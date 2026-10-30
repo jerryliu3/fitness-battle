@@ -64,7 +64,6 @@ export function CompetitionField({
   const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d">(() => state && buildArenaModel(state, undefined, track, sport)?.unit === "pts" ? "2d" : "4d");
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
   const chooseView = (value: "2d" | "3d" | "4d") => {
-    void playCue("selection");
     flight.cancel();
     setSceneDimension(value);
   };
@@ -94,7 +93,7 @@ export function CompetitionField({
     : inlineHeight);
   const laneAnchor = useRef<LaneAnchor | null>(null);
   const portraitAnchor = useRef(0);
-  const expandField = () => { setExpanded(true); void playCue("light"); };
+  const expandField = () => { setExpanded(true); };
   const [center, setCenter] = useState<number | null>(null);
   const [span, setSpan] = useState<number | null>(null);
   const ghost = true;
@@ -148,6 +147,7 @@ export function CompetitionField({
   const selectAthlete = (id: string) => {
     const lane = arena.lanes.find((item) => item.id === id);
     if (!lane || lane.mystery || hiddenIds.includes(id)) return;
+    void playCue("selection");
     setCourseTarget(null);
     const ordered = orderedArenaLanes(arena.lanes);
     portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you));

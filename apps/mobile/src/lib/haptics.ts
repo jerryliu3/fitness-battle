@@ -1,3 +1,4 @@
+import { AppState } from "react-native";
 import * as Haptics from "expo-haptics";
 import {
   HAPTIC_MIN_INTERVAL_MS,
@@ -17,15 +18,38 @@ const notifications: Record<string, Haptics.NotificationFeedbackType> = {
 };
 
 let lastAt = 0;
+let lastKind: HapticCue = "none";
+let generation = 0;
+const timers = new Set<ReturnType<typeof setTimeout>>();
+export function cancelHaptics() {
+  generation++;
+  timers.forEach(clearTimeout);
+  timers.clear();
+}
+AppState.addEventListener("change", state => { if (state !== "active") cancelHaptics(); });
+export function playPattern(kind: "pass" | "lead" | "earned" | "confirm") {
+  cancelHaptics();
+  const owner = generation;
+  const beats: [number, HapticCue][] = kind === "pass" ? [[0,"soft"],[90,"light"]]
+    : kind === "confirm" ? [[0,"soft"],[120,"light"]]
+    : kind === "lead" ? [[0,"soft"],[90,"light"],[230,"medium"]]
+    : [[0,"soft"],[140,"light"],[340,"medium"]];
+  for (const [delay, cue] of beats) {
+    const timer = setTimeout(() => { timers.delete(timer); if (generation === owner) void playCue(cue); }, delay);
+    timers.add(timer);
+  }
+}
 
 export async function playCue(
   kind: HapticCue,
   options?: { controlAlreadyPlayed?: boolean },
 ): Promise<void> {
+  if (AppState.currentState !== "active") return;
   if (options?.controlAlreadyPlayed || kind === "none") return;
   const now = Date.now();
-  if (kind === "selection" && now - lastAt < HAPTIC_MIN_INTERVAL_MS) return;
+  if (now - lastAt < HAPTIC_MIN_INTERVAL_MS && (kind === "selection" || kind === lastKind)) return;
   lastAt = now;
+  lastKind = kind;
   try {
     if (kind === "selection") await Haptics.selectionAsync();
     else if (kind in impacts)
