@@ -3,6 +3,7 @@ import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 vi.mock("react-native", () => ({ Animated: { createAnimatedComponent: () => "AnimatedRect" } }));
 vi.mock("react-native-svg", () => ({ default: "Svg", Polyline: "Polyline", Line: "Line", Text: "SvgText", Defs: "Defs", ClipPath: "ClipPath", Rect: "Rect", G: "G" }));
+vi.mock("./section", () => ({ chartTextProps: () => ({ fontFamily: "Manrope_500Medium", fontSize: 12, fontWeight: "500" }) }));
 vi.mock("./chart-scrubber", () => ({ ChartScrubber: "Scrubber" }));
 import { StandardLineChart } from "./standard-line-chart";
 it("keeps axes outside the animated plot clipping region", async () => {

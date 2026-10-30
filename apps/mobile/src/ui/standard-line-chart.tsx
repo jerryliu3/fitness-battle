@@ -1,4 +1,5 @@
 import { SHELL_COLORS as c, buildStandardChartGeometry } from "@fitness-battle/shared";
+import { chartTextProps } from "./section";
 import { ChartScrubber } from "./chart-scrubber";
 import { useId } from "react";
 import { Animated } from "react-native";
@@ -33,8 +34,8 @@ export function StandardLineChart({ revealProgress, showAxes = false, values, xL
  {revealProgress && <Defs><ClipPath id={clipId}><AnimatedRect x={geo.xStart} y={0} height={height} width={revealProgress.interpolate({inputRange:[0,1],outputRange:[0,geo.xEnd-geo.xStart]})}/></ClipPath></Defs>}
  {showAxes && <G><Line x1={geo.xStart} x2={geo.xStart} y1={geo.yTop} y2={geo.yBottom} stroke={c.line}/>
  <Line x1={geo.xStart} x2={geo.xEnd} y1={geo.yBottom} y2={geo.yBottom} stroke={c.line}/>
- {[{value:geo.yMax,y:geo.yTop},{value:geo.yMid,y:geo.yMidPos},{value:geo.yMin,y:geo.yBottom}].map(tick=><SvgText key={tick.y} x={geo.xStart-6} y={tick.y+4} fontSize={10} fill={c.muted} textAnchor="end">{formatY(tick.value)}</SvgText>)}
- {xLabels?.map((label,i)=><SvgText key={i} x={[geo.xStart,geo.xMid,geo.xEnd][i]} y={height-6} fontSize={10} fill={c.muted} textAnchor={i===0?"start":i===2?"end":"middle"}>{label}</SvgText>)}
+ {[{value:geo.yMax,y:geo.yTop},{value:geo.yMid,y:geo.yMidPos},{value:geo.yMin,y:geo.yBottom}].map(tick=><SvgText key={tick.y} x={geo.xStart-6} y={tick.y+4} {...chartTextProps()} fill={c.muted} textAnchor="end">{formatY(tick.value)}</SvgText>)}
+ {xLabels?.map((label,i)=><SvgText key={i} x={[geo.xStart,geo.xMid,geo.xEnd][i]} y={height-6} {...chartTextProps()} fill={c.muted} textAnchor={i===0?"start":i===2?"end":"middle"}>{label}</SvgText>)}
  </G>}
  <G clipPath={revealProgress?`url(#${clipId})`:undefined}><Polyline points={geo.polyline} fill="none" stroke={c.tennis} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></G></Svg>
  </ChartScrubber>;
