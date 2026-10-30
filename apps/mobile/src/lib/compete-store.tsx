@@ -602,6 +602,17 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   }, [readBaselineItem, writeBaselineItem]);
   refreshRef.current = refresh;
 
+  // A tracker connected in a browser belongs to this account too. Reconcile
+  // on resume even when this device still has no connected-provider links.
+  useEffect(() => {
+    if (!owner || auth.offlineMode || loadStatus !== "ready") return;
+    const subscription = AppState.addEventListener("change", status => {
+      if (status === "active") void refresh({ ifStale: true });
+    });
+    return () => subscription.remove();
+  }, [owner, auth.offlineMode, loadStatus, refresh]);
+
+
   const connectedPullProviders = (state?.links ?? []).filter(link => link.status === "connected" && ["strava", "whoop", "oura"].includes(link.provider)).map(link => link.provider).sort().join(",");
   useEffect(() => {
     if (!owner || auth.offlineMode || loadStatus !== "ready" || !connectedPullProviders) return;

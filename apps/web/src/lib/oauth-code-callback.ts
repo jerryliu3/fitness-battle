@@ -1,5 +1,5 @@
 import { serverEnv } from "@/lib/env";
-import { trackerRedirect } from "@/lib/oauth-callback";
+import { trackerRedirectForRequest } from "@/lib/oauth-callback";
 import { resolveSessionUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider } from "@/lib/fitness";
 import { resolveOAuthCallbackUserId } from "@/lib/oauth-state";
@@ -26,12 +26,12 @@ export function oauthCodeCallback(providerId: "whoop" | "oura") {
     if (url.searchParams.has("error") || (creds(providerId) && liveAuth && !code)) {
       const reason = url.searchParams.get("error");
       console.warn("Provider authorization rejected", { provider: providerId, reason: reason && /^[a-z_]{1,60}$/.test(reason) ? reason : "missing_code" });
-      return trackerRedirect(url.origin, providerId, "error");
+      return trackerRedirectForRequest(request, providerId, "error");
     }
     if (!creds(providerId) || !liveAuth) {
-      return trackerRedirect(url.origin, providerId, "stub");
+      return trackerRedirectForRequest(request, providerId, "stub");
     }
-    if (!code) return trackerRedirect(url.origin, providerId, "error");
+    if (!code) return trackerRedirectForRequest(request, providerId, "error");
     const sessionUserId = await resolveSessionUserId();
     const userId = resolveOAuthCallbackUserId({
       state,
@@ -39,14 +39,14 @@ export function oauthCodeCallback(providerId: "whoop" | "oura") {
       sessionUserId,
     });
     if (!userId) {
-      return trackerRedirect(url.origin, providerId, "error");
+      return trackerRedirectForRequest(request, providerId, "error");
     }
     try {
       if (providerId === "whoop") await getServerFitnessProvider("whoop").completeOAuth(userId, code);
       else await getServerFitnessProvider("oura").completeOAuth(userId, code);
-      return trackerRedirect(url.origin, providerId, "connected");
+      return trackerRedirectForRequest(request, providerId, "connected");
     } catch {
-      return trackerRedirect(url.origin, providerId, "error");
+      return trackerRedirectForRequest(request, providerId, "error");
     }
   };
 }
