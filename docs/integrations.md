@@ -1,6 +1,6 @@
 # Fitness integrations
 
-Cloud OAuth token exchange runs on the web server. The mobile app starts the same connect flow in an in-app auth session (ASWebAuthenticationSession / Chrome Custom Tabs); callbacks return via `overtaek:///you` (browser fallback `/you`). Apple Health and Health Connect run on the phone and post into the same API. Missing keys keep a provider on the stub path. A stub is never shown as a live connection.
+Cloud OAuth token exchange runs on the web server. The mobile app starts the same connect flow in an in-app auth session (ASWebAuthenticationSession / Chrome Custom Tabs); mobile callbacks return via `overtaek:///you` with `panel=connections`; web callbacks stay on the website. Apple Health and Health Connect run on the phone and post into the same API. Missing keys keep a provider on the stub path. A stub is never shown as a live connection.
 
 ## Status matrix
 
@@ -133,3 +133,5 @@ Web and native clients request cloud refresh on startup, on return to the foregr
 Onboarding uses the same live tracker authorization controls as Athlete. Draft setup is preserved through the provider redirect. A newly connected Strava, WHOOP or Oura link triggers the client refresh immediately, including when the native auth session returns without remounting the app. Garmin Starter only supplies new pushed activities, not historical onboarding calibration.
 
 Use the secret as the final path segment because query-string preservation in Garmin endpoint configuration has not been verified. The previous query-key route remains compatible. Neither bare `/push` nor an incorrect secret is accepted. Verify the saved destination after reloading Garmin Tools, then confirm an actual inbox delivery.
+
+OAuth callback routing uses the verified state channel: session/web requests return directly to the web app, while bearer/mobile requests open the native scheme. Unverified state cannot initiate a native handoff. Native links include `panel=connections` to avoid an extra settings redirect in compatible older builds. A native crash still requires device crash diagnostics; server token-exchange success does not prove native UI success.

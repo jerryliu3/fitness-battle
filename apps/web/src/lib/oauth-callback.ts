@@ -1,20 +1,23 @@
 import { webProductPath } from "@fitness-battle/shared";
 import { NextResponse } from "next/server";
+import { verifyOAuthState, type OAuthStateChannel } from "./oauth-state";
 
 /**
- * After OAuth, try the mobile deep link first, then fall back to the web Athlete page.
- * Installed apps intercept `overtaek://`; browsers continue to `/you`.
+ * Return to the surface that started OAuth. Only authenticated mobile state
+ * may launch the native scheme; web and invalid states stay in the browser.
  */
 export function trackerRedirect(
   origin: string,
   provider: string,
   outcome: "connected" | "stub" | "error",
+  channel: OAuthStateChannel = "session",
 ): NextResponse {
   const webUrl = new URL(webProductPath("/you"), origin);
   webUrl.searchParams.set("tracker", outcome);
   webUrl.searchParams.set("provider", provider);
+  if (channel === "session") return NextResponse.redirect(webUrl, { status: 303, headers: { "Cache-Control": "no-store" } });
   // Three slashes so Expo Router treats `you` as a path, not a host.
-  const deep = `overtaek:///you?tracker=${encodeURIComponent(outcome)}&provider=${encodeURIComponent(provider)}`;
+  const deep = `overtaek:///you?tracker=${encodeURIComponent(outcome)}&provider=${encodeURIComponent(provider)}&panel=connections`;
   const web = webUrl.toString();
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -43,4 +46,11 @@ export function trackerRedirect(
       "Cache-Control": "no-store",
     },
   });
+}
+
+export function trackerRedirectForRequest(request: Request, provider: string, outcome: "connected" | "stub" | "error"): NextResponse {
+  const url = new URL(request.url);
+  const state = url.searchParams.get("state");
+  const channel = state && verifyOAuthState(state, provider)?.c === "bearer" ? "bearer" : "session";
+  return trackerRedirect(url.origin, provider, outcome, channel);
 }

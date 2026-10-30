@@ -1,5 +1,5 @@
 import { serverEnv } from "@/lib/env";
-import { trackerRedirect } from "@/lib/oauth-callback";
+import { trackerRedirectForRequest } from "@/lib/oauth-callback";
 import { resolveSessionUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider } from "@/lib/fitness";
 import { resolveOAuthCallbackUserId } from "@/lib/oauth-state";
@@ -23,10 +23,10 @@ export async function GET(request: Request) {
   const liveAuth = configured;
 
   if (!hasCreds || !code) {
-    return trackerRedirect(url.origin, "strava", "stub");
+    return trackerRedirectForRequest(request, "strava", "stub");
   }
   if (!liveAuth) {
-    return trackerRedirect(url.origin, "strava", "stub");
+    return trackerRedirectForRequest(request, "strava", "stub");
   }
 
   const sessionUserId = await resolveSessionUserId();
@@ -36,14 +36,14 @@ export async function GET(request: Request) {
     sessionUserId,
   });
   if (!userId) {
-    return trackerRedirect(url.origin, "strava", "error");
+    return trackerRedirectForRequest(request, "strava", "error");
   }
 
   const provider = getServerFitnessProvider("strava");
   try {
     await provider.completeOAuth(userId, code);
-    return trackerRedirect(url.origin, "strava", "connected");
+    return trackerRedirectForRequest(request, "strava", "connected");
   } catch {
-    return trackerRedirect(url.origin, "strava", "error");
+    return trackerRedirectForRequest(request, "strava", "error");
   }
 }
