@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { mapGarminActivity, type ActivitySample } from "@fitness-battle/shared";
-import { persistSyncedActivities, serviceDb, userIdForAthlete } from "./fitness-store";
+import { createProviderStore, persistSyncedActivities, serviceDb, userIdForAthlete } from "./fitness-store";
 
 export function secretMatches(actual: string | null, expected: string): boolean {
   if (!actual || !expected || expected.length < 32) return false;
@@ -45,6 +45,12 @@ export async function drainGarminPush(maxItems = 20): Promise<{ processed: numbe
       }
       for (const [userId, activities] of grouped) {
         if (!await persistSyncedActivities(userId, activities)) throw new Error("persist_failed");
+        const store = createProviderStore("garmin");
+        const connection = await store?.getConnection(userId);
+        if (store && connection?.status === "connected") {
+          const latest = [...activities.map(activity => activity.startedAt), ...(connection.lastActivityAt ? [connection.lastActivityAt] : [])].sort().at(-1) ?? null;
+          await store.setConnection({ ...connection, lastSyncAt: new Date().toISOString(), lastActivityAt: latest });
+        }
       }
       success = true;
     } catch {

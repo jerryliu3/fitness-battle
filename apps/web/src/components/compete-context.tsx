@@ -579,6 +579,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     };
   }, [offlineMode, loading, refresh, userId]);
 
+  const connectedPullProviders = (state?.links ?? []).filter(link => link.status === "connected" && ["strava", "whoop", "oura"].includes(link.provider)).map(link => link.provider).sort().join(",");
   useEffect(() => {
     if (loading || !userId || offlineMode) return;
     let stopped = false, running = false;
@@ -604,7 +605,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     document.addEventListener("visibilitychange", kick);
     window.addEventListener("online", kick);
     return () => { stopped = true; clearInterval(timer); document.removeEventListener("visibilitychange", kick); window.removeEventListener("online", kick); };
-  }, [loading, userId, offlineMode, refresh]);
+  }, [loading, userId, offlineMode, refresh, connectedPullProviders]);
 
   const dismissFieldNotice = useCallback(() => {
     const accountKey = userIdRef.current ?? "guest";
