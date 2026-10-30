@@ -583,3 +583,8 @@ native onboarding remains full-screen. Recap replay sits beside Follow me inside
 the board. Weekly chart drawing starts immediately; onboarding keeps its staged
 reveal delay. Debug Overtake exposes 2D / 4D switching on the same playback clock,
 using the practice course for geographic previews.
+
+
+## Mobile action refinement, October 29
+
+Native primary and secondary action buttons use fully rounded pill corners with a 48px minimum height. Compact filters use stable label typography and at least 44px touch regions; selection uses a stronger border and pale fill. Picker triggers share the pill silhouette. Secondary destinations use quiet chevron rows. Keep 12px control geometry for text fields and settings rows, 20px cards and 24px sheets. Preserve the selected chart designs, palette and typography.

@@ -75,7 +75,7 @@ export function CompetitionSummary({
                   onRegister();
                 }}
                 style={{
-                  minHeight: 36,
+                  minHeight: 44,
                   paddingHorizontal: 14,
                   paddingVertical: 7,
                   borderRadius: 999,

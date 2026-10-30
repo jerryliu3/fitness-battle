@@ -73,7 +73,7 @@ export function ChoicePicker<T extends string>({
           accessibilityLabel={`${label}: ${options[selected]?.label ?? placeholder}`}
           accessibilityState={{ expanded: open }}
           onPress={toggle}
-          style={[s.trigger, open && s.triggerOpen]}
+          style={({ pressed }) => [s.trigger, open && s.triggerOpen, pressed && { opacity: 0.7 }]}
         >
           <Text style={[textStyle("label"), { flexShrink: 1 }]}>
             {options[selected]?.label ?? placeholder}
@@ -135,7 +135,7 @@ const s = StyleSheet.create({
   trigger: {
     minHeight: 46,
     paddingHorizontal: 16,
-    borderRadius: 14,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: c.line,
     backgroundColor: c.card,
