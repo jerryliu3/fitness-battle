@@ -1,4 +1,4 @@
-import { playCue, playPattern } from "../lib/haptics";
+import { playCue } from "../lib/haptics";
 import { textStyle } from "./section";
 import { AppIcon, type AppIconName } from "./app-icon";
 import { Pressable, Text, View } from "react-native";

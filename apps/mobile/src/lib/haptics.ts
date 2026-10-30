@@ -1,5 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useSyncExternalStore } from "react";
+import { hapticsEnabled, subscribeHaptics } from "./haptic-preferences";
+export { useHapticsEnabled, setHapticsEnabled } from "./haptic-preferences";
 import { AppState } from "react-native";
 import * as Haptics from "expo-haptics";
 import {
@@ -19,23 +19,6 @@ const notifications: Record<string, Haptics.NotificationFeedbackType> = {
   error: Haptics.NotificationFeedbackType.Error,
 };
 
-let enabled = false;
-let preferenceLoaded = false;
-const listeners = new Set<() => void>();
-const preferenceKey = "overtaek:haptics:v1";
-void AsyncStorage.getItem(preferenceKey).then(value => {
-  if (preferenceLoaded) return;
-  enabled = value !== "off"; preferenceLoaded = true;
-  listeners.forEach(listener => listener());
-}).catch(() => { preferenceLoaded = true; });
-export function useHapticsEnabled() {
-  return useSyncExternalStore(listener => { listeners.add(listener); return () => { listeners.delete(listener); }; }, () => enabled, () => false);
-}
-export function setHapticsEnabled(value: boolean) {
-  preferenceLoaded = true; enabled = value;
-  cancelHaptics(); listeners.forEach(listener => listener());
-  void AsyncStorage.setItem(preferenceKey, value ? "on" : "off").catch(() => {});
-}
 let lastAt = 0;
 let lastKind: HapticCue = "none";
 let generation = 0;
@@ -46,25 +29,44 @@ export function cancelHaptics() {
   timers.clear();
 }
 AppState.addEventListener("change", state => { if (state !== "active") cancelHaptics(); });
-export function playPattern(kind: "pass" | "lead" | "earned" | "confirm") {
+subscribeHaptics(() => { if (!hapticsEnabled()) cancelHaptics(); });
+const patterns = {
+  pass: [[0, "light"]],
+  lead: [[0, "light"], [140, "medium"]],
+  combo: [[0, "light"], [140, "medium"]],
+  earned: [[0, "soft"], [140, "light"], [340, "medium"]],
+  confirm: [[0, "soft"], [120, "light"]],
+} as const satisfies Record<string, readonly (readonly [number, HapticCue])[]>;
+
+/** Returns a handle that can cancel only this playback, never its successor. */
+export function playPattern(kind: keyof typeof patterns): () => void {
+  if (!hapticsEnabled() || AppState.currentState !== "active") return () => {};
   cancelHaptics();
   const owner = generation;
-  const beats: [number, HapticCue][] = kind === "pass" ? [[0,"soft"],[90,"light"]]
-    : kind === "confirm" ? [[0,"soft"],[120,"light"]]
-    : kind === "lead" ? [[0,"soft"],[90,"light"],[230,"medium"]]
-    : [[0,"soft"],[140,"light"],[340,"medium"]];
-  for (const [delay, cue] of beats) {
-    const timer = setTimeout(() => { timers.delete(timer); if (generation === owner) void playCue(cue); }, delay);
+  const cancel = () => { if (owner === generation) cancelHaptics(); };
+  for (const [delay, cue] of patterns[kind]) {
+    if (!delay) { void dispatchCue(cue); continue; }
+    const timer = setTimeout(() => {
+      timers.delete(timer);
+      if (generation === owner) void dispatchCue(cue);
+    }, delay);
     timers.add(timer);
   }
+  return cancel;
 }
 
 export async function playCue(
   kind: HapticCue,
   options?: { controlAlreadyPlayed?: boolean },
 ): Promise<void> {
-  if (!enabled || AppState.currentState !== "active") return;
+  if (!hapticsEnabled() || AppState.currentState !== "active") return;
   if (options?.controlAlreadyPlayed || kind === "none") return;
+  cancelHaptics();
+  return dispatchCue(kind);
+}
+
+async function dispatchCue(kind: HapticCue): Promise<void> {
+  if (!hapticsEnabled() || AppState.currentState !== "active") return;
   const now = Date.now();
   if (now - lastAt < HAPTIC_MIN_INTERVAL_MS && (kind === "selection" || kind === lastKind)) return;
   lastAt = now;

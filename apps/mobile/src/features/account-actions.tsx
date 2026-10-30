@@ -65,9 +65,10 @@ export function AccountActions() {
         if (await clearAccountData(id)) await signOut();
       }
     } catch (e) {
-      void playCue("error");
-      if (mounted.current && ownerRef.current === id)
+      if (mounted.current && ownerRef.current === id) {
+        void playCue("error");
         setError(e instanceof Error ? e.message : "Please try again.");
+      }
     } finally {
       flight.current = false;
       setBusy(false);

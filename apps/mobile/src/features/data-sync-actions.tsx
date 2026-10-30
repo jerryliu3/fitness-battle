@@ -42,8 +42,7 @@ export function DataSyncActions({ provider, includeCalibration = true }: { provi
     try {
       await work(isCurrent);
     } catch (e) {
-      void playCue("error");
-      if (isCurrent()) setNote(e instanceof Error ? e.message : "Sync failed");
+      if (isCurrent()) { void playCue("error"); setNote(e instanceof Error ? e.message : "Sync failed"); }
     } finally {
       flight.current = false;
       if (mounted.current) setBusy(false);

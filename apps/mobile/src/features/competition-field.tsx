@@ -403,7 +403,6 @@ export function CompetitionField({
                     accessibilityRole="button"
                     accessibilityLabel={`View ${peer.name}'s profile`}
                     onPress={() => {
-                      void playCue("selection");
                       selectAthlete(peer.id);
                       openProfile(peer);
                     }}
@@ -558,7 +557,6 @@ export function CompetitionField({
                         accessibilityRole="button"
                         accessibilityLabel={`Focus ${peer.name}, place ${place(peer.values[2])}`}
                         onPress={() => {
-                          void playCue("selection");
                           selectAthlete(peer.id);
                         }}
                         style={{

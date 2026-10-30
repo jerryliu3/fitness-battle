@@ -1,4 +1,4 @@
-import { playCue, playPattern } from "../lib/haptics";
+import { playCue } from "../lib/haptics";
 import { AppText } from "../ui/section";
 import { OPEN_LINE_RANGES, type OpenLineRange, type TrainingRange } from "@fitness-battle/shared";
 import { Pressable, StyleSheet, View } from "react-native";

@@ -1,4 +1,4 @@
-import { playCue, playPattern, cancelHaptics } from "../lib/haptics";
+import { playCue } from "../lib/haptics";
 import { textStyle } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type ScrollViewInstance } from "react-native";
@@ -48,7 +48,6 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
   }, []);
   const activities = receipt.activities, selected = activities.filter(a => !excluded.includes(a.id));
   const detent = useRef(0);
-  useEffect(() => () => cancelHaptics(), []);
   const finish = () => {
     if (complete.current || saving) return;
     const ids = activities
@@ -62,7 +61,6 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
       if (complete.current) return;
       complete.current = true;
       onComplete(ids);
-      playPattern("confirm");
     }, SYNC_REVIEW_SAVE_DELAY_MS);
   };
   const openDetail = (id: string) => {
@@ -269,7 +267,7 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
           onMoveShouldSetResponder={() => !saving && dragging.current}
           onResponderTerminationRequest={() => false}
           onResponderGrant={e => { if (saving) return; void playCue("soft"); detent.current = 0; dragging.current = true; dragStart.current = e.nativeEvent.pageX; dragDistance.current = 0; }}
-          onResponderMove={e => { if (saving) return; dragDistance.current = Math.max(0, e.nativeEvent.pageX - dragStart.current); const next = Math.min(1, dragDistance.current / travel); const step = next >= .85 ? 3 : next >= .65 ? 2 : next >= .35 ? 1 : 0; if (step > detent.current) void playCue(step === 3 ? "light" : "selection"); detent.current = step; setProgress(next); }}
+          onResponderMove={e => { if (saving) return; dragDistance.current = Math.max(0, e.nativeEvent.pageX - dragStart.current); const next = Math.min(1, dragDistance.current / travel); const step = next >= .85 ? 3 : next >= .65 ? 2 : next >= .35 ? 1 : 0; if (step > detent.current) void playCue(step === 3 ? "light" : "selection"); detent.current = Math.max(detent.current, step); setProgress(next); }}
           onResponderRelease={e => { if (saving) return; const distance = Math.max(0, e.nativeEvent.pageX - dragStart.current); dragging.current = false; if (distance / travel >= .85) finish(); else setProgress(0); }}
           onResponderTerminate={() => { dragging.current = false; if (!saving) setProgress(0); }}>
           <View pointerEvents="none" style={{ position: "absolute", top: 5, left: 4, width: 56, height: 56, borderRadius: 28, backgroundColor: c.tennis, justifyContent: "center", alignItems: "center", transform: [{ translateX: progress * travel }] }}>{saving ? <ActivityIndicator color={c.ink} /> : <Text style={textStyle("heading")}>→</Text>}</View>
