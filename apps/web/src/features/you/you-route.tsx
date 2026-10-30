@@ -388,9 +388,10 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
         readiness?: ReadinessSample[];
         error?: string;
         windowKind?: string;
+        message?: string;
       };
       if (!response.ok) {
-        setSyncNote("Sync failed");
+        setSyncNote(body.message ?? "Sync failed");
         void requestAccountPush("connection_alerts", pushIdentity, {
           provider: providerId,
         });
