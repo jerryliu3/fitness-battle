@@ -4,7 +4,6 @@ import { readJson } from "./http";
 import { mockFitnessProvider } from "./mock-provider";
 import { encodeForm } from "./http";
 import { mapSportToCategory, type StravaStore, type StravaTokenSet } from "./strava-provider";
-import { syncWindow } from "./sync-window";
 import type { FitnessAuthResult, FitnessProvider } from "./types";
 
 export interface GarminEnv {
@@ -237,34 +236,13 @@ export function createGarminProvider(
           usedMock: false,
         };
       }
-      const since = options?.since ?? syncWindow({ forceBackfill: true }).since;
-      const start = Math.floor(new Date(since).getTime() / 1000);
-      const end = Math.floor(Date.now() / 1000);
-      const url = new URL(urls.activitiesUrl);
-      url.searchParams.set("uploadStartTimeInSeconds", String(start));
-      url.searchParams.set("uploadEndTimeInSeconds", String(end));
-      const tokens = await access(userId);
-      const response = await bearer(url.toString(), tokens);
-      if (!response.ok) throw new Error(`garmin_activities_failed:${response.status}`);
-      const rows = (await readJson(response)) as GarminSummary[];
-      let activities = (Array.isArray(rows) ? rows : [])
-        .map((item) => mapGarminActivity(item))
-        .filter((item): item is ActivitySample => item != null);
-      if (options?.categorySlug) {
-        activities = activities.filter((item) => item.categorySlug === options.categorySlug);
-      }
-      const syncedAt = new Date().toISOString();
-      await store.setConnection({
-        ...connection,
-        lastSyncAt: syncedAt,
-        lastActivityAt: activities.map((item) => item.startedAt).sort().at(-1) ?? null,
-      });
+      // Starter accounts receive new activities via push; ad-hoc pull and
+      // historical backfill are available only with Enterprise access.
       return {
         provider: "garmin" as const,
-        activities,
-        syncedAt,
+        activities: [],
+        syncedAt: new Date().toISOString(),
         usedMock: false,
-        since,
       };
     },
   };

@@ -28,7 +28,7 @@ function isUuid(value: string): boolean {
   return UUID_RE.test(value);
 }
 
-function serviceDb(): SupabaseClient | null {
+export function serviceDb(): SupabaseClient | null {
   const { configured, supabaseUrl } = getSupabaseConfig();
   if (!configured || !serverEnv.supabaseServiceRoleKey) {
     return null;

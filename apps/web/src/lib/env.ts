@@ -37,6 +37,8 @@ export const serverEnv = {
   ouraRedirectUri:
     process.env.OURA_REDIRECT_URI ??
     "http://localhost:3000/api/fitness/oura/callback",
+  garminWebhookSecret: process.env.GARMIN_WEBHOOK_SECRET ?? "",
+  cronSecret: process.env.CRON_SECRET ?? "",
   garminConsumerKey: process.env.GARMIN_CONSUMER_KEY,
   garminConsumerSecret: process.env.GARMIN_CONSUMER_SECRET,
   garminRedirectUri:

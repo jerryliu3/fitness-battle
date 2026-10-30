@@ -579,6 +579,33 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     };
   }, [offlineMode, loading, refresh, userId]);
 
+  useEffect(() => {
+    if (loading || !userId || offlineMode) return;
+    let stopped = false, running = false;
+    const sync = async () => {
+      if (stopped || running || document.visibilityState === "hidden") return;
+      running = true;
+      try {
+        const response = await fetch("/api/fitness/status");
+        if (!response.ok) return;
+        const body = await response.json();
+        for (const connection of body.connections ?? []) {
+          if (stopped || userIdRef.current !== userId) return;
+          if (connection.status !== "connected" || !["strava", "whoop", "oura"].includes(connection.provider)) continue;
+          await fetch("/api/fitness/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider: connection.provider, automatic: true }) });
+        }
+        if (!stopped && userIdRef.current === userId) await refresh();
+      } catch { /* A later foreground or hourly attempt retries. */ }
+      finally { running = false; }
+    };
+    void sync();
+    const kick = () => { void sync(); };
+    const timer = window.setInterval(kick, 60 * 60_000);
+    document.addEventListener("visibilitychange", kick);
+    window.addEventListener("online", kick);
+    return () => { stopped = true; clearInterval(timer); document.removeEventListener("visibilitychange", kick); window.removeEventListener("online", kick); };
+  }, [loading, userId, offlineMode, refresh]);
+
   const dismissFieldNotice = useCallback(() => {
     const accountKey = userIdRef.current ?? "guest";
     const current = stateRef.current;

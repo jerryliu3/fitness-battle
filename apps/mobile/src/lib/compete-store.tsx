@@ -603,6 +603,35 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   refreshRef.current = refresh;
 
   useEffect(() => {
+    if (!owner || auth.offlineMode) return;
+    let stopped = false, running = false;
+    const sync = async () => {
+      if (stopped || running || AppState.currentState !== "active") return;
+      running = true;
+      try {
+        const account = await competeAccount();
+        if (!account || account.userId !== owner || stopped) return;
+        const headers = { Authorization: `Bearer ${account.token}`, "Content-Type": "application/json" };
+        const response = await fetchWithTimeout(`${mobileEnv.apiUrl}/api/fitness/status`, { headers });
+        if (!response.ok) return;
+        const body = await response.json();
+        for (const connection of body.connections ?? []) {
+          if (stopped || accountRef.current !== owner) return;
+          if (connection.status !== "connected" || !["strava", "whoop", "oura"].includes(connection.provider)) continue;
+          await fetchWithTimeout(`${mobileEnv.apiUrl}/api/fitness/sync`, { method: "POST", headers, body: JSON.stringify({ provider: connection.provider, automatic: true }) });
+        }
+        if (!stopped && accountRef.current === owner) await refresh();
+      } catch { /* Retry on next foreground or active hourly interval. */ }
+      finally { running = false; }
+    };
+    void sync();
+    const timer = setInterval(() => { void sync(); }, 60 * 60_000);
+    const subscription = AppState.addEventListener("change", status => { if (status === "active") void sync(); });
+    return () => { stopped = true; clearInterval(timer); subscription.remove(); };
+  }, [owner, auth.offlineMode, refresh]);
+
+
+  useEffect(() => {
     if (!state || !loadReady.current || !navigationReady) return;
     let alive = true;
     const accountKey = accountRef.current ?? "device";

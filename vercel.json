@@ -11,5 +11,11 @@
       "**/*": false,
       "**": false
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/fitness/garmin/retry",
+      "schedule": "0 8 * * *"
+    }
+  ]
 }
