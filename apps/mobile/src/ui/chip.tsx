@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import { AppText } from "./section";
-import { SHELL_COLORS as c } from "../theme";
+import { SHELL_COLORS as c, SHELL_RADIUS } from "../theme";
 import { playCue } from "../lib/haptics";
 
 /**
@@ -50,12 +50,11 @@ export function Chip({
         void playCue("selection");
         onPress();
       }}
-      style={[s.chip, selected && s.chipSelected, style]}
+      style={({ pressed }) => [s.chip, selected && s.chipSelected, style, pressed && { opacity: 0.7 }]}
     >
       <AppText
-        role={selected ? "label" : "caption"}
-        secondary={!selected}
-        style={[s.label, selected ? s.labelSelected : s.labelUnselected, labelStyle]}
+        role="label"
+        style={[s.label, labelStyle]}
       >
         {label}
       </AppText>
@@ -71,10 +70,10 @@ const s = StyleSheet.create({
     paddingVertical: 2,
   },
   chip: {
-    minHeight: 32,
-    paddingVertical: 6,
+    minHeight: 44,
+    paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 9999,
+    borderRadius: SHELL_RADIUS.pill,
     borderWidth: 1,
     borderColor: c.line,
     backgroundColor: c.card,
@@ -82,16 +81,11 @@ const s = StyleSheet.create({
     alignItems: "center",
   },
   chipSelected: {
-    backgroundColor: c.ink,
+    backgroundColor: c.soft,
     borderColor: c.ink,
   },
   label: {
-    fontVariant: ["tabular-nums"],
-  },
-  labelUnselected: {
     color: c.ink,
-  },
-  labelSelected: {
-    color: c.card,
+    fontVariant: ["tabular-nums"],
   },
 });
