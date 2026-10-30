@@ -32,7 +32,7 @@ export function FieldViewSwitcher({
         onPress={toggle}
         style={({ pressed }) => [
           {
-            minHeight: 36,
+            minHeight: 44,
             paddingHorizontal: 12,
             flexDirection: "row",
             alignItems: "center",
@@ -73,7 +73,7 @@ export function FieldViewSwitcher({
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  minHeight: 36,
+                  minHeight: 44,
                   paddingHorizontal: 12,
                   paddingVertical: 6,
                   backgroundColor: isSelected ? "rgba(20, 20, 19, 0.08)" : "transparent",

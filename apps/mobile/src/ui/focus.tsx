@@ -347,7 +347,8 @@ export function FocusButton({
       style={({ pressed }) => [
         f.button,
         secondary && f.secondary,
-        (pressed || disabled) && { opacity: 0.5 },
+        pressed && !disabled && { opacity: 0.78 },
+        disabled && { opacity: 0.4 },
       ]}
     >
       <Text style={[f.buttonText, secondary && { color: c.ink }]}>{label}</Text>
@@ -563,9 +564,10 @@ export const f = StyleSheet.create({
     backgroundColor: c.actionPrimary,
     borderBottomWidth: 1,
     borderBottomColor: c.actionPrimary,
-    borderRadius: SHELL_RADIUS.control,
+    borderRadius: SHELL_RADIUS.pill,
     minHeight: 48,
-    padding: 15,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -573,6 +575,8 @@ export const f = StyleSheet.create({
   },
   buttonText: {
     ...textStyle("label"),
+    flexShrink: 1,
+    textAlign: "center",
     color: c.ink,
   },
   secondary: {
