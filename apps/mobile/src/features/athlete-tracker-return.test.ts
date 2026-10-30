@@ -13,7 +13,7 @@ const mock = vi.hoisted(() => ({
   canGoBackValue: true,
   user: { id: "alice" } as { id: string } | null,
 }));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   StyleSheet: { create: (styles: unknown) => styles },
   Pressable: "Pressable",

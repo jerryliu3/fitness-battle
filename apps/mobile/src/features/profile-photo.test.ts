@@ -11,7 +11,7 @@ vi.mock("expo-image-picker", () => ({
   launchImageLibraryAsync: mock.pick,
   getMediaLibraryPermissionsAsync: mock.permission,
 }));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   StyleSheet: { create: (styles: unknown) => styles }, View: "View", Text: "Text", Image: "Image", Pressable: "Pressable" }));
 vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path" }));

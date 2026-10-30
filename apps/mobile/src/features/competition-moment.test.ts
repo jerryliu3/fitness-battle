@@ -9,7 +9,7 @@ vi.mock("react-native", () => ({ View: "View", Text: "Text", StyleSheet: { absol
 vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ top: 20, bottom: 20 }) }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ accountKey: "a" }) }));
 vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton" }));
-vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
+vi.mock("../lib/haptics", () => ({ playCue: vi.fn(), playPattern: vi.fn(() => vi.fn()), cancelHaptics: vi.fn() }));
 vi.mock("../ui/field-course", () => ({ useFieldAppearance: () => [defaultFieldAppearance] }));
 vi.mock("../ui/lane-track", () => ({ LaneTrack: "LaneTrack" }));
 vi.mock("./geographic-course",()=>({GeographicCourse:"GeographicCourse"}));
