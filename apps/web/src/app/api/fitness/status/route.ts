@@ -24,7 +24,10 @@ async function connectionFor(
   provider: FitnessProviderId,
 ): Promise<FitnessConnection> {
   if (isOAuthProvider(provider)) {
-    return getServerFitnessProvider(provider).getConnection(userId);
+    const connection = await getServerFitnessProvider(provider).getConnection(userId);
+    const tokens = await createProviderStore(provider)?.getTokens(userId);
+    if (connection.status === "connected" && !tokens) return { ...connection, status: "disconnected", connectedAt: null };
+    return connection;
   }
   const store = createProviderStore(provider);
   const existing = store ? await store.getConnection(userId) : null;
