@@ -1,3 +1,4 @@
+vi.mock("../lib/haptics", () => ({ playCue: vi.fn(), playPattern: vi.fn(() => vi.fn()) }));
 vi.mock("./app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("./club-art",()=>({clubIcon:1}));
 import { freshState, type CompeteState } from "@fitness-battle/shared";

@@ -1,3 +1,4 @@
+vi.mock("../lib/haptics", () => ({ playCue: vi.fn(), playPattern: vi.fn(() => vi.fn()) }));
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: vi.fn() }) }));
 import { afterEach, expect, it, vi } from "vitest";
 import { createElement } from "react";
