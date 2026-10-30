@@ -7,17 +7,17 @@ import { IconButton } from "./icon-button";
 import { SHELL_COLORS as c } from "../theme";
 import { f } from "./focus";
 
-interface ScreenHeaderProps { title: string; onBack: () => void; localBack?: boolean }
-function IOSScreenHeader({ title, onBack, localBack = false }: ScreenHeaderProps) {
+interface ScreenHeaderProps { title: string; onBack: () => void; localBack?: boolean; hidden?: boolean }
+function IOSScreenHeader({ title, onBack, localBack = false, hidden = false }: ScreenHeaderProps) {
   const height = useHeaderHeight();
   const insets = useSafeAreaInsets();
   return <>
-    <Stack.Screen options={{ headerShown: true, title, headerTransparent: true, headerBackVisible: false,
+    <Stack.Screen options={{ headerShown: !hidden, title, headerTransparent: true, headerBackVisible: false,
       headerTintColor: c.ink, headerTitleStyle: textStyle("heading"), gestureEnabled: !localBack,
       ...(Number.parseFloat(String(Platform.Version)) < 26 ? { headerBlurEffect: "systemThinMaterial" as const } : {}) }} />
-    <Stack.Toolbar placement="left">
+    {!hidden && <Stack.Toolbar placement="left">
       <Stack.Toolbar.Button icon="chevron.backward" accessibilityLabel="Return to previous screen" onPress={onBack}>Back</Stack.Toolbar.Button>
-    </Stack.Toolbar>
+    </Stack.Toolbar>}
     {/* Callers already apply the top safe inset; reserve only the native bar. */}
     <View style={{ height: Math.max(44, height - insets.top) }} />
   </>;
