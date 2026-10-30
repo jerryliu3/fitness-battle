@@ -145,3 +145,14 @@ Native/Expo web need the updated `/route-scene` deployment. No production migrat
 was run during implementation. See [scope and verification](reviews/session-map-replay.md).
 
 Daily competition waves require all three daily-wave/score-authority migrations through `20261029001132_competition_score_authority.sql` with the matching web/API/native code. The API now requires server-only `SUPABASE_SERVICE_ROLE_KEY` for ordinary score commits. New registrations, including onboarding, queue the next 06:00 Eastern start; renewal starts Monday 06:00 and close remains Monday midnight. Late uploads remain in training but cannot affect a closed competition. See [daily-waves.md](daily-waves.md) and [Docker verification](reviews/daily-waves/local-verification.md) for the schema, rollout and repeatable local tests. No production migration or deployment was performed.
+
+### Local native builds
+
+From `apps/mobile`, `pnpm ios` and `pnpm android` build and launch the native app
+using Expo Run. Mapbox requires this native build rather than Expo Go. Put
+`EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` (a public `pk.` token), the desired API URL,
+and public account configuration in ignored `apps/mobile/.env.local`. Keep server
+secrets out of this file. Local builds load it automatically; restart Metro after
+changing it. Generated `ios/` and `android/` projects remain ignored. For iOS,
+install Xcode and CocoaPods; `pnpm ios --device` selects a physical device and
+may require choosing a signing team in Xcode. EAS profiles are configured separately.
