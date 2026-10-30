@@ -41,7 +41,6 @@ export function CompetitionReplayButton({
   variant?: "button" | "inline";
 }) {
   const [open, setOpen] = useState(false);
-  const reduced = useReducedMotion();
   return (
     <>
       {variant === "inline" ? (
@@ -73,28 +72,26 @@ export function CompetitionReplayButton({
       ) : (
         <FocusButton secondary label={label} onPress={() => setOpen(true)} />
       )}
-      {open && (
-        <Modal
-          visible
-          animationType={reduced ? "none" : "slide"}
-          presentationStyle="fullScreen"
-          onRequestClose={() => setOpen(false)}
-        >
-          <SafeAreaProvider>
-            <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
-              <ReplayViewer
-                key={`${selection.sport}:${selection.track}:${selection.periodStart}`}
-                state={state}
-                selection={selection}
-                initialDimension={dimension}
-                onClose={() => setOpen(false)}
-              />
-            </SafeAreaView>
-          </SafeAreaProvider>
-        </Modal>
-      )}
+      <CompetitionReplayModal open={open} state={state} selection={selection} dimension={dimension} onClose={() => setOpen(false)} />
     </>
   );
+}
+
+export function CompetitionReplayModal({ open, state, selection, dimension, onClose }: {
+  open: boolean;
+  state: CompeteState;
+  selection: CompetitionReplaySelection;
+  dimension: "2d" | "3d" | "4d";
+  onClose(): void;
+}) {
+  const reduced = useReducedMotion();
+  return open ? <Modal visible animationType={reduced ? "none" : "slide"} presentationStyle="fullScreen" onRequestClose={onClose}>
+    <SafeAreaProvider>
+      <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
+        <ReplayViewer key={`${selection.sport}:${selection.track}:${selection.periodStart}`} state={state} selection={selection} initialDimension={dimension} onClose={onClose} />
+      </SafeAreaView>
+    </SafeAreaProvider>
+  </Modal> : null;
 }
 
 function ReplayTimeline({ cursor, count, caption, onSeek }: { cursor: number; count: number; caption: string; onSeek: (cursor: number) => void }) {

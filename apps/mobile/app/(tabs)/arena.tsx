@@ -1,4 +1,4 @@
-import { SectionStack, AppText } from "../../src/ui/section";
+import { NavigationAction, SectionStack, AppText } from "../../src/ui/section";
 import { competitionQueue, competeNow, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
 import { EventCarousel } from "../../src/features/event-carousel";
 import {
@@ -200,8 +200,8 @@ export default function ArenaScreen() {
             <FocusButton label="Explore events" onPress={openRegistration} />
           </View>
         )}
-        {state.periodResults.length ? <FocusButton label="Last week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
-        <FocusButton label="View all time standings" secondary onPress={() => router.push("/benchmarks")} />
+        {state.periodResults.length ? <NavigationAction label="Last week results" onPress={() => router.push("/arena?results=latest")} /> : null}
+        <NavigationAction label="View all time standings" onPress={() => router.push("/benchmarks")} />
       </SectionStack>
 </ScrollView>
       <FocusSheet
