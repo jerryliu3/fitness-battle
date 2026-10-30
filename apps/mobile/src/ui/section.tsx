@@ -54,6 +54,7 @@ export function ListRow({ title, subtitle, leading, trailing }: { title: string;
   return <View style={styles.listRow}>{leading}<View style={{ flex: 1, minWidth: 0 }}><AppText role="row">{title}</AppText>{subtitle && <AppText role="support" secondary>{subtitle}</AppText>}</View>{trailing}</View>;
 }
 const styles = StyleSheet.create({
+  navigationAction: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   header: { flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", columnGap: 12, rowGap: 4 },
   heading: { gap: geometry.subtitleGap },
   action: { minHeight: 44, minWidth: 44, maxWidth: "100%", justifyContent: "center", paddingVertical: 12 },
@@ -69,4 +70,19 @@ export function FeatureCard({ title, description, badge, onPress }: { title: str
   const content = <>{badge && <StatusBadge>{badge}</StatusBadge>}<AppText role="heading" accessibilityRole="header">{title}</AppText><AppText role="body" secondary>{description}</AppText></>;
   const style = [styles.surface, { gap: 12, flexGrow: 1, flexBasis: 240, minWidth: 0 }];
   return onPress ? <Pressable accessibilityRole="button" accessibilityLabel={`${title}. ${description}`} onPress={onPress} style={style}>{content}</Pressable> : <View style={style}>{content}</View>;
+}
+
+/** Quiet destination row with the same generous target as other navigation. */
+export function NavigationAction({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={() => { void playCue("light"); onPress(); }}
+      style={({ pressed }) => [styles.navigationAction, pressed && { opacity: 0.65 }]}
+    >
+      <AppText role="label" style={{ flex: 1 }}>{label}</AppText>
+      <AppText role="label" accessible={false} importantForAccessibility="no">›</AppText>
+    </Pressable>
+  );
 }

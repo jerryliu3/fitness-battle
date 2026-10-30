@@ -28,7 +28,7 @@ export function FieldGroundSwitcher({
         onPress={toggle}
         style={({ pressed }) => [
           {
-            minHeight: 34,
+            minHeight: 44,
             paddingHorizontal: 12,
             flexDirection: "row",
             alignItems: "center",
@@ -85,7 +85,7 @@ export function FieldGroundSwitcher({
                   {
                     flexDirection: "row",
                     alignItems: "center",
-                    minHeight: 38,
+                    minHeight: 44,
                     paddingHorizontal: 8,
                     paddingVertical: 6,
                     borderRadius: 8,

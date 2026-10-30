@@ -1,8 +1,8 @@
-import { textStyle } from "./section";
+import { NavigationAction, textStyle } from "./section";
 import { useEffect, useMemo, useState } from "react";
 import { Text, View } from "react-native";
 import { activityRoute, normalizeRouteReplay, type RouteReplaySample, type Activity } from "@fitness-battle/shared";
-import { FocusButton, FocusSheet, f } from "./focus";
+import { FocusSheet } from "./focus";
 import { RouteStaticPreview } from "./route-static-preview";
 import { RouteTimelapse } from "./route-timelapse";
 
@@ -29,7 +29,7 @@ export function ActivityRoute({ activity, milestone = false, units = "metric" }:
   return <View style={{ gap: 8 }}>
     {activity.id.startsWith("local-route-") && <Text style={textStyle("caption")}>Local file preview · original activity date · Open only</Text>}
     <RouteStaticPreview coordinates={coordinates} height={260} strokeColor="176c75" showPlayBadge={false} onPress={show} />
-    <FocusButton label="Explore route · 2D / 3D" secondary onPress={show} />
+    <NavigationAction label="Explore route · 2D / 3D" onPress={show} />
     <FocusSheet open={open} title="Your route" onClose={() => setOpen(false)} fullScreen>
       {activity.elevationGainM != null && <Text style={textStyle("caption")}>{activity.elevationGainM.toLocaleString()} m elevation gain</Text>}
       {milestone && <Text style={textStyle("caption")}>Full activity route · the record segment is not identified.</Text>}
