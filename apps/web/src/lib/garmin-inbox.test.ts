@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ rpc: vi.fn(), user: vi.fn(), persist: vi.fn() }));
-vi.mock("./fitness-store", () => ({ serviceDb: () => ({ rpc: mocks.rpc }), userIdForAthlete: mocks.user, persistSyncedActivities: mocks.persist }));
+vi.mock("./fitness-store", () => ({ createProviderStore: () => undefined, serviceDb: () => ({ rpc: mocks.rpc }), userIdForAthlete: mocks.user, persistSyncedActivities: mocks.persist }));
 import { drainGarminPush, enqueueGarminPush, secretMatches } from "./garmin-inbox";
 
 const raw = JSON.stringify({ activities: [{ userId: "garmin-user", summaryId: "123", activityType: "RUNNING", startTimeInSeconds: 1700000000, durationInSeconds: 200, distanceInMeters: 1000 }] });
