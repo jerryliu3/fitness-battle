@@ -96,7 +96,7 @@ vi.mock("../features/round-takeover", () => ({ RoundTakeover: () => null }));
 vi.mock("../features/geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
 vi.mock("../features/use-competition-course", () => ({ useCompetitionCourse: () => ({ course: null, error: "", retry() {} }) }));
 vi.mock("../features/competition-replay", () => ({
-  CompetitionReplayButton: "CompetitionReplayButton",
+  CompetitionReplayButton: "CompetitionReplayButton", CompetitionReplayModal: "ReplayModal",
 }));
 vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./arena-3d", () => ({ Arena3D: () => null }));

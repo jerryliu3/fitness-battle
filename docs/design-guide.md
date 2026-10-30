@@ -462,6 +462,17 @@ in that card; switching back retains the camera and lane selection. Athlete taps
 in standings focus that athlete in the retained field. The redundant view row and
 2D/3D toggle chips are removed. Event/sport selection remains separate.
 
+### Mobile geographic field controls — October 29
+
+The native 3D course preview opens by tapping the map, using the same
+“Tap to open full screen” hint as 2D. The preview has no course toolbar or
+fullscreen icon. Fullscreen places a compact **Options** dropdown below the dimension selector,
+matching the existing HUD chips and anchored menus. It contains View replay, a Perspective view switch (off means flat), a Space racers
+switch and See overview. Switches keep the menu open; actions close it. The
+fullscreen athlete spotlight shows place and identity without an Elo label. Replay remains a chip in the preview. Course names, Following / Recenter and zoom
+buttons are removed. The map engine owns pinch zoom; selecting an athlete resumes
+following. Browser map gesture behavior is unchanged.
+
 ### Fullscreen controls and overview — October 27
 
 Full Arena uses the same view dropdown. Replay is a chip beneath Behind for all
