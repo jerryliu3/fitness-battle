@@ -1,3 +1,4 @@
+import { playCue } from "../lib/haptics";
 import { AppText } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
@@ -44,6 +45,7 @@ export function AccountActions() {
         if (!result.sent)
           throw new Error("Your report could not be sent. Please try again.");
         if (!mounted.current || ownerRef.current !== id) return;
+        void playCue("success");
         setSent(true);
         setMessage("");
       } else {
@@ -64,8 +66,10 @@ export function AccountActions() {
         if (await clearAccountData(id)) await signOut();
       }
     } catch (e) {
-      if (mounted.current && ownerRef.current === id)
+      if (mounted.current && ownerRef.current === id) {
+        void playCue("error");
         setError(e instanceof Error ? e.message : "Please try again.");
+      }
     } finally {
       flight.current = false;
       setBusy(false);

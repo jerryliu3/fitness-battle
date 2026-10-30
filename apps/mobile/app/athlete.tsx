@@ -1,3 +1,5 @@
+import { playPattern } from "../src/lib/haptics";
+import { HapticPreference } from "../src/ui/haptic-preference";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SectionHeader, SectionStack, textStyle, AppText } from "../src/ui/section";
 import { SportIcon } from "../src/ui/sport-icon";
@@ -312,6 +314,7 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
       if (currentUser.current !== user.id) return;
       const linked = result.provider ?? providerId;
       if (result.tracker === "connected") {
+        playPattern("confirm");
         appliedTracker.current = `connected:${linked}`;
         dispatch({
           type: "apply-sync",
@@ -911,6 +914,7 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
 
       <View style={{ gap: 8, marginTop: 16 }}>
         <SectionHeader title="Settings" />
+        <HapticPreference />
         <SettingsRow
           title="Data Sync"
           detail="Trackers & history"

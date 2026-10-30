@@ -350,6 +350,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
       }
       const result = await api.request(path, body);
       if (owner.current !== id) return;
+      void playCue("success");
       const reloaded = await api.reload();
       if (owner.current !== id) return;
       if (result.crew?.id) setSelected(result.crew.id);
@@ -379,7 +380,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
         );
       }
     } catch (e) {
-      if (owner.current === id) setNote(crewError(e));
+      if (owner.current === id) { void playCue("error"); setNote(crewError(e)); }
     } finally {
       flight.current = false;
       setBusy(false);

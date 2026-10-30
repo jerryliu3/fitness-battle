@@ -64,7 +64,6 @@ export function CompetitionField({
   const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d">(() => state && buildArenaModel(state, undefined, track, sport)?.unit === "pts" ? "2d" : "4d");
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
   const chooseView = (value: "2d" | "3d" | "4d") => {
-    void playCue("selection");
     flight.cancel();
     setSceneDimension(value);
   };
@@ -95,7 +94,7 @@ export function CompetitionField({
     : inlineHeight);
   const laneAnchor = useRef<LaneAnchor | null>(null);
   const portraitAnchor = useRef(0);
-  const expandField = () => { setExpanded(true); void playCue("light"); };
+  const expandField = () => { if (!expanded) { void playCue("light"); setExpanded(true); } };
   const [center, setCenter] = useState<number | null>(null);
   const [span, setSpan] = useState<number | null>(null);
   const ghost = true;
@@ -149,6 +148,7 @@ export function CompetitionField({
   const selectAthlete = (id: string) => {
     const lane = arena.lanes.find((item) => item.id === id);
     if (!lane || lane.mystery || hiddenIds.includes(id)) return;
+    void playCue("selection");
     setCourseTarget(null);
     const ordered = orderedArenaLanes(arena.lanes);
     portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you));
@@ -212,9 +212,7 @@ export function CompetitionField({
           <GeographicCourse hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onReplay={() => setCourseReplayOpen(true)} optionsTop={expanded && !queued ? safeTop + 54 : undefined} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
-          <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-            <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>Tap to open full screen</Text>
-          </View>
+          <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>Tap to open full screen</Text></View>
         </Pressable> : null}
       </View> : null}
       {sceneDimension === "3d" ? (
@@ -409,7 +407,6 @@ export function CompetitionField({
                     accessibilityRole="button"
                     accessibilityLabel={`View ${peer.name}'s profile`}
                     onPress={() => {
-                      void playCue("selection");
                       selectAthlete(peer.id);
                       openProfile(peer);
                     }}
@@ -563,7 +560,6 @@ export function CompetitionField({
                         accessibilityRole="button"
                         accessibilityLabel={`Focus ${peer.name}, place ${place(peer.values[2])}`}
                         onPress={() => {
-                          void playCue("selection");
                           selectAthlete(peer.id);
                         }}
                         style={{

@@ -1,3 +1,4 @@
+import { playCue } from "../lib/haptics";
 import { GeographicCourse } from "./geographic-course";
 import { useCompetitionCourse } from "./use-competition-course";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
@@ -47,7 +48,7 @@ export function CompetitionReplayButton({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={label || "View replay"}
-          onPress={() => setOpen(true)}
+          onPress={() => { void playCue("light"); setOpen(true); }}
           style={({ pressed }) => [
             {
               flexDirection: "row",
@@ -70,7 +71,7 @@ export function CompetitionReplayButton({
           </Text>
         </Pressable>
       ) : (
-        <FocusButton secondary label={label} onPress={() => setOpen(true)} />
+        <FocusButton secondary label={label} onPress={() => { void playCue("light"); setOpen(true); }} />
       )}
       <CompetitionReplayModal open={open} state={state} selection={selection} dimension={dimension} onClose={() => setOpen(false)} />
     </>
@@ -114,7 +115,7 @@ function ReplayTimeline({ cursor, count, caption, onSeek }: { cursor: number; co
   </View>;
 }
 function ReplayAction({ label, text, disabled, onPress, primary = false }: { label: string; text: string; disabled?: boolean; onPress: () => void; primary?: boolean }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: Boolean(disabled) }} disabled={disabled} onPress={onPress} style={[s.action, primary && s.primary, disabled && { opacity: .4 }]}><AppText role="label">{text}</AppText></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: Boolean(disabled) }} disabled={disabled} onPress={() => { if (!disabled) { void playCue("selection"); onPress(); } }} style={[s.action, primary && s.primary, disabled && { opacity: .4 }]}><AppText role="label">{text}</AppText></Pressable>;
 }
 export function ReplayViewer({ state, selection, initialDimension, onClose, embedded=false }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; onClose: () => void; embedded?: boolean }) {
   const { user, accessToken, offlineMode } = useAuth();
@@ -167,7 +168,7 @@ export function ReplayViewer({ state, selection, initialDimension, onClose, embe
     return () => cancelAnimationFrame(raf);
   }, [playing, speed, count, reduced, dimension]);
   useEffect(() => { const subscription = AppState.addEventListener("change", next => { if (next !== "active") setPlaying(false); }); return () => subscription.remove(); }, []);
-  const seek = (next: number) => { setPlaying(false); setCursor(Math.max(0, Math.min(count, next))); };
+  const seek = (next: number) => { const bounded = Math.max(0, Math.min(count, next)); if (Math.ceil(bounded) !== Math.ceil(cursor)) void playCue("selection"); setPlaying(false); setCursor(bounded); };
   const frame = index ? competitionReplayFrame(index, cursor) : null;
   const me = frame?.rows.find(a => a.you);
   const focus = followEvent ? frame?.rows.find(a => a.id === frame.event?.athleteId && !hiddenIds.includes(a.id)) ?? me : me;

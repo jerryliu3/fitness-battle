@@ -1,3 +1,4 @@
+import { playCue } from "../lib/haptics";
 import { UserAvatar } from "../ui/user-avatar";
 import { AppText } from "../ui/section";
 import {
@@ -106,10 +107,12 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
       if (mounted.current && ownerRef.current === id)
         dispatch({ type: "set-avatar", avatarUrl: url, accountId: id });
     } catch (e) {
-      if (mounted.current && ownerRef.current === id)
+      if (mounted.current && ownerRef.current === id) {
+        void playCue("error");
         setError(
           e instanceof Error ? e.message : "Could not update your photo.",
         );
+      }
     } finally {
       flight.current = false;
       setBusy(false);

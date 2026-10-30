@@ -16,7 +16,7 @@ export function AppText({ role = "body", secondary = false, style, ...props }: O
   return <Text {...props} style={[{ color: secondary ? c.muted : c.ink }, style, textStyle(role)]} />;
 }
 export function TextAction({ label, accessibilityLabel, onPress }: { label: string; accessibilityLabel: string; onPress: () => void }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} style={styles.action}><AppText role="label">{label}</AppText></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={() => { void playCue("selection"); onPress(); }} style={styles.action}><AppText role="label">{label}</AppText></Pressable>;
 }
 export function SectionHeader({ title, titleRole = "heading", subtitle, action }: { title: ReactNode; titleRole?: "display" | "heading"; subtitle?: string; action?: ReactNode }) {
   const { fontScale, width } = useWindowDimensions();

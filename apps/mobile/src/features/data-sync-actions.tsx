@@ -1,3 +1,4 @@
+import { playCue } from "../lib/haptics";
 import { SectionHeader, AppText } from "../ui/section";
 import {
   activityFromSample,
@@ -41,7 +42,7 @@ export function DataSyncActions({ provider, includeCalibration = true }: { provi
     try {
       await work(isCurrent);
     } catch (e) {
-      if (isCurrent()) setNote(e instanceof Error ? e.message : "Sync failed");
+      if (isCurrent()) { void playCue("error"); setNote(e instanceof Error ? e.message : "Sync failed"); }
     } finally {
       flight.current = false;
       if (mounted.current) setBusy(false);
@@ -121,6 +122,7 @@ export function DataSyncActions({ provider, includeCalibration = true }: { provi
                       provider: l.provider,
                       accountId: id,
                     });
+                    void playCue("success");
                     setNote("Tracker disconnected.");
                   }
                 })

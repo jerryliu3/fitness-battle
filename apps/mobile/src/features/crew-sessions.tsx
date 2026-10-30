@@ -1,3 +1,4 @@
+import { playCue, playPattern } from "../lib/haptics";
 import { UserAvatar } from "../ui/user-avatar";
 import { textStyle, Section, AppText  } from "../ui/section";
 import { DateTimeField } from "../ui/form-picker";
@@ -68,7 +69,9 @@ export function CrewSessions({
       mounted.current = false;
     };
   }, [reload]);
+  const feedbackOwner = useRef(user?.id); feedbackOwner.current = user?.id;
   async function write(body: CrewSessionMutation) {
+    const requestOwner = user?.id;
     if (flight.current) return;
     flight.current = true;
     setBusy(true);
@@ -93,6 +96,7 @@ export function CrewSessions({
         body,
       });
       if (!mounted.current) return;
+      if (feedbackOwner.current === requestOwner) playPattern("confirm");
       setOpen(false);
       if (body.action === "cancel") setCancelTarget(null);
       setTitle("");
@@ -101,8 +105,7 @@ export function CrewSessions({
         setError("Saved. Refresh to load the updated start list."),
       );
     } catch (e) {
-      if (mounted.current)
-        setError(crewSessionError(e instanceof Error ? e.message : ""));
+      if (mounted.current && feedbackOwner.current === requestOwner) { void playCue("error"); setError(crewSessionError(e instanceof Error ? e.message : "")); }
     } finally {
       flight.current = false;
       if (mounted.current) setBusy(false);

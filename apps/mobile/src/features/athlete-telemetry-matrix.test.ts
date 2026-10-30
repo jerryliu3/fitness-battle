@@ -8,7 +8,7 @@ vi.mock("expo-router", () => ({
   useLocalSearchParams: () => ({ domain: "market" }),
 }));
 
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
   Animated: { createAnimatedComponent: (component: unknown) => component },
   PanResponder: { create: () => ({ panHandlers: {} }) },
   Pressable: "Pressable",

@@ -36,7 +36,7 @@ export function ChartScrubber({
   const selected = points.find(point => point.id === (selectedPointId ?? selectedId));
   const latest = useRef({ points, width, onSelect, onSelectionChange });
   latest.current = { points, width, onSelect, onSelectionChange };
-  const inspect = (locationX: number) => {
+  const inspect = (locationX: number, feedback = true) => {
     const current = latest.current;
     const modelX = chartClientXToModel(locationX, { left: 0, width: measuredWidth.current }, current.width);
     const point = nearestChartDatum(current.points, modelX);
@@ -45,7 +45,7 @@ export function ChartScrubber({
     setSelectedId(point.id);
     current.onSelect?.(point.id);
     current.onSelectionChange?.(point);
-    void playCue("selection");
+    if (feedback) void playCue("selection");
   };
   const inspectRef = useRef(inspect);
   inspectRef.current = inspect;
@@ -98,9 +98,11 @@ export function ChartScrubber({
           y: event.nativeEvent.pageY,
           locationX: event.nativeEvent.locationX,
         };
-        inspectRef.current(event.nativeEvent.locationX);
+        inspectRef.current(event.nativeEvent.locationX, false);
       }}
-      onTouchEnd={() => {
+      onTouchEnd={event => {
+        const start = touchStart.current;
+        if (start && !direction.current && Math.abs(event.nativeEvent.pageX - start.x) < DIRECTION_LOCK_PX && Math.abs(event.nativeEvent.pageY - start.y) < DIRECTION_LOCK_PX) inspectRef.current(start.locationX);
         touchStart.current = null;
         clearSelection();
       }}

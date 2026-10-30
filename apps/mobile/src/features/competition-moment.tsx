@@ -11,7 +11,7 @@ import { useReducedMotion } from "../ui/use-reduced-motion";
 import { textStyle } from "../ui/section";
 import { FocusButton } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
-import { playCue } from "../lib/haptics";
+import { playCue, playPattern } from "../lib/haptics";
 const ignore = () => {};
 
 export function CompetitionMoment({ moment, remaining, onConfirm, debug = false, embedded = false, dimension = "2d", course = null, autoStart = false }: { moment: Moment; remaining: number; onConfirm: () => void; debug?: boolean; embedded?: boolean; dimension?: "2d" | "4d"; course?: RaceCourse | null; autoStart?: boolean }) {
@@ -39,11 +39,19 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [moment.id, reduced, count, started, embedded]);
+  const stopHaptics = useRef<() => void>(() => {});
+  useEffect(() => () => stopHaptics.current(), [moment.id]);
   const frame = competitionMomentScene(moment, progress);
   useEffect(() => {
-    if (frame.count > previousCount.current && !passedBy && !reduced) void playCue("success");
+    if (frame.count > previousCount.current && !passedBy && !skipped.current) {
+      const soleLead = frame.rank === 1 && frame.lanes.every(lane => lane.you || lane.value < frame.youValue);
+      if (reduced) stopHaptics.current = playPattern("confirm");
+      else if (soleLead) stopHaptics.current = playPattern("lead");
+      else if (count > 1 && frame.count === count) stopHaptics.current = playPattern("combo");
+      else void playCue("light");
+    }
     previousCount.current = frame.count;
-  }, [frame.count, passedBy, reduced]);
+  }, [frame.count, frame.rank, count, passedBy, reduced]);
   const lanes: ArenaLane[] = frame.lanes.map(lane => ({ ...lane, you: Boolean(lane.you), ghost: false, values: [lane.value, lane.value, lane.value] }));
   return <View style={embedded ? {height:600} : { flex: 1 }}>
     <View onLayout={e => setHeight(e.nativeEvent.layout.height)} style={[StyleSheet.absoluteFill,{top:embedded?0:insets.top+160,bottom:embedded?170:insets.bottom+180}]} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
@@ -61,7 +69,7 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
         <Text style={textStyle("heading")}>{frame.count} {passedBy ? "passed you" : `overtake${frame.count === 1 ? "" : "s"}`}{!passedBy && frame.count > 1 ? ` · ×${frame.count} COMBO` : ""}</Text>
         <Text style={textStyle("caption")}>Your place #{frame.rank}{frame.done ? " · Up to date" : " · Replaying your field"}</Text>
       </View>
-      <FocusButton label={!started && !reduced ? embedded ? "Watch an Overtake →" : "See my move →" : frame.done ? remaining > 1 ? "Continue →" : embedded ? "Replay Overtake →" : "Back to the app →" : "Skip animation"} onPress={() => !started && !reduced ? setStarted(true) : frame.done ? (() => { if (!confirmed.current) { confirmed.current = true; onConfirm(); } })() : (() => { skipped.current = true; setProgress(1); })()}/>
+      <FocusButton label={!started && !reduced ? embedded ? "Watch an Overtake →" : "See my move →" : frame.done ? remaining > 1 ? "Continue →" : embedded ? "Replay Overtake →" : "Back to the app →" : "Skip animation"} onPress={() => !started && !reduced ? setStarted(true) : frame.done ? (() => { if (!confirmed.current) { confirmed.current = true; onConfirm(); } })() : (() => { skipped.current = true; stopHaptics.current(); setProgress(1); })()}/>
       </View>
     </View>
   </View>;

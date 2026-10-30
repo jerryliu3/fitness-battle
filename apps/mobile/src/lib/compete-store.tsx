@@ -1,3 +1,5 @@
+import { playCue, playPattern } from "./haptics";
+import { clubAchievements, weeklyActivityStreak, competeNow, rankForElo } from "@fitness-battle/shared";
 import { useCompetitionExperience } from "./use-competition-experience";
 import { useSyncReviewGate } from "./use-sync-review";
 import {
@@ -646,6 +648,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     };
   }, [pathname, router, state, navigationReady]);
 
+  const pendingFeedback = useRef<{ account: string | null; generation: number } | null>(null);
+  useEffect(() => { pendingFeedback.current = null; }, [owner]);
   const scheduleSave = useCallback((next: CompeteState, immediate = false, force = false) => {
     if (debugActiveRef.current) return;
     const id = accountRef.current;
@@ -713,6 +717,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
                 void refresh();
               }
               if (message) setSaveError(message);
+              if (pendingFeedback.current?.account === id) void playCue("error");
               return;
             }
             const body = await response.json();
@@ -734,9 +739,14 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             }
             invalidateApiReads(apiReadScope(mobileEnv.apiUrl, account.token));
             setSaveError(null);
+            if (pendingFeedback.current?.account === id && pendingFeedback.current.generation <= generation) {
+              pendingFeedback.current = null;
+              playPattern("confirm");
+            }
             await AsyncStorage.removeItem(scoped.dirty);
           } catch {
             if (isCurrent()) {
+              if (pendingFeedback.current?.account === id) void playCue("error");
               const message = saveFailure();
               if (message) setSaveError(message);
             }
@@ -797,6 +807,10 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       });
       if (JSON.stringify(next) === JSON.stringify(before)) return;
       dirtyRef.current += 1;
+      if (["rename", "set-city", "set-avatar", "opt-in", "opt-in-health", "opt-out", "opt-out-health", "log-manual", "complete-onboarding", "freeze", "unfreeze"].includes(action.type)) {
+        if (!authRef.current.offlineMode && id) pendingFeedback.current = { account: id, generation: dirtyRef.current };
+        else void playCue("light");
+      }
       unsavedRef.current = true;
       if (action.type === "set-units") unitsUnsavedRef.current = true;
       stateRef.current = next;
@@ -839,7 +853,20 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     loadReady.current ? state : null,
     accountRef.current ?? null,
     syncReviewBlocked,
-    experience.observe,
+    (next, quiet) => {
+      experience.observe(next, quiet);
+      const before = stateRef.current;
+      if (quiet || !before || debugActiveRef.current) return;
+      const earned = new Set(clubAchievements(before).filter(item => item.earned).map(item => item.id));
+      const newAward = clubAchievements(next).some(item => item.earned && !earned.has(item.id));
+      const now = competeNow(next);
+      const streakGrew = weeklyActivityStreak(next.activities, now).count > weeklyActivityStreak(before.activities, now).count;
+      const tierGrew = next.ratings.some(rating => {
+        const old = before.ratings.find(item => item.sport === rating.sport);
+        return old && rankForElo(rating.verifiedElo).min > rankForElo(old.verifiedElo).min;
+      });
+      playPattern(newAward || streakGrew || tierGrew ? "earned" : "confirm");
+    },
   );
   holdRemoteRef.current = syncReview.holdRemote;
 
