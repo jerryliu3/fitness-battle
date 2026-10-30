@@ -153,15 +153,9 @@ export function ReplayViewer({ state, selection, initialDimension, onClose, embe
   useEffect(() => {
     if (!playing || !count) return;
     let raf = 0; const from = cursorRef.current, start = Date.now();
-    let lastPaint = -Infinity;
     const tick = () => {
       const progress = from + (Date.now() - start) * speed / 1100;
-      // Bound GeoJSON/bridge updates during playback; seeking always paints immediately.
-      const paintTime = Date.now();
-      if (dimension !== "4d" || paintTime - lastPaint >= 100 || progress >= count) {
-        setCursor(Math.min(count, reduced ? Math.floor(progress) : progress));
-        lastPaint = paintTime;
-      }
+      setCursor(Math.min(count, reduced ? Math.floor(progress) : progress));
       if (progress < count) raf = requestAnimationFrame(tick); else setPlaying(false);
     };
     raf = requestAnimationFrame(tick);

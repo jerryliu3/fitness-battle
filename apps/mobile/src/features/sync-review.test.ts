@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-import { freshState, type SyncReviewReceipt } from "@fitness-battle/shared";
+import { encodePolyline, freshState, type SyncReviewReceipt } from "@fitness-battle/shared";
 vi.mock("../ui/activity-route", () => ({ ActivityRoute: "ActivityRoute" }));
 vi.mock("../ui/route-static-preview", () => ({ RouteStaticPreview: "RouteStaticPreview" }));
 vi.mock("./competition-moment", () => ({ CompetitionMoment: "CompetitionMoment" }));
@@ -36,6 +36,7 @@ it("a native full-screen swipe confirms the selected activities once without nav
           id: "a",
           sport: "running",
           startedAt: "2026-10-22T12:00:00Z",
+          summaryPolyline: encodePolyline([[-73.98,40.75],[-73.97,40.76]]),
           distanceM: 5000,
           movingSec: 1800,
           avgHr: null,
@@ -56,6 +57,9 @@ it("a native full-screen swipe confirms the selected activities once without nav
       }),
     );
   });
+  const map = renderer!.root.findByType("RouteStaticPreview" as never);
+  expect(map.props.width).toBe(Math.round(390 * .82));
+  expect(map.props.height).toBe(180);
   const slider = renderer!.root
     .findAllByType("View" as never)
     .find((n) => n.props.onResponderRelease)!;

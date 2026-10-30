@@ -105,6 +105,8 @@ export interface CourseCameraDriver {
   read(): CourseCameraPose;
   move(pose: CourseCameraPose, duration: number): void;
   stop(userGesture?: boolean): void;
+  /** Frame-driven hosts can apply follow poses directly without restarting a flight. */
+  follow?(pose: CourseCameraPose): void;
   fit?(bounds: { ne: LngLat; sw: LngLat }, duration: number): void;
 }
 /** One owner for both platforms. Native engines own every frame between camera commands. */
@@ -112,6 +114,7 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
   let following = true;
   let dimension: CourseDimension = "3d";
   const move = (pose: CourseCameraPose, automatic = false) => {
+    if (automatic && driver.follow) { driver.follow(pose); return; }
     const from = driver.read();
     const metres = distance(from.center, pose.center, { units: "meters" });
     driver.stop();

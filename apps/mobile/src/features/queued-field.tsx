@@ -1,3 +1,4 @@
+import { WaveCountdown } from "../ui/wave-countdown";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { competitionQueue, type CompeteState, type SportId } from "@fitness-battle/shared";
@@ -17,7 +18,7 @@ export function QueuedField({ state, event, now, onCancel, overlay = false }: { 
     <AppText role="body" secondary>{queue.queued
       ? "We're matching athletes at your level."
       : "Your shared field is loading. Your activity counts from the start time below."}</AppText>
-    <View style={{ gap: 8 }}><AppText role="body">Starts {queue.startsLabel}</AppText><AppText role="body">Ends {queue.endsLabel}</AppText></View>
+    <View style={{ gap: 8 }}><View style={{flexDirection:"row",flexWrap:"wrap",gap:8,alignItems:"center"}}><AppText role="body">Starts {queue.startsLabel}</AppText>{queue.queued && <WaveCountdown start={queue.start} now={now}/>}</View><AppText role="body">Ends {queue.endsLabel}</AppText></View>
     {queue.queued ? <FocusButton label="Cancel registration" secondary onPress={onCancel} /> : null}
   </View>;
 }

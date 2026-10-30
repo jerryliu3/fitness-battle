@@ -123,6 +123,7 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
                 <View style={{ height: 180, overflow: "hidden", backgroundColor: "#0b242c" }}>
                   <RouteStaticPreview
                     coordinates={coords}
+                    width={cardWidth}
                     height={180}
                     strokeColor="176c75"
                     showPlayBadge={false}
