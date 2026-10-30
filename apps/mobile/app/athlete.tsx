@@ -188,6 +188,7 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
   const pageHeader = (
     <ScreenHeader
       localBack={Boolean(panel)}
+      hidden={!panel && editOpen}
       title={panel ? titles[panel] : "Athlete"}
       onBack={() => {
         if (router.canGoBack()) {
