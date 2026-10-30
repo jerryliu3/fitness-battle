@@ -1,3 +1,4 @@
+import { playPattern } from "../lib/haptics";
 import { useEffect, useRef } from "react";
 import { Animated } from "react-native";
 import { OnboardingFade } from "./onboarding-visuals";
@@ -36,6 +37,15 @@ function Round({
   onClose: () => void;
 }) {
   const [stage, setStage] = useState(0);
+  const celebrated = useRef(false);
+  const revealFinish = () => {
+    if (!celebrated.current) {
+      celebrated.current = true;
+      const fresh = rows.some(row => !state.periodResults.find(original => original.id === row.id)?.acknowledgedAt && row.eloAfter > row.eloBefore);
+      if (fresh) playPattern("earned");
+    }
+    setStage(1);
+  };
   const next = stage === 2;
   const router = useRouter();
   return (
@@ -56,7 +66,7 @@ function Round({
           <AppText accessibilityRole="header" role="display" >
             {["Small days. Quite a week.", "Your week, settled.", "Your week in motion.", "New round. Fresh start."][stage]}
           </AppText>
-          {stage===0 ? <><View style={{alignItems:"center"}}><AnimatedEmber size={190}/></View><AppText>Your effort added up. Let’s see where it took you.</AppText><FocusButton label="Reveal my finish →" onPress={()=>setStage(1)}/></> : !next ? (
+          {stage===0 ? <><View style={{alignItems:"center"}}><AnimatedEmber size={190}/></View><AppText>Your effort added up. Let’s see where it took you.</AppText><FocusButton label="Reveal my finish →" onPress={revealFinish}/></> : !next ? (
             <>
               {rows.map((result) => (
                 <View key={result.id}>

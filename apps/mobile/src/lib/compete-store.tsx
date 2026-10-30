@@ -1,3 +1,5 @@
+import { playPattern } from "./haptics";
+import { clubAchievements, weeklyActivityStreak, competeNow } from "@fitness-battle/shared";
 import { useCompetitionExperience } from "./use-competition-experience";
 import { useSyncReviewGate } from "./use-sync-review";
 import {
@@ -839,7 +841,16 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     loadReady.current ? state : null,
     accountRef.current ?? null,
     syncReviewBlocked,
-    experience.observe,
+    (next, quiet) => {
+      experience.observe(next, quiet);
+      const before = stateRef.current;
+      if (quiet || !before || debugActiveRef.current) return;
+      const earned = new Set(clubAchievements(before).filter(item => item.earned).map(item => item.id));
+      const newAward = clubAchievements(next).some(item => item.earned && !earned.has(item.id));
+      const now = competeNow(next);
+      const streakGrew = weeklyActivityStreak(next.activities, now).count > weeklyActivityStreak(before.activities, now).count;
+      playPattern(newAward || streakGrew ? "earned" : "confirm");
+    },
   );
   holdRemoteRef.current = syncReview.holdRemote;
 
