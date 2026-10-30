@@ -132,7 +132,7 @@ export function createWhoopProvider(
       displayName: "WHOOP",
       authorizeUrl: "https://api.prod.whoop.com/oauth/oauth2/auth",
       tokenUrl: "https://api.prod.whoop.com/oauth/oauth2/token",
-      scopes: "offline read:recovery read:sleep read:workout read:profile",
+      scopes: "offline read:recovery read:workout",
       missingCredentialsMessage:
         "WHOOP credentials missing — using stub readiness. Set WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET, and WHOOP_REDIRECT_URI.",
       pull: pullWhoop,
