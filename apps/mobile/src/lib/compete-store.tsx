@@ -604,7 +604,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
 
   const connectedPullProviders = (state?.links ?? []).filter(link => link.status === "connected" && ["strava", "whoop", "oura"].includes(link.provider)).map(link => link.provider).sort().join(",");
   useEffect(() => {
-    if (!owner || auth.offlineMode) return;
+    if (!owner || auth.offlineMode || loadStatus !== "ready" || !connectedPullProviders) return;
     let stopped = false, running = false;
     const sync = async () => {
       if (stopped || running || AppState.currentState !== "active") return;
@@ -629,7 +629,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     const timer = setInterval(() => { void sync(); }, 60 * 60_000);
     const subscription = AppState.addEventListener("change", status => { if (status === "active") void sync(); });
     return () => { stopped = true; clearInterval(timer); subscription.remove(); };
-  }, [owner, auth.offlineMode, refresh, connectedPullProviders]);
+  }, [owner, auth.offlineMode, loadStatus, refresh, connectedPullProviders]);
 
 
   useEffect(() => {
