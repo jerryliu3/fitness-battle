@@ -1,0 +1,19 @@
+import { createElement } from "react";
+import { act, create } from "react-test-renderer";
+import { expect, it, vi } from "vitest";
+vi.mock("react-native", () => ({ Animated: { createAnimatedComponent: () => "AnimatedRect" } }));
+vi.mock("react-native-svg", () => ({ default: "Svg", Polyline: "Polyline", Line: "Line", Text: "SvgText", Defs: "Defs", ClipPath: "ClipPath", Rect: "Rect", G: "G" }));
+vi.mock("./chart-scrubber", () => ({ ChartScrubber: "Scrubber" }));
+import { StandardLineChart } from "./standard-line-chart";
+it("keeps axes outside the animated plot clipping region", async () => {
+ vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
+ const interpolate=vi.fn(()=>123);
+ let r!:ReturnType<typeof create>;
+ await act(async()=>{r=create(createElement(StandardLineChart,{showAxes:true,values:[1000,1040,1080],xLabels:["Week 1","Week 4","Week 7"],revealProgress:{interpolate} as never}));});
+ expect(r.root.findAllByType("Line" as never)).toHaveLength(2);
+ expect(r.root.findAllByType("SvgText" as never)).toHaveLength(6);
+ expect(r.root.findByType("AnimatedRect" as never).props.width).toBe(123);
+ expect(r.root.findAllByType("G" as never).find(n=>n.props.clipPath)!.findAllByType("SvgText" as never)).toHaveLength(0);
+ expect(interpolate).toHaveBeenCalledWith({inputRange:[0,1],outputRange:[0,282]});
+ await act(async()=>r.unmount());vi.unstubAllGlobals();
+});

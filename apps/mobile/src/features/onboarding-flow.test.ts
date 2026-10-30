@@ -5,7 +5,7 @@ import { freshState } from "@fitness-battle/shared";
 const mock=vi.hoisted(()=>({preview:undefined as string|undefined,dispatch:vi.fn(),replace:vi.fn(),back:vi.fn(),storage:vi.fn(async()=>{})}));
 vi.mock("react-native",()=>({Modal:"Modal",ScrollView:"ScrollView",TextInput:"TextInput",View:"View"}));
 vi.mock("react-native-svg",()=>({default:"Svg",Rect:"Rect",Text:"SvgText"}));
-vi.mock("react-native-safe-area-context",()=>({SafeAreaView:"SafeAreaView"}));
+vi.mock("react-native-safe-area-context",()=>({SafeAreaProvider:"SafeAreaProvider",SafeAreaView:"SafeAreaView"}));
 vi.mock("@react-native-async-storage/async-storage",()=>({default:{getItem:async()=>null,setItem:mock.storage,removeItem:vi.fn()}}));
 vi.mock("expo-router",()=>({useLocalSearchParams:()=>({preview:mock.preview}),useRouter:()=>({replace:mock.replace,back:mock.back,canGoBack:()=>true})}));
 vi.mock("../lib/auth",()=>({useAuth:()=>({user:{id:"a",displayName:"Jamie"}})}));
@@ -14,6 +14,7 @@ vi.mock("../lib/compete-store",()=>({useCompeteStore:()=>({state,canWrite:true,d
 vi.mock("../ui/section",()=>({AppText:"AppText",chartTextProps:()=>({})}));
 vi.mock("../ui/motion-step",()=>({MotionStep:"MotionStep"}));
 vi.mock("../ui/mascot/animated-ember",()=>({AnimatedEmber:"AnimatedEmber"}));
+vi.mock("../ui/choice-picker",()=>({ChoicePicker:"ChoicePicker"}));
 vi.mock("../ui/chip",()=>({Chip:"Chip"}));
 vi.mock("../ui/focus",()=>({FocusButton:"FocusButton",FocusSegments:"FocusSegments",f:{}}));
 vi.mock("./onboarding-visuals",()=>({OnboardingFade:"OnboardingFade",OnboardingOutlook:"OnboardingOutlook",OnboardingSummary:"OnboardingSummary"}));
@@ -46,5 +47,20 @@ it("validates the combined selection on Continue and supports sleep without a sp
  await press("Skip for now");await press("Continue");await press("Continue");await press("Finish");
  expect(mock.dispatch).toHaveBeenCalledWith({type:"opt-in-health",metric:"sleep"});
  expect(mock.dispatch.mock.calls.some(([a])=>a.type==="opt-in"||a.type==="set-primary")).toBe(false);
+ await act(async()=>r.unmount());
+});
+
+it("uses the top safe area and a primary dropdown only for multiple sports", async () => {
+ vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);mock.preview="1";
+ let r!:ReactTestRenderer;await act(async()=>{r=create(createElement(Onboarding));});
+ expect(r.root.findByType("SafeAreaView" as never).props.edges).toEqual(["top","bottom"]);
+ const next=async()=>act(async()=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label==="Continue")!.props.onPress());
+ await next();await next();
+ expect(r.root.findAllByType("ChoicePicker" as never)).toHaveLength(0);
+ await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Cycling")!.props.onPress());
+ const picker=r.root.findByType("ChoicePicker" as never);
+ expect(picker.props.options.map((o:{value:string})=>o.value)).toEqual(["running","cycling"]);
+ await act(async()=>picker.props.onChange("cycling"));
+ expect(r.root.findByType("ChoicePicker" as never).props.value).toBe("cycling");
  await act(async()=>r.unmount());
 });

@@ -588,3 +588,11 @@ using the practice course for geographic previews.
 ## Mobile action refinement, October 29
 
 Native primary and secondary action buttons use fully rounded pill corners with a 48px minimum height. Compact filters use stable label typography and at least 44px touch regions; selection uses a stronger border and pale fill. Picker triggers share the pill silhouette. Secondary destinations use quiet chevron rows. Keep 12px control geometry for text fields and settings rows, 20px cards and 24px sheets. Preserve the selected chart designs, palette and typography.
+
+Native onboarding applies top and bottom modal safe areas. With multiple sports,
+Primary sport uses the standard dropdown. The weekly introduction resets its
+staged standings/chart reveal after the motion preference resolves; axes remain
+visible while the trace draws and the panel fades in. Queued native registrations
+show a live HH:MM:SS countdown beside their scheduled start, including sleep.
+Native geographic replay follows frame positions directly rather than restarting
+camera flights on each update; explicit athlete selection retains its flight.
