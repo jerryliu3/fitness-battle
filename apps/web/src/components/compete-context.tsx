@@ -581,7 +581,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
   const connectedPullProviders = (state?.links ?? []).filter(link => link.status === "connected" && ["strava", "whoop", "oura"].includes(link.provider)).map(link => link.provider).sort().join(",");
   useEffect(() => {
-    if (loading || !userId || offlineMode) return;
+    if (loading || !userId || offlineMode || loadStatus !== "ready" || !connectedPullProviders) return;
     let stopped = false, running = false;
     const sync = async () => {
       if (stopped || running || document.visibilityState === "hidden") return;
@@ -605,7 +605,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     document.addEventListener("visibilitychange", kick);
     window.addEventListener("online", kick);
     return () => { stopped = true; clearInterval(timer); document.removeEventListener("visibilitychange", kick); window.removeEventListener("online", kick); };
-  }, [loading, userId, offlineMode, refresh, connectedPullProviders]);
+  }, [loading, userId, offlineMode, loadStatus, refresh, connectedPullProviders]);
 
   const dismissFieldNotice = useCallback(() => {
     const accountKey = userIdRef.current ?? "guest";
