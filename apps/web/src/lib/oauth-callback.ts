@@ -12,7 +12,8 @@ export function trackerRedirect(
   outcome: "connected" | "stub" | "error",
   channel: OAuthStateChannel = "session",
 ): NextResponse {
-  const webUrl = new URL(webProductPath("/you"), origin);
+  const webUrl = new URL(webProductPath("/athlete"), origin);
+  webUrl.searchParams.set("panel", "connections");
   webUrl.searchParams.set("tracker", outcome);
   webUrl.searchParams.set("provider", provider);
   if (channel === "session") return NextResponse.redirect(webUrl, { status: 303, headers: { "Cache-Control": "no-store" } });

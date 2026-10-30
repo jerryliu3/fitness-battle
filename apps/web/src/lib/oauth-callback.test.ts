@@ -9,7 +9,7 @@ describe("trackerRedirect", () => {
     const html = await response.text();
     expect(html).toContain("overtaek:///you?tracker=connected&provider=oura");
     expect(html).toContain(
-      "https://example.com/app/you?tracker=connected&provider=oura",
+      "https://example.com/app/athlete?panel=connections&tracker=connected&provider=oura",
     );
   });
 });
@@ -17,7 +17,7 @@ describe("trackerRedirect", () => {
 it("keeps web-started authorization in the browser", async () => {
   const response = trackerRedirect("https://example.com", "garmin", "connected");
   expect(response.status).toBe(303);
-  expect(response.headers.get("location")).toBe("https://example.com/app/you?tracker=connected&provider=garmin");
+  expect(response.headers.get("location")).toBe("https://example.com/app/athlete?panel=connections&tracker=connected&provider=garmin");
   expect(await response.text()).not.toContain("overtaek://");
 });
 
