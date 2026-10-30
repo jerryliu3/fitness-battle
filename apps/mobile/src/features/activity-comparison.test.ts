@@ -3,7 +3,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { freshState, type Activity } from "@fitness-battle/shared";
 
-vi.mock("react-native", () => ({ Pressable: "Pressable", ScrollView: "ScrollView", View: "View", StyleSheet: { create: (styles: unknown) => styles } }));
+vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) }, Pressable: "Pressable", ScrollView: "ScrollView", View: "View", StyleSheet: { create: (styles: unknown) => styles } }));
 vi.mock("../ui/section", () => ({ AppText: "AppText" }));
 
 import { ActivityComparison } from "./activity-comparison";
