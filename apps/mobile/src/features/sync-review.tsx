@@ -48,6 +48,14 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
   }, []);
   const activities = receipt.activities, selected = activities.filter(a => !excluded.includes(a.id));
   const detent = useRef(0);
+  // Each detent plays at most once per gesture, including threshold oscillation.
+  const updateSwipe = (distance: number) => {
+    const next = Math.min(1, Math.max(0, distance) / Math.max(1, width - 60));
+    const step = next >= .85 ? 3 : next >= .65 ? 2 : next >= .35 ? 1 : 0;
+    if (step > detent.current) void playCue(step === 3 ? "light" : "selection");
+    detent.current = Math.max(detent.current, step);
+    setProgress(next);
+  };
   const finish = () => {
     if (complete.current || saving) return;
     const ids = activities
@@ -267,7 +275,7 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
           onMoveShouldSetResponder={() => !saving && dragging.current}
           onResponderTerminationRequest={() => false}
           onResponderGrant={e => { if (saving) return; void playCue("soft"); detent.current = 0; dragging.current = true; dragStart.current = e.nativeEvent.pageX; dragDistance.current = 0; }}
-          onResponderMove={e => { if (saving) return; dragDistance.current = Math.max(0, e.nativeEvent.pageX - dragStart.current); const next = Math.min(1, dragDistance.current / travel); const step = next >= .85 ? 3 : next >= .65 ? 2 : next >= .35 ? 1 : 0; if (step > detent.current) void playCue(step === 3 ? "light" : "selection"); detent.current = Math.max(detent.current, step); setProgress(next); }}
+          onResponderMove={e => { if (saving) return; dragDistance.current = Math.max(0, e.nativeEvent.pageX - dragStart.current); updateSwipe(dragDistance.current); }}
           onResponderRelease={e => { if (saving) return; const distance = Math.max(0, e.nativeEvent.pageX - dragStart.current); dragging.current = false; if (distance / travel >= .85) finish(); else setProgress(0); }}
           onResponderTerminate={() => { dragging.current = false; if (!saving) setProgress(0); }}>
           <View pointerEvents="none" style={{ position: "absolute", top: 5, left: 4, width: 56, height: 56, borderRadius: 28, backgroundColor: c.tennis, justifyContent: "center", alignItems: "center", transform: [{ translateX: progress * travel }] }}>{saving ? <ActivityIndicator color={c.ink} /> : <Text style={textStyle("heading")}>→</Text>}</View>

@@ -1,3 +1,4 @@
+import { playCue } from "../lib/haptics";
 import { AppText } from "../ui/section";
 import { IconButton } from "../ui/icon-button";
 import { NumberPicker, DateTimeField } from "../ui/form-picker";
@@ -142,8 +143,7 @@ export function HomeActivityActions({
       }
       if (owner.current === id) setNote(messages.join(" "));
     } catch {
-      if (owner.current === id)
-        setNote("Sync could not finish. Retry from Athlete.");
+      if (owner.current === id) { void playCue("error"); setNote("Sync could not finish. Retry from Athlete."); }
     } finally {
       endSyncReviewBatch?.(id);
       flight.current = false;
@@ -212,6 +212,7 @@ export function HomeActivityActions({
             if (!user || !canWrite || !sport) return;
             const parsed = parseManualActivity(sport, miles, minutes, state.units);
             if (parsed.error !== null) {
+              void playCue("error");
               setFormError(parsed.error);
               return;
             }

@@ -105,7 +105,7 @@ it("clears selection when touch releases, falling back to summary and live state
   });
   expect(selectionChange).toHaveBeenCalledWith(expect.objectContaining({ id: "tue" }));
   await act(async () => {
-    surface().props.onTouchEnd();
+    surface().props.onTouchEnd({ nativeEvent: { pageX: 240, pageY: 100 } });
   });
   expect(selectionChange).toHaveBeenLastCalledWith(undefined);
   expect(renderer.root.findAllByType("Line" as never)).toHaveLength(0);

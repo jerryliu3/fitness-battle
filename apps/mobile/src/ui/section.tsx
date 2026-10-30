@@ -1,3 +1,4 @@
+import { playCue } from "../lib/haptics";
 import { Children, Fragment, useEffect, useState, type ReactNode } from "react";
 import { Pressable, Text, View, StyleSheet, type TextProps, type TextStyle, type ViewProps, useWindowDimensions } from "react-native";
 import { SHELL_COLORS as c, SHELL_RADIUS, SHELL_SECTION as geometry, SHELL_SPACING, SHELL_TYPOGRAPHY, type TypographyRole } from "@fitness-battle/shared";
@@ -15,7 +16,7 @@ export function AppText({ role = "body", secondary = false, style, ...props }: O
   return <Text {...props} style={[{ color: secondary ? c.muted : c.ink }, style, textStyle(role)]} />;
 }
 export function TextAction({ label, accessibilityLabel, onPress }: { label: string; accessibilityLabel: string; onPress: () => void }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} style={styles.action}><AppText role="label">{label}</AppText></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={() => { void playCue("selection"); onPress(); }} style={styles.action}><AppText role="label">{label}</AppText></Pressable>;
 }
 export function SectionHeader({ title, titleRole = "heading", subtitle, action }: { title: ReactNode; titleRole?: "display" | "heading"; subtitle?: string; action?: ReactNode }) {
   const { fontScale, width } = useWindowDimensions();

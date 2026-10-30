@@ -45,6 +45,7 @@ export function AccountActions() {
         if (!result.sent)
           throw new Error("Your report could not be sent. Please try again.");
         if (!mounted.current || ownerRef.current !== id) return;
+        void playCue("success");
         setSent(true);
         setMessage("");
       } else {

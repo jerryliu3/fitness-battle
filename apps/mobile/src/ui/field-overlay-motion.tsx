@@ -1,3 +1,4 @@
+import { playCue } from "../lib/haptics";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Animated, Easing, Pressable, View, type ViewProps, type ViewStyle } from "react-native";
 import { G, type GProps } from "react-native-svg";
@@ -65,7 +66,7 @@ export function SlidingFieldPanel({ label, collapsed, onToggle, overlaysHidden, 
         accessibilityRole="button"
         accessibilityLabel={`${collapsed ? "Expand" : "Collapse"} ${label}`}
         accessibilityState={{ expanded: !collapsed }}
-        onPress={onToggle}
+        onPress={() => { void playCue("selection"); onToggle(); }}
         style={{ position: "absolute", right: 0, top: "50%", marginTop: -32, width: 44, height: 64, justifyContent: "center", zIndex: 1 }}
       >
         <View pointerEvents="none" style={{ width: 18, height: 52, borderTopRightRadius: 10, borderBottomRightRadius: 10, backgroundColor: "rgba(20,20,19,.78)", alignItems: "center", justifyContent: "center" }}>

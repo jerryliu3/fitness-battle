@@ -122,6 +122,7 @@ export function DataSyncActions({ provider, includeCalibration = true }: { provi
                       provider: l.provider,
                       accountId: id,
                     });
+                    void playCue("success");
                     setNote("Tracker disconnected.");
                   }
                 })

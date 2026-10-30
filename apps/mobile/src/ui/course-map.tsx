@@ -1,3 +1,4 @@
+import { playCue } from "../lib/haptics";
 import Svg, { G } from "react-native-svg";
 import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode, type ComponentRef } from "react";
@@ -50,7 +51,7 @@ export default function CourseMap({ course, lanes, hiddenIds = [], unit, selecte
     controller.seek(course, metres);
     setFollowing(false);
   }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request, controller]);
-  const control = (label: string, action: () => void) => <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => { action(); setFollowing(controller.following); }} style={{ minHeight: 44, paddingHorizontal: 14, justifyContent: "center", borderRadius: 12, backgroundColor: "#ffffff" }}><Text style={textStyle("label")}>{label}</Text></Pressable>;
+  const control = (label: string, action: () => void) => <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => { void playCue("light"); action(); setFollowing(controller.following); }} style={{ minHeight: 44, paddingHorizontal: 14, justifyContent: "center", borderRadius: 12, backgroundColor: "#ffffff" }}><Text style={textStyle("label")}>{label}</Text></Pressable>;
   return <View style={{ flex: 1, minHeight: 200 }}>
     <MapView accessibilityLabel={`${course.name}. Out-and-back geographic race course.`} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled
       logoPosition={{ bottom: controlsBottom + 60, left: 8 }} attributionPosition={{ bottom: controlsBottom + 60, right: 8 }}

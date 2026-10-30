@@ -1,3 +1,4 @@
+import { playPattern } from "../src/lib/haptics";
 import { HapticPreference } from "../src/ui/haptic-preference";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SectionHeader, SectionStack, textStyle, AppText } from "../src/ui/section";
@@ -313,6 +314,7 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
       if (currentUser.current !== user.id) return;
       const linked = result.provider ?? providerId;
       if (result.tracker === "connected") {
+        playPattern("confirm");
         appliedTracker.current = `connected:${linked}`;
         dispatch({
           type: "apply-sync",
