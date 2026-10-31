@@ -33,6 +33,7 @@ vi.mock("../lib/compete-store", () => ({
   }),
 }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "https://test.local" } }));
+vi.mock("../ui/toast", () => ({ Toast: (props: any) => props.message ? createElement("Toast", props, props.message) : null }));
 vi.mock("../ui/focus", () => ({ FocusButton: "Button", f: {} }));
 import { DataSyncActions } from "./data-sync-actions";
 
@@ -41,6 +42,7 @@ const file = {
   canceled: false,
   assets: [{ name: "run.gpx", uri: "blob:activity", size: 128 }],
 };
+type UploadFile = typeof file;
 const button = (label: string) =>
   renderer.root
     .findAllByType("Button" as never)
@@ -65,7 +67,7 @@ describe("tracker action ownership", () => {
   it.each(["switch", "signout", "unmount", "switch back"])(
     "does not upload a file after %s while the picker is open",
     async (change) => {
-      const picker = deferred<typeof file>();
+      const picker = deferred<UploadFile>();
       mock.pick.mockReturnValueOnce(picker.promise);
       const fetch = vi.fn();
       vi.stubGlobal("fetch", fetch);
