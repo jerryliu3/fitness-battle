@@ -12,6 +12,7 @@ export interface CompetitionReplaySelection {
   periodEnd: string;
 }
 export interface CompetitionReplayAthlete {
+  avatarUrl?: string | null;
   id: string;
   name: string;
   you: boolean;
@@ -62,7 +63,7 @@ export function localCompetitionReplay(state: CompeteState, selection: Competiti
     id: a.id, athleteId: "you", at: a.startedAt, distanceM: a.distanceM, movingSec: a.movingSec, effort: activityEffort(a),
   }));
   const enrollment = state.enrollments.find(e => e.sport === selection.sport && Date.parse(e.waveStart) === Date.parse(selection.periodStart) && Date.parse(e.weekEnd) === Date.parse(selection.periodEnd));
-  return addSimulatedReplay({ ...selection, through, athletes: [{ id: "you", name: state.name, you: true }], events, scope: "local" }, enrollment?.syntheticIds ?? []);
+  return addSimulatedReplay({ ...selection, through, athletes: [{ id: "you", name: state.name, avatarUrl: state.avatarUrl, you: true }], events, scope: "local" }, enrollment?.syntheticIds ?? []);
 }
 
 interface AthleteSeries { steps: number[]; values: number[]; efforts: number[] }

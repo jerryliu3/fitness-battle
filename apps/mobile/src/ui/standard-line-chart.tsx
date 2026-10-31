@@ -9,8 +9,11 @@ const AnimatedRect = Animated.createAnimatedComponent(Rect);
 export interface StandardLineChartProps {
   revealProgress?: Animated.Value;
   showAxes?: boolean;
+  showSummary?: boolean;
+  pointLabels?: string[];
   values: number[];
   xLabels?: [string, string, string]; // [start, mid, end]
+  formatAxisY?: (value: number) => string;
   formatY?: (value: number) => string;
   selectedIdx?: number;
   onSelectIdx?: (index: number) => void;
@@ -24,18 +27,18 @@ export interface StandardLineChartProps {
   ariaLabel?: string;
 }
 
-export function StandardLineChart({ revealProgress, showAxes = false, values, xLabels, formatY = (v) => `${Math.round(v)}`, onSelectIdx, selectedIdx, height = 190, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
+export function StandardLineChart({ revealProgress, showAxes = false, showSummary = false, pointLabels, values, xLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, selectedIdx, height = 190, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
  const clipId = useId();
  const geo = buildStandardChartGeometry(values, 340, height);
  if (!values.length) return null;
- const points = geo.points.map((point, index) => ({ id: String(index), x: point.x, y: point.y, label: index === 0 ? xLabels?.[0] ?? "Day 1" : index === values.length - 1 ? xLabels?.[2] ?? `Day ${index + 1}` : `Day ${index + 1}`, value: formatY(values[index]!) }));
- return <ChartScrubber hideSummary selectedPointId={selectedIdx === undefined ? undefined : String(selectedIdx)} points={points} width={340} height={height} plotTop={geo.yTop} plotBottom={geo.yBottom} label={ariaLabel ?? accessibilityLabel ?? "Daily trend"} onSelect={id => onSelectIdx?.(Number(id))}>
- <Svg width="100%" height={height} viewBox={`0 0 340 ${height}`}>
+ const points = geo.points.map((point, index) => ({ id: String(index), x: point.x, y: point.y, label: pointLabels?.[index] ?? (index === 0 ? xLabels?.[0] ?? "Day 1" : index === values.length - 1 ? xLabels?.[2] ?? `Day ${index + 1}` : `Day ${index + 1}`), value: formatY(values[index]!) }));
+ return <ChartScrubber hideSummary={!showSummary} selectedPointId={selectedIdx === undefined ? undefined : String(selectedIdx)} points={points} width={340} height={height} plotTop={geo.yTop} plotBottom={geo.yBottom} label={ariaLabel ?? accessibilityLabel ?? "Daily trend"} onSelect={id => onSelectIdx?.(Number(id))}>
+ <Svg width="100%" height={height} viewBox={`0 0 340 ${height}`} preserveAspectRatio="none">
  {revealProgress && <Defs><ClipPath id={clipId}><AnimatedRect x={geo.xStart} y={0} height={height} width={revealProgress.interpolate({inputRange:[0,1],outputRange:[0,geo.xEnd-geo.xStart]})}/></ClipPath></Defs>}
  {showAxes && <G><Line x1={geo.xStart} x2={geo.xStart} y1={geo.yTop} y2={geo.yBottom} stroke={c.line}/>
  <Line x1={geo.xStart} x2={geo.xEnd} y1={geo.yBottom} y2={geo.yBottom} stroke={c.line}/>
- {[{value:geo.yMax,y:geo.yTop},{value:geo.yMid,y:geo.yMidPos},{value:geo.yMin,y:geo.yBottom}].map(tick=><SvgText key={tick.y} x={geo.xStart-6} y={tick.y+4} {...chartTextProps()} fill={c.muted} textAnchor="end">{formatY(tick.value)}</SvgText>)}
- {xLabels?.map((label,i)=><SvgText key={i} x={[geo.xStart,geo.xMid,geo.xEnd][i]} y={height-6} {...chartTextProps()} fill={c.muted} textAnchor={i===0?"start":i===2?"end":"middle"}>{label}</SvgText>)}
+ {[{value:geo.yMax,y:geo.yTop},{value:geo.yMid,y:geo.yBottom - (geo.yMid - geo.yMin) / (geo.yMax - geo.yMin) * (geo.yBottom - geo.yTop)},{value:geo.yMin,y:geo.yBottom}].map(tick=><SvgText key={tick.y} x={geo.xStart-6} y={tick.y+4} {...chartTextProps()} fill={c.muted} textAnchor="end">{(formatAxisY ?? formatY)(tick.value)}</SvgText>)}
+ {xLabels?.map((label,i)=><SvgText key={i} x={[geo.xStart, geo.points[Math.floor((values.length - 1) / 2)]!.x, geo.points.at(-1)!.x][i]} y={height-6} {...chartTextProps()} fill={c.muted} textAnchor={i===0?"start":i===2?"end":"middle"}>{label}</SvgText>)}
  </G>}
  <G clipPath={revealProgress?`url(#${clipId})`:undefined}><Polyline points={geo.polyline} fill="none" stroke={c.tennis} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></G></Svg>
  </ChartScrubber>;

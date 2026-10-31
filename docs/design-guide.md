@@ -640,3 +640,7 @@ required onboarding/result takeovers keep their own explicit actions.
 ### Sync feedback and activity actions — October 31
 
 Native sync feedback uses a dismissible toast above the page without taking layout space or blocking page interaction. Suggested rest days omit activity actions; other suggestions place primary Sync activities and secondary Add activity together in one row.
+
+### Settled recap — October 31
+
+Settled recaps omit the standings list, retain a 360px map viewport, and identify podium finishers with names and available profile photos (initials when absent). Strength recaps use 2D. The recap training chart shows dated axes, cumulative minutes and scrubbable readings. Effort Score uses the same live endpoint indicator as Home.

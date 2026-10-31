@@ -1,10 +1,10 @@
 import { beforeEach, expect, it, vi } from "vitest";
-const mock = vi.hoisted(() => ({ owner: "owner" as string | null, rpc: vi.fn() }));
+const mock = vi.hoisted(() => ({ owner: "owner" as string | null, rpc: vi.fn(), portraits: vi.fn() }));
 vi.mock("@/lib/auth/request-user", () => ({ resolveRequestUserId: async () => mock.owner }));
-vi.mock("@/lib/supabase/request", () => ({ createRequestClient: async () => ({ rpc: mock.rpc }) }));
+vi.mock("@/lib/supabase/request", () => ({ createRequestClient: async () => ({ rpc: mock.rpc, from: () => ({ select: () => ({ in: mock.portraits }) }) }) }));
 import { GET } from "./route";
 const url = "https://test/api/compete/replay?sport=running&track=verified&start=2026-10-19T04:00:00Z&end=2026-10-26T04:00:00Z";
-beforeEach(() => { mock.owner = "owner"; mock.rpc.mockReset(); });
+beforeEach(() => { mock.owner = "owner"; mock.rpc.mockReset(); mock.portraits.mockReset(); mock.portraits.mockResolvedValue({ data: [{ id: "owner", avatar_url: "https://example.com/owner.jpg" }] }); });
 it("requires a session and validates bounds before accessing the field", async () => {
   mock.owner = null;
   expect((await GET(new Request(url))).status).toBe(401);
@@ -19,6 +19,8 @@ it("returns a minimal private ledger and uses the member-authorized RPC", async 
   expect(response.status).toBe(200);
   expect(response.headers.get("cache-control")).toBe("private, no-store");
   const body = await response.json();
+  expect(body.athletes[0].avatarUrl).toBe("https://example.com/owner.jpg");
+  expect(mock.portraits).toHaveBeenCalledWith("id", ["owner"]);
   expect(body.events[0].distanceM).toBe(5000);
   expect(body.events[0].effort).toBeGreaterThan(0);
   expect(body.events[0]).not.toHaveProperty("avgHr");
@@ -29,6 +31,7 @@ it("keeps denied or unavailable timelines explicit without returning another fie
   mock.rpc.mockResolvedValue({ data: null, error: { code: "42501", message: "private details" } });
   const denied = await GET(new Request(url));
   expect(denied.status).toBe(404);
+  expect(mock.portraits).not.toHaveBeenCalled();
   expect(JSON.stringify(await denied.json())).not.toContain("private details");
   mock.rpc.mockResolvedValue({ data: null, error: { code: "PGRST202" } });
   expect((await GET(new Request(url))).status).toBe(503);
