@@ -60,8 +60,8 @@ export function RouteControlsHud({
         <span><small>Heart rate</small><b>{replaySample?.heartRate != null ? `${Math.round(replaySample.heartRate)} bpm` : "—"}</b></span>
         <span><small>Cadence</small><b>{replaySample?.cadence != null ? `${Math.round(replaySample.cadence)} ${replaySample.cadenceUnit}` : "—"}</b></span>
       </div>}
-      {/* Top row: Scrubber and Distance Readout */}
-      <div className="flex items-center gap-3 px-1">
+      {/* Controls row: Play Button, 2D/3D Dropdown, Scrubber, and Distance Readout */}
+      <div className="flex items-center gap-2.5 px-1">
         {/* Play/Pause or Replay button */}
         <button
           type="button"
@@ -90,6 +90,25 @@ export function RouteControlsHud({
           )}
         </button>
 
+        {/* 2D vs 3D dropdown beside the play button */}
+        <div className="relative shrink-0">
+          <select
+            value={mode}
+            disabled={isRecordingVideo}
+            onChange={(e) => {
+              const next = e.target.value as "2d-overview" | "3d-flyover";
+              if (next !== mode) onToggleMode();
+            }}
+            aria-label="Replay perspective"
+            className="h-10 cursor-pointer appearance-none rounded-xl border border-white/20 bg-white/10 pl-2.5 pr-6 text-white shadow-sm transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-[#f7c948]"
+            style={typographyStyle("label")}
+          >
+            <option value="2d-overview" className="bg-[#142b3b] text-white">2D View</option>
+            <option value="3d-flyover" className="bg-[#142b3b] text-white">3D Flyover</option>
+          </select>
+          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white/70" style={typographyStyle("caption")}>▼</span>
+        </div>
+
         {/* Interactive Progress Scrubber */}
         <div className="relative flex-1 flex flex-col justify-center">
           <input
@@ -107,7 +126,7 @@ export function RouteControlsHud({
         </div>
 
         {/* Distance metric */}
-        <div className="shrink-0 text-right   text-white/90" style={typographyStyle("caption")}>
+        <div className="shrink-0 text-right text-white/90" style={typographyStyle("caption")}>
           <span className=" text-[#f7c948]" style={typographyStyle("label")}>
             {(currentDistanceKm * factor).toFixed(1)}
           </span>

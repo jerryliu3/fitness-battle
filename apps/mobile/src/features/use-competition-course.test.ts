@@ -5,11 +5,11 @@ const mock = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "athlete", mode: "supabase" }, accessToken: "token", offlineMode: false }) }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "https://api.example.test" } }));
 vi.mock("../lib/api", () => ({ requestApi: mock.request }));
-import { useCompetitionCourse } from "./use-competition-course";
+import { useCompetitionCourse, clearCourseCache } from "./use-competition-course";
 const start = "2026-10-26T04:00:00Z", end = "2026-11-02T05:00:00Z";
 function Probe({ from = start, to = end }: { from?: string; to?: string }) { const result = useCompetitionCourse("running", from, to); return createElement("Probe", result); }
 let renderer: ReactTestRenderer;
-afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); mock.request.mockReset(); });
+afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); mock.request.mockReset(); clearCourseCache(); });
 it("reads the assigned route with the native bearer request and fails closed", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   mock.request.mockResolvedValueOnce({ name: "Server course", coordinates: [[0, 0], [.02, 0]], periodStart: start, periodEnd: end }).mockRejectedValueOnce(new Error("offline"));

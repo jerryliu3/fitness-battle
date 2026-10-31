@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { textStyle } from "../ui/section";
+import { SHELL_COLORS as c } from "../theme";
 
 const CourseMap = lazy(() => import("../ui/course-map"));
 class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -20,7 +21,17 @@ export function GeographicCourse({ lanes, hiddenIds = [], unit, selectedId, focu
   if (unit !== "mi" && unit !== "km") return null;
   return <View style={{ flex: 1, minHeight: 300 }}>
     {!mobileEnv.mapboxAccessToken ? <Text style={{ ...textStyle("body"), padding: 16 }}>Mapbox access is not configured for this build.</Text> : !course ?
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 16, gap: 12 }}><Text accessibilityRole={error ? "alert" : undefined} style={textStyle("body")}>{error || "Loading this competition’s course…"}</Text>{error && onRetry ? <Pressable accessibilityRole="button" onPress={onRetry} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 16 }}><Text style={textStyle("label")}>Retry</Text></Pressable> : null}</View> :
-      <MapBoundary><Suspense fallback={<ActivityIndicator />}><CourseMap key={course.name + course.length} course={course} lanes={lanes} hiddenIds={hiddenIds} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} optionsTop={optionsTop} onReplay={onReplay} /></Suspense></MapBoundary>}
+      <View style={{ flex: 1, minHeight: 300, justifyContent: "center", alignItems: "center", padding: 16, gap: 12, backgroundColor: "#0b242c" }}>
+        {!error ? <ActivityIndicator size="large" color={c.tennis} /> : null}
+        <Text accessibilityRole={error ? "alert" : undefined} style={[textStyle("body"), { color: "#ffffff" }]}>
+          {error || "Loading this competition’s course…"}
+        </Text>
+        {error && onRetry ? (
+          <Pressable accessibilityRole="button" onPress={onRetry} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 16, backgroundColor: c.card, borderRadius: 12 }}>
+            <Text style={textStyle("label")}>Retry</Text>
+          </Pressable>
+        ) : null}
+      </View> :
+      <MapBoundary><Suspense fallback={<View style={{ flex: 1, minHeight: 300, justifyContent: "center", alignItems: "center", backgroundColor: "#0b242c" }}><ActivityIndicator size="large" color={c.tennis} /></View>}><CourseMap key={course.name + course.length} course={course} lanes={lanes} hiddenIds={hiddenIds} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} optionsTop={optionsTop} onReplay={onReplay} /></Suspense></MapBoundary>}
   </View>;
 }
