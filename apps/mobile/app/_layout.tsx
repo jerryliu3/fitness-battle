@@ -33,6 +33,7 @@ import {
 import { shellTabFromPath } from "@fitness-battle/shared";
 import { SHELL_COLORS } from "../src/theme";
 import { BootGate } from "../src/ui/boot-gate";
+import { LaunchGate } from "../src/ui/launch-gate";
 import { NavigationWarmup } from "../src/lib/navigation-warmup";
 
 function BlockPrivacyGate({ children }: { children: ReactNode }) {
@@ -66,6 +67,30 @@ function pathFromNotificationResponse(
     : null;
 }
 
+function NotificationNavigation() {
+  useEffect(() => {
+    // Browser study previews do not have a native notification response API.
+    if (Platform.OS === "web") return;
+    let alive = true;
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (!alive || !response) return;
+      const path = pathFromNotificationResponse(response);
+      if (path) router.push(path as "/settings");
+    });
+    const sub = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const path = pathFromNotificationResponse(response);
+        if (path) router.push(path as "/settings");
+      },
+    );
+    return () => {
+      alive = false;
+      sub.remove();
+    };
+  }, []);
+  return null;
+}
+
 export default function RootLayout() {
   const [dmLoaded, dmError] = useDmSans({
     DMSans_400Regular,
@@ -92,27 +117,6 @@ export default function RootLayout() {
         nunitoLoaded,
       });
   }, [fontError, fontLoadTimedOut, fontsLoaded, dmLoaded, nunitoLoaded]);
-
-  useEffect(() => {
-    // Browser study previews do not have a native notification response API.
-    if (Platform.OS === "web") return;
-    let alive = true;
-    void Notifications.getLastNotificationResponseAsync().then((response) => {
-      if (!alive || !response) return;
-      const path = pathFromNotificationResponse(response);
-      if (path) router.push(path as "/settings");
-    });
-    const sub = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const path = pathFromNotificationResponse(response);
-        if (path) router.push(path as "/settings");
-      },
-    );
-    return () => {
-      alive = false;
-      sub.remove();
-    };
-  }, []);
 
   let fontFallback: ReactNode = null;
   if (!fontsLoaded) {
@@ -149,29 +153,32 @@ export default function RootLayout() {
       style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }}
     >
       <View style={{ flex: 1, maxWidth: 880, width: "100%", alignSelf: "center" }}>
-        <HeroUINativeProvider>
-          <AuthProvider>
-            <AthleteBlocksProvider>
-            <CompeteProvider navigationReady={fontsLoaded}>
-              {fontsLoaded ? <BootGate>
-                <BlockPrivacyGate>
-                  <LiveFieldRefresh />
-                  <NavigationWarmup />
-                  <StatusBar style="dark" />
-                  <Stack
-                    screenOptions={{
-                      headerShown: false,
-                      contentStyle: { backgroundColor: SHELL_COLORS.paper },
-                      animation:
-                        Platform.OS === "ios" ? "default" : "slide_from_right",
-                    }}
-                  />
-                </BlockPrivacyGate>
-              </BootGate> : fontFallback}
-            </CompeteProvider>
-            </AthleteBlocksProvider>
-          </AuthProvider>
-        </HeroUINativeProvider>
+        {fontsLoaded ? <LaunchGate>
+          <HeroUINativeProvider>
+            <AuthProvider>
+              <AthleteBlocksProvider>
+                <CompeteProvider navigationReady={fontsLoaded}>
+                  <BootGate>
+                    <NotificationNavigation />
+                    <BlockPrivacyGate>
+                      <LiveFieldRefresh />
+                      <NavigationWarmup />
+                      <StatusBar style="dark" />
+                      <Stack
+                        screenOptions={{
+                          headerShown: false,
+                          contentStyle: { backgroundColor: SHELL_COLORS.paper },
+                          animation:
+                            Platform.OS === "ios" ? "default" : "slide_from_right",
+                        }}
+                      />
+                    </BlockPrivacyGate>
+                  </BootGate>
+                </CompeteProvider>
+              </AthleteBlocksProvider>
+            </AuthProvider>
+          </HeroUINativeProvider>
+        </LaunchGate> : fontFallback}
       </View>
     </GestureHandlerRootView>
   );
