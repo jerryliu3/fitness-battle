@@ -1,4 +1,5 @@
 import type { SleepNight } from "@fitness-battle/shared";
+import { getServerFitnessProvider } from "./fitness";
 import { serviceDb } from "./fitness-store";
 import { garminFileActivity, garminFileUrl, garminRecordId, type GarminRecord } from "./garmin-feeds";
 
@@ -28,8 +29,8 @@ export async function fetchGarminFile(userId: string, item: GarminRecord) {
   if (error) throw new Error("garmin_file_cache_failed");
   let base64 = data?.base64 as string | undefined;
   if (!base64) {
-    // Garmin's URL has its own single-use token, not the user's OAuth access token.
-    const response = await fetch(url, { redirect: "error", signal: AbortSignal.timeout(30_000) });
+    // The callback's single-use token does not replace OAuth 2 bearer authentication.
+    const response = await getServerFitnessProvider("garmin").downloadActivityFile(userId, url);
     if (!response.ok) throw new Error(`garmin_file_download_failed:${response.status}`);
     const reader = response.body?.getReader();
     if (!reader) throw new Error("garmin_file_empty");

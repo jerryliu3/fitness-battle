@@ -82,8 +82,10 @@ export async function drainGarminPush(maxItems = 20): Promise<{ processed: numbe
         }
       }
       success = true;
-    } catch {
+    } catch (error) {
       failed++;
+      const message = error instanceof Error && /^[a-zA-Z0-9_:.-]{1,120}$/.test(error.message) ? error.message : "processing_failed";
+      await db.rpc("record_garmin_push_error", { p_id: job.id, p_lease: job.lease_id, p_error: message });
     } finally {
       const { error: finishError } = await db.rpc("finish_garmin_push", { p_id: job.id, p_lease: job.lease_id, p_success: success });
       if (finishError) throw new Error("finish_failed");
