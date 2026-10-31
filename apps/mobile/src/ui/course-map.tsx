@@ -53,7 +53,7 @@ export default function CourseMap({ course, lanes, hiddenIds = [], unit, selecte
   }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request, controller]);
   return <View style={{ flex: 1, minHeight: 200 }}>
     <MapView accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled
-      logoPosition={{ bottom: controlsBottom + 60, left: 8 }} attributionPosition={{ bottom: controlsBottom + 60, right: 8 }}
+      logoPosition={{ top: 8, left: 8 }} attributionPosition={{ top: 8, left: 100 }}
       scaleBarPosition={{ bottom: controlsBottom + 100, left: 8 }}
       onDidFinishLoadingMap={() => { setReady(true); setError(""); }}
       onMapLoadingError={event => setError(ready && event?.type !== "style" ? "Some map scenery could not load. Check your connection." : "The map could not load. Check your connection and Mapbox access.")}

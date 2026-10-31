@@ -6,13 +6,14 @@ const mock = vi.hoisted(() => ({ instances: [] as any[] }));
 vi.mock("@/lib/env", () => ({ webEnv: { mapboxAccessToken: "public-test-token" } }));
 vi.mock("mapbox-gl", () => ({ default: { Map: class {
   events = new Map<string, Function[]>(); sources = new Map<string, { setData: ReturnType<typeof vi.fn> }>();
+  addControl = vi.fn();
   fitBounds = vi.fn(); easeTo = vi.fn(); stop = vi.fn(); remove = vi.fn(); resize = vi.fn(); setPaintProperty = vi.fn();
   constructor() { mock.instances.push(this); }
   getCenter() { return { toArray: () => [.005, 0] }; } getZoom() { return 15; } getPitch() { return 30; } getBearing() { return 20; }
   on(name: string, layer: Function | string, callback?: Function) { const handlers = this.events.get(name) ?? []; handlers.push(callback ?? layer as Function); this.events.set(name, handlers); }
   emit(name: string, event = {}) { this.events.get(name)?.forEach(callback => callback(event)); }
   addSource(id: string) { this.sources.set(id, { setData: vi.fn() }); } getSource(id: string) { return this.sources.get(id); } addLayer() {}
-} } }));
+}, AttributionControl: class {} } }));
 vi.mock("./course-callout", () => ({ CourseCallout: "CourseCallout" }));
 import CourseMap from "./course-map";
 let renderer: ReactTestRenderer;

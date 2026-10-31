@@ -29,7 +29,7 @@ export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing
       else onReplay();
     } }] : []),
     { label: "Perspective view", value: !flat, action: onToggleDimension },
-    { label: "Space racers", value: spaced, action: onToggleSpacing },
+    { label: "Shared lane", value: !spaced, action: onToggleSpacing },
     { label: "See overview", action: onOverview },
   ];
 
@@ -53,8 +53,8 @@ export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing
     </Pressable>
     <AnchoredMenu open={open} onClose={close} onDismiss={onReplay ? finishReplay : undefined} menuLayout={menuLayout} accessibilityLabel="Close course options">
       {options.map(option => "value" in option ? <View key={option.label} style={{ minHeight: 52, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-        <Text style={{ ...textStyle("caption"), color: c.ink }}>{option.label}</Text>
-        <Switch accessibilityLabel={option.label} value={option.value} onValueChange={() => { void playCue("selection"); option.action(); }} trackColor={{ false: c.line, true: c.tennis }} />
+        <Text style={{ ...textStyle("caption"), color: c.ink, flex: 1 }}>{option.label}</Text>
+        <Switch style={{ margin: 0 }} accessibilityLabel={option.label} value={option.value} onValueChange={() => { void playCue("selection"); option.action(); }} trackColor={{ false: c.line, true: c.tennis }} />
       </View> : <Pressable
         key={option.label}
         accessibilityRole="button"
