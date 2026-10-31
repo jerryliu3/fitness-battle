@@ -100,12 +100,13 @@ export function RouteControlsHud({
               if (next !== mode) onToggleMode();
             }}
             aria-label="Replay perspective"
-            className="h-10 cursor-pointer appearance-none rounded-xl border border-white/20 bg-white/10 pl-2.5 pr-6 text-xs font-bold text-white shadow-sm transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-[#f7c948]"
+            className="h-10 cursor-pointer appearance-none rounded-xl border border-white/20 bg-white/10 pl-2.5 pr-6 text-white shadow-sm transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-[#f7c948]"
+            style={typographyStyle("label")}
           >
             <option value="2d-overview" className="bg-[#142b3b] text-white">2D View</option>
             <option value="3d-flyover" className="bg-[#142b3b] text-white">3D Flyover</option>
           </select>
-          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-white/70">▼</span>
+          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white/70" style={typographyStyle("caption")}>▼</span>
         </div>
 
         {/* Interactive Progress Scrubber */}

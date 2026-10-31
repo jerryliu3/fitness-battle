@@ -427,7 +427,7 @@ export function RouteTimelapseMap({
       {!mapLoaded && !tokenError && (
         <div role="status" className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-[#142b3b] text-white">
           <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-white/20 border-t-[#f7c948]" />
-          <span className="text-sm font-semibold tracking-wide text-white/90">Loading route map…</span>
+          <span className="text-white/90" style={typographyStyle("label")}>Loading route map…</span>
         </div>
       )}
 
