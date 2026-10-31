@@ -240,6 +240,8 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
     } else if (tracker === "stub") {
       dispatch({ type: "link", provider });
       setSyncNote("Credentials are not set, so this link is a demo stub.");
+    } else if (tracker === "already_linked") {
+      setSyncNote("This account is already linked to another Overtaek account. Contact support if this is unexpected.");
     } else if (tracker === "error") {
       setSyncNote(
         "That tracker did not connect. Sign in and try the link again.",

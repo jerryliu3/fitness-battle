@@ -9,7 +9,7 @@ import { verifyOAuthState, type OAuthStateChannel } from "./oauth-state";
 export function trackerRedirect(
   origin: string,
   provider: string,
-  outcome: "connected" | "stub" | "error",
+  outcome: "connected" | "stub" | "error" | "already_linked",
   channel: OAuthStateChannel = "session",
 ): NextResponse {
   const webUrl = new URL(webProductPath("/athlete"), origin);
@@ -49,9 +49,13 @@ export function trackerRedirect(
   });
 }
 
-export function trackerRedirectForRequest(request: Request, provider: string, outcome: "connected" | "stub" | "error"): NextResponse {
+export function trackerRedirectForRequest(request: Request, provider: string, outcome: "connected" | "stub" | "error" | "already_linked"): NextResponse {
   const url = new URL(request.url);
   const state = url.searchParams.get("state");
   const channel = state && verifyOAuthState(state, provider)?.c === "bearer" ? "bearer" : "session";
   return trackerRedirect(url.origin, provider, outcome, channel);
+}
+
+export function trackerConnectFailure(error: unknown): "error" | "already_linked" {
+  return error instanceof Error && error.message.includes("provider_account_already_linked") ? "already_linked" : "error";
 }

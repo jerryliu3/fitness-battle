@@ -157,6 +157,8 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
     } else if (tracker === "stub") {
       dispatch({ type: "link", provider: trackerProvider });
       setNote("Credentials are not set. Please try again later.");
+    } else if (tracker === "already_linked") {
+      setNote("This account is already linked to another Overtaek account. Contact support if this is unexpected.");
     } else if (tracker === "error") {
       setNote("That tracker did not connect. Try again from the app.");
     }

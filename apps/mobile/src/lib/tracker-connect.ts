@@ -14,7 +14,7 @@ export function isCloudOAuthProvider(id: string): id is CloudOAuthProvider {
   return (CLOUD_OAUTH_PROVIDERS as readonly string[]).includes(id);
 }
 
-export type TrackerOutcome = "connected" | "stub" | "error";
+export type TrackerOutcome = "connected" | "stub" | "error" | "already_linked";
 
 export type CloudConnectResult = {
   ok: boolean;
@@ -67,7 +67,7 @@ export function outcomeFromReturnUrl(url: string): {
     const trackerRaw = parsed.searchParams.get("tracker");
     const providerRaw = parsed.searchParams.get("provider");
     const tracker =
-      trackerRaw === "connected" || trackerRaw === "stub" || trackerRaw === "error"
+      trackerRaw === "connected" || trackerRaw === "stub" || trackerRaw === "error" || trackerRaw === "already_linked"
         ? trackerRaw
         : undefined;
     const provider =
@@ -222,6 +222,7 @@ function resultFromReturnUrl(
       message: "Credentials are not set. Please try again later.",
     };
   }
+  if (tracker === "already_linked") return { ok: false, tracker, provider: resolvedProvider, message: "This account is already linked to another Overtaek account. Contact support if this is unexpected." };
   if (tracker === "error") {
     return {
       ok: false,

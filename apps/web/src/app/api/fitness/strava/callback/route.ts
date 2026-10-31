@@ -1,5 +1,5 @@
 import { serverEnv } from "@/lib/env";
-import { trackerRedirectForRequest } from "@/lib/oauth-callback";
+import { trackerRedirectForRequest, trackerConnectFailure } from "@/lib/oauth-callback";
 import { resolveSessionUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider } from "@/lib/fitness";
 import { resolveOAuthCallbackUserId } from "@/lib/oauth-state";
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
   try {
     await provider.completeOAuth(userId, code);
     return trackerRedirectForRequest(request, "strava", "connected");
-  } catch {
-    return trackerRedirectForRequest(request, "strava", "error");
+  } catch (error) {
+    return trackerRedirectForRequest(request, "strava", trackerConnectFailure(error));
   }
 }
