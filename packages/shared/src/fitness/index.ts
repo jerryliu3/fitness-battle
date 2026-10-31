@@ -3,7 +3,7 @@ import { createStravaProvider, type StravaEnv } from "./strava-provider";
 import type { FitnessProvider } from "./types";
 import type { FitnessProviderId } from "../types";
 
-export type { FitnessAuthResult, FitnessProvider, SyncResult } from "./types";
+export type { DailyHealthSample, FitnessAuthResult, FitnessProvider, SyncResult } from "./types";
 export { mockFitnessProvider } from "./mock-provider";
 export {
   createStravaProvider,

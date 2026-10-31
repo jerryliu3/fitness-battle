@@ -14,12 +14,20 @@ export interface FitnessAuthResult {
   message: string;
 }
 
+export interface DailyHealthSample {
+  provider: FitnessProviderId | string;
+  day: string;
+  steps?: number | null;
+  restingHr?: number | null;
+  hrv?: number | null;
+}
+
 export interface SyncResult {
   provider: FitnessProviderId;
   activities: ActivitySample[];
   readiness?: ReadinessSample[];
   sleepNights?: SleepNight[];
-  dailyHealth?: {provider: FitnessProviderId; day:string; steps?:number|null; restingHr?:number|null; hrv?:number|null}[];
+  dailyHealth?: DailyHealthSample[];
   syncedAt: string;
   usedMock: boolean;
   /** ISO window start used for the pull, when known. */

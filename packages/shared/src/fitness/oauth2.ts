@@ -7,7 +7,7 @@ import type {
 } from "../types";
 import { mockFitnessProvider } from "./mock-provider";
 import { syncWindow } from "./sync-window";
-import type { FitnessAuthResult, FitnessProvider, SyncResult } from "./types";
+import type { DailyHealthSample, FitnessAuthResult, FitnessProvider, SyncResult } from "./types";
 import { encodeForm, readJson, type FitnessHttp } from "./http";
 import type { StravaStore, StravaTokenSet } from "./strava-provider";
 
@@ -21,7 +21,7 @@ export interface OAuth2Pull {
   activities: ActivitySample[];
   readiness: ReadinessSample[];
   sleepNights?: SleepNight[];
-  dailyHealth?: {provider: FitnessProviderId; day:string; steps?:number|null; restingHr?:number|null; hrv?:number|null}[];
+  dailyHealth?: DailyHealthSample[];
 }
 
 export interface OAuth2Spec {
