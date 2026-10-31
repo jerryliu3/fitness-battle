@@ -200,7 +200,7 @@ export function ReplayViewer({ state, selection, initialDimension, onClose, embe
           <ReplayAction label="Previous competition event" text="‹" disabled={!count || cursor === 0} onPress={() => seek(Math.ceil(cursor) - 1)} />
           <ReplayAction primary label={playing ? "Pause replay" : "Play replay"} text={playing ? "Pause" : "Play"} disabled={!count} onPress={() => { if (!playing && cursor >= count) setCursor(0); setPlaying(p => !p); }} />
           <ReplayAction label="Next competition event" text="›" disabled={!count || cursor >= count} onPress={() => seek(Math.floor(cursor) + 1)} />
-          <ReplayAction label={`Playback speed ${speed} times`} text={`${speed}×`} onPress={() => setSpeed(v => v === 4 ? 1 : v * 2)} />
+          <ReplayAction label={`Playback speed ${speed} times`} text={`${speed}×`} onPress={() => setSpeed(v => v === 4 ? .25 : v * 2)} />
         </View>
       </View>
     </>}

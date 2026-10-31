@@ -122,7 +122,7 @@ export function competitionReplayFrame(index: CompetitionReplayIndex, cursor: nu
 export function competitionReplayCaption(index: CompetitionReplayIndex, cursor: number): string {
   const frame = competitionReplayFrame(index, cursor);
   const event = frame.event;
-  if (!event) return "The starting line · everyone begins at zero";
+  if (!event) return "The starting line";
   const athlete = index.replay.athletes.find(a => a.id === event.athleteId)!;
   const before = competitionReplayFrame(index, Math.ceil(frame.position) - 1).rows.find(a => a.id === event.athleteId)!;
   const after = competitionReplayFrame(index, Math.ceil(frame.position)).rows.find(a => a.id === event.athleteId)!;
