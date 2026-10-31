@@ -83,8 +83,8 @@ it("keeps a small gap between wider trails and labels every real racer independe
   const scene = raceCourseScene(course, lanes, "km", "a");
   expect(scene.callouts.map(lane => lane.id)).toEqual(["you", "a", "b"]);
   expect(courseAthleteDetail(lanes, lanes[0], "km")).toBe("2nd · 0.5 km");
-  expect(courseAthleteDetail(lanes, lanes[1], "km")).toBe("1st · +0.5 km");
-  expect(courseAthleteDetail(lanes, lanes[2], "km")).toBe("3rd · -0.1 km");
+  expect(courseAthleteDetail(lanes, lanes[1], "km")).toBe("1st · 1.0 km");
+  expect(courseAthleteDetail(lanes, lanes[2], "km")).toBe("3rd · 0.4 km");
   const reselected = raceCourseScene(course, lanes, "km", "you");
   expect(reselected.callouts.map(lane => lane.id)).toEqual(["you", "a", "b"]);
   expect(reselected.callouts.map(lane => lane.callout)).toEqual(scene.callouts.map(lane => lane.callout));

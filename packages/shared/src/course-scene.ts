@@ -58,13 +58,11 @@ export function raceCourseScene(course: RaceCourse, lanes: readonly ArenaSceneLa
   };
 }
 
-/** Matches the 2D nameplate: absolute distance for you, relative distance for peers. */
+/** Geographic cards show each athlete’s full earned distance. */
 export function courseAthleteDetail(lanes: readonly ArenaSceneLane[], lane: ArenaSceneLane, unit: string) {
   if (lanes.some(peer => peer.mystery)) return lane.mystery ? "Revealed at the start" : "Starts at zero";
   const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
-  const mine = lanes.find(peer => peer.you)?.value ?? 0;
-  const value = lane.you ? lane.value : lane.value - mine;
-  return `${ordinalPlace(rank)} · ${!lane.you && value > 0 ? "+" : ""}${value.toFixed(1)} ${unit}`;
+  return `${ordinalPlace(rank)} · ${lane.value.toFixed(1)} ${unit}`;
 }
 
 /** Stable screen-space tiers keep tied racers' cards from stacking on one another. */

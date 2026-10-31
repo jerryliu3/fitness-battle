@@ -158,12 +158,12 @@ it("keeps a navigable overview inside the athlete panel across collapse and expa
   await act(async () => button("Expand athlete panel").props.onPress());
   expect(overview()).toBeDefined();
 });
-it("opens an athlete profile from the fullscreen standings without changing the field", async () => {
-  const entry = renderer.root.findAllByType("Pressable" as never).find(node => String(node.props.accessibilityLabel).startsWith("View ") && String(node.props.accessibilityLabel).endsWith("'s profile"))!;
+it("focuses an athlete from current positions without opening their profile", async () => {
+  const entry = renderer.root.findAllByType("Pressable" as never).find(node => String(node.props.accessibilityLabel).startsWith("Focus "))!;
   expect(entry).toBeDefined();
   await act(async () => entry.props.onPress());
   const sheet = renderer.root.findByType("AthleteProfileSheet" as never);
-  expect(sheet.props.athlete.name).toBeTruthy();
+  expect(sheet.props.athlete).toBeNull();
   expect(field().props.lanes.length).toBeGreaterThan(0);
 });
 
