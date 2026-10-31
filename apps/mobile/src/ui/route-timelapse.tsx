@@ -1,3 +1,4 @@
+import { useSceneActive } from "./use-scene-active";
 import { useRef, useEffect } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import WebView, { type WebViewMessageEvent } from "react-native-webview";
@@ -28,6 +29,11 @@ export function RouteTimelapse({
   onUnavailable,
   style,
 }: RouteTimelapseProps) {
+  const active = useSceneActive();
+  const sceneActive = useRef(active);
+  sceneActive.current = active;
+  const fail = useRef(onUnavailable);
+  fail.current = onUnavailable;
   const ref = useRef<WebView<object>>(null);
   const ready = useRef(false);
 
@@ -38,6 +44,7 @@ export function RouteTimelapse({
   const origin = new URL(uri).origin;
 
   function inject(message: object) {
+    if (!ready.current || !sceneActive.current) return;
     const script = `window.dispatchEvent(new MessageEvent('message',{data:${JSON.stringify(
       message,
     )}}));true;`;
@@ -46,11 +53,15 @@ export function RouteTimelapse({
 
   useEffect(() => {
     ready.current = false;
+  }, [uri]);
+
+  useEffect(() => {
+    if (!active) return;
     const timeout = setTimeout(() => {
-      if (!ready.current) onUnavailable?.();
+      if (!ready.current) fail.current?.();
     }, 15000);
     return () => clearTimeout(timeout);
-  }, [uri]);
+  }, [uri, active]);
 
   useEffect(() => {
     if (ready.current) {
@@ -63,7 +74,7 @@ export function RouteTimelapse({
         durationMs,
       });
     }
-  }, [polylineStr, routeReplay, mode, accentColor, durationMs]);
+  }, [polylineStr, routeReplay, mode, accentColor, durationMs, active]);
 
   return (
     <View style={[styles.frame, style]}>
@@ -77,6 +88,10 @@ export function RouteTimelapse({
         onShouldStartLoadWithRequest={(r: { url: string }) =>
           r.url === "about:blank" || r.url.startsWith(`${origin}/route-scene`)
         }
+        onContentProcessDidTerminate={() => {
+          ready.current = false;
+          onUnavailable?.();
+        }}
         onError={onUnavailable}
         onHttpError={onUnavailable}
         onMessage={(event: WebViewMessageEvent) => {

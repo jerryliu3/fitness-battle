@@ -6,7 +6,7 @@ import { expect, it, vi } from "vitest";
 import { defaultFieldAppearance, applyDebugEvent, competitionMoments, freshState, momentStorageKey } from "@fitness-battle/shared";
 const preferences = vi.hoisted(() => ({ reduced: true }));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => preferences.reduced }));
-vi.mock("react-native", () => ({ View: "View", Text: "Text", StyleSheet: { absoluteFill: {}, create: (value: unknown) => value } }));
+vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: () => ({ remove() {} }) }, View: "View", Text: "Text", StyleSheet: { absoluteFill: {}, create: (value: unknown) => value } }));
 vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ top: 20, bottom: 20 }) }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ accountKey: "a" }) }));
 vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton" }));

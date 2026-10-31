@@ -1,3 +1,4 @@
+import { useSceneActive } from "./use-scene-active";
 import { textStyle } from "./section";
 import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import { useRef, useEffect } from "react";
@@ -21,6 +22,9 @@ export function Arena3D({
   onPan,
   onUnavailable,
 }: Arena3DProps) {
+  const active = useSceneActive();
+  const sceneActive = useRef(active);
+  sceneActive.current = active;
   const ref = useRef<WebView<object>>(null);
   const ready = useRef(false);
   const fail = useRef(onUnavailable);
@@ -30,12 +34,13 @@ export function Arena3D({
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function inject(next: ArenaSceneMessage) {
+    if (!ready.current || !sceneActive.current) return;
     const script = `window.dispatchEvent(new MessageEvent('message',{data:${JSON.stringify(next)}}));true;`;
     ref.current?.injectJavaScript(script);
   }
 
   function scheduleSync() {
-    if (!ready.current) return;
+    if (!ready.current || !sceneActive.current) return;
     if (timer.current) return;
     timer.current = setTimeout(() => {
       timer.current = null;
@@ -44,18 +49,20 @@ export function Arena3D({
   }
 
   useEffect(() => {
+    if (!active) return;
     const t = setTimeout(() => {
       if (!ready.current) fail.current();
     }, 12000);
     return () => {
       clearTimeout(t);
       if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
     };
-  }, []);
+  }, [active]);
 
   useEffect(() => {
     scheduleSync();
-  }, [model]);
+  }, [model, active]);
 
   const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/arena-scene`;
   const origin = new URL(uri).origin;
@@ -74,6 +81,12 @@ export function Arena3D({
         }
         onLoadEnd={() => {
           if (ready.current) inject(latest.current);
+        }}
+        onContentProcessDidTerminate={() => {
+          ready.current = false;
+          if (timer.current) clearTimeout(timer.current);
+          timer.current = null;
+          onUnavailable();
         }}
         onError={onUnavailable}
         onHttpError={onUnavailable}
