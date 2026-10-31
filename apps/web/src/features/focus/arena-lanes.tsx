@@ -37,6 +37,7 @@ export function ArenaLanes({
   unit,
   selected,
   focusOnMount = false,
+  focusSelection = true,
   followSelected = false,
   replayFocusIds,
   playback = false,
@@ -60,6 +61,7 @@ export function ArenaLanes({
   unit: string;
   selected: string;
   focusOnMount?: boolean;
+  focusSelection?: boolean;
   /** Keep a passive replay camera centered on its selected athlete. */
   followSelected?: boolean;
   replayFocusIds?: readonly string[];
@@ -154,6 +156,7 @@ export function ArenaLanes({
   const prevSelectedRef = useRef(focusOnMount ? "" : `${selected}:${focusRequest}`);
   useLayoutEffect(() => {
     const key = `${selected}:${focusRequest}`;
+    if (!focusSelection) { host.current?.scrollTo({ left: host.current.scrollLeft, behavior: "instant" }); return; }
     if (replayFocusIds || prevSelectedRef.current === key) return;
     prevSelectedRef.current = key;
     const el = host.current;
@@ -162,7 +165,7 @@ export function ArenaLanes({
     if (idx < 0) return;
     const nextScroll = Math.max(0, Math.min(width - size.width, course.left + (idx + .5) * laneWidth - size.width / 2));
     el.scrollTo({ left: nextScroll, behavior: reduced ? "instant" : "smooth" });
-  }, [selected, focusRequest, standings, course.oval, course.left, laneWidth, width, size.width, ordered]);
+  }, [selected, focusRequest, focusSelection, standings, course.oval, course.left, laneWidth, width, size.width, ordered]);
   const gestures = useFieldGestures({
     surface, view: effectiveView, unit, enabled: immersive,
     lateral: () => host.current?.scrollLeft ?? 0,

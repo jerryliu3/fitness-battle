@@ -11,7 +11,8 @@ import { textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
 
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
-export default function CourseMap({ course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop, onReplay, overlaysHidden = false, distanceTarget }: {
+export default function CourseMap({ initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop, onReplay, overlaysHidden = false, distanceTarget }: {
+  initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
   distanceTarget?: CourseDistanceTarget | null;
   hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number; onReplay?: () => void; overlaysHidden?: boolean;
 }) {
@@ -25,8 +26,8 @@ export default function CourseMap({ course, lanes, hiddenIds = [], unit, selecte
   const visibleTrails = useMemo(() => hiddenIds.length ? { ...scene.trails, features: scene.trails.features.filter(feature => !hiddenIds.includes(String(feature.id))) } : scene.trails, [scene.trails, hiddenIds]);
   const visibleMarkers = useMemo(() => hiddenIds.length ? { ...scene.markers, features: scene.markers.features.filter(feature => !hiddenIds.includes(String(feature.id))) } : scene.markers, [scene.markers, hiddenIds]);
   const trailWidth = RACE_TRAIL_WIDTH_METRES / (78271.516964 * Math.cos(course.coordinates[0][1] * Math.PI / 180));
-  const pose = useRef<CourseCameraPose>({ center: scene.selected?.coordinate ?? course.coordinates[0], zoom: 16, pitch: 60, bearing: 0 });
-  const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(false);
+  const pose = useRef<CourseCameraPose>({ center: scene.selected?.coordinate ?? course.coordinates[0], zoom: 16, pitch: initialFlat ? 0 : 60, bearing: 0 });
+  const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(initialFlat);
   const controller = useMemo(() => createCourseCamera({
     read: () => pose.current,
     // Native input already cancels animations. Issuing setCamera during a gesture would fight it.
@@ -35,16 +36,18 @@ export default function CourseMap({ course, lanes, hiddenIds = [], unit, selecte
     fit(bounds, duration) { ref.current?.setCamera({ bounds: { ...bounds, paddingTop: 48, paddingBottom: 48, paddingLeft: 48, paddingRight: 48 }, pitch: 0, heading: 0, animationDuration: duration, animationMode: "easeTo" }); },
     move(next, duration) { ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: duration, animationMode: "easeTo" }); },
   }), []);
+  useEffect(() => { if (ready) controller.dimension(initialFlat ? "2d" : "3d"); }, [ready, controller]);
   useEffect(() => controller.setReducedMotion(Boolean(reduced)), [controller, reduced]);
+  useEffect(() => { if (!followAthlete) { controller.setReducedMotion(Boolean(reduced)); controller.interrupt(); } }, [controller, followAthlete, reduced]);
   const focus = () => { if (scene.selected) { controller.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); } };
   const lastFocus = useRef<{ course: RaceCourse; id: string; request: number } | null>(null);
   useEffect(() => {
-    if (!ready || !scene.selected) return;
+    if (!ready || !scene.selected || !followAthlete) return;
     const previous = lastFocus.current;
     const explicit = !previous || previous.course !== course || previous.id !== selectedId || previous.request !== focusRequest;
     lastFocus.current = { course, id: selectedId, request: focusRequest };
     controller.focus(course, scene.selected.metres, !explicit, scene.selected.lateralMetres);
-  }, [ready, controller, course, selectedId, focusRequest, scene.selected?.metres, scene.selected?.lateralMetres]);
+  }, [ready, controller, course, selectedId, focusRequest, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres]);
   useEffect(() => {
     if (!ready || !distanceTarget) return;
     const metres = raceEffortMetres(distanceTarget.value, unit);
@@ -59,11 +62,11 @@ export default function CourseMap({ course, lanes, hiddenIds = [], unit, selecte
       onMapLoadingError={event => setError(ready && event?.type !== "style" ? "Some map scenery could not load. Check your connection." : "The map could not load. Check your connection and Mapbox access.")}
       onMapIdle={() => { if (ready) setError(""); }}
     >
-      <Camera minZoomLevel={0} maxZoomLevel={20} ref={ref} defaultSettings={{ centerCoordinate: pose.current.center, zoomLevel: 16, pitch: 60 }} />
+      <Camera minZoomLevel={0} maxZoomLevel={20} ref={ref} defaultSettings={{ centerCoordinate: pose.current.center, zoomLevel: 16, pitch: initialFlat ? 0 : 60 }} />
       <CameraGestureObserver onCameraChanged={({ nativeEvent }) => {
         const p = nativeEvent.properties;
         pose.current = { center: [p.center[0], p.center[1]], zoom: p.zoom, pitch: p.pitch, bearing: p.heading };
-        if (p.isUserInteraction && controller.following) { controller.interrupt(); }
+        if (p.isUserInteraction && controller.following) { controller.interrupt(); onFollowChange?.(false); }
       }} />
       <ShapeSource id="completed" shape={visibleTrails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineSortKey: ["get", "priority"], lineWidth: ["interpolate", ["exponential", 2], ["zoom"], 0, RACE_TRAIL_MIN_WIDTH_PIXELS, 16, Math.max(RACE_TRAIL_MIN_WIDTH_PIXELS, trailWidth * 2 ** 16), 22, trailWidth * 2 ** 22], lineCap: "round", lineJoin: "round" }} /></ShapeSource>
       <ShapeSource id="athletes" shape={visibleMarkers} onPress={event => { const id = event.features[0]?.properties?.id; if (typeof id === "string") onSelect(id); }}>
@@ -85,9 +88,9 @@ export default function CourseMap({ course, lanes, hiddenIds = [], unit, selecte
         onReplay={onReplay}
         flat={flat}
         spaced={spaced}
-        onToggleDimension={() => { controller.dimension(flat ? "3d" : "2d"); setFlat(!flat); if (controller.following) focus(); }}
+        onToggleDimension={() => { controller.dimension(flat ? "3d" : "2d"); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && controller.following) focus(); }}
         onToggleSpacing={() => setSpaced(value => !value)}
-        onOverview={() => { controller.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); }}
+        onOverview={() => { controller.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); onFlatChange?.(true); }}
       />
     </FieldOverlayView> : null}
   </View>;

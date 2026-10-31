@@ -31,12 +31,14 @@ import { SHELL_COLORS as c } from "../theme";
 export function CompetitionReplayButton({
   state,
   selection,
+  initialFlat = false,
   dimension = "2d",
   label = "Replay competition",
   variant = "button",
 }: {
   state: CompeteState;
   selection: CompetitionReplaySelection;
+  initialFlat?: boolean;
   dimension?: "2d" | "3d" | "4d";
   label?: string;
   variant?: "button" | "inline";
@@ -73,15 +75,16 @@ export function CompetitionReplayButton({
       ) : (
         <FocusButton secondary label={label} onPress={() => { void playCue("light"); setOpen(true); }} />
       )}
-      <CompetitionReplayModal open={open} state={state} selection={selection} dimension={dimension} onClose={() => setOpen(false)} />
+      <CompetitionReplayModal open={open} state={state} selection={selection} initialFlat={initialFlat} dimension={dimension} onClose={() => setOpen(false)} />
     </>
   );
 }
 
-export function CompetitionReplayModal({ open, state, selection, dimension, onClose }: {
+export function CompetitionReplayModal({ open, state, selection, dimension, onClose, initialFlat = false }: {
   open: boolean;
   state: CompeteState;
   selection: CompetitionReplaySelection;
+  initialFlat?: boolean;
   dimension: "2d" | "3d" | "4d";
   onClose(): void;
 }) {
@@ -89,7 +92,7 @@ export function CompetitionReplayModal({ open, state, selection, dimension, onCl
   return open ? <Modal visible animationType={reduced ? "none" : "slide"} presentationStyle="fullScreen" onRequestClose={onClose}>
     <SafeAreaProvider>
       <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
-        <ReplayViewer key={`${selection.sport}:${selection.track}:${selection.periodStart}`} state={state} selection={selection} initialDimension={dimension} onClose={onClose} />
+        <ReplayViewer key={`${selection.sport}:${selection.track}:${selection.periodStart}`} state={state} selection={selection} initialFlat={initialFlat} initialDimension={dimension} onClose={onClose} />
       </SafeAreaView>
     </SafeAreaProvider>
   </Modal> : null;
@@ -117,7 +120,7 @@ function ReplayTimeline({ cursor, count, caption, onSeek }: { cursor: number; co
 function ReplayAction({ label, text, disabled, onPress, primary = false }: { label: string; text: string; disabled?: boolean; onPress: () => void; primary?: boolean }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: Boolean(disabled) }} disabled={disabled} onPress={() => { if (!disabled) { void playCue("selection"); onPress(); } }} style={[s.action, primary && s.primary, disabled && { opacity: .4 }]}><AppText role="label">{text}</AppText></Pressable>;
 }
-export function ReplayViewer({ state, selection, initialDimension, onClose, embedded=false }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; onClose: () => void; embedded?: boolean }) {
+export function ReplayViewer({ state, selection, initialDimension, onClose, embedded=false, initialFlat = false }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; initialFlat?: boolean; onClose: () => void; embedded?: boolean }) {
   const { user, accessToken, offlineMode } = useAuth();
   const { debugActive } = useCompeteStore();
   const { blocks } = useAthleteBlocks();
@@ -129,7 +132,8 @@ export function ReplayViewer({ state, selection, initialDimension, onClose, embe
   const [dimension, setDimension] = useState(initialDimension);
   const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(selection.sport, selection.periodStart, selection.periodEnd, debugActive, dimension === "4d");
   const [center, setCenter] = useState<number | null>(null), [span, setSpan] = useState<number | null>(null);
-  const [followEvent, setFollowEvent] = useState(true);
+  const [following, setFollowing] = useState(true);
+  const [courseFlat, setCourseFlat] = useState(initialFlat);
   const [selected, setSelected] = useState<string | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
   useEffect(() => { if (selected && hiddenIds.includes(selected)) setSelected(null); }, [selected, hiddenIds]);
@@ -165,16 +169,16 @@ export function ReplayViewer({ state, selection, initialDimension, onClose, embe
   const seek = (next: number) => { const bounded = Math.max(0, Math.min(count, next)); if (Math.ceil(bounded) !== Math.ceil(cursor)) void playCue("selection"); setPlaying(false); setCursor(bounded); };
   const frame = index ? competitionReplayFrame(index, cursor) : null;
   const me = frame?.rows.find(a => a.you);
-  const focus = followEvent ? frame?.rows.find(a => a.id === frame.event?.athleteId && !hiddenIds.includes(a.id)) ?? me : me;
+  const focus = frame?.rows.find(a => a.id === selected && !hiddenIds.includes(a.id)) ?? me;
   const unit = index?.unit ?? "km", viewSpan = span ?? fieldDefaultSpan(unit);
   const lanes = useMemo(() => (frame?.rows ?? []).map(row => ({ ...row, initials: initialsFromName(row.name) })), [index, cursor]);
   const nativeLanes = useMemo<ArenaLane[]>(() => lanes.map(l => ({ ...l, ghost: false, values: [l.value, l.value, l.value] })), [lanes]);
-  const view = { center: clampCourseCenter(center ?? focus?.value ?? 0, viewSpan, Math.max(0, ...lanes.map(l => l.value)), unit, appearance.ground), span: viewSpan };
+  const view = { center: clampCourseCenter((following ? focus?.value : center) ?? focus?.value ?? 0, viewSpan, Math.max(0, ...lanes.map(l => l.value)), unit, appearance.ground), span: viewSpan };
   const flight = useFieldFlight(view, next => { setCenter(next.center); setSpan(next.span); }, Boolean(reduced));
-  const applyView = (next: typeof view) => { flight.cancel(); setCenter(next.center); setSpan(next.span); };
+  const applyView = (next: typeof view) => { setFollowing(false); flight.cancel(); setCenter(next.center); setSpan(next.span); };
   const panTo = (center: number) => applyView({ ...view, center });
   const zoomTo = (span: number) => applyView({ ...view, span });
-  const select = (id: string) => { if (hiddenIds.includes(id)) return; const lane = lanes.find(l => l.id === id); if (lane) { const ordered = orderedArenaLanes(lanes); portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you)); setSelected(id); setFocusRequest(value => value + 1); if (dimension !== "4d") flight.fly({ ...view, center: clampCourseCenter(lane.value, view.span, Math.max(0, ...lanes.map(l => l.value)), unit, appearance.ground) }); } };
+  const select = (id: string) => { if (hiddenIds.includes(id)) return; const lane = lanes.find(l => l.id === id); if (lane) { const ordered = orderedArenaLanes(lanes); if (following) portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you)); setSelected(id); setFocusRequest(value => value + 1); if (following) setCenter(null); } };
   const closed = data && Date.parse(data.through) >= Date.parse(data.periodEnd);
   const caption = index ? (frame?.event && hiddenIds.includes(frame.event.athleteId) ? "An athlete recorded activity" : competitionReplayCaption(index, cursor)) : "";
   return <View style={{ flex: 1 }}>
@@ -185,16 +189,18 @@ export function ReplayViewer({ state, selection, initialDimension, onClose, embe
 
     {!index ? <View style={s.message}><AppText role="body" accessibilityLiveRegion="polite">{error || "Loading the competition timeline…"}</AppText>{error && <FocusButton label="Retry" onPress={() => setAttempt(a => a + 1)} />}</View> : <>
       <View style={s.scene} onLayout={event => setHeight(Math.max(100, event.nativeEvent.layout.height))}>
-        <View style={{ position: "absolute", top: 12, right: 12, zIndex: 10 }}>
+        <View style={{ position: "absolute", top: 12, right: 12, zIndex: 10, flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Pressable accessibilityRole="button" accessibilityState={{ selected: following }} accessibilityLabel={`Camera: ${following ? "Follow athlete" : "Fixed"}`} onPress={() => { flight.cancel(); setCenter(following ? view.center : null); setFollowing(value => !value); if (!following) setFocusRequest(value => value + 1); }} style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: "center", borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.78)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.2)" }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{following ? "Follow athlete" : "Fixed"}</Text></Pressable>
           <FieldViewSwitcher value={dimension} geographic={unit !== "pts"} onChange={value => { flight.cancel(); setDimension(value); }} />
         </View>
-        {dimension === "4d" ? <GeographicCourse hiddenIds={hiddenIds} course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <LaneTrack hiddenIds={hiddenIds} onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={selected ?? focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField hiddenIds={hiddenIds} onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={selected ?? focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
-        <View style={[s.follow,{flexDirection:"row",gap:12}]}><Pressable accessibilityRole="button" onPress={() => { flight.cancel(); setCenter(null); setSelected(null); setFollowEvent(v => !v); }}><AppText role="label">{followEvent ? "Follow me" : "Follow event"}</AppText></Pressable>{embedded&&<Pressable accessibilityRole="button" onPress={()=>{seek(0);setPlaying(true);}}><AppText role="label">Replay this round</AppText></Pressable>}</View>
+        {dimension === "4d" ? <GeographicCourse initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following} onFollowChange={setFollowing} optionsTop={64} hiddenIds={hiddenIds} course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <LaneTrack hiddenIds={hiddenIds} onGestureStart={() => { flight.cancel(); setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={selected ?? focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField hiddenIds={hiddenIds} onGestureStart={() => { flight.cancel(); setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={selected ?? focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
+
       </View>
       <View style={s.controls}>
         <AppText role="row" numberOfLines={2}>{caption}</AppText>
         <AppText role="caption" secondary>{competitionReplayDate(index, cursor)}</AppText>
         <ReplayTimeline cursor={cursor} count={count} caption={caption} onSeek={seek} />
+        {embedded && <ReplayAction label="Replay this round" text="Replay this round" onPress={() => { seek(0); setPlaying(true); }} />}
         <View style={s.actions}>
           <ReplayAction label="Jump to competition start" text="|‹" disabled={!count || cursor === 0} onPress={() => seek(0)} />
           <ReplayAction label="Previous competition event" text="‹" disabled={!count || cursor === 0} onPress={() => seek(Math.ceil(cursor) - 1)} />

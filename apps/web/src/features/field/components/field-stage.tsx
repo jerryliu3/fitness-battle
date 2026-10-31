@@ -91,6 +91,7 @@ export function FieldStage({
 
   const [viewDimension, setViewDimension] = useState<"2d" | "3d" | "4d">(unit === "pts" ? "2d" : "4d");
   const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(model.sport, model.periodStart, model.periodEnd, debugActive, viewDimension === "4d" && tabActive);
+  const [courseFlat, setCourseFlat] = useState(false);
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
   useEffect(() => setCourseTarget(null), [accountKey, model.sport, model.periodStart, model.unit]);
   const chooseView = (value: "2d" | "3d" | "4d") => {
@@ -403,7 +404,7 @@ export function FieldStage({
           </button>
         ) : null}
         <div className="focus-broadcast-replay-chip">
-        {replayState && <CompetitionReplayButton state={replayState} selection={{ sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: model.periodEnd }} dimension={viewDimension} label="Replay" />}
+        {replayState && <CompetitionReplayButton state={replayState} selection={{ sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: model.periodEnd }} initialFlat={courseFlat} dimension={viewDimension} label="Replay" />}
         </div>
       </div>
 
@@ -504,7 +505,7 @@ export function FieldStage({
           hud={broadcastHud}
         >
           {viewDimension === "4d" && tabActive ? <div className="focus-geographic-host" style={{ position: "relative", height: lanesImmersive ? "100%" : 460 }}>
-            <GeographicCourse lanes={fieldLanes} unit={unit} selectedId={(lanesImmersive ? trackSelected : null) || you.id} focusRequest={lanesImmersive ? focusRequest : 0} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? spotlightCollapsed ? 136 : 236 : 8} />
+            <GeographicCourse initialFlat={courseFlat} onFlatChange={setCourseFlat} lanes={fieldLanes} unit={unit} selectedId={(lanesImmersive ? trackSelected : null) || you.id} focusRequest={lanesImmersive ? focusRequest : 0} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? spotlightCollapsed ? 136 : 236 : 8} />
             {!lanesImmersive ? <button type="button" className="focus-portal-pill is-accent" style={{ position: "absolute", top: 12, right: 12 }} aria-label="Expand 3D course to full screen" onClick={() => setLanesImmersive(true)}>Full Arena ⤢</button> : null}
           </div> : null}
           {viewDimension === "3d" && tabActive ? (

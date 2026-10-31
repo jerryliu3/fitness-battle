@@ -13,8 +13,9 @@ class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean }
 }
 
 /** Presentation-only scene. The field/replay host owns the weekly course. */
-export function GeographicCourse({ lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, course, error = "", onRetry, controlsBottom = 8, overlaysHidden = false, optionsTop, onReplay, distanceTarget }: {
+export function GeographicCourse({ initialFlat, onFlatChange, onFollowChange, followAthlete, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, course, error = "", onRetry, controlsBottom = 8, overlaysHidden = false, optionsTop, onReplay, distanceTarget }: {
   hiddenIds?: readonly string[]; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void;
+  initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
   distanceTarget?: CourseDistanceTarget | null;
   course: RaceCourse | null; error?: string; onRetry?: () => void; controlsBottom?: number; overlaysHidden?: boolean; optionsTop?: number; onReplay?: () => void;
 }) {
@@ -32,6 +33,6 @@ export function GeographicCourse({ lanes, hiddenIds = [], unit, selectedId, focu
           </Pressable>
         ) : null}
       </View> :
-      <MapBoundary><Suspense fallback={<View style={{ flex: 1, minHeight: 300, justifyContent: "center", alignItems: "center", backgroundColor: "#0b242c" }}><ActivityIndicator size="large" color={c.tennis} /></View>}><CourseMap key={course.name + course.length} course={course} lanes={lanes} hiddenIds={hiddenIds} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} optionsTop={optionsTop} onReplay={onReplay} /></Suspense></MapBoundary>}
+      <MapBoundary><Suspense fallback={<View style={{ flex: 1, minHeight: 300, justifyContent: "center", alignItems: "center", backgroundColor: "#0b242c" }}><ActivityIndicator size="large" color={c.tennis} /></View>}><CourseMap initialFlat={initialFlat} onFlatChange={onFlatChange} followAthlete={followAthlete} onFollowChange={onFollowChange} key={course.name + course.length} course={course} lanes={lanes} hiddenIds={hiddenIds} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} optionsTop={optionsTop} onReplay={onReplay} /></Suspense></MapBoundary>}
   </View>;
 }

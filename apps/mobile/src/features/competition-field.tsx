@@ -67,6 +67,7 @@ export function CompetitionField({
     flight.cancel();
     setSceneDimension(value);
   };
+  const [courseFlat, setCourseFlat] = useState(false);
   const [courseReplayOpen, setCourseReplayOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [intervalsCollapsed, setIntervalsCollapsed] = useState(false);
@@ -209,7 +210,7 @@ export function CompetitionField({
     >
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <View pointerEvents={expanded ? "auto" : "none"} style={{ flex: 1 }}>
-          <GeographicCourse hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onReplay={() => setCourseReplayOpen(true)} optionsTop={expanded && !queued ? safeTop + 54 : undefined} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
+          <GeographicCourse initialFlat={courseFlat} onFlatChange={setCourseFlat} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onReplay={() => setCourseReplayOpen(true)} optionsTop={expanded && !queued ? safeTop + 54 : undefined} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
           <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>Tap to open full screen</Text></View>
@@ -322,7 +323,7 @@ export function CompetitionField({
           {!queued && <CompetitionReplayButton
             state={state}
             selection={replaySelection}
-            dimension={sceneDimension}
+            initialFlat={courseFlat} dimension={sceneDimension}
             variant="inline"
             label="Replay"
           />}
@@ -338,7 +339,7 @@ export function CompetitionField({
           <View onTouchStartCapture={() => hold.current?.reset()} style={[f.safe, { backgroundColor: "#0b242c", position: "relative" }]}>
             {fieldContent}
             {queueOverlay}
-            <CompetitionReplayModal open={courseReplayOpen} state={state} selection={replaySelection} dimension={sceneDimension} onClose={() => setCourseReplayOpen(false)} />
+            <CompetitionReplayModal open={courseReplayOpen} state={state} selection={replaySelection} initialFlat={courseFlat} dimension={sceneDimension} onClose={() => setCourseReplayOpen(false)} />
             {/* Top Bar HUD */}
             <FieldOverlayView
               hidden={overlaysHidden}
@@ -470,7 +471,7 @@ export function CompetitionField({
                 {!queued && <CompetitionReplayButton
                   state={state}
                   selection={replaySelection}
-                  dimension={sceneDimension}
+                  initialFlat={courseFlat} dimension={sceneDimension}
                   variant="inline"
                   label="Replay"
                 />}
