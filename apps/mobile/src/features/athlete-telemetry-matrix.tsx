@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
-import Svg, { Path, Circle, G, Line, Text as SvgText } from "react-native-svg";
+import Svg, { Path, Circle, G, Line } from "react-native-svg";
 import {
   SHELL_COLORS as c,
   buildAnalyticsLabModel,
@@ -10,6 +10,7 @@ import {
   type CompeteState,
 } from "@fitness-battle/shared";
 import { AppText } from "../ui/section";
+import { ChartSvg, ChartText } from "../ui/chart-text";
 
 export function AthleteTelemetryMatrix({
   state,
@@ -158,10 +159,10 @@ function MiniSparkline({
   const ticks = [...new Set([low, high])].map(value => ({ value, y: points.find(p => p.val === value)!.y }));
   const number = (value: number) => value >= 1000 ? `${(value / 1000).toFixed(1)}k` : Number(value.toPrecision(3)).toString();
   return (
-    <Svg width={110} height={50} viewBox="0 0 110 50">
-      {ticks.map(tick => <G key={tick.value}><Line x1={30} x2={104} y1={tick.y} y2={tick.y} stroke={c.line}/><SvgText x={26} y={tick.y+3} fontSize={9} textAnchor="end" fill={c.muted}>{number(tick.value)}</SvgText></G>)}
-      {labels[0] && <SvgText x={30} y={46} fontSize={9} fill={c.muted}>{labels[0]}</SvgText>}
-      {labels.at(-1) && <SvgText x={104} y={46} fontSize={9} textAnchor="end" fill={c.muted}>{labels.at(-1)}</SvgText>}
+    <ChartSvg width={110} height={50} viewBox="0 0 110 50">
+      {ticks.map(tick => <G key={tick.value}><Line x1={30} x2={104} y1={tick.y} y2={tick.y} stroke={c.line}/><ChartText x={26} y={tick.y+3} textAnchor="end" fill={c.muted}>{number(tick.value)}</ChartText></G>)}
+      {labels[0] && <ChartText x={30} y={46} fill={c.muted}>{labels[0]}</ChartText>}
+      {labels.at(-1) && <ChartText x={104} y={46} textAnchor="end" fill={c.muted}>{labels.at(-1)}</ChartText>}
       <G transform="translate(28 0)">
       <Path
         d={`M ${polyline}`}
@@ -175,7 +176,7 @@ function MiniSparkline({
         <Circle key={i} cx={p.x} cy={p.y} r={1.5} fill={stroke} />
       ))}
       </G>
-    </Svg>
+    </ChartSvg>
   );
 }
 

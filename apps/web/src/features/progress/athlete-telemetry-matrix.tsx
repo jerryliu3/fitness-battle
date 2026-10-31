@@ -10,6 +10,7 @@ import {
   type CompeteState,
 } from "@fitness-battle/shared";
 import { AppHeading, AppText } from "../../ui/section";
+import { ChartSvg, ChartText } from "../../ui/chart-text";
 
 export function AthleteTelemetryMatrix({
   state,
@@ -181,10 +182,10 @@ function MiniSparklineSvg({
   const ticks = [...new Set([low, high])].map(value => ({ value, y: points.find(p => p.val === value)!.y }));
   const number = (value: number) => value >= 1000 ? `${(value / 1000).toFixed(1)}k` : Number(value.toPrecision(3)).toString();
   return (
-    <svg width={110} height={50} viewBox="0 0 110 50" aria-hidden="true">
-      {ticks.map(tick => <g key={tick.value}><line x1={30} x2={104} y1={tick.y} y2={tick.y} stroke={c.line}/><text x={26} y={tick.y+3} fontSize={9} textAnchor="end" fill={c.muted}>{number(tick.value)}</text></g>)}
-      {labels[0] && <text x={30} y={46} fontSize={9} fill={c.muted}>{labels[0]}</text>}
-      {labels.at(-1) && <text x={104} y={46} fontSize={9} textAnchor="end" fill={c.muted}>{labels.at(-1)}</text>}
+    <ChartSvg width={110} height={50} viewBox="0 0 110 50" aria-hidden="true">
+      {ticks.map(tick => <g key={tick.value}><line x1={30} x2={104} y1={tick.y} y2={tick.y} stroke={c.line}/><ChartText x={26} y={tick.y+3} textAnchor="end" fill={c.muted}>{number(tick.value)}</ChartText></g>)}
+      {labels[0] && <ChartText x={30} y={46} fill={c.muted}>{labels[0]}</ChartText>}
+      {labels.at(-1) && <ChartText x={104} y={46} textAnchor="end" fill={c.muted}>{labels.at(-1)}</ChartText>}
       <g transform="translate(28 0)">
       <path
         d={`M ${polyline}`}
@@ -198,6 +199,6 @@ function MiniSparklineSvg({
         <circle key={i} cx={p.x} cy={p.y} r={1.5} fill={stroke} />
       ))}
       </g>
-    </svg>
+    </ChartSvg>
   );
 }
