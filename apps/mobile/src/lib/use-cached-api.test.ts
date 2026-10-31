@@ -32,6 +32,7 @@ beforeEach(() => {
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
   clearApiReads();
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -75,4 +76,35 @@ it("updates mounted consumers when another reader refreshes the shared snapshot"
       async () => ({ value: "refreshed elsewhere" }));
   });
   expect(result.data?.value).toBe("refreshed elsewhere");
+});
+
+it("reloads silently on background return without setting busy when cached", async () => {
+  vi.useFakeTimers();
+  const fetcher = vi.fn(async () => Response.json({ value: "initial" }));
+  vi.stubGlobal("fetch", fetcher);
+  await act(async () => { renderer = create(createElement(Probe)); });
+  expect(result.data?.value).toBe("initial");
+  expect(fetcher).toHaveBeenCalledTimes(1);
+
+  // Transient inactive does not reload
+  await act(async () => {
+    mock.resume?.("inactive");
+    mock.resume?.("active");
+  });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+
+  // Advance time past TAB_READ_TTL so cache is stale
+  vi.advanceTimersByTime(65_000);
+
+  // Background return reloads silently
+  fetcher.mockImplementationOnce(async () => Response.json({ value: "fresh" }));
+  await act(async () => {
+    mock.resume?.("background");
+    mock.resume?.("active");
+  });
+  // During or after reload, busy remains false
+  expect(result.busy).toBe(false);
+  expect(result.data?.value).toBe("fresh");
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  vi.useRealTimers();
 });
