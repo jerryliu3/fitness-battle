@@ -19,7 +19,7 @@ import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
 import { HeroUINativeProvider } from "heroui-native/provider";
 import { useEffect, useState, type ReactNode } from "react";
-import { ActivityIndicator, Platform, Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 // Registers the foreground notification handler.
@@ -39,8 +39,9 @@ function BlockPrivacyGate({ children }: { children: ReactNode }) {
   const { ready, error, reload } = useAthleteBlocks();
   const { signOut } = useAuth();
   if (ready) return children;
+  if (!error) return <View style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }} />;
   return <View style={{ flex: 1, padding: 24, justifyContent: "center", gap: 16 }}>
-    <Text style={textStyle("body")}>{error || "Loading your safety settings…"}</Text>
+    <Text style={textStyle("body")}>{error}</Text>
     {error ? <><Text accessibilityRole="button" onPress={() => void reload()} style={textStyle("label")}>Retry</Text><Text accessibilityRole="button" onPress={() => void signOut()} style={textStyle("label")}>Sign out</Text></> : null}
   </View>;
 }
@@ -138,9 +139,7 @@ export default function RootLayout() {
               </Text>
             ) : null}
           </View>
-        ) : (
-          <ActivityIndicator color={SHELL_COLORS.tennis} />
-        )}
+        ) : null}
       </View>
     );
   }
@@ -154,23 +153,21 @@ export default function RootLayout() {
           <AuthProvider>
             <AthleteBlocksProvider>
             <CompeteProvider navigationReady={fontsLoaded}>
-              {fontsLoaded ? <BlockPrivacyGate>
-                <>
+              {fontsLoaded ? <BootGate>
+                <BlockPrivacyGate>
                   <LiveFieldRefresh />
                   <NavigationWarmup />
-                  <BootGate>
-                    <StatusBar style="dark" />
-                    <Stack
-                      screenOptions={{
-                        headerShown: false,
-                        contentStyle: { backgroundColor: SHELL_COLORS.paper },
-                        animation:
-                          Platform.OS === "ios" ? "default" : "slide_from_right",
-                      }}
-                    />
-                  </BootGate>
-                </>
-              </BlockPrivacyGate> : fontFallback}
+                  <StatusBar style="dark" />
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      contentStyle: { backgroundColor: SHELL_COLORS.paper },
+                      animation:
+                        Platform.OS === "ios" ? "default" : "slide_from_right",
+                    }}
+                  />
+                </BlockPrivacyGate>
+              </BootGate> : fontFallback}
             </CompeteProvider>
             </AthleteBlocksProvider>
           </AuthProvider>

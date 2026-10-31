@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement, useEffect } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
-const mock = vi.hoisted(() => ({ state: null as unknown, complete: null as null | (() => void) }));
+const mock = vi.hoisted(() => ({ privacyReady: true, privacyError: "", state: null as unknown, complete: null as null | (() => void) }));
+vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ ready: mock.privacyReady, error: mock.privacyError }) }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ loading: false }) }));
 vi.mock("../lib/compete-store", () => ({
   useCompeteStore: () => ({
@@ -31,6 +32,8 @@ async function layout() {
 async function frames() { await act(async () => { await vi.advanceTimersByTimeAsync(50); }); }
 beforeEach(() => {
   mounts = 0;
+  mock.privacyReady = true;
+  mock.privacyError = "";
   vi.useFakeTimers();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("requestAnimationFrame", (fn: () => void) => setTimeout(fn, 16));
@@ -99,4 +102,38 @@ describe("native boot gate", () => {
     await frames();
     expect(covered()).toBe(false);
   });
+});
+
+
+it("does not show startup again while privacy settings replace the signed-in subtree", async () => {
+  const content = (privacyReady: boolean) => createElement(BootGate, null,
+    privacyReady ? createElement(Screen) : createElement("privacy-loading"));
+  mock.state = {};
+  await act(async () => { renderer = create(content(true)); });
+  await layout();
+  await act(async () => { mock.complete?.(); });
+  await frames();
+  expect(covered()).toBe(false);
+  mock.state = null;
+  await act(async () => { renderer.update(content(false)); });
+  expect(covered()).toBe(false);
+  expect(renderer.root.findAll(node => (node.type as unknown) === "privacy-loading")).toHaveLength(1);
+  mock.state = {};
+  await act(async () => { renderer.update(content(true)); });
+  expect(covered()).toBe(false);
+});
+
+
+it("keeps privacy loading behind the launch animation and exposes failures for retry", async () => {
+  mock.state = {};
+  mock.privacyReady = false;
+  await act(async () => { renderer = create(tree()); });
+  await layout();
+  await act(async () => { mock.complete?.(); });
+  await frames();
+  expect(covered()).toBe(true);
+  mock.privacyError = "Unable to load";
+  await act(async () => renderer.update(tree()));
+  await frames();
+  expect(covered()).toBe(false);
 });
