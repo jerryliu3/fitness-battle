@@ -24,7 +24,7 @@ import { useState } from "react";
 import { Modal, ScrollView, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { WeeklySocialActions } from "./weekly-social";
-import { ReplayViewer, CompetitionReplayButton } from "./competition-replay";
+import { ReplayViewer } from "./competition-replay";
 import { ResultCard } from "./result-card";
 import { FocusButton, f } from "../ui/focus";
 function Round({
@@ -70,7 +70,7 @@ function Round({
             <>
               {rows.map((result) => (
                 <View key={result.id}>
-                  <View style={{height:500}}><ReplayViewer state={state} selection={result} initialDimension="4d" embedded onClose={()=>{}}/></View>
+                  <View style={{height:660}}><ReplayViewer state={state} selection={result} initialDimension="4d" embedded onClose={()=>{}}/></View>
                   <ResultCard result={result} units={state.units} />
                   <WeeklySocialActions result={result} units={state.units} />
                 </View>

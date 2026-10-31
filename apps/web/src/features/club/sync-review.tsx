@@ -54,7 +54,7 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
     <ActivityRoute activity={activity} units={state.units}/>
     <div className="moment-result"><strong>{formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units)}</strong><span>{clubDuration(activity.movingSec)}</span></div>
     <p className="fb-copy">{new Date(activity.startedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: APP_TIMEZONE })}</p>
-    <ActivityMetricBars activity={activity} history={state.activities} units={state.units}/>
+    <ActivityMetricBars activity={activity} history={[...receipt.activities, ...state.activities]} units={state.units}/>
   </div>;
   return <div ref={step} className="sync-review-step">
     {receipt.preview && <p className="fb-kicker">SAMPLE PREVIEW · NO COMPETITION CREDIT</p>}
@@ -65,7 +65,7 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
     <div className="sync-review-list">{activities.map(a => <div key={a.id} className="sync-review-row">
       <label><input type="checkbox" disabled={saving} checked={!excluded.includes(a.id)} onChange={e => { if (saving) return; setExcluded(ids => e.target.checked ? ids.filter(id => id !== a.id) : [...ids, a.id]); setProgress(0); }} aria-label={`Count ${sportById(a.sport).name} activity ${a.id}`}/><span className="sr-only">Include activity</span></label>
       <button type="button" disabled={saving} onClick={() => openDetail(a.id)}><span><b>{sportById(a.sport).name}</b><small>{new Date(a.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}</small></span><span aria-hidden="true">↗</span></button>
-      <ActivityMetricBars activity={a} history={state.activities} units={state.units}/>
+      <ActivityMetricBars activity={a} history={[...receipt.activities, ...state.activities]} units={state.units}/>
     </div>)}</div>
     {!receipt.preview && excluded.length > 0 && <p className="fb-note">Deselected activities stay saved, excluded from competition.</p>}
     <div className="sync-review-footer">

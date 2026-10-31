@@ -32,6 +32,6 @@ export function syncReviewMetrics(activity: Activity, activities: readonly Activ
     ...(sportById(activity.sport).gps ? metric("distance", "Distance", activity.distanceM, formatVolume(activity.sport, activity.distanceM, activity.movingSec, units), row => row.distanceM) : []),
     ...metric("duration", "Moving time", activity.movingSec, clubDuration(activity.movingSec), row => row.movingSec),
     ...(activity.avgHr != null && activity.avgHr >= 20 && activity.avgHr <= 260 ? metric("heart-rate", "Avg heart rate", activity.avgHr, `${Math.round(activity.avgHr)} bpm`, row => row.avgHr != null && row.avgHr >= 20 && row.avgHr <= 260 ? row.avgHr : null) : []),
-    ...metric("elevation", "Elevation gain", activity.elevationGainM, `${Math.round(activity.elevationGainM ?? 0)} m`, row => row.elevationGainM),
+    ...metric("elevation", "Elevation gain", activity.elevationGainM, `${Math.round((activity.elevationGainM ?? 0) * (units === "metric" ? 1 : 3.28084))} ${units === "metric" ? "m" : "ft"}`, row => row.elevationGainM),
   ];
 }

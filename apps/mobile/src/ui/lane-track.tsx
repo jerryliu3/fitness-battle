@@ -46,6 +46,7 @@ function LaneTrackContent({
   selectedId,
   focusOnMount = false,
   focusSelection = true,
+  clampView = true,
   followSelected = false,
   replayFocusIds,
   animateSelection = true,
@@ -90,6 +91,7 @@ function LaneTrackContent({
   selectedId?: string;
   focusOnMount?: boolean;
   focusSelection?: boolean;
+  clampView?: boolean;
   /** Lock the horizontal camera to the athlete during passive playback. */
   followSelected?: boolean;
   replayFocusIds?: readonly string[];
@@ -120,7 +122,7 @@ function LaneTrackContent({
   );
   const clampCenter = (value: number, span: number) =>
     clampCourseCenter(value, span, fieldHigh, unit, appearance.ground);
-  const effectiveCenter = clampCenter(rawV.center, rawV.span);
+  const effectiveCenter = clampView ? clampCenter(rawV.center, rawV.span) : rawV.center;
   const v =
     effectiveCenter === rawV.center
       ? rawV

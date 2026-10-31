@@ -12,7 +12,6 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { WeeklySocialActions } from "./weekly-social";
-import { CompetitionReplayButton } from "@/features/replay/competition-replay";
 import { ResultCard } from "./result-card";
 import {
   countsOnTrack, APP_TIMEZONE,

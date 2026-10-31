@@ -7,7 +7,7 @@
 .route-scene-map.route-ui { height: 100%; width: 100%; border: 0; border-radius: 0; }
 .route-ui svg { display: block; }
 /* Keep attribution and the Mapbox mark clear of the playback controls. */
-.route-ui .mapboxgl-ctrl-bottom-right, .route-ui .mapboxgl-ctrl-bottom-left { top: 52px; bottom: auto; }
+.route-ui .mapboxgl-ctrl-top-left { top: 52px; }
 .route-ui button { cursor: pointer; }
 .route-ui button:focus-visible, .route-ui[role="button"]:focus-visible { outline: 2px solid #176c75; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {

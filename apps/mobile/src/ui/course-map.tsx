@@ -11,12 +11,14 @@ import { textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
 
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
-export default function CourseMap({ initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop, onReplay, overlaysHidden = false, distanceTarget }: {
+export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, overlaysHidden = false, distanceTarget }: {
+  cardSessionKey?: string | number | boolean;
   initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
   distanceTarget?: CourseDistanceTarget | null;
-  hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number; onReplay?: () => void; overlaysHidden?: boolean;
+  hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; overlaysHidden?: boolean;
 }) {
   const [dismissed, setDismissed] = useState<string[]>([]);
+  useEffect(() => { setDismissed([]); }, [course, cardSessionKey]);
   useEffect(() => { setDismissed(ids => ids.filter(id => id !== selectedId)); }, [selectedId, focusRequest]);
   const prefix = useId();
   const ref = useRef<ComponentRef<typeof Camera>>(null);
@@ -35,26 +37,26 @@ export default function CourseMap({ initialFlat = false, onFlatChange, onFollowC
     follow(next) { ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: 0 }); },
     fit(bounds, duration) { ref.current?.setCamera({ bounds: { ...bounds, paddingTop: 48, paddingBottom: 48, paddingLeft: 48, paddingRight: 48 }, pitch: 0, heading: 0, animationDuration: duration, animationMode: "easeTo" }); },
     move(next, duration) { ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: duration, animationMode: "easeTo" }); },
-  }), []);
-  useEffect(() => { if (ready) controller.dimension(initialFlat ? "2d" : "3d"); }, [ready, controller]);
+  }, Boolean(reduced), initialFlat ? "2d" : "3d"), []);
   useEffect(() => controller.setReducedMotion(Boolean(reduced)), [controller, reduced]);
-  useEffect(() => { if (!followAthlete) { controller.setReducedMotion(Boolean(reduced)); controller.interrupt(); } }, [controller, followAthlete, reduced]);
+  useEffect(() => { if (!followAthlete && controller.following) controller.interrupt(false); }, [controller, followAthlete, reduced]);
   const focus = () => { if (scene.selected) { controller.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); } };
-  const lastFocus = useRef<{ course: RaceCourse; id: string; request: number } | null>(null);
+  const lastFocus = useRef<{ course: RaceCourse; id: string; request: number; following: boolean; session?: string | number | boolean } | null>(null);
   useEffect(() => {
-    if (!ready || !scene.selected || !followAthlete) return;
+    if (!ready || !scene.selected) return;
     const previous = lastFocus.current;
-    const explicit = !previous || previous.course !== course || previous.id !== selectedId || previous.request !== focusRequest;
-    lastFocus.current = { course, id: selectedId, request: focusRequest };
+    const explicit = !previous || previous.course !== course || previous.id !== selectedId || previous.request !== focusRequest || !previous.following || previous.session !== cardSessionKey;
+    lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey };
+    if (!followAthlete) return;
     controller.focus(course, scene.selected.metres, !explicit, scene.selected.lateralMetres);
-  }, [ready, controller, course, selectedId, focusRequest, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres]);
+  }, [ready, controller, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres]);
   useEffect(() => {
     if (!ready || !distanceTarget) return;
     const metres = raceEffortMetres(distanceTarget.value, unit);
     if (metres === null) return;
     controller.seek(course, metres);
   }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request, controller]);
-  return <View style={{ flex: 1, minHeight: 200 }}>
+  return <View style={{ flex: 1, minHeight: 0 }}>
     <MapView accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled
       logoPosition={{ top: 8, left: 8 }} attributionPosition={{ top: 8, left: 100 }}
       scaleBarPosition={{ bottom: controlsBottom + 100, left: 8 }}
@@ -83,14 +85,14 @@ export default function CourseMap({ initialFlat = false, onFlatChange, onFollowC
       </MarkerView>) : null}
     </MapView>
     {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), position: "absolute", left: 8, right: 8, bottom: controlsBottom + 136, padding: 12, borderRadius: 12, backgroundColor: "#ffffff" }}>{error}</Text> : null}
-    {optionsTop !== undefined ? <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()} style={{ position: "absolute", top: optionsTop, right: 12 }}>
+    {optionsTop != null ? <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()} style={{ position: "absolute", top: optionsTop, right: 12 }}>
       <CourseOptions
         onReplay={onReplay}
         flat={flat}
         spaced={spaced}
-        onToggleDimension={() => { controller.dimension(flat ? "3d" : "2d"); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && controller.following) focus(); }}
+        onToggleDimension={() => { controller.dimension(flat ? "3d" : "2d", !(followAthlete && controller.following && scene.selected)); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && controller.following) focus(); }}
         onToggleSpacing={() => setSpaced(value => !value)}
-        onOverview={() => { controller.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); onFlatChange?.(true); }}
+        onOverview={() => { onFollowChange?.(false); controller.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); onFlatChange?.(true); }}
       />
     </FieldOverlayView> : null}
   </View>;

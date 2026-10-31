@@ -77,7 +77,7 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   expect(cards.find(card => card.props.anchor.x === 0)!.props.coordinate).toEqual(marker.geometry.coordinates);
   expect(cards.every(card => card.props.allowOverlap && card.props.allowZElevate === false)).toBe(true);
   const labels = renderer.root.findAllByType("AthletePennant" as never);
-  expect(labels.map(label => label.props.detail)).toEqual(["2nd · 0.6 km", "1st · 1.1 km"]);
+  expect(labels.map(label => label.props.detail)).toEqual(["2nd · 0.6 km", "1st · +0.5 km"]);
 
 });
 
@@ -109,7 +109,7 @@ it("hides a blocked racer without changing the other racer's position or place",
   const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: .5 }, { id: "peer", name: "Peer", initials: "P", value: 1 }], unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn() };
   await act(async () => { renderer = create(createElement(CourseMap, props)); });
   expect(renderer.root.findAllByType("ScrollView" as never)).toHaveLength(0);
-  expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Course options")).toBe(false);
+  expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Course options")).toBe(true);
   expect(renderer.root.findByType("Map" as never).props.zoomEnabled).toBe(true);
   expect(renderer.root.findByType("Map" as never).props.accessibilityLabel).not.toContain(course.name);
   const source = () => renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape;
@@ -135,4 +135,17 @@ it("applies automatic replay poses directly without stopping or easing each fram
     const marker = renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape.features[0];
     expect(calls.setCamera.mock.lastCall![0].centerCoordinate).toEqual(marker.geometry.coordinates);
   }
+});
+
+it("does not issue corrective native camera writes when a gesture updates Fixed mode", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const props = { course: createRaceCourse("Street", [[0, 0], [.02, 0]]), lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 0 }], unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn(), onFollowChange: vi.fn(), followAthlete: true, initialFlat: true };
+  await act(async () => { renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "Camera" ? calls : null }); });
+  await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
+  expect(calls.setCamera.mock.lastCall![0].pitch).toBe(0);
+  calls.setCamera.mockClear();
+  await act(async () => renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [.005, 0], zoom: 15, pitch: 0, heading: 0, isUserInteraction: true } } }));
+  expect(props.onFollowChange).toHaveBeenCalledWith(false);
+  await act(async () => renderer.update(createElement(CourseMap, { ...props, followAthlete: false })));
+  expect(calls.setCamera).not.toHaveBeenCalled();
 });
