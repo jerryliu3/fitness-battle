@@ -24,6 +24,7 @@ const mock = vi.hoisted(() => ({
   values: new Map<string, string>(),
   pathname: "/arena",
   router: { navigate: vi.fn() },
+  appStateListeners: new Set<(state: string) => void>(),
 }));
 vi.mock("./auth", () => ({ useAuth: () => mock.auth }));
 vi.mock("./env", () => ({
@@ -55,7 +56,10 @@ vi.mock("react-native", () => ({
   Pressable: "Pressable",
   AppState: {
     currentState: "active",
-    addEventListener: () => ({ remove() {} }),
+    addEventListener: (_type: string, listener: (state: string) => void) => {
+      mock.appStateListeners.add(listener);
+      return { remove: () => mock.appStateListeners.delete(listener) };
+    },
   },
 }));
 vi.mock("@react-native-async-storage/async-storage", () => ({
@@ -637,4 +641,28 @@ it.each([true, false])("detects Garmin imports at startup only with a prior acco
     expect(api.state!.activities.some(a => a.id === activity.id)).toBe(true);
     expect(renderer.root.findAllByType("SyncReview" as never)).toHaveLength(0);
   }
+});
+
+it("ignores transient inactive states and gates background return refreshes by freshness", async () => {
+  login("alice");
+  const cached = accountState("alice");
+  mock.values.set(accountStorageKeys("alice").state, JSON.stringify(cached));
+  await mount();
+  const initialFetchCount = fetcher.mock.calls.length;
+
+  // Transient inactive -> active does not trigger network fetch
+  await act(async () => {
+    mock.appStateListeners.forEach(listener => listener("inactive"));
+    mock.appStateListeners.forEach(listener => listener("active"));
+    await flush();
+  });
+  expect(fetcher.mock.calls.length).toBe(initialFetchCount);
+
+  // Background -> active within fresh TTL (still fresh) does not trigger network fetch
+  await act(async () => {
+    mock.appStateListeners.forEach(listener => listener("background"));
+    mock.appStateListeners.forEach(listener => listener("active"));
+    await flush();
+  });
+  expect(fetcher.mock.calls.length).toBe(initialFetchCount);
 });

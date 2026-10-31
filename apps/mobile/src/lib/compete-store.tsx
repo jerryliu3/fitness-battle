@@ -95,16 +95,30 @@ interface CompeteContextValue {
   resetDebugState?: () => void;
 }
 
-async function competeAccount(): Promise<{
+async function competeAccount(preferred?: {
+  userId?: string | null;
+  token?: string | null;
+}): Promise<{
   userId: string;
   token: string;
 } | null> {
+  if (preferred?.userId && preferred?.token) {
+    return { userId: preferred.userId, token: preferred.token };
+  }
   if (!isSupabaseConfigured(mobileEnv.supabaseUrl, mobileEnv.supabaseAnonKey)) return null;
-  const { data } = await supabase.auth.getSession();
-  const userId = data.session?.user?.id;
-  const token = data.session?.access_token;
-  if (!userId || !token) return null;
-  return { userId, token };
+  try {
+    const sessionPromise = supabase.auth.getSession();
+    const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) => {
+      setTimeout(() => resolve({ data: { session: null } }), 2500);
+    });
+    const { data } = await Promise.race([sessionPromise, timeoutPromise]);
+    const userId = data.session?.user?.id;
+    const token = data.session?.access_token;
+    if (!userId || !token) return null;
+    return { userId, token };
+  } catch {
+    return null;
+  }
 }
 
 const CompeteContext = createContext<CompeteContextValue | null>(null);
@@ -292,7 +306,10 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       }
       if (live) {
         try {
-          const account = await competeAccount();
+          const account = await competeAccount({
+            userId: currentAuth.user?.id,
+            token: currentAuth.accessToken,
+          });
           if (!account || account.userId !== owner)
             throw new Error("session_changed");
           const response = await fetchWithTimeout(
@@ -414,7 +431,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   });
 
   const refreshingRef = useRef(false);
-  const refreshRef = useRef<() => Promise<boolean>>(async () => false);
+  const refreshRef = useRef<(options?: { ifStale?: boolean }) => Promise<boolean>>(async () => false);
   const announcedNotice = useRef<string | null>(null);
 
   const remember = useCallback(
@@ -456,10 +473,18 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       remember(countedActivityIds(current), true);
     });
 
+    let wasBackground = false;
     const sub = AppState.addEventListener("change", (status) => {
+      if (status === "background") {
+        wasBackground = true;
+        return;
+      }
       if (status !== "active" || !seenRef.current.ready) return;
+      const returning = wasBackground;
+      wasBackground = false;
+      if (!returning) return;
       refreshingRef.current = true;
-      void refreshRef.current().finally(() => {
+      void refreshRef.current({ ifStale: true }).finally(() => {
         if (stateRef.current)
           remember(countedActivityIds(stateRef.current), true);
         refreshingRef.current = false;
@@ -488,7 +513,11 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     if (debugActiveRef.current) return true;
     if (hydrationPending.current) return false;
     if (options?.ifStale && Date.now() - lastRefresh.current < FIELD_REFRESH_MS) return true;
-    const account = await competeAccount();
+    const currentAuth = authRef.current;
+    const account = await competeAccount({
+      userId: accountRef.current,
+      token: currentAuth.offlineMode ? null : currentAuth.accessToken,
+    });
     if (debugActiveRef.current) return true;
     if (!stateRef.current) return false;
     if (!account) return true;
@@ -609,23 +638,39 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   // on resume even when this device still has no connected-provider links.
   useEffect(() => {
     if (!owner || auth.offlineMode || loadStatus !== "ready") return;
+    let wasBackground = false;
     const subscription = AppState.addEventListener("change", status => {
-      if (status === "active") void refresh({ ifStale: true });
+      if (status === "background") {
+        wasBackground = true;
+      } else if (status === "active") {
+        if (wasBackground) {
+          wasBackground = false;
+          void refresh({ ifStale: true });
+        }
+      }
     });
     return () => subscription.remove();
   }, [owner, auth.offlineMode, loadStatus, refresh]);
 
 
   const connectedPullProviders = (state?.links ?? []).filter(link => link.status === "connected" && ["strava", "whoop", "oura"].includes(link.provider)).map(link => link.provider).sort().join(",");
+  const lastPullSync = useRef(0);
+  const PULL_SYNC_COOLDOWN_MS = 5 * 60_000;
   useEffect(() => {
     if (!owner || auth.offlineMode || loadStatus !== "ready" || !connectedPullProviders) return;
     let stopped = false, running = false;
-    const sync = async () => {
+    const sync = async (force = false) => {
       if (stopped || running || AppState.currentState !== "active") return;
+      if (!force && Date.now() - lastPullSync.current < PULL_SYNC_COOLDOWN_MS) return;
       running = true;
       try {
-        const account = await competeAccount();
+        const currentAuth = authRef.current;
+        const account = await competeAccount({
+          userId: owner,
+          token: currentAuth.offlineMode ? null : currentAuth.accessToken,
+        });
         if (!account || account.userId !== owner || stopped) return;
+        lastPullSync.current = Date.now();
         const headers = { Authorization: `Bearer ${account.token}`, "Content-Type": "application/json" };
         const response = await fetchWithTimeout(`${mobileEnv.apiUrl}/api/fitness/status`, { headers });
         if (!response.ok) return;
@@ -635,13 +680,23 @@ export function CompeteProvider({ children, navigationReady = true }: { children
           if (connection.status !== "connected" || !["strava", "whoop", "oura"].includes(connection.provider)) continue;
           await fetchWithTimeout(`${mobileEnv.apiUrl}/api/fitness/sync`, { method: "POST", headers, body: JSON.stringify({ provider: connection.provider, automatic: true }) });
         }
-        if (!stopped && accountRef.current === owner) await refresh();
+        if (!stopped && accountRef.current === owner) await refresh({ ifStale: true });
       } catch { /* Retry on next foreground or active hourly interval. */ }
       finally { running = false; }
     };
     void sync();
-    const timer = setInterval(() => { void sync(); }, 60 * 60_000);
-    const subscription = AppState.addEventListener("change", status => { if (status === "active") void sync(); });
+    const timer = setInterval(() => { void sync(true); }, 60 * 60_000);
+    let wasBackground = false;
+    const subscription = AppState.addEventListener("change", status => {
+      if (status === "background") {
+        wasBackground = true;
+      } else if (status === "active") {
+        if (wasBackground) {
+          wasBackground = false;
+          void sync();
+        }
+      }
+    });
     return () => { stopped = true; clearInterval(timer); subscription.remove(); };
   }, [owner, auth.offlineMode, loadStatus, refresh, connectedPullProviders]);
 
@@ -726,7 +781,11 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             return;
           }
           try {
-            const account = await competeAccount();
+            const currentAuth = authRef.current;
+            const account = await competeAccount({
+              userId: id,
+              token: currentAuth.offlineMode ? null : currentAuth.accessToken,
+            });
             if (!account || account.userId !== id || !isCurrent())
               return;
             const response = await fetchWithTimeout(

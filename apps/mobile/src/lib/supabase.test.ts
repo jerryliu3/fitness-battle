@@ -1,7 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 const mock = vi.hoisted(() => ({
   platform: { OS: "web" },
-  createClient: vi.fn((..._args: unknown[]) => ({})),
+  startAutoRefresh: vi.fn(),
+  stopAutoRefresh: vi.fn(),
+  appStateListener: null as null | ((state: string) => void),
+  createClient: vi.fn((..._args: unknown[]) => ({
+    auth: {
+      startAutoRefresh: () => mock.startAutoRefresh(),
+      stopAutoRefresh: () => mock.stopAutoRefresh(),
+    },
+  })),
   storage: {
     getItem: vi.fn(() => {
       throw new Error("Storage cannot run during export");
@@ -9,7 +17,15 @@ const mock = vi.hoisted(() => ({
   },
 }));
 vi.mock("react-native-url-polyfill/auto", () => ({}));
-vi.mock("react-native", () => ({ Platform: mock.platform }));
+vi.mock("react-native", () => ({
+  Platform: mock.platform,
+  AppState: {
+    addEventListener: vi.fn((_type: string, handler: (state: string) => void) => {
+      mock.appStateListener = handler;
+      return { remove: vi.fn() };
+    }),
+  },
+}));
 vi.mock("@react-native-async-storage/async-storage", () => ({
   default: mock.storage,
 }));
@@ -21,6 +37,7 @@ vi.mock("./env", () => ({
   },
 }));
 afterEach(() => {
+  mock.appStateListener = null;
   vi.resetModules();
   vi.clearAllMocks();
   vi.unstubAllGlobals();
@@ -46,4 +63,15 @@ describe("Expo auth persistence", () => {
       expect(mock.storage.getItem).not.toHaveBeenCalled();
     },
   );
+
+  it("pauses auto-refresh on background and resumes on active on native", async () => {
+    mock.platform.OS = "ios";
+    await import("./supabase");
+    expect(mock.appStateListener).toBeTypeOf("function");
+    mock.appStateListener!("background");
+    expect(mock.stopAutoRefresh).toHaveBeenCalledTimes(1);
+    expect(mock.startAutoRefresh).not.toHaveBeenCalled();
+    mock.appStateListener!("active");
+    expect(mock.startAutoRefresh).toHaveBeenCalledTimes(1);
+  });
 });

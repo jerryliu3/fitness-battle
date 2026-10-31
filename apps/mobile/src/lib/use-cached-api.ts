@@ -19,10 +19,12 @@ export function useCachedApi<T>(path: string | null) {
   const sequence = useRef(0);
   const [result, setResult] = useState<{ key: string; data?: T; error: string; busy: boolean }>({ key: "", error: "", busy: false });
   const cached = scope && path ? peekApiRead<T>(scope, path) : undefined;
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (options?: { silent?: boolean }) => {
     if (!token || !path) return false;
     const attempt = ++sequence.current;
-    setResult(previous => ({ key, data: previous.key === key ? previous.data : peekApiRead<T>(scope, path), error: "", busy: true }));
+    if (!options?.silent) {
+      setResult(previous => ({ key, data: previous.key === key ? previous.data : peekApiRead<T>(scope, path), error: "", busy: true }));
+    }
     try {
       const data = await requestApi<T>(mobileEnv.apiUrl, token, path, { cacheMs: TAB_READ_TTL });
       if (currentKey.current !== key || attempt !== sequence.current) return false;
@@ -44,12 +46,21 @@ export function useCachedApi<T>(path: string | null) {
     return () => { sequence.current++; unsubscribe(); };
   }, [reload, scope, path, key]);
   useFocusEffect(useCallback(() => {
-    void reload();
+    const hasCached = scope && path ? peekApiRead<T>(scope, path) !== undefined : false;
+    void reload({ silent: hasCached });
+    let wasBackground = false;
     const subscription = AppState.addEventListener("change", status => {
-      if (status === "active") void reload();
+      if (status === "background") {
+        wasBackground = true;
+      } else if (status === "active") {
+        if (wasBackground) {
+          wasBackground = false;
+          void reload({ silent: true });
+        }
+      }
     });
     return () => subscription.remove();
-  }, [reload]));
+  }, [reload, scope, path]));
   const active = result.key === key ? result : undefined;
   return { data: scope && path ? active?.data ?? cached : undefined, error: active?.error ?? "", busy: active?.busy ?? false, reload };
 }
