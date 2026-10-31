@@ -139,6 +139,7 @@ export function createGarminProvider(
 ): FitnessProvider & {
   completeOAuth(userId: string, code: string, verifier: string): Promise<FitnessAuthResult>;
   pullCallback(userId: string, callbackUrl: string): Promise<ActivitySample[]>;
+  downloadActivityFile(userId: string, callbackUrl: string): Promise<Response>;
 } {
   const store = options.store ?? memoryStore();
   const http = options.http ?? { fetch };
@@ -230,6 +231,11 @@ export function createGarminProvider(
           status: "disconnected",
         }
       );
+    },
+    async downloadActivityFile(userId, callbackUrl) {
+      if (!isGarminCallbackUrl(callbackUrl) || new URL(callbackUrl).pathname !== "/wellness-api/rest/activityFile") throw new Error("garmin_callback_rejected");
+      const tokens = await access(userId);
+      return http.fetch(callbackUrl, { redirect: "error", headers: { Authorization: `Bearer ${tokens.accessToken}` }, signal: AbortSignal.timeout(30_000) });
     },
     async pullCallback(userId, callbackUrl) {
       if (!isGarminCallbackUrl(callbackUrl)) throw new Error("garmin_callback_rejected");

@@ -68,3 +68,14 @@ describe("Garmin GPS evidence", () => {
     expect(mapGarminActivity({ ...summary, activityType: "TREADMILL_RUNNING", samples })?.summaryPolyline).toBeUndefined();
   });
 });
+
+it("authenticates a single-use activity file with OAuth 2 and refuses other callback hosts", async () => {
+  const http = { fetch: vi.fn(async () => new Response("file")) };
+  const store = { getTokens: async () => ({ accessToken: "access", refreshToken: "refresh", expiresAt: Math.floor(Date.now()/1000)+86400 }) } as unknown as StravaStore;
+  const provider = createGarminProvider({}, { store, http });
+  const url = "https://apis.garmin.com/wellness-api/rest/activityFile?id=1&token=single-use";
+  await provider.downloadActivityFile("owner", url);
+  expect(http.fetch).toHaveBeenCalledWith(url, expect.objectContaining({ redirect: "error", headers: { Authorization: "Bearer access" } }));
+  await expect(provider.downloadActivityFile("owner", "https://example.com/file")).rejects.toThrow("garmin_callback_rejected");
+  expect(http.fetch).toHaveBeenCalledTimes(1);
+});
