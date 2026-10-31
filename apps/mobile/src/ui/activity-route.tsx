@@ -1,3 +1,4 @@
+import { useReducedMotion } from "./use-reduced-motion";
 import { textStyle } from "./section";
 import { useEffect, useMemo, useState } from "react";
 import { Modal, SafeAreaView, StyleSheet, Text, View } from "react-native";
@@ -22,6 +23,7 @@ export function ActivityRoute({
   units?: "us" | "metric";
 }) {
   const auth = useAuth();
+  const reduced = useReducedMotion();
   const [fetched, setFetched] = useState<{ id: string; owner?: string; detailedPolyline?: string; samples: RouteReplaySample[] } | null>(null);
   const fetchedLine = fetched?.id === activity?.id && fetched?.owner === auth.user?.id ? fetched?.detailedPolyline : undefined;
   const coordinates = useMemo(
@@ -127,7 +129,7 @@ export function ActivityRoute({
       {/* Dedicated native full screen mode that returns cleanly without closing activity */}
       <Modal
         visible={fullScreen}
-        animationType="slide"
+        animationType={reduced ? "none" : "fade"}
         onRequestClose={() => setFullScreen(false)}
       >
         <SafeAreaView style={s.fullRoot}>

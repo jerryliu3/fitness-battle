@@ -92,8 +92,9 @@ export function photoFinishFrame(moment: CompetitionMoment, progress: number) {
   for (const r of Object.values(plan.rivals)) values[r.id] = passedBy && travel < 1 ? r.startValue + (r.endValue - r.startValue) * travel : r.endValue;
   const passed = peers.filter(r => passedBy ? values[r.id] > youValue : youValue > r.endValue);
   const nearest = peers.slice().sort((a, b) => Math.abs(values[a.id] - youValue) - Math.abs(values[b.id] - youValue))[0];
-  const nearestCrossing = nearest ? crossing(nearest) : 0;
-  const focus = nearest ? Math.exp(-Math.pow((travel - nearestCrossing) / .075, 2)) * (p < .95 ? 1 : 0) : 0;
+  // Blend all crossings, so changing the nearest rival cannot reset the zoom.
+  // A broad envelope holds the close view between consecutive overtakes.
+  const focus = crossings.reduce((strongest, at) => Math.max(strongest, Math.exp(-Math.pow((travel - at) / .16, 2))), 0);
   const rank = 1 + Object.values(plan.rivals).filter(r => values[r.id] > youValue).length;
   const passEffects = plan.hasOvertake && p < .9 ? passed.flatMap(r => {
     const elapsed = travel - Math.max(.04, Math.min(.96, crossing(r)));

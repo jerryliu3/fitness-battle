@@ -152,10 +152,21 @@ it("does not issue corrective native camera writes when a gesture updates Fixed 
 
 it("frames both racers during slow motion and pulses only visible passed athletes", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  let nextFrame: (() => void) | undefined;
+  let time = 0;
+  vi.spyOn(Date, "now").mockImplementation(() => time);
+  vi.stubGlobal("requestAnimationFrame", (callback: () => void) => { nextFrame = callback; return 1; });
+  vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  const advance = (frames = 1) => { for (let i = 0; i < frames; i++) { time += 16; nextFrame?.(); } };
   const props = { course: createRaceCourse("Finish", [[0,0],[.02,0]]), lanes: [{id:"you",name:"You",initials:"Y",you:true,value:.51},{id:"peer",name:"Peer",initials:"P",value:.5}], unit:"km", selectedId:"you", focusRequest:0, onSelect:vi.fn(), replay:{nearestId:"peer",focus:1,passEffects:[{id:"peer",strength:.8}]} };
   await act(async () => { renderer = create(createElement(CourseMap, props), {createNodeMock: element => element.type === "Camera" ? calls : null}); });
   await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
-  expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBeGreaterThan(18);
+  advance();
+  const initialZoom = calls.setCamera.mock.lastCall![0].zoomLevel;
+  expect(initialZoom).toBeGreaterThan(16);
+  expect(initialZoom).toBeLessThan(17);
+  advance(90);
+  expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBeGreaterThan(19);
   expect(calls.setCamera.mock.lastCall![0].animationDuration).toBe(0);
   const markers = renderer.root.findAllByType("MarkerView" as never);
   expect(markers).toHaveLength(3);
@@ -163,6 +174,11 @@ it("frames both racers during slow motion and pulses only visible passed athlete
   await act(async () => renderer.update(createElement(CourseMap, {...props,hiddenIds:["peer"]})));
   expect(renderer.root.findAllByType("MarkerView" as never)).toHaveLength(1);
   await act(async () => renderer.update(createElement(CourseMap, {...props,replay:{...props.replay,focus:0,passEffects:[]}})));
-  expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBe(16);
+  const before = calls.setCamera.mock.lastCall![0].zoomLevel;
+  advance();
+  expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBeGreaterThan(before - .2);
+  advance(100);
+  expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBeCloseTo(17, 1);
+  vi.restoreAllMocks();
   expect(renderer.root.findAllByType("MarkerView" as never)).toHaveLength(2);
 });

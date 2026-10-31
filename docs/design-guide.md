@@ -689,3 +689,12 @@ observations and show baseline unavailable without a band or out-of-range labels
 HRV comparisons retain one provider's measurements. These are personal history
 comparisons, not clinical reference ranges or targets. Analytics range controls
 filter one stable history; selecting another range must not change a day's value.
+
+Native settings keep Haptic feedback in Preferences and Blocked athletes in Account.
+Advanced Analytics tiles use axis-free sparklines; detail screens retain axes.
+Full-screen native navigation and sync/replay modals fade, respecting Reduced
+Motion; receipt-to-overtake transitions fade within their shared modal. Receipt
+metric tracks expose their recent-maximum comparison in visible copy, including
+missing history. Overtake counts flow below the dimension toggle. Native overtake
+cameras ease position, heading and zoom through rival changes and the ending hold;
+Follow athlete in competition timelines tracks the current event's athlete.

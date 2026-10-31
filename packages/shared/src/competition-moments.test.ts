@@ -87,3 +87,15 @@ it("pulses every successful crossing briefly, then clears effects at completion 
   const loss = fixture("overtaken").moments[0];
   for (let step=0;step<=100;step++) expect(photoFinishFrame(loss,step/100).passEffects).toEqual([]);
 });
+
+it("keeps the zoom envelope continuous through rival handoffs and the ending hold", () => {
+  for (const direction of ["overtake", "overtaken"] as const) {
+    const moment = fixture(direction).moments[0];
+    let previous = photoFinishFrame(moment, 0).focus;
+    for (let i = 1; i <= 2000; i++) {
+      const focus = photoFinishFrame(moment, i / 2000).focus;
+      expect(Math.abs(focus - previous)).toBeLessThan(.04);
+      previous = focus;
+    }
+  }
+});
