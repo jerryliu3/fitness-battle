@@ -178,6 +178,7 @@ function WebMarketView({ model }: { model: AnalyticsLabModel }) {
           ]}
         />
         <StandardLineChart
+          yAxisLabel="NAV (pts)"
           values={series.map((p) => p.nav)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
@@ -287,6 +288,7 @@ function WebVitalsView({ model }: { model: AnalyticsLabModel }) {
         </div>
 
         <StandardLineChart
+          yAxisLabel={`${vital.name} (${vital.unit})`}
           values={vital.series.map((p) => p.value)}
           selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
@@ -345,6 +347,7 @@ function WebSleepView({ model }: { model: AnalyticsLabModel }) {
           ]}
         />
         <StandardLineChart
+          yAxisLabel="Sleep score"
           values={nights.map((n) => n.score)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
@@ -404,6 +407,7 @@ function WebLoadView({ model }: { model: AnalyticsLabModel }) {
           ]}
         />
         <StandardLineChart
+          yAxisLabel="ACWR (ratio)"
           values={l.series.map((s) => Number(s.acwr.toFixed(2)))}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
@@ -429,6 +433,7 @@ function WebLoadView({ model }: { model: AnalyticsLabModel }) {
       <div className="fb-card">
         <AppHeading level={2} role="heading">Period Volume Burn-Up</AppHeading>
         <StandardLineChart
+          yAxisLabel="Training (hrs)"
           values={l.series.map((s) => s.cumCurrentHours)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
@@ -469,6 +474,7 @@ function WebPerformanceView({ model }: { model: AnalyticsLabModel }) {
           ]}
         />
         <StandardLineChart
+          yAxisLabel="EF (m/min/bpm)"
           values={p.series.map((s) => Number(s.efficiencyFactor.toFixed(2)))}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
@@ -536,6 +542,7 @@ function WebCombinedView({ model }: { model: AnalyticsLabModel }) {
           ]}
         />
         <StandardLineChart
+          yAxisLabel="Readiness (%)"
           values={cmb.series.map((s) => s.nextDayReadiness)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}

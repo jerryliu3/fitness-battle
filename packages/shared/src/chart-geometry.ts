@@ -28,9 +28,9 @@ export function buildStandardChartGeometry(
   const xStart = 44;
   const xEnd = Math.max(xStart + 1, width - 14);
   const xMid = Math.round((xStart + xEnd) / 2);
-  const yTop = 20;
-  const yBottom = Math.max(yTop + 1, height - 28);
-  const yMidPos = Math.round((yTop + yBottom) / 2);
+  const yTop = 28;
+  const yBottom = Math.max(yTop + 1, height - 44);
+  let yMidPos = (yTop + yBottom) / 2;
 
   if (values.length === 0) {
     return {
@@ -77,6 +77,7 @@ export function buildStandardChartGeometry(
   }
 
   const ySpan = Math.max(0.001, yMax - yMin);
+  yMidPos = yBottom - ((yMid - yMin) / ySpan) * (yBottom - yTop);
   const usableW = Math.max(1, xEnd - xStart);
   const usableH = Math.max(1, yBottom - yTop);
 

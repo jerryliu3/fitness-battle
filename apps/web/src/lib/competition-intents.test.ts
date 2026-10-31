@@ -5,15 +5,17 @@ const now = new Date("2026-10-28T15:00:00Z");
 function baseline() { return withAccountEloBaseline(freshState(now)); }
 it("ignores forged ratings, archived results, milestone awards and freeze budgets", () => {
   const stored = baseline();
-  const forged = { ...stored, name: "Allowed name", freezesLeft: 900,
+  const forged: typeof stored = { ...stored, name: "Allowed name", freezesLeft: 900,
     ratings: stored.ratings.map(r => ({ ...r, openElo: 2400, verifiedElo: 2400 })),
     periodResults: [{ id: "forged", sport: "running", eloAfter: 2400 }] as typeof stored.periodResults,
+    effortScoreEvents: [{ id: "forged", sport: "running", track: "open", occurredAt: now.toISOString(), scoreBefore: 1000, scoreAfter: 2400 }],
     effortMilestones: [{ sport: "running", earned: 999 }] as typeof stored.effortMilestones,
   };
   const result = deriveCompetitionIntents(stored, forged, "owner", now);
   expect(result.ratings).toEqual(stored.ratings);
   expect(result.periodResults).toEqual([]);
   expect(result.effortMilestones).toEqual(stored.effortMilestones);
+  expect(result.effortScoreEvents).toEqual(stored.effortScoreEvents);
   expect(result.freezesLeft).toBe(3);
   expect(result.name).toBe("Allowed name");
 });

@@ -81,3 +81,15 @@ Mobile athlete blocks are private, directed, reversible account choices. A block
 Mobile cold starts compare an authenticated server snapshot against the same account's clean durable local cache before replacing it, using the same sync-review gate as foreground refresh. First loads without a cache establish a quiet baseline; restored unsaved drafts retain conflict/recovery handling. Detection compares activity IDs and meaningful activity fields, not workout dates or tracker last-sync timestamps, so late imports of older workouts can still appear. This is device-local presentation state, not a cross-device acknowledgement ledger.
 
 Daily health readings (steps, resting heart rate, HRV) are server-owned in `public.daily_health_readings` with select-only authenticated grants and owner RLS policies. Trigger-based merging ensures separate feed deliveries (such as Garmin dailies and HRV) do not overwrite each other. Client-reported or provider-synced sleep records union overlapping intervals to prevent artificial duration inflation from multiple recording devices.
+
+
+Effort Score history is presentation of authoritative committed rating changes.
+The additive `effort_score_events` migration records old/new Open and GPS scores
+with database time in the same transaction as `sport_ratings` updates. Unchanged
+writes and rollbacks create no history. History is owner-readable through RLS;
+athletes cannot insert, update or delete it, and incoming account documents cannot
+supply it. Hydration and save acknowledgements read persisted events. A batch is
+one committed change, and historical milestone receipts must not be converted into
+fictional dated awards. Apply this migration before deploying the corresponding
+account reader. Existing milestone thresholds, receipts and settlement rules are
+unchanged.

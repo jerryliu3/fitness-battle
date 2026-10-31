@@ -159,6 +159,7 @@ function MarketView({ model }: { model: AnalyticsLabModel }) {
           ]}
         />
         <StandardLineChart
+          yAxisLabel="NAV (pts)"
           values={series.map((p) => p.nav)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
@@ -255,6 +256,7 @@ function VitalsView({ model }: { model: AnalyticsLabModel }) {
         </View>
 
         <StandardLineChart
+          yAxisLabel={`${vital.name} (${vital.unit})`}
           values={vital.series.map((p) => p.value)}
           selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
@@ -313,6 +315,7 @@ function SleepView({ model }: { model: AnalyticsLabModel }) {
           ]}
         />
         <StandardLineChart
+          yAxisLabel="Sleep score"
           values={nights.map((n) => n.score)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
@@ -372,6 +375,7 @@ function LoadView({ model }: { model: AnalyticsLabModel }) {
           ]}
         />
         <StandardLineChart
+          yAxisLabel="ACWR (ratio)"
           values={l.series.map((s) => Number(s.acwr.toFixed(2)))}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
@@ -397,6 +401,7 @@ function LoadView({ model }: { model: AnalyticsLabModel }) {
       <View style={f.card}>
         <SectionHeader title="Period Volume Burn-Up" />
         <StandardLineChart
+          yAxisLabel="Training (hrs)"
           values={l.series.map((s) => s.cumCurrentHours)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
@@ -437,6 +442,7 @@ function PerformanceView({ model }: { model: AnalyticsLabModel }) {
           ]}
         />
         <StandardLineChart
+          yAxisLabel="EF (m/min/bpm)"
           values={p.series.map((s) => Number(s.efficiencyFactor.toFixed(2)))}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
@@ -502,6 +508,7 @@ function CombinedView({ model }: { model: AnalyticsLabModel }) {
           ]}
         />
         <StandardLineChart
+          yAxisLabel="Readiness (%)"
           values={cmb.series.map((s) => s.nextDayReadiness)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}

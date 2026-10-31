@@ -240,7 +240,18 @@ export interface PeriodResult {
 /** Display preference for distance. Default US customary (miles). */
 export type UnitSystem = "us" | "metric";
 
+export interface EffortScoreEvent {
+  id: string;
+  sport: SportId;
+  track: ScoreTrack;
+  occurredAt: string;
+  scoreBefore: number;
+  scoreAfter: number;
+}
+
 export interface CompeteState {
+  /** Read-only server history of actual committed score changes. */
+  effortScoreEvents?: EffortScoreEvent[];
   /** Transient configured-account guard; unresolved rosters cannot be locally settled. */
   requiresCanonicalFields?: boolean;
   /** Durable qualifying session receipts, including sessions beyond the activity load window. */

@@ -3,10 +3,10 @@ import { freshState } from "@fitness-battle/shared";
 vi.mock("@/lib/auth/request-user", () => ({ resolveRequestUserId: vi.fn() }));
 vi.mock("@/lib/supabase/request", () => ({ createRequestClient: vi.fn() }));
 vi.mock("@/lib/competition-authority", () => ({ competitionAuthorityDatabase: () => ({}) }));
-vi.mock("@/lib/compete-persist", () => ({ loadCompeteAccount: vi.fn(), persistCompeteAccount: vi.fn(), hydrateFieldBoard: vi.fn(), settleAccountFields: vi.fn(), reconcileAccountSettlement: vi.fn() }));
+vi.mock("@/lib/compete-persist", () => ({ loadCompeteAccount: vi.fn(), loadEffortScoreEvents: vi.fn().mockResolvedValue([]), persistCompeteAccount: vi.fn(), hydrateFieldBoard: vi.fn(), settleAccountFields: vi.fn(), reconcileAccountSettlement: vi.fn() }));
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import { createRequestClient } from "@/lib/supabase/request";
-import { loadCompeteAccount, persistCompeteAccount, settleAccountFields, reconcileAccountSettlement } from "@/lib/compete-persist";
+import { loadEffortScoreEvents, loadCompeteAccount, persistCompeteAccount, settleAccountFields, reconcileAccountSettlement } from "@/lib/compete-persist";
 import { GET, PUT } from "./route";
 function request(extra: object) { return new Request("https://test.local/api/compete", { method: "PUT", body: JSON.stringify({ accountId: "athlete", state: freshState(), ...extra }) }); }
 beforeEach(() => {
@@ -50,4 +50,18 @@ it("does not return an uncommitted rollover as an authoritative account snapshot
  const response = await GET(new Request("https://test.local/api/compete"));
  expect(response.status).toBe(503);
  expect(await response.json()).toEqual({ error: "account_not_saved" });
+});
+
+it("returns newly committed score events with the save acknowledgement", async () => {
+ const events = [{ id: "1", sport: "running" as const, track: "open" as const, occurredAt: new Date().toISOString(), scoreBefore: 1000, scoreAfter: 1001 }];
+ vi.mocked(loadEffortScoreEvents).mockResolvedValueOnce(events);
+ const response = await PUT(request({ updatedAt: "base-version" }));
+ expect(response.status).toBe(200);
+ expect((await response.json()).state.effortScoreEvents).toEqual(events);
+});
+it("does not report a committed save as failed when the history reread fails", async () => {
+ vi.mocked(loadEffortScoreEvents).mockRejectedValueOnce(new Error("score_history_unavailable"));
+ const response = await PUT(request({ updatedAt: "base-version" }));
+ expect(response.status).toBe(200);
+ expect(await response.json()).toMatchObject({ persisted: true, updatedAt: "new-version" });
 });
