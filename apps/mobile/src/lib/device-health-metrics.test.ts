@@ -74,3 +74,15 @@ describe("device health metrics", () => {
     ]);
   });
 });
+
+ it("retains overlapping awake records once without adding them to asleep duration", () => {
+ const sourceId="watch";
+ const records=[
+ {value:"ASLEEP_CORE",startDate:"2026-10-30T02:00:00Z",endDate:"2026-10-30T05:00:00Z",sourceId},
+ {value:"AWAKE",startDate:"2026-10-30T05:00:00Z",endDate:"2026-10-30T05:30:00Z",sourceId},
+ {value:"AWAKE",startDate:"2026-10-30T05:10:00Z",endDate:"2026-10-30T05:30:00Z",sourceId},
+ {value:"ASLEEP_REM",startDate:"2026-10-30T05:30:00Z",endDate:"2026-10-30T09:00:00Z",sourceId},
+ ];
+ expect(appleSleepNights(records)).toMatchObject([{durationMin:390,awakeMin:30}]);
+ expect(appleSleepNights(records.filter(r=>r.value==="AWAKE"))).toEqual([]);
+ });
