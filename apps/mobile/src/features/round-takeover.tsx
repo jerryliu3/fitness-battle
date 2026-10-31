@@ -157,7 +157,7 @@ function WeekChart({ state, result, delay }: { state: CompeteState; result: Peri
     animation.start();
     return () => animation.stop();
   }, [draw, delay, reduced]);
-  const activities = state.activities.filter(a => a.sport === result.sport && countsOnTrack(a, result.track) && a.startedAt >= result.periodStart && a.startedAt < result.periodEnd);
+  const activities = state.activities.filter(a => a.sport === result.sport && countsOnTrack(a, result.track) && Date.parse(a.startedAt) >= Date.parse(result.periodStart) && Date.parse(a.startedAt) < Date.parse(result.periodEnd));
   // Iterate calendar dates rather than 24-hour instants across Eastern DST changes.
   const first = dayKey(new Date(result.periodStart), APP_TIMEZONE);
   const last = dayKey(new Date(Date.parse(result.periodEnd) - 1), APP_TIMEZONE);

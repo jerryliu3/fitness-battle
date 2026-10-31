@@ -32,7 +32,7 @@ export function StandardLineChart({ values, xLabels, pointLabels, formatY = (v) 
  const xTicks: Array<{ x: number; label: string; anchor: "start" | "middle" | "end" }> = xLabels
    ? [
        { x: geo.xStart, label: xLabels[0], anchor: "start" },
-       { x: geo.xMid, label: xLabels[1], anchor: "middle" },
+       { x: geo.points[Math.floor((values.length - 1) / 2)]!.x, label: xLabels[1], anchor: "middle" },
        { x: geo.xEnd, label: xLabels[2], anchor: "end" },
      ]
    : values.length === 1
@@ -44,7 +44,7 @@ export function StandardLineChart({ values, xLabels, pointLabels, formatY = (v) 
          ]
        : [
            { x: geo.xStart, label: pointLabels?.[0] ?? "1", anchor: "start" },
-           { x: geo.xMid, label: pointLabels?.[Math.floor((values.length - 1) / 2)] ?? String(Math.floor((values.length - 1) / 2) + 1), anchor: "middle" },
+           { x: geo.points[Math.floor((values.length - 1) / 2)]!.x, label: pointLabels?.[Math.floor((values.length - 1) / 2)] ?? String(Math.floor((values.length - 1) / 2) + 1), anchor: "middle" },
            { x: geo.xEnd, label: pointLabels?.at(-1) ?? String(values.length), anchor: "end" },
          ];
  return <ChartScrubber hideSummary selectedPointId={selectedIdx === undefined ? undefined : String(selectedIdx)} points={points} width={340} height={height} plotTop={geo.yTop} plotBottom={geo.yBottom} label={ariaLabel ?? accessibilityLabel ?? "Daily trend"} onSelect={id => onSelectIdx?.(Number(id))}>
