@@ -1,5 +1,5 @@
 import { serverEnv } from "@/lib/env";
-import { trackerRedirectForRequest } from "@/lib/oauth-callback";
+import { trackerRedirectForRequest, trackerConnectFailure } from "@/lib/oauth-callback";
 import { resolveSessionUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider } from "@/lib/fitness";
 import { resolveOAuthCallbackUserId } from "@/lib/oauth-state";
@@ -45,8 +45,8 @@ export function oauthCodeCallback(providerId: "whoop" | "oura") {
       if (providerId === "whoop") await getServerFitnessProvider("whoop").completeOAuth(userId, code);
       else await getServerFitnessProvider("oura").completeOAuth(userId, code);
       return trackerRedirectForRequest(request, providerId, "connected");
-    } catch {
-      return trackerRedirectForRequest(request, providerId, "error");
+    } catch (error) {
+      return trackerRedirectForRequest(request, providerId, trackerConnectFailure(error));
     }
   };
 }

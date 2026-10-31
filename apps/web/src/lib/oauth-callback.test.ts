@@ -1,6 +1,6 @@
 import { signOAuthState } from "./oauth-state";
 import { describe, expect, it } from "vitest";
-import { trackerRedirect, trackerRedirectForRequest } from "./oauth-callback";
+import { trackerConnectFailure, trackerRedirect, trackerRedirectForRequest } from "./oauth-callback";
 
 describe("trackerRedirect", () => {
   it("returns a path-style deep link and web fallback", async () => {
@@ -28,4 +28,11 @@ it("launches the app only for authenticated mobile state", async () => {
   expect(await response.text()).toContain("provider=garmin&panel=connections");
   const forged = trackerRedirectForRequest(new Request("https://example.com/api/fitness/garmin/callback?state=forged"), "garmin", "error");
   expect(forged.status).toBe(303);
+});
+
+it("returns a specific outcome for an account ownership conflict", () => {
+  expect(trackerConnectFailure(new Error("provider_account_already_linked"))).toBe("already_linked");
+  expect(trackerConnectFailure(new Error("network failure"))).toBe("error");
+  const response = trackerRedirect("https://example.com", "garmin", "already_linked");
+  expect(response.headers.get("location")).toContain("tracker=already_linked&provider=garmin");
 });

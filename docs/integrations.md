@@ -138,4 +138,4 @@ OAuth callback routing uses the verified state channel: session/web requests ret
 
 ## Provider account ownership
 
-Cloud consent binds the provider's external user ID to the authenticated Overtaek user in signed OAuth state; it never matches emails. A provider account may be owned by only one Overtaek account through the token-storage RPC. Existing ambiguous legacy mappings resolve to no user, keeping pushed jobs queued for explicit ownership resolution. Reconnecting while signed into another app account does not implicitly transfer the provider account or its imported activities.
+Cloud consent binds the provider's external user ID to the authenticated Overtaek user in signed OAuth state; it never matches emails. A provider account may be owned by only one Overtaek account through the token-storage RPC. Existing legacy duplicate mappings retain the previous LIMIT 1 lookup; they are not deduplicated automatically. Reconnecting while signed into another app account does not implicitly transfer the provider account or its imported activities.

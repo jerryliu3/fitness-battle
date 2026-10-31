@@ -42,6 +42,11 @@ describe("outcomeFromReturnUrl", () => {
     ).toEqual({ tracker: "connected", provider: "strava" });
   });
 
+  it("recognizes an account ownership conflict", () => {
+    expect(outcomeFromReturnUrl("overtaek:///you?tracker=already_linked&provider=garmin"))
+      .toEqual({ tracker: "already_linked", provider: "garmin" });
+  });
+
   it("ignores unknown outcomes", () => {
     expect(outcomeFromReturnUrl("overtaek:///you?tracker=weird&provider=oura")).toEqual({
       tracker: undefined,

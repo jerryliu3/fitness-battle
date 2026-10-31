@@ -1,5 +1,5 @@
 import { serverEnv } from "@/lib/env";
-import { trackerRedirectForRequest } from "@/lib/oauth-callback";
+import { trackerRedirectForRequest, trackerConnectFailure } from "@/lib/oauth-callback";
 import { resolveSessionUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider } from "@/lib/fitness";
 import { garminPkceVerifier, resolveOAuthCallbackUserId } from "@/lib/oauth-state";
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   try {
     await getServerFitnessProvider("garmin").completeOAuth(userId, code, garminPkceVerifier(state));
     return trackerRedirectForRequest(request, "garmin", "connected");
-  } catch {
-    return trackerRedirectForRequest(request, "garmin", "error");
+  } catch (error) {
+    return trackerRedirectForRequest(request, "garmin", trackerConnectFailure(error));
   }
 }

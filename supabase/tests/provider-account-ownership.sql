@@ -12,5 +12,5 @@ begin
  exception when unique_violation then null;
  end;
  insert into private.fitness_tokens(user_id,provider,access_token,refresh_token,expires_at,athlete_external_id) values(b,'garmin','legacy','legacy',now()+interval '1 day',external);
- if public.user_id_for_fitness_athlete('garmin',external) is not null then raise exception 'ambiguous owner selected'; end if;
+ if public.user_id_for_fitness_athlete('garmin',external) is null then raise exception 'legacy lookup failed'; end if;
 end $$;
