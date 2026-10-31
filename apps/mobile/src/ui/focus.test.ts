@@ -7,7 +7,10 @@ const mock = vi.hoisted(() => ({
 }));
 vi.mock("react-native", () => ({
   Animated: {
+    add: () => 0,
     Value: class {
+      setValue() {}
+      stopAnimation() {}
       interpolate() {
         return 0;
       }
@@ -29,7 +32,9 @@ vi.mock("react-native", () => ({
     out: (value: unknown) => value,
     cubic: "cubic",
   },
-  useWindowDimensions: () => ({ height: 844 }),
+  PanResponder: { create: (handlers: unknown) => ({ panHandlers: handlers }) },
+  BackHandler: { addEventListener: () => ({ remove() {} }) },
+  useWindowDimensions: () => ({ height: 844, width: 390 }),
   KeyboardAvoidingView: "KeyboardAvoidingView",
   Modal: "Modal",
   Platform: { OS: "ios" },
@@ -46,7 +51,7 @@ vi.mock("react-native-safe-area-context", () => ({
 vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => false }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
-import { FocusSegments, FocusSheet } from "./focus";
+import { FocusSegments, FocusSheet, FocusSidePanel } from "./focus";
 let renderer: ReactTestRenderer;
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
@@ -100,4 +105,62 @@ describe("native detail sheet", () => {
     await act(async () => renderer.root.findByType("Modal" as never).props.onDismiss());
     expect(onClosed).toHaveBeenCalledTimes(1);
   });
+});
+
+
+it("dismisses sheets downward, yields to scrolled content and keeps accessibility dismissal", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const onClose = vi.fn();
+  await act(async () => { renderer = create(createElement(FocusSheet, { open: true, title: "Your activity", onClose })); });
+  const surface = renderer.root.findByType("SafeAreaView" as never);
+  const gesture = { dx: 0, dy: 120, vy: 0.2, numberActiveTouches: 1, y0: 700 };
+  const captures = (change = {}) => surface.props.onMoveShouldSetPanResponderCapture({}, { ...gesture, ...change });
+  expect(captures()).toBe(true);
+  expect(captures({ dx: 130 })).toBe(false);
+  expect(captures({ dy: -120 })).toBe(false);
+  expect(captures({ numberActiveTouches: 2 })).toBe(false);
+  const scroll = renderer.root.findByType("ScrollView" as never);
+  await act(async () => scroll.props.onScroll({ nativeEvent: { contentOffset: { y: 80 } } }));
+  expect(captures()).toBe(false);
+  expect(captures({ y0: 25 })).toBe(true);
+  await act(async () => surface.props.onPanResponderRelease({}, gesture));
+  expect(onClose).toHaveBeenCalledTimes(1);
+  await act(async () => surface.props.onAccessibilityEscape());
+  expect(onClose).toHaveBeenCalledTimes(2);
+  expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Close dialog")).toBe(false);
+});
+
+it("springs a short drag back, but dismisses a deliberate downward flick", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const onClose = vi.fn();
+  await act(async () => { renderer = create(createElement(FocusSheet, { open: true, title: "Activity", onClose })); });
+  const surface = renderer.root.findByType("SafeAreaView" as never);
+  await act(async () => surface.props.onPanResponderRelease({}, { dy: 20, vy: 0.1 }));
+  expect(onClose).not.toHaveBeenCalled();
+  expect(mock.animations.at(-1)).toMatchObject({ toValue: 0, duration: 180 });
+  await act(async () => surface.props.onPanResponderRelease({}, { dy: 30, vy: 1 }));
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+it("dismisses side panels from their header or leading edge without stealing chart swipes", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const onClose = vi.fn();
+  await act(async () => { renderer = create(createElement(FocusSidePanel, { open: true, title: "Preferences", onClose })); });
+  const surface = renderer.root.findAllByType("AnimatedView" as never).find(node => node.props.onPanResponderRelease)!;
+  const gesture = { dx: 120, dy: 0, vx: .2, numberActiveTouches: 1, x0: 10, y0: 400 };
+  expect(surface.props.onMoveShouldSetPanResponderCapture({}, gesture)).toBe(true);
+  expect(surface.props.onMoveShouldSetPanResponderCapture({}, { ...gesture, x0: 150 })).toBe(false);
+  expect(surface.props.onMoveShouldSetPanResponderCapture({}, { ...gesture, x0: 150, y0: 60 })).toBe(true);
+  await act(async () => surface.props.onPanResponderRelease({}, gesture));
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+
+it("keeps full-screen map drags inside the map and permits header dismissal", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  await act(async () => { renderer = create(createElement(FocusSheet, { open: true, title: "Your route", onClose: vi.fn(), fullScreen: true })); });
+  const surface = renderer.root.findByType("SafeAreaView" as never);
+  const gesture = { dx: 0, dy: 120, numberActiveTouches: 1, y0: 400 };
+  expect(surface.props.onMoveShouldSetPanResponderCapture({}, gesture)).toBe(false);
+  expect(surface.props.onMoveShouldSetPanResponderCapture({}, { ...gesture, y0: 60 })).toBe(true);
 });

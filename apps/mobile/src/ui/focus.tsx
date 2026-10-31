@@ -21,6 +21,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { SHELL_COLORS as c, mobileSurfaces } from "../theme";
 import { useReducedMotion } from "./use-reduced-motion";
 import { IconButton } from "./icon-button";
+import { useDismissPan } from "./use-dismiss-pan";
 import { playCue } from "../lib/haptics";
 const AnimatedSafeAreaView = Animated.createAnimatedComponent(SafeAreaView);
 
@@ -41,7 +42,6 @@ export function FocusSheet({
   onClose,
   onClosed,
   children,
-  minimal = false,
   fullScreen = false,
 }: {
   open: boolean;
@@ -51,6 +51,7 @@ export function FocusSheet({
   /** Run a sheet handoff only after the native modal has dismissed. */
   onClosed?: () => void;
   children?: ReactNode;
+  /** Legacy callers may still pass this; all sheets now omit the close-button row. */
   minimal?: boolean;
   fullScreen?: boolean;
 }) {
@@ -65,9 +66,18 @@ export function FocusSheet({
   const progress = useRef(new Animated.Value(0)).current;
   const insets = useSafeInsets();
   const { height: windowHeight } = useWindowDimensions();
+  const scrollY = useRef(0);
+  const sheetHeight = useRef(windowHeight);
+  const { translation: dragY, panHandlers } = useDismissPan({
+    axis: "y", open, extent: windowHeight, reduced: reduce, onClose,
+    canStart: gesture => {
+      const onHeader = gesture.y0 < windowHeight - sheetHeight.current + (fullScreen ? insets.top + 64 : 64);
+      return onHeader || (!fullScreen && scrollY.current <= 0);
+    },
+  });
   const maxSheetHeight = fullScreen
     ? "100%"
-    : Math.max(200, windowHeight - Math.max(insets.top, 24) - 24);
+    : Math.max(200, Math.min(windowHeight * 0.85, windowHeight - Math.max(insets.top, 24) - 24));
   useEffect(() => {
     if (open) void playCue("light");
   }, [open]);
@@ -117,6 +127,9 @@ export function FocusSheet({
           />
         </Animated.View>
         <AnimatedSafeAreaView
+          {...panHandlers}
+          onLayout={event => { sheetHeight.current = event.nativeEvent.layout.height; }}
+          onAccessibilityEscape={onClose}
           edges={fullScreen ? ["top", "bottom"] : ["bottom"]}
           style={[
             f.sheet,
@@ -125,28 +138,28 @@ export function FocusSheet({
             {
               transform: [
                 {
-                  translateY: progress.interpolate({
+                  translateY: Animated.add(dragY, progress.interpolate({
                     inputRange: [0, 1],
                     outputRange: [windowHeight, 0],
-                  }),
+                  })),
                 },
               ],
             },
           ]}
           accessibilityViewIsModal
         >
-          {!fullScreen && <View style={f.handle} />}
+          {!fullScreen && <View style={f.sheetGrip} accessible accessibilityRole="button"
+            hitSlop={10} accessibilityLabel="Dismiss sheet" accessibilityHint="Swipe down or double tap to dismiss"
+            onAccessibilityTap={onClose}><View style={f.handle} /></View>}
           {fullScreen ? <View style={[f.row, { paddingHorizontal: 22, paddingVertical: 8 }]}>
             <IconButton icon="back" label="Return to previous screen" onPress={onClose} />
             <AppText role="heading" accessibilityRole="header" style={{ flex: 1, textAlign: "center" }}>{content.current.title}</AppText>
             <View style={{ width: 44 }} />
-          </View> : !minimal && <View style={f.sheetHead}>
-            <View />
-            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close dialog" style={f.close}>
-              <AppText role="label">×</AppText>
-            </Pressable>
-          </View>}
+          </View> : null}
           <ScrollView
+            style={fullScreen ? { flex: 1 } : { flexGrow: 0, flexShrink: 1 }}
+            onScroll={event => { scrollY.current = event.nativeEvent.contentOffset.y; }}
+            scrollEventThrottle={16}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={f.sheetBody}
           >
@@ -181,6 +194,11 @@ export function FocusSidePanel({
   const progress = useRef(new Animated.Value(0)).current;
   const { width: windowWidth } = useWindowDimensions();
   const panelWidth = Math.min(windowWidth, 440);
+  const { translation: dragX, panHandlers } = useDismissPan({
+    axis: "x", open, extent: panelWidth, reduced: reduce, onClose,
+    // Header and leading edge dismiss; horizontal charts and controls keep their gestures.
+    canStart: gesture => gesture.x0 <= windowWidth - panelWidth + 32 || gesture.y0 <= Math.max(insets.top, 16) + 68,
+  });
 
   useEffect(() => {
     if (open) void playCue("light");
@@ -244,6 +262,8 @@ export function FocusSidePanel({
           />
         </Animated.View>
         <Animated.View
+          {...panHandlers}
+          onAccessibilityEscape={onClose}
           style={{
             width: panelWidth,
             height: "100%",
@@ -257,10 +277,10 @@ export function FocusSidePanel({
             elevation: 16,
             transform: [
               {
-                translateX: progress.interpolate({
+                translateX: Animated.add(dragX, progress.interpolate({
                   inputRange: [0, 1],
                   outputRange: [panelWidth, 0],
-                }),
+                })),
               },
             ],
           }}
@@ -651,29 +671,15 @@ export const f = StyleSheet.create({
     backgroundColor: c.paper,
     paddingTop: 10,
   },
+  sheetGrip: { height: 24, alignItems: "center", justifyContent: "flex-start" },
   handle: {
     alignSelf: "center",
     width: 35,
     height: 4,
     borderRadius: 4,
     backgroundColor: c.line,
-    marginBottom: 13,
   },
-  sheetHead: {
-    paddingHorizontal: 24,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  sheetBody: { padding: 24, paddingTop: 10, paddingBottom: 35, gap: 18 },
-  close: {
-    height: 44,
-    width: 44,
-    borderRadius: 18,
-    backgroundColor: c.card,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  sheetBody: { padding: 24, paddingTop: 0, paddingBottom: 24, gap: 18 },
   chip: {
     paddingVertical: 12,
     paddingHorizontal: 16,

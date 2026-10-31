@@ -596,3 +596,16 @@ visible while the trace draws and the panel fades in. Queued native registration
 show a live HH:MM:SS countdown beside their scheduled start, including sleep.
 Native geographic replay follows frame positions directly rather than restarting
 camera flights on each update; explicit athlete selection retains its flight.
+
+
+### Native sheet dismissal — October 30
+
+Shared native bottom sheets dismiss with a downward drag from the grip/header or
+from content at scroll position zero. Scrolled content retains vertical scrolling;
+short drags return to rest and deliberate downward flicks dismiss. Full-screen route
+sheets limit dismissal to the header to preserve map gestures. Side panels dismiss
+rightward from their header or leading edge. Preserve backdrop tap, system Back and
+accessibility escape, plus content through the existing dismissal/handoff lifecycle.
+Bottom sheets omit the X row and size to their content up to 85% of the viewport, respecting the top safe area;
+Your activity uses this shorter layout. Centered confirmation/picker dialogs and
+required onboarding/result takeovers keep their own explicit actions.
