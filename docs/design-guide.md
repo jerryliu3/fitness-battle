@@ -44,6 +44,15 @@ and period navigation. Include recorded zero buckets in the average and exclude
 future buckets from both inspection and the average. Training mix is deferred.
 See the [source review](reviews/chart-system/reference-study.md).
 
+Sync receipts use one “Sync completed” heading and keep the sample-preview
+notice when applicable. Activity metadata uses two columns of labeled values,
+each above a thin grey track with a teal magnitude fill. Compare each metric
+with its maximum across the previous 10 counted activities in the same sport,
+within 90 days before that session; cap fill at 100%. Missing comparison history
+leaves the track empty, and missing measurements omit the metric. These bars
+describe recorded values, not fitness or competition credit. GPS/Open badges
+are omitted from this receipt.
+
 The palette is defined in `packages/shared/src/shell.ts`, consumed by native `src/theme.ts` and mirrored in web `features/focus/club.css` and HeroUI variables. Legacy plum/tennis keys remain compatibility aliases.
 
 | Semantic role | Value | Usage |

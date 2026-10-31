@@ -38,6 +38,7 @@ export * from "./compete-carousel";
 export * from "./field-navigation";
 
 export * from "./sync-review";
+export * from "./sync-review-metrics";
 
 export * from "./integration-icons";
 

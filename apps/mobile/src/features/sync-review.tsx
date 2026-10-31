@@ -3,7 +3,7 @@ import { textStyle } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type ScrollViewInstance } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { APP_TIMEZONE, clubDuration, formatVolume, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
+import { APP_TIMEZONE, syncReviewMetrics, clubDuration, formatVolume, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { FocusButton, f } from "../ui/focus";
 import { ActivityRoute } from "../ui/activity-route";
 import { RouteStaticPreview } from "../ui/route-static-preview";
@@ -22,8 +22,8 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
   useEffect(resetScroll, [receipt ? "review" : moment?.id]);
   return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "slide"} onRequestClose={close}>
     <SafeAreaProvider>{!receipt && moment ? <CompetitionMoment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, minHeight: 56 }}>
-        <Text style={textStyle("label")}>{receipt ? "Review your activities" : moment?.plan.hasOvertake ? "Your overtakes" : "Your field changed"}</Text>
+      <View style={{ flexDirection: "row", justifyContent: receipt ? "flex-end" : "space-between", alignItems: "center", paddingHorizontal: 20, minHeight: 56 }}>
+        {!receipt && <Text style={textStyle("label")}>{moment?.plan.hasOvertake ? "Your overtakes" : "Your field changed"}</Text>}
         {receipt && <Pressable accessibilityRole="button" accessibilityLabel="Apply activities and skip recap" onPress={close} style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}><Text style={textStyle("label")}>Skip</Text></Pressable>}
       </View>
       <ScrollView ref={scroll} contentContainerStyle={{ padding: 22, gap: 20, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
@@ -83,13 +83,13 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
     <ActivityRoute activity={activity} units={state.units}/>
     <Text style={textStyle("heading")}>{formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units)} · {clubDuration(activity.movingSec)}</Text>
     <Text style={textStyle("body")}>{new Date(activity.startedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: APP_TIMEZONE })}</Text>
-    <Text style={textStyle("caption")}>{activity.verified ? "GPS Tracked" : "Open activity"}{activity.avgHr ? ` · ${activity.avgHr} bpm average` : ""}{activity.elevationGainM != null ? ` · ${activity.elevationGainM} m elevation gain` : ""}</Text>
+    <ActivityMetricBars activity={activity} history={state.activities} units={state.units}/>
   </View>;
   return <View style={{ gap: 20, flex: 1 }}>
-    <Text style={f.kicker}>{receipt.preview ? "SAMPLE PREVIEW · NO COMPETITION CREDIT" : "SYNC COMPLETE · YOUR NEXT MOVE"}</Text>
-    <Text accessibilityRole="header" style={textStyle("display")}>Make it count.</Text>
+    {receipt.preview && <Text style={f.kicker}>SAMPLE PREVIEW · NO COMPETITION CREDIT</Text>}
+    <Text accessibilityRole="header" style={textStyle("display")}>Sync completed</Text>
     <Text style={f.massive}>{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</Text>
-    <Text style={textStyle("body")}>{selected.length} of {activities.length} activities selected. Review your effort, then slide to see what changed.</Text>
+    <Text style={textStyle("body")}>{selected.length} of {activities.length} activities selected.</Text>
     <View style={{ gap: 12 }}>
       <ScrollView
         horizontal
@@ -139,12 +139,9 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
                     justifyContent: "space-between",
                   }}
                 >
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <Text style={{ ...textStyle("caption"), color: c.tennis }}>
                       {sportById(a.sport).name.toUpperCase()}
-                    </Text>
-                    <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,0.6)" }}>
-                      {a.verified ? "GPS Tracked" : "Open activity"}
                     </Text>
                   </View>
                   <View style={{ gap: 2 }}>
@@ -212,37 +209,7 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
                   </Pressable>
                 </View>
 
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                  <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                    <Text style={{ ...textStyle("caption"), color: c.ink }}>
-                      {formatVolume(a.sport, a.distanceM, a.movingSec, state.units)}
-                    </Text>
-                  </View>
-                  <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                    <Text style={{ ...textStyle("caption"), color: c.ink }}>
-                      {clubDuration(a.movingSec)}
-                    </Text>
-                  </View>
-                  {a.avgHr ? (
-                    <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                      <Text style={{ ...textStyle("caption"), color: c.ink }}>
-                        {a.avgHr} bpm
-                      </Text>
-                    </View>
-                  ) : null}
-                  {a.elevationGainM != null && a.elevationGainM > 0 ? (
-                    <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                      <Text style={{ ...textStyle("caption"), color: c.ink }}>
-                        +{a.elevationGainM}m elev
-                      </Text>
-                    </View>
-                  ) : null}
-                  <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                    <Text style={{ ...textStyle("caption"), color: c.muted }}>
-                      {a.verified ? "GPS Tracked" : "Open"}
-                    </Text>
-                  </View>
-                </View>
+                <ActivityMetricBars activity={a} history={state.activities} units={state.units}/>
               </View>
             </View>
           );
@@ -284,5 +251,17 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
       </View>
       <Text style={[textStyle("caption"), { textAlign: "center" }]}>{receipt.preview ? "Preview only. No activities or points will be added." : "Your synced activities are saved safely."}</Text>
     </View>
+  </View>;
+}
+
+function ActivityMetricBars({ activity, history, units }: { activity: SyncReviewReceipt["activities"][number]; history: CompeteState["activities"]; units: CompeteState["units"] }) {
+  return <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16, paddingVertical: 6 }}>
+    {syncReviewMetrics(activity, history, units).map(metric => <View key={metric.id} accessible accessibilityLabel={`${metric.label}: ${metric.valueLabel}. ${metric.comparisonLabel}`} style={{ width: "47%", gap: 6 }}>
+      <Text style={{ ...textStyle("caption"), color: c.muted }}>{metric.label}</Text>
+      <Text style={{ ...textStyle("label"), color: c.ink }}>{metric.valueLabel}</Text>
+      <View style={{ height: 4, backgroundColor: c.line, overflow: "hidden" }}>
+        <View style={{ height: 4, width: `${(metric.fraction ?? 0) * 100}%`, backgroundColor: c.fieldTeal }}/>
+      </View>
+    </View>)}
   </View>;
 }
