@@ -117,6 +117,7 @@ function mergeFreshRemote(
           acknowledgedAt: r.acknowledgedAt ?? local.periodResults.find(row => row.id === r.id)?.acknowledgedAt ?? null,
         })),
       ],
+      effortScoreEvents: remote.effortScoreEvents ?? local.effortScoreEvents,
       effortMilestones: [
         ...(local.effortMilestones ?? []).filter(r => !authoritativeSports.has(r.sport)),
         ...(remote.effortMilestones ?? []).filter(r => authoritativeSports.has(r.sport)),

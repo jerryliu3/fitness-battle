@@ -41,3 +41,9 @@ describe("buildStandardChartGeometry", () => {
     expect(geo.corridorPath).toContain(" Z");
   });
 });
+
+it("places a rounded middle tick using the same Y scale as its value", () => {
+  const geo = buildStandardChartGeometry([.11, .98], 340, 151);
+  const expected = geo.yBottom - (geo.yMid - geo.yMin) / (geo.yMax - geo.yMin) * (geo.yBottom - geo.yTop);
+  expect(geo.yMidPos).toBe(expected);
+});

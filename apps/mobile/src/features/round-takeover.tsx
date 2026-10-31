@@ -157,14 +157,14 @@ function WeekChart({ state, result, delay }: { state: CompeteState; result: Peri
     animation.start();
     return () => animation.stop();
   }, [draw, delay, reduced]);
-  const activities = state.activities.filter(a => a.sport === result.sport && countsOnTrack(a, result.track) && Date.parse(a.startedAt) >= Date.parse(result.periodStart) && Date.parse(a.startedAt) < Date.parse(result.periodEnd));
+  const activities = state.activities.filter(a => a.sport === result.sport && countsOnTrack(a, result.track) && a.startedAt >= result.periodStart && a.startedAt < result.periodEnd);
   // Iterate calendar dates rather than 24-hour instants across Eastern DST changes.
   const first = dayKey(new Date(result.periodStart), APP_TIMEZONE);
   const last = dayKey(new Date(Date.parse(result.periodEnd) - 1), APP_TIMEZONE);
   const dates: string[] = [];
   for (let date = first; date <= last; date = new Date(Date.parse(`${date}T12:00:00Z`) + 86400000).toISOString().slice(0, 10)) dates.push(date);
   const labels = dates.map(date => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE }));
-  return activities.length ? <StandardLineChart showAxes showSummary formatAxisY={value => `${Math.round(value)}`} pointLabels={labels} formatY={value => `${Math.round(value)} min`} accessibilityLabel="Cumulative training minutes in the settled week" revealProgress={draw}
+  return activities.length ? <StandardLineChart yAxisLabel="Training (min)" showAxes showSummary formatAxisY={value => `${Math.round(value)}`} pointLabels={labels} formatY={value => `${Math.round(value)} min`} accessibilityLabel="Cumulative training minutes in the settled week" revealProgress={draw}
     values={dates.map(date => activities.filter(a => dayKey(new Date(a.startedAt), APP_TIMEZONE) <= date).reduce((sum, a) => sum + a.movingSec / 60, 0))}
     xLabels={[labels[0]!, labels[Math.floor((labels.length - 1) / 2)]!, labels.at(-1)!]} />
     : <AppText>Detailed activity history is unavailable for this archived week.</AppText>;

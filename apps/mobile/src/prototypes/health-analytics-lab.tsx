@@ -1000,7 +1000,7 @@ function MarketConceptRenderer({
             value: `NAV ${p.nav.toLocaleString()} pts (+${p.dividendPts} div · ${p.drawdownPct}% dd)`,
           }))}
         >
-          <Svg width="100%" height={180} viewBox={`0 0 ${W} ${H}`}>
+          <Svg preserveAspectRatio="none" width="100%" height={180} viewBox={`0 0 ${W} ${H}`}>
             {[0, 0.5, 1].map((frac) => {
               const y = T + frac * (B - T);
               const val = Math.round(maxV - frac * span);
@@ -1162,7 +1162,7 @@ function MarketConceptRenderer({
             value: `O ${cd.open} · H ${cd.high} · L ${cd.low} · C ${cd.close} (${cd.close >= cd.open ? "+" : ""}${cd.close - cd.open})`,
           }))}
         >
-          <Svg width="100%" height={185} viewBox={`0 0 ${W} ${H}`}>
+          <Svg preserveAspectRatio="none" width="100%" height={185} viewBox={`0 0 ${W} ${H}`}>
             {[0, 0.5, 1].map((frac) => {
               const y = T + frac * (B - T);
               const val = Math.round(maxHigh - frac * span);
@@ -1231,6 +1231,8 @@ function MarketConceptRenderer({
                 </G>
               );
             })}
+            <SvgText x={L - 5} y={137} textAnchor="end" fontSize={9} fill={c.muted}>{maxVol.toFixed(1)}h</SvgText>
+            <SvgText x={L - 5} y={166} textAnchor="end" fontSize={9} fill={c.muted}>0h</SvgText>
             <Line x1={L} x2={R} y1={166} y2={166} stroke={c.line} />
             <SvgText x={L} y={180} fontSize={9} fill={c.muted}>
               {candles[0]?.weekLabel}
@@ -1517,7 +1519,7 @@ function VitalsConceptRenderer({
         <Text style={f.small}>
           Autonomic State Plane (X = RHR Stability · Y = HRV Parasympathetic Tone)
         </Text>
-        <Svg width="100%" height={145} viewBox="0 0 340 145">
+        <Svg preserveAspectRatio="none" width="100%" height={145} viewBox="0 0 340 145">
           <Rect x={20} y={8} width={300} height={120} rx={10} fill={c.soft} />
           {/* Optimal top-right quadrant highlight */}
           <Rect
@@ -1528,6 +1530,7 @@ function VitalsConceptRenderer({
             rx={6}
             fill={c.statusSuccessSoft}
           />
+          {[-2, 0, 2].map(value => <G key={value}><SvgText x={170 + value * 60} y={140} textAnchor="middle" fontSize={9} fill={c.muted}>{value}σ</SvgText><SvgText x={16} y={71 - value * 24} textAnchor="end" fontSize={9} fill={c.muted}>{value}σ</SvgText></G>)}
           <Line x1={170} x2={170} y1={8} y2={128} stroke={c.line} strokeWidth={1.5} />
           <Line x1={20} x2={320} y1={68} y2={68} stroke={c.line} strokeWidth={1.5} />
           <SvgText x={28} y={24} fontSize={9} fill={c.muted}>
@@ -1622,7 +1625,7 @@ function VitalCorridorSvg({ vital }: { vital: VitalMetricModel }) {
           value: `${p.value} ${vital.unit}`,
         }))}
       >
-        <Svg width="100%" height={155} viewBox={`0 0 ${W} ${H}`}>
+        <Svg preserveAspectRatio="none" width="100%" height={155} viewBox={`0 0 ${W} ${H}`}>
           {/* Shaded 60-day Personal Normal Corridor */}
           <Rect
             x={L}
@@ -1835,7 +1838,8 @@ function SleepConceptRenderer({
             value: `${formatMinutesAsHoursMins(n.durationMin)} · Score ${n.score} (${n.restorativePct}% restorative)`,
           }))}
         >
-          <Svg width="100%" height={165} viewBox={`0 0 ${W} ${H}`}>
+          <Svg preserveAspectRatio="none" width="100%" height={165} viewBox={`0 0 ${W} ${H}`}>
+            {[0, 240].map(minutes => <SvgText key={minutes} x={L - 4} y={B - minutes / maxMin * (B - T) + 3} textAnchor="end" fontSize={9} fill={c.muted}>{minutes / 60}h</SvgText>)}
             <Line
               x1={L}
               x2={R}
@@ -1938,7 +1942,7 @@ function SleepConceptRenderer({
           Sleep Debt: {sl.cumulativeDebtMin}m
         </Text>
       </View>
-      <Svg width="100%" height={150} viewBox={`0 0 ${W} ${H}`}>
+      <Svg preserveAspectRatio="none" width="100%" height={150} viewBox={`0 0 ${W} ${H}`}>
         <Line
           x1={L}
           x2={R}
@@ -2090,7 +2094,8 @@ function LoadConceptRenderer({
             value: `${p.cumCurrentHours}h cumulative (${(p.cumCurrentHours - p.cumGhostHours) >= 0 ? "+" : ""}${(p.cumCurrentHours - p.cumGhostHours).toFixed(1)}h vs ghost)`,
           }))}
         >
-          <Svg width="100%" height={160} viewBox={`0 0 ${W} ${H}`}>
+          <Svg preserveAspectRatio="none" width="100%" height={160} viewBox={`0 0 ${W} ${H}`}>
+            <NumericReferences left={L} right={R} top={T} bottom={B} max={maxCum} unit="Training (hrs)"/>
             <Line x1={L} x2={R} y1={B} y2={B} stroke={c.line} />
             <Polyline
               points={ghostLine}
@@ -2197,7 +2202,8 @@ function LoadConceptRenderer({
         </View>
 
         {timeLens !== "point" ? (
-          <Svg width="100%" height={155} viewBox={`0 0 ${W} ${H}`}>
+          <Svg preserveAspectRatio="none" width="100%" height={155} viewBox={`0 0 ${W} ${H}`}>
+            <NumericReferences left={L} right={R} top={T} bottom={B} max={maxL} unit="Load"/>
             <Line x1={L} x2={R} y1={B} y2={B} stroke={c.line} />
             <Polyline
               points={chronicPts}
@@ -2212,7 +2218,7 @@ function LoadConceptRenderer({
               strokeWidth={2.5}
             />
             <SvgText x={L} y={146} fontSize={9} fill={c.muted}>
-              7D Acute vs 28D Chronic Load · Monotony {ld.monotonyScore}
+              {pts[0]?.label}
             </SvgText>
           </Svg>
         ) : null}
@@ -2237,7 +2243,8 @@ function LoadConceptRenderer({
 
   return (
     <View style={{ gap: 8 }}>
-      <Svg width="100%" height={155} viewBox={`0 0 ${W} ${H}`}>
+      <Svg preserveAspectRatio="none" width="100%" height={155} viewBox={`0 0 ${W} ${H}`}>
+            <NumericReferences left={L} right={R} top={T} bottom={B} max={maxHrs} unit="Training (hrs)"/>
         <Line x1={L} x2={R} y1={B} y2={B} stroke={c.line} />
         {pts.map((p, i) => {
           const x = toX(i);
@@ -2358,7 +2365,8 @@ function PerformanceConceptRenderer({
             value: `EF ${p.efficiencyFactor} m/min/bpm`,
           }))}
         >
-          <Svg width="100%" height={155} viewBox={`0 0 ${W} ${H}`}>
+          <Svg preserveAspectRatio="none" width="100%" height={155} viewBox={`0 0 ${W} ${H}`}>
+            <NumericReferences left={L} right={R} top={T} bottom={B} min={minEf} max={maxEf} unit="EF (m/min/bpm)" format={v => v.toFixed(2)}/>
             <Line x1={L} x2={R} y1={B} y2={B} stroke={c.line} />
             <Polyline
               points={efLine}
@@ -2511,7 +2519,8 @@ function CombinedConceptRenderer({
             value: `Strain ${p.strainScore} → Readiness ${p.nextDayReadiness}%`,
           }))}
         >
-          <Svg width="100%" height={165} viewBox={`0 0 ${W} ${H}`}>
+          <Svg preserveAspectRatio="none" width="100%" height={165} viewBox={`0 0 ${W} ${H}`}>
+            <NumericReferences left={L} right={R} top={T} bottom={B} min={30} max={100} unit="Readiness (%)" format={v => String(Math.round(v))}/>
             <Line x1={L} x2={R} y1={B} y2={B} stroke={c.line} />
             {pts.map((p, i) => {
               const x = toX(i);
@@ -2546,7 +2555,7 @@ function CombinedConceptRenderer({
               />
             ))}
             <SvgText x={L} y={150} fontSize={9} fill={c.muted}>
-              Bars = Daily Strain (0–21) · Line = Next-Morning Readiness (%)
+              {pts[0]?.label} — {pts.at(-1)?.label}
             </SvgText>
           </Svg>
         </ChartScrubber>
@@ -2619,6 +2628,19 @@ function CombinedConceptRenderer({
       ) : null}
     </View>
   );
+}
+
+/** Minimal numeric references for the custom analytics plots. */
+function NumericReferences({ left, right, top, bottom, min = 0, max, unit, format = (v: number) => v.toFixed(1) }: {
+  left: number; right: number; top: number; bottom: number; min?: number; max: number; unit: string; format?: (value: number) => string;
+}) {
+  return <G>
+    <SvgText x={left} y={Math.max(9, top - 4)} fontSize={9} fill={c.muted}>{unit}</SvgText>
+    {[0, .5, 1].map(fraction => <G key={fraction}>
+      <Line x1={left} x2={right} y1={bottom - fraction * (bottom - top)} y2={bottom - fraction * (bottom - top)} stroke={c.line} strokeWidth={.5}/>
+      <SvgText x={left - 5} y={bottom - fraction * (bottom - top) + 3} textAnchor="end" fontSize={9} fill={c.muted}>{format(min + fraction * (max - min))}</SvgText>
+    </G>)}
+  </G>;
 }
 
 function LegendDot({ color, label }: { color: string; label: string }) {

@@ -52,6 +52,7 @@ export function RecordChart({
         height={190}
         accessibilityLabel="Personal record timeline, lower time is faster"
       >
+        <ChartText x={chart.left} y={12} fill={clubColors.muted}>Finish time</ChartText>
         {chart.ticks.map((t) => (
           <G key={t.seconds}>
             <Line

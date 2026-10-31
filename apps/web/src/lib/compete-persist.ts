@@ -248,6 +248,7 @@ export async function loadCompeteAccount(
     dailyHealthResult,
     { data: connectionRows },
     milestoneResult,
+    effortScoreEvents,
     attempts,
   ] = await Promise.all([
     db
@@ -286,6 +287,7 @@ export async function loadCompeteAccount(
     db.from("daily_health_readings").select("*").eq("user_id", userId).order("day", { ascending: false }).limit(365),
     db.from("fitness_connections").select("provider, status").eq("user_id", userId),
     db.from("effort_milestones").select("*").eq("user_id", userId).order("period_start", { ascending: false }).limit(1000),
+    loadEffortScoreEvents(db, userId),
     loadAllRecordAttempts(db, userId),
   ]);
 
@@ -538,6 +540,7 @@ export async function loadCompeteAccount(
     requiresCanonicalFields: true,
     periodResults,
     recordAttempts: attempts,
+    effortScoreEvents,
     effortMilestones: (milestoneResult.data ?? []).map((r) => ({ sport: r.sport, track: r.track, periodStart: new Date(r.period_start).toISOString(), periodEnd: new Date(r.period_end).toISOString(), step: Number(r.step), earned: Number(r.earned) })),
     enrollments,
     activities,
@@ -707,5 +710,18 @@ async function loadAllRecordAttempts(db: Db, userId: string): Promise<NonNullabl
     if (error) throw new Error("record_history_unavailable");
     attempts.push(...(data ?? []).map(r => ({activityId:r.activity_key,sport:r.sport,distanceId:r.distance_id,startedAt:r.started_at,seconds:Number(r.seconds),source:r.source,verified:r.verified})));
     if ((data?.length ?? 0) < 1000) return attempts;
+  }
+}
+
+/** Append-only score history; stable pagination keeps same-time events distinct. */
+export async function loadEffortScoreEvents(db: Db, userId: string): Promise<NonNullable<CompeteState["effortScoreEvents"]>> {
+  const events: NonNullable<CompeteState["effortScoreEvents"]> = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await db.from("effort_score_events").select("*").eq("user_id", userId)
+      .order("occurred_at").order("id").range(offset, offset + 999);
+    if (error) throw new Error("score_history_unavailable");
+    events.push(...(data ?? []).map(row => ({ id: String(row.id), sport: row.sport, track: row.track,
+      occurredAt: row.occurred_at, scoreBefore: Number(row.score_before), scoreAfter: Number(row.score_after) })));
+    if ((data?.length ?? 0) < 1000) return events;
   }
 }

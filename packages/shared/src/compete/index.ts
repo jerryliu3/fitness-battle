@@ -25,6 +25,7 @@ export {
   type ReadinessMark,
   type Duel,
   type CompeteState,
+  type EffortScoreEvent,
   type CrewBoardPin,
   type CrewBoardMember,
   type LinkStatus,

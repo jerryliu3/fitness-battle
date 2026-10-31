@@ -34,6 +34,7 @@ export function RecordChart({
         role="group"
         aria-label="Personal record timeline, lower time is faster"
       >
+        <ChartText x={chart.left} y={12} fill="var(--muted)">Finish time</ChartText>
         {chart.ticks.map((t) => (
           <g key={t.seconds}>
             <line

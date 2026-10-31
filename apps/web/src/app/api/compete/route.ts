@@ -11,11 +11,22 @@ import { resolveRequestUserId } from "@/lib/auth/request-user";
 import {
   settleAccountFields,
   loadCompeteAccount,
+  loadEffortScoreEvents,
   persistCompeteAccount,
 } from "@/lib/compete-persist";
 import { deriveCompetitionIntents } from "@/lib/competition-intents";
 import { competitionAuthorityDatabase } from "@/lib/competition-authority";
 import { createRequestClient } from "@/lib/supabase/request";
+
+/** History reload failure must not turn an already committed save into a failure. */
+async function committedScoreHistory(db: Parameters<typeof loadEffortScoreEvents>[0], userId: string, state: CompeteState): Promise<CompeteState> {
+  try {
+    return { ...state, effortScoreEvents: await loadEffortScoreEvents(db, userId) };
+  } catch (error) {
+    console.error("Committed score history reload failed:", error instanceof Error ? error.message : "unknown");
+    return state; // Keep the acknowledged score; the next account refresh retries history.
+  }
+}
 
 function sameLiveDocument(left: CompeteState, right: CompeteState): boolean {
   return (
@@ -24,7 +35,7 @@ function sameLiveDocument(left: CompeteState, right: CompeteState): boolean {
   );
 }
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<Response> {
   const userId = await resolveRequestUserId(request);
   if (!userId) {
     return NextResponse.json({ error: "authentication_required" }, { status: 401 });
@@ -64,6 +75,7 @@ export async function GET(request: Request) {
         loaded.updatedAt,
         { db: competitionAuthorityDatabase(), receipts, computedAt: now },
       );
+      state = await committedScoreHistory(supabase, userId, state);
       return NextResponse.json({ state, updatedAt, settled: true });
     } catch (error) {
       console.error("GET /api/compete commit failed:", error instanceof Error ? error.message : "unknown");
@@ -78,7 +90,7 @@ export async function GET(request: Request) {
   });
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: Request): Promise<Response> {
   const body = (await request.json().catch(() => null)) as {
     state?: unknown;
     accountId?: unknown;
@@ -133,6 +145,7 @@ export async function PUT(request: Request) {
 
   try {
     const updatedAt = await persistCompeteAccount(supabase, userId, live, body.updatedAt as string | null, { db: competitionAuthorityDatabase(), receipts, computedAt: now });
+    live = await committedScoreHistory(supabase, userId, live);
     return NextResponse.json({
       ok: true,
       persisted: true,

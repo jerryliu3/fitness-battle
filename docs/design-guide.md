@@ -30,7 +30,7 @@ The [Brand & Ember study](brand-study/brand-and-ember-studio.md) is available at
 ### Selected chart system — October 29
 
 Home's hours chart and Progress's Effort Score use **Open line**: an unfilled
-teal trace without a grid or ordinary axes, one date/range and large value above,
+teal trace with quiet numeric Y references and dated X ticks, one date/range and large value above,
 and compact 1W / 4W controls below (Effort Score also offers 1Y). Hover previews;
 tap pins and horizontal dragging inspects. The reading contains no session list,
 repeated date or explanatory paragraph. A dotted previous-week line remains on
@@ -644,3 +644,20 @@ Native sync feedback uses a dismissible toast above the page without taking layo
 ### Settled recap — October 31
 
 Settled recaps omit the standings list, retain a 360px map viewport, and identify podium finishers with names and available profile photos (initials when absent). Strength recaps use 2D. The recap training chart shows dated axes, cumulative minutes and scrubbable readings. Effort Score uses the same live endpoint indicator as Home.
+
+### Chart references and event detail — October 31
+
+Every full chart carries readable axis values, a metric/unit label and a dated or
+named horizontal reference. Keep references quiet and avoid dense grids. Native
+plot geometry and inspection overlays use the same full-width SVG transform;
+chart captions retain their typography size as the plot resizes. Advanced
+analytics, onboarding, training, record and recap charts follow this convention.
+
+Home 1W shows every eligible positive-time activity at its recorded start time,
+with equal-width Eastern days, including DST transitions. Cumulative lines stay
+flat between events and extend to the current reading. Prior-week comparison uses
+the same time placement; Home 4W retains daily totals. Effort Score uses actual
+server-committed score changes, with individual date/time readings in 1W. A sync
+batch that changes a score is one committed score event; do not invent separate
+activity award times within that transaction. Older settlement boundaries remain
+available, but earlier activity awards have no reconstructable timestamps.
