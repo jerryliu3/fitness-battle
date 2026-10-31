@@ -26,10 +26,11 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
     let instance: mapboxgl.Map;
     try { instance = new mapboxgl.Map({ container: container.current, accessToken: webEnv.mapboxAccessToken,
       style: "mapbox://styles/mapbox/standard", center: latest.current.scene.selected?.coordinate ?? course.coordinates[0], zoom: 16, pitch: 60, minZoom: 0, maxZoom: 20,
-      attributionControl: true, antialias: true }); }
+      attributionControl: false, logoPosition: "top-left", antialias: true }); }
     catch { setError("This browser could not start the 3D map."); return; }
     setReady(false);
     map.current = instance;
+    instance.addControl(new mapboxgl.AttributionControl({ compact: true }), "top-left");
     const read = (): CourseCameraPose => ({ center: instance.getCenter().toArray(), zoom: instance.getZoom(), pitch: instance.getPitch(), bearing: instance.getBearing() });
     const buildCamera = () => { camera.current = createCourseCamera({ read, fit: (bounds, duration) => { instance.fitBounds([bounds.sw, bounds.ne], { padding: 48, pitch: 0, bearing: 0, maxZoom: 20, duration }); }, stop: userGesture => { if (!userGesture) instance.stop(); }, move: (pose, duration) => instance.easeTo({ center: pose.center, zoom: pose.zoom, pitch: pose.pitch, bearing: pose.bearing, duration }) }, reduced.current); };
     buildCamera();
@@ -84,7 +85,7 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
       {extraControls}
       {control(following ? "Following" : "Recenter", () => { if (scene.selected) { camera.current?.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); onResumeFollow?.(); } })}
       {control(flat ? "3D chase" : "2D map", () => { camera.current?.dimension(flat ? "3d" : "2d"); setFlat(!flat); if (camera.current?.following && scene.selected) camera.current.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); })}
-      {control(spaced ? "Racers: spaced" : "Racers: together", () => setSpaced(value => !value))}
+      {control(spaced ? "Shared lane: off" : "Shared lane: on", () => setSpaced(value => !value))}
       {control("Race overview", () => { camera.current?.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); })}
       {control("Zoom in", () => camera.current?.zoom(1))}{control("Zoom out", () => camera.current?.zoom(-1))}
     </div>

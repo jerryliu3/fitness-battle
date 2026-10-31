@@ -56,13 +56,13 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   expect(button("See overview")).toBeDefined();
   expect(["Following", "Recenter", "Zoom in", "Zoom out", "2D map"].every(label => !button(label))).toBe(true);
   expect(toggle("Perspective view").props.value).toBe(true);
-  expect(toggle("Space racers").props.value).toBe(true);
+  expect(toggle("Shared lane").props.value).toBe(false);
   const together = renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape;
-  await act(async () => toggle("Space racers").props.onValueChange(false));
-  expect(toggle("Space racers").props.value).toBe(false);
+  await act(async () => toggle("Shared lane").props.onValueChange(true));
+  expect(toggle("Shared lane").props.value).toBe(true);
   expect(button("See overview")).toBeDefined();
   expect(renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape).not.toBe(together);
-  await act(async () => toggle("Space racers").props.onValueChange(true));
+  await act(async () => toggle("Shared lane").props.onValueChange(false));
   await act(async () => toggle("Perspective view").props.onValueChange(false));
   expect(toggle("Perspective view").props.value).toBe(false);
   expect(calls.setCamera.mock.lastCall![0]).toMatchObject({ centerCoordinate: marker.geometry.coordinates, pitch: 0 });
@@ -77,7 +77,7 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   expect(cards.find(card => card.props.anchor.x === 0)!.props.coordinate).toEqual(marker.geometry.coordinates);
   expect(cards.every(card => card.props.allowOverlap && card.props.allowZElevate === false)).toBe(true);
   const labels = renderer.root.findAllByType("AthletePennant" as never);
-  expect(labels.map(label => label.props.detail)).toEqual(["2nd · 0.6 km", "1st · 1.1 km"]);
+  expect(labels.map(label => label.props.detail)).toEqual(["2nd · 0.6 km", "1st · +0.5 km"]);
 
 });
 
