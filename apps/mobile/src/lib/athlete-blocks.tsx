@@ -1,5 +1,4 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AppState } from "react-native";
 import { useAuth } from "./auth";
 import { supabase } from "./supabase";
 
@@ -17,7 +16,11 @@ export function AthleteBlocksProvider({ children }: { children: ReactNode }) {
   const reload = useCallback(async () => {
     const attempt = ++sequence.current;
     if (!owner || offlineMode) { setSnapshot({ owner, blocks: [], ready: true, error: "" }); return; }
+    let deadline: ReturnType<typeof setTimeout> | undefined;
     try {
+      const expired = new Promise<never>((_, reject) => {
+        deadline = setTimeout(() => reject(new Error("Block list timed out")), 15000);
+      });
       const blocks: Block[] = [];
       const pageSize = 100;
       let after: string | null = null;
@@ -26,7 +29,7 @@ export function AthleteBlocksProvider({ children }: { children: ReactNode }) {
           .select("blocked_id, profiles!athlete_blocks_blocked_id_fkey(display_name)")
           .eq("blocker_id", owner).order("blocked_id").limit(pageSize);
         if (after) query = query.gt("blocked_id", after);
-        const { data, error } = await query;
+        const { data, error } = await Promise.race([query, expired]);
         if (current.current !== owner || sequence.current !== attempt) return;
         if (error) throw error;
         const rows = data ?? [];
@@ -40,18 +43,11 @@ export function AthleteBlocksProvider({ children }: { children: ReactNode }) {
       setSnapshot({ owner, blocks, ready: true, error: "" });
     } catch {
       if (current.current === owner && sequence.current === attempt) setSnapshot(previous => ({ owner, blocks: previous.owner === owner ? previous.blocks : [], ready: false, error: "Could not load blocked athletes. Check your connection and retry." }));
+    } finally {
+      clearTimeout(deadline);
     }
   }, [owner, offlineMode]);
   useEffect(() => { void reload(); }, [reload]);
-  useEffect(() => {
-    if (!owner || offlineMode) return;
-    const subscription = AppState.addEventListener("change", status => {
-      if (status !== "active") return;
-      setSnapshot(previous => ({ ...previous, ready: false, error: "" }));
-      void reload();
-    });
-    return () => subscription.remove();
-  }, [owner, offlineMode, reload]);
   const setBlocked = useCallback(async (id: string, blocked: boolean) => {
     if (!owner || offlineMode || id === owner) throw new Error("A live signed-in account is required.");
     const result = blocked
