@@ -37,8 +37,9 @@ describe("GPS geometry in imported files", () => {
     data.push(0); u32(100); u32(degrees(40)); u32(degrees(-74)); u16(2550);
     data.push(0x80 | 9); u32(degrees(40.01)); u32(degrees(-74.01)); u16(2600);
     data.push(0x80 | 10); u32(0x7fffffff); u32(0x7fffffff); u16(0xffff);
-    data.push(0x41, 0, 0); u16(18); data.push(5, 253, 4, 6, 2, 4, 6, 5, 1, 2, 8, 4, 6, 9, 4, 6);
-    data.push(1); u32(sessionTimestamp); u32(100); data.push(1); u32(20000); u32(100000);
+    data.push(0x80 | 31); u32(degrees(41)); u32(degrees(-74)); u16(2600);
+    data.push(0x41, 0, 0); u16(18); data.push(6, 253, 4, 6, 2, 4, 6, 5, 1, 2, 7, 4, 6, 8, 4, 6, 9, 4, 6);
+    data.push(1); u32(sessionTimestamp); u32(100); data.push(1); u32(20000); u32(20000); u32(100000);
     const bytes = new Uint8Array(14 + data.length + 2);
     bytes[0] = 14; bytes.set([46, 70, 73, 84], 8);
     new DataView(bytes.buffer).setUint32(4, data.length, true);
