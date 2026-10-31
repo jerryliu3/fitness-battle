@@ -21,7 +21,7 @@ import {
   type SportId,
   type SyncReviewReceipt,
 } from "@fitness-battle/shared";
-/** Account-scoped, memory-only recap. Closing applies it; restarting loads durable server ingest quietly. */
+/** Account-scoped, memory-only recap. Closing applies it; startup compares durable ingest with the account cache. */
 export function useSyncReviewGate(
   raw: (action: Action) => void,
   state: CompeteState | null,
@@ -159,17 +159,17 @@ export function useSyncReviewGate(
     blocked.current = actions.length > 0;
     setReceipt({ ...pending.current.receipt });
   };
-  const holdRemote = (next: CompeteState): CompeteState => {
+  const holdRemote = (next: CompeteState, known = current.current.state): CompeteState => {
     const c = current.current;
-    if (!c.state || pending.current) return next;
-    const activities = changedSyncActivities(next.activities, c.state.activities, competeNow(next)).filter(a => countsOnTrack(a, "open") && a.source !== "manual" && a.source !== "history");
+    if (!known || pending.current) return next;
+    const activities = changedSyncActivities(next.activities, known.activities, competeNow(next)).filter(a => countsOnTrack(a, "open") && a.source !== "manual" && a.source !== "history");
     if (!activities.length) return next;
     const actions: Action[] = [...new Set(activities.map(a => a.source))].filter((provider): provider is NonNullable<Action["provider"]> => provider !== "manual" && provider !== "history").map(provider => ({
       type: "apply-sync", provider, accountId: c.account ?? undefined, now: competeNow(next).toISOString(), activities: activities.filter(a => a.source === provider),
     }));
-    stage(activities, actions);
+    stage(activities, actions, undefined, next);
     const held = new Set(activities.map(a => a.id));
-    return { ...next, activities: [...next.activities.filter(a => !held.has(a.id)), ...c.state.activities.filter(a => held.has(a.id))] };
+    return { ...next, activities: [...next.activities.filter(a => !held.has(a.id)), ...known.activities.filter(a => held.has(a.id))] };
   };
   return {
     dispatch,

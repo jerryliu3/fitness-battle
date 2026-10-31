@@ -162,7 +162,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
 
   const [savedState, setState] = useState<CompeteState | null>(null);
   const syncReviewBlocked = useRef(false);
-  const holdRemoteRef = useRef<(next: CompeteState) => CompeteState>(next => next);
+  const holdRemoteRef = useRef<(next: CompeteState, known?: CompeteState) => CompeteState>(next => next);
   const loadedOwnerRef = useRef<string | null | undefined>(undefined);
   const state = loadedOwnerRef.current === owner ? savedState : null;
   const [returnGain, setReturnGain] = useState(0);
@@ -327,6 +327,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             );
           if (body.state !== null && !isCompeteState(body.state))
             throw new Error("invalid_snapshot");
+          const known = next;
           if (isCompeteState(body.state))
             next = applyRemoteSnapshot(
               next,
@@ -335,6 +336,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               // Hydrated drafts represent a pending whole-document save, including units.
               dirty || unitsUnsavedRef.current,
             );
+          // First install establishes a baseline; later launches review unseen imports.
+          if (hasCache && !dirty) next = holdRemoteRef.current(next, known);
           if (alive) {
             remoteLoaded = true;
             setStandingsStale(false);
