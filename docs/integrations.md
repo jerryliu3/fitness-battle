@@ -135,3 +135,7 @@ Onboarding uses the same live tracker authorization controls as Athlete. Draft s
 Use the secret as the final path segment because query-string preservation in Garmin endpoint configuration has not been verified. The previous query-key route remains compatible. Neither bare `/push` nor an incorrect secret is accepted. Verify the saved destination after reloading Garmin Tools, then confirm an actual inbox delivery.
 
 OAuth callback routing uses the verified state channel: session/web requests return directly to the web app, while bearer/mobile requests open the native scheme. Unverified state cannot initiate a native handoff. Native links include `panel=connections` to avoid an extra settings redirect in compatible older builds. A native crash still requires device crash diagnostics; server token-exchange success does not prove native UI success.
+
+## Provider account ownership
+
+Cloud consent binds the provider's external user ID to the authenticated Overtaek user in signed OAuth state; it never matches emails. A provider account may be owned by only one Overtaek account through the token-storage RPC. Existing ambiguous legacy mappings resolve to no user, keeping pushed jobs queued for explicit ownership resolution. Reconnecting while signed into another app account does not implicitly transfer the provider account or its imported activities.
