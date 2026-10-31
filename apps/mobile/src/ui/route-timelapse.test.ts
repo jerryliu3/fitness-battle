@@ -1,3 +1,5 @@
+const activity = vi.hoisted(() => ({ active: true }));
+vi.mock("./use-scene-active", () => ({ useSceneActive: () => activity.active }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -34,6 +36,8 @@ let renderer: ReactTestRenderer;
 
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
+  activity.active = true;
+  vi.useRealTimers();
   vi.clearAllMocks();
 });
 
@@ -83,4 +87,29 @@ describe("Mobile RouteTimelapse", () => {
 
     expect(onFinish).toHaveBeenCalledTimes(1);
   });
+});
+
+it("falls back when iOS terminates a loaded web-content process and resets readiness", async () => {
+  const onUnavailable = vi.fn();
+  const props = { coordinates: MARIN_HEADLANDS_ROUTE_COORDINATES, onUnavailable };
+  await act(async () => { renderer = create(createElement(RouteTimelapse, props)); });
+  const web = renderer.root.findByType("WebView" as never);
+  await act(async () => web.props.onMessage({ nativeEvent: { data: '{"type":"route-ready"}' } }));
+  mockInjectJavaScript.mockClear();
+  await act(async () => web.props.onContentProcessDidTerminate());
+  expect(onUnavailable).toHaveBeenCalledOnce();
+  await act(async () => renderer.update(createElement(RouteTimelapse, { ...props, accentColor: "red" })));
+  expect(mockInjectJavaScript).not.toHaveBeenCalled();
+});
+
+it("defers bridge injection while inactive and sends the latest route on return", async () => {
+  vi.useFakeTimers(); activity.active = false;
+  const fail = vi.fn(); const props = { coordinates: MARIN_HEADLANDS_ROUTE_COORDINATES, onUnavailable: fail };
+  await act(async () => { renderer = create(createElement(RouteTimelapse, props)); });
+  await act(async () => { vi.advanceTimersByTime(60_000); }); expect(fail).not.toHaveBeenCalled();
+  await act(async () => renderer.root.findByType("WebView" as never).props.onMessage({ nativeEvent: { data: '{"type":"route-ready"}' } }));
+  expect(mockInjectJavaScript).not.toHaveBeenCalled();
+  activity.active = true;
+  await act(async () => renderer.update(createElement(RouteTimelapse, props)));
+  expect(mockInjectJavaScript).toHaveBeenCalledOnce();
 });

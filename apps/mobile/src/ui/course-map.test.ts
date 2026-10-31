@@ -1,3 +1,5 @@
+const activity = vi.hoisted(() => ({ active: true }));
+vi.mock("./use-scene-active", () => ({ useSceneActive: () => activity.active }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn(), playPattern: vi.fn(() => vi.fn()) }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
@@ -15,7 +17,7 @@ vi.mock("../lib/env", () => ({ mobileEnv: { mapboxAccessToken: "public-test-toke
 vi.mock("@rnmapbox/maps", () => ({ default: { setAccessToken: vi.fn() }, MapView: "Map", Camera: "Camera", ShapeSource: "ShapeSource", LineLayer: "Line", CircleLayer: "Circle", MarkerView: "MarkerView", CameraGestureObserver: "Observer" }));
 import CourseMap from "./course-map";
 let renderer: ReactTestRenderer;
-afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); vi.clearAllMocks(); vi.unstubAllGlobals(); });
+afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); activity.active = true; vi.clearAllMocks(); vi.unstubAllGlobals(); });
 it("delegates native camera frames, pauses following on gestures, and flies from the observed position", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
@@ -181,4 +183,37 @@ it("frames both racers during slow motion and pulses only visible passed athlete
   expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBeCloseTo(17, 1);
   vi.restoreAllMocks();
   expect(renderer.root.findAllByType("MarkerView" as never)).toHaveLength(2);
+});
+
+it("defers native camera writes while inactive and follows the latest position on return", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
+  const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: .5 }], unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn() };
+  await act(async () => { renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "Camera" ? calls : null }); });
+  await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
+  calls.setCamera.mockClear(); activity.active = false;
+  const next = { ...props, lanes: [{ ...props.lanes[0]!, value: 1 }] };
+  await act(async () => renderer.update(createElement(CourseMap, next)));
+  expect(calls.setCamera).not.toHaveBeenCalled();
+  activity.active = true;
+  await act(async () => renderer.update(createElement(CourseMap, next)));
+  expect(calls.setCamera).toHaveBeenCalled();
+});
+it("cancels the retained replay camera loop on inactivity and restarts it on return", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const frames = new Map<number, () => void>(); let serial = 0;
+  vi.stubGlobal("requestAnimationFrame", (fn: () => void) => { frames.set(++serial, fn); return serial; });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
+  const props = { course: createRaceCourse("City", [[0, 0], [.02, 0]]), lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: .5 }], unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn(), replay: { nearestId: "you", focus: 0, passEffects: [] } as never };
+  await act(async () => { renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "Camera" ? calls : null }); });
+  await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
+  expect(frames.size).toBe(1); calls.setCamera.mockClear();
+  activity.active = false;
+  await act(async () => renderer.update(createElement(CourseMap, { ...props })));
+  expect(frames.size).toBe(0); expect(calls.setCamera).not.toHaveBeenCalled();
+  activity.active = true;
+  await act(async () => renderer.update(createElement(CourseMap, { ...props })));
+  expect(frames.size).toBe(1);
+  await act(async () => { const callback = [...frames.values()][0]!; frames.clear(); callback(); });
+  expect(calls.setCamera).toHaveBeenCalledOnce();
 });

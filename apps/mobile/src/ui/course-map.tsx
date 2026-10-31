@@ -1,3 +1,4 @@
+import { useSceneActive } from "./use-scene-active";
 import Svg, { G } from "react-native-svg";
 import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef } from "react";
@@ -17,6 +18,7 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   onReady?: () => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null;
   hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; overlaysHidden?: boolean;
 }) {
+  const active = useSceneActive();
   const [dismissed, setDismissed] = useState<string[]>([]);
   useEffect(() => { setDismissed([]); }, [course, cardSessionKey]);
   useEffect(() => { setDismissed(ids => ids.filter(id => id !== selectedId)); }, [selectedId, focusRequest]);
@@ -43,20 +45,20 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   const focus = () => { if (scene.selected) { controller.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); } };
   const lastFocus = useRef<{ course: RaceCourse; id: string; request: number; following: boolean; session?: string | number | boolean } | null>(null);
   useEffect(() => {
-    if (!ready || !scene.selected || replay) return;
+    if (!active || !ready || !scene.selected || replay) return;
     const previous = lastFocus.current;
     const explicit = !previous || previous.course !== course || previous.id !== selectedId || previous.request !== focusRequest || !previous.following || previous.session !== cardSessionKey;
     lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey };
     if (!followAthlete) return;
     controller.focus(course, scene.selected.metres, !explicit, scene.selected.lateralMetres);
-  }, [ready, controller, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres, replay]);
+  }, [active, ready, controller, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres, replay]);
   const replayTarget = useRef<CourseCameraPose | null>(null);
   replayTarget.current = replay && scene.selected
     ? courseReplayPose(course, scene.selected, scene.callouts.find(lane => lane.id === replay.nearestId), reduced ? 0 : replay.focus)
     : null;
   const replayActive = Boolean(replay);
   useEffect(() => {
-    if (!ready || !replayActive) return;
+    if (!active || !ready || !replayActive) return;
     // Keep one camera loop alive across rival changes and the final hold.
     // Native camera observations can lag, so interpolate our last commanded pose.
     let raf = 0, previous = Date.now();
@@ -79,13 +81,13 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [ready, course, replayActive, reduced]);
+  }, [active, ready, course, replayActive, reduced]);
   useEffect(() => {
-    if (!ready || !distanceTarget) return;
+    if (!active || !ready || !distanceTarget) return;
     const metres = raceEffortMetres(distanceTarget.value, unit);
     if (metres === null) return;
     controller.seek(course, metres);
-  }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request, controller]);
+  }, [active, ready, course, unit, distanceTarget?.value, distanceTarget?.request, controller]);
   return <View style={{ flex: 1, minHeight: 0 }}>
     <MapView accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled
       logoPosition={{ top: 8, left: 8 }} attributionPosition={{ top: 8, left: 100 }}

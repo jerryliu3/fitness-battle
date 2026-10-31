@@ -93,3 +93,16 @@ one committed change, and historical milestone receipts must not be converted in
 fictional dated awards. Apply this migration before deploying the corresponding
 account reader. Existing milestone thresholds, receipts and settlement rules are
 unchanged.
+
+### Native presentation lifecycle and crash investigation
+
+Retained scenes stop presentation clocks on both screen blur and app inactivity.
+Live chart halos use native view opacity/scale animation; do not drive repeating
+SVG props through JS Animated timers, which can repeatedly commit Fabric layout
+and walk retained scroll hierarchies. Automatic overtake playback counts active
+time only, cancels frames immediately on inactivity, and preserves its progress
+across resume. Geographic camera effects wait for an active, ready scene. WebView
+content-process termination resets bridge readiness and uses the existing
+unavailable fallback. These are rendering changes, not scoring or ingestion changes.
+See [the iOS crash investigation](reviews/ios-crash-audit-2026-10-31.md) for device
+evidence, confidence limits and the required release-device verification.

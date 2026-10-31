@@ -1,3 +1,4 @@
+import { startActivePlayback } from "../ui/active-playback";
 import { useCompetitionCourse } from "./use-competition-course";
 import { GeographicCourse } from "./geographic-course";
 import { useEffect, useRef, useState } from "react";
@@ -32,18 +33,18 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
   const [started, setStarted] = useState(autoStart);
   const [progress, setProgress] = useState(reduced ? 1 : 0);
   const previousCount = useRef(0), skipped = useRef(false), confirmed = useRef(false);
+  const stopPlayback = useRef<() => void>(() => {});
   const passedBy = !moment.plan.hasOvertake;
   const count = passedBy ? moment.plan.passedByIds?.length ?? 0 : moment.plan.overtakenIds.length;
   useEffect(() => {
     if (reduced) { setProgress(1); return; }
     if (skipped.current) return;
     if (!started || (viewDimension === "4d" && !sceneReady)) return;
-    let raf = 0;
     setProgress(0);
-    const start = Date.now(), duration = (4200 + count * 1150) * (embedded ? 1.5 : 1);
-    const tick = () => { if (skipped.current) return; const p = Math.min(1, (Date.now() - start) / duration); setProgress(p); if (p < 1) raf = requestAnimationFrame(tick); };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    const duration = (4200 + count * 1150) * (embedded ? 1.5 : 1);
+    const stop = startActivePlayback(duration, p => { if (!skipped.current) setProgress(p); });
+    stopPlayback.current = stop;
+    return stop;
   }, [moment.id, reduced, count, started, embedded, viewDimension, sceneReady]);
   const stopHaptics = useRef<() => void>(() => {});
   useEffect(() => () => stopHaptics.current(), [moment.id]);
@@ -76,7 +77,7 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
     {!reduced && !skipped.current && frame.passEffects.length > 0 && <View pointerEvents="none" style={{ position:"absolute", top:"45%", alignSelf:"center", opacity:Math.max(...frame.passEffects.map(pass => pass.strength)) }}><Text style={{...textStyle("hero"),color:c.tennis}}>+1</Text></View>}
     <View pointerEvents="box-none" style={{ position: "absolute", bottom: (embedded ? 0 : insets.bottom) + 16, left: 16, right: 16, alignItems: "center" }}>
       <View style={{ width: "100%", maxWidth: 420, gap: 12 }}>
-      <FocusButton label={!started && !reduced ? embedded ? "Watch an Overtake →" : "See my move →" : frame.done ? remaining > 1 ? "Continue →" : embedded ? "Replay Overtake →" : "Back to the app →" : "Skip animation"} onPress={() => !started && !reduced ? setStarted(true) : frame.done ? (() => { if (!confirmed.current) { confirmed.current = true; onConfirm(); } })() : (() => { skipped.current = true; stopHaptics.current(); setProgress(1); })()}/>
+      <FocusButton label={!started && !reduced ? embedded ? "Watch an Overtake →" : "See my move →" : frame.done ? remaining > 1 ? "Continue →" : embedded ? "Replay Overtake →" : "Back to the app →" : "Skip animation"} onPress={() => !started && !reduced ? setStarted(true) : frame.done ? (() => { if (!confirmed.current) { confirmed.current = true; onConfirm(); } })() : (() => { skipped.current = true; stopPlayback.current(); stopHaptics.current(); setProgress(1); })()}/>
       </View>
     </View>
   </View>;
