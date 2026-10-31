@@ -15,6 +15,7 @@ export function Sheet({
   preventAutoFocus = true,
   returnFocusTo,
   minimal = false,
+  hideTitle = false,
   fullScreen = false,
   scrollResetKey,
 }: {
@@ -24,6 +25,7 @@ export function Sheet({
   onClose: () => void;
   children?: ReactNode;
   minimal?: boolean;
+  hideTitle?: boolean;
   fullScreen?: boolean;
   scrollResetKey?: string;
   /** Stops mobile browsers from focusing the first field when the sheet opens. */
@@ -102,7 +104,7 @@ export function Sheet({
                 >
                   <div className="sheet-grab" aria-hidden="true" />
                   <div className="club-sheet-heading">
-                    <Dialog.Title ref={heading} tabIndex={-1} style={typographyStyle(fullScreen ? "heading" : "display")}>{title}</Dialog.Title>
+                    <Dialog.Title className={hideTitle ? "sr-only" : undefined} ref={heading} tabIndex={-1} style={typographyStyle(fullScreen ? "heading" : "display")}>{title}</Dialog.Title>
                     {!minimal && <Dialog.Close asChild><button type="button" className="club-sheet-dismiss" aria-label={fullScreen ? "Return to previous screen" : "Close dialog"}>{fullScreen ? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg> : "×"}</button></Dialog.Close>}
                   </div>
                   <Dialog.Description style={typographyStyle("body")}>{body}</Dialog.Description>

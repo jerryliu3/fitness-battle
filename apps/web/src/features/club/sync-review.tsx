@@ -2,7 +2,7 @@
 import { AppHeading } from "@/ui/section";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { APP_TIMEZONE, clubDuration, formatVolume, sportById, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment, type SyncReviewReceipt } from "@fitness-battle/shared";
+import { APP_TIMEZONE, syncReviewMetrics, clubDuration, formatVolume, sportById, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { Sheet } from "@/ui/sheet";
 import { ActivityRoute } from "@/components/routes/activity-route";
 import { CompetitionMoment as Moment } from "./competition-moment";
@@ -11,8 +11,8 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
   receipt: SyncReviewReceipt | null; state: CompeteState; debug?: boolean; moment?: CompetitionMoment | null; remaining?: number;
   onComplete: (selected?: readonly string[], quiet?: boolean) => unknown; onAcknowledge?: () => void;
 }) {
-  const title = receipt ? "Review your activities" : moment?.plan.hasOvertake ? "Your overtakes" : "Your field changed";
-  return <Sheet open title={title} body="" fullScreen minimal={!receipt} scrollResetKey={receipt ? "review" : moment?.id} onClose={() => { if (receipt) onComplete(undefined, true); }}>
+  const title = receipt ? "Sync completed" : moment?.plan.hasOvertake ? "Your overtakes" : "Your field changed";
+  return <Sheet open hideTitle={Boolean(receipt)} title={title} body="" fullScreen minimal={!receipt} scrollResetKey={receipt ? "review" : moment?.id} onClose={() => { if (receipt) onComplete(undefined, true); }}>
     {debug && receipt && <p className="fb-kicker" style={{ textAlign: "center", marginTop: 20 }}>DEBUG PREVIEW · LOCAL DATA ONLY</p>}
     {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete}/> : moment ? <Moment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : null}
   </Sheet>;
@@ -54,17 +54,18 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
     <ActivityRoute activity={activity} units={state.units}/>
     <div className="moment-result"><strong>{formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units)}</strong><span>{clubDuration(activity.movingSec)}</span></div>
     <p className="fb-copy">{new Date(activity.startedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: APP_TIMEZONE })}</p>
-    <p className="fb-note">{activity.verified ? "GPS Tracked" : "Open activity"}{activity.avgHr ? ` · ${activity.avgHr} bpm average` : ""}{activity.elevationGainM != null ? ` · ${activity.elevationGainM} m elevation gain` : ""}</p>
+    <ActivityMetricBars activity={activity} history={state.activities} units={state.units}/>
   </div>;
   return <div ref={step} className="sync-review-step">
-    <p className="fb-kicker">{receipt.preview ? "SAMPLE PREVIEW · NO COMPETITION CREDIT" : "SYNC COMPLETE · YOUR NEXT MOVE"}</p>
-    <AppHeading level={1} role="display">Make it count.</AppHeading>
+    {receipt.preview && <p className="fb-kicker">SAMPLE PREVIEW · NO COMPETITION CREDIT</p>}
+    <AppHeading level={1} role="display">Sync completed</AppHeading>
     <div className="sync-review-total">{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</div>
-    <p className="fb-copy">{selected.length} of {activities.length} activities selected. Review your effort, then slide to see what changed.</p>
+    <p className="fb-copy">{selected.length} of {activities.length} activities selected.</p>
     {activities.length > 0 && <ActivityRoute activity={selected[0] ?? activities[0]} units={state.units}/>}
     <div className="sync-review-list">{activities.map(a => <div key={a.id} className="sync-review-row">
       <label><input type="checkbox" disabled={saving} checked={!excluded.includes(a.id)} onChange={e => { if (saving) return; setExcluded(ids => e.target.checked ? ids.filter(id => id !== a.id) : [...ids, a.id]); setProgress(0); }} aria-label={`Count ${sportById(a.sport).name} activity ${a.id}`}/><span className="sr-only">Include activity</span></label>
-      <button type="button" disabled={saving} onClick={() => openDetail(a.id)}><span><b>{sportById(a.sport).name}</b><small>{formatVolume(a.sport, a.distanceM, a.movingSec, state.units)} · {clubDuration(a.movingSec)}</small><small>{new Date(a.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} · {a.verified ? "GPS Tracked" : "Open"}</small></span><span aria-hidden="true">↗</span></button>
+      <button type="button" disabled={saving} onClick={() => openDetail(a.id)}><span><b>{sportById(a.sport).name}</b><small>{new Date(a.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}</small></span><span aria-hidden="true">↗</span></button>
+      <ActivityMetricBars activity={a} history={state.activities} units={state.units}/>
     </div>)}</div>
     {!receipt.preview && excluded.length > 0 && <p className="fb-note">Deselected activities stay saved, excluded from competition.</p>}
     <div className="sync-review-footer">
@@ -78,5 +79,14 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
       </div>
       <p className="fb-note">{receipt.preview ? "Preview only. No activities or points will be added." : "Your synced activities are saved safely."}</p>
     </div>
+  </div>;
+}
+
+function ActivityMetricBars({ activity, history, units }: { activity: SyncReviewReceipt["activities"][number]; history: CompeteState["activities"]; units: CompeteState["units"] }) {
+  return <div className="sync-review-metrics">
+    {syncReviewMetrics(activity, history, units).map(metric => <div key={metric.id} className="sync-review-metric" role="group" aria-label={`${metric.label}: ${metric.valueLabel}. ${metric.comparisonLabel}`}>
+      <span>{metric.label}</span><strong>{metric.valueLabel}</strong>
+      <div className="sync-review-metric-track" aria-hidden="true"><div style={{ width: `${(metric.fraction ?? 0) * 100}%` }}/></div>
+    </div>)}
   </div>;
 }

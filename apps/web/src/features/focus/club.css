@@ -1519,7 +1519,14 @@
   text-transform: none;
   font-style: normal; }
 .sync-review-list { background: #fff; border: 1px solid #e3e9e7; border-radius: 20px; overflow: hidden; }
-.sync-review-row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e3e9e7; padding: 8px 12px; }
+.sync-review-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 8px; border-bottom: 1px solid #e3e9e7; padding: 8px 12px 18px; }
+.sync-review-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; padding: 6px 0; }
+.sync-review-row > .sync-review-metrics { grid-column: 2; }
+.sync-review-metric { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.sync-review-metric > span { font: var(--type-caption); color: var(--muted, #637482); }
+.sync-review-metric > strong { font: var(--type-label); color: var(--ink, #142b3b); }
+.sync-review-metric-track { height: 4px; background: var(--line, #e3e9e7); overflow: hidden; }
+.sync-review-metric-track > div { height: 100%; background: var(--field-teal, #176c75); }
 .sync-review-row:last-child { border: 0; }
 .sync-review-row label { display: grid; place-items: center; min-width: 44px; min-height: 48px; }
 .sync-review-row input { width: 23px; height: 23px; accent-color: #176c75; }
