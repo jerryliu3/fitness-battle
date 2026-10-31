@@ -6,8 +6,8 @@ import { courseCalloutLayout, type ArenaSceneLane, type LngLat } from "@fitness-
 import { AthletePennant } from "../field/components/athlete-pennant";
 
 /** The SDK positions a screen-sized DOM marker; React never projects camera frames. */
-export function CourseCallout({ map, lane, coordinate, detail, onSelect, layout }: {
-  map: mapboxgl.Map; lane: ArenaSceneLane; coordinate: LngLat; detail: string; onSelect(id: string): void; layout?: ReturnType<typeof courseCalloutLayout>;
+export function CourseCallout({ map, lane, coordinate, detail, onSelect, onDismiss, layout }: {
+  map: mapboxgl.Map; lane: ArenaSceneLane; coordinate: LngLat; detail: string; onSelect(id: string): void; onDismiss?: () => void; layout?: ReturnType<typeof courseCalloutLayout>;
 }) {
   const prefix = useId();
   const placement = layout ?? courseCalloutLayout(lane.you ? 0 : 1);
@@ -15,7 +15,7 @@ export function CourseCallout({ map, lane, coordinate, detail, onSelect, layout 
     const node = document.createElement("div");
     node.className = "course-athlete-callout";
     node.setAttribute("role", "group");
-    node.setAttribute("aria-label", "Racer card");
+    node.setAttribute("aria-label", "Athlete card");
     node.style.cssText = "position:absolute;left:0;top:0;width:170px;height:120px;pointer-events:none;";
     return node;
   });
@@ -34,5 +34,6 @@ export function CourseCallout({ map, lane, coordinate, detail, onSelect, layout 
       </g>
     </svg>
     {!lane.mystery && <button type="button" className="course-callout-target" aria-label={`Focus ${lane.name}, ${detail}`} onClick={event => { event.stopPropagation(); onSelect(lane.id); }} style={{ position: "absolute", left: 12, top: placement.cardTop, width: 146, height: 46, padding: 0, border: 0, background: "transparent", cursor: "pointer", pointerEvents: "auto" }} />}
+    {onDismiss && !lane.mystery && <button type="button" aria-label={`Hide ${lane.name} card`} onClick={event => { event.stopPropagation(); onDismiss(); }} style={{ position: "absolute", right: -4, top: placement.cardTop - 16, width: 44, height: 44, display: "grid", placeItems: "center", padding: 0, border: 0, background: "transparent", cursor: "pointer", pointerEvents: "auto" }}><span aria-hidden="true" style={{ width: 28, height: 28, display: "grid", placeItems: "center", borderRadius: "50%", background: "white" }}>−</span></button>}
   </>, element);
 }
