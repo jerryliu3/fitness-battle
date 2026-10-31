@@ -175,7 +175,7 @@ export function AthleteTelemetryMatrix({
                 }}
               >
                 <AppText role="value">{t.value}</AppText>
-  
+
               </div>
 
               <MiniSparklineSvg values={t.points} stroke={t.accent} corridor={t.corridor} labels={datesByDomain[t.domain]} />
@@ -219,9 +219,9 @@ function MiniSparklineSvg({
       {labels[0] && <ChartText x={30} y={46} fill={c.muted}>{labels[0]}</ChartText>}
       {labels.at(-1) && <ChartText x={104} y={46} textAnchor="end" fill={c.muted}>{labels.at(-1)}</ChartText>}
       <g transform="translate(28 0)">
-{corridor && <path d={`M ${corridor.high.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" L ")} L ${corridor.low.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).reverse().join(" L ")} Z`} fill={stroke} opacity={.16}/>}
-{corridor && <polyline points={corridor.high.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" ")} fill="none" stroke={stroke} opacity={.65}/>}
-      {corridor && <polyline points={corridor.low.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" ")} fill="none" stroke={stroke} opacity={.65}/>}
+      {corridor && <path d={`M ${corridor.high.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" L ")} L ${corridor.low.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).reverse().join(" L ")} Z`} fill={stroke} opacity={.16}/>}
+      {corridor && <polyline points={corridor.high.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" ")} fill="none" stroke={stroke} strokeDasharray="2 2" opacity={.65}/>}
+      {corridor && <polyline points={corridor.low.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" ")} fill="none" stroke={stroke} strokeDasharray="2 2" opacity={.65}/>}
       <path
         d={`M ${polyline}`}
         fill="none"
