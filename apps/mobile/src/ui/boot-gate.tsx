@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { isCompeteDataReady } from "@fitness-battle/shared/boot";
+import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { View, StyleSheet } from "react-native";
@@ -15,8 +16,9 @@ let bootAnimationCompleted = false;
 export function BootGate({ children }: { children: ReactNode }) {
   const { loading: authLoading } = useAuth();
   const { state, loadStatus } = useCompeteStore();
+  const { ready: privacyReady, error: privacyError } = useAthleteBlocks();
   const [animationDone, setAnimationDone] = useState(bootAnimationCompleted);
-  const dataReady = !authLoading && isCompeteDataReady(loadStatus, state);
+  const dataReady = !authLoading && (privacyReady || Boolean(privacyError)) && isCompeteDataReady(loadStatus, state);
   const [opened, setOpened] = useState(false);
   const [laidOut, setLaidOut] = useState(false);
   const { pending, report } = useBootRequests();

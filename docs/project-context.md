@@ -26,3 +26,12 @@ The core product features:
 ## Planned activity detail
 
 The owner wants FIT and health-source metrics imported, retained and displayed for non-GPS activities too, including strength sessions with no route. This is a follow-up to v1 GPS maps; do not invent coordinates or treat the absence of a route as the absence of an activity. Current FIT session import retains duration and average heart rate. Activity details now include session-level scatterplots, five-session trends (including a relative Speed / HR index), and the selected session's contribution to seven-day logged volume; see [implementation review](reviews/activity-detail/README.md). These use recorded session summaries. Rich within-session sample-series storage and charts remain future work.
+
+
+## Native startup loading
+
+Startup shows the canvas while bundled fonts load, followed by the launch animation.
+The blocked-athlete privacy read stays behind that cover; ordinary loading never
+shows safety-settings copy. Privacy failures still expose Retry and Sign out. The
+launch gate remains mounted across sign-in and foreground privacy refresh, so later
+reads do not replay startup. Account and privacy reads still gate protected content.
