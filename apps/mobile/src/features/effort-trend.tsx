@@ -18,6 +18,6 @@ export function EffortTrend({ state }: { state: CompeteState }) {
   const chart = openLineModel(history.pts.map((point, i) => ({ id: point.date, date: point.date, value: history.dailyValues[i]! })), formatEffortScore);
   return <ChartFrame><View style={f.section}>
     <FocusSegments label="Effort chart score track" value={track} options={[{ value: "open", label: "Open" }, { value: "verified", label: "GPS Tracked" }]} onChange={nextTrack => setLens({ scope, track: nextTrack })} />
-    <OpenLineChart key={`${scope}:${track}`} chart={chart} label={`${track === "open" ? "Open" : "GPS Tracked"} effort score history`} unit="Effort score" range={range} onRangeChange={setRange} />
+    <OpenLineChart live key={`${scope}:${track}`} chart={chart} label={`${track === "open" ? "Open" : "GPS Tracked"} effort score history`} unit="Effort score" range={range} onRangeChange={setRange} />
   </View></ChartFrame>;
 }

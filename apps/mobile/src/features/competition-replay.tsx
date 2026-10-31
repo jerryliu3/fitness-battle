@@ -1,3 +1,4 @@
+import { ResultCard } from "./result-card";
 import { playCue } from "../lib/haptics";
 import { GeographicCourse } from "./geographic-course";
 import { useCompetitionCourse } from "./use-competition-course";
@@ -10,7 +11,7 @@ import {
   coursePositionLeaders, competitionReplayDimension, nextCompetitionReplaySpeed, competitionReplayFrame, competitionReplayCaption, competitionReplayDate,
   indexCompetitionReplay, localCompetitionReplay, initialsFromName, fieldDefaultSpan,
   clampCourseCenter, sportById,
-  type CompetitionReplay, type CompetitionReplaySelection, type CompeteState, type ArenaLane,
+  type PeriodResult, type CompetitionReplay, type CompetitionReplaySelection, type CompeteState, type ArenaLane,
 } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
@@ -119,7 +120,7 @@ function ReplayTimeline({ cursor, count, caption, onSeek }: { cursor: number; co
 function ReplayAction({ label, text, disabled, onPress, primary = false }: { label: string; text: string; disabled?: boolean; onPress: () => void; primary?: boolean }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: Boolean(disabled) }} disabled={disabled} onPress={() => { if (!disabled) { void playCue("selection"); onPress(); } }} style={[s.action, primary && s.primary, disabled && { opacity: .4 }]}><AppText role="label">{text}</AppText></Pressable>;
 }
-export function ReplayViewer({ state, selection, initialDimension, onClose, embedded=false, initialFlat = false }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; initialFlat?: boolean; onClose: () => void; embedded?: boolean }) {
+export function ReplayViewer({ state, selection, initialDimension, onClose, embedded=false, initialFlat = false, result }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; initialFlat?: boolean; onClose: () => void; embedded?: boolean; result?: PeriodResult }) {
   const { user, accessToken, offlineMode } = useAuth();
   const { debugActive } = useCompeteStore();
   const { blocks } = useAthleteBlocks();
@@ -177,16 +178,21 @@ export function ReplayViewer({ state, selection, initialDimension, onClose, embe
   const panTo = (center: number) => applyView({ ...view, center });
   const zoomTo = (span: number) => applyView({ ...view, span });
   const select = (id: string) => { if (hiddenIds.includes(id)) return; const lane = lanes.find(l => l.id === id); if (lane) { const ordered = orderedArenaLanes(lanes); if (following) portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you)); setSelected(id); setFocusRequest(value => value + 1); if (following) setCenter(null); } };
+  const podiumAthletes = useMemo(() => index
+    ? competitionReplayFrame(index, count).rows
+      .filter(row => row.place <= 3 && !hiddenIds.includes(row.id))
+      .map(row => ({ ...row, avatarUrl: row.you ? state.avatarUrl : row.avatarUrl }))
+    : [], [index, count, hiddenIds, state.avatarUrl]);
   const closed = data && Date.parse(data.through) >= Date.parse(data.periodEnd);
   const caption = index ? (frame?.event && hiddenIds.includes(frame.event.athleteId) ? "An athlete recorded activity" : competitionReplayCaption(index, cursor)) : "";
-  return <View style={{ flex: 1 }}>
+  return <View style={embedded ? undefined : { flex: 1 }}>
     <View style={s.header}>
       {!embedded&&<IconButton icon="back" label="Close competition replay" onPress={onClose} />}
       <View style={{ flex: 1 }}><AppText role="heading" accessibilityRole="header">{sportById(selection.sport).name} replay</AppText><AppText role="caption" secondary>{selection.track === "verified" ? "GPS Tracked" : "Open"} · {closed ? "Completed round" : "Competition so far"}</AppText></View>
     </View>
 
     {!index ? <View style={s.message}><AppText role="body" accessibilityLiveRegion="polite">{error || "Loading the competition timeline…"}</AppText>{error && <FocusButton label="Retry" onPress={() => setAttempt(a => a + 1)} />}</View> : <>
-      <View style={s.scene} onLayout={event => setHeight(Math.max(100, event.nativeEvent.layout.height))}>
+      <View style={[s.scene, embedded && { flex: 0, height: 360 }]} onLayout={event => setHeight(Math.max(100, event.nativeEvent.layout.height))}>
         <View style={{ position: "absolute", top: 12, right: 12, zIndex: 10, flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Pressable accessibilityRole="button" accessibilityState={{ selected: following }} accessibilityLabel={`Camera: ${following ? "Follow athlete" : "Fixed"}`} onPress={() => { setCenter(following ? view.center : null); setFollowing(value => !value); if (!following) setFocusRequest(value => value + 1); }} style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: "center", borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.78)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.2)" }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{following ? "Follow athlete" : "Fixed"}</Text></Pressable>
           <FieldViewSwitcher value={dimension} geographic={unit !== "pts"} onChange={setDimension} />
@@ -209,6 +215,7 @@ export function ReplayViewer({ state, selection, initialDimension, onClose, embe
         </View>
       </View>
     </>}
+    {embedded && result && <ResultCard result={result} units={state.units} podiumAthletes={podiumAthletes} />}
 
   </View>;
 }

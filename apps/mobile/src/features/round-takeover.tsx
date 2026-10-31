@@ -5,13 +5,12 @@ import { OnboardingFade } from "./onboarding-visuals";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { StandardLineChart } from "../ui/standard-line-chart";
 import { useCompeteStore } from "../lib/compete-store";
-import Svg, { Circle, Path, Text as SvgText } from "react-native-svg";
 import { AnimatedEmber } from "../ui/mascot/animated-ember";
-import { SectionStack, AppText, chartTextProps } from "../ui/section";
+import { SectionStack, AppText } from "../ui/section";
 import { MotionStep } from "../ui/motion-step";
 import { useAuth } from "../lib/auth";
 import {
-  countsOnTrack, APP_TIMEZONE,
+  countsOnTrack, APP_TIMEZONE, dayKey,
   roundReveal,
   roundEnrollment,
   sportById,
@@ -25,7 +24,7 @@ import { Modal, ScrollView, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { WeeklySocialActions } from "./weekly-social";
 import { ReplayViewer } from "./competition-replay";
-import { ResultCard } from "./result-card";
+
 import { FocusButton, f } from "../ui/focus";
 function Round({
   state,
@@ -70,8 +69,7 @@ function Round({
             <>
               {rows.map((result) => (
                 <View key={result.id}>
-                  <View style={{height:660}}><ReplayViewer state={state} selection={result} initialDimension="4d" embedded onClose={()=>{}}/></View>
-                  <ResultCard result={result} units={state.units} />
+                  <ReplayViewer state={state} selection={result} initialDimension="4d" embedded result={result} onClose={()=>{}}/>
                   <WeeklySocialActions result={result} units={state.units} />
                 </View>
               ))}
@@ -151,4 +149,23 @@ export function RoundTakeover({
   );
 }
 
-function WeekChart({state,result,delay}:{state:CompeteState;result:PeriodResult;delay:number}){const reduced=useReducedMotion();const draw=useRef(new Animated.Value(reduced?1:0)).current;useEffect(()=>{const animation=Animated.timing(draw,{toValue:1,delay:reduced?0:delay+400,duration:reduced?0:1500,useNativeDriver:false});animation.start();return ()=>animation.stop();},[draw,delay,reduced]);const activities=state.activities.filter(a=>a.sport===result.sport&&countsOnTrack(a,result.track)&&a.startedAt>=result.periodStart&&a.startedAt<result.periodEnd);return activities.length?<StandardLineChart revealProgress={draw} values={Array.from({length:7},(_,day)=>activities.filter(a=>Date.parse(a.startedAt)<Date.parse(result.periodStart)+(day+1)*86400000).reduce((sum,a)=>sum+a.movingSec/60,0))} xLabels={["Day 1","Day 4","Day 7"]}/>:<AppText>Detailed activity history is unavailable for this archived week.</AppText>;}
+function WeekChart({ state, result, delay }: { state: CompeteState; result: PeriodResult; delay: number }) {
+  const reduced = useReducedMotion();
+  const draw = useRef(new Animated.Value(reduced ? 1 : 0)).current;
+  useEffect(() => {
+    const animation = Animated.timing(draw, { toValue: 1, delay: reduced ? 0 : delay + 400, duration: reduced ? 0 : 1500, useNativeDriver: false });
+    animation.start();
+    return () => animation.stop();
+  }, [draw, delay, reduced]);
+  const activities = state.activities.filter(a => a.sport === result.sport && countsOnTrack(a, result.track) && Date.parse(a.startedAt) >= Date.parse(result.periodStart) && Date.parse(a.startedAt) < Date.parse(result.periodEnd));
+  // Iterate calendar dates rather than 24-hour instants across Eastern DST changes.
+  const first = dayKey(new Date(result.periodStart), APP_TIMEZONE);
+  const last = dayKey(new Date(Date.parse(result.periodEnd) - 1), APP_TIMEZONE);
+  const dates: string[] = [];
+  for (let date = first; date <= last; date = new Date(Date.parse(`${date}T12:00:00Z`) + 86400000).toISOString().slice(0, 10)) dates.push(date);
+  const labels = dates.map(date => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE }));
+  return activities.length ? <StandardLineChart showAxes showSummary formatAxisY={value => `${Math.round(value)}`} pointLabels={labels} formatY={value => `${Math.round(value)} min`} accessibilityLabel="Cumulative training minutes in the settled week" revealProgress={draw}
+    values={dates.map(date => activities.filter(a => dayKey(new Date(a.startedAt), APP_TIMEZONE) <= date).reduce((sum, a) => sum + a.movingSec / 60, 0))}
+    xLabels={[labels[0]!, labels[Math.floor((labels.length - 1) / 2)]!, labels.at(-1)!]} />
+    : <AppText>Detailed activity history is unavailable for this archived week.</AppText>;
+}

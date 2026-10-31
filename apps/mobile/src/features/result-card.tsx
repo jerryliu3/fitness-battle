@@ -1,3 +1,4 @@
+import { UserAvatar } from "../ui/user-avatar";
 import { textStyle, SectionHeader, AppText  } from "../ui/section";
 import { useRef, useState } from "react";
 import { Animated, Pressable, Text, View } from "react-native";
@@ -15,9 +16,11 @@ import { f } from "../ui/focus";
 export function ResultCard({
   result,
   units,
+  podiumAthletes = [],
 }: {
   result: PeriodResult;
   units: UnitSystem;
+  podiumAthletes?: { id: string; name: string; place: number; you: boolean; avatarUrl?: string | null }[];
 }) {
   const [receipt, setReceipt] = useState(false),
     pressed = useRef(new Animated.Value(0)).current,
@@ -117,12 +120,14 @@ export function ResultCard({
                   { step: 3, label: "3rd", height: 42 },
                 ] as const
               ).map((podium) => {
+                const athletes = podiumAthletes.filter(athlete => athlete.place === podium.step);
                 const isYou = result.place === podium.step;
                 return (
+                  <View key={podium.step} style={{ flex: 1, alignItems: "center", gap: 8 }}>
+                    {athletes.map(athlete => <View key={athlete.id} style={{ alignItems: "center", gap: 4, width: "100%" }}><UserAvatar src={athlete.avatarUrl} name={athlete.name} size={40} highlight={athlete.you} /><AppText role="caption" numberOfLines={2} style={{ textAlign: "center" }}>{athlete.you ? "You" : athlete.name}</AppText></View>)}
                   <View
-                    key={podium.step}
                     style={{
-                      flex: 1,
+                      width: "100%",
                       height: podium.height,
                       borderRadius: 12,
                       backgroundColor: isYou ? "#142b3b" : "#ffffff99",
@@ -151,7 +156,7 @@ export function ResultCard({
                         YOU
                       </Text>
                     ) : null}
-                  </View>
+                  </View></View>
                 );
               })}
             </View>
