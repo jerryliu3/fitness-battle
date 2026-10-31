@@ -24,6 +24,7 @@ export function PortraitField({
   unit,
   selectedId,
   focusOnMount = false,
+  focusSelection = true,
   immersive = false,
   onExpand,
   onToggleDimension,
@@ -43,6 +44,7 @@ export function PortraitField({
   unit: string;
   selectedId?: string;
   focusOnMount?: boolean;
+  focusSelection?: boolean;
   immersive?: boolean;
   onExpand?: () => void;
   onToggleDimension?: () => void;
@@ -78,6 +80,7 @@ export function PortraitField({
   useEffect(() => () => stopTravel(), []);
   useEffect(() => {
     const key = `${selectedId}:${focusRequest}`;
+    if (!focusSelection) { stopTravel(); return; }
     if (!selectedId || key === prevSelectedRef.current) return;
     prevSelectedRef.current = key;
     const focus = scene.ordered.findIndex((lane) => lane.id === selectedId);
@@ -88,7 +91,7 @@ export function PortraitField({
     const started = performance.now(), duration = fieldFlightDuration(view, view, target - from);
     const tick = (now: number) => { const t = Math.min(1, (now - started) / duration); setLaneOffset(from + (target - from) * fieldFlightEase(t)); travel.current = t < 1 ? requestAnimationFrame(tick) : null; };
     travel.current = requestAnimationFrame(tick);
-  }, [selectedId, focusRequest, scene.baseFocus, scene.ordered]);
+  }, [selectedId, focusRequest, focusSelection, scene.baseFocus, scene.ordered]);
   const gestures = useFieldGestures({
     surface: svg, view, unit, enabled: exploring,
     lateral: () => latest.current.scene.focus,

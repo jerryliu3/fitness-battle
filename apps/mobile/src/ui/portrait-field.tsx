@@ -44,6 +44,7 @@ export function PortraitField({
   unit,
   selectedId,
   focusOnMount = false,
+  focusSelection = true,
   animateSelection = true,
   onZoom,
   onPan,
@@ -77,6 +78,7 @@ export function PortraitField({
   unit: string;
   selectedId?: string;
   focusOnMount?: boolean;
+  focusSelection?: boolean;
   animateSelection?: boolean;
   onZoom: (span: number) => void;
   onPan: (center: number) => void;
@@ -166,11 +168,12 @@ export function PortraitField({
   const prevSelectedRef = useRef(focusOnMount ? "" : `${selectedId}:${focusRequest}`);
   useEffect(() => {
     const key = `${selectedId}:${focusRequest}`;
+    if (!focusSelection) { stopTravel(); return; }
     if (!selectedId || key === prevSelectedRef.current) return;
     prevSelectedRef.current = key;
     const focus = scene.ordered.findIndex((lane) => lane.id === selectedId);
     if (focus >= 0) moveTo(focus - scene.baseFocus);
-  }, [selectedId, focusRequest, scene.baseFocus, scene.ordered, animateSelection]);
+  }, [selectedId, focusRequest, focusSelection, scene.baseFocus, scene.ordered, animateSelection]);
   return (
     <View style={{ gap: fullscreen ? 0 : 10, position: "relative", ...(fullscreen ? { height } : {}) }}>
       <FieldOverlayView hidden={overlaysHidden || fullscreen} style={[s.status, fullscreen ? { display: "none" } : null, !fullscreen && controlsTop > 12 ? { minHeight: 48, paddingLeft: 136, flexWrap: "wrap", justifyContent: "flex-end", gap: 4 } : null]} pointerEvents="none">

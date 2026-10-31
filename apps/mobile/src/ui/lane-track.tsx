@@ -45,6 +45,7 @@ function LaneTrackContent({
   showGhost,
   selectedId,
   focusOnMount = false,
+  focusSelection = true,
   followSelected = false,
   replayFocusIds,
   animateSelection = true,
@@ -88,6 +89,7 @@ function LaneTrackContent({
   showGhost: boolean;
   selectedId?: string;
   focusOnMount?: boolean;
+  focusSelection?: boolean;
   /** Lock the horizontal camera to the athlete during passive playback. */
   followSelected?: boolean;
   replayFocusIds?: readonly string[];
@@ -194,6 +196,7 @@ function LaneTrackContent({
   }, [w, lw, width, course.left, course.oval, course.focusScroll, followSelected, followSelected ? selectedId : undefined]);
   useEffect(() => {
     const key = `${selectedId}:${focusRequest}`;
+    if (!focusSelection) { stopLateralTravel(); return; }
     if (replayFocusIds || !selectedId || key === prevSelectedRef.current || course.oval) {
       prevSelectedRef.current = key;
       return;
@@ -209,7 +212,7 @@ function LaneTrackContent({
     const started = Date.now(), duration = fieldFlightDuration(v, v, (x - from) / lw);
     const tick = () => { const t = Math.min(1, (Date.now() - started) / duration); apply(from + (x - from) * fieldFlightEase(t)); lateralTravel.current = t < 1 ? requestAnimationFrame(tick) : null; };
     lateralTravel.current = requestAnimationFrame(tick);
-  }, [selectedId, focusRequest, w, lw, width, course.left, course.oval, ordered.length]);
+  }, [selectedId, focusRequest, focusSelection, w, lw, width, course.left, course.oval, ordered.length]);
   return (
     <View
       onLayout={(e) => {
