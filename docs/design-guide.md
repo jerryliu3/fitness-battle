@@ -636,3 +636,7 @@ accessibility escape, plus content through the existing dismissal/handoff lifecy
 Bottom sheets omit the X row and size to their content up to 85% of the viewport, respecting the top safe area;
 Your activity uses this shorter layout. Centered confirmation/picker dialogs and
 required onboarding/result takeovers keep their own explicit actions.
+
+### Sync feedback and activity actions — October 31
+
+Native sync feedback uses a dismissible toast above the page without taking layout space or blocking page interaction. Suggested rest days omit activity actions; other suggestions place primary Sync activities and secondary Add activity together in one row.

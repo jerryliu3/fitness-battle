@@ -14,6 +14,7 @@ vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: mock.user, offlineMode: 
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: mock.state, canWrite: mock.canWrite, dispatch: mock.dispatch, refresh: mock.refresh, beginSyncReviewBatch: mock.begin, endSyncReviewBatch: mock.end }) }));
 vi.mock("../lib/platform-providers", () => ({ providersForDevice: () => mock.supported.map((id) => ({ id })) }));
 vi.mock("../lib/device-health", () => ({ syncAppleHealth: mock.device, syncHealthConnect: mock.device, createAppleHealthDeps: vi.fn(), createHealthConnectDeps: vi.fn() }));
+vi.mock("../ui/toast", () => ({ Toast: (props: any) => props.message ? createElement("Toast", props, props.message) : null }));
 vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("../ui/form-picker", () => ({ NumberPicker: "NumberPicker", DateTimeField: "DateTimeField" }));
 vi.mock("../ui/choice-picker", () => ({ ChoicePicker: "ChoicePicker" }));
