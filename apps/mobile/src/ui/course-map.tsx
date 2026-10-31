@@ -50,12 +50,36 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     if (!followAthlete) return;
     controller.focus(course, scene.selected.metres, !explicit, scene.selected.lateralMetres);
   }, [ready, controller, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres, replay]);
+  const replayTarget = useRef<CourseCameraPose | null>(null);
+  replayTarget.current = replay && scene.selected
+    ? courseReplayPose(course, scene.selected, scene.callouts.find(lane => lane.id === replay.nearestId), reduced ? 0 : replay.focus)
+    : null;
+  const replayActive = Boolean(replay);
   useEffect(() => {
-    if (!ready || !replay || !scene.selected) return;
-    const rival = scene.callouts.find(lane => lane.id === replay.nearestId);
-    const next = courseReplayPose(course, scene.selected, rival, reduced ? 0 : replay.focus);
-    ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: 0 });
-  }, [ready, course, scene, replay, reduced]);
+    if (!ready || !replayActive) return;
+    // Keep one camera loop alive across rival changes and the final hold.
+    // Native camera observations can lag, so interpolate our last commanded pose.
+    let raf = 0, previous = Date.now();
+    let current = pose.current;
+    const tick = () => {
+      const target = replayTarget.current;
+      if (!target) return;
+      const now = Date.now();
+      const blend = reduced ? 1 : 1 - Math.exp(-Math.min(64, Math.max(1, now - previous)) / 220);
+      previous = now;
+      const angle = (from: number, to: number) => from + (((to - from) % 360 + 540) % 360 - 180) * blend;
+      current = {
+        center: [angle(current.center[0], target.center[0]), current.center[1] + (target.center[1] - current.center[1]) * blend],
+        zoom: current.zoom + (target.zoom - current.zoom) * blend,
+        pitch: target.pitch,
+        bearing: angle(current.bearing, target.bearing),
+      };
+      ref.current?.setCamera({ centerCoordinate: current.center, zoomLevel: current.zoom, pitch: current.pitch, heading: current.bearing, animationDuration: 0 });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [ready, course, replayActive, reduced]);
   useEffect(() => {
     if (!ready || !distanceTarget) return;
     const metres = raceEffortMetres(distanceTarget.value, unit);

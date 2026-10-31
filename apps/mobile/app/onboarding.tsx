@@ -14,12 +14,14 @@ import { AnimatedEmber } from "../src/ui/mascot/animated-ember";
 import { FocusButton, FocusSegments, f } from "../src/ui/focus";
 import { OnboardingFade, OnboardingOutlook, OnboardingSummary } from "../src/features/onboarding-visuals";
 import { ProfilePhoto } from "../src/features/profile-photo";
+import { useReducedMotion } from "../src/ui/use-reduced-motion";
 import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { SHELL_COLORS as c } from "../src/theme";
 
 const titles = ["Good things start with you.", "What should we call you?", "What moves you?", "Bring your training along.", "This is an Overtake.", "Make every week count.", "Your starting line is here."];
 export default function Onboarding() {
+  const reduced = useReducedMotion();
   const { state, canWrite, dispatch, saveError, retrySave } = useCompeteStore();
   const { user } = useAuth(); const router = useRouter();
   const preview = useLocalSearchParams<{ preview?: string }>().preview === "1";
@@ -55,7 +57,7 @@ export default function Onboarding() {
     if (sleep) dispatch({ type: "opt-in-health", metric: "sleep" });
     dispatch({ type: "complete-onboarding" }); void AsyncStorage.removeItem(key); router.replace("/arena");
   }
-  return <Modal visible presentationStyle="fullScreen"><SafeAreaProvider><SafeAreaView style={f.safe} edges={["top", "bottom"]}><ScrollView ref={scroll} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentContainerStyle={[f.content,{maxWidth:520,width:"100%",alignSelf:"center"}]}>
+  return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "fade"}><SafeAreaProvider><SafeAreaView style={f.safe} edges={["top", "bottom"]}><ScrollView ref={scroll} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentContainerStyle={[f.content,{maxWidth:520,width:"100%",alignSelf:"center"}]}>
     <View style={{alignItems:"center",backgroundColor:"#fff5d1",borderRadius:24,padding:12}}><AnimatedEmber size={140}/></View>
     <MotionStep identity={String(step)}>
       <AppText role="caption" secondary>{preview ? "DEBUG PREVIEW · NO CHANGES SAVED" : `YOUR FIRST FIELD · ${step+1} / 7`}</AppText>

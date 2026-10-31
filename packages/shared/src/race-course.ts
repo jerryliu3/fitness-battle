@@ -113,7 +113,7 @@ export function courseReplayPose(course: RaceCourse, you: { metres: number; late
   const b = rival ? raceCourseRacerPosition(course, rival.metres, rival.lateralMetres).coordinate : a;
   const gap = distance(a, b, { units: "meters" });
   const center = gap > .01 ? destination(point(a), gap / 2, bearing(a, b), { units: "meters" }).geometry.coordinates as LngLat : a;
-  return { center, zoom: Math.min(16 + 2.3 * Math.max(0, Math.min(1, focus)), 18.3 - Math.log2(Math.max(1, gap / 65))), pitch: 60, bearing: raceCoursePosition(course, you.metres).heading };
+  return { center, zoom: Math.min(17 + 2.3 * Math.max(0, Math.min(1, focus)), 19.3 - Math.log2(Math.max(1, gap / 65))), pitch: 60, bearing: raceCoursePosition(course, you.metres).heading };
 }
 export interface CourseCameraDriver {
   read(): CourseCameraPose;

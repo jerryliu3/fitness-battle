@@ -8,6 +8,7 @@ import { FocusButton, f } from "../ui/focus";
 import { ActivityRoute } from "../ui/activity-route";
 import { RouteStaticPreview } from "../ui/route-static-preview";
 import { SHELL_COLORS as c } from "../theme";
+import { ScreenFade } from "../ui/screen-fade";
 import { CompetitionMoment } from "./competition-moment";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 
@@ -20,17 +21,13 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
   const scroll = useRef<ScrollViewInstance | null>(null);
   const resetScroll = () => scroll.current?.scrollTo({ y: 0, animated: false });
   useEffect(resetScroll, [receipt ? "review" : moment?.id]);
-  return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "slide"} onRequestClose={close}>
-    <SafeAreaProvider>{!receipt && moment ? <CompetitionMoment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
-      <View style={{ flexDirection: "row", justifyContent: receipt ? "flex-end" : "space-between", alignItems: "center", paddingHorizontal: 20, minHeight: 56 }}>
-        {!receipt && <Text style={textStyle("label")}>{moment?.plan.hasOvertake ? "Your overtakes" : "Your field changed"}</Text>}
-        {receipt && <Pressable accessibilityRole="button" accessibilityLabel="Apply activities and skip recap" onPress={close} style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}><Text style={textStyle("label")}>Skip</Text></Pressable>}
-      </View>
+  return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "fade"} onRequestClose={close}>
+    <SafeAreaProvider><ScreenFade identity={receipt ? `receipt:${receipt.account}:${receipt.day}` : `moment:${moment?.id}`}>{!receipt && moment ? <CompetitionMoment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
       <ScrollView ref={scroll} contentContainerStyle={{ padding: 22, gap: 20, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         {debug && <Text style={f.kicker}>DEBUG PREVIEW · LOCAL DATA ONLY</Text>}
         {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete} resetScroll={resetScroll}/> : null}
       </ScrollView>
-    </SafeAreaView>}</SafeAreaProvider>
+    </SafeAreaView>}</ScreenFade></SafeAreaProvider>
   </Modal>;
 }
 function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () => void; receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {
@@ -255,13 +252,17 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
 }
 
 function ActivityMetricBars({ activity, history, units }: { activity: SyncReviewReceipt["activities"][number]; history: CompeteState["activities"]; units: CompeteState["units"] }) {
-  return <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16, paddingVertical: 6 }}>
+  return <View style={{ gap: 10 }}>
+    <Text style={{ ...textStyle("caption"), color: c.muted }}>Bars compare with your previous 10 counted activities in this sport, within 90 days. No history leaves a bar empty.</Text>
+    <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16, paddingVertical: 6 }}>
     {syncReviewMetrics(activity, history, units).map(metric => <View key={metric.id} accessible accessibilityLabel={`${metric.label}: ${metric.valueLabel}. ${metric.comparisonLabel}`} style={{ width: "47%", gap: 6 }}>
       <Text style={{ ...textStyle("caption"), color: c.muted }}>{metric.label}</Text>
       <Text style={{ ...textStyle("label"), color: c.ink }}>{metric.valueLabel}</Text>
       <View style={{ height: 4, backgroundColor: c.line, overflow: "hidden" }}>
         <View style={{ height: 4, width: `${(metric.fraction ?? 0) * 100}%`, backgroundColor: c.fieldTeal }}/>
       </View>
+      <Text style={{ ...textStyle("caption"), color: c.muted }}>{metric.comparisonLabel}</Text>
     </View>)}
+    </View>
   </View>;
 }

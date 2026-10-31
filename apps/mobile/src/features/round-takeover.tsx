@@ -36,6 +36,7 @@ function Round({
   onClose: () => void;
 }) {
   const [stage, setStage] = useState(0);
+  const reduced = useReducedMotion();
   const celebrated = useRef(false);
   const revealFinish = () => {
     if (!celebrated.current) {
@@ -51,7 +52,7 @@ function Round({
     <Modal
       visible
       presentationStyle="fullScreen"
-      animationType="slide"
+      animationType={reduced ? "none" : "fade"}
       onRequestClose={() => { /* Complete the recap before acknowledging results. */ }}
     >
       <SafeAreaProvider>

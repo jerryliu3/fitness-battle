@@ -334,7 +334,7 @@ export function CompetitionField({
       {expanded ? (
         <Modal
           visible
-          animationType={reduceMotion ? "none" : "slide"}
+          animationType={reduceMotion ? "none" : "fade"}
           presentationStyle="fullScreen"
           onRequestClose={() => setExpanded(false)}
         >

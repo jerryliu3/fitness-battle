@@ -82,3 +82,26 @@ it("uses replay totals in 4D, seeks backward and retains the course across modes
   await act(async () => modes().props.onChange("4d"));
   expect(map().props.course).toBe(course);
 });
+
+it("follows the moving opponent and holds Fixed through subsequent events", async () => {
+  mock.debug = false;
+  mock.request.mockResolvedValue({ ...localCompetitionReplay(state, selection),
+    athletes: [{ id: "you", name: "You", you: true }, { id: "peer", name: "Peer", you: false }],
+    events: [
+      { id: "peer-run", athleteId: "peer", at: "2026-10-24T10:00:00Z", distanceM: 1000, movingSec: 300, effort: 1 },
+      { id: "your-run", athleteId: "you", at: "2026-10-24T11:00:00Z", distanceM: 2000, movingSec: 600, effort: 2 },
+    ],
+  });
+  await open();
+  const field = () => renderer.root.findByType("LaneTrack" as never);
+  const timeline = () => renderer.root.findByProps({ accessibilityLabel: "Competition replay timeline" });
+  await act(async () => timeline().props.onAccessibilityAction({ nativeEvent: { actionName: "increment" } }));
+  expect(field().props.selectedId).toBe("peer");
+  const toggle = renderer.root.findByProps({ accessibilityLabel: "Camera: Follow athlete" });
+  await act(async () => toggle.props.onPress());
+  const held = field().props.view.center;
+  await act(async () => timeline().props.onAccessibilityAction({ nativeEvent: { actionName: "increment" } }));
+  expect(field().props.view.center).toBe(held);
+  await act(async () => renderer.root.findByProps({ accessibilityLabel: "Camera: Fixed" }).props.onPress());
+  expect(field().props.selectedId).toBe("you");
+});

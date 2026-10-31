@@ -89,7 +89,7 @@ export function CompetitionReplayModal({ open, state, selection, dimension, onCl
   onClose(): void;
 }) {
   const reduced = useReducedMotion();
-  return open ? <Modal visible animationType={reduced ? "none" : "slide"} presentationStyle="fullScreen" onRequestClose={onClose}>
+  return open ? <Modal visible animationType={reduced ? "none" : "fade"} presentationStyle="fullScreen" onRequestClose={onClose}>
     <SafeAreaProvider>
       <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
         <ReplayViewer key={`${selection.sport}:${selection.track}:${selection.periodStart}`} state={state} selection={selection} initialFlat={initialFlat} initialDimension={dimension} onClose={onClose} />
@@ -169,7 +169,10 @@ export function ReplayViewer({ state, selection, initialDimension, onClose, embe
   const seek = (next: number) => { const bounded = Math.max(0, Math.min(count, next)); if (Math.ceil(bounded) !== Math.ceil(cursor)) void playCue("selection"); setPlaying(false); setCursor(bounded); };
   const frame = index ? competitionReplayFrame(index, cursor) : null;
   const me = frame?.rows.find(a => a.you);
-  const focus = frame?.rows.find(a => a.id === selected && !hiddenIds.includes(a.id)) ?? me;
+  // An explicit tap can inspect a racer; the next event resumes automatic focus.
+  useEffect(() => { if (following) setSelected(null); }, [frame?.event?.id, following]);
+  const moving = frame?.rows.find(a => a.id === frame.event?.athleteId && !hiddenIds.includes(a.id));
+  const focus = frame?.rows.find(a => a.id === selected && !hiddenIds.includes(a.id)) ?? (following ? moving : null) ?? me;
   const unit = index?.unit ?? "km", viewSpan = span ?? fieldDefaultSpan(unit);
   const lanes = useMemo(() => (frame?.rows ?? []).map(row => ({ ...row, initials: initialsFromName(row.name) })), [index, cursor]);
   const nativeLanes = useMemo<ArenaLane[]>(() => lanes.map(l => ({ ...l, ghost: false, values: [l.value, l.value, l.value] })), [lanes]);
@@ -197,7 +200,7 @@ export function ReplayViewer({ state, selection, initialDimension, onClose, embe
           <Pressable accessibilityRole="button" accessibilityState={{ selected: following }} accessibilityLabel={`Camera: ${following ? "Follow athlete" : "Fixed"}`} onPress={() => { setCenter(following ? view.center : null); setFollowing(value => !value); if (!following) setFocusRequest(value => value + 1); }} style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: "center", borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.78)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.2)" }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{following ? "Follow athlete" : "Fixed"}</Text></Pressable>
           <FieldViewSwitcher value={dimension} geographic={unit !== "pts"} onChange={setDimension} />
         </View>
-        {dimension === "4d" ? <GeographicCourse initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following} onFollowChange={next => { setCenter(next ? null : view.center); setFollowing(next); }} optionsTop={64} hiddenIds={hiddenIds} course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <LaneTrack clampView={following} hiddenIds={hiddenIds} onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={selected ?? focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField hiddenIds={hiddenIds} onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={selected ?? focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
+        {dimension === "4d" ? <GeographicCourse initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following} onFollowChange={next => { setCenter(next ? null : view.center); setFollowing(next); }} optionsTop={64} hiddenIds={hiddenIds} course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <LaneTrack clampView={following} hiddenIds={hiddenIds} onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField hiddenIds={hiddenIds} onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
 
       </View>
       <View style={s.controls}>

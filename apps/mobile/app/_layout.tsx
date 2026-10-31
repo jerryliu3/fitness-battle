@@ -35,6 +35,7 @@ import { shellTabFromPath } from "@fitness-battle/shared";
 import { SHELL_COLORS } from "../src/theme";
 import { BootGate } from "../src/ui/boot-gate";
 import { LaunchGate } from "../src/ui/launch-gate";
+import { useReducedMotion } from "../src/ui/use-reduced-motion";
 import { NavigationWarmup } from "../src/lib/navigation-warmup";
 
 function BlockPrivacyGate({ children }: { children: ReactNode }) {
@@ -93,6 +94,7 @@ function NotificationNavigation() {
 }
 
 export default function RootLayout() {
+  const reduced = useReducedMotion();
   const [dmLoaded, dmError] = useDmSans({
     DMSans_400Regular,
     DMSans_500Medium,
@@ -170,8 +172,7 @@ export default function RootLayout() {
                           screenOptions={{
                             headerShown: false,
                             contentStyle: { backgroundColor: SHELL_COLORS.paper },
-                            animation:
-                              Platform.OS === "ios" ? "default" : "slide_from_right",
+                            animation: reduced ? "none" : "fade",
                           }}
                         />
                       </BlockPrivacyGate>
