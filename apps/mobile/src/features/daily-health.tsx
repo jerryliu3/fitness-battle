@@ -4,6 +4,7 @@ import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
 import {
   HOME_HEALTH_COLORS as colors,
   buildHealth7DayCorridorModel,
+  competeNow,
   healthSignal,
   healthSignalRange,
   homeHealthMetrics,
@@ -76,7 +77,7 @@ export function DailyHealth({ state }: { state: CompeteState }) {
         })}
       </View>
       {selected && (() => {
-        const chart = buildHealth7DayCorridorModel(selected);
+        const chart = buildHealth7DayCorridorModel(selected, competeNow(state));
         return (
           <View style={s.detail} accessibilityLiveRegion="polite">
             <View style={s.detailHeader}>
@@ -98,7 +99,7 @@ export function DailyHealth({ state }: { state: CompeteState }) {
             </View>
             <View style={s.chartBox}>
               <Svg width="100%" height={chart.height} viewBox={`0 0 ${chart.width} ${chart.height}`} accessible={false}>
-                <Path d={chart.corridorAreaPath} fill={colors.accent} opacity={0.12} />
+                {chart.hasBaseline && <G><Path d={chart.corridorAreaPath} fill={colors.accent} opacity={0.12} />
                 <Line
                   x1={38}
                   x2={304}
@@ -135,7 +136,8 @@ export function DailyHealth({ state }: { state: CompeteState }) {
                 >
                   {chart.baselineLow}
                 </SvgText>
-                {chart.lineSegments.map((d, i) => (
+                </G>}
+{chart.lineSegments.map((d, i) => (
                   <Path
                     key={i}
                     d={d}

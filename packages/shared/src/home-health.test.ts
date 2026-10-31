@@ -92,12 +92,13 @@ it("builds 7-day health corridor chart model identifying points under, in, or ov
     context: "Today",
     detail: "Garmin · recorded 2026-10-24",
     history: [72, 70, 58, null, 65, 85, 54],
+    baselineHistory: [62, 65, 68, 72, 75, 80, 82],
   };
   const chart = buildHealth7DayCorridorModel(hrvMetric, now);
   expect(chart.points).toHaveLength(7);
   expect(chart.baselineLow).toBe(62);
   expect(chart.baselineHigh).toBe(82);
-  expect(chart.formattedRange).toBe("62–82 ms");
+  expect(chart.formattedRange).toBe("62 ms–82 ms");
   expect(chart.points[6].dayLabel).toBe("Today");
   expect(chart.points[6].position).toBe("under"); // 54 < 62
   expect(chart.points[2].position).toBe("under"); // 58 < 62
@@ -107,4 +108,14 @@ it("builds 7-day health corridor chart model identifying points under, in, or ov
   expect(chart.hasUnder).toBe(true);
   expect(chart.corridorAreaPath).toContain("M 38,");
   expect(chart.lineSegments.length).toBeGreaterThan(0);
+});
+
+it("withholds the baseline without seven prior readings", () => {
+  const metric = homeHealthMetrics(freshState(now), now)[3]!;
+  const chart = buildHealth7DayCorridorModel({...metric,history:[40,41,42,43,44,45,46]},now);
+  expect(chart.hasBaseline).toBe(false);
+  expect(chart.points.every(p=>p.position === "unavailable")).toBe(true);
+  expect(chart.hasUnder).toBe(false);
+  expect(getHealthMetricCorridor("hrv",[10,20,30])).toBeNull();
+  expect(getHealthMetricCorridor("hrv",[20,21,22,23,24,25,26])?.high).toBe(26);
 });

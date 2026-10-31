@@ -4,6 +4,7 @@ import { Fragment, useState, type CSSProperties } from "react";
 import {
   HOME_HEALTH_COLORS as colors,
   buildHealth7DayCorridorModel,
+  competeNow,
   healthSignal,
   healthSignalRange,
   homeHealthMetrics,
@@ -73,7 +74,7 @@ export function DailyHealth({ state }: { state: CompeteState }) {
               </button>
 
               {isRowEnd && isSelectedInRow && selected && (() => {
-                const chart = buildHealth7DayCorridorModel(selected);
+                const chart = buildHealth7DayCorridorModel(selected, competeNow(state));
                 return (
                   <div
                     id="home-health-detail"
@@ -98,7 +99,7 @@ export function DailyHealth({ state }: { state: CompeteState }) {
                         className="home-health-chart-svg"
                         aria-label={`${selected.name} 7-day corridor chart`}
                       >
-                        <path d={chart.corridorAreaPath} fill="var(--health-accent)" opacity="0.12" />
+                        {chart.hasBaseline && <g><path d={chart.corridorAreaPath} fill="var(--health-accent)" opacity="0.12" />
                         <line
                           x1={38}
                           x2={304}
@@ -133,7 +134,8 @@ export function DailyHealth({ state }: { state: CompeteState }) {
                         >
                           {chart.baselineLow}
                         </text>
-                        {chart.lineSegments.map((d, i) => (
+                        </g>}
+{chart.lineSegments.map((d, i) => (
                           <path
                             key={i}
                             d={d}

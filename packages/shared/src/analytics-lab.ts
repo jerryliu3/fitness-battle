@@ -369,11 +369,12 @@ export function buildSvgLineGeometry(
   width: number,
   height: number,
   padding = 10,
+  domain?: { min: number; max: number },
 ): SvgLineGeometry {
   if (values.length === 0) return { points: [], polyline: "", areaPath: "" };
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = Math.max(1, max - min);
+  const min = domain?.min ?? Math.min(...values);
+  const max = domain?.max ?? Math.max(...values);
+  const span = domain ? max - min || 1 : Math.max(1, max - min);
   const usableW = Math.max(1, width - padding * 2);
   const usableH = Math.max(1, height - padding * 2);
 
@@ -762,15 +763,7 @@ export function buildAnalyticsLabModel(
 
   const isOver = scenario === "overreaching";
   const isSparse = scenario === "sparse_new";
-  const totalPoints = isSparse
-    ? timeLens === "7d"
-      ? 4
-      : 8
-    : timeLens === "90d" || timeLens === "all"
-      ? 90
-      : timeLens === "7d"
-        ? 7
-        : 30;
+  const totalPoints = isSparse ? 8 : 90;
 
   const anchor = state?.demoNow
     ? new Date(state.demoNow)
@@ -956,7 +949,7 @@ export function buildAnalyticsLabModel(
         baselineHigh: Number((baseMean + baseHalfBand).toFixed(decimals)),
       });
     }
-    return sliceByLens(pts, timeLens);
+    return pts;
   }
 
   const hrvSeries = makeVitalSeries("hrv", 72, 10, 0.8, -19, 0);
@@ -994,7 +987,7 @@ export function buildAnalyticsLabModel(
         hrvNow < 62
           ? "Parasympathetic tone is suppressed below your 62–82 ms corridor—prioritize Zone 1/2 or rest."
           : "HRV sits comfortably inside your upper baseline tunnel, signaling strong autonomic recovery.",
-      series: hrvSeries,
+      series: sliceByLens(hrvSeries, timeLens),
     },
     {
       id: "rhr",
@@ -1016,7 +1009,7 @@ export function buildAnalyticsLabModel(
         rhrNow > 54
           ? "Overnight RHR is +5 bpm above baseline, typical after late threshold sessions or dehydration."
           : "Stroke volume adaptation keeps overnight resting heart rate anchored near 49–51 bpm.",
-      series: rhrSeries,
+      series: sliceByLens(rhrSeries, timeLens),
     },
     {
       id: "vo2max",
@@ -1036,7 +1029,7 @@ export function buildAnalyticsLabModel(
       provider: "Garmin · Apple Watch",
       insight:
         "Submaximal pace-to-HR ratio indicates a steady climb in aerobic ceiling over this block.",
-      series: vo2Series,
+      series: sliceByLens(vo2Series, timeLens),
     },
     {
       id: "resp",
@@ -1058,7 +1051,7 @@ export function buildAnalyticsLabModel(
         respNow > 15.2
           ? "Sleeping ventilation rate ticked above 15.1 brpm—watch for systemic fatigue or airway strain."
           : "Minute ventilation is remarkably steady, confirming low overnight metabolic stress.",
-      series: respSeries,
+      series: sliceByLens(respSeries, timeLens),
     },
     {
       id: "spo2",
@@ -1077,7 +1070,7 @@ export function buildAnalyticsLabModel(
       higherIsBetter: true,
       provider: "Oura · Apple Health",
       insight: "Peripheral oxygen saturation remains above 97% throughout REM and Deep stages.",
-      series: spo2Series,
+      series: sliceByLens(spo2Series, timeLens),
     },
     {
       id: "temp",
@@ -1099,7 +1092,7 @@ export function buildAnalyticsLabModel(
         Math.abs(tempNow) > 0.35
           ? "Nocturnal skin temperature rose above your ±0.25°C thermal envelope."
           : "Core-to-shell thermoregulation is tightly aligned with your circadian trough.",
-      series: tempSeries,
+      series: sliceByLens(tempSeries, timeLens),
     },
   ];
 
@@ -1420,7 +1413,7 @@ export function buildAnalyticsLabModel(
           : "All 6 overnight vitals track inside your 60-day personal corridor. High capacity for threshold or race-pace work.",
       anomalyCount,
       metrics: vitalsList,
-      quadrantTrail,
+      quadrantTrail: sliceByLens(quadrantTrail, timeLens),
     },
     sleep: {
       lastNight,

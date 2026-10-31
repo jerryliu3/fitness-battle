@@ -13,6 +13,7 @@ export interface HomeHealthMetric {
   detail: string;
   /** Seven calendar days, oldest first. Missing readings remain gaps. */
   history: (number | null)[];
+  baselineHistory?: (number | null)[];
 }
 
 /** Known preview readings must not be presented as connected tracker data. */
@@ -38,6 +39,7 @@ export function homeHealthMetrics(state: CompeteState, now = competeNow(state)):
     {
       id: "sleep", name: "Sleep", unit: "", value: night ? formatSleepDuration(night.durationMin) : "—",
       context: night ? "Last night" : "No reading today", history,
+      baselineHistory: nights.filter(n => n.day < dayKey(shiftAppDay(now, -6)) && n.day >= dayKey(shiftAppDay(now, -34))).map(n => n.durationMin),
       detail: night
         ? `${source} · wake date ${night.day}. Recorded sleep duration; not a readiness score.`
         : latest ? `No sleep reading for today. Last recorded wake date: ${latest.day}.` : "No sleep duration recorded yet. Available tracker readings appear after sync.",
@@ -62,6 +64,7 @@ export function homeHealthMetrics(state: CompeteState, now = competeNow(state)):
         detail: current
           ? `${providerName} · recorded ${today}.${spec.key === "hrv" && current.provider === "apple_health" ? " SDNN, daily sample average; not RMSSD." : ""}`
           : `No recorded ${spec.name.toLowerCase()} available for today.`,
+        baselineHistory: Array.from({ length: 28 }, (_, i) => forDay(dayKey(shiftAppDay(now, i - 34)))?.[spec.key] ?? null),
         history: Array.from({ length: 7 }, (_, i) => forDay(dayKey(shiftAppDay(now, i - 6)))?.[spec.key] ?? null),
       };
     }),
@@ -119,18 +122,14 @@ export interface HealthMetricCorridor {
   format: (value: number) => string;
 }
 
-export function getHealthMetricCorridor(metricId: string): HealthMetricCorridor {
-  switch (metricId) {
-    case "sleep":
-      return { low: 420, high: 540, formattedRange: "7h–9h", format: (m) => formatSleepDuration(m) };
-    case "steps":
-      return { low: 7500, high: 11000, formattedRange: "7,500–11,000 steps", format: (s) => Math.round(s).toLocaleString("en-US") };
-    case "resting-hr":
-      return { low: 50, high: 65, formattedRange: "50–65 bpm", format: (r) => `${Math.round(r)} bpm` };
-    case "hrv":
-    default:
-      return { low: 62, high: 82, formattedRange: "62–82 ms", format: (h) => `${Math.round(h)} ms` };
-  }
+/** Descriptive personal range from at least seven prior readings; never a clinical target. */
+export function getHealthMetricCorridor(metricId: string, history: readonly (number | null)[] = []): HealthMetricCorridor | null {
+  const values = history.filter((v): v is number => v !== null && Number.isFinite(v)).sort((a,b)=>a-b);
+  if (values.length < 7) return null;
+  const low = values[Math.floor((values.length - 1) * .1)]!;
+  const high = values[Math.ceil((values.length - 1) * .9)]!;
+  const format = metricId === "sleep" ? formatSleepDuration : (value: number) => `${Math.round(value).toLocaleString("en-US")}${metricId === "steps" ? " steps" : metricId === "hrv" ? " ms" : " bpm"}`;
+  return { low, high, formattedRange: `${format(low)}–${format(high)}`, format };
 }
 
 export interface Health7DayPoint {
@@ -140,13 +139,14 @@ export interface Health7DayPoint {
   formatted: string;
   x: number;
   y: number | null;
-  position: "under" | "in" | "over" | "missing";
+  position: "under" | "in" | "over" | "missing" | "unavailable";
 }
 
 export interface Health7DayChartModel {
   metricId: string;
   metricName: string;
   unit: string;
+  hasBaseline: boolean;
   baselineLow: number;
   baselineHigh: number;
   formattedRange: string;
@@ -165,7 +165,8 @@ export function buildHealth7DayCorridorModel(
   metric: HomeHealthMetric,
   now = new Date(),
 ): Health7DayChartModel {
-  const corridor = getHealthMetricCorridor(metric.id);
+  const personal = getHealthMetricCorridor(metric.id, metric.baselineHistory);
+  const corridor = personal ?? { low: 0, high: 0, formattedRange: "Unavailable · insufficient prior readings", format: (value: number) => metric.id === "sleep" ? formatSleepDuration(value) : `${value} ${metric.unit}` };
   const width = 320;
   const height = 116;
   const left = 38;
@@ -174,7 +175,7 @@ export function buildHealth7DayCorridorModel(
   const plotBottom = 86;
 
   const validValues = metric.history.filter((v): v is number => v != null && Number.isFinite(v));
-  const allNums = [...validValues, corridor.low, corridor.high];
+  const allNums = personal ? [...validValues, personal.low, personal.high] : validValues.length ? validValues : [0, 1];
   const minVal = Math.min(...allNums);
   const maxVal = Math.max(...allNums);
   const spread = maxVal - minVal;
@@ -188,12 +189,11 @@ export function buildHealth7DayCorridorModel(
   const corridorYBottom = toY(corridor.low);
   const corridorAreaPath = `M ${left},${corridorYTop} L ${right},${corridorYTop} L ${right},${corridorYBottom} L ${left},${corridorYBottom} Z`;
 
-  const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const points: Health7DayPoint[] = metric.history.map((val, i) => {
     const x = Number((left + (i / 6) * (right - left)).toFixed(1));
     const isToday = i === 6;
     const targetDate = shiftAppDay(now, i - 6);
-    const dayLabel = isToday ? "Today" : WEEKDAYS[targetDate.getDay()] ?? "";
+    const dayLabel = isToday ? "Today" : new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "America/New_York" }).format(targetDate) ?? "";
 
     if (val == null || !Number.isFinite(val)) {
       return {
@@ -208,7 +208,7 @@ export function buildHealth7DayCorridorModel(
     }
 
     const y = toY(val);
-    const position = val < corridor.low ? ("under" as const) : val > corridor.high ? ("over" as const) : ("in" as const);
+    const position = !personal ? ("unavailable" as const) : val < corridor.low ? ("under" as const) : val > corridor.high ? ("over" as const) : ("in" as const);
     return {
       index: i,
       dayLabel,
@@ -240,6 +240,7 @@ export function buildHealth7DayCorridorModel(
     metricId: metric.id,
     metricName: metric.name,
     unit: metric.unit,
+    hasBaseline: Boolean(personal),
     baselineLow: corridor.low,
     baselineHigh: corridor.high,
     formattedRange: corridor.formattedRange,

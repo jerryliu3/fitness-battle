@@ -137,3 +137,21 @@ describe("analytics-lab shared model", () => {
     expect(formatMinutesAsHoursMins(125)).toBe("2h 05m");
   });
 });
+
+it("preserves observations and summary values when changing the time lens", () => {
+  const week=buildAnalyticsLabModel("peak_build","7d");
+  const month=buildAnalyticsLabModel("peak_build","30d");
+  const quarter=buildAnalyticsLabModel("peak_build","90d");
+  expect(week.vitals.metrics[0]!.series).toEqual(month.vitals.metrics[0]!.series.slice(-7));
+  expect(month.vitals.metrics[0]!.series).toEqual(quarter.vitals.metrics[0]!.series.slice(-30));
+  expect(week.sleep.nights).toEqual(month.sleep.nights.slice(-7));
+  expect(week.combined.series).toEqual(month.combined.series.slice(-7));
+  expect(week.load.series).toEqual(month.load.series.slice(-7));
+  expect(week.market.currentIndex).toBe(month.market.currentIndex);
+});
+
+it("uses the supplied corridor domain for observation coordinates", () => {
+  const geometry = buildSvgLineGeometry([70,75],58,22,2,{min:60,max:80});
+  expect(geometry.points[0]!.y).toBe(11);
+  expect(geometry.points[1]!.y).toBe(6.5);
+});

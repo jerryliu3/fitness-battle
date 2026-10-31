@@ -679,3 +679,13 @@ server-committed score changes, with individual date/time readings in 1W. A sync
 batch that changes a score is one committed score event; do not invent separate
 activity award times within that transaction. Older settlement boundaries remain
 available, but earlier activity awards have no reconstructable timestamps.
+
+### Personal health corridors
+
+Home's seven-day chart uses a descriptive personal corridor: the 10th–90th
+percentile of recorded values in the preceding 28 calendar days, excluding the
+seven displayed days. Require at least seven readings; otherwise retain the
+observations and show baseline unavailable without a band or out-of-range labels.
+HRV comparisons retain one provider's measurements. These are personal history
+comparisons, not clinical reference ranges or targets. Analytics range controls
+filter one stable history; selecting another range must not change a day's value.
