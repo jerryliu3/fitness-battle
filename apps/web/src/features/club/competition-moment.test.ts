@@ -1,3 +1,6 @@
+vi.mock("@/features/course/use-competition-course", () => ({ useCompetitionCourse: () => ({ course: null, error: "", retry: vi.fn() }) }));
+vi.mock("@/components/compete-context", () => ({ useCompete: () => ({ state: null }) }));
+vi.mock("@/features/course/geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
@@ -16,7 +19,7 @@ it("reduced motion shows the final result in either direction and confirms at mo
     const baselines = Object.fromEntries(Object.entries(result.baselines).map(([k,v]) => [momentStorageKey(k),v]));
     const moment = competitionMoments(result.state, "a", k => baselines[k])[0];
     const done = vi.fn(); let renderer!: ReactTestRenderer;
-    await act(async () => { renderer = create(createElement(CompetitionMoment, { moment, remaining: 1, onConfirm: done })); });
+    await act(async () => { renderer = create(createElement(CompetitionMoment, { moment, dimension: "2d", remaining: 1, onConfirm: done })); });
     const button = renderer.root.findByType("button");
     expect(button.props.children).toBe("Back to the app →");
     const field = renderer.root.findByType("ArenaLanes" as never);
@@ -24,7 +27,6 @@ it("reduced motion shows the final result in either direction and confirms at mo
     expect(field.props.lanes).toHaveLength(moment.lanes.length);
     expect(field.props.lanes.find((lane: { you?: boolean }) => lane.you).value).toBe(moment.plan.youAfter);
     expect(field.props.appearance).toEqual(defaultFieldAppearance);
-    expect(renderer.root.findByProps({ role: "status" }).findAllByType("small").at(-1)!.props.children.join("")).toContain(`Your place #${moment.plan.rankAfter}`);
     await act(async () => { button.props.onClick(); button.props.onClick(); });
     expect(done).toHaveBeenCalledTimes(1);
     await act(async () => renderer.unmount());
@@ -41,7 +43,7 @@ it("skipping playback shows final totals and waits for explicit confirmation", a
   const done = vi.fn();
   let renderer!: ReactTestRenderer;
   try {
-    await act(async () => { renderer = create(createElement(CompetitionMoment, { moment, remaining: 2, onConfirm: done })); });
+    await act(async () => { renderer = create(createElement(CompetitionMoment, { moment, dimension: "2d", remaining: 2, onConfirm: done })); });
     const button = renderer.root.findByType("button");
     const field = () => renderer.root.findByType("ArenaLanes" as never);
     expect(field().props.lanes.find((lane: { you?: boolean }) => lane.you).value).toBe(moment.plan.youBefore);

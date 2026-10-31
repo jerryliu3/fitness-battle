@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createRaceCourse, raceCoursePosition, raceCourseTrail, raceEffortMetres, createCourseCamera, type CourseCameraPose } from "./race-course";
+import { courseReplayPose, createRaceCourse, raceCoursePosition, raceCourseTrail, raceEffortMetres, createCourseCamera, type CourseCameraPose } from "./race-course";
 const course = createRaceCourse("City", [[0, 0], [.001, 0], [.001, .002]]);
 describe("race courses", () => {
   it("indexes distance, removes duplicates and preserves distance units", () => {
@@ -87,4 +87,14 @@ it("seeks directly through return trips without resetting the camera or followin
   expect(move).toHaveBeenCalledOnce();
   expect(camera.following).toBe(true);
   expect(stop).toHaveBeenCalled();
+});
+
+it("zooms into the pair at a pass, backs out for distant rivals and frames across the date line", () => {
+  const you = {metres:100,lateralMetres:0}, peer = {metres:105,lateralMetres:28};
+  const wide = courseReplayPose(course,you,peer,0), close = courseReplayPose(course,you,peer,1);
+  expect(close.zoom).toBeGreaterThan(wide.zoom + 2);
+  expect(close.center).toEqual(wide.center);
+  expect(courseReplayPose(course,you,{...peer,metres:300},1).zoom).toBeLessThan(close.zoom);
+  const dateLine = createRaceCourse("Date line", [[179.99,0],[-179.99,0]]);
+  expect(Math.abs(courseReplayPose(dateLine,{metres:1050,lateralMetres:0},{metres:1200,lateralMetres:0},1).center[0])).toBeGreaterThan(179.9);
 });

@@ -54,10 +54,10 @@ Sync confirmation is a presentation gate, not another ingestion or scoring path.
 
 Weekly activity streaks are presentation derived from counted non-sample, non-future activity with positive volume in any sport. Weeks use the existing Eastern Monday–Monday bounds. Until the current week is active, show the immediately preceding consecutive streak dimmed; a missed complete week breaks it. Manual counted activity qualifies, while a freeze alone does not. Streaks do not change ratings or settlement writes. Authenticated synthetic accounts follow ordinary session and membership authorization; only backend-unconfigured offline previews use local fixture paths.
 
-4D scenery uses `race_routes` as its live catalog and `weekly_race_routes` as a
+Geographic 3D scenery uses `race_routes` as its live catalog and `weekly_race_routes` as a
 snapshot keyed by field wave start. The authenticated `competition_route` RPC
-checks field membership and atomically creates the assignment on the first 4D
-read. An empty catalog makes 4D unavailable without blocking field seating; a
+checks field membership and atomically creates the assignment on the first 3D
+read. An empty catalog makes 3D unavailable without blocking field seating; a
 later retry can assign a reactivated route. The catalog and assignment tables have no
 athlete write grants. Catalog edits must not rewrite active or historical route
 snapshots. Bundled sample routes are only for local demo and debug previews.

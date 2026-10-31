@@ -69,3 +69,21 @@ it("replays every captured lane, follows real totals and preserves stable lane i
     }
   }
 });
+
+it("pulses every successful crossing briefly, then clears effects at completion and for losses", () => {
+  const moment = fixture("overtake").moments[0];
+  const seen = new Set<string>();
+  for (let step=0;step<=1000;step++) {
+    const frame = photoFinishFrame(moment,step/1000);
+    for (const pass of frame.passEffects) {
+      seen.add(pass.id);
+      expect(frame.values[pass.id]).toBeLessThan(frame.youValue);
+      expect(pass.strength).toBeGreaterThan(0);
+      expect(pass.strength).toBeLessThanOrEqual(1);
+    }
+  }
+  expect([...seen].sort()).toEqual([...moment.plan.overtakenIds].sort());
+  expect(photoFinishFrame(moment,1).passEffects).toEqual([]);
+  const loss = fixture("overtaken").moments[0];
+  for (let step=0;step<=100;step++) expect(photoFinishFrame(loss,step/100).passEffects).toEqual([]);
+});

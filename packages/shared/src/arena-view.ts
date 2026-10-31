@@ -1,3 +1,5 @@
+import { SHELL_COLORS } from "./shell";
+
 /** Presentation only. A fixed distance window; never normalizes or changes standings. */
 export interface ArenaViewWindow {
   center: number;
@@ -496,4 +498,12 @@ export function serializeArenaBaseline(
     values,
   };
   return JSON.stringify(snapshot);
+}
+
+/** Exact totals drive equal-width tracks; rank alone determines podium color. */
+export function standingsBar(value: number, leader: number, place: number) {
+  return {
+    percent: leader > 0 ? Math.max(0, Math.min(100, value / leader * 100)) : 0,
+    color: place === 1 ? SHELL_COLORS.podiumGold : place === 2 ? SHELL_COLORS.podiumSilver : place === 3 ? SHELL_COLORS.podiumBronze : SHELL_COLORS.muted,
+  };
 }

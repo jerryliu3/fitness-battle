@@ -11,7 +11,9 @@ import { useFieldFlight } from "../ui/use-field-flight";
 import { FieldOverlayView, SlidingFieldPanel } from "../ui/field-overlay-motion";
 import { PortraitField } from "../ui/portrait-field";
 import {
-  coursePositionLeaders, orderedArenaLanes,
+  coursePositionLeaders,
+  standingsBar,
+  orderedArenaLanes,
   competitionQueue,
   createFieldOverlayHold,
   arenaFieldHigh,
@@ -61,7 +63,7 @@ export function CompetitionField({
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
-  const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d">(() => (queued || (state && buildArenaModel(state, undefined, track, sport)?.unit === "pts")) ? "2d" : "4d");
+  const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d">(() => (state && buildArenaModel(state, undefined, track, sport)?.unit === "pts") ? "2d" : "4d");
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
   const chooseView = (value: "2d" | "3d" | "4d") => {
     flight.cancel();
@@ -169,7 +171,7 @@ export function CompetitionField({
       id: lane.id, name: lane.name, avatarUrl: lane.avatarUrl, you: lane.you,
       sample: !lane.you && Boolean(state.enrollments.find((item) => item.sport === sport)?.syntheticIds.includes(lane.id)),
       score: scores.find((row) => row.id === lane.id)?.elo,
-      contextLabel: "This week", contextValue: `${lane.values[2].toFixed(1)} ${arena.unit}`,
+      contextLabel: "This week", contextValue: `${lane.values[2].toFixed(arena.unit === "pts" ? 1 : 2)} ${arena.unit}`,
       contextDetail: `Place ${place(lane.values[2])} · ${sport}`,
     });
   };
@@ -635,22 +637,19 @@ export function CompetitionField({
           {ranked.map((lane) => {
             if (hiddenIds.includes(lane.id)) return <View key={lane.id} style={{ minHeight: 72 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />;
             const rank = place(lane.values[2]);
-            const pct = Math.max(
-              6,
-              Math.min(100, Math.round((lane.values[2] / leaderValue) * 100)),
-            );
+            const bar = standingsBar(lane.values[2], leaderValue, rank);
             const elo = scores.find((row) => row.id === lane.id)?.elo;
             return (
               <Pressable
                 key={lane.id}
                 accessibilityRole="button"
-                accessibilityLabel={`${lane.name}, place ${rank}, ${lane.values[2].toFixed(1)} ${arena.unit}`}
+                accessibilityLabel={`${lane.name}, place ${rank}, ${lane.values[2].toFixed(arena.unit === "pts" ? 1 : 2)} ${arena.unit}`}
                 onPress={() => openProfile(lane)}
                 style={[
                   f.row,
                   {
                     paddingVertical: 10,
-                    paddingHorizontal: lane.you ? 10 : 4,
+                    paddingHorizontal: 10,
                     borderRadius: 12,
                     backgroundColor: lane.you ? c.soft : "transparent",
                   },
@@ -674,7 +673,7 @@ export function CompetitionField({
                     </View>
                     <View style={{ alignItems: "flex-end" }}>
                       <Text style={{ ...textStyle("heading"), color: c.ink }}>
-                        {lane.values[2].toFixed(1)} {arena.unit}
+                        {lane.values[2].toFixed(arena.unit === "pts" ? 1 : 2)} {arena.unit}
                       </Text>
                     </View>
                   </View>
@@ -689,11 +688,11 @@ export function CompetitionField({
                   >
                     <View
                       style={{
-                        width: `${pct}%`,
+                        width: `${bar.percent}%`,
                         height: "100%",
                         borderRadius: 999,
                         backgroundColor:
-                          rank === 1 ? c.ink : lane.you ? c.tennis : c.muted,
+                          bar.color,
                       }}
                     />
                   </View>
