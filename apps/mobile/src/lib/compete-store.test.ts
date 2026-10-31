@@ -616,3 +616,25 @@ it("removes an orphan dirty flag before caching the loaded account", async () =>
   expect(api.saveError).toBeNull();
   expect(fetcher.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(0);
 });
+
+
+it.each([true, false])("detects Garmin imports at startup only with a prior account baseline (cache=%s)", async (hasCache) => {
+  login("alice");
+  const cached = accountState("alice");
+  const activity = { id: "garmin-arrived-while-closed", sport: "running" as const, source: "garmin" as const, startedAt: "2026-10-21T12:00:00Z", distanceM: 5000, movingSec: 1800, avgHr: null, verified: true, provenance: "recorded" as const, disposition: "counted" as const };
+  if (hasCache) mock.values.set(accountStorageKeys("alice").state, JSON.stringify(cached));
+  fetcher.mockResolvedValueOnce(Response.json({ state: { ...cached, activities: [...cached.activities, activity] }, updatedAt: "garmin-revision" }));
+  await mount();
+  if (hasCache) {
+    expect(api.state!.activities.some(a => a.id === activity.id)).toBe(false);
+    const screen = renderer.root.findByType("SyncReview" as never);
+    expect(screen.props.receipt.activities.map((a: { id: string }) => a.id)).toEqual([activity.id]);
+    await act(async () => { screen.props.onComplete([activity.id]); await flush(); });
+    expect(api.state!.activities.filter(a => a.id === activity.id)).toHaveLength(1);
+    await act(async () => { await api.refresh(); await flush(); });
+    expect(renderer.root.findAllByType("SyncReview" as never).some(screen => screen.props.receipt)).toBe(false);
+  } else {
+    expect(api.state!.activities.some(a => a.id === activity.id)).toBe(true);
+    expect(renderer.root.findAllByType("SyncReview" as never)).toHaveLength(0);
+  }
+});
