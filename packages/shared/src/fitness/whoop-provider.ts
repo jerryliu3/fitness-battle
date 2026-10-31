@@ -1,3 +1,4 @@
+import { recordedSleep } from "./sleep";
 import type { ActivitySample, ReadinessSample } from "../types";
 import { mapSportToCategory } from "./strava-provider";
 import type { FitnessHttp } from "./http";
@@ -32,7 +33,7 @@ interface WhoopRecovery {
   cycle_id?: number;
   created_at?: string;
   score_state?: string;
-  score?: { recovery_score?: number };
+  score?: { recovery_score?: number; resting_heart_rate?:number; hrv_rmssd_milli?:number };
 }
 
 async function paged<T>(
@@ -47,6 +48,7 @@ async function paged<T>(
     const response = await http.fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+    if (response.status===403) throw new Error("whoop_reconnect_required");
     if (!response.ok) throw new Error(`whoop_pull_failed:${response.status}`);
     const body = (await readJson(response)) as WhoopPage<T>;
     collected.push(...(body.records ?? []));
@@ -108,11 +110,16 @@ export async function pullWhoop(
   recoveryUrl.searchParams.set("start", since);
   recoveryUrl.searchParams.set("end", until);
   recoveryUrl.searchParams.set("limit", "25");
-  const [workouts, recoveries] = await Promise.all([
+  interface Sleep { id:string; end:string; nap:boolean; score_state:string; score?:{ sleep_efficiency_percentage?:number; stage_summary:{total_light_sleep_time_milli:number;total_slow_wave_sleep_time_milli:number;total_rem_sleep_time_milli:number;total_awake_time_milli:number} } }
+  const sleepsUrl=new URL(`${WHOOP_API}/activity/sleep`); sleepsUrl.searchParams.set("start",since); sleepsUrl.searchParams.set("end",until); sleepsUrl.searchParams.set("limit","25");
+  const [workouts, recoveries, sleeps] = await Promise.all([
     paged<WhoopWorkout>(workoutsUrl, accessToken, http),
     paged<WhoopRecovery>(recoveryUrl, accessToken, http),
+    paged<Sleep>(sleepsUrl,accessToken,http),
   ]);
   return {
+    dailyHealth: recoveries.filter(r=>r.score_state==="SCORED" && r.created_at).map(r=>({provider:"whoop" as const,day:r.created_at!.slice(0,10),restingHr:r.score?.resting_heart_rate,hrv:r.score?.hrv_rmssd_milli})),
+    sleepNights: sleeps.filter(r=>!r.nap && r.score_state==="SCORED" && r.score).flatMap(r=>{const stages=r.score!.stage_summary; const night=recordedSleep("whoop",{id:r.id,end:r.end,durationSec:(stages.total_light_sleep_time_milli+stages.total_slow_wave_sleep_time_milli+stages.total_rem_sleep_time_milli)/1000,deepSec:stages.total_slow_wave_sleep_time_milli/1000,remSec:stages.total_rem_sleep_time_milli/1000,lightSec:stages.total_light_sleep_time_milli/1000,awakeSec:stages.total_awake_time_milli/1000,efficiency:r.score!.sleep_efficiency_percentage});return night?[night]:[];}),
     activities: workouts
       .map((item) => mapWhoopWorkout(item))
       .filter((item): item is ActivitySample => item != null),
@@ -132,7 +139,7 @@ export function createWhoopProvider(
       displayName: "WHOOP",
       authorizeUrl: "https://api.prod.whoop.com/oauth/oauth2/auth",
       tokenUrl: "https://api.prod.whoop.com/oauth/oauth2/token",
-      scopes: "offline read:recovery read:workout",
+      scopes: "offline read:recovery read:workout read:sleep",
       missingCredentialsMessage:
         "WHOOP credentials missing — using stub readiness. Set WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET, and WHOOP_REDIRECT_URI.",
       pull: pullWhoop,

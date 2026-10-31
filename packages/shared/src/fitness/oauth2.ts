@@ -1,3 +1,4 @@
+import type { SleepNight } from "../compete/health";
 import type {
   ActivitySample,
   FitnessConnection,
@@ -19,6 +20,8 @@ export interface OAuth2Env {
 export interface OAuth2Pull {
   activities: ActivitySample[];
   readiness: ReadinessSample[];
+  sleepNights?: SleepNight[];
+  dailyHealth?: {provider: FitnessProviderId; day:string; steps?:number|null; restingHr?:number|null; hrv?:number|null}[];
 }
 
 export interface OAuth2Spec {
@@ -278,6 +281,8 @@ export function createOAuth2Provider(
         provider: spec.id,
         activities,
         readiness: pulled.readiness,
+        sleepNights: pulled.sleepNights,
+        dailyHealth: pulled.dailyHealth,
         syncedAt,
         usedMock: false,
         since,

@@ -1,3 +1,4 @@
+import { recordedSleep } from "./sleep";
 import type { ActivitySample, ReadinessSample } from "../types";
 import type { FitnessHttp } from "./http";
 import { readJson } from "./http";
@@ -100,11 +101,16 @@ export async function pullOura(
 ): Promise<OAuth2Pull> {
   const sinceDay = since.slice(0, 10);
   const untilDay = until.slice(0, 10);
-  const [workouts, readiness] = await Promise.all([
+  interface Sleep { day:string; average_hrv?:number; lowest_heart_rate?:number; id: string; type?: string; bedtime_end: string; total_sleep_duration: number; deep_sleep_duration?: number; rem_sleep_duration?: number; light_sleep_duration?: number; awake_time?: number; efficiency?: number }
+  const [workouts, readiness, sleeps, daily] = await Promise.all([
     ouraGet<OuraWorkout>("workout", accessToken, sinceDay, untilDay, http),
     ouraGet<OuraReadiness>("daily_readiness", accessToken, sinceDay, untilDay, http),
+    ouraGet<Sleep>("sleep", accessToken, sinceDay, untilDay, http),
+    ouraGet<{day:string;steps?:number}>("daily_activity",accessToken,sinceDay,untilDay,http),
   ]);
   return {
+    dailyHealth: [...daily.map(r=>({provider:"oura" as const,day:r.day,steps:r.steps})),...sleeps.filter(r=>r.type==="long_sleep").map(r=>({provider:"oura" as const,day:r.day,hrv:r.average_hrv}))],
+    sleepNights: sleeps.filter(r => r.type === "long_sleep").flatMap(r => { const night=recordedSleep("oura", {id:r.id,end:r.bedtime_end,durationSec:r.total_sleep_duration,deepSec:r.deep_sleep_duration,remSec:r.rem_sleep_duration,lightSec:r.light_sleep_duration,awakeSec:r.awake_time,efficiency:r.efficiency}); return night?[night]:[]; }),
     activities: workouts
       .map((item) => mapOuraWorkout(item))
       .filter((item): item is ActivitySample => item != null),

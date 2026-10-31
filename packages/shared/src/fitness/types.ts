@@ -1,3 +1,4 @@
+import type { SleepNight } from "../compete/health";
 import type {
   ActivitySample,
   CategorySlug,
@@ -17,6 +18,8 @@ export interface SyncResult {
   provider: FitnessProviderId;
   activities: ActivitySample[];
   readiness?: ReadinessSample[];
+  sleepNights?: SleepNight[];
+  dailyHealth?: {provider: FitnessProviderId; day:string; steps?:number|null; restingHr?:number|null; hrv?:number|null}[];
   syncedAt: string;
   usedMock: boolean;
   /** ISO window start used for the pull, when known. */

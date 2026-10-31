@@ -74,3 +74,11 @@ it("labels the observed range with sleep units and ignores missing days", () => 
   state.links = [{ provider: "oura", linked: true, status: "stub" }];
   expect(isSampleSleepNight(state, night())).toBe(true);
 });
+
+it("shows actual daily measurements and leaves absent or future measurements as gaps",()=>{
+ const state=freshState(now); state.dailyHealth=[{provider:"garmin",day:"2026-10-24",steps:5432,restingHr:52,hrv:48},{provider:"oura",day:"2026-10-25",steps:99999}];
+ const metrics=homeHealthMetrics(state,now);
+ expect(metrics.slice(1).map(r=>r.value)).toEqual(["5,432","52","48"]);
+ expect(metrics[1].history.at(-1)).toBe(5432);
+ expect(metrics[1].detail).toContain("Garmin");
+});

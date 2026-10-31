@@ -12,15 +12,16 @@ import { mobileEnv } from "../lib/env";
 
 export function ActivityRoute({ activity, milestone = false, units = "metric" }: { activity?: Activity; milestone?: boolean; units?: "us" | "metric" }) {
   const auth = useAuth();
-  const [fetched, setFetched] = useState<{ id: string; owner?: string; samples: RouteReplaySample[] } | null>(null);
-  const coordinates = useMemo(() => activityRoute(activity), [activity?.summaryPolyline, activity?.detailedPolyline]);
+  const [fetched, setFetched] = useState<{ id: string; owner?: string; detailedPolyline?: string; samples: RouteReplaySample[] } | null>(null);
+  const fetchedLine = fetched?.id === activity?.id && fetched?.owner === auth.user?.id ? fetched?.detailedPolyline : undefined;
+  const coordinates = useMemo(() => activityRoute(activity ? {...activity,detailedPolyline:fetchedLine ?? activity.detailedPolyline} : undefined), [activity?.summaryPolyline, activity?.detailedPolyline,fetchedLine]);
   const [open, setOpen] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
   useEffect(() => {
     if (!open || !activity || activity.routeReplay || !auth.user || auth.offlineMode) return;
     const id = activity.id, owner = auth.user.id, controller = new AbortController();
     let alive = true;
-    void requestApi<{ routeReplay: unknown }>(mobileEnv.apiUrl, auth.accessToken, `/api/fitness/replay?activityId=${encodeURIComponent(id)}`).then(body => { if (alive) setFetched({ id, owner, samples: normalizeRouteReplay(body.routeReplay) }); }).catch(() => { /* Optional telemetry never prevents route playback. */ });
+    void requestApi<{ routeReplay: unknown; detailedPolyline?:string }>(mobileEnv.apiUrl, auth.accessToken, `/api/fitness/replay?activityId=${encodeURIComponent(id)}`).then(body => { if (alive) setFetched({ id, owner, detailedPolyline: typeof body.detailedPolyline === "string" ? body.detailedPolyline : undefined, samples: normalizeRouteReplay(body.routeReplay) }); }).catch(() => { /* Optional telemetry never prevents route playback. */ });
     return () => { alive = false; controller.abort(); };
   }, [open, activity?.id, activity?.routeReplay, auth.user?.id, auth.offlineMode, auth.accessToken]);
   const routeReplay = activity?.routeReplay ?? (fetched?.id === activity?.id && fetched?.owner === auth.user?.id ? fetched?.samples : undefined);

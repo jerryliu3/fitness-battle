@@ -24,6 +24,7 @@ export {
   type GarminEnv,
 } from "./garmin-provider";
 export {
+  routeMetadata,
   parseActivityFile,
   parseFit,
   parseGpx,

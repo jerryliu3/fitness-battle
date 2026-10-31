@@ -52,6 +52,10 @@ describe("store binary config", () => {
       "android.permission.POST_NOTIFICATIONS",
       "android.permission.health.READ_EXERCISE",
       "android.permission.health.READ_DISTANCE",
+      "android.permission.health.READ_STEPS",
+      "android.permission.health.READ_RESTING_HEART_RATE",
+      "android.permission.health.READ_HEART_RATE_VARIABILITY",
+      "android.permission.health.READ_SLEEP",
     ]);
     for (const blocked of [
       "android.permission.ACCESS_FINE_LOCATION",
@@ -59,7 +63,6 @@ describe("store binary config", () => {
       "android.permission.ACTIVITY_RECOGNITION",
       "android.permission.READ_MEDIA_IMAGES",
       "android.permission.health.READ_HEART_RATE",
-      "android.permission.health.READ_SLEEP",
       "android.permission.health.WRITE_EXERCISE",
     ]) {
       expect(app.android.blockedPermissions).toContain(blocked);

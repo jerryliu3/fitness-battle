@@ -10,7 +10,7 @@ export type AppleHealthKitNative = {
 };
 
 export type AppleHealthKitConstants = {
-  Permissions: { Workout: string };
+  Permissions: { Workout: string; [key:string]:string };
 };
 
 export type AppleHealthKitModule = AppleHealthKitNative & {
@@ -57,7 +57,9 @@ export function resolveAppleHealthKit(
     return "unavailable";
   }
 
+  const extra = Object.fromEntries(["getDailyStepCountSamples","getRestingHeartRateSamples","getHeartRateVariabilitySamples","getSleepSamples","getWorkoutRouteSamples"].flatMap(key=>{const fn=(native as unknown as Record<string,unknown>)[key];return typeof fn === "function"?[[key,fn.bind(native)]]:[];}));
   return {
+    ...extra,
     initHealthKit: native.initHealthKit.bind(native),
     getAnchoredWorkouts: native.getAnchoredWorkouts.bind(native),
     Constants: constants,

@@ -258,6 +258,7 @@ export interface CompeteState {
   clock: SeasonClock;
   ratings: Rating[];
   activities: Activity[];
+  dailyHealth?: { provider: string; day: string; steps?: number | null; restingHr?: number | null; hrv?: number | null }[];
   readiness: ReadinessMark[];
   /** Nightly sleep readings. Separate from workout activities. */
   sleepNights: SleepNight[];

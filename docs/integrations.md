@@ -181,3 +181,19 @@ environment; without them the scheduler makes no HTTP request. File callback URL
 expire after 24 hours, so a prolonged outage can require Garmin resending the file. Historical Starter backfill is not available; the Garmin
 Summary Resender may replay recently retained records where supported.
 
+Native startup keeps BootGate mounted outside the block privacy gate. Signing in or
+refreshing blocked-athlete settings still hides protected content until that read
+succeeds, but no longer recreates the launch splash. Account hydration and privacy
+network requests can still take time.
+
+## Daily health readings and sleep ingestion
+
+Daily health metrics (steps, resting heart rate, heart rate variability) and recorded sleep nights
+are synchronized across supported fitness providers (WHOOP, Oura, Garmin, Apple Health, Android Health Connect).
+Server-side `public.daily_health_readings` maintains owner-scoped daily measurements with RLS and trigger-based
+coalescing updates so distinct feeds update independently without erasing each other. Authenticated clients
+have read-only access; writes occur through authenticated ingest and sync endpoints using service role.
+
+Sleep nights union overlapping intervals so duplicate device recordings (e.g. watch and phone) cannot inflate
+sleep duration. HealthKit HRV is normalized to milliseconds (SDNN). Ungranted permissions are respected without
+querying or fabricating metrics. Missing provider readings remain honest gaps on Home.

@@ -598,7 +598,12 @@ Native geographic replay follows frame positions directly rather than restarting
 camera flights on each update; explicit athlete selection retains its flight.
 
 
-### Native sheet dismissal — October 30
+### Native launch and sheet dismissal — October 30
+
+Startup shows the canvas while bundled fonts load, followed by the launch animation.
+The privacy read stays behind that cover; ordinary loading never shows safety-settings
+copy. Privacy failures still expose Retry and Sign out. The launch gate remains mounted
+across sign-in and foreground privacy refresh, so later reads do not replay startup.
 
 Shared native bottom sheets dismiss with a downward drag from the grip/header or
 from content at scroll position zero. Scrolled content retains vertical scrolling;
