@@ -223,6 +223,7 @@ const FIT_SPORT: Record<number, CategorySlug | null> = {
 };
 
 interface FitSession {
+  elapsed?: number;
   sport?: number;
   start?: number;
   timer?: number;
@@ -318,6 +319,7 @@ export function parseFit(bytes: Uint8Array, provider: FitnessProviderId): Activi
       if (definition.global === 18) {
         if (field.num === 5 && field.size === 1) session.sport = value;
         if (field.num === 2 && field.size === 4) session.start = value;
+        if (field.num === 7 && field.size === 4 && value !== 0xffffffff) session.elapsed = value;
         if (field.num === 8 && field.size === 4) session.timer = value;
         if (field.num === 9 && field.size === 4) session.distance = value;
         if (field.num === 16 && field.size === 1) session.hr = value;
@@ -351,7 +353,13 @@ export function parseFit(bytes: Uint8Array, provider: FitnessProviderId): Activi
       ...(gps ? routeMetadata(records.map(p => ({ ...p, cadence: p.cadence == null ? undefined : p.cadence * (sport === "cycling" ? 1 : 2), cadenceUnit: sport === "cycling" ? "rpm" as const : "spm" as const })).filter(p => {
         if (!p.time) return sessions.length === 1;
         const at = (Date.parse(p.time) - FIT_EPOCH_MS) / 1000;
-        return at >= session.start! && at <= (session.end ?? sessions[index + 1]?.start ?? Infinity);
+        // Some Garmin exports stamp the session message with its start time.
+        // Prefer recorded elapsed time to a zero-length message timestamp; never
+        // discard valid GPS samples merely because that timestamp repeats start.
+        const upper = session.end != null && session.end > session.start! ? session.end
+          : session.elapsed != null && session.elapsed > 0 ? session.start! + session.elapsed / 1000
+          : sessions[index + 1]?.start ?? Infinity;
+        return at >= session.start! && at <= Math.min(upper, sessions[index + 1]?.start ?? Infinity);
       }), sport) : {}),
     };
     return [sample];
