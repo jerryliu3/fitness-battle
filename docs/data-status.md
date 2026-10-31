@@ -69,9 +69,8 @@ native Sync / Add Activity. Applied the existing
 verified an authenticated read under the affected account. No historical score
 awards were reconstructed.
 
-Deployment bookkeeping needs approval: the migration service recorded the applied
-migration as `20261031212647` (`effort_score_events`), while the repository file is
-`20261031135120`. Automatic approval review rejected aligning that single new
-history entry under the no-rewritten-history charter. The table, trigger and RLS
-are live; the repository migration remains unchanged. Reconcile this mismatch
-before a future migration push to avoid attempting the same DDL twice.
+The migration service initially recorded this migration as `20261031212647`.
+The owner reconciled the history entry to repository version `20261031135120`.
+Verified that exactly one `effort_score_events` entry exists under the repository
+version and that the tool-generated version is absent. Migration history and the
+repository filename are aligned; the deployment bookkeeping blocker is resolved.
