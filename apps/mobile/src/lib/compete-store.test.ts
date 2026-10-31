@@ -446,6 +446,8 @@ describe("mobile account lifecycle", () => {
       await flush();
     });
     expect(api.state?.name).toBe("Alice recovered");
+    expect(api.canWrite).toBe(true);
+    expect(api.saveError).toBeNull();
     expect(api.state?.city).not.toBe("Unsafe replacement");
   });
   it("clears only exact owned caches when deleting an account", async () => {

@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import Svg, { Circle, Path, Polyline, G, Line } from "react-native-svg";
+import Svg, { Circle, Path, Polyline, G } from "react-native-svg";
 import {
   SHELL_COLORS as c,
   buildAnalyticsLabModel,
@@ -10,7 +10,7 @@ import {
   type AnalyticsTimeLens,
   type CompeteState,
 } from "@fitness-battle/shared";
-import { ChartSvg, ChartText } from "../ui/chart-text";
+import { ChartSvg } from "../ui/chart-text";
 import { AppText } from "../ui/section";
 
 export function AthleteTelemetryMatrix({
@@ -25,16 +25,6 @@ export function AthleteTelemetryMatrix({
   const model = useMemo(() => buildAnalyticsLabModel(state, timeLens), [state, timeLens]);
 
   const SHOW_ATHLETE_EQUITY = false;
-
-  const datesByDomain = {
-    market: model.market.equitySeries.map(p => p.label),
-    vitals: model.vitals.metrics[0]?.series.map(p => p.label) ?? [],
-    sleep: model.sleep.nights.map(p => p.label),
-    load: model.load.series.map(p => p.label),
-    performance: model.performance.series.map(p => p.label),
-    combined: model.combined.series.map(p => p.label),
-  };
-
 
   const bentoTiles: Array<{
     id: string;
@@ -172,7 +162,7 @@ export function AthleteTelemetryMatrix({
 
             </View>
 
-              <MiniSparkline values={t.points} stroke={t.accent} corridor={t.corridor} labels={datesByDomain[t.domain]} />
+              <MiniSparkline values={t.points} stroke={t.accent} corridor={t.corridor} />
             <AppText role="caption" secondary numberOfLines={1}>
               {t.delta}
             </AppText>
@@ -186,12 +176,10 @@ export function AthleteTelemetryMatrix({
 function MiniSparkline({
   values,
   stroke,
-  labels = [],
   corridor,
 }: {
   values: number[];
   stroke: string;
-  labels?: string[];
   corridor?: { high: number[]; low: number[] };
 }) {
   if (values.length < 2) return null;
@@ -200,14 +188,9 @@ function MiniSparkline({
   const geometry = buildSvgLineGeometry(values, 78, 28, 2, { min: low, max: high });
   const polyline = geometry.polyline;
   const points = geometry.points.map((point, i) => ({ ...point, val: values[i]! }));
-  const ticks = [...new Set([low, high])].map(value => ({ value, y: 26 - (value-low)/(high-low || 1)*24 }));
-  const number = (value: number) => value >= 1000 ? `${(value / 1000).toFixed(1)}k` : Number(value.toPrecision(3)).toString();
   return (
-    <ChartSvg width={110} height={50} viewBox="0 0 110 50">
-      {ticks.map(tick => <G key={tick.value}><Line x1={30} x2={104} y1={tick.y} y2={tick.y} stroke={c.line}/><ChartText x={26} y={tick.y+3} textAnchor="end" fill={c.muted}>{number(tick.value)}</ChartText></G>)}
-      {labels[0] && <ChartText x={30} y={46} fill={c.muted}>{labels[0]}</ChartText>}
-      {labels.at(-1) && <ChartText x={104} y={46} textAnchor="end" fill={c.muted}>{labels.at(-1)}</ChartText>}
-      <G transform="translate(28 0)">
+    <ChartSvg width="100%" height={40} viewBox="0 0 82 32">
+      <G transform="translate(2 2)">
       {corridor && <Path d={`M ${corridor.high.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" L ")} L ${corridor.low.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).reverse().join(" L ")} Z`} fill={stroke} opacity={.16}/>}
       {corridor && <Polyline points={corridor.high.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" ")} fill="none" stroke={stroke} strokeDasharray={[2, 2]} opacity={.65}/>}
       {corridor && <Polyline points={corridor.low.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" ")} fill="none" stroke={stroke} strokeDasharray={[2, 2]} opacity={.65}/>}
