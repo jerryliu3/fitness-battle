@@ -1,3 +1,4 @@
+import { Toast } from "../ui/toast";
 import { playCue } from "../lib/haptics";
 import { SectionHeader, AppText } from "../ui/section";
 import {
@@ -246,11 +247,7 @@ export function DataSyncActions({ provider, includeCalibration = true }: { provi
           /></>}
         </>
       ) : null}
-      {note ? (
-        <AppText role="body" secondary  accessibilityLiveRegion="polite">
-          {note}
-        </AppText>
-      ) : null}
+      <Toast message={note} onDismiss={() => setNote("")} />
     </View>
   );
 }

@@ -1,3 +1,4 @@
+import { Toast } from "../ui/toast";
 import { playCue } from "../lib/haptics";
 import { AppText } from "../ui/section";
 import { IconButton } from "../ui/icon-button";
@@ -16,7 +17,7 @@ import {
   type SportId,
 } from "@fitness-battle/shared";
 import { Link } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -51,6 +52,7 @@ export function HomeActivityActions({
   const [time, setTime] = useState("");
   const [miles, setMiles] = useState(""),
     [minutes, setMinutes] = useState("");
+  useEffect(() => setNote(""), [user?.id]);
   const flight = useRef(false);
   if (!state) return null;
   async function sync() {
@@ -152,26 +154,26 @@ export function HomeActivityActions({
   }
   const actionRow = compact ? (
     <View style={{ flexDirection: "row", gap: 8 }}>
-      <IconButton icon="sync" label={busy ? "Syncing activities" : "Sync activities"} disabled={!user || !canWrite || busy} onPress={() => void sync()} />
+      <IconButton primary icon="sync" label={busy ? "Syncing activities" : "Sync activities"} disabled={!user || !canWrite || busy} onPress={() => void sync()} />
       <IconButton icon="plus" label="Add activity" disabled={!user || !canWrite || busy} onPress={() => { setSport(""); setFormError(""); setOpen(true); }} />
     </View>
   ) : (
-    <>
-      <FocusButton
+    <View style={{ flexDirection: "row", gap: 8 }}>
+      <View style={{ flex: 1 }}><FocusButton
         label={busy ? "Syncing…" : "Sync activities"}
-        secondary
         disabled={!user || !canWrite || busy}
         onPress={() => void sync()}
-      />
-      <FocusButton
+      /></View>
+      <View style={{ flex: 1 }}><FocusButton
+        secondary
         label="Add activity"
         disabled={!user || !canWrite || busy}
         onPress={() => {
           setFormError("");
           setOpen(true);
         }}
-      />
-    </>
+      /></View>
+    </View>
   );
 
   return (
@@ -180,11 +182,7 @@ export function HomeActivityActions({
       {!user && !compact && (
         <Link href="/athlete">Sign in to add or sync activities</Link>
       )}
-      {note ? (
-        <AppText role="caption" secondary  accessibilityLiveRegion="polite">
-          {note}
-        </AppText>
-      ) : null}
+      <Toast message={note} onDismiss={() => setNote("")} />
       <FocusSheet
         open={open}
         onClose={() => setOpen(false)}

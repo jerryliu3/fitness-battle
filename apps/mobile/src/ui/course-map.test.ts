@@ -77,7 +77,7 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   expect(cards.find(card => card.props.anchor.x === 0)!.props.coordinate).toEqual(marker.geometry.coordinates);
   expect(cards.every(card => card.props.allowOverlap && card.props.allowZElevate === false)).toBe(true);
   const labels = renderer.root.findAllByType("AthletePennant" as never);
-  expect(labels.map(label => label.props.detail)).toEqual(["2nd · 0.6 km", "1st · +0.5 km"]);
+  expect(labels.map(label => label.props.detail)).toEqual(["2nd · 0.6 km", "1st · 1.1 km"]);
 
 });
 

@@ -15,7 +15,7 @@ import { ActivityComparison } from "./activity-comparison";
 import { ActivityContext } from "./activity-context";
 
 export function SessionStage({ state, activities, suggestion, onRemove, actions }: {
-  state: CompeteState; activities: Activity[]; suggestion?: { title: string; minutes?: number | null; detail: string };
+  state: CompeteState; activities: Activity[]; suggestion?: { kind?: string; title: string; minutes?: number | null; detail: string };
   onRemove: (id: string) => void; actions?: ReactNode;
 }) {
   const model = sessionStageModel(activities);
@@ -24,7 +24,7 @@ export function SessionStage({ state, activities, suggestion, onRemove, actions 
   if (!current) return <View style={s.stack}>
     <AppText role="display" accessibilityRole="header">{suggestion?.title ?? "Make room to move."}</AppText>
     <View style={s.suggestion}><View><AppText role="hero">{formatTrainingHours((suggestion?.minutes ?? 0) * 60)}</AppText><AppText role="caption" secondary>hr · Suggested time</AppText></View><AnimatedEmber size={90} expression="happy" action="idle" loop /></View>
-    <AppText secondary>{suggestion?.detail ?? "Nothing recorded today."}</AppText>{actions}
+    <AppText secondary>{suggestion?.detail ?? "Nothing recorded today."}</AppText>{suggestion?.kind !== "rest" && actions}
   </View>;
   return <View style={s.stack}>
     {model.rows.length > 1 ? <View style={s.group}>

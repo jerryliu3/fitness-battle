@@ -1,3 +1,4 @@
+import { Toast } from "../src/ui/toast";
 import { playPattern } from "../src/lib/haptics";
 import { HapticPreference } from "../src/ui/haptic-preference";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -531,24 +532,7 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
               </View>
             );
           })}
-          {note === "Sync failed" ? (
-            <Pressable
-              onPress={() => setPanel("connections")}
-              accessibilityRole="button"
-              style={{ paddingVertical: 4 }}
-            >
-              <Text
-                style={[
-                  styles.copy,
-                  { color: "#b83a38", textDecorationLine: "underline" },
-                ]}
-              >
-                Sync failed · check Data Sync
-              </Text>
-            </Pressable>
-          ) : note ? (
-            <Text style={styles.copy}>{note}</Text>
-          ) : null}
+          <Toast message={note ?? ""} onDismiss={() => setNote(null)} />
           <DataSyncActions includeCalibration={!inlineConnections}/>
         </SectionStack>);
     if (inlineConnections) return content;

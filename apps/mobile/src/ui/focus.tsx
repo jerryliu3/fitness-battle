@@ -1,3 +1,4 @@
+import { ToastProvider } from "./toast";
 import { SHELL_SPACING, SHELL_SECTION, SHELL_RADIUS } from "@fitness-battle/shared";
 import { AppText, PageHeader, textStyle } from "./section";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -111,6 +112,7 @@ export function FocusSheet({
       onRequestClose={onClose}
       onDismiss={Platform.OS === "ios" ? () => closedCallback.current?.() : undefined}
     >
+      <ToastProvider>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={f.modal}
@@ -173,6 +175,7 @@ export function FocusSheet({
           </ScrollView>
         </AnimatedSafeAreaView>
       </KeyboardAvoidingView>
+      </ToastProvider>
     </Modal>
   );
 }

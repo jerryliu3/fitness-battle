@@ -1,3 +1,4 @@
+import { ToastProvider } from "../src/ui/toast";
 import { textStyle } from "../src/ui/section";
 import {
   DMSans_400Regular,
@@ -160,19 +161,21 @@ export default function RootLayout() {
                 <CompeteProvider navigationReady={fontsLoaded}>
                   <BootGate>
                     <NotificationNavigation />
-                    <BlockPrivacyGate>
-                      <LiveFieldRefresh />
-                      <NavigationWarmup />
-                      <StatusBar style="dark" />
-                      <Stack
-                        screenOptions={{
-                          headerShown: false,
-                          contentStyle: { backgroundColor: SHELL_COLORS.paper },
-                          animation:
-                            Platform.OS === "ios" ? "default" : "slide_from_right",
-                        }}
-                      />
-                    </BlockPrivacyGate>
+                    <ToastProvider>
+                      <BlockPrivacyGate>
+                        <LiveFieldRefresh />
+                        <NavigationWarmup />
+                        <StatusBar style="dark" />
+                        <Stack
+                          screenOptions={{
+                            headerShown: false,
+                            contentStyle: { backgroundColor: SHELL_COLORS.paper },
+                            animation:
+                              Platform.OS === "ios" ? "default" : "slide_from_right",
+                          }}
+                        />
+                      </BlockPrivacyGate>
+                    </ToastProvider>
                   </BootGate>
                 </CompeteProvider>
               </AthleteBlocksProvider>
