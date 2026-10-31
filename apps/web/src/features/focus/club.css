@@ -2368,3 +2368,7 @@
 .focus-broadcast-replay-chip .competition-replay-trigger { border-radius: 999px; padding-inline: 14px; }
 
 .week-board-preview .competition-replay-scene{height:340px;min-height:340px;position:relative;flex:none}.week-board-preview{border-radius:20px;overflow:hidden;margin-bottom:20px}
+
+.competition-replay-athletes { display:flex; flex-wrap:wrap; gap:6px; }
+.competition-replay-athletes button { min-height:44px; font:var(--type-caption); }
+.competition-replay-viewbar { flex-wrap:wrap; }

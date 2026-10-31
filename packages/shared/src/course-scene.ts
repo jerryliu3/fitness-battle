@@ -75,3 +75,10 @@ export function courseCalloutLayout(slot: number) {
   const height = originY + Math.max(0, y + 48) + 2;
   return { left, y, originY, height, originX: left ? 170 : 0, cardTop: originY + y };
 }
+
+/** Ranked callers share the same compact roster in live fields and every replay. */
+export function coursePositionLeaders<T extends { id: string; you?: boolean }>(ranked: readonly T[]): T[] {
+  const leaders = ranked.slice(0, 3);
+  const you = ranked.find(lane => lane.you);
+  return you && !leaders.some(lane => lane.id === you.id) ? [...leaders, you] : leaders;
+}

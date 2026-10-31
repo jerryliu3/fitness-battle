@@ -110,9 +110,9 @@ export interface CourseCameraDriver {
   fit?(bounds: { ne: LngLat; sw: LngLat }, duration: number): void;
 }
 /** One owner for both platforms. Native engines own every frame between camera commands. */
-export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = false) {
+export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = false, initialDimension: CourseDimension = "3d") {
   let following = true;
-  let dimension: CourseDimension = "3d";
+  let dimension: CourseDimension = initialDimension;
   const move = (pose: CourseCameraPose, automatic = false) => {
     if (automatic && driver.follow) { driver.follow(pose); return; }
     const from = driver.read();
@@ -121,7 +121,7 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
     driver.move(pose, reducedMotion ? 0 : automatic ? 500 : Math.min(1800, 400 + 180 * Math.log2(1 + metres / 30)));
   };
   return {
-    interrupt() { following = false; driver.stop(true); },
+    interrupt(userGesture = true) { following = false; driver.stop(userGesture); },
     setReducedMotion(value: boolean) { reducedMotion = value; driver.stop(); },
     focus(course: RaceCourse, metres: number, automatic = false, lateralMetres = 0) {
       if (automatic && !following) return;
@@ -140,7 +140,7 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
       // Scrubbing is direct manipulation: no queued flights, zoom reset or heading changes.
       driver.move({ ...current, center: raceCoursePosition(course, metres).coordinate }, 0);
     },
-    dimension(value: CourseDimension) { dimension = value; move({ ...driver.read(), pitch: value === "3d" ? 60 : 0, bearing: value === "2d" ? 0 : driver.read().bearing }); },
+    dimension(value: CourseDimension, moveCamera = true) { dimension = value; if (moveCamera) move({ ...driver.read(), pitch: value === "3d" ? 60 : 0, bearing: value === "2d" ? 0 : driver.read().bearing }); },
     zoom(delta: number) { following = false; const current = driver.read(); move({ ...current, zoom: Math.max(0, Math.min(20, current.zoom + delta)) }); },
     overview(course: Pick<RaceCourse, "coordinates">) {
       following = false;

@@ -35,7 +35,7 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 async function open() {
-  await act(async () => { renderer = create(createElement(CompetitionReplayButton, { state, selection })); });
+  await act(async () => { renderer = create(createElement(CompetitionReplayButton, { state, selection, dimension: "2d" })); });
   await act(async () => renderer.root.findByType("FocusButton" as never).props.onPress());
 }
 it("uses the local practice ledger when signed in with Debug active and reloads from the server after reset", async () => {
@@ -45,7 +45,7 @@ it("uses the local practice ledger when signed in with Debug active and reloads 
   expect(field().props.lanes.map((lane: { id: string }) => lane.id).sort()).toEqual(localCompetitionReplay(state, selection).athletes.map(a => a.id).sort());
   mock.debug = false;
   mock.request.mockResolvedValue(localCompetitionReplay(state, selection));
-  await act(async () => renderer.update(createElement(CompetitionReplayButton, { state, selection })));
+  await act(async () => renderer.update(createElement(CompetitionReplayButton, { state, selection, dimension: "2d" })));
   expect(mock.request).toHaveBeenCalledTimes(1);
   expect(mock.request.mock.calls[0][2]).toContain("/api/compete/replay?");
 });

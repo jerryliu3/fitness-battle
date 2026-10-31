@@ -34,7 +34,7 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 async function open() {
-  await act(async () => { renderer = create(createElement(CompetitionReplayButton, { state, selection })); });
+  await act(async () => { renderer = create(createElement(CompetitionReplayButton, { state, selection, dimension: "2d" })); });
   await act(async () => mock.open!(true));
 }
 it("uses the local practice ledger when signed in with Debug active and reloads from the server after reset", async () => {
@@ -45,7 +45,7 @@ it("uses the local practice ledger when signed in with Debug active and reloads 
   expect(renderer.root.findByType("input").props.max).toBeGreaterThan(0);
   mock.debug = false;
   mock.request.mockResolvedValue(new Response(JSON.stringify(localCompetitionReplay(state, selection))));
-  await act(async () => renderer.update(createElement(CompetitionReplayButton, { state, selection })));
+  await act(async () => renderer.update(createElement(CompetitionReplayButton, { state, selection, dimension: "2d" })));
   expect(mock.request).toHaveBeenCalledTimes(1);
   expect(mock.request.mock.calls[0][0]).toContain("/api/compete/replay?");
 });

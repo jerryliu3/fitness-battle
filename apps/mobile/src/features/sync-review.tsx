@@ -83,7 +83,7 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
     <ActivityRoute activity={activity} units={state.units}/>
     <Text style={textStyle("heading")}>{formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units)} · {clubDuration(activity.movingSec)}</Text>
     <Text style={textStyle("body")}>{new Date(activity.startedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: APP_TIMEZONE })}</Text>
-    <ActivityMetricBars activity={activity} history={state.activities} units={state.units}/>
+    <ActivityMetricBars activity={activity} history={[...receipt.activities, ...state.activities]} units={state.units}/>
   </View>;
   return <View style={{ gap: 20, flex: 1 }}>
     {receipt.preview && <Text style={f.kicker}>SAMPLE PREVIEW · NO COMPETITION CREDIT</Text>}
@@ -209,7 +209,7 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
                   </Pressable>
                 </View>
 
-                <ActivityMetricBars activity={a} history={state.activities} units={state.units}/>
+                <ActivityMetricBars activity={a} history={[...receipt.activities, ...state.activities]} units={state.units}/>
               </View>
             </View>
           );

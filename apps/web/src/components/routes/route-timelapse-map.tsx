@@ -12,6 +12,7 @@ import {
   decodePolyline,
   type LngLat,
 } from "@fitness-battle/shared";
+import { addMapboxAttribution, mapboxAttributionOptions } from "../maps/mapbox-attribution";
 import { webEnv } from "@/lib/env";
 import { RouteStaticPreview } from "./route-static-preview";
 import { RouteControlsHud } from "./route-controls-hud";
@@ -135,7 +136,7 @@ export function RouteTimelapseMap({
         // CRITICAL for captureStream() video recording and toBlob() HD snapshots:
         preserveDrawingBuffer: true,
         antialias: true,
-        attributionControl: true,
+        ...mapboxAttributionOptions,
       });
 
     } catch {
@@ -144,6 +145,7 @@ export function RouteTimelapseMap({
       return;
     }
     mapRef.current = map;
+    addMapboxAttribution(map);
     const resize = new ResizeObserver(() => map.resize());
     resize.observe(containerRef.current);
     const timeout = window.setTimeout(() => {

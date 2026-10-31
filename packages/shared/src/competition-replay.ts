@@ -133,3 +133,11 @@ export function competitionReplayDate(index: CompetitionReplayIndex, cursor: num
   const event = index.replay.events[Math.max(0, Math.ceil(cursor) - 1)];
   return new Date(cursor > 0 && event ? event.at : index.replay.periodStart).toLocaleString("en-US", { timeZone: APP_TIMEZONE, month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
 }
+
+export function competitionReplayDimension(sport: SportId, requested: "2d" | "3d" | "4d" = "4d") {
+  return requested === "4d" && !sportById(sport).gps ? "2d" : requested;
+}
+export function nextCompetitionReplaySpeed(speed: number) {
+  const speeds = [.25, .5, 1, 2, 4];
+  return speeds[(speeds.indexOf(speed) + 1) % speeds.length]!;
+}

@@ -38,6 +38,7 @@ export function ArenaLanes({
   selected,
   focusOnMount = false,
   focusSelection = true,
+  clampView = true,
   followSelected = false,
   replayFocusIds,
   playback = false,
@@ -62,6 +63,7 @@ export function ArenaLanes({
   selected: string;
   focusOnMount?: boolean;
   focusSelection?: boolean;
+  clampView?: boolean;
   /** Keep a passive replay camera centered on its selected athlete. */
   followSelected?: boolean;
   replayFocusIds?: readonly string[];
@@ -94,7 +96,7 @@ export function ArenaLanes({
       : lanes;
   const ordered = orderedArenaLanes(liveLanes);
   const ghost = liveLanes.find((l) => l.ghost);
-  const effectiveCenter = appearance.ground === "oval" ? Math.max(0, view.center) : clampArenaLaneCenter(view.center, view.span);
+  const effectiveCenter = !clampView ? view.center : appearance.ground === "oval" ? Math.max(0, view.center) : clampArenaLaneCenter(view.center, view.span);
   const clampPanCenter = (value: number, span: number) => appearance.ground === "oval" ? Math.max(0, value) : clampArenaLaneCenter(value, span);
   const effectiveView: ArenaViewWindow =
     effectiveCenter === view.center

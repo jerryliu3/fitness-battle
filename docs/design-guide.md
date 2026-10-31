@@ -44,6 +44,17 @@ and period navigation. Include recorded zero buckets in the average and exclude
 future buckets from both inspection and the average. Training mix is deferred.
 See the [source review](reviews/chart-system/reference-study.md).
 
+Competition maps share the geographic renderer within each platform across live
+fields, fullscreen exploration, competition replay, and week recaps. Camera,
+geometry, compact-roster policy and playback speeds are shared pure logic.
+Every replay uses the same viewer, including archived weeks and embedded recaps;
+points fields normalize to 2D. Fixed holds the view through timeline rewinds;
+gestures suspend following without corrective native camera writes. Fullscreen
+card dismissal resets at the explicit session boundary even when web retains its
+map instance. Replay's compact athlete rows can restore dismissed cards. Web
+competition and recorded-route maps share compact upper-left attribution.
+See the [stack review](reviews/map-ui-stack-review.md).
+
 Sync receipts use one “Sync completed” heading and keep the sample-preview
 notice when applicable. Activity metadata uses two columns of labeled values,
 each above a thin grey track with a teal magnitude fill. Compare each metric

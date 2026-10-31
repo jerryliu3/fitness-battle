@@ -82,3 +82,21 @@ it.each(["km", "mi"])("seeks %s overview targets after loading and allows repeat
   expect(props.onSelect).not.toHaveBeenCalled();
   expect(mock.instances).toHaveLength(1);
 });
+
+it("restores dismissed cards on repeat selection and across preserved fullscreen sessions", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.stubGlobal("window", { matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }) });
+  vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+  const props = { course: createRaceCourse("Street", [[0, 0], [.02, 0]]), lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 0 }, { id: "peer", name: "Peer", initials: "P", value: 1 }], unit: "km", selectedId: "peer", focusRequest: 1, cardSessionKey: true, onSelect: vi.fn() };
+  await act(async () => { renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "div" ? {} : null }); });
+  await act(async () => mock.instances[0].emit("load"));
+  const peer = () => renderer.root.findAllByType("CourseCallout" as never).find(node => node.props.lane.id === "peer");
+  await act(async () => peer()!.props.onDismiss());
+  expect(peer()).toBeUndefined();
+  await act(async () => renderer.update(createElement(CourseMap, { ...props, focusRequest: 2 })));
+  expect(peer()).toBeDefined();
+  await act(async () => peer()!.props.onDismiss());
+  await act(async () => renderer.update(createElement(CourseMap, { ...props, cardSessionKey: false, selectedId: "you" })));
+  expect(peer()).toBeDefined();
+  expect(mock.instances).toHaveLength(1);
+});

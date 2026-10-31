@@ -173,7 +173,7 @@ it("expands the whole 3D preview and only exposes course options in full screen"
   await choose("4d");
   const close = renderer.root.findAllByType("IconButton" as never).find(node => node.props.label === "Close full screen field")!;
   await act(async () => close.props.onPress());
-  expect(map().props.optionsTop).toBeUndefined();
+  expect(map().props.optionsTop).toBeNull();
   expect(map().parent!.props.pointerEvents).toBe("none");
   expect(renderer.root.findAllByType("IconButton" as never).some(node => node.props.icon === "expand")).toBe(false);
   expect(renderer.root.findAllByType("Text" as never).some(node => node.props.children === "Tap to open full screen")).toBe(true);

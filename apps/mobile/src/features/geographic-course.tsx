@@ -13,16 +13,17 @@ class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean }
 }
 
 /** Presentation-only scene. The field/replay host owns the weekly course. */
-export function GeographicCourse({ initialFlat, onFlatChange, onFollowChange, followAthlete, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, course, error = "", onRetry, controlsBottom = 8, overlaysHidden = false, optionsTop, onReplay, distanceTarget }: {
+export function GeographicCourse({ cardSessionKey, initialFlat, onFlatChange, onFollowChange, followAthlete, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, course, error = "", onRetry, controlsBottom = 8, overlaysHidden = false, optionsTop, onReplay, distanceTarget }: {
   hiddenIds?: readonly string[]; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void;
+  cardSessionKey?: string | number | boolean;
   initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
   distanceTarget?: CourseDistanceTarget | null;
-  course: RaceCourse | null; error?: string; onRetry?: () => void; controlsBottom?: number; overlaysHidden?: boolean; optionsTop?: number; onReplay?: () => void;
+  course: RaceCourse | null; error?: string; onRetry?: () => void; controlsBottom?: number; overlaysHidden?: boolean; optionsTop?: number | null; onReplay?: () => void;
 }) {
   if (unit !== "mi" && unit !== "km") return null;
-  return <View style={{ flex: 1, minHeight: 300 }}>
+  return <View style={{ flex: 1, minHeight: 0 }}>
     {!mobileEnv.mapboxAccessToken ? <Text style={{ ...textStyle("body"), padding: 16 }}>Mapbox access is not configured for this build.</Text> : !course ?
-      <View style={{ flex: 1, minHeight: 300, justifyContent: "center", alignItems: "center", padding: 16, gap: 12, backgroundColor: "#0b242c" }}>
+      <View style={{ flex: 1, minHeight: 0, justifyContent: "center", alignItems: "center", padding: 16, gap: 12, backgroundColor: "#0b242c" }}>
         {!error ? <ActivityIndicator size="large" color={c.tennis} /> : null}
         <Text accessibilityRole={error ? "alert" : undefined} style={[textStyle("body"), { color: "#ffffff" }]}>
           {error || "Loading this competition’s course…"}
@@ -33,6 +34,6 @@ export function GeographicCourse({ initialFlat, onFlatChange, onFollowChange, fo
           </Pressable>
         ) : null}
       </View> :
-      <MapBoundary><Suspense fallback={<View style={{ flex: 1, minHeight: 300, justifyContent: "center", alignItems: "center", backgroundColor: "#0b242c" }}><ActivityIndicator size="large" color={c.tennis} /></View>}><CourseMap initialFlat={initialFlat} onFlatChange={onFlatChange} followAthlete={followAthlete} onFollowChange={onFollowChange} key={course.name + course.length} course={course} lanes={lanes} hiddenIds={hiddenIds} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} optionsTop={optionsTop} onReplay={onReplay} /></Suspense></MapBoundary>}
+      <MapBoundary><Suspense fallback={<View style={{ flex: 1, minHeight: 0, justifyContent: "center", alignItems: "center", backgroundColor: "#0b242c" }}><ActivityIndicator size="large" color={c.tennis} /></View>}><CourseMap cardSessionKey={cardSessionKey} initialFlat={initialFlat} onFlatChange={onFlatChange} followAthlete={followAthlete} onFollowChange={onFollowChange} key={course.name + course.length} course={course} lanes={lanes} hiddenIds={hiddenIds} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} optionsTop={optionsTop} onReplay={onReplay} /></Suspense></MapBoundary>}
   </View>;
 }
