@@ -33,7 +33,7 @@ interface TrackPoint {
   cadenceUnit?: "spm" | "rpm";
 }
 
-function routeMetadata(points: TrackPoint[], sport: CategorySlug): Partial<ActivitySample> {
+export function routeMetadata(points: TrackPoint[], sport: CategorySlug): Partial<ActivitySample> {
   const valid = points.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180);
   if (valid.length < 2) return {};
   const coordinates: LngLat[] = valid.map(p => [p.lon, p.lat]);

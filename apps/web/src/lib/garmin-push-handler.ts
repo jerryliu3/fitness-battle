@@ -7,7 +7,7 @@ export async function receiveGarminPush(request: Request, secret: string | null)
     return new Response(null, { status: 401 });
   }
   const length = Number(request.headers.get("content-length"));
-  if (length > 1_000_000) return new Response(null, { status: 413 });
+  if (length > 4_000_000) return new Response(null, { status: 413 });
   let raw: string;
   try {
     const reader = request.body?.getReader();
@@ -17,7 +17,7 @@ export async function receiveGarminPush(request: Request, secret: string | null)
       const { done, value } = await reader.read();
       if (done) break;
       size += value.length;
-      if (size > 1_000_000) { await reader.cancel(); return new Response(null, { status: 413 }); }
+      if (size > 4_000_000) { await reader.cancel(); return new Response(null, { status: 413 }); }
       chunks.push(value);
     }
     raw = Buffer.concat(chunks).toString("utf8");

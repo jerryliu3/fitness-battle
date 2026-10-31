@@ -1,3 +1,4 @@
+import { routeMetadata } from "./activity-files";
 import type { ActivitySample, CategorySlug, FitnessConnection } from "../types";
 import type { FitnessHttp } from "./http";
 import { readJson } from "./http";
@@ -23,7 +24,7 @@ export const GARMIN_DEFAULTS = {
   activitiesUrl: "https://apis.garmin.com/wellness-api/rest/activities",
 };
 
-interface GarminSummary {
+export interface GarminSummary {
   summaryId?: string;
   activityId?: string | number;
   activityName?: string;
@@ -32,6 +33,20 @@ interface GarminSummary {
   durationInSeconds?: number;
   distanceInMeters?: number;
   averageHeartRateInBeatsPerMinute?: number;
+  startingLatitudeInDegree?: number;
+  startingLongitudeInDegree?: number;
+  manual?: boolean;
+  totalElevationGainInMeters?: number;
+  samples?: {
+    latitudeInDegree?: number;
+    longitudeInDegree?: number;
+    startTimeInSeconds?: number;
+    elevationInMeters?: number;
+    heartRate?: number;
+    speedMetersPerSecond?: number;
+    stepsPerMinute?: number;
+    bikeCadenceInRPM?: number;
+  }[];
 }
 
 function configured(env: GarminEnv): boolean {
@@ -48,12 +63,22 @@ function endpoints(env: GarminEnv) {
 }
 
 export function mapGarminActivity(raw: GarminSummary): ActivitySample | null {
-  const sport: CategorySlug | null = mapSportToCategory(raw.activityType ?? "");
+  const sport: CategorySlug | null = mapSportToCategory((raw.activityType ?? "").replace(/^(indoor_|virtual_|treadmill_)/i, ""));
   if (!sport || raw.startTimeInSeconds == null) return null;
-  const externalId = String(raw.summaryId ?? raw.activityId ?? raw.startTimeInSeconds);
+  const externalId = String(raw.activityId ?? raw.summaryId?.replace(/-(detail|file)$/, "") ?? raw.startTimeInSeconds);
   const movingSec = Math.max(0, Math.round(raw.durationInSeconds ?? 0));
   const distance = Math.max(0, raw.distanceInMeters ?? 0);
   const gps = sport !== "strength";
+  const indoor = /treadmill|indoor|virtual|elliptical/i.test(`${raw.activityType ?? ""} ${raw.activityName ?? ""}`);
+  const route = gps && !indoor && !raw.manual ? routeMetadata((raw.samples ?? []).flatMap(sample => {
+    const lat = sample.latitudeInDegree, lon = sample.longitudeInDegree;
+    if (typeof lat !== "number" || typeof lon !== "number" || (lat === 0 && lon === 0)) return [];
+    return [{ lat, lon, time: sample.startTimeInSeconds == null || !Number.isFinite(sample.startTimeInSeconds) || Math.abs(sample.startTimeInSeconds * 1000) > 8.64e15 ? undefined : new Date(sample.startTimeInSeconds * 1000).toISOString(),
+      elevation: sample.elevationInMeters, heartRate: sample.heartRate, speedMps: sample.speedMetersPerSecond, cadence: sport === "cycling" ? sample.bikeCadenceInRPM : sample.stepsPerMinute, cadenceUnit: sport === "cycling" ? "rpm" as const : "spm" as const }];
+  }), sport) : {};
+  const lat = raw.startingLatitudeInDegree, lon = raw.startingLongitudeInDegree;
+  const hasStart = typeof lat === "number" && typeof lon === "number" && Number.isFinite(lat) && Number.isFinite(lon)
+    && Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && (lat !== 0 || lon !== 0);
   return {
     id: `garmin-${externalId}`,
     provider: "garmin",
@@ -64,6 +89,9 @@ export function mapGarminActivity(raw: GarminSummary): ActivitySample | null {
     movingSec,
     avgHr: raw.averageHeartRateInBeatsPerMinute ?? null,
     rawName: raw.activityName || raw.activityType || sport,
+    verified: gps && !indoor && !raw.manual && (hasStart || Boolean(route.summaryPolyline)),
+    ...route,
+    ...(Number.isFinite(raw.totalElevationGainInMeters) ? { elevationGainM: Math.max(0, raw.totalElevationGainInMeters!) } : {}),
   };
 }
 
