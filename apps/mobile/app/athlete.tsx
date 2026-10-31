@@ -447,6 +447,13 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
             secondary
             onPress={() => setConfirmSignOut(true)}
           />
+        <SettingsRow
+          title="Blocked athletes"
+          detail="Manage who you have blocked"
+          onPress={() => {
+            router.push("/blocked-athletes");
+          }}
+        />
           <AccountActions />
           <LegalLinks />
           <FocusSheet open={confirmSignOut} title="Sign out?" onClose={() => setConfirmSignOut(false)}><AppText role="body" secondary>You can sign in again to return to your account.</AppText><FocusButton label="Sign out" onPress={() => { setConfirmSignOut(false); void signOut(); }} /><FocusButton label="Cancel" secondary onPress={() => setConfirmSignOut(false)} /></FocusSheet>
@@ -651,6 +658,7 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
             </>
           ) : (
             <>
+              <HapticPreference />
               <View style={[f.row, { minHeight: 48, alignItems: "center", justifyContent: "space-between" }]}>
                 <AppText role="label">Units</AppText>
                 <View style={{ width: 170 }}>
@@ -901,7 +909,6 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
 
       <View style={{ gap: 8, marginTop: 16 }}>
         <SectionHeader title="Settings" />
-        <HapticPreference />
         <SettingsRow
           title="Data Sync"
           detail="Trackers & history"
@@ -930,13 +937,7 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
             setPanel("scoring");
           }}
         />
-        <SettingsRow
-          title="Blocked athletes"
-          detail="Manage who you have blocked"
-          onPress={() => {
-            router.push("/blocked-athletes");
-          }}
-        />
+
         <SettingsRow
           title="Account"
           detail="Sign out, report an issue & delete account"

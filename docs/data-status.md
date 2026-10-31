@@ -59,3 +59,19 @@ Invite-code `battles` / `periods` / `standings` remain from the early scaffold. 
 1. Apply `packages/rankings/imports/*.import.sql` with `RANKINGS_DATABASE_URL` (see `docs/ingestion.md`).
 2. A public half-marathon list, plus New York, Tokyo, and Sydney once a results list is on the page.
 3. Point `NEXT_PUBLIC_USE_DEMO_DATA=false` plus Strava keys and the service role at a real athlete backfill. Token storage and score recompute are already wired for that mode.
+
+## October 31 native account-load repair
+
+Production account reads required `effort_score_events` before its additive
+migration had been applied. This failed the account load and consequently gated
+native Sync / Add Activity. Applied the existing
+`20261031135120_effort_score_events.sql` migration to the Fitness project and
+verified an authenticated read under the affected account. No historical score
+awards were reconstructed.
+
+Deployment bookkeeping needs approval: the migration service recorded the applied
+migration as `20261031212647` (`effort_score_events`), while the repository file is
+`20261031135120`. Automatic approval review rejected aligning that single new
+history entry under the no-rewritten-history charter. The table, trigger and RLS
+are live; the repository migration remains unchanged. Reconcile this mismatch
+before a future migration push to avoid attempting the same DDL twice.
