@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { freshState } from "./compete/engine";
 import type { SleepNight } from "./compete/health";
-import { healthSignal, healthSignalRange, healthSparkline, homeHealthMetrics, isSampleSleepNight } from "./home-health";
+import { buildHealth7DayCorridorModel, getHealthMetricCorridor, healthSignal, healthSignalRange, healthSparkline, homeHealthMetrics, isSampleSleepNight } from "./home-health";
 const now = new Date("2026-10-25T03:30:00Z"); // Oct 24 Eastern
 const night = (overrides: Partial<SleepNight> = {}): SleepNight => ({ id: "sleep", metric: "sleep", day: "2026-10-24", durationMin: 462, score: 80, efficiency: null, deepMin: null, remMin: null, lightMin: null, awakeMin: null, source: "oura", verified: true, ...overrides });
 describe("Home daily health", () => {
@@ -81,4 +81,30 @@ it("shows actual daily measurements and leaves absent or future measurements as 
  expect(metrics.slice(1).map(r=>r.value)).toEqual(["5,432","52","48"]);
  expect(metrics[1].history.at(-1)).toBe(5432);
  expect(metrics[1].detail).toContain("Garmin");
+});
+
+it("builds 7-day health corridor chart model identifying points under, in, or over corridor", () => {
+  const hrvMetric = {
+    id: "hrv" as const,
+    name: "HRV",
+    value: "54",
+    unit: "ms",
+    context: "Today",
+    detail: "Garmin · recorded 2026-10-24",
+    history: [72, 70, 58, null, 65, 85, 54],
+  };
+  const chart = buildHealth7DayCorridorModel(hrvMetric, now);
+  expect(chart.points).toHaveLength(7);
+  expect(chart.baselineLow).toBe(62);
+  expect(chart.baselineHigh).toBe(82);
+  expect(chart.formattedRange).toBe("62–82 ms");
+  expect(chart.points[6].dayLabel).toBe("Today");
+  expect(chart.points[6].position).toBe("under"); // 54 < 62
+  expect(chart.points[2].position).toBe("under"); // 58 < 62
+  expect(chart.points[0].position).toBe("in"); // 72 is in 62..82
+  expect(chart.points[5].position).toBe("over"); // 85 > 82
+  expect(chart.points[3].position).toBe("missing"); // null
+  expect(chart.hasUnder).toBe(true);
+  expect(chart.corridorAreaPath).toContain("M 38,");
+  expect(chart.lineSegments.length).toBeGreaterThan(0);
 });

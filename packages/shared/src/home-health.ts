@@ -111,3 +111,146 @@ export function healthSignalRange(metric: HomeHealthMetric): string {
   const format = metric.id === "sleep" ? formatSleepDuration : (value: number) => value.toLocaleString("en-US");
   return `${format(Math.min(...values))}–${format(Math.max(...values))} (7 day range)`;
 }
+
+export interface HealthMetricCorridor {
+  low: number;
+  high: number;
+  formattedRange: string;
+  format: (value: number) => string;
+}
+
+export function getHealthMetricCorridor(metricId: string): HealthMetricCorridor {
+  switch (metricId) {
+    case "sleep":
+      return { low: 420, high: 540, formattedRange: "7h–9h", format: (m) => formatSleepDuration(m) };
+    case "steps":
+      return { low: 7500, high: 11000, formattedRange: "7,500–11,000 steps", format: (s) => Math.round(s).toLocaleString("en-US") };
+    case "resting-hr":
+      return { low: 50, high: 65, formattedRange: "50–65 bpm", format: (r) => `${Math.round(r)} bpm` };
+    case "hrv":
+    default:
+      return { low: 62, high: 82, formattedRange: "62–82 ms", format: (h) => `${Math.round(h)} ms` };
+  }
+}
+
+export interface Health7DayPoint {
+  index: number;
+  dayLabel: string;
+  value: number | null;
+  formatted: string;
+  x: number;
+  y: number | null;
+  position: "under" | "in" | "over" | "missing";
+}
+
+export interface Health7DayChartModel {
+  metricId: string;
+  metricName: string;
+  unit: string;
+  baselineLow: number;
+  baselineHigh: number;
+  formattedRange: string;
+  width: number;
+  height: number;
+  points: Health7DayPoint[];
+  lineSegments: string[];
+  corridorYTop: number;
+  corridorYBottom: number;
+  corridorAreaPath: string;
+  hasUnder: boolean;
+  hasAnyData: boolean;
+}
+
+export function buildHealth7DayCorridorModel(
+  metric: HomeHealthMetric,
+  now = new Date(),
+): Health7DayChartModel {
+  const corridor = getHealthMetricCorridor(metric.id);
+  const width = 320;
+  const height = 116;
+  const left = 38;
+  const right = 304;
+  const plotTop = 18;
+  const plotBottom = 86;
+
+  const validValues = metric.history.filter((v): v is number => v != null && Number.isFinite(v));
+  const allNums = [...validValues, corridor.low, corridor.high];
+  const minVal = Math.min(...allNums);
+  const maxVal = Math.max(...allNums);
+  const spread = maxVal - minVal;
+  const pad = Math.max(spread * 0.18, metric.id === "sleep" ? 30 : 4);
+  const yMin = minVal - pad;
+  const yMax = maxVal + pad;
+  const span = Math.max(1, yMax - yMin);
+
+  const toY = (v: number) => Number((plotBottom - ((v - yMin) / span) * (plotBottom - plotTop)).toFixed(1));
+  const corridorYTop = toY(corridor.high);
+  const corridorYBottom = toY(corridor.low);
+  const corridorAreaPath = `M ${left},${corridorYTop} L ${right},${corridorYTop} L ${right},${corridorYBottom} L ${left},${corridorYBottom} Z`;
+
+  const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const points: Health7DayPoint[] = metric.history.map((val, i) => {
+    const x = Number((left + (i / 6) * (right - left)).toFixed(1));
+    const isToday = i === 6;
+    const targetDate = shiftAppDay(now, i - 6);
+    const dayLabel = isToday ? "Today" : WEEKDAYS[targetDate.getDay()] ?? "";
+
+    if (val == null || !Number.isFinite(val)) {
+      return {
+        index: i,
+        dayLabel,
+        value: null,
+        formatted: "—",
+        x,
+        y: null,
+        position: "missing" as const,
+      };
+    }
+
+    const y = toY(val);
+    const position = val < corridor.low ? ("under" as const) : val > corridor.high ? ("over" as const) : ("in" as const);
+    return {
+      index: i,
+      dayLabel,
+      value: val,
+      formatted: corridor.format(val),
+      x,
+      y,
+      position,
+    };
+  });
+
+  const lineSegments: string[] = [];
+  let currentSegment: string[] = [];
+  for (const pt of points) {
+    if (pt.y != null) {
+      currentSegment.push(`${pt.x},${pt.y}`);
+    } else if (currentSegment.length > 0) {
+      if (currentSegment.length > 1) {
+        lineSegments.push(`M ${currentSegment.join(" L ")}`);
+      }
+      currentSegment = [];
+    }
+  }
+  if (currentSegment.length > 1) {
+    lineSegments.push(`M ${currentSegment.join(" L ")}`);
+  }
+
+  return {
+    metricId: metric.id,
+    metricName: metric.name,
+    unit: metric.unit,
+    baselineLow: corridor.low,
+    baselineHigh: corridor.high,
+    formattedRange: corridor.formattedRange,
+    width,
+    height,
+    points,
+    lineSegments,
+    corridorYTop,
+    corridorYBottom,
+    corridorAreaPath,
+    hasUnder: points.some((p) => p.position === "under"),
+    hasAnyData: validValues.length > 0,
+  };
+}

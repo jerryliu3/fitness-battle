@@ -31,7 +31,7 @@ describe("buildStandardChartGeometry", () => {
     expect(Number.isFinite(geo.points[0]!.y)).toBe(true);
   });
 
-  it("generates closed corridor path when corridor bounds provided", () => {
+  it("generates closed corridor path and boundary polylines when corridor bounds provided", () => {
     const geo = buildStandardChartGeometry([50, 60], 340, 150, {
       high: [65, 75],
       low: [40, 45],
@@ -39,6 +39,10 @@ describe("buildStandardChartGeometry", () => {
     expect(geo.corridorPath).toBeDefined();
     expect(geo.corridorPath).toContain("M ");
     expect(geo.corridorPath).toContain(" Z");
+    expect(geo.corridorHighPolyline).toBeDefined();
+    expect(geo.corridorLowPolyline).toBeDefined();
+    expect(geo.corridorHighPolyline).toContain(",");
+    expect(geo.corridorLowPolyline).toContain(",");
   });
 });
 

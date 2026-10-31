@@ -45,6 +45,13 @@ describe("analytics-lab shared model", () => {
   });
 
   it("computes deterministic market, vitals, sleep, load, performance, and combined series across scenarios and lenses", () => {
+    const m7d = buildAnalyticsLabModel("peak_build", "7d");
+    const m30d = buildAnalyticsLabModel("peak_build", "30d");
+    expect(m7d.vitals.metrics[0]!.series).toHaveLength(7);
+    expect(m30d.vitals.metrics[0]!.series).toHaveLength(30);
+    expect(m7d.sleep.nights).toHaveLength(7);
+    expect(m30d.sleep.nights).toHaveLength(30);
+
     for (const scenario of ANALYTICS_SCENARIO_IDS) {
       for (const lens of ANALYTICS_TIME_LENSES) {
         const model = buildAnalyticsLabModel(scenario, lens);

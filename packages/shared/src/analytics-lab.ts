@@ -1,4 +1,5 @@
 import { clamp, unitInterval, type CompeteState } from "./compete/sports";
+import { APP_TIMEZONE, dayKey, shiftAppDay } from "./period";
 
 export const ANALYTICS_DOMAIN_IDS = [
   "market",
@@ -628,13 +629,26 @@ export interface AnalyticsLabModel {
   };
 }
 
-function sliceByLens<T>(items: readonly T[], lens: AnalyticsTimeLens): T[] {
+function sliceDailyByLens<T>(items: readonly T[], lens: AnalyticsTimeLens): T[] {
   if (items.length === 0) return [];
   if (lens === "point") return items.slice(-3);
   if (lens === "7d") return items.slice(-7);
-  if (lens === "30d") return items.slice(-10);
+  if (lens === "30d") return items.slice(-30);
+  if (lens === "90d") return items.slice(-90);
+  return [...items];
+}
+
+function sliceWeeklyByLens<T>(items: readonly T[], lens: AnalyticsTimeLens): T[] {
+  if (items.length === 0) return [];
+  if (lens === "point") return items.slice(-2);
+  if (lens === "7d") return items.slice(-2);
+  if (lens === "30d") return items.slice(-4);
   if (lens === "90d") return items.slice(-12);
   return [...items];
+}
+
+function sliceByLens<T>(items: readonly T[], lens: AnalyticsTimeLens): T[] {
+  return sliceDailyByLens(items, lens);
 }
 
 export function getDomainTitle(domain?: AnalyticsDomainId | string | null): string {
@@ -720,6 +734,18 @@ export function deriveScenarioFromCompeteState(
   return "peak_build";
 }
 
+const MONTH_NAMES = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+] as const;
+
+function formatDayLabel(key: string): string {
+  const parts = key.split("-");
+  const monthIdx = Number(parts[1]) - 1;
+  const day = Number(parts[2]);
+  return `${MONTH_NAMES[monthIdx] ?? "Oct"} ${day}`;
+}
+
 export function buildAnalyticsLabModel(
   scenarioOrState: AnalyticsScenarioId | CompeteState | null = "peak_build",
   timeLens: AnalyticsTimeLens = "30d",
@@ -736,41 +762,30 @@ export function buildAnalyticsLabModel(
 
   const isOver = scenario === "overreaching";
   const isSparse = scenario === "sparse_new";
-  const totalPoints = isSparse ? 4 : 14;
+  const totalPoints = isSparse
+    ? timeLens === "7d"
+      ? 4
+      : 8
+    : timeLens === "90d" || timeLens === "all"
+      ? 90
+      : timeLens === "7d"
+        ? 7
+        : 30;
 
-  const dayLabels = [
-    "Oct 12",
-    "Oct 13",
-    "Oct 14",
-    "Oct 15",
-    "Oct 16",
-    "Oct 17",
-    "Oct 18",
-    "Oct 19",
-    "Oct 20",
-    "Oct 21",
-    "Oct 22",
-    "Oct 23",
-    "Oct 24",
-    "Oct 25",
-  ].slice(-totalPoints);
+  const anchor = state?.demoNow
+    ? new Date(state.demoNow)
+    : new Date("2026-10-25T12:00:00Z");
 
-  const weekLabels = [
-    "Jul 27",
-    "Aug 3",
-    "Aug 10",
-    "Aug 17",
-    "Aug 24",
-    "Aug 31",
-    "Sep 7",
-    "Sep 14",
-    "Sep 21",
-    "Sep 28",
-    "Oct 5",
-    "Oct 12",
-    "Oct 19",
-    "Oct 26",
-  ].slice(-totalPoints);
+  const dayKeys = Array.from({ length: totalPoints }, (_, i) => {
+    const d = shiftAppDay(anchor, i - (totalPoints - 1));
+    return dayKey(d, APP_TIMEZONE);
+  });
+  const dayLabels = dayKeys.map(formatDayLabel);
+
+  const weekLabels = Array.from({ length: 14 }, (_, i) => {
+    const d = shiftAppDay(anchor, (i - 13) * 7);
+    return formatDayLabel(dayKey(d, APP_TIMEZONE));
+  });
 
   // 1. Build Market Series & Candlesticks
   const baseNav = 1000;
@@ -933,7 +948,7 @@ export function buildAnalyticsLabModel(
         (recent.reduce((a, b) => a + b, 0) / recent.length).toFixed(decimals),
       );
       pts.push({
-        day: `2026-10-${(12 + i).toString().padStart(2, "0")}`,
+        day: dayKeys[i]!,
         label: dayLabels[i]!,
         value,
         rolling7d,
@@ -1186,7 +1201,7 @@ export function buildAnalyticsLabModel(
 
     rawLoad.push({
       id: `ld-${i}`,
-      label: weekLabels[i]!,
+      label: dayLabels[i]!,
       acuteLoad,
       chronicLoad,
       acwr,
@@ -1213,8 +1228,9 @@ export function buildAnalyticsLabModel(
 
   // 5. Build Cardio Performance, Aerobic Efficiency & HR Zones
   const rawPerf: PerformancePointModel[] = [];
-  for (let i = 0; i < totalPoints; i += 1) {
-    const progress = i / Math.max(1, totalPoints - 1);
+  const totalWeeks = weekLabels.length;
+  for (let i = 0; i < totalWeeks; i += 1) {
+    const progress = i / Math.max(1, totalWeeks - 1);
     const paceMinKm = Number(
       (5.15 - progress * (isOver ? 0.12 : 0.38) + (isOver && i > 9 ? 0.18 : 0)).toFixed(2),
     );
@@ -1233,7 +1249,7 @@ export function buildAnalyticsLabModel(
       vo2Max,
     });
   }
-  const perfSeries = sliceByLens(rawPerf, timeLens);
+  const perfSeries = sliceWeeklyByLens(rawPerf, timeLens);
   const efCurrent = rawPerf.at(-1)?.efficiencyFactor ?? 1.35;
   const efStart = rawPerf[0]?.efficiencyFactor ?? 1.25;
   const efDeltaPct = Number((((efCurrent - efStart) / efStart) * 100).toFixed(1));
@@ -1334,7 +1350,7 @@ export function buildAnalyticsLabModel(
     const ld = rawLoad[i]!;
     const vt = hrvSeries[Math.min(i, hrvSeries.length - 1)]!;
     const sl = rawNights[i]!;
-    const pf = rawPerf[i]!;
+    const pf = rawPerf[Math.min(i, rawPerf.length - 1)]!;
     const strainScore = clamp(
       6,
       20.5,

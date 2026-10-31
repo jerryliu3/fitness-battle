@@ -3,6 +3,8 @@ export interface StandardChartGeometry {
   polyline: string;
   areaPath: string;
   corridorPath?: string;
+  corridorHighPolyline?: string;
+  corridorLowPolyline?: string;
   yMin: number;
   yMid: number;
   yMax: number;
@@ -95,6 +97,8 @@ export function buildStandardChartGeometry(
   const areaPath = `M ${first.x.toFixed(1)},${yBottom} L ${polyline} L ${last.x.toFixed(1)},${yBottom} Z`;
 
   let corridorPath: string | undefined;
+  let corridorHighPolyline: string | undefined;
+  let corridorLowPolyline: string | undefined;
   if (
     corridor &&
     corridor.high.length === values.length &&
@@ -105,14 +109,15 @@ export function buildStandardChartGeometry(
       const y = yBottom - ((h - yMin) / ySpan) * usableH;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     });
-    const lowPts = corridor.low
-      .map((l, i) => {
-        const x = xStart + (i / Math.max(1, values.length - 1)) * usableW;
-        const y = yBottom - ((l - yMin) / ySpan) * usableH;
-        return `${x.toFixed(1)},${y.toFixed(1)}`;
-      })
-      .reverse();
-    corridorPath = `M ${highPts.join(" L ")} L ${lowPts.join(" L ")} Z`;
+    const lowPts = corridor.low.map((l, i) => {
+      const x = xStart + (i / Math.max(1, values.length - 1)) * usableW;
+      const y = yBottom - ((l - yMin) / ySpan) * usableH;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    });
+    const lowPtsReversed = [...lowPts].reverse();
+    corridorPath = `M ${highPts.join(" L ")} L ${lowPtsReversed.join(" L ")} Z`;
+    corridorHighPolyline = highPts.join(" ");
+    corridorLowPolyline = lowPts.join(" ");
   }
 
   return {
@@ -120,6 +125,8 @@ export function buildStandardChartGeometry(
     polyline,
     areaPath,
     corridorPath,
+    corridorHighPolyline,
+    corridorLowPolyline,
     yMin,
     yMid,
     yMax,
