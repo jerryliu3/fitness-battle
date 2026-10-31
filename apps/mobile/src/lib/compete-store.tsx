@@ -107,11 +107,16 @@ async function competeAccount(preferred?: {
   }
   if (!isSupabaseConfigured(mobileEnv.supabaseUrl, mobileEnv.supabaseAnonKey)) return null;
   try {
-    const sessionPromise = supabase.auth.getSession();
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) => {
-      setTimeout(() => resolve({ data: { session: null } }), 2500);
+      timer = setTimeout(() => resolve({ data: { session: null } }), 2500);
     });
-    const { data } = await Promise.race([sessionPromise, timeoutPromise]);
+    const safeSessionPromise = supabase.auth
+      .getSession()
+      .catch(() => ({ data: { session: null } }));
+    const { data } = await Promise.race([safeSessionPromise, timeoutPromise]).finally(() => {
+      if (timer) clearTimeout(timer);
+    });
     const userId = data.session?.user?.id;
     const token = data.session?.access_token;
     if (!userId || !token) return null;
@@ -479,10 +484,10 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         wasBackground = true;
         return;
       }
-      if (status !== "active" || !seenRef.current.ready) return;
+      if (status !== "active") return;
       const returning = wasBackground;
       wasBackground = false;
-      if (!returning) return;
+      if (!returning || !seenRef.current.ready) return;
       refreshingRef.current = true;
       void refreshRef.current({ ifStale: true }).finally(() => {
         if (stateRef.current)
@@ -634,25 +639,6 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   }, [readBaselineItem, writeBaselineItem]);
   refreshRef.current = refresh;
 
-  // A tracker connected in a browser belongs to this account too. Reconcile
-  // on resume even when this device still has no connected-provider links.
-  useEffect(() => {
-    if (!owner || auth.offlineMode || loadStatus !== "ready") return;
-    let wasBackground = false;
-    const subscription = AppState.addEventListener("change", status => {
-      if (status === "background") {
-        wasBackground = true;
-      } else if (status === "active") {
-        if (wasBackground) {
-          wasBackground = false;
-          void refresh({ ifStale: true });
-        }
-      }
-    });
-    return () => subscription.remove();
-  }, [owner, auth.offlineMode, loadStatus, refresh]);
-
-
   const connectedPullProviders = (state?.links ?? []).filter(link => link.status === "connected" && ["strava", "whoop", "oura"].includes(link.provider)).map(link => link.provider).sort().join(",");
   const lastPullSync = useRef(0);
   const PULL_SYNC_COOLDOWN_MS = 5 * 60_000;
@@ -680,7 +666,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
           if (connection.status !== "connected" || !["strava", "whoop", "oura"].includes(connection.provider)) continue;
           await fetchWithTimeout(`${mobileEnv.apiUrl}/api/fitness/sync`, { method: "POST", headers, body: JSON.stringify({ provider: connection.provider, automatic: true }) });
         }
-        if (!stopped && accountRef.current === owner) await refresh({ ifStale: true });
+        if (!stopped && accountRef.current === owner) await refresh();
       } catch { /* Retry on next foreground or active hourly interval. */ }
       finally { running = false; }
     };

@@ -112,6 +112,7 @@ function accountState(id: string) {
   return state;
 }
 beforeEach(() => {
+  mock.appStateListeners.clear();
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-10-22T16:00:00Z"));
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);

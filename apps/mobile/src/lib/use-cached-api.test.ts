@@ -32,6 +32,7 @@ beforeEach(() => {
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
   clearApiReads();
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
