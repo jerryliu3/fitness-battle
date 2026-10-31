@@ -42,13 +42,13 @@ export function RecordChart({
               x2={chart.right}
               y1={t.y}
               y2={t.y}
-              stroke="#e0e5dc"
+              stroke="var(--line, #e0e5dc)"
             />
             <ChartText
               x={chart.left - 8}
               y={t.y + 4}
               textAnchor="end"
-              fill="#616c63"
+              fill="var(--muted, #616c63)"
 
             >
               {formatClockTime(t.seconds)}
@@ -58,7 +58,7 @@ export function RecordChart({
         <path
           d={chart.path}
           fill="none"
-          stroke="#282f2c"
+          stroke="var(--ink, #282f2c)"
           strokeWidth={2}
           strokeLinejoin="round"
         />
@@ -83,20 +83,20 @@ export function RecordChart({
               cx={p.x}
               cy={p.y}
               r={selected === p.activityId ? 6 : 4}
-              fill={selected === p.activityId ? "#282f2c" : "#fff"}
-              stroke="#282f2c"
+              fill={selected === p.activityId ? "var(--ink, #282f2c)" : "#fff"}
+              stroke="var(--ink, #282f2c)"
               strokeWidth={2}
             />
           </g>
         ))}
-        <ChartText x={chart.points.length===1?(chart.left+chart.right)/2:chart.left} textAnchor={chart.points.length===1?"middle":"start"} y={chart.height - 8} fill="#616c63" >
+        <ChartText x={chart.points.length===1?(chart.left+chart.right)/2:chart.left} textAnchor={chart.points.length===1?"middle":"start"} y={chart.height - 8} fill="var(--muted, #616c63)" >
           {date(chart.start)}
         </ChartText>
         <ChartText
           x={chart.right}
           y={chart.height - 8}
           textAnchor="end"
-          fill="#616c63"
+          fill="var(--muted, #616c63)"
 
         >
           {chart.points.length>1?date(chart.end):""}

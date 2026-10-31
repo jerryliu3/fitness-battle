@@ -32,7 +32,7 @@ export function OpenLineChart({ chart, label, unit, range, onRangeChange, includ
         <G>
           <ChartText x={chart.left} y={14} fill={c.muted}>{unit}</ChartText>
           <ChartText x={(chart.left + chart.right) / 2} y={chart.height - 2} textAnchor="middle" fill={c.muted}>Date</ChartText>
-          {chart.yTicks.map(tick => <G key={tick.y}><Line x1={chart.left} x2={chart.right} y1={tick.y} y2={tick.y} stroke={c.line} strokeWidth={.5}/><ChartText x={chart.left - 6} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</ChartText></G>)}
+          {chart.yTicks.map((tick, i) => <G key={`${tick.y}-${i}`}><Line x1={chart.left} x2={chart.right} y1={tick.y} y2={tick.y} stroke={c.line} strokeWidth={.5}/><ChartText x={chart.left - 6} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</ChartText></G>)}
           {chart.xTicks.map((tick, i) => <ChartText key={i} x={tick.x} y={chart.height - 22} textAnchor={i === 0 ? "start" : i === chart.xTicks.length - 1 ? "end" : "middle"} fill={c.muted}>{tick.label}</ChartText>)}
         </G>
         {!!chart.previous && <Polyline points={chart.previous} fill="none" stroke={c.muted} strokeWidth={1.5} strokeDasharray="2 5" strokeLinecap="round" opacity={.65} />}

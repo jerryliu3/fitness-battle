@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 vi.mock("react-native", () => ({ useWindowDimensions: () => ({ fontScale: 1 }), Animated: { createAnimatedComponent: () => "AnimatedRect" } }));
-vi.mock("react-native-svg", () => ({ default: "Svg", Polyline: "Polyline", Path: "Path", Line: "Line", Text: "SvgText", Defs: "Defs", ClipPath: "ClipPath", Rect: "Rect", G: "G" }));
+vi.mock("react-native-svg", () => ({ default: "Svg", Polyline: "Polyline", Path: "Path", Line: "Line", Text: "SvgText", Defs: "Defs", ClipPath: "ClipPath", Rect: "Rect", G: "G", Circle: "Circle" }));
 vi.mock("./section", () => ({ chartTextProps: () => ({ fontFamily: "Manrope_500Medium", fontSize: 12, fontWeight: "500" }) }));
 vi.mock("./chart-scrubber", () => ({ ChartScrubber: "Scrubber" }));
 import { StandardLineChart } from "./standard-line-chart";
@@ -35,5 +35,14 @@ it("uses the same full-width transform and coordinates for the trace and selecte
  }
  const labels=r.root.findAllByType("SvgText" as never).map(t=>t.props.children);
  expect(labels).toContain("HRV (ms)");expect(labels).toContain("Date");expect(labels).toContain("Oct 21");
+ await act(async()=>r.unmount());vi.unstubAllGlobals();
+});
+it("renders a circle and appropriate ticks for a single-point dataset", async () => {
+ vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
+ let r!:ReturnType<typeof create>;
+ await act(async()=>{r=create(createElement(StandardLineChart,{values:[42]}));});
+ expect(r.root.findAllByType("Circle" as never)).toHaveLength(1);
+ const labels=r.root.findAllByType("SvgText" as never).map(t=>t.props.children);
+ expect(labels).toContain("1");
  await act(async()=>r.unmount());vi.unstubAllGlobals();
 });
