@@ -16,7 +16,7 @@ it("opens honest reading details with accessible expanded state and large-text t
   expect(tiles()[0].props.style[1].width).toBe("100%");
   await act(async () => { tiles()[2].props.onPress(); });
   expect(tiles()[2].props.accessibilityState.expanded).toBe(true);
-  expect(JSON.stringify(view.toJSON())).toContain("Workout average heart rate is a separate measurement");
+  expect(JSON.stringify(view.toJSON())).toContain("No recorded resting hr available for today.");
   await act(async () => { tiles()[2].props.onPress(); });
   expect(tiles()[2].props.accessibilityState.expanded).toBe(false);
 });

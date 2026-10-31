@@ -16,8 +16,9 @@ import { useAuth } from "@/components/auth-context";
 
 export function ActivityRoute({ activity, milestone = false, units = "metric" }: { activity?: Activity; milestone?: boolean; units?: "us" | "metric" }) {
   const auth = useAuth();
-  const [fetched, setFetched] = useState<{ id: string; owner?: string; samples: RouteReplaySample[] } | null>(null);
-  const coordinates = useMemo(() => activityRoute(activity), [activity?.summaryPolyline, activity?.detailedPolyline]);
+  const [fetched, setFetched] = useState<{ id: string; owner?: string; detailedPolyline?: string; samples: RouteReplaySample[] } | null>(null);
+  const fetchedLine = fetched?.id === activity?.id && fetched?.owner === auth.user?.id ? fetched?.detailedPolyline : undefined;
+  const coordinates = useMemo(() => activityRoute(activity ? {...activity,detailedPolyline:fetchedLine ?? activity.detailedPolyline} : undefined), [activity?.summaryPolyline, activity?.detailedPolyline,fetchedLine]);
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open || !activity || activity.routeReplay || !auth.user || auth.offlineMode) return;
@@ -26,7 +27,7 @@ export function ActivityRoute({ activity, milestone = false, units = "metric" }:
     void fetch(`/api/fitness/replay?activityId=${encodeURIComponent(id)}`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]) }).then(async response => {
       if (!response.ok) return { routeReplay: [] };
       return response.json();
-    }).then(body => { if (alive) setFetched({ id, owner, samples: normalizeRouteReplay(body.routeReplay) }); }).catch(() => { /* Optional telemetry never prevents route playback. */ });
+    }).then(body => { if (alive) setFetched({ id, owner, detailedPolyline: typeof body.detailedPolyline === "string" ? body.detailedPolyline : undefined, samples: normalizeRouteReplay(body.routeReplay) }); }).catch(() => { /* Optional telemetry never prevents route playback. */ });
     return () => { alive = false; controller.abort(); };
   }, [open, activity?.id, activity?.routeReplay, auth.user?.id, auth.offlineMode]);
   const routeReplay = activity?.routeReplay ?? (fetched?.id === activity?.id && fetched?.owner === auth.user?.id ? fetched?.samples : undefined);

@@ -1,3 +1,5 @@
+import { persistDailyHealth } from "@/lib/daily-health-store";
+import { persistGarminSleep } from "@/lib/garmin-record-store";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import type { CategorySlug } from "@fitness-battle/shared";
@@ -45,6 +47,8 @@ export async function POST(request: Request) {
   if (!result.usedMock) {
     try {
       const activitiesStored = await persistSyncedActivities(userId, result.activities);
+      await persistDailyHealth(userId,result.dailyHealth??[]);
+      for (const night of result.sleepNights ?? []) await persistGarminSleep(userId, night);
       const readinessStored = await persistReadiness(userId, result.readiness ?? []);
       persisted = (result.activities.length === 0 || activitiesStored) && ((result.readiness ?? []).length === 0 || readinessStored);
     } catch {
@@ -63,8 +67,9 @@ export async function POST(request: Request) {
     windowDays: window.days,
     persisted,
   });
-  } catch {
+  } catch (error) {
     await createProviderStore(providerId)?.setConnection(connection);
+    if(error instanceof Error && error.message==="whoop_reconnect_required")return NextResponse.json({error:"provider_reconnect_required",message:"Reconnect WHOOP to approve sleep access."},{status:409});
     return NextResponse.json({ error: "provider_sync_failed" }, { status: 502 });
   } finally {
     await db.rpc("release_fitness_sync", { p_user: userId, p_provider: providerId, p_lease: lease });

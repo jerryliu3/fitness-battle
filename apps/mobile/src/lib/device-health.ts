@@ -1,4 +1,5 @@
-import { mapSportToCategory, type ActivitySample, type CategorySlug } from "@fitness-battle/shared";
+import { appleHealthExtra, androidHealthExtra, type DeviceHealthExtra } from "./device-health-metrics";
+import { routeMetadata, mapSportToCategory, type ActivitySample, type CategorySlug } from "@fitness-battle/shared";
 import { NativeModules, Platform } from "react-native";
 import {
   resolveAppleHealthKit,
@@ -109,6 +110,7 @@ async function postIngest(
   provider: "apple_health" | "google_health",
   activities: ActivitySample[],
   deps: Pick<SyncAppleHealthDeps, "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly">,
+  health?:DeviceHealthExtra,
 ): Promise<DeviceSyncResult> {
   if (deps.localOnly) {
     return {
@@ -142,6 +144,7 @@ async function postIngest(
       body: JSON.stringify({
         provider,
         activities,
+        ...health,
         userId: auth.userId,
       }),
     });
@@ -208,7 +211,7 @@ export async function syncAppleHealth(
   try {
     workouts = await new Promise<WorkoutLike[]>((resolve, reject) => {
       kit.initHealthKit(
-        { permissions: { read: [kit.Constants.Permissions.Workout], write: [] } },
+        { permissions: { read: ["Workout","StepCount","RestingHeartRate","HeartRateVariability","SleepAnalysis","WorkoutRoute"].map(key=>kit.Constants.Permissions[key]).filter(Boolean), write: [] } },
         (error) => {
           if (error) {
             reject(new Error(healthKitErrorMessage(error)));
@@ -244,7 +247,13 @@ export async function syncAppleHealth(
       ),
     )
     .filter((item): item is ActivitySample => item != null);
-  if (activities.length === 0) {
+  const routeReader=(kit as unknown as Record<string,unknown>).getWorkoutRouteSamples;
+  if(typeof routeReader==="function")for(const activity of activities.slice(0,20)){
+    const locations=await new Promise<{latitude:number;longitude:number;timestamp?:string;altitude?:number;speed?:number}[]>(resolve=>routeReader.call(kit,{id:activity.externalId},(error:unknown,result:{data?:{locations?:{latitude:number;longitude:number;timestamp?:string;altitude?:number;speed?:number}[]}})=>resolve(error?[]:result?.data?.locations??[])));
+    Object.assign(activity,routeMetadata(locations.map(p=>({lat:p.latitude,lon:p.longitude,time:p.timestamp,elevation:p.altitude,speedMps:p.speed})),activity.categorySlug));
+  }
+  const healthExtra=await appleHealthExtra(kit as unknown as Record<string,unknown>,startDate,endDate);
+  if (activities.length === 0 && !healthExtra.dailyHealth.length && !healthExtra.sleepNights.length) {
     return {
       ok: true,
       authorized: true,
@@ -252,7 +261,7 @@ export async function syncAppleHealth(
       count: 0,
     };
   }
-  return postIngest("apple_health", activities, deps);
+  return postIngest("apple_health", activities, deps,healthExtra);
 }
 
 const HEALTH_CONNECT_SPORTS: Record<string, string> = {
@@ -285,6 +294,7 @@ type HealthConnectModule = {
       title?: string;
       exerciseType?: number | string;
       distance?: { inMeters?: number };
+      exerciseRoute?:{route?:{latitude:number;longitude:number;time?:string;altitude?:{inMeters?:number}}[]};
     }[];
   }>;
   ExerciseType?: Record<string, number>;
@@ -424,7 +434,7 @@ export async function syncHealthConnect(
         if (Number.isNaN(at) || Number.isNaN(startMs) || at < startMs || at > endMs) return sum;
         return sum + (item.distance?.inMeters ?? 0);
       }, 0);
-      return sampleFromWorkout(
+      const sample=sampleFromWorkout(
         "google_health",
         {
           id: record.metadata?.id,
@@ -435,9 +445,12 @@ export async function syncHealthConnect(
         },
         sport,
       );
+      if(sample)Object.assign(sample,routeMetadata((record.exerciseRoute?.route??[]).map(p=>({lat:p.latitude,lon:p.longitude,time:p.time,elevation:p.altitude?.inMeters})),sample.categorySlug));
+      return sample;
     })
     .filter((item): item is ActivitySample => item != null);
-  if (activities.length === 0) {
+  const healthExtra=await androidHealthExtra(health as unknown as Record<string,unknown>);
+  if (activities.length === 0 && !healthExtra.dailyHealth.some(r=>r.steps!=null||r.restingHr!=null||r.hrv!=null) && !healthExtra.sleepNights.length) {
     return {
       ok: true,
       authorized: true,
@@ -445,5 +458,5 @@ export async function syncHealthConnect(
       count: 0,
     };
   }
-  return postIngest("google_health", activities, deps);
+  return postIngest("google_health", activities, deps,healthExtra);
 }

@@ -21,7 +21,7 @@
         "react-native-health",
         {
           "isClinicalDataEnabled": false,
-          "healthSharePermission": "Overtaek reads workouts so your week can be scored.",
+          "healthSharePermission": "Overtaek reads workouts, routes, sleep, steps, resting heart rate and heart rate variability to show your training and daily health.",
           "healthUpdatePermission": "Overtaek does not write health data."
         }
       ],
@@ -59,7 +59,7 @@
       "bundleIdentifier": "com.overtaek.app",
       "infoPlist": {
         "CFBundleDisplayName": "Overtaek",
-        "NSHealthShareUsageDescription": "Overtaek reads workouts so your week can be scored.",
+        "NSHealthShareUsageDescription": "Overtaek reads workouts, routes, sleep, steps, resting heart rate and heart rate variability to show your training and daily health.",
         "NSHealthUpdateUsageDescription": "Overtaek does not write health data.",
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryUsageDescription": "Overtaek uses the photo you choose for your athlete profile.",
@@ -109,7 +109,11 @@
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.health.READ_EXERCISE",
-        "android.permission.health.READ_DISTANCE"
+        "android.permission.health.READ_DISTANCE",
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_RESTING_HEART_RATE",
+        "android.permission.health.READ_HEART_RATE_VARIABILITY",
+        "android.permission.health.READ_SLEEP"
       ],
       "blockedPermissions": [
         "android.permission.ACCESS_FINE_LOCATION",
@@ -124,7 +128,6 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.health.READ_HEART_RATE",
-        "android.permission.health.READ_SLEEP",
         "android.permission.health.WRITE_EXERCISE",
         "android.permission.health.WRITE_DISTANCE",
         "android.permission.health.WRITE_HEART_RATE",

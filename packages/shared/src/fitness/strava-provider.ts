@@ -1,3 +1,4 @@
+import { routeMetadata } from "./activity-files";
 import type { ActivitySample, CategorySlug, FitnessConnection } from "../types";
 import { mockFitnessProvider } from "./mock-provider";
 import { syncWindow } from "./sync-window";
@@ -285,11 +286,27 @@ export function createStravaProvider(
   options: { store?: StravaStore; http?: StravaHttp } = {},
 ): FitnessProvider & {
   completeOAuth(userId: string, code: string): Promise<FitnessAuthResult>;
+  routeForActivity(userId:string,id:string,sport:CategorySlug):Promise<Partial<ActivitySample>>;
 } {
   const store = options.store ?? memoryStore();
   const http = options.http ?? { fetch };
 
   return {
+    async routeForActivity(userId,id,sport) {
+      if (!/^\d+$/.test(id)) throw new Error("invalid_strava_activity");
+      const tokens=await ensureAccessToken(env,userId,store,http);
+      const response=await http.fetch(`https://www.strava.com/api/v3/activities/${id}/streams?keys=latlng,time,altitude,velocity_smooth,heartrate,cadence&key_by_type=true`,{headers:{Authorization:`Bearer ${tokens.accessToken}`}});
+      if (!response.ok) throw new Error(`strava_streams_failed:${response.status}`);
+      const streams=await response.json() as Record<string,{data?:unknown[]}>;
+      const positions=streams.latlng?.data??[];
+      if (positions.length>100000) throw new Error("strava_streams_too_large");
+      const number=(key:string,i:number)=>typeof streams[key]?.data?.[i]==="number" ? streams[key].data![i] as number : undefined;
+      return routeMetadata(positions.flatMap((position,i)=>{
+        if (!Array.isArray(position)||position.length!==2||!position.every(n=>typeof n==="number"&&Number.isFinite(n))) return [];
+        const seconds=number("time",i);
+        return [{lat:position[0],lon:position[1],time:seconds==null?undefined:new Date(seconds*1000).toISOString(),elevation:number("altitude",i),speedMps:number("velocity_smooth",i),heartRate:number("heartrate",i),cadence:number("cadence",i),cadenceUnit:sport==="cycling"?"rpm" as const:"spm" as const}];
+      }),sport);
+    },
     id: "strava",
     displayName: "Strava",
     async connect(userId) {
