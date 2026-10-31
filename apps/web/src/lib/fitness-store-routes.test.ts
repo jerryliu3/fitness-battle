@@ -23,3 +23,14 @@ describe("GPS file persistence", () => {
     })], { onConflict: "user_id,provider,external_id" });
   });
 });
+
+
+it("persists Garmin GPS evidence rather than treating every sync as GPS", async () => {
+  for (const verified of [false, true, undefined]) {
+    await persistSyncedActivities("11111111-1111-4111-8111-111111111111", [{
+      id: "garmin-one", externalId: "one", provider: "garmin", categorySlug: "running",
+      startedAt: "2026-10-30T12:00:00Z", metricValue: 2000, movingSec: 600, rawName: "Run", verified,
+    }]);
+    expect(mock.upsert).toHaveBeenLastCalledWith([expect.objectContaining({ verified: verified === true })], { onConflict: "user_id,provider,external_id" });
+  }
+});

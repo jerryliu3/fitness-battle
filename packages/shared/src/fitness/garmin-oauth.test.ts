@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { createGarminProvider } from "./garmin-provider";
+import { mapGarminActivity, createGarminProvider } from "./garmin-provider";
 import type { StravaStore, StravaTokenSet } from "./strava-provider";
+import { activityFromSample } from "./samples";
 import type { FitnessConnection } from "../types";
 
 describe("Garmin OAuth 2", () => {
@@ -34,5 +35,36 @@ describe("Garmin OAuth 2", () => {
     await provider.disconnect("user");
     expect(await store.getTokens("user")).toBeNull();
     expect(fetcher).toHaveBeenCalledTimes(4);
+  });
+});
+
+
+describe("Garmin GPS evidence", () => {
+  const summary = { activityType: "RUNNING", activityId: "1", startTimeInSeconds: 1700000000, durationInSeconds: 600, distanceInMeters: 2000 };
+  it("does not mistake an indoor session, manual entry or unknown summary for GPS", () => {
+    expect(mapGarminActivity(summary)?.verified).toBe(false);
+    expect(mapGarminActivity({ ...summary, activityName: "Treadmill Running", startingLatitudeInDegree: 40, startingLongitudeInDegree: -74 })?.verified).toBe(false);
+    expect(activityFromSample(mapGarminActivity(summary)!)?.verified).toBe(false);
+    for (const activityType of ["TREADMILL_RUNNING", "INDOOR_CYCLING", "VIRTUAL_RUN"]) {
+      expect(mapGarminActivity({ ...summary, activityType, startingLatitudeInDegree: 40, startingLongitudeInDegree: -74 })?.verified).toBe(false);
+    }
+    expect(mapGarminActivity({ ...summary, manual: true, startingLatitudeInDegree: 40, startingLongitudeInDegree: -74 })?.verified).toBe(false);
+  });
+  it("uses valid GPS evidence without inventing a route from a single location", () => {
+    const activity = mapGarminActivity({ ...summary, startingLatitudeInDegree: 40, startingLongitudeInDegree: -74 });
+    expect(activity?.verified).toBe(true);
+    expect(activity?.summaryPolyline).toBeUndefined();
+    expect(mapGarminActivity({ ...summary, startingLatitudeInDegree: 0, startingLongitudeInDegree: 0 })?.verified).toBe(false);
+    expect(mapGarminActivity({ ...summary, startingLatitudeInDegree: 95, startingLongitudeInDegree: -74 })?.verified).toBe(false);
+  });
+  it("retains supplied route samples for map and replay, with no route on indoor sessions", () => {
+    const samples = [0, 1, 2].map(i => ({ latitudeInDegree: 40 + i * .001, longitudeInDegree: -74, startTimeInSeconds: 1700000000 + i * 10, heartRate: 140 + i }));
+    const activity = mapGarminActivity({ ...summary, samples });
+    expect(activity?.verified).toBe(true);
+    expect(activity?.summaryPolyline).toBeTruthy();
+    expect(activity?.detailedPolyline).toBeTruthy();
+    expect(activity?.routeBounds).toEqual([-74, 40, -74, 40.002]);
+    expect(activity?.routeReplay).toHaveLength(3);
+    expect(mapGarminActivity({ ...summary, activityType: "TREADMILL_RUNNING", samples })?.summaryPolyline).toBeUndefined();
   });
 });

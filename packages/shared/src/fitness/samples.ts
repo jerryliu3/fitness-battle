@@ -40,7 +40,7 @@ export function activityFromSample(
     distanceM,
     movingSec,
     avgHr: sample.avgHr ?? null,
-    verified: !isDemo && recorded && sport.gps,
+    verified: !isDemo && recorded && sport.gps && (sample.verified ?? sample.provider !== "garmin"),
     source: sample.provider as Activity["source"],
     provenance: isDemo ? "demo" : provenance,
     disposition: isDemo ? "excluded" : provenance === "imported" ? "pending" : "counted",

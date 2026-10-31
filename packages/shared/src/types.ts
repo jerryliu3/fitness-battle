@@ -93,6 +93,8 @@ export interface ActivitySample {
   movingSec?: number;
   avgHr?: number | null;
   rawName: string;
+  /** Provider evidence that this was recorded with GPS; false for indoor/unknown Garmin sessions. */
+  verified?: boolean;
   /** Google Encoded Polyline for route thumbnails and quick maps. */
   summaryPolyline?: string | null;
   /** High-resolution Google Encoded Polyline for 3D flyovers. */

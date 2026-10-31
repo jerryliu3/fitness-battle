@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ rpc: vi.fn(), user: vi.fn(), persist: vi.fn() }));
 vi.mock("./fitness-store", () => ({ createProviderStore: () => undefined, serviceDb: () => ({ rpc: mocks.rpc }), userIdForAthlete: mocks.user, persistSyncedActivities: mocks.persist }));
+vi.mock("./garmin-record-store", () => ({ storeGarminRecord: vi.fn(), persistGarminSleep: vi.fn(), fetchGarminFile: vi.fn() }));
 import { drainGarminPush, enqueueGarminPush, secretMatches } from "./garmin-inbox";
 
 const raw = JSON.stringify({ activities: [{ userId: "garmin-user", summaryId: "123", activityType: "RUNNING", startTimeInSeconds: 1700000000, durationInSeconds: 200, distanceInMeters: 1000 }] });
@@ -14,7 +15,7 @@ describe("Garmin durable inbox", () => {
   it("stores a stable digest before acknowledging and rejects invalid payloads", async () => {
     mocks.rpc.mockResolvedValue({ error: null });
     await enqueueGarminPush(raw); await enqueueGarminPush(raw);
-    expect(mocks.rpc.mock.calls[0][1].p_hash).toBe(mocks.rpc.mock.calls[1][1].p_hash);
+    expect(mocks.rpc.mock.calls[0][1].p_items[0].hash).toBe(mocks.rpc.mock.calls[1][1].p_items[0].hash);
     await expect(enqueueGarminPush('{}')).rejects.toThrow('invalid_payload');
   });
   it("finishes a leased delivery only after persistence", async () => {

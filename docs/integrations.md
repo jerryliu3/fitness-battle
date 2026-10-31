@@ -139,3 +139,45 @@ OAuth callback routing uses the verified state channel: session/web requests ret
 ## Provider account ownership
 
 Cloud consent binds the provider's external user ID to the authenticated Overtaek user in signed OAuth state; it never matches emails. A provider account may be owned by only one Overtaek account through the token-storage RPC. Existing legacy duplicate mappings retain the previous LIMIT 1 lookup; they are not deduplicated automatically. Reconnecting while signed into another app account does not implicitly transfer the provider account or its imported activities.
+
+
+### Garmin GPS evidence and routes
+
+Garmin Activities summaries are not full routes. GPS credit requires valid starting
+coordinates or route samples, a distance sport, and a non-manual outdoor activity
+type. Indoor/treadmill/virtual and unknown summaries remain recorded Open activity.
+Both sample conversion and server persistence honor the provider's GPS evidence.
+A single starting coordinate never creates a map. Supplied samples retain route
+geometry and replay through the existing file-route conversion. The Starter receiver accepts Activities, nested Activity Details, Activity Files,
+Manually Updated Activities and MoveIQ. Summaries, details and files share the Garmin
+activity ID, so additional deliveries enrich one activity. Route geometry and replay
+survive later summary deliveries. MoveIQ is retained without adding overlapping
+scored workouts; manually edited activities do not gain GPS credit.
+
+All configured Garmin Health feeds are retained in private owner-scoped records:
+blood pressure, body composition, breathing variations, daily summaries, epochs,
+HRV, snapshots, hydration, nutrition, pulse oxygen, respiration, skin temperature,
+sleep, stress and user metrics. Sleep stages, duration and the device sleep score
+(or the existing shared sleep formula when no score is supplied) populate the
+existing sleep view. Other metrics are retained for future presentation; enabling
+a feed does not imply a chart for every field. Owner-only reads are available at
+`GET /api/fitness/garmin/records?feed=<feed>` with `before` pagination.
+
+Use the same authenticated push URL for every supported feed. Health deliveries
+require HEALTH_EXPORT (Daily Health Stats) consent in addition to ACTIVITY_EXPORT.
+Deregistration removes tokens and marks all links to that Garmin account disconnected;
+permission changes are retained and update connection availability, ignoring older
+events. Training and Courses are outbound device features, not additional workout
+history feeds.
+
+Each delivery is atomically split into record-level leased inbox jobs. Push bodies
+are limited to 4 MB; file downloads to 10 MB. Files use only Garmin's exact HTTPS
+activityFile callback endpoint, prohibit redirects and cache the one-use response
+before parsing or persisting activities. A Supabase cron checks only queued deliveries every minute and wakes the worker
+when due work exists, using a separate Vault-managed token; the existing daily
+Vercel retry remains a fallback. This does not pull data across user accounts.
+Configure `garmin_inbox_retry_url` and `garmin_inbox_retry_token` in Vault per
+environment; without them the scheduler makes no HTTP request. File callback URLs
+expire after 24 hours, so a prolonged outage can require Garmin resending the file. Historical Starter backfill is not available; the Garmin
+Summary Resender may replay recently retained records where supported.
+

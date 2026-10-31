@@ -256,7 +256,7 @@ export async function persistSyncedActivities(
         elevation_gain_m: activity.elevationGainM ?? null,
         sport,
         distance_m: sport === "strength" ? 0 : Number(activity.metricValue ?? 0),
-        verified: provenance === "recorded",
+        verified: provenance === "recorded" && sport !== "strength" && (activity.verified ?? activity.provider !== "garmin"),
         provenance,
         disposition: provenance === "imported" ? "pending" : "counted",
         compete_key: activity.id,
