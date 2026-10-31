@@ -416,27 +416,32 @@ export function RouteTimelapseMap({
     }
   }, []);
 
+  const activeSample = routeReplayAt(replaySamples, progress);
+
   return (
     <div
       className={`route-ui relative w-full h-[450px] sm:h-[540px] overflow-hidden rounded-2xl bg-[#142b3b] shadow-xl border border-[#e3e9e7]/30 ${className}`}
     >
       {/* Mapbox WebGL Canvas Container */}
       <div ref={containerRef} className="h-full w-full" />
-      {!mapLoaded && !tokenError && <div role="status" className="absolute inset-0 flex items-center justify-center text-white">Loading route map…</div>}
-
-      {/* Floating Header Badges */}
-      <div className="pointer-events-none absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 rounded-full bg-[#142b3b]/85 px-3 py-1.5   text-white shadow-md backdrop-blur-md" style={typographyStyle("label")}>
-          <span className="h-2 w-2 rounded-full bg-[#f7c948] animate-pulse" />
-          <span>{mode === "3d-flyover" ? "3D Flyover Replay" : "2D Overview"}</span>
+      {!mapLoaded && !tokenError && (
+        <div role="status" className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-[#142b3b] text-white">
+          <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-white/20 border-t-[#f7c948]" />
+          <span className="text-sm font-semibold tracking-wide text-white/90">Loading route map…</span>
         </div>
+      )}
 
-        {totalDistanceKm > 0 && (
-          <div className="rounded-full bg-[#142b3b]/85 px-3 py-1.5    text-white/90 shadow-md backdrop-blur-md" style={typographyStyle("label")}>
-            {(totalDistanceKm * (units === "us" ? 1 / 1.609344 : 1)).toFixed(1)} {units === "us" ? "mi" : "km"} total
+      {/* Floating Header Metadata HUD */}
+      {replaySamples.length > 0 ? (
+        <div className="pointer-events-none absolute top-3 left-3 right-3 z-10 flex justify-center">
+          <div className="route-recorded-metrics pointer-events-auto w-full rounded-2xl border border-white/10 bg-[#142b3b]/90 px-4 py-2.5 shadow-2xl backdrop-blur-md text-white" aria-label="Recorded measurements at the replay position">
+            <span><small>Recorded time</small><b>{activeSample ? `${Math.floor(activeSample.elapsedSec / 60)}:${String(Math.floor(activeSample.elapsedSec) % 60).padStart(2, "0")}` : "—"}</b></span>
+            <span><small>Speed</small><b>{activeSample?.speedMps != null ? `${(activeSample.speedMps * (units === "us" ? 2.236936 : 3.6)).toFixed(1)} ${units === "us" ? "mph" : "km/h"}` : "—"}</b></span>
+            <span><small>Heart rate</small><b>{activeSample?.heartRate != null ? `${Math.round(activeSample.heartRate)} bpm` : "—"}</b></span>
+            <span><small>Cadence</small><b>{activeSample?.cadence != null ? `${Math.round(activeSample.cadence)} ${activeSample.cadenceUnit || "spm"}` : "—"}</b></span>
           </div>
-        )}
-      </div>
+        </div>
+      ) : null}
 
       {/* Floating Mobile Control HUD */}
       {mapLoaded && (
@@ -445,8 +450,8 @@ export function RouteTimelapseMap({
             isPlaying={isPlaying}
             isFinished={isFinished}
             progress={progress}
-            replaySample={routeReplayAt(replaySamples, progress)}
-            hasReplaySamples={replaySamples.length > 0}
+            replaySample={activeSample}
+            hasReplaySamples={false}
             currentDistanceKm={currentDistanceKm}
             totalDistanceKm={totalDistanceKm}
             mode={mode}

@@ -16,8 +16,9 @@ export function LogoRaceBootSplash({ waiting = false, onAnimationComplete }: {
   const { width } = useWindowDimensions();
   useEffect(() => {
     let disposed = false, raf = 0, elapsed = 0, last: number | null = null;
-    let preferenceReady = false, preferenceChanged = false, reduced = true;
+    let preferenceChanged = false, reduced = false;
     function finish() {
+      cancelAnimationFrame(raf);
       setPosition(1);
       if (!disposed && !completed.current) {
         completed.current = true;
@@ -26,7 +27,12 @@ export function LogoRaceBootSplash({ waiting = false, onAnimationComplete }: {
     }
     function tick(now: number) {
       if (disposed || AppState.currentState !== "active") return;
-      if (last !== null) elapsed += now - last;
+      if (last !== null) {
+        // Cap frame step so JS thread hitches during initial app mount don't cause
+        // the entrance animation to teleport or stutter forward.
+        const dt = Math.min(now - last, 36);
+        elapsed += dt;
+      }
       last = now;
       const next = clamp(elapsed / LOGO_RACE_DURATION_MS);
       setPosition(next);
@@ -35,26 +41,23 @@ export function LogoRaceBootSplash({ waiting = false, onAnimationComplete }: {
     function resume() {
       cancelAnimationFrame(raf);
       last = null;
-      if (disposed || completed.current || !preferenceReady) return;
+      if (disposed || completed.current) return;
       if (reduced) { finish(); return; }
       if (AppState.currentState === "active") raf = requestAnimationFrame(tick);
     }
+    // Start the clock immediately without waiting for async native bridge latency
+    if (AppState.currentState === "active") {
+      raf = requestAnimationFrame(tick);
+    }
     void AccessibilityInfo.isReduceMotionEnabled().then(value => {
       if (disposed || preferenceChanged) return;
-      preferenceReady = true;
       reduced = value;
-      resume();
-    }).catch(() => {
-      if (disposed || preferenceChanged) return;
-      preferenceReady = true;
-      reduced = true;
-      resume();
-    });
+      if (reduced) finish();
+    }).catch(() => {});
     const preference = AccessibilityInfo.addEventListener("reduceMotionChanged", value => {
       preferenceChanged = true;
-      preferenceReady = true;
       reduced = value;
-      resume();
+      if (reduced) finish(); else resume();
     });
     const app = AppState.addEventListener("change", resume);
     return () => {

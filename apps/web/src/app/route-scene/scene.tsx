@@ -97,20 +97,27 @@ export function RouteScene() {
 
   return (
     <div style={{ height: "100dvh", width: "100vw", background: "#142b3b", overflow: "hidden" }}>
-      {coordinates.length > 0 ? <RouteTimelapseMap
-        coordinates={coordinates}
-        routeReplay={routeReplay}
-        key={`${typeof coordinates === "string" ? coordinates : JSON.stringify(coordinates)}:${mode}`}
-        mode={mode}
-        autoPlay={false}
-        durationMs={durationMs}
-        units={searchParams.get("units") === "us" ? "us" : "metric"}
-        onUnavailable={() => send({ type: "route-unavailable" })}
-        accentColor={accentColor}
-        mapboxToken={paramToken}
-        className="route-scene-map"
-        onFinish={() => send({ type: "route-finish" })}
-      /> : <p role="status" style={{ color: "white", padding: 24 }}>Preparing your route…</p>}
+      {coordinates.length > 0 ? (
+        <RouteTimelapseMap
+          coordinates={coordinates}
+          routeReplay={routeReplay}
+          key={`${typeof coordinates === "string" ? coordinates : JSON.stringify(coordinates)}:${mode}`}
+          mode={mode}
+          autoPlay={false}
+          durationMs={durationMs}
+          units={searchParams.get("units") === "us" ? "us" : "metric"}
+          onUnavailable={() => send({ type: "route-unavailable" })}
+          accentColor={accentColor}
+          mapboxToken={paramToken}
+          className="route-scene-map"
+          onFinish={() => send({ type: "route-finish" })}
+        />
+      ) : (
+        <div role="status" className="flex h-full w-full flex-col items-center justify-center gap-3 bg-[#142b3b] text-white">
+          <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-white/20 border-t-[#f7c948]" />
+          <span className="text-sm font-semibold tracking-wide text-white/90">Preparing your route…</span>
+        </div>
+      )}
     </div>
   );
 }

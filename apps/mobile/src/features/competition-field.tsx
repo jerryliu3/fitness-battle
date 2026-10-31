@@ -61,7 +61,7 @@ export function CompetitionField({
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
-  const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d">(() => state && buildArenaModel(state, undefined, track, sport)?.unit === "pts" ? "2d" : "4d");
+  const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d">(() => (queued || (state && buildArenaModel(state, undefined, track, sport)?.unit === "pts")) ? "2d" : "4d");
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
   const chooseView = (value: "2d" | "3d" | "4d") => {
     flight.cancel();
@@ -109,7 +109,7 @@ export function CompetitionField({
     [state, track, sport],
   );
   const period = state ? competePeriodWindow(state, competeNow(state), sport) : null;
-  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(sport, period?.startsAt.toISOString() ?? "", period?.endsAt.toISOString() ?? "", debugActive, sceneDimension === "4d" && isFocused);
+  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(sport, period?.startsAt.toISOString() ?? "", period?.endsAt.toISOString() ?? "", debugActive, !queued && sceneDimension === "4d" && isFocused);
   useEffect(() => setCourseTarget(null), [accountKey, sport, period?.startsAt.getTime(), arena?.unit]);
   const defaultSpan = fieldDefaultSpan(arena?.unit ?? "km");
   const viewSpan = span ?? defaultSpan;
@@ -310,7 +310,7 @@ export function CompetitionField({
         >
           <FieldViewSwitcher
             value={sceneDimension}
-            geographic={arena.unit !== "pts"}
+            geographic={!queued && arena.unit !== "pts"}
             onChange={chooseView}
           />
           {sceneDimension === "2d" ? (
@@ -368,7 +368,7 @@ export function CompetitionField({
                   onPress={() => setExpanded(false)}
                 />
               </View>
-              <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
+              <FieldViewSwitcher value={sceneDimension} geographic={!queued && arena.unit !== "pts"} onChange={chooseView} />
             </FieldOverlayView>
 
             {!queued && (sceneDimension !== "4d" || course) ? <>
@@ -626,7 +626,7 @@ export function CompetitionField({
           </View>
         </Modal>
       ) : (
-        <View>{fieldContent}{queueOverlay}</View>
+        <View style={{ position: "relative" }}>{fieldContent}{queueOverlay}</View>
       )}
 
       {!expanded ? <AthleteProfileSheet athlete={profileAthlete} onClose={() => setProfileAthlete(null)} /> : null}

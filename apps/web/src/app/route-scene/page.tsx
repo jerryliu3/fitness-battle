@@ -11,7 +11,27 @@ export default function Page() {
   return (
     <Suspense
       fallback={
-        <div style={{ height: "100dvh", width: "100vw", background: "#142b3b" }} />
+        <div
+          role="status"
+          style={{
+            height: "100dvh",
+            width: "100vw",
+            background: "#142b3b",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              border: "3px solid rgba(255,255,255,0.2)",
+              borderTopColor: "#f7c948",
+            }}
+          />
+        </div>
       }
     >
       <RouteScene />
