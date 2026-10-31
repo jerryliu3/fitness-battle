@@ -24,7 +24,7 @@ export function AthleteTelemetryMatrix({
   const SHOW_ATHLETE_EQUITY = false;
   const datesByDomain = {
     market: model.market.equitySeries.map(p => p.label),
-    vitals: model.vitals.metrics[0]!.series.map(p => p.label),
+    vitals: model.vitals.metrics[0]?.series.map(p => p.label) ?? [],
     sleep: model.sleep.nights.map(p => p.label),
     load: model.load.series.map(p => p.label),
     performance: model.performance.series.map(p => p.label),
@@ -143,10 +143,12 @@ export function AthleteTelemetryMatrix({
 
 function MiniSparkline({
   values,
-  stroke, labels,
+  stroke,
+  labels = [],
 }: {
   values: number[];
-  stroke: string; labels: string[];
+  stroke: string;
+  labels?: string[];
 }) {
   if (values.length < 2) return null;
   const low = Math.min(...values), high = Math.max(...values);
@@ -158,8 +160,8 @@ function MiniSparkline({
   return (
     <Svg width={110} height={50} viewBox="0 0 110 50">
       {ticks.map(tick => <G key={tick.value}><Line x1={30} x2={104} y1={tick.y} y2={tick.y} stroke={c.line}/><SvgText x={26} y={tick.y+3} fontSize={9} textAnchor="end" fill={c.muted}>{number(tick.value)}</SvgText></G>)}
-      <SvgText x={30} y={46} fontSize={9} fill={c.muted}>{labels[0]}</SvgText>
-      <SvgText x={104} y={46} fontSize={9} textAnchor="end" fill={c.muted}>{labels.at(-1)}</SvgText>
+      {labels[0] && <SvgText x={30} y={46} fontSize={9} fill={c.muted}>{labels[0]}</SvgText>}
+      {labels.at(-1) && <SvgText x={104} y={46} fontSize={9} textAnchor="end" fill={c.muted}>{labels.at(-1)}</SvgText>}
       <G transform="translate(28 0)">
       <Path
         d={`M ${polyline}`}

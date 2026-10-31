@@ -36,7 +36,14 @@ export function OpenLineChart({ chart, label, unit, range, onRangeChange, includ
           {chart.xTicks.map((tick, i) => <ChartText key={i} x={tick.x} y={chart.height - 22} textAnchor={i === 0 ? "start" : i === chart.xTicks.length - 1 ? "end" : "middle"} fill={c.muted}>{tick.label}</ChartText>)}
         </G>
         {!!chart.previous && <Polyline points={chart.previous} fill="none" stroke={c.muted} strokeWidth={1.5} strokeDasharray="2 5" strokeLinecap="round" opacity={.65} />}
-        {chart.segments.map((line, i) => <Polyline key={i} points={line} fill="none" stroke={c.tennis} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />)}
+        {chart.segments.map((line, i) => {
+          if (!line) return null;
+          if (!line.includes(" ")) {
+            const [cx, cy] = line.split(",").map(Number);
+            return <Circle key={i} cx={cx} cy={cy} r={3} fill={c.tennis} />;
+          }
+          return <Polyline key={i} points={line} fill="none" stroke={c.tennis} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />;
+        })}
         {live && !selected && end && <Circle cx={end.x} cy={end.y} r={3.5} fill={c.tennis} />}
         {live && !selected && !reduceMotion && end && <LiveCircle cx={end.x} cy={end.y} r={pulse.interpolate({ inputRange: [0, .75, 1], outputRange: [3.5, 12, 12] })} fill={c.tennis} opacity={pulse.interpolate({ inputRange: [0, .65, .9, 1], outputRange: [.5, .18, 0, 0] })} />}
         {chart.points.length === 1 && <Circle cx={chart.points[0]!.x} cy={chart.points[0]!.y} r={3} fill={c.tennis} />}

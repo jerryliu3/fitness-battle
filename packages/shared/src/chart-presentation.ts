@@ -84,7 +84,7 @@ export function openLineModel(
   const xTicks = tickDates.flatMap((at, i) => at ? [{ x: timeline ? timeX(at.toISOString()) : x([0, Math.floor((rows.length - 1) / 2), rows.length - 1][i]!), label: date(at.toISOString()) }] : [])
     .filter((tick, i, ticks) => ticks.findIndex(other => other.x === tick.x && other.label === tick.label) === i);
   return { width, height, top, bottom, left, right, points: points.filter((_, i) => rows[i]?.inspectable !== false), line, segments, xTicks,
-    yTicks: [min, (min + max) / 2, max].map(value => ({ y: y(value), label: format(value) })),
+    yTicks: values.length ? [min, (min + max) / 2, max].map(value => ({ y: y(value), label: format(value) })) : [],
     previous: timeline?.previousRows ? trace(timeline.previousRows.map(row => ({ x: timeX(row.date, true), y: y(row.value) }))) : previous.map((value, i) => `${x(i).toFixed(1)},${y(value).toFixed(1)}`).join(" "),
     value: rows.length ? format(rows[rows.length - 1]!.value) : format(0),
     date: rows.length ? `${date(rows[0]!.date)} – ${date(rows[rows.length - 1]!.date)}` : "No data",
