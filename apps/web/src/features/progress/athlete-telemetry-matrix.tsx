@@ -1,25 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   SHELL_COLORS as c,
   buildAnalyticsLabModel,
   buildSvgLineGeometry,
   type AnalyticsDomainId,
+  type AnalyticsTimeLens,
   type CompeteState,
 } from "@fitness-battle/shared";
-import { AppHeading, AppText } from "../../ui/section";
 import { ChartSvg, ChartText } from "../../ui/chart-text";
+import { AppHeading, AppText, typographyStyle } from "../../ui/section";
 
 export function AthleteTelemetryMatrix({
   state,
 }: {
   state?: CompeteState | null;
 }) {
-  const model = useMemo(() => buildAnalyticsLabModel(state, "30d"), [state]);
+  const [timeLens, setTimeLens] = useState<AnalyticsTimeLens>("30d");
+  const model = useMemo(() => buildAnalyticsLabModel(state, timeLens), [state, timeLens]);
 
   const SHOW_ATHLETE_EQUITY = false;
+
   const datesByDomain = {
     market: model.market.equitySeries.map(p => p.label),
     vitals: model.vitals.metrics[0]?.series.map(p => p.label) ?? [],
@@ -38,6 +41,7 @@ export function AthleteTelemetryMatrix({
     delta: string;
     points: number[];
     accent: string;
+    corridor?: { high: number[]; low: number[] };
   }> = [
     ...(SHOW_ATHLETE_EQUITY
       ? [
@@ -54,25 +58,31 @@ export function AthleteTelemetryMatrix({
       : []),
     {
       id: "vitals",
-      domain: "vitals",
+      domain: "vitals" as const,
       kicker: "Overnight HRV",
-      value: model.vitals.metrics[0]!.formattedCurrent,
-      delta: `${model.vitals.metrics[0]!.statusLabel} corridor`,
-      points: model.vitals.metrics[0]!.series.map((p) => p.value),
-      accent: c.tennis,
+      value: model.vitals.metrics[0]?.formattedCurrent ?? "64 ms",
+      delta: `${model.vitals.metrics[0]?.statusLabel ?? "Normal"} · Baseline ${model.vitals.metrics[0]?.baselineMin ?? 62}–${model.vitals.metrics[0]?.baselineMax ?? 82} ms`,
+      points: model.vitals.metrics[0]?.series.map((p) => p.value) ?? [60, 62, 65, 64, 66, 63, 64],
+      accent: c.fieldTeal,
+      corridor: model.vitals.metrics[0]
+        ? {
+            high: model.vitals.metrics[0].series.map((p) => p.baselineHigh),
+            low: model.vitals.metrics[0].series.map((p) => p.baselineLow),
+          }
+        : undefined,
     },
     {
       id: "sleep",
-      domain: "sleep",
+      domain: "sleep" as const,
       kicker: "Sleep & Debt",
-      value: `${model.sleep.lastNight.score} score`,
-      delta: `${model.sleep.lastNight.restorativePct}% restorative · ${model.sleep.lastNight.debtMin}m debt`,
+      value: `${model.sleep.lastNight.score} pts`,
+      delta: `${model.sleep.lastNight.restorativePct}% restorative · +${model.sleep.lastNight.debtMin}m debt`,
       points: model.sleep.nights.map((n) => n.score),
-      accent: c.tennis,
+      accent: c.fieldTeal,
     },
     {
       id: "load",
-      domain: "load",
+      domain: "load" as const,
       kicker: "Workload Ratio",
       value: `${model.load.acwrCurrent.toFixed(2)}x`,
       delta: model.load.acwrStatusLabel,
@@ -81,7 +91,7 @@ export function AthleteTelemetryMatrix({
     },
     {
       id: "performance",
-      domain: "performance",
+      domain: "performance" as const,
       kicker: "Aerobic Efficiency",
       value: model.performance.efCurrent.toFixed(2),
       delta: `${model.performance.efDeltaPct >= 0 ? "+" : ""}${model.performance.efDeltaPct}% pace/HR`,
@@ -90,44 +100,67 @@ export function AthleteTelemetryMatrix({
     },
     {
       id: "combined",
-      domain: "combined",
+      domain: "combined" as const,
       kicker: "Readiness Brief",
       value: `${model.vitals.readinessComposite}%`,
-      delta: `Strain ceiling ${model.combined.optimalStrainCeiling}`,
+      delta: `Strain ceiling: ${model.combined.optimalStrainCeiling} / 21`,
       points: model.combined.series.map((s) => s.nextDayReadiness),
-      accent: c.tennis,
+      accent: c.fieldTeal,
     },
   ];
 
   return (
-    <section className="athlete-telemetry-matrix fb-stack" style={{ marginTop: 18 }}>
+    <section aria-label="Advanced Analytics Telemetry">
       <div style={{ display: "grid", gap: 12 }}>
-        <AppHeading role="heading" level={2}>Advanced Analytics</AppHeading>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <AppHeading role="heading" level={2}>Advanced Analytics</AppHeading>
+          <div style={{ display: "flex", gap: 6 }} role="group" aria-label="Time range">
+            {(["7d", "30d"] as const).map((lens) => {
+              const active = timeLens === lens;
+              return (
+                <button
+                  key={lens}
+                  type="button"
+                  onClick={() => setTimeLens(lens)}
+                  aria-pressed={active}
+                  style={{
+                    ...typographyStyle("caption"),
+                    padding: "4px 10px",
+                    borderRadius: 99,
+                    border: `1px solid ${active ? c.fieldTeal : c.line}`,
+                    backgroundColor: active ? c.fieldTeal : "transparent",
+                    color: active ? "#ffffff" : c.muted,
+                    cursor: "pointer",
+                  }}
+                >
+                  {lens.toUpperCase()}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             gap: 12,
           }}
         >
           {bentoTiles.map((t) => (
             <Link
               key={t.id}
-              href={`/you/telemetry?domain=${t.domain}`}
-              aria-label={`${t.kicker}, ${t.value}, ${t.delta}`}
+              href={`/you/telemetry?domain=${t.domain}${timeLens !== "30d" ? `&lens=${timeLens}` : ""}`}
               style={{
                 display: "flex",
                 flexDirection: "column",
                 gap: 8,
-                padding: "14px 14px 12px",
-                background: "var(--fb-card, #ffffff)",
-                border: "1px solid var(--fb-line, #e5eae6)",
-                borderRadius: 12,
+                padding: 14,
+                borderRadius: 14,
+                border: `1px solid ${c.line}`,
+                backgroundColor: c.card,
                 textDecoration: "none",
                 color: "inherit",
-                cursor: "pointer",
-                transition: "border-color 0.15s, transform 0.15s",
               }}
             >
               <AppText role="label" secondary>
@@ -137,23 +170,19 @@ export function AthleteTelemetryMatrix({
               <div
                 style={{
                   display: "flex",
-                  alignItems: "baseline",
                   justifyContent: "space-between",
-                  gap: 8,
+                  alignItems: "baseline",
                 }}
               >
                 <AppText role="value">{t.value}</AppText>
+
               </div>
 
-              <MiniSparklineSvg values={t.points} stroke={t.accent} labels={datesByDomain[t.domain]} />
+              <MiniSparklineSvg values={t.points} stroke={t.accent} corridor={t.corridor} labels={datesByDomain[t.domain]} />
               <AppText
                 role="caption"
                 secondary
-                style={{
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
+                style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
               >
                 {t.delta}
               </AppText>
@@ -169,17 +198,20 @@ function MiniSparklineSvg({
   values,
   stroke,
   labels = [],
+  corridor,
 }: {
   values: number[];
   stroke: string;
   labels?: string[];
+  corridor?: { high: number[]; low: number[] };
 }) {
   if (values.length < 2) return null;
-  const low = Math.min(...values), high = Math.max(...values);
-  const geometry = buildSvgLineGeometry(values.map(value => (value - low) / (high - low || 1)), 78, 28, 2);
+  const all = corridor ? [...values, ...corridor.high, ...corridor.low] : values;
+  const low = Math.min(...all), high = Math.max(...all);
+  const geometry = buildSvgLineGeometry(values, 78, 28, 2, { min: low, max: high });
   const polyline = geometry.polyline;
   const points = geometry.points.map((point, i) => ({ ...point, val: values[i]! }));
-  const ticks = [...new Set([low, high])].map(value => ({ value, y: points.find(p => p.val === value)!.y }));
+  const ticks = [...new Set([low, high])].map(value => ({ value, y: 26 - (value-low)/(high-low || 1)*24 }));
   const number = (value: number) => value >= 1000 ? `${(value / 1000).toFixed(1)}k` : Number(value.toPrecision(3)).toString();
   return (
     <ChartSvg width={110} height={50} viewBox="0 0 110 50" aria-hidden="true">
@@ -187,6 +219,9 @@ function MiniSparklineSvg({
       {labels[0] && <ChartText x={30} y={46} fill={c.muted}>{labels[0]}</ChartText>}
       {labels.at(-1) && <ChartText x={104} y={46} textAnchor="end" fill={c.muted}>{labels.at(-1)}</ChartText>}
       <g transform="translate(28 0)">
+      {corridor && <path d={`M ${corridor.high.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" L ")} L ${corridor.low.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).reverse().join(" L ")} Z`} fill={stroke} opacity={.16}/>}
+      {corridor && <polyline points={corridor.high.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" ")} fill="none" stroke={stroke} strokeDasharray="2 2" opacity={.65}/>}
+      {corridor && <polyline points={corridor.low.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" ")} fill="none" stroke={stroke} strokeDasharray="2 2" opacity={.65}/>}
       <path
         d={`M ${polyline}`}
         fill="none"

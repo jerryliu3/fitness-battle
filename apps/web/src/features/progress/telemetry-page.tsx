@@ -163,7 +163,8 @@ function WebMarketView({ model }: { model: AnalyticsLabModel }) {
   const m = model.market;
   const series = m.equitySeries;
   const [selectedIdx, setSelectedIdx] = useState(series.length - 1);
-  const pt = series[Math.max(0, Math.min(selectedIdx, series.length - 1))] ?? series[0]!;
+  const safeIdx = Math.max(0, Math.min(selectedIdx, series.length - 1));
+  const pt = series[safeIdx] ?? series[0]!;
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -180,7 +181,7 @@ function WebMarketView({ model }: { model: AnalyticsLabModel }) {
         <StandardLineChart
           yAxisLabel="NAV (pts)"
           values={series.map((p) => p.nav)}
-          selectedIdx={selectedIdx}
+          selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.tennis}
           xLabels={
@@ -326,7 +327,8 @@ function WebSleepView({ model }: { model: AnalyticsLabModel }) {
   const sData = model.sleep;
   const nights = sData.nights;
   const [selectedIdx, setSelectedIdx] = useState(nights.length - 1);
-  const night = nights[Math.max(0, Math.min(selectedIdx, nights.length - 1))] ?? sData.lastNight;
+  const safeIdx = Math.max(0, Math.min(selectedIdx, nights.length - 1));
+  const night = nights[safeIdx] ?? sData.lastNight;
 
   const total = Math.max(1, night.durationMin);
   const deepP = (night.deepMin / total) * 100;
@@ -349,7 +351,7 @@ function WebSleepView({ model }: { model: AnalyticsLabModel }) {
         <StandardLineChart
           yAxisLabel="Sleep score"
           values={nights.map((n) => n.score)}
-          selectedIdx={selectedIdx}
+          selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.fieldTeal}
           xLabels={
@@ -392,7 +394,8 @@ function WebSleepView({ model }: { model: AnalyticsLabModel }) {
 function WebLoadView({ model }: { model: AnalyticsLabModel }) {
   const l = model.load;
   const [selectedIdx, setSelectedIdx] = useState(l.series.length - 1);
-  const b = l.series[Math.max(0, Math.min(selectedIdx, l.series.length - 1))] ?? l.series[0]!;
+  const safeIdx = Math.max(0, Math.min(selectedIdx, l.series.length - 1));
+  const b = l.series[safeIdx] ?? l.series[0]!;
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -409,7 +412,7 @@ function WebLoadView({ model }: { model: AnalyticsLabModel }) {
         <StandardLineChart
           yAxisLabel="ACWR (ratio)"
           values={l.series.map((s) => Number(s.acwr.toFixed(2)))}
-          selectedIdx={selectedIdx}
+          selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.statusSuccess}
           xLabels={
@@ -435,7 +438,7 @@ function WebLoadView({ model }: { model: AnalyticsLabModel }) {
         <StandardLineChart
           yAxisLabel="Training (hrs)"
           values={l.series.map((s) => s.cumCurrentHours)}
-          selectedIdx={selectedIdx}
+          selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.fieldTeal}
           height={130}
@@ -459,7 +462,8 @@ function WebLoadView({ model }: { model: AnalyticsLabModel }) {
 function WebPerformanceView({ model }: { model: AnalyticsLabModel }) {
   const p = model.performance;
   const [selectedIdx, setSelectedIdx] = useState(p.series.length - 1);
-  const run = p.series[Math.max(0, Math.min(selectedIdx, p.series.length - 1))] ?? p.series[0]!;
+  const safeIdx = Math.max(0, Math.min(selectedIdx, p.series.length - 1));
+  const run = p.series[safeIdx] ?? p.series[0]!;
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -476,7 +480,7 @@ function WebPerformanceView({ model }: { model: AnalyticsLabModel }) {
         <StandardLineChart
           yAxisLabel="EF (m/min/bpm)"
           values={p.series.map((s) => Number(s.efficiencyFactor.toFixed(2)))}
-          selectedIdx={selectedIdx}
+          selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.fieldTeal}
           xLabels={
@@ -527,7 +531,8 @@ function WebPerformanceView({ model }: { model: AnalyticsLabModel }) {
 function WebCombinedView({ model }: { model: AnalyticsLabModel }) {
   const cmb = model.combined;
   const [selectedIdx, setSelectedIdx] = useState(cmb.series.length - 1);
-  const day = cmb.series[Math.max(0, Math.min(selectedIdx, cmb.series.length - 1))] ?? cmb.series[0]!;
+  const safeIdx = Math.max(0, Math.min(selectedIdx, cmb.series.length - 1));
+  const day = cmb.series[safeIdx] ?? cmb.series[0]!;
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -544,7 +549,7 @@ function WebCombinedView({ model }: { model: AnalyticsLabModel }) {
         <StandardLineChart
           yAxisLabel="Readiness (%)"
           values={cmb.series.map((s) => s.nextDayReadiness)}
-          selectedIdx={selectedIdx}
+          selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.statusSuccess}
           xLabels={

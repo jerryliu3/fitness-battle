@@ -127,7 +127,9 @@ describe("AthleteTelemetryMatrix mobile features", () => {
     expect(text).toContain("Aerobic Efficiency");
     expect(text).toContain("Readiness Brief");
 
-    const tiles = renderer.root.findAllByType("Pressable" as never);
+    const tiles = renderer.root
+      .findAllByType("Pressable" as never)
+      .filter((p) => !p.props.accessibilityLabel?.startsWith("Time lens"));
     expect(tiles.length).toBe(5);
 
     await act(async () => {
