@@ -59,7 +59,7 @@ export function AdminRouteControls() {
   function loadCatalog() {
     void perform(async (signal, current) => {
       const data = await read("/api/admin/routes", signal);
-      if (current()) { setRoutes(data.routes); if (!data.routes.length) setNote("No routes yet. Add one to enable 4D course assignment."); }
+      if (current()) { setRoutes(data.routes); if (!data.routes.length) setNote("No routes yet. Add one to enable 3D course assignment."); }
     });
   }
   function loadRoute(id: string) {
@@ -82,7 +82,7 @@ export function AdminRouteControls() {
     });
   }
   return <section style={{ display: "grid", gap: 16 }}>
-    <SectionHeader title="4D route catalog" />
+    <SectionHeader title="3D route catalog" />
     <AppParagraph typographyRole="body">Add or edit the routes used by automatic course rotation. Active routes are eligible for new assignments. Deactivating or editing a route preserves courses already assigned to competitions.</AppParagraph>
     <div className="focus-actions">
       <button type="button" className="fb-btn-line" disabled={busy} onClick={loadCatalog}>Load route catalog</button>

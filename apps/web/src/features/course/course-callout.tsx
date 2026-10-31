@@ -6,8 +6,8 @@ import { courseCalloutLayout, type ArenaSceneLane, type LngLat } from "@fitness-
 import { AthletePennant } from "../field/components/athlete-pennant";
 
 /** The SDK positions a screen-sized DOM marker; React never projects camera frames. */
-export function CourseCallout({ map, lane, coordinate, detail, onSelect, onDismiss, layout }: {
-  map: mapboxgl.Map; lane: ArenaSceneLane; coordinate: LngLat; detail: string; onSelect(id: string): void; onDismiss?: () => void; layout?: ReturnType<typeof courseCalloutLayout>;
+export function CourseCallout({ passStrength = 0, map, lane, coordinate, detail, onSelect, onDismiss, layout }: {
+  passStrength?: number; map: mapboxgl.Map; lane: ArenaSceneLane; coordinate: LngLat; detail: string; onSelect(id: string): void; onDismiss?: () => void; layout?: ReturnType<typeof courseCalloutLayout>;
 }) {
   const prefix = useId();
   const placement = layout ?? courseCalloutLayout(lane.you ? 0 : 1);
@@ -28,6 +28,7 @@ export function CourseCallout({ map, lane, coordinate, detail, onSelect, onDismi
   }, [map, element, placement.left, placement.height, placement.originY]);
   useEffect(() => { marker?.setLngLat(coordinate); }, [marker, coordinate[0], coordinate[1]]);
   return createPortal(<>
+    {passStrength > 0 && <div aria-hidden style={{position:"absolute",left:placement.originX,top:placement.originY,width:32+64*(1-passStrength),height:32+64*(1-passStrength),transform:"translate(-50%, -50%)",borderRadius:"50%",border:"4px solid #f7c948",background:"#f7c94833",opacity:passStrength,pointerEvents:"none"}}/>}
     <svg width={170} height={placement.height} viewBox={`0 0 170 ${placement.height}`} aria-hidden="true" style={{ display: "block", pointerEvents: "none" }}>
       <g transform={`translate(${placement.originX} ${placement.originY})`}>
         {lane.mystery ? <g><circle r={18} fill="white" stroke="#616c63" strokeWidth={2} strokeDasharray="3 3"/><text y={5} textAnchor="middle" fill="#282f2c">?</text></g> : <AthletePennant lane={lane} x={placement.left ? -158 : 12} y={placement.y} detail={detail} prefix={prefix} />}

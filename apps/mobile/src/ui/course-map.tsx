@@ -3,7 +3,7 @@ import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef } from "react";
 import { View, Text, Pressable } from "react-native";
 import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
-import { courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, RACE_TRAIL_MIN_WIDTH_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, RACE_TRAIL_MIN_WIDTH_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { CourseOptions } from "./course-options";
 import { FieldOverlayView } from "./field-overlay-motion";
@@ -11,10 +11,10 @@ import { textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
 
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
-export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, overlaysHidden = false, distanceTarget }: {
+export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, overlaysHidden = false, distanceTarget }: {
   cardSessionKey?: string | number | boolean;
   initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
-  distanceTarget?: CourseDistanceTarget | null;
+  onReady?: () => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null;
   hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; overlaysHidden?: boolean;
 }) {
   const [dismissed, setDismissed] = useState<string[]>([]);
@@ -43,13 +43,19 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   const focus = () => { if (scene.selected) { controller.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); } };
   const lastFocus = useRef<{ course: RaceCourse; id: string; request: number; following: boolean; session?: string | number | boolean } | null>(null);
   useEffect(() => {
-    if (!ready || !scene.selected) return;
+    if (!ready || !scene.selected || replay) return;
     const previous = lastFocus.current;
     const explicit = !previous || previous.course !== course || previous.id !== selectedId || previous.request !== focusRequest || !previous.following || previous.session !== cardSessionKey;
     lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey };
     if (!followAthlete) return;
     controller.focus(course, scene.selected.metres, !explicit, scene.selected.lateralMetres);
-  }, [ready, controller, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres]);
+  }, [ready, controller, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres, replay]);
+  useEffect(() => {
+    if (!ready || !replay || !scene.selected) return;
+    const rival = scene.callouts.find(lane => lane.id === replay.nearestId);
+    const next = courseReplayPose(course, scene.selected, rival, reduced ? 0 : replay.focus);
+    ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: 0 });
+  }, [ready, course, scene, replay, reduced]);
   useEffect(() => {
     if (!ready || !distanceTarget) return;
     const metres = raceEffortMetres(distanceTarget.value, unit);
@@ -57,10 +63,10 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     controller.seek(course, metres);
   }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request, controller]);
   return <View style={{ flex: 1, minHeight: 0 }}>
-    <MapView accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled
+    <MapView accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled
       logoPosition={{ top: 8, left: 8 }} attributionPosition={{ top: 8, left: 100 }}
       scaleBarPosition={{ bottom: controlsBottom + 100, left: 8 }}
-      onDidFinishLoadingMap={() => { setReady(true); setError(""); }}
+      onDidFinishLoadingMap={() => { setReady(true); setError(""); onReady?.(); }}
       onMapLoadingError={event => setError(ready && event?.type !== "style" ? "Some map scenery could not load. Check your connection." : "The map could not load. Check your connection and Mapbox access.")}
       onMapIdle={() => { if (ready) setError(""); }}
     >
@@ -74,6 +80,10 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
       <ShapeSource id="athletes" shape={visibleMarkers} onPress={event => { const id = event.features[0]?.properties?.id; if (typeof id === "string") onSelect(id); }}>
         <CircleLayer id="athlete-dots" slot="top" style={{ circleRadius: ["case", ["get", "selected"], 5, 3], circleColor: ["case", ["get", "you"], "#f7c948", "#20b9c6"], circleStrokeColor: "#ffffff", circleStrokeWidth: 1 }} />
       </ShapeSource>
+      {!reduced && replay ? replay.passEffects.filter(pass => !hiddenIds.includes(pass.id)).map(pass => {
+        const lane = scene.callouts.find(lane => lane.id === pass.id);
+        return lane ? <MarkerView key={`pass-${pass.id}`} coordinate={lane.coordinate} anchor={{x:.5,y:.5}} allowOverlap allowOverlapWithPuck><View pointerEvents="none" style={{width:100,height:100,alignItems:"center",justifyContent:"center"}}><View style={{width:32+64*(1-pass.strength),height:32+64*(1-pass.strength),borderRadius:60,borderWidth:4,borderColor:"#f7c948",backgroundColor:"#f7c94833",opacity:pass.strength}}/></View></MarkerView> : null;
+      }) : null}
       {!overlaysHidden ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id) && !dismissed.includes(lane.id)).map(lane => <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: lane.callout.left ? 1 : 0, y: lane.callout.originY / lane.callout.height }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
         <View collapsable={false} pointerEvents="box-none" style={{ width: 170, height: lane.callout.height }}>
           <Svg width={170} height={lane.callout.height} viewBox={`0 0 170 ${lane.callout.height}`} pointerEvents="none"><G transform={`translate(${lane.callout.originX} ${lane.callout.originY})`}>

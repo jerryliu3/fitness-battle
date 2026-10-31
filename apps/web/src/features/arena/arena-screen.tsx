@@ -177,7 +177,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
           leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"}/>
       ) : <section className="focus-card focus-empty"><AppHeading level={2} role="heading">Your next chapter starts here.</AppHeading><AppParagraph typographyRole="body" className="fb-copy">Register for an event to open your field.</AppParagraph></section>}
 
-      {selectedSport && !queue?.queued && !queue?.awaitingField ? <AppParagraph typographyRole="caption" className="fb-note">Sync workouts before the end time. Late uploads won't change final results.</AppParagraph> : null}
       </EventCarousel> : <section className="focus-card focus-empty"><AppHeading level={2} role="heading">Your next chapter starts here.</AppHeading><AppParagraph typographyRole="body" className="fb-copy">Register for an event to open your field.</AppParagraph><button type="button" className="fb-btn" onClick={()=>setRegister(true)}>Explore events</button></section>}
 
       {state.periodResults.length ? (

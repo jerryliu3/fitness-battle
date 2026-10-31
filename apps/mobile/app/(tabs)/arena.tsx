@@ -189,7 +189,6 @@ export default function ArenaScreen() {
                 </AppText>
               </View>
             )}
-            {selectedSport && !queue?.queued && !queue?.awaitingField ? <AppText role="caption" secondary>Sync workouts before the end time. Late uploads won't change final results.</AppText> : null}
           </EventCarousel>
         ) : (
           <View style={f.card}>

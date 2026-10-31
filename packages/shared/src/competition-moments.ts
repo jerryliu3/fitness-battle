@@ -95,7 +95,11 @@ export function photoFinishFrame(moment: CompetitionMoment, progress: number) {
   const nearestCrossing = nearest ? crossing(nearest) : 0;
   const focus = nearest ? Math.exp(-Math.pow((travel - nearestCrossing) / .075, 2)) * (p < .95 ? 1 : 0) : 0;
   const rank = 1 + Object.values(plan.rivals).filter(r => values[r.id] > youValue).length;
-  return { progress: p, travel, youValue, values, count: p >= 1 ? peers.length : passed.length, rank: p >= 1 ? plan.rankAfter : rank, focus, nearestId: nearest?.id, done: p >= 1 };
+  const passEffects = plan.hasOvertake && p < .9 ? passed.flatMap(r => {
+    const elapsed = travel - Math.max(.04, Math.min(.96, crossing(r)));
+    return elapsed > 0 && elapsed < .08 ? [{ id: r.id, strength: 1 - elapsed / .08 }] : [];
+  }) : [];
+  return { passEffects, progress: p, travel, youValue, values, count: p >= 1 ? peers.length : passed.length, rank: p >= 1 ? plan.rankAfter : rank, focus, nearestId: nearest?.id, done: p >= 1 };
 }
 
 /** Replay the complete captured field using the production lane geometry. */

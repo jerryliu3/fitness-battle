@@ -149,3 +149,20 @@ it("does not issue corrective native camera writes when a gesture updates Fixed 
   await act(async () => renderer.update(createElement(CourseMap, { ...props, followAthlete: false })));
   expect(calls.setCamera).not.toHaveBeenCalled();
 });
+
+it("frames both racers during slow motion and pulses only visible passed athletes", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const props = { course: createRaceCourse("Finish", [[0,0],[.02,0]]), lanes: [{id:"you",name:"You",initials:"Y",you:true,value:.51},{id:"peer",name:"Peer",initials:"P",value:.5}], unit:"km", selectedId:"you", focusRequest:0, onSelect:vi.fn(), replay:{nearestId:"peer",focus:1,passEffects:[{id:"peer",strength:.8}]} };
+  await act(async () => { renderer = create(createElement(CourseMap, props), {createNodeMock: element => element.type === "Camera" ? calls : null}); });
+  await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
+  expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBeGreaterThan(18);
+  expect(calls.setCamera.mock.lastCall![0].animationDuration).toBe(0);
+  const markers = renderer.root.findAllByType("MarkerView" as never);
+  expect(markers).toHaveLength(3);
+  expect(markers.find(marker=>marker.props.anchor.x === .5)!.props.coordinate).toEqual(markers.find(marker=>marker.props.anchor.x === 0)!.props.coordinate);
+  await act(async () => renderer.update(createElement(CourseMap, {...props,hiddenIds:["peer"]})));
+  expect(renderer.root.findAllByType("MarkerView" as never)).toHaveLength(1);
+  await act(async () => renderer.update(createElement(CourseMap, {...props,replay:{...props.replay,focus:0,passEffects:[]}})));
+  expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBe(16);
+  expect(renderer.root.findAllByType("MarkerView" as never)).toHaveLength(2);
+});

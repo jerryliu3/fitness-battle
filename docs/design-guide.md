@@ -83,6 +83,24 @@ Home leads with a personal greeting, weekly chart and real next-rival preview, t
 
 Compete presents one registration at a time in a horizontal carousel with previous/next buttons, page indicators and an explicit event chooser. Geographic 3D is the default for distance fields; points fields use 2D. Standings and optional alpine 3D use the same totals and viewport; native 3D remains the credential-free web renderer. Scenery is illustrative. Crew retains shared progress, standings, members, invitations and existing sessions; no feed or recording flow is added.
 
+### Native overtake and standings refinement — October 31
+
+Geographic **3D** is the default for distance fields, automatic overtake moments,
+and GPS competition replays, including fields that begin queued. Points remain
+2D. The internal `4d` renderer identifier is retained to distinguish the geographic
+course from the legacy perspective renderer; all product labels say 3D.
+Overtake playback waits for the map to load, frames the user and nearest rival,
+and zooms toward the pair during each slow-motion crossing. A fading circular
+pulse marks the passed athlete, with a screen +1 and a floating overtake count
+only after the first pass. Reduced Motion shows final totals without these effects.
+The replay's narrative text card and the late-upload reminder are removed.
+
+Standings distance labels show two decimals. Bars use exact linear proportions
+on equal-width tracks, including an empty bar for zero. Exact ties share a place
+and bar length; display rounding does not change ranks. Places 1–3 use gold
+`#dfad3c`, silver `#9fa5af`, bronze `#b87945`; other bars retain muted dark grey `#637482`, independently
+of the user's row and whether the field has closed.
+
 ## Information architecture
 
 The visible tabs are **Home / Compete / Progress / Crew**. Stable route IDs are `/today`, `/arena`, `/you`, and `/field`. The header profile circle opens **Athlete** at `/athlete`, with the shared muted person icon on white when no custom photo exists, matching web and native profile settings. Existing mobile tracker and settings links through `/you` redirect to Athlete.

@@ -1,3 +1,4 @@
+vi.mock("./use-competition-course", () => ({ useCompetitionCourse: () => ({ course: null, error: "", retry: vi.fn() }) }));
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: vi.fn() }) }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
@@ -21,7 +22,7 @@ it("reduced motion shows the final result in either direction and confirms at mo
     const baselines = Object.fromEntries(Object.entries(result.baselines).map(([k,v]) => [momentStorageKey(k),v]));
     const moment = competitionMoments(result.state, "a", k => baselines[k])[0];
     const done = vi.fn(); let renderer!: ReactTestRenderer;
-    await act(async () => { renderer = create(createElement(CompetitionMoment, { moment, remaining: 1, onConfirm: done })); });
+    await act(async () => { renderer = create(createElement(CompetitionMoment, { moment, dimension: "2d", remaining: 1, onConfirm: done })); });
     const button = renderer.root.findByType("FocusButton" as never);
     expect(button.props.label).toBe("Back to the app →");
     const root = renderer.root.findAllByType("View" as never).find(view => view.props.onLayout)!;
@@ -48,7 +49,7 @@ it("skipping playback shows final totals and waits for explicit confirmation", a
   const done = vi.fn();
   let renderer!: ReactTestRenderer;
   try {
-    await act(async () => { renderer = create(createElement(CompetitionMoment, { moment, remaining: 2, onConfirm: done })); });
+    await act(async () => { renderer = create(createElement(CompetitionMoment, { moment, dimension: "2d", remaining: 2, onConfirm: done })); });
     const root = renderer.root.findAllByType("View" as never).find(view => view.props.onLayout)!;
     await act(async () => root.props.onLayout({ nativeEvent: { layout: { height: 844 } } }));
     const button = renderer.root.findByType("FocusButton" as never);
@@ -68,4 +69,35 @@ it("skipping playback shows final totals and waits for explicit confirmation", a
     preferences.reduced = true;
     vi.unstubAllGlobals();
   }
+});
+
+it.each([false, true])("defaults to the geographic course and handles readiness (skip while loading: %s)", async skipWhileLoading => {
+  preferences.reduced = false;
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const raf = vi.fn(() => 1);
+  vi.stubGlobal("requestAnimationFrame", raf); vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  const result = applyDebugEvent(freshState(new Date("2026-10-24T18:00:00Z")), "overtake", "a");
+  const baselines = Object.fromEntries(Object.entries(result.baselines).map(([key,value])=>[momentStorageKey(key),value]));
+  const moment = competitionMoments(result.state,"a",key=>baselines[key])[0];
+  let renderer!: ReactTestRenderer;
+  try {
+    await act(async () => { renderer=create(createElement(CompetitionMoment,{moment,remaining:1,onConfirm:vi.fn(),autoStart:true})); });
+    const map=()=>renderer.root.findByType("GeographicCourse" as never);
+    expect(map().props.replay.focus).toBeCloseTo(0);
+    expect(raf).not.toHaveBeenCalled();
+    expect(JSON.stringify(renderer.toJSON())).not.toContain("Your field has moved");
+    if (skipWhileLoading) await act(async () => renderer.root.findByType("FocusButton" as never).props.onPress());
+    await act(async () => map().props.onReady());
+    if (skipWhileLoading) expect(raf).not.toHaveBeenCalled();
+    else {
+      expect(raf).toHaveBeenCalled();
+      await act(async () => renderer.root.findByType("FocusButton" as never).props.onPress());
+    }
+    expect(map().props.replay.done).toBe(true);
+    expect(map().props.replay.passEffects).toEqual([]);
+    await act(async () => map().props.onReady());
+    expect(map().props.replay.done).toBe(true);
+    expect(JSON.stringify(renderer.toJSON())).not.toContain("Up to date");
+    expect(JSON.stringify(renderer.toJSON())).toContain("overtake");
+  } finally { await act(async () => renderer.unmount()); preferences.reduced=true; vi.unstubAllGlobals(); }
 });

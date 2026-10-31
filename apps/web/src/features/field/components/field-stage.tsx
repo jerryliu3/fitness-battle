@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { playCue } from "@/lib/haptics";
 import { usePathname } from "next/navigation";
 import {
+  standingsBar,
   fieldFlightDuration, fieldFlightEase,
   arenaFieldHigh,
   type CourseDistanceTarget,
@@ -674,10 +675,7 @@ export function FieldStage({
             <div className="focus-standings-bars" role="list">
               {ranked.map((lane) => {
                 const r = placeOf(lane.value);
-                const pct = Math.max(
-                  6,
-                  Math.min(100, Math.round((lane.value / leaderValue) * 100)),
-                );
+                const bar = standingsBar(lane.value, leaderValue, r);
                 const elo = scoreMap[lane.id];
                 return (
                   <button
@@ -724,7 +722,7 @@ export function FieldStage({
                         </strong>
                         <div className="focus-standing-metrics">
                           <strong>
-                            {lane.value.toFixed(1)} {unit}
+                            {lane.value.toFixed(unit === "pts" ? 1 : 2)} {unit}
                           </strong>
                           <small>{elo ?? "—"} effort score</small>
                         </div>
@@ -738,7 +736,7 @@ export function FieldStage({
                                 ? "focus-standing-bar-fill is-you"
                                 : "focus-standing-bar-fill"
                           }
-                          style={{ width: `${pct}%` }}
+                          style={{ width: `${bar.percent}%`, background: bar.color }}
                         />
                       </div>
                     </div>
