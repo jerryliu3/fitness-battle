@@ -248,7 +248,7 @@ export async function syncAppleHealth(
     )
     .filter((item): item is ActivitySample => item != null);
   const routeReader=(kit as unknown as Record<string,unknown>).getWorkoutRouteSamples;
-  if(typeof routeReader==="function")for(const activity of activities.slice(0,20)){
+  if(typeof routeReader==="function")for(const activity of activities){
     const locations=await new Promise<{latitude:number;longitude:number;timestamp?:string;altitude?:number;speed?:number}[]>(resolve=>routeReader.call(kit,{id:activity.externalId},(error:unknown,result:{data?:{locations?:{latitude:number;longitude:number;timestamp?:string;altitude?:number;speed?:number}[]}})=>resolve(error?[]:result?.data?.locations??[])));
     Object.assign(activity,routeMetadata(locations.map(p=>({lat:p.latitude,lon:p.longitude,time:p.timestamp,elevation:p.altitude,speedMps:p.speed})),activity.categorySlug));
   }

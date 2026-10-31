@@ -56,7 +56,7 @@ export function unionTimeRanges(ranges: [number, number][]): number {
 export function appleSleepNights(samples: HealthKitSample[]): SleepNight[] {
   const sources = new Map<string, HealthKitSample[]>();
   for (const r of samples) {
-    if (!String(r.value).startsWith("ASLEEP")) continue;
+    if (!String(r.value).startsWith("ASLEEP") && !String(r.value).startsWith("AWAKE")) continue;
     const key = r.sourceId ?? "unknown";
     sources.set(key, [...(sources.get(key) ?? []), r]);
   }
@@ -64,6 +64,7 @@ export function appleSleepNights(samples: HealthKitSample[]): SleepNight[] {
   const nights: SleepNight[] = [];
   for (const [source, rows] of sources) {
     const intervals = rows
+      .filter((r) => String(r.value).startsWith("ASLEEP"))
       .map((r) => [Date.parse(r.startDate ?? ""), Date.parse(r.endDate ?? "")] as [number, number])
       .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b) && b > a)
       .sort((a, b) => a[0] - b[0]);
@@ -269,7 +270,7 @@ export async function androidHealthExtra(
           const stages = session.stages ?? [];
           if (stages.length > 0) {
             for (const stage of stages) {
-              const value = ({ 2: "ASLEEP", 4: "ASLEEP_CORE", 5: "ASLEEP_DEEP", 6: "ASLEEP_REM" } as Record<
+              const value = ({ 1: "AWAKE", 2: "ASLEEP", 3: "AWAKE_OUT_OF_BED", 4: "ASLEEP_CORE", 5: "ASLEEP_DEEP", 6: "ASLEEP_REM" } as Record<
                 number,
                 string
               >)[stage.stage ?? 0];

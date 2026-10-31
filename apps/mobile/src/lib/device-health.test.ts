@@ -244,3 +244,13 @@ describe("sampleFromWorkout", () => {
     expect(sample?.metricValue).toBe(2700);
   });
 });
+
+it("reads available routes for workouts beyond the first twenty", async () => {
+ const workouts=Array.from({length:21},(_,i)=>({id:`workout-${i}`,activityName:"Running",start:"2026-10-01T12:00:00Z",end:"2026-10-01T12:30:00Z",distance:1,duration:1800}));
+ const deps=testDeps({workouts});
+ const reader=vi.fn((_options:unknown,callback:Function)=>callback(null,{data:{locations:[]}}));
+ Object.assign(deps.nativeModule!,{getWorkoutRouteSamples:reader});
+ await syncAppleHealth(deps);
+ expect(reader).toHaveBeenCalledTimes(21);
+ expect(reader).toHaveBeenCalledWith({id:"workout-20"},expect.any(Function));
+});
