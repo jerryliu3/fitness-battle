@@ -15,6 +15,7 @@ export type AppleHealthKitConstants = {
 
 export type AppleHealthKitModule = AppleHealthKitNative & {
   Constants: AppleHealthKitConstants;
+  [key: string]: unknown;
 };
 
 export type AppleHealthKitPackageExport = {

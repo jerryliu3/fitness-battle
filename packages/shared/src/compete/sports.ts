@@ -6,6 +6,7 @@ import type {
 } from "./health";
 import type { WaveEnrollment } from "../matching/types";
 import type { PeriodKind } from "../types";
+import type { DailyHealthSample } from "../fitness/types";
 
 /** Starting effort score for signed-in accounts (and after first join). */
 export const ELO_BASE = 1000;
@@ -258,7 +259,7 @@ export interface CompeteState {
   clock: SeasonClock;
   ratings: Rating[];
   activities: Activity[];
-  dailyHealth?: { provider: string; day: string; steps?: number | null; restingHr?: number | null; hrv?: number | null }[];
+  dailyHealth?: DailyHealthSample[];
   readiness: ReadinessMark[];
   /** Nightly sleep readings. Separate from workout activities. */
   sleepNights: SleepNight[];

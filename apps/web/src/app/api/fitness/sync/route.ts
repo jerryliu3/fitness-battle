@@ -1,5 +1,5 @@
 import { persistDailyHealth } from "@/lib/daily-health-store";
-import { persistGarminSleep } from "@/lib/garmin-record-store";
+import { persistSleepNight } from "@/lib/garmin-record-store";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import type { CategorySlug } from "@fitness-battle/shared";
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     try {
       const activitiesStored = await persistSyncedActivities(userId, result.activities);
       await persistDailyHealth(userId,result.dailyHealth??[]);
-      for (const night of result.sleepNights ?? []) await persistGarminSleep(userId, night);
+      for (const night of result.sleepNights ?? []) await persistSleepNight(userId, night);
       const readinessStored = await persistReadiness(userId, result.readiness ?? []);
       persisted = (result.activities.length === 0 || activitiesStored) && ((result.readiness ?? []).length === 0 || readinessStored);
     } catch {

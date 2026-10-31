@@ -283,7 +283,7 @@ export async function loadCompeteAccount(
       .order("period_start", { ascending: false }),
     db.from("compete_duels").select("*").eq("user_id", userId),
     db.from("readiness_marks").select("*").eq("user_id", userId),
-    db.from("daily_health_readings").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(365),
+    db.from("daily_health_readings").select("*").eq("user_id", userId).order("day", { ascending: false }).limit(365),
     db.from("fitness_connections").select("provider, status").eq("user_id", userId),
     db.from("effort_milestones").select("*").eq("user_id", userId).order("period_start", { ascending: false }).limit(1000),
     loadAllRecordAttempts(db, userId),

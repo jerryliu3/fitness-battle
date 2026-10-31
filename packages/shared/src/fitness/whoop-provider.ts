@@ -110,16 +110,65 @@ export async function pullWhoop(
   recoveryUrl.searchParams.set("start", since);
   recoveryUrl.searchParams.set("end", until);
   recoveryUrl.searchParams.set("limit", "25");
-  interface Sleep { id:string; end:string; nap:boolean; score_state:string; score?:{ sleep_efficiency_percentage?:number; stage_summary:{total_light_sleep_time_milli:number;total_slow_wave_sleep_time_milli:number;total_rem_sleep_time_milli:number;total_awake_time_milli:number} } }
-  const sleepsUrl=new URL(`${WHOOP_API}/activity/sleep`); sleepsUrl.searchParams.set("start",since); sleepsUrl.searchParams.set("end",until); sleepsUrl.searchParams.set("limit","25");
+  interface WhoopSleep {
+    id: string;
+    end: string;
+    nap: boolean;
+    score_state: string;
+    score?: {
+      sleep_efficiency_percentage?: number;
+      stage_summary: {
+        total_light_sleep_time_milli: number;
+        total_slow_wave_sleep_time_milli: number;
+        total_rem_sleep_time_milli: number;
+        total_awake_time_milli: number;
+      };
+    };
+  }
+  const sleepsUrl = new URL(`${WHOOP_API}/activity/sleep`);
+  sleepsUrl.searchParams.set("start", since);
+  sleepsUrl.searchParams.set("end", until);
+  sleepsUrl.searchParams.set("limit", "25");
   const [workouts, recoveries, sleeps] = await Promise.all([
     paged<WhoopWorkout>(workoutsUrl, accessToken, http),
     paged<WhoopRecovery>(recoveryUrl, accessToken, http),
-    paged<Sleep>(sleepsUrl,accessToken,http),
+    paged<WhoopSleep>(sleepsUrl, accessToken, http),
   ]);
   return {
-    dailyHealth: recoveries.filter(r=>r.score_state==="SCORED" && r.created_at).map(r=>({provider:"whoop" as const,day:r.created_at!.slice(0,10),restingHr:r.score?.resting_heart_rate,hrv:r.score?.hrv_rmssd_milli})),
-    sleepNights: sleeps.filter(r=>!r.nap && r.score_state==="SCORED" && r.score).flatMap(r=>{const stages=r.score!.stage_summary; const night=recordedSleep("whoop",{id:r.id,end:r.end,durationSec:(stages.total_light_sleep_time_milli+stages.total_slow_wave_sleep_time_milli+stages.total_rem_sleep_time_milli)/1000,deepSec:stages.total_slow_wave_sleep_time_milli/1000,remSec:stages.total_rem_sleep_time_milli/1000,lightSec:stages.total_light_sleep_time_milli/1000,awakeSec:stages.total_awake_time_milli/1000,efficiency:r.score!.sleep_efficiency_percentage});return night?[night]:[];}),
+    dailyHealth: recoveries
+      .filter((r) => r.score_state === "SCORED" && r.created_at)
+      .map((r) => ({
+        provider: "whoop" as const,
+        day: r.created_at!.slice(0, 10),
+        restingHr:
+          typeof r.score?.resting_heart_rate === "number" && r.score.resting_heart_rate > 0
+            ? r.score.resting_heart_rate
+            : undefined,
+        hrv:
+          typeof r.score?.hrv_rmssd_milli === "number" && r.score.hrv_rmssd_milli >= 0
+            ? r.score.hrv_rmssd_milli
+            : undefined,
+      })),
+    sleepNights: sleeps
+      .filter((r) => !r.nap && r.score_state === "SCORED" && r.score)
+      .flatMap((r) => {
+        const stages = r.score!.stage_summary;
+        const night = recordedSleep("whoop", {
+          id: r.id,
+          end: r.end,
+          durationSec:
+            (stages.total_light_sleep_time_milli +
+              stages.total_slow_wave_sleep_time_milli +
+              stages.total_rem_sleep_time_milli) /
+            1000,
+          deepSec: stages.total_slow_wave_sleep_time_milli / 1000,
+          remSec: stages.total_rem_sleep_time_milli / 1000,
+          lightSec: stages.total_light_sleep_time_milli / 1000,
+          awakeSec: stages.total_awake_time_milli / 1000,
+          efficiency: r.score!.sleep_efficiency_percentage,
+        });
+        return night ? [night] : [];
+      }),
     activities: workouts
       .map((item) => mapWhoopWorkout(item))
       .filter((item): item is ActivitySample => item != null),

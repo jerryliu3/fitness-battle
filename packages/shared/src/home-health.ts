@@ -43,13 +43,27 @@ export function homeHealthMetrics(state: CompeteState, now = competeNow(state)):
         : latest ? `No sleep reading for today. Last recorded wake date: ${latest.day}.` : "No sleep duration recorded yet. Available tracker readings appear after sync.",
     },
     ...([{ id: "steps", name: "Steps", unit: "steps", key: "steps" }, { id: "resting-hr", name: "Resting HR", unit: "bpm", key: "restingHr" }, { id: "hrv", name: "HRV", unit: "ms", key: "hrv" }] as const).map(spec => {
-      const readings = (state.dailyHealth ?? []).filter(r => r.day <= today && Number.isFinite(r[spec.key]) && r[spec.key]! >= 0);
-      const preferred=readings.find(r=>r.day===today)?.provider??readings[0]?.provider;
-      const forDay = (day: string) => readings.find(r => r.day === day && (spec.key!=="hrv" || r.provider===preferred));
-      const current = forDay(today), value = current?.[spec.key];
-      return { id: spec.id, name: spec.name, unit: spec.unit, value: value == null ? "—" : Math.round(value).toLocaleString("en-US"),
-        context: current ? "Today" : "Not available", detail: current ? `${INTEGRATIONS.find(p => p.id === current.provider)?.name ?? current.provider} · recorded ${today}.${spec.key==="hrv"&&current.provider==="apple_health"?" SDNN, daily sample average; not RMSSD.":""}` : `No recorded ${spec.name.toLowerCase()} available for today.`,
-        history: Array.from({ length: 7 }, (_, i) => forDay(dayKey(shiftAppDay(now, i - 6)))?.[spec.key] ?? null) };
+      const readings = (state.dailyHealth ?? []).filter((r) => {
+        const val = r[spec.key];
+        return r.day <= today && typeof val === "number" && Number.isFinite(val) && (spec.key === "restingHr" ? val > 0 : val >= 0);
+      });
+      const sortedReadings = [...readings].sort((a, b) => b.day.localeCompare(a.day));
+      const preferred = sortedReadings.find((r) => r.day === today)?.provider ?? sortedReadings[0]?.provider;
+      const forDay = (day: string) => sortedReadings.find((r) => r.day === day && (spec.key !== "hrv" || r.provider === preferred));
+      const current = forDay(today);
+      const value = current?.[spec.key];
+      const providerName = current ? INTEGRATIONS.find((p) => p.id === current.provider)?.name ?? current.provider : null;
+      return {
+        id: spec.id,
+        name: spec.name,
+        unit: spec.unit,
+        value: value == null ? "—" : Math.round(value).toLocaleString("en-US"),
+        context: current ? "Today" : "Not available",
+        detail: current
+          ? `${providerName} · recorded ${today}.${spec.key === "hrv" && current.provider === "apple_health" ? " SDNN, daily sample average; not RMSSD." : ""}`
+          : `No recorded ${spec.name.toLowerCase()} available for today.`,
+        history: Array.from({ length: 7 }, (_, i) => forDay(dayKey(shiftAppDay(now, i - 6)))?.[spec.key] ?? null),
+      };
     }),
   ];
 }

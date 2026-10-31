@@ -18,12 +18,33 @@ export async function GET(request: Request) {
   if (!data) return NextResponse.json({ error: "activity_not_found" }, { status: 404 });
   if (data.provider === "strava" && !data.route_replay) {
     try {
-      const route=await getServerFitnessProvider("strava").routeForActivity(owner,data.external_id,data.sport as CategorySlug);
+      const route = await getServerFitnessProvider("strava").routeForActivity(
+        owner,
+        data.external_id,
+        data.sport as CategorySlug,
+      );
       if (route.detailedPolyline) {
-        const result=await serviceDb()?.from("activities").update({detailed_polyline:route.detailedPolyline,summary_polyline:route.summaryPolyline,route_bounds:route.routeBounds,route_replay:route.routeReplay??null,elevation_gain_m:route.elevationGainM}).eq("user_id",owner).eq("provider","strava").eq("external_id",data.external_id);
-        if (!result?.error) { data.route_replay=route.routeReplay; data.detailed_polyline=route.detailedPolyline; }
+        const result = await serviceDb()
+          ?.from("activities")
+          .update({
+            detailed_polyline: route.detailedPolyline,
+            summary_polyline: route.summaryPolyline,
+            route_bounds: route.routeBounds,
+            route_replay: route.routeReplay ?? null,
+            elevation_gain_m: route.elevationGainM,
+          })
+          .eq("user_id", owner)
+          .eq("provider", "strava")
+          .eq("external_id", data.external_id);
+        if (!result?.error) {
+          data.route_replay = route.routeReplay;
+          data.detailed_polyline = route.detailedPolyline;
+        }
       }
-    } catch { return NextResponse.json({error:"route_sync_unavailable"},{status:503}); }
+    } catch {
+      // Optional telemetry stream sync: if Strava streams are unavailable (e.g. manual workout without GPS),
+      // fall through to return existing activity data without failing the request.
+    }
   }
   return NextResponse.json({ detailedPolyline:data.detailed_polyline, routeReplay: normalizeRouteReplay(data.route_replay) }, { headers: { "Cache-Control": "private, no-store" } });
 }

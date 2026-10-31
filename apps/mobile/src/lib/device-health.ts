@@ -379,6 +379,10 @@ export async function syncHealthConnect(
     granted = await health.requestPermission([
       { accessType: "read", recordType: "ExerciseSession" },
       { accessType: "read", recordType: "Distance" },
+      { accessType: "read", recordType: "Steps" },
+      { accessType: "read", recordType: "RestingHeartRate" },
+      { accessType: "read", recordType: "HeartRateVariabilityRmssd" },
+      { accessType: "read", recordType: "SleepSession" },
     ]);
   } catch {
     return {
@@ -449,7 +453,13 @@ export async function syncHealthConnect(
       return sample;
     })
     .filter((item): item is ActivitySample => item != null);
-  const healthExtra=await androidHealthExtra(health as unknown as Record<string,unknown>);
+  const healthExtra = await androidHealthExtra(
+    health as unknown as Record<string, unknown>,
+    (granted ?? []).filter(
+      (g): g is { recordType: string; accessType: string } =>
+        typeof g.recordType === "string" && typeof g.accessType === "string",
+    ),
+  );
   if (activities.length === 0 && !healthExtra.dailyHealth.some(r=>r.steps!=null||r.restingHr!=null||r.hrv!=null) && !healthExtra.sleepNights.length) {
     return {
       ok: true,

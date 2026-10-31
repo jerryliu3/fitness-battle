@@ -1,6 +1,6 @@
 import { decodePolyline, normalizeRouteReplay } from "@fitness-battle/shared";
 import { persistDailyHealth } from "@/lib/daily-health-store";
-import { persistGarminSleep } from "@/lib/garmin-record-store";
+import { persistSleepNight } from "@/lib/garmin-record-store";
 import type { SyncResult, SleepNight } from "@fitness-battle/shared";
 import { NextResponse } from "next/server";
 import type {
@@ -89,10 +89,36 @@ export async function POST(request: Request) {
 
   let persisted = false;
   try {
-    const dailyHealth=Array.isArray(body.dailyHealth)?body.dailyHealth.slice(0,200).map(r=>({...r,provider:body.provider!})):[];
-    await persistDailyHealth(userId,dailyHealth);
-    const sleeps=(Array.isArray(body.sleepNights)?body.sleepNights:[]).slice(0,200).filter(r=>typeof r.id==="string"&&r.id.length<200&&/^\d{4}-\d{2}-\d{2}$/.test(r.day)&&Number.isFinite(r.durationMin)&&r.durationMin>0&&r.durationMin<=1440&&Number.isFinite(r.score)&&r.score>=0&&r.score<=100);
-    for(const night of sleeps) await persistGarminSleep(userId,{...night,id:`${body.provider}-sleep-${night.id}`,source:body.provider as "apple_health"|"google_health",verified:true});
+    const dailyHealth = Array.isArray(body.dailyHealth)
+      ? body.dailyHealth.slice(0, 200).map((r) => ({ ...r, provider: body.provider! }))
+      : [];
+    await persistDailyHealth(userId, dailyHealth);
+    const sleeps = (Array.isArray(body.sleepNights) ? body.sleepNights : [])
+      .slice(0, 200)
+      .filter(
+        (r) =>
+          typeof r.id === "string" &&
+          r.id.length < 200 &&
+          /^\d{4}-\d{2}-\d{2}$/.test(r.day) &&
+          Number.isFinite(r.durationMin) &&
+          r.durationMin > 0 &&
+          r.durationMin <= 1440 &&
+          Number.isFinite(r.score) &&
+          r.score >= 0 &&
+          r.score <= 100,
+      );
+    for (const night of sleeps) {
+      const sleepId =
+        night.id.startsWith(body.provider) || night.id.startsWith("apple-health-") || night.id.startsWith("health-connect-")
+          ? night.id
+          : `${body.provider}-sleep-${night.id}`;
+      await persistSleepNight(userId, {
+        ...night,
+        id: sleepId,
+        source: body.provider as "apple_health" | "google_health",
+        verified: true,
+      });
+    }
     const storedActivities = await persistSyncedActivities(userId, activities);
     const storedReady = await persistReadiness(userId, readiness);
     persisted = storedActivities || storedReady || dailyHealth.length>0 || sleeps.length>0;

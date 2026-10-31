@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { activityRoute, normalizeRouteReplay, type RouteReplaySample, type Activity } from "@fitness-battle/shared";
+import { useAuth } from "@/components/auth-context";
 import { Sheet } from "@/ui/sheet";
 import { webEnv } from "@/lib/env";
 import { RouteStaticPreview } from "./route-static-preview";
@@ -11,8 +12,6 @@ const Replay = dynamic(() => import("./route-timelapse-map").then(m => m.RouteTi
   ssr: false,
   loading: () => <p role="status">Loading route…</p>,
 });
-
-import { useAuth } from "@/components/auth-context";
 
 export function ActivityRoute({ activity, milestone = false, units = "metric" }: { activity?: Activity; milestone?: boolean; units?: "us" | "metric" }) {
   const auth = useAuth();
