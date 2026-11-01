@@ -136,7 +136,7 @@ export function HomeActivityActions({
             activities: (body.activities ?? []).flatMap((sample) => {
               const activity = activityFromSample(
                 sample,
-                body.usedMock ? "sample" : "recorded",
+                body.usedMock ? "demo" : "recorded",
               );
               return activity ? [activity] : [];
             }),
