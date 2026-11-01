@@ -29,28 +29,29 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
   const assigned = useCompetitionCourse(moment.sport, period?.startsAt.toISOString() ?? "", period?.endsAt.toISOString() ?? "", debug, !course && viewDimension !== "2d");
   const [sceneReady, setSceneReady] = useState(false);
   useEffect(() => setSceneReady(false), [viewDimension]);
-  const [started, setStarted] = useState(autoStart);
   const [progress, setProgress] = useState(0);
   const [playback, setPlayback] = useState(0);
-  const previousCount = useRef(0), skipped = useRef(false), confirmed = useRef(false);
+  const previousCount = useRef(0), confirmed = useRef(false);
+  const progressRef = useRef(0), lastReduced = useRef(reduced);
+  progressRef.current = progress;
   const passedBy = !moment.plan.hasOvertake;
   const count = passedBy ? moment.plan.passedByIds?.length ?? 0 : moment.plan.overtakenIds.length;
   useEffect(() => {
+    if (lastReduced.current !== reduced) { lastReduced.current = reduced; progressRef.current = 0; }
     if (reduced) { setProgress(1); return; }
-    if (skipped.current) return;
-    if (!started || (viewDimension === "4d" && !sceneReady)) return;
+    if (!autoStart || progressRef.current >= 1 || (viewDimension === "4d" && !sceneReady)) return;
     let raf = 0;
-    setProgress(0);
+    const from = progressRef.current;
     const start = Date.now(), duration = (6500 + count * 2200) * (embedded ? 1.5 : 1);
-    const tick = () => { if (skipped.current) return; const p = Math.min(1, (Date.now() - start) / duration); setProgress(p); if (p < 1) raf = requestAnimationFrame(tick); };
+    const tick = () => { const p = Math.min(1, from + (Date.now() - start) / duration); setProgress(p); if (p < 1) raf = requestAnimationFrame(tick); };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [moment.id, reduced, count, started, embedded, viewDimension, sceneReady, playback]);
+  }, [moment.id, reduced, count, autoStart, embedded, viewDimension, sceneReady, playback]);
   const stopHaptics = useRef<() => void>(() => {});
   useEffect(() => () => stopHaptics.current(), [moment.id]);
   const frame = competitionMomentScene(moment, progress);
   useEffect(() => {
-    if (frame.count > previousCount.current && !passedBy && !skipped.current) {
+    if (frame.count > previousCount.current && !passedBy) {
       const soleLead = frame.rank === 1 && frame.lanes.every(lane => lane.you || lane.value < frame.youValue);
       if (reduced) stopHaptics.current = playPattern("confirm");
       else if (soleLead) stopHaptics.current = playPattern("lead");
@@ -74,11 +75,11 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
       {!embedded && <View style={[styles.panel, { flex: 1, minWidth: 160 }]} accessibilityLabel="Live replay standings">{frame.standings.filter(lane => !hiddenIds.includes(lane.id)).map(lane => <View key={lane.id} style={{ flexDirection: "row", gap: 10, alignItems: "center", paddingVertical: 5 }}><Text style={textStyle("label")}>#{lane.place}</Text><Text numberOfLines={1} style={[textStyle(lane.you ? "label" : "caption"), { flex: 1, maxWidth: 140 }]}>{lane.you ? "You" : lane.name}</Text><Text style={textStyle("caption")}>{lane.value.toFixed(1)} {moment.unit}</Text></View>)}</View>}
       </View>
     </View>
-    {!reduced && !skipped.current && frame.passEffects.length > 0 && <View pointerEvents="none" style={{ position:"absolute", top:"45%", alignSelf:"center", opacity:Math.max(...frame.passEffects.map(pass => pass.strength)) }}><Text style={{...textStyle("hero"),color:c.tennis}}>+1</Text></View>}
+    {!reduced && frame.passEffects.length > 0 && <View pointerEvents="none" style={{ position:"absolute", top:"45%", alignSelf:"center", opacity:Math.max(...frame.passEffects.map(pass => pass.strength)) }}><Text style={{...textStyle("hero"),color:c.tennis}}>+1</Text></View>}
     <View pointerEvents="box-none" style={{ position: "absolute", bottom: (embedded ? 0 : insets.bottom) + 16, left: 16, right: 16, alignItems: "center" }}>
       <View style={{ width: "100%", maxWidth: 420, gap: 12 }}>
       {frame.done && <View style={{ flexDirection: "row", gap: 12 }}>
-        <View style={{ flex: 1 }}><FocusButton secondary label="Replay" onPress={() => { skipped.current = false; previousCount.current = 0; stopHaptics.current(); setProgress(0); setStarted(true); setPlayback(value => value + 1); }}/></View>
+        <View style={{ flex: 1 }}><FocusButton secondary label="Replay" onPress={() => { previousCount.current = 0; stopHaptics.current(); setProgress(0); setPlayback(value => value + 1); }}/></View>
         <View style={{ flex: 1 }}><FocusButton label="Continue" onPress={() => { if (!confirmed.current) { confirmed.current = true; onConfirm(); } }}/></View>
       </View>}
 
