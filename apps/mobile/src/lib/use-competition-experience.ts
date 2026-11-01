@@ -2,6 +2,13 @@ import { usePathname } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { competitionMoments, competitionMomentSnapshots, momentStorageKey, type CompetitionMoment, type CompeteState } from "@fitness-battle/shared";
 
+function receiptIds(raw: string | null): string[] {
+  try {
+    const parsed = JSON.parse(raw ?? "[]");
+    return Array.isArray(parsed) ? parsed.filter(id => typeof id === "string") : [];
+  } catch { return []; }
+}
+
 /** Root-owned event queue. Scene browsing and event acknowledgement are independent. */
 export function useCompetitionExperience(
   state: CompeteState | null,
@@ -27,9 +34,8 @@ export function useCompetitionExperience(
     const c = current.current;
     const readValue = (key: string) => cache.current.get(key) ?? c.read(key);
     const detected = competitionMoments(next, c.account, readValue);
-    let seen: string[] = [];
-    try { const parsed = JSON.parse(c.read(`fb-overtake-seen:${c.account}`) ?? "[]"); if (Array.isArray(parsed)) seen = parsed.filter(id => typeof id === "string"); } catch { /* Retry unacknowledged receipts if local metadata is corrupt. */ }
-    const committed = (next.committedOvertakeMoments ?? []).filter(moment => !delivered.current.has(moment.id) && !seen.includes(moment.id));
+    const seen = receiptIds(c.read(`fb-overtake-seen:${c.account}`));
+    const committed = (c.authoritativeOvertakes ? next.committedOvertakeMoments ?? [] : []).filter(moment => !delivered.current.has(moment.id) && !seen.includes(moment.id));
     if (quiet && committed.length) c.write(`fb-overtake-seen:${c.account}`, JSON.stringify([...seen, ...committed.map(moment => moment.id)].slice(-100)));
     for (const moment of committed) delivered.current.add(moment.id);
     const moments = quiet ? [] : c.authoritativeOvertakes
@@ -60,8 +66,7 @@ export function useCompetitionExperience(
   const acknowledge = useCallback(() => {
     if (visibleMoment?.id.startsWith("overtake:")) {
       const c = current.current;
-      let seen: string[] = [];
-      try { const parsed = JSON.parse(c.read(`fb-overtake-seen:${c.account}`) ?? "[]"); if (Array.isArray(parsed)) seen = parsed.filter(id => typeof id === "string"); } catch { /* Replace corrupt receipt metadata. */ }
+      const seen = receiptIds(c.read(`fb-overtake-seen:${c.account}`));
       c.write(`fb-overtake-seen:${c.account}`, JSON.stringify([...new Set([...seen, visibleMoment.id])].slice(-100)));
     }
     setQueue(previous => previous.account === current.current.account ? { ...previous, moments: previous.moments.filter(moment => moment.id !== visibleMoment?.id) } : { account: current.current.account, moments: [] });

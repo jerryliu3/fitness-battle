@@ -152,5 +152,7 @@ export function applyRemoteSnapshot(
   const next = dirty
     ? mergeFreshRemote(local, remote, holdLocalUnits)
     : remote;
-  return sameDocument(local, next) ? local : next;
+  const sameReceipts = JSON.stringify(local.committedOvertakeMoments?.map(moment => moment.id) ?? [])
+    === JSON.stringify(next.committedOvertakeMoments?.map(moment => moment.id) ?? []);
+  return sameDocument(local, next) && sameReceipts ? local : next;
 }

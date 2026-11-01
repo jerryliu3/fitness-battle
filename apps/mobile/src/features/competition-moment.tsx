@@ -26,7 +26,7 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
   const reduced = useReducedMotion();
   const [viewDimension,setViewDimension]=useState(dimension);
   useEffect(()=>setViewDimension(dimension),[dimension]);
-  const assigned = useCompetitionCourse(moment.sport, period?.startsAt.toISOString() ?? "", period?.endsAt.toISOString() ?? "", debug, !course && viewDimension !== "2d");
+  const assigned = useCompetitionCourse(moment.sport, moment.periodStart ?? period?.startsAt.toISOString() ?? "", moment.periodEnd ?? period?.endsAt.toISOString() ?? "", debug, !course && viewDimension !== "2d");
   const [sceneReady, setSceneReady] = useState(false);
   useEffect(() => setSceneReady(false), [viewDimension]);
   const [progress, setProgress] = useState(0);
@@ -37,7 +37,7 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
   const passedBy = !moment.plan.hasOvertake;
   const count = passedBy ? moment.plan.passedByIds?.length ?? 0 : moment.plan.overtakenIds.length;
   useEffect(() => {
-    if (lastReduced.current !== reduced) { lastReduced.current = reduced; progressRef.current = 0; }
+    if (lastReduced.current !== reduced) { lastReduced.current = reduced; progressRef.current = 0; setProgress(0); }
     if (reduced) { setProgress(1); return; }
     if (!autoStart || progressRef.current >= 1 || (viewDimension === "4d" && !sceneReady)) return;
     let raf = 0;

@@ -1003,6 +1003,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     const owned = all.filter(
       (key) =>
         key === fieldSeenStorageKey(expectedId) ||
+        key === `fb-overtake-seen:${expectedId}` ||
         key.startsWith(`fb-arena-baseline:${expectedId}:`) ||
         key.startsWith(`moment:v1:fb-arena-baseline:${expectedId}:`),
     );

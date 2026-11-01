@@ -19,6 +19,7 @@ import {
   withDerivedPendingReveals,
   type Activity,
   type CompeteState,
+  type CompetitionMoment,
   type Duel,
   type GoalDistance,
   type HealthMetricId,
@@ -36,6 +37,21 @@ import {
 import { seatWeekFieldPin } from "./week-field";
 
 type Db = SupabaseClient;
+
+function overtakeView(state: CompeteState): CompeteState {
+  return { ...state, units: "metric", enrollments: state.enrollments.filter(e => e.fieldBoard && !e.awaitingField) };
+}
+
+/** Reads may advance rival positions, but must hold positive own movement for confirmation. */
+function mayAdvanceOvertakeBaseline(snapshot: ReturnType<typeof competitionMomentSnapshots>[number], raw: string | null): boolean {
+  const before = readArenaBaseline(raw, snapshot.period, snapshot.unit);
+  const you = snapshot.lanes.find(lane => lane.you);
+  return !before || !you || you.value <= (before[you.id] ?? you.value) + .001;
+}
+
+function overtakeReceiptId(userId: string, revision: string, sport: string) {
+  return `overtake:${userId}:${new Date(revision).toISOString()}:${sport}`;
+}
 
 function asSport(value: string): SportId | null {
   return (SPORT_IDS as readonly string[]).includes(value)
@@ -207,16 +223,11 @@ export async function persistCompeteAccount(
   if (baselines?.error) throw new Error("overtake_baselines_unavailable");
   // Canonical field snapshots must survive presentation until this calculation;
   // they are still stripped from the durable account document as before.
-  const canonical = { ...state, units: "metric" as const, enrollments: state.enrollments.filter(e => e.fieldBoard && !e.awaitingField) };
+  const canonical = overtakeView(state);
   const previous = (baselines?.data ?? {}) as Record<string, string>;
-  const snapshots = authority ? competitionMomentSnapshots(canonical, userId).filter(snapshot => {
-    if (authority.recordOvertakes !== false) return true;
-    const before = readArenaBaseline(previous[snapshot.key] ?? null, snapshot.period, snapshot.unit);
-    const you = snapshot.lanes.find(lane => lane.you);
-    // GET establishes a baseline and tracks rivals, but an imported own move
-    // waits for the confirmed account PUT before it earns a durable receipt.
-    return !before || !you || you.value <= (before[you.id] ?? you.value) + .001;
-  }) : [];
+  const snapshots = authority ? competitionMomentSnapshots(canonical, userId).filter(snapshot =>
+    authority.recordOvertakes !== false || mayAdvanceOvertakeBaseline(snapshot, previous[snapshot.key] ?? null)
+  ) : [];
   const moments = authority && authority.recordOvertakes !== false ? competitionMoments(canonical, userId, key => previous[key] ?? null).filter(m => m.plan.hasOvertake) : [];
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const activities = await accountActivityRows(db, userId, clean);
@@ -231,7 +242,7 @@ export async function persistCompeteAccount(
       if (authority) {
         if (!data || typeof data.updatedAt !== "string" || typeof data.lifetimeOvertakes !== "number") throw new Error("account_not_saved");
         state.lifetimeOvertakes = data.lifetimeOvertakes;
-        state.committedOvertakeMoments = moments.map(moment => ({ ...overtakeMomentForUnits(moment, state.units), id: `overtake:${userId}:${data.updatedAt}:${moment.sport}` }));
+        state.committedOvertakeMoments = moments.map(moment => ({ ...overtakeMomentForUnits(moment, state.units), id: overtakeReceiptId(userId, data.updatedAt, moment.sport) }));
         return data.updatedAt;
       }
       if (typeof data !== "string") throw new Error("account_not_saved");
@@ -276,6 +287,7 @@ export async function loadCompeteAccount(
     milestoneResult,
     effortScoreEvents,
     attempts,
+    overtakeResult,
   ] = await Promise.all([
     db
       .from("profiles")
@@ -315,8 +327,10 @@ export async function loadCompeteAccount(
     db.from("effort_milestones").select("*").eq("user_id", userId).order("period_start", { ascending: false }).limit(1000),
     loadEffortScoreEvents(db, userId),
     loadAllRecordAttempts(db, userId),
+    db.from("overtake_receipts").select("account_revision,sport,moment").eq("user_id", userId).order("account_revision", { ascending: false }).limit(50),
   ]);
 
+  if (overtakeResult.error) throw new Error("overtake_receipts_unavailable");
   if (milestoneResult.error) throw new Error("milestones_unavailable");
   const periodStart =
     prefs.clock_period_start != null
@@ -567,6 +581,9 @@ export async function loadCompeteAccount(
     periodResults,
     recordAttempts: attempts,
     effortScoreEvents,
+    committedOvertakeMoments: (overtakeResult.data ?? []).filter(row =>
+      enrollments.some(enrollment => enrollment.sport === row.sport && Date.parse(enrollment.waveStart) === Date.parse(row.moment?.periodStart ?? ""))
+    ).map(row => ({ ...overtakeMomentForUnits(row.moment as CompetitionMoment, state.units), id: overtakeReceiptId(userId, row.account_revision, row.sport) })),
     effortMilestones: (milestoneResult.data ?? []).map((r) => ({ sport: r.sport, track: r.track, periodStart: new Date(r.period_start).toISOString(), periodEnd: new Date(r.period_end).toISOString(), step: Number(r.step), earned: Number(r.earned) })),
     enrollments,
     activities,
@@ -757,10 +774,8 @@ export async function loadEffortScoreEvents(db: Db, userId: string): Promise<Non
 export async function overtakeSnapshotChanged(db: Db, userId: string, state: CompeteState): Promise<boolean> {
   const { data, error } = await db.rpc("read_compete_overtake_baselines", { p_user_id: userId });
   if (error) throw new Error("overtake_baselines_unavailable");
-  const canonical = { ...state, units: "metric" as const, enrollments: state.enrollments.filter(e => e.fieldBoard && !e.awaitingField) };
-  return competitionMomentSnapshots(canonical, userId).some(snapshot => {
-    const before = readArenaBaseline(data?.[snapshot.key] ?? null, snapshot.period, snapshot.unit);
-    const you = snapshot.lanes.find(lane => lane.you);
-    return (!before || !you || you.value <= (before[you.id] ?? you.value) + .001) && data?.[snapshot.key] !== snapshot.value;
-  });
+  const canonical = overtakeView(state);
+  return competitionMomentSnapshots(canonical, userId).some(snapshot =>
+    mayAdvanceOvertakeBaseline(snapshot, data?.[snapshot.key] ?? null) && data?.[snapshot.key] !== snapshot.value
+  );
 }

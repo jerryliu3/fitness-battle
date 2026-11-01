@@ -8,6 +8,8 @@ import { competitionTrack, type CompeteState, type SportId } from "./compete/spo
 export interface CompetitionMoment {
   id: string;
   sport: SportId;
+  periodStart?: string;
+  periodEnd?: string;
   unit: "km" | "mi" | "pts";
   lanes: ArenaSceneLane[];
   plan: ArenaOvertakePlan;
@@ -21,10 +23,11 @@ export function competitionMomentSnapshots(state: CompeteState, account: string)
   return state.ratings.filter(r => r.optedIn && state.enrollments.some(e => e.sport === r.sport)).map(r => {
     const track = competitionTrack(r.sport);
     const arena = buildArenaModel(state, now, track, r.sport);
-    const period = competePeriodWindow(state, now, r.sport).startsAt.toISOString();
+    const window = competePeriodWindow(state, now, r.sport);
+    const period = window.startsAt.toISOString();
     const lanes: ArenaSceneLane[] = arena.lanes.filter(l => !l.ghost).map(l => ({ id: l.id, name: l.name, initials: initialsFromName(l.name), you: l.you, avatarUrl: l.avatarUrl, lastUpdated: l.lastUpdated, value: l.values[2] }));
     const arenaKey = arenaBaselineStorageKey(account, r.sport, track);
-    return { sport: r.sport, unit: arena.unit, period, lanes, arenaKey, key: momentStorageKey(arenaKey), value: serializeArenaBaseline(period, lanes, arena.unit) };
+    return { sport: r.sport, unit: arena.unit, period, periodEnd: window.endsAt.toISOString(), lanes, arenaKey, key: momentStorageKey(arenaKey), value: serializeArenaBaseline(period, lanes, arena.unit) };
   });
 }
 
@@ -33,7 +36,7 @@ export function competitionMoments(state: CompeteState, account: string, read: (
     const previous = readArenaBaseline(read(s.key), s.period, s.unit);
     const plan = reconcileArenaOvertake(s.lanes, previous);
     if (!plan || (!plan.hasOvertake && !plan.passedByIds?.length)) return [];
-    const common = { sport: s.sport, unit: s.unit, lanes: s.lanes };
+    const common = { sport: s.sport, unit: s.unit, lanes: s.lanes, periodStart: s.period, periodEnd: s.periodEnd };
     if (plan.hasOvertake && plan.passedByIds?.length) {
       const middleRank = 1 + Object.values(plan.rivals).filter(r => r.endValue > plan.youBefore + .00001).length;
       const rivalPlan: ArenaOvertakePlan = { ...plan, hasOvertake: false, overtakenIds: [], youAfter: plan.youBefore, rankAfter: middleRank,

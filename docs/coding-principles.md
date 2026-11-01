@@ -118,3 +118,9 @@ atomic with the overtake writer.
 Account GET establishes missing wave baselines and updates rival positions only
 when own volume has not grown. A positive imported own move waits for the account
 PUT after sync review, so deselected volume cannot earn an overtake receipt.
+
+Account hydration also returns the latest 50 committed overtake receipts for the
+current wave. This recovers presentation when a successful commit's response is
+lost. Receipt IDs normalize timestamps; per-device acknowledgement suppresses
+already-viewed plans. Historical-wave receipts remain durable but do not interrupt
+the current wave's experience.
