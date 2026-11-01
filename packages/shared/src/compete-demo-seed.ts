@@ -6,6 +6,7 @@ import {
   type CompeteState,
   type SportId,
 } from "./compete";
+import { dayKey, shiftAppDay } from "./period";
 import { weeklyPeriodBounds } from "./period";
 
 function mondayOfCurrentWeek(): Date {
@@ -39,6 +40,10 @@ export function getDemoCompeteState(
     return {
       ...base,
       name: "Alice Park",
+      dailyHealth: Array.from({ length: 90 }, (_, index) => ({
+        provider: "demo", day: dayKey(shiftAppDay(new Date(), -index)),
+        steps: 7800 + (index * 937 % 5200), restingHr: 52 + index % 7, hrv: 58 + index * 7 % 24,
+      })),
       city: "Brooklyn",
       primary: "running",
       focus: { family: "sport", id: "running" },
