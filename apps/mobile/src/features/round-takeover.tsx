@@ -7,7 +7,6 @@ import { StandardLineChart } from "../ui/standard-line-chart";
 import { useCompeteStore } from "../lib/compete-store";
 import { AnimatedEmber } from "../ui/mascot/animated-ember";
 import { SectionStack, AppText } from "../ui/section";
-import { MotionStep } from "../ui/motion-step";
 import { useAuth } from "../lib/auth";
 import {
   countsOnTrack, APP_TIMEZONE, dayKey,
