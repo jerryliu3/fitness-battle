@@ -1,3 +1,4 @@
+vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "camera-test" } }) }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn(), playPattern: vi.fn(() => vi.fn()) }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
