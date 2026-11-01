@@ -168,11 +168,11 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
   const prior = recorded.filter(event => Date.parse(event.occurredAt) < start.getTime()).at(-1);
   if (prior) rows.push({ id: "baseline", date: start.toISOString(), value: prior.scoreAfter });
   for (const event of events.filter(event => Date.parse(event.occurredAt) >= start.getTime())) {
-    if (!rows.length || rows.at(-1)!.value !== event.scoreBefore) rows.push({ id: `before:${event.id}`, date: new Date(Math.max(start.getTime(), Date.parse(event.occurredAt) - 1)).toISOString(), value: event.scoreBefore, breakBefore: true, inspectable: false });
+    if (!rows.length || rows.at(-1)!.value !== event.scoreBefore) rows.push({ id: `before:${event.id}`, date: new Date(Math.max(start.getTime(), Date.parse(event.occurredAt) - 1)).toISOString(), value: event.scoreBefore, breakBefore: false, inspectable: false });
     rows.push({ id: event.id, date: event.occurredAt, value: event.scoreAfter });
   }
   const rating = state.ratings.find(r => r.sport === state.primary);
   const current = (track === "open" ? rating?.openElo : rating?.verifiedElo) ?? 500;
-  rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: !!rows.length && rows.at(-1)!.value !== current });
+  rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: false });
   return openLineModel(rows, value => String(Math.round(value)), [], 7, { start, end, showTime: range === "week", step: true });
 }
