@@ -129,7 +129,6 @@ export function FocusSheet({
           />
         </Animated.View>
         <AnimatedSafeAreaView
-          {...panHandlers}
           onLayout={event => { sheetHeight.current = event.nativeEvent.layout.height; }}
           onAccessibilityEscape={onClose}
           edges={fullScreen ? ["top", "bottom"] : ["bottom"]}
@@ -150,7 +149,7 @@ export function FocusSheet({
           ]}
           accessibilityViewIsModal
         >
-          {!fullScreen && <View style={f.sheetGrip} accessible accessibilityRole="button"
+          {!fullScreen && <View {...panHandlers} style={f.sheetGrip} accessible accessibilityRole="button"
             hitSlop={10} accessibilityLabel="Dismiss sheet" accessibilityHint="Swipe down or double tap to dismiss"
             onAccessibilityTap={onClose}><View style={f.handle} /></View>}
           {fullScreen ? <View style={[f.row, { paddingHorizontal: 22, paddingVertical: 8 }]}>
