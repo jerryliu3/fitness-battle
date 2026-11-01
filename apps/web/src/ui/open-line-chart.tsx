@@ -13,7 +13,7 @@ export function OpenLineChart({ chart, label, unit, range, onRangeChange, includ
   const [selected, setSelected] = useState(false);
   const end = chart.points.at(-1);
   return <div className="open-line-chart">
-    <ChartScrubber key={range} points={chart.points} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} label={label} onSelectionChange={point => setSelected(!!point)}
+    <ChartScrubber key={range} points={chart.points} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} label={chart.bridges?.length ? `${label}. Dashed lines connect readings with unrecorded change times.` : label} onSelectionChange={point => setSelected(!!point)}
       renderSummary={point => <div className="open-line-reading"><span>{point?.label ?? chart.date}</span><strong>{point?.value ?? chart.value}<small> {unit}</small></strong></div>}>
       <ChartSvg viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" aria-hidden="true">
         <ChartText x={chart.left} y={14} fill={c.muted}>{unit}</ChartText>
@@ -21,6 +21,7 @@ export function OpenLineChart({ chart, label, unit, range, onRangeChange, includ
         {chart.yTicks.map((tick, i) => <g key={`${tick.y}-${i}`}><line x1={chart.left} x2={chart.right} y1={tick.y} y2={tick.y} stroke={c.line} strokeWidth={.5}/><ChartText x={chart.left - 6} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</ChartText></g>)}
         {chart.xTicks.map((tick, i) => <ChartText key={i} x={tick.x} y={chart.height - 22} textAnchor={i === 0 ? "start" : i === chart.xTicks.length - 1 ? "end" : "middle"} fill={c.muted}>{tick.label}</ChartText>)}
         {chart.previous && <polyline points={chart.previous} fill="none" stroke={c.muted} strokeWidth="1.5" strokeDasharray="2 5" strokeLinecap="round" opacity=".65" />}
+        {chart.bridges?.map((line, index) => <polyline key={`bridge-${index}`} points={line} fill="none" stroke={c.muted} strokeWidth="1.5" strokeDasharray="3 4" />)}
         {chart.segments.map((line, i) => {
           if (!line) return null;
           if (!line.includes(" ")) {
