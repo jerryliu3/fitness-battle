@@ -36,7 +36,7 @@ export function getDemoCompeteState(
   }
 
   if (demo.email === "alice@example.com") {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = dayKey(new Date());
     return {
       ...base,
       name: "Alice Park",
@@ -474,7 +474,7 @@ export function getDemoCompeteState(
         {
           id: "slp-alice-d1",
           metric: "sleep",
-          day: new Date(Date.now() - 86400000).toISOString().slice(0, 10),
+          day: dayKey(shiftAppDay(new Date(), -1)),
           score: 91,
           durationMin: 480,
           efficiency: 96,
@@ -505,7 +505,7 @@ export function getDemoCompeteState(
         {
           id: "readiness-alice-d1",
           provider: "whoop",
-          day: new Date(Date.now() - 86400000).toISOString().slice(0, 10),
+          day: dayKey(shiftAppDay(new Date(), -1)),
           score: 91,
         },
       ],
@@ -818,7 +818,7 @@ export function getDemoCompeteState(
   }
 
   if (demo.email === "test@test.com") {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = dayKey(new Date());
     return {
       ...base,
       name: "Test Athlete",
