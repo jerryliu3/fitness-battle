@@ -17,7 +17,8 @@
       "env": {
         "EXPO_PUBLIC_USE_DEMO_DATA": "true",
         "EXPO_PUBLIC_API_URL": "https://fitness-battle-one.vercel.app"
-      }
+      },
+      "environment": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -35,7 +36,8 @@
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_qDgv-txtSFPU4VatDc1CGQ_2SwG-Po9",
         "EXPO_PUBLIC_RANKINGS_SUPABASE_URL": "https://nevwdslqilysyeaccptz.supabase.co",
         "EXPO_PUBLIC_RANKINGS_SUPABASE_ANON_KEY": "sb_publishable_D9343Y1mDcEg0_vTy1ASGA_yQSXR_sA"
-      }
+      },
+      "environment": "preview"
     },
     "production": {
       "autoIncrement": true,
@@ -53,7 +55,8 @@
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_qDgv-txtSFPU4VatDc1CGQ_2SwG-Po9",
         "EXPO_PUBLIC_RANKINGS_SUPABASE_URL": "https://nevwdslqilysyeaccptz.supabase.co",
         "EXPO_PUBLIC_RANKINGS_SUPABASE_ANON_KEY": "sb_publishable_D9343Y1mDcEg0_vTy1ASGA_yQSXR_sA"
-      }
+      },
+      "environment": "production"
     }
   },
   "submit": {
