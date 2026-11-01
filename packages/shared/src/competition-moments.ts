@@ -8,6 +8,8 @@ import { competitionTrack, type CompeteState, type SportId } from "./compete/spo
 export interface CompetitionMoment {
   id: string;
   sport: SportId;
+  periodStart?: string;
+  periodEnd?: string;
   unit: "km" | "mi" | "pts";
   lanes: ArenaSceneLane[];
   plan: ArenaOvertakePlan;
@@ -21,10 +23,11 @@ export function competitionMomentSnapshots(state: CompeteState, account: string)
   return state.ratings.filter(r => r.optedIn && state.enrollments.some(e => e.sport === r.sport)).map(r => {
     const track = competitionTrack(r.sport);
     const arena = buildArenaModel(state, now, track, r.sport);
-    const period = competePeriodWindow(state, now, r.sport).startsAt.toISOString();
+    const window = competePeriodWindow(state, now, r.sport);
+    const period = window.startsAt.toISOString();
     const lanes: ArenaSceneLane[] = arena.lanes.filter(l => !l.ghost).map(l => ({ id: l.id, name: l.name, initials: initialsFromName(l.name), you: l.you, avatarUrl: l.avatarUrl, lastUpdated: l.lastUpdated, value: l.values[2] }));
     const arenaKey = arenaBaselineStorageKey(account, r.sport, track);
-    return { sport: r.sport, unit: arena.unit, period, lanes, arenaKey, key: momentStorageKey(arenaKey), value: serializeArenaBaseline(period, lanes, arena.unit) };
+    return { sport: r.sport, unit: arena.unit, period, periodEnd: window.endsAt.toISOString(), lanes, arenaKey, key: momentStorageKey(arenaKey), value: serializeArenaBaseline(period, lanes, arena.unit) };
   });
 }
 
@@ -33,7 +36,7 @@ export function competitionMoments(state: CompeteState, account: string, read: (
     const previous = readArenaBaseline(read(s.key), s.period, s.unit);
     const plan = reconcileArenaOvertake(s.lanes, previous);
     if (!plan || (!plan.hasOvertake && !plan.passedByIds?.length)) return [];
-    const common = { sport: s.sport, unit: s.unit, lanes: s.lanes };
+    const common = { sport: s.sport, unit: s.unit, lanes: s.lanes, periodStart: s.period, periodEnd: s.periodEnd };
     if (plan.hasOvertake && plan.passedByIds?.length) {
       const middleRank = 1 + Object.values(plan.rivals).filter(r => r.endValue > plan.youBefore + .00001).length;
       const rivalPlan: ArenaOvertakePlan = { ...plan, hasOvertake: false, overtakenIds: [], youAfter: plan.youBefore, rankAfter: middleRank,
@@ -76,7 +79,7 @@ export function photoFinishFrame(moment: CompetitionMoment, progress: number) {
   // Integrate a low speed near each pass and invert its cumulative timeline.
   const weights = Array.from({ length: 240 }, (_, i) => {
     const t = (i + .5) / 240;
-    return 1 + crossings.reduce((n, c) => n + 5 * Math.exp(-Math.pow((t - c) / .045, 2)), 0);
+    return 1 + crossings.reduce((n, c) => n + 18 * Math.exp(-Math.pow((t - c) / .045, 2)), 0);
   });
   const total = weights.reduce((n, w) => n + w, 0);
   const target = Math.max(0, Math.min(1, (p - .1) / .8)) * total;
@@ -117,5 +120,15 @@ export function competitionMomentScene(moment: CompetitionMoment, progress: numb
   return { ...frame, lanes, replayFocusIds, standings: standings.slice(start, start + 3), view: {
     center: (frame.youValue+rival)/2,
     span: Math.max(fieldDefaultSpan(moment.unit) * (1 - frame.focus * .18),Math.abs(frame.youValue-rival)*3),
+  } };
+}
+
+/** Receipt computation always uses metric baselines; presentation honors units. */
+export function overtakeMomentForUnits(moment: CompetitionMoment, units: CompeteState["units"]): CompetitionMoment {
+  if (moment.unit !== "km" || units !== "us") return moment;
+  const scale = 1 / 1.609344;
+  return { ...moment, unit: "mi", lanes: moment.lanes.map(lane => ({ ...lane, value: lane.value * scale })), plan: {
+    ...moment.plan, youBefore: moment.plan.youBefore * scale, youAfter: moment.plan.youAfter * scale,
+    rivals: Object.fromEntries(Object.entries(moment.plan.rivals).map(([id, rival]) => [id, { ...rival, startValue: rival.startValue * scale, endValue: rival.endValue * scale }])),
   } };
 }

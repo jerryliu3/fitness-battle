@@ -101,6 +101,8 @@ function mergeFreshRemote(
   const merged = rollClock(
     {
       ...local,
+      lifetimeOvertakes: remote.lifetimeOvertakes,
+      committedOvertakeMoments: remote.committedOvertakeMoments,
       requiresCanonicalFields: remote.requiresCanonicalFields ?? local.requiresCanonicalFields,
       units:
         holdLocalUnits && local.units !== remote.units
@@ -150,5 +152,7 @@ export function applyRemoteSnapshot(
   const next = dirty
     ? mergeFreshRemote(local, remote, holdLocalUnits)
     : remote;
-  return sameDocument(local, next) ? local : next;
+  const sameReceipts = JSON.stringify(local.committedOvertakeMoments?.map(moment => moment.id) ?? [])
+    === JSON.stringify(next.committedOvertakeMoments?.map(moment => moment.id) ?? []);
+  return sameDocument(local, next) && sameReceipts ? local : next;
 }

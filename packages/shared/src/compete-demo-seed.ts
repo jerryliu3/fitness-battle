@@ -6,6 +6,7 @@ import {
   type CompeteState,
   type SportId,
 } from "./compete";
+import { dayKey, shiftAppDay } from "./period";
 import { weeklyPeriodBounds } from "./period";
 
 function mondayOfCurrentWeek(): Date {
@@ -35,10 +36,14 @@ export function getDemoCompeteState(
   }
 
   if (demo.email === "alice@example.com") {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = dayKey(new Date());
     return {
       ...base,
       name: "Alice Park",
+      dailyHealth: Array.from({ length: 90 }, (_, index) => ({
+        provider: "demo", day: dayKey(shiftAppDay(new Date(), -index)),
+        steps: 7800 + (index * 937 % 5200), restingHr: 52 + index % 7, hrv: 58 + index * 7 % 24,
+      })),
       city: "Brooklyn",
       primary: "running",
       focus: { family: "sport", id: "running" },
@@ -469,7 +474,7 @@ export function getDemoCompeteState(
         {
           id: "slp-alice-d1",
           metric: "sleep",
-          day: new Date(Date.now() - 86400000).toISOString().slice(0, 10),
+          day: dayKey(shiftAppDay(new Date(), -1)),
           score: 91,
           durationMin: 480,
           efficiency: 96,
@@ -500,7 +505,7 @@ export function getDemoCompeteState(
         {
           id: "readiness-alice-d1",
           provider: "whoop",
-          day: new Date(Date.now() - 86400000).toISOString().slice(0, 10),
+          day: dayKey(shiftAppDay(new Date(), -1)),
           score: 91,
         },
       ],
@@ -813,7 +818,7 @@ export function getDemoCompeteState(
   }
 
   if (demo.email === "test@test.com") {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = dayKey(new Date());
     return {
       ...base,
       name: "Test Athlete",

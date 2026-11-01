@@ -228,8 +228,6 @@ export function DataSyncActions({ provider, includeCalibration = true }: { provi
                 />
               </View>
             ))}
-          <SectionHeader title="Sleep & recovery"/>
-          <AppText role="body" secondary >Sleep data appears when supplied by a connected tracker.</AppText>
           {includeCalibration && <><SectionHeader title="Import fitness history"/>
           <AppText role="body" secondary >
             {state.calibrated
