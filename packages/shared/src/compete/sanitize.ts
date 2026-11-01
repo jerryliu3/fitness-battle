@@ -33,7 +33,7 @@ export function stripDurableCrewBoard(state: CompeteState): CompeteState {
 export function prepareCompeteStateForAccount(
   state: CompeteState,
 ): CompeteState {
-  const { requiresCanonicalFields: _requiresCanonicalFields, ...durable } = state;
+  const { requiresCanonicalFields: _requiresCanonicalFields, committedOvertakeMoments: _committedOvertakeMoments, ...durable } = state;
   const cleaned = stripDurableCrewBoard(sanitizeCompeteStateForAccount(durable));
   if (cleaned.pendingRevealIds.length === 0) return cleaned;
   return { ...cleaned, pendingRevealIds: [] };

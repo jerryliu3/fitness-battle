@@ -93,3 +93,34 @@ one committed change, and historical milestone receipts must not be converted in
 fictional dated awards. Apply this migration before deploying the corresponding
 account reader. Existing milestone thresholds, receipts and settlement rules are
 unchanged.
+
+Overtake totals are server-owned presentation receipts. Canonical field snapshots
+use metric units and the same `competitionMoments` comparator as replay; GPS sports
+use their existing competition track, so Open and GPS do not double-credit a pass.
+The first server snapshot or a new wave establishes a quiet baseline. A positive
+own crossing yields one receipt per sport/account revision, storing its complete
+replay plan. The service-only `save_compete_account_with_overtakes` wrapper uses
+the existing account lock, optimistic revision and accepted-input checks, then
+commits the ordinary save, receipts, baseline and profile lifetime increment in
+one transaction. A failed/retried revision cannot add credit. Client-supplied
+lifetime totals and replay acknowledgements cannot award passes. Excluding and
+later re-including volume can create another crossing under the existing replay
+comparison semantics; these are crossing counts, not unique-opponent awards.
+
+Apply the additive atomic-overtake migration before deploying the account reader
+and writer. Existing historical passes are not reconstructed. Native authenticated
+receipts use committed server plans; local detection remains for losses and debug
+previews. Receipt presentation is acknowledged per device; the receipt table is
+not yet a cross-device presentation acknowledgement ledger. Ordinary ingestion
+remains durable before the account review/commit; only the account-save side is
+atomic with the overtake writer.
+
+Account GET establishes missing wave baselines and updates rival positions only
+when own volume has not grown. A positive imported own move waits for the account
+PUT after sync review, so deselected volume cannot earn an overtake receipt.
+
+Account hydration also returns the latest 50 committed overtake receipts for the
+current wave. This recovers presentation when a successful commit's response is
+lost. Receipt IDs normalize timestamps; per-device acknowledgement suppresses
+already-viewed plans. Historical-wave receipts remain durable but do not interrupt
+the current wave's experience.

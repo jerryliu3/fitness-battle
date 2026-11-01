@@ -105,3 +105,23 @@ requested scope. The proposed targeted cleanup is reviewable in
 the migrations directory: remove personal before/after snapshots about a deleted
 target, retain other athletes' audit records with a nullable actor reference.
 No account was deleted by the agent. No tests or typechecks were run.
+
+## Atomic overtake writer (prepared, not deployed)
+
+Prepared the additive `atomic_overtake_receipts` migration and account commit
+integration. This resolves the missing lifetime writer for future server-baselined
+crossings without fabricating Alice's historical total. The migration must be
+applied before the corresponding application release. No tests, typechecks or
+builds were run at the owner's request; regression cases were added for authority
+routing, server-owned lifetime acknowledgements and rejected revisions.
+
+## PR-stack review followup
+
+Read the existing failing CI logs for #501–#507 without rerunning checks. Updated
+sheet gesture and autoplay assertions for the intended behavior. Preserved unknown
+score-change intervals as dashed visual bridges rather than inventing event times.
+Fixed replay restart behavior, excluded browsing camera cache from cinematic
+replays, and changed demo day labels to Eastern dates. Atomic receipts now recover
+on account hydration after a lost response, with normalized IDs and per-device
+acknowledgement; receipt-only snapshot changes are not discarded during merging.
+No tests, typechecks, builds, or post-fix CI checks were run.
