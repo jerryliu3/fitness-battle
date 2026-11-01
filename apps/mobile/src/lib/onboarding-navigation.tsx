@@ -6,7 +6,7 @@ import { useCompeteStore } from "./compete-store";
 export function useOnboardingRequired() {
   const { user, loading } = useAuth();
   const { state, loadStatus, accountKey } = useCompeteStore();
-  const pending = loading || Boolean(user && (!state || loadStatus === "loading" || accountKey !== user.id));
+  const pending = loading || Boolean(user && (loadStatus === "loading" || accountKey !== user.id));
   const required = Boolean(user && !pending && (loadStatus === "ready" || loadStatus === "local") && !state?.onboardingCompleted);
   return { pending, required };
 }
