@@ -41,7 +41,8 @@ it("opens honest reading details with accessible expanded state and 7-day corrid
     tiles()[2].props.onPress();
   });
   expect(tiles()[2].props.accessibilityState.expanded).toBe(true);
-  expect(JSON.stringify(view.toJSON())).toContain("Baseline corridor: Unavailable");
+  expect(JSON.stringify(view.toJSON())).not.toContain("Baseline corridor:");
+  expect(JSON.stringify(view.toJSON())).not.toContain("Below corridor");
   expect(JSON.stringify(view.toJSON())).toContain("Resting HR");
   await act(async () => {
     tiles()[2].props.onPress();

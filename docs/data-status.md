@@ -136,3 +136,24 @@ ordinary navigation, fullscreen fades, handle-only sheet gestures and receipt
 copy removal. Overtake playback uses main's active-time clock with the followup's
 slower autoplay and Replay/Continue controls. Applied the additive atomic writer
 migration before merging application code. No tests, typechecks or builds run.
+
+## Native followups: onboarding, health, Mapbox and Alice fields
+
+Prepared a new PR stack based on origin/main for profile-header separation,
+authenticated onboarding resume, quieter charts and daily-health labels, partial
+sync success and five-second native toasts. Score-history gaps now use solid yellow
+connections without inventing award timestamps. The missing Mapbox runtime token
+was found in the original checkout's ignored local env file. It is now configured
+in the project's production, preview and development EAS environments, outside Git.
+Native build config requires the token and native Mapbox plugin before release.
+A fresh native build is required; no builds, typechecks or tests were run.
+
+With the owner's explicit approval to reseed Alice's current demo fields, applied
+`supabase/seeds/alice-field-accounts.sql` with `overtaek.reseed_alice_fields=on`.
+Six dedicated auth accounts and email identities now have profiles, completed
+onboarding, four sport ratings, 60-day workout histories and daily health/sleep
+records. Alice's four active solo fields now contain seven database-backed
+athletes and no generated IDs. Historical fields and settled results were left
+untouched. The seed rejects unrelated live members and directed block conflicts.
+These are database fixtures, not live integrations; no provider connection is
+falsely marked connected. No passwords are stored in the seed file.

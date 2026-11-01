@@ -137,3 +137,10 @@ current wave. This recovers presentation when a successful commit's response is
 lost. Receipt IDs normalize timestamps; per-device acknowledgement suppresses
 already-viewed plans. Historical-wave receipts remain durable but do not interrupt
 the current wave's experience.
+
+The reserved Alice-field fixture IDs are informationally classified as synthetic
+training data while retaining ordinary Supabase sessions, ownership, field
+membership, blocking and reporting. They are not generated `synth:` competitors
+and never receive the Sample athlete UI flag. Administrative fixture reseeding
+requires explicit approval for active frozen fields and refuses unrelated live
+members; the ordinary seating path and historical results remain unchanged.

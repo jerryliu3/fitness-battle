@@ -2,7 +2,7 @@ import { DEMO_ACCOUNTS } from "./demo-data";
 
 /** Data provenance is informational and never authorizes access. */
 export function accountDataOrigin(id: string): "synthetic" | "recorded" {
-  return DEMO_ACCOUNTS.some(account => account.id === id) ? "synthetic" : "recorded";
+  return DEMO_ACCOUNTS.some(account => account.id === id) || /^a11ce000-0000-4000-8000-00000000000[1-6]$/.test(id) ? "synthetic" : "recorded";
 }
 
 export function isSupabaseConfigured(url: string, anonKey: string): boolean {

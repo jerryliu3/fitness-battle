@@ -119,7 +119,7 @@ export function healthSignal(history: readonly (number | null)[]) {
 export function healthSignalRange(metric: HomeHealthMetric): string {
   if (!healthSignal(metric.history).available) return "No reading available";
   const values = metric.history.filter((value): value is number => value != null && Number.isFinite(value) && value >= 0);
-  const format = metric.id === "sleep" ? formatSleepDuration : (value: number) => value.toLocaleString("en-US");
+  const format = metric.id === "sleep" ? (value: number) => `${Math.floor(value / 60)}:${String(Math.round(value) % 60).padStart(2, "0")}` : formatHealthNumber;
   return `${format(Math.min(...values))}–${format(Math.max(...values))} (7 day range)`;
 }
 

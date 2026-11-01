@@ -156,3 +156,10 @@ secrets out of this file. Local builds load it automatically; restart Metro afte
 changing it. Generated `ios/` and `android/` projects remain ignored. For iOS,
 install Xcode and CocoaPods; `pnpm ios --device` selects a physical device and
 may require choosing a signing team in Xcode. EAS profiles are configured separately.
+
+Native EAS profiles explicitly select their development, preview or production
+EAS environment. `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` is configured there as a
+sensitive string and is bundled as a public runtime token through Expo extra.
+Credential values stay outside Git. EAS builds fail early when the token or native
+Mapbox plugin is absent. `RNMAPBOX_MAPS_DOWNLOAD_TOKEN`, when needed by the native
+SDK installer, is a separate build-only secret and must never enter Expo extra.
