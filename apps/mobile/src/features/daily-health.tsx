@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
 import {
   HOME_HEALTH_COLORS as colors,
+  formatHealthNumber,
   buildHealth7DayCorridorModel,
   competeNow,
   healthSignal,
@@ -85,17 +86,8 @@ export function DailyHealth({ state }: { state: CompeteState }) {
                 <AppText role="label" style={{ color: colors.text }}>
                   {selected.name}
                 </AppText>
-                <AppText role="caption" style={s.secondary}>
-                  {`Baseline corridor: ${chart.formattedRange}`}
-                </AppText>
               </View>
-              {chart.hasUnder && (
-                <View style={s.alertBadge}>
-                  <AppText role="label" style={s.alertText}>
-                    Below corridor
-                  </AppText>
-                </View>
-              )}
+
             </View>
             <View style={s.chartBox}>
               <Svg width="100%" height={chart.height} viewBox={`0 0 ${chart.width} ${chart.height}`} accessible={false}>
@@ -125,7 +117,7 @@ export function DailyHealth({ state }: { state: CompeteState }) {
                   textAnchor="end"
                   fill={colors.secondary}
                 >
-                  {chart.baselineHigh}
+                  {formatHealthNumber(chart.baselineHigh)}
                 </SvgText>
                 <SvgText
                   {...chartTextProps()}
@@ -134,7 +126,7 @@ export function DailyHealth({ state }: { state: CompeteState }) {
                   textAnchor="end"
                   fill={colors.secondary}
                 >
-                  {chart.baselineLow}
+                  {formatHealthNumber(chart.baselineLow)}
                 </SvgText>
                 </G>}
 {chart.lineSegments.map((d, i) => (

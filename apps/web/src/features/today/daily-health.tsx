@@ -3,6 +3,7 @@
 import { Fragment, useState, type CSSProperties } from "react";
 import {
   HOME_HEALTH_COLORS as colors,
+  formatHealthNumber,
   buildHealth7DayCorridorModel,
   competeNow,
   healthSignal,
@@ -85,13 +86,9 @@ export function DailyHealth({ state }: { state: CompeteState }) {
                     <div className="home-health-chart-header">
                       <div className="home-health-chart-title">
                         <b>{selected.name}</b>
-                        <span className="home-health-chart-corridor">
-                          Baseline corridor: {chart.formattedRange}
-                        </span>
+
                       </div>
-                      {chart.hasUnder && (
-                        <span className="home-health-chart-alert">Below corridor</span>
-                      )}
+
                     </div>
                     <div className="home-health-chart-body">
                       <svg
@@ -124,7 +121,7 @@ export function DailyHealth({ state }: { state: CompeteState }) {
                           textAnchor="end"
                           className="home-health-axis-label"
                         >
-                          {chart.baselineHigh}
+                          {formatHealthNumber(chart.baselineHigh)}
                         </text>
                         <text
                           x={34}
@@ -132,7 +129,7 @@ export function DailyHealth({ state }: { state: CompeteState }) {
                           textAnchor="end"
                           className="home-health-axis-label"
                         >
-                          {chart.baselineLow}
+                          {formatHealthNumber(chart.baselineLow)}
                         </text>
                         </g>}
 {chart.lineSegments.map((d, i) => (

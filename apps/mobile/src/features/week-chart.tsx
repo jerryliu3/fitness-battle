@@ -11,7 +11,7 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
   const chart = homeTrainingLine(state, range);
   return <ChartFrame ready={ready}><View style={s.card}>
     <View style={s.header}><AppText role="display" accessibilityRole="header">Your effort</AppText><HomeActivityActions compact /></View>
-    <OpenLineChart key={range} chart={chart} label="Cumulative training hours" unit="hrs" range={range} onRangeChange={next => { if (next !== "year") setRange(next); }} includeYear={false} live footerAction={onOpen ? <Pressable accessibilityRole="button" onPress={onOpen} style={s.open}><AppText role="label">View week →</AppText></Pressable> : undefined} comparisonLabel={range === "week" ? "Last week" : "Prior 4 weeks"} />
+    <OpenLineChart showAxes={false} key={range} chart={chart} label="Cumulative training hours" unit="hrs" range={range} onRangeChange={next => { if (next !== "year") setRange(next); }} includeYear={false} live footerAction={onOpen ? <Pressable accessibilityRole="button" onPress={onOpen} style={s.open}><AppText role="label">View week →</AppText></Pressable> : undefined} comparisonLabel={range === "week" ? "Last week" : "Prior 4 weeks"} />
 
   </View></ChartFrame>;
 }

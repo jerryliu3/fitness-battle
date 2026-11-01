@@ -118,11 +118,7 @@ export function AthleteMetrics({
             </View>
           </View>
           <EffortTrend state={state} />
-          <FocusButton
-            label="Your benchmarks · pace & rankings"
-            secondary
-            onPress={() => router.push("/benchmarks")}
-          />
+
         </>
       )}
     </>

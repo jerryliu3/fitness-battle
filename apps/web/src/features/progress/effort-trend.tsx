@@ -15,6 +15,6 @@ export function EffortTrend({ state, email }: { state: CompeteState; email?: str
   const chart = effortScoreLine(state, track, range);
   return <section id="effort-score" className="effort-open-chart">
     <div className="focus-elo-track-toggle" role="group" aria-label="Effort chart score track">{(["open", "verified"] as const).map(value => <button type="button" key={value} aria-pressed={track === value} onClick={() => setLens({ scope, track: value })}>{value === "open" ? "Open" : "GPS Tracked"}</button>)}</div>
-    <OpenLineChart live key={`${scope}:${track}`} chart={chart} label={`${track === "open" ? "Open" : "GPS Tracked"} effort score history`} unit="Effort score" range={range} onRangeChange={setRange} />
+    <OpenLineChart showAxes={false} live key={`${scope}:${track}`} chart={chart} label={`${track === "open" ? "Open" : "GPS Tracked"} effort score history`} unit="Effort score" range={range} onRangeChange={setRange} />
   </section>;
 }
