@@ -93,7 +93,7 @@ export default function NotificationsScreen() {
           : " Stored on this device only.";
       setNote(
         result.mode === "expo"
-          ? `Live Expo push token registered for ${platform}.${synced}`
+          ? "Notifications enabled."
           : `${result.detail ?? "Using a stub token."}${synced}`,
       );
     } catch (error) {
@@ -211,23 +211,13 @@ export default function NotificationsScreen() {
             }
           }}
         />
-        <Text style={styles.copy}>
-          Choose which updates you receive. Enabling notifications asks for
-          permission on this device.{" "}
-          {identity && !identity.localOnly
-            ? "Your choices sync to your account."
-            : "Your choices stay on this device."}
-        </Text>
-
         <View style={styles.card}>
           <View style={[styles.row, styles.rowFirst]}>
             <View style={styles.grow}>
               <Text style={styles.rowTitle}>Push notifications</Text>
               <Text style={styles.rowDetail}>
                 {permissionLabel(prefs.permissionStatus)}
-                {prefs.registration?.token
-                  ? ` · ${prefs.registration.stub ? "stub" : "live"} token`
-                  : ""}
+                
               </Text>
             </View>
             <Switch
