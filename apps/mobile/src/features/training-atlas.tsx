@@ -64,16 +64,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     setSelectedDay(null);
   };
   return (
-    <Section titleRole="display" title="Your training">
-      <View style={[f.row, { justifyContent: "space-between", alignItems: "center" }]}>
-        <TrainingSportMenu
-          value={sports}
-          onChange={(next) => {
-            setSports(normalizeTrainingSports(next));
-          }}
-        />
-
-      </View>
+    <Section titleRole="display" title="Your training" action={<TrainingSportMenu value={sports} onChange={next => setSports(normalizeTrainingSports(next))} />}>
       <View style={s.row}>
         <Pressable
           style={s.arrow}

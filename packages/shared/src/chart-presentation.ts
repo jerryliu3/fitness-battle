@@ -16,6 +16,7 @@ export const OPEN_LINE_RANGES: readonly { value: OpenLineRange; label: string; a
 export interface OpenLineModel {
   width: number; height: number; top: number; bottom: number;
   segments: string[];
+  bridges?: string[];
   line: string; previous: string; points: ChartDatum[];
   value: string; date: string;
   left: number; right: number;
@@ -174,5 +175,10 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
   const rating = state.ratings.find(r => r.sport === state.primary);
   const current = (track === "open" ? rating?.openElo : rating?.verifiedElo) ?? 500;
   rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: !!rows.length && rows.at(-1)!.value !== current });
-  return openLineModel(rows, value => String(Math.round(value)), [], 7, { start, end, showTime: range === "week", step: true });
+  const chart = openLineModel(rows, value => String(Math.round(value)), [], 7, { start, end, showTime: range === "week", step: true });
+  // Unknown award times remain gaps in the data. Dashed bridges connect the
+  // known readings visually without asserting an award time in that interval.
+  return { ...chart, bridges: chart.segments.slice(1).map((line, index) =>
+    `${chart.segments[index]!.split(" ").at(-1)} ${line.split(" ")[0]}`) };
+
 }
