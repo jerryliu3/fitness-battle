@@ -10,6 +10,7 @@ import { CourseOptions } from "./course-options";
 import { FieldOverlayView } from "./field-overlay-motion";
 import { textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
+import { useSceneActive } from "./use-scene-active";
 
 const rememberedCameras = new Map<string, CourseCameraPose>();
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
