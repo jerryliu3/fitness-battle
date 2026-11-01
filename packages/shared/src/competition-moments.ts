@@ -76,7 +76,7 @@ export function photoFinishFrame(moment: CompetitionMoment, progress: number) {
   // Integrate a low speed near each pass and invert its cumulative timeline.
   const weights = Array.from({ length: 240 }, (_, i) => {
     const t = (i + .5) / 240;
-    return 1 + crossings.reduce((n, c) => n + 5 * Math.exp(-Math.pow((t - c) / .045, 2)), 0);
+    return 1 + crossings.reduce((n, c) => n + 18 * Math.exp(-Math.pow((t - c) / .045, 2)), 0);
   });
   const total = weights.reduce((n, w) => n + w, 0);
   const target = Math.max(0, Math.min(1, (p - .1) / .8)) * total;
