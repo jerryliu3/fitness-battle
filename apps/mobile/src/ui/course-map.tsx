@@ -20,8 +20,8 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; overlaysHidden?: boolean;
 }) {
   const { user } = useAuth();
-  const cameraKey = `${user?.id ?? "guest"}:${course.name}:${unit}`;
-  const restored = useRef(rememberedCameras.get(cameraKey));
+  const cameraKey = `${user?.id ?? "guest"}:${course.name}:${course.length}:${course.coordinates[0].join(",")}:${unit}`;
+  const restored = useRef(replay ? undefined : rememberedCameras.get(cameraKey));
   const [dismissed, setDismissed] = useState<string[]>([]);
   useEffect(() => { setDismissed([]); }, [course, cardSessionKey]);
   useEffect(() => { setDismissed(ids => ids.filter(id => id !== selectedId)); }, [selectedId, focusRequest]);
@@ -69,7 +69,7 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     let current = pose.current;
     const tick = () => {
       const target = replayTarget.current;
-      if (!target) return;
+      if (!target) { raf = requestAnimationFrame(tick); return; }
       const now = Date.now();
       const blend = reduced ? 1 : 1 - Math.exp(-Math.min(64, Math.max(1, now - previous)) / 220);
       previous = now;
