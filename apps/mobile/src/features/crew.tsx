@@ -101,7 +101,7 @@ function crewError(error: unknown): string {
   return raw;
 }
 function inviteLink(code: string): string {
-  const base = mobileEnv.apiUrl.replace(/\/$/, "");
+  const base = "https://overtaek.xyz";
   return `${base}/field?invite=${encodeURIComponent(code)}`;
 }
 

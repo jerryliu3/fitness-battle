@@ -51,7 +51,7 @@ export function Achievements({ state }: { state: CompeteState }) {
             <Badge item={row} />
             <AchievementMeter row={row} />
             <AppText role="label" style={{ textAlign: "center" }}>
-              {row.current.toLocaleString()} / {row.target.toLocaleString()}
+              {Math.min(row.current, row.target).toLocaleString()} / {row.target.toLocaleString()}
             </AppText>
             <AppText role="caption" secondary style={{ textAlign: "center" }}>
               {row.title}

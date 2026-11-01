@@ -172,7 +172,7 @@ export default function RootLayout() {
                           screenOptions={{
                             headerShown: false,
                             contentStyle: { backgroundColor: SHELL_COLORS.paper },
-                            animation: reduced ? "none" : "fade",
+                            animation: reduced ? "none" : Platform.OS === "ios" ? "default" : "slide_from_right",
                           }}
                         />
                       </BlockPrivacyGate>

@@ -71,7 +71,7 @@ export function ReplayViewer({ state, selection, initialDimension, embedded = fa
     let raf = 0; const from = cursorRef.current, start = performance.now();
     let lastPaint = -Infinity;
     const tick = (now: number) => {
-      const progress = from + (now - start) * speed / 1100;
+      const progress = from + (now - start) * speed / 2200;
       // Bound GeoJSON/bridge updates during playback; seeking always paints immediately.
       const paintTime = Date.now();
       if (dimension !== "4d" || paintTime - lastPaint >= 100 || progress >= count) {

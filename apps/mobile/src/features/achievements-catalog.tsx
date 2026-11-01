@@ -55,7 +55,7 @@ export function AchievementsCatalog({
           <Badge item={item} />
           <AchievementMeter row={item} decorative={false} />
           <AppText role="heading" >
-            {item.current.toLocaleString()} / {item.target.toLocaleString()}
+            {Math.min(item.current, item.target).toLocaleString()} / {item.target.toLocaleString()}
           </AppText>
           <AppText role="body" secondary >
             {item.category === "sessions"

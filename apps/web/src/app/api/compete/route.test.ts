@@ -3,7 +3,7 @@ import { freshState } from "@fitness-battle/shared";
 vi.mock("@/lib/auth/request-user", () => ({ resolveRequestUserId: vi.fn() }));
 vi.mock("@/lib/supabase/request", () => ({ createRequestClient: vi.fn() }));
 vi.mock("@/lib/competition-authority", () => ({ competitionAuthorityDatabase: () => ({}) }));
-vi.mock("@/lib/compete-persist", () => ({ loadCompeteAccount: vi.fn(), loadEffortScoreEvents: vi.fn().mockResolvedValue([]), persistCompeteAccount: vi.fn(), hydrateFieldBoard: vi.fn(), settleAccountFields: vi.fn(), reconcileAccountSettlement: vi.fn() }));
+vi.mock("@/lib/compete-persist", () => ({ loadCompeteAccount: vi.fn(), overtakeSnapshotChanged: vi.fn().mockResolvedValue(false), loadEffortScoreEvents: vi.fn().mockResolvedValue([]), persistCompeteAccount: vi.fn(), hydrateFieldBoard: vi.fn(), settleAccountFields: vi.fn(), reconcileAccountSettlement: vi.fn() }));
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import { createRequestClient } from "@/lib/supabase/request";
 import { loadEffortScoreEvents, loadCompeteAccount, persistCompeteAccount, settleAccountFields, reconcileAccountSettlement } from "@/lib/compete-persist";

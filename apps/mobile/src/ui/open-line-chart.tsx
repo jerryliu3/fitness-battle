@@ -32,7 +32,7 @@ export function OpenLineChart({ chart, label, unit, range, onRangeChange, includ
   }, [live, selected, pulse, reduceMotion, active]);
   const end = chart.points.at(-1);
   return <View style={{ gap: 12 }}>
-    <ChartScrubber key={range} points={chart.points} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} label={label} onSelectionChange={point => setSelected(!!point)}
+    <ChartScrubber key={range} points={chart.points} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} label={chart.bridges?.length ? `${label}. Dashed lines connect readings with unrecorded change times.` : label} onSelectionChange={point => setSelected(!!point)}
       renderSummary={point => <View style={s.reading}><AppText role="caption" secondary>{point?.label ?? chart.date}</AppText><Text style={s.value}>{point?.value ?? chart.value}<Text style={s.unit}> {unit}</Text></Text></View>}>
       <View onLayout={event => setPlotWidth(event.nativeEvent.layout.width)} style={{ position: "relative" }}><ChartSvg width="100%" height={chart.height} viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" accessible={false}>
         <G>
@@ -42,6 +42,7 @@ export function OpenLineChart({ chart, label, unit, range, onRangeChange, includ
           {chart.xTicks.map((tick, i) => <ChartText key={i} x={tick.x} y={chart.height - 22} textAnchor={i === 0 ? "start" : i === chart.xTicks.length - 1 ? "end" : "middle"} fill={c.muted}>{tick.label}</ChartText>)}
         </G>
         {!!chart.previous && <Polyline points={chart.previous} fill="none" stroke={c.muted} strokeWidth={1.5} strokeDasharray="2 5" strokeLinecap="round" opacity={.65} />}
+        {chart.bridges?.map((line, index) => <Polyline key={`bridge-${index}`} points={line} fill="none" stroke={c.muted} strokeWidth={1.5} strokeDasharray="3 4" />)}
         {chart.segments.map((line, i) => {
           if (!line) return null;
           if (!line.includes(" ")) {

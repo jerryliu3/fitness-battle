@@ -10,6 +10,7 @@ import {
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import {
   settleAccountFields,
+  overtakeSnapshotChanged,
   loadCompeteAccount,
   loadEffortScoreEvents,
   persistCompeteAccount,
@@ -65,15 +66,18 @@ export async function GET(request: Request): Promise<Response> {
     return NextResponse.json({ error: "field_unavailable" }, { status: 503 });
   }
 
-  const settled = !sameLiveDocument(hydrated, state);
+  let snapshotChanged: boolean;
+  try { snapshotChanged = await overtakeSnapshotChanged(competitionAuthorityDatabase(), userId, state); }
+  catch { return NextResponse.json({ error: "account_unavailable" }, { status: 503 }); }
+  const settled = !sameLiveDocument(hydrated, state) || snapshotChanged;
   if (settled) {
     try {
       const updatedAt = await persistCompeteAccount(
         supabase,
         userId,
-        prepareCompeteStateForAccount(state),
+        state,
         loaded.updatedAt,
-        { db: competitionAuthorityDatabase(), receipts, computedAt: now },
+        { db: competitionAuthorityDatabase(), receipts, computedAt: now, recordOvertakes: false },
       );
       state = await committedScoreHistory(supabase, userId, state);
       return NextResponse.json({ state, updatedAt, settled: true });

@@ -71,10 +71,7 @@ export function FocusSheet({
   const sheetHeight = useRef(windowHeight);
   const { translation: dragY, panHandlers } = useDismissPan({
     axis: "y", open, extent: windowHeight, reduced: reduce, onClose,
-    canStart: gesture => {
-      const onHeader = gesture.y0 < windowHeight - sheetHeight.current + (fullScreen ? insets.top + 64 : 64);
-      return onHeader || (!fullScreen && scrollY.current <= 0);
-    },
+
   });
   const maxSheetHeight = fullScreen
     ? "100%"
@@ -129,7 +126,6 @@ export function FocusSheet({
           />
         </Animated.View>
         <AnimatedSafeAreaView
-          {...panHandlers}
           onLayout={event => { sheetHeight.current = event.nativeEvent.layout.height; }}
           onAccessibilityEscape={onClose}
           edges={fullScreen ? ["top", "bottom"] : ["bottom"]}
@@ -150,10 +146,10 @@ export function FocusSheet({
           ]}
           accessibilityViewIsModal
         >
-          {!fullScreen && <View style={f.sheetGrip} accessible accessibilityRole="button"
+          {!fullScreen && <View {...panHandlers} style={f.sheetGrip} accessible accessibilityRole="button"
             hitSlop={10} accessibilityLabel="Dismiss sheet" accessibilityHint="Swipe down or double tap to dismiss"
             onAccessibilityTap={onClose}><View style={f.handle} /></View>}
-          {fullScreen ? <View style={[f.row, { paddingHorizontal: 22, paddingVertical: 8 }]}>
+          {fullScreen ? <View {...panHandlers} accessibilityLabel="Dismiss full screen" style={[f.row, { paddingHorizontal: 22, paddingVertical: 8 }]}>
             <IconButton icon="back" label="Return to previous screen" onPress={onClose} />
             <AppText role="heading" accessibilityRole="header" style={{ flex: 1, textAlign: "center" }}>{content.current.title}</AppText>
             <View style={{ width: 44 }} />

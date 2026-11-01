@@ -698,3 +698,11 @@ metric tracks expose their recent-maximum comparison in visible copy, including
 missing history. Overtake counts flow below the dimension toggle. Native overtake
 cameras ease position, heading and zoom through rival changes and the ending hold;
 Follow athlete in competition timelines tracks the current event's athlete.
+
+Native UX followups preserve ordinary stack, panel and sheet transitions. Fades
+are limited to fullscreen experiences. Sheet dismissal drags start at the handle.
+Sync metrics place label and value together and omit comparison subtitles.
+Overtake scenes autoplay, emphasize crossings with stronger slowdown, and offer
+Replay / Continue at completion. Getting-overtaken receipts wait for Compete.
+Week recaps use intro / replay / result card / breakdown steps with fixed entry
+positions. Course camera poses are retained in account-scoped process memory.

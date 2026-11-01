@@ -148,7 +148,7 @@ async function preloadBaselineCache(
     arenaBaselineStorageKey(accountKey, sport.id, "open"),
     arenaBaselineStorageKey(accountKey, sport.id, "verified"),
   ]);
-  const pairs = await AsyncStorage.multiGet([...keys, ...keys.map(momentStorageKey)]);
+  const pairs = await AsyncStorage.multiGet([...keys, ...keys.map(momentStorageKey), `fb-overtake-seen:${accountKey}`]);
   for (const [key, value] of pairs) {
     if (value != null && !cache.has(key)) cache.set(key, value);
   }
@@ -936,6 +936,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
 
   const experience = useCompetitionExperience(
     loadReady.current ? state : null, accountRef.current ?? "guest", readBaselineItem, (key, value) => { if (!debugActiveRef.current) writeBaselineItem(key, value); },
+    Boolean(auth.user && !auth.offlineMode && !debugActive),
   );
   const syncReview = useSyncReviewGate(
     dispatch,
@@ -1002,6 +1003,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     const owned = all.filter(
       (key) =>
         key === fieldSeenStorageKey(expectedId) ||
+        key === `fb-overtake-seen:${expectedId}` ||
         key.startsWith(`fb-arena-baseline:${expectedId}:`) ||
         key.startsWith(`moment:v1:fb-arena-baseline:${expectedId}:`),
     );

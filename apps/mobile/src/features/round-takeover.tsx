@@ -7,7 +7,6 @@ import { StandardLineChart } from "../ui/standard-line-chart";
 import { useCompeteStore } from "../lib/compete-store";
 import { AnimatedEmber } from "../ui/mascot/animated-ember";
 import { SectionStack, AppText } from "../ui/section";
-import { MotionStep } from "../ui/motion-step";
 import { useAuth } from "../lib/auth";
 import {
   countsOnTrack, APP_TIMEZONE, dayKey,
@@ -23,6 +22,7 @@ import { useState } from "react";
 import { Modal, ScrollView, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { WeeklySocialActions } from "./weekly-social";
+import { ResultCard } from "./result-card";
 import { ReplayViewer } from "./competition-replay";
 
 import { FocusButton, f } from "../ui/focus";
@@ -46,7 +46,7 @@ function Round({
     }
     setStage(1);
   };
-  const next = stage === 2;
+  const next = stage === 3;
   const router = useRouter();
   return (
     <Modal
@@ -57,24 +57,20 @@ function Round({
     >
       <SafeAreaProvider>
       <SafeAreaView style={f.safe}>
-        <ScrollView contentContainerStyle={f.content}>
+        <ScrollView key={stage} contentContainerStyle={f.content}>
 <SectionStack divided={false}>
-          <MotionStep identity={String(stage)}>
-          <Text style={f.kicker}>
-            Round complete · {stage+1} / 3
-          </Text>
+          <View style={{ gap: 18 }}>
           <AppText accessibilityRole="header" role="display" >
-            {["Small days. Quite a week.", "Your week, settled.", "Your week in motion.", "New round. Fresh start."][stage]}
+            {["Small days. Quite a week.", "Your week in motion.", "Your week, settled.", "New round. Fresh start."][stage]}
           </AppText>
           {stage===0 ? <><View style={{alignItems:"center"}}><AnimatedEmber size={190}/></View><AppText>Your effort added up. Let’s see where it took you.</AppText><FocusButton label="Reveal my finish →" onPress={revealFinish}/></> : !next ? (
             <>
               {rows.map((result) => (
                 <View key={result.id}>
-                  <ReplayViewer state={state} selection={result} initialDimension="4d" embedded result={result} onClose={()=>{}}/>
-                  <WeeklySocialActions result={result} units={state.units} />
+                  {stage === 1 ? <ReplayViewer state={state} selection={result} initialDimension="4d" embedded onClose={()=>{}}/> : <><ResultCard result={result} units={state.units}/><WeeklySocialActions result={result} units={state.units}/></>}
                 </View>
               ))}
-              <FocusButton label="See what added up →" onPress={() => setStage(2)} />
+              <FocusButton label={stage === 1 ? "See my result →" : "See what added up →"} onPress={() => setStage(value => value + 1)} />
             </>
           ) : (
             <>
@@ -100,7 +96,7 @@ function Round({
               <FocusButton label="Done" onPress={onClose} />
             </>
           )}
-          </MotionStep>
+          </View>
         </SectionStack>
 </ScrollView>
       </SafeAreaView>
