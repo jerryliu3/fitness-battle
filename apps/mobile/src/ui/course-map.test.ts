@@ -188,7 +188,7 @@ it("frames both racers during slow motion and pulses only visible passed athlete
 
 it("defers native camera writes while inactive and follows the latest position on return", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
+  const course = createRaceCourse("Inactive follow", [[0, 0], [.02, 0]]);
   const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: .5 }], unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn() };
   await act(async () => { renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "Camera" ? calls : null }); });
   await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
