@@ -62,6 +62,7 @@
         "CFBundleDisplayName": "Overtaek",
         "NSHealthShareUsageDescription": "Overtaek reads workouts, routes, sleep, steps, resting heart rate and heart rate variability to show your training and daily health.",
         "NSHealthUpdateUsageDescription": "Overtaek does not write health data.",
+        "NSLocationWhenInUseUsageDescription": "Overtaek displays your position on activity routes and maps.",
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryUsageDescription": "Overtaek uses the photo you choose for your athlete profile.",
         "CFBundleURLTypes": [
