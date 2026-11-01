@@ -253,7 +253,6 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
 
 function ActivityMetricBars({ activity, history, units }: { activity: SyncReviewReceipt["activities"][number]; history: CompeteState["activities"]; units: CompeteState["units"] }) {
   return <View style={{ gap: 10 }}>
-    <Text style={{ ...textStyle("caption"), color: c.muted }}>Bars compare with your previous 10 counted activities in this sport, within 90 days. No history leaves a bar empty.</Text>
     <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16, paddingVertical: 6 }}>
     {syncReviewMetrics(activity, history, units).map(metric => <View key={metric.id} accessible accessibilityLabel={`${metric.label}: ${metric.valueLabel}. ${metric.comparisonLabel}`} style={{ width: "47%", gap: 6 }}>
       <Text style={{ ...textStyle("label"), color: c.ink }}>{metric.label}: {metric.valueLabel}</Text>
