@@ -10,6 +10,7 @@ import {
   type WeeklySocial,
 } from "@fitness-battle/shared";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
+import { useCompeteStore } from "../lib/compete-store";
 import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
 import { mobileEnv } from "../lib/env";
@@ -21,6 +22,7 @@ export function WeeklySocialActions({
   result: PeriodResult;
   units: UnitSystem;
 }) {
+  const { debugActive } = useCompeteStore();
   const { user, accessToken, offlineMode } = useAuth(),
     [data, setData] = useState<WeeklySocial | null>(null),
     [selected, setSelected] = useState(""),
@@ -40,14 +42,14 @@ export function WeeklySocialActions({
   }, [accessToken, query]);
   useEffect(() => {
     mounted.current = true;
-    if (user && !offlineMode)
+    if (user && !offlineMode && !debugActive)
       void load().catch(() => {
         if (mounted.current) setError("Could not load the settled field.");
       });
     return () => {
       mounted.current = false;
     };
-  }, [load, user?.id, offlineMode]);
+  }, [load, user?.id, offlineMode, debugActive]);
   const { blocks } = useAthleteBlocks();
   const peers = data?.peers.filter(p => !blocks.some(block => block.id === p.id)) ?? [];
   const peer = peers.find((p) => p.id === selected) ?? peers[0];

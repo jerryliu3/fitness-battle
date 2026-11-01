@@ -1,3 +1,4 @@
+import { usePathname } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { competitionMoments, competitionMomentSnapshots, momentStorageKey, type CompetitionMoment, type CompeteState } from "@fitness-battle/shared";
 
@@ -8,6 +9,8 @@ export function useCompetitionExperience(
   read: (key: string) => string | null,
   write: (key: string, value: string) => void,
 ) {
+  const path = usePathname();
+  const onCompete = path === "/arena" || path.endsWith("/arena");
   const current = useRef({ account, read, write });
   current.current = { account, read, write };
   const owner = useRef(account);
@@ -42,8 +45,9 @@ export function useCompetitionExperience(
     setQueue({ account: current.current.account, moments: [] });
     if (next) observe(next, true);
   }, [observe]);
+  const visibleMoment = queue.account === account ? queue.moments.find(moment => moment.plan.hasOvertake || onCompete) ?? null : null;
   const acknowledge = useCallback(() => {
-    setQueue(previous => previous.account === current.current.account ? { ...previous, moments: previous.moments.slice(1) } : { account: current.current.account, moments: [] });
-  }, []);
-  return { moment: queue.account === account ? queue.moments[0] ?? null : null, remaining: queue.account === account ? queue.moments.length : 0, observe, prime, clear, acknowledge };
+    setQueue(previous => previous.account === current.current.account ? { ...previous, moments: previous.moments.filter(moment => moment.id !== visibleMoment?.id) } : { account: current.current.account, moments: [] });
+  }, [visibleMoment?.id]);
+  return { moment: visibleMoment, remaining: queue.account === account ? queue.moments.length : 0, observe, prime, clear, acknowledge };
 }

@@ -158,7 +158,7 @@ export function ReplayViewer({ state, selection, initialDimension, onClose, embe
     if (!playing || !count) return;
     let raf = 0; const from = cursorRef.current, start = Date.now();
     const tick = () => {
-      const progress = from + (Date.now() - start) * speed / 1100;
+      const progress = from + (Date.now() - start) * speed / 2200;
       setCursor(Math.min(count, reduced ? Math.floor(progress) : progress));
       if (progress < count) raf = requestAnimationFrame(tick); else setPlaying(false);
     };
