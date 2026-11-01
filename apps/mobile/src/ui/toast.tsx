@@ -17,7 +17,7 @@ function ToastNotice({ notice }: { notice: Notice }) {
   }), []);
   return <View {...(Platform.OS === "web" ? {} : pan.panHandlers)} accessible accessibilityLabel={notice.message} accessibilityActions={[{ name: "dismiss", label: "Dismiss notification" }]} onAccessibilityAction={() => latest.current()} style={{ margin: 16, padding: 16, borderRadius: 16, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, elevation: 8, shadowColor: c.ink, shadowOpacity: .16, shadowRadius: 16, shadowOffset: { width: 0, height: 4 }, flexDirection: "row", alignItems: "center", gap: 12 }}>
     <AppText accessibilityLiveRegion="polite" style={{ flex: 1 }}>{notice.message}</AppText>
-    {Platform.OS === "web" && <Pressable accessibilityRole="button" accessibilityLabel="Dismiss notification" onPress={notice.dismiss}><AppText role="label">✕</AppText></Pressable>}
+    {Platform.OS === "web" && <Pressable accessibilityRole="button" accessibilityLabel="Dismiss notification" onPress={notice.dismiss} style={{ minHeight: 44, minWidth: 44, alignItems: "center", justifyContent: "center" }}><AppText role="label">✕</AppText></Pressable>}
   </View>;
 }
 

@@ -5,7 +5,7 @@ import { distanceUnitLabel, formatDistanceM, type CompeteState } from "@fitness-
 import { useRouter } from "expo-router";
 import { Text, View } from "react-native";
 import { IconButton } from "../ui/icon-button";
-import { FocusButton, f } from "../ui/focus";
+import { f } from "../ui/focus";
 import { EffortTrend } from "./effort-trend";
 import { ProfilePhoto } from "./profile-photo";
 
