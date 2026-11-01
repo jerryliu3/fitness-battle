@@ -65,87 +65,94 @@ export function HomeActivityActions({
       (link) => link.linked && supported.has(link.provider),
     );
     if (!links.length) {
-      setNote("Connect a tracker in Athlete to sync activities.");
+      setNote("Check your data sync settings to connect a tracker.");
       return;
     }
     flight.current = true;
     setBusy(true);
     beginSyncReviewBatch?.(id);
     setNote("");
-    const messages: string[] = [];
+    let successes = 0, failures = 0;
     try {
       for (const link of links) {
         if (owner.current !== id) return;
-        if (
-          link.provider === "apple_health" ||
-          link.provider === "google_health"
-        ) {
-          const auth = {
-            localOnly: offlineMode,
-            getAccessToken: async () => ({
-              token: accessToken ?? undefined,
-              userId: id,
-            }),
-          };
-          const result =
-            link.provider === "apple_health"
-              ? await syncAppleHealth(createAppleHealthDeps(auth))
-              : await syncHealthConnect(createHealthConnectDeps(auth));
-          if (owner.current !== id) return;
-          if (result.ok && result.activities?.length) {
+        try {
+          if (
+            link.provider === "apple_health" ||
+            link.provider === "google_health"
+          ) {
+            const auth = {
+              localOnly: offlineMode,
+              getAccessToken: async () => ({
+                token: accessToken ?? undefined,
+                userId: id,
+              }),
+            };
+            const result =
+              link.provider === "apple_health"
+                ? await syncAppleHealth(createAppleHealthDeps(auth))
+                : await syncHealthConnect(createHealthConnectDeps(auth));
+            if (owner.current !== id) return;
+            if (!result.ok) { failures += 1; continue; }
+            if (result.activities?.length) {
+              dispatch({
+                type: "apply-sync",
+                accountId: id,
+                provider: link.provider,
+                activities: result.activities.flatMap((sample) => {
+                  const a = activityFromSample(sample, "recorded");
+                  return a ? [a] : [];
+                }),
+                linkStatus: "connected",
+              });
+            } else await refresh();
+            if (owner.current !== id) return;
+            successes += 1;
+          } else if (!offlineMode) {
+            const body = await requestApi<{
+              activities?: ActivitySample[];
+              readiness?: ReadinessSample[];
+              usedMock?: boolean;
+            }>(mobileEnv.apiUrl, accessToken, "/api/fitness/sync", {
+              allowUnpersisted: true,
+              body: { provider: link.provider },
+            });
+            if (owner.current !== id) return;
             dispatch({
               type: "apply-sync",
               accountId: id,
               provider: link.provider,
-              activities: result.activities.flatMap((sample) => {
-                const a = activityFromSample(sample, "recorded");
-                return a ? [a] : [];
+              readiness: (body.readiness ?? []).flatMap((sample) =>
+                sample.provider === link.provider
+                  ? [
+                      {
+                        id: sample.id,
+                        provider: link.provider,
+                        day: sample.day,
+                        score: sample.score,
+                      },
+                    ]
+                  : [],
+              ),
+              activities: (body.activities ?? []).flatMap((sample) => {
+                const activity = activityFromSample(
+                  sample,
+                  body.usedMock ? "demo" : "recorded",
+                );
+                return activity ? [activity] : [];
               }),
-              linkStatus: "connected",
+              linkStatus: body.usedMock ? "stub" : "connected",
             });
-          } else if (result.ok) await refresh();
-          if (owner.current !== id) return;
-          messages.push(result.message);
-        } else if (!offlineMode) {
-          const body = await requestApi<{
-            activities?: ActivitySample[];
-            readiness?: ReadinessSample[];
-            usedMock?: boolean;
-          }>(mobileEnv.apiUrl, accessToken, "/api/fitness/sync", {
-            allowUnpersisted: true,
-            body: { provider: link.provider },
-          });
-          if (owner.current !== id) return;
-          dispatch({
-            type: "apply-sync",
-            provider: link.provider,
-            readiness: (body.readiness ?? []).flatMap((sample) =>
-              sample.provider === link.provider
-                ? [
-                    {
-                      id: sample.id,
-                      provider: link.provider,
-                      day: sample.day,
-                      score: sample.score,
-                    },
-                  ]
-                : [],
-            ),
-            activities: (body.activities ?? []).flatMap((sample) => {
-              const activity = activityFromSample(
-                sample,
-                "recorded",
-              );
-              return activity ? [activity] : [];
-            }),
-            linkStatus: "connected",
-          });
-          messages.push(`${link.provider}: sync complete.`);
-        }
+            if (body.usedMock) failures += 1; else successes += 1;
+          }
+        } catch { failures += 1; }
       }
-      if (owner.current === id) setNote(messages.join(" "));
+      if (owner.current === id) {
+        if (!successes) void playCue("error");
+        setNote(successes ? failures ? "Activities synced. Check your data sync settings for integrations that need attention." : "Sync completed." : "Sync could not finish. Check your data sync settings.");
+      }
     } catch {
-      if (owner.current === id) { void playCue("error"); setNote("Sync could not finish. Retry from Athlete."); }
+      if (owner.current === id) { void playCue("error"); setNote("Sync could not finish. Check your data sync settings."); }
     } finally {
       endSyncReviewBatch?.(id);
       flight.current = false;

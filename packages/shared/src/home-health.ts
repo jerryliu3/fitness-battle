@@ -16,6 +16,14 @@ export interface HomeHealthMetric {
   baselineHistory?: (number | null)[];
 }
 
+/** Compact counts without decimal steps; presentation never changes source readings. */
+export function formatHealthNumber(value: number): string {
+  const rounded = Math.round(value);
+  return Math.abs(rounded) >= 100000
+    ? new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 0 }).format(rounded).toLowerCase()
+    : rounded.toLocaleString("en-US");
+}
+
 /** Known preview readings must not be presented as connected tracker data. */
 export function isSampleSleepNight(state: CompeteState, night: SleepNight): boolean {
   return night.source === "history" || night.id === `sleep-${night.source}-${night.day}` ||
@@ -59,7 +67,7 @@ export function homeHealthMetrics(state: CompeteState, now = competeNow(state)):
         id: spec.id,
         name: spec.name,
         unit: spec.unit,
-        value: value == null ? "—" : Math.round(value).toLocaleString("en-US"),
+        value: value == null ? "—" : formatHealthNumber(value),
         context: current ? "Today" : "Not available",
         detail: current
           ? `${providerName} · recorded ${today}.${spec.key === "hrv" && current.provider === "apple_health" ? " SDNN, daily sample average; not RMSSD." : ""}`
@@ -111,7 +119,7 @@ export function healthSignal(history: readonly (number | null)[]) {
 export function healthSignalRange(metric: HomeHealthMetric): string {
   if (!healthSignal(metric.history).available) return "No reading available";
   const values = metric.history.filter((value): value is number => value != null && Number.isFinite(value) && value >= 0);
-  const format = metric.id === "sleep" ? formatSleepDuration : (value: number) => value.toLocaleString("en-US");
+  const format = metric.id === "sleep" ? (value: number) => `${Math.floor(Math.round(value) / 60)}:${String(Math.round(value) % 60).padStart(2, "0")}` : formatHealthNumber;
   return `${format(Math.min(...values))}–${format(Math.max(...values))} (7 day range)`;
 }
 
@@ -128,7 +136,7 @@ export function getHealthMetricCorridor(metricId: string, history: readonly (num
   if (values.length < 7) return null;
   const low = values[Math.floor((values.length - 1) * .1)]!;
   const high = values[Math.ceil((values.length - 1) * .9)]!;
-  const format = metricId === "sleep" ? formatSleepDuration : (value: number) => `${Math.round(value).toLocaleString("en-US")}${metricId === "steps" ? " steps" : metricId === "hrv" ? " ms" : " bpm"}`;
+  const format = metricId === "sleep" ? formatSleepDuration : (value: number) => `${formatHealthNumber(value)}${metricId === "steps" ? " steps" : metricId === "hrv" ? " ms" : " bpm"}`;
   return { low, high, formattedRange: `${format(low)}–${format(high)}`, format };
 }
 
@@ -213,7 +221,9 @@ export function buildHealth7DayCorridorModel(
       index: i,
       dayLabel,
       value: val,
-      formatted: corridor.format(val),
+      formatted: metric.id === "sleep"
+        ? (i === 6 ? formatSleepDuration(val) : `${Math.floor(Math.round(val) / 60)}:${String(Math.round(val) % 60).padStart(2, "0")}`)
+        : `${formatHealthNumber(val)}${i === 6 && metric.unit ? ` ${metric.unit}` : ""}`,
       x,
       y,
       position,

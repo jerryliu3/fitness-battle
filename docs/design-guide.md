@@ -706,3 +706,10 @@ Overtake scenes autoplay, emphasize crossings with stronger slowdown, and offer
 Replay / Continue at completion. Getting-overtaken receipts wait for Compete.
 Week recaps use intro / replay / result card / breakdown steps with fixed entry
 positions. Course camera poses are retained in account-scoped process memory.
+
+The next native refinement removes axis labels from Home and Effort Score charts.
+Effort connections are solid yellow, including connections between readings with
+unknown change times; source event timestamps remain unchanged. Daily-health
+history labels omit units except on today's point, omit corridor prose/status
+badges, and round counts with compact notation above five digits. Native toasts
+expire after five seconds and dismiss upward without a close glyph.

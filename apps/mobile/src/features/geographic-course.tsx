@@ -6,10 +6,10 @@ import { textStyle } from "../ui/section";
 import { SHELL_COLORS as c } from "../theme";
 
 const CourseMap = lazy(() => import("../ui/course-map"));
-class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-  static getDerivedStateFromError() { return { failed: true }; }
-  render() { return this.state.failed ? <Text style={textStyle("body")}>This course view needs a new native app build with Mapbox installed.</Text> : this.props.children; }
+class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean; missingNative: boolean }> {
+  state = { failed: false, missingNative: false };
+  static getDerivedStateFromError(error: Error) { return { failed: true, missingNative: /(?:RNMBX|RNMapbox).*(?:not found|not registered|not available)|native module.*(?:null|not found)|TurboModuleRegistry.*(?:RNMBX|RNMapbox)/i.test(error.message) }; }
+  render() { return this.state.failed ? <Text style={textStyle("body")}>{this.state.missingNative ? "This app build is missing native map support. Install the latest build." : "This course could not open. Return to Compete and try again."}</Text> : this.props.children; }
 }
 
 /** Presentation-only scene. The field/replay host owns the weekly course. */

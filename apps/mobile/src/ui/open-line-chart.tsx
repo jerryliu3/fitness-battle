@@ -9,8 +9,8 @@ import { useReducedMotion } from "./use-reduced-motion";
 import { ChartScrubber } from "./chart-scrubber";
 import { useSceneActive } from "./use-scene-active";
 
-export function OpenLineChart({ chart, label, unit, range, onRangeChange, includeYear = true, comparisonLabel, live = false, footerAction }: {
-  chart: OpenLineModel; label: string; unit: string; range: OpenLineRange;
+export function OpenLineChart({ chart, label, unit, range, onRangeChange, includeYear = true, comparisonLabel, live = false, footerAction, showAxes = true }: {
+  chart: OpenLineModel; showAxes?: boolean; label: string; unit: string; range: OpenLineRange;
   onRangeChange: (range: OpenLineRange) => void; includeYear?: boolean; comparisonLabel?: string; live?: boolean; footerAction?: ReactNode;
 }) {
   const reduceMotion = useReducedMotion();
@@ -32,17 +32,17 @@ export function OpenLineChart({ chart, label, unit, range, onRangeChange, includ
   }, [live, selected, pulse, reduceMotion, active]);
   const end = chart.points.at(-1);
   return <View style={{ gap: 12 }}>
-    <ChartScrubber key={range} points={chart.points} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} label={chart.bridges?.length ? `${label}. Dashed lines connect readings with unrecorded change times.` : label} onSelectionChange={point => setSelected(!!point)}
+    <ChartScrubber key={range} points={chart.points} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} label={label} onSelectionChange={point => setSelected(!!point)}
       renderSummary={point => <View style={s.reading}><AppText role="caption" secondary>{point?.label ?? chart.date}</AppText><Text style={s.value}>{point?.value ?? chart.value}<Text style={s.unit}> {unit}</Text></Text></View>}>
       <View onLayout={event => setPlotWidth(event.nativeEvent.layout.width)} style={{ position: "relative" }}><ChartSvg width="100%" height={chart.height} viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" accessible={false}>
-        <G>
+        {showAxes && <G>
           <ChartText x={chart.left} y={14} fill={c.muted}>{unit}</ChartText>
           <ChartText x={(chart.left + chart.right) / 2} y={chart.height - 2} textAnchor="middle" fill={c.muted}>Date</ChartText>
           {chart.yTicks.map((tick, i) => <G key={`${tick.y}-${i}`}><Line x1={chart.left} x2={chart.right} y1={tick.y} y2={tick.y} stroke={c.line} strokeWidth={.5}/><ChartText x={chart.left - 6} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</ChartText></G>)}
           {chart.xTicks.map((tick, i) => <ChartText key={i} x={tick.x} y={chart.height - 22} textAnchor={i === 0 ? "start" : i === chart.xTicks.length - 1 ? "end" : "middle"} fill={c.muted}>{tick.label}</ChartText>)}
-        </G>
+        </G>}
         {!!chart.previous && <Polyline points={chart.previous} fill="none" stroke={c.muted} strokeWidth={1.5} strokeDasharray="2 5" strokeLinecap="round" opacity={.65} />}
-        {chart.bridges?.map((line, index) => <Polyline key={`bridge-${index}`} points={line} fill="none" stroke={c.muted} strokeWidth={1.5} strokeDasharray="3 4" />)}
+        {chart.bridges?.map((line, index) => <Polyline key={`bridge-${index}`} points={line} fill="none" stroke={c.tennis} strokeWidth={2.5} />)}
         {chart.segments.map((line, i) => {
           if (!line) return null;
           if (!line.includes(" ")) {

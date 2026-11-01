@@ -19,7 +19,7 @@ export const mobileEnv = {
   apiUrl:
     process.env.EXPO_PUBLIC_API_URL ?? extra.apiUrl ?? "http://localhost:3000",
   mapboxAccessToken:
-    process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ??
-    extra.mapboxAccessToken ??
+    process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN?.trim() ||
+    extra.mapboxAccessToken?.trim() ||
     "",
 };

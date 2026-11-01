@@ -191,7 +191,7 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
   const pageHeader = (
     <ScreenHeader
       localBack={Boolean(panel)}
-      hidden={false}
+      hidden={!panel && editOpen}
       title={panel ? titles[panel] : "Athlete"}
       onBack={() => {
         if (router.canGoBack()) {
@@ -235,6 +235,7 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
       }
       setPassword("");
       setAuthNote(null);
+      router.replace("/onboarding");
     } finally {
       setAuthBusy(false);
     }

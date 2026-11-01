@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { AppText, textStyle } from "./section";
 import { Platform, View } from "react-native";
 import { Stack } from "expo-router";
@@ -11,15 +12,17 @@ interface ScreenHeaderProps { title: string; onBack: () => void; localBack?: boo
 function IOSScreenHeader({ title, onBack, localBack = false, hidden = false }: ScreenHeaderProps) {
   const height = useHeaderHeight();
   const insets = useSafeAreaInsets();
+  const reservedHeight = useRef(Math.max(44, height - insets.top));
+  if (!hidden && height > insets.top) reservedHeight.current = Math.max(44, height - insets.top);
   return <>
     <Stack.Screen options={{ headerShown: !hidden, title, headerTransparent: true, headerBackVisible: false,
-      headerTintColor: c.ink, headerTitleStyle: textStyle("heading"), gestureEnabled: !localBack,
+      headerTintColor: c.ink, headerTitleStyle: textStyle("heading"), gestureEnabled: !localBack && !hidden,
       ...(Number.parseFloat(String(Platform.Version)) < 26 ? { headerBlurEffect: "systemThinMaterial" as const } : {}) }} />
     {!hidden && <Stack.Toolbar placement="left">
       <Stack.Toolbar.Button icon="chevron.backward" accessibilityLabel="Return to previous screen" onPress={onBack}>Back</Stack.Toolbar.Button>
     </Stack.Toolbar>}
     {/* Callers already apply the top safe inset; reserve only the native bar. */}
-    <View style={{ height: Math.max(44, height - insets.top) }} />
+    <View style={{ height: reservedHeight.current }} />
   </>;
 }
 /** iOS uses system toolbar items (Liquid Glass on iOS 26+), preserving local Back callbacks. */
