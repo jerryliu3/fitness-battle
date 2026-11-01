@@ -14,7 +14,7 @@ describe("store binary config", () => {
     expect(app.ios.infoPlist.NSHealthShareUsageDescription).toMatch(/workouts/);
     expect(app.ios.infoPlist.NSHealthUpdateUsageDescription).toMatch(/does not write/);
     expect(app.ios.infoPlist.NSPhotoLibraryUsageDescription).toMatch(/photo/);
-    expect(app.ios.infoPlist.NSLocationWhenInUseUsageDescription).toBeUndefined();
+    expect(app.ios.infoPlist.NSLocationWhenInUseUsageDescription).toMatch(/position.*(?:routes|maps)/i);
     expect(app.ios.infoPlist.NSCameraUsageDescription).toBeUndefined();
     expect(app.ios.infoPlist.NSMotionUsageDescription).toBeUndefined();
   });
