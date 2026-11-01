@@ -157,3 +157,15 @@ athletes and no generated IDs. Historical fields and settled results were left
 untouched. The seed rejects unrelated live members and directed block conflicts.
 These are database fixtures, not live integrations; no provider connection is
 falsely marked connected. No passwords are stored in the seed file.
+
+## Review of PRs #510–#514
+
+Read the existing CI failures on all five branches: each stopped at the same
+missing `useSceneActive` import in the native course map. Restored that import
+without changing active-scene behavior. Static review also fixed the web chart's
+unused `showAxes` option, kept account recovery accessible when onboarding hydration
+fails without cached state, and scoped cloud sync actions to their originating
+account. Updated the existing sleep-range expectation for the requested unit-free
+historical labels. Propagated fixes through the existing PR stack.
+No local tests, typechecks, builds, or post-fix CI checks were run. No additional
+live database writes, seed runs, or EAS environment changes were made in this pass.
