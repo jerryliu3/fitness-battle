@@ -62,7 +62,7 @@ it("fills health signals from zero against the seven-day maximum without treatin
 
 it("labels the observed range with sleep units and ignores missing days", () => {
   const metric = homeHealthMetrics(freshState(now), now)[0];
-  expect(healthSignalRange({ ...metric, history: [414, null, 480, 462] })).toBe("6h 54m–8h (7 day range)");
+  expect(healthSignalRange({ ...metric, history: [414, null, 480, 462] })).toBe("6:54–8:00 (7 day range)");
   expect(healthSignalRange({ ...metric, id: "resting-hr", history: [49, null, 54, 52] })).toBe("49–54 (7 day range)");
   expect(healthSignalRange({ ...metric, history: [414, null] })).toBe("No reading available");
 });
