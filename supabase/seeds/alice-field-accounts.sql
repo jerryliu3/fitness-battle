@@ -76,7 +76,7 @@ begin
  if reseat then
   for f in select * from public.week_fields where alice=any(member_ids) and wave_start<=statement_timestamp() and week_end>statement_timestamp() and crew_id is null loop
    update public.week_fields set member_ids=cohort,synthetic_ids='{}',capacity=cardinality(cohort),
-    entry_ratings=coalesce(entry_ratings,'{}'::jsonb)||(select jsonb_object_agg(r.user_id::text,jsonb_build_object('open',r.open_elo,'verified',r.verified_elo)) from public.sport_ratings r where r.user_id=any(cohort) and r.sport=f.sport),updated_at=clock_timestamp() where id=f.id;
+    entry_ratings=coalesce(entry_ratings,'{}'::jsonb)||(select jsonb_object_agg(r.user_id::text,jsonb_build_object('open',r.open_elo,'verified',r.verified_elo)) from public.sport_ratings r where r.user_id=any(cohort) and r.user_id<>alice and r.sport=f.sport),updated_at=clock_timestamp() where id=f.id;
    foreach athlete in array cohort loop
     insert into public.wave_enrollments(user_id,sport,wave_start,week_end,capacity,peer_ids,synthetic_ids,auto_enroll_next,crew_id,registered_at,field_id)
      values(athlete,f.sport,f.wave_start,f.week_end,cardinality(cohort),array(select member_id::text from unnest(cohort) as members(member_id) where member_id<>athlete),'{}',true,null,f.wave_start,f.id)
