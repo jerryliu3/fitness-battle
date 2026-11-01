@@ -1,11 +1,16 @@
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { Platform, View } from "react-native";
 import { AppHeader } from "../../src/ui/app-header";
+import { useOnboardingRequired } from "../../src/lib/onboarding-navigation";
+import { Redirect } from "expo-router";
 import { Tabs } from "expo-router";
 import { PhoneTabBar } from "../../src/ui/phone-tab-bar";
 import { SHELL_COLORS } from "../../src/theme";
 
 export default function TabLayout() {
+  const { pending, required } = useOnboardingRequired();
+  if (pending) return <View style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }} />;
+  if (required) return <Redirect href="/onboarding" />;
   if (Platform.OS === "ios") return <View style={{ flex: 1 }}><AppHeader />
     <NativeTabs tintColor={SHELL_COLORS.ink} blurEffect="systemUltraThinMaterialLight" backgroundColor="#ffffff" disableTransparentOnScrollEdge>
       <NativeTabs.Trigger name="today" accessibilityLabel="Home"><NativeTabs.Trigger.Icon sf="house" /><NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label></NativeTabs.Trigger>

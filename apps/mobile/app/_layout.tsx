@@ -1,3 +1,4 @@
+import { OnboardingNavigation } from "../src/lib/onboarding-navigation";
 import { ToastProvider } from "../src/ui/toast";
 import { textStyle } from "../src/ui/section";
 import {
@@ -167,6 +168,7 @@ export default function RootLayout() {
                       <BlockPrivacyGate>
                         <LiveFieldRefresh />
                         <NavigationWarmup />
+                        <OnboardingNavigation />
                         <StatusBar style="dark" />
                         <Stack
                           screenOptions={{
