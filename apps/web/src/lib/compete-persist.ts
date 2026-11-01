@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   dispositionOf,
+  getDemoCompeteState,
   freshHealthRatings,
   freshState,
   periodResultId,
@@ -549,7 +550,7 @@ export async function loadCompeteAccount(
     healthResults,
     duels,
     readiness,
-    dailyHealth: (dailyHealthResult.data ?? []).map(r => ({ provider: r.provider, day: String(r.day).slice(0,10), steps: r.steps, restingHr: r.resting_hr, hrv: r.hrv })),
+    dailyHealth: [...(dailyHealthResult.data ?? []).map(r => ({ provider: r.provider, day: String(r.day).slice(0,10), steps: r.steps, restingHr: r.resting_hr, hrv: r.hrv })), ...(userId === "11111111-1111-4111-8111-111111111111" ? getDemoCompeteState(userId)?.dailyHealth ?? [] : [])],
     links,
     demoNow: null,
     crewBoard: null,

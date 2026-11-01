@@ -85,7 +85,7 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
 function ActivityMetricBars({ activity, history, units }: { activity: SyncReviewReceipt["activities"][number]; history: CompeteState["activities"]; units: CompeteState["units"] }) {
   return <div className="sync-review-metrics">
     {syncReviewMetrics(activity, history, units).map(metric => <div key={metric.id} className="sync-review-metric" role="group" aria-label={`${metric.label}: ${metric.valueLabel}. ${metric.comparisonLabel}`}>
-      <span>{metric.label}</span><strong>{metric.valueLabel}</strong>
+      <strong>{metric.label}: {metric.valueLabel}</strong>
       <div className="sync-review-metric-track" aria-hidden="true"><div style={{ width: `${(metric.fraction ?? 0) * 100}%` }}/></div>
     </div>)}
   </div>;

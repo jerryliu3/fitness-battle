@@ -87,15 +87,7 @@ export default function NotificationsScreen() {
         setNote(result.detail ?? "Notification permission was denied.");
         return;
       }
-      const synced =
-        identity && !identity.localOnly
-          ? " Synced to your account."
-          : " Stored on this device only.";
-      setNote(
-        result.mode === "expo"
-          ? "Notifications enabled."
-          : `${result.detail ?? "Using a stub token."}${synced}`,
-      );
+      setNote(null);
     } catch (error) {
       setNote(
         error instanceof Error

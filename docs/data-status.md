@@ -74,3 +74,16 @@ The owner reconciled the history entry to repository version `20261031135120`.
 Verified that exactly one `effort_score_events` entry exists under the repository
 version and that the tool-generated version is absent. Migration history and the
 repository filename are aligned; the deployment bookkeeping blocker is resolved.
+
+## Native followups: lifetime overtakes and demo health
+
+Alice's stored lifetime count is zero. Code inspection found the profile column
+and readers, but no production writer or durable overtake-event ledger. Zero is
+therefore not evidence that she never passed an athlete; no historical total was
+invented from current standings or archived placement. A durable, idempotent
+server-owned overtake ledger remains necessary to populate this counter reliably.
+
+The reserved Alice demo account now receives a rolling 90-day daily-health
+fixture, including today, labeled with provider `demo`. Genuine provider readings
+remain separate. This fixture is presentation data and is not persisted as a
+provider ingestion or used to award competition points.
