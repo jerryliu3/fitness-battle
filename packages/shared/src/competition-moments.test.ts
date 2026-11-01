@@ -99,3 +99,16 @@ it("keeps the zoom envelope continuous through rival handoffs and the ending hol
     }
   }
 });
+
+it("converts committed replay distances without changing the count or ranking", async () => {
+  const { overtakeMomentForUnits } = await import("./competition-moments");
+  const moment = fixture("overtake").moments[0];
+  const metric = { ...moment, unit: "km" as const };
+  const display = overtakeMomentForUnits(metric, "us");
+  expect(display.unit).toBe("mi");
+  expect(display.plan.overtakenIds).toEqual(metric.plan.overtakenIds);
+  expect(display.plan.rankAfter).toBe(metric.plan.rankAfter);
+  expect(display.plan.youAfter).toBeCloseTo(metric.plan.youAfter / 1.609344);
+  expect(display.lanes[0].value).toBeCloseTo(metric.lanes[0].value / 1.609344);
+  expect(overtakeMomentForUnits(metric, "metric")).toBe(metric);
+});

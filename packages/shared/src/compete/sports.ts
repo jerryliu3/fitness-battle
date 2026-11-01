@@ -289,6 +289,8 @@ export interface CompeteState {
   onboardingCompleted: boolean;
   /** Lifetime count of field overtakes (server-owned; read from profile). */
   lifetimeOvertakes: number;
+  /** Transient server acknowledgement; never accepted as account input. */
+  committedOvertakeMoments?: import("../competition-moments").CompetitionMoment[];
   /** Closed-week placements and Elo transitions (newest first, capped). */
   periodResults: PeriodResult[];
   /** Result ids waiting for the week-complete reveal UI. */

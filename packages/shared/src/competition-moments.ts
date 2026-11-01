@@ -119,3 +119,13 @@ export function competitionMomentScene(moment: CompetitionMoment, progress: numb
     span: Math.max(fieldDefaultSpan(moment.unit) * (1 - frame.focus * .18),Math.abs(frame.youValue-rival)*3),
   } };
 }
+
+/** Receipt computation always uses metric baselines; presentation honors units. */
+export function overtakeMomentForUnits(moment: CompetitionMoment, units: CompeteState["units"]): CompetitionMoment {
+  if (moment.unit !== "km" || units !== "us") return moment;
+  const scale = 1 / 1.609344;
+  return { ...moment, unit: "mi", lanes: moment.lanes.map(lane => ({ ...lane, value: lane.value * scale })), plan: {
+    ...moment.plan, youBefore: moment.plan.youBefore * scale, youAfter: moment.plan.youAfter * scale,
+    rivals: Object.fromEntries(Object.entries(moment.plan.rivals).map(([id, rival]) => [id, { ...rival, startValue: rival.startValue * scale, endValue: rival.endValue * scale }])),
+  } };
+}

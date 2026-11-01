@@ -101,6 +101,8 @@ function mergeFreshRemote(
   const merged = rollClock(
     {
       ...local,
+      lifetimeOvertakes: remote.lifetimeOvertakes,
+      committedOvertakeMoments: remote.committedOvertakeMoments,
       requiresCanonicalFields: remote.requiresCanonicalFields ?? local.requiresCanonicalFields,
       units:
         holdLocalUnits && local.units !== remote.units

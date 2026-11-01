@@ -105,3 +105,12 @@ requested scope. The proposed targeted cleanup is reviewable in
 the migrations directory: remove personal before/after snapshots about a deleted
 target, retain other athletes' audit records with a nullable actor reference.
 No account was deleted by the agent. No tests or typechecks were run.
+
+## Atomic overtake writer (prepared, not deployed)
+
+Prepared the additive `atomic_overtake_receipts` migration and account commit
+integration. This resolves the missing lifetime writer for future server-baselined
+crossings without fabricating Alice's historical total. The migration must be
+applied before the corresponding application release. No tests, typechecks or
+builds were run at the owner's request; regression cases were added for authority
+routing, server-owned lifetime acknowledgements and rejected revisions.

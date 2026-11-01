@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   dispositionOf,
+  competitionMoments,
+  readArenaBaseline,
+  overtakeMomentForUnits,
+  competitionMomentSnapshots,
   getDemoCompeteState,
   freshHealthRatings,
   freshState,
@@ -196,19 +200,40 @@ export async function persistCompeteAccount(
   userId: string,
   state: CompeteState,
   expectedUpdatedAt: string | null,
-  authority?: { db: Db; receipts: number; computedAt: Date },
+  authority?: { db: Db; receipts: number; computedAt: Date; recordOvertakes?: boolean },
 ): Promise<string> {
   const clean = prepareCompeteStateForAccount(state);
+  const baselines = authority ? await authority.db.rpc("read_compete_overtake_baselines", { p_user_id: userId }) : null;
+  if (baselines?.error) throw new Error("overtake_baselines_unavailable");
+  // Canonical field snapshots must survive presentation until this calculation;
+  // they are still stripped from the durable account document as before.
+  const canonical = { ...state, units: "metric" as const, enrollments: state.enrollments.filter(e => e.fieldBoard && !e.awaitingField) };
+  const previous = (baselines?.data ?? {}) as Record<string, string>;
+  const snapshots = authority ? competitionMomentSnapshots(canonical, userId).filter(snapshot => {
+    if (authority.recordOvertakes !== false) return true;
+    const before = readArenaBaseline(previous[snapshot.key] ?? null, snapshot.period, snapshot.unit);
+    const you = snapshot.lanes.find(lane => lane.you);
+    // GET establishes a baseline and tracks rivals, but an imported own move
+    // waits for the confirmed account PUT before it earns a durable receipt.
+    return !before || !you || you.value <= (before[you.id] ?? you.value) + .001;
+  }) : [];
+  const moments = authority && authority.recordOvertakes !== false ? competitionMoments(canonical, userId, key => previous[key] ?? null).filter(m => m.plan.hasOvertake) : [];
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const activities = await accountActivityRows(db, userId, clean);
-    const { data, error } = await (authority?.db ?? db).rpc(authority ? "save_compete_account_server" : "save_compete_account", {
+    const { data, error } = await (authority?.db ?? db).rpc(authority ? "save_compete_account_with_overtakes" : "save_compete_account", {
       p_state: clean,
       p_activities: activities,
       p_readiness: accountReadinessRows(userId, clean.readiness),
       p_expected_updated_at: expectedUpdatedAt,
-      ...(authority ? { p_user_id: userId, p_expected_receipts: authority.receipts, p_computed_at: authority.computedAt.toISOString() } : {}),
+      ...(authority ? { p_user_id: userId, p_expected_receipts: authority.receipts, p_computed_at: authority.computedAt.toISOString(), p_baselines: snapshots.map(s => ({ key: s.key, value: s.value })), p_moments: moments } : {}),
     });
     if (!error) {
+      if (authority) {
+        if (!data || typeof data.updatedAt !== "string" || typeof data.lifetimeOvertakes !== "number") throw new Error("account_not_saved");
+        state.lifetimeOvertakes = data.lifetimeOvertakes;
+        state.committedOvertakeMoments = moments.map(moment => ({ ...overtakeMomentForUnits(moment, state.units), id: `overtake:${userId}:${data.updatedAt}:${moment.sport}` }));
+        return data.updatedAt;
+      }
       if (typeof data !== "string") throw new Error("account_not_saved");
       return data;
     }
@@ -725,4 +750,17 @@ export async function loadEffortScoreEvents(db: Db, userId: string): Promise<Non
       occurredAt: row.occurred_at, scoreBefore: Number(row.score_before), scoreAfter: Number(row.score_after) })));
     if ((data?.length ?? 0) < 1000) return events;
   }
+}
+
+/** Sync may already have ingested activities before account GET. Compare server
+ * baselines too, so that read commits the same atomic receipt as an explicit save. */
+export async function overtakeSnapshotChanged(db: Db, userId: string, state: CompeteState): Promise<boolean> {
+  const { data, error } = await db.rpc("read_compete_overtake_baselines", { p_user_id: userId });
+  if (error) throw new Error("overtake_baselines_unavailable");
+  const canonical = { ...state, units: "metric" as const, enrollments: state.enrollments.filter(e => e.fieldBoard && !e.awaitingField) };
+  return competitionMomentSnapshots(canonical, userId).some(snapshot => {
+    const before = readArenaBaseline(data?.[snapshot.key] ?? null, snapshot.period, snapshot.unit);
+    const you = snapshot.lanes.find(lane => lane.you);
+    return (!before || !you || you.value <= (before[you.id] ?? you.value) + .001) && data?.[snapshot.key] !== snapshot.value;
+  });
 }
