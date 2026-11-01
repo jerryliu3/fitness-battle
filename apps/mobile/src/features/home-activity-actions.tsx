@@ -65,17 +65,18 @@ export function HomeActivityActions({
       (link) => link.linked && supported.has(link.provider),
     );
     if (!links.length) {
-      setNote("Connect a tracker in Athlete to sync activities.");
+      setNote("Check your data sync settings to connect a tracker.");
       return;
     }
     flight.current = true;
     setBusy(true);
     beginSyncReviewBatch?.(id);
     setNote("");
-    const messages: string[] = [];
+    let successes = 0, failures = 0;
     try {
       for (const link of links) {
         if (owner.current !== id) return;
+        try {
         if (
           link.provider === "apple_health" ||
           link.provider === "google_health"
@@ -92,7 +93,8 @@ export function HomeActivityActions({
               ? await syncAppleHealth(createAppleHealthDeps(auth))
               : await syncHealthConnect(createHealthConnectDeps(auth));
           if (owner.current !== id) return;
-          if (result.ok && result.activities?.length) {
+          if (!result.ok) { failures += 1; continue; }
+          if (result.activities?.length) {
             dispatch({
               type: "apply-sync",
               accountId: id,
@@ -105,7 +107,7 @@ export function HomeActivityActions({
             });
           } else if (result.ok) await refresh();
           if (owner.current !== id) return;
-          messages.push(result.message);
+          successes += 1;
         } else if (!offlineMode) {
           const body = await requestApi<{
             activities?: ActivitySample[];
@@ -134,18 +136,22 @@ export function HomeActivityActions({
             activities: (body.activities ?? []).flatMap((sample) => {
               const activity = activityFromSample(
                 sample,
-                "recorded",
+                body.usedMock ? "sample" : "recorded",
               );
               return activity ? [activity] : [];
             }),
-            linkStatus: "connected",
+            linkStatus: body.usedMock ? "stub" : "connected",
           });
-          messages.push(`${link.provider}: sync complete.`);
+          if (body.usedMock) failures += 1; else successes += 1;
         }
+        } catch { failures += 1; }
       }
-      if (owner.current === id) setNote(messages.join(" "));
+      if (owner.current === id) {
+        if (!successes) void playCue("error");
+        setNote(successes ? failures ? "Activities synced. Check your data sync settings for integrations that need attention." : "Sync completed." : "Sync could not finish. Check your data sync settings.");
+      }
     } catch {
-      if (owner.current === id) { void playCue("error"); setNote("Sync could not finish. Retry from Athlete."); }
+      if (owner.current === id) { void playCue("error"); setNote("Sync could not finish. Check your data sync settings."); }
     } finally {
       endSyncReviewBatch?.(id);
       flight.current = false;
