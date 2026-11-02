@@ -1,3 +1,4 @@
+vi.mock("../ui/toast", () => ({ Toast: "AccountSaveToast" }));
 vi.mock("../features/sync-review", async () => {
   const { createElement } = await import("react");
   return { SyncReview: (props: object) => createElement("SyncReview", props) };
@@ -668,4 +669,25 @@ it("ignores transient inactive states and gates background return refreshes by f
     await flush();
   });
   expect(fetcher.mock.calls.length).toBe(initialFetchCount);
+});
+
+it("shows retry progress, sends the current draft once, and retains it until the save succeeds", async () => {
+  login("Alice"); await mount();
+  fetcher.mockResolvedValueOnce(Response.json({ error: "competition_inputs_changed" }, { status: 409 }));
+  await act(async () => api.dispatch({ type: "set-city", city: "Retained draft" }));
+  await save();
+  expect(api.saveError).toContain("More activities arrived");
+  expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBe("1");
+  let resolve!: (response: Response) => void;
+  fetcher.mockImplementationOnce(() => new Promise<Response>(done => { resolve = done; }));
+  await act(async () => { api.retrySave(); await flush(); });
+  expect(api.saving).toBe(true);
+  const calls = fetcher.mock.calls.length;
+  await act(async () => { api.retrySave(); await flush(); });
+  expect(fetcher).toHaveBeenCalledTimes(calls);
+  expect(api.state?.city).toBe("Retained draft");
+  await act(async () => { resolve(Response.json({ ok: true, updatedAt: "saved-retry" })); await flush(); });
+  expect(api.saving).toBe(false);
+  expect(api.saveError).toBeNull();
+  expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBeUndefined();
 });

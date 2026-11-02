@@ -62,7 +62,7 @@ export function useCompetitionExperience(
     setQueue({ account: current.current.account, moments: [] });
     if (next) observe(next, true);
   }, [observe]);
-  const visibleMoment = queue.account === account ? queue.moments.find(moment => moment.plan.hasOvertake || onCompete) ?? null : null;
+  const visibleMoment = queue.account === account ? queue.moments.find(moment => moment.plan.youAfter > moment.plan.youBefore || onCompete) ?? null : null;
   const acknowledge = useCallback(() => {
     if (visibleMoment?.id.startsWith("overtake:")) {
       const c = current.current;

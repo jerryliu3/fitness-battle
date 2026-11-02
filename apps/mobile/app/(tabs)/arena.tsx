@@ -29,8 +29,6 @@ export default function ArenaScreen() {
     accountKey,
     dispatch,
     standingsStale,
-    saveError,
-    retrySave,
     refresh,
     canWrite,
   } = useCompeteStore();
@@ -138,12 +136,6 @@ export default function ArenaScreen() {
       <ScrollView contentContainerStyle={f.content}>
 <SectionStack divided={false}>
         <CompetitionSummary state={state} selectedSport={selectedSport??undefined} onRegister={openRegistration} />
-        {saveError ? (
-          <View style={f.feedback}>
-            <AppText role="body" secondary >{saveError}</AppText>
-            <FocusButton label="Retry save" secondary onPress={retrySave} />
-          </View>
-        ) : null}
         {standingsStale ? (
           <AppText role="body" secondary  accessibilityLiveRegion="polite">
             Standings may be out of date until the next refresh.

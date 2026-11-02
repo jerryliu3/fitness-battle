@@ -35,5 +35,6 @@ export function hydrateAccountIdentity(
 }
 export function saveFailure(code?: string): string | null {
   if (code === "week_still_open") return null;
+  if (code === "competition_inputs_changed") return "More activities arrived while saving. Please retry to save your latest changes.";
   return "Your changes are saved on this device but haven't reached your account. Please try again.";
 }

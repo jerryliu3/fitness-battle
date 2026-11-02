@@ -1,3 +1,4 @@
+vi.mock("react-dom", async (original) => ({ ...await original<typeof import("react-dom")>(), createPortal: (node: unknown) => node }));
 // Exercise the Suspense state even when the module loads slowly in CI.
 const lazyReview = vi.hoisted(() => {
   let release!: () => void;

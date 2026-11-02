@@ -102,6 +102,7 @@ export function Sheet({
                       : { type: "spring", bounce: 0.12, duration: 0.42 }
                   }
                 >
+                  <div data-account-notice-host />
                   <div className="sheet-grab" aria-hidden="true" />
                   <div className="club-sheet-heading">
                     <Dialog.Title className={hideTitle ? "sr-only" : undefined} ref={heading} tabIndex={-1} style={typographyStyle(fullScreen ? "heading" : "display")}>{title}</Dialog.Title>

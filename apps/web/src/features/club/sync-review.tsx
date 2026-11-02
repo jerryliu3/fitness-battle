@@ -11,7 +11,7 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
   receipt: SyncReviewReceipt | null; state: CompeteState; debug?: boolean; moment?: CompetitionMoment | null; remaining?: number;
   onComplete: (selected?: readonly string[], quiet?: boolean) => unknown; onAcknowledge?: () => void;
 }) {
-  const title = receipt ? "Sync completed" : moment?.plan.hasOvertake ? "Your overtakes" : "Your field changed";
+  const title = receipt ? "Sync completed" : moment?.plan.hasOvertake ? "Your overtakes" : moment && moment.plan.youAfter > moment.plan.youBefore ? "Your progress" : "Your field changed";
   return <Sheet open hideTitle={Boolean(receipt)} title={title} body="" fullScreen minimal={!receipt} scrollResetKey={receipt ? "review" : moment?.id} onClose={() => { if (receipt) onComplete(undefined, true); }}>
     {debug && receipt && <p className="fb-kicker" style={{ textAlign: "center", marginTop: 20 }}>DEBUG PREVIEW · LOCAL DATA ONLY</p>}
     {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete}/> : moment ? <Moment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : null}

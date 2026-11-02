@@ -22,7 +22,7 @@ import { SHELL_COLORS as c } from "../src/theme";
 const titles = ["Good things start with you.", "What should we call you?", "What moves you?", "Bring your training along.", "This is an Overtake.", "Make every week count.", "Your starting line is here."];
 export default function Onboarding() {
   const reduced = useReducedMotion();
-  const { state, canWrite, dispatch, saveError, retrySave } = useCompeteStore();
+  const { state, canWrite, dispatch } = useCompeteStore();
   const { user } = useAuth(); const router = useRouter();
   const preview = useLocalSearchParams<{ preview?: string }>().preview === "1";
   const key = `onboarding-draft:v3:${user?.id ?? "guest"}`;
@@ -70,7 +70,6 @@ export default function Onboarding() {
       {step===4 && <><AppText secondary>The moment your effort takes you ahead of another athlete. Don’t get overtaken!</AppText><OnboardingOvertake/></>}
       {step===5&&<OnboardingOutlook/>}
       {step===6&&<><OnboardingSummary sports={sports} units={units} sleep={sleep}/><OnboardingFade delay={(sports.length+Number(sleep))*300+400}><AppText role="label">Your next wave starts at {waveTimeLabel(nextDailyWaveWindowAt(new Date(now)).waveStart)}.</AppText></OnboardingFade></>}
-      {saveError && <><AppText secondary>{saveError}</AppText><FocusButton secondary label="Retry account loading" onPress={retrySave}/></>}
       <View style={{flexDirection:"row",gap:12,alignItems:"stretch"}}>{step>0&&<View style={{flex:1}}><FocusButton secondary label="Back" onPress={()=>setStep(step-1)}/></View>}<View style={{flex:1}}><FocusButton label={step===6?preview?"Finish preview":user?"Finish":"Sign in to finish setup":step===3?(state.links.some(link=>link.status==="connected")?"Continue":"Skip for now"):"Continue"} disabled={!preview && step===6 && Boolean(user) && !canWrite} onPress={()=>step<6?advance():!preview&&!user?router.replace("/athlete"):finish()}/></View></View>
     </MotionStep>
   </ScrollView></SafeAreaView></SafeAreaProvider></Modal>;

@@ -4,16 +4,9 @@ import {
   type Activity, type CompeteState, type CrewBoardPin,
 } from "@fitness-battle/shared";
 
-/** The document transports user intentions. Ratings, locks, receipts and results
- * always start from the server copy; supplied score values are never imported. */
-export function deriveCompetitionIntents(stored: CompeteState | null, incoming: CompeteState, userId: string, now: Date): CompeteState {
-  let next = stored ?? withAccountEloBaseline(freshState(now));
-  next = { ...next, requiresCanonicalFields: true, demoNow: null,
-    name: incoming.name.trim().slice(0, 80) || next.name, city: incoming.city.trim().slice(0, 80),
-    avatarUrl: incoming.avatarUrl, units: incoming.units, primary: incoming.primary, focus: incoming.focus,
-    trainingGoal: incoming.trainingGoal, onboardingCompleted: next.onboardingCompleted || incoming.onboardingCompleted,
-    lessonDoneOn: incoming.lessonDoneOn === dayKey(now) ? incoming.lessonDoneOn : next.lessonDoneOn,
-  };
+/** Apply review choices before any reducer can award newly ingested volume.
+ * Tracker facts remain server-owned; only disposition and valid manual rows enter. */
+export function applyCompetitionActivityIntents(next: CompeteState, incoming: CompeteState, now: Date): CompeteState {
   const known = new Map(next.activities.map(a => [a.id, a]));
   const activities = [...next.activities];
   for (const candidate of incoming.activities) {
@@ -34,7 +27,19 @@ export function deriveCompetitionIntents(stored: CompeteState | null, incoming: 
       distanceM: candidate.sport === "strength" ? 0 : candidate.distanceM };
     activities.push(manual); known.set(manual.id, manual);
   }
-  next = { ...next, activities };
+  return { ...next, activities };
+}
+
+/** The document transports user intentions. Ratings, locks, receipts and results
+ * always start from the server copy; supplied score values are never imported. */
+export function deriveCompetitionIntents(stored: CompeteState | null, incoming: CompeteState, userId: string, now: Date): CompeteState {
+  let next = applyCompetitionActivityIntents(stored ?? withAccountEloBaseline(freshState(now)), incoming, now);
+  next = { ...next, requiresCanonicalFields: true, demoNow: null,
+    name: incoming.name.trim().slice(0, 80) || next.name, city: incoming.city.trim().slice(0, 80),
+    avatarUrl: incoming.avatarUrl, units: incoming.units, primary: incoming.primary, focus: incoming.focus,
+    trainingGoal: incoming.trainingGoal, onboardingCompleted: next.onboardingCompleted || incoming.onboardingCompleted,
+    lessonDoneOn: incoming.lessonDoneOn === dayKey(now) ? incoming.lessonDoneOn : next.lessonDoneOn,
+  };
   // Sleep readings are input data; the server validates them and derives the rating.
   const nights = new Map(next.sleepNights.map(n => [n.id, n]));
   for (const night of incoming.sleepNights) {
