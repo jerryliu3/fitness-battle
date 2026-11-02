@@ -1,4 +1,5 @@
 "use client";
+import { Achievements } from "@/features/club/achievements";
 import { EffortTrend } from "@/features/progress/effort-trend";
 import { AppParagraph, AppText, SectionHeader, typographyStyle, AppHeading } from "@/ui/section";
 
@@ -248,6 +249,33 @@ export function AthleteOverview({
             );
           })()}
         </section>
+      ) : null}
+
+      {showProfile ? (
+        <>
+          <section className="focus-season-strip" aria-label="Since the first mile">
+            <SectionHeader title="Since the first mile" />
+            <div className="focus-season-stats">
+              <div>
+                <AppText role="metric">{formatDistanceM(season.meters, state.units)}</AppText>
+                <AppText role="caption" secondary>{unit} total</AppText>
+              </div>
+              <div>
+                <AppText role="metric">{season.sessions}</AppText>
+                <AppText role="caption" secondary>sessions</AppText>
+              </div>
+              <div>
+                <AppText role="metric">{season.weeks}</AppText>
+                <AppText role="caption" secondary>active weeks</AppText>
+              </div>
+              <div>
+                <AppText role="metric">{state.lifetimeOvertakes}</AppText>
+                <AppText role="caption" secondary>overtakes</AppText>
+              </div>
+            </div>
+          </section>
+          <Achievements state={state} />
+        </>
       ) : null}
 
       {showProgress ? <EffortTrend state={state} email={email} /> : null}

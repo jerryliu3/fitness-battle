@@ -39,6 +39,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AccountActions } from "../src/features/account-actions";
 import { LegalLinks } from "../src/features/legal-links";
 import { AthleteMetrics } from "../src/features/athlete-metrics";
+import { Achievements } from "../src/features/club-achievements";
 import { SettingsRow } from "../src/ui/settings-row";
 import { DataSyncActions } from "../src/features/data-sync-actions";
 import { useAuth } from "../src/lib/auth";
@@ -805,32 +806,8 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
           </View>
         </View>
 
-        {/* A few proud moments */}
-        <View style={f.section}>
-          <SectionHeader title="A few proud moments" subtitle="Milestones earned by showing up" />
-          <View style={[f.row, { gap: 12 }]}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push("/progress-history")}
-              style={[f.card, { flex: 1, padding: 14, backgroundColor: SHELL_COLORS.card, gap: 4 }]}
-            >
-              <AppText role="label">Four weeks strong</AppText>
-              <AppText role="caption" secondary>4 active weeks in a row</AppText>
-            </Pressable>
-            {topRecords[0] ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => router.push("/progress-achievements")}
-                style={[f.card, { flex: 1, padding: 14, backgroundColor: SHELL_COLORS.card, gap: 4 }]}
-              >
-                <AppText role="label">A new best</AppText>
-                <AppText role="caption" secondary>
-                  {formatClockTime(topRecords[0].seconds)} · Fastest {RECORD_DISTANCES[topRecords[0].sport]?.find((d) => d.id === topRecords[0].distanceId)?.label ?? topRecords[0].distanceId}
-                </AppText>
-              </Pressable>
-            ) : null}
-          </View>
-        </View>
+        {/* Momentum Rings & Bento Wall */}
+        <Achievements state={state} />
 
         {!state.onboardingCompleted ? (
           <View style={f.card}>
