@@ -179,3 +179,127 @@ describe("Home rival card presentation", () => {
     }
   });
 });
+
+import { seasonPassModel, athleteMomentumModel } from "./club-summary";
+describe("seasonPassModel & athleteMomentumModel", () => {
+  it("builds season ladder checkpoints and recent settled week nodes without future rounds", () => {
+    const base = freshState(now);
+    const settled1: PeriodResult = {
+      id: "w1",
+      sport: "running",
+      track: "verified",
+      periodStart: "2026-10-19T04:00:00Z",
+      periodEnd: "2026-10-26T04:00:00Z",
+      settledAt: "2026-10-26T04:00:00Z",
+      place: 1,
+      fieldSize: 8,
+      effort: 42.5,
+      distanceM: 25000,
+      movingSec: 7200,
+      eloBefore: 1140,
+      eloAfter: 1168,
+      frozen: false,
+    };
+    const future: PeriodResult = {
+      ...settled1,
+      id: "future",
+      periodStart: "2026-11-02T04:00:00Z",
+      periodEnd: "2026-11-09T05:00:00Z",
+    };
+    const state = {
+      ...base,
+      primary: "running" as const,
+      ratings: base.ratings.map((r) =>
+        r.sport === "running"
+          ? { ...r, openElo: 1168, verifiedElo: 1168 }
+          : r,
+      ),
+      periodResults: [future, settled1],
+    };
+    const pass = seasonPassModel(state, "verified", now);
+    expect(pass.score).toBe(1168);
+    expect(pass.band.name).toBe("Active");
+    expect(pass.nextBand?.name).toBe("Steady");
+    expect(pass.intoNext).toBe(32);
+    expect(pass.weekNodes).toHaveLength(1);
+    expect(pass.weekNodes[0]).toMatchObject({
+      id: "w1",
+      place: 1,
+      fieldSize: 8,
+      delta: 28,
+      headline: "Took the field",
+    });
+    expect(pass.winsCount).toBe(1);
+    expect(pass.podiumsCount).toBe(1);
+  });
+
+  it("derives 4 live momentum rings and 2 breakthrough bento cards from real state", () => {
+    const base = freshState(now);
+    const settled: PeriodResult = {
+      id: "w1",
+      sport: "running",
+      track: "verified",
+      periodStart: "2026-10-19T04:00:00Z",
+      periodEnd: "2026-10-26T04:00:00Z",
+      settledAt: "2026-10-26T04:00:00Z",
+      place: 1,
+      fieldSize: 8,
+      effort: 42.5,
+      distanceM: 25000,
+      movingSec: 7200,
+      eloBefore: 1140,
+      eloAfter: 1168,
+      frozen: false,
+    };
+    const state = {
+      ...base,
+      lifetimeOvertakes: 19,
+      ratings: base.ratings.map((r) =>
+        r.sport === "running" ? { ...r, openElo: 1168 } : r,
+      ),
+      activities: [
+        activity("pb1", "2026-10-11T12:00:00Z", {
+          distanceM: 5000,
+          movingSec: 1440,
+          verified: true,
+        }),
+        activity("pb2", "2026-10-25T12:00:00Z", {
+          distanceM: 5000,
+          movingSec: 1422,
+          verified: true,
+        }),
+      ],
+      periodResults: [settled],
+    };
+    const momentum = athleteMomentumModel(state, now);
+    expect(momentum.rings.map((r) => r.id)).toEqual([
+      "streak",
+      "sessions",
+      "rating",
+      "passes",
+    ]);
+    expect(momentum.rings.find((r) => r.id === "sessions")).toMatchObject({
+      current: 2,
+      target: 10,
+      percent: 20,
+    });
+    expect(momentum.rings.find((r) => r.id === "passes")).toMatchObject({
+      current: 19,
+      target: 25,
+      percent: 76,
+    });
+    expect(momentum.bentoCards[0]).toMatchObject({
+      id: "bento-pb",
+      badge: "FASTEST 5K",
+      value: "23:42",
+      earned: true,
+    });
+    expect(momentum.bentoCards[0]?.delta).toContain("18s faster");
+    expect(momentum.bentoCards[1]).toMatchObject({
+      id: "bento-finish",
+      badge: "FIELD WINNER",
+      value: "#1 of 8",
+      earned: true,
+    });
+  });
+});
