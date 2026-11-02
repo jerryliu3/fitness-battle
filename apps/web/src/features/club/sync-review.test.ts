@@ -57,3 +57,34 @@ it("disables activity detail navigation while saving", async () => {
     .findAll((node) => node.type === "button" && typeof node.props.onClick === "function" && node.props.disabled === true);
   expect(detailButtons.length).toBeGreaterThan(0);
 });
+it("provides Select all and Deselect all, and deletes the saved safely notice", async () => {
+  const done = vi.fn();
+  await act(async () => { renderer = create(createElement(SyncReview, { state, receipt, onComplete: done })); });
+
+  // Verify "Your synced activities are saved safely." is NOT anywhere in rendered html
+  const textContent = JSON.stringify(renderer.toJSON());
+  expect(textContent).not.toContain("Your synced activities are saved safely");
+
+  const buttons = renderer.root.findAllByType("button");
+  const deselectAllBtn = buttons.find((b) => b.props.children === "Deselect all");
+  const selectAllBtn = buttons.find((b) => b.props.children === "Select all");
+
+  expect(deselectAllBtn).toBeDefined();
+  expect(selectAllBtn).toBeDefined();
+
+  // Initially all are selected
+  expect(selectAllBtn!.props.disabled).toBe(true);
+  expect(deselectAllBtn!.props.disabled).toBe(false);
+
+  // Click Deselect all
+  await act(async () => { deselectAllBtn!.props.onClick(); });
+
+  expect(deselectAllBtn!.props.disabled).toBe(true);
+  expect(selectAllBtn!.props.disabled).toBe(false);
+
+  // Click Select all
+  await act(async () => { selectAllBtn!.props.onClick(); });
+
+  expect(selectAllBtn!.props.disabled).toBe(true);
+  expect(deselectAllBtn!.props.disabled).toBe(false);
+});

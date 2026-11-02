@@ -1,7 +1,21 @@
 import { playCue } from "../lib/haptics";
 import { textStyle } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type ScrollViewInstance } from "react-native";
+import {
+  ActivityIndicator,
+  Animated,
+  Easing,
+  LayoutAnimation,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+  type ScrollViewInstance,
+} from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { APP_TIMEZONE, syncReviewMetrics, clubDuration, formatVolume, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { FocusButton, f } from "../ui/focus";
@@ -34,6 +48,8 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
   const windowDimensions = useWindowDimensions();
   const cardWidth = Math.max(260, Math.min(360, Math.round((windowDimensions.width || 375) * 0.82)));
   const cardGap = 12;
+  const cardScroll = useRef<ScrollViewInstance | null>(null);
+  const reduced = useReducedMotion();
   const [activeIndex, setActiveIndex] = useState(0);
   const [excluded, setExcluded] = useState<string[]>([]), [detail, setDetail] = useState<string | null>(null), [progress, setProgress] = useState(0), [width, setWidth] = useState(280), [saving, setSaving] = useState(false);
   const complete = useRef(false), dragStart = useRef(0), dragDistance = useRef(0), dragging = useRef(false), saveTimer = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
@@ -68,6 +84,25 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
       onComplete(ids);
     }, SYNC_REVIEW_SAVE_DELAY_MS);
   };
+  const selectCard = (idx: number) => {
+    if (idx === activeIndex) return;
+    if (Platform.OS !== "web" && typeof LayoutAnimation?.configureNext === "function" && !reduced) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
+    setActiveIndex(idx);
+  };
+  const selectAll = () => {
+    if (saving) return;
+    void playCue("selection");
+    setExcluded([]);
+    setProgress(0);
+  };
+  const deselectAll = () => {
+    if (saving) return;
+    void playCue("selection");
+    setExcluded(activities.map((a) => a.id));
+    setProgress(0);
+  };
   const openDetail = (id: string) => {
     if (saving) return;
     setDetail(id);
@@ -86,9 +121,37 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
     {receipt.preview && <Text style={f.kicker}>SAMPLE PREVIEW · NO COMPETITION CREDIT</Text>}
     <Text accessibilityRole="header" style={textStyle("display")}>Sync completed</Text>
     <Text style={f.massive}>{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</Text>
-    <Text style={textStyle("body")}>{selected.length} of {activities.length} activities selected.</Text>
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+      <Text style={textStyle("body")}>{selected.length} of {activities.length} activities selected.</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Select all activities"
+          disabled={saving || selected.length === activities.length}
+          accessibilityState={{ disabled: saving || selected.length === activities.length }}
+          onPress={selectAll}
+          hitSlop={8}
+          style={({ pressed }) => [{ opacity: saving || selected.length === activities.length ? 0.35 : pressed ? 0.6 : 1 }]}
+        >
+          <Text style={{ ...textStyle("label"), color: c.ink, textDecorationLine: "underline" }}>Select all</Text>
+        </Pressable>
+        <Text style={{ ...textStyle("caption"), color: c.muted }}>·</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Deselect all activities"
+          disabled={saving || selected.length === 0}
+          accessibilityState={{ disabled: saving || selected.length === 0 }}
+          onPress={deselectAll}
+          hitSlop={8}
+          style={({ pressed }) => [{ opacity: saving || selected.length === 0 ? 0.35 : pressed ? 0.6 : 1 }]}
+        >
+          <Text style={{ ...textStyle("label"), color: c.ink, textDecorationLine: "underline" }}>Deselect all</Text>
+        </Pressable>
+      </View>
+    </View>
     <View style={{ gap: 12 }}>
       <ScrollView
+        ref={cardScroll}
         horizontal
         showsHorizontalScrollIndicator={false}
         decelerationRate="fast"
@@ -97,7 +160,7 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
         onScroll={(e) => {
           const x = e.nativeEvent.contentOffset.x;
           const idx = Math.max(0, Math.min(activities.length - 1, Math.round(x / (cardWidth + cardGap))));
-          if (idx !== activeIndex) setActiveIndex(idx);
+          if (idx !== activeIndex) selectCard(idx);
         }}
         scrollEventThrottle={16}
       >
@@ -213,21 +276,14 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
         })}
       </ScrollView>
 
-      {activities.length > 1 && (
-        <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, paddingTop: 4 }}>
-          {activities.map((a, i) => (
-            <View
-              key={a.id}
-              style={{
-                width: i === activeIndex ? 18 : 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: i === activeIndex ? c.ink : c.line,
-              }}
-            />
-          ))}
-        </View>
-      )}
+      <SyncReviewCarouselDots
+        total={activities.length}
+        activeIndex={activeIndex}
+        onSelectIndex={(idx) => {
+          cardScroll.current?.scrollTo({ x: idx * (cardWidth + cardGap), animated: !reduced });
+          selectCard(idx);
+        }}
+      />
     </View>
     {!receipt.preview && excluded.length > 0 && <Text style={textStyle("caption")}>Deselected activities stay saved, excluded from competition.</Text>}
     <View style={{ marginTop: "auto", paddingTop: 16, gap: 12 }}>
@@ -246,9 +302,155 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
           <View pointerEvents="none" style={{ position: "absolute", top: 5, left: 4, width: 56, height: 56, borderRadius: 28, backgroundColor: c.tennis, justifyContent: "center", alignItems: "center", transform: [{ translateX: progress * travel }] }}>{saving ? <ActivityIndicator color={c.ink} /> : <Text style={textStyle("heading")}>→</Text>}</View>
         </View>
       </View>
-      <Text style={[textStyle("caption"), { textAlign: "center" }]}>{receipt.preview ? "Preview only. No activities or points will be added." : "Your synced activities are saved safely."}</Text>
+      {receipt.preview ? <Text style={[textStyle("caption"), { textAlign: "center" }]}>Preview only. No activities or points will be added.</Text> : null}
     </View>
   </View>;
+}
+
+export function computeWindowStart(
+  prevStart: number,
+  activeIndex: number,
+  total: number,
+  maxVisible: number = 5,
+): number {
+  if (total <= maxVisible) return 0;
+  const clampedIndex = Math.max(0, Math.min(total - 1, activeIndex));
+  const maxStart = total - maxVisible;
+  const forwardThreshold = prevStart + maxVisible - 2;
+  if (clampedIndex > forwardThreshold) {
+    return Math.min(maxStart, Math.max(0, clampedIndex - (maxVisible - 2)));
+  }
+  const backwardThreshold = prevStart + 1;
+  if (clampedIndex < backwardThreshold) {
+    return Math.max(0, Math.min(maxStart, clampedIndex - 1));
+  }
+  return Math.min(maxStart, Math.max(0, prevStart));
+}
+
+const MAX_VISIBLE_DOTS = 5;
+const DOT_SIZE = 6;
+const ACTIVE_DOT_WIDTH = 18;
+const DOT_GAP = 6;
+const DOT_STEP = DOT_SIZE + DOT_GAP;
+const WINDOW_WIDTH = ACTIVE_DOT_WIDTH + (MAX_VISIBLE_DOTS - 1) * DOT_STEP;
+
+export function SyncReviewCarouselDots({
+  total,
+  activeIndex,
+  onSelectIndex,
+}: {
+  total: number;
+  activeIndex: number;
+  onSelectIndex?: (index: number) => void;
+}) {
+  const reduced = useReducedMotion();
+  const [windowStart, setWindowStart] = useState(() =>
+    computeWindowStart(0, activeIndex, total, MAX_VISIBLE_DOTS),
+  );
+
+  useEffect(() => {
+    setWindowStart((prev) => computeWindowStart(prev, activeIndex, total, MAX_VISIBLE_DOTS));
+  }, [activeIndex, total]);
+
+  const translateX = useRef(new Animated.Value(-windowStart * DOT_STEP)).current;
+
+  const isWindowed = total > MAX_VISIBLE_DOTS;
+
+  useEffect(() => {
+    if (!isWindowed) return;
+    const targetX = -windowStart * DOT_STEP;
+    if (reduced) {
+      translateX.setValue(targetX);
+      return;
+    }
+    const animation = Animated.timing(translateX, {
+      toValue: targetX,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [windowStart, isWindowed, reduced, translateX]);
+
+  if (total <= 1) return null;
+
+  const dots = Array.from({ length: total }, (_, i) => {
+    const isActive = i === activeIndex;
+    const isLeftEdge = isWindowed && windowStart > 0 && i === windowStart;
+    const isRightEdge =
+      isWindowed &&
+      windowStart + MAX_VISIBLE_DOTS - 1 < total - 1 &&
+      i === windowStart + MAX_VISIBLE_DOTS - 1;
+    const isOutside = isWindowed && (i < windowStart || i >= windowStart + MAX_VISIBLE_DOTS);
+    const scale = isActive
+      ? 1
+      : isOutside
+        ? 0.4
+        : isLeftEdge || isRightEdge
+          ? 0.67
+          : 1;
+
+    return (
+      <Pressable
+        key={i}
+        accessibilityRole="tab"
+        accessibilityLabel={`Activity ${i + 1}`}
+        accessibilityState={{ selected: isActive }}
+        disabled={!onSelectIndex}
+        onPress={() => onSelectIndex?.(i)}
+        hitSlop={6}
+        style={{
+          width: isActive ? ACTIVE_DOT_WIDTH : DOT_SIZE,
+          height: DOT_SIZE,
+          borderRadius: DOT_SIZE / 2,
+          backgroundColor: isActive ? c.ink : c.line,
+          ...(isWindowed ? { transform: [{ scale }], opacity: isOutside ? 0.2 : 1 } : {}),
+        }}
+      />
+    );
+  });
+
+  return (
+    <View
+      accessible
+      accessibilityRole="tablist"
+      accessibilityLabel={`Activity ${activeIndex + 1} of ${total}`}
+      style={
+        isWindowed
+          ? {
+              width: WINDOW_WIDTH,
+              height: 14,
+              overflow: "hidden",
+              alignSelf: "center",
+              justifyContent: "center",
+              paddingTop: 4,
+            }
+          : {
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: DOT_GAP,
+              paddingTop: 4,
+            }
+      }
+    >
+      {isWindowed ? (
+        <Animated.View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: DOT_GAP,
+            transform: [{ translateX }],
+          }}
+        >
+          {dots}
+        </Animated.View>
+      ) : (
+        dots
+      )}
+    </View>
+  );
 }
 
 function ActivityMetricBars({ activity, history, units }: { activity: SyncReviewReceipt["activities"][number]; history: CompeteState["activities"]; units: CompeteState["units"] }) {
