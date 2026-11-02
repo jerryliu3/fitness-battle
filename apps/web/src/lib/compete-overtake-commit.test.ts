@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { freshState } from "@fitness-battle/shared";
+import { freshState, reduceCompete } from "@fitness-battle/shared";
 import { persistCompeteAccount } from "./compete-persist";
 function database() {
   return { from(table: string) {
@@ -30,4 +30,18 @@ it("does not acknowledge a lifetime change when the transaction rejects the revi
   await expect(persistCompeteAccount(database() as never, "owner", state, "stale", { db: { rpc } as never, receipts: 0, computedAt: new Date() })).rejects.toThrow("account_changed_reload");
   expect(state.lifetimeOvertakes).toBe(7);
   expect(state.committedOvertakeMoments).toBeUndefined();
+});
+
+it("retains earlier sports' receipts through a subsequent save or read-side baseline commit", async () => {
+  const state = reduceCompete(freshState(new Date("2026-10-28T15:00:00Z")), { type: "opt-in", sport: "running", now: "2026-10-28T09:00:00Z" });
+  state.units = "metric";
+  const retained = { id: "overtake:owner:earlier:running", sport: "running", periodStart: state.enrollments[0]!.waveStart, unit: "km", plan: { hasOvertake: true } };
+  state.committedOvertakeMoments = [retained as never, { ...retained, id: "old-wave", periodStart: "2026-10-19T10:00:00Z" } as never];
+  const rpc = vi.fn(async (name: string) => name === "read_compete_overtake_baselines"
+    ? { data: {}, error: null }
+    : { data: { updatedAt: "2026-11-01T02:00:00Z", lifetimeOvertakes: 7, overtakes: 0 }, error: null });
+  await persistCompeteAccount(database() as never, "owner", state, "previous", {
+    db: { rpc } as never, receipts: 12, computedAt: new Date("2026-11-01T02:00:00Z"), recordOvertakes: false,
+  });
+  expect(state.committedOvertakeMoments).toEqual([retained]);
 });

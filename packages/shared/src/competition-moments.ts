@@ -35,7 +35,7 @@ export function competitionMoments(state: CompeteState, account: string, read: (
   return competitionMomentSnapshots(state, account).flatMap(s => {
     const previous = readArenaBaseline(read(s.key), s.period, s.unit);
     const plan = reconcileArenaOvertake(s.lanes, previous);
-    if (!plan || (!plan.hasOvertake && !plan.passedByIds?.length)) return [];
+    if (!plan) return [];
     const common = { sport: s.sport, unit: s.unit, lanes: s.lanes, periodStart: s.period, periodEnd: s.periodEnd };
     if (plan.hasOvertake && plan.passedByIds?.length) {
       const middleRank = 1 + Object.values(plan.rivals).filter(r => r.endValue > plan.youBefore + .00001).length;
@@ -125,9 +125,10 @@ export function competitionMomentScene(moment: CompetitionMoment, progress: numb
 
 /** Receipt computation always uses metric baselines; presentation honors units. */
 export function overtakeMomentForUnits(moment: CompetitionMoment, units: CompeteState["units"]): CompetitionMoment {
-  if (moment.unit !== "km" || units !== "us") return moment;
-  const scale = 1 / 1.609344;
-  return { ...moment, unit: "mi", lanes: moment.lanes.map(lane => ({ ...lane, value: lane.value * scale })), plan: {
+  const unit = units === "us" ? "mi" : "km";
+  if (moment.unit === "pts" || moment.unit === unit) return moment;
+  const scale = unit === "mi" ? 1 / 1.609344 : 1.609344;
+  return { ...moment, unit, lanes: moment.lanes.map(lane => ({ ...lane, value: lane.value * scale })), plan: {
     ...moment.plan, youBefore: moment.plan.youBefore * scale, youAfter: moment.plan.youAfter * scale,
     rivals: Object.fromEntries(Object.entries(moment.plan.rivals).map(([id, rival]) => [id, { ...rival, startValue: rival.startValue * scale, endValue: rival.endValue * scale }])),
   } };

@@ -15,7 +15,7 @@ import {
   loadEffortScoreEvents,
   persistCompeteAccount,
 } from "@/lib/compete-persist";
-import { deriveCompetitionIntents } from "@/lib/competition-intents";
+import { applyCompetitionActivityIntents, deriveCompetitionIntents } from "@/lib/competition-intents";
 import { competitionAuthorityDatabase } from "@/lib/competition-authority";
 import { createRequestClient } from "@/lib/supabase/request";
 
@@ -122,52 +122,61 @@ export async function PUT(request: Request): Promise<Response> {
   }
 
   const supabase = await createRequestClient(request);
-  const now = new Date();
-  let receipts = 0;
-  try {
-    const revision = await supabase.rpc("competition_input_revision");
-    if (revision.error) throw new Error("revision_unavailable");
-    receipts = Number(revision.data);
-    const existing = await loadCompeteAccount(supabase, userId);
-    if (
-      existing &&
-      openEnrollmentRemoved(
-        migrateCompeteState(existing.state),
-        live,
-        new Date(),
-      )
-    ) {
-      return NextResponse.json({ error: "week_still_open" }, { status: 409 });
+  // A tracker can deliver more facts while this request is deriving scores.
+  // Recompute once against those facts; keep the client's account revision so
+  // this never overwrites a concurrent account edit.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const now = new Date();
+    let receipts = 0;
+    try {
+      const revision = await supabase.rpc("competition_input_revision");
+      if (revision.error) throw new Error("revision_unavailable");
+      receipts = Number(revision.data);
+      const existing = await loadCompeteAccount(supabase, userId);
+      if (
+        existing &&
+        openEnrollmentRemoved(
+          migrateCompeteState(existing.state),
+          incoming,
+          now,
+        )
+      ) {
+        return NextResponse.json({ error: "week_still_open" }, { status: 409 });
+      }
+      const baseline = existing ? await settleAccountFields(supabase, userId,
+        applyCompetitionActivityIntents(existing.state, incoming, now), now, true) : null;
+      live = deriveCompetitionIntents(baseline, incoming, userId, now);
+    } catch (error) {
+      if (attempt === 0 && error instanceof Error && /competition_inputs_changed|competition_clock_changed/.test(error.message)) continue;
+      if (error instanceof Error && error.message === "week_still_open") return NextResponse.json({ error: "week_still_open", persisted: false }, { status: 409 });
+      if (error instanceof Error && /^invalid_/.test(error.message)) return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: "account_unavailable" }, { status: 503 });
     }
-    const baseline = existing ? await settleAccountFields(supabase, userId, existing.state, now, true) : null;
-    live = deriveCompetitionIntents(baseline, incoming, userId, now);
-  } catch (error) {
-    if (error instanceof Error && error.message === "week_still_open") return NextResponse.json({ error: "week_still_open", persisted: false }, { status: 409 });
-    if (error instanceof Error && /^invalid_/.test(error.message)) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ error: "account_unavailable" }, { status: 503 });
-  }
 
-  try {
-    const updatedAt = await persistCompeteAccount(supabase, userId, live, body.updatedAt as string | null, { db: competitionAuthorityDatabase(), receipts, computedAt: now });
-    live = await committedScoreHistory(supabase, userId, live);
-    return NextResponse.json({
-      ok: true,
-      persisted: true,
-      updatedAt,
-      state: { ...live, requiresCanonicalFields: true, enrollments: live.enrollments.map(e => ({ ...e, awaitingField: e.awaitingField ?? !e.fieldBoard })) },
-    });
-  } catch (error) {
-    if (error instanceof Error && error.message.includes("account_changed_reload")) {
-      return NextResponse.json({ error: "account_changed_reload", persisted: false }, { status: 409 });
+    try {
+      const updatedAt = await persistCompeteAccount(supabase, userId, live, body.updatedAt as string | null, { db: competitionAuthorityDatabase(), receipts, computedAt: now });
+      live = await committedScoreHistory(supabase, userId, live);
+      return NextResponse.json({
+        ok: true,
+        persisted: true,
+        updatedAt,
+        state: { ...live, requiresCanonicalFields: true, enrollments: live.enrollments.map(e => ({ ...e, awaitingField: e.awaitingField ?? !e.fieldBoard })) },
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("account_changed_reload")) {
+        return NextResponse.json({ error: "account_changed_reload", persisted: false }, { status: 409 });
+      }
+      if (attempt === 0 && error instanceof Error && /competition_inputs_changed|competition_clock_changed/.test(error.message)) continue;
+      if (error instanceof Error && /competition_inputs_changed|competition_clock_changed/.test(error.message)) return NextResponse.json({ error: "competition_inputs_changed", persisted: false }, { status: 409 });
+      if (error instanceof Error && /week_still_open|registration_window_changed/.test(error.message)) {
+        return NextResponse.json({ error: error.message.includes("week_still_open") ? "week_still_open" : "registration_window_changed", persisted: false }, { status: 409 });
+      }
+      console.error("PUT /api/compete save failed:", error);
+      return NextResponse.json(
+        { error: "account_not_saved", persisted: false },
+        { status: 500 },
+      );
     }
-    if (error instanceof Error && /competition_inputs_changed|competition_clock_changed/.test(error.message)) return NextResponse.json({ error: "account_changed_reload", persisted: false }, { status: 409 });
-    if (error instanceof Error && /week_still_open|registration_window_changed/.test(error.message)) {
-      return NextResponse.json({ error: error.message.includes("week_still_open") ? "week_still_open" : "registration_window_changed", persisted: false }, { status: 409 });
-    }
-    console.error("PUT /api/compete save failed:", error);
-    return NextResponse.json(
-      { error: "account_not_saved", persisted: false },
-      { status: 500 },
-    );
   }
+  return NextResponse.json({ error: "account_not_saved", persisted: false }, { status: 503 });
 }

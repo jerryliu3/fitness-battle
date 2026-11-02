@@ -112,3 +112,46 @@ it("converts committed replay distances without changing the count or ranking", 
   expect(display.lanes[0].value).toBeCloseTo(metric.lanes[0].value / 1.609344);
   expect(overtakeMomentForUnits(metric, "metric")).toBe(metric);
 });
+
+it("replays positive distance without a pass and finishes at the updated field position", () => {
+  const { result } = fixture("overtake");
+  const snapshot = competitionMomentSnapshots(result.state, "a")[0];
+  const baseline = JSON.parse(snapshot.value);
+  const you = snapshot.lanes.find(lane => lane.you)!;
+  baseline.values[you.id] = you.value - .05;
+  const moments = competitionMoments(result.state, "a", key => key === snapshot.key ? JSON.stringify(baseline) : null);
+  expect(moments).toHaveLength(1);
+  const moment = moments[0];
+  expect(moment.plan.hasOvertake).toBe(false);
+  expect(moment.plan.rankBefore).toBe(moment.plan.rankAfter);
+  expect(competitionMomentScene(moment, 0).youValue).toBeCloseTo(you.value - .05);
+  expect(competitionMomentScene(moment, .5).youValue).toBeGreaterThan(you.value - .05);
+  expect(competitionMomentScene(moment, 1).youValue).toBe(you.value);
+  expect(photoFinishFrame(moment, 1).count).toBe(0);
+});
+
+it("captures every sport in a single sync, with independent baselines and crossing counts", () => {
+  const running = applyDebugEvent({ ...state, primary: "running" }, "overtake", "a");
+  const cycling = applyDebugEvent({ ...state, primary: "cycling" }, "overtake", "a");
+  const combined = { ...running.state,
+    ratings: running.state.ratings.map(r => r.sport === "cycling" ? cycling.state.ratings.find(c => c.sport === "cycling")! : r),
+    enrollments: [...running.state.enrollments, ...cycling.state.enrollments],
+    activities: [...running.state.activities, ...cycling.state.activities],
+  };
+  const baselines = Object.fromEntries(Object.entries({ ...running.baselines, ...cycling.baselines }).map(([key, value]) => [momentStorageKey(key), value]));
+  const moments = competitionMoments(combined, "a", key => baselines[key]);
+  expect(moments.map(moment => moment.sport)).toEqual(["running", "cycling"]);
+  expect(moments.every(moment => moment.plan.hasOvertake)).toBe(true);
+  expect(new Set(moments.map(moment => moment.id)).size).toBe(2);
+  for (const moment of moments) expect(photoFinishFrame(moment, 1).youValue).toBe(moment.plan.youAfter);
+});
+
+it("converts retained display receipts back to metric without changing their identity", async () => {
+  const { overtakeMomentForUnits } = await import("./competition-moments");
+  const original = { ...fixture("overtake").moments[0], unit: "km" as const };
+  const restored = overtakeMomentForUnits(overtakeMomentForUnits(original, "us"), "metric");
+  expect(restored.unit).toBe("km");
+  expect(restored.id).toBe(original.id);
+  expect(restored.plan.youAfter).toBeCloseTo(original.plan.youAfter);
+  expect(restored.lanes[0].value).toBeCloseTo(original.lanes[0].value);
+});

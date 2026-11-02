@@ -1,3 +1,4 @@
+vi.mock("../ui/toast", () => ({ Toast: "AccountSaveToast" }));
 vi.mock("../features/sync-review", async () => {
   const { createElement } = await import("react");
   return { SyncReview: (props: object) => createElement("SyncReview", props) };
@@ -668,4 +669,40 @@ it("ignores transient inactive states and gates background return refreshes by f
     await flush();
   });
   expect(fetcher.mock.calls.length).toBe(initialFetchCount);
+});
+
+it("shows retry progress, sends the current draft once, and retains it until the save succeeds", async () => {
+  login("Alice"); await mount();
+  fetcher.mockResolvedValueOnce(Response.json({ error: "competition_inputs_changed" }, { status: 409 }));
+  await act(async () => api.dispatch({ type: "set-city", city: "Retained draft" }));
+  await save();
+  expect(api.saveError).toContain("More activities arrived");
+  expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBe("1");
+  let resolve!: (response: Response) => void;
+  fetcher.mockImplementationOnce(() => new Promise<Response>(done => { resolve = done; }));
+  await act(async () => { api.retrySave(); await flush(); });
+  expect(api.saving).toBe(true);
+  const calls = fetcher.mock.calls.length;
+  await act(async () => { api.retrySave(); await flush(); });
+  expect(fetcher).toHaveBeenCalledTimes(calls);
+  expect(api.state?.city).toBe("Retained draft");
+  await act(async () => { resolve(Response.json({ ok: true, updatedAt: "saved-retry" })); await flush(); });
+  expect(api.saving).toBe(false);
+  expect(api.saveError).toBeNull();
+  expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBeUndefined();
+});
+
+it("resurfaces conflict recovery on another edit without attempting an unsafe save", async () => {
+  login("Alice"); await mount();
+  fetcher.mockImplementation(async (_url: string, init: RequestInit) => init.method === "PUT"
+    ? Response.json({ error: "account_changed_reload" }, { status: 409 })
+    : Response.json({ state: accountState("Alice"), updatedAt: "revision-1" }));
+  await act(async () => api.dispatch({ type: "set-city", city: "First draft" }));
+  await save();
+  const original = renderer.root.findByType("AccountSaveToast" as never);
+  await act(async () => api.dispatch({ type: "set-city", city: "Another draft" }));
+  expect(renderer.root.findByType("AccountSaveToast" as never)).not.toBe(original);
+  await save();
+  expect(fetcher.mock.calls.filter(([, init]) => init.method === "PUT")).toHaveLength(1);
+  expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBe("1");
 });

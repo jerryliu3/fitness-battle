@@ -24,7 +24,7 @@ export interface DebugEventOption {
 }
 
 export const DEBUG_EVENT_OPTIONS: readonly DebugEventOption[] = [
-  { id: "sync-activity", label: "Sync · no overtakes", detail: "Review activities and maps, swipe, then return" },
+  { id: "sync-activity", label: "Sync · no overtakes", detail: "Review activities, then watch your progress" },
   { id: "sync-combo", label: "Sync → photo finish + combo", detail: "Review multiple activities, then pass several rivals" },
   { id: "overtake", label: "Overtake someone", detail: "Open the full-screen photo finish" },
   { id: "overtake-combo", label: "Overtake several rivals", detail: "Watch each pass build the full-screen combo" },

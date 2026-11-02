@@ -44,7 +44,7 @@ it("autoplays after map readiness, holds the final frame and replays on request"
     await act(async () => { renderer = create(createElement(CompetitionMoment, { moment: moment(), remaining: 1, onConfirm: vi.fn() })); });
     const map = () => renderer.root.findByType("GeographicCourse" as never);
     expect(frame).toBeUndefined();
-    expect(renderer.root.findAllByType("FocusButton" as never)).toHaveLength(0);
+    expect(renderer.root.findAllByType("FocusButton" as never).map(button => button.props.label)).toEqual(["Use 2D replay"]);
     await act(async () => map().props.onReady());
     await act(async () => { now = 30000; frame?.(); });
     expect(map().props.replay.done).toBe(true);
@@ -53,6 +53,30 @@ it("autoplays after map readiness, holds the final frame and replays on request"
     await act(async () => renderer.root.findAllByType("FocusButton" as never).find(button => button.props.label === "Replay")!.props.onPress());
     expect(map().props.replay.done).toBe(false);
     expect(map().props.replay.count).toBe(0);
+  } finally {
+    await act(async () => renderer.unmount());
+    preferences.reduced = true; vi.restoreAllMocks(); vi.unstubAllGlobals();
+  }
+});
+
+it("can play in 2D and continue to the next queued sport when the map never becomes ready", async () => {
+  preferences.reduced = false;
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  let frame: (() => void) | undefined, now = 0;
+  vi.stubGlobal("requestAnimationFrame", vi.fn((callback: () => void) => { frame = callback; return 1; }));
+  vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  vi.spyOn(Date, "now").mockImplementation(() => now);
+  let renderer!: ReactTestRenderer;
+  const done = vi.fn();
+  try {
+    await act(async () => { renderer = create(createElement(CompetitionMoment, { moment: moment(), remaining: 2, onConfirm: done })); });
+    await act(async () => renderer.root.findByType("FocusButton" as never).props.onPress());
+    expect(renderer.root.findAllByType("GeographicCourse" as never)).toHaveLength(0);
+    await act(async () => { now = 30000; frame?.(); });
+    const next = renderer.root.findAllByType("FocusButton" as never).find(button => button.props.label === "Continue (1 more)");
+    expect(next).toBeDefined();
+    await act(async () => next!.props.onPress());
+    expect(done).toHaveBeenCalledOnce();
   } finally {
     await act(async () => renderer.unmount());
     preferences.reduced = true; vi.restoreAllMocks(); vi.unstubAllGlobals();

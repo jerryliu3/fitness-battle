@@ -37,7 +37,7 @@ export function HomeActivityActions({
 }: {
   compact?: boolean;
 }) {
-  const { state, canWrite, dispatch, refresh, saveError,
+  const { state, canWrite, dispatch, refresh,
     beginSyncReviewBatch,
     endSyncReviewBatch,
   } = useCompeteStore();

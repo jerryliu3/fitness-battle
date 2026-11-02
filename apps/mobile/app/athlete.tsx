@@ -74,7 +74,7 @@ type AthletePanel =
   | "account";
 
 function AthleteContent({ inlineConnections = false }: { inlineConnections?: boolean }) {
-  const { state, dispatch, saveError, retrySave } = useCompeteStore();
+  const { state, dispatch } = useCompeteStore();
   const {
     user,
     loading: authLoading,
@@ -688,7 +688,6 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
                     dispatch(enabled ? enrollment ? { type: "resume-renewal", sport: sport.id } : { type: "opt-in", sport: sport.id, crewBoard: null } : { type: queued ? "opt-out" : "schedule-leave", sport: sport.id });
                   }} />
               </View>)}
-              {saveError ? <AppText role="body" secondary >{saveError}</AppText> : null}
               <FocusSheet
                 open={confirmFreeze}
                 title="Freeze this week?"
@@ -728,12 +727,6 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
         keyboardShouldPersistTaps="handled"
       >
 <SectionStack divided={false}>
-        {saveError ? (
-          <View style={f.feedback}>
-            <AppText role="body" secondary >{saveError}</AppText>
-            <FocusButton label="Retry save" secondary onPress={retrySave} />
-          </View>
-        ) : null}
 
         <AthleteProfileCard
           largeName
