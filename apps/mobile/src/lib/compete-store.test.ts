@@ -691,3 +691,18 @@ it("shows retry progress, sends the current draft once, and retains it until the
   expect(api.saveError).toBeNull();
   expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBeUndefined();
 });
+
+it("resurfaces conflict recovery on another edit without attempting an unsafe save", async () => {
+  login("Alice"); await mount();
+  fetcher.mockImplementation(async (_url: string, init: RequestInit) => init.method === "PUT"
+    ? Response.json({ error: "account_changed_reload" }, { status: 409 })
+    : Response.json({ state: accountState("Alice"), updatedAt: "revision-1" }));
+  await act(async () => api.dispatch({ type: "set-city", city: "First draft" }));
+  await save();
+  const original = renderer.root.findByType("AccountSaveToast" as never);
+  await act(async () => api.dispatch({ type: "set-city", city: "Another draft" }));
+  expect(renderer.root.findByType("AccountSaveToast" as never)).not.toBe(original);
+  await save();
+  expect(fetcher.mock.calls.filter(([, init]) => init.method === "PUT")).toHaveLength(1);
+  expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBe("1");
+});
