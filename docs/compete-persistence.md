@@ -57,3 +57,38 @@ fields use the same API; retained current counted activity reconstructs chronolo
 rather than preserving past ingestion/correction history. See the
 [replay contract](reviews/competition-replay/README.md) for fidelity, memory,
 simulated-athlete and deployment details.
+
+### Sync review and replay recovery
+
+Apply validated activity intentions before `settleAccountFields` on account PUT.
+New tracker ingest can still be counted in the database when the review excludes
+it. Awarding milestones before applying those exclusions creates a high-water
+receipt above the final counted volume, causing `milestone_volume_mismatch` on
+every retry. Existing committed milestone awards remain durable. Tracker facts
+stay server-owned and closed-wave scoring still uses accepted deadline facts.
+
+If accepted inputs or the competition clock change during PUT, recalculate once
+using fresh facts and the original optimistic account revision. A second input
+race returns retryable `competition_inputs_changed`; a changed account revision
+still requires explicit recovery and must never be silently overwritten.
+
+Positive movement within an existing field opens the existing replay even when
+rank does not change. Each sport keeps its own baseline and queue entry. Native
+positive movement is visible over any tab; loss-only events wait for Compete.
+Actual native passes still require committed server receipts. Save responses and
+read-side baseline commits retain recent loaded receipts so a later write cannot
+hide a previously committed sport's replay. Device acknowledgements deduplicate
+these deliveries. An unavailable native course can use the same replay in 2D.
+
+Verification: `supabase/tests/sync-review-milestones.sql` runs against a local
+migrated database inside a rollback-only transaction. It reproduces the rejected
+award, checks repeated reviewed saves, and preserves already committed awards.
+This repair needs the updated API and native JS delivery; no migration is needed.
+
+
+Account save feedback is owned by the account provider and rendered through a
+floating notification. Individual screens must not add inline save-error or
+retry blocks. Conflict notices supersede ordinary save errors. Dismissing a
+notice changes presentation only; dirty state, optimistic revision protection
+and recovery-copy behavior remain intact. Native notifications are hosted above
+iOS navigation/sheets with safe-area padding.

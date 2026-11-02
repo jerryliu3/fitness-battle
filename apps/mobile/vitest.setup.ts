@@ -10,3 +10,5 @@ vi.mock("expo-haptics", () => ({
   ImpactFeedbackStyle: { Soft: "soft", Light: "light", Medium: "medium", Heavy: "heavy" },
   NotificationFeedbackType: { Success: "success", Warning: "warning", Error: "error" },
 }));
+
+vi.mock("react-native-screens", () => ({ FullWindowOverlay: "FullWindowOverlay" }));

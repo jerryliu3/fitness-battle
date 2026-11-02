@@ -144,3 +144,12 @@ membership, blocking and reporting. They are not generated `synth:` competitors
 and never receive the Sample athlete UI flag. Administrative fixture reseeding
 requires explicit approval for active frozen fields and refuses unrelated live
 members; the ordinary seating path and historical results remain unchanged.
+
+Account PUT applies validated activity dispositions before settlement or milestone
+calculation. Newly ingested volume excluded in sync review cannot first become an
+uncommitted high-water award. Retryable tracker-input races recalculate once with
+the original account revision; actual account conflicts retain explicit draft
+recovery. Positive field movement reuses the existing replay without requiring a
+rank change, and each sport remains independently queued. Committed overtake
+receipts survive subsequent save acknowledgements until device presentation can
+consume them.

@@ -1,4 +1,6 @@
 "use client";
+
+import { AccountSaveToast } from "@/ui/account-save-toast";
 import { AppParagraph } from "@/ui/section";
 
 
@@ -205,7 +207,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const holdRemoteRef = useRef<(next: CompeteState) => CompeteState>(next => next);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [retryingSave, setRetryingSave] = useState(false);
-  const [retryFailed, setRetryFailed] = useState(false);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
   const [attempt, setAttempt] = useState(0);
   /** Account the current `state`/`loadStatus` belong to — cleared synchronously on switch. */
@@ -226,6 +227,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const revisionRef = useRef<string | null>(null);
   const conflictRef = useRef(false);
   const [saveConflict, setSaveConflict] = useState(false);
+  const [noticeAttempt, setNoticeAttempt] = useState(0);
   const lifecycle = useRef(0);
   const saveChain = useRef<Promise<void>>(Promise.resolve());
   const refreshFlight = useRef<Promise<boolean> | null>(null);
@@ -246,7 +248,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     setLoadStatus("loading");
     setSaveError(null);
     setRetryingSave(false);
-    setRetryFailed(false);
     statusRef.current = "loading";
     stateRef.current = null;
     queue.current = [];
@@ -291,6 +292,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             } else if (body?.error === "week_still_open") {
               setSaveError("The wave has started, so your registration was kept. Please retry any other changes.");
               void refresh();
+            } else if (body?.error === "competition_inputs_changed") {
+              setSaveError("More activities arrived while saving. Please retry to save your latest changes.");
             } else setSaveError("This device updated. The account copy did not save.");
             return;
           }
@@ -306,7 +309,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             unsavedRef.current = false; unitsUnsavedRef.current = false;
           }
           setSaveError(null);
-          setRetryFailed(false);
         } catch {
           if (!isCurrent()) return;
           writeStorageItem(deviceOnlyKey(accountId), "1");
@@ -503,7 +505,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     }
     if (!conflictRef.current && statusRef.current === "ready" && unsavedRef.current && stateRef.current) {
       setRetryingSave(true);
-      setRetryFailed(true);
       scheduleSave(accountId, stateRef.current, true);
       return;
     }
@@ -691,6 +692,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       triggerDebugEvent,
       resetDebugState,
       dispatch: (action: Action) => {
+      if (conflictRef.current) setNoticeAttempt(value => value + 1);
         const withAccount: Action =
           userIdRef.current && !action.accountId
             ? { ...action, accountId: userIdRef.current }
@@ -777,19 +779,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         beginSyncReviewBatch: syncReview.begin,
         endSyncReviewBatch: syncReview.end,
       }}>
-    {saveConflict && (
-        <div role="alert" className="fb-card" style={{ padding: 16 }}>
-      Your account changed elsewhere. Reload to use the current account. Your local draft will be kept on this device as a recovery copy.
-      <button className="fb-btn-line" onClick={retryLoad}>Reload account</button>
-    </div>
-      )}
-    {saveError && !saveConflict && loadStatus === "ready" && (
-      <div role="alert" className="fb-card" style={{ padding: 16 }}>
-        <p>{saveError}</p>
-        {retryFailed && !retryingSave && <p role="status">Retry could not save. Your changes remain on this device.</p>}
-        <button className="fb-btn-line" disabled={retryingSave} onClick={retryLoad}>{retryingSave ? "Saving…" : "Retry save"}</button>
-      </div>
-    )}
+    <AccountSaveToast key={`${userId ?? "guest"}:${noticeAttempt}`} message={saveError} conflict={saveConflict} saving={retryingSave} onRetry={retryLoad}/>
     {children}
       {(syncReview.receipt || experience.moment) && state ? (
         <Suspense fallback={<AppParagraph typographyRole="body" role="status">Opening today’s recap…</AppParagraph>}>
@@ -801,7 +791,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             remaining={experience.remaining}
             onAcknowledge={() => { experience.acknowledge(); if (debugActive && experience.remaining <= 1) resetDebugState(); }}
             state={state}
-            onComplete={(selected, quiet) => { const result=syncReview.finish(selected, quiet); if(debugActive && (quiet || lastDebugEvent?.id !== "sync-combo")) resetDebugState(); return result; }}
+            onComplete={(selected, quiet) => { const result=syncReview.finish(selected, quiet); if(debugActive && (quiet || syncReview.receipt?.preview || selected?.length === 0)) resetDebugState(); return result; }}
           />
         </Suspense>
       ) : null}

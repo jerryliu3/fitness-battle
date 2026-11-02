@@ -35,7 +35,7 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
   const previousCount = useRef(0), confirmed = useRef(false);
   const progressRef = useRef(0), lastReduced = useRef(reduced);
   progressRef.current = progress;
-  const passedBy = !moment.plan.hasOvertake;
+  const passedBy = !moment.plan.hasOvertake && Boolean(moment.plan.passedByIds?.length);
   const count = passedBy ? moment.plan.passedByIds?.length ?? 0 : moment.plan.overtakenIds.length;
   useEffect(() => {
     if (lastReduced.current !== reduced) { lastReduced.current = reduced; progressRef.current = 0; setProgress(0); }
@@ -68,7 +68,8 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
       <View pointerEvents="box-none" style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: 10 }}>
       <View pointerEvents="box-none" style={{ gap: 10 }}>
       {debug&&!embedded&&<View style={{flexDirection:"row",alignItems:"center",gap:8}}><Text style={textStyle("label")}>3D course</Text><Switch accessibilityLabel="3D course" value={viewDimension==="4d"} onValueChange={value=>setViewDimension(value?"4d":"2d")}/></View>}
-      {!passedBy && <View pointerEvents="none" accessibilityLiveRegion="polite" style={[styles.panel, { alignSelf: "flex-start" }]}><Text style={textStyle("label")}>{frame.count} overtake{frame.count === 1 ? "" : "s"}</Text></View>}
+      {moment.plan.hasOvertake && <View pointerEvents="none" accessibilityLiveRegion="polite" style={[styles.panel, { alignSelf: "flex-start" }]}><Text style={textStyle("label")}>{frame.count} overtake{frame.count === 1 ? "" : "s"}</Text></View>}
+      {!moment.plan.hasOvertake && !passedBy && <View style={styles.panel}><Text style={textStyle("label")}>+{(moment.plan.youAfter - moment.plan.youBefore).toFixed(moment.unit === "pts" ? 0 : 1)} {moment.unit}</Text></View>}
       </View>
       {!embedded && <View style={[styles.panel, { flex: 1, minWidth: 160 }]} accessibilityLabel="Live replay standings">{frame.standings.filter(lane => !hiddenIds.includes(lane.id)).map(lane => <View key={lane.id} style={{ flexDirection: "row", gap: 10, alignItems: "center", paddingVertical: 5 }}><Text style={textStyle("label")}>#{lane.place}</Text><Text numberOfLines={1} style={[textStyle(lane.you ? "label" : "caption"), { flex: 1, maxWidth: 140 }]}>{lane.you ? "You" : lane.name}</Text><Text style={textStyle("caption")}>{lane.value.toFixed(1)} {moment.unit}</Text></View>)}</View>}
       </View>
@@ -76,9 +77,10 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
     {!reduced && frame.passEffects.length > 0 && <View pointerEvents="none" style={{ position:"absolute", top:"45%", alignSelf:"center", opacity:Math.max(...frame.passEffects.map(pass => pass.strength)) }}><Text style={{...textStyle("hero"),color:c.tennis}}>+1</Text></View>}
     <View pointerEvents="box-none" style={{ position: "absolute", bottom: (embedded ? 0 : insets.bottom) + 16, left: 16, right: 16, alignItems: "center" }}>
       <View style={{ width: "100%", maxWidth: 420, gap: 12 }}>
+      {viewDimension === "4d" && !sceneReady && !reduced && <FocusButton secondary label="Use 2D replay" onPress={() => setViewDimension("2d")}/>}
       {frame.done && <View style={{ flexDirection: "row", gap: 12 }}>
         <View style={{ flex: 1 }}><FocusButton secondary label="Replay" onPress={() => { previousCount.current = 0; stopHaptics.current(); setProgress(0); setPlayback(value => value + 1); }}/></View>
-        <View style={{ flex: 1 }}><FocusButton label="Continue" onPress={() => { if (!confirmed.current) { confirmed.current = true; onConfirm(); } }}/></View>
+        <View style={{ flex: 1 }}><FocusButton label={remaining > 1 ? `Continue (${remaining - 1} more)` : "Continue"} onPress={() => { if (!confirmed.current) { confirmed.current = true; onConfirm(); } }}/></View>
       </View>}
 
       </View>

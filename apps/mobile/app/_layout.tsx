@@ -161,10 +161,10 @@ export default function RootLayout() {
           <HeroUINativeProvider>
             <AuthProvider>
               <AthleteBlocksProvider>
-                <CompeteProvider navigationReady={fontsLoaded}>
-                  <BootGate>
-                    <NotificationNavigation />
-                    <ToastProvider>
+                <ToastProvider>
+                  <CompeteProvider navigationReady={fontsLoaded}>
+                    <BootGate>
+                      <NotificationNavigation />
                       <BlockPrivacyGate>
                         <LiveFieldRefresh />
                         <NavigationWarmup />
@@ -178,9 +178,9 @@ export default function RootLayout() {
                           }}
                         />
                       </BlockPrivacyGate>
-                    </ToastProvider>
-                  </BootGate>
-                </CompeteProvider>
+                    </BootGate>
+                  </CompeteProvider>
+                </ToastProvider>
               </AthleteBlocksProvider>
             </AuthProvider>
           </HeroUINativeProvider>

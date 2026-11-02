@@ -20,13 +20,13 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
   const reduced = useReducedMotion();
   const [viewDimension,setViewDimension]=useState(dimension);
   useEffect(()=>setViewDimension(dimension),[dimension]);
-  const assigned = useCompetitionCourse(moment.sport, period?.startsAt.toISOString() ?? "", period?.endsAt.toISOString() ?? "", debug, !course && viewDimension === "4d");
+  const assigned = useCompetitionCourse(moment.sport, moment.periodStart ?? period?.startsAt.toISOString() ?? "", moment.periodEnd ?? period?.endsAt.toISOString() ?? "", debug, !course && viewDimension === "4d");
   const [sceneReady, setSceneReady] = useState(false);
   useEffect(() => setSceneReady(false), [viewDimension]);
   const [started, setStarted] = useState(autoStart);
   const [progress, setProgress] = useState(reduced ? 1 : 0);
   const previousCount = useRef(0), skipped = useRef(false), confirmed = useRef(false);
-  const passedBy = !moment.plan.hasOvertake;
+  const passedBy = !moment.plan.hasOvertake && Boolean(moment.plan.passedByIds?.length);
   const count = passedBy ? moment.plan.passedByIds?.length ?? 0 : moment.plan.overtakenIds.length;
   useEffect(() => {
     if (reduced) { setProgress(1); return; }
@@ -53,7 +53,8 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
       {!embedded && <div className="moment-replay-label"><span className="fb-kicker">{sportById(moment.sport).name} · {embedded ? "OVERTAKE TUTORIAL · SAMPLE KM" : "REPLAY"}</span>{debug && <small>DEBUG PREVIEW · LOCAL DATA ONLY</small>}</div>}
       {!embedded && <div className="moment-replay-standings" aria-label="Live replay standings">{frame.standings.map(lane => <div key={lane.id} className={lane.you ? "is-you" : ""}><b>#{lane.place}</b><span>{lane.you ? "You" : lane.name}</span><small>{lane.value.toFixed(1)} {moment.unit}</small></div>)}</div>}
     </header>
-    {!passedBy && frame.count > 0 && <div className="moment-replay-label" role="status" style={{position:"absolute",left:16,top:100}}>{frame.count} overtake{frame.count === 1 ? "" : "s"}</div>}
+    {moment.plan.hasOvertake && frame.count > 0 && <div className="moment-replay-label" role="status" style={{position:"absolute",left:16,top:100}}>{frame.count} overtake{frame.count === 1 ? "" : "s"}</div>}
+    {!moment.plan.hasOvertake && !passedBy && <div className="moment-replay-label" role="status" style={{position:"absolute",left:16,top:100}}>+{(moment.plan.youAfter - moment.plan.youBefore).toFixed(moment.unit === "pts" ? 0 : 1)} {moment.unit}</div>}
     {!reduced && !skipped.current && frame.passEffects.length > 0 && <div aria-hidden style={{position:"absolute",top:"45%",left:"50%",transform:"translateX(-50%)",...typographyStyle("hero"),color:"#f7c948",opacity:Math.max(...frame.passEffects.map(pass=>pass.strength)),pointerEvents:"none"}}>+1</div>}
     <footer className="moment-replay-bottom">
       <button className="fb-btn" type="button" onClick={() => !started && !reduced ? setStarted(true) : frame.done ? (() => { if (!confirmed.current) { confirmed.current = true; onConfirm(); } })() : (() => { skipped.current = true; setProgress(1); })()}>{!started && !reduced ? embedded ? "Watch an Overtake →" : "See my move →" : frame.done ? remaining > 1 ? "Continue →" : embedded ? "Replay Overtake →" : "Back to the app →" : "Skip animation"}</button>

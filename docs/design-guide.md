@@ -711,5 +711,24 @@ The next native refinement removes axis labels from Home and Effort Score charts
 Effort connections are solid yellow, including connections between readings with
 unknown change times; source event timestamps remain unchanged. Daily-health
 history labels omit units except on today's point, omit corridor prose/status
-badges, and round counts with compact notation above five digits. Native toasts
+badges, and round counts with compact notation above five digits. Informational native toasts
 expire after five seconds and dismiss upward without a close glyph.
+
+
+### Account save notifications — November 1
+
+Account save failures belong to one root-owned floating toast on web and native.
+Pages, settings, onboarding and Effort Score captions do not reserve space for
+save errors. A revision conflict replaces the generic save failure in that same
+notification. Retry save / Saving… and Reload account retain their existing save
+and recovery behavior; Dismiss only hides the notice and never clears a draft,
+conflict or unsaved flag.
+
+Native notifications render in the iOS full-window overlay above navigation
+headers and sheets, inside top and horizontal safe areas. Empty overlay space
+passes touches to the current screen. Informational sync toasts keep their
+five-second lifetime and upward dismissal. Actionable save errors allow eight
+seconds, pause expiry while saving, and offer a visible Dismiss action. Account
+conflicts stay until acted on or dismissed and take precedence over informational
+sync feedback. A failed retry can show the same error again. Web uses a fixed
+portal with safe-area offsets and the same actions and dismissal policy.

@@ -1,3 +1,4 @@
+import { Toast } from "../ui/toast";
 import { playCue, playPattern } from "./haptics";
 import { clubAchievements, weeklyActivityStreak, competeNow, rankForElo } from "@fitness-battle/shared";
 import { useCompetitionExperience } from "./use-competition-experience";
@@ -45,7 +46,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { AppState, Text, Pressable, View } from "react-native";
+import { AppState, Text } from "react-native";
 import {
   accountStorageKeys,
   hydrateAccountIdentity,
@@ -88,6 +89,7 @@ interface CompeteContextValue {
   standingsStale: boolean;
   refresh: (options?: { ifStale?: boolean }) => Promise<boolean>;
   saveError: string | null;
+  saving: boolean;
   retrySave: () => void;
   clearAccountData: (expectedId: string) => Promise<boolean>;
   debugActive?: boolean;
@@ -169,6 +171,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   useLayoutEffect(() => { clearApiReads(); }, [owner, auth.offlineMode]);
   const keys = accountStorageKeys(owner);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [loadStatus, setLoadStatus] = useState<AccountLoadStatus>("loading");
   const loadReady = useRef(false);
   const hydrationPending = useRef(true);
@@ -197,6 +201,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   const revisionRef = useRef<string | null>(null);
   const conflictRef = useRef(false);
   const [saveConflict, setSaveConflict] = useState(false);
+  const [noticeAttempt, setNoticeAttempt] = useState(0);
   const refreshFlight = useRef<Promise<boolean> | null>(null);
   const lastRefresh = useRef(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -240,6 +245,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     setState(null);
     stateRef.current = null;
     setSaveError(null);
+    setSaving(false);
+    savingRef.current = false;
     setFieldNotice(null);
     setReturnGain(0);
     void (async () => {
@@ -766,6 +773,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             );
             return;
           }
+          savingRef.current = true;
+          setSaving(true);
           try {
             const currentAuth = authRef.current;
             const account = await competeAccount({
@@ -839,6 +848,11 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               const message = saveFailure();
               if (message) setSaveError(message);
             }
+          } finally {
+            if (isCurrent()) {
+              savingRef.current = false;
+              setSaving(false);
+            }
           }
         });
     };
@@ -859,6 +873,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
 
   const dispatch = useCallback(
     (action: Action) => {
+      if (conflictRef.current) setNoticeAttempt(value => value + 1);
       const prev = stateRef.current;
       if (!prev) return;
       if (
@@ -961,6 +976,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   holdRemoteRef.current = syncReview.holdRemote;
 
   const retrySave = useCallback(() => {
+    if (savingRef.current) return;
     if (conflictRef.current) {
       const id = accountRef.current;
       const scoped = accountStorageKeys(id);
@@ -1112,6 +1128,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         standingsStale,
         refresh,
         saveError,
+        saving,
         retrySave,
         clearAccountData,
         debugActive,
@@ -1119,20 +1136,12 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         resetDebugState,
       }}
     >
-      {saveConflict && (
-        <View
-          accessibilityRole="alert"
-          style={{ padding: 16, backgroundColor: SHELL_COLORS.tennis }}
-        >
-          <Text>
-            Your account changed elsewhere. Reload to use the current account.
-            Your local draft will be kept on this device as a recovery copy.
-          </Text>
-          <Pressable accessibilityRole="button" onPress={retrySave}>
-            <Text>Reload account</Text>
-          </Pressable>
-        </View>
-      )}
+      <Toast key={`${owner ?? "guest"}:${noticeAttempt}`}
+        message={saveConflict ? "Your account changed elsewhere. Reload to continue. Your local draft will be kept as a recovery copy." : saveError ?? ""}
+        action={{ label: saving ? "Saving…" : saveConflict ? "Reload account" : "Retry save", onPress: retrySave, disabled: saving }}
+        durationMs={saveConflict ? null : 8000}
+        priority={saveConflict ? 20 : 10}
+      />
       {children}
       {(syncReview.receipt || experience.moment) && state ? (
         <Suspense
@@ -1148,7 +1157,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             remaining={experience.remaining}
             onAcknowledge={() => { experience.acknowledge(); if (debugActive && experience.remaining <= 1) resetDebugState(); }}
             state={state}
-            onComplete={(selected, quiet) => { const result=syncReview.finish(selected, quiet); if(debugActive && (quiet || lastPreviewEvent.current !== "sync-combo")) resetDebugState(); return result; }}
+            onComplete={(selected, quiet) => { const result=syncReview.finish(selected, quiet); if(debugActive && (quiet || syncReview.receipt?.preview || selected?.length === 0)) resetDebugState(); return result; }}
           />
         </Suspense>
       ) : null}

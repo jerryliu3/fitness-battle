@@ -242,7 +242,15 @@ export async function persistCompeteAccount(
       if (authority) {
         if (!data || typeof data.updatedAt !== "string" || typeof data.lifetimeOvertakes !== "number") throw new Error("account_not_saved");
         state.lifetimeOvertakes = data.lifetimeOvertakes;
-        state.committedOvertakeMoments = moments.map(moment => ({ ...overtakeMomentForUnits(moment, state.units), id: overtakeReceiptId(userId, data.updatedAt, moment.sport) }));
+        const committed = moments.map(moment => ({ ...overtakeMomentForUnits(moment, state.units), id: overtakeReceiptId(userId, data.updatedAt, moment.sport) }));
+        // A following preference save or GET baseline commit must still deliver
+        // earlier unacknowledged sports if the first response was lost.
+        const retained = (state.committedOvertakeMoments ?? []).filter(moment => state.enrollments.some(enrollment =>
+          enrollment.sport === moment.sport && Date.parse(enrollment.waveStart) === Date.parse(moment.periodStart ?? "")
+        ));
+        state.committedOvertakeMoments = [...new Map([
+          ...retained.map(moment => overtakeMomentForUnits(moment, state.units)), ...committed,
+        ].map(moment => [moment.id, moment])).values()].slice(-50);
         return data.updatedAt;
       }
       if (typeof data !== "string") throw new Error("account_not_saved");
