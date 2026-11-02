@@ -1,7 +1,6 @@
 "use client";
 import { AppParagraph, AppText, StatusBadge } from "@/ui/section";
-
-import { useId, useState } from "react";
+import { useState } from "react";
 import {
   achievementAccessibilityLabel,
   clubAchievements,
@@ -9,25 +8,47 @@ import {
   type ClubAchievement,
   type CompeteState,
 } from "@fitness-battle/shared";
+import { Achievements } from "./achievements";
 import { AchievementMeter } from "./achievement-meter";
 
-function AchievementBadge({ item }: { item: ClubAchievement }) {
-  const id = useId();
+function AchievementRingBadge({ item }: { item: ClubAchievement }) {
+  const dash = Math.round(item.fraction * 138.2);
+  const stroke = item.earned
+    ? item.category === "effort"
+      ? "#f7c948"
+      : "#176c75"
+    : "#9fa5af";
   return (
-    <svg className="club-badge" viewBox="0 0 84 92" aria-hidden="true">
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          <stop stopColor={item.earned ? (item.category === "effort" ? "#ffe39a" : "#6bbab2") : "#edf1f1"} />
-          <stop offset="1" stopColor={item.earned ? (item.category === "effort" ? "#e4a82b" : "#176c75") : "#cbd6d9"} />
-        </linearGradient>
-      </defs>
-      <path d="M42 4 76 22v43L42 87 8 65V22Z" fill={`url(#${id})`} stroke={item.earned ? "#ffffff" : "#e3e9e7"} strokeWidth="3" />
-      <path d="M42 13 68 27v33L42 77 16 60V27Z" fill="none" stroke="#ffffff88" strokeWidth="2" />
-      {item.category === "sessions" ? (
-        <path d="m42 27 5 11 12 2-9 8 2 13-10-6-11 6 2-13-9-8 13-2Z" fill="white" />
-      ) : (
-        <path d="m46 23-18 26h12l-3 20 21-29H45Z" fill="white" />
-      )}
+    <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true">
+      <circle
+        cx="28"
+        cy="28"
+        r="22"
+        fill={item.earned ? "#142b3b" : "#f8f9f6"}
+        stroke="#e3e9e7"
+        strokeWidth="4"
+      />
+      <circle
+        cx="28"
+        cy="28"
+        r="22"
+        fill="none"
+        stroke={stroke}
+        strokeWidth="4.5"
+        strokeDasharray={`${dash} 138.2`}
+        strokeLinecap="round"
+        transform="rotate(-90 28 28)"
+      />
+      <text
+        x="28"
+        y="32"
+        textAnchor="middle"
+        fill={item.earned ? "#f7c948" : "#142b3b"}
+        fontSize="11"
+        fontWeight="800"
+      >
+        {Math.round(item.fraction * 100)}%
+      </text>
     </svg>
   );
 }
@@ -47,13 +68,15 @@ export function AchievementsCatalog({
   );
   const item = rows.find((row) => row.id === selected) ?? rows[0];
   return (
-    <div className="club-achievements-catalog">
+    <div className="club-achievements-catalog" style={{ display: "grid", gap: 20 }}>
+      <Achievements state={state} />
       {item ? (
         <div className="club-achievement-detail">
-          <AchievementBadge item={item} />
+          <AchievementRingBadge item={item} />
           <AchievementMeter row={item} decorative={false} />
           <strong>
-            {Math.min(item.current, item.target).toLocaleString()} / {item.target.toLocaleString()}
+            {Math.min(item.current, item.target).toLocaleString()} /{" "}
+            {item.target.toLocaleString()}
           </strong>
           <AppParagraph typographyRole="body">
             {item.category === "sessions"
@@ -68,19 +91,31 @@ export function AchievementsCatalog({
         </div>
       ) : null}
       <AppParagraph typographyRole="caption" className="fb-note">
-        Milestones reflect your current activity history and score. They do not grant rewards or change competition points.
+        Milestones reflect your current activity history and score. They do not
+        grant rewards or change competition points.
       </AppParagraph>
       <div className="club-all-achievements">
         {rows.map((row) => (
-          <button type="button" key={row.id} aria-pressed={row.id === item?.id} aria-label={achievementAccessibilityLabel(row)} onClick={() => setSelected(row.id)}>
-            <AchievementBadge item={row} />
+          <button
+            type="button"
+            key={row.id}
+            aria-pressed={row.id === item?.id}
+            aria-label={achievementAccessibilityLabel(row)}
+            onClick={() => setSelected(row.id)}
+          >
+            <AchievementRingBadge item={row} />
             <span>
               <b>{row.title}</b>
               <AchievementMeter row={row} />
               <AppText as="small" role="caption" secondary>
-                {row.target} {row.category === "sessions" ? "sessions" : "Open effort score"}
+                {row.target}{" "}
+                {row.category === "sessions"
+                  ? "sessions"
+                  : "Open effort score"}
               </AppText>
-              <StatusBadge tone={row.earned ? "success" : "neutral"}>{row.earned ? "Earned" : "Up next"}</StatusBadge>
+              <StatusBadge tone={row.earned ? "success" : "neutral"}>
+                {row.earned ? "Earned" : "Up next"}
+              </StatusBadge>
             </span>
           </button>
         ))}
@@ -88,3 +123,4 @@ export function AchievementsCatalog({
     </div>
   );
 }
+
