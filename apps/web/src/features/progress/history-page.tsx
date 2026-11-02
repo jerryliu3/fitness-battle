@@ -13,7 +13,7 @@ export function ProgressHistoryPage() {
   return (
     <div className="club-detail-page">
       <header className="club-detail-heading">
-        <Link href="/you" className="club-icon-button" aria-label="Return to Progress">
+        <Link href="/you?view=effort" className="club-icon-button" aria-label="Return to Progress">
           ‹
         </Link>
         <AppHeading level={1} role="heading">Past weeks & awards</AppHeading>

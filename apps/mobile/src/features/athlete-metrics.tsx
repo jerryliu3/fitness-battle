@@ -60,6 +60,7 @@ export function AthleteMetrics({
         </>
       ) : (
         <>
+          <EffortTrend state={state} />
           <View
             style={[
               f.card,
@@ -117,8 +118,6 @@ export function AthleteMetrics({
               </View>
             </View>
           </View>
-          <EffortTrend state={state} />
-
         </>
       )}
     </>

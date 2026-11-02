@@ -250,6 +250,8 @@ export function AthleteOverview({
         </section>
       ) : null}
 
+      {showProgress ? <EffortTrend state={state} email={email} /> : null}
+
       {showProgress ? (
       <section className="focus-season-strip" aria-label="Lifetime totals">
         <SectionHeader title="Lifetime totals"/>
@@ -273,8 +275,6 @@ export function AthleteOverview({
         </div>
       </section>
       ) : null}
-
-      {showProgress ? <EffortTrend state={state} email={email} /> : null}
     </>
   );
 }

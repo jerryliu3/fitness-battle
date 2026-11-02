@@ -830,21 +830,6 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
     <div className="focus-athlete" ref={overviewRef} inert={Boolean(panel) || settingsPresent}>
       {surface === "progress" ? (
         <ProgressHub overview={<><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/>
-        <Section
-          className="club-history-preview-section"
-          title="Past weeks & awards"
-          action={
-            <TextAction
-              href="/you/history"
-              label="View all"
-              accessibilityLabel="View all past weeks and awards"
-            />
-          }
-        >
-          {awardCards(state).length > 0 ? (
-            <AwardShelf state={state} />
-          ) : null}
-        </Section>
         <AthleteTelemetryMatrix state={state} />
         </>} effort={<>
           <AthleteOverview
