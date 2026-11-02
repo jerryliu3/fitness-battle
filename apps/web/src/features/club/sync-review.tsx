@@ -43,6 +43,16 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
       onComplete(ids);
     }, SYNC_REVIEW_SAVE_DELAY_MS);
   };
+  const selectAll = () => {
+    if (saving) return;
+    setExcluded([]);
+    setProgress(0);
+  };
+  const deselectAll = () => {
+    if (saving) return;
+    setExcluded(activities.map((a) => a.id));
+    setProgress(0);
+  };
   const openDetail = (id: string) => {
     if (saving) return;
     setDetail(id);
@@ -60,7 +70,28 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
     {receipt.preview && <p className="fb-kicker">SAMPLE PREVIEW · NO COMPETITION CREDIT</p>}
     <AppHeading level={1} role="display">Sync completed</AppHeading>
     <div className="sync-review-total">{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</div>
-    <p className="fb-copy">{selected.length} of {activities.length} activities selected.</p>
+    <div className="sync-review-selection-bar">
+      <p className="fb-copy">{selected.length} of {activities.length} activities selected.</p>
+      <div className="sync-review-selection-actions">
+        <button
+          type="button"
+          className="sync-review-action-btn"
+          disabled={saving || selected.length === activities.length}
+          onClick={selectAll}
+        >
+          Select all
+        </button>
+        <span aria-hidden="true" className="sync-review-action-sep">·</span>
+        <button
+          type="button"
+          className="sync-review-action-btn"
+          disabled={saving || selected.length === 0}
+          onClick={deselectAll}
+        >
+          Deselect all
+        </button>
+      </div>
+    </div>
     {activities.length > 0 && <ActivityRoute activity={selected[0] ?? activities[0]} units={state.units}/>}
     <div className="sync-review-list">{activities.map(a => <div key={a.id} className="sync-review-row">
       <label><input type="checkbox" disabled={saving} checked={!excluded.includes(a.id)} onChange={e => { if (saving) return; setExcluded(ids => e.target.checked ? ids.filter(id => id !== a.id) : [...ids, a.id]); setProgress(0); }} aria-label={`Count ${sportById(a.sport).name} activity ${a.id}`}/><span className="sr-only">Include activity</span></label>
@@ -77,7 +108,7 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
         onPointerCancel={() => { if (!saving) setProgress(0); }}>
         <span className="sync-review-swipe-label" style={{ clipPath: `inset(0 0 0 ${Math.round(progress * 100)}%)` }}>{receipt.preview ? "Swipe to preview" : selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</span><i style={{ left: `calc(${progress * 100}% - ${progress * 56}px)` }} aria-hidden="true">{saving ? <span className="sync-review-swipe-spin" /> : "→"}</i>
       </div>
-      <p className="fb-note">{receipt.preview ? "Preview only. No activities or points will be added." : "Your synced activities are saved safely."}</p>
+      {receipt.preview ? <p className="fb-note">Preview only. No activities or points will be added.</p> : null}
     </div>
   </div>;
 }
