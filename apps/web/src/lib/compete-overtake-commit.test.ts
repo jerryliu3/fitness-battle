@@ -34,6 +34,7 @@ it("does not acknowledge a lifetime change when the transaction rejects the revi
 
 it("retains earlier sports' receipts through a subsequent save or read-side baseline commit", async () => {
   const state = reduceCompete(freshState(new Date("2026-10-28T15:00:00Z")), { type: "opt-in", sport: "running", now: "2026-10-28T09:00:00Z" });
+  state.units = "metric";
   const retained = { id: "overtake:owner:earlier:running", sport: "running", periodStart: state.enrollments[0]!.waveStart, unit: "km", plan: { hasOvertake: true } };
   state.committedOvertakeMoments = [retained as never, { ...retained, id: "old-wave", periodStart: "2026-10-19T10:00:00Z" } as never];
   const rpc = vi.fn(async (name: string) => name === "read_compete_overtake_baselines"
