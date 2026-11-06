@@ -91,44 +91,53 @@ export function DailyHealth({ state }: { state: CompeteState }) {
             </View>
             <View style={s.chartBox}>
               <Svg width="100%" height={chart.height} viewBox={`0 0 ${chart.width} ${chart.height}`} accessible={false}>
-                {chart.hasBaseline && <G><Path d={chart.corridorAreaPath} fill={colors.accent} opacity={0.12} />
-                <Line
-                  x1={38}
-                  x2={304}
-                  y1={chart.corridorYTop}
-                  y2={chart.corridorYTop}
-                  stroke={colors.accent}
-                  strokeDasharray="3 3"
-                  opacity={0.65}
-                />
-                <Line
-                  x1={38}
-                  x2={304}
-                  y1={chart.corridorYBottom}
-                  y2={chart.corridorYBottom}
-                  stroke={colors.accent}
-                  strokeDasharray="3 3"
-                  opacity={0.65}
-                />
-                <SvgText
-                  {...chartTextProps()}
-                  x={34}
-                  y={chart.corridorYTop + 3}
-                  textAnchor="end"
-                  fill={colors.secondary}
-                >
-                  {formatHealthNumber(chart.baselineHigh)}
-                </SvgText>
-                <SvgText
-                  {...chartTextProps()}
-                  x={34}
-                  y={chart.corridorYBottom + 3}
-                  textAnchor="end"
-                  fill={colors.secondary}
-                >
-                  {formatHealthNumber(chart.baselineLow)}
-                </SvgText>
-                </G>}
+                {chart.hasBaseline && (() => {
+                  const yDiff = chart.corridorYBottom - chart.corridorYTop;
+                  const minGap = 13;
+                  const topLabelY = yDiff < minGap ? chart.corridorYTop - (minGap - yDiff) / 2 + 3 : chart.corridorYTop + 3;
+                  const bottomLabelY = yDiff < minGap ? chart.corridorYBottom + (minGap - yDiff) / 2 + 3 : chart.corridorYBottom + 3;
+                  return (
+                    <G>
+                      <Path d={chart.corridorAreaPath} fill={colors.accent} opacity={0.12} />
+                      <Line
+                        x1={38}
+                        x2={304}
+                        y1={chart.corridorYTop}
+                        y2={chart.corridorYTop}
+                        stroke={colors.accent}
+                        strokeDasharray="3 3"
+                        opacity={0.65}
+                      />
+                      <Line
+                        x1={38}
+                        x2={304}
+                        y1={chart.corridorYBottom}
+                        y2={chart.corridorYBottom}
+                        stroke={colors.accent}
+                        strokeDasharray="3 3"
+                        opacity={0.65}
+                      />
+                      <SvgText
+                        {...chartTextProps()}
+                        x={34}
+                        y={topLabelY}
+                        textAnchor="end"
+                        fill={colors.secondary}
+                      >
+                        {formatHealthNumber(chart.baselineHigh)}
+                      </SvgText>
+                      <SvgText
+                        {...chartTextProps()}
+                        x={34}
+                        y={bottomLabelY}
+                        textAnchor="end"
+                        fill={colors.secondary}
+                      >
+                        {formatHealthNumber(chart.baselineLow)}
+                      </SvgText>
+                    </G>
+                  );
+                })()}
 {chart.lineSegments.map((d, i) => (
                   <Path
                     key={i}
@@ -168,9 +177,9 @@ export function DailyHealth({ state }: { state: CompeteState }) {
                       />
                       <SvgText
                         {...chartTextProps()}
-                        x={p.x}
+                        x={p.index === 6 ? Math.min(316, p.x) : p.index === 0 ? Math.max(40, p.x) : p.x}
                         y={Math.max(12, p.y - 7)}
-                        textAnchor="middle"
+                        textAnchor={p.index === 6 ? "end" : p.index === 0 ? "start" : "middle"}
                         fill={ptColor}
                       >
                         {p.formatted}

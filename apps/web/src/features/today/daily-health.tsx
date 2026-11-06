@@ -96,42 +96,51 @@ export function DailyHealth({ state }: { state: CompeteState }) {
                         className="home-health-chart-svg"
                         aria-label={`${selected.name} 7-day corridor chart`}
                       >
-                        {chart.hasBaseline && <g><path d={chart.corridorAreaPath} fill="var(--health-accent)" opacity="0.12" />
-                        <line
-                          x1={38}
-                          x2={304}
-                          y1={chart.corridorYTop}
-                          y2={chart.corridorYTop}
-                          stroke="var(--health-accent)"
-                          strokeDasharray="3 3"
-                          opacity="0.65"
-                        />
-                        <line
-                          x1={38}
-                          x2={304}
-                          y1={chart.corridorYBottom}
-                          y2={chart.corridorYBottom}
-                          stroke="var(--health-accent)"
-                          strokeDasharray="3 3"
-                          opacity="0.65"
-                        />
-                        <text
-                          x={34}
-                          y={chart.corridorYTop + 3}
-                          textAnchor="end"
-                          className="home-health-axis-label"
-                        >
-                          {formatHealthNumber(chart.baselineHigh)}
-                        </text>
-                        <text
-                          x={34}
-                          y={chart.corridorYBottom + 3}
-                          textAnchor="end"
-                          className="home-health-axis-label"
-                        >
-                          {formatHealthNumber(chart.baselineLow)}
-                        </text>
-                        </g>}
+                        {chart.hasBaseline && (() => {
+                          const yDiff = chart.corridorYBottom - chart.corridorYTop;
+                          const minGap = 13;
+                          const topLabelY = yDiff < minGap ? chart.corridorYTop - (minGap - yDiff) / 2 + 3 : chart.corridorYTop + 3;
+                          const bottomLabelY = yDiff < minGap ? chart.corridorYBottom + (minGap - yDiff) / 2 + 3 : chart.corridorYBottom + 3;
+                          return (
+                            <g>
+                              <path d={chart.corridorAreaPath} fill="var(--health-accent)" opacity="0.12" />
+                              <line
+                                x1={38}
+                                x2={304}
+                                y1={chart.corridorYTop}
+                                y2={chart.corridorYTop}
+                                stroke="var(--health-accent)"
+                                strokeDasharray="3 3"
+                                opacity="0.65"
+                              />
+                              <line
+                                x1={38}
+                                x2={304}
+                                y1={chart.corridorYBottom}
+                                y2={chart.corridorYBottom}
+                                stroke="var(--health-accent)"
+                                strokeDasharray="3 3"
+                                opacity="0.65"
+                              />
+                              <text
+                                x={34}
+                                y={topLabelY}
+                                textAnchor="end"
+                                className="home-health-axis-label"
+                              >
+                                {formatHealthNumber(chart.baselineHigh)}
+                              </text>
+                              <text
+                                x={34}
+                                y={bottomLabelY}
+                                textAnchor="end"
+                                className="home-health-axis-label"
+                              >
+                                {formatHealthNumber(chart.baselineLow)}
+                              </text>
+                            </g>
+                          );
+                        })()}
 {chart.lineSegments.map((d, i) => (
                           <path
                             key={i}
@@ -170,9 +179,9 @@ export function DailyHealth({ state }: { state: CompeteState }) {
                                 strokeWidth="1.5"
                               />
                               <text
-                                x={p.x}
+                                x={p.index === 6 ? Math.min(316, p.x) : p.index === 0 ? Math.max(40, p.x) : p.x}
                                 y={Math.max(12, p.y - 7)}
-                                textAnchor="middle"
+                                textAnchor={p.index === 6 ? "end" : p.index === 0 ? "start" : "middle"}
                                 className={isUnder ? "home-health-pt-under" : "home-health-pt-value"}
                               >
                                 {p.formatted}
