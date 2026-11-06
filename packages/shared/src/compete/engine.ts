@@ -1527,7 +1527,7 @@ export function formatDistanceM(
 
 export function formatEffort(value: number): string {
   return Number.isFinite(value)
-    ? value.toLocaleString("en-US", { useGrouping: false, maximumFractionDigits: 1 })
+    ? value.toLocaleString("en-US", { useGrouping: true, maximumFractionDigits: 1 })
     : "—";
 }
 
