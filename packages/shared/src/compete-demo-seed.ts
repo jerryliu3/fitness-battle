@@ -53,9 +53,7 @@ export function getDemoCompeteState(
       freezesLeft: 3,
       trainingGoal: {
         distance: "half",
-        deadline: new Date(Date.now() + 45 * 86400000)
-          .toISOString()
-          .slice(0, 10),
+        deadline: dayKey(shiftAppDay(new Date(), 45)),
       },
       ratings: SPORT_IDS.map((sport: SportId) => {
         if (sport === "running") {
@@ -488,7 +486,7 @@ export function getDemoCompeteState(
         {
           id: "slp-alice-d2",
           metric: "sleep",
-          day: new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10),
+          day: dayKey(shiftAppDay(new Date(), -2)),
           score: 82,
           durationMin: 440,
           efficiency: 91,
@@ -559,7 +557,7 @@ export function getDemoCompeteState(
       focus: { family: "sport", id: "cycling" },
       calibrated: true,
       onboardingCompleted: true,
-      lessonDoneOn: new Date().toISOString().slice(0, 10),
+      lessonDoneOn: dayKey(new Date()),
       ratings: SPORT_IDS.map((sport: SportId) => {
         if (sport === "cycling") {
           return {
@@ -831,9 +829,7 @@ export function getDemoCompeteState(
       freezesLeft: 3,
       trainingGoal: {
         distance: "half",
-        deadline: new Date(Date.now() + 60 * 86400000)
-          .toISOString()
-          .slice(0, 10),
+        deadline: dayKey(shiftAppDay(new Date(), 60)),
       },
       ratings: SPORT_IDS.map((sport: SportId) => {
         if (sport === "running") {
