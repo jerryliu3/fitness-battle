@@ -239,7 +239,7 @@ export function CrewSessions({
           />
         </label>
         <label className="fb-field">
-          Time · {APP_TIMEZONE}
+          Time · Eastern (EST)
           <input
             type="time"
             value={time}

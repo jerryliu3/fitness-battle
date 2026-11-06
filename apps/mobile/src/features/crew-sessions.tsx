@@ -250,9 +250,9 @@ export function CrewSessions({
           value={title}
           onChangeText={setTitle}
         />
-        <AppText role="caption" secondary >Date · {APP_TIMEZONE}</AppText>
+        <AppText role="caption" secondary >Date · Eastern (EST)</AppText>
         <DateTimeField label="Session date · Eastern" mode="date" value={day} onChange={setDay} />
-        <AppText role="caption" secondary >Time · {APP_TIMEZONE}</AppText>
+        <AppText role="caption" secondary >Time · Eastern (EST)</AppText>
         <DateTimeField label="Session time · Eastern" mode="time" value={time} onChange={setTime} />
         <AppText role="caption" secondary >Duration</AppText>
         <View style={f.chipRow}>

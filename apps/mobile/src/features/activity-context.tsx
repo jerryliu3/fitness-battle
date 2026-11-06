@@ -14,9 +14,10 @@ import { SHELL_COLORS as c } from "../theme";
 type Point = { id: string; x: number; y: number };
 const H = 258, TOP = 18, BOTTOM = H - 46, LEFT = 52;
 const path = (points: { x: number; y: number }[]) => points.map((point, i) => `${i ? "L" : "M"}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
-function extent(values: number[], minimumPadding = 1): [number, number] {
+function extent(values: number[], minimumPadding = 1, clampZero = true): [number, number] {
   const min = Math.min(...values), max = Math.max(...values), padding = Math.max(minimumPadding, (max - min) * .16);
-  return [min - padding, max + padding];
+  const low = clampZero && min >= 0 ? Math.max(0, min - padding) : min - padding;
+  return [low, max + padding];
 }
 function scale(domain: [number, number], low: number, high: number) {
   return (value: number) => low + (value - domain[0]) / (domain[1] - domain[0] || 1) * (high - low);
@@ -150,7 +151,7 @@ function Ripple({ current, history }: { current: Activity; history: Activity[] }
     <AppText role="heading" accessibilityRole="header">What this added</AppText>
     <View style={s.hero}><AppText role="hero">{average.toFixed(1)}</AppText><AppText role="body" secondary>min / day · 7-day average</AppText></View>
     <Plot width={width} points={days.map((day, index) => ({ id: day.key, x: x(index), y: y(day.minutes) }))} selected={chosen.key} onSelect={setSelected} label={`Logged volume. ${dateLabel(chosen.date)}: ${Math.round(chosen.minutes)} minutes. ${chosen.average.toFixed(1)} minutes per day rolling average on this day.`}>
-      <Grid width={width} yDomain={yd} yFormat={value => `${Math.round(value)}`} xTicks={[0, 13, 27].map(index => ({ x: x(index), label: dateLabel(days[index]!.date) }))} xLabel="Day · America/New_York" yLabel="Minutes / day" />
+      <Grid width={width} yDomain={yd} yFormat={value => `${Math.round(value)}`} xTicks={[0, 13, 27].map(index => ({ x: x(index), label: dateLabel(days[index]!.date) }))} xLabel="Day (EST)" yLabel="Minutes / day" />
       {days.map((day, index) => <Rect key={day.key} x={x(index) - Math.max(2, (width - LEFT - 28) / 28 * .28)} y={y(day.without)} width={Math.max(4, (width - LEFT - 28) / 28 * .56)} height={BOTTOM - y(day.without)} rx={2} fill={c.secondary} opacity={.45} />)}
       <Rect x={x(27) - Math.max(2, (width - LEFT - 28) / 28 * .28)} y={y(latest.minutes)} width={Math.max(4, (width - LEFT - 28) / 28 * .56)} height={y(latest.without) - y(latest.minutes)} rx={2} fill={c.tennis} />
       <Path d={path(days.map((day, index) => ({ x: x(index), y: y(day.average) })))} fill="none" stroke={c.fieldTeal} strokeWidth={3} />
