@@ -1,5 +1,7 @@
 # Everyday Club component decisions
 
+Composition follows the [November 6 design-guide principles](../design-guide.md#composition-and-copy-principles--november-6-2026). Header subtitles and explanatory copy are optional. A component API offering a title, subtitle, badge or description does not justify rendering them all. Section boundaries need not each introduce another visible heading.
+
 | Component | Purpose and behavior | Avoid | States / access |
 | --- | --- | --- | --- |
 | Primary button | Execute the page's principal action, yellow with dark label | Navigation everywhere / recording | 44px minimum, focused, pressed, loading, disabled |
