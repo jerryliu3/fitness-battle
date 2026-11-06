@@ -1,5 +1,87 @@
 # Product design guide — Everyday Club
 
+## Composition and copy principles — November 6, 2026
+
+These principles apply to new screens and refinements on web and native. They
+supplement the selected Everyday Club tokens and chart contracts. When historical
+examples imply mandatory subtitles, nested introductions or explanatory cards,
+these composition rules take precedence. Reference observations and the current
+implementation comparison are in [the wellness app review](reviews/wellness-design-principles-2026-11-06.md).
+
+### Give each screen a purpose and a focal point
+
+Describe the user's immediate task before composing the screen. Choose a primary
+reading, decision or action; subordinate the rest. Multiple sections may exist,
+but they must not all demand equal attention. Use the existing semantic type roles
+and spacing to establish meaningful differences in emphasis. Do not invent a new
+font size for each feature or reduce readable text to squeeze in more content.
+
+### Text must earn its space
+
+Default to a concise title and the content. Subtitles, kickers, helper paragraphs,
+badges and nested headings are optional, never a component-completeness checklist.
+Every visible line must identify something, add necessary context, explain a
+consequence or enable an action. Delete lines that repeat nearby text or describe
+an obvious control. Do not add copy merely to make a screen feel designed.
+
+- Avoid the stack: eyebrow → page title → subtitle → section title → card title →
+  explanatory sentence before the user reaches the value or action.
+- A chart may need a metric name, date and unit; it does not also need a slogan,
+  a section introduction and a paragraph saying it shows progress.
+- Prefer a direct action such as “Explore events” to an inspirational heading
+  followed by an instruction that repeats the action.
+- Omit “Tap to view” on recognizable interactive rows. Use a familiar affordance;
+  provide an accessibility hint when it adds useful information.
+- Do not label every visual boundary. Use proximity, alignment and spacing to
+  communicate grouping. A named metric can introduce its own chart.
+- Keep units, dates, comparison periods, data provenance, unavailable/error states,
+  consequences and accurate sample disclosures where needed for understanding.
+  Move optional methodology into contextual details; do not hide essential context.
+- Keep accessible names and semantic structure even when visible copy is reduced.
+  Do not replace text bloat with unexplained icon-only controls.
+
+Before adding text, ask: what would the user misunderstand or be unable to do
+without this line? If there is no specific answer, omit it. Fix unclear layout or
+interaction before compensating with permanent instructions. Shortening copy
+must not simply leave oversized empty wrappers and inherited introduction gaps.
+
+### Make data interpretable with the minimum useful context
+
+Lead with the selected reading and its time context. Provide real units,
+comparison/reference meaning and inspectable values through the selected chart
+system. Use one stable reading location rather than repeating the same value in
+a KPI tile, chart heading, badge and inspection card. A range, baseline and target
+must be distinguishable. Do not invent health judgments or progress goals from
+recorded measurements. Quiet axes still need readable contrast.
+
+### Use consistent rules with task-specific compositions
+
+Reuse tokens, control behavior, chart inspection and spacing relationships.
+A map, recommendation, form and recap need different compositions. Do not force
+every task into the same title/subtitle/card template. Keep related information
+close and separate different tasks with larger boundaries. Avoid nested cards
+that add no meaningful grouping.
+
+### Concentrate expression and show meaningful progress
+
+Give illustration, maps, motion or a prominent number a clear role. Keep nearby
+chrome quiet so expressive elements do not compete. Ember should support an
+actual recommendation, event or outcome rather than decorate every section.
+Show current position, next action and confirmed outcomes when relevant. Explain
+what changed once; do not narrate the same progress across multiple banners.
+Tone should fit the moment: direct during competition, supportive for recovery,
+and precise during data inspection. Do not infer engagement or usability from
+visual polish alone.
+
+### Review the whole phone screen
+
+Review first viewport and scrolled states at supported widths and large text.
+Identify what draws attention first and how far the user travels before reaching
+the main content. Check populated, empty and error states. Audit repeated dates,
+values, instructions and heading levels. Remove unnecessary content before adding
+another container, badge or explanation. Preserve honest missing-data states
+without giving unavailable metrics the visual weight of a primary result.
+
 The [product-derived native refinement](reviews/product-refinement/README.md) narrows the October 25 tab review to nine implementation candidates built from the current app. It preserves the selected production tokens and domain rules; layouts remain under review.
 
 The selected production direction is **Everyday Club**, following the owner’s October 22 reference and implementation request. Retain yellow and Ember, Home / Compete / Progress / Crew, existing data behavior, geographic 3D default competition, no recording action and no social feed. See [audit](design/ui-audit.md) and [component decisions](design/component-guidelines.md).
