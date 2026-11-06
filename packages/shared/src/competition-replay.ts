@@ -3,7 +3,7 @@ import { activityEffort } from "./compete/effort";
 import { countsOnTrack } from "./compete/ledger";
 import { competeNow } from "./compete/engine";
 import { sportById, type CompeteState, type ScoreTrack, type SportId, type UnitSystem } from "./compete/sports";
-import { findSynthetic, syntheticVolumeInWindow } from "./matching/synthetic-bank";
+import { findSynthetic, syntheticBank, syntheticVolumeInWindow } from "./matching/synthetic-bank";
 
 export interface CompetitionReplaySelection {
   sport: SportId;
@@ -63,7 +63,10 @@ export function localCompetitionReplay(state: CompeteState, selection: Competiti
     id: a.id, athleteId: "you", at: a.startedAt, distanceM: a.distanceM, movingSec: a.movingSec, effort: activityEffort(a),
   }));
   const enrollment = state.enrollments.find(e => e.sport === selection.sport && Date.parse(e.waveStart) === Date.parse(selection.periodStart) && Date.parse(e.weekEnd) === Date.parse(selection.periodEnd));
-  return addSimulatedReplay({ ...selection, through, athletes: [{ id: "you", name: state.name, avatarUrl: state.avatarUrl, you: true }], events, scope: "local" }, enrollment?.syntheticIds ?? []);
+  const candidateIds = (enrollment?.syntheticIds && enrollment.syntheticIds.length > 0)
+    ? enrollment.syntheticIds
+    : syntheticBank(selection.sport).slice(0, 7).map(r => r.id);
+  return addSimulatedReplay({ ...selection, through, athletes: [{ id: "you", name: state.name, avatarUrl: state.avatarUrl, you: true }], events, scope: "local" }, candidateIds);
 }
 
 interface AthleteSeries { steps: number[]; values: number[]; efforts: number[] }
