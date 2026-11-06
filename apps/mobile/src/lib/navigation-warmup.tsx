@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter, type Href } from "expo-router";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
 import { useCompeteStore } from "./compete-store";
 
 // Tabs already mount eagerly on iOS and Android/web. Warm only likely child stacks.
@@ -18,7 +18,8 @@ export function NavigationWarmup() {
   const warmed = useRef(new Set<string>());
   useEffect(() => { warmed.current.clear(); }, [accountKey]);
   useEffect(() => {
-    if (!ready) return;
+    // NativeTabs on iOS does not support JS router prefetch and triggers unhandled PRELOAD LogBox errors.
+    if (!ready || Platform.OS === "ios") return;
     const destinations = NESTED_PREFETCH[pathname] ?? [];
     // Space out pre-renders so opening Home/Compete gets the first JS frames.
     const timers = destinations.map((href, index) => setTimeout(() => {
