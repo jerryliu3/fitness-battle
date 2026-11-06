@@ -109,6 +109,16 @@ describe("suggestToday", () => {
       now,
     );
     expect(suggestion.title).toBe("Already covered");
+    expect(suggestion.detail).toContain("5 km");
+
+    const usSuggestion = suggestToday(
+      { distance: "5k", deadline: "2026-12-08" },
+      [run({ id: "today", startedAt: "2026-10-13T12:00:00.000Z", distanceM: 5600 })],
+      now,
+      "running",
+      "us",
+    );
+    expect(usSuggestion.detail).toContain("3.5 mi");
   });
 
   it("keeps the long day on the weekday with the most distance", () => {
