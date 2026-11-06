@@ -13,6 +13,9 @@ import { useReducedMotion } from "./use-reduced-motion";
 import { useSceneActive } from "./use-scene-active";
 
 const rememberedCameras = new Map<string, CourseCameraPose>();
+const isValidPose = (p?: CourseCameraPose | null): p is CourseCameraPose =>
+  Boolean(p && p.center && Array.isArray(p.center) && (Math.abs(p.center[0]) >= 1e-6 || Math.abs(p.center[1]) >= 1e-6) && !Number.isNaN(p.center[0]) && !Number.isNaN(p.center[1]) && typeof p.zoom === "number" && p.zoom > 1);
+
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
 export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, overlaysHidden = false, distanceTarget }: {
   cardSessionKey?: string | number | boolean;
@@ -23,7 +26,8 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   const active = useSceneActive();
   const { user } = useAuth();
   const cameraKey = `${user?.id ?? "guest"}:${course.name}:${course.length}:${course.coordinates[0].join(",")}:${unit}`;
-  const restored = useRef(replay ? undefined : rememberedCameras.get(cameraKey));
+  const cachedPose = replay ? undefined : rememberedCameras.get(cameraKey);
+  const restored = useRef(isValidPose(cachedPose) ? cachedPose : undefined);
   const [dismissed, setDismissed] = useState<string[]>([]);
   useEffect(() => { setDismissed([]); }, [course, cardSessionKey]);
   useEffect(() => { setDismissed(ids => ids.filter(id => id !== selectedId)); }, [selectedId, focusRequest]);
@@ -35,7 +39,8 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   const visibleTrails = useMemo(() => hiddenIds.length ? { ...scene.trails, features: scene.trails.features.filter(feature => !hiddenIds.includes(String(feature.id))) } : scene.trails, [scene.trails, hiddenIds]);
   const visibleMarkers = useMemo(() => hiddenIds.length ? { ...scene.markers, features: scene.markers.features.filter(feature => !hiddenIds.includes(String(feature.id))) } : scene.markers, [scene.markers, hiddenIds]);
   const trailWidth = RACE_TRAIL_WIDTH_METRES / (78271.516964 * Math.cos(course.coordinates[0][1] * Math.PI / 180));
-  const pose = useRef<CourseCameraPose>(restored.current ?? { center: scene.selected?.coordinate ?? course.coordinates[0], zoom: 16, pitch: initialFlat ? 0 : 60, bearing: 0 });
+  const fallbackCenter = scene.selected?.coordinate ?? course.coordinates[0];
+  const pose = useRef<CourseCameraPose>(restored.current ?? { center: fallbackCenter, zoom: 16, pitch: initialFlat ? 0 : 60, bearing: 0 });
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(restored.current ? restored.current.pitch === 0 : initialFlat);
   const controller = useMemo(() => createCourseCamera({
     read: () => pose.current,
@@ -48,14 +53,18 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   useEffect(() => controller.setReducedMotion(Boolean(reduced)), [controller, reduced]);
   useEffect(() => { if (!followAthlete && controller.following) controller.interrupt(false); }, [controller, followAthlete, reduced]);
   const focus = () => { if (scene.selected) { controller.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); } };
-  const lastFocus = useRef<{ course: RaceCourse; id: string; request: number; following: boolean; session?: string | number | boolean } | null>(null);
+  const lastFocus = useRef<{ course: RaceCourse; id: string; request: number; following: boolean; session?: string | number | boolean; metres?: number } | null>(null);
   useEffect(() => {
     if (!active || !ready || !scene.selected || replay) return;
-    if (restored.current) { lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey }; restored.current = undefined; controller.interrupt(false); onFollowChange?.(false); return; }
+    if (restored.current) { lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey, metres: scene.selected.metres }; restored.current = undefined; controller.interrupt(false); onFollowChange?.(false); return; }
     const previous = lastFocus.current;
     const explicit = !previous || previous.course !== course || previous.id !== selectedId || previous.request !== focusRequest || !previous.following || previous.session !== cardSessionKey;
-    lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey };
+    lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey, metres: scene.selected.metres };
     if (!followAthlete) return;
+    if (previous && !explicit && previous.metres === scene.selected.metres) {
+      // Retain current POV without shifting when toggling between tabs
+      return;
+    }
     controller.focus(course, scene.selected.metres, !explicit, scene.selected.lateralMetres);
   }, [active, ready, controller, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres, replay]);
   const replayTarget = useRef<CourseCameraPose | null>(null);
@@ -98,13 +107,24 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     <MapView accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled
       logoPosition={{ top: 8, left: 8 }} attributionPosition={{ top: 8, left: 100 }}
       scaleBarPosition={{ bottom: controlsBottom + 100, left: 8 }}
-      onDidFinishLoadingMap={() => { setReady(true); setError(""); onReady?.(); }}
+      onDidFinishLoadingMap={() => {
+        setReady(true);
+        setError("");
+        const p = pose.current;
+        if (isValidPose(p)) {
+          ref.current?.setCamera({ centerCoordinate: p.center, zoomLevel: p.zoom, pitch: p.pitch, heading: p.bearing, animationDuration: 0 });
+        }
+        onReady?.();
+      }}
       onMapLoadingError={event => setError(ready && event?.type !== "style" ? "Some map scenery could not load. Check your connection." : "The map could not load. Check your connection and Mapbox access.")}
       onMapIdle={() => { if (ready) setError(""); }}
     >
       <Camera minZoomLevel={0} maxZoomLevel={20} ref={ref} defaultSettings={{ centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing }} />
       <CameraGestureObserver onCameraChanged={({ nativeEvent }) => {
         const p = nativeEvent.properties;
+        if (!p || !p.center || !Array.isArray(p.center)) return;
+        if ((Math.abs(p.center[0]) < 1e-6 && Math.abs(p.center[1]) < 1e-6) || Number.isNaN(p.center[0]) || Number.isNaN(p.center[1])) return;
+        if (typeof p.zoom === "number" && p.zoom <= 0.1) return;
         pose.current = { center: [p.center[0], p.center[1]], zoom: p.zoom, pitch: p.pitch, bearing: p.heading };
         if (!replay) rememberedCameras.set(cameraKey, pose.current);
         if (p.isUserInteraction && controller.following) { controller.interrupt(); onFollowChange?.(false); }
