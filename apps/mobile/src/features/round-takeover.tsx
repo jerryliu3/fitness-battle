@@ -20,7 +20,7 @@ import {
 import { usePathname, useRouter, useGlobalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Modal, ScrollView, Text, View } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView, initialWindowMetrics } from "react-native-safe-area-context";
 import { WeeklySocialActions } from "./weekly-social";
 import { ResultCard } from "./result-card";
 import { ReplayViewer } from "./competition-replay";
@@ -55,9 +55,9 @@ function Round({
       animationType={reduced ? "none" : "fade"}
       onRequestClose={() => { /* Complete the recap before acknowledging results. */ }}
     >
-      <SafeAreaProvider>
-      <SafeAreaView style={f.safe}>
-        <ScrollView key={stage} contentContainerStyle={f.content}>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
+        <ScrollView key={stage} contentContainerStyle={[f.content, { paddingTop: 16 }]}>
 <SectionStack divided={false}>
           <View style={{ gap: 18 }}>
           <AppText accessibilityRole="header" role="display" >
