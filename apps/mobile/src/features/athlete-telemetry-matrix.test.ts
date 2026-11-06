@@ -131,6 +131,7 @@ describe("AthleteTelemetryMatrix mobile features", () => {
       .findAllByType("Pressable" as never)
       .filter((p) => !p.props.accessibilityLabel?.startsWith("Time lens"));
     expect(tiles.length).toBe(5);
+    expect(tiles[4]!.props.style).toContainEqual({ width: "100%" });
 
     await act(async () => {
       tiles[0]!.props.onPress();
