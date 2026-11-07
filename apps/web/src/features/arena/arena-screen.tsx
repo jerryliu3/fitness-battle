@@ -1,8 +1,10 @@
 "use client";
+import { CoursePreview } from "./course-preview";
+import { FieldOverview } from "@/features/field/components/field-course";
+import { CompeteSheet } from "./compete-sheet";
 import { FeatureCard, StatusBadge, AppParagraph, AppText, typographyStyle, SectionHeader, AppHeading } from "@/ui/section";
 
-import { EventCarousel } from "@/features/club/event-carousel";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { playCue } from "@/lib/haptics";
 
@@ -20,7 +22,7 @@ import { SleepPanel } from "@/features/health/sleep-panel";
 import { QueuedField } from "./queued-field";
 import "./queued-field.css";
 import { Sheet } from "@/ui/sheet";
-import { APP_TIMEZONE, competitionQueue, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, type SportId } from "@fitness-battle/shared";
+import { APP_TIMEZONE, competitionQueue, waveTimeLabel, nextDailyWaveWindowAt, buildArenaModel, competitionTrack, competitionTrackLabel, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, type SportId } from "@fitness-battle/shared";
 
 function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
   const lastDay = weeklyCompetitionLastDay(endsAt);
@@ -32,15 +34,23 @@ function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
   return `${startsAt.toLocaleDateString("en-US", opts)} – ${lastDay.toLocaleDateString("en-US", opts)}`;
 }
 
-export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
+export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean; onExit?: () => void }) {
   const { state, dispatch, loadStatus, standingsStale, refresh } = useCompete();
   const { user } = useAuth();
   const router = useRouter();
   const requestedEvent=useSearchParams().get("event");
+  const [immersiveAccount, setImmersiveAccount] = useState<string | null>(null);
+  const [athleteFocus, setAthleteFocus] = useState<{ id: string; request: number } | null>(null);
+  const [courseOptions, setCourseOptions] = useState<ReactNode>(null);
+  const [courseTarget, setCourseTarget] = useState<{ value: number; request: number } | null>(null);
+  const [expandRequest, setExpandRequest] = useState(0);
+  const immersive = immersiveAccount === (user?.id ?? "guest") && tabActive;
+  useEffect(() => { if (!tabActive) setImmersiveAccount(null); }, [tabActive]);
   const [authOpen, setAuthOpen] = useState(false);
   const [register, setRegister] = useState(false);
   const [selection, setSelection] = useState<{account:string; sport:SportId|"sleep"}|null>(null);
   useEffect(()=>{if(tabActive&&requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:user?.id??"guest",sport:requestedEvent as SportId});},[requestedEvent,user?.id,tabActive]);
+  useEffect(() => setCourseTarget(null), [user?.id, selection?.sport]);
   const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const account = user?.id ?? "guest";
@@ -78,14 +88,8 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   if (selectedSport === "sleep" && queue) period.endsAt = new Date(queue.end);
   const msLeft = Math.max(0, period.endsAt.getTime() - now.getTime());
   const daysLeft = Math.floor(msLeft / (24 * 3600 * 1000));
-  const hoursLeft = Math.floor((msLeft % (24 * 3600 * 1000)) / (3600 * 1000));
-  const minutesLeft = Math.floor((msLeft % (3600 * 1000)) / (60 * 1000));
-  const badgeLabel =
-    daysLeft >= 1
-      ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`
-      : hoursLeft >= 1
-        ? `${hoursLeft} hour${hoursLeft === 1 ? "" : "s"} left`
-        : `${Math.max(1, minutesLeft)}m left`;
+  const hoursLeft = Math.ceil(msLeft / (3600 * 1000));
+  const badgeLabel = msLeft === 0 ? "Ended" : daysLeft >= 1 ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : `${hoursLeft} hour${hoursLeft === 1 ? "" : "s"} left`;
   const dateRangeLabel = formatCompetitionDateRange(period.startsAt, period.endsAt);
 
   function participate(_reason: string, action: () => void) {
@@ -107,47 +111,38 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   const hasAnyRegistration = active.length > 0 || sleepOptedIn;
 
   const sleep = sleepRenewal(state);
+  const overviewModel = selectedSport && selectedSport !== "sleep" ? buildArenaModel(state, undefined, track, selectedSport) : null;
 
   return (
     <div className="focus-arena">
-      <header className="focus-competition-card">
-        <div className="focus-competition-info">
-          <SectionHeader
-            titleRole="display"
-            title={
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                <span>Competition</span>
-                <StatusBadge>{queue?.queued ? "Queued" : badgeLabel}</StatusBadge>
-              </span>
-            }
-            subtitle={dateRangeLabel}
-            action={
-              <div className="ui-competition-status" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <button
-                  type="button"
-                  aria-label="Register for new sports"
-                  onClick={() => {
-                    setSport(null);
-                    setRegister(true);
-                  }}
-                  style={{
-                    cursor: "pointer",
-                    padding: "6px 14px",
-                    borderRadius: "999px",
-                    border: "1px solid var(--line, #e0e5dc)",
-                    background: "var(--card, #ffffff)",
-                    color: "var(--ink, #00101b)",
-                    ...typographyStyle("label"),
-                  }}
-                >
-                  ＋ Register
-                </button>
-              </div>
-            }
-          />
+      {selectedSport && selectedSport !== "sleep" ? <FieldStage externalAthleteFocus={athleteFocus} key={`${account}:${selectedSport}:${state.units}`} onOptionsChange={setCourseOptions} externalCourseTarget={courseTarget} persistent backgroundMode presentationVisible={immersive} onExit={() => setImmersiveAccount(null)} tabActive={tabActive} replayState={state} queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField overlay state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
+      {!immersive && <section aria-label="Your events" className="compete-event-home">
+        <SectionHeader titleRole="display" title="Compete" action={<button type="button" className="fb-btn" onClick={() => { setSport(null); setRegister(true); }}>Register for an event</button>} />
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}><span>{dateRangeLabel}</span><StatusBadge>{badgeLabel}</StatusBadge></div>
+        {active.map(rating => {
+          const event = rating.sport;
+          const eventQueue = competitionQueue(state, event, now);
 
-        </div>
-      </header>
+          const queued = eventQueue?.queued || eventQueue?.awaitingField;
+          const model = buildArenaModel(state, undefined, competitionTrack(event), event);
+          const lanes = model?.lanes.filter(lane => !lane.ghost) ?? [];
+          const me = lanes.find(lane => lane.you);
+          const total = me?.values[2] ?? 0;
+          const place = 1 + lanes.filter(lane => lane.values[2] > total).length;
+
+          return <div key={event} className="compete-event-card">
+            <strong>{SPORTS.find(s => s.id === event)?.name}</strong><span>{queued ? "Upcoming wave" : `Place ${place} / ${lanes.length}`}</span>
+            <CoursePreview sport={event} queued={Boolean(queued)} state={state} />
+            {queued ? <p>Your race opens when the wave starts.</p> : null}
+            <button type="button" className="fb-btn" style={{ width: "100%" }} aria-label={`Enter ${SPORTS.find(s => s.id === event)?.name} field`} onClick={() => { setSelection({ account, sport: event }); setImmersiveAccount(account); }}>See race</button>
+          </div>;
+        })}
+        {sleepOptedIn && <button type="button" className="compete-event-card" onClick={() => setSelection({ account, sport: "sleep" })}><strong>Recovery</strong><span>View your recovery event →</span></button>}
+        {!hasAnyRegistration && <p className="fb-copy">Register for an event to open your first field.</p>}
+      </section>}
+      <CompeteSheet overview={overviewModel && !queue?.queued && !queue?.awaitingField ? <div className="compete-sheet-overview-row"><div className="compete-sheet-overview-track"><FieldOverview lanes={overviewModel.lanes.filter(lane => !lane.ghost).map(lane => ({ ...lane, value: lane.values[2], initials: "" }))} unit={overviewModel.unit} positionOnly view={{ center: courseTarget?.value ?? overviewModel.lanes.find(lane => lane.you)?.values[2] ?? 0, span: 1 }} onNavigate={value => setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }))} /></div>{courseOptions}</div> : undefined} active={immersive} expandRequest={expandRequest}>
+
+
 
       {frozen && (
         <div className="fb-pill" style={{ marginBottom: "16px" }}>
@@ -162,22 +157,11 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         </AppParagraph>
       ) : null}
 
-      {hasAnyRegistration ? <EventCarousel key={account} events={[...active.map(r=>({id:r.sport,label:SPORTS.find(s=>s.id===r.sport)!.name,badge:competitionTrackLabel(r.sport)})),...(sleepOptedIn?[{id:"sleep",label:"Sleep & Recovery"}]:[])]} value={selectedSport!} onChange={id=>{setSelection({account,sport:id as SportId|"sleep"});void playCue("selection");}} onRegister={()=>{setSport(null);setRegister(true);}}>
-      {selectedSport === "sleep" && queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => dispatch(selectedSport === "sleep" ? { type: "opt-out-health", metric: "sleep" } : { type: "opt-out", sport: selectedSport })} /> : selectedSport && selectedSport !== "sleep" ? (
-        <FieldStage key={`${account}:${selectedSport}:${state.units}`} tabActive={tabActive}
-          replayState={state}
-          queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField overlay state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined}
-          sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name}
-          model={buildFieldModel(state,selectedSport,track,now)}
-          boardRows={buildSplitBoard(state,selectedSport,track,now).rows}/>
-      ) : selectedSport === "sleep" ? (
-        <SleepPanel state={state} now={now}
-          onJoin={()=>participate("join sleep",()=>dispatch({type:"opt-in-health",metric:"sleep"}))}
-          onLeave={()=>dispatch({type:sleep.renews?"schedule-leave":"resume-renewal",metric:"sleep"})}
-          leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"}/>
-      ) : <section className="focus-card focus-empty"><AppHeading level={2} role="heading">Your next chapter starts here.</AppHeading><AppParagraph typographyRole="body" className="fb-copy">Register for an event to open your field.</AppParagraph></section>}
+      {selectedSport && selectedSport !== "sleep" ? <FieldStage onFocusAthlete={id => { setCourseTarget(null); setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} standingsOnly key={`${account}:${selectedSport}:${state.units}`} tabActive={immersive} replayState={state} sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined} /> : null}
+      </CompeteSheet>
+      <div hidden={immersive}>
+      {selectedSport === "sleep" && (queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event="sleep" now={now} onCancel={() => dispatch({type:"opt-out-health",metric:"sleep"})} /> : <SleepPanel state={state} now={now} onJoin={()=>participate("join sleep",()=>dispatch({type:"opt-in-health",metric:"sleep"}))} onLeave={()=>dispatch({type:sleep.renews?"schedule-leave":"resume-renewal",metric:"sleep"})} leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"} />)}
 
-      </EventCarousel> : <section className="focus-card focus-empty"><AppHeading level={2} role="heading">Your next chapter starts here.</AppHeading><AppParagraph typographyRole="body" className="fb-copy">Register for an event to open your field.</AppParagraph><button type="button" className="fb-btn" onClick={()=>setRegister(true)}>Explore events</button></section>}
 
       {state.periodResults.length ? (
         <Link className="fb-btn-ghost" href="/arena?results=latest">
@@ -193,6 +177,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
 
       <FeatureCard title="Beyond this week" description="All-time pace and race rankings." href="/pace"/>
 
+      </div>
       </div>
       <Sheet
         open={register}

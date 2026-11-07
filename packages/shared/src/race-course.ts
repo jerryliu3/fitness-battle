@@ -1,5 +1,5 @@
 import { bearing, destination, distance, point } from "@turf/turf";
-import type { LngLat } from "./routeGeoUtils";
+import { shortestAngleDiff, type LngLat } from "./routeGeoUtils";
 
 export interface RaceCourse {
   name: string;
@@ -115,44 +115,80 @@ export function courseReplayPose(course: RaceCourse, you: { metres: number; late
   const center = gap > .01 ? destination(point(a), gap / 2, bearing(a, b), { units: "meters" }).geometry.coordinates as LngLat : a;
   return { center, zoom: Math.min(17 + 2.3 * Math.max(0, Math.min(1, focus)), 19.3 - Math.log2(Math.max(1, gap / 65))), pitch: 60, bearing: raceCoursePosition(course, you.metres).heading };
 }
+/** Average the forward race tangent across nearby points, so bends are anticipated. */
+function courseForwardHeading(course: RaceCourse, metres: number) {
+  const before = raceCoursePosition(course, Math.max(0, metres - 18));
+  const after = raceCoursePosition(course, metres + 18);
+  return distance(before.coordinate, after.coordinate, { units: "meters" }) > .01
+    ? bearing(before.coordinate, after.coordinate) : raceCoursePosition(course, metres).heading;
+}
+
 export interface CourseCameraDriver {
   read(): CourseCameraPose;
   move(pose: CourseCameraPose, duration: number): void;
   stop(userGesture?: boolean): void;
   /** Frame-driven hosts can apply follow poses directly without restarting a flight. */
   follow?(pose: CourseCameraPose): void;
+  trace?(poseAt: (fraction: number, elapsedMs?: number) => CourseCameraPose, duration: number): void;
   fit?(bounds: { ne: LngLat; sw: LngLat }, duration: number): void;
 }
 /** One owner for both platforms. Native engines own every frame between camera commands. */
 export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = false, initialDimension: CourseDimension = "3d") {
+  let lastCourse: RaceCourse | null = null, lastMetres = 0, lastLateral = 0;
   let following = true;
   let dimension: CourseDimension = initialDimension;
   const move = (pose: CourseCameraPose, automatic = false) => {
-    if (automatic && driver.follow) { driver.follow(pose); return; }
+    if (automatic && driver.follow && !reducedMotion) { driver.follow(pose); return; }
     const from = driver.read();
     const metres = distance(from.center, pose.center, { units: "meters" });
     driver.stop();
     driver.move(pose, reducedMotion ? 0 : automatic ? 500 : Math.min(1800, 400 + 180 * Math.log2(1 + metres / 30)));
   };
   return {
-    interrupt(userGesture = true) { following = false; driver.stop(userGesture); },
+    anchor(course: RaceCourse, metres: number, lateralMetres = 0) { lastCourse = course; lastMetres = metres; lastLateral = lateralMetres; },
+    get courseMetres() { return lastCourse ? lastMetres : null; },
+    stopMotion() { driver.stop(true); },
+    interrupt(userGesture = true) { following = false; if (userGesture) lastCourse = null; driver.stop(userGesture); },
     setReducedMotion(value: boolean) { reducedMotion = value; driver.stop(); },
     focus(course: RaceCourse, metres: number, automatic = false, lateralMetres = 0) {
       if (automatic && !following) return;
       if (!automatic) following = true;
-      const position = raceCoursePosition(course, metres), current = driver.read();
-      // Look forward along bends rather than abruptly adopting the next segment's heading.
-      const remaining = position.returning ? position.routeMetres : course.length - position.routeMetres;
-      const ahead = raceCoursePosition(course, position.metres + Math.min(30, remaining));
-      const heading = remaining > .01 ? bearing(position.coordinate, ahead.coordinate) : position.heading;
-      move({ ...current, center: raceCourseRacerPosition(course, metres, lateralMetres).coordinate, pitch: dimension === "3d" ? 60 : 0, bearing: dimension === "3d" ? heading : 0 }, automatic);
+      const current = driver.read();
+      const heading = courseForwardHeading(course, metres);
+      const target = { ...current, center: raceCourseRacerPosition(course, metres, lateralMetres).coordinate, pitch: dimension === "3d" ? 60 : 0, bearing: dimension === "3d" ? heading : 0 };
+      if (!reducedMotion && driver.trace && lastCourse === course && Math.abs(metres - lastMetres) > .1) {
+        const from = lastMetres, fromLateral = lastLateral;
+        const duration = Math.min(4000, 800 + 350 * Math.log2(1 + Math.abs(metres - from) / 100));
+        let smoothedHeading = current.bearing, previousElapsed = 0;
+        driver.stop();
+        driver.trace((fraction, elapsedMs = fraction * duration) => {
+          const progress = fraction >= 1 ? metres : from + (metres - from) * fraction;
+          const lateral = fraction >= 1 ? lateralMetres : fromLateral + (lateralMetres - fromLateral) * fraction;
+          lastCourse = course; lastMetres = progress; lastLateral = lateral;
+          const at = raceCourseRacerPosition(course, progress, lateral);
+          // Moving backward changes position only; the lens still faces race-forward.
+          const desiredHeading = courseForwardHeading(course, progress);
+          const dt = Math.max(0, Math.min(64, elapsedMs - previousElapsed));
+          previousElapsed = elapsedMs;
+          const delta = shortestAngleDiff(smoothedHeading, desiredHeading);
+          const adjustment = delta * (1 - Math.exp(-dt / 220));
+          smoothedHeading += Math.max(-dt * .18, Math.min(dt * .18, adjustment));
+          return { ...current, center: at.coordinate, pitch: dimension === "3d" ? 60 : 0, bearing: dimension === "3d" ? smoothedHeading : 0 };
+        }, duration);
+      } else {
+        lastCourse = course; lastMetres = metres; lastLateral = lateralMetres;
+        move(target, automatic);
+      }
     },
     seek(course: RaceCourse, metres: number) {
       following = false;
+      lastCourse = course; lastMetres = metres; lastLateral = 0;
       const current = driver.read();
       driver.stop();
-      // Scrubbing is direct manipulation: no queued flights, zoom reset or heading changes.
-      driver.move({ ...current, center: raceCoursePosition(course, metres).coordinate }, 0);
+      // Direct manipulation follows the course heading without queuing flights.
+      const position = raceCoursePosition(course, metres);
+      const heading = courseForwardHeading(course, metres);
+      driver.move({ ...current, center: position.coordinate, pitch: dimension === "3d" ? 60 : 0, bearing: dimension === "3d" ? heading : 0 }, 0);
     },
     dimension(value: CourseDimension, moveCamera = true) { dimension = value; if (moveCamera) move({ ...driver.read(), pitch: value === "3d" ? 60 : 0, bearing: value === "2d" ? 0 : driver.read().bearing }); },
     zoom(delta: number) { following = false; const current = driver.read(); move({ ...current, zoom: Math.max(0, Math.min(20, current.zoom + delta)) }); },

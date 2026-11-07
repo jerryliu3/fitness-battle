@@ -36,12 +36,13 @@ function renderTab(
   tabId: ShellTabId,
   accountKey: string,
   tabActive: boolean,
+  onCompeteExit?: () => void,
 ): ReactNode {
   switch (tabId) {
     case "today":
       return <TodayScreen />;
     case "arena":
-      return <ArenaScreen tabActive={tabActive} />;
+      return <ArenaScreen tabActive={tabActive} onExit={onCompeteExit} />;
     case "field":
       return <FieldScreen />;
     case "you":
@@ -79,9 +80,11 @@ export function PhoneShell({
   const [bootAnimDone, setBootAnimDone] = useState(false);
   const matched = tab?.id ?? null;
   const active = onAthlete ? null : intent ?? matched;
+  const competeOrigin = useRef<ShellTabId>("today");
+  if (active && active !== "arena") competeOrigin.current = active;
   const accountKey = user?.id ?? "guest";
   const [visited, setVisited] = useState<Set<ShellTabId>>(
-    () => new Set(["today"]),
+    () => new Set(["today", "arena"]),
   );
 
   useEffect(() => {
@@ -206,7 +209,7 @@ export function PhoneShell({
                   aria-hidden={!on}
                 >
                   {visited.has(tab.id)
-                    ? panel(renderTab(tab.id, accountKey, on))
+                    ? panel(<>{renderTab(tab.id, accountKey, on, () => goTab(competeOrigin.current))}</>)
                     : null}
                 </div>
               );

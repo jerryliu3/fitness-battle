@@ -7,10 +7,10 @@ import { CourseCallout } from "./course-callout";
 import { addMapboxAttribution, mapboxAttributionOptions } from "@/components/maps/mapbox-attribution";
 import { webEnv } from "@/lib/env";
 
-export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, replay, course, lanes, unit, selectedId, focusRequest, onSelect, controlsBottom = 8, extraControls, distanceTarget, onResumeFollow }: {
+export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, onSnapshot, replay, course, lanes, unit, selectedId, focusRequest, onSelect, controlsBottom = 8, extraControls, distanceTarget, onResumeFollow }: {
   cardSessionKey?: string | number | boolean;
   initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
-  onReady?: () => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null; onResumeFollow?: () => void;
+  onReady?: () => void; onSnapshot?: (uri: string) => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null; onResumeFollow?: () => void;
   course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; extraControls?: ReactNode;
 }) {
   const [dismissed, setDismissed] = useState<string[]>([]);
@@ -19,8 +19,10 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   const container = useRef<HTMLDivElement>(null), map = useRef<mapboxgl.Map | null>(null);
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(initialFlat), [following, setFollowing] = useState(true);
   const [spaced, setSpaced] = useState(true);
+  const earnedDistance = Math.max(0, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value));
+  const clampedTarget = distanceTarget ? Math.max(0, Math.min(distanceTarget.value, earnedDistance)) : undefined;
   const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? RACE_LANE_SPACING_METRES : 0), [course, lanes, unit, selectedId, spaced]);
-  const latest = useRef({ scene, onSelect, onFollowChange, onReady }); latest.current = { scene, onSelect, onFollowChange, onReady };
+  const latest = useRef({ scene, onSelect, onFollowChange, onReady, onSnapshot }); latest.current = { scene, onSelect, onFollowChange, onReady, onSnapshot };
   const reduced = useRef(false);
   const camera = useRef<ReturnType<typeof createCourseCamera> | null>(null);
   useEffect(() => {
@@ -29,14 +31,16 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     reduced.current = preference.matches;
     let instance: mapboxgl.Map;
     try { instance = new mapboxgl.Map({ container: container.current, accessToken: webEnv.mapboxAccessToken,
-      interactive: !replay, style: "mapbox://styles/mapbox/standard", center: latest.current.scene.selected?.coordinate ?? course.coordinates[0], zoom: 16, pitch: initialFlat ? 0 : 60, minZoom: 0, maxZoom: 20,
+      preserveDrawingBuffer: Boolean(onSnapshot), interactive: !replay && !onSnapshot, style: "mapbox://styles/mapbox/standard", center: latest.current.scene.selected?.coordinate ?? course.coordinates[0], zoom: 16, pitch: initialFlat ? 0 : 60, minZoom: 0, maxZoom: 20,
       ...mapboxAttributionOptions, antialias: true }); }
     catch { setError("This browser could not start the 3D map."); return; }
     setReady(false);
     map.current = instance;
     addMapboxAttribution(instance);
     const read = (): CourseCameraPose => ({ center: instance.getCenter().toArray(), zoom: instance.getZoom(), pitch: instance.getPitch(), bearing: instance.getBearing() });
-    const buildCamera = () => { camera.current = createCourseCamera({ read, fit: (bounds, duration) => { instance.fitBounds([bounds.sw, bounds.ne], { padding: 48, pitch: 0, bearing: 0, maxZoom: 20, duration }); }, stop: userGesture => { if (!userGesture) instance.stop(); }, move: (pose, duration) => instance.easeTo({ center: pose.center, zoom: pose.zoom, pitch: pose.pitch, bearing: pose.bearing, duration }) }, reduced.current, initialFlat ? "2d" : "3d"); };
+    let routeFrame = 0;
+    let initialized = false;
+    const buildCamera = () => { camera.current = createCourseCamera({ read, trace: (poseAt, duration) => { const start = performance.now(); const tick = () => { const elapsed = performance.now() - start, fraction = Math.min(1, elapsed / duration), next = poseAt(fraction * fraction * (3 - 2 * fraction), elapsed); instance.jumpTo({ center: next.center, zoom: next.zoom, pitch: next.pitch, bearing: next.bearing }); if (elapsed < duration + 1200) routeFrame = requestAnimationFrame(tick); else routeFrame = 0; }; routeFrame = requestAnimationFrame(tick); }, fit: (bounds, duration) => { instance.fitBounds([bounds.sw, bounds.ne], { padding: 48, pitch: 0, bearing: 0, maxZoom: 20, duration }); }, stop: userGesture => { if (routeFrame) cancelAnimationFrame(routeFrame); routeFrame = 0; if (!userGesture) instance.stop(); }, move: (pose, duration) => instance.easeTo({ center: pose.center, zoom: pose.zoom, pitch: pose.pitch, bearing: pose.bearing, duration: initialized ? duration : 0 }) }, reduced.current, initialFlat ? "2d" : "3d"); };
     buildCamera();
     const preferenceChanged = () => { reduced.current = preference.matches; camera.current?.setReducedMotion(reduced.current); };
     preference.addEventListener("change", preferenceChanged);
@@ -52,10 +56,12 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
       instance.addLayer({ id: "completed-line", type: "line", source: "completed", slot: "middle", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "priority"] }, paint: { "line-color": ["get", "color"], "line-width": ["interpolate", ["exponential", 2], ["zoom"], 0, RACE_TRAIL_MIN_WIDTH_PIXELS, 16, Math.max(RACE_TRAIL_MIN_WIDTH_PIXELS, trailWidth * 2 ** 16), 22, trailWidth * 2 ** 22] } });
       instance.addLayer({ id: "athlete-dots", type: "circle", source: "athletes", slot: "top", paint: { "circle-radius": ["case", ["get", "selected"], 5, 3], "circle-color": ["case", ["get", "you"], "#f7c948", "#20b9c6"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
       instance.on("click", "athlete-dots", event => { const id = event.features?.[0]?.properties?.id; if (typeof id === "string") latest.current.onSelect(id); });
-      setReady(true); setError(""); latest.current.onReady?.();
+      setReady(true); setError("");
+      const prepared = () => { if (!initialized) { initialized = true; latest.current.onReady?.(); if (latest.current.onSnapshot) { try { latest.current.onSnapshot(instance.getCanvas().toDataURL("image/png")); } catch {} } } };
+      instance.on("idle", prepared);
     });
     const observer = new ResizeObserver(() => instance.resize()); observer.observe(container.current);
-    return () => { observer.disconnect(); preference.removeEventListener("change", preferenceChanged); instance.remove(); map.current = null; camera.current = null; };
+    return () => { observer.disconnect(); preference.removeEventListener("change", preferenceChanged); camera.current?.interrupt(false); instance.remove(); map.current = null; camera.current = null; };
   }, [course]);
   useEffect(() => {
     const instance = map.current; if (!ready || !instance || !instance.getSource("completed")) return;
@@ -83,15 +89,15 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   }, [ready, course, scene, replay]);
   useEffect(() => {
     if (!ready || !distanceTarget) return;
-    const metres = raceEffortMetres(distanceTarget.value, unit);
+    const metres = raceEffortMetres(clampedTarget ?? 0, unit);
     if (metres === null) return;
     camera.current?.seek(course, metres);
     setFollowing(false);
-  }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request]);
+  }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request, clampedTarget]);
   const control = (label: string, action: () => void) => <button type="button" className="fb-btn-line" style={{ whiteSpace: "nowrap", minHeight: 44 }} onClick={() => { action(); const next = camera.current?.following ?? false; setFollowing(next); onFollowChange?.(next); }}>{label}</button>;
   return <div className="geographic-map" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", position: "relative", "--map-controls-bottom": `${controlsBottom}px` } as React.CSSProperties}>
     <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 0, position: "relative", overflow: "hidden" }} />
-    {ready && map.current ? scene.callouts.filter(lane => !dismissed.includes(lane.id)).map(lane => <CourseCallout key={lane.id} map={map.current!} lane={lane} coordinate={lane.coordinate} layout={lane.callout} passStrength={reduced.current ? 0 : replay?.passEffects.find(pass => pass.id === lane.id)?.strength ?? 0} detail={courseAthleteDetail(lanes, lane, unit)} onDismiss={() => setDismissed(ids => [...ids, lane.id])} onSelect={onSelect} />) : null}
+    {ready && map.current ? scene.callouts.filter(lane => !dismissed.includes(lane.id)).map(lane => <CourseCallout key={lane.id} map={map.current!} lane={lane} coordinate={lane.coordinate} layout={lane.callout} passStrength={reduced.current ? 0 : replay?.passEffects.find(pass => pass.id === lane.id)?.strength ?? 0} detail={courseAthleteDetail(lanes, lane, unit)} onDismiss={!onSnapshot && lane.id === selectedId ? () => setDismissed(ids => [...ids, lane.id]) : undefined} onSelect={onSelect} />) : null}
     {error ? <p role="alert" className="fb-copy" style={{ position: "absolute", left: 8, right: 8, bottom: controlsBottom + 100, padding: 12, background: "white" }}>{error}</p> : null}
     {!replay && <div className="geographic-map-controls" style={{ position: "absolute", bottom: controlsBottom, left: 8, right: 8, display: "flex", overflowX: "auto", gap: 8, padding: 8 }}>
       {extraControls}

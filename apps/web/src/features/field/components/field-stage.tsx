@@ -1,11 +1,12 @@
 "use client";
+import { Sheet } from "@/ui/sheet";
 import { FieldViewSwitcher } from "./field-view-switcher";
 import { GeographicCourse } from "@/features/course/geographic-course";
 import { useCompetitionCourse } from "@/features/course/use-competition-course";
 import { PortraitField } from "@/features/club/portrait-field";
 import { PolishedRacer } from "@/features/brand/polished-racer";
 import { UserAvatar } from "@/ui/user-avatar";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { playCue } from "@/lib/haptics";
 import { usePathname } from "next/navigation";
 import {
@@ -40,6 +41,16 @@ import type { FieldModel } from "../model";
 
 export function FieldStage({
   model,
+  persistent = false,
+  backgroundMode = false,
+  externalAthleteFocus,
+  onFocusAthlete,
+  externalCourseTarget,
+  onOptionsChange,
+  presentationVisible = true,
+  onDetails,
+  standingsOnly = false,
+  onExit,
   boardRows,
   sportTitle,
   tabActive = true,
@@ -48,6 +59,16 @@ export function FieldStage({
 }: {
   queueOverlay?: import("react").ReactNode;
   model: FieldModel;
+  persistent?: boolean;
+  backgroundMode?: boolean;
+  onOptionsChange?: (options: ReactNode | null) => void;
+  externalAthleteFocus?: { id: string; request: number } | null;
+  onFocusAthlete?: (id: string) => void;
+  externalCourseTarget?: CourseDistanceTarget | null;
+  presentationVisible?: boolean;
+  onDetails?: () => void;
+  standingsOnly?: boolean;
+  onExit?: () => void;
   boardRows?: BoardRow[];
   sportTitle?: string;
   tabActive?: boolean;
@@ -92,7 +113,7 @@ export function FieldStage({
     : null;
 
   const [viewDimension, setViewDimension] = useState<"2d" | "3d" | "4d">(unit === "pts" ? "2d" : "4d");
-  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(model.sport, model.periodStart, model.periodEnd, debugActive, viewDimension === "4d" && tabActive);
+  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(model.sport, model.periodStart, model.periodEnd, debugActive, !standingsOnly && viewDimension === "4d" && (persistent || tabActive));
   const [courseFlat, setCourseFlat] = useState(false);
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
   useEffect(() => setCourseTarget(null), [accountKey, model.sport, model.periodStart, model.unit]);
@@ -102,18 +123,20 @@ export function FieldStage({
     setStandingsOpen(false);
     setViewDimension(value);
   };
-  const [standingsOpen, setStandingsOpen] = useState(false);
-  const [lanesImmersive, setLanesImmersive] = useState(false);
+  const [standingsOpen, setStandingsOpen] = useState(standingsOnly);
+  const [lanesImmersive, setLanesImmersive] = useState(persistent);
   const [intervalsCollapsed, setIntervalsCollapsed] = useState(false);
   const [spotlightCollapsed, setSpotlightCollapsed] = useState(false);
 
 
   useEffect(() => {
+    if (persistent) { if (tabActive) setLanesImmersive(true); return; }
     if (tabActive && shellTabFromPath(pathname)?.id === "arena") return;
     setLanesImmersive(false);
-  }, [pathname, tabActive]);
+  }, [pathname, tabActive, persistent]);
   const [span, setSpan] = useState(fieldDefaultSpan(unit));
   const [center, setCenter] = useState<number | null>(null);
+  useEffect(() => { if (externalCourseTarget) { setCourseTarget(externalCourseTarget); setCenter(externalCourseTarget.value); } }, [externalCourseTarget]);
   const [centerTween, setCenterTween] = useState<number | null>(null);
   const centerTweenRef = useRef<{
     from: number;
@@ -126,7 +149,9 @@ export function FieldStage({
   const liveCenterRef = useRef(0);
   const showGhost = true;
   const [selected, setSelected] = useState<string | null>(null);
+  const [profileLane, setProfileLane] = useState<ArenaSceneLane | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
+  useEffect(() => { if (externalAthleteFocus) { setSelected(externalAthleteFocus.id); const runner = runners.find(item => item.id === externalAthleteFocus.id); if (runner) setCenter(valueAt(runner, time)); setCourseTarget(null); setFocusRequest(value => value + 1); } }, [externalAthleteFocus]);
   const toggleSelect = (id: string) => {
     const runner =
       runners.find((item) => item.id === id) ??
@@ -310,33 +335,41 @@ export function FieldStage({
   const focusedDeltaToLeader =
     focusedLane && leader ? focusedLane.value - leader.value : 0;
 
+  const chooseViewRef = useRef(chooseView); chooseViewRef.current = chooseView;
+  useEffect(() => {
+    if (!onOptionsChange) return;
+    onOptionsChange(<FieldViewSwitcher compact value={viewDimension} geographic={unit !== "pts"} onChange={value => chooseViewRef.current(value)} />);
+    return () => onOptionsChange(null);
+  }, [onOptionsChange, viewDimension, unit]);
+
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
 
   const broadcastHud = lanesImmersive ? (
-    <div className="focus-broadcast-hud" aria-label="Broadcast race controls">
+    <div className={`focus-broadcast-hud${backgroundMode ? " compete-immersive-hud" : ""}`} aria-label="Broadcast race controls">
       <div className="focus-broadcast-top">
         <button
           type="button"
           className="focus-broadcast-back"
-          aria-label="Close full screen field"
-          onClick={() => setLanesImmersive(false)}
+          aria-label={backgroundMode ? "Back to events" : "Close full screen field"}
+          onClick={() => persistent ? onExit?.() : setLanesImmersive(false)}
         >
           ← Back
         </button>
-        <div className="focus-broadcast-title" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {!backgroundMode && <button type="button" className="fb-btn-line" onClick={() => backgroundMode ? onDetails?.() : setLanesImmersive(false)}>Standings</button>}
+        {!backgroundMode && <div className="focus-broadcast-title" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {sportTitle ?? model.sport}{queueOverlay ? " · Upcoming wave" : ` · ${displayPlace} / ${runners.length}`}
-        </div>
-        <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
-          onStandings={queueOverlay ? undefined : () => { setLanesImmersive(false); setStandingsOpen(true); }}
+        </div>}
+        {!onOptionsChange && <FieldViewSwitcher compact={backgroundMode} value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
+          onStandings={queueOverlay ? undefined : () => { if (backgroundMode) onDetails?.(); else { setLanesImmersive(false); setStandingsOpen(true); } }}
           onZoomIn={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.max(unit === "pts" ? 2 : .5, view.span / 1.5)); } : undefined}
-          onZoomOut={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)); } : undefined} />
+          onZoomOut={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)); } : undefined} />}
       </div>
 
       {!queueOverlay && (viewDimension !== "4d" || course) ? <>
-      <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Live intervals">
+      <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Current leaders">
         <button type="button" className="focus-panel-toggle" aria-label={intervalsCollapsed ? "Expand live intervals" : "Collapse live intervals"} aria-expanded={!intervalsCollapsed} onClick={() => setIntervalsCollapsed(value => !value)}><span className="focus-panel-grip" aria-hidden="true" /></button>
         <div className="focus-panel-content" inert={intervalsCollapsed} aria-hidden={intervalsCollapsed}>
-          <span className="focus-broadcast-tower-kicker">LIVE INTERVALS</span>
+          <span className="focus-broadcast-tower-kicker">CURRENT LEADERS</span>
           {coursePositionLeaders(ranked).map((peer, idx) => {
             const delta = peer.value - leaderValue;
             const isSelected = (trackSelected || you.id) === peer.id;
@@ -410,7 +443,7 @@ export function FieldStage({
         </div>
       </div>
 
-      {focusedLane ? (
+      {focusedLane && !backgroundMode ? (
         <div
           className={`focus-broadcast-spotlight${spotlightCollapsed ? " is-collapsed" : ""}`}
           aria-label="Focused athlete spotlight"
@@ -476,7 +509,7 @@ export function FieldStage({
           </div>
         </div>
       ) : null}
-      <div className="focus-broadcast-overview" aria-label="Race overview">
+      <div className="focus-broadcast-overview" aria-label="Race overview" hidden={backgroundMode}>
         <FieldOverview lanes={fieldLanes} view={viewDimension === "4d" ? { ...view, center: courseTarget?.value ?? focusedLane?.value ?? total } : view}
           unit={unit} positionOnly={viewDimension === "4d"}
           onNavigate={value => {
@@ -492,25 +525,27 @@ export function FieldStage({
     <section
       className="focus-arena-stage"
       style={{ position: "relative" }}
-      hidden={!tabActive}
-      aria-hidden={!tabActive}
+      hidden={!persistent && !tabActive}
+      aria-hidden={!persistent && !tabActive}
     >
-      {!lanesImmersive ? <div style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
+      <Sheet open={Boolean(profileLane)} title={profileLane?.name ?? "Athlete"} body="" onClose={() => setProfileLane(null)}>{profileLane ? <><UserAvatar src={profileLane.avatarUrl} name={profileLane.name} size={64} /><p>{profileLane.value.toFixed(2)} {unit} this event</p><p>{scoreMap[profileLane.id] ?? "—"} effort score</p></> : null}</Sheet>
+      {!standingsOnly && !lanesImmersive ? <div style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
         <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
           standings={standingsOpen} onStandings={queueOverlay ? undefined : () => { cancelCenterTween(); setStandingsOpen(true); }} />
       </div> : null}
-      <div style={{ display: standingsOpen ? "none" : "flow-root" }}>
+      {!standingsOnly && <div style={{ display: standingsOpen ? "none" : "flow-root" }}>
         <ExpandingField
-          open={lanesImmersive && tabActive}
+          persistent={persistent}
+          open={lanesImmersive && tabActive && presentationVisible}
           tabActive={tabActive}
-          onClose={() => setLanesImmersive(false)}
-          hud={broadcastHud}
+          onClose={() => { if (backgroundMode) onExit?.(); else setLanesImmersive(false); }}
+          hud={presentationVisible ? broadcastHud : undefined}
         >
-          {viewDimension === "4d" && tabActive ? <div className="focus-geographic-host" style={{ position: "relative", height: lanesImmersive ? "100%" : 460 }}>
+          {viewDimension === "4d" && (persistent || tabActive) ? <div className="focus-geographic-host" style={{ position: "relative", height: persistent || lanesImmersive ? "100%" : 460 }}>
             <GeographicCourse cardSessionKey={lanesImmersive} initialFlat={courseFlat} onFlatChange={setCourseFlat} lanes={fieldLanes} unit={unit} selectedId={(lanesImmersive ? trackSelected : null) || you.id} focusRequest={lanesImmersive ? focusRequest : 0} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={lanesImmersive ? courseTarget : null} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? spotlightCollapsed ? 136 : 236 : 8} />
             {!lanesImmersive ? <button type="button" className="focus-portal-pill is-accent" style={{ position: "absolute", top: 12, right: 12 }} aria-label="Expand 3D course to full screen" onClick={() => setLanesImmersive(true)}>Full Arena ⤢</button> : null}
           </div> : null}
-          {viewDimension === "3d" && tabActive ? (
+          {viewDimension === "3d" && (persistent || tabActive) ? (
             <PortraitField
               lanes={sceneLanes.map((l) => ({
                 ...l,
@@ -611,9 +646,9 @@ export function FieldStage({
           </div>
           {queueOverlay}
         </ExpandingField>
-      </div>
+      </div>}
 
-      <div className="focus-standings-collapsible" hidden={!standingsOpen} style={{ paddingTop: 64 }}>
+      <div className="focus-standings-collapsible" hidden={!standingsOpen} style={{ paddingTop: standingsOnly ? 0 : 64 }}>
         {standingsOpen ? (
           <div className="focus-standings-body">
             {leader ? (
@@ -678,18 +713,20 @@ export function FieldStage({
                 const bar = standingsBar(lane.value, leaderValue, r);
                 const elo = scoreMap[lane.id];
                 return (
-                  <button
+                  <div
                     key={lane.id}
-                    type="button"
                     role="listitem"
                     className={
                       lane.you
                         ? "focus-standing-bar-row is-you"
                         : "focus-standing-bar-row"
                     }
-                    onClick={() => toggleSelect(lane.id)}
+                    onClick={() => onFocusAthlete ? onFocusAthlete(lane.id) : toggleSelect(lane.id)}
+                    tabIndex={0}
+                    onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); if (onFocusAthlete) onFocusAthlete(lane.id); else toggleSelect(lane.id); } }}
                   >
                     <span className="focus-standing-rank">{r}</span>
+                    <button type="button" aria-label={`Open ${lane.name}'s profile`} onClick={event => { event.stopPropagation(); setProfileLane(lane); }} style={{ border: 0, padding: 0, background: "transparent", cursor: "pointer" }}>
                     <UserAvatar
                       src={lane.avatarUrl}
                       name={lane.name}
@@ -712,6 +749,7 @@ export function FieldStage({
                         </svg>
                       }
                     />
+                    </button>
                     <div className="focus-standing-bar-content">
                       <div className="focus-standing-bar-top">
                         <strong className="focus-standing-name">
@@ -740,7 +778,7 @@ export function FieldStage({
                         />
                       </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
               {ghost ? (

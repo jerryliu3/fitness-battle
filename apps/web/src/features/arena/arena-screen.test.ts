@@ -1,3 +1,4 @@
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -5,10 +6,11 @@ import { freshState, reduceCompete, type CompeteState } from "@fitness-battle/sh
 const mock=vi.hoisted(()=>({state:null as CompeteState|null}));
 vi.mock("@/components/compete-context",()=>({useCompete:()=>({state:mock.state,dispatch:vi.fn(),loadStatus:"local"})}));
 vi.mock("@/components/auth-context",()=>({useAuth:()=>({user:{id:"demo"}})}));
+vi.mock("next/link",()=>({default:"a"}));
 vi.mock("next/navigation",()=>({useSearchParams:()=>new URLSearchParams(),useRouter:()=>({push:vi.fn()})}));
 vi.mock("@/lib/score-track-lens",()=>({useScoreTrackLens:()=>["open",vi.fn()]}));
 vi.mock("@/lib/haptics",()=>({playCue:vi.fn()}));
-vi.mock("@/features/field/components/field-stage",()=>({FieldStage:({sportTitle, queueOverlay}:{sportTitle:string; queueOverlay?: import("react").ReactNode})=>createElement("div",{"data-active-field":sportTitle}, queueOverlay)}));
+vi.mock("@/features/field/components/field-stage",()=>({FieldStage:({sportTitle, queueOverlay, standingsOnly, presentationVisible, onExit}:{sportTitle:string; standingsOnly?:boolean; presentationVisible?:boolean; onExit?:()=>void; queueOverlay?: import("react").ReactNode})=>createElement("div",{[standingsOnly ? "data-standings" : "data-active-field"]:sportTitle,"data-visible":presentationVisible,onDoubleClick:onExit}, queueOverlay)}));
 vi.mock("@/features/health/sleep-panel",()=>({SleepPanel:()=>createElement("div",{"data-sleep-field":true})}));
 vi.mock("@/features/split/components/week-reveal",()=>({WeekReveal:()=>null}));
 vi.mock("@/ui/sheet",()=>({Sheet:()=>null}));
@@ -23,7 +25,8 @@ describe("single-sport competition",()=>{
   expect(html.match(/data-active-field=/g)).toHaveLength(1);
   expect(html).toContain('data-active-field="Running"');
   expect(html).toContain("Cycling");
-  expect(html).toContain('role="tab"');
+  expect(html).toContain('aria-label="Enter Running field"');
+  expect(html).toContain('aria-label="Enter Cycling field"');
   expect(html).toContain("Register");
  });
  it("shows recovery alone when it is the only registration",()=>{
@@ -44,4 +47,22 @@ it("shows mystery competitors and a cancel action for a queued registration", ()
   expect(html).toContain("11:59 PM ET");
   expect(html).toContain('data-active-field="Running"');
   expect(html).not.toContain("hidden-peer");
+});
+
+it("enters a selected event and returns home without replacing its prepared field", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mock.state = reduceCompete(freshState(), { type: "opt-in", sport: "running", now: "2026-10-21T09:00:00Z" });
+  let renderer!: ReactTestRenderer;
+  await act(async () => { renderer = create(createElement(ArenaScreen)); });
+  try {
+    const map = renderer.root.findByProps({ "data-active-field": "Running" });
+    expect(map.props["data-visible"]).toBe(false);
+    await act(async () => renderer.root.findByProps({ "aria-label": "Enter Running field" }).props.onClick());
+    expect(renderer.root.findByProps({ "data-active-field": "Running" })).toBe(map);
+    expect(map.props["data-visible"]).toBe(true);
+    await act(async () => map.props.onDoubleClick());
+    expect(map.props["data-visible"]).toBe(false);
+    expect(renderer.root.findByProps({ "aria-label": "Enter Running field" })).toBeDefined();
+    expect(renderer.root.findByProps({ "data-active-field": "Running" })).toBe(map);
+  } finally { await act(async () => renderer.unmount()); vi.unstubAllGlobals(); }
 });

@@ -10,18 +10,25 @@ import { collapseExpandingFieldImmediate } from "./expanding-field-teardown";
 /** One portal target for the entire lifetime: moving it never remounts the lane canvas. */
 export function ExpandingField({
   open,
+  persistent = false,
   onClose,
   tabActive = true,
   hud,
   children,
 }: {
   open: boolean;
+  persistent?: boolean;
   onClose: () => void;
   tabActive?: boolean;
   hud?: ReactNode;
   children: ReactNode;
 }) {
   const reduce = useReducedMotion();
+  const persistentHost = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (!persistent || !tabActive || !persistentHost.current) return;
+    return bindFieldOverlayHold(persistentHost.current, setOverlaysHidden);
+  }, [persistent, tabActive]);
   const [overlaysHidden, setOverlaysHidden] = useState(false);
   const lastHud = useRef(hud);
   if (hud) lastHud.current = hud;
@@ -48,6 +55,7 @@ export function ExpandingField({
   }, []);
 
   useLayoutEffect(() => {
+    if (persistent) return;
     const node = document.createElement("div");
     node.className = "focus-field-content";
     slot.current?.appendChild(node);
@@ -140,6 +148,8 @@ export function ExpandingField({
     dialog.addEventListener("keydown", loopTab);
     return () => dialog.removeEventListener("keydown", loopTab);
   }, [dialog]);
+
+  if (persistent) return <div ref={persistentHost} data-persistent-field className={`focus-field-expanded${overlaysHidden ? " is-holding-field" : ""}`} style={{ position: "fixed", inset: 0, visibility: tabActive && open ? "visible" : "hidden", pointerEvents: tabActive && open ? "auto" : "none", zIndex: 100 }} aria-hidden={!tabActive || !open} inert={!tabActive || !open} onKeyDown={event => { if (event.key === "Escape") onClose(); }}><div className="focus-field-content" style={{ position: "absolute", inset: 0 }}>{children}</div>{hud}</div>;
 
   return <>
     <div

@@ -103,6 +103,28 @@ joystick replacements remain under discussion pending release-device profiling.
 
 Use semantic shared tokens: navy `#142b3b`, yellow `#f7c948`, canvas `#f8f9f6`, white cards, muted `#637482`, border `#e3e9e7`, teal `#176c75`. Cards use quiet 20px corners. Yellow primary controls use dark labels. Historical decisions below describe earlier iterations; this selection supersedes their presentation rules.
 
+### Compete event home and immersive fields — November 7
+
+Compete is the home base for registered events, using the same app header and
+bottom navigation as the other tabs. Each event shows a read-only preview from
+its existing field data, position, volume, nearest available rival, and time
+remaining. Queued events show their upcoming state without ranks or identities.
+Registration, Recovery and result destinations remain on the home base.
+
+Tap a sport event to enter its immersive field. App navigation disappears; Back
+returns to the event home. Retain the selected field host and camera while closed,
+and prepare the initial selected field during startup. Map options, athlete
+selection and the current-positions overlay remain available inside the field.
+Standings live in a bottom sheet that starts partially open and reaches the actual
+bottom edge, including beneath the home indicator. Drag or tap its handle to
+change height; retain accessible adjustment and web arrow-key support. Do not add
+visible Minimize/Lower buttons. Moving the sheet never resizes the map. Respect
+Reduced Motion and pause hidden presentation clocks.
+
+This supersedes the November 6 map-as-tab composition and its separate overlaid
+navigation. Distance fields remain geographic 3D; points remain 2D. See the
+[implementation review](reviews/compete-event-home/README.md).
+
 ## Brand and character exploration
 
 The [Brand & Ember study](brand-study/brand-and-ember-studio.md) is available at `/design/brand` under the existing design access gate. It preserves ten brand territories, adds the current Ember in a Chain Reaction-inspired setting, and explores Everyday Club, Open Field and Pocket Arena as calmer foundations for customizable star finishes. The October 17 review selects Open Field’s structure with Everyday Club’s warm white, charcoal and gold. Ember’s preferred art references are The Pass / Challenger, Marginal Gains and Higher Ground, with shared anatomy and adjustable finishes. The study locker uses local fictional ownership and proposed unlock examples; it does not establish production rewards, entitlement, scoring or storage rules.
@@ -814,3 +836,57 @@ seconds, pause expiry while saving, and offer a visible Dismiss action. Account
 conflicts stay until acted on or dismissed and take precedence over informational
 sync feedback. A failed retry can show the same error again. Web uses a fixed
 portal with safe-area offsets and the same actions and dismissal policy.
+
+
+### Compete event home and sheet controls — November 7, 2026
+
+Compete is an event home with the shared app navigation. Tap a registered event
+to reveal its retained immersive field; Back returns to the home. Geographic
+event cards show noninteractive 3D snapshots centered on the user, retaining
+map attribution. Cards contain ordinary images that scroll with their content.
+Entering opens a separate prepared immersive scene. Queued events wait for course assignment, and points events use
+an explicit points placeholder.
+
+The immersive header omits the redundant sport pill and places native UIKit
+glass Back at the top safe inset on supported iOS. The standings sheet keeps its
+rows laid out below the viewport while minimized. Inside the sheet, the course
+scrubber and its settings gear share a row directly above Standings; the gear
+sits immediately to the right of the scrubber. The sheet starts partially open,
+expands to the bottom edge, and adjusts through its handle without visible
+minimize/lower buttons. See [implementation review](reviews/compete-event-home/README.md).
+
+Compete geographic controls use a bare settings gear, Start–Leader scrubber
+labels and a Current Leaders panel. Scrubbing follows the earned course heading
+in perspective mode and cannot seek past the leader. Mapbox credits stay visible
+at the lower-right map edge above the standings sheet. Athlete photos open
+profiles; the rest of a standings row focuses the athlete on the map.
+
+Snapshot credits may use a compact caption near the static image instead of an
+embedded info button. Live map credits sit at the top-right safe-area edge.
+The standings sheet has no repeated title, retains all rows during height
+changes, and allows its last row to scroll fully above the visible bottom.
+Racer selection travels along course distance, facing race-forward even when reversing;
+reduced motion uses an immediate position change.
+
+Compete home restores the shared competition date range beneath its title;
+event cards omit repeated days-left labels. Snapshot previews use a 1:1 aspect
+ratio at the existing card width. Utility map credits use the compact shared nav text recipe
+with a feedback info glyph carrying its full accessible label. Live maps retain
+the standard SDK wordmark and align a 14-point info control beside it; the info
+sheet includes source links, feedback and the telemetry privacy choice.
+
+Event cards place compact copyright links over the bottom-right of the snapshot,
+with a contrast backing. They omit repeated distance and rival-gap text below
+it. A full-width See race button is the entry action. Beside the header date,
+a badge shows full days remaining, or hours when fewer than 24 hours remain.
+
+Course settings group aligned switches before action rows. The 3D view switch
+selects between the 2D and 3D renderers; the native menu and switch columns have
+explicit widths. Only the selected racer's map card exposes its minus control;
+snapshot captures omit interactive controls entirely.
+
+Camera headings anticipate bends using nearby course points and ease toward the
+forward race tangent over time. Racer travel backward retraces course distance
+without turning the lens around. Automatic position updates use the same route
+motion; reduced motion skips animation. Zoom and interruption behavior remain
+consistent across native and web.
