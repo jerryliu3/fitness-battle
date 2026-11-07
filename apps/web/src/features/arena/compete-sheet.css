@@ -27,3 +27,5 @@
 .compete-sheet-overview{padding:0 16px 8px;flex:none}.compete-sheet-overview-row{display:flex;align-items:center;gap:8px}.compete-sheet-overview-track{flex:1;min-width:0}
 
 .focus-field-expanded[aria-hidden="true"] .geographic-map-controls{display:none}
+
+.focus-field-expanded .mapboxgl-ctrl-bottom-right{bottom:var(--course-credits-bottom,8px);right:8px}

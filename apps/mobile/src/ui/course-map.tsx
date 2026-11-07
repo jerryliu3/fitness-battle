@@ -17,8 +17,8 @@ const isValidPose = (p?: CourseCameraPose | null): p is CourseCameraPose =>
   Boolean(p && p.center && Array.isArray(p.center) && (Math.abs(p.center[0]) >= 1e-6 || Math.abs(p.center[1]) >= 1e-6) && !Number.isNaN(p.center[0]) && !Number.isNaN(p.center[1]) && typeof p.zoom === "number" && p.zoom > 1);
 
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
-export default function CourseMap({ presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, onSnapshot, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, onChoose2D, onOptionsChange, overlaysHidden = false, distanceTarget }: {
-  presentationActive?: boolean;
+export default function CourseMap({ creditsBottom, presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, onSnapshot, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, onChoose2D, onOptionsChange, overlaysHidden = false, distanceTarget }: {
+  creditsBottom?: number; presentationActive?: boolean;
   cardSessionKey?: string | number | boolean;
   initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
   onReady?: () => void; onSnapshot?: (uri: string) => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null;
@@ -104,7 +104,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
   }, [active, ready, course, replayActive, reduced]);
   useEffect(() => {
     if (!active || !ready || !distanceTarget) return;
-    const metres = raceEffortMetres(distanceTarget.value, unit);
+    const metres = raceEffortMetres(Math.max(0, Math.min(distanceTarget.value, Math.max(0, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value)))), unit);
     if (metres === null) return;
     controller.seek(course, metres);
   }, [active, ready, course, unit, distanceTarget?.value, distanceTarget?.request, controller]);
@@ -126,7 +126,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
   }, [onOptionsChange, flat, spaced, Boolean(onReplay), Boolean(onChoose2D)]);
   return <View style={{ flex: 1, minHeight: 0 }}>
     <MapView ref={mapRef} accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled
-      logoPosition={{ top: 8, left: optionsTop != null ? 72 : 8 }} attributionPosition={{ top: 8, left: optionsTop != null ? 170 : 100 }}
+      logoPosition={{ bottom: (creditsBottom ?? 0) + 8, right: 40 }} attributionPosition={{ bottom: (creditsBottom ?? 0) + 8, right: 8 }}
       scaleBarEnabled={optionsTop == null}
       scaleBarPosition={{ bottom: controlsBottom + 100, left: 8 }}
       onDidFinishLoadingMap={() => {

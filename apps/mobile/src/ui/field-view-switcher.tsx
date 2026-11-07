@@ -41,14 +41,14 @@ export function FieldViewSwitcher({
             alignItems: "center",
             gap: 6,
             borderRadius: 999,
-            backgroundColor: "rgba(20, 20, 19, 0.78)",
-            borderWidth: 1,
+            backgroundColor: compact ? "transparent" : "rgba(20, 20, 19, 0.78)",
+            borderWidth: compact ? 0 : 1,
             borderColor: "rgba(255, 255, 255, 0.2)",
           },
           pressed && { opacity: 0.75 },
         ]}
       >
-        {compact ? <AppIcon name="settings" size={22} color="#ffffff" /> : <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
+        {compact ? <AppIcon name="settings" size={22} color={c.ink} /> : <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
           {(value === "4d" ? "3D" : value.toUpperCase())} ▾
         </Text>}
       </Pressable>

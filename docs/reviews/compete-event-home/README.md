@@ -90,3 +90,26 @@ events retain explicit placeholders.
 
 This follow-up intentionally skips local typecheck, tests and screenshot review
 at the owner's request. The native app is rebuilt and installed for owner review.
+
+## Course controls and standings polish
+
+Required Mapbox logo and attribution move to the lower-right map edge above the
+sheet; native sheet coverage updates their position as the sheet moves. Snapshot
+credits also remain at the lower right. Credits remain visible as required by
+Mapbox. The gear uses an unframed icon with its existing accessible touch target.
+
+The geographic scrubber is labeled Start–Leader, uses the leader's exact earned
+distance as its endpoint, and clamps seek commands to that distance. Scrubbing
+in perspective mode follows the path heading and pitch; flat mode stays flat.
+The colored course geometry continues to include earned trails only, without an
+unearned course outline or finish marker. The map's ordinary streets remain
+geographic scenery, not a disclosure of the unearned race course.
+
+Current Positions is renamed Current Leaders. Standings photo taps open the
+athlete profile; the rest of the row focuses that racer in the retained map.
+The native existing profile sheet is reused; the web profile sheet shows the
+existing roster identity, event total and effort score.
+
+Native simulator build installed. Tests/typecheck and visual review are left to
+GitHub CI and the owner as requested. Camera expectations and existing panel
+labels in regression tests are updated but not run locally.

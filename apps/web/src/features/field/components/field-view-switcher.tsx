@@ -18,5 +18,5 @@ export function FieldViewSwitcher({ compact = false, value, geographic, onChange
       {onZoomOut ? <option value="zoom-out">Zoom out</option> : null}
     </optgroup> : null}
   </select>;
-  return compact ? <details style={{ position: "relative", marginLeft: "auto" }}><summary aria-label="Course options" style={{ listStyle: "none", cursor: "pointer", borderRadius: 999, padding: 12, background: c.card, color: c.ink }}>⚙</summary><div style={{ position: "absolute", right: 0, bottom: 48 }}>{selector}</div></details> : selector;
+  return compact ? <details style={{ position: "relative", marginLeft: "auto" }}><summary aria-label="Course options" style={{ listStyle: "none", cursor: "pointer", borderRadius: 999, padding: 12, background: "transparent", color: c.ink }}>⚙</summary><div style={{ position: "absolute", right: 0, bottom: 48 }}>{selector}</div></details> : selector;
 }

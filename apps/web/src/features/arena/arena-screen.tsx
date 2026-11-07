@@ -40,6 +40,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const router = useRouter();
   const requestedEvent=useSearchParams().get("event");
   const [immersiveAccount, setImmersiveAccount] = useState<string | null>(null);
+  const [athleteFocus, setAthleteFocus] = useState<{ id: string; request: number } | null>(null);
   const [courseOptions, setCourseOptions] = useState<ReactNode>(null);
   const [courseTarget, setCourseTarget] = useState<{ value: number; request: number } | null>(null);
   const [expandRequest, setExpandRequest] = useState(0);
@@ -120,7 +121,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
 
   return (
     <div className="focus-arena">
-      {selectedSport && selectedSport !== "sleep" ? <FieldStage key={`${account}:${selectedSport}:${state.units}`} onOptionsChange={setCourseOptions} externalCourseTarget={courseTarget} persistent backgroundMode presentationVisible={immersive} onExit={() => setImmersiveAccount(null)} tabActive={tabActive} replayState={state} queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField overlay state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
+      {selectedSport && selectedSport !== "sleep" ? <FieldStage externalAthleteFocus={athleteFocus} key={`${account}:${selectedSport}:${state.units}`} onOptionsChange={setCourseOptions} externalCourseTarget={courseTarget} persistent backgroundMode presentationVisible={immersive} onExit={() => setImmersiveAccount(null)} tabActive={tabActive} replayState={state} queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField overlay state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
       {!immersive && <section aria-label="Your events" className="compete-event-home">
         <SectionHeader titleRole="display" title="Compete" subtitle="Your events" action={<button type="button" className="fb-btn" onClick={() => { setSport(null); setRegister(true); }}>Register for an event</button>} />
         {active.map(rating => {
@@ -162,7 +163,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         </AppParagraph>
       ) : null}
 
-      {selectedSport && selectedSport !== "sleep" ? <FieldStage standingsOnly key={`${account}:${selectedSport}:${state.units}`} tabActive={immersive} replayState={state} sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined} /> : null}
+      {selectedSport && selectedSport !== "sleep" ? <FieldStage onFocusAthlete={id => { setCourseTarget(null); setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} standingsOnly key={`${account}:${selectedSport}:${state.units}`} tabActive={immersive} replayState={state} sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined} /> : null}
       </CompeteSheet>
       <div hidden={immersive}>
       {selectedSport === "sleep" && (queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event="sleep" now={now} onCancel={() => dispatch({type:"opt-out-health",metric:"sleep"})} /> : <SleepPanel state={state} now={now} onJoin={()=>participate("join sleep",()=>dispatch({type:"opt-in-health",metric:"sleep"}))} onLeave={()=>dispatch({type:sleep.renews?"schedule-leave":"resume-renewal",metric:"sleep"})} leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"} />)}

@@ -8,6 +8,13 @@ export function CompeteSheet({ children, active, expandRequest = 0, overview }: 
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const drag = useRef<{ y: number; height: number; maximum: number } | null>(null);
   const sheet = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const node = sheet.current, root = node?.closest?.<HTMLElement>(".focus-arena");
+    if (!node || !root || !active) return;
+    const update = () => root.style.setProperty("--course-credits-bottom", `${(dragHeight ?? (stop === 0 ? (overview ? 128 : 76) : stop === 1 ? node.offsetHeight * .42 : node.offsetHeight)) + 8}px`);
+    update(); const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update); observer?.observe(node);
+    return () => { observer?.disconnect(); root.style.removeProperty("--course-credits-bottom"); };
+  }, [active, stop, dragHeight, Boolean(overview)]);
   const minimum = overview ? 128 : 76;
   const visible = dragHeight !== null ? `${dragHeight}px` : stop === 0 ? `${minimum}px` : stop === 1 ? "42%" : "100%";
   return <section onKeyDown={event => { if (event.key === "Escape") setStop(0); }} ref={sheet} className="compete-sheet" data-active={active} aria-label="Competition standings and events" data-stop={stop} inert={!active}
