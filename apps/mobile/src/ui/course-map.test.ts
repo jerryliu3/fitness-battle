@@ -142,7 +142,7 @@ it("hides a blocked racer without changing the other racer's position or place",
   expect(renderer.root.findByType("AthletePennant" as never).props.detail).toContain("2nd");
 });
 
-it("applies automatic replay poses directly without stopping or easing each frame", async () => {
+it("follows automatic progress along the route and settles on the racer", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const course = createRaceCourse("Replay", [[0, 0], [.1, 0]]);
   const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: .5 }], unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn() };
@@ -151,7 +151,8 @@ it("applies automatic replay poses directly without stopping or easing each fram
   for (const value of [.501, .55, 5]) {
     calls.setCamera.mockClear();
     await act(async () => renderer.update(createElement(CourseMap, { ...props, lanes: [{ ...props.lanes[0]!, value }] })));
-    expect(calls.setCamera).toHaveBeenCalledTimes(1);
+    expect(scheduledFrames.size).toBeGreaterThan(0);
+    await finishCameraTravel();
     expect(calls.setCamera.mock.lastCall![0].animationDuration).toBe(0);
     const marker = renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape.features[0];
     expect(calls.setCamera.mock.lastCall![0].centerCoordinate).toEqual(marker.geometry.coordinates);

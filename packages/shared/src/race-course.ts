@@ -162,8 +162,8 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
         let smoothedHeading = current.bearing, previousElapsed = 0;
         driver.stop();
         driver.trace((fraction, elapsedMs = fraction * duration) => {
-          const progress = from + (metres - from) * fraction;
-          const lateral = fromLateral + (lateralMetres - fromLateral) * fraction;
+          const progress = fraction >= 1 ? metres : from + (metres - from) * fraction;
+          const lateral = fraction >= 1 ? lateralMetres : fromLateral + (lateralMetres - fromLateral) * fraction;
           lastCourse = course; lastMetres = progress; lastLateral = lateral;
           const at = raceCourseRacerPosition(course, progress, lateral);
           // Moving backward changes position only; the lens still faces race-forward.

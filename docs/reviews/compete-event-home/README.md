@@ -219,3 +219,11 @@ Pausing motion now cancels animation without writing an extra camera pose, and
 empty frame handles are not cancelled. Seek effects depend on the effective
 clamped target, avoiding unnecessary recentering when the leader grows but the
 requested target remains valid. No verification was run after these changes.
+
+## Exact route endpoint CI repair
+
+The reported coordinate failures came from interpolation roundoff at fraction
+one. Completed camera samples now use the exact target distance and lateral
+offset. The remaining automatic-progress test still expected an immediate
+teleport despite route animation; it now advances the controlled frame queue
+and asserts arrival at the racer. No post-fix verification was run.
