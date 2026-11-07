@@ -1,3 +1,4 @@
+vi.mock("./compete-sheet", () => ({ CompeteSheet: "CompeteSheet" }));
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: vi.fn() }) }));
 vi.mock("../features/athlete-profile-sheet", () => ({ AthleteProfileSheet: "AthleteProfileSheet" }));
 vi.mock("./app-icon", () => ({ AppIcon: "AppIcon" }));
@@ -151,7 +152,7 @@ vi.mock("./field-course", async () => {
     FieldOverview: (props: object) => createElement("FieldOverview", props),
   };
 });
-import ArenaScreen from "../../app/(tabs)/arena";
+import { ArenaScreen } from "../../app/(tabs)/arena";
 let renderer: ReactTestRenderer;
 async function layoutCarousel() {
  const host=renderer.root.findAllByType("View" as never).find(node=>typeof node.props.onLayout==="function");

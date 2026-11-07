@@ -16,7 +16,7 @@ export async function prefetchCompetitionCourse(
   periodEnd: string,
   accessToken: string,
 ): Promise<RaceCourse | null> {
-  const cacheKey = `${sport}:${periodStart}:${periodEnd}`;
+  const cacheKey = `${accessToken}:${sport}:${periodStart}:${periodEnd}`;
   if (courseCache.has(cacheKey)) return courseCache.get(cacheKey)!;
   try {
     const query = `sport=${encodeURIComponent(sport)}&start=${encodeURIComponent(periodStart)}&end=${encodeURIComponent(periodEnd)}`;
@@ -32,7 +32,7 @@ export async function prefetchCompetitionCourse(
 export function useCompetitionCourse(sport: string, periodStart: string, periodEnd: string, debug = false, enabled = true) {
   const { user, accessToken, offlineMode } = useAuth();
   const [attempt, setAttempt] = useState(0);
-  const cacheKey = `${sport}:${periodStart}:${periodEnd}`;
+  const cacheKey = `${accessToken}:${sport}:${periodStart}:${periodEnd}`;
   const key = `${user?.id ?? ""}:${sport}:${periodStart}:${periodEnd}:${attempt}`;
   const [result, setResult] = useState<{ key: string; course: RaceCourse | null; error: string } | null>(null);
   const demo = user?.mode === "demo" || debug;
@@ -44,7 +44,7 @@ export function useCompetitionCourse(sport: string, periodStart: string, periodE
     void requestApi(mobileEnv.apiUrl, accessToken, `/api/compete/course?${query}`)
       .then(data => raceCourseFromAssignment(data, periodStart, periodEnd))
       .then(course => {
-        if (course) courseCache.set(cacheKey, course);
+        if (course) { const cached = courseCache.get(cacheKey); if (cached && JSON.stringify(cached) === JSON.stringify(course)) course = cached; courseCache.set(cacheKey, course); }
         if (!cancelled) setResult({ key, course, error: "" });
       })
       .catch(() => { if (!cancelled) setResult({ key, course: null, error: "Weekly course is unavailable. Please try again." }); });

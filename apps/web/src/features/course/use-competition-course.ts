@@ -23,7 +23,7 @@ export function useCompetitionCourse(sport: string, periodStart: string, periodE
         if (!response.ok) throw new Error("Weekly course is unavailable. Please try again.");
         return raceCourseFromAssignment(await response.json(), periodStart, periodEnd);
       })
-      .then(course => { if (!controller.signal.aborted) setResult({ key, course, error: "" }); })
+      .then(course => { if (!controller.signal.aborted) setResult(previous => ({ key, course: previous?.key === key && JSON.stringify(previous.course) === JSON.stringify(course) ? previous.course : course, error: "" })); })
       .catch(() => { if (!controller.signal.aborted) setResult({ key, course: null, error: "Weekly course is unavailable. Please try again." }); })
       .finally(() => clearTimeout(timeout));
     return () => { clearTimeout(timeout); controller.abort(); };

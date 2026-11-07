@@ -40,6 +40,10 @@ import type { FieldModel } from "../model";
 
 export function FieldStage({
   model,
+  persistent = false,
+  backgroundMode = false,
+  standingsOnly = false,
+  onExit,
   boardRows,
   sportTitle,
   tabActive = true,
@@ -48,6 +52,10 @@ export function FieldStage({
 }: {
   queueOverlay?: import("react").ReactNode;
   model: FieldModel;
+  persistent?: boolean;
+  backgroundMode?: boolean;
+  standingsOnly?: boolean;
+  onExit?: () => void;
   boardRows?: BoardRow[];
   sportTitle?: string;
   tabActive?: boolean;
@@ -92,7 +100,7 @@ export function FieldStage({
     : null;
 
   const [viewDimension, setViewDimension] = useState<"2d" | "3d" | "4d">(unit === "pts" ? "2d" : "4d");
-  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(model.sport, model.periodStart, model.periodEnd, debugActive, viewDimension === "4d" && tabActive);
+  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(model.sport, model.periodStart, model.periodEnd, debugActive, !standingsOnly && viewDimension === "4d" && (persistent || tabActive));
   const [courseFlat, setCourseFlat] = useState(false);
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
   useEffect(() => setCourseTarget(null), [accountKey, model.sport, model.periodStart, model.unit]);
@@ -102,16 +110,17 @@ export function FieldStage({
     setStandingsOpen(false);
     setViewDimension(value);
   };
-  const [standingsOpen, setStandingsOpen] = useState(false);
-  const [lanesImmersive, setLanesImmersive] = useState(false);
+  const [standingsOpen, setStandingsOpen] = useState(standingsOnly);
+  const [lanesImmersive, setLanesImmersive] = useState(persistent);
   const [intervalsCollapsed, setIntervalsCollapsed] = useState(false);
   const [spotlightCollapsed, setSpotlightCollapsed] = useState(false);
 
 
   useEffect(() => {
+    if (persistent) { if (tabActive) setLanesImmersive(true); return; }
     if (tabActive && shellTabFromPath(pathname)?.id === "arena") return;
     setLanesImmersive(false);
-  }, [pathname, tabActive]);
+  }, [pathname, tabActive, persistent]);
   const [span, setSpan] = useState(fieldDefaultSpan(unit));
   const [center, setCenter] = useState<number | null>(null);
   const [centerTween, setCenterTween] = useState<number | null>(null);
@@ -319,10 +328,11 @@ export function FieldStage({
           type="button"
           className="focus-broadcast-back"
           aria-label="Close full screen field"
-          onClick={() => setLanesImmersive(false)}
+          onClick={() => persistent ? onExit?.() : setLanesImmersive(false)}
         >
           ← Back
         </button>
+        <button type="button" className="fb-btn-line" onClick={() => setLanesImmersive(false)}>Events & standings</button>
         <div className="focus-broadcast-title" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {sportTitle ?? model.sport}{queueOverlay ? " · Upcoming wave" : ` · ${displayPlace} / ${runners.length}`}
         </div>
@@ -492,25 +502,26 @@ export function FieldStage({
     <section
       className="focus-arena-stage"
       style={{ position: "relative" }}
-      hidden={!tabActive}
-      aria-hidden={!tabActive}
+      hidden={!persistent && !tabActive}
+      aria-hidden={!persistent && !tabActive}
     >
-      {!lanesImmersive ? <div style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
+      {!standingsOnly && !lanesImmersive ? <div style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
         <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
           standings={standingsOpen} onStandings={queueOverlay ? undefined : () => { cancelCenterTween(); setStandingsOpen(true); }} />
       </div> : null}
-      <div style={{ display: standingsOpen ? "none" : "flow-root" }}>
+      {!standingsOnly && <div style={{ display: standingsOpen ? "none" : "flow-root" }}>
         <ExpandingField
+          persistent={persistent}
           open={lanesImmersive && tabActive}
           tabActive={tabActive}
-          onClose={() => setLanesImmersive(false)}
-          hud={broadcastHud}
+          onClose={() => { if (!backgroundMode) setLanesImmersive(false); }}
+          hud={backgroundMode ? <div className="compete-map-heading"><span>{sportTitle ?? model.sport}</span><FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView} /></div> : broadcastHud}
         >
-          {viewDimension === "4d" && tabActive ? <div className="focus-geographic-host" style={{ position: "relative", height: lanesImmersive ? "100%" : 460 }}>
+          {viewDimension === "4d" && (persistent || tabActive) ? <div className="focus-geographic-host" style={{ position: "relative", height: persistent || lanesImmersive ? "100%" : 460 }}>
             <GeographicCourse cardSessionKey={lanesImmersive} initialFlat={courseFlat} onFlatChange={setCourseFlat} lanes={fieldLanes} unit={unit} selectedId={(lanesImmersive ? trackSelected : null) || you.id} focusRequest={lanesImmersive ? focusRequest : 0} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={lanesImmersive ? courseTarget : null} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? spotlightCollapsed ? 136 : 236 : 8} />
             {!lanesImmersive ? <button type="button" className="focus-portal-pill is-accent" style={{ position: "absolute", top: 12, right: 12 }} aria-label="Expand 3D course to full screen" onClick={() => setLanesImmersive(true)}>Full Arena ⤢</button> : null}
           </div> : null}
-          {viewDimension === "3d" && tabActive ? (
+          {viewDimension === "3d" && (persistent || tabActive) ? (
             <PortraitField
               lanes={sceneLanes.map((l) => ({
                 ...l,
@@ -611,9 +622,9 @@ export function FieldStage({
           </div>
           {queueOverlay}
         </ExpandingField>
-      </div>
+      </div>}
 
-      <div className="focus-standings-collapsible" hidden={!standingsOpen} style={{ paddingTop: 64 }}>
+      <div className="focus-standings-collapsible" hidden={!standingsOpen} style={{ paddingTop: standingsOnly ? 0 : 64 }}>
         {standingsOpen ? (
           <div className="focus-standings-body">
             {leader ? (

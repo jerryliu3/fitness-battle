@@ -8,7 +8,7 @@ vi.mock("@/components/auth-context",()=>({useAuth:()=>({user:{id:"demo"}})}));
 vi.mock("next/navigation",()=>({useSearchParams:()=>new URLSearchParams(),useRouter:()=>({push:vi.fn()})}));
 vi.mock("@/lib/score-track-lens",()=>({useScoreTrackLens:()=>["open",vi.fn()]}));
 vi.mock("@/lib/haptics",()=>({playCue:vi.fn()}));
-vi.mock("@/features/field/components/field-stage",()=>({FieldStage:({sportTitle, queueOverlay}:{sportTitle:string; queueOverlay?: import("react").ReactNode})=>createElement("div",{"data-active-field":sportTitle}, queueOverlay)}));
+vi.mock("@/features/field/components/field-stage",()=>({FieldStage:({sportTitle, queueOverlay, standingsOnly}:{sportTitle:string; standingsOnly?:boolean; queueOverlay?: import("react").ReactNode})=>createElement("div",{[standingsOnly ? "data-standings" : "data-active-field"]:sportTitle}, queueOverlay)}));
 vi.mock("@/features/health/sleep-panel",()=>({SleepPanel:()=>createElement("div",{"data-sleep-field":true})}));
 vi.mock("@/features/split/components/week-reveal",()=>({WeekReveal:()=>null}));
 vi.mock("@/ui/sheet",()=>({Sheet:()=>null}));

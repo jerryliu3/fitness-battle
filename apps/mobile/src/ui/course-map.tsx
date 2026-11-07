@@ -17,13 +17,17 @@ const isValidPose = (p?: CourseCameraPose | null): p is CourseCameraPose =>
   Boolean(p && p.center && Array.isArray(p.center) && (Math.abs(p.center[0]) >= 1e-6 || Math.abs(p.center[1]) >= 1e-6) && !Number.isNaN(p.center[0]) && !Number.isNaN(p.center[1]) && typeof p.zoom === "number" && p.zoom > 1);
 
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
-export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, overlaysHidden = false, distanceTarget }: {
+export default function CourseMap({ presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, overlaysHidden = false, distanceTarget }: {
+  presentationActive?: boolean;
   cardSessionKey?: string | number | boolean;
   initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
   onReady?: () => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null;
   hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; overlaysHidden?: boolean;
 }) {
-  const active = useSceneActive();
+  const sceneActive = useSceneActive();
+  const active = sceneActive && presentationActive;
+  const initialized = useRef(false);
+  const reported = useRef(false);
   const { user } = useAuth();
   const cameraKey = `${user?.id ?? "guest"}:${course.name}:${course.length}:${course.coordinates[0].join(",")}:${unit}`;
   const cachedPose = replay ? undefined : rememberedCameras.get(cameraKey);
@@ -48,24 +52,23 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     stop(userGesture) { if (userGesture) return; const p = pose.current; ref.current?.setCamera({ centerCoordinate: p.center, zoomLevel: p.zoom, pitch: p.pitch, heading: p.bearing, animationDuration: 0 }); },
     follow(next) { ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: 0 }); },
     fit(bounds, duration) { ref.current?.setCamera({ bounds: { ...bounds, paddingTop: 48, paddingBottom: 48, paddingLeft: 48, paddingRight: 48 }, pitch: 0, heading: 0, animationDuration: duration, animationMode: "easeTo" }); },
-    move(next, duration) { ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: duration, animationMode: "easeTo" }); },
+    move(next, duration) { ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: initialized.current ? duration : 0, animationMode: "easeTo" }); },
   }, Boolean(reduced), (restored.current ? restored.current.pitch === 0 : initialFlat) ? "2d" : "3d"), []);
   useEffect(() => controller.setReducedMotion(Boolean(reduced)), [controller, reduced]);
   useEffect(() => { if (!followAthlete && controller.following) controller.interrupt(false); }, [controller, followAthlete, reduced]);
   const focus = () => { if (scene.selected) { controller.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); } };
   const lastFocus = useRef<{ course: RaceCourse; id: string; request: number; following: boolean; session?: string | number | boolean; metres?: number } | null>(null);
   useEffect(() => {
-    if (!active || !ready || !scene.selected || replay) return;
-    if (restored.current) { lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey, metres: scene.selected.metres }; restored.current = undefined; controller.interrupt(false); onFollowChange?.(false); return; }
+    if ((!active && initialized.current) || !ready || !scene.selected || replay) return;
+    if (restored.current) { initialized.current = true; lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey, metres: scene.selected.metres }; restored.current = undefined; controller.interrupt(false); onFollowChange?.(false); return; }
     const previous = lastFocus.current;
     const explicit = !previous || previous.course !== course || previous.id !== selectedId || previous.request !== focusRequest || !previous.following || previous.session !== cardSessionKey;
     lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey, metres: scene.selected.metres };
     if (!followAthlete) return;
-    if (previous && !explicit && previous.metres === scene.selected.metres) {
-      // Retain current POV without shifting when toggling between tabs
-      return;
-    }
+    // Tab focus alone must never move a prepared camera.
+    if (previous && !explicit && previous.metres === scene.selected.metres) return;
     controller.focus(course, scene.selected.metres, !explicit, scene.selected.lateralMetres);
+    initialized.current = true;
   }, [active, ready, controller, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres, replay]);
   const replayTarget = useRef<CourseCameraPose | null>(null);
   replayTarget.current = replay && scene.selected
@@ -114,10 +117,9 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
         if (isValidPose(p)) {
           ref.current?.setCamera({ centerCoordinate: p.center, zoomLevel: p.zoom, pitch: p.pitch, heading: p.bearing, animationDuration: 0 });
         }
-        onReady?.();
       }}
       onMapLoadingError={event => setError(ready && event?.type !== "style" ? "Some map scenery could not load. Check your connection." : "The map could not load. Check your connection and Mapbox access.")}
-      onMapIdle={() => { if (ready) setError(""); }}
+      onMapIdle={() => { if (ready) setError(""); if (ready && (initialized.current || replay) && !reported.current) { reported.current = true; onReady?.(); } }}
     >
       <Camera minZoomLevel={0} maxZoomLevel={20} ref={ref} defaultSettings={{ centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing }} />
       <CameraGestureObserver onCameraChanged={({ nativeEvent }) => {

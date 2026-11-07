@@ -103,6 +103,24 @@ joystick replacements remain under discussion pending release-device profiling.
 
 Use semantic shared tokens: navy `#142b3b`, yellow `#f7c948`, canvas `#f8f9f6`, white cards, muted `#637482`, border `#e3e9e7`, teal `#176c75`. Cards use quiet 20px corners. Yellow primary controls use dark labels. Historical decisions below describe earlier iterations; this selection supersedes their presentation rules.
 
+### Compete background field and sheet — November 6
+
+Compete is a persistent full-viewport field with controls over it. It is not a
+fullscreen mode to enter or close. Keep Home / Compete / Progress / Crew available
+above the field at the bottom. The ordinary app header stays hidden on Compete.
+Standings, registered event selection, registration and results live in a bottom
+sheet that starts partially visible, minimizes to its header, or expands to fill
+the content area above navigation. Drag its grip or use its labeled controls;
+scroll the contents independently. Preserve sheet content and field selection
+through resizing and tab changes. Reduced Motion disables sheet travel.
+
+Keep the field at its final viewport dimensions throughout these sheet states:
+coverage changes, camera geometry does not. Prepare it under the launch cover
+and pause hidden presentation clocks. Distance fields retain geographic 3D;
+points use 2D. Empty, queued and Recovery states stay honest in the same sheet.
+This supersedes the November 3 separate fullscreen/close-and-return experience.
+See [the simulator review](reviews/compete-background-sheet/README.md).
+
 ## Brand and character exploration
 
 The [Brand & Ember study](brand-study/brand-and-ember-studio.md) is available at `/design/brand` under the existing design access gate. It preserves ten brand territories, adds the current Ember in a Chain Reaction-inspired setting, and explores Everyday Club, Open Field and Pocket Arena as calmer foundations for customizable star finishes. The October 17 review selects Open Field’s structure with Everyday Club’s warm white, charcoal and gold. Ember’s preferred art references are The Pass / Challenger, Marginal Gains and Higher Ground, with shared anatomy and adjustable finishes. The study locker uses local fictional ownership and proposed unlock examples; it does not establish production rewards, entitlement, scoring or storage rules.
