@@ -4,8 +4,8 @@ import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { defaultFieldAppearance, freshState, reduceCompete, DEMO_RACE_COURSE } from "@fitness-battle/shared";
-const mocks = vi.hoisted(() => ({ fly: vi.fn(), appState: null as null | ((status: string) => void) }));
-vi.mock("expo-router", () => ({ usePathname: () => "/arena" }));
+const mocks = vi.hoisted(() => ({ fly: vi.fn(), path: "/arena", appState: null as null | ((status: string) => void) }));
+vi.mock("expo-router", () => ({ usePathname: () => mocks.path }));
 vi.mock("react-native", () => ({
   Modal: "Modal",
   Animated: { View: "View", Value: class { constructor(public value: number) {} interpolate(config: unknown) { return config; } }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
@@ -46,6 +46,7 @@ const root = () => renderer.root.findAllByType("View" as never).find(node => nod
 const button = (label: string) => renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === label)!;
 const touch = (x = 10) => ({ nativeEvent: { pageX: x, pageY: 20, touches: [{}] } });
 beforeEach(async () => {
+  mocks.path = "/arena";
   vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-26T18:00:00Z")); vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); mocks.fly.mockClear();
   await act(async () => { renderer = create(createElement(CompetitionField, { sport: "running", track: "verified" })); });
   expect(renderer.root.findAllByType("FieldViewSwitcher" as never)[0].props.value).toBe("4d");
@@ -53,6 +54,16 @@ beforeEach(async () => {
   await act(async () => field().props.onExpand());
 });
 afterEach(async () => { await act(async () => renderer.unmount()); vi.useRealTimers(); vi.unstubAllGlobals(); });
+it("uses the persistent field as background without fullscreen exit or broadcast panels", async () => {
+  const onDetails = vi.fn();
+  await act(async () => renderer.update(createElement(CompetitionField, { sport: "running", track: "verified", persistent: true, backgroundMode: true, onDetails })));
+  expect(renderer.root.findAllByType("IconButton" as never).filter(node => node.props.label === "Close full screen field")).toHaveLength(0);
+  expect(renderer.root.findAll(node => node.props.label === "current positions" || node.props.label === "athlete panel")).toHaveLength(0);
+  const details = renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Events & standings")!;
+  await act(async () => details.props.onPress());
+  expect(onDetails).toHaveBeenCalledOnce();
+  expect(field().props.fullscreen).toBe(true);
+});
 it("restores HUD and consumes a held athlete release without blocking the next gesture", async () => {
   await act(async () => { root().props.onTouchStartCapture(); scene().props.onTouchStart(touch()); vi.advanceTimersByTime(450); });
   expect(field().props.overlaysHidden).toBe(true);
@@ -187,4 +198,29 @@ it("expands the whole 3D preview and only exposes course options in full screen"
 it("omits Elo from the fullscreen athlete spotlight", () => {
   const labels = renderer.root.findAllByType("Text" as never).map(node => JSON.stringify(node.props.children));
   expect(labels.some(label => /ELO/i.test(label))).toBe(false);
+});
+
+it("retains the fullscreen scene across tab blur and exits without collapsing it", async () => {
+  await act(async () => renderer.unmount());
+  const onExit = vi.fn();
+  const onDetails = vi.fn();
+  const props = { sport: "running" as const, track: "verified" as const, persistent: true, onExit, onDetails };
+  await act(async () => { renderer = create(createElement(CompetitionField, props)); });
+  const map = renderer.root.findByType("GeographicCourse" as never);
+  expect(map.props.cardSessionKey).toBe(true);
+  expect(renderer.root.findAll(node => /^.+, place \d+,/.test(node.props.accessibilityLabel ?? ""))).toHaveLength(0);
+  const details = renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Events & standings")!;
+  await act(async () => details.props.onPress());
+  expect(onDetails).toHaveBeenCalledOnce();
+  expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(0);
+  mocks.path = "/today";
+  await act(async () => renderer.update(createElement(CompetitionField, props)));
+  expect(renderer.root.findByType("GeographicCourse" as never)).toBe(map);
+  expect(map.props.cardSessionKey).toBe(true);
+  mocks.path = "/arena";
+  await act(async () => renderer.update(createElement(CompetitionField, props)));
+  const exit = renderer.root.findAllByType("IconButton" as never).find(node => node.props.label === "Close full screen field")!;
+  await act(async () => exit.props.onPress());
+  expect(onExit).toHaveBeenCalledOnce();
+  expect(renderer.root.findByType("GeographicCourse" as never)).toBe(map);
 });

@@ -36,12 +36,13 @@ function renderTab(
   tabId: ShellTabId,
   accountKey: string,
   tabActive: boolean,
+  onCompeteExit?: () => void,
 ): ReactNode {
   switch (tabId) {
     case "today":
       return <TodayScreen />;
     case "arena":
-      return <ArenaScreen tabActive={tabActive} />;
+      return <ArenaScreen tabActive={tabActive} onExit={onCompeteExit} />;
     case "field":
       return <FieldScreen />;
     case "you":
@@ -79,9 +80,11 @@ export function PhoneShell({
   const [bootAnimDone, setBootAnimDone] = useState(false);
   const matched = tab?.id ?? null;
   const active = onAthlete ? null : intent ?? matched;
+  const competeOrigin = useRef<ShellTabId>("today");
+  if (active && active !== "arena") competeOrigin.current = active;
   const accountKey = user?.id ?? "guest";
   const [visited, setVisited] = useState<Set<ShellTabId>>(
-    () => new Set(["today"]),
+    () => new Set(["today", "arena"]),
   );
 
   useEffect(() => {
@@ -175,7 +178,7 @@ export function PhoneShell({
     <ShellBootReadiness />
     <div className="phone-frame">
       <div className="phone-shell">
-        {!onAthlete && productPath !== "/week" && !progressDetail && <header className="focus-shell-header">
+        {active !== "arena" && !onAthlete && productPath !== "/week" && !progressDetail && <header className="focus-shell-header">
           <div className="club-header-effort"><EffortRail compact /></div>
           {streak && <span className={`club-week-streak${streak.active ? " is-active" : ""}`} aria-label={`${streak.count} week activity streak${streak.active ? "" : ", inactive this week"}`}><svg width="18" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2c1 6 7 7 7 13a8 8 0 0 1-16 0c0-3 2-6 5-8-1 4 0 5 2 6 2-3 3-6 2-11Z" fill="currentColor" /></svg><b>{streak.count}</b></span>}
           {process.env.NODE_ENV === "development" && <DebugEventMenu activeTab={active} onNavigate={navigateDebugTarget} />}
@@ -206,7 +209,7 @@ export function PhoneShell({
                   aria-hidden={!on}
                 >
                   {visited.has(tab.id)
-                    ? panel(renderTab(tab.id, accountKey, on))
+                    ? panel(<>{renderTab(tab.id, accountKey, on, () => goTab(competeOrigin.current))}</>)
                     : null}
                 </div>
               );

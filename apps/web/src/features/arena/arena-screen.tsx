@@ -1,4 +1,5 @@
 "use client";
+import { CompeteSheet } from "./compete-sheet";
 import { FeatureCard, StatusBadge, AppParagraph, AppText, typographyStyle, SectionHeader, AppHeading } from "@/ui/section";
 
 import { EventCarousel } from "@/features/club/event-carousel";
@@ -32,7 +33,7 @@ function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
   return `${startsAt.toLocaleDateString("en-US", opts)} – ${lastDay.toLocaleDateString("en-US", opts)}`;
 }
 
-export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
+export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean; onExit?: () => void }) {
   const { state, dispatch, loadStatus, standingsStale, refresh } = useCompete();
   const { user } = useAuth();
   const router = useRouter();
@@ -110,6 +111,39 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
 
   return (
     <div className="focus-arena">
+      {selectedSport && selectedSport !== "sleep" ? <FieldStage persistent backgroundMode key={`${account}:${selectedSport}:${state.units}`} tabActive={tabActive} replayState={state} queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField overlay state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
+      <CompeteSheet active={tabActive} onRegister={() => { setSport(null); setRegister(true); }}>
+
+
+      {frozen && (
+        <div className="fb-pill" style={{ marginBottom: "16px" }}>
+          <b>❄ Week frozen</b>
+          <span>Your effort score is protected through next Monday.</span>
+        </div>
+      )}
+
+      {standingsStale ? (
+        <AppParagraph typographyRole="caption" className="fb-note" role="status">
+          Standings may be out of date. They'll refresh when the connection returns.
+        </AppParagraph>
+      ) : null}
+
+      {hasAnyRegistration ? <EventCarousel key={account} events={[...active.map(r=>({id:r.sport,label:SPORTS.find(s=>s.id===r.sport)!.name,badge:competitionTrackLabel(r.sport)})),...(sleepOptedIn?[{id:"sleep",label:"Sleep & Recovery"}]:[])]} value={selectedSport!} onChange={id=>{setSelection({account,sport:id as SportId|"sleep"});void playCue("selection");}} onRegister={()=>{setSport(null);setRegister(true);}}>
+      {selectedSport === "sleep" && queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => dispatch(selectedSport === "sleep" ? { type: "opt-out-health", metric: "sleep" } : { type: "opt-out", sport: selectedSport })} /> : selectedSport && selectedSport !== "sleep" ? (
+        <FieldStage standingsOnly key={`${account}:${selectedSport}:${state.units}`} tabActive={tabActive}
+          replayState={state}
+          queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField overlay state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined}
+          sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name}
+          model={buildFieldModel(state,selectedSport,track,now)}
+          boardRows={buildSplitBoard(state,selectedSport,track,now).rows}/>
+      ) : selectedSport === "sleep" ? (
+        <SleepPanel state={state} now={now}
+          onJoin={()=>participate("join sleep",()=>dispatch({type:"opt-in-health",metric:"sleep"}))}
+          onLeave={()=>dispatch({type:sleep.renews?"schedule-leave":"resume-renewal",metric:"sleep"})}
+          leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"}/>
+      ) : <section className="focus-card focus-empty"><AppHeading level={2} role="heading">Your next chapter starts here.</AppHeading><AppParagraph typographyRole="body" className="fb-copy">Register for an event to open your field.</AppParagraph></section>}
+
+      </EventCarousel> : <section className="focus-card focus-empty"><AppHeading level={2} role="heading">Your next chapter starts here.</AppHeading><AppParagraph typographyRole="body" className="fb-copy">Register for an event to open your field.</AppParagraph><button type="button" className="fb-btn" onClick={()=>setRegister(true)}>Explore events</button></section>}
       <header className="focus-competition-card">
         <div className="focus-competition-info">
           <SectionHeader
@@ -149,36 +183,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         </div>
       </header>
 
-      {frozen && (
-        <div className="fb-pill" style={{ marginBottom: "16px" }}>
-          <b>❄ Week frozen</b>
-          <span>Your effort score is protected through next Monday.</span>
-        </div>
-      )}
-
-      {standingsStale ? (
-        <AppParagraph typographyRole="caption" className="fb-note" role="status">
-          Standings may be out of date. They'll refresh when the connection returns.
-        </AppParagraph>
-      ) : null}
-
-      {hasAnyRegistration ? <EventCarousel key={account} events={[...active.map(r=>({id:r.sport,label:SPORTS.find(s=>s.id===r.sport)!.name,badge:competitionTrackLabel(r.sport)})),...(sleepOptedIn?[{id:"sleep",label:"Sleep & Recovery"}]:[])]} value={selectedSport!} onChange={id=>{setSelection({account,sport:id as SportId|"sleep"});void playCue("selection");}} onRegister={()=>{setSport(null);setRegister(true);}}>
-      {selectedSport === "sleep" && queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => dispatch(selectedSport === "sleep" ? { type: "opt-out-health", metric: "sleep" } : { type: "opt-out", sport: selectedSport })} /> : selectedSport && selectedSport !== "sleep" ? (
-        <FieldStage key={`${account}:${selectedSport}:${state.units}`} tabActive={tabActive}
-          replayState={state}
-          queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField overlay state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined}
-          sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name}
-          model={buildFieldModel(state,selectedSport,track,now)}
-          boardRows={buildSplitBoard(state,selectedSport,track,now).rows}/>
-      ) : selectedSport === "sleep" ? (
-        <SleepPanel state={state} now={now}
-          onJoin={()=>participate("join sleep",()=>dispatch({type:"opt-in-health",metric:"sleep"}))}
-          onLeave={()=>dispatch({type:sleep.renews?"schedule-leave":"resume-renewal",metric:"sleep"})}
-          leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"}/>
-      ) : <section className="focus-card focus-empty"><AppHeading level={2} role="heading">Your next chapter starts here.</AppHeading><AppParagraph typographyRole="body" className="fb-copy">Register for an event to open your field.</AppParagraph></section>}
-
-      </EventCarousel> : <section className="focus-card focus-empty"><AppHeading level={2} role="heading">Your next chapter starts here.</AppHeading><AppParagraph typographyRole="body" className="fb-copy">Register for an event to open your field.</AppParagraph><button type="button" className="fb-btn" onClick={()=>setRegister(true)}>Explore events</button></section>}
-
       {state.periodResults.length ? (
         <Link className="fb-btn-ghost" href="/arena?results=latest">
           Last week results ↗
@@ -194,6 +198,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
       <FeatureCard title="Beyond this week" description="All-time pace and race rankings." href="/pace"/>
 
       </div>
+      </CompeteSheet>
       <Sheet
         open={register}
         title="Register for this week."

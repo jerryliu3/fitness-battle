@@ -1,3 +1,4 @@
+import { CompeteSheet } from "../../src/ui/compete-sheet";
 import { NavigationAction, SectionStack, AppText } from "../../src/ui/section";
 import { competitionQueue, competeNow, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
 import { EventCarousel } from "../../src/features/event-carousel";
@@ -6,9 +7,9 @@ import {
   type CrewBoardPin,
   type SportId,
 } from "@fitness-battle/shared";
-import { useGlobalSearchParams, useRouter } from "expo-router";
+import { useGlobalSearchParams, usePathname, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { BackHandler, Modal, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CompetitionField } from "../../src/features/competition-field";
 import { QueuedField } from "../../src/features/queued-field";
@@ -23,7 +24,9 @@ import { playCue } from "../../src/lib/haptics";
 import { FocusButton, FocusSheet, f } from "../../src/ui/focus";
 import { SHELL_COLORS } from "../../src/theme";
 
-export default function ArenaScreen() {
+export default function ArenaRoute() { return null; }
+
+export function ArenaScreen({ persistent = false, onExit }: { persistent?: boolean; onExit?: () => void }) {
   const {
     state,
     accountKey,
@@ -34,8 +37,12 @@ export default function ArenaScreen() {
   } = useCompeteStore();
   const { user } = useAuth();
   const router = useRouter();
+  const exit = onExit ?? (() => router.navigate("/today"));
+  const focused = usePathname().endsWith("/arena");
+  useEffect(() => { if (!persistent || !focused) return; const sub = BackHandler.addEventListener("hardwareBackPress", () => { exit(); return true; }); return () => sub.remove(); }, [focused, router, persistent]);
   const requestedEvent=useGlobalSearchParams<{event?:string}>().event;
   const crewApi = useCrewApi();
+  const [expandRequest, setExpandRequest] = useState(0);
   const [register, setRegister] = useState(false);
   const [selection,setSelection]=useState<{account:string;sport:SportId|"sleep"}|null>(null);
   useEffect(()=>{if(requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:accountKey,sport:requestedEvent as SportId});},[requestedEvent,accountKey]);
@@ -133,9 +140,10 @@ export default function ArenaScreen() {
 
   return (
     <SafeAreaView style={f.safe} edges={[]}>
-      <ScrollView contentContainerStyle={f.content}>
+      {persistent && selectedSport && selectedSport !== "sleep" ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} persistent backgroundMode onDetails={() => setExpandRequest(value => value + 1)} /> : null}
+      <ArenaSheet persistent={persistent} expandRequest={expandRequest} active={focused} onRegister={openRegistration}>
 <SectionStack divided={false}>
-        <CompetitionSummary state={state} selectedSport={selectedSport??undefined} onRegister={openRegistration} />
+        {!persistent && <CompetitionSummary state={state} selectedSport={selectedSport??undefined} onRegister={openRegistration} />}
         {standingsStale ? (
           <AppText role="body" secondary  accessibilityLiveRegion="polite">
             Standings may be out of date until the next refresh.
@@ -166,11 +174,7 @@ export default function ArenaScreen() {
             onRegister={openRegistration}
           >
             {selectedSport === "sleep" && queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => dispatch(selectedSport === "sleep" ? { type: "opt-out-health", metric: "sleep" } : { type: "opt-out", sport: selectedSport })} /> : selectedSport && selectedSport !== "sleep" ? (
-              <CompetitionField
-                key={`${accountKey}:${selectedSport}:${state.units}:${track}`}
-                sport={selectedSport}
-                track={track}
-              />
+              persistent ? <CompetitionField sport={selectedSport} track={track} standingsOnly /> : <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} />
             ) : selectedSport === "sleep" ? (
               <SleepPanel state={state} dispatch={dispatch} />
             ) : (
@@ -191,10 +195,11 @@ export default function ArenaScreen() {
             <FocusButton label="Explore events" onPress={openRegistration} />
           </View>
         )}
+        {persistent && <CompetitionSummary state={state} selectedSport={selectedSport??undefined} onRegister={openRegistration} />}
         {state.periodResults.length ? <NavigationAction label="Last week results" onPress={() => router.push("/arena?results=latest")} /> : null}
         <NavigationAction label="View all time standings" onPress={() => router.push("/benchmarks")} />
       </SectionStack>
-</ScrollView>
+</ArenaSheet>
       <FocusSheet
         open={register}
         minimal
@@ -279,4 +284,8 @@ export default function ArenaScreen() {
       </FocusSheet>
     </SafeAreaView>
   );
+}
+
+function ArenaSheet({ persistent, children, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean; onRegister: () => void }) {
+  return persistent ? <CompeteSheet {...props}>{children}</CompeteSheet> : <ScrollView contentContainerStyle={f.content}>{children}</ScrollView>;
 }
