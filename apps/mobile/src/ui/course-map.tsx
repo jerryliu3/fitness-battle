@@ -46,6 +46,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
   const reduced = useReducedMotion();
   const [spaced, setSpaced] = useState(true);
   const earnedDistance = Math.max(0, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value));
+  const clampedTarget = distanceTarget ? Math.max(0, Math.min(distanceTarget.value, earnedDistance)) : undefined;
   const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? RACE_LANE_SPACING_METRES : 0), [course, lanes, unit, selectedId, spaced]);
   const visibleTrails = useMemo(() => hiddenIds.length ? { ...scene.trails, features: scene.trails.features.filter(feature => !hiddenIds.includes(String(feature.id))) } : scene.trails, [scene.trails, hiddenIds]);
   const visibleMarkers = useMemo(() => hiddenIds.length ? { ...scene.markers, features: scene.markers.features.filter(feature => !hiddenIds.includes(String(feature.id))) } : scene.markers, [scene.markers, hiddenIds]);
@@ -57,7 +58,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
   const controller = useMemo(() => createCourseCamera({
     read: () => pose.current,
     // Native input already cancels animations. Issuing setCamera during a gesture would fight it.
-    stop(userGesture) { cancelAnimationFrame(routeFrame.current); routeFrame.current = 0; if (userGesture) return; const p = pose.current; ref.current?.setCamera({ centerCoordinate: p.center, zoomLevel: p.zoom, pitch: p.pitch, heading: p.bearing, animationDuration: 0 }); },
+    stop(userGesture) { if (routeFrame.current) cancelAnimationFrame(routeFrame.current); routeFrame.current = 0; if (userGesture) return; const p = pose.current; ref.current?.setCamera({ centerCoordinate: p.center, zoomLevel: p.zoom, pitch: p.pitch, heading: p.bearing, animationDuration: 0 }); },
     follow(next) { ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: 300, animationMode: "easeTo" }); },
     trace(poseAt, duration) {
       const start = Date.now();
@@ -116,10 +117,10 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
   }, [active, ready, course, replayActive, reduced]);
   useEffect(() => {
     if (!active || !ready || !distanceTarget) return;
-    const metres = raceEffortMetres(Math.max(0, Math.min(distanceTarget.value, earnedDistance)), unit);
+    const metres = raceEffortMetres(clampedTarget ?? 0, unit);
     if (metres === null) return;
     controller.seek(course, metres);
-  }, [active, ready, course, unit, distanceTarget?.value, distanceTarget?.request, earnedDistance, controller]);
+  }, [active, ready, course, unit, distanceTarget?.value, distanceTarget?.request, clampedTarget, controller]);
   const optionsHandlers = useRef({ onReplay, onChoose2D, toggleDimension: () => {}, toggleSpacing: () => {}, overview: () => {} });
   optionsHandlers.current = { onReplay, onChoose2D,
     toggleDimension: () => { controller.dimension(flat ? "3d" : "2d", !(followAthlete && controller.following && scene.selected)); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && controller.following) focus(); },

@@ -1,7 +1,8 @@
+vi.mock("./app-icon", () => ({ AppIcon: "AppIcon" }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-vi.mock("react-native", () => ({ View: "View", Text: "Text", Pressable: "Pressable" }));
+vi.mock("react-native", () => ({ View: "View", Text: "Text", Pressable: "Pressable", Switch: "Switch", Platform: { OS: "ios" } }));
 vi.mock("./anchored-menu", () => ({
   AnchoredMenu: ({ children }: { children: unknown }) => children,
   useAnchoredMenu: () => ({ open: true, close: vi.fn(), toggle: vi.fn(), anchorRef: { current: null }, menuLayout: null }),

@@ -7,7 +7,7 @@ vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "camera-test" } })
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn(), playPattern: vi.fn(() => vi.fn()) }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createRaceCourse, raceCoursePosition, raceEffortMetres } from "@fitness-battle/shared";
 const calls = vi.hoisted(() => ({ setCamera: vi.fn() }));
 vi.mock("react-native", () => ({ View: "View", Text: "Text", Pressable: "Pressable", ScrollView: "ScrollView", Switch: "Switch", Platform: { OS: "ios" }, Modal: ({ visible, ...props }: { visible: boolean }) => visible ? createElement("Modal", { visible, ...props }) : null, Dimensions: { get: () => ({ width: 390, height: 844 }) }, StyleSheet: { create: (value: unknown) => value } }));
@@ -21,7 +21,21 @@ vi.mock("../lib/env", () => ({ mobileEnv: { mapboxAccessToken: "public-test-toke
 vi.mock("@rnmapbox/maps", () => ({ default: { setAccessToken: vi.fn() }, MapView: "Map", Camera: "Camera", ShapeSource: "ShapeSource", LineLayer: "Line", CircleLayer: "Circle", MarkerView: "MarkerView", CameraGestureObserver: "Observer" }));
 import CourseMap from "./course-map";
 let renderer: ReactTestRenderer;
-afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); activity.active = true; vi.clearAllMocks(); vi.unstubAllGlobals(); });
+type TestFrame = (time: number) => void;
+const scheduledFrames = new Map<number, TestFrame>();
+let frameId = 0, frameTime = 0;
+beforeEach(() => {
+  scheduledFrames.clear(); frameId = 0; frameTime = 0;
+  vi.spyOn(Date, "now").mockImplementation(() => frameTime);
+  vi.spyOn(performance, "now").mockImplementation(() => frameTime);
+  vi.stubGlobal("requestAnimationFrame", (callback: TestFrame) => { scheduledFrames.set(++frameId, callback); return frameId; });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => scheduledFrames.delete(id));
+});
+async function finishCameraTravel() {
+  await act(async () => { for (let frame = 0; scheduledFrames.size && frame < 500; frame++) { frameTime += 16; const pending = [...scheduledFrames]; scheduledFrames.clear(); for (const [, callback] of pending) callback(frameTime); } });
+}
+
+afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); activity.active = true; vi.clearAllMocks(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 it("delegates native camera frames, pauses following on gestures, and flies from the observed position", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
@@ -91,21 +105,22 @@ it.each(["km", "mi"])("seeks %s overview targets without changing map pose or at
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const course = createRaceCourse("Corner", [[0, 0], [.01, 0], [.01, .01]]);
   const value = course.length * 1.25 / (unit === "mi" ? 1609.344 : 1000);
-  const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 2 }], unit, selectedId: "you", focusRequest: 0, onSelect: vi.fn(), distanceTarget: { value, request: 1 } };
+  const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 4 }], unit, selectedId: "you", focusRequest: 0, onSelect: vi.fn(), distanceTarget: { value, request: 1 } };
   await act(async () => { renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "Camera" ? calls : null }); });
   await act(async () => renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [.005, 0], zoom: 15, pitch: 30, heading: 20, isUserInteraction: true } } }));
   await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
   const target = raceCoursePosition(course, raceEffortMetres(value, unit)!).coordinate;
-  expect(calls.setCamera.mock.lastCall![0]).toMatchObject({ centerCoordinate: target, zoomLevel: 15, pitch: 30, heading: 20, animationDuration: 0 });
+  expect(calls.setCamera.mock.lastCall![0]).toMatchObject({ centerCoordinate: target, zoomLevel: 15, pitch: 60, animationDuration: 0 });
   calls.setCamera.mockClear();
   const repeated = { ...props, distanceTarget: { value, request: 2 } };
   await act(async () => renderer.update(createElement(CourseMap, repeated)));
   expect(calls.setCamera.mock.lastCall![0].centerCoordinate).toEqual(target);
   calls.setCamera.mockClear();
-  await act(async () => renderer.update(createElement(CourseMap, { ...repeated, lanes: [{ ...props.lanes[0], value: 3 }] })));
+  await act(async () => renderer.update(createElement(CourseMap, { ...repeated, lanes: [{ ...props.lanes[0], value: 5 }] })));
   expect(calls.setCamera).not.toHaveBeenCalled();
-  await act(async () => renderer.update(createElement(CourseMap, { ...repeated, lanes: [{ ...props.lanes[0], value: 3 }], distanceTarget: null, focusRequest: 1 })));
-  expect(calls.setCamera.mock.lastCall![0].centerCoordinate).toEqual(raceCoursePosition(course, raceEffortMetres(3, unit)!).coordinate);
+  await act(async () => renderer.update(createElement(CourseMap, { ...repeated, lanes: [{ ...props.lanes[0], value: 5 }], distanceTarget: null, focusRequest: 1 })));
+  await finishCameraTravel();
+  expect(calls.setCamera.mock.lastCall![0].centerCoordinate).toEqual(raceCoursePosition(course, raceEffortMetres(5, unit)!).coordinate);
   expect(props.onSelect).not.toHaveBeenCalled();
   expect(renderer.root.findAllByType("Map" as never)).toHaveLength(1);
 });
@@ -201,6 +216,7 @@ it("defers native camera writes while inactive and follows the latest position o
   expect(calls.setCamera).not.toHaveBeenCalled();
   activity.active = true;
   await act(async () => renderer.update(createElement(CourseMap, next)));
+  await finishCameraTravel();
   expect(calls.setCamera).toHaveBeenCalled();
 });
 it("cancels the retained replay camera loop on inactivity and restarts it on return", async () => {

@@ -1,13 +1,13 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createRaceCourse, raceCoursePosition, raceEffortMetres } from "@fitness-battle/shared";
 const mock = vi.hoisted(() => ({ instances: [] as any[] }));
 vi.mock("@/lib/env", () => ({ webEnv: { mapboxAccessToken: "public-test-token" } }));
 vi.mock("mapbox-gl", () => ({ default: { Map: class {
   events = new Map<string, Function[]>(); sources = new Map<string, { setData: ReturnType<typeof vi.fn> }>();
   addControl = vi.fn();
-  fitBounds = vi.fn(); easeTo = vi.fn(); stop = vi.fn(); remove = vi.fn(); resize = vi.fn(); setPaintProperty = vi.fn();
+  jumpTo = vi.fn(); fitBounds = vi.fn(); easeTo = vi.fn(); stop = vi.fn(); remove = vi.fn(); resize = vi.fn(); setPaintProperty = vi.fn();
   constructor() { mock.instances.push(this); }
   getCenter() { return { toArray: () => [.005, 0] }; } getZoom() { return 15; } getPitch() { return 30; } getBearing() { return 20; }
   on(name: string, layer: Function | string, callback?: Function) { const handlers = this.events.get(name) ?? []; handlers.push(callback ?? layer as Function); this.events.set(name, handlers); }
@@ -17,7 +17,21 @@ vi.mock("mapbox-gl", () => ({ default: { Map: class {
 vi.mock("./course-callout", () => ({ CourseCallout: "CourseCallout" }));
 import CourseMap from "./course-map";
 let renderer: ReactTestRenderer;
-afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); mock.instances.length = 0; vi.unstubAllGlobals(); });
+type TestFrame = (time: number) => void;
+const scheduledFrames = new Map<number, TestFrame>();
+let frameId = 0, frameTime = 0;
+beforeEach(() => {
+  scheduledFrames.clear(); frameId = 0; frameTime = 0;
+  vi.spyOn(Date, "now").mockImplementation(() => frameTime);
+  vi.spyOn(performance, "now").mockImplementation(() => frameTime);
+  vi.stubGlobal("requestAnimationFrame", (callback: TestFrame) => { scheduledFrames.set(++frameId, callback); return frameId; });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => scheduledFrames.delete(id));
+});
+async function finishCameraTravel() {
+  await act(async () => { for (let frame = 0; scheduledFrames.size && frame < 500; frame++) { frameTime += 16; const pending = [...scheduledFrames]; scheduledFrames.clear(); for (const [, callback] of pending) callback(frameTime); } });
+}
+
+afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); mock.instances.length = 0; vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 it("keeps one map instance, suspends following for user input and resumes on selection", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("window", { matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }) });
@@ -62,12 +76,12 @@ it.each(["km", "mi"])("seeks %s overview targets after loading and allows repeat
   vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
   const course = createRaceCourse("Corner", [[0, 0], [.01, 0], [.01, .01]]);
   const value = course.length * 1.25 / (unit === "mi" ? 1609.344 : 1000);
-  const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 2 }], unit, selectedId: "you", focusRequest: 0, onSelect: vi.fn(), onResumeFollow: vi.fn(), distanceTarget: { value, request: 1 } };
+  const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 4 }], unit, selectedId: "you", focusRequest: 0, onSelect: vi.fn(), onResumeFollow: vi.fn(), distanceTarget: { value, request: 1 } };
   await act(async () => { renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "div" ? {} : null }); });
   const instance = mock.instances[0];
   await act(async () => instance.emit("load"));
   const target = raceCoursePosition(course, raceEffortMetres(value, unit)!).coordinate;
-  expect(instance.easeTo.mock.lastCall[0]).toMatchObject({ center: target, zoom: 15, pitch: 30, bearing: 20, duration: 0 });
+  expect(instance.easeTo.mock.lastCall[0]).toMatchObject({ center: target, zoom: 15, pitch: 60, duration: 0 });
   const trails = instance.getSource("completed").setData;
   trails.mockClear(); instance.easeTo.mockClear();
   await act(async () => instance.emit("movestart", { originalEvent: {} }));
@@ -77,11 +91,12 @@ it.each(["km", "mi"])("seeks %s overview targets after loading and allows repeat
   expect(instance.easeTo.mock.lastCall[0].center).toEqual(target);
   expect(trails).not.toHaveBeenCalled();
   instance.easeTo.mockClear();
-  await act(async () => renderer.update(createElement(CourseMap, { ...repeated, lanes: [{ ...props.lanes[0], value: 3 }] })));
+  await act(async () => renderer.update(createElement(CourseMap, { ...repeated, lanes: [{ ...props.lanes[0], value: 5 }] })));
   expect(instance.easeTo).not.toHaveBeenCalled();
   await act(async () => renderer.root.findAllByType("button").find(node => node.props.children === "Recenter")!.props.onClick());
+  await finishCameraTravel();
   expect(props.onResumeFollow).toHaveBeenCalledOnce();
-  expect(instance.easeTo.mock.lastCall[0].center).toEqual(raceCoursePosition(course, raceEffortMetres(3, unit)!).coordinate);
+  expect(instance.jumpTo.mock.lastCall[0].center).toEqual(raceCoursePosition(course, raceEffortMetres(5, unit)!).coordinate);
   expect(props.onSelect).not.toHaveBeenCalled();
   expect(mock.instances).toHaveLength(1);
 });

@@ -20,6 +20,7 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(initialFlat), [following, setFollowing] = useState(true);
   const [spaced, setSpaced] = useState(true);
   const earnedDistance = Math.max(0, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value));
+  const clampedTarget = distanceTarget ? Math.max(0, Math.min(distanceTarget.value, earnedDistance)) : undefined;
   const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? RACE_LANE_SPACING_METRES : 0), [course, lanes, unit, selectedId, spaced]);
   const latest = useRef({ scene, onSelect, onFollowChange, onReady, onSnapshot }); latest.current = { scene, onSelect, onFollowChange, onReady, onSnapshot };
   const reduced = useRef(false);
@@ -39,7 +40,7 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     const read = (): CourseCameraPose => ({ center: instance.getCenter().toArray(), zoom: instance.getZoom(), pitch: instance.getPitch(), bearing: instance.getBearing() });
     let routeFrame = 0;
     let initialized = false;
-    const buildCamera = () => { camera.current = createCourseCamera({ read, trace: (poseAt, duration) => { const start = performance.now(); const tick = () => { const elapsed = performance.now() - start, fraction = Math.min(1, elapsed / duration), next = poseAt(fraction * fraction * (3 - 2 * fraction), elapsed); instance.jumpTo({ center: next.center, zoom: next.zoom, pitch: next.pitch, bearing: next.bearing }); if (elapsed < duration + 1200) routeFrame = requestAnimationFrame(tick); else routeFrame = 0; }; routeFrame = requestAnimationFrame(tick); }, fit: (bounds, duration) => { instance.fitBounds([bounds.sw, bounds.ne], { padding: 48, pitch: 0, bearing: 0, maxZoom: 20, duration }); }, stop: userGesture => { cancelAnimationFrame(routeFrame); routeFrame = 0; if (!userGesture) instance.stop(); }, move: (pose, duration) => instance.easeTo({ center: pose.center, zoom: pose.zoom, pitch: pose.pitch, bearing: pose.bearing, duration: initialized ? duration : 0 }) }, reduced.current, initialFlat ? "2d" : "3d"); };
+    const buildCamera = () => { camera.current = createCourseCamera({ read, trace: (poseAt, duration) => { const start = performance.now(); const tick = () => { const elapsed = performance.now() - start, fraction = Math.min(1, elapsed / duration), next = poseAt(fraction * fraction * (3 - 2 * fraction), elapsed); instance.jumpTo({ center: next.center, zoom: next.zoom, pitch: next.pitch, bearing: next.bearing }); if (elapsed < duration + 1200) routeFrame = requestAnimationFrame(tick); else routeFrame = 0; }; routeFrame = requestAnimationFrame(tick); }, fit: (bounds, duration) => { instance.fitBounds([bounds.sw, bounds.ne], { padding: 48, pitch: 0, bearing: 0, maxZoom: 20, duration }); }, stop: userGesture => { if (routeFrame) cancelAnimationFrame(routeFrame); routeFrame = 0; if (!userGesture) instance.stop(); }, move: (pose, duration) => instance.easeTo({ center: pose.center, zoom: pose.zoom, pitch: pose.pitch, bearing: pose.bearing, duration: initialized ? duration : 0 }) }, reduced.current, initialFlat ? "2d" : "3d"); };
     buildCamera();
     const preferenceChanged = () => { reduced.current = preference.matches; camera.current?.setReducedMotion(reduced.current); };
     preference.addEventListener("change", preferenceChanged);
@@ -88,11 +89,11 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   }, [ready, course, scene, replay]);
   useEffect(() => {
     if (!ready || !distanceTarget) return;
-    const metres = raceEffortMetres(Math.max(0, Math.min(distanceTarget.value, earnedDistance)), unit);
+    const metres = raceEffortMetres(clampedTarget ?? 0, unit);
     if (metres === null) return;
     camera.current?.seek(course, metres);
     setFollowing(false);
-  }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request, earnedDistance]);
+  }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request, clampedTarget]);
   const control = (label: string, action: () => void) => <button type="button" className="fb-btn-line" style={{ whiteSpace: "nowrap", minHeight: 44 }} onClick={() => { action(); const next = camera.current?.following ?? false; setFollowing(next); onFollowChange?.(next); }}>{label}</button>;
   return <div className="geographic-map" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", position: "relative", "--map-controls-bottom": `${controlsBottom}px` } as React.CSSProperties}>
     <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 0, position: "relative", overflow: "hidden" }} />

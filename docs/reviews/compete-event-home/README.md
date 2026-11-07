@@ -207,3 +207,15 @@ The UI-contract job rejected hardcoded credit and info-button font metrics.
 Map credits now use the existing shared nav recipe and the info glyph uses the
 support recipe. No lint exemptions or contract changes were added. The repair
 is deliberately not verified locally or by a post-fix CI check, per the owner.
+
+## Camera test harness CI repair
+
+The next CI run reported missing animation-frame globals in the Node-based map
+harnesses, a native icon import missing its mock, and unexpected camera writes
+when pausing replay. Added controlled frame queues and clock advancement to the
+map harnesses, updated seek fixtures to stay within earned bounds and expect the
+new perspective behavior, and mocked native icons in the dimension selector.
+Pausing motion now cancels animation without writing an extra camera pose, and
+empty frame handles are not cancelled. Seek effects depend on the effective
+clamped target, avoiding unnecessary recentering when the leader grows but the
+requested target remains valid. No verification was run after these changes.

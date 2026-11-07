@@ -147,7 +147,7 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
   return {
     anchor(course: RaceCourse, metres: number, lateralMetres = 0) { lastCourse = course; lastMetres = metres; lastLateral = lateralMetres; },
     get courseMetres() { return lastCourse ? lastMetres : null; },
-    stopMotion() { driver.stop(); },
+    stopMotion() { driver.stop(true); },
     interrupt(userGesture = true) { following = false; if (userGesture) lastCourse = null; driver.stop(userGesture); },
     setReducedMotion(value: boolean) { reducedMotion = value; driver.stop(); },
     focus(course: RaceCourse, metres: number, automatic = false, lateralMetres = 0) {
