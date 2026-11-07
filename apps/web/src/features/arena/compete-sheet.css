@@ -28,4 +28,4 @@
 
 .focus-field-expanded[aria-hidden="true"] .geographic-map-controls{display:none}
 
-.focus-field-expanded .mapboxgl-ctrl-bottom-right{bottom:var(--course-credits-bottom,8px);right:8px}
+.focus-field-expanded .mapboxgl-ctrl-top-right{top:calc(env(safe-area-inset-top) + 8px);right:8px}

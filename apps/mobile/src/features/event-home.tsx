@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useCompetitionCourse } from "./use-competition-course";
 import { GeographicCourse } from "./geographic-course";
 import { useCompeteStore } from "../lib/compete-store";
-import { Image, Pressable, View } from "react-native";
+import { Image, Linking, Pressable, View } from "react-native";
 import { competePeriodWindow, buildArenaModel, competitionQueue, competitionTrack, competeNow, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppText } from "../ui/section";
 import { SHELL_COLORS as c } from "../theme";
@@ -45,8 +45,12 @@ function CoursePreview({ state, sport, queued }: { state: CompeteState; sport: S
   const { course } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, !queued);
   const model = buildArenaModel(state, undefined, competitionTrack(sport), sport);
   const me = model?.lanes.find(lane => lane.you);
-  const key = `${accountKey}:${sport}:${course?.name}:${course?.length}:${me?.values[2]}:${state.units}`;
-  return <SnapshotPreview key={key} cacheKey={key} course={course} lane={me} unit={model?.unit ?? ""} queued={queued} />;
+  const key = `caption-v2:${accountKey}:${sport}:${course?.name}:${course?.length}:${me?.values[2]}:${state.units}`;
+  return <View style={{ gap: 2 }}><SnapshotPreview key={key} cacheKey={key} course={course} lane={me} unit={model?.unit ?? ""} queued={queued} />
+    {!queued && course ? <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 6 }}>
+      {[{ label: "© Mapbox", url: "https://www.mapbox.com/about/maps" }, { label: "© OpenStreetMap", url: "https://www.openstreetmap.org/copyright" }, { label: "Improve this map", url: "https://apps.mapbox.com/feedback/" }].map(link => <Pressable key={link.label} accessibilityRole="link" onPress={event => { event.stopPropagation(); void Linking.openURL(link.url); }}><AppText role="caption" secondary>{link.label}</AppText></Pressable>)}
+    </View> : null}
+  </View>;
 }
 function SnapshotPreview({ cacheKey, course, lane, unit, queued }: { cacheKey: string; course: ReturnType<typeof useCompetitionCourse>["course"]; lane: NonNullable<ReturnType<typeof buildArenaModel>>["lanes"][number] | undefined; unit: string; queued: boolean }) {
   const [uri, setUri] = useState(() => snapshotCache.get(cacheKey) ?? "");

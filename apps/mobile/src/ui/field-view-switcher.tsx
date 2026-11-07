@@ -32,11 +32,12 @@ export function FieldViewSwitcher({
         accessibilityRole="button"
         accessibilityLabel={compact ? "Course options" : `Dimension: ${(value === "4d" ? "3D" : value.toUpperCase())}`}
         accessibilityState={{ expanded: open }}
+        hitSlop={compact ? 8 : undefined}
         onPress={toggle}
         style={({ pressed }) => [
           {
-            minHeight: 44,
-            paddingHorizontal: 12,
+            minHeight: compact ? 28 : 44,
+            paddingHorizontal: compact ? 2 : 12,
             flexDirection: "row",
             alignItems: "center",
             gap: 6,

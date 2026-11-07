@@ -8,14 +8,9 @@ export function CompeteSheet({ children, active, expandRequest = 0, overview }: 
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const drag = useRef<{ y: number; height: number; maximum: number } | null>(null);
   const sheet = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const node = sheet.current, root = node?.closest?.<HTMLElement>(".focus-arena");
-    if (!node || !root || !active) return;
-    const update = () => root.style.setProperty("--course-credits-bottom", `${(dragHeight ?? (stop === 0 ? (overview ? 128 : 76) : stop === 1 ? node.offsetHeight * .42 : node.offsetHeight)) + 8}px`);
-    update(); const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update); observer?.observe(node);
-    return () => { observer?.disconnect(); root.style.removeProperty("--course-credits-bottom"); };
-  }, [active, stop, dragHeight, Boolean(overview)]);
-  const minimum = overview ? 128 : 76;
+  const [maximum, setMaximum] = useState(0);
+  useEffect(() => { const node = sheet.current; if (!node || typeof ResizeObserver === "undefined") return; const update = () => setMaximum(node.offsetHeight); update(); const observer = new ResizeObserver(update); observer.observe(node); return () => observer.disconnect(); }, []);
+  const minimum = overview ? 96 : 44;
   const visible = dragHeight !== null ? `${dragHeight}px` : stop === 0 ? `${minimum}px` : stop === 1 ? "42%" : "100%";
   return <section onKeyDown={event => { if (event.key === "Escape") setStop(0); }} ref={sheet} className="compete-sheet" data-active={active} aria-label="Competition standings and events" data-stop={stop} inert={!active}
     style={{ visibility: active ? "visible" : "hidden", transform: `translateY(calc(100% - ${visible}))`, transition: dragHeight !== null ? "none" : undefined }}>
@@ -27,7 +22,6 @@ export function CompeteSheet({ children, active, expandRequest = 0, overview }: 
       onPointerUp={event => { const current = drag.current; if (!current) return; if (Math.abs(event.clientY - current.y) < 5) { setStop(stop === 2 ? 1 : 2); setDragHeight(null); drag.current = null; return; } const height = Math.max(minimum, Math.min(current.maximum, current.height + current.y - event.clientY)); const stops = [minimum, current.maximum * .42, current.maximum]; setStop(stops.reduce((best, item, index) => Math.abs(item - height) < Math.abs(stops[best] - height) ? index : best, 0)); setDragHeight(null); drag.current = null; }}
       onPointerCancel={() => { setDragHeight(null); drag.current = null; }}><span /></div>
     {overview && <div className="compete-sheet-overview">{overview}</div>}
-    <div className="compete-sheet-heading"><strong>Standings</strong></div>
-    <div className="compete-sheet-body" inert={stop === 0 && dragHeight === null}>{children}</div>
+    <div className="compete-sheet-body" style={{ paddingBottom: 32 + Math.max(0, maximum - (dragHeight ?? (stop === 0 ? minimum : stop === 1 ? maximum * .42 : maximum))) }} inert={stop === 0 && dragHeight === null}>{children}</div>
   </section>;
 }

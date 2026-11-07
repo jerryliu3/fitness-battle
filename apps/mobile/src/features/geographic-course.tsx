@@ -15,8 +15,8 @@ class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean; 
 }
 
 /** Presentation-only scene. The field/replay host owns the weekly course. */
-export function GeographicCourse({ creditsBottom, presentationActive = true, cardSessionKey, initialFlat, onFlatChange, onFollowChange, followAthlete, onReady, onSnapshot, replay, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, course, error = "", onRetry, controlsBottom = 8, overlaysHidden = false, optionsTop, onReplay, onChoose2D, onOptionsChange, distanceTarget }: {
-  creditsBottom?: number; presentationActive?: boolean;
+export function GeographicCourse({ presentationActive = true, cardSessionKey, initialFlat, onFlatChange, onFollowChange, followAthlete, onReady, onSnapshot, replay, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, course, error = "", onRetry, controlsBottom = 8, overlaysHidden = false, optionsTop, onReplay, onChoose2D, onOptionsChange, distanceTarget }: {
+  presentationActive?: boolean;
   onReady?: () => void; onSnapshot?: (uri: string) => void; replay?: CourseReplayFrame; hiddenIds?: readonly string[]; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void;
   cardSessionKey?: string | number | boolean;
   initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
@@ -50,6 +50,6 @@ export function GeographicCourse({ creditsBottom, presentationActive = true, car
           </Pressable>
         ) : null}
       </View> :
-      <MapBoundary><Suspense fallback={<View style={{ flex: 1, minHeight: 0, justifyContent: "center", alignItems: "center", backgroundColor: "#0b242c" }}><ActivityIndicator size="large" color={c.tennis} /></View>}><CourseMap creditsBottom={creditsBottom} presentationActive={presentationActive} cardSessionKey={cardSessionKey} initialFlat={initialFlat} onFlatChange={onFlatChange} followAthlete={followAthlete} onFollowChange={onFollowChange} key={course.name + course.length} course={course} replay={replay} onReady={prepared} onSnapshot={onSnapshot} lanes={lanes} hiddenIds={hiddenIds} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} optionsTop={optionsTop} onReplay={onReplay} onChoose2D={onChoose2D} onOptionsChange={onOptionsChange} /></Suspense></MapBoundary>}
+      <MapBoundary><Suspense fallback={<View style={{ flex: 1, minHeight: 0, justifyContent: "center", alignItems: "center", backgroundColor: "#0b242c" }}><ActivityIndicator size="large" color={c.tennis} /></View>}><CourseMap presentationActive={presentationActive} cardSessionKey={cardSessionKey} initialFlat={initialFlat} onFlatChange={onFlatChange} followAthlete={followAthlete} onFollowChange={onFollowChange} key={course.name + course.length} course={course} replay={replay} onReady={prepared} onSnapshot={onSnapshot} lanes={lanes} hiddenIds={hiddenIds} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} optionsTop={optionsTop} onReplay={onReplay} onChoose2D={onChoose2D} onOptionsChange={onOptionsChange} /></Suspense></MapBoundary>}
   </View>;
 }

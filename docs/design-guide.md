@@ -860,3 +860,10 @@ labels and a Current Leaders panel. Scrubbing follows the earned course heading
 in perspective mode and cannot seek past the leader. Mapbox credits stay visible
 at the lower-right map edge above the standings sheet. Athlete photos open
 profiles; the rest of a standings row focuses the athlete on the map.
+
+Snapshot credits may use a compact caption near the static image instead of an
+embedded info button. Live map credits sit at the top-right safe-area edge.
+The standings sheet has no repeated title, retains all rows during height
+changes, and allows its last row to scroll fully above the visible bottom.
+Racer selection travels along course distance, facing the direction of travel;
+reduced motion uses an immediate position change.

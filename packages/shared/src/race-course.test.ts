@@ -102,3 +102,28 @@ it("zooms into the pair at a pass, backs out for distant rivals and frames acros
   const dateLine = createRaceCourse("Date line", [[179.99,0],[-179.99,0]]);
   expect(Math.abs(courseReplayPose(dateLine,{metres:1050,lateralMetres:0},{metres:1200,lateralMetres:0},1).center[0])).toBeGreaterThan(179.9);
 });
+
+it("traces curved course distance forward, backward, and from an interrupted journey", () => {
+  let pose: CourseCameraPose = { center: [0, 0], zoom: 16, pitch: 60, bearing: 0 };
+  let sample: ((fraction: number) => CourseCameraPose) | undefined;
+  const trace = vi.fn((next: (fraction: number) => CourseCameraPose) => { sample = next; });
+  const camera = createCourseCamera({ read: () => pose, move: next => { pose = next; }, stop() {}, trace });
+  camera.focus(course, 50);
+  camera.focus(course, 300);
+  expect(trace).toHaveBeenCalledOnce();
+  pose = sample!(.5);
+  expect(pose.center).toEqual(raceCoursePosition(course, 175).coordinate);
+  camera.focus(course, 25);
+  pose = sample!(.5);
+  expect(pose.center).toEqual(raceCoursePosition(course, 100).coordinate);
+  expect(camera.courseMetres).toBe(100);
+  expect(pose.zoom).toBe(16);
+});
+
+it("skips route animation with reduced motion", () => {
+  const trace = vi.fn(), move = vi.fn();
+  const camera = createCourseCamera({ read: () => ({ center: [0, 0], zoom: 16, pitch: 60, bearing: 0 }), move, stop() {}, trace }, true);
+  camera.focus(course, 50); camera.focus(course, 300);
+  expect(trace).not.toHaveBeenCalled();
+  expect(move.mock.lastCall![1]).toBe(0);
+});

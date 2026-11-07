@@ -113,3 +113,25 @@ existing roster identity, event total and effort score.
 Native simulator build installed. Tests/typecheck and visual review are left to
 GitHub CI and the owner as requested. Camera expectations and existing panel
 labels in regression tests are updated but not run locally.
+
+## Sheet scrolling, static attribution and route travel
+
+Static snapshots use a compact attribution caption next to the image, per
+Mapbox's static-map guidance. They no longer bake the blue information button
+into the image. Live map ornaments move to the top-right safe-area edge. The
+settings gear is 28 points with extra invisible touch slop. The Standings heading
+is removed.
+
+The retained sheet scroll viewport remains full height to keep rows ready during
+drags. Its content now includes padding for the portion below the screen, so the
+last row can reach the visible bottom at partial expansion. This fixes the
+previous capped scrolling without unmounting rows.
+
+Racer switches interpolate earned course distance forward or backward rather
+than drawing a camera chord between coordinates. Frames use the route position
+and travel heading, preserve zoom, and are interrupted by selection changes,
+scrubbing, gestures, backgrounding and teardown. Reduced motion skips travel.
+Snapshots and normal hidden scenes do not retain a route animation clock.
+Shared camera tests cover curved travel, interrupted travel and reduced motion;
+these were written for CI and not run locally, per the owner's instructions.
+Native build installed; visual review remains with the owner.

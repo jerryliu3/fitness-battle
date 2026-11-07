@@ -12,13 +12,14 @@ import { textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
 import { useSceneActive } from "./use-scene-active";
 
+const rememberedProgress = new Map<string, number>();
 const rememberedCameras = new Map<string, CourseCameraPose>();
 const isValidPose = (p?: CourseCameraPose | null): p is CourseCameraPose =>
   Boolean(p && p.center && Array.isArray(p.center) && (Math.abs(p.center[0]) >= 1e-6 || Math.abs(p.center[1]) >= 1e-6) && !Number.isNaN(p.center[0]) && !Number.isNaN(p.center[1]) && typeof p.zoom === "number" && p.zoom > 1);
 
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
-export default function CourseMap({ creditsBottom, presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, onSnapshot, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, onChoose2D, onOptionsChange, overlaysHidden = false, distanceTarget }: {
-  creditsBottom?: number; presentationActive?: boolean;
+export default function CourseMap({ presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, onSnapshot, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, onChoose2D, onOptionsChange, overlaysHidden = false, distanceTarget }: {
+  presentationActive?: boolean;
   cardSessionKey?: string | number | boolean;
   initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
   onReady?: () => void; onSnapshot?: (uri: string) => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null;
@@ -48,27 +49,35 @@ export default function CourseMap({ creditsBottom, presentationActive = true, ca
   const fallbackCenter = scene.selected?.coordinate ?? course.coordinates[0];
   const pose = useRef<CourseCameraPose>(restored.current ?? { center: fallbackCenter, zoom: 16, pitch: initialFlat ? 0 : 60, bearing: 0 });
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(restored.current ? restored.current.pitch === 0 : initialFlat);
+  const routeFrame = useRef(0);
   const controller = useMemo(() => createCourseCamera({
     read: () => pose.current,
     // Native input already cancels animations. Issuing setCamera during a gesture would fight it.
-    stop(userGesture) { if (userGesture) return; const p = pose.current; ref.current?.setCamera({ centerCoordinate: p.center, zoomLevel: p.zoom, pitch: p.pitch, heading: p.bearing, animationDuration: 0 }); },
+    stop(userGesture) { cancelAnimationFrame(routeFrame.current); routeFrame.current = 0; if (userGesture) return; const p = pose.current; ref.current?.setCamera({ centerCoordinate: p.center, zoomLevel: p.zoom, pitch: p.pitch, heading: p.bearing, animationDuration: 0 }); },
     follow(next) { ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: 0 }); },
+    trace(poseAt, duration) {
+      const start = Date.now();
+      const tick = () => { const fraction = Math.min(1, (Date.now() - start) / duration); const next = poseAt(fraction * fraction * (3 - 2 * fraction)); pose.current = next; ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: 0 }); if (fraction < 1) routeFrame.current = requestAnimationFrame(tick); else routeFrame.current = 0; };
+      routeFrame.current = requestAnimationFrame(tick);
+    },
     fit(bounds, duration) { ref.current?.setCamera({ bounds: { ...bounds, paddingTop: 48, paddingBottom: 48, paddingLeft: 48, paddingRight: 48 }, pitch: 0, heading: 0, animationDuration: duration, animationMode: "easeTo" }); },
     move(next, duration) { ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: initialized.current ? duration : 0, animationMode: "easeTo" }); },
   }, Boolean(reduced), (restored.current ? restored.current.pitch === 0 : initialFlat) ? "2d" : "3d"), []);
+  useEffect(() => { if (!active) controller.stopMotion(); return () => controller.stopMotion(); }, [controller, active]);
   useEffect(() => controller.setReducedMotion(Boolean(reduced)), [controller, reduced]);
   useEffect(() => { if (!followAthlete && controller.following) controller.interrupt(false); }, [controller, followAthlete, reduced]);
   const focus = () => { if (scene.selected) { controller.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); } };
   const lastFocus = useRef<{ course: RaceCourse; id: string; request: number; following: boolean; session?: string | number | boolean; metres?: number } | null>(null);
   useEffect(() => {
     if ((!active && initialized.current) || !ready || !scene.selected || replay) return;
-    if (restored.current) { initialized.current = true; lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey, metres: scene.selected.metres }; restored.current = undefined; controller.interrupt(false); onFollowChange?.(false); return; }
+    if (restored.current) { const savedMetres = rememberedProgress.get(cameraKey); if (savedMetres !== undefined) controller.anchor(course, savedMetres, scene.selected.lateralMetres); initialized.current = true; lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey, metres: scene.selected.metres }; restored.current = undefined; controller.interrupt(false); onFollowChange?.(false); return; }
     const previous = lastFocus.current;
     const explicit = !previous || previous.course !== course || previous.id !== selectedId || previous.request !== focusRequest || !previous.following || previous.session !== cardSessionKey;
     lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey, metres: scene.selected.metres };
     if (!followAthlete) return;
     // Tab focus alone must never move a prepared camera.
     if (previous && !explicit && previous.metres === scene.selected.metres) return;
+    if (!explicit && routeFrame.current) return;
     controller.focus(course, scene.selected.metres, !explicit, scene.selected.lateralMetres);
     initialized.current = true;
   }, [active, ready, controller, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres, replay]);
@@ -125,8 +134,8 @@ export default function CourseMap({ creditsBottom, presentationActive = true, ca
     return () => onOptionsChange(null);
   }, [onOptionsChange, flat, spaced, Boolean(onReplay), Boolean(onChoose2D)]);
   return <View style={{ flex: 1, minHeight: 0 }}>
-    <MapView ref={mapRef} accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled
-      logoPosition={{ bottom: (creditsBottom ?? 0) + 8, right: 40 }} attributionPosition={{ bottom: (creditsBottom ?? 0) + 8, right: 8 }}
+    <MapView ref={mapRef} accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled={!onSnapshot} attributionEnabled={!onSnapshot}
+      logoPosition={{ top: 8, right: 40 }} attributionPosition={{ top: 8, right: 8 }}
       scaleBarEnabled={optionsTop == null}
       scaleBarPosition={{ bottom: controlsBottom + 100, left: 8 }}
       onDidFinishLoadingMap={() => {
@@ -147,7 +156,7 @@ export default function CourseMap({ creditsBottom, presentationActive = true, ca
         if ((Math.abs(p.center[0]) < 1e-6 && Math.abs(p.center[1]) < 1e-6) || Number.isNaN(p.center[0]) || Number.isNaN(p.center[1])) return;
         if (typeof p.zoom === "number" && p.zoom <= 0.1) return;
         pose.current = { center: [p.center[0], p.center[1]], zoom: p.zoom, pitch: p.pitch, bearing: p.heading };
-        if (!replay) rememberedCameras.set(cameraKey, pose.current);
+        if (!replay) { rememberedCameras.set(cameraKey, pose.current); if (controller.courseMetres !== null) rememberedProgress.set(cameraKey, controller.courseMetres); else rememberedProgress.delete(cameraKey); }
         if (p.isUserInteraction && controller.following) { controller.interrupt(); onFollowChange?.(false); }
       }} />
       <ShapeSource id="completed" shape={visibleTrails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineSortKey: ["get", "priority"], lineWidth: ["interpolate", ["exponential", 2], ["zoom"], 0, RACE_TRAIL_MIN_WIDTH_PIXELS, 16, Math.max(RACE_TRAIL_MIN_WIDTH_PIXELS, trailWidth * 2 ** 16), 22, trailWidth * 2 ** 22], lineCap: "round", lineJoin: "round" }} /></ShapeSource>

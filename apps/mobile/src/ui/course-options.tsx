@@ -41,12 +41,13 @@ export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing
       accessibilityRole="button"
       accessibilityLabel="Course options"
       accessibilityState={{ expanded: open }}
+      hitSlop={8}
       onPress={toggle}
       style={({ pressed }) => [{
-        minHeight: 44,
-        minWidth: 44,
+        minHeight: 28,
+        minWidth: 28,
         alignItems: "center",
-        paddingHorizontal: 12,
+        paddingHorizontal: 0,
         justifyContent: "center",
         borderRadius: 999,
         backgroundColor: "transparent",

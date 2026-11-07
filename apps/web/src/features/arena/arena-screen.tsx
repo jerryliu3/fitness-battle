@@ -135,13 +135,13 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
           const total = me?.values[2] ?? 0;
           const place = 1 + lanes.filter(lane => lane.values[2] > total).length;
           const rival = lanes.filter(lane => !lane.you).sort((a,b) => Math.abs(a.values[2] - total) - Math.abs(b.values[2] - total))[0];
-          return <button type="button" key={event} className="compete-event-card" aria-label={`Enter ${SPORTS.find(s => s.id === event)?.name} field`} onClick={() => { setSelection({ account, sport: event }); setImmersiveAccount(account); }}>
+          return <div role="button" tabIndex={0} onKeyDown={eventKey => { if (eventKey.target === eventKey.currentTarget && (eventKey.key === "Enter" || eventKey.key === " ")) { eventKey.preventDefault(); setSelection({ account, sport: event }); setImmersiveAccount(account); } }} key={event} className="compete-event-card" aria-label={`Enter ${SPORTS.find(s => s.id === event)?.name} field`} onClick={() => { setSelection({ account, sport: event }); setImmersiveAccount(account); }}>
             <strong>{SPORTS.find(s => s.id === event)?.name}</strong><span>{queued ? "Upcoming wave" : `Place ${place} / ${lanes.length}`}</span>
             <CoursePreview sport={event} queued={Boolean(queued)} state={state} />
             <small>{queued ? "Upcoming wave" : `${daysLeft} days left`}</small>
             <b>{queued ? "Your field opens when the wave starts." : `${total.toFixed(2)} ${model?.unit ?? ""}`}</b>
             {!queued && rival ? <small>{Math.abs(rival.values[2] - total).toFixed(2)} {model?.unit} {rival.values[2] > total ? "behind" : "ahead of"} {rival.name}</small> : null}<span>Open field →</span>
-          </button>;
+          </div>;
         })}
         {sleepOptedIn && <button type="button" className="compete-event-card" onClick={() => setSelection({ account, sport: "sleep" })}><strong>Recovery</strong><span>View your recovery event →</span></button>}
         {!hasAnyRegistration && <p className="fb-copy">Register for an event to open your first field.</p>}
