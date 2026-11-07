@@ -842,8 +842,9 @@ portal with safe-area offsets and the same actions and dismissal policy.
 
 Compete is an event home with the shared app navigation. Tap a registered event
 to reveal its retained immersive field; Back returns to the home. Geographic
-event cards show retained live Mapbox scene viewports centered on the user,
-retaining map attribution. Entering enlarges that same scene host. Queued events wait for course assignment, and points events use
+event cards show noninteractive 3D snapshots centered on the user, retaining
+map attribution. Cards contain ordinary images that scroll with their content.
+Entering opens a separate prepared immersive scene. Queued events wait for course assignment, and points events use
 an explicit points placeholder.
 
 The immersive header omits the redundant sport pill and places native UIKit

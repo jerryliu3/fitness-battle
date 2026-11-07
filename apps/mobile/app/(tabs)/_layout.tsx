@@ -1,7 +1,7 @@
-import { CompeteExperienceProvider, type PreviewFrame } from "../../src/features/compete-experience";
+import { CompeteExperienceProvider } from "../../src/features/compete-experience";
 import type { SportId } from "@fitness-battle/shared";
 import { ArenaScreen } from "./arena";
-import { useCallback, useRef, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { Platform, View } from "react-native";
@@ -18,14 +18,8 @@ export default function TabLayout() {
   const [event, setEvent] = useState<{ account: string; sport: SportId } | null>(null);
   const [immersive, setImmersive] = useState(false);
   useEffect(() => { if (!compete) setImmersive(false); }, [compete]);
-  const [viewport, setViewport] = useState<PreviewFrame>();
-  const [previews, setPreviews] = useState<Partial<Record<SportId, PreviewFrame>>>({});
-  const measures = useRef(new Map<SportId, () => void>());
-  const registerPreview = useCallback((sport: SportId, measure: (() => void) | null) => { if (measure) measures.current.set(sport, measure); else measures.current.delete(sport); }, []);
-  const updatePreview = useCallback((sport: SportId, frame: PreviewFrame) => setPreviews(previous => JSON.stringify(previous[sport]) === JSON.stringify(frame) ? previous : { ...previous, [sport]: frame }), []);
-  const measurePreviews = useCallback(() => measures.current.forEach(measure => measure()), []);
-  const experience = { viewport, updateViewport: setViewport, previews, registerPreview, updatePreview, measurePreviews, event, immersive: immersive && compete, enter: (account: string, sport: SportId) => { setEvent({ account, sport }); setImmersive(true); }, close: () => setImmersive(false) };
-  const host = <View pointerEvents={compete ? "box-none" : "none"} accessibilityElementsHidden={!experience.immersive} importantForAccessibility={experience.immersive ? "auto" : "no-hide-descendants"} style={{ position: "absolute", inset: 0, opacity: compete ? 1 : 0, zIndex: compete ? 100 : -1 }}><ArenaScreen persistent /></View>;
+  const experience = { event, immersive: immersive && compete, enter: (account: string, sport: SportId) => { setEvent({ account, sport }); setImmersive(true); }, close: () => setImmersive(false) };
+  const host = <View pointerEvents={experience.immersive ? "auto" : "none"} accessibilityElementsHidden={!experience.immersive} importantForAccessibility={experience.immersive ? "auto" : "no-hide-descendants"} style={{ position: "absolute", inset: 0, opacity: experience.immersive ? 1 : 0, zIndex: experience.immersive ? 100 : -1 }}><ArenaScreen persistent /></View>;
   const { pending, required } = useOnboardingRequired();
   if (pending) return <View style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }} />;
   if (required) return <Redirect href="/onboarding" />;
