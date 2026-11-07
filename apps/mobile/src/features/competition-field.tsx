@@ -56,7 +56,6 @@ export function CompetitionField({
   onExit,
   onDetails,
   presentationActive,
-  previewHeight,
   externalCourseTarget,
   onOptionsChange,
 }: {
@@ -69,7 +68,6 @@ export function CompetitionField({
   onDetails?: () => void;
   presentationActive?: boolean;
   onOptionsChange?: (options: ReactNode | null) => void;
-  previewHeight?: number;
   externalCourseTarget?: CourseDistanceTarget | null;
 }) {
   const { state, accountKey, debugActive, dispatch } = useCompeteStore();
@@ -118,7 +116,7 @@ export function CompetitionField({
   const inlineHeight = sceneDimension === "2d"
     ? Math.max(300, Math.min(420, dimensions.height * .46))
     : Math.max(360, Math.min(480, dimensions.height * .56));
-  const sceneHeight = previewHeight ?? Math.round(expanded
+  const sceneHeight = Math.round(expanded
     ? Math.max(460, dimensions.height)
     : inlineHeight);
   const laneAnchor = useRef<LaneAnchor | null>(null);
@@ -239,7 +237,7 @@ export function CompetitionField({
     >
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <View pointerEvents={expanded ? "auto" : "none"} style={{ flex: 1 }}>
-          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onReplay={() => setCourseReplayOpen(true)} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange} optionsTop={expanded && previewHeight == null && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
+          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onReplay={() => setCourseReplayOpen(true)} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
           <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>Tap to open full screen</Text></View>
@@ -371,7 +369,6 @@ export function CompetitionField({
             {queueOverlay}
             <CompetitionReplayModal open={courseReplayOpen} state={state} selection={replaySelection} initialFlat={courseFlat} dimension={sceneDimension} onClose={() => setCourseReplayOpen(false)} />
             {/* Top Bar HUD */}
-            {previewHeight == null && <>
             <FieldOverlayView
               hidden={overlaysHidden}
               pointerEvents="box-none"
@@ -655,7 +652,6 @@ export function CompetitionField({
             ) : null}
           </> : null}
           <AthleteProfileSheet athlete={profileAthlete} onClose={() => setProfileAthlete(null)} />
-            </>}
           </View>
         </FullscreenHost>
       ) : (

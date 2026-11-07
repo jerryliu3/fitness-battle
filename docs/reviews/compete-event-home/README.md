@@ -70,3 +70,23 @@ available). A development build does not enable app debug mode; no database rese
 is part of this simulator build. The historical repeat-onboarding cause was not
 reproduced conclusively. Typecheck, tests and screenshot review were not run for
 this follow-up at the owner's request; GitHub CI owns code checks.
+
+## Noninteractive 3D snapshots
+
+The owner selected still 3D previews after the floating live-map host caused
+scroll lag and overlap. Cards now contain ordinary images. A temporary map
+renders the user's current position inside the card, captures through the SDK,
+and unmounts once captured (or after a bounded timeout). Preview generation does
+not hold the application startup cover. Snapshots are cached in memory by
+account, sport, course, units and user total, with a bounded cache. Revisiting
+unchanged cards reuses the image. No global card-coordinate tracking remains.
+
+The full immersive map is a separate retained scene. Preview generation still
+uses SDK resources and scenery downloads; it is not zero-cost rendering. Web
+snapshot rendering creates a map initialization per uncached capture. Both
+platforms stop rendering the preview map after capture. The native SDK capture
+and browser canvas capture replace Static Images API requests. Points and queued
+events retain explicit placeholders.
+
+This follow-up intentionally skips local typecheck, tests and screenshot review
+at the owner's request. The native app is rebuilt and installed for owner review.

@@ -1,10 +1,10 @@
 "use client";
-import { CoursePreview, type PreviewFrame } from "./course-preview";
+import { CoursePreview } from "./course-preview";
 import { FieldOverview } from "@/features/field/components/field-course";
 import { CompeteSheet } from "./compete-sheet";
 import { FeatureCard, StatusBadge, AppParagraph, AppText, typographyStyle, SectionHeader, AppHeading } from "@/ui/section";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { playCue } from "@/lib/haptics";
 
@@ -40,8 +40,6 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const router = useRouter();
   const requestedEvent=useSearchParams().get("event");
   const [immersiveAccount, setImmersiveAccount] = useState<string | null>(null);
-  const [previewFrames, setPreviewFrames] = useState<Record<string, PreviewFrame>>({});
-  const updatePreview = useCallback((sport: string, frame: PreviewFrame) => setPreviewFrames(previous => JSON.stringify(previous[sport]) === JSON.stringify(frame) ? previous : { ...previous, [sport]: frame }), []);
   const [courseOptions, setCourseOptions] = useState<ReactNode>(null);
   const [courseTarget, setCourseTarget] = useState<{ value: number; request: number } | null>(null);
   const [expandRequest, setExpandRequest] = useState(0);
@@ -122,7 +120,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
 
   return (
     <div className="focus-arena">
-      {active.map(rating => { const sport = rating.sport, expanded = immersive && selectedSport === sport, eventQueue = competitionQueue(state, sport, now); return <FieldStage key={`${account}:${sport}:${state.units}`} previewFrame={!immersive && !eventQueue?.queued && !eventQueue?.awaitingField ? previewFrames[sport] : undefined} onOptionsChange={sport === selectedSport ? setCourseOptions : undefined} externalCourseTarget={sport === selectedSport ? courseTarget : null} persistent backgroundMode presentationVisible={expanded} onExit={() => setImmersiveAccount(null)} tabActive={tabActive} replayState={state} queueOverlay={eventQueue && (eventQueue.queued || eventQueue.awaitingField) ? <QueuedField overlay state={state} event={sport} now={now} onCancel={() => dispatch({ type: "opt-out", sport })} /> : undefined} sportTitle={SPORTS.find(s => s.id === sport)?.name} model={buildFieldModel(state,sport,competitionTrack(sport),now)} boardRows={buildSplitBoard(state,sport,competitionTrack(sport),now).rows} />; })}
+      {selectedSport && selectedSport !== "sleep" ? <FieldStage key={`${account}:${selectedSport}:${state.units}`} onOptionsChange={setCourseOptions} externalCourseTarget={courseTarget} persistent backgroundMode presentationVisible={immersive} onExit={() => setImmersiveAccount(null)} tabActive={tabActive} replayState={state} queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField overlay state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
       {!immersive && <section aria-label="Your events" className="compete-event-home">
         <SectionHeader titleRole="display" title="Compete" subtitle="Your events" action={<button type="button" className="fb-btn" onClick={() => { setSport(null); setRegister(true); }}>Register for an event</button>} />
         {active.map(rating => {
@@ -138,7 +136,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
           const rival = lanes.filter(lane => !lane.you).sort((a,b) => Math.abs(a.values[2] - total) - Math.abs(b.values[2] - total))[0];
           return <button type="button" key={event} className="compete-event-card" aria-label={`Enter ${SPORTS.find(s => s.id === event)?.name} field`} onClick={() => { setSelection({ account, sport: event }); setImmersiveAccount(account); }}>
             <strong>{SPORTS.find(s => s.id === event)?.name}</strong><span>{queued ? "Upcoming wave" : `Place ${place} / ${lanes.length}`}</span>
-            <CoursePreview sport={event} queued={Boolean(queued)} onFrame={updatePreview} />
+            <CoursePreview sport={event} queued={Boolean(queued)} state={state} />
             <small>{queued ? "Upcoming wave" : `${daysLeft} days left`}</small>
             <b>{queued ? "Your field opens when the wave starts." : `${total.toFixed(2)} ${model?.unit ?? ""}`}</b>
             {!queued && rival ? <small>{Math.abs(rival.values[2] - total).toFixed(2)} {model?.unit} {rival.values[2] > total ? "behind" : "ahead of"} {rival.name}</small> : null}<span>Open field →</span>

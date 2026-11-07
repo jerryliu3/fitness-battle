@@ -12,7 +12,7 @@ import {
 } from "@fitness-battle/shared";
 import { useGlobalSearchParams, usePathname, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { BackHandler, Pressable, ScrollView, View, type ScrollViewInstance } from "react-native";
+import { BackHandler, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CompetitionField } from "../../src/features/competition-field";
 import { useCrewApi } from "../../src/features/crew";
@@ -139,17 +139,7 @@ export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
   const overviewModel = persistent && selectedSport && selectedSport !== "sleep" ? buildArenaModel(state, undefined, track, selectedSport) : null;
   return (
     <SafeAreaView pointerEvents={persistent ? "box-none" : "auto"} style={[f.safe, persistent && { backgroundColor: "transparent" }]} edges={[]}>
-      <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, top: experience.immersive ? 0 : experience.viewport?.y ?? 0, height: experience.immersive ? "100%" : experience.viewport?.height ?? 0, overflow: "hidden" }}>
-      {persistent && active.map(rating => {
-        const sport = rating.sport, frame = experience.previews?.[sport];
-        const expanded = experience.immersive && selectedSport === sport;
-        const queued = competitionQueue(state, sport, now);
-        const visible = expanded || (frame && !experience.immersive && !queued?.queued && !queued?.awaitingField);
-        return <View key={`${accountKey}:${sport}:${state.units}`} pointerEvents={expanded ? "auto" : "none"} style={{ position: "absolute", left: expanded ? 0 : frame?.x ?? 0, top: expanded ? 0 : (frame?.y ?? 0) - (experience.viewport?.y ?? 0), width: expanded ? "100%" : frame?.width ?? 1, height: expanded ? "100%" : frame?.height ?? 180, borderRadius: expanded ? 0 : 12, overflow: "hidden", opacity: visible ? 1 : 0 }}>
-          <CompetitionField sport={sport} track={competitionTrack(sport)} persistent backgroundMode previewHeight={expanded ? undefined : frame?.height ?? 180} onOptionsChange={sport === selectedSport ? setCourseOptions : undefined} externalCourseTarget={sport === selectedSport ? courseTarget : null} presentationActive={focused && Boolean(visible)} onExit={exit} />
-        </View>;
-      })}
-      </View>
+      {persistent && selectedSport && selectedSport !== "sleep" ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}`} sport={selectedSport} track={track} persistent backgroundMode onOptionsChange={setCourseOptions} externalCourseTarget={courseTarget} presentationActive={experience.immersive} onExit={exit} /> : null}
       <ArenaSheet persistent={persistent} expandRequest={expandRequest} active={focused && experience.immersive} overview={overviewModel && !queue?.queued && !queue?.awaitingField ? <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><View style={{ flex: 1 }}><FieldOverview hiddenIds={blocks.map(block => block.id)} lanes={overviewModel.lanes.filter(lane => !lane.ghost).map(lane => ({ ...lane, value: lane.values[2], initials: "" }))} unit={overviewModel.unit} positionOnly view={{ center: courseTarget?.value ?? overviewModel.lanes.find(lane => lane.you)?.values[2] ?? 0, span: 1 }} onNavigate={value => setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }))} /></View>{courseOptions}</View> : undefined}>
 <SectionStack divided={false}>
         {!persistent && <View style={{ gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><AppText role="display" accessibilityRole="header">Compete</AppText><FocusButton label="+ Register" secondary onPress={openRegistration} /></View><AppText role="body" secondary>Your events</AppText></View>}
@@ -254,8 +244,5 @@ export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
 }
 
 function ArenaSheet({ persistent, children, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean; overview?: React.ReactNode }) {
-  const experience = useCompeteExperience();
-  const viewportRef = useRef<ScrollViewInstance>(null);
-  const measure = () => { viewportRef.current?.measureInWindow((x, y, width, height) => experience.updateViewport?.({ x, y, width, height })); experience.measurePreviews?.(); };
-  return persistent ? <CompeteSheet {...props}>{children}</CompeteSheet> : <ScrollView ref={viewportRef} onLayout={measure} onScroll={experience.measurePreviews} scrollEventThrottle={16} contentContainerStyle={f.content}>{children}</ScrollView>;
+  return persistent ? <CompeteSheet {...props}>{children}</CompeteSheet> : <ScrollView contentContainerStyle={f.content}>{children}</ScrollView>;
 }

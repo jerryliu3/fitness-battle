@@ -1,10 +1,14 @@
-import { useCallback, useEffect, useRef } from "react";
-import { useCompeteExperience } from "./compete-experience";
-import { Pressable, View } from "react-native";
+import { useEffect, useState } from "react";
+import { useCompetitionCourse } from "./use-competition-course";
+import { GeographicCourse } from "./geographic-course";
+import { useCompeteStore } from "../lib/compete-store";
+import { Image, Pressable, View } from "react-native";
 import { competePeriodWindow, buildArenaModel, competitionQueue, competitionTrack, competeNow, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppText } from "../ui/section";
 import { SHELL_COLORS as c } from "../theme";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
+
+const snapshotCache = new Map<string, string>();
 
 /** Read-only event previews; entering is an explicit presentation action. */
 export function EventHome({ state, accountKey, onEnter, onRecovery }: { state: CompeteState; accountKey: string; onEnter(account: string, sport: SportId): void; onRecovery(): void }) {
@@ -35,12 +39,21 @@ export function EventHome({ state, accountKey, onEnter, onRecovery }: { state: C
   </View>;
 }
 
-function CoursePreview({ sport, queued }: { state: CompeteState; sport: SportId; queued: boolean }) {
-  const experience = useCompeteExperience();
-  const ref = useRef<View>(null);
-  const measure = useCallback(() => ref.current?.measureInWindow((x, y, width, height) => experience.updatePreview?.(sport, { x, y, width, height })), [sport, experience.updatePreview]);
-  useEffect(() => { experience.registerPreview?.(sport, measure); measure(); return () => experience.registerPreview?.(sport, null); }, [sport, measure, experience.registerPreview]);
-  return <View ref={ref} collapsable={false} onLayout={measure} style={{ height: 180, borderRadius: 12, overflow: "hidden", backgroundColor: c.paper, justifyContent: "center", alignItems: "center" }}>
-    {queued ? <AppText role="caption" secondary>Course assigned when your wave starts</AppText> : null}
+function CoursePreview({ state, sport, queued }: { state: CompeteState; sport: SportId; queued: boolean }) {
+  const period = competePeriodWindow(state, competeNow(state), sport);
+  const { debugActive, accountKey } = useCompeteStore();
+  const { course } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, !queued);
+  const model = buildArenaModel(state, undefined, competitionTrack(sport), sport);
+  const me = model?.lanes.find(lane => lane.you);
+  const key = `${accountKey}:${sport}:${course?.name}:${course?.length}:${me?.values[2]}:${state.units}`;
+  return <SnapshotPreview key={key} cacheKey={key} course={course} lane={me} unit={model?.unit ?? ""} queued={queued} />;
+}
+function SnapshotPreview({ cacheKey, course, lane, unit, queued }: { cacheKey: string; course: ReturnType<typeof useCompetitionCourse>["course"]; lane: NonNullable<ReturnType<typeof buildArenaModel>>["lanes"][number] | undefined; unit: string; queued: boolean }) {
+  const [uri, setUri] = useState(() => snapshotCache.get(cacheKey) ?? "");
+  const capture = (value: string) => { if (snapshotCache.size >= 32) snapshotCache.delete(snapshotCache.keys().next().value!); snapshotCache.set(cacheKey, value); setUri(value); };
+  const [expired, setExpired] = useState(false);
+  useEffect(() => { const timer = setTimeout(() => setExpired(true), 15000); return () => clearTimeout(timer); }, []);
+  return <View pointerEvents="none" style={{ height: 180, borderRadius: 12, overflow: "hidden", backgroundColor: c.paper }}>
+    {uri ? <Image source={{ uri }} resizeMode="cover" accessibilityLabel="3D snapshot of your current race position" style={{ width: "100%", height: "100%" }} /> : !expired && !queued && course && lane && (unit === "mi" || unit === "km") ? <GeographicCourse course={course} lanes={[{ id: lane.id, name: "You", initials: "", you: true, value: lane.values[2] }]} unit={unit} selectedId={lane.id} focusRequest={0} onSelect={() => {}} onSnapshot={capture} optionsTop={null} /> : <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><AppText role="caption" secondary>{queued ? "Course assigned when your wave starts" : unit === "pts" ? "Points event" : "Preview unavailable"}</AppText></View>}
   </View>;
 }

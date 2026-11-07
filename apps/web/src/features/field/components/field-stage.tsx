@@ -42,7 +42,6 @@ export function FieldStage({
   model,
   persistent = false,
   backgroundMode = false,
-  previewFrame,
   externalCourseTarget,
   onOptionsChange,
   presentationVisible = true,
@@ -60,7 +59,6 @@ export function FieldStage({
   persistent?: boolean;
   backgroundMode?: boolean;
   onOptionsChange?: (options: ReactNode | null) => void;
-  previewFrame?: { x: number; y: number; width: number; height: number };
   externalCourseTarget?: CourseDistanceTarget | null;
   presentationVisible?: boolean;
   onDetails?: () => void;
@@ -529,7 +527,6 @@ export function FieldStage({
       </div> : null}
       {!standingsOnly && <div style={{ display: standingsOpen ? "none" : "flow-root" }}>
         <ExpandingField
-          previewFrame={previewFrame}
           persistent={persistent}
           open={lanesImmersive && tabActive && presentationVisible}
           tabActive={tabActive}

@@ -17,16 +17,18 @@ const isValidPose = (p?: CourseCameraPose | null): p is CourseCameraPose =>
   Boolean(p && p.center && Array.isArray(p.center) && (Math.abs(p.center[0]) >= 1e-6 || Math.abs(p.center[1]) >= 1e-6) && !Number.isNaN(p.center[0]) && !Number.isNaN(p.center[1]) && typeof p.zoom === "number" && p.zoom > 1);
 
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
-export default function CourseMap({ presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, onChoose2D, onOptionsChange, overlaysHidden = false, distanceTarget }: {
+export default function CourseMap({ presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, onSnapshot, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, onChoose2D, onOptionsChange, overlaysHidden = false, distanceTarget }: {
   presentationActive?: boolean;
   cardSessionKey?: string | number | boolean;
   initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
-  onReady?: () => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null;
+  onReady?: () => void; onSnapshot?: (uri: string) => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null;
   hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; onChoose2D?: () => void; onOptionsChange?: (options: ReactNode | null) => void; overlaysHidden?: boolean;
 }) {
   const sceneActive = useSceneActive();
   const active = sceneActive && presentationActive;
   const initialized = useRef(false);
+  const snapshotTaken = useRef(false);
+  const mapRef = useRef<ComponentRef<typeof MapView>>(null);
   const reported = useRef(false);
   const { user } = useAuth();
   const cameraKey = `${user?.id ?? "guest"}:${course.name}:${course.length}:${course.coordinates[0].join(",")}:${unit}`;
@@ -123,7 +125,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
     return () => onOptionsChange(null);
   }, [onOptionsChange, flat, spaced, Boolean(onReplay), Boolean(onChoose2D)]);
   return <View style={{ flex: 1, minHeight: 0 }}>
-    <MapView accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled
+    <MapView ref={mapRef} accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled
       logoPosition={{ top: 8, left: optionsTop != null ? 72 : 8 }} attributionPosition={{ top: 8, left: optionsTop != null ? 170 : 100 }}
       scaleBarEnabled={optionsTop == null}
       scaleBarPosition={{ bottom: controlsBottom + 100, left: 8 }}
@@ -136,7 +138,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
         }
       }}
       onMapLoadingError={event => setError(ready && event?.type !== "style" ? "Some map scenery could not load. Check your connection." : "The map could not load. Check your connection and Mapbox access.")}
-      onMapIdle={() => { if (ready) setError(""); if (ready && (initialized.current || replay) && !reported.current) { reported.current = true; onReady?.(); } }}
+      onMapIdle={() => { if (ready && onSnapshot && !snapshotTaken.current) { snapshotTaken.current = true; void mapRef.current?.takeSnap(true).then(onSnapshot).catch(() => {}); } if (ready) setError(""); if (ready && (initialized.current || replay) && !reported.current) { reported.current = true; onReady?.(); } }}
     >
       <Camera minZoomLevel={0} maxZoomLevel={20} ref={ref} defaultSettings={{ centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing }} />
       <CameraGestureObserver onCameraChanged={({ nativeEvent }) => {
