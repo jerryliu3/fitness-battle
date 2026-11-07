@@ -3,16 +3,16 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { NavigationWarmup } from "./navigation-warmup";
 
-const mock = vi.hoisted(() => ({ path: "/today", account: "alice", ready: true, prefetch: vi.fn() }));
+const mock = vi.hoisted(() => ({ path: "/today", account: "alice", ready: true, os: "android", prefetch: vi.fn() }));
 const router = { prefetch: mock.prefetch };
 vi.mock("expo-router", () => ({ usePathname: () => mock.path, useRouter: () => router }));
-vi.mock("react-native", () => ({ AppState: { currentState: "active" } }));
+vi.mock("react-native", () => ({ AppState: { currentState: "active" }, Platform: { get OS() { return mock.os; } } }));
 vi.mock("./compete-store", () => ({ useCompeteStore: () => ({ state: mock.ready ? {} : null, accountKey: mock.account }) }));
 let renderer: ReactTestRenderer;
 beforeEach(() => {
   vi.useFakeTimers();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  mock.path = "/today"; mock.account = "alice"; mock.ready = true; mock.prefetch.mockClear();
+  mock.path = "/today"; mock.account = "alice"; mock.ready = true; mock.os = "android"; mock.prefetch.mockClear();
 });
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
@@ -51,4 +51,13 @@ it("waits for account data and avoids repeated pre-renders within the same accou
   await act(async () => renderer.update(createElement(NavigationWarmup)));
   await act(async () => { await vi.advanceTimersByTimeAsync(600); });
   expect(mock.prefetch).toHaveBeenCalledTimes(2);
+});
+
+it("skips prefetch on iOS to prevent unhandled PRELOAD action warnings", async () => {
+  mock.os = "ios";
+  await act(async () => { renderer = create(createElement(NavigationWarmup)); });
+  mock.path = "/arena";
+  await act(async () => renderer.update(createElement(NavigationWarmup)));
+  await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+  expect(mock.prefetch).not.toHaveBeenCalled();
 });

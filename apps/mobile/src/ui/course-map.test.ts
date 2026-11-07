@@ -218,3 +218,28 @@ it("cancels the retained replay camera loop on inactivity and restarts it on ret
   await act(async () => { const callback = [...frames.values()][0]!; frames.clear(); callback(); });
   expect(calls.setCamera).toHaveBeenCalledOnce();
 });
+
+it("ignores [0, 0] null island camera changes and preserves camera pose across tab transitions without shifting", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const course = createRaceCourse("Null Island Guard", [[0.1, 0.1], [0.12, 0.1]]);
+  const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 0.5 }], unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn(), followAthlete: true };
+  await act(async () => { renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "Camera" ? calls : null }); });
+  await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
+  calls.setCamera.mockClear();
+
+  // Simulate user gesturing to a specific vantage point
+  await act(async () => renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [0.11, 0.105], zoom: 17, pitch: 45, heading: 90, isUserInteraction: true } } }));
+
+  // Simulate Mapbox native emitting [0, 0] or zoom 0 on unmount/tab switch
+  await act(async () => renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [0, 0], zoom: 0, pitch: 0, heading: 0, isUserInteraction: false } } }));
+
+  // Simulate tab switch: inactive -> active with same athlete state
+  activity.active = false;
+  await act(async () => renderer.update(createElement(CourseMap, { ...props, followAthlete: false })));
+  activity.active = true;
+  calls.setCamera.mockClear();
+  await act(async () => renderer.update(createElement(CourseMap, { ...props, followAthlete: false })));
+
+  // Camera must not re-fly or reset to [0, 0]
+  expect(calls.setCamera).not.toHaveBeenCalled();
+});

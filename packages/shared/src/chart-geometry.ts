@@ -26,6 +26,7 @@ export function buildStandardChartGeometry(
   height = 150,
   corridor?: { high: number[]; low: number[] },
   yPaddingFraction = 0.1,
+  clampMinZero = true,
 ): StandardChartGeometry {
   const xStart = 44;
   const xEnd = Math.max(xStart + 1, width - 14);
@@ -68,6 +69,9 @@ export function buildStandardChartGeometry(
     const factor = Math.pow(10, decimals);
     yMin = Math.round((yMid - diff) * factor) / factor;
     yMax = Math.round((yMid + diff) * factor) / factor;
+    if (clampMinZero && rawMin >= 0 && yMin < 0) {
+      yMin = 0;
+    }
   } else {
     const spread = rawMax - rawMin;
     const pad = Math.max(spread * yPaddingFraction, 0.01);
@@ -75,6 +79,9 @@ export function buildStandardChartGeometry(
     const factor = Math.pow(10, decimals);
     yMin = Math.floor((rawMin - pad) * factor) / factor;
     yMax = Math.ceil((rawMax + pad) * factor) / factor;
+    if (clampMinZero && rawMin >= 0 && yMin < 0) {
+      yMin = 0;
+    }
     yMid = Math.round(((yMin + yMax) / 2) * factor) / factor;
   }
 

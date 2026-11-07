@@ -21,11 +21,17 @@ export function SessionStage({ state, activities, suggestion, onRemove, actions 
   const model = sessionStageModel(activities);
   const [selected, setSelected] = useState<string | null>(null);
   const current = model.rows.find(row => row.id === selected) ?? model.rows[0];
-  if (!current) return <View style={s.stack}>
-    <AppText role="display" accessibilityRole="header">{suggestion?.title ?? "Make room to move."}</AppText>
-    <View style={s.suggestion}><View><AppText role="hero">{formatTrainingHours((suggestion?.minutes ?? 0) * 60)}</AppText><AppText role="caption" secondary>hr · Suggested time</AppText></View><AnimatedEmber size={90} expression="happy" action="idle" loop /></View>
-    <AppText secondary>{suggestion?.detail ?? "Nothing recorded today."}</AppText>{suggestion?.kind !== "rest" && actions}
-  </View>;
+  if (!current) {
+    const suggestedMin = suggestion?.minutes ?? 0;
+    const isHours = suggestedMin >= 60;
+    const timeVal = isHours ? (suggestedMin / 60).toFixed(1) : String(suggestedMin);
+    const timeUnit = isHours ? "hr · Suggested time" : "min · Suggested time";
+    return <View style={s.stack}>
+      <AppText role="display" accessibilityRole="header">{suggestion?.title ?? "Make room to move."}</AppText>
+      <View style={s.suggestion}><View><AppText role="hero">{timeVal}</AppText><AppText role="caption" secondary>{timeUnit}</AppText></View><AnimatedEmber size={90} expression="happy" action="idle" loop /></View>
+      <AppText secondary>{suggestion?.detail ?? "Nothing recorded today."}</AppText>{suggestion?.kind !== "rest" && actions}
+    </View>;
+  }
   return <View style={s.stack}>
     {model.rows.length > 1 ? <View style={s.group}>
       <AppText role="label">{`${model.sessions} recorded sessions · ${formatTrainingHours(model.movingSec)} hr total`}</AppText>

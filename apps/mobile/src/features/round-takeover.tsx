@@ -20,7 +20,7 @@ import {
 import { usePathname, useRouter, useGlobalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Modal, ScrollView, Text, View } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView, initialWindowMetrics } from "react-native-safe-area-context";
 import { WeeklySocialActions } from "./weekly-social";
 import { ResultCard } from "./result-card";
 import { ReplayViewer } from "./competition-replay";
@@ -55,9 +55,9 @@ function Round({
       animationType={reduced ? "none" : "fade"}
       onRequestClose={() => { /* Complete the recap before acknowledging results. */ }}
     >
-      <SafeAreaProvider>
-      <SafeAreaView style={f.safe}>
-        <ScrollView key={stage} contentContainerStyle={f.content}>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
+        <ScrollView key={stage} contentContainerStyle={[f.content, { paddingTop: 16 }]}>
 <SectionStack divided={false}>
           <View style={{ gap: 18 }}>
           <AppText accessibilityRole="header" role="display" >
@@ -161,7 +161,7 @@ function WeekChart({ state, result, delay }: { state: CompeteState; result: Peri
   const dates: string[] = [];
   for (let date = first; date <= last; date = new Date(Date.parse(`${date}T12:00:00Z`) + 86400000).toISOString().slice(0, 10)) dates.push(date);
   const labels = dates.map(date => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE }));
-  return activities.length ? <StandardLineChart yAxisLabel="Training (min)" showAxes showSummary formatAxisY={value => `${Math.round(value)}`} pointLabels={labels} formatY={value => `${Math.round(value)} min`} accessibilityLabel="Cumulative training minutes in the settled week" revealProgress={draw}
+  return activities.length ? <StandardLineChart yAxisLabel="Training (min)" xAxisLabel="Day (EST)" showAxes showSummary formatAxisY={value => `${Math.round(value)}`} pointLabels={labels} formatY={value => `${Math.round(value)} min`} accessibilityLabel="Cumulative training minutes in the settled week" revealProgress={draw}
     values={dates.map(date => activities.filter(a => dayKey(new Date(a.startedAt), APP_TIMEZONE) <= date).reduce((sum, a) => sum + a.movingSec / 60, 0))}
     xLabels={[labels[0]!, labels[Math.floor((labels.length - 1) / 2)]!, labels.at(-1)!]} />
     : <AppText>Detailed activity history is unavailable for this archived week.</AppText>;

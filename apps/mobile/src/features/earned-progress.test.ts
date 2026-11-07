@@ -52,7 +52,7 @@ describe("native earned progress flows",()=>{
  });
  it("keeps an unrecorded suggestion separate from completion",async()=>{
   await act(async()=>{renderer=create(createElement(SessionStage,{state:mock.state!,activities:[],suggestion:{title:"Easy movement",minutes:30,detail:"Keep it comfortable."},onRemove:vi.fn()}));});
-  const json=JSON.stringify(renderer.toJSON());expect(json).toContain("Suggested time");expect(json).toContain('"0.5"');expect(json).not.toContain("recorded session");
+  const json=JSON.stringify(renderer.toJSON());expect(json).toContain("Suggested time");expect(json).toContain('"30"');expect(json).not.toContain("recorded session");
  });
  it("shows session history and compact comparisons when enough history exists",async()=>{
   const current=recorded("today",2400);

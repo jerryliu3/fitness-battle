@@ -20,6 +20,8 @@ import {
   personalRecordHistory,
   formatClockTime,
   RECORD_DISTANCES,
+  competitionTrack,
+  effortPointProgress,
   type ProviderId,
 } from "@fitness-battle/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -715,7 +717,10 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
   const unit = distanceUnitLabel(state.units);
   const records = personalRecordHistory(state, now);
   const topRecords = records.slice(0, 3);
+  const primaryTrack = competitionTrack(state.primary);
   const primaryRating = state.ratings.find(r => r.sport === state.primary);
+  const effortModel = effortPointProgress(state, state.primary, primaryTrack);
+  const effortScore = effortModel?.score ?? (primaryRating ? (primaryTrack === "verified" ? primaryRating.verifiedElo : primaryRating.openElo) : 1000);
 
   return (
     <View style={styles.safe}>
@@ -733,7 +738,7 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
           name={state.name}
           avatarUrl={state.avatarUrl}
           city={state.city}
-          score={primaryRating?.openElo ?? 1000}
+          score={effortScore}
           since={user?.createdAt && Number.isFinite(Date.parse(user.createdAt)) ? `Since ${new Date(user.createdAt).getUTCFullYear()}` : undefined}
           action={<Pressable
             accessibilityRole="button"

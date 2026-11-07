@@ -35,6 +35,7 @@ export function AthleteTelemetryMatrix({
     points: number[];
     accent: string;
     corridor?: { high: number[]; low: number[] };
+    hero?: boolean;
   }> = [
     ...(SHOW_ATHLETE_EQUITY
       ? [
@@ -107,6 +108,7 @@ export function AthleteTelemetryMatrix({
         : `Strain ceiling ${model.combined.optimalStrainCeiling}`,
       points: signedOut ? [] : model.combined.series.map((s) => s.nextDayReadiness),
       accent: c.tennis,
+      hero: true,
     },
   ];
 
@@ -151,7 +153,7 @@ export function AthleteTelemetryMatrix({
                 },
               } as never);
             }}
-            style={s.bentoTile}
+            style={[s.bentoTile, t.hero && s.bentoTileHero]}
           >
             <AppText role="label" secondary numberOfLines={1}>
               {t.kicker}
@@ -235,6 +237,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
+    justifyContent: "space-between",
   },
   bentoTile: {
     width: "48%",
@@ -244,6 +247,9 @@ const s = StyleSheet.create({
     borderColor: c.line,
     padding: 12,
     gap: 6,
+  },
+  bentoTileHero: {
+    width: "100%",
   },
   betweenRow: {
     flexDirection: "row",

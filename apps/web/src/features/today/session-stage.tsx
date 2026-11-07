@@ -15,7 +15,13 @@ export function SessionStage({ state, activities, suggestion, onRemove, actions 
 }) {
   const model = sessionStageModel(activities), [selected, setSelected] = useState<string | null>(null);
   const current = model.rows.find(row => row.id === selected) ?? model.rows[0];
-  if (!current) return <section className="session-stage" aria-label="Today's suggestion"><AppHeading role="display">{suggestion?.title ?? "Make room to move."}</AppHeading><div className="session-stage-object"><div><strong className="session-stage-hours">{formatTrainingHours((suggestion?.minutes ?? 0) * 60)}</strong><small>hr · Suggested time</small></div><AnimatedEmber expression="happy" action="idle" loop={false} /></div><p>{suggestion?.detail ?? "Nothing recorded today."}</p>{actions}</section>;
+  if (!current) {
+    const suggestedMin = suggestion?.minutes ?? 0;
+    const isHours = suggestedMin >= 60;
+    const timeVal = isHours ? (suggestedMin / 60).toFixed(1) : String(suggestedMin);
+    const timeUnit = isHours ? "hr · Suggested time" : "min · Suggested time";
+    return <section className="session-stage" aria-label="Today's suggestion"><AppHeading role="display">{suggestion?.title ?? "Make room to move."}</AppHeading><div className="session-stage-object"><div><strong className="session-stage-hours">{timeVal}</strong><small>{timeUnit}</small></div><AnimatedEmber expression="happy" action="idle" loop={false} /></div><p>{suggestion?.detail ?? "Nothing recorded today."}</p>{actions}</section>;
+  }
   return <section className="session-detail" aria-label="Recorded activity">
     {model.rows.length > 1 && <div className="ac-group"><b>{model.sessions} recorded sessions · {formatTrainingHours(model.movingSec)} hr total</b><div className="ac-choices" role="group" aria-label="Choose a session">{model.rows.map(row => <button type="button" key={row.id} aria-pressed={row.id === current.id} onClick={() => setSelected(row.id)}>{sportById(row.sport).name} · {new Date(row.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE })}</button>)}</div></div>}
     <ActivityDetails key={current.id} activity={current} state={state} onRemove={onRemove} />

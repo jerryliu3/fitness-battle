@@ -117,9 +117,9 @@ it("holds the prior best until each new record without extending to today", () =
   expect(chart.path).toBe(`M ${chart.points[0]!.x} ${chart.points[0]!.y} H ${chart.points[1]!.x} V ${chart.points[1]!.y}`);
 });
 
-it("formats large effort scores without raw decimals", () => {
-  expect(formatEffort(54000)).toBe("54000");
-  expect(formatEffort(1400.55)).toBe("1400.6");
+it("formats large effort scores with thousands grouping and without raw decimals", () => {
+  expect(formatEffort(54000)).toBe("54,000");
+  expect(formatEffort(1400.55)).toBe("1,400.6");
 });
 
 it("ignores slower attempts and future records in the milestone chart",()=>{

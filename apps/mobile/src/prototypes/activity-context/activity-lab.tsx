@@ -15,9 +15,10 @@ const concepts: { id: Concept; label: string }[] = [{ id: "scatter", label: "Ses
 const examples: { id: Example; label: string }[] = [{ id: "run", label: "Run + HR" }, { id: "strength", label: "Strength" }, { id: "no-hr", label: "No HR" }, { id: "sparse", label: "Sparse" }];
 const H = 282, TOP = 20, BOTTOM = H - 46, LEFT = 54;
 const path = (points: { x: number; y: number }[]) => points.map((point, i) => `${i ? "L" : "M"}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
-function extent(values: number[], minimumPadding = 1): [number, number] {
+function extent(values: number[], minimumPadding = 1, clampZero = true): [number, number] {
   const min = Math.min(...values), max = Math.max(...values), padding = Math.max(minimumPadding, (max - min) * .16);
-  return [min - padding, max + padding];
+  const low = clampZero && min >= 0 ? Math.max(0, min - padding) : min - padding;
+  return [low, max + padding];
 }
 function scale(domain: [number, number], low: number, high: number) {
   return (value: number) => low + (value - domain[0]) / (domain[1] - domain[0] || 1) * (high - low);
@@ -153,7 +154,7 @@ function Ripple({ current, history }: { current: Activity; history: Activity[] }
     <Choices items={[{ id: "without", label: "Without this session" }, { id: "with", label: "With this session" }]} value={included ? "with" : "without"} onChange={value => setIncluded(value === "with")} label="Include selected activity in volume" />
     <AppText role="caption" secondary>Recorded minutes / day</AppText>
     <Plot width={width} points={days.map((day, index) => ({ id: day.key, x: x(index), y: y(included ? day.minutes : day.without) }))} selected={chosen.key} onSelect={setSelected} label={`Logged volume. ${dateLabel(chosen.date)}: ${Math.round(included ? chosen.minutes : chosen.without)} minutes. ${(included ? chosen.average : chosen.averageWithout).toFixed(1)} minutes per day rolling average on this day.`}>
-      <Grid width={width} yDomain={yd} yFormat={value => `${Math.round(value)}`} xTicks={[0, 13, 27].map(index => ({ x: x(index), label: dateLabel(days[index]!.date) }))} xLabel="Day · America/New_York" />
+      <Grid width={width} yDomain={yd} yFormat={value => `${Math.round(value)}`} xTicks={[0, 13, 27].map(index => ({ x: x(index), label: dateLabel(days[index]!.date) }))} xLabel="Day (EST)" />
       {days.map((day, index) => <Rect key={day.key} x={x(index) - Math.max(2, (width - LEFT - 28) / 28 * .28)} y={y(day.without)} width={Math.max(4, (width - LEFT - 28) / 28 * .56)} height={BOTTOM - y(day.without)} rx={2} fill={c.secondary} opacity={.45} />)}
       {included ? <Rect x={x(27) - Math.max(2, (width - LEFT - 28) / 28 * .28)} y={y(latest.minutes)} width={Math.max(4, (width - LEFT - 28) / 28 * .56)} height={y(latest.without) - y(latest.minutes)} rx={2} fill={c.tennis} /> : null}
       <Path d={path(days.map((day, index) => ({ x: x(index), y: y(included ? day.average : day.averageWithout) })))} fill="none" stroke={c.fieldTeal} strokeWidth={3} />

@@ -13,9 +13,10 @@ import {
 
 type Point = { id: string; x: number; y: number };
 const W = 360, H = 258, L = 48, R = 344, T = 18, B = 212;
-const extent = (values: number[], padding = 1): [number, number] => {
+const extent = (values: number[], padding = 1, clampZero = true): [number, number] => {
   const low = Math.min(...values), high = Math.max(...values), pad = Math.max(padding, (high - low) * .16);
-  return [low - pad, high + pad];
+  const clampedLow = clampZero && low >= 0 ? Math.max(0, low - pad) : low - pad;
+  return [clampedLow, high + pad];
 };
 const scale = (domain: [number, number], a: number, b: number) => (value: number) => a + (value - domain[0]) / (domain[1] - domain[0] || 1) * (b - a);
 const path = (points: { x: number; y: number }[]) => points.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
@@ -117,7 +118,7 @@ function Ripple({ current, history }: { current: Activity; history: Activity[] }
   return <section className="ac-section"><AppHeading level={3}>What this added</AppHeading><p>Your recorded {current.sport} minutes. See what changes with this session.</p><div className="ac-volume"><strong>{average.toFixed(1)}</strong><span>min / day · 7-day average</span></div>
     <Choices items={toggleItems} value={included ? "with" : "without"} onChange={id => setIncluded(id === "with")} label="Include selected activity in volume" /><small>Recorded minutes / day</small>
     <Plot points={days.map((d, i) => ({ id: d.key, x: x(i), y: y(included ? d.minutes : d.without) }))} selected={chosen.key} onSelect={setSelected} label={`Logged volume. ${dateLabel(chosen.date)}: ${Math.round(included ? chosen.minutes : chosen.without)} minutes.`}>
-      <Grid domain={yd} format={v => `${Math.round(v)}`} ticks={[0, 13, 27].map(i => ({ x: x(i), label: dateLabel(days[i]!.date) }))} label="Day · America/New_York" />
+      <Grid domain={yd} format={v => `${Math.round(v)}`} ticks={[0, 13, 27].map(i => ({ x: x(i), label: dateLabel(days[i]!.date) }))} label="Day (EST)" />
       {days.map((d, i) => <rect key={d.key} x={x(i) - 3} y={y(d.without)} width={6} height={B - y(d.without)} rx={2} fill={muted} opacity={.4} />)}
       {included && <rect x={x(27) - 3} y={y(latest.minutes)} width={6} height={y(latest.without) - y(latest.minutes)} rx={2} fill={yellow} />}
       <path d={path(days.map((d, i) => ({ x: x(i), y: y(included ? d.average : d.averageWithout) })))} fill="none" stroke={teal} strokeWidth={3} /><line x1={x(days.indexOf(chosen))} x2={x(days.indexOf(chosen))} y1={T} y2={B} stroke={ink} opacity={.25} /><circle cx={x(27)} cy={y(average)} r={5} fill={yellow} stroke={ink} strokeWidth={2} />

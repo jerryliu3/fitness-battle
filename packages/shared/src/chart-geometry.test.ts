@@ -44,6 +44,11 @@ describe("buildStandardChartGeometry", () => {
     expect(geo.corridorHighPolyline).toContain(",");
     expect(geo.corridorLowPolyline).toContain(",");
   });
+
+  it("clamps yMin to 0 for non-negative series by default", () => {
+    const geo = buildStandardChartGeometry([0, 50, 190], 340, 150);
+    expect(geo.yMin).toBe(0);
+  });
 });
 
 it("places a rounded middle tick using the same Y scale as its value", () => {

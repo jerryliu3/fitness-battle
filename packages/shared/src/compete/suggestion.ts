@@ -1,6 +1,6 @@
 import { dayKey, getZonedWeekday, startOfZonedDay } from "../period";
 import { dispositionOf, provenanceOf } from "./ledger";
-import type { Activity, CompeteState, GoalDistance, SportId, TrainingGoal } from "./sports";
+import type { Activity, CompeteState, GoalDistance, SportId, TrainingGoal, UnitSystem } from "./sports";
 
 /** Recreational race targets. The shapes follow common public plans, not a copied workout table. */
 export type { GoalDistance, TrainingGoal } from "./sports";
@@ -134,6 +134,7 @@ export function suggestOpen(
   activities: Activity[],
   now: Date,
   primary: SportId = "running",
+  units: UnitSystem = "metric",
 ): DaySuggestion {
   const today = startOfZonedDay(now);
   const todayKey = dayKey(today);
@@ -153,11 +154,18 @@ export function suggestOpen(
 
   if (todaySession) {
     const minutes = Math.round(todaySession.movingSec / 60);
+    const dist = todaySession.distanceM > 0
+      ? (units === "us"
+          ? `${round1(todaySession.distanceM / 1609.344)} mi`
+          : `${round1(todaySession.distanceM / 1000)} km`)
+      : null;
     return {
       kind: "rest",
       phase: "open",
       title: "Already covered",
-      detail: `You already recorded ${minutes} minutes today. Nothing else is required.`,
+      detail: dist
+        ? `You already recorded ${dist} today. Nothing else is required.`
+        : `You already recorded ${minutes} minutes today. Nothing else is required.`,
       minutes: null,
       distanceKm: null,
       reason: history,
@@ -202,7 +210,9 @@ export function suggestOpen(
   return {
     kind: "easy",
     phase: "open",
-    title: distanceKm ? `Easy ${distanceKm} km` : `Easy ${minutes} min`,
+    title: distanceKm
+      ? (units === "us" ? `Easy ${round1(distanceKm * 0.621371)} mi` : `Easy ${distanceKm} km`)
+      : `Easy ${minutes} min`,
     detail: prior.length
       ? "Match a normal recent session. Keep it comfortable the whole way."
       : firstSessionDetail,
@@ -222,10 +232,11 @@ export function suggestToday(
   activities: Activity[],
   now: Date,
   sport: SportId = "running",
+  units: UnitSystem = "metric",
 ): DaySuggestion {
   const plan = PLANS[goal.distance];
   const deadline = parseDeadline(goal.deadline);
-  if (!deadline) return suggestOpen(activities, now);
+  if (!deadline) return suggestOpen(activities, now, sport, units);
   const today = startOfZonedDay(now);
   const todayKey = dayKey(today);
   const daysLeft = Math.round((deadline.getTime() - today.getTime()) / DAY_MS);
@@ -281,14 +292,18 @@ export function suggestToday(
 
   if (todaySession) {
     const minutes = Math.round(todaySession.movingSec / 60);
-    const km = todaySession.distanceM > 0 ? round1(todaySession.distanceM / 1000) : null;
+    const dist = todaySession.distanceM > 0
+      ? (units === "us"
+          ? `${round1(todaySession.distanceM / 1609.344)} mi`
+          : `${round1(todaySession.distanceM / 1000)} km`)
+      : null;
     return say(
       "rest",
       daysLeft <= plan.taperDays ? "taper" : "build",
       null,
       null,
-      km
-        ? `You already recorded ${km} km today. Nothing else is required.`
+      dist
+        ? `You already recorded ${dist} today. Nothing else is required.`
         : `You already recorded ${minutes} minutes today. Nothing else is required.`,
       `${history} ${daysLeft} days remain until the ${plan.label}.`,
       "Already covered",
@@ -476,7 +491,7 @@ function mainWeekday(sessions: Activity[]): number | null {
 
 export function suggestionForState(state: CompeteState, now: Date): DaySuggestion {
   if (!state.trainingGoal || !isTrainingGoal(state.trainingGoal)) {
-    return suggestOpen(state.activities, now, state.primary);
+    return suggestOpen(state.activities, now, state.primary, state.units);
   }
-  return suggestToday(state.trainingGoal, state.activities, now, state.primary);
+  return suggestToday(state.trainingGoal, state.activities, now, state.primary, state.units);
 }
