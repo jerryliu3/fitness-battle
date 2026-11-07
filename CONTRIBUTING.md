@@ -24,14 +24,18 @@ pnpm test
 
 Env template: `apps/web/.env.example`.
 
-## Pull requests
+## Pull requests & workflow
 
-1. One logical change per PR when practical.
-2. Match existing ink/lime UI — see design guide; do not introduce a second palette.
-3. Keep `@fitness-battle/shared` free of platform imports.
-4. Additive Supabase migrations only; encode battle/period invariants in SQL when correctness is cross-request.
-5. Stub Strava cleanly without secrets; do not fake a live connection status.
-6. Include or update tests when changing period math, scoring, or RPC semantics.
+1. One logical change per PR when practical (prefer small stacked PRs over large monolithic branches).
+2. **Minimal clean fixes**: Smallest correct change. No verbose or overly complex layers, defensive bloat, or speculative abstractions.
+3. **Verification discipline**: Do not run slow typechecks, tests, or builds autonomously during intermediate steps, rebases, or CI fixes. Only run verification when explicitly approved or when all work across the task/PR is fully finished (and verification was not opted out).
+4. **Code review & cleanup**: Run a deep code review pass for correctness, bugs, and simplification/cleanup before declaring complete.
+5. Match existing ink/lime UI — see design guide; do not introduce a second palette.
+6. Keep `@fitness-battle/shared` free of platform imports.
+7. Additive Supabase migrations only; encode battle/period invariants in SQL when correctness is cross-request.
+8. Stub Strava cleanly without secrets; do not fake a live connection status.
+9. Include or update tests when changing period math, scoring, or RPC semantics.
+10. For ambiguous product or design choices, hold off and clarify with the developer rather than guessing.
 
 ## Git author (Vercel)
 

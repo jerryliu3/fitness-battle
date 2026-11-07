@@ -25,10 +25,26 @@ If those paths are not in this checkout, they live in the Fitness Battle Project
 7. **Env** — read through `lib/env.ts` modules; honor demo flags when wiring live Supabase.
 8. **Tests** — period/SQL/scoring semantic changes ship with tests (`pnpm test` / shared Vitest).
 9. **Migrations** — additive only; no rewritten history.
-10. **Simplification** — smallest correct change; no speculative packages or duplicate write paths.
+10. **Simplification & Minimal Fixes** — smallest correct change; keep diffs minimal, clean, and robust; no speculative packages, bloated abstractions, verbose defensive code, or duplicate write paths. Maximize reuse across web and mobile.
 
-## Workflow
+## Developer & Agent Workflow Rules
 
-- Prefer small PRs. Update the matching living doc when tokens or domain rules change.
-- Do not copy secrets into the client. Strava client secret stays server-side.
-- When verification is requested: `pnpm typecheck`, relevant tests, and web build for web-facing changes.
+- **Minimal, Clean Changes**: Keep implementations lean and minimal. Do not add verbose or overly complex layers, defensive bloat, or speculative abstractions. If a PR or diff feels disproportionately large, conduct a dedicated simplification pass to prune unnecessary code.
+- **Verification & Test Execution Policy (DO NOT RUN AUTONOMOUSLY)**:
+  - **Do NOT run slow type checks (`pnpm typecheck`), test suites (`pnpm test`), or builds autonomously** after every minor edit, rebase, merge conflict resolution, or CI fix.
+  - When asked to "fix CI, do not verify", "resolve merge conflicts and push (do not verify)", or similar: resolve the issue, commit, and push immediately without running local verification suites.
+  - **Only run verification when**:
+    1. Explicitly approved or requested by the user (e.g., "verify this", "run the typecheck/tests"), OR
+    2. All planned implementation work across the entire task/PR is completely finished and ready for final delivery (and the user hasn't specified "do not verify").
+- **Deep Code Review & Recursive Simplification**:
+  - Before completing tasks, always perform a deep review pass for correctness, bug prevention, and code simplification/cleanup.
+  - Eliminate dead code, duplicated logic, and unnecessary UI branching. Apply fixes cleanly.
+- **PR Hygiene & Worktrees**:
+  - Prefer small, clean, stacked PRs against `origin/main` (e.g., 1 PR per tab/feature rather than massive combined PRs).
+  - Use isolated git worktrees or branches for parallel streams. Rebase cleanly on `origin/main`.
+- **Testing & Local Verification Instructions**:
+  - When work is ready for the user to review locally, always provide the exact working directory and commands to run the web dev server or test in the iOS simulator.
+- **Product Ambiguity**:
+  - For any ambiguous product, UX, or domain decisions, hold off and report back to the user with clear options rather than making assumptions.
+- **Secrets & Auth**:
+  - Do not copy secrets into the client. Strava client secret stays server-side. Update the matching living doc when tokens or domain rules change.
