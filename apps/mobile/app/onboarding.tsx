@@ -4,7 +4,7 @@ import { OnboardingOvertake } from "../src/features/onboarding-overtake";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Modal, ScrollView, TextInput, View, type ScrollViewInstance } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { nextDailyWaveWindowAt, waveTimeLabel, PROVIDERS, SPORTS, type SportId, type UnitSystem } from "@fitness-battle/shared";
 import { ChoicePicker } from "../src/ui/choice-picker";
 import { Chip } from "../src/ui/chip";
@@ -44,6 +44,7 @@ export default function Onboarding() {
     setSleep(Boolean(draft?.sleep)); setLoadedKey(key); setReady(true);
   }).catch(() => { if (alive) setReady(true); }); return () => { alive = false; }; }, [key, preview, Boolean(state)]);
   useEffect(() => { if (ready && loadedKey === key && !preview) void AsyncStorage.setItem(key, JSON.stringify({step,name,city,sports,units,sleep})).catch(() => {}); }, [ready,loadedKey,preview,key,step,name,city,sports,units,sleep]);
+  if (!preview && state?.onboardingCompleted) return <Redirect href="/arena" />;
   if (!state || !ready) return <AppText>Loading setup…</AppText>;
   function advance(){if(step===2&&!sports.length&&!sleep){setSelectionError(true);return;}setSelectionError(false);setStep(step+1);}
   function finish() {

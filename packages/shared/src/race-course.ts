@@ -151,8 +151,12 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
       following = false;
       const current = driver.read();
       driver.stop();
-      // Scrubbing is direct manipulation: no queued flights, zoom reset or heading changes.
-      driver.move({ ...current, center: raceCoursePosition(course, metres).coordinate }, 0);
+      // Direct manipulation follows the course heading without queuing flights.
+      const position = raceCoursePosition(course, metres);
+      const remaining = position.returning ? position.routeMetres : course.length - position.routeMetres;
+      const ahead = raceCoursePosition(course, position.metres + Math.min(30, remaining));
+      const heading = remaining > .01 ? bearing(position.coordinate, ahead.coordinate) : position.heading;
+      driver.move({ ...current, center: position.coordinate, pitch: dimension === "3d" ? 60 : 0, bearing: dimension === "3d" ? heading : 0 }, 0);
     },
     dimension(value: CourseDimension, moveCamera = true) { dimension = value; if (moveCamera) move({ ...driver.read(), pitch: value === "3d" ? 60 : 0, bearing: value === "2d" ? 0 : driver.read().bearing }); },
     zoom(delta: number) { following = false; const current = driver.read(); move({ ...current, zoom: Math.max(0, Math.min(20, current.zoom + delta)) }); },

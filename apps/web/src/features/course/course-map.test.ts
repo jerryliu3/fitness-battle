@@ -25,7 +25,10 @@ it("keeps one map instance, suspends following for user input and resumes on sel
   const props = { course: createRaceCourse("City", [[0, 0], [.02, 0]]), lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: .5 }, { id: "peer", name: "Peer", initials: "P", value: 1 }], unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn() };
   await act(async () => { renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "div" ? {} : null }); });
   const instance = mock.instances[0];
-  await act(async () => instance.emit("load")); instance.easeTo.mockClear();
+  await act(async () => instance.emit("load"));
+  expect(instance.easeTo.mock.lastCall[0].duration).toBe(0);
+  await act(async () => instance.emit("idle"));
+  instance.easeTo.mockClear();
   await act(async () => instance.emit("movestart", { originalEvent: {} }));
   const updated = { ...props, lanes: props.lanes.map(lane => ({ ...lane, value: lane.value + .1 })) };
   await act(async () => renderer.update(createElement(CourseMap, updated)));

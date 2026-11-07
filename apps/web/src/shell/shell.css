@@ -125,7 +125,7 @@
   overflow: hidden;
 }
 
-.phone-panel:not(.is-active) .focus-field-expanded,
+.phone-panel:not(.is-active) .focus-field-expanded:not([data-persistent-field]),
 .phone-panel:not(.is-active) .focus-field-backdrop {
   display: none !important;
 }
