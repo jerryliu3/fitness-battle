@@ -938,7 +938,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         if (accountRef.current !== id || lifecycle.current !== epoch) return;
         scheduleSave(
           stateRef.current ?? next,
-          action.type === "set-units" || action.type === "set-avatar",
+          action.type === "set-units" || action.type === "set-avatar" || action.type === "complete-onboarding",
           action.type === "set-avatar" && !loadReady.current,
         );
       }).catch(() => {

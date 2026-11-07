@@ -42,6 +42,7 @@ export function FieldStage({
   model,
   persistent = false,
   backgroundMode = false,
+  previewFrame,
   externalCourseTarget,
   onOptionsChange,
   presentationVisible = true,
@@ -59,6 +60,7 @@ export function FieldStage({
   persistent?: boolean;
   backgroundMode?: boolean;
   onOptionsChange?: (options: ReactNode | null) => void;
+  previewFrame?: { x: number; y: number; width: number; height: number };
   externalCourseTarget?: CourseDistanceTarget | null;
   presentationVisible?: boolean;
   onDetails?: () => void;
@@ -527,11 +529,12 @@ export function FieldStage({
       </div> : null}
       {!standingsOnly && <div style={{ display: standingsOpen ? "none" : "flow-root" }}>
         <ExpandingField
+          previewFrame={previewFrame}
           persistent={persistent}
           open={lanesImmersive && tabActive && presentationVisible}
           tabActive={tabActive}
           onClose={() => { if (backgroundMode) onExit?.(); else setLanesImmersive(false); }}
-          hud={broadcastHud}
+          hud={presentationVisible ? broadcastHud : undefined}
         >
           {viewDimension === "4d" && (persistent || tabActive) ? <div className="focus-geographic-host" style={{ position: "relative", height: persistent || lanesImmersive ? "100%" : 460 }}>
             <GeographicCourse cardSessionKey={lanesImmersive} initialFlat={courseFlat} onFlatChange={setCourseFlat} lanes={fieldLanes} unit={unit} selectedId={(lanesImmersive ? trackSelected : null) || you.id} focusRequest={lanesImmersive ? focusRequest : 0} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={lanesImmersive ? courseTarget : null} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? spotlightCollapsed ? 136 : 236 : 8} />

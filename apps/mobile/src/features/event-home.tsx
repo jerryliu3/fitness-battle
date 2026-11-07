@@ -1,9 +1,7 @@
-import { useState } from "react";
-import { useCompetitionCourse } from "./use-competition-course";
-import { useCompeteStore } from "../lib/compete-store";
-import { mobileEnv } from "../lib/env";
-import { Image, Pressable, View } from "react-native";
-import { buildMapboxStaticImageUrl, competePeriodWindow, buildArenaModel, competitionQueue, competitionTrack, competeNow, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { useCallback, useEffect, useRef } from "react";
+import { useCompeteExperience } from "./compete-experience";
+import { Pressable, View } from "react-native";
+import { competePeriodWindow, buildArenaModel, competitionQueue, competitionTrack, competeNow, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppText } from "../ui/section";
 import { SHELL_COLORS as c } from "../theme";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
@@ -37,14 +35,12 @@ export function EventHome({ state, accountKey, onEnter, onRecovery }: { state: C
   </View>;
 }
 
-function CoursePreview({ state, sport, queued }: { state: CompeteState; sport: SportId; queued: boolean }) {
-  const { debugActive } = useCompeteStore();
-  const period = competePeriodWindow(state, competeNow(state), sport);
-  const { course, error } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, !queued);
-  const url = course ? buildMapboxStaticImageUrl({ coordinates: course.coordinates, width: 600, height: 240, mapboxToken: mobileEnv.mapboxAccessToken }) : "";
-  const [failedUrl, setFailedUrl] = useState("");
-  const geographic = ["running", "walking", "cycling"].includes(sport);
-  return <View style={{ height: 144, borderRadius: 12, overflow: "hidden", backgroundColor: c.paper, justifyContent: "center", alignItems: "center" }}>
-    {url && failedUrl !== url ? <Image accessibilityLabel={`${course?.name} course preview`} source={{ uri: url, cache: "force-cache" }} resizeMode="contain" onError={() => setFailedUrl(url)} style={{ width: "100%", height: "100%" }} /> : <AppText role="caption" secondary>{queued ? "Course assigned when your wave starts" : !geographic ? "Points event" : error || failedUrl || !mobileEnv.mapboxAccessToken ? "Course preview unavailable" : "Loading course preview…"}</AppText>}
+function CoursePreview({ sport, queued }: { state: CompeteState; sport: SportId; queued: boolean }) {
+  const experience = useCompeteExperience();
+  const ref = useRef<View>(null);
+  const measure = useCallback(() => ref.current?.measureInWindow((x, y, width, height) => experience.updatePreview?.(sport, { x, y, width, height })), [sport, experience.updatePreview]);
+  useEffect(() => { experience.registerPreview?.(sport, measure); measure(); return () => experience.registerPreview?.(sport, null); }, [sport, measure, experience.registerPreview]);
+  return <View ref={ref} collapsable={false} onLayout={measure} style={{ height: 180, borderRadius: 12, overflow: "hidden", backgroundColor: c.paper, justifyContent: "center", alignItems: "center" }}>
+    {queued ? <AppText role="caption" secondary>Course assigned when your wave starts</AppText> : null}
   </View>;
 }

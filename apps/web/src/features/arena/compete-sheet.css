@@ -23,5 +23,5 @@
 .compete-immersive-hud .focus-broadcast-tower{top:76px}
 .focus-field-expanded:has(.compete-immersive-hud) .geographic-map-controls{top:112px;bottom:auto;left:auto;right:12px;max-width:50%}
 
-.compete-event-preview{height:144px;min-height:144px;padding:0;overflow:hidden;display:grid;place-items:center}
+.compete-event-preview{height:180px;min-height:180px;padding:0;overflow:hidden;display:grid;place-items:center}
 .compete-sheet-overview{padding:0 16px 8px;flex:none}.compete-sheet-overview-row{display:flex;align-items:center;gap:8px}.compete-sheet-overview-track{flex:1;min-width:0}
