@@ -870,7 +870,7 @@ reduced motion uses an immediate position change.
 
 Compete home restores the shared competition date range beneath its title;
 event cards omit repeated days-left labels. Snapshot previews use a 1:1 aspect
-ratio at the existing card width. Utility map credits use compact 10-point text
+ratio at the existing card width. Utility map credits use the compact shared nav text recipe
 with a feedback info glyph carrying its full accessible label. Live maps retain
 the standard SDK wordmark and align a 14-point info control beside it; the info
 sheet includes source links, feedback and the telemetry privacy choice.

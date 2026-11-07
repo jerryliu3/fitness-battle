@@ -200,3 +200,10 @@ standings cannot leave a scrub target ahead of the leader. Removed obsolete shee
 heading styles, merged duplicate preview styling, and removed an unused course
 position calculation. No local verification or CI reruns were requested after
 these changes; the PR is rebased onto the fetched origin/main.
+
+## Typography CI repair
+
+The UI-contract job rejected hardcoded credit and info-button font metrics.
+Map credits now use the existing shared nav recipe and the info glyph uses the
+support recipe. No lint exemptions or contract changes were added. The repair
+is deliberately not verified locally or by a post-fix CI check, per the owner.

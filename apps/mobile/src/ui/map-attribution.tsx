@@ -26,8 +26,8 @@ export function MapAttribution({ top }: { top: number }) {
     preference = next; Mapbox.setTelemetryEnabled(next); setTelemetry(next);
   };
   return <>
-    <Pressable accessibilityRole="button" accessibilityLabel="Map credits and privacy" hitSlop={15} onPress={() => { setTelemetry(preference); setOpen(true); }} style={{ position: "absolute", top, right: 12, width: 14, height: 18, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ ...textStyle("caption"), fontSize: 14, lineHeight: 18, color: c.ink }}>ⓘ</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel="Map credits and privacy" hitSlop={15} onPress={() => { setTelemetry(preference); setOpen(true); }} style={{ position: "absolute", top, right: 12, width: 14, height: 20, alignItems: "center", justifyContent: "center" }}>
+      <Text style={{ ...textStyle("support"), color: c.ink }}>ⓘ</Text>
     </Pressable>
     <FocusSheet open={open} title="Map credits" onClose={() => setOpen(false)}>
       {[{ label: "© Mapbox", url: "https://www.mapbox.com/about/maps" }, { label: "© OpenStreetMap", url: "https://www.openstreetmap.org/copyright" }, { label: "Improve this map", url: "https://apps.mapbox.com/feedback/" }].map(link => <FocusButton key={link.label} secondary label={link.label} onPress={() => { void Linking.openURL(link.url); }} />)}

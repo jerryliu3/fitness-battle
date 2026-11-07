@@ -1,4 +1,5 @@
 "use client";
+import { typographyStyle } from "@/ui/section";
 import { useEffect, useState } from "react";
 import { buildArenaModel, competitionTrack, competePeriodWindow, competeNow, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { useCompetitionCourse } from "@/features/course/use-competition-course";
@@ -13,7 +14,7 @@ export function CoursePreview({ sport, queued, state }: { sport: SportId; queued
   const { course } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, !queued);
   const model = buildArenaModel(state, undefined, competitionTrack(sport), sport), lane = model?.lanes.find(lane => lane.you);
   const cacheKey = `race-card-v4:${user?.id}:${sport}:${course?.name}:${course?.length}:${lane?.values[2]}:${state.units}`;
-  return <div style={{ position: "relative", borderRadius: 12, overflow: "hidden" }}><Snapshot key={cacheKey} cacheKey={cacheKey} course={course} value={lane?.values[2] ?? 0} unit={model?.unit ?? ""} queued={queued} />{!queued && course ? <small style={{ position: "absolute", bottom: 4, right: 6, textAlign: "right", fontSize: 10, lineHeight: "14px", background: "rgba(255,255,255,.85)", padding: "0 4px", borderRadius: 4 }}><a href="https://www.mapbox.com/about/maps" onClick={event => event.stopPropagation()}>© Mapbox</a> · <a href="https://www.openstreetmap.org/copyright" onClick={event => event.stopPropagation()}>© OpenStreetMap</a> · <a href="https://apps.mapbox.com/feedback/" title="Improve this map" aria-label="Improve this map" onClick={event => event.stopPropagation()}>ⓘ</a></small> : null}</div>;
+  return <div style={{ position: "relative", borderRadius: 12, overflow: "hidden" }}><Snapshot key={cacheKey} cacheKey={cacheKey} course={course} value={lane?.values[2] ?? 0} unit={model?.unit ?? ""} queued={queued} />{!queued && course ? <small style={{ ...typographyStyle("nav"), position: "absolute", bottom: 4, right: 6, textAlign: "right", background: "rgba(255,255,255,.85)", padding: "0 4px", borderRadius: 4 }}><a href="https://www.mapbox.com/about/maps" onClick={event => event.stopPropagation()}>© Mapbox</a> · <a href="https://www.openstreetmap.org/copyright" onClick={event => event.stopPropagation()}>© OpenStreetMap</a> · <a href="https://apps.mapbox.com/feedback/" title="Improve this map" aria-label="Improve this map" onClick={event => event.stopPropagation()}>ⓘ</a></small> : null}</div>;
 }
 function Snapshot({ cacheKey, course, value, unit, queued }: { cacheKey: string; course: ReturnType<typeof useCompetitionCourse>["course"]; value: number; unit: string; queued: boolean }) {
   const [uri, setUri] = useState(() => snapshotCache.get(cacheKey) ?? ""), [expired, setExpired] = useState(false);
