@@ -86,7 +86,7 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   }, [ready, course, scene, replay]);
   useEffect(() => {
     if (!ready || !distanceTarget) return;
-    const metres = raceEffortMetres(distanceTarget.value, unit);
+    const metres = raceEffortMetres(Math.max(0, Math.min(distanceTarget.value, Math.max(0, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value)))), unit);
     if (metres === null) return;
     camera.current?.seek(course, metres);
     setFollowing(false);

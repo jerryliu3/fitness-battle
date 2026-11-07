@@ -54,11 +54,11 @@ beforeEach(async () => {
   await act(async () => field().props.onExpand());
 });
 afterEach(async () => { await act(async () => renderer.unmount()); vi.useRealTimers(); vi.unstubAllGlobals(); });
-it("restores exit and current positions in the immersive field while standings use the sheet", async () => {
+it("restores exit and current leaders in the immersive field while standings use the sheet", async () => {
   const onDetails = vi.fn();
   await act(async () => renderer.update(createElement(CompetitionField, { sport: "running", track: "verified", persistent: true, backgroundMode: true, onDetails })));
   expect(renderer.root.findAllByType("IconButton" as never).filter(node => node.props.label === "Back to events")).toHaveLength(1);
-  expect(renderer.root.findAll(node => node.props.label === "current positions").length).toBeGreaterThan(0);
+  expect(renderer.root.findAll(node => node.props.label === "current leaders").length).toBeGreaterThan(0);
   expect(renderer.root.findAll(node => node.props.label === "athlete panel")).toHaveLength(0);
   expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Expand standings")).toBe(false);
   expect(field().props.fullscreen).toBe(true);
@@ -84,13 +84,13 @@ it("cancels a pending hold for small drags and app backgrounding", async () => {
   expect(field().props.overlaysHidden).toBe(false);
 });
 it("collapses each panel independently and isolates zoom/replay touches from scene holds", async () => {
-  await act(async () => button("Collapse current positions").props.onPress());
-  expect(button("Expand current positions").props.accessibilityState.expanded).toBe(false);
+  await act(async () => button("Collapse current leaders").props.onPress());
+  expect(button("Expand current leaders").props.accessibilityState.expanded).toBe(false);
   expect(button("Collapse athlete panel").props.accessibilityState.expanded).toBe(true);
   await act(async () => button("Collapse athlete panel").props.onPress());
   expect(button("Expand athlete panel").props.accessibilityState.expanded).toBe(false);
-  await act(async () => button("Expand current positions").props.onPress());
-  expect(button("Collapse current positions").props.accessibilityState.expanded).toBe(true);
+  await act(async () => button("Expand current leaders").props.onPress());
+  expect(button("Collapse current leaders").props.accessibilityState.expanded).toBe(true);
   expect(button("Zoom in")).toBeUndefined();
   const replay = renderer.root.findAllByType("ReplayButton" as never)[0].parent!;
   const stopPropagation = vi.fn();
@@ -120,7 +120,7 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
   await act(async () => map().props.onSelect(map().props.selectedId));
   expect(map().props.distanceTarget).toBeNull();
   expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(1);
-  expect(button("Collapse current positions")).toBeDefined();
+  expect(button("Collapse current leaders")).toBeDefined();
   await act(async () => button("Collapse athlete panel").props.onPress());
   expect(button("Expand athlete panel")).toBeDefined();
   expect(overview()).toBeDefined();
@@ -168,7 +168,7 @@ it("keeps a navigable overview inside the athlete panel across collapse and expa
   await act(async () => button("Expand athlete panel").props.onPress());
   expect(overview()).toBeDefined();
 });
-it("focuses an athlete from current positions without opening their profile", async () => {
+it("focuses an athlete from current leaders without opening their profile", async () => {
   const entry = renderer.root.findAllByType("Pressable" as never).find(node => String(node.props.accessibilityLabel).startsWith("Focus "))!;
   expect(entry).toBeDefined();
   await act(async () => entry.props.onPress());

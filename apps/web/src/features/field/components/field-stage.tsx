@@ -1,4 +1,5 @@
 "use client";
+import { Sheet } from "@/ui/sheet";
 import { FieldViewSwitcher } from "./field-view-switcher";
 import { GeographicCourse } from "@/features/course/geographic-course";
 import { useCompetitionCourse } from "@/features/course/use-competition-course";
@@ -42,6 +43,8 @@ export function FieldStage({
   model,
   persistent = false,
   backgroundMode = false,
+  externalAthleteFocus,
+  onFocusAthlete,
   externalCourseTarget,
   onOptionsChange,
   presentationVisible = true,
@@ -59,6 +62,8 @@ export function FieldStage({
   persistent?: boolean;
   backgroundMode?: boolean;
   onOptionsChange?: (options: ReactNode | null) => void;
+  externalAthleteFocus?: { id: string; request: number } | null;
+  onFocusAthlete?: (id: string) => void;
   externalCourseTarget?: CourseDistanceTarget | null;
   presentationVisible?: boolean;
   onDetails?: () => void;
@@ -144,7 +149,9 @@ export function FieldStage({
   const liveCenterRef = useRef(0);
   const showGhost = true;
   const [selected, setSelected] = useState<string | null>(null);
+  const [profileLane, setProfileLane] = useState<ArenaSceneLane | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
+  useEffect(() => { if (externalAthleteFocus) { setSelected(externalAthleteFocus.id); const runner = runners.find(item => item.id === externalAthleteFocus.id); if (runner) setCenter(valueAt(runner, time)); setCourseTarget(null); setFocusRequest(value => value + 1); } }, [externalAthleteFocus]);
   const toggleSelect = (id: string) => {
     const runner =
       runners.find((item) => item.id === id) ??
@@ -359,10 +366,10 @@ export function FieldStage({
       </div>
 
       {!queueOverlay && (viewDimension !== "4d" || course) ? <>
-      <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Live intervals">
+      <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Current leaders">
         <button type="button" className="focus-panel-toggle" aria-label={intervalsCollapsed ? "Expand live intervals" : "Collapse live intervals"} aria-expanded={!intervalsCollapsed} onClick={() => setIntervalsCollapsed(value => !value)}><span className="focus-panel-grip" aria-hidden="true" /></button>
         <div className="focus-panel-content" inert={intervalsCollapsed} aria-hidden={intervalsCollapsed}>
-          <span className="focus-broadcast-tower-kicker">LIVE INTERVALS</span>
+          <span className="focus-broadcast-tower-kicker">CURRENT LEADERS</span>
           {coursePositionLeaders(ranked).map((peer, idx) => {
             const delta = peer.value - leaderValue;
             const isSelected = (trackSelected || you.id) === peer.id;
@@ -521,6 +528,7 @@ export function FieldStage({
       hidden={!persistent && !tabActive}
       aria-hidden={!persistent && !tabActive}
     >
+      <Sheet open={Boolean(profileLane)} title={profileLane?.name ?? "Athlete"} body="" onClose={() => setProfileLane(null)}>{profileLane ? <><UserAvatar src={profileLane.avatarUrl} name={profileLane.name} size={64} /><p>{profileLane.value.toFixed(2)} {unit} this event</p><p>{scoreMap[profileLane.id] ?? "—"} effort score</p></> : null}</Sheet>
       {!standingsOnly && !lanesImmersive ? <div style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
         <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
           standings={standingsOpen} onStandings={queueOverlay ? undefined : () => { cancelCenterTween(); setStandingsOpen(true); }} />
@@ -705,18 +713,20 @@ export function FieldStage({
                 const bar = standingsBar(lane.value, leaderValue, r);
                 const elo = scoreMap[lane.id];
                 return (
-                  <button
+                  <div
                     key={lane.id}
-                    type="button"
                     role="listitem"
                     className={
                       lane.you
                         ? "focus-standing-bar-row is-you"
                         : "focus-standing-bar-row"
                     }
-                    onClick={() => toggleSelect(lane.id)}
+                    onClick={() => onFocusAthlete ? onFocusAthlete(lane.id) : toggleSelect(lane.id)}
+                    tabIndex={0}
+                    onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); if (onFocusAthlete) onFocusAthlete(lane.id); else toggleSelect(lane.id); } }}
                   >
                     <span className="focus-standing-rank">{r}</span>
+                    <button type="button" aria-label={`Open ${lane.name}'s profile`} onClick={event => { event.stopPropagation(); setProfileLane(lane); }} style={{ border: 0, padding: 0, background: "transparent", cursor: "pointer" }}>
                     <UserAvatar
                       src={lane.avatarUrl}
                       name={lane.name}
@@ -739,6 +749,7 @@ export function FieldStage({
                         </svg>
                       }
                     />
+                    </div>
                     <div className="focus-standing-bar-content">
                       <div className="focus-standing-bar-top">
                         <strong className="focus-standing-name">
@@ -767,7 +778,7 @@ export function FieldStage({
                         />
                       </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
               {ghost ? (

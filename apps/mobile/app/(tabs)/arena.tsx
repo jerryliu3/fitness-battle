@@ -46,6 +46,8 @@ export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
   useEffect(() => { if (!persistent || !focused || !experience.immersive) return; const sub = BackHandler.addEventListener("hardwareBackPress", () => { exit(); return true; }); return () => sub.remove(); }, [focused, persistent, experience.immersive, exit]);
   const requestedEvent=useGlobalSearchParams<{event?:string}>().event;
   const crewApi = useCrewApi();
+  const [creditsBottom, setCreditsBottom] = useState(360);
+  const [athleteFocus, setAthleteFocus] = useState<{ id: string; request: number } | null>(null);
   const [courseOptions, setCourseOptions] = useState<React.ReactNode>(null);
   const [courseTarget, setCourseTarget] = useState<{ value: number; request: number } | null>(null);
   useEffect(() => setCourseTarget(null), [accountKey, experience.event?.sport]);
@@ -139,8 +141,8 @@ export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
   const overviewModel = persistent && selectedSport && selectedSport !== "sleep" ? buildArenaModel(state, undefined, track, selectedSport) : null;
   return (
     <SafeAreaView pointerEvents={persistent ? "box-none" : "auto"} style={[f.safe, persistent && { backgroundColor: "transparent" }]} edges={[]}>
-      {persistent && selectedSport && selectedSport !== "sleep" ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}`} sport={selectedSport} track={track} persistent backgroundMode onOptionsChange={setCourseOptions} externalCourseTarget={courseTarget} presentationActive={experience.immersive} onExit={exit} /> : null}
-      <ArenaSheet persistent={persistent} expandRequest={expandRequest} active={focused && experience.immersive} overview={overviewModel && !queue?.queued && !queue?.awaitingField ? <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><View style={{ flex: 1 }}><FieldOverview hiddenIds={blocks.map(block => block.id)} lanes={overviewModel.lanes.filter(lane => !lane.ghost).map(lane => ({ ...lane, value: lane.values[2], initials: "" }))} unit={overviewModel.unit} positionOnly view={{ center: courseTarget?.value ?? overviewModel.lanes.find(lane => lane.you)?.values[2] ?? 0, span: 1 }} onNavigate={value => setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }))} /></View>{courseOptions}</View> : undefined}>
+      {persistent && selectedSport && selectedSport !== "sleep" ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}`} sport={selectedSport} track={track} persistent backgroundMode creditsBottom={creditsBottom} externalAthleteFocus={athleteFocus} onOptionsChange={setCourseOptions} externalCourseTarget={courseTarget} presentationActive={experience.immersive} onExit={exit} /> : null}
+      <ArenaSheet onCoverageChange={setCreditsBottom} persistent={persistent} expandRequest={expandRequest} active={focused && experience.immersive} overview={overviewModel && !queue?.queued && !queue?.awaitingField ? <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><View style={{ flex: 1 }}><FieldOverview hiddenIds={blocks.map(block => block.id)} lanes={overviewModel.lanes.filter(lane => !lane.ghost).map(lane => ({ ...lane, value: lane.values[2], initials: "" }))} unit={overviewModel.unit} positionOnly view={{ center: courseTarget?.value ?? overviewModel.lanes.find(lane => lane.you)?.values[2] ?? 0, span: 1 }} onNavigate={value => setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }))} /></View>{courseOptions}</View> : undefined}>
 <SectionStack divided={false}>
         {!persistent && <View style={{ gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><AppText role="display" accessibilityRole="header">Compete</AppText><FocusButton label="+ Register" secondary onPress={openRegistration} /></View><AppText role="body" secondary>Your events</AppText></View>}
         {standingsStale ? (
@@ -149,7 +151,7 @@ export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
           </AppText>
         ) : null}
         {!persistent && <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />}
-        {persistent ? selectedSport && selectedSport !== "sleep" ? <CompetitionField sport={selectedSport} track={track} standingsOnly /> : null : <>
+        {persistent ? selectedSport && selectedSport !== "sleep" ? <CompetitionField sport={selectedSport} track={track} standingsOnly onFocusAthlete={id => { setCourseTarget(null); setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} /> : null : <>
           <EventHome state={state} accountKey={accountKey} onEnter={experience.enter} onRecovery={() => setSelection({ account: accountKey, sport: "sleep" })} />
           {selectedSport === "sleep" && (queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event="sleep" now={now} onCancel={() => dispatch({ type: "opt-out-health", metric: "sleep" })} /> : <SleepPanel state={state} dispatch={dispatch} />)}
         </>}
@@ -243,6 +245,6 @@ export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
   );
 }
 
-function ArenaSheet({ persistent, children, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean; overview?: React.ReactNode }) {
+function ArenaSheet({ persistent, children, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean; overview?: React.ReactNode; onCoverageChange?: (height: number) => void }) {
   return persistent ? <CompeteSheet {...props}>{children}</CompeteSheet> : <ScrollView contentContainerStyle={f.content}>{children}</ScrollView>;
 }

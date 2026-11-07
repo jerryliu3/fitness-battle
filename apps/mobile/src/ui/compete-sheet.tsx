@@ -6,7 +6,7 @@ import { textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
 
 /** Moving the sheet changes coverage without resizing the retained field. */
-export function CompeteSheet({ children, expandRequest, active, overview }: { children: ReactNode; expandRequest: number; active: boolean; overview?: ReactNode }) {
+export function CompeteSheet({ children, expandRequest, active, overview, onCoverageChange }: { children: ReactNode; expandRequest: number; active: boolean; overview?: ReactNode; onCoverageChange?: (height: number) => void }) {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const bottom = 0;
@@ -22,17 +22,19 @@ export function CompeteSheet({ children, expandRequest, active, overview }: { ch
   const snap = (next: number) => {
     indexRef.current = next;
     setIndex(next);
+    onCoverageChange?.(stops[next]);
     Animated.timing(offset, { toValue: maximum - stops[next], duration: reduced ? 0 : 280, useNativeDriver: true }).start();
   };
   const snapRef = useRef(snap);
   snapRef.current = snap;
-  useEffect(() => { offset.setValue(maximum - [minimum, maximum * .42, maximum][indexRef.current]); }, [maximum, offset, insets.bottom, minimum]);
+  useEffect(() => { onCoverageChange?.([minimum, maximum * .42, maximum][indexRef.current]); offset.setValue(maximum - [minimum, maximum * .42, maximum][indexRef.current]); }, [maximum, offset, insets.bottom, minimum]);
   useEffect(() => { if (expandRequest) snapRef.current(2); }, [expandRequest]);
   useEffect(() => () => offset.stopAnimation(), [offset]);
+  const coverageRef = useRef(onCoverageChange); coverageRef.current = onCoverageChange;
   const pan = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onPanResponderGrant: () => offset.stopAnimation(value => { origin.current = value; }),
-    onPanResponderMove: (_, gesture) => offset.setValue(Math.max(0, Math.min(maximum - minimum, origin.current + gesture.dy))),
+    onPanResponderMove: (_, gesture) => { const value = Math.max(0, Math.min(maximum - minimum, origin.current + gesture.dy)); offset.setValue(value); coverageRef.current?.(maximum - value); },
     onPanResponderRelease: (_, gesture) => {
       if (Math.abs(gesture.dy) < 5) { snapRef.current(indexRef.current === 2 ? 1 : 2); return; }
       const visible = maximum - origin.current - gesture.dy - gesture.vy * 100;

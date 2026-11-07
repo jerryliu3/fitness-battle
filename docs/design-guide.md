@@ -854,3 +854,9 @@ scrubber and its settings gear share a row directly above Standings; the gear
 sits immediately to the right of the scrubber. The sheet starts partially open,
 expands to the bottom edge, and adjusts through its handle without visible
 minimize/lower buttons. See [implementation review](reviews/compete-event-home/README.md).
+
+Compete geographic controls use a bare settings gear, Start–Leader scrubber
+labels and a Current Leaders panel. Scrubbing follows the earned course heading
+in perspective mode and cannot seek past the leader. Mapbox credits stay visible
+at the lower-right map edge above the standings sheet. Athlete photos open
+profiles; the rest of a standings row focuses the athlete on the map.

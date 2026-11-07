@@ -49,12 +49,12 @@ export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing
         paddingHorizontal: 12,
         justifyContent: "center",
         borderRadius: 999,
-        backgroundColor: "rgba(20, 20, 19, 0.78)",
-        borderWidth: 1,
+        backgroundColor: "transparent",
+        borderWidth: 0,
         borderColor: "rgba(255, 255, 255, 0.2)",
       }, pressed && { opacity: 0.75 }]}
     >
-      <AppIcon name="settings" size={22} color="#ffffff" />
+      <AppIcon name="settings" size={22} color={c.ink} />
     </Pressable>
     <AnchoredMenu open={open} onClose={close} onDismiss={onReplay ? finishReplay : undefined} menuLayout={menuLayout} accessibilityLabel="Close course options">
       {options.map(option => "value" in option ? <View key={option.label} style={{ minHeight: 52, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 }}>

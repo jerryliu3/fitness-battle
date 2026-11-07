@@ -35,10 +35,11 @@ export function FieldGroundPicker({ appearance, onChange }: { appearance: FieldA
   </>;
 }
 export function FieldOverview({ lanes, view, unit, onNavigate, positionOnly = false }: { lanes: ArenaSceneLane[]; view: ArenaViewWindow; unit: string; onNavigate: (value: number) => void; positionOnly?: boolean }) {
-  const overview = fieldOverview(lanes, view);
+  const baseOverview = fieldOverview(lanes, view);
+  const overview = positionOnly ? { ...baseOverview, high: Math.max(.001, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value)) } : baseOverview;
   const [scrubbing, setScrubbing] = useState(false);
   return <div className="focus-field-overview">
-    <span>0</span>
+    <span>{positionOnly ? "Start" : "0"}</span>
     <div role="slider" tabIndex={0} aria-label={positionOnly ? "Course distance target" : "Field distance overview"} aria-valuemin={0} aria-valuemax={overview.high} aria-valuenow={Math.min(overview.high, Math.max(0, view.center))} aria-valuetext={`${view.center.toFixed(1)} ${unit}`} className="focus-overview-map"
       onKeyDown={e => { if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) { e.preventDefault(); onNavigate(e.key === "Home" ? 0 : e.key === "End" ? overview.high : Math.max(0, Math.min(overview.high, view.center + (e.key === "ArrowRight" ? 1 : -1) * view.span / 4))); } }}
       onPointerDown={e => { if (!e.isPrimary || e.button !== 0) return; e.currentTarget.setPointerCapture(e.pointerId); setScrubbing(true); const r = e.currentTarget.getBoundingClientRect(); onNavigate(overviewTarget((e.clientX - r.left) / r.width, overview.high)); }}
@@ -46,6 +47,6 @@ export function FieldOverview({ lanes, view, unit, onNavigate, positionOnly = fa
       onPointerUp={() => setScrubbing(false)} onPointerCancel={() => setScrubbing(false)} onLostPointerCapture={() => setScrubbing(false)}>
       <i className="focus-overview-window" style={positionOnly ? { left: `${Math.max(0, Math.min(1, view.center / overview.high)) * 100}%`, width: 2, top: 8, height: 28 } : { left: `${overview.from * 100}%`, width: `${overview.width * 100}%` }}/>
       {lanes.filter(l => !l.ghost).map(l => <i key={l.id} className={l.you ? "is-you" : ""} style={{ left: `${Math.max(0, Math.min(100, l.value / overview.high * 100))}%` }}/>) }
-    </div><span>{overview.high.toFixed(1)} {unit}</span>
+    </div><span>{positionOnly ? "Leader" : `${overview.high.toFixed(1)} ${unit}`}</span>
   </div>;
 }
