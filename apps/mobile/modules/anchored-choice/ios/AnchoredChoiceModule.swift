@@ -6,6 +6,9 @@ public class AnchoredChoiceModule: Module {
     Name("AnchoredChoice")
     View(AnchoredChoiceView.self) {
       Events("onSelect")
+      Prop("backButton") { (view: AnchoredChoiceView, enabled: Bool) in
+        if enabled { view.configureBack() }
+      }
       Prop("options") { (view: AnchoredChoiceView, options: [[String: String]]) in
         view.options = options
         view.updateMenu()
@@ -33,6 +36,25 @@ final class AnchoredChoiceView: ExpoView {
     super.init(appContext: appContext)
     button.showsMenuAsPrimaryAction = true
     addSubview(button)
+  }
+
+  private var backConfigured = false
+
+  func configureBack() {
+    guard !backConfigured else { return }
+    backConfigured = true
+    button.showsMenuAsPrimaryAction = false
+    button.menu = nil
+    var configuration: UIButton.Configuration
+    if #available(iOS 26.0, *) { configuration = .glass() }
+    else { configuration = .plain(); configuration.background.backgroundColor = UIColor.secondarySystemBackground.withAlphaComponent(0.7) }
+    configuration.background.backgroundColor = UIColor.white.withAlphaComponent(0.24)
+    configuration.baseForegroundColor = UIColor(red: 20/255, green: 43/255, blue: 59/255, alpha: 1)
+    configuration.image = UIImage(systemName: "chevron.backward")
+    configuration.cornerStyle = .capsule
+    button.configuration = configuration
+    button.accessibilityLabel = "Back to events"
+    button.addAction(UIAction { [weak self] _ in self?.onSelect(["value": "back"]) }, for: .touchUpInside)
   }
 
   override func layoutSubviews() {

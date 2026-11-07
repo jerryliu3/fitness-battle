@@ -1,3 +1,4 @@
+import IconSettings from "@tabler/icons-react-native/IconSettings";
 import IconRun from "@tabler/icons-react-native/IconRun";
 import IconWalk from "@tabler/icons-react-native/IconWalk";
 import IconBike from "@tabler/icons-react-native/IconBike";
@@ -27,7 +28,7 @@ const icons = {
   running: IconRun, walking: IconWalk, cycling: IconBike, strength: IconBarbell,
   person: IconUser, home: IconHome, compete: IconFlag, progress: IconChartLine, crew: IconUsers,
   sync: IconRefresh, back: IconArrowLeft, plus: IconPlus, expand: IconMaximize, edit: IconPencil,
-  preferences: IconAdjustmentsHorizontal, notifications: IconBell, scoring: IconChartBar,
+  settings: IconSettings, preferences: IconAdjustmentsHorizontal, notifications: IconBell, scoring: IconChartBar,
   external: IconArrowUpRight, chevron: IconChevronRight, flame: IconFlameFilled,
   replay: IconReload, block: IconBan,
 };

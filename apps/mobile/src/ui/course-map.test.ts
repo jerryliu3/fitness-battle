@@ -1,3 +1,4 @@
+vi.mock("./app-icon", () => ({ AppIcon: "AppIcon" }));
 const activity = vi.hoisted(() => ({ active: true }));
 vi.mock("./use-scene-active", () => ({ useSceneActive: () => activity.active }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "camera-test" } }) }));
@@ -242,4 +243,21 @@ it("ignores [0, 0] null island camera changes and preserves camera pose across t
 
   // Camera must not re-fly or reset to [0, 0]
   expect(calls.setCamera).not.toHaveBeenCalled();
+});
+
+it("publishes working course controls to the sheet and removes the map's duplicate menu", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const onOptionsChange = vi.fn(), onChoose2D = vi.fn();
+  await act(async () => { renderer = create(createElement(CourseMap, {
+    course: createRaceCourse("City", [[0, 0], [.02, 0]]), lanes: [], unit: "km", selectedId: "", focusRequest: 0, onSelect() {}, onChoose2D, onOptionsChange,
+  })); });
+  const options = () => onOptionsChange.mock.calls.at(-1)![0];
+  expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Course options")).toBe(false);
+  expect(options().props.spaced).toBe(true);
+  await act(async () => options().props.onToggleSpacing());
+  expect(options().props.spaced).toBe(false);
+  await act(async () => options().props.onChoose2D());
+  expect(onChoose2D).toHaveBeenCalledOnce();
+  await act(async () => renderer.unmount());
+  expect(onOptionsChange).toHaveBeenLastCalledWith(null);
 });

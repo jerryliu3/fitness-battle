@@ -1,4 +1,4 @@
-.compete-sheet{position:fixed;left:0;right:0;bottom:0;height:calc(100dvh - env(safe-area-inset-top));z-index:120;border-radius:24px 24px 0 0;background:var(--paper);color:var(--ink);box-shadow:0 -8px 32px #142b3b18;display:flex;flex-direction:column;transition:transform 280ms cubic-bezier(.22,1,.36,1);overflow:hidden}
+.compete-sheet{position:fixed;left:0;right:0;bottom:0;height:calc(100dvh - env(safe-area-inset-top));z-index:120;border-radius:24px 24px 0 0;background:var(--paper);color:var(--ink);box-shadow:0 -8px 32px #142b3b18;display:flex;flex-direction:column;transition:transform 280ms cubic-bezier(.22,1,.36,1);overflow:visible}
 .compete-sheet-grip{height:44px;flex:none;display:grid;place-items:center;touch-action:none;cursor:ns-resize}
 .compete-sheet-grip span{height:4px;width:40px;border-radius:4px;background:var(--muted)}
 .compete-sheet-heading{display:flex;align-items:center;gap:8px;padding:0 20px 8px;min-height:32px;flex:none}
@@ -18,9 +18,10 @@
 .compete-event-card>strong{font:var(--type-heading)}
 .compete-event-card>small{color:var(--muted)}
 .compete-event-preview{display:grid;align-content:space-around;min-height:64px;border-radius:12px;padding:8px 12px;background:var(--paper)}
-.compete-event-preview>div{position:relative;height:2px;background:var(--line)}
-.compete-event-preview i{position:absolute;top:-4px;width:10px;height:10px;border-radius:50%}
 
-.compete-immersive-hud .focus-broadcast-top{top:max(56px,env(safe-area-inset-top))}
-.compete-immersive-hud .focus-broadcast-tower{top:120px}
+.compete-immersive-hud .focus-broadcast-top{top:max(12px,env(safe-area-inset-top))}
+.compete-immersive-hud .focus-broadcast-tower{top:76px}
 .focus-field-expanded:has(.compete-immersive-hud) .geographic-map-controls{top:112px;bottom:auto;left:auto;right:12px;max-width:50%}
+
+.compete-event-preview{height:144px;min-height:144px;padding:0;overflow:hidden;display:grid;place-items:center}
+.compete-sheet-overview{padding:0 16px 8px;flex:none}.compete-sheet-overview-row{display:flex;align-items:center;gap:8px}.compete-sheet-overview-track{flex:1;min-width:0}

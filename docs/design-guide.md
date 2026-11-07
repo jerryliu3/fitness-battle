@@ -836,3 +836,20 @@ seconds, pause expiry while saving, and offer a visible Dismiss action. Account
 conflicts stay until acted on or dismissed and take precedence over informational
 sync feedback. A failed retry can show the same error again. Web uses a fixed
 portal with safe-area offsets and the same actions and dismissal policy.
+
+
+### Compete event home and sheet controls — November 7, 2026
+
+Compete is an event home with the shared app navigation. Tap a registered event
+to reveal its retained immersive field; Back returns to the home. Geographic
+event cards use static Mapbox previews of assigned courses, retaining map
+attribution. Queued events wait for course assignment, and points events use
+an explicit points placeholder.
+
+The immersive header omits the redundant sport pill and places native UIKit
+glass Back at the top safe inset on supported iOS. The standings sheet keeps its
+rows laid out below the viewport while minimized. Inside the sheet, the course
+scrubber and its settings gear share a row directly above Standings; the gear
+sits immediately to the right of the scrubber. The sheet starts partially open,
+expands to the bottom edge, and adjusts through its handle without visible
+minimize/lower buttons. See [implementation review](reviews/compete-event-home/README.md).

@@ -1,3 +1,5 @@
+vi.mock("../features/use-competition-course", () => ({ useCompetitionCourse: () => ({ course: null, error: "" }) }));
+vi.mock("../lib/env", () => ({ mobileEnv: { mapboxAccessToken: "" } }));
 vi.mock("./compete-sheet", () => ({ CompeteSheet: "CompeteSheet" }));
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: vi.fn() }) }));
 vi.mock("../features/athlete-profile-sheet", () => ({ AthleteProfileSheet: "AthleteProfileSheet" }));
@@ -36,6 +38,7 @@ vi.mock("react-native", async () => {
   return {
     StyleSheet: { create: (styles: unknown) => styles },
     View,
+    Image: "Image",
     Modal: "Modal",
     Animated: { View: "View", Value: class { constructor(public value: number) {} interpolate(config: unknown) { return config; } }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
     Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x },
