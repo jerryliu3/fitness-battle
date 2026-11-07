@@ -1,6 +1,8 @@
 "use client";
+import { colors as c } from "@/theme/app-colors";
+
 import { useId, useState } from "react";
-import { initialsFromName, SHELL_COLORS as c } from "@fitness-battle/shared";
+import { initialsFromName } from "@fitness-battle/shared";
 import { typographyStyle } from "./section";
 /** SVG identity for standings; retains a useful fallback if the image fails. */
 export function UserAvatarSvg({ src, name, x, y, size = 34 }: { src?: string | null; name: string; x: number; y: number; size?: number }) {

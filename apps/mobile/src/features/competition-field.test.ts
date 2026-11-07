@@ -6,7 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { defaultFieldAppearance, freshState, reduceCompete, DEMO_RACE_COURSE } from "@fitness-battle/shared";
 const mocks = vi.hoisted(() => ({ fly: vi.fn(), path: "/arena", appState: null as null | ((status: string) => void) }));
 vi.mock("expo-router", () => ({ usePathname: () => mocks.path }));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   Modal: "Modal",
   Animated: { View: "View", Value: class { constructor(public value: number) {} interpolate(config: unknown) { return config; } }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
   Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x }, Pressable: "Pressable", ScrollView: "ScrollView", Text: "Text", View: "View",
@@ -35,7 +35,7 @@ vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("../ui/polished-racer", () => ({ PolishedRacer: "PolishedRacer" }));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
 vi.mock("../ui/field-course", () => ({ FieldOverview: "FieldOverview", useFieldAppearance: () => [defaultFieldAppearance, vi.fn()] }));
-vi.mock("../ui/focus", () => ({ f: {} }));
+vi.mock("../ui/focus", () => ((()=>{const mock={ f: {} };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 vi.mock("../lib/haptics", () => ({ playCue() {} }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: reduceCompete(freshState(new Date("2026-10-26T18:00:00Z")), { type: "opt-in", sport: "running", now: "2026-10-26T09:00:00Z" }), accountKey: "test" }) }));
 import { CompetitionField } from "./competition-field";

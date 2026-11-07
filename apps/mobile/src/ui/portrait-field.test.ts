@@ -6,7 +6,7 @@ vi.mock("./field-overlay-motion", () => ({ FieldOverlayGroup: "FieldOverlayGroup
 vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./club-art", () => ({ alpineTrail: 1 }));
 vi.mock("./field-course", () => ({ drawFieldNode: () => null }));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   Platform: { OS: "ios" },
   PanResponder:{create:(handlers:object)=>({panHandlers:handlers})},
   ScrollView:"ScrollView",

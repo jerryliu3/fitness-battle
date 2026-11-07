@@ -1,19 +1,15 @@
+import { homeHealthColors } from "@fitness-battle/shared";
+import { createThemedStyles, useThemedStyles, useHomeHealthColors } from "../theme";
 import { useState } from "react";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
-import {
-  HOME_HEALTH_COLORS as colors,
-  formatHealthNumber,
-  buildHealth7DayCorridorModel,
-  competeNow,
-  healthSignal,
-  healthSignalRange,
-  homeHealthMetrics,
-  type CompeteState,
-} from "@fitness-battle/shared";
+import { formatHealthNumber, buildHealth7DayCorridorModel, competeNow, healthSignal, healthSignalRange, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
 import { AppText, chartTextProps } from "../ui/section";
 
 export function DailyHealth({ state }: { state: CompeteState }) {
+const colors=useHomeHealthColors();
+const s=useThemedStyles(sThemes);
+
   const metrics = homeHealthMetrics(state);
   const [expanded, setExpanded] = useState<string | null>(null);
   const { fontScale, width } = useWindowDimensions();
@@ -208,7 +204,7 @@ export function DailyHealth({ state }: { state: CompeteState }) {
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const colors=homeHealthColors(themeColors);return {
   panel: { backgroundColor: colors.background, gap: 16 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
@@ -250,4 +246,4 @@ const s = StyleSheet.create({
   },
   alertText: { color: colors.comparison },
   chartBox: { width: "100%", overflow: "hidden" },
-});
+};});

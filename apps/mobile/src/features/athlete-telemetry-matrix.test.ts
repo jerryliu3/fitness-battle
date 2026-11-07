@@ -8,7 +8,7 @@ vi.mock("expo-router", () => ({
   useLocalSearchParams: () => ({ domain: "market" }),
 }));
 
-vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
+vi.mock("react-native", () => ({useColorScheme: () => "light",  AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
   Animated: { createAnimatedComponent: (component: unknown) => component },
   PanResponder: { create: () => ({ panHandlers: {} }) },
   Pressable: "Pressable",
@@ -33,7 +33,7 @@ vi.mock("react-native-svg", () => ({
   Text: "SvgText",
 }));
 
-vi.mock("../ui/focus", () => ({
+vi.mock("../ui/focus", () => ((()=>{const mock={
   f: {
     safe: {},
     content: {},
@@ -77,9 +77,10 @@ vi.mock("../ui/focus", () => ({
   fonts: {
     bodyBold: "System",
   },
-}));
+};return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 
-vi.mock("../theme", () => ({
+vi.mock("../theme", async importOriginal => ({
+  ...await importOriginal<typeof import("../theme")>(),
   SHELL_COLORS: { ink: "#142b3b", muted: "#637482", tennis: "#f7c948" },
   fonts: {
     bodyBold: "System",

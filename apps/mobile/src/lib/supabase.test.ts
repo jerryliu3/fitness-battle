@@ -17,7 +17,7 @@ const mock = vi.hoisted(() => ({
   },
 }));
 vi.mock("react-native-url-polyfill/auto", () => ({}));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   Platform: mock.platform,
   AppState: {
     addEventListener: vi.fn((_type: string, handler: (state: string) => void) => {

@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { ToastProvider } from "./toast";
 import { SHELL_SPACING, SHELL_SECTION, SHELL_RADIUS } from "@fitness-battle/shared";
 import { AppText, PageHeader, textStyle } from "./section";
@@ -19,7 +20,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { SHELL_COLORS as c, mobileSurfaces } from "../theme";
+
 import { useReducedMotion } from "./use-reduced-motion";
 import { IconButton } from "./icon-button";
 import { useDismissPan } from "./use-dismiss-pan";
@@ -56,6 +57,8 @@ export function FocusSheet({
   minimal?: boolean;
   fullScreen?: boolean;
 }) {
+const f=useThemedStyles(fThemes);
+
   // Keep the last open content during exit; callers often clear their selection
   // in onClose, which must not flash a different panel while the sheet slides away.
   const content = useRef({ title, body, children });
@@ -187,6 +190,11 @@ export function FocusSidePanel({
   onClose: () => void;
   children?: ReactNode;
 }) {
+const appearanceColors = useThemeColors();
+
+const c=useThemeColors();
+const f=useThemedStyles(fThemes);
+
   const reduce = useReducedMotion();
   const insets = useSafeAreaInsets();
   const [present, setPresent] = useState(open);
@@ -269,7 +277,7 @@ export function FocusSidePanel({
             backgroundColor: c.paper,
             borderLeftWidth: 1,
             borderLeftColor: c.line,
-            shadowColor: "#000",
+            shadowColor: appearanceColors.shadow,
             shadowOffset: { width: -4, height: 0 },
             shadowOpacity: 0.15,
             shadowRadius: 16,
@@ -332,6 +340,8 @@ export function FocusHeading({
   title: string;
   body?: string;
 }) {
+const f=useThemedStyles(fThemes);
+
   return (
     <View style={f.heading}>
       <Text style={f.kicker}>{kicker}</Text>
@@ -352,6 +362,9 @@ export function FocusButton({
   secondary?: boolean;
   disabled?: boolean;
 }) {
+const c=useThemeColors();
+const f=useThemedStyles(fThemes);
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -390,6 +403,9 @@ export function FocusSegments<T extends string>({
   accent?: boolean;
   variant?: "segments" | "tabs";
 }) {
+const c=useThemeColors();
+const f=useThemedStyles(fThemes);
+
   const reduce = useReducedMotion();
   const [width, setWidth] = useState(0);
   const position = useRef(new Animated.Value(0)).current;
@@ -441,7 +457,7 @@ export function FocusSegments<T extends string>({
           ]}
         >
           <Text
-            style={[f.segmentText, value === option.value && { color: variant === "tabs" || accent ? c.ink : c.card }]}
+            style={[f.segmentText, value === option.value && { color: variant === "tabs" ? c.ink : accent ? c.textOnAction : c.card }]}
           >
             {option.label}
           </Text>
@@ -460,6 +476,8 @@ export function FocusTextButton({
   accessibilityLabel?: string;
   onPress: () => void;
 }) {
+const f=useThemedStyles(fThemes);
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -490,6 +508,8 @@ export function FocusDisclosure({
   compact?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
+const f=useThemedStyles(fThemes);
+
   const [open, setOpen] = useState(initialOpen);
   return (
     <View style={[f.disclosure, compact && f.disclosureCompact, style]}>
@@ -516,7 +536,7 @@ export function FocusDisclosure({
     </View>
   );
 }
-export const f = StyleSheet.create({
+const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobileSurfaces={divider:themeColors.divider};return {
   safe: { flex: 1, backgroundColor: c.paper },
   content: {
     padding: 20,
@@ -596,7 +616,7 @@ export const f = StyleSheet.create({
     ...textStyle("label"),
     flexShrink: 1,
     textAlign: "center",
-    color: c.ink,
+    color: c.textOnAction,
   },
   secondary: {
     backgroundColor: c.card,
@@ -714,4 +734,7 @@ export const f = StyleSheet.create({
     ...textStyle("hero"),
     color: c.ink
 },
-});
+};});
+export const f = fThemes.light;
+
+export function useFocusStyles() { return useThemedStyles(fThemes); }

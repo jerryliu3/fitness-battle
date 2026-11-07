@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { playPattern } from "../lib/haptics";
 import { AppText } from "../ui/section";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,7 +15,7 @@ import { useCompeteStore } from "../lib/compete-store";
 import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
 import { mobileEnv } from "../lib/env";
-import { FocusButton, f } from "../ui/focus";
+import { FocusButton } from "../ui/focus";
 export function WeeklySocialActions({
   result,
   units,
@@ -22,6 +23,8 @@ export function WeeklySocialActions({
   result: PeriodResult;
   units: UnitSystem;
 }) {
+const f=useFocusStyles();
+
   const { debugActive } = useCompeteStore();
   const { user, accessToken, offlineMode } = useAuth(),
     [data, setData] = useState<WeeklySocial | null>(null),

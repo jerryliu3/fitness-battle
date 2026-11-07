@@ -1,11 +1,13 @@
+import { useFocusStyles } from "../ui/focus";
+import { useThemeColors } from "../theme";
 import { AppText, SectionHeader } from "../ui/section";
 import { clubLifetimeTotals } from "@fitness-battle/shared";
-import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
+
 import { distanceUnitLabel, formatDistanceM, type CompeteState } from "@fitness-battle/shared";
 import { useRouter } from "expo-router";
 import { Text, View } from "react-native";
 import { IconButton } from "../ui/icon-button";
-import { f } from "../ui/focus";
+
 import { EffortTrend } from "./effort-trend";
 import { ProfilePhoto } from "./profile-photo";
 
@@ -26,6 +28,9 @@ export function AthleteMetrics({
   onEdit?: () => void;
   sections?: "profile" | "progress";
 }) {
+const clubColors=useThemeColors();
+const f=useFocusStyles();
+
   const router = useRouter();
   const season = clubLifetimeTotals(state);
   const unit = distanceUnitLabel(state.units);

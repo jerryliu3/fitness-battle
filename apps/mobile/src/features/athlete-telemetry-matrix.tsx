@@ -1,15 +1,9 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, View } from "react-native";
 import Svg, { Circle, Path, Polyline, G } from "react-native-svg";
-import {
-  SHELL_COLORS as c,
-  buildAnalyticsLabModel,
-  buildSvgLineGeometry,
-  type AnalyticsDomainId,
-  type AnalyticsTimeLens,
-  type CompeteState,
-} from "@fitness-battle/shared";
+import { buildAnalyticsLabModel, buildSvgLineGeometry, type AnalyticsDomainId, type AnalyticsTimeLens, type CompeteState } from "@fitness-battle/shared";
 import { ChartSvg } from "../ui/chart-text";
 import { AppText } from "../ui/section";
 
@@ -20,6 +14,9 @@ export function AthleteTelemetryMatrix({
   state?: CompeteState | null;
   signedOut?: boolean;
 }) {
+const c=useThemeColors();
+const s=useThemedStyles(sThemes);
+
   const router = useRouter();
   const [timeLens, setTimeLens] = useState<AnalyticsTimeLens>("30d");
   const model = useMemo(() => buildAnalyticsLabModel(state, timeLens), [state, timeLens]);
@@ -212,7 +209,7 @@ function MiniSparkline({
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   container: {
     gap: 14,
     marginVertical: 4,
@@ -256,4 +253,4 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-});
+};});

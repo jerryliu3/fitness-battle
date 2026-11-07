@@ -8,12 +8,12 @@ vi.mock("../ui/route-static-preview", () => ({ RouteStaticPreview: "RouteStaticP
 vi.mock("./competition-moment", () => ({ CompetitionMoment: "CompetitionMoment" }));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaProvider: "SafeAreaProvider", SafeAreaView: "SafeAreaView" }));
-vi.mock("../ui/focus", () => ({
+vi.mock("../ui/focus", () => ((()=>{const mock={
   FocusSheet: "Sheet",
   FocusButton: "Button",
   f: {},
-}));
-vi.mock("react-native", () => ({
+};return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
   Modal: "Modal",
   View: "View",

@@ -2,10 +2,10 @@ vi.mock("../lib/haptics", () => ({ playCue: vi.fn(), playPattern: vi.fn(() => vi
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
-vi.mock("react-native", () => ({ StyleSheet: { create: (value: unknown) => value }, Modal: "Modal", Platform: { OS: "ios" }, Pressable: "Pressable", Text: "Text", View: "View" }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  StyleSheet: { create: (value: unknown) => value }, Modal: "Modal", Platform: { OS: "ios" }, Pressable: "Pressable", Text: "Text", View: "View" }));
 vi.mock("@react-native-community/datetimepicker", () => ({ default: "DateTimePicker" }));
 vi.mock("@react-native-picker/picker", async () => { const { createElement } = await import("react"); return { Picker: Object.assign((props: object) => createElement("Picker", props), { Item: "PickerItem" }) }; });
-vi.mock("./focus", () => ({ f: {} }));
+vi.mock("./focus", () => ((()=>{const mock={ f: {} };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 import { NumberPicker, DateTimeField } from "./form-picker.native";
 let renderer: ReactTestRenderer;
 afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); });

@@ -1,11 +1,14 @@
+import { useThemeColors } from "../theme";
 import { Pressable } from "react-native";
 import { playCue } from "../lib/haptics";
 import { AppIcon } from "./app-icon";
-import { SHELL_COLORS as c } from "../theme";
+
 
 export function IconButton({ icon, label, onPress, disabled = false, haptic = true, primary = false }: {
   icon: "back" | "plus" | "sync" | "expand" | "edit"; label: string; onPress: () => void; disabled?: boolean; haptic?: boolean; primary?: boolean;
 }) {
+const c=useThemeColors();
+
   return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled}
     accessibilityState={{ disabled }} onPress={() => { if (disabled) return; if (haptic) void playCue("light"); onPress(); }}
     style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, borderWidth: 1,

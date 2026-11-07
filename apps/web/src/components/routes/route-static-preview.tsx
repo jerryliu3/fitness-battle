@@ -1,4 +1,6 @@
 "use client";
+import { colors as appearanceColors } from "@/theme/app-colors";
+
 
 import { typographyStyle } from "../../ui/section";
 
@@ -258,15 +260,15 @@ function FallbackSvgRoute({
               cy={startPt[1]}
               r="3.5"
               fill="#22c55e"
-              stroke="#ffffff"
+              stroke={appearanceColors.white}
               strokeWidth="1.2"
             />
             <circle
               cx={endPt[0]}
               cy={endPt[1]}
               r="3.5"
-              fill="#f7c948"
-              stroke="#ffffff"
+              fill={appearanceColors.actionPrimary}
+              stroke={appearanceColors.white}
               strokeWidth="1.2"
             />
           </>

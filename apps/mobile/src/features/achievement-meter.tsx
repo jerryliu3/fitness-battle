@@ -1,9 +1,10 @@
+import { useThemeColors } from "../theme";
 import { View } from "react-native";
 import {
   achievementProgressPercent,
   type ClubAchievement,
 } from "@fitness-battle/shared";
-import { SHELL_COLORS as c } from "../theme";
+
 
 export function AchievementMeter({
   row,
@@ -12,6 +13,8 @@ export function AchievementMeter({
   row: ClubAchievement;
   decorative?: boolean;
 }) {
+const c=useThemeColors();
+
   return (
     <View
       importantForAccessibility={

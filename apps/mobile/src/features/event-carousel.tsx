@@ -1,15 +1,10 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { AppText } from "../ui/section";
 import { competeEventCarouselPageIndex } from "@fitness-battle/shared";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-  type ScrollViewInstance,
-} from "react-native";
+import { ScrollView, useWindowDimensions, View, type ScrollViewInstance } from "react-native";
 import { FocusSegments } from "../ui/focus";
-import { SHELL_COLORS as c } from "../theme";
+
 
 type ClubEvent = { id: string; label: string; badge?: string };
 
@@ -26,6 +21,8 @@ export function EventCarousel({
   onRegister: () => void;
   children: ReactNode;
 }) {
+const s=useThemedStyles(sThemes);
+
   const scroller = useRef<ScrollViewInstance>(null);
   const fromScroll = useRef(false);
   const indexRef = useRef(0);
@@ -119,7 +116,7 @@ export function EventCarousel({
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   page: {
     borderBottomWidth: 1,
     borderColor: c.line,
@@ -127,4 +124,4 @@ const s = StyleSheet.create({
   pageBody: {
     paddingVertical: 14,
   },
-});
+};});

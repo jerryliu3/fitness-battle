@@ -6,7 +6,7 @@ const mock = vi.hoisted(() => ({
   change: null as null | ((value: boolean) => void),
   remove: vi.fn(),
 }));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   AccessibilityInfo: {
     isReduceMotionEnabled: mock.read,
     addEventListener: (_: string, callback: (value: boolean) => void) => {

@@ -1,10 +1,11 @@
+import { useThemeColors } from "../theme";
 import { textStyle } from "./section";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { PanResponder, Text, View } from "react-native";
 import Svg, { Circle, Line } from "react-native-svg";
 import { chartClientXToModel, nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
 import { playCue } from "../lib/haptics";
-import { SHELL_COLORS as c } from "../theme";
+
 
 export type { ChartDatum };
 
@@ -28,6 +29,8 @@ export function ChartScrubber({
   selectedPointId?: string;
   onSelectionChange?: (point: ChartDatum | undefined) => void;
 }) {
+const c=useThemeColors();
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const measuredWidth = useRef(1);
   const lastId = useRef<string | null>(null);

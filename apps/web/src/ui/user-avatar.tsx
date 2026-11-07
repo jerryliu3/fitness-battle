@@ -1,6 +1,8 @@
 "use client";
+import { colors as c } from "@/theme/app-colors";
+
 import { useState, type ReactNode } from "react";
-import { initialsFromName, SHELL_COLORS as c } from "@fitness-battle/shared";
+import { initialsFromName } from "@fitness-battle/shared";
 import { typographyStyle } from "./section";
 
 /** Actual authorized portrait first; initials/icon only if absent or failed. */

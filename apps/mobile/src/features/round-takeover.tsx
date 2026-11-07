@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { playPattern } from "../lib/haptics";
 import { useEffect, useRef } from "react";
 import { Animated } from "react-native";
@@ -19,13 +20,13 @@ import {
 } from "@fitness-battle/shared";
 import { usePathname, useRouter, useGlobalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Modal, ScrollView, Text, View } from "react-native";
+import { Modal, ScrollView, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView, initialWindowMetrics } from "react-native-safe-area-context";
 import { WeeklySocialActions } from "./weekly-social";
 import { ResultCard } from "./result-card";
 import { ReplayViewer } from "./competition-replay";
 
-import { FocusButton, f } from "../ui/focus";
+import { FocusButton } from "../ui/focus";
 function Round({
   state,
   rows,
@@ -35,6 +36,8 @@ function Round({
   rows: PeriodResult[];
   onClose: () => void;
 }) {
+const f=useFocusStyles();
+
   const [stage, setStage] = useState(0);
   const reduced = useReducedMotion();
   const celebrated = useRef(false);

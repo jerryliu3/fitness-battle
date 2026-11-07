@@ -3,7 +3,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
 const scene = vi.hoisted(() => ({ active: true, inject: vi.fn() }));
 vi.mock("./use-scene-active", () => ({ useSceneActive: () => scene.active }));
-vi.mock("react-native", () => ({ View: "View", Text: "Text", StyleSheet: { create: (s: unknown) => s } }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  View: "View", Text: "Text", StyleSheet: { create: (s: unknown) => s } }));
 vi.mock("./section", () => ({ textStyle: () => ({}) }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "https://example.test" } }));
 vi.mock("react-native-webview", async () => {

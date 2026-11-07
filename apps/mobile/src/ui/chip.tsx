@@ -1,7 +1,8 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { type ReactNode } from "react";
-import { Pressable, ScrollView, StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import { Pressable, ScrollView, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import { AppText } from "./section";
-import { SHELL_COLORS as c, SHELL_RADIUS } from "../theme";
+import { SHELL_RADIUS } from "../theme";
 import { playCue } from "../lib/haptics";
 
 /**
@@ -9,6 +10,8 @@ import { playCue } from "../lib/haptics";
  * Keeps selectors on 1 line and lets them overflow/scroll smoothly off-screen.
  */
 export function ChipRow({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+const s=useThemedStyles(sThemes);
+
   return (
     <ScrollView
       horizontal
@@ -41,6 +44,8 @@ export function Chip({
   style,
   labelStyle,
 }: ChipProps) {
+const s=useThemedStyles(sThemes);
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -62,7 +67,7 @@ export function Chip({
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -88,4 +93,4 @@ const s = StyleSheet.create({
     color: c.ink,
     fontVariant: ["tabular-nums"],
   },
-});
+};});

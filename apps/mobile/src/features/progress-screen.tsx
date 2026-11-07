@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { SectionStack, Section, TextAction } from "../ui/section";
 import { MotionStep } from "../ui/motion-step";
 import { Achievements } from "./club-achievements";
@@ -6,7 +7,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../lib/compete-store";
-import { FocusSegments, f } from "../ui/focus";
+import { FocusSegments } from "../ui/focus";
 import { AwardShelf } from "../ui/award-shelf";
 import {
   awardCards,
@@ -15,6 +16,8 @@ import { TrainingHistory } from "./training-history";
 import { AthleteMetrics } from "./athlete-metrics";
 import { AthleteTelemetryMatrix } from "./athlete-telemetry-matrix";
 export function ProgressScreen() {
+const f=useFocusStyles();
+
   const { state, accountKey } = useCompeteStore();
   const router = useRouter();
   const params=useLocalSearchParams<{view?:string}>();

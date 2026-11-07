@@ -10,7 +10,7 @@ const mock = vi.hoisted(() => ({ id: "alice", token: "alice", resume: null as nu
 vi.mock("./auth", () => ({ useAuth: () => ({ user: { id: mock.id }, accessToken: mock.token, offlineMode: false }) }));
 vi.mock("./env", () => ({ mobileEnv: { apiUrl: "https://test.local" } }));
 vi.mock("expo-router", () => ({ useFocusEffect: (effect: () => (() => void) | void) => useEffect(effect, [effect]) }));
-vi.mock("react-native", () => ({ AppState: { addEventListener: (_: string, listener: (state: string) => void) => {
+vi.mock("react-native", () => ({useColorScheme: () => "light",  AppState: { addEventListener: (_: string, listener: (state: string) => void) => {
   mock.resume = listener;
   return { remove() {} };
 } } }));

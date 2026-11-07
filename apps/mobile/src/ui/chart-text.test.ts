@@ -2,7 +2,7 @@ vi.mock("../lib/haptics", () => ({ playCue: vi.fn(), playPattern: vi.fn(() => vi
 import { createElement } from "react";
 import { act, create } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
-vi.mock("react-native", () => ({ Text: "Text", View: "View", Pressable: "Pressable", StyleSheet: { create: (x: unknown) => x }, useWindowDimensions: () => ({ fontScale: 2 }) }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  Text: "Text", View: "View", Pressable: "Pressable", StyleSheet: { create: (x: unknown) => x }, useWindowDimensions: () => ({ fontScale: 2 }) }));
 vi.mock("react-native-svg", () => ({ default: "Svg", Text: "SvgText" }));
 import { ChartSvg, ChartText } from "./chart-text";
 

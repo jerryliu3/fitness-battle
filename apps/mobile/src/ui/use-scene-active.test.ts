@@ -2,7 +2,7 @@ import { createElement, useEffect } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 const mock = vi.hoisted(() => ({ status: "active", listener: null as null | ((status: string) => void), blur: null as null | (() => void), remove: vi.fn() }));
-vi.mock("react-native", () => ({ AppState: { get currentState() { return mock.status; }, addEventListener: (_: string, listener: (s: string) => void) => { mock.listener = listener; return { remove: mock.remove }; } } }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  AppState: { get currentState() { return mock.status; }, addEventListener: (_: string, listener: (s: string) => void) => { mock.listener = listener; return { remove: mock.remove }; } } }));
 vi.mock("expo-router", () => ({ useFocusEffect: (effect: () => () => void) => useEffect(() => { mock.blur = effect(); return mock.blur; }, [effect]) }));
 import { useSceneActive } from "./use-scene-active";
 it("stops retained scenes on inactivity or blur and removes its listener", async () => {

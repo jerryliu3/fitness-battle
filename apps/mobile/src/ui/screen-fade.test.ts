@@ -3,7 +3,7 @@ import { act, create } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
 const motion = vi.hoisted(() => ({ reduced: false, pending: [] as Array<{ target: number; done?: (result: { finished: boolean }) => void; stopped: boolean }> }));
 vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => motion.reduced }));
-vi.mock("react-native", () => ({ Animated: {
+vi.mock("react-native", () => ({useColorScheme: () => "light",  Animated: {
   View: "AnimatedView",
   Value: class { setValue() {} },
   timing: (_value: unknown, options: { toValue: number }) => {

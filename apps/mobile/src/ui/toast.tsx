@@ -1,15 +1,18 @@
+import { useThemeColors } from "../theme";
 import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { PanResponder, Platform, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FullWindowOverlay } from "react-native-screens";
 import { AppText } from "./section";
-import { SHELL_COLORS as c } from "../theme";
+
 
 type ToastAction = { label: string; onPress: () => void; disabled?: boolean };
 type Notice = { id: string; message: string; dismiss: () => void; action?: ToastAction; durationMs: number | null; priority: number };
 const ToastContext = createContext<{ show: (notice: Notice) => void; remove: (id: string) => void } | null>(null);
 
 function ToastNotice({ notice }: { notice: Notice }) {
+const c=useThemeColors();
+
   const latest = useRef(notice.dismiss);
   latest.current = notice.dismiss;
   useEffect(() => {

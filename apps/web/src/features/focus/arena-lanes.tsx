@@ -1,4 +1,6 @@
 "use client";
+import { colors as appearanceColors } from "@/theme/app-colors";
+
 import { AthletePennant } from "../field/components/athlete-pennant";
 import { useFieldGestures } from "../field/use-field-gestures";
 import { UserAvatarSvg } from "@/ui/user-avatar-svg";
@@ -287,7 +289,7 @@ export function ArenaLanes({
               {l.you && charging > 0.02 && (
                 <g
                   opacity={charging}
-                  stroke="#f1c75b"
+                  stroke={appearanceColors.actionPrimary}
                   strokeWidth="2"
                   strokeLinecap="round"
                   pointerEvents="none"
@@ -304,7 +306,7 @@ export function ArenaLanes({
                   cy={yy}
                   r={19 + effect.ripple * 24}
                   fill="none"
-                  stroke="#f1c75b"
+                  stroke={appearanceColors.actionPrimary}
                   strokeWidth={3 - effect.ripple * 2}
                   opacity={1 - effect.ripple}
                   pointerEvents="none"
@@ -312,7 +314,7 @@ export function ArenaLanes({
                 />
               )}
               {/* Local echoes own their animation; replay only moves the parent marker. */}
-              {l.mystery ? <g data-mystery-marker="true"><circle cx={xx} cy={yy} r={18} fill="white" stroke="#616c63" strokeWidth={2} strokeDasharray="3 3"/><text x={xx} y={yy+5} textAnchor="middle" fill="#282f2c" style={typographyStyle("label")}>?</text></g> : standings || !edge ? (
+              {l.mystery ? <g data-mystery-marker="true"><circle cx={xx} cy={yy} r={18} fill="white" stroke={appearanceColors.textSecondary} strokeWidth={2} strokeDasharray="3 3"/><text x={xx} y={yy+5} textAnchor="middle" fill={appearanceColors.textSecondary} style={typographyStyle("label")}>?</text></g> : standings || !edge ? (
                 <PolishedRacer
                   sizeScale={standings ? undefined : fieldLaneMarkerScale(Boolean(l.you))}
                   x={xx}
@@ -322,24 +324,24 @@ export function ArenaLanes({
                   active={active}
                   showWake={false}
                   />
-              ) : <circle r={18} fill="white" stroke="#616c63" strokeDasharray="3 3"/>}
-              <rect className="focus-racer-focus-ring" x={-23} y={-headHalf-3} width={46} height={headHalf*2+6} rx={23} fill="none" stroke="#f1c75b" strokeWidth={2}/>
+              ) : <circle r={18} fill="white" stroke={appearanceColors.textSecondary} strokeDasharray="3 3"/>}
+              <rect className="focus-racer-focus-ring" x={-23} y={-headHalf-3} width={46} height={headHalf*2+6} rx={23} fill="none" stroke={appearanceColors.actionPrimary} strokeWidth={2}/>
               <rect x={xx - 24 / markerScale} y={yy - Math.max(22 / markerScale, headHalf + 4)} width={48 / markerScale} height={Math.max(44 / markerScale, headHalf * 2 + 8)} rx="24" fill="transparent"/>
               {standings && l.avatarUrl && <UserAvatarSvg src={l.avatarUrl} name={l.name} x={xx-17} y={yy-17} />}
-              {((standings && !l.avatarUrl) || (!standings && edge)) && <text style={typographyStyle("caption")} x={xx} y={yy+4} textAnchor="middle" className="lane-initial" fill="#282f2c">{!standings&&edge?(edge==="ahead"?"↑":"↓"):l.initials}</text>}
+              {((standings && !l.avatarUrl) || (!standings && edge)) && <text style={typographyStyle("caption")} x={xx} y={yy+4} textAnchor="middle" className="lane-initial" fill={appearanceColors.textSecondary}>{!standings&&edge?(edge==="ahead"?"↑":"↓"):l.initials}</text>}
               </g>
-              {!standings&&edge&&<g pointerEvents="none"><rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><text style={typographyStyle("caption")} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill="#616c63">{position.distanceOutside.toFixed(1)} {unit}</text></g>}
+              {!standings&&edge&&<g pointerEvents="none"><rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><text style={typographyStyle("caption")} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill={appearanceColors.textSecondary}>{position.distanceOutside.toFixed(1)} {unit}</text></g>}
               {!standings && !edge && (l.you || selected===l.id) && <g className="athlete-pennant" pointerEvents="none">
                 <AthletePennant lane={l} prefix={`${prefix}-portrait-${i}`} x={pennantX} y={pennantY} detail={`${liveLanes.some(peer => peer.mystery) ? "Starts at zero" : ordinalPlace(rank)} · ${l.you ? `${l.value.toFixed(1)} ${unit}` : relativeDistance(l.value)}`} />
               </g>}
               <g aria-hidden={!standings} display={standings ? "inline" : "none"}>
               <motion.g initial={false} animate={{ opacity: standings ? 1 : 0 }}>
                 <rect x={-30} y={-33} width={Math.max(200, width - 16)} height={70} rx={14} fill="transparent" />
-                <line x1={-22} x2={width - 52} y1={38} y2={38} stroke="#e0e5dc" />
-                <text style={typographyStyle("caption")} x={40} y={4} fill="#616c63" >{rank}</text>
-                <text style={typographyStyle("row")} x={64} y={-5} fill="#282f2c"  >{l.you ? selfLaneLabel(l.name) : l.name}{scores[l.id] != null ? ` ${effortRankBadge(scores[l.id]).symbol}` : ""}</text>
+                <line x1={-22} x2={width - 52} y1={38} y2={38} stroke={appearanceColors.borderSubtle} />
+                <text style={typographyStyle("caption")} x={40} y={4} fill={appearanceColors.textSecondary} >{rank}</text>
+                <text style={typographyStyle("row")} x={64} y={-5} fill={appearanceColors.textSecondary}  >{l.you ? selfLaneLabel(l.name) : l.name}{scores[l.id] != null ? ` ${effortRankBadge(scores[l.id]).symbol}` : ""}</text>
                 <text style={typographyStyle("caption")} x={64} y={15} fill="#a67c00" >{scores[l.id] ?? "—"} effort score</text>
-                <text style={typographyStyle("value")} x={width - 58} y={5} textAnchor="end" fill="#282f2c"  >{l.value.toFixed(1)} {unit}</text>
+                <text style={typographyStyle("value")} x={width - 58} y={5} textAnchor="end" fill={appearanceColors.textSecondary}  >{l.value.toFixed(1)} {unit}</text>
               </motion.g>
               </g>
             </Marker>
@@ -365,7 +367,7 @@ export function ArenaLanes({
                   cy={gy}
                   r={13 * course.markerScale}
                   fill="#ffffffcc"
-                  stroke="#616c63"
+                  stroke={appearanceColors.textSecondary}
                   strokeDasharray="3 3"
                 />
                 <text style={typographyStyle("caption")}

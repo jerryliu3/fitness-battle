@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
+import { useThemeColors } from "../theme";
 import { FieldOverlayGroup, FieldOverlayView } from "./field-overlay-motion";
 import { chartTextProps, textStyle  } from "./section";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
@@ -34,7 +36,7 @@ import {
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
-import { IconButton } from "./icon-button";
+
 import { drawFieldNode } from "./field-course";
 import { alpineTrail } from "./club-art";
 export function PortraitField({
@@ -84,6 +86,10 @@ export function PortraitField({
   onPan: (center: number) => void;
   onSelect: (id: string) => void;
 }) {
+const s=useThemedStyles(sThemes);
+
+const appearanceColors = useThemeColors();
+
   const [laneOffset, setLaneOffset] = useState(laneAnchor?.current ?? 0);
   const prefix = useId().replace(/:/g, "");
   if (laneAnchor) laneAnchor.current = laneOffset;
@@ -177,11 +183,11 @@ export function PortraitField({
   return (
     <View style={{ gap: fullscreen ? 0 : 10, position: "relative", ...(fullscreen ? { height } : {}) }}>
       <FieldOverlayView hidden={overlaysHidden || fullscreen} style={[s.status, fullscreen ? { display: "none" } : null, !fullscreen && controlsTop > 12 ? { minHeight: 48, paddingLeft: 136, flexWrap: "wrap", justifyContent: "flex-end", gap: 4 } : null]} pointerEvents="none">
-        <Text style={[s.white, { color: "#142b3b" }]}>
+        <Text style={[s.white, { color: appearanceColors.textPrimary }]}>
           {scene.place} / {scene.fieldSize} PLACE
         </Text>
         <Text
-          style={[s.white, { ...textStyle("caption"), color: "#142b3b", flexShrink: 1, textAlign: "right" }]}
+          style={[s.white, { ...textStyle("caption"), color: appearanceColors.textPrimary, flexShrink: 1, textAlign: "right" }]}
         >
           {portraitFieldGap(scene.nextGap, unit)}
         </Text>
@@ -268,7 +274,7 @@ export function PortraitField({
                         cx={0}
                         cy={27}
                         r={7}
-                        fill="#ffffff"
+                        fill={appearanceColors.white}
                         stroke={m.you ? "#f7c948" : "#98a6bc"}
                         strokeWidth={3}
                       />
@@ -302,11 +308,11 @@ export function PortraitField({
                       width={46}
                       height={58}
                       rx={12}
-                      fill="#f8f9f6"
+                      fill={appearanceColors.surfaceCanvas}
                       stroke={m.you ? "#f7c948" : "#b3c9c5"}
                       strokeWidth={m.you ? 3 : 1.5}
                     />}
-<G>{m.mystery ? <G><Circle cy={-14} r={22} fill="white" stroke="#616c63" strokeWidth={2} strokeDasharray="3 3"/><SvgText y={-8} textAnchor="middle" fill="#142b3b">?</SvgText></G> : <>                    <Defs>
+<G>{m.mystery ? <G><Circle cy={-14} r={22} fill="white" stroke="#616c63" strokeWidth={2} strokeDasharray="3 3"/><SvgText y={-8} textAnchor="middle" fill={appearanceColors.textPrimary}>?</SvgText></G> : <>                    <Defs>
                       <ClipPath id={id}>
                         <Rect x={-19} y={-39} width={38} height={50} rx={9} />
                       </ClipPath>
@@ -334,7 +340,7 @@ export function PortraitField({
                         <SvgText {...chartTextProps()}
                           y={-8}
                           textAnchor="middle"
-                          fill="#142b3b"
+                          fill={appearanceColors.textPrimary}
 
                         >
                           {m.initials}
@@ -351,12 +357,12 @@ export function PortraitField({
                           width={44}
                           height={18}
                           rx={9}
-                          fill="#f7c948"
+                          fill={appearanceColors.actionPrimary}
                         />
                         <SvgText {...chartTextProps()}
                           y={-53}
                           textAnchor="middle"
-                          fill="#142b3b"
+                          fill={appearanceColors.textPrimary}
 
                         >
                           YOU
@@ -423,7 +429,7 @@ export function PortraitField({
                 borderColor: "rgba(255, 255, 255, 0.2)",
               }}
             >
-              <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
+              <Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>
                 3D
               </Text>
             </Pressable>
@@ -443,7 +449,7 @@ export function PortraitField({
                 borderColor: "rgba(255, 255, 255, 0.2)",
               }}
             >
-              <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
+              <Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>
                 Full Arena ↗
               </Text>
             </Pressable>
@@ -481,7 +487,7 @@ export function PortraitField({
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{return {
   board: {
     height: 560,
     borderRadius: 20,
@@ -500,7 +506,7 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
   },
-  white: { ...textStyle("label"), color: "#fff" },
+  white: { ...textStyle("label"), color: themeColors.white },
   controls: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -524,4 +530,4 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-});
+};});

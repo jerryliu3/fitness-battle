@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { useState } from "react";
 import { effortScoreLine, type CompeteState, type OpenLineRange, type ScoreTrack } from "@fitness-battle/shared";
 import { useScoreTrackLens } from "../lib/score-track-lens";
@@ -5,9 +6,11 @@ import { useAuth } from "../lib/auth";
 import { View } from "react-native";
 import { OpenLineChart } from "../ui/open-line-chart";
 import { ChartFrame } from "../ui/chart-frame";
-import { FocusSegments, f } from "../ui/focus";
+import { FocusSegments } from "../ui/focus";
 
 export function EffortTrend({ state }: { state: CompeteState }) {
+const f=useFocusStyles();
+
   const [defaultTrack] = useScoreTrackLens();
   const { user } = useAuth();
   const scope = `${user?.id}:${state.primary}`;

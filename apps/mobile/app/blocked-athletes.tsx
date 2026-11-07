@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../src/ui/focus";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -5,9 +6,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAthleteBlocks } from "../src/lib/athlete-blocks";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { AppText, SectionStack } from "../src/ui/section";
-import { FocusButton, f } from "../src/ui/focus";
+import { FocusButton } from "../src/ui/focus";
 
 export default function BlockedAthletes() {
+const f=useFocusStyles();
+
   const router = useRouter();
   const { blocks, ready, error, reload, setBlocked } = useAthleteBlocks();
   const [busy, setBusy] = useState("");

@@ -4,7 +4,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { beforeEach, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ lookup: vi.fn(), navigate: vi.fn(), close: vi.fn(), request: vi.fn(), setBlocked: vi.fn(), blocks: [] as { id: string; name: string }[] }));
-vi.mock("react-native", () => ({ View: "View", TextInput: "TextInput", Pressable: "Pressable" }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  View: "View", TextInput: "TextInput", Pressable: "Pressable" }));
 vi.mock("expo-router", () => ({ useRouter: () => ({ navigate: mocks.navigate }) }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "owner", createdAt: "2024-05-01T00:00:00Z" }, accessToken: "token", offlineMode: false }) }));
 vi.mock("../lib/api", () => ({ requestApi: mocks.request }));
@@ -13,7 +13,7 @@ vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: { city
 vi.mock("../lib/supabase", () => ({ supabase: { from: () => ({
   select: () => ({ eq: () => ({ maybeSingle: mocks.lookup }) }),
 }) } }));
-vi.mock("../ui/focus", () => ({ FocusSheet: "FocusSheet", FocusButton: "FocusButton", f: { row: {}, section: {} } }));
+vi.mock("../ui/focus", () => ((()=>{const mock={ FocusSheet: "FocusSheet", FocusButton: "FocusButton", f: { row: {}, section: {} } };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 vi.mock("../ui/section", () => ({ AppText: "AppText", SectionHeader: "SectionHeader" }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("./athlete-profile-card", () => ({ AthleteProfileCard: "AthleteProfileCard" }));

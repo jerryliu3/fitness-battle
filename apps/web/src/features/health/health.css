@@ -26,8 +26,8 @@
   border-radius: 22px;
   background:
     radial-gradient(80% 80% at 0% 0%, rgba(90, 120, 255, 0.18), transparent 60%),
-    linear-gradient(160deg, #161a2b, #10131c 70%);
-  color: #f4f6ff;
+    linear-gradient(160deg, var(--app-soft), var(--app-surface-inverse) 70%);
+  color: var(--app-white);
 }
 
 .sl-score {
@@ -45,7 +45,7 @@
 
 .sl-score span {
   padding-bottom: 8px;
-  color: #c5cbe6;
+  color: var(--app-border-subtle);
   letter-spacing: normal;
   text-transform: none;
   font: var(--type-body);
@@ -53,7 +53,7 @@
 
 .sl-hero .fb-copy,
 .sl-hero .fb-note {
-  color: #c5cbe6;
+  color: var(--app-border-subtle);
 }
 
 .sl-stages {
@@ -61,7 +61,7 @@
   height: 16px;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--app-surface-card) 8%, transparent);
 }
 
 .sl-stage-deep {
@@ -73,7 +73,7 @@
 }
 
 .sl-stage-light {
-  background: #d7deff;
+  background: var(--app-soft);
 }
 
 .sl-stage-awake {
@@ -87,7 +87,7 @@
   margin: 10px 0 0;
   padding: 0;
   list-style: none;
-  color: #c5cbe6;
+  color: var(--app-border-subtle);
   letter-spacing: normal;
   text-transform: none;
   font: var(--type-caption);

@@ -1,4 +1,6 @@
 import { MaterialBack } from "../ui/material-back";
+import { useFocusStyles } from "../ui/focus";
+import { useThemeColors } from "../theme";
 import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
 import { QueuedField } from "./queued-field";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
@@ -41,8 +43,8 @@ import { IconButton } from "../ui/icon-button";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useCompeteStore } from "../lib/compete-store";
 import { playCue } from "../lib/haptics";
-import { SHELL_COLORS as c } from "../theme";
-import { f } from "../ui/focus";
+
+
 import { LaneTrack, type LaneAnchor } from "../ui/lane-track";
 import { FieldOverview, useFieldAppearance } from "../ui/field-course";
 import { useReducedMotion } from "../ui/use-reduced-motion";
@@ -74,6 +76,11 @@ export function CompetitionField({
   onFocusAthlete?: (id: string) => void;
   externalCourseTarget?: CourseDistanceTarget | null;
 }) {
+const appearanceColors = useThemeColors();
+
+const c=useThemeColors();
+const f=useFocusStyles();
+
   const { state, accountKey, debugActive, dispatch } = useCompeteStore();
   const { blocks } = useAthleteBlocks();
   const hiddenIds = useMemo(() => blocks.map(block => block.id), [blocks]);
@@ -245,7 +252,7 @@ export function CompetitionField({
           <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onReplay={() => setCourseReplayOpen(true)} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
-          <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>Tap to open full screen</Text></View>
+          <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>Tap to open full screen</Text></View>
         </Pressable> : null}
       </View> : null}
       {sceneDimension === "3d" ? (
@@ -555,7 +562,7 @@ export function CompetitionField({
                     </Text>
                     <Text
                       numberOfLines={1}
-                      style={{ ...textStyle("label"), color: "#ffffff" }}
+                      style={{ ...textStyle("label"), color: appearanceColors.white }}
                     >
                       {focusedLane.you
                         ? selfLaneLabel(focusedLane.name)

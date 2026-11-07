@@ -1,10 +1,13 @@
+import { useFocusStyles } from "../src/ui/focus";
 import { ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SHELL_TYPOGRAPHY, type TypographyRole } from "@fitness-battle/shared";
 import { AppText, PageHeader, Section, SectionStack, StatusBadge, Surface, ListRow, TextAction } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
-import { f } from "../src/ui/focus";
+
 export default function ComponentGallery() {
+const f=useFocusStyles();
+
   const router = useRouter();
   return <View style={f.safe}><ScreenHeader title="Components" onBack={() => router.back()}/><ScrollView contentContainerStyle={f.content}><SectionStack>
     <PageHeader title="Everyday Club" subtitle="Review with large accessibility text and both system appearances."/>

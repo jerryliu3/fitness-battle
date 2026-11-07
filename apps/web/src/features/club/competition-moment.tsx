@@ -1,4 +1,6 @@
 "use client";
+import { colors as appearanceColors } from "@/theme/app-colors";
+
 import { typographyStyle } from "@/ui/section";
 import { useCompetitionCourse } from "@/features/course/use-competition-course";
 import { useCompete } from "@/components/compete-context";
@@ -55,7 +57,7 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
     </header>
     {moment.plan.hasOvertake && frame.count > 0 && <div className="moment-replay-label" role="status" style={{position:"absolute",left:16,top:100}}>{frame.count} overtake{frame.count === 1 ? "" : "s"}</div>}
     {!moment.plan.hasOvertake && !passedBy && <div className="moment-replay-label" role="status" style={{position:"absolute",left:16,top:100}}>+{(moment.plan.youAfter - moment.plan.youBefore).toFixed(moment.unit === "pts" ? 0 : 1)} {moment.unit}</div>}
-    {!reduced && !skipped.current && frame.passEffects.length > 0 && <div aria-hidden style={{position:"absolute",top:"45%",left:"50%",transform:"translateX(-50%)",...typographyStyle("hero"),color:"#f7c948",opacity:Math.max(...frame.passEffects.map(pass=>pass.strength)),pointerEvents:"none"}}>+1</div>}
+    {!reduced && !skipped.current && frame.passEffects.length > 0 && <div aria-hidden style={{position:"absolute",top:"45%",left:"50%",transform:"translateX(-50%)",...typographyStyle("hero"),color:appearanceColors.actionPrimary,opacity:Math.max(...frame.passEffects.map(pass=>pass.strength)),pointerEvents:"none"}}>+1</div>}
     <footer className="moment-replay-bottom">
       <button className="fb-btn" type="button" onClick={() => !started && !reduced ? setStarted(true) : frame.done ? (() => { if (!confirmed.current) { confirmed.current = true; onConfirm(); } })() : (() => { skipped.current = true; setProgress(1); })()}>{!started && !reduced ? embedded ? "Watch an Overtake →" : "See my move →" : frame.done ? remaining > 1 ? "Continue →" : embedded ? "Replay Overtake →" : "Back to the app →" : "Skip animation"}</button>
     </footer>

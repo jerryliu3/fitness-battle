@@ -1,3 +1,5 @@
+import { useFocusStyles } from "../ui/focus";
+import { useThemeColors } from "../theme";
 import { playCue } from "../lib/haptics";
 import { textStyle } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
@@ -18,10 +20,10 @@ import {
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { APP_TIMEZONE, syncReviewMetrics, clubDuration, formatVolume, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
-import { FocusButton, f } from "../ui/focus";
+import { FocusButton } from "../ui/focus";
 import { ActivityRoute } from "../ui/activity-route";
 import { RouteStaticPreview } from "../ui/route-static-preview";
-import { SHELL_COLORS as c } from "../theme";
+
 import { ScreenFade } from "../ui/screen-fade";
 import { CompetitionMoment } from "./competition-moment";
 import { useReducedMotion } from "../ui/use-reduced-motion";
@@ -30,6 +32,8 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
   receipt: SyncReviewReceipt | null; state: CompeteState; debug?: boolean; moment?: Moment | null; remaining?: number;
   onComplete: (selected?: readonly string[], quiet?: boolean) => unknown; onAcknowledge?: () => void;
 }) {
+const f=useFocusStyles();
+
   const reduced = useReducedMotion();
   const close = () => { if (receipt) onComplete(undefined, true); };
   const scroll = useRef<ScrollViewInstance | null>(null);
@@ -45,6 +49,11 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
   </Modal>;
 }
 function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () => void; receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {
+const appearanceColors = useThemeColors();
+
+const f=useFocusStyles();
+const c=useThemeColors();
+
   const windowDimensions = useWindowDimensions();
   const cardWidth = Math.max(260, Math.min(360, Math.round((windowDimensions.width || 375) * 0.82)));
   const cardGap = 12;
@@ -174,7 +183,7 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
                 width: cardWidth,
                 borderRadius: 20,
                 overflow: "hidden",
-                backgroundColor: "#ffffff",
+                backgroundColor: appearanceColors.surfaceCard,
                 borderWidth: 1,
                 borderColor: c.line,
               }}
@@ -205,7 +214,7 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
                     </Text>
                   </View>
                   <View style={{ gap: 2 }}>
-                    <Text style={{ ...textStyle("display"), color: "#ffffff" }}>
+                    <Text style={{ ...textStyle("display"), color: appearanceColors.white }}>
                       {formatVolume(a.sport, a.distanceM, a.movingSec, state.units)}
                     </Text>
                     <Text style={{ ...textStyle("body"), color: "rgba(255,255,255,0.75)" }}>
@@ -343,6 +352,8 @@ export function SyncReviewCarouselDots({
   activeIndex: number;
   onSelectIndex?: (index: number) => void;
 }) {
+const c=useThemeColors();
+
   const reduced = useReducedMotion();
   const [windowStart, setWindowStart] = useState(() =>
     computeWindowStart(0, activeIndex, total, MAX_VISIBLE_DOTS),
@@ -454,6 +465,8 @@ export function SyncReviewCarouselDots({
 }
 
 function ActivityMetricBars({ activity, history, units }: { activity: SyncReviewReceipt["activities"][number]; history: CompeteState["activities"]; units: CompeteState["units"] }) {
+const c=useThemeColors();
+
   return <View style={{ gap: 10 }}>
     <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16, paddingVertical: 6 }}>
     {syncReviewMetrics(activity, history, units).map(metric => <View key={metric.id} accessible accessibilityLabel={`${metric.label}: ${metric.valueLabel}. ${metric.comparisonLabel}`} style={{ width: "47%", gap: 6 }}>

@@ -19,7 +19,7 @@ describe("appearance foundation", () => {
     expect(APP_COLORS.dark.actionPrimary).toBe(APP_COLORS.light.actionPrimary);
     expect(APP_COLORS.dark.textPrimary).not.toBe(APP_COLORS.light.textPrimary);
     expect(Object.keys(appColorVariables("dark"))).toEqual(Object.keys(appColorVariables("light")));
-    expect(Object.keys(appColorVariables("dark")).every(key => key.startsWith("--app-"))).toBe(true);
+    expect(appColorVariables("dark")["--ink"]).toBe("var(--app-text-primary)");
     expect(appColorVariables("dark")["--app-surface-card"]).toBe(APP_COLORS.dark.surfaceCard);
   });
 });

@@ -1,8 +1,10 @@
 "use client";
+import { colors as c } from "@/theme/app-colors";
+
 
 import { useEffect, useRef, useState } from "react";
 import { clamp, LOGO_RACE_DURATION_MS, logoRaceWords } from "@fitness-battle/shared/boot";
-import { SHELL_COLORS as c } from "@fitness-battle/shared";
+
 import "./logo-race-boot-splash.css";
 
 export function LogoRaceBootSplash({ waiting = false, onAnimationComplete, progress }: {

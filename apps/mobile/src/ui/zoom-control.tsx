@@ -1,8 +1,9 @@
+import { useThemeColors } from "../theme";
 import { textStyle } from "./section";
 import { useMemo, useRef, useState } from "react";
 import { PanResponder, Text, View } from "react-native";
-import { SHELL_COLORS as c } from "../theme";
-import { f } from "./focus";
+
+
 export function ZoomControl({
   value,
   maximum,
@@ -12,6 +13,8 @@ export function ZoomControl({
   maximum: number;
   onChange: (v: number) => void;
 }) {
+const c=useThemeColors();
+
   const [width, setWidth] = useState(280);
   const latest = useRef({ value, maximum, onChange, width });
   latest.current = { value, maximum, onChange, width };

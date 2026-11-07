@@ -15,9 +15,9 @@ vi.mock("../ui/field-course", () => ({ useFieldAppearance: () => [defaultFieldAp
 vi.mock("../ui/section", () => ({ AppText: "AppText", textStyle: () => ({}) }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
-vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton", FocusSegments: "FocusSegments", f: {} }));
+vi.mock("../ui/focus", () => ((()=>{const mock={ FocusButton: "FocusButton", FocusSegments: "FocusSegments", f: {} };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaProvider: "SafeAreaProvider", SafeAreaView: "SafeAreaView" }));
-vi.mock("react-native", () => ({ Modal: "Modal", View: "View", Text: "Text", Pressable: "Pressable", StyleSheet: { create: (value: unknown) => value }, PanResponder: { create: () => ({ panHandlers: {} }) }, AppState: { addEventListener: () => ({ remove() {} }) } }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  Modal: "Modal", View: "View", Text: "Text", Pressable: "Pressable", StyleSheet: { create: (value: unknown) => value }, PanResponder: { create: () => ({ panHandlers: {} }) }, AppState: { addEventListener: () => ({ remove() {} }) } }));
 vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
 vi.mock("./use-competition-course", () => ({ useCompetitionCourse: () => ({ course: DEMO_RACE_COURSE, error: "", retry() {} }) }));
 vi.mock("../ui/field-view-switcher", () => ({ FieldViewSwitcher: "FieldViewSwitcher" }));

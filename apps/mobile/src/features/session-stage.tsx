@@ -1,5 +1,6 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useState, type ReactNode } from "react";
-import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { Modal, Pressable, View } from "react-native";
 import {
   APP_TIMEZONE, PROVIDERS, countsOnTrack, formatClockTime,
   formatTrainingHours, formatVolume, isVerifiedActivity, sessionStageModel, sportById,
@@ -10,7 +11,7 @@ import { AppText } from "../ui/section";
 import { SportIcon } from "../ui/sport-icon";
 import { Chip, ChipRow } from "../ui/chip";
 import { AnimatedEmber } from "../ui/mascot/animated-ember";
-import { SHELL_COLORS as c } from "../theme";
+
 import { ActivityComparison } from "./activity-comparison";
 import { ActivityContext } from "./activity-context";
 
@@ -18,6 +19,8 @@ export function SessionStage({ state, activities, suggestion, onRemove, actions 
   state: CompeteState; activities: Activity[]; suggestion?: { kind?: string; title: string; minutes?: number | null; detail: string };
   onRemove: (id: string) => void; actions?: ReactNode;
 }) {
+const s=useThemedStyles(sThemes);
+
   const model = sessionStageModel(activities);
   const [selected, setSelected] = useState<string | null>(null);
   const current = model.rows.find(row => row.id === selected) ?? model.rows[0];
@@ -51,6 +54,9 @@ export function SessionStage({ state, activities, suggestion, onRemove, actions 
 }
 
 function ActivityDetails({ activity, state, onRemove }: { activity: Activity; state: CompeteState; onRemove: (id: string) => void }) {
+const c=useThemeColors();
+const s=useThemedStyles(sThemes);
+
   const [confirming, setConfirming] = useState(false);
   const gps = sportById(activity.sport).gps;
   const primary = gps && activity.distanceM > 0 ? formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units) : formatClockTime(activity.movingSec);
@@ -84,7 +90,7 @@ function ActivityDetails({ activity, state, onRemove }: { activity: Activity; st
                   <AppText role="label">Cancel</AppText>
                 </Pressable>
                 <Pressable accessibilityRole="button" accessibilityLabel="Delete session" style={s.deleteBtn} onPress={() => { setConfirming(false); onRemove(activity.id); }}>
-                  <AppText role="label" style={{ color: c.card }}>Delete</AppText>
+                  <AppText role="label" style={{ color: c.white }}>Delete</AppText>
                 </Pressable>
               </View>
             </View>
@@ -95,7 +101,7 @@ function ActivityDetails({ activity, state, onRemove }: { activity: Activity; st
   </View>;
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   stack: { gap: 24 }, details: { gap: 28 }, overview: { gap: 8 }, sport: { flexDirection: "row", alignItems: "center", gap: 8 },
   group: { gap: 12 }, tabs: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   tab: { minHeight: 44, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: c.line, borderRadius: 12 }, active: { backgroundColor: c.ink, borderColor: c.ink },
@@ -104,12 +110,12 @@ const s = StyleSheet.create({
   disclosure: { minHeight: 44, justifyContent: "center", alignSelf: "flex-start", paddingVertical: 8 },
   modalBackdrop: { flex: 1, backgroundColor: "rgba(10, 15, 20, 0.45)", justifyContent: "center", alignItems: "center", padding: 24 },
   glassCard: {
-    width: "100%", maxWidth: 300, backgroundColor: "rgba(255, 255, 255, 0.94)", borderRadius: 20,
+    width: "100%", maxWidth: 300, backgroundColor: `${themeColors.card}f0`, borderRadius: 20,
     borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.6)", padding: 20,
-    shadowColor: "#000", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 12,
+    shadowColor: themeColors.shadow, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 12,
   },
   dialogContent: { gap: 12, alignItems: "center" },
   dialogActions: { flexDirection: "row", gap: 10, marginTop: 6, width: "100%" },
   cancelBtn: { flex: 1, height: 38, justifyContent: "center", alignItems: "center", borderRadius: 12, backgroundColor: c.soft, borderWidth: 1, borderColor: c.line },
   deleteBtn: { flex: 1, height: 38, justifyContent: "center", alignItems: "center", borderRadius: 12, backgroundColor: c.statusError },
-});
+};});

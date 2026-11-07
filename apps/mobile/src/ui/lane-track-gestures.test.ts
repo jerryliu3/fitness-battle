@@ -3,7 +3,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
 import type { ArenaViewWindow } from "@fitness-battle/shared";
 vi.mock("./field-overlay-motion", () => ({ FieldOverlayGroup: "FieldOverlayGroup", FieldOverlayView: "View" }));
-vi.mock("react-native", () => ({ StyleSheet: { create: (value: unknown) => value }, PanResponder: { create: (panHandlers: object) => ({ panHandlers }) }, Pressable: "Pressable", ScrollView: "ScrollView", Text: "Text", View: "View" }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  StyleSheet: { create: (value: unknown) => value }, PanResponder: { create: (panHandlers: object) => ({ panHandlers }) }, Pressable: "Pressable", ScrollView: "ScrollView", Text: "Text", View: "View" }));
 vi.mock("react-native-svg", () => Object.fromEntries(["default", "Circle", "Defs", "ClipPath", "Image", "G", "Path", "Rect", "Text"].map(k => [k, `Svg${k}`])));
 vi.mock("../lib/haptics", () => ({ playCue() {} }));
 vi.mock("./field-course", () => ({ drawFieldNode: () => null }));

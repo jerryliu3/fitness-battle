@@ -25,11 +25,12 @@ export function useAppearance() { return useContext(AppearanceContext); }
 /** Reusable control for screens adopting the appearance contract. */
 export function AppearanceControl() {
   const { preference, setPreference } = useAppearance();
-  return <fieldset><legend>Appearance</legend>
-    {(["system", "light", "dark"] as const).map(value => <label key={value}>
-      <input type="radio" name="appearance" value={value} checked={preference === value}
-        onChange={() => setPreference(value)} />
-      {value === "system" ? "System" : value === "light" ? "Light" : "Dark"}
-    </label>)}
-  </fieldset>;
+  return <div className="club-preference-row"><strong>Appearance</strong>
+    <div className="focus-segments" role="group" aria-label="Appearance">
+      {(["system", "light", "dark"] as const).map(value => <button key={value} type="button"
+        aria-pressed={preference === value} onClick={() => setPreference(value)}>
+        {value === "system" ? "System" : value === "light" ? "Light" : "Dark"}
+      </button>)}
+    </div>
+  </div>;
 }

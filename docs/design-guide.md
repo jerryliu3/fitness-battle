@@ -1,6 +1,6 @@
 # Product design guide — Everyday Club
 
-The [appearance foundation](appearance-system.md) adds shared light/dark roles and System preference infrastructure. Existing production styles remain the baseline until separately migrated; this does not select a new secondary palette.
+The [appearance foundation](appearance-system.md) adds shared light/dark roles and System preference infrastructure. Production web and native components adopt this contract and expose System/Light/Dark in Athlete Preferences; this does not select a new secondary palette.
 
 ## Composition and copy principles — November 6, 2026
 

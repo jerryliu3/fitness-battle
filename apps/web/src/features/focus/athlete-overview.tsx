@@ -1,4 +1,6 @@
 "use client";
+import { colors as appearanceColors } from "@/theme/app-colors";
+
 import { EffortTrend } from "@/features/progress/effort-trend";
 import { AppParagraph, AppText, SectionHeader, typographyStyle, AppHeading } from "@/ui/section";
 
@@ -146,8 +148,8 @@ export function AthleteOverview({
           className="focus-profile-card"
           aria-label="Athlete profile"
           style={{
-            background: "var(--ink, #00101b)",
-            color: "var(--paper, #f7f9f5)",
+            background: "var(--app-surface-inverse)",
+            color: "var(--app-text-on-inverse)",
             border: "1px solid var(--line, #24384a)",
             borderRadius: "24px",
             padding: "20px",
@@ -160,13 +162,13 @@ export function AthleteOverview({
             <ProfilePhoto state={state} email={email} />
             <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                <AppHeading level={1} role="display" style={{ color: "#ffffff", margin: 0 }}>
+                <AppHeading level={1} role="display" style={{ color: appearanceColors.white, margin: 0 }}>
                   {state.name}
                 </AppHeading>
-                <AppText role="caption" secondary style={{ color: "#8fa2b5", whiteSpace: "nowrap" }}>Since Jan 2026</AppText>
+                <AppText role="caption" secondary style={{ color: appearanceColors.textOnFeatureMuted, whiteSpace: "nowrap" }}>Since Jan 2026</AppText>
               </div>
               {state.city ? (
-                <AppText role="caption" secondary style={{ color: "#c9d6e3" }}>{state.city}</AppText>
+                <AppText role="caption" secondary style={{ color: appearanceColors.textOnFeatureMuted }}>{state.city}</AppText>
               ) : null}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
                 {(() => {
@@ -174,7 +176,7 @@ export function AthleteOverview({
                   const elo = primaryRating?.openElo || 1000;
                   const rank = rankForElo(elo);
                   return (
-                    <div style={{ color: "var(--tennis, #ccff00)", ...typographyStyle("label") }}>
+                    <div style={{ color: "var(--app-action-primary)", ...typographyStyle("label") }}>
                       {sportById(state.primary).name} · Open Effort Score {elo} · {rank.name}
                     </div>
                   );
@@ -189,7 +191,7 @@ export function AthleteOverview({
                     borderRadius: "999px",
                     border: "1px solid rgba(255, 255, 255, 0.2)",
                     background: "rgba(255, 255, 255, 0.1)",
-                    color: "#ffffff",
+                    color: appearanceColors.white,
                     ...typographyStyle("label"),
                   }}
                   onClick={() => {
@@ -232,13 +234,13 @@ export function AthleteOverview({
                     <div key={r.activityId} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                       <span
                         style={{
-                          color: "#c9d6e3",
+                          color: appearanceColors.textOnFeatureMuted,
                           ...typographyStyle("caption"),
                         }}
                       >
                         {label}
                       </span>
-                      <strong style={{ color: "#ffffff", ...typographyStyle("heading") }}>
+                      <strong style={{ color: appearanceColors.white, ...typographyStyle("heading") }}>
                         {formatClockTime(r.seconds)}
                       </strong>
                     </div>

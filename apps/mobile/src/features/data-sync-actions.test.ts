@@ -9,7 +9,7 @@ const mock = vi.hoisted(() => ({
   request: vi.fn(),
   dispatch: vi.fn(),
 }));
-vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
+vi.mock("react-native", () => ({useColorScheme: () => "light",  AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   StyleSheet: { create: (styles: unknown) => styles },
   Platform: { OS: "web" },
@@ -34,7 +34,7 @@ vi.mock("../lib/compete-store", () => ({
 }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "https://test.local" } }));
 vi.mock("../ui/toast", () => ({ Toast: (props: any) => props.message ? createElement("Toast", props, props.message) : null }));
-vi.mock("../ui/focus", () => ({ FocusButton: "Button", f: {} }));
+vi.mock("../ui/focus", () => ((()=>{const mock={ FocusButton: "Button", f: {} };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 import { DataSyncActions } from "./data-sync-actions";
 
 let renderer: ReactTestRenderer;

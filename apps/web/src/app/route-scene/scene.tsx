@@ -1,4 +1,6 @@
 "use client";
+import { colors as appearanceColors } from "@/theme/app-colors";
+
 
 import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
@@ -96,7 +98,7 @@ export function RouteScene() {
   }, []);
 
   return (
-    <div style={{ height: "100dvh", width: "100vw", background: "#142b3b", overflow: "hidden" }}>
+    <div style={{ height: "100dvh", width: "100vw", background: appearanceColors.soft, overflow: "hidden" }}>
       {coordinates.length > 0 ? (
         <RouteTimelapseMap
           coordinates={coordinates}

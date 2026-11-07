@@ -1,7 +1,8 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Animated, Easing, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, Text, View } from "react-native";
 import { Circle, Polyline, Line, G } from "react-native-svg";
-import { SHELL_COLORS as c, type OpenLineModel, type OpenLineRange } from "@fitness-battle/shared";
+import { type OpenLineModel, type OpenLineRange } from "@fitness-battle/shared";
 import { OpenLineRangeToggle } from "../features/chart-range-toggle";
 import { ChartSvg, ChartText } from "./chart-text";
 import { AppText, textStyle } from "./section";
@@ -13,6 +14,9 @@ export function OpenLineChart({ chart, label, unit, range, onRangeChange, includ
   chart: OpenLineModel; showAxes?: boolean; label: string; unit: string; range: OpenLineRange;
   onRangeChange: (range: OpenLineRange) => void; includeYear?: boolean; comparisonLabel?: string; live?: boolean; footerAction?: ReactNode;
 }) {
+const c=useThemeColors();
+const s=useThemedStyles(sThemes);
+
   const reduceMotion = useReducedMotion();
   const [selected, setSelected] = useState(false);
   const active = useSceneActive();
@@ -66,9 +70,9 @@ export function OpenLineChart({ chart, label, unit, range, onRangeChange, includ
     <View style={s.footer}><OpenLineRangeToggle value={range} onChange={onRangeChange} includeYear={includeYear} />{footerAction}</View>
   </View>;
 }
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   reading: { minHeight: 92, gap: 4 },
   value: { ...textStyle("hero"), color: c.ink, fontVariant: ["tabular-nums"] },
   unit: { ...textStyle("body"), color: c.muted },
   footer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" },
-});
+};});

@@ -2,11 +2,12 @@ import { useRef } from "react";
 import { Platform } from "react-native";
 import { SettingsToggleRow } from "./settings-toggle-row";
 import { AppIcon } from "./app-icon";
+import { useThemeColors } from "../theme";
 import { Pressable, Text, View } from "react-native";
 import { AnchoredMenu, useAnchoredMenu } from "./anchored-menu";
 import { textStyle } from "./section";
 import { playCue } from "../lib/haptics";
-import { SHELL_COLORS as c } from "../theme";
+
 
 export function FieldViewSwitcher({
   compact = false,
@@ -19,6 +20,10 @@ export function FieldViewSwitcher({
   geographic: boolean;
   onChange(value: "2d" | "3d" | "4d"): void;
 }) {
+const appearanceColors = useThemeColors();
+
+const c=useThemeColors();
+
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
     minWidth: compact ? 220 : 90,
     estimatedHeight: compact ? 52 : 130,
@@ -54,7 +59,7 @@ export function FieldViewSwitcher({
           pressed && { opacity: 0.75 },
         ]}
       >
-        {compact ? <AppIcon name="settings" size={22} color={c.ink} /> : <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
+        {compact ? <AppIcon name="settings" size={22} color={c.ink} /> : <Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>
           {(value === "4d" ? "3D" : value.toUpperCase())} ▾
         </Text>}
       </Pressable>

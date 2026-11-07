@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({ currentState: "active", change: null as null | ((s: string) => void), remove: vi.fn() }));
-vi.mock("react-native", () => ({ AppState: {
+vi.mock("react-native", () => ({useColorScheme: () => "light",  AppState: {
   get currentState() { return state.currentState; },
   addEventListener: (_: string, fn: (s: string) => void) => { state.change = fn; return { remove: state.remove }; },
 } }));

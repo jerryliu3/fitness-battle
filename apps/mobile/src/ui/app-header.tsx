@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { UserAvatar } from "./user-avatar";
 import { textStyle } from "./section";
 import { useBootImage } from "./boot-readiness";
@@ -5,15 +6,18 @@ import { EffortRail } from "../features/effort-rail";
 
 import { usePathname, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppIcon } from "./app-icon";
 import { weeklyActivityStreak, competeNow, DEBUG_EVENT_OPTIONS, type DebugEventId } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
 import { isAthleteSettingsPath } from "../lib/navigation";
-import { SHELL_COLORS as c } from "../theme";
+
 
 export function AppHeader() {
+const c=useThemeColors();
+const s=useThemedStyles(sThemes);
+
   const { state, debugActive, triggerDebugEvent, resetDebugState } = useCompeteStore();
   const imageSettled = useBootImage(state?.avatarUrl);
   const [debugOpen, setDebugOpen] = useState(false);
@@ -79,7 +83,7 @@ export function AppHeader() {
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   safe: { backgroundColor: c.paper, zIndex: 30 },
   header: {
     paddingHorizontal: 20,
@@ -93,7 +97,7 @@ const s = StyleSheet.create({
   effort: { flex: 1, minWidth: 0, maxWidth: 190 },
   streak: { flexDirection: "row", alignItems: "center", gap: 3, flexShrink: 0 },
   debugBtn: { flexShrink: 0, minHeight: 44, justifyContent: "center", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: c.line, backgroundColor: c.card },
-  debugBtnActive: { borderColor: c.tennis, backgroundColor: "#fff5d1" },
+  debugBtnActive: { borderColor: c.tennis, backgroundColor: themeColors.actionSoft },
   debugBtnText: { ...textStyle("caption"), color: c.ink },
   debugMenu: { marginHorizontal: 22, marginBottom: 10, padding: 10, borderRadius: 16, borderWidth: 1, borderColor: c.line, backgroundColor: c.card, gap: 6 },
   debugKicker: { ...textStyle("label"), color: c.muted, marginHorizontal: 4, marginBottom: 2 },
@@ -116,4 +120,4 @@ const s = StyleSheet.create({
   },
   selected: { borderColor: c.tennis },
   photo: { width: "100%", height: "100%" },
-});
+};});

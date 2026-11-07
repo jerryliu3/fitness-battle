@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   Platform: { OS: "ios" },
   NativeModules: {},
 }));

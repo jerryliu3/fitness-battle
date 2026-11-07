@@ -1,6 +1,8 @@
 "use client";
+import { colors as c } from "@/theme/app-colors";
+
 import { useState, type ReactNode } from "react";
-import { SHELL_COLORS as c, type OpenLineModel, type OpenLineRange } from "@fitness-battle/shared";
+import { type OpenLineModel, type OpenLineRange } from "@fitness-battle/shared";
 import { OpenLineRangeToggle } from "@/features/progress/chart-range-toggle";
 import { ChartScrubber } from "./chart-scrubber";
 import "./open-line-chart.css";

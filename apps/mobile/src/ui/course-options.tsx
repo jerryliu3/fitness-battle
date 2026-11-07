@@ -1,11 +1,12 @@
 import { SettingsToggleRow } from "./settings-toggle-row";
 import { AppIcon } from "./app-icon";
+import { useThemeColors } from "../theme";
 import { useRef } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
 import { AnchoredMenu, useAnchoredMenu } from "./anchored-menu";
 import { textStyle } from "./section";
 import { playCue } from "../lib/haptics";
-import { SHELL_COLORS as c } from "../theme";
+
 
 export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing, onOverview, onReplay, onChoose2D }: {
   onReplay?: () => void;
@@ -16,6 +17,10 @@ export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing
   onToggleSpacing(): void;
   onOverview(): void;
 }) {
+const appearanceColors = useThemeColors();
+
+const c=useThemeColors();
+
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
     minWidth: 220,
     estimatedHeight: 164 + (onReplay ? 44 : 0) + (onChoose2D ? 44 : 0),

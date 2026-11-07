@@ -3,7 +3,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 const motion = vi.hoisted(() => ({ reduced: true, timing: vi.fn() }));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => motion.reduced }));
-vi.mock("react-native", () => ({ View: "View", LayoutAnimation: { configureNext: vi.fn(), Presets: { easeInEaseOut: {} } }, Animated: { View: "AnimatedView", Value: class { setValue = vi.fn(); }, timing: (...args: unknown[]) => { motion.timing(...args); return { start: vi.fn(), stop: vi.fn() }; } } }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  View: "View", LayoutAnimation: { configureNext: vi.fn(), Presets: { easeInEaseOut: {} } }, Animated: { View: "AnimatedView", Value: class { setValue = vi.fn(); }, timing: (...args: unknown[]) => { motion.timing(...args); return { start: vi.fn(), stop: vi.fn() }; } } }));
 vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path" }));
 vi.mock("../ui/section", () => ({ AppText: "AppText" }));
 vi.mock("../ui/sport-icon", () => ({ SportIcon: "SportIcon" }));

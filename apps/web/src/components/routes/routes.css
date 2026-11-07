@@ -3,13 +3,13 @@
 @import "tailwindcss/utilities.css" source(none);
 @source "./";
 
-.route-ui { color: #142b3b; }
+.route-ui { color: var(--app-text-primary); }
 .route-scene-map.route-ui { height: 100%; width: 100%; border: 0; border-radius: 0; }
 .route-ui svg { display: block; }
 /* Keep attribution and the Mapbox mark clear of the playback controls. */
 .route-ui .mapboxgl-ctrl-top-left { top: 52px; }
 .route-ui button { cursor: pointer; }
-.route-ui button:focus-visible, .route-ui[role="button"]:focus-visible { outline: 2px solid #176c75; outline-offset: 3px; }
+.route-ui button:focus-visible, .route-ui[role="button"]:focus-visible { outline: 2px solid var(--app-chart-series); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {
   .route-ui *, .route-ui *::before, .route-ui *::after { animation: none !important; transition: none !important; }
 }
@@ -17,12 +17,12 @@
 .route-controls button[aria-pressed] { border: 0; }
 .route-controls button[aria-pressed="false"] { background: transparent; color: rgb(255 255 255 / 80%); }
 .route-controls input[type="range"] { appearance: none; width: 100%; height: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 0; background: transparent !important; }
-.route-controls input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: linear-gradient(to right, #f7c948 var(--route-progress), rgb(255 255 255 / 20%) var(--route-progress)); }
-.route-controls input[type="range"]::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; margin-top: -5px; border: 0; border-radius: 50%; background: #f7c948; }
-.route-controls input[type="range"]::-moz-range-track { height: 6px; border-radius: 999px; background: linear-gradient(to right, #f7c948 var(--route-progress), rgb(255 255 255 / 20%) var(--route-progress)); }
-.route-controls input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: #f7c948; }
+.route-controls input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: linear-gradient(to right, var(--app-action-primary) var(--route-progress), rgb(255 255 255 / 20%) var(--route-progress)); }
+.route-controls input[type="range"]::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; margin-top: -5px; border: 0; border-radius: 50%; background: var(--app-action-primary); }
+.route-controls input[type="range"]::-moz-range-track { height: 6px; border-radius: 999px; background: linear-gradient(to right, var(--app-action-primary) var(--route-progress), rgb(255 255 255 / 20%) var(--route-progress)); }
+.route-controls input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--app-action-primary); }
 
-.route-recorded-metrics { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:4px 2px 10px;border-bottom:1px solid #ffffff20; }
+.route-recorded-metrics { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:4px 2px 10px;border-bottom:1px solid color-mix(in srgb, var(--app-surface-card) 12.55%, transparent); }
 .route-recorded-metrics span { display:grid;gap:4px;min-width:0; }
 .route-recorded-metrics small { font:var(--type-caption);opacity:.7; }
 .route-recorded-metrics b { font:var(--type-label);font-variant-numeric:tabular-nums;overflow-wrap:anywhere; }

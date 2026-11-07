@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useBootImage } from "../ui/boot-readiness";
 import { textStyle } from "../ui/section";
@@ -22,8 +23,10 @@ import {
   type CompeteState,
 } from "@fitness-battle/shared";
 
-import { SHELL_COLORS as c } from "../theme";
+
 export function RivalCard({ state }: { state: CompeteState }) {
+const s=useThemedStyles(sThemes);
+
   const router = useRouter();
   const { blocks } = useAthleteBlocks();
   const imageSettled = useBootImage(alpineTrail);
@@ -80,20 +83,20 @@ export function RivalCard({ state }: { state: CompeteState }) {
     </Pressable>
   );
 }
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   card: { borderRadius: 20, overflow: "hidden", backgroundColor: c.fieldDeep },
   background: { minHeight: 180, justifyContent: "space-between", padding: 20 },
   scrim: { ...StyleSheet.absoluteFill, backgroundColor: "#081f3670" },
   top: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
   title: {
     ...textStyle("heading"),
-    color: c.card,
+    color: c.textOnFeature,
     marginTop: 5
 },
-  place: { ...textStyle("metric"), color: c.card },
+  place: { ...textStyle("metric"), color: c.textOnFeature },
   markers: { alignSelf: "center", height: 110 },
   bottom: { flexDirection: "row", alignItems: "center", gap: 12 },
-  headline: { ...textStyle("heading"), color: c.card },
+  headline: { ...textStyle("heading"), color: c.textOnFeature },
   caption: {
     ...textStyle("caption"),
     color: "#ffffffdd"
@@ -106,4 +109,4 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-});
+};});

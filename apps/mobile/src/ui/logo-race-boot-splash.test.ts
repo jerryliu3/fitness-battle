@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { LOGO_RACE_DURATION_MS } from "@fitness-battle/shared/boot";
 const mock = vi.hoisted(() => ({ active: true, reduced: false, listeners: new Map<string, (value?: boolean) => void>() }));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   View: "View", Text: "Text", ActivityIndicator: "Spinner", StyleSheet: { create: (styles: unknown) => styles }, useWindowDimensions: () => ({ width: 390 }),
   AppState: { get currentState() { return mock.active ? "active" : "background"; }, addEventListener: (name: string, fn: () => void) => { mock.listeners.set(name, fn); return { remove: () => mock.listeners.delete(name) }; } },
   AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(mock.reduced), addEventListener: (name: string, fn: () => void) => { mock.listeners.set(name, fn); return { remove: () => mock.listeners.delete(name) }; } },

@@ -10,7 +10,7 @@ vi.mock("../lib/env", () => ({
   },
 }));
 
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   View: "View",
   Text: "Text",
   Image: "Image",

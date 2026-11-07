@@ -1,5 +1,7 @@
+import { useFocusStyles } from "../ui/focus";
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { AppText } from "../ui/section";
-import { SHELL_COLORS as c } from "../theme";
+
 import {
   Pressable,
   ScrollView,
@@ -14,7 +16,7 @@ import {
   trainingSportFilterLabel,
   type SportId,
 } from "@fitness-battle/shared";
-import { f } from "../ui/focus";
+
 import { playCue } from "../lib/haptics";
 import { useAnchoredMenu, AnchoredMenu } from "../ui/anchored-menu";
 
@@ -25,6 +27,9 @@ export function TrainingSportMenu({
   value: readonly SportId[];
   onChange: (sports: SportId[]) => void;
 }) {
+const f=useFocusStyles();
+const s=useThemedStyles(sThemes);
+
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
     minWidth: 190,
     estimatedHeight: Math.min(280, (SPORTS.length + 1) * 44 + 16),
@@ -109,7 +114,7 @@ export function TrainingSportMenu({
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   option: {
     height: 44,
     paddingHorizontal: 16,
@@ -138,9 +143,9 @@ const s = StyleSheet.create({
     backgroundColor: c.ink,
   },
   checkmark: {
-    color: "#ffffff",
+    color: themeColors.white,
   },
   optionSelected: {
     backgroundColor: c.soft,
   },
-});
+};});

@@ -1,5 +1,7 @@
+import { useFocusStyles } from "../ui/focus";
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { Section, AppText } from "../ui/section";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useRouter } from "expo-router";
 import {
   APP_TIMEZONE,
@@ -9,9 +11,12 @@ import {
   sportById,
   type CompeteState,
 } from "@fitness-battle/shared";
-import { f } from "../ui/focus";
-import { SHELL_COLORS as c } from "../theme";
+
+
 export function WeekRecap({ state }: { state: CompeteState }) {
+const f=useFocusStyles();
+const s=useThemedStyles(sThemes);
+
   const router = useRouter(),
     week = clubWeekSummary(state),
     recap = latestClubRecap(state),
@@ -72,7 +77,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
     </Section>
   );
 }
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   receipt: {
     flexDirection: "row",
     alignItems: "center",
@@ -89,4 +94,4 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-});
+};});

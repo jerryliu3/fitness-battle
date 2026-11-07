@@ -1,3 +1,5 @@
+import { useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { UserAvatar } from "../ui/user-avatar";
 import { textStyle, SectionHeader, AppText  } from "../ui/section";
 import { useRef, useState } from "react";
@@ -12,7 +14,7 @@ import {
   type UnitSystem,
 } from "@fitness-battle/shared";
 import { useReducedMotion } from "../ui/use-reduced-motion";
-import { f } from "../ui/focus";
+
 export function ResultCard({
   result,
   units,
@@ -22,6 +24,10 @@ export function ResultCard({
   units: UnitSystem;
   podiumAthletes?: { id: string; name: string; place: number; you: boolean; avatarUrl?: string | null }[];
 }) {
+const appearanceColors = useThemeColors();
+
+const f=useFocusStyles();
+
   const [receipt, setReceipt] = useState(false),
     pressed = useRef(new Animated.Value(0)).current,
     reduced = useReducedMotion();
@@ -67,7 +73,7 @@ export function ResultCard({
           padding: 24,
           gap: 14,
           borderRadius: 20,
-          backgroundColor: "#f7e5a3",
+          backgroundColor: appearanceColors.actionSoft,
           borderWidth: 1,
           borderBottomWidth: 5,
           borderRightWidth: 3,
@@ -150,7 +156,7 @@ export function ResultCard({
                       <Text
                         style={[
                           textStyle("caption"),
-                          { color: "#ffffff" },
+                          { color: appearanceColors.white },
                         ]}
                       >
                         YOU
@@ -161,13 +167,13 @@ export function ResultCard({
               })}
             </View>
             <View style={{ flexDirection: "row", gap: 10, alignItems: "stretch" }}>
-              <View style={{ flex: 1.1, backgroundColor: "#ffffff88", borderRadius: 16, padding: 16, justifyContent: "center" }}>
+              <View style={{ flex: 1.1, backgroundColor: `${appearanceColors.card}88`, borderRadius: 16, padding: 16, justifyContent: "center" }}>
                 <Text style={f.massive}>#{result.place}</Text>
                 <AppText role="body" secondary >of {result.fieldSize}</AppText>
               </View>
               <View style={{ flex: 1, gap: 10 }}>
-                <AppText role="body" secondary style={{ padding: 12, backgroundColor: "#ffffffbb", borderRadius: 14 }}>{formatVolume(result.sport, result.distanceM, result.movingSec, units)}</AppText>
-                <AppText role="label" style={{ padding: 12, backgroundColor: "#fff5d1", borderRadius: 14 }}>{result.eloAfter} effort score · {formatEloDelta(result.eloBefore,result.eloAfter)}</AppText>
+                <AppText role="body" secondary style={{ padding: 12, backgroundColor: `${appearanceColors.card}bb`, borderRadius: 14 }}>{formatVolume(result.sport, result.distanceM, result.movingSec, units)}</AppText>
+                <AppText role="label" style={{ padding: 12, backgroundColor: appearanceColors.actionSoft, borderRadius: 14 }}>{result.eloAfter} effort score · {formatEloDelta(result.eloBefore,result.eloAfter)}</AppText>
               </View>
             </View>
           </>

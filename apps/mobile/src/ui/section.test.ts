@@ -2,7 +2,7 @@ vi.mock("../lib/haptics", () => ({ playCue: vi.fn(), playPattern: vi.fn(() => vi
 import { createElement } from "react";
 import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-vi.mock("react-native", () => ({ Text: "Text", View: "View", Pressable: "Pressable", StyleSheet: { create: (x: unknown) => x }, useWindowDimensions: () => ({ fontScale: 2 }) }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  Text: "Text", View: "View", Pressable: "Pressable", StyleSheet: { create: (x: unknown) => x }, useWindowDimensions: () => ({ fontScale: 2 }) }));
 import { AppText, SectionHeader, SectionStack, TextAction } from "./section";
 it("keeps long scalable headings and named actions unconstrained at large font sizes", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);

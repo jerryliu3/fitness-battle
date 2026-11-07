@@ -1,19 +1,11 @@
 "use client";
+import { colors as c } from "@/theme/app-colors";
+
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
-import {
-  SHELL_COLORS as c,
-  buildAnalyticsLabModel,
-  formatMinutesAsHoursMins,
-  getDomainTitle,
-  type AnalyticsDomainId,
-  type AnalyticsLabModel,
-  type AnalyticsTimeLens,
-  type CompeteState,
-  type VitalId,
-} from "@fitness-battle/shared";
+import { buildAnalyticsLabModel, formatMinutesAsHoursMins, getDomainTitle, type AnalyticsDomainId, type AnalyticsLabModel, type AnalyticsTimeLens, type CompeteState, type VitalId } from "@fitness-battle/shared";
 import { useCompete } from "@/components/compete-context";
 import { AppHeading, AppText, ListRow, SectionHeader, StatusBadge, typographyStyle } from "../../ui/section";
 import { StandardLineChart } from "../../ui/standard-line-chart";

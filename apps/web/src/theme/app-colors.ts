@@ -14,7 +14,7 @@ export function appearanceVariables(preference: AppearancePreference): CSSProper
   const light = appColorVariables("light"), dark = appColorVariables("dark");
   return { colorScheme: preference === "system" ? "light dark" : preference,
     ...Object.fromEntries(Object.entries(light).map(([key, value]) => [key,
-      preference === "system" ? `light-dark(${value}, ${dark[key]})` : preference === "dark" ? dark[key] : value,
+      preference === "system" && key.startsWith("--app-") ? `light-dark(${value}, ${dark[key]})` : preference === "dark" ? dark[key] : value,
     ])),
   } as CSSProperties;
 }

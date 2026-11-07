@@ -1,4 +1,5 @@
-import { SHELL_COLORS as c, buildStandardChartGeometry } from "@fitness-battle/shared";
+import { useThemeColors } from "../theme";
+import { buildStandardChartGeometry } from "@fitness-battle/shared";
 import { chartTextProps } from "./section";
 import { ChartScrubber } from "./chart-scrubber";
 import { useId } from "react";
@@ -30,7 +31,10 @@ export interface StandardLineChartProps {
   ariaLabel?: string;
 }
 
-export function StandardLineChart({ revealProgress, showAxes = true, showSummary = false, xAxisLabel, yAxisLabel = "Value", pointLabels, values, xLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, selectedIdx, height = 190, stroke = c.tennis, corridor, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
+export function StandardLineChart({ revealProgress, showAxes = true, showSummary = false, xAxisLabel, yAxisLabel = "Value", pointLabels, values, xLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, selectedIdx, height = 190, stroke: suppliedstroke, corridor, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
+const c=useThemeColors();
+const stroke=suppliedstroke ?? c.tennis;
+
  const clipId = useId();
  const geo = buildStandardChartGeometry(values, 340, height, corridor);
  if (!values.length) return null;

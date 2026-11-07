@@ -1,13 +1,18 @@
+import { useFocusStyles } from "./focus";
+import { useThemeColors } from "../theme";
 import { textStyle } from "./section";
 import { dayKey } from "@fitness-battle/shared";
 import { useState } from "react";
 import { Modal, Platform, Pressable, Text, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
-import { SHELL_COLORS as c } from "../theme";
-import { f } from "./focus";
+
+
 
 function PickerSurface({ label, close, done, children }: { label: string; close: () => void; done: () => void; children: React.ReactNode }) {
+const c=useThemeColors();
+const f=useFocusStyles();
+
   return <Modal transparent animationType="fade" onRequestClose={close}>
     <View style={{ flex: 1, backgroundColor: "#142b3b66", justifyContent: "center", padding: 24 }} accessibilityViewIsModal>
       <View style={[f.card, { backgroundColor: c.card }]}>
@@ -19,6 +24,9 @@ function PickerSurface({ label, close, done, children }: { label: string; close:
   </Modal>;
 }
 export function NumberPicker({ label, value, onChange, max = 1440, step = 1, unit }: { label: string; value: string; onChange: (value: string) => void; max?: number; step?: number; unit: string }) {
+const c=useThemeColors();
+const f=useFocusStyles();
+
   const [open, setOpen] = useState(false), [draft, setDraft] = useState("0");
   const fractional = step < 1;
   const options = Array.from({ length: Math.floor(max) + 1 }, (_, i) => String(i));
@@ -40,6 +48,8 @@ export function NumberPicker({ label, value, onChange, max = 1440, step = 1, uni
 }
 /** Values are wall-clock strings. Existing Eastern validators resolve instants and reject DST gaps. */
 export function DateTimeField({ label, value, mode, onChange, clearLabel }: { label: string; value: string; mode: "date" | "time"; onChange: (value: string) => void; clearLabel?: string }) {
+const f=useFocusStyles();
+
   const [open, setOpen] = useState(false), [draft, setDraft] = useState(new Date());
   const serialize = (date: Date) => mode === "date" ? date.toISOString().slice(0, 10) : date.toISOString().slice(11, 16);
   const accept = (date: Date) => { onChange(serialize(date)); setOpen(false); };

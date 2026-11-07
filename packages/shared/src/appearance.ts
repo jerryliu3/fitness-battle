@@ -46,7 +46,16 @@ export function homeHealthColors(c: AppColors) {
 /** Web publishes this mapping from shared tokens; no parallel CSS palette to maintain. */
 export function appColorVariables(mode: ColorMode): Record<string, string> {
   const c = getAppColors(mode);
-  return Object.fromEntries(Object.entries(c).map(([name, value]) => [
+  const variables = Object.fromEntries(Object.entries(c).map(([name, value]) => [
     `--app-${name.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)}`, value,
   ]));
+  const aliases: Record<string, string> = {
+    danger: "status-error", red: "status-error", ink: "text-primary", muted: "text-secondary", paper: "surface-canvas", card: "surface-card",
+    line: "border-subtle", lime: "action-primary", "lime-deep": "action-pressed",
+    accent: "text-primary", "accent-soft": "soft", green: "status-success", "green-soft": "status-success-soft",
+    gold: "gold", soft: "soft", "ot-secondary": "chart-comparison", "action-primary": "action-primary",
+    "action-soft": "action-soft", "field-deep": "surface-feature", "field-teal": "chart-series", teal: "chart-series",
+  };
+  for (const [alias, role] of Object.entries(aliases)) variables[`--${alias}`] = `var(--app-${role})`;
+  return variables;
 }

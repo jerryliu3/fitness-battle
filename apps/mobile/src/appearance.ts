@@ -4,23 +4,28 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { APP_COLORS, getAppColors, resolveColorMode, type AppColors, type AppearancePreference } from "@fitness-battle/shared";
 
 const preferenceKey = "overtaek.appearance";
-const ThemeContext = createContext<{ preference: AppearancePreference; setPreference: (value: AppearancePreference) => void }>({ preference: "system", setPreference() {} });
+type AppearanceState = {
+  preference: AppearancePreference;
+  mode: "light" | "dark";
+  colors: AppColors;
+  setPreference: (value: AppearancePreference) => void;
+};
+const ThemeContext = createContext<AppearanceState>({
+  preference: "system", mode: "light", colors: getAppColors("light"), setPreference() {},
+});
 export function AppThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreference] = useState<AppearancePreference>("system");
+  const system = useColorScheme();
+  const mode = resolveColorMode(preference, system);
   const changed = useRef(false);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => { let alive = true; void AsyncStorage.getItem(preferenceKey).then(value => {
     if (alive && !changed.current && (value === "light" || value === "dark")) setPreference(value);
   }).catch(() => {}).finally(() => { if (alive) setLoaded(true); }); return () => { alive = false; }; }, []);
   useEffect(() => { if (loaded) void AsyncStorage.setItem(preferenceKey, preference).catch(() => {}); }, [loaded, preference]);
-  return createElement(ThemeContext.Provider, { value: { preference, setPreference: value => { changed.current = true; setPreference(value); } } }, children);
+  return createElement(ThemeContext.Provider, { value: { preference, mode, colors: getAppColors(mode), setPreference: value => { changed.current = true; setPreference(value); } } }, children);
 }
-export function useAppTheme() {
-  const context = useContext(ThemeContext);
-  const system = useColorScheme();
-  const mode = resolveColorMode(context.preference, system);
-  return { mode, colors: getAppColors(mode), preference: context.preference, setPreference: context.setPreference };
-}
+export function useAppTheme() { return useContext(ThemeContext); }
 export function useThemeColors() { return useAppTheme().colors; }
 type NamedStyles<T> = { [P in keyof T]: ViewStyle | TextStyle | ImageStyle };
 export function createThemedStyles<T extends NamedStyles<T>>(factory: (colors: AppColors) => T) {

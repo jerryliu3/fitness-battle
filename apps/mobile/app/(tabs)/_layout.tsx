@@ -3,6 +3,8 @@ import type { SportId } from "@fitness-battle/shared";
 import { ArenaScreen } from "./arena";
 import { useEffect, useState } from "react";
 import { usePathname } from "expo-router";
+import { useAppTheme } from "../../src/appearance";
+import { useThemeColors } from "../../src/theme";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { Platform, View } from "react-native";
 import { AppHeader } from "../../src/ui/app-header";
@@ -10,9 +12,11 @@ import { useOnboardingRequired } from "../../src/lib/onboarding-navigation";
 import { Redirect } from "expo-router";
 import { Tabs } from "expo-router";
 import { PhoneTabBar } from "../../src/ui/phone-tab-bar";
-import { SHELL_COLORS } from "../../src/theme";
+
 
 export default function TabLayout() {
+  const { mode } = useAppTheme();
+  const SHELL_COLORS = useThemeColors();
   const pathname = usePathname();
   const compete = pathname.endsWith("/arena");
   const [event, setEvent] = useState<{ account: string; sport: SportId } | null>(null);
@@ -24,7 +28,7 @@ export default function TabLayout() {
   if (pending) return <View style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }} />;
   if (required) return <Redirect href="/onboarding" />;
   if (Platform.OS === "ios") return <CompeteExperienceProvider value={experience}><View style={{ flex: 1 }}><View style={{ flex: 1 }} accessibilityElementsHidden={experience.immersive} importantForAccessibility={experience.immersive ? "no-hide-descendants" : "auto"}><AppHeader />
-    <NativeTabs tintColor={SHELL_COLORS.ink} blurEffect="systemUltraThinMaterialLight" backgroundColor="#ffffff" disableTransparentOnScrollEdge>
+    <NativeTabs tintColor={SHELL_COLORS.ink} blurEffect={mode === "dark" ? "systemUltraThinMaterialDark" : "systemUltraThinMaterialLight"} backgroundColor={SHELL_COLORS.surfaceNavigation} disableTransparentOnScrollEdge>
       <NativeTabs.Trigger name="today" accessibilityLabel="Home"><NativeTabs.Trigger.Icon sf="house" /><NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="arena" accessibilityLabel="Compete"><NativeTabs.Trigger.Icon sf="flag.checkered" /><NativeTabs.Trigger.Label>Compete</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="you" accessibilityLabel="Progress"><NativeTabs.Trigger.Icon sf="chart.xyaxis.line" /><NativeTabs.Trigger.Label>Progress</NativeTabs.Trigger.Label></NativeTabs.Trigger>

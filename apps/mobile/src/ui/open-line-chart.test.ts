@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({ active: true, reduced: false, timing: vi.fn(), start: vi.fn(), stop: vi.fn() }));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   View: "View", Text: "Text", StyleSheet: { create: (s: unknown) => s },
   Easing: { ease: "ease", inOut: (v: unknown) => v },
   Animated: { View: "NativeHalo", Value: class { setValue() {} interpolate() { return 1; } },

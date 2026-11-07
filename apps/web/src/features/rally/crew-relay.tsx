@@ -1,4 +1,6 @@
 "use client";
+import { colors as appearanceColors } from "@/theme/app-colors";
+
 import { UserAvatar } from "@/ui/user-avatar";
 import { typographyStyle, AppText, AppParagraph } from "@/ui/section";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
@@ -87,7 +89,7 @@ export function CrewRelay(props: Props) {
                 )}
                 y={222}
                 textAnchor="middle"
-                fill="#142b3b"
+                fill={appearanceColors.textSecondary}
               >
                 FINISH · {volume(view.target)}
               </text>
@@ -97,7 +99,7 @@ export function CrewRelay(props: Props) {
                 x={view.width / 2}
                 y={222}
                 textAnchor="middle"
-                fill="#637482"
+                fill={appearanceColors.textSecondary}
               >
                 A shared target has not been set
               </text>

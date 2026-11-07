@@ -3,9 +3,9 @@ import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
 const platform = vi.hoisted(() => ({ OS: "ios", Version: 26 }));
-vi.mock("react-native", () => ({ Platform: platform, View: "View", Text: "Text", StyleSheet: { create: (v: unknown) => v } }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  Platform: platform, View: "View", Text: "Text", StyleSheet: { create: (v: unknown) => v } }));
 vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
-vi.mock("./focus", () => ({ f: { row: {} } }));
+vi.mock("./focus", () => ((()=>{const mock={ f: { row: {} } };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 vi.mock("expo-router/react-navigation", () => ({ useHeaderHeight: () => 100 }));
 vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ top: 44 }) }));
 vi.mock("expo-router", () => ({ Stack: {

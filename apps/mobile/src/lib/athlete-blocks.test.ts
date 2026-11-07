@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const mock = vi.hoisted(() => ({ owner: "owner", rows: [] as { blocked_id: string; profiles: { display_name: string } }[], select: vi.fn(), insert: vi.fn(), remove: vi.fn(), failure: false, hanging: false, listener: null as null | ((state: string) => void) }));
-vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: (_: string, listener: (state: string) => void) => { mock.listener = listener; return { remove() { mock.listener = null; } }; } } }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  AppState: { currentState: "active", addEventListener: (_: string, listener: (state: string) => void) => { mock.listener = listener; return { remove() { mock.listener = null; } }; } } }));
 vi.mock("./auth", () => ({ useAuth: () => ({ user: { id: mock.owner }, offlineMode: false }) }));
 vi.mock("./supabase", () => ({ supabase: { from: () => ({
   select: (...args: unknown[]) => { mock.select(...args); return ({ eq: () => ({ order: () => ({ limit: () => {

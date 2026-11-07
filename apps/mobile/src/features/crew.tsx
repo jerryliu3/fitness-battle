@@ -1,10 +1,12 @@
+import { useFocusStyles } from "../ui/focus";
+import { useThemeColors } from "../theme";
 import { AthleteProfileSheet } from "./athlete-profile-sheet";
 import { UserAvatar } from "../ui/user-avatar";
 import { AppText, Section, SectionStack } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 import { RankBadge } from "../ui/rank-badge";
 import { alpineTrail } from "../ui/club-art";
-import { SHELL_COLORS as c } from "../theme";
+
 import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import {
@@ -33,7 +35,7 @@ import { mobileEnv } from "../lib/env";
 import { requestApi } from "../lib/api";
 import { useCachedApi } from "../lib/use-cached-api";
 import { playCue } from "../lib/haptics";
-import { FocusButton, FocusSheet, f } from "../ui/focus";
+import { FocusButton, FocusSheet } from "../ui/focus";
 export interface PrivateCrew {
   id: string;
   name: string;
@@ -106,6 +108,9 @@ function inviteLink(code: string): string {
 }
 
 export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: boolean; crewId?: string } = {}) {
+const c=useThemeColors();
+const f=useFocusStyles();
+
   const { state, refresh, dispatch } = useCompeteStore();
   const { user } = useAuth();
   const { blocks } = useAthleteBlocks();
@@ -435,7 +440,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
       ) : null}
       {solo ? (
         <SectionStack divided={false}>
-        <ImageBackground source={alpineTrail} style={{height:200,justifyContent:"flex-end",padding:22,borderRadius:20,overflow:"hidden",backgroundColor:c.fieldDeep}}><View style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3670"}]}/><AppText accessibilityRole="header" role="display" style={{ color: c.card }}>Stronger together.</AppText><AppText role="body" secondary style={{ color: c.card }}>A place for every pace.</AppText></ImageBackground>
+        <ImageBackground source={alpineTrail} style={{height:200,justifyContent:"flex-end",padding:22,borderRadius:20,overflow:"hidden",backgroundColor:c.fieldDeep}}><View style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3670"}]}/><AppText accessibilityRole="header" role="display" style={{ color: c.textOnFeature }}>Stronger together.</AppText><AppText role="body" secondary style={{ color: c.textOnFeature }}>A place for every pace.</AppText></ImageBackground>
         <View style={f.section}>
           <Text style={f.kicker}>Your people</Text>
           <AppText accessibilityRole="header" role="display" >Make room for your people.</AppText>

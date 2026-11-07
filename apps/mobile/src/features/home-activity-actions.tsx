@@ -30,7 +30,7 @@ import {
   syncAppleHealth,
   syncHealthConnect,
 } from "../lib/device-health";
-import { FocusButton, FocusSheet, f } from "../ui/focus";
+import { FocusButton, FocusSheet } from "../ui/focus";
 
 export function HomeActivityActions({
   compact = false,

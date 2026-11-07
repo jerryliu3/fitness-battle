@@ -1,4 +1,7 @@
 "use client";
+import { colors as appearanceColors } from "@/theme/app-colors";
+
+import { AppearanceControl } from "@/theme/appearance-provider";
 import { AppParagraph, AppText, typographyStyle, SectionHeader, Section, AppHeading, TextAction } from "@/ui/section";
 
 import { isAdminEmail } from "@/lib/auth/admin-access";
@@ -181,7 +184,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
           style={{
             background: "var(--red, #b83a38)",
             borderColor: "var(--red, #b83a38)",
-            color: "#fff",
+            color: appearanceColors.white,
           }}
           disabled={deletingAccount}
           onClick={() => void handleDeleteAccount()}
@@ -530,6 +533,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
     return (
       <div className="focus-athlete">
         <AthleteOverview state={state} sections="profile" />
+        <section className="focus-card club-preferences"><AppearanceControl /></section>
         <section className="focus-card fb-stack">
           <AppParagraph typographyRole="label" className="fb-kicker">Account</AppParagraph>
           <SectionHeader title="Sign in to sync your athlete"/>
@@ -714,6 +718,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
         <div className="focus-settings-panel">
           {panel === "connections" ? connectionsContent : null}
           {panel === "preferences" ? <section className="fb-card club-preferences">
+            <AppearanceControl />
             <div className="club-preference-row"><strong>Units</strong><div className="focus-segments" role="group" aria-label="Unit system">
               {(["us", "metric"] as const).map(units => <button key={units} type="button" aria-pressed={state.units === units} onClick={() => dispatch({ type: "set-units", units })}>{units === "us" ? "Imperial" : "Metric"}</button>)}
             </div></div>
@@ -751,7 +756,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
                 }}>Download local demo backup</button>}
               </section>
               {user ? (
-                <Section className="fb-card" style={{ borderColor: "#f3d1cc" }} title="Danger Zone">
+                <Section className="fb-card" style={{ borderColor: appearanceColors.borderSubtle }} title="Danger Zone">
 
                   <AppParagraph typographyRole="body" className="fb-copy">
                     Permanently delete your account and all associated workout history, rankings, and effort scores. This action cannot be undone.

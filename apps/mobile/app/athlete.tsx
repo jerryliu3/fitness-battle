@@ -1,3 +1,6 @@
+import { AppearanceControl } from "../src/ui/appearance-control";
+import { useFocusStyles } from "../src/ui/focus";
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../src/theme";
 import { Toast } from "../src/ui/toast";
 import { playPattern } from "../src/lib/haptics";
 import { HapticPreference } from "../src/ui/haptic-preference";
@@ -28,15 +31,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
 import { useEffect, useRef, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AccountActions } from "../src/features/account-actions";
 import { LegalLinks } from "../src/features/legal-links";
@@ -56,8 +51,8 @@ import {
   isCloudOAuthProvider,
   startCloudTrackerConnect,
 } from "../src/lib/tracker-connect";
-import { SHELL_COLORS, SHELL_RADIUS } from "../src/theme";
-import { FocusButton, FocusSegments, FocusSheet, FocusSidePanel, f } from "../src/ui/focus";
+import { SHELL_RADIUS } from "../src/theme";
+import { FocusButton, FocusSegments, FocusSheet, FocusSidePanel } from "../src/ui/focus";
 import { ProfilePhoto } from "../src/features/profile-photo";
 import { AthleteProfileCard } from "../src/features/athlete-profile-card";
 
@@ -76,6 +71,12 @@ type AthletePanel =
   | "account";
 
 function AthleteContent({ inlineConnections = false }: { inlineConnections?: boolean }) {
+const appearanceColors = useThemeColors();
+
+const SHELL_COLORS=useThemeColors();
+const f=useFocusStyles();
+const styles=useThemedStyles(stylesThemes);
+
   const { state, dispatch } = useCompeteStore();
   const {
     user,
@@ -605,6 +606,7 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
           keyboardShouldPersistTaps="handled"
         >
 <SectionStack divided={false}>
+          {panel === "preferences" && <AppearanceControl />}
           {panel === "profile" ? (
             <>
               <Input style={textStyle("body")}
@@ -749,7 +751,7 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
               borderColor: "rgba(255, 255, 255, 0.2)",
               backgroundColor: pressed ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.1)",
             })}
-          ><AppText role="label" style={{ color: "#ffffff" }}>Edit profile</AppText></Pressable>}
+          ><AppText role="label" style={{ color: appearanceColors.white }}>Edit profile</AppText></Pressable>}
         >
             {topRecords.length > 0 ? (
               <View
@@ -767,7 +769,7 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
                   const label = RECORD_DISTANCES[r.sport]?.find((d) => d.id === r.distanceId)?.label ?? r.distanceId;
                   return (
                     <View key={r.activityId} style={{ alignItems: "center", gap: 2, flex: 1 }}>
-                      <AppText role="heading" style={{ color: SHELL_COLORS.card }}>
+                      <AppText role="heading" style={{ color: SHELL_COLORS.textOnFeature }}>
                         {formatClockTime(r.seconds)}
                       </AppText>
                       <AppText role="caption" style={{ color: "#c9d6e3" }}>
@@ -950,7 +952,7 @@ function AthleteContent({ inlineConnections = false }: { inlineConnections?: boo
   );
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles(themeColors=>{const SHELL_COLORS=themeColors;return {
   safe: { flex: 1, backgroundColor: SHELL_COLORS.paper },
   scroll: { padding: 20, gap: 28, paddingBottom: 32 },
   kicker: {
@@ -1005,7 +1007,8 @@ const styles = StyleSheet.create({
     ...textStyle("label"),
     color: SHELL_COLORS.ink
 },
-});
+};});
+
 
 export function TrackerConnections() { return <AthleteContent inlineConnections/>; }
 export default function AthleteScreen() { return <AthleteContent/>; }

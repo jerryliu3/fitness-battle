@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { playCue } from "../lib/haptics";
 import { AppText } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
@@ -6,9 +7,11 @@ import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
-import { FocusButton, FocusSheet, f } from "../ui/focus";
+import { FocusButton, FocusSheet } from "../ui/focus";
 
 export function AccountActions() {
+const f=useFocusStyles();
+
   const { user, offlineMode, accessToken, signOut } = useAuth();
   const { clearAccountData } = useCompeteStore();
   const [panel, setPanel] = useState<"report" | "delete" | null>(null);

@@ -1,16 +1,9 @@
 "use client";
+import { healthColors as colors } from "@/theme/app-colors";
+
 
 import { Fragment, useState, type CSSProperties } from "react";
-import {
-  HOME_HEALTH_COLORS as colors,
-  formatHealthNumber,
-  buildHealth7DayCorridorModel,
-  competeNow,
-  healthSignal,
-  healthSignalRange,
-  homeHealthMetrics,
-  type CompeteState,
-} from "@fitness-battle/shared";
+import { formatHealthNumber, buildHealth7DayCorridorModel, competeNow, healthSignal, healthSignalRange, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
 import { AppHeading } from "@/ui/section";
 import "./daily-health.css";
 

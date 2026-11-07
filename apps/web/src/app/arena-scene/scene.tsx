@@ -1,4 +1,6 @@
 "use client";
+import { colors as appearanceColors } from "@/theme/app-colors";
+
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -65,7 +67,7 @@ export function ArenaScene() {
 
   return (
     <div
-      style={{ height: "100dvh", background: "#eef0e9", overflow: "hidden" }}
+      style={{ height: "100dvh", background: appearanceColors.soft, overflow: "hidden" }}
       className="embedded-arena"
     >
       <style>{`.embedded-arena .fd-live-world{height:100dvh;min-height:100dvh}.embedded-arena .fd-world-label{background:#fffffff0;color:#282f2c;border:1px solid #e0e5dc;border-radius:10px}.embedded-arena canvas{touch-action:none}`}</style>
@@ -96,7 +98,7 @@ export function ArenaScene() {
           }}
         />
       ) : (
-        <p style={{ padding: 24, color: "#616c63", fontFamily: "sans-serif" }}>
+        <p style={{ padding: 24, color: appearanceColors.textSecondary, fontFamily: "sans-serif" }}>
           Preparing your lanes…
         </p>
       )}

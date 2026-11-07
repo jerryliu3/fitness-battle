@@ -1,6 +1,8 @@
+import { useFocusStyles } from "../../src/ui/focus";
+import { createThemedStyles, useThemedStyles } from "../../src/theme";
 import { AppText, SectionStack } from "../../src/ui/section";
 import { useDailySuggestion } from "../../src/features/use-daily-suggestion";
-import { SHELL_COLORS as c } from "../../src/theme";
+
 import { WeekChart } from "../../src/features/week-chart";
 import { DailyHealth } from "../../src/features/daily-health";
 import { LatestActivity } from "../../src/features/club-latest-activity";
@@ -12,15 +14,18 @@ import { RivalCard } from "../../src/features/club-rival-card";
 import { APP_TIMEZONE, buildTodayRoute, competeNow, countsOnTrack, dayKey, primaryFreezePeriodStart } from "@fitness-battle/shared";
 import { useState, useCallback, useEffect } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Platform, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { SessionStage } from "../../src/features/session-stage";
 import { HomeActivityActions } from "../../src/features/home-activity-actions";
 import { Journey } from "../../src/features/journey";
 import { useCompeteStore } from "../../src/lib/compete-store";
-import { FocusDisclosure, FocusSheet, f } from "../../src/ui/focus";
+import { FocusDisclosure, FocusSheet } from "../../src/ui/focus";
 export default function Home() {
+const f=useFocusStyles();
+const s=useThemedStyles(sThemes);
+
   const router = useRouter();
   const { state, dispatch, accountKey } = useCompeteStore();
   const suggestionPrompt = useDailySuggestion(accountKey, state);
@@ -110,7 +115,7 @@ export default function Home() {
     </SafeAreaView>
   );
 }
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   suggestionPrompt: {
     position: "absolute",
     bottom: 92,
@@ -166,4 +171,4 @@ const s = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
   },
-});
+};});

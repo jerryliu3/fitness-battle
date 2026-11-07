@@ -5,7 +5,7 @@ import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 const fixtures = vi.hoisted(() => ({ rows: [] as unknown[], navigate: vi.fn() }));
 vi.mock("@fitness-battle/shared", async importOriginal => ({ ...await importOriginal<typeof import("@fitness-battle/shared")>(), weeklyBoard: () => fixtures.rows }));
-vi.mock("react-native", () => ({ View: "View", Text: "Text", ImageBackground: "ImageBackground", Pressable: "Pressable", StyleSheet: { absoluteFill: {}, create: (styles: unknown) => styles } }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  View: "View", Text: "Text", ImageBackground: "ImageBackground", Pressable: "Pressable", StyleSheet: { absoluteFill: {}, create: (styles: unknown) => styles } }));
 vi.mock("expo-router", () => ({ useRouter: () => ({ navigate: fixtures.navigate }) }));
 vi.mock("../ui/club-art", () => ({ alpineTrail: 1 }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: () => null }));

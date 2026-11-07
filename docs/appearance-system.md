@@ -4,16 +4,20 @@ This replaces the abandoned color-study integration with a small foundation base
 
 ## Contract
 
-`packages/shared/src/appearance.ts` is platform-independent. `getAppColors(mode)` returns matching semantic roles, `resolveColorMode(preference, system)` resolves Light/Dark/System, and `appColorVariables(mode)` publishes only namespaced `--app-*` values. Existing static exports remain compatible and light-only. Supporting text and secondary brand accents are separate roles.
+`packages/shared/src/appearance.ts` is platform-independent. `getAppColors(mode)` returns matching semantic roles, `resolveColorMode(preference, system)` resolves Light/Dark/System, and `appColorVariables(mode)` publishes only namespaced `--app-*` values. Existing static exports remain compatible for historical prototypes and pure presentation defaults. Supporting text and secondary brand accents are separate roles.
 
 Native `AppThemeProvider` is mounted above navigation. `useAppTheme()` exposes preference, resolved mode and colors; `useThemeColors()` is the convenience hook. Preferences persist in AsyncStorage, with protection against a late storage read overwriting a new user selection. `createThemedStyles` caches both recipes and `useThemedStyles` selects one without remounting children. Expo permits system appearance.
 
 Web reads the preference cookie on the server and publishes color variables before hydration. System uses CSS `light-dark()`; manual overrides and browser theme-color follow the resolved preference. `AppearanceProvider`, `useAppearance` and the reusable `AppearanceControl` provide persistence and selection. Inline/SVG consumers use `src/theme/app-colors.ts` instead of fixed shared hex exports.
 
-## Adoption boundary
+## Application adoption
 
-This is infrastructure, not a complete dark-mode product release. Existing static native styles and legacy CSS are deliberately not bulk rewritten. The reusable preference control is not yet exposed in product settings: add it when the destination and its common primitives have been migrated and visually checked. Do not claim all screens support dark mode merely because their provider does.
+Production native routes and common UI now consume reactive palette hooks and cached light/dark style recipes. Navigation, text, sheets, charts, onboarding and settings follow the saved preference without remounting navigation. HeroUI/Uniwind control variables are synchronized from the same shared palette.
 
-For an adopted native component, define recipes with `createThemedStyles(colors => ({ surface: { backgroundColor: colors.surfaceCard } }))` and select them in the component with `useThemedStyles`. For web, use `background: var(--app-surface-card); color: var(--app-text-primary)`. Yellow controls require `textOnAction`, not a foreground that flips to white in dark mode. Illustration, categorical series and status colors keep their distinct purposes.
+Production web CSS and SVG/inline consumers resolve the shared namespaced variables and legacy aliases. Athlete Preferences exposes System/Light/Dark on both platforms, with the appearance control also available on the guest web profile. Supporting text and brand accents retain independent roles. Fixed foregrounds on artwork and yellow actions use explicit on-surface tokens.
 
-Screen migrations should be separate small PRs against current main. Verify Light, Dark and System on real content and empty/error states before exposing a production switch. This separation avoids carrying old layouts across recent refactors.
+Geographic scenery, mascot artwork and categorical participant colors retain their distinct palettes. Historical design studies and native prototypes are not production routes and retain their reviewed study styling. The old Slate/Steel experiment, diagnostic outline mode and chart recoloring are excluded.
+
+Define new native styles with `createThemedStyles(colors => ({ surface: { backgroundColor: colors.surfaceCard } }))` and select them with `useThemedStyles` in the component. Read inline colors with `useThemeColors`. On web use `--app-*` variables or the CSS-variable adapter; never import static light colors into reactive product UI.
+
+Before shipping, check release-device native appearance and real connected-account states. Browser review and renderer tests do not establish device rendering parity.

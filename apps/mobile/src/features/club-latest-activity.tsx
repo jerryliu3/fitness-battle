@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { RouteStaticPreview } from "../ui/route-static-preview";
 import { Section, AppText } from "../ui/section";
 import { useState } from "react";
@@ -6,10 +7,12 @@ import { APP_TIMEZONE, activityRoute, clubDuration, formatVolume, homeRecentActi
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
 import { useCrewActivities } from "./use-crew-activities";
-import { FocusSheet, f } from "../ui/focus";
+import { FocusSheet } from "../ui/focus";
 import { SportActivityIcon } from "../ui/sport-activity-icon";
 
 export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen: (activity: Activity) => void }) {
+const f=useFocusStyles();
+
   const { user } = useAuth();
   const crew = useCrewActivities();
   const { blocks } = useAthleteBlocks();

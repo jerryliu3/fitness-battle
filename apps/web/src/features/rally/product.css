@@ -20,7 +20,7 @@
 }
 
 body:has(.rally-focus[data-product="on"]) {
-  background: #40234e;
+  background: var(--app-soft);
 }
 
 body:has(.rally-focus[data-product="on"]) .fb {
@@ -32,14 +32,14 @@ body:has(.rally-focus[data-product="on"]) .fb {
 
 .rally-focus[data-product="on"] .fb-guest-banner {
   margin: 12px 0 0;
-  background: #fff9e9;
+  background: var(--app-surface-card);
   border: 1px solid #40234e26;
   border-radius: 0;
-  color: #40234e;
+  color: var(--app-text-secondary);
 }
 
 .rally-focus[data-product="on"] .fb-guest-banner a {
-  color: #40234e;
+  color: var(--app-text-secondary);
 }
 
 .rally-focus[data-product="on"] .rf-product-main {
