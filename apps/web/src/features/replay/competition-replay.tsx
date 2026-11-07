@@ -2,6 +2,7 @@
 import { GeographicCourse } from "../course/geographic-course";
 import { useCompetitionCourse } from "../course/use-competition-course";
 import { FieldViewSwitcher } from "../field/components/field-view-switcher";
+import { CompeteTimeSeriesChart } from "../field/components/compete-time-series-chart";
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -19,7 +20,7 @@ import {
 } from "@fitness-battle/shared";
 
 export function CompetitionReplayButton({ state, selection, dimension = "4d", initialFlat = false, label = "Replay competition" }: {
-  state: CompeteState; selection: CompetitionReplaySelection; dimension?: "2d" | "3d" | "4d"; initialFlat?: boolean; label?: string;
+  state: CompeteState; selection: CompetitionReplaySelection; dimension?: "2d" | "3d" | "4d" | "graph"; initialFlat?: boolean; label?: string;
 }) {
   const [open, setOpen] = useState(false);
   return <Dialog.Root open={open} onOpenChange={setOpen}>
@@ -30,7 +31,7 @@ export function CompetitionReplayButton({ state, selection, dimension = "4d", in
   </Dialog.Root>;
 }
 
-export function ReplayViewer({ state, selection, initialDimension, embedded = false, initialFlat = false }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; initialFlat?: boolean; embedded?: boolean }) {
+export function ReplayViewer({ state, selection, initialDimension, embedded = false, initialFlat = false }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d" | "graph"; initialFlat?: boolean; embedded?: boolean }) {
   const { user, offlineMode } = useAuth();
   const { debugActive } = useCompete();
   const reduced = useReducedMotion();
@@ -112,7 +113,7 @@ export function ReplayViewer({ state, selection, initialDimension, embedded = fa
         onZoomIn={dimension !== "4d" ? () => zoomTo(Math.max(unit === "pts" ? 2 : .5, view.span / 1.5)) : undefined}
         onZoomOut={dimension !== "4d" ? () => zoomTo(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)) : undefined} /></div><span>Your place <b>{me?.place ?? "—"} / {lanes.length}</b></span></div>
       <div className="competition-replay-scene">
-        {dimension === "4d" ? <GeographicCourse initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following} onFollowChange={next => { setCenter(next ? null : view.center); setFollowing(next); }} course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <ArenaLanes clampView={following} playback onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount immersive lanes={lanes} appearance={appearance} view={view} unit={unit} selected={selected ?? focus?.id ?? ""} onSelect={select} onPan={panTo} onZoom={zoomTo} /> : <PortraitField onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount immersive selectedId={selected ?? focus?.id} lanes={lanes} view={view} unit={unit} onSelect={select} onPan={panTo} onZoom={zoomTo} />}
+        {dimension === "graph" ? <CompeteTimeSeriesChart state={state} sport={selection.sport} track={selection.track} selectedId={selected ?? focus?.id} onSelectAthlete={select} /> : dimension === "4d" ? <GeographicCourse initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following} onFollowChange={next => { setCenter(next ? null : view.center); setFollowing(next); }} course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <ArenaLanes clampView={following} playback onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount immersive lanes={lanes} appearance={appearance} view={view} unit={unit} selected={selected ?? focus?.id ?? ""} onSelect={select} onPan={panTo} onZoom={zoomTo} /> : <PortraitField onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount immersive selectedId={selected ?? focus?.id} lanes={lanes} view={view} unit={unit} onSelect={select} onPan={panTo} onZoom={zoomTo} />}
 
       </div>
       <footer className="competition-replay-controls">

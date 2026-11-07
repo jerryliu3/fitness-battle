@@ -2,6 +2,7 @@ import { useFocusStyles } from "../ui/focus";
 import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
 import { useState } from "react";
 import { SectionHeader, AppText } from "../ui/section";
+import { CompeteTimeSeriesChart } from "../ui/compete-time-series-chart";
 import {
   buildSleepView,
   competeNow,
@@ -78,6 +79,7 @@ const f=useFocusStyles();
           {view.place ?? "—"} / {view.fieldSize || "—"}
         </AppText>
       </View>
+      <CompeteTimeSeriesChart state={state} mode="sleep" />
       {view.rows.map((r) => (
         <Pressable key={r.id} style={f.row} accessibilityRole="button" accessibilityLabel={`View ${r.name} profile`} onPress={() => setAthlete({ id: r.id, name: r.name, you: r.you, sample: !r.you, contextLabel: "Recovery this week", contextValue: `${r.score.toFixed(0)} contest score`, contextDetail: `Place ${r.place}` })}>
           <AppText role="body" secondary >{r.place}</AppText>

@@ -141,7 +141,7 @@ export function competitionReplayDate(index: CompetitionReplayIndex, cursor: num
   return new Date(live ? Date.parse(index.replay.through) : before + (after - before) * fraction).toLocaleString("en-US", { timeZone: APP_TIMEZONE, month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
 }
 
-export function competitionReplayDimension(sport: SportId, requested: "2d" | "3d" | "4d" = "4d") {
+export function competitionReplayDimension(sport: SportId, requested: "2d" | "3d" | "4d" | "graph" = "4d"): "2d" | "3d" | "4d" | "graph" {
   return requested === "4d" && !sportById(sport).gps ? "2d" : requested;
 }
 export function nextCompetitionReplaySpeed(speed: number) {

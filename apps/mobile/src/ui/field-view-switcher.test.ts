@@ -20,14 +20,19 @@ it("offers the course as 3D for distance fields and marks the chosen view withou
     const trigger = buttons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Dimension: 3D");
     expect(trigger).toBeDefined();
 
+    const optionGraph = buttons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Select Graph");
     const option2D = buttons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Select 2D");
     const option3D = buttons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Select 3D");
     const option4D = buttons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Select 4D");
+    expect(optionGraph).toBeDefined();
     expect(option2D).toBeDefined();
     expect(option3D?.props.accessibilityState.selected).toBe(true);
     await act(async () => option3D!.props.onPress());
     expect(onChange).toHaveBeenCalledWith("4d");
     expect(option4D).toBeUndefined();
+
+    await act(async () => optionGraph!.props.onPress());
+    expect(onChange).toHaveBeenCalledWith("graph");
 
     await act(async () => option2D!.props.onPress());
     expect(onChange).toHaveBeenCalledWith("2d");

@@ -2,6 +2,7 @@
 import { useCompetitionTimeline } from "@/features/arena/competition-timeline-context";
 import { Sheet } from "@/ui/sheet";
 import { FieldViewSwitcher } from "./field-view-switcher";
+import { CompeteTimeSeriesChart } from "./compete-time-series-chart";
 import { GeographicCourse } from "@/features/course/geographic-course";
 import { useCompetitionCourse } from "@/features/course/use-competition-course";
 import { PortraitField } from "@/features/club/portrait-field";
@@ -121,12 +122,12 @@ export function FieldStage({
       }
     : null;
 
-  const [viewDimension, setViewDimension] = useState<"2d" | "3d" | "4d">(unit === "pts" ? "2d" : "4d");
+  const [viewDimension, setViewDimension] = useState<"2d" | "3d" | "4d" | "graph">(unit === "pts" ? "graph" : "4d");
   const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(model.sport, model.periodStart, model.periodEnd, debugActive, !standingsOnly && viewDimension === "4d" && (persistent || tabActive));
   const [courseFlat, setCourseFlat] = useState(false);
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
   useEffect(() => setCourseTarget(null), [accountKey, model.sport, model.periodStart, model.unit]);
-  const chooseView = (value: "2d" | "3d" | "4d") => {
+  const chooseView = (value: "2d" | "3d" | "4d" | "graph") => {
     void playCue("selection");
     cancelCenterTween();
     setStandingsOpen(false);
@@ -170,7 +171,7 @@ export function FieldStage({
     setStandingsOpen(false);
     setSelected(id);
     setFocusRequest(value => value + 1);
-    if (viewDimension !== "4d") tweenCenterTo(valueAt(runner, time));
+    if (viewDimension !== "4d" && viewDimension !== "graph") tweenCenterTo(valueAt(runner, time));
   };
 
   const fieldLanes: ArenaSceneLane[] = useMemo(
@@ -370,8 +371,8 @@ export function FieldStage({
         </div>}
         {!onOptionsChange && <FieldViewSwitcher compact={backgroundMode} value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
           onStandings={queueOverlay ? undefined : () => { if (backgroundMode) onDetails?.(); else { setLanesImmersive(false); setStandingsOpen(true); } }}
-          onZoomIn={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.max(unit === "pts" ? 2 : .5, view.span / 1.5)); } : undefined}
-          onZoomOut={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)); } : undefined} />}
+          onZoomIn={viewDimension !== "4d" && viewDimension !== "graph" ? () => { cancelCenterTween(); setSpan(Math.max(unit === "pts" ? 2 : .5, view.span / 1.5)); } : undefined}
+          onZoomOut={viewDimension !== "4d" && viewDimension !== "graph" ? () => { cancelCenterTween(); setSpan(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)); } : undefined} />}
       </div>
 
       {!backgroundMode && !queueOverlay && replayState && <div className="field-timeline-fullscreen"><FieldTimeline timeline={timeline} /></div>}
@@ -546,6 +547,16 @@ export function FieldStage({
           onClose={() => { if (backgroundMode) onExit?.(); else setLanesImmersive(false); }}
           hud={presentationVisible ? broadcastHud : undefined}
         >
+          {viewDimension === "graph" && (persistent || tabActive) ? (
+            <CompeteTimeSeriesChart
+              state={replayState}
+              sport={model.sport}
+              track={model.track}
+              selectedId={trackSelected || you.id}
+              onSelectAthlete={toggleSelect}
+              reserveTopControls={!lanesImmersive}
+            />
+          ) : null}
           {viewDimension === "4d" && (persistent || tabActive) ? <div className="focus-geographic-host" style={{ position: "relative", height: persistent || lanesImmersive ? "100%" : 460 }}>
             <GeographicCourse cardSessionKey={lanesImmersive} initialFlat={courseFlat} onFlatChange={setCourseFlat} lanes={fieldLanes} unit={unit} selectedId={(lanesImmersive ? trackSelected : null) || you.id} focusRequest={lanesImmersive ? focusRequest : 0} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={lanesImmersive ? courseTarget : null} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? (spotlightCollapsed ? 136 : 236) + (replayState && !backgroundMode ? 128 : 0) : 8} />
             {!lanesImmersive ? <button type="button" className="focus-portal-pill is-accent" style={{ position: "absolute", top: 12, right: 12 }} aria-label="Expand 3D course to full screen" onClick={() => setLanesImmersive(true)}>Full Arena ⤢</button> : null}

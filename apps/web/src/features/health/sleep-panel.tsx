@@ -1,5 +1,6 @@
 "use client";
 import { AppParagraph, AppText, typographyStyle, SectionHeader } from "@/ui/section";
+import { CompeteTimeSeriesChart } from "@/features/field/components/compete-time-series-chart";
 
 import {
   buildSleepView,
@@ -165,6 +166,8 @@ export function SleepPanel({
               </strong>
             </div>
           </div>
+
+          <CompeteTimeSeriesChart state={state} now={now} mode="sleep" />
 
           {view.rows.length > 0 ? (
             <ol className="sl-board">

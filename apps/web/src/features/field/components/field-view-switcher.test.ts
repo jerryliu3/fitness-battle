@@ -10,15 +10,17 @@ it("offers 2D, geographic 3D and standings in an accessible dropdown", async () 
     const select = renderer.root.findByType("select");
     expect(select.props["aria-label"]).toBe("Field view");
     expect(select.props.value).toBe("4d");
-    expect(renderer.root.findAllByType("option").map(option => option.props.children)).toEqual(["2D map", "3D course", "Standings"]);
-    expect(renderer.root.findAllByType("option").map(option => option.props.value)).toEqual(["2d", "4d", "standings"]);
+    expect(renderer.root.findAllByType("option").map(option => option.props.children)).toEqual(["Graph", "2D map", "3D course", "Standings"]);
+    expect(renderer.root.findAllByType("option").map(option => option.props.value)).toEqual(["graph", "2d", "4d", "standings"]);
     await act(async () => select.props.onChange({ target: { value: "standings" } }));
     expect(onStandings).toHaveBeenCalledOnce();
     await act(async () => select.props.onChange({ target: { value: "4d" } }));
     expect(onChange).toHaveBeenCalledWith("4d");
+    await act(async () => select.props.onChange({ target: { value: "graph" } }));
+    expect(onChange).toHaveBeenCalledWith("graph");
     await act(async () => renderer.update(createElement(FieldViewSwitcher, { value: "2d", geographic: false, onChange, standings: true, onStandings })));
     expect(renderer.root.findByType("select").props.value).toBe("standings");
-    expect(renderer.root.findAllByType("option").map(option => option.props.value)).toEqual(["2d", "standings"]);
+    expect(renderer.root.findAllByType("option").map(option => option.props.value)).toEqual(["graph", "2d", "standings"]);
   } finally { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); }
 });
 
