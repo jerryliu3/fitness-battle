@@ -1,8 +1,10 @@
 "use client";
+import { CoursePreview } from "./course-preview";
+import { FieldOverview } from "@/features/field/components/field-course";
 import { CompeteSheet } from "./compete-sheet";
 import { FeatureCard, StatusBadge, AppParagraph, AppText, typographyStyle, SectionHeader, AppHeading } from "@/ui/section";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { playCue } from "@/lib/haptics";
 
@@ -38,6 +40,8 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const router = useRouter();
   const requestedEvent=useSearchParams().get("event");
   const [immersiveAccount, setImmersiveAccount] = useState<string | null>(null);
+  const [courseOptions, setCourseOptions] = useState<ReactNode>(null);
+  const [courseTarget, setCourseTarget] = useState<{ value: number; request: number } | null>(null);
   const [expandRequest, setExpandRequest] = useState(0);
   const immersive = immersiveAccount === (user?.id ?? "guest") && tabActive;
   useEffect(() => { if (!tabActive) setImmersiveAccount(null); }, [tabActive]);
@@ -45,6 +49,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const [register, setRegister] = useState(false);
   const [selection, setSelection] = useState<{account:string; sport:SportId|"sleep"}|null>(null);
   useEffect(()=>{if(tabActive&&requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:user?.id??"guest",sport:requestedEvent as SportId});},[requestedEvent,user?.id,tabActive]);
+  useEffect(() => setCourseTarget(null), [user?.id, selection?.sport]);
   const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const account = user?.id ?? "guest";
@@ -111,10 +116,11 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const hasAnyRegistration = active.length > 0 || sleepOptedIn;
 
   const sleep = sleepRenewal(state);
+  const overviewModel = selectedSport && selectedSport !== "sleep" ? buildArenaModel(state, undefined, track, selectedSport) : null;
 
   return (
     <div className="focus-arena">
-      {selectedSport && selectedSport !== "sleep" ? <FieldStage persistent backgroundMode presentationVisible={immersive} onExit={() => setImmersiveAccount(null)} onDetails={() => setExpandRequest(value => value + 1)} key={`${account}:${selectedSport}:${state.units}`} tabActive={tabActive} replayState={state} queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField overlay state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
+      {selectedSport && selectedSport !== "sleep" ? <FieldStage onOptionsChange={setCourseOptions} externalCourseTarget={courseTarget} persistent backgroundMode presentationVisible={immersive} onExit={() => setImmersiveAccount(null)} onDetails={() => setExpandRequest(value => value + 1)} key={`${account}:${selectedSport}:${state.units}`} tabActive={tabActive} replayState={state} queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField overlay state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
       {!immersive && <section aria-label="Your events" className="compete-event-home">
         <SectionHeader titleRole="display" title="Compete" subtitle="Your events" action={<button type="button" className="fb-btn" onClick={() => { setSport(null); setRegister(true); }}>Register for an event</button>} />
         {active.map(rating => {
@@ -130,7 +136,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
           const rival = lanes.filter(lane => !lane.you).sort((a,b) => Math.abs(a.values[2] - total) - Math.abs(b.values[2] - total))[0];
           return <button type="button" key={event} className="compete-event-card" aria-label={`Enter ${SPORTS.find(s => s.id === event)?.name} field`} onClick={() => { setSelection({ account, sport: event }); setImmersiveAccount(account); }}>
             <strong>{SPORTS.find(s => s.id === event)?.name}</strong><span>{queued ? "Upcoming wave" : `Place ${place} / ${lanes.length}`}</span>
-            <div className="compete-event-preview" aria-hidden="true">{!queued && lanes.slice(0,3).map(lane => <div key={lane.id}><i style={{ left: `${Math.min(95, lane.values[2] / Math.max(1, ...lanes.map(item => item.values[2])) * 95)}%`, background: lane.you ? "var(--lime)" : "var(--muted)" }} /></div>)}</div>
+            <CoursePreview sport={event} start={competePeriodWindow(state, now, event).startsAt.toISOString()} end={competePeriodWindow(state, now, event).endsAt.toISOString()} queued={Boolean(queued)} />
             <small>{queued ? "Upcoming wave" : `${daysLeft} days left`}</small>
             <b>{queued ? "Your field opens when the wave starts." : `${total.toFixed(2)} ${model?.unit ?? ""}`}</b>
             {!queued && rival ? <small>{Math.abs(rival.values[2] - total).toFixed(2)} {model?.unit} {rival.values[2] > total ? "behind" : "ahead of"} {rival.name}</small> : null}<span>Open field →</span>
@@ -139,7 +145,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         {sleepOptedIn && <button type="button" className="compete-event-card" onClick={() => setSelection({ account, sport: "sleep" })}><strong>Recovery</strong><span>View your recovery event →</span></button>}
         {!hasAnyRegistration && <p className="fb-copy">Register for an event to open your first field.</p>}
       </section>}
-      <CompeteSheet active={immersive} expandRequest={expandRequest}>
+      <CompeteSheet overview={overviewModel && !queue?.queued && !queue?.awaitingField ? <div className="compete-sheet-overview-row"><div className="compete-sheet-overview-track"><FieldOverview lanes={overviewModel.lanes.filter(lane => !lane.ghost).map(lane => ({ ...lane, value: lane.values[2], initials: "" }))} unit={overviewModel.unit} positionOnly view={{ center: courseTarget?.value ?? overviewModel.lanes.find(lane => lane.you)?.values[2] ?? 0, span: 1 }} onNavigate={value => setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }))} /></div>{courseOptions}</div> : undefined} active={immersive} expandRequest={expandRequest}>
 
 
 

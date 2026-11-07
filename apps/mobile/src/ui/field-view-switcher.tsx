@@ -1,3 +1,4 @@
+import { AppIcon } from "./app-icon";
 import { Pressable, Text, View } from "react-native";
 import { AnchoredMenu, useAnchoredMenu } from "./anchored-menu";
 import { textStyle } from "./section";
@@ -5,10 +6,12 @@ import { playCue } from "../lib/haptics";
 import { SHELL_COLORS as c } from "../theme";
 
 export function FieldViewSwitcher({
+  compact = false,
   value,
   geographic,
   onChange,
 }: {
+  compact?: boolean;
   value: "2d" | "3d" | "4d";
   geographic: boolean;
   onChange(value: "2d" | "3d" | "4d"): void;
@@ -27,7 +30,7 @@ export function FieldViewSwitcher({
     <View ref={anchorRef} collapsable={false}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Dimension: ${(value === "4d" ? "3D" : value.toUpperCase())}`}
+        accessibilityLabel={compact ? "Course options" : `Dimension: ${(value === "4d" ? "3D" : value.toUpperCase())}`}
         accessibilityState={{ expanded: open }}
         onPress={toggle}
         style={({ pressed }) => [
@@ -45,9 +48,9 @@ export function FieldViewSwitcher({
           pressed && { opacity: 0.75 },
         ]}
       >
-        <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
+        {compact ? <AppIcon name="settings" size={22} color="#ffffff" /> : <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
           {(value === "4d" ? "3D" : value.toUpperCase())} ▾
-        </Text>
+        </Text>}
       </Pressable>
       <AnchoredMenu
         open={open}

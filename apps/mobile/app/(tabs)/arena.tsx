@@ -1,8 +1,10 @@
+import { useAthleteBlocks } from "../../src/lib/athlete-blocks";
+import { FieldOverview } from "../../src/ui/field-course";
 import { useCompeteExperience } from "../../src/features/compete-experience";
 import { EventHome } from "../../src/features/event-home";
 import { CompeteSheet } from "../../src/ui/compete-sheet";
 import { NavigationAction, SectionStack, AppText } from "../../src/ui/section";
-import { competitionQueue, competeNow, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
+import { buildArenaModel, competitionQueue, competeNow, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
 import {
   SPORTS,
   type CrewBoardPin,
@@ -35,6 +37,7 @@ export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
     canWrite,
   } = useCompeteStore();
   const { user } = useAuth();
+  const { blocks } = useAthleteBlocks();
   const router = useRouter();
   const experience = useCompeteExperience();
   const exit = experience.close;
@@ -43,6 +46,9 @@ export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
   useEffect(() => { if (!persistent || !focused || !experience.immersive) return; const sub = BackHandler.addEventListener("hardwareBackPress", () => { exit(); return true; }); return () => sub.remove(); }, [focused, persistent, experience.immersive, exit]);
   const requestedEvent=useGlobalSearchParams<{event?:string}>().event;
   const crewApi = useCrewApi();
+  const [courseOptions, setCourseOptions] = useState<React.ReactNode>(null);
+  const [courseTarget, setCourseTarget] = useState<{ value: number; request: number } | null>(null);
+  useEffect(() => setCourseTarget(null), [accountKey, experience.event?.sport]);
   const [expandRequest, setExpandRequest] = useState(0);
   const [register, setRegister] = useState(false);
   const [selection,setSelection]=useState<{account:string;sport:SportId|"sleep"}|null>(null);
@@ -130,10 +136,11 @@ export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
   }
 
 
+  const overviewModel = persistent && selectedSport && selectedSport !== "sleep" ? buildArenaModel(state, undefined, track, selectedSport) : null;
   return (
     <SafeAreaView style={f.safe} edges={[]}>
-      {persistent && selectedSport && selectedSport !== "sleep" ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} persistent backgroundMode presentationActive={experience.immersive} onExit={exit} onDetails={() => setExpandRequest(value => value + 1)} /> : null}
-      <ArenaSheet persistent={persistent} expandRequest={expandRequest} active={focused && experience.immersive}>
+      {persistent && selectedSport && selectedSport !== "sleep" ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} persistent backgroundMode onOptionsChange={setCourseOptions} externalCourseTarget={courseTarget} presentationActive={experience.immersive} onExit={exit} onDetails={() => setExpandRequest(value => value + 1)} /> : null}
+      <ArenaSheet persistent={persistent} expandRequest={expandRequest} active={focused && experience.immersive} overview={overviewModel && !queue?.queued && !queue?.awaitingField ? <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><View style={{ flex: 1 }}><FieldOverview hiddenIds={blocks.map(block => block.id)} lanes={overviewModel.lanes.filter(lane => !lane.ghost).map(lane => ({ ...lane, value: lane.values[2], initials: "" }))} unit={overviewModel.unit} positionOnly view={{ center: courseTarget?.value ?? overviewModel.lanes.find(lane => lane.you)?.values[2] ?? 0, span: 1 }} onNavigate={value => setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }))} /></View>{courseOptions}</View> : undefined}>
 <SectionStack divided={false}>
         {!persistent && <View style={{ gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><AppText role="display" accessibilityRole="header">Compete</AppText><FocusButton label="+ Register" secondary onPress={openRegistration} /></View><AppText role="body" secondary>Your events</AppText></View>}
         {standingsStale ? (
@@ -236,6 +243,6 @@ export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
   );
 }
 
-function ArenaSheet({ persistent, children, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean }) {
+function ArenaSheet({ persistent, children, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean; overview?: React.ReactNode }) {
   return persistent ? <CompeteSheet {...props}>{children}</CompeteSheet> : <ScrollView contentContainerStyle={f.content}>{children}</ScrollView>;
 }

@@ -1,3 +1,4 @@
+import { MaterialBack } from "../ui/material-back";
 import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
 import { QueuedField } from "./queued-field";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
@@ -33,7 +34,7 @@ import {
   type SportId,
 } from "@fitness-battle/shared";
 import { usePathname } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AppState, Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "../ui/icon-button";
@@ -55,6 +56,8 @@ export function CompetitionField({
   onExit,
   onDetails,
   presentationActive,
+  externalCourseTarget,
+  onOptionsChange,
 }: {
   sport: SportId;
   track: ScoreTrack;
@@ -64,6 +67,8 @@ export function CompetitionField({
   onExit?: () => void;
   onDetails?: () => void;
   presentationActive?: boolean;
+  onOptionsChange?: (options: ReactNode | null) => void;
+  externalCourseTarget?: CourseDistanceTarget | null;
 }) {
   const { state, accountKey, debugActive, dispatch } = useCompeteStore();
   const { blocks } = useAthleteBlocks();
@@ -77,10 +82,17 @@ export function CompetitionField({
   const isFocused = (presentationActive ?? true) && shellTabFromPath(pathname)?.id === "arena";
   const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d">(() => (state && buildArenaModel(state, undefined, track, sport)?.unit === "pts") ? "2d" : "4d");
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
+
   const chooseView = (value: "2d" | "3d" | "4d") => {
     flight.cancel();
     setSceneDimension(value);
   };
+  const chooseViewRef = useRef(chooseView); chooseViewRef.current = chooseView;
+  useEffect(() => {
+    if (!onOptionsChange || sceneDimension === "4d") return;
+    onOptionsChange(<FieldViewSwitcher compact value={sceneDimension} geographic={!queued && sport !== "strength"} onChange={value => chooseViewRef.current(value)} />);
+    return () => onOptionsChange(null);
+  }, [onOptionsChange, sceneDimension, queued, sport]);
   const [courseFlat, setCourseFlat] = useState(false);
   const [courseReplayOpen, setCourseReplayOpen] = useState(false);
   const [expanded, setExpanded] = useState(persistent);
@@ -111,6 +123,7 @@ export function CompetitionField({
   const portraitAnchor = useRef(0);
   const expandField = () => { if (!expanded) { void playCue("light"); setExpanded(true); } };
   const [center, setCenter] = useState<number | null>(null);
+  useEffect(() => { if (externalCourseTarget) { setCourseTarget(externalCourseTarget); setCenter(externalCourseTarget.value); } }, [externalCourseTarget]);
   const [span, setSpan] = useState<number | null>(null);
   const ghost = true;
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -224,7 +237,7 @@ export function CompetitionField({
     >
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <View pointerEvents={expanded ? "auto" : "none"} style={{ flex: 1 }}>
-          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onReplay={() => setCourseReplayOpen(true)} optionsTop={expanded && !queued ? safeTop + (backgroundMode ? 90 : 54) : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
+          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onReplay={() => setCourseReplayOpen(true)} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
           <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>Tap to open full screen</Text></View>
@@ -363,14 +376,14 @@ export function CompetitionField({
                 f.row,
                 {
                   position: "absolute",
-                  top: safeTop + (backgroundMode ? 40 : 6),
+                  top: Math.max(insets.top, 0) + 6,
                   left: 12,
                   right: 12,
                   justifyContent: "space-between",
                 },
               ]}
             >
-              {<View
+              {backgroundMode ? <MaterialBack onPress={() => onExit?.()} /> : <View
                 style={{
                   backgroundColor: "rgba(20, 20, 19, 0.72)",
                   borderRadius: 999,
@@ -384,8 +397,8 @@ export function CompetitionField({
                   onPress={() => persistent ? onExit?.() : setExpanded(false)}
                 />
               </View>}
-              {onDetails ? <Pressable accessibilityRole="button" accessibilityLabel={backgroundMode ? "Expand standings" : "Events & standings"} onPress={onDetails} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.72)" }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{backgroundMode ? `${sport.charAt(0).toUpperCase()}${sport.slice(1)}` : "Events & standings"}</Text></Pressable> : null}
-              <FieldViewSwitcher value={sceneDimension} geographic={!queued && arena.unit !== "pts"} onChange={chooseView} />
+              {!backgroundMode && onDetails ? <Pressable accessibilityRole="button" accessibilityLabel={backgroundMode ? "Expand standings" : "Events & standings"} onPress={onDetails} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.72)" }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{backgroundMode ? `${sport.charAt(0).toUpperCase()}${sport.slice(1)}` : "Events & standings"}</Text></Pressable> : null}
+              {!onOptionsChange && !(backgroundMode && sceneDimension === "4d") && <FieldViewSwitcher compact={backgroundMode} value={sceneDimension} geographic={!queued && arena.unit !== "pts"} onChange={chooseView} />}
             </FieldOverlayView>
 
             {!queued && (sceneDimension !== "4d" || course) ? <>
@@ -397,7 +410,7 @@ export function CompetitionField({
               overlaysHidden={overlaysHidden}
               style={{
                 position: "absolute",
-                top: safeTop + (backgroundMode ? 96 : 62),
+                top: Math.max(insets.top, 0) + 62,
                 left: 12,
                 maxWidth: 274, // 230 px panel plus the 44 px grip target.
               }}

@@ -5,7 +5,7 @@ import { useCompetitionCourse } from "@/features/course/use-competition-course";
 import { PortraitField } from "@/features/club/portrait-field";
 import { PolishedRacer } from "@/features/brand/polished-racer";
 import { UserAvatar } from "@/ui/user-avatar";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { playCue } from "@/lib/haptics";
 import { usePathname } from "next/navigation";
 import {
@@ -42,6 +42,8 @@ export function FieldStage({
   model,
   persistent = false,
   backgroundMode = false,
+  externalCourseTarget,
+  onOptionsChange,
   presentationVisible = true,
   onDetails,
   standingsOnly = false,
@@ -56,6 +58,8 @@ export function FieldStage({
   model: FieldModel;
   persistent?: boolean;
   backgroundMode?: boolean;
+  onOptionsChange?: (options: ReactNode | null) => void;
+  externalCourseTarget?: CourseDistanceTarget | null;
   presentationVisible?: boolean;
   onDetails?: () => void;
   standingsOnly?: boolean;
@@ -127,6 +131,7 @@ export function FieldStage({
   }, [pathname, tabActive, persistent]);
   const [span, setSpan] = useState(fieldDefaultSpan(unit));
   const [center, setCenter] = useState<number | null>(null);
+  useEffect(() => { if (externalCourseTarget) { setCourseTarget(externalCourseTarget); setCenter(externalCourseTarget.value); } }, [externalCourseTarget]);
   const [centerTween, setCenterTween] = useState<number | null>(null);
   const centerTweenRef = useRef<{
     from: number;
@@ -323,6 +328,13 @@ export function FieldStage({
   const focusedDeltaToLeader =
     focusedLane && leader ? focusedLane.value - leader.value : 0;
 
+  const chooseViewRef = useRef(chooseView); chooseViewRef.current = chooseView;
+  useEffect(() => {
+    if (!onOptionsChange) return;
+    onOptionsChange(<FieldViewSwitcher compact value={viewDimension} geographic={unit !== "pts"} onChange={value => chooseViewRef.current(value)} />);
+    return () => onOptionsChange(null);
+  }, [onOptionsChange, viewDimension, unit]);
+
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
 
   const broadcastHud = lanesImmersive ? (
@@ -336,14 +348,14 @@ export function FieldStage({
         >
           ← Back
         </button>
-        <button type="button" className="fb-btn-line" onClick={() => backgroundMode ? onDetails?.() : setLanesImmersive(false)}>Standings</button>
-        <div className="focus-broadcast-title" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {!backgroundMode && <button type="button" className="fb-btn-line" onClick={() => backgroundMode ? onDetails?.() : setLanesImmersive(false)}>Standings</button>}
+        {!backgroundMode && <div className="focus-broadcast-title" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {sportTitle ?? model.sport}{queueOverlay ? " · Upcoming wave" : ` · ${displayPlace} / ${runners.length}`}
-        </div>
-        <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
+        </div>}
+        {!onOptionsChange && <FieldViewSwitcher compact={backgroundMode} value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
           onStandings={queueOverlay ? undefined : () => { if (backgroundMode) onDetails?.(); else { setLanesImmersive(false); setStandingsOpen(true); } }}
           onZoomIn={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.max(unit === "pts" ? 2 : .5, view.span / 1.5)); } : undefined}
-          onZoomOut={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)); } : undefined} />
+          onZoomOut={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)); } : undefined} />}
       </div>
 
       {!queueOverlay && (viewDimension !== "4d" || course) ? <>
@@ -490,7 +502,7 @@ export function FieldStage({
           </div>
         </div>
       ) : null}
-      <div className="focus-broadcast-overview" aria-label="Race overview">
+      <div className="focus-broadcast-overview" aria-label="Race overview" hidden={backgroundMode}>
         <FieldOverview lanes={fieldLanes} view={viewDimension === "4d" ? { ...view, center: courseTarget?.value ?? focusedLane?.value ?? total } : view}
           unit={unit} positionOnly={viewDimension === "4d"}
           onNavigate={value => {

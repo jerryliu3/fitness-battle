@@ -60,9 +60,7 @@ it("restores exit and current positions in the immersive field while standings u
   expect(renderer.root.findAllByType("IconButton" as never).filter(node => node.props.label === "Back to events")).toHaveLength(1);
   expect(renderer.root.findAll(node => node.props.label === "current positions").length).toBeGreaterThan(0);
   expect(renderer.root.findAll(node => node.props.label === "athlete panel")).toHaveLength(0);
-  const details = renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Expand standings")!;
-  await act(async () => details.props.onPress());
-  expect(onDetails).toHaveBeenCalledOnce();
+  expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Expand standings")).toBe(false);
   expect(field().props.fullscreen).toBe(true);
 });
 it("restores HUD and consumes a held athlete release without blocking the next gesture", async () => {
@@ -191,7 +189,7 @@ it("expands the whole 3D preview and only exposes course options in full screen"
   expect(renderer.root.findAllByType("Text" as never).some(node => node.props.children === "Tap to open full screen")).toBe(true);
   await act(async () => button("Open 3D course in full screen").props.onPress());
   expect(map().parent!.props.pointerEvents).toBe("auto");
-  expect(map().props.optionsTop).toBe(110);
+  expect(map().props.optionsTop).toBe(50);
   expect(button("Open 3D course in full screen")).toBeUndefined();
 });
 

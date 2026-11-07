@@ -1,7 +1,7 @@
 import { useAuth } from "../lib/auth";
 import Svg, { G } from "react-native-svg";
 import { AthletePennant } from "./athlete-pennant";
-import { useEffect, useId, useMemo, useRef, useState, type ComponentRef } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import { View, Text, Pressable } from "react-native";
 import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
 import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, RACE_TRAIL_MIN_WIDTH_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
@@ -17,12 +17,12 @@ const isValidPose = (p?: CourseCameraPose | null): p is CourseCameraPose =>
   Boolean(p && p.center && Array.isArray(p.center) && (Math.abs(p.center[0]) >= 1e-6 || Math.abs(p.center[1]) >= 1e-6) && !Number.isNaN(p.center[0]) && !Number.isNaN(p.center[1]) && typeof p.zoom === "number" && p.zoom > 1);
 
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
-export default function CourseMap({ presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, overlaysHidden = false, distanceTarget }: {
+export default function CourseMap({ presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, onChoose2D, onOptionsChange, overlaysHidden = false, distanceTarget }: {
   presentationActive?: boolean;
   cardSessionKey?: string | number | boolean;
   initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
   onReady?: () => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null;
-  hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; overlaysHidden?: boolean;
+  hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; onChoose2D?: () => void; onOptionsChange?: (options: ReactNode | null) => void; overlaysHidden?: boolean;
 }) {
   const sceneActive = useSceneActive();
   const active = sceneActive && presentationActive;
@@ -106,9 +106,26 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
     if (metres === null) return;
     controller.seek(course, metres);
   }, [active, ready, course, unit, distanceTarget?.value, distanceTarget?.request, controller]);
+  const optionsHandlers = useRef({ onReplay, onChoose2D, toggleDimension: () => {}, toggleSpacing: () => {}, overview: () => {} });
+  optionsHandlers.current = { onReplay, onChoose2D,
+    toggleDimension: () => { controller.dimension(flat ? "3d" : "2d", !(followAthlete && controller.following && scene.selected)); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && controller.following) focus(); },
+    toggleSpacing: () => setSpaced(value => !value),
+    overview: () => { onFollowChange?.(false); controller.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); onFlatChange?.(true); },
+  };
+  useEffect(() => {
+    if (!onOptionsChange) return;
+    onOptionsChange(<CourseOptions flat={flat} spaced={spaced}
+      onReplay={onReplay ? () => optionsHandlers.current.onReplay?.() : undefined}
+      onChoose2D={onChoose2D ? () => optionsHandlers.current.onChoose2D?.() : undefined}
+      onToggleDimension={() => optionsHandlers.current.toggleDimension()}
+      onToggleSpacing={() => optionsHandlers.current.toggleSpacing()}
+      onOverview={() => optionsHandlers.current.overview()} />);
+    return () => onOptionsChange(null);
+  }, [onOptionsChange, flat, spaced, Boolean(onReplay), Boolean(onChoose2D)]);
   return <View style={{ flex: 1, minHeight: 0 }}>
     <MapView accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled
-      logoPosition={{ top: 8, left: 8 }} attributionPosition={{ top: 8, left: 100 }}
+      logoPosition={{ top: 8, left: optionsTop != null ? 72 : 8 }} attributionPosition={{ top: 8, left: optionsTop != null ? 170 : 100 }}
+      scaleBarEnabled={optionsTop == null}
       scaleBarPosition={{ bottom: controlsBottom + 100, left: 8 }}
       onDidFinishLoadingMap={() => {
         setReady(true);
@@ -150,9 +167,9 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
       </MarkerView>) : null}
     </MapView>
     {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), position: "absolute", left: 8, right: 8, bottom: controlsBottom + 136, padding: 12, borderRadius: 12, backgroundColor: "#ffffff" }}>{error}</Text> : null}
-    {optionsTop != null ? <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()} style={{ position: "absolute", top: optionsTop, right: 12 }}>
+    {!onOptionsChange && optionsTop != null ? <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()} style={{ position: "absolute", top: optionsTop, right: 12 }}>
       <CourseOptions
-        onReplay={onReplay}
+        onReplay={onReplay} onChoose2D={onChoose2D}
         flat={flat}
         spaced={spaced}
         onToggleDimension={() => { controller.dimension(flat ? "3d" : "2d", !(followAthlete && controller.following && scene.selected)); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && controller.following) focus(); }}
