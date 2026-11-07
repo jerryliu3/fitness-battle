@@ -57,10 +57,10 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
     read: () => pose.current,
     // Native input already cancels animations. Issuing setCamera during a gesture would fight it.
     stop(userGesture) { cancelAnimationFrame(routeFrame.current); routeFrame.current = 0; if (userGesture) return; const p = pose.current; ref.current?.setCamera({ centerCoordinate: p.center, zoomLevel: p.zoom, pitch: p.pitch, heading: p.bearing, animationDuration: 0 }); },
-    follow(next) { ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: 0 }); },
+    follow(next) { ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: 300, animationMode: "easeTo" }); },
     trace(poseAt, duration) {
       const start = Date.now();
-      const tick = () => { const fraction = Math.min(1, (Date.now() - start) / duration); const next = poseAt(fraction * fraction * (3 - 2 * fraction)); pose.current = next; ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: 0 }); if (fraction < 1) routeFrame.current = requestAnimationFrame(tick); else routeFrame.current = 0; };
+      const tick = () => { const elapsed = Date.now() - start; const fraction = Math.min(1, elapsed / duration); const next = poseAt(fraction * fraction * (3 - 2 * fraction), elapsed); pose.current = next; ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: 0 }); if (elapsed < duration + 1200) routeFrame.current = requestAnimationFrame(tick); else routeFrame.current = 0; };
       routeFrame.current = requestAnimationFrame(tick);
     },
     fit(bounds, duration) { ref.current?.setCamera({ bounds: { ...bounds, paddingTop: 48, paddingBottom: 48, paddingLeft: 48, paddingRight: 48 }, pitch: 0, heading: 0, animationDuration: duration, animationMode: "easeTo" }); },
@@ -80,7 +80,6 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
     if (!followAthlete) return;
     // Tab focus alone must never move a prepared camera.
     if (previous && !explicit && previous.metres === scene.selected.metres) return;
-    if (!explicit && routeFrame.current) return;
     controller.focus(course, scene.selected.metres, !explicit, scene.selected.lateralMetres);
     initialized.current = true;
   }, [active, ready, controller, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres, replay]);

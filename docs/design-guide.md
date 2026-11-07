@@ -865,7 +865,7 @@ Snapshot credits may use a compact caption near the static image instead of an
 embedded info button. Live map credits sit at the top-right safe-area edge.
 The standings sheet has no repeated title, retains all rows during height
 changes, and allows its last row to scroll fully above the visible bottom.
-Racer selection travels along course distance, facing the direction of travel;
+Racer selection travels along course distance, facing race-forward even when reversing;
 reduced motion uses an immediate position change.
 
 Compete home restores the shared competition date range beneath its title;
@@ -884,3 +884,9 @@ Course settings group aligned switches before action rows. The 3D view switch
 selects between the 2D and 3D renderers; the native menu and switch columns have
 explicit widths. Only the selected racer's map card exposes its minus control;
 snapshot captures omit interactive controls entirely.
+
+Camera headings anticipate bends using nearby course points and ease toward the
+forward race tangent over time. Racer travel backward retraces course distance
+without turning the lens around. Automatic position updates use the same route
+motion; reduced motion skips animation. Zoom and interruption behavior remain
+consistent across native and web.

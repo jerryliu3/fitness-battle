@@ -129,7 +129,7 @@ previous capped scrolling without unmounting rows.
 
 Racer switches interpolate earned course distance forward or backward rather
 than drawing a camera chord between coordinates. Frames use the route position
-and travel heading, preserve zoom, and are interrupted by selection changes,
+and race-forward heading even when reversing, preserve zoom, and are interrupted by selection changes,
 scrubbing, gestures, backgrounding and teardown. Reduced motion skips travel.
 Snapshots and normal hidden scenes do not retain a route animation clock.
 Shared camera tests cover curved travel, interrupted travel and reduced motion;
@@ -175,3 +175,18 @@ snapshot capture. Snapshot cache keys change to discard any older control-bearin
 images. Existing entry test selectors now target the real button; no tests,
 typecheck or visual review were run locally for this follow-up. Native simulator
 build installed for owner review.
+
+## Smooth course headings and reverse travel
+
+Racer transitions and automatic progress updates follow course distance with a
+race-forward camera, including when the camera backs up to an athlete behind.
+They no longer turn to face the reverse direction. A local course tangent
+anticipates bends, and a time-based angular filter limits sudden rotation while
+handling north wraparound through the shortest angular change. Position still
+tracks the course itself. A short settling interval eases the final heading
+without a last-frame snap. Zoom stays fixed; selection changes, gestures,
+backgrounding and teardown still cancel motion. Reduced motion stays immediate.
+
+Shared regression cases cover backward-facing behavior, bounded per-frame
+rotation, automatic travel and north wraparound. Tests/typecheck and visual
+review were not run at the owner's request. Native simulator build installed.

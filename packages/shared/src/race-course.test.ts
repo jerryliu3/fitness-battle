@@ -127,3 +127,37 @@ it("skips route animation with reduced motion", () => {
   expect(trace).not.toHaveBeenCalled();
   expect(move.mock.lastCall![1]).toBe(0);
 });
+
+
+it("reverses along the race without turning the camera around", () => {
+  const straight = createRaceCourse("Straight", [[0, 0], [.02, 0]]);
+  let pose: CourseCameraPose = { center: straight.coordinates[0], zoom: 16, pitch: 60, bearing: 90 };
+  let sample: ((fraction: number, elapsed?: number) => CourseCameraPose) | undefined;
+  const camera = createCourseCamera({ read: () => pose, stop() {}, move: next => { pose = next; }, trace: next => { sample = next; } });
+  camera.focus(straight, 800); camera.focus(straight, 200);
+  pose = sample!(.5, 16);
+  expect(pose.center).toEqual(raceCoursePosition(straight, 500).coordinate);
+  expect(pose.bearing).toBeCloseTo(90);
+});
+
+it("smooths turn headings across frames, including north wraparound and automatic travel", () => {
+  let pose: CourseCameraPose = { center: [0, 0], zoom: 16, pitch: 60, bearing: 90 };
+  let sample: ((fraction: number, elapsed?: number) => CourseCameraPose) | undefined;
+  const trace = vi.fn((next: (fraction: number, elapsed?: number) => CourseCameraPose) => { sample = next; });
+  const camera = createCourseCamera({ read: () => pose, stop() {}, move: next => { pose = next; }, trace });
+  camera.focus(course, 40); camera.focus(course, 250, true);
+  expect(trace).toHaveBeenCalledOnce();
+  let previous = pose.bearing;
+  for (let frame = 1; frame <= 180; frame++) {
+    pose = sample!(Math.min(1, frame / 100), frame * 16);
+    expect(Math.abs(pose.bearing - previous)).toBeLessThanOrEqual(2.881);
+    previous = pose.bearing;
+  }
+  expect(Math.abs(pose.bearing)).toBeLessThan(1);
+  const north = createRaceCourse("North", [[0, 0], [0, .02]]);
+  pose = { ...pose, bearing: 359 };
+  camera.anchor(north, 100); camera.focus(north, 500);
+  const wrapped = sample!(.5, 16);
+  expect(wrapped.bearing).toBeGreaterThan(359);
+  expect(wrapped.bearing).toBeLessThan(361);
+});
