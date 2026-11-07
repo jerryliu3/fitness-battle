@@ -32,3 +32,5 @@ export {
   SHELL_TYPE,
   SHELL_TABS,
 } from "@fitness-battle/shared";
+
+export { AppThemeProvider, useAppTheme, useThemeColors, createThemedStyles, useThemedStyles } from "./appearance";

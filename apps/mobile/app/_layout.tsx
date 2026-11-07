@@ -1,3 +1,4 @@
+import { AppThemeProvider } from "../src/appearance";
 import { OnboardingNavigation } from "../src/lib/onboarding-navigation";
 import { ToastProvider } from "../src/ui/toast";
 import { textStyle } from "../src/ui/section";
@@ -95,6 +96,10 @@ function NotificationNavigation() {
 }
 
 export default function RootLayout() {
+  return <AppThemeProvider><RootContent /></AppThemeProvider>;
+}
+
+function RootContent() {
   const reduced = useReducedMotion();
   const [dmLoaded, dmError] = useDmSans({
     DMSans_400Regular,

@@ -75,3 +75,5 @@ export * from "./chart-geometry";
 export * from "./experience-concepts";
 export * from "./onboarding-overtake";
 export * from "./chart-presentation";
+
+export * from "./appearance";

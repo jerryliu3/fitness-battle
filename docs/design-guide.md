@@ -1,5 +1,7 @@
 # Product design guide — Everyday Club
 
+The [appearance foundation](appearance-system.md) adds shared light/dark roles and System preference infrastructure. Existing production styles remain the baseline until separately migrated; this does not select a new secondary palette.
+
 ## Composition and copy principles — November 6, 2026
 
 These principles apply to new screens and refinements on web and native. They
