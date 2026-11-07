@@ -138,7 +138,7 @@ export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
 
   const overviewModel = persistent && selectedSport && selectedSport !== "sleep" ? buildArenaModel(state, undefined, track, selectedSport) : null;
   return (
-    <SafeAreaView pointerEvents={persistent ? "box-none" : "auto"} style={f.safe} edges={[]}>
+    <SafeAreaView pointerEvents={persistent ? "box-none" : "auto"} style={[f.safe, persistent && { backgroundColor: "transparent" }]} edges={[]}>
       <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, top: experience.immersive ? 0 : experience.viewport?.y ?? 0, height: experience.immersive ? "100%" : experience.viewport?.height ?? 0, overflow: "hidden" }}>
       {persistent && active.map(rating => {
         const sport = rating.sport, frame = experience.previews?.[sport];
