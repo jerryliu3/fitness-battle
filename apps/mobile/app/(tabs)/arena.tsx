@@ -1,7 +1,8 @@
+import { useCompeteExperience } from "../../src/features/compete-experience";
+import { EventHome } from "../../src/features/event-home";
 import { CompeteSheet } from "../../src/ui/compete-sheet";
 import { NavigationAction, SectionStack, AppText } from "../../src/ui/section";
 import { competitionQueue, competeNow, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
-import { EventCarousel } from "../../src/features/event-carousel";
 import {
   SPORTS,
   type CrewBoardPin,
@@ -9,24 +10,22 @@ import {
 } from "@fitness-battle/shared";
 import { useGlobalSearchParams, usePathname, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { BackHandler, Modal, Pressable, ScrollView, View } from "react-native";
+import { BackHandler, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CompetitionField } from "../../src/features/competition-field";
-import { QueuedField } from "../../src/features/queued-field";
-import { CompetitionSummary } from "../../src/features/competition-summary";
 import { useCrewApi } from "../../src/features/crew";
 import { RoundTakeover } from "../../src/features/round-takeover";
+import { QueuedField } from "../../src/features/queued-field";
 import { SleepPanel } from "../../src/features/sleep-panel";
 import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
 
 import { playCue } from "../../src/lib/haptics";
 import { FocusButton, FocusSheet, f } from "../../src/ui/focus";
-import { SHELL_COLORS } from "../../src/theme";
 
-export default function ArenaRoute() { return null; }
+export default function ArenaRoute() { return <ArenaScreen />; }
 
-export function ArenaScreen({ persistent = false, onExit }: { persistent?: boolean; onExit?: () => void }) {
+export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
   const {
     state,
     accountKey,
@@ -37,9 +36,11 @@ export function ArenaScreen({ persistent = false, onExit }: { persistent?: boole
   } = useCompeteStore();
   const { user } = useAuth();
   const router = useRouter();
-  const exit = onExit ?? (() => router.navigate("/today"));
+  const experience = useCompeteExperience();
+  const exit = experience.close;
+  useEffect(() => { if (persistent && experience.immersive && (experience.event?.account !== accountKey || (state && !state.ratings.some(r => r.optedIn && r.sport === experience.event?.sport)))) experience.close(); }, [accountKey, persistent, experience, state]);
   const focused = usePathname().endsWith("/arena");
-  useEffect(() => { if (!persistent || !focused) return; const sub = BackHandler.addEventListener("hardwareBackPress", () => { exit(); return true; }); return () => sub.remove(); }, [focused, router, persistent]);
+  useEffect(() => { if (!persistent || !focused || !experience.immersive) return; const sub = BackHandler.addEventListener("hardwareBackPress", () => { exit(); return true; }); return () => sub.remove(); }, [focused, persistent, experience.immersive, exit]);
   const requestedEvent=useGlobalSearchParams<{event?:string}>().event;
   const crewApi = useCrewApi();
   const [expandRequest, setExpandRequest] = useState(0);
@@ -66,10 +67,8 @@ export function ArenaScreen({ persistent = false, onExit }: { persistent?: boole
   }, [state, refresh]);
   if (!state) return null;
   const active = state.ratings.filter((rating) => rating.optedIn);
-  const hasRegistration =
-    active.length > 0 || state.healthRatings.some((rating) => rating.optedIn);
   const sleepOptedIn=state.healthRatings.some(r=>r.metric==="sleep"&&r.optedIn);
-  const requested=selection?.account===accountKey?selection.sport:null;
+  const requested=persistent && experience.event?.account === accountKey ? experience.event.sport : selection?.account===accountKey?selection.sport:null;
   const selectedSport=requested&&(requested==="sleep"?sleepOptedIn:active.some(r=>r.sport===requested))
     ? requested : active.find(r=>r.sport===state.primary)?.sport??active[0]?.sport??(sleepOptedIn?"sleep":null);
   const now = competeNow(state);
@@ -130,74 +129,25 @@ export function ArenaScreen({ persistent = false, onExit }: { persistent?: boole
     }
   }
 
-  const eventOptions = [
-    ...active.map(r => ({
-      value: r.sport,
-      label: SPORTS.find(s => s.id === r.sport)?.name ?? r.sport,
-    })),
-    ...(sleepOptedIn ? [{ value: "sleep" as const, label: "Recovery" }] : []),
-  ];
 
   return (
     <SafeAreaView style={f.safe} edges={[]}>
-      {persistent && selectedSport && selectedSport !== "sleep" ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} persistent backgroundMode onDetails={() => setExpandRequest(value => value + 1)} /> : null}
-      <ArenaSheet persistent={persistent} expandRequest={expandRequest} active={focused} onRegister={openRegistration}>
+      {persistent && selectedSport && selectedSport !== "sleep" ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} persistent backgroundMode presentationActive={experience.immersive} onExit={exit} onDetails={() => setExpandRequest(value => value + 1)} /> : null}
+      <ArenaSheet persistent={persistent} expandRequest={expandRequest} active={focused && experience.immersive}>
 <SectionStack divided={false}>
-        {!persistent && <CompetitionSummary state={state} selectedSport={selectedSport??undefined} onRegister={openRegistration} />}
+        {!persistent && <View style={{ gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><AppText role="display" accessibilityRole="header">Compete</AppText><FocusButton label="+ Register" secondary onPress={openRegistration} /></View><AppText role="body" secondary>Your events</AppText></View>}
         {standingsStale ? (
           <AppText role="body" secondary  accessibilityLiveRegion="polite">
             Standings may be out of date until the next refresh.
           </AppText>
         ) : null}
-        <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />
-        {hasRegistration ? (
-          <EventCarousel
-            key={accountKey}
-            events={[
-              ...active.map((r) => ({
-                id: r.sport,
-                label: SPORTS.find((s) => s.id === r.sport)!.name,
-                badge: competitionTrackLabel(r.sport),
-              })),
-              ...(sleepOptedIn
-                ? [{ id: "sleep", label: "Recovery" }]
-                : []),
-            ]}
-            value={selectedSport!}
-            onChange={(id) => {
-              setSelection({
-                account: accountKey,
-                sport: id as SportId | "sleep",
-              });
-              void playCue("selection");
-            }}
-            onRegister={openRegistration}
-          >
-            {selectedSport === "sleep" && queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => dispatch(selectedSport === "sleep" ? { type: "opt-out-health", metric: "sleep" } : { type: "opt-out", sport: selectedSport })} /> : selectedSport && selectedSport !== "sleep" ? (
-              persistent ? <CompetitionField sport={selectedSport} track={track} standingsOnly /> : <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} />
-            ) : selectedSport === "sleep" ? (
-              <SleepPanel state={state} dispatch={dispatch} />
-            ) : (
-              <View style={f.card}>
-                <AppText role="heading">Your next chapter starts here.</AppText>
-                <AppText role="body" secondary>
-                  Register for an event to open your field.
-                </AppText>
-              </View>
-            )}
-          </EventCarousel>
-        ) : (
-          <View style={f.card}>
-            <AppText role="heading">Your next chapter starts here.</AppText>
-            <AppText role="body" secondary>
-              Register for an event to open your field.
-            </AppText>
-            <FocusButton label="Explore events" onPress={openRegistration} />
-          </View>
-        )}
-        {persistent && <CompetitionSummary state={state} selectedSport={selectedSport??undefined} onRegister={openRegistration} />}
-        {state.periodResults.length ? <NavigationAction label="Last week results" onPress={() => router.push("/arena?results=latest")} /> : null}
-        <NavigationAction label="View all time standings" onPress={() => router.push("/benchmarks")} />
+        {!persistent && <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />}
+        {persistent ? selectedSport && selectedSport !== "sleep" ? <CompetitionField sport={selectedSport} track={track} standingsOnly /> : null : <>
+          <EventHome state={state} accountKey={accountKey} onEnter={experience.enter} onRecovery={() => setSelection({ account: accountKey, sport: "sleep" })} />
+          {selectedSport === "sleep" && (queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event="sleep" now={now} onCancel={() => dispatch({ type: "opt-out-health", metric: "sleep" })} /> : <SleepPanel state={state} dispatch={dispatch} />)}
+        </>}
+        {!persistent && state.periodResults.length ? <NavigationAction label="Last week results" onPress={() => router.push("/arena?results=latest")} /> : null}
+        {!persistent && <NavigationAction label="View all time standings" onPress={() => router.push("/benchmarks")} />}
       </SectionStack>
 </ArenaSheet>
       <FocusSheet
@@ -286,6 +236,6 @@ export function ArenaScreen({ persistent = false, onExit }: { persistent?: boole
   );
 }
 
-function ArenaSheet({ persistent, children, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean; onRegister: () => void }) {
+function ArenaSheet({ persistent, children, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean }) {
   return persistent ? <CompeteSheet {...props}>{children}</CompeteSheet> : <ScrollView contentContainerStyle={f.content}>{children}</ScrollView>;
 }

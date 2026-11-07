@@ -1,5 +1,7 @@
 # Compete background field and bottom sheet
 
+Superseded by the November 7 [event home and immersive field flow](../compete-event-home/README.md).
+
 Implemented November 6, 2026 from the owner's reference image and revised request.
 The permanent competition field replaces the separate fullscreen mode. Existing
 Everyday Club colors, typography, real field values, eligibility, privacy, queue,

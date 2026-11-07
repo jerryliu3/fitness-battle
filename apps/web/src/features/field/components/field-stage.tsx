@@ -42,6 +42,8 @@ export function FieldStage({
   model,
   persistent = false,
   backgroundMode = false,
+  presentationVisible = true,
+  onDetails,
   standingsOnly = false,
   onExit,
   boardRows,
@@ -54,6 +56,8 @@ export function FieldStage({
   model: FieldModel;
   persistent?: boolean;
   backgroundMode?: boolean;
+  presentationVisible?: boolean;
+  onDetails?: () => void;
   standingsOnly?: boolean;
   onExit?: () => void;
   boardRows?: BoardRow[];
@@ -322,22 +326,22 @@ export function FieldStage({
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
 
   const broadcastHud = lanesImmersive ? (
-    <div className="focus-broadcast-hud" aria-label="Broadcast race controls">
+    <div className={`focus-broadcast-hud${backgroundMode ? " compete-immersive-hud" : ""}`} aria-label="Broadcast race controls">
       <div className="focus-broadcast-top">
         <button
           type="button"
           className="focus-broadcast-back"
-          aria-label="Close full screen field"
+          aria-label={backgroundMode ? "Back to events" : "Close full screen field"}
           onClick={() => persistent ? onExit?.() : setLanesImmersive(false)}
         >
           ← Back
         </button>
-        <button type="button" className="fb-btn-line" onClick={() => setLanesImmersive(false)}>Events & standings</button>
+        <button type="button" className="fb-btn-line" onClick={() => backgroundMode ? onDetails?.() : setLanesImmersive(false)}>Standings</button>
         <div className="focus-broadcast-title" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {sportTitle ?? model.sport}{queueOverlay ? " · Upcoming wave" : ` · ${displayPlace} / ${runners.length}`}
         </div>
         <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
-          onStandings={queueOverlay ? undefined : () => { setLanesImmersive(false); setStandingsOpen(true); }}
+          onStandings={queueOverlay ? undefined : () => { if (backgroundMode) onDetails?.(); else { setLanesImmersive(false); setStandingsOpen(true); } }}
           onZoomIn={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.max(unit === "pts" ? 2 : .5, view.span / 1.5)); } : undefined}
           onZoomOut={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)); } : undefined} />
       </div>
@@ -420,7 +424,7 @@ export function FieldStage({
         </div>
       </div>
 
-      {focusedLane ? (
+      {focusedLane && !backgroundMode ? (
         <div
           className={`focus-broadcast-spotlight${spotlightCollapsed ? " is-collapsed" : ""}`}
           aria-label="Focused athlete spotlight"
@@ -512,10 +516,10 @@ export function FieldStage({
       {!standingsOnly && <div style={{ display: standingsOpen ? "none" : "flow-root" }}>
         <ExpandingField
           persistent={persistent}
-          open={lanesImmersive && tabActive}
+          open={lanesImmersive && tabActive && presentationVisible}
           tabActive={tabActive}
-          onClose={() => { if (!backgroundMode) setLanesImmersive(false); }}
-          hud={backgroundMode ? <div className="compete-map-heading"><span>{sportTitle ?? model.sport}</span><FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView} /></div> : broadcastHud}
+          onClose={() => { if (backgroundMode) onExit?.(); else setLanesImmersive(false); }}
+          hud={broadcastHud}
         >
           {viewDimension === "4d" && (persistent || tabActive) ? <div className="focus-geographic-host" style={{ position: "relative", height: persistent || lanesImmersive ? "100%" : 460 }}>
             <GeographicCourse cardSessionKey={lanesImmersive} initialFlat={courseFlat} onFlatChange={setCourseFlat} lanes={fieldLanes} unit={unit} selectedId={(lanesImmersive ? trackSelected : null) || you.id} focusRequest={lanesImmersive ? focusRequest : 0} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={lanesImmersive ? courseTarget : null} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? spotlightCollapsed ? 136 : 236 : 8} />
