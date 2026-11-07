@@ -1,8 +1,7 @@
 import { countsOnTrack } from "./compete/ledger";
 import { competeNow } from "./compete/engine";
 import type { CompeteState } from "./compete/sports";
-import { competePeriodWindow } from "./phone-views";
-import { APP_TIMEZONE, dayKey, shiftAppDay, startOfZonedDay } from "./period";
+import { APP_TIMEZONE, dayKey, shiftAppDay, startOfZonedDay, weeklyPeriodBounds } from "./period";
 import type { ChartDatum } from "./chart-scrubber";
 import type { TrainingBucket } from "./training-view";
 
@@ -92,9 +91,9 @@ export function openLineModel(
   };
 }
 
-/** Current Eastern competition week, optionally preceded by three complete weeks. */
+/** Current Eastern calendar training week (Monday–Monday), optionally preceded by three complete weeks. */
 export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks" = "week", now = competeNow(state)) {
-  const period = competePeriodWindow(state, now), days = range === "week" ? 7 : 28;
+  const period = weeklyPeriodBounds(now), days = range === "week" ? 7 : 28;
   const start = shiftAppDay(period.startsAt, -(days - 7));
   const previousStart = shiftAppDay(start, -days);
   const eligible = state.activities.filter(activity => countsOnTrack(activity, "open") && Date.parse(activity.startedAt) <= now.getTime());
