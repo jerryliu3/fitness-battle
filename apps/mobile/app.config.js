@@ -8,6 +8,7 @@ module.exports = ({ config }) => {
   }
   return ({
   ...config,
+  ios: { ...config.ios, infoPlist: { ...config.ios?.infoPlist, MGLMapboxMetricsEnabledSettingShownInApp: true } },
   extra: { ...config.extra, ...(mapboxAccessToken ? { mapboxAccessToken } : {}) },
   web: {
     ...config.web,

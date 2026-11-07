@@ -1,3 +1,5 @@
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MapAttribution } from "./map-attribution";
 import { useAuth } from "../lib/auth";
 import Svg, { G } from "react-native-svg";
 import { AthletePennant } from "./athlete-pennant";
@@ -25,6 +27,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
   onReady?: () => void; onSnapshot?: (uri: string) => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null;
   hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; onChoose2D?: () => void; onOptionsChange?: (options: ReactNode | null) => void; overlaysHidden?: boolean;
 }) {
+  const insets = useSafeAreaInsets();
   const sceneActive = useSceneActive();
   const active = sceneActive && presentationActive;
   const initialized = useRef(false);
@@ -134,8 +137,8 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
     return () => onOptionsChange(null);
   }, [onOptionsChange, flat, spaced, Boolean(onReplay), Boolean(onChoose2D)]);
   return <View style={{ flex: 1, minHeight: 0 }}>
-    <MapView ref={mapRef} accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled={!onSnapshot} attributionEnabled={!onSnapshot}
-      logoPosition={{ top: 8, right: 40 }} attributionPosition={{ top: 8, right: 8 }}
+    <MapView ref={mapRef} accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled={!onSnapshot} attributionEnabled={false}
+      logoPosition={{ top: 8, right: 34 }} attributionPosition={{ top: 8, right: 8 }}
       scaleBarEnabled={optionsTop == null}
       scaleBarPosition={{ bottom: controlsBottom + 100, left: 8 }}
       onDidFinishLoadingMap={() => {
@@ -177,6 +180,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
         </View>
       </MarkerView>) : null}
     </MapView>
+    {!onSnapshot ? <MapAttribution top={insets.top + 9} /> : null}
     {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), position: "absolute", left: 8, right: 8, bottom: controlsBottom + 136, padding: 12, borderRadius: 12, backgroundColor: "#ffffff" }}>{error}</Text> : null}
     {!onOptionsChange && optionsTop != null ? <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()} style={{ position: "absolute", top: optionsTop, right: 12 }}>
       <CourseOptions

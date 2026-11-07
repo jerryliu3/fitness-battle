@@ -135,3 +135,24 @@ Snapshots and normal hidden scenes do not retain a route animation clock.
 Shared camera tests cover curved travel, interrupted travel and reduced motion;
 these were written for CI and not run locally, per the owner's instructions.
 Native build installed; visual review remains with the owner.
+
+## Square snapshots and compact credits
+
+Cards now use square captures at their existing width. The snapshot cache key
+changes so old wide captures are regenerated. Credits are 10-point text with a
+one-character feedback link and full accessible labeling. Copyright and feedback
+links remain available; the snapshot stays noninteractive.
+
+Compete shows the selected event's date range beneath its title, using Eastern
+time and the exclusive period end converted to its last calendar day. Repeated
+days-left labels are removed from event cards.
+
+Live native maps retain the unmodified SDK wordmark. A custom 14-point info glyph
+aligns with it, with a larger invisible hit target. Its sheet includes source
+credits, feedback and a durable anonymous-usage opt-out. The app declares that
+privacy setting in Info.plist; prior SDK preferences are not overwritten when no
+custom preference exists. Native SDK ornament APIs available through this
+integration expose placement, not size. Web compact controls align horizontally.
+
+A fresh simulator build is installed. Typecheck, tests and visual review were
+not run for this follow-up, per the owner's instructions.

@@ -1,3 +1,5 @@
+vi.mock("./map-attribution", () => ({ MapAttribution: "MapAttribution" }));
+vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ top: 44, bottom: 34 }) }));
 vi.mock("./app-icon", () => ({ AppIcon: "AppIcon" }));
 const activity = vi.hoisted(() => ({ active: true }));
 vi.mock("./use-scene-active", () => ({ useSceneActive: () => activity.active }));
