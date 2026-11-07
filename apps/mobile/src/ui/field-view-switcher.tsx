@@ -1,3 +1,6 @@
+import { useRef } from "react";
+import { Platform } from "react-native";
+import { SettingsToggleRow } from "./settings-toggle-row";
 import { AppIcon } from "./app-icon";
 import { Pressable, Text, View } from "react-native";
 import { AnchoredMenu, useAnchoredMenu } from "./anchored-menu";
@@ -17,10 +20,12 @@ export function FieldViewSwitcher({
   onChange(value: "2d" | "3d" | "4d"): void;
 }) {
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
-    minWidth: 90,
-    estimatedHeight: 130,
+    minWidth: compact ? 220 : 90,
+    estimatedHeight: compact ? 52 : 130,
   });
 
+  const pendingChange = useRef<(() => void) | null>(null);
+  const finishChange = () => { const action = pendingChange.current; pendingChange.current = null; action?.(); };
   const options: Array<{ value: "2d" | "3d" | "4d"; label: string }> = [
     { value: "2d", label: "2D" },
     ...(geographic ? [{ value: "4d" as const, label: "3D" }] : []),
@@ -57,9 +62,11 @@ export function FieldViewSwitcher({
         open={open}
         onClose={close}
         menuLayout={menuLayout}
+        onDismiss={compact ? finishChange : undefined}
+        style={compact ? { width: menuLayout?.width ?? 220 } : undefined}
         accessibilityLabel="Close dimension switcher"
       >
-        {options.map((opt) => {
+        {compact && geographic ? <SettingsToggleRow label="3D view" value={value === "4d"} onChange={() => { const next = value === "4d" ? "2d" : "4d"; if (Platform.OS === "ios") pendingChange.current = () => onChange(next); else onChange(next); close(); }} /> : options.map((opt) => {
           const isSelected = opt.value === value;
           return (
             <Pressable

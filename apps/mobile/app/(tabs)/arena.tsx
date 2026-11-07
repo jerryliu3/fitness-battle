@@ -3,7 +3,7 @@ import { FieldOverview } from "../../src/ui/field-course";
 import { useCompeteExperience } from "../../src/features/compete-experience";
 import { EventHome } from "../../src/features/event-home";
 import { CompeteSheet } from "../../src/ui/compete-sheet";
-import { NavigationAction, SectionStack, AppText } from "../../src/ui/section";
+import { NavigationAction, SectionStack, AppText, StatusBadge } from "../../src/ui/section";
 import { APP_TIMEZONE, competePeriodWindow, weeklyCompetitionLastDay, weeklyPeriodBounds, buildArenaModel, competitionQueue, competeNow, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
 import {
   SPORTS,
@@ -82,6 +82,9 @@ export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
   const headerPeriod = selectedSport && selectedSport !== "sleep" ? competePeriodWindow(state, now, selectedSport) : weeklyPeriodBounds(now);
   const dateOptions: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", timeZone: APP_TIMEZONE };
   const dateRange = `${headerPeriod.startsAt.toLocaleDateString("en-US", dateOptions)} – ${weeklyCompetitionLastDay(headerPeriod.endsAt).toLocaleDateString("en-US", dateOptions)}`;
+  const remainingMs = Math.max(0, headerPeriod.endsAt.getTime() - now.getTime());
+  const remainingDays = Math.floor(remainingMs / 86400000), remainingHours = Math.ceil(remainingMs / 3600000);
+  const timeRemaining = remainingMs === 0 ? "Ended" : remainingDays >= 1 ? `${remainingDays} day${remainingDays === 1 ? "" : "s"} left` : `${remainingHours} hour${remainingHours === 1 ? "" : "s"} left`;
   const queue = selectedSport ? competitionQueue(state, selectedSport, now) : null;
   const track = competitionTrack(selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary);
   function openRegistration() {
@@ -146,7 +149,7 @@ export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
       {persistent && selectedSport && selectedSport !== "sleep" ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}`} sport={selectedSport} track={track} persistent backgroundMode externalAthleteFocus={athleteFocus} onOptionsChange={setCourseOptions} externalCourseTarget={courseTarget} presentationActive={experience.immersive} onExit={exit} /> : null}
       <ArenaSheet persistent={persistent} expandRequest={expandRequest} active={focused && experience.immersive} overview={overviewModel && !queue?.queued && !queue?.awaitingField ? <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><View style={{ flex: 1 }}><FieldOverview hiddenIds={blocks.map(block => block.id)} lanes={overviewModel.lanes.filter(lane => !lane.ghost).map(lane => ({ ...lane, value: lane.values[2], initials: "" }))} unit={overviewModel.unit} positionOnly view={{ center: courseTarget?.value ?? overviewModel.lanes.find(lane => lane.you)?.values[2] ?? 0, span: 1 }} onNavigate={value => setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }))} /></View>{courseOptions}</View> : undefined}>
 <SectionStack divided={false}>
-        {!persistent && <View style={{ gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><AppText role="display" accessibilityRole="header">Compete</AppText><FocusButton label="+ Register" secondary onPress={openRegistration} /></View><AppText role="body" secondary>{dateRange}</AppText></View>}
+        {!persistent && <View style={{ gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><AppText role="display" accessibilityRole="header">Compete</AppText><FocusButton label="+ Register" secondary onPress={openRegistration} /></View><View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 }}><AppText role="body" secondary>{dateRange}</AppText><StatusBadge>{timeRemaining}</StatusBadge></View></View>}
         {standingsStale ? (
           <AppText role="body" secondary  accessibilityLiveRegion="polite">
             Standings may be out of date until the next refresh.

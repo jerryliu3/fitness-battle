@@ -187,8 +187,8 @@ it("offers event management on the home base and only enters a field on explicit
   await act(async () => { renderer = create(createElement(CompeteExperienceProvider, { value: { immersive: false, event: null, enter, close() {} }, children: createElement(ArenaScreen) })); });
   expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(0);
   expect(renderer.root.findAllByType("FieldViewSwitcher" as never)).toHaveLength(0);
-  const running = renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Enter Running field")!;
-  const cycling = renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Enter Cycling field")!;
+  const running = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.accessibilityLabel === "Enter Running field")!;
+  const cycling = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.accessibilityLabel === "Enter Cycling field")!;
   expect(running).toBeDefined(); expect(cycling).toBeDefined();
   expect(enter).not.toHaveBeenCalled();
   await act(async () => cycling.props.onPress());

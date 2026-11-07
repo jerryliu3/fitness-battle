@@ -35,3 +35,11 @@
 .focus-field-expanded .mapboxgl-ctrl-attrib.mapboxgl-compact{min-width:16px;min-height:16px;width:16px;height:16px;padding:0}
 .focus-field-expanded .mapboxgl-ctrl-attrib-button{width:16px;height:16px;background-size:14px 14px}
 .focus-field-expanded .mapboxgl-ctrl-attrib.mapboxgl-compact-show{width:auto;height:auto;max-width:260px;padding:4px 20px 4px 8px}
+
+.compete-event-card{cursor:default}
+button.compete-event-card{cursor:pointer}
+
+.course-settings-switch{appearance:none;flex:none;width:36px;height:22px;border-radius:999px;position:relative;cursor:pointer}
+.course-settings-switch::before{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:white;box-shadow:0 1px 3px #142b3b22}
+.course-settings-switch:checked::before{left:17px}
+.course-settings-switch:focus-visible{outline:2px solid var(--ink);outline-offset:3px}

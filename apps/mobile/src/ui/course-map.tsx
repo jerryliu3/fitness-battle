@@ -176,7 +176,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
             <AthletePennant lane={lane} x={lane.callout.left ? -158 : 12} y={lane.callout.y} detail={courseAthleteDetail(lanes, lane, unit)} prefix={`${prefix}-${lane.id}`} />
           </G></Svg>
           <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${courseAthleteDetail(lanes, lane, unit)}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: 12, top: lane.callout.cardTop, width: 146, height: 46 }} />
-          <Pressable accessibilityRole="button" accessibilityLabel={`Hide ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={8} style={{ position: "absolute", right: 4, top: lane.callout.cardTop - 8, width: 28, height: 28, borderRadius: 14, backgroundColor: "white", alignItems: "center", justifyContent: "center" }}><Text style={textStyle("label")}>−</Text></Pressable>
+          {!onSnapshot && lane.id === selectedId && <Pressable accessibilityRole="button" accessibilityLabel={`Hide ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={8} style={{ position: "absolute", right: 4, top: lane.callout.cardTop - 8, width: 28, height: 28, borderRadius: 14, backgroundColor: "white", alignItems: "center", justifyContent: "center" }}><Text style={textStyle("label")}>−</Text></Pressable>}
         </View>
       </MarkerView>) : null}
     </MapView>

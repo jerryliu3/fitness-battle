@@ -874,3 +874,13 @@ ratio at the existing card width. Utility map credits use compact 10-point text
 with a feedback info glyph carrying its full accessible label. Live maps retain
 the standard SDK wordmark and align a 14-point info control beside it; the info
 sheet includes source links, feedback and the telemetry privacy choice.
+
+Event cards place compact copyright links over the bottom-right of the snapshot,
+with a contrast backing. They omit repeated distance and rival-gap text below
+it. A full-width See race button is the entry action. Beside the header date,
+a badge shows full days remaining, or hours when fewer than 24 hours remain.
+
+Course settings group aligned switches before action rows. The 3D view switch
+selects between the 2D and 3D renderers; the native menu and switch columns have
+explicit widths. Only the selected racer's map card exposes its minus control;
+snapshot captures omit interactive controls entirely.

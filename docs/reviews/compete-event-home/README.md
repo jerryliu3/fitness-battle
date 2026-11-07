@@ -156,3 +156,22 @@ integration expose placement, not size. Web compact controls align horizontally.
 
 A fresh simulator build is installed. Typecheck, tests and visual review were
 not run for this follow-up, per the owner's instructions.
+
+## Event card actions and settings alignment
+
+Copyright links now overlay the square snapshot at bottom-right on a small
+contrast backing. The header date is followed by a days-left badge; below one
+day it shows hours (rounded up), and an expired event reads Ended. Event cards
+remove both the redundant distance total and rival-gap distance below the image.
+A full-width See race button replaces the text entry affordance. Queued events
+keep their honest opening-time explanation.
+
+Native settings use a shared row with the label and a fixed 52-point switch
+column, inside an explicitly sized dropdown. Switches precede replay/overview
+actions. Renderer selection is a 3D view toggle, with iOS modal dismissal
+completed before swapping renderer menus. Web renderer settings also use a
+switch. Minus controls appear only for the selected athlete and never during
+snapshot capture. Snapshot cache keys change to discard any older control-bearing
+images. Existing entry test selectors now target the real button; no tests,
+typecheck or visual review were run locally for this follow-up. Native simulator
+build installed for owner review.
