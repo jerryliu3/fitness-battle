@@ -54,6 +54,7 @@ export function CompetitionField({
   standingsOnly = false,
   onExit,
   onDetails,
+  presentationActive,
 }: {
   sport: SportId;
   track: ScoreTrack;
@@ -62,6 +63,7 @@ export function CompetitionField({
   standingsOnly?: boolean;
   onExit?: () => void;
   onDetails?: () => void;
+  presentationActive?: boolean;
 }) {
   const { state, accountKey, debugActive, dispatch } = useCompeteStore();
   const { blocks } = useAthleteBlocks();
@@ -72,7 +74,7 @@ export function CompetitionField({
   const queueOverlay = queued && state ? <QueuedField overlay state={state} event={sport} now={now} onCancel={() => dispatch({ type: "opt-out", sport })} /> : null;
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
-  const isFocused = shellTabFromPath(pathname)?.id === "arena";
+  const isFocused = (presentationActive ?? true) && shellTabFromPath(pathname)?.id === "arena";
   const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d">(() => (state && buildArenaModel(state, undefined, track, sport)?.unit === "pts") ? "2d" : "4d");
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
   const chooseView = (value: "2d" | "3d" | "4d") => {
@@ -222,7 +224,7 @@ export function CompetitionField({
     >
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <View pointerEvents={expanded ? "auto" : "none"} style={{ flex: 1 }}>
-          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onReplay={() => setCourseReplayOpen(true)} optionsTop={expanded && !queued ? safeTop + 54 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
+          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onReplay={() => setCourseReplayOpen(true)} optionsTop={expanded && !queued ? safeTop + (backgroundMode ? 90 : 54) : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
           <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>Tap to open full screen</Text></View>
@@ -361,14 +363,14 @@ export function CompetitionField({
                 f.row,
                 {
                   position: "absolute",
-                  top: safeTop + 6,
-                  left: backgroundMode ? 132 : 12,
+                  top: safeTop + (backgroundMode ? 40 : 6),
+                  left: 12,
                   right: 12,
                   justifyContent: "space-between",
                 },
               ]}
             >
-              {!backgroundMode && <View
+              {<View
                 style={{
                   backgroundColor: "rgba(20, 20, 19, 0.72)",
                   borderRadius: 999,
@@ -378,15 +380,15 @@ export function CompetitionField({
               >
                 <IconButton
                   icon="back"
-                  label="Close full screen field"
+                  label={backgroundMode ? "Back to events" : "Close full screen field"}
                   onPress={() => persistent ? onExit?.() : setExpanded(false)}
                 />
               </View>}
-              {onDetails ? <Pressable accessibilityRole="button" accessibilityLabel="Events & standings" onPress={onDetails} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.72)" }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{backgroundMode ? `${sport.charAt(0).toUpperCase()}${sport.slice(1)}` : "Events & standings"}</Text></Pressable> : null}
+              {onDetails ? <Pressable accessibilityRole="button" accessibilityLabel={backgroundMode ? "Expand standings" : "Events & standings"} onPress={onDetails} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.72)" }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{backgroundMode ? `${sport.charAt(0).toUpperCase()}${sport.slice(1)}` : "Events & standings"}</Text></Pressable> : null}
               <FieldViewSwitcher value={sceneDimension} geographic={!queued && arena.unit !== "pts"} onChange={chooseView} />
             </FieldOverlayView>
 
-            {!backgroundMode && !queued && (sceneDimension !== "4d" || course) ? <>
+            {!queued && (sceneDimension !== "4d" || course) ? <>
             {/* Broadcast HUD: Left Current Positions Tower */}
             <SlidingFieldPanel
               label="current positions"
@@ -395,7 +397,7 @@ export function CompetitionField({
               overlaysHidden={overlaysHidden}
               style={{
                 position: "absolute",
-                top: safeTop + 62,
+                top: safeTop + (backgroundMode ? 96 : 62),
                 left: 12,
                 maxWidth: 274, // 230 px panel plus the 44 px grip target.
               }}
@@ -493,7 +495,7 @@ export function CompetitionField({
             </FieldOverlayView> : null}
 
             {/* Broadcast HUD: Bottom Focused Athlete Spotlight + Player Chips */}
-            {focusedLane ? (
+            {focusedLane && !backgroundMode ? (
               <SlidingFieldPanel
                 label="athlete panel"
                 collapsed={spotlightCollapsed}

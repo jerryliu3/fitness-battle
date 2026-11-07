@@ -54,12 +54,13 @@ beforeEach(async () => {
   await act(async () => field().props.onExpand());
 });
 afterEach(async () => { await act(async () => renderer.unmount()); vi.useRealTimers(); vi.unstubAllGlobals(); });
-it("uses the persistent field as background without fullscreen exit or broadcast panels", async () => {
+it("restores exit and current positions in the immersive field while standings use the sheet", async () => {
   const onDetails = vi.fn();
   await act(async () => renderer.update(createElement(CompetitionField, { sport: "running", track: "verified", persistent: true, backgroundMode: true, onDetails })));
-  expect(renderer.root.findAllByType("IconButton" as never).filter(node => node.props.label === "Close full screen field")).toHaveLength(0);
-  expect(renderer.root.findAll(node => node.props.label === "current positions" || node.props.label === "athlete panel")).toHaveLength(0);
-  const details = renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Events & standings")!;
+  expect(renderer.root.findAllByType("IconButton" as never).filter(node => node.props.label === "Back to events")).toHaveLength(1);
+  expect(renderer.root.findAll(node => node.props.label === "current positions").length).toBeGreaterThan(0);
+  expect(renderer.root.findAll(node => node.props.label === "athlete panel")).toHaveLength(0);
+  const details = renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Expand standings")!;
   await act(async () => details.props.onPress());
   expect(onDetails).toHaveBeenCalledOnce();
   expect(field().props.fullscreen).toBe(true);

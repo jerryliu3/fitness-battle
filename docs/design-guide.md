@@ -103,23 +103,27 @@ joystick replacements remain under discussion pending release-device profiling.
 
 Use semantic shared tokens: navy `#142b3b`, yellow `#f7c948`, canvas `#f8f9f6`, white cards, muted `#637482`, border `#e3e9e7`, teal `#176c75`. Cards use quiet 20px corners. Yellow primary controls use dark labels. Historical decisions below describe earlier iterations; this selection supersedes their presentation rules.
 
-### Compete background field and sheet — November 6
+### Compete event home and immersive fields — November 7
 
-Compete is a persistent full-viewport field with controls over it. It is not a
-fullscreen mode to enter or close. Keep Home / Compete / Progress / Crew available
-above the field at the bottom. The ordinary app header stays hidden on Compete.
-Standings, registered event selection, registration and results live in a bottom
-sheet that starts partially visible, minimizes to its header, or expands to fill
-the content area above navigation. Drag its grip or use its labeled controls;
-scroll the contents independently. Preserve sheet content and field selection
-through resizing and tab changes. Reduced Motion disables sheet travel.
+Compete is the home base for registered events, using the same app header and
+bottom navigation as the other tabs. Each event shows a read-only preview from
+its existing field data, position, volume, nearest available rival, and time
+remaining. Queued events show their upcoming state without ranks or identities.
+Registration, Recovery and result destinations remain on the home base.
 
-Keep the field at its final viewport dimensions throughout these sheet states:
-coverage changes, camera geometry does not. Prepare it under the launch cover
-and pause hidden presentation clocks. Distance fields retain geographic 3D;
-points use 2D. Empty, queued and Recovery states stay honest in the same sheet.
-This supersedes the November 3 separate fullscreen/close-and-return experience.
-See [the simulator review](reviews/compete-background-sheet/README.md).
+Tap a sport event to enter its immersive field. App navigation disappears; Back
+returns to the event home. Retain the selected field host and camera while closed,
+and prepare the initial selected field during startup. Map options, athlete
+selection and the current-positions overlay remain available inside the field.
+Standings live in a bottom sheet that starts partially open and reaches the actual
+bottom edge, including beneath the home indicator. Drag or tap its handle to
+change height; retain accessible adjustment and web arrow-key support. Do not add
+visible Minimize/Lower buttons. Moving the sheet never resizes the map. Respect
+Reduced Motion and pause hidden presentation clocks.
+
+This supersedes the November 6 map-as-tab composition and its separate overlaid
+navigation. Distance fields remain geographic 3D; points remain 2D. See the
+[implementation review](reviews/compete-event-home/README.md).
 
 ## Brand and character exploration
 
