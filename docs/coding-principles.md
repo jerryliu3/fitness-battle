@@ -30,9 +30,19 @@
    - OAuth state parameters must be HMAC-signed with expiration; production must not fall back to a hard-coded signing secret.
    - API routes that touch RLS-backed tables should use `createRequestClient(request)` so mobile Bearer tokens see `auth.uid()` the same way cookie sessions do.
 
-5. **Testing & Quality**:
+5. **Testing, Verification & Quality Discipline**:
    - Every semantic change to scoring, Elo calculations, period bounds, or database models must ship with unit tests in Vitest.
-   - All workspace packages must pass `pnpm typecheck` without `--skipLibCheck` on local application code.
+   - Code must cleanly satisfy TypeScript typing (`pnpm typecheck` without `--skipLibCheck` on local application code).
+   - **Verification Execution Policy (Do Not Run Autonomously)**: Agents and developers should NOT run slow, full-repo type checks (`pnpm typecheck`), test suites, or production builds after every minor edit, rebase, merge conflict resolution, or CI fix.
+   - **Only run verification when**: (1) explicitly instructed or approved by the developer (e.g. "verify this", "run the tests"), OR (2) all planned implementation work across the entire task/PR is completely finished and ready for final delivery (unless explicitly instructed "do not verify").
+   - When asked to "fix CI, do not verify" or "resolve conflict and push (do not verify)", immediately commit and push without running local verification suites.
+
+6. **Minimal Fixes, Simplification & Code Review**:
+   - **Smallest Correct Change**: Keep diffs minimal, clean, and robust. Avoid speculative abstractions, verbose defensive wrappers, unnecessary configuration, or duplicate write paths.
+   - **Maximize Component & Logic Parity**: Share logic between web and mobile via `@fitness-battle/shared`. Use identical component styling and semantics rather than branching categories.
+   - **Recursive Simplification & Cleanup**: Perform a dedicated review pass on every PR/task for bugs, correctness gaps, unnecessary complexity, and tech debt cleanup before declaring completion.
+   - **Ambiguous Product Decisions**: Never guess on ambiguous product or UX logic; hold off on implementation and ask the developer for confirmation.
+   - **Testing Guidance**: When changes are ready for developer verification, provide the exact working directory and commands to test locally (e.g. via iOS simulator or web dev server).
 
 Crew’s visible shared-week progress and standings read aggregate counted activities through `crew_week_totals`, authorized by active membership. Exclude sample/demo, history, pending/excluded and future activities. The feed and manual share action are retired; legacy entry endpoints remain for older clients. Apply the additive totals migration before deploying the corresponding API.
 

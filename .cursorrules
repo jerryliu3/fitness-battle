@@ -1,0 +1,32 @@
+# Cursor Rules — Fitness Battle (Overtaek)
+
+## Core Principles & Developer Preferences
+
+1. **Minimal, Clean Fixes**:
+   - Always make the smallest correct change. Avoid over-engineering, verbose wrappers, speculative abstractions, or duplicate write paths.
+   - If diffs grow unexpectedly large, run a simplification pass to prune unnecessary changes.
+   - Reuse logic via `@fitness-battle/shared` and keep UI styling unified without arbitrary branching.
+
+2. **Verification Policy (DO NOT RUN AUTONOMOUSLY)**:
+   - Do NOT autonomously run full `pnpm typecheck`, test suites (`pnpm test`), or builds on intermediate edits, rebases, or quick CI fixes.
+   - When asked to "fix CI, do not verify" or "resolve conflict and push (do not verify)", push immediately without local test suites.
+   - Only run verification when explicitly instructed/approved by the user or when all task work is fully completed (unless opted out).
+
+3. **Deep Code Review & Recursive Simplification**:
+   - Perform a deep code review pass for correctness, bugs, cleanup, and simplification before concluding work.
+   - Eliminate dead code and tech debt.
+
+4. **Git & Stacked PR Hygiene**:
+   - Prefer small, clean, stacked PRs against `origin/main` rather than massive combined PRs.
+   - Rebase cleanly on `origin/main`.
+   - Always provide the exact local directory and commands when handing off for local verification (e.g. iOS simulator / web dev server).
+
+5. **Clarify Ambiguity**:
+   - Do not guess on ambiguous product or UX requirements. Report back with concise options and wait for user direction.
+
+## Architecture
+- `apps/mobile`: Expo Router (React Native)
+- `apps/web`: Next.js App Router (web shell + API routes)
+- `packages/shared`: Pure platform-agnostic TypeScript (NEVER import React, React Native, Expo, Next, or DOM)
+- `packages/pursuit`: Three.js Arena 3D DOM scene (web only; mobile embeds via WebView)
+- `supabase/`: Migrations, SQL functions (`SECURITY DEFINER` with `SET search_path = ''`), RLS policies
