@@ -14,13 +14,13 @@ vi.mock("@/features/club/portrait-field", () => ({ PortraitField: "PortraitField
 vi.mock("@/features/focus/arena-lanes", () => ({ ArenaLanes: "ArenaLanes" }));
 vi.mock("@/features/brand/polished-racer", () => ({ PolishedRacer: "PolishedRacer" }));
 vi.mock("@/ui/user-avatar", () => ({ UserAvatar: "UserAvatar" }));
-vi.mock("@/features/replay/competition-replay", () => ({ CompetitionReplayButton: "ReplayButton" }));
 vi.mock("./expanding-field", () => ({ ExpandingField: ({ children, hud, open }: { children: ReactNode; hud: ReactNode; open: boolean }) => createElement("FieldHost", { open }, children, hud) }));
 import { FieldStage } from "./field-stage";
 let renderer: ReactTestRenderer;
 afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); });
-it("shares fullscreen, athlete panels, selection and course replay with 4D", async () => {
+it("shares fullscreen, athlete panels, selection and timeline with 4D", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.stubGlobal("document", { hidden: false, addEventListener() {}, removeEventListener() {} });
   const you = { id: "you", name: "You", initials: "Y", km: [0, 0, 1] as [number, number, number], place: 2, effort: 1, you: true };
   const peer = { ...you, id: "peer", name: "Peer", initials: "P", km: [0, 0, 2] as [number, number, number], place: 1, you: false };
   const model: FieldModel = { sport: "running", track: "open", periodStart: "2026-10-26T04:00:00Z", periodEnd: "2026-11-02T05:00:00Z", runners: [you, peer], ghost: null, you, referenceKm: 2, checkpointLabels: ["Mon", "Wed", "Now"], gps: true, unit: "km" };
@@ -52,8 +52,7 @@ it("shares fullscreen, athlete panels, selection and course replay with 4D", asy
   expect(map().props.selectedId).toBe("peer");
   expect(map().props.distanceTarget).toBeNull();
   expect(overview().props.view.center).toBe(2);
-  expect(renderer.root.findByType("ReplayButton" as never).props).toMatchObject({ dimension: "4d" });
-  expect(renderer.root.findByType("ReplayButton" as never).props.course).toBeUndefined();
+  expect(renderer.root.findByProps({ "aria-label": "Competition timeline" })).toBeDefined();
   await choose("3d");
   expect(renderer.root.findAllByType("FieldOverview" as never)).toHaveLength(1);
   expect(renderer.root.findByType("FieldHost" as never).props.open).toBe(true);
@@ -68,5 +67,34 @@ it("shares fullscreen, athlete panels, selection and course replay with 4D", asy
     replayState: freshState(new Date("2026-11-03T18:00:00Z")),
   })));
   expect(map().props.distanceTarget).toBeNull();
-  expect(renderer.root.findByType("ReplayButton" as never).props.selection.periodEnd).toBe("2026-11-09T05:00:00Z");
+  expect(renderer.root.findByProps({ "aria-label": "Competition timeline" }).props.value).toBeGreaterThanOrEqual(0);
+});
+
+it("scrubs in the main field and retains time through expansion and view changes", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.stubGlobal("document", { hidden: false, addEventListener() {}, removeEventListener() {} });
+  const state = { ...freshState(new Date("2026-10-26T18:00:00Z")), units: "metric" as const };
+  state.activities = [16, 17].map(hour => ({ id: `run-${hour}`, sport: "running", startedAt: `2026-10-26T${hour}:00:00Z`, distanceM: 1000, movingSec: 300, avgHr: null, verified: true, source: "strava" }));
+  const you = { id: "you", name: "You", initials: "Y", km: [0, 0, 5] as [number, number, number], place: 1, effort: 1, you: true };
+  const model: FieldModel = { sport: "running", track: "verified", periodStart: "2026-10-26T04:00:00Z", periodEnd: "2026-11-02T05:00:00Z", runners: [you], ghost: null, you, referenceKm: 5, checkpointLabels: ["Mon", "Wed", "Now"], gps: true, unit: "km" };
+  await act(async () => { renderer = create(createElement(FieldStage, { model, replayState: state })); });
+  const timeline = () => renderer.root.findByProps({ "aria-label": "Competition timeline" });
+  const map = () => renderer.root.findByType("GeographicCourse" as never);
+  expect(map().props.lanes[0].value).toBe(5);
+  await act(async () => timeline().props.onChange({ target: { value: "0" } }));
+  expect(map().props.lanes[0].value).toBe(0);
+  await act(async () => timeline().props.onChange({ target: { value: ".5" } }));
+  expect(map().props.lanes[0].value).toBe(.5);
+  await act(async () => renderer.root.findByType("select").props.onChange({ target: { value: "2d" } }));
+  const expand = renderer.root.findAllByType("button").find(node => node.props["aria-label"] === "Expand 2D map to full screen")!;
+  await act(async () => expand.props.onClick());
+  expect(timeline().props.value).toBe(.5);
+  expect(renderer.root.findByType("ArenaLanes" as never).props.lanes[0].value).toBe(.5);
+  await act(async () => renderer.root.findByType("select").props.onChange({ target: { value: "4d" } }));
+  expect(map().props.lanes[0].value).toBe(.5);
+  const close = renderer.root.findAllByType("button").find(node => node.props["aria-label"] === "Close full screen field")!;
+  await act(async () => close.props.onClick());
+  expect(timeline().props.value).toBe(.5);
+  await act(async () => renderer.root.findAllByType("button").find(node => node.props.children === "Latest")!.props.onClick());
+  expect(map().props.lanes[0].value).toBe(5);
 });

@@ -1,13 +1,14 @@
 import { useThemeColors } from "../theme";
 import { useFocusStyles } from "../ui/focus";
 import { createThemedStyles, useThemedStyles } from "../theme";
+import { ReplayTimeline } from "./replay-timeline";
 import { ResultCard } from "./result-card";
 import { playCue } from "../lib/haptics";
 import { GeographicCourse } from "./geographic-course";
 import { useCompetitionCourse } from "./use-competition-course";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AppState, Modal, PanResponder, Pressable, Text, View } from "react-native";
+import { AppState, Modal, Pressable, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import {
   orderedArenaLanes,
@@ -105,27 +106,6 @@ const f=useFocusStyles();
   </Modal> : null;
 }
 
-function ReplayTimeline({ cursor, count, caption, onSeek }: { cursor: number; count: number; caption: string; onSeek: (cursor: number) => void }) {
-const s=useThemedStyles(sThemes);
-
-  const width = useRef(1), left = useRef(0);
-  const latest = useRef({ count, onSeek }); latest.current = { count, onSeek };
-  const pan = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => latest.current.count > 0,
-    onMoveShouldSetPanResponder: () => latest.current.count > 0,
-    onPanResponderGrant: event => { left.current = event.nativeEvent.pageX - event.nativeEvent.locationX; latest.current.onSeek(Math.max(0, Math.min(1, event.nativeEvent.locationX / width.current)) * latest.current.count); },
-    onPanResponderMove: event => latest.current.onSeek(Math.max(0, Math.min(1, (event.nativeEvent.pageX - left.current) / width.current)) * latest.current.count),
-    onPanResponderTerminationRequest: () => false,
-  }), []);
-  return <View style={s.timeline} {...pan.panHandlers} onLayout={event => { width.current = Math.max(1, event.nativeEvent.layout.width); }}
-    accessible accessibilityRole="adjustable" accessibilityLabel="Competition replay timeline"
-    accessibilityValue={{ min: 0, max: count, now: Math.ceil(cursor), text: `${Math.ceil(cursor)} of ${count} events. ${caption}` }}
-    accessibilityActions={[{ name: "increment", label: "Next event" }, { name: "decrement", label: "Previous event" }]}
-    onAccessibilityAction={event => onSeek(event.nativeEvent.actionName === "increment" ? Math.floor(cursor) + 1 : Math.ceil(cursor) - 1)}>
-    <View pointerEvents="none" style={s.rail}><View style={[s.fill, { width: `${count ? cursor / count * 100 : 0}%` }]} /></View>
-    <View pointerEvents="none" style={[s.thumb, { left: `${count ? cursor / count * 100 : 0}%` }]} />
-  </View>;
-}
 function ReplayAction({ label, text, disabled, onPress, primary = false }: { label: string; text: string; disabled?: boolean; onPress: () => void; primary?: boolean }) {
 const s=useThemedStyles(sThemes);
 
@@ -242,10 +222,6 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   message: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, padding: 24 },
   scene: { flex: 1, minHeight: 100, overflow: "hidden" },
   controls: { gap: 4, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 8, borderTopWidth: 1, borderColor: c.line, backgroundColor: c.paper },
-  timeline: { height: 44, justifyContent: "center", marginHorizontal: 10 },
-  rail: { height: 4, borderRadius: 2, backgroundColor: c.line, overflow: "hidden" },
-  fill: { height: 4, backgroundColor: themeColors.chartSeries },
-  thumb: { position: "absolute", top: 12, width: 20, height: 20, marginLeft: -10, borderRadius: 10, backgroundColor: themeColors.chartSeries, borderWidth: 2, borderColor: "white" },
   actions: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 3, marginBottom: 4 },
   action: { minWidth: 44, minHeight: 44, paddingHorizontal: 8, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: themeColors.card, borderWidth: 1, borderColor: c.line },
   primary: { backgroundColor: c.soft, minWidth: 66 },

@@ -1,3 +1,7 @@
+vi.mock("./competition-replay", () => ({ CompetitionReplayModal: "ReplayModal" }));
+vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: null, offlineMode: true }) }));
+vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "" } }));
+vi.mock("../lib/api", () => ({ requestApi: vi.fn() }));
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: vi.fn() }) }));
 vi.mock("./athlete-profile-sheet", () => ({ AthleteProfileSheet: "AthleteProfileSheet" }));
 import { createElement } from "react";
@@ -7,7 +11,7 @@ import { defaultFieldAppearance, freshState, reduceCompete, DEMO_RACE_COURSE } f
 const mocks = vi.hoisted(() => ({ fly: vi.fn(), path: "/arena", appState: null as null | ((status: string) => void) }));
 vi.mock("expo-router", () => ({ usePathname: () => mocks.path }));
 vi.mock("react-native", () => ({useColorScheme: () => "light",
-  Modal: "Modal",
+  Modal: "Modal", PanResponder: { create: () => ({ panHandlers: {} }) },
   Animated: { View: "View", Value: class { constructor(public value: number) {} interpolate(config: unknown) { return config; } }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
   Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x }, Pressable: "Pressable", ScrollView: "ScrollView", Text: "Text", View: "View",
   StyleSheet: { create: (v: unknown) => v },
@@ -19,7 +23,6 @@ vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG" }));
 vi.mock("./queued-field", () => ({ QueuedField: "QueuedField" }));
 vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
 vi.mock("./use-competition-course", () => ({ useCompetitionCourse: () => ({ course: DEMO_RACE_COURSE, error: "", retry() {} }) }));
-vi.mock("./competition-replay", () => ({ CompetitionReplayButton: "ReplayButton", CompetitionReplayModal: "ReplayModal" }));
 vi.mock("../ui/field-view-switcher", () => ({
   FieldViewSwitcher: ({ value, onChange }: { value: string; onChange: (v: string) => void }) =>
     createElement("FieldViewSwitcher", { value, onChange }),
@@ -37,7 +40,9 @@ vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
 vi.mock("../ui/field-course", () => ({ FieldOverview: "FieldOverview", useFieldAppearance: () => [defaultFieldAppearance, vi.fn()] }));
 vi.mock("../ui/focus", () => ((()=>{const mock={ f: {} };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 vi.mock("../lib/haptics", () => ({ playCue() {} }));
-vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: reduceCompete(freshState(new Date("2026-10-26T18:00:00Z")), { type: "opt-in", sport: "running", now: "2026-10-26T09:00:00Z" }), accountKey: "test" }) }));
+vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: fieldState, accountKey: "test" }) }));
+const fieldState = reduceCompete(freshState(new Date("2026-10-26T18:00:00Z")), { type: "opt-in", sport: "running", now: "2026-10-26T09:00:00Z" });
+fieldState.activities = [{ id: "counted-run", sport: "running", startedAt: "2026-10-26T16:00:00Z", distanceM: 1000, movingSec: 300, avgHr: null, verified: true, source: "strava" }];
 import { CompetitionField } from "./competition-field";
 let renderer: ReactTestRenderer;
 const field = () => renderer.root.findByType("LaneTrack" as never);
@@ -83,7 +88,7 @@ it("cancels a pending hold for small drags and app backgrounding", async () => {
   await act(async () => mocks.appState?.("inactive"));
   expect(field().props.overlaysHidden).toBe(false);
 });
-it("collapses each panel independently and isolates zoom/replay touches from scene holds", async () => {
+it("collapses each panel independently and isolates timeline touches from scene holds", async () => {
   await act(async () => button("Collapse current leaders").props.onPress());
   expect(button("Expand current leaders").props.accessibilityState.expanded).toBe(false);
   expect(button("Collapse athlete panel").props.accessibilityState.expanded).toBe(true);
@@ -92,13 +97,13 @@ it("collapses each panel independently and isolates zoom/replay touches from sce
   await act(async () => button("Expand current leaders").props.onPress());
   expect(button("Collapse current leaders").props.accessibilityState.expanded).toBe(true);
   expect(button("Zoom in")).toBeUndefined();
-  const replay = renderer.root.findAllByType("ReplayButton" as never)[0].parent!;
+  const replay = renderer.root.findAllByType("View" as never).find(node => node.props.onTouchStart && !node.props.onTouchEnd)!;
   const stopPropagation = vi.fn();
   replay.props.onTouchStart({ stopPropagation });
   expect(stopPropagation).toHaveBeenCalledTimes(1);
 });
 
-it("keeps 4D inside the fullscreen host with the same panels, selection and replay", async () => {
+it("keeps 4D inside the fullscreen host with the same panels, selection and timeline", async () => {
   const switchTo = async (mode: string) => act(async () => {
     const switcher = renderer.root.findAllByType("FieldViewSwitcher" as never)[0];
     switcher.props.onChange(mode.toLowerCase());
@@ -133,14 +138,7 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
     expect(overview().props.view.center).toBe(peer.value);
   }
   expect(mocks.fly).not.toHaveBeenCalled();
-  expect(renderer.root.findAllByType("ReplayButton" as never)).toHaveLength(0);
-  await act(async () => map().props.onReplay());
-  const replay = renderer.root.findByType("ReplayModal" as never);
-  expect(replay.props.open).toBe(true);
-  expect(replay.props.dimension).toBe("4d");
-  expect(replay.props.selection.sport).toBe("running");
-  await act(async () => replay.props.onClose());
-  expect(renderer.root.findByType("ReplayModal" as never).props.open).toBe(false);
+  expect(renderer.root.findAllByProps({ accessibilityLabel: "Competition timeline" }).length).toBeGreaterThan(0);
   await act(async () => { root().props.onTouchStartCapture(); scene().props.onTouchStart(touch()); vi.advanceTimersByTime(450); });
   expect(map().props.overlaysHidden).toBe(true);
   await act(async () => scene().props.onTouchEnd());
@@ -222,4 +220,31 @@ it("retains the fullscreen scene across tab blur and exits without collapsing it
   await act(async () => exit.props.onPress());
   expect(onExit).toHaveBeenCalledOnce();
   expect(renderer.root.findByType("GeographicCourse" as never)).toBe(map);
+});
+
+it("scrubs the current field and preserves its cursor across dimensions and fullscreen", async () => {
+  const liveValues = field().props.lanes.filter((lane: { ghost?: boolean }) => !lane.ghost).map((lane: { values: number[] }) => lane.values[2]);
+  const timeline = () => renderer.root.findAllByProps({ accessibilityLabel: "Competition timeline" })[0];
+  expect(timeline().props.accessibilityValue.max).toBeGreaterThan(0);
+  await act(async () => timeline().props.onAccessibilityAction({ nativeEvent: { actionName: "decrement" } }));
+  const at = timeline().props.accessibilityValue.now;
+  expect(at).toBeLessThan(timeline().props.accessibilityValue.max);
+  await act(async () => renderer.root.findAllByType("FieldViewSwitcher" as never)[0].props.onChange("4d"));
+  expect(timeline().props.accessibilityValue.now).toBe(at);
+  await act(async () => renderer.root.findByType("IconButton" as never).props.onPress());
+  expect(timeline().props.accessibilityValue.now).toBe(at);
+  await act(async () => button("Latest").props.onPress());
+  const map = renderer.root.findByType("GeographicCourse" as never);
+  expect(map.props.lanes.map((lane: { value: number }) => lane.value)).toEqual(liveValues);
+});
+
+it("leaves the redesigned immersive sheet free of the legacy timeline and keeps its replay action", async () => {
+  await act(async () => renderer.unmount());
+  await act(async () => { renderer = create(createElement(CompetitionField, { sport: "running", track: "verified", persistent: true, backgroundMode: true })); });
+  expect(renderer.root.findAllByProps({ accessibilityLabel: "Competition timeline" })).toHaveLength(0);
+  const map = renderer.root.findByType("GeographicCourse" as never);
+  await act(async () => map.props.onReplay());
+  expect(renderer.root.findByType("ReplayModal" as never).props.open).toBe(true);
+  await act(async () => renderer.root.findByType("ReplayModal" as never).props.onClose());
+  expect(renderer.root.findByType("ReplayModal" as never).props.open).toBe(false);
 });

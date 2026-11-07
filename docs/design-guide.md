@@ -161,6 +161,12 @@ map instance. Replay's compact athlete rows can restore dismissed cards. Web
 competition and recorded-route maps share compact upper-left attribution.
 See the [stack review](reviews/map-ui-stack-review.md).
 
+The timeline feature branch retains workout scrubbing for legacy inline and
+fullscreen fields. The November 7 event-home immersive field retains its
+existing course-position sheet and replay viewer while time/course dock
+placements are evaluated. Do not overlay the legacy timeline card on that sheet.
+See the [timeline rebase review](reviews/field-timeline/rebase-2026-11-07.md).
+
 Sync receipts use one “Sync completed” heading and keep the sample-preview
 notice when applicable. Activity metadata uses two columns of labeled values,
 each above a thin grey track with a teal magnitude fill. Compare each metric

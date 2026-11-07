@@ -1,6 +1,8 @@
 vi.mock("../features/use-competition-course", () => ({ useCompetitionCourse: () => ({ course: null, error: "" }) }));
-vi.mock("../lib/env", () => ({ mobileEnv: { mapboxAccessToken: "" } }));
+vi.mock("../lib/env", () => ({ mobileEnv: { mapboxAccessToken: "", apiUrl: "" } }));
 vi.mock("./compete-sheet", () => ({ CompeteSheet: "CompeteSheet" }));
+vi.mock("../features/field-timeline", () => ({ FieldTimeline: "FieldTimeline" }));
+vi.mock("../lib/api", () => ({ requestApi: vi.fn() }));
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: vi.fn() }) }));
 vi.mock("../features/athlete-profile-sheet", () => ({ AthleteProfileSheet: "AthleteProfileSheet" }));
 vi.mock("./app-icon", () => ({ AppIcon: "AppIcon" }));
