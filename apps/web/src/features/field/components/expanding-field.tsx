@@ -11,6 +11,7 @@ import { collapseExpandingFieldImmediate } from "./expanding-field-teardown";
 export function ExpandingField({
   open,
   persistent = false,
+  previewFrame,
   onClose,
   tabActive = true,
   hud,
@@ -18,6 +19,7 @@ export function ExpandingField({
 }: {
   open: boolean;
   persistent?: boolean;
+  previewFrame?: { x: number; y: number; width: number; height: number };
   onClose: () => void;
   tabActive?: boolean;
   hud?: ReactNode;
@@ -149,7 +151,7 @@ export function ExpandingField({
     return () => dialog.removeEventListener("keydown", loopTab);
   }, [dialog]);
 
-  if (persistent) return <div ref={persistentHost} data-persistent-field className={`focus-field-expanded${overlaysHidden ? " is-holding-field" : ""}`} style={{ position: "fixed", inset: 0, visibility: tabActive && open ? "visible" : "hidden", pointerEvents: tabActive && open ? "auto" : "none", zIndex: 100 }} aria-hidden={!tabActive || !open} inert={!tabActive || !open} onKeyDown={event => { if (event.key === "Escape") onClose(); }}><div className="focus-field-content" style={{ position: "absolute", inset: 0 }}>{children}</div>{hud}</div>;
+  if (persistent) return <div ref={persistentHost} data-persistent-field className={`focus-field-expanded${overlaysHidden ? " is-holding-field" : ""}`} style={{ position: "fixed", inset: open ? 0 : undefined, left: open ? undefined : previewFrame?.x, top: open ? undefined : previewFrame?.y, width: open ? undefined : previewFrame?.width, height: open ? undefined : previewFrame?.height, borderRadius: open ? 0 : 12, overflow: "hidden", visibility: tabActive && (open || previewFrame) ? "visible" : "hidden", pointerEvents: tabActive && open ? "auto" : "none", zIndex: 100 }} aria-hidden={!tabActive || !open} inert={!tabActive || !open} onKeyDown={event => { if (event.key === "Escape") onClose(); }}><div className="focus-field-content" style={{ position: "absolute", inset: 0 }}>{children}</div>{hud}</div>;
 
   return <>
     <div

@@ -149,9 +149,11 @@ export function applyRemoteSnapshot(
   dirty: boolean,
   holdLocalUnits = false,
 ): CompeteState {
-  const next = dirty
+  let next = dirty
     ? mergeFreshRemote(local, remote, holdLocalUnits)
     : remote;
+  // Completion is permanent for this account, even when an older server snapshot arrives.
+  if (local.onboardingCompleted && !next.onboardingCompleted) next = { ...next, onboardingCompleted: true };
   const sameReceipts = JSON.stringify(local.committedOvertakeMoments?.map(moment => moment.id) ?? [])
     === JSON.stringify(next.committedOvertakeMoments?.map(moment => moment.id) ?? []);
   return sameDocument(local, next) && sameReceipts ? local : next;

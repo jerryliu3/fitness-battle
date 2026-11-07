@@ -56,6 +56,7 @@ export function CompetitionField({
   onExit,
   onDetails,
   presentationActive,
+  previewHeight,
   externalCourseTarget,
   onOptionsChange,
 }: {
@@ -68,6 +69,7 @@ export function CompetitionField({
   onDetails?: () => void;
   presentationActive?: boolean;
   onOptionsChange?: (options: ReactNode | null) => void;
+  previewHeight?: number;
   externalCourseTarget?: CourseDistanceTarget | null;
 }) {
   const { state, accountKey, debugActive, dispatch } = useCompeteStore();
@@ -116,7 +118,7 @@ export function CompetitionField({
   const inlineHeight = sceneDimension === "2d"
     ? Math.max(300, Math.min(420, dimensions.height * .46))
     : Math.max(360, Math.min(480, dimensions.height * .56));
-  const sceneHeight = Math.round(expanded
+  const sceneHeight = previewHeight ?? Math.round(expanded
     ? Math.max(460, dimensions.height)
     : inlineHeight);
   const laneAnchor = useRef<LaneAnchor | null>(null);
@@ -369,6 +371,7 @@ export function CompetitionField({
             {queueOverlay}
             <CompetitionReplayModal open={courseReplayOpen} state={state} selection={replaySelection} initialFlat={courseFlat} dimension={sceneDimension} onClose={() => setCourseReplayOpen(false)} />
             {/* Top Bar HUD */}
+            {previewHeight == null && <>
             <FieldOverlayView
               hidden={overlaysHidden}
               pointerEvents="box-none"
@@ -652,6 +655,7 @@ export function CompetitionField({
             ) : null}
           </> : null}
           <AthleteProfileSheet athlete={profileAthlete} onClose={() => setProfileAthlete(null)} />
+            </>}
           </View>
         </FullscreenHost>
       ) : (

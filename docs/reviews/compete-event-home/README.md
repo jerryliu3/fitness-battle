@@ -51,3 +51,22 @@ production build passed. A fresh native build with the glass control was
 installed on iPhone 18 Pro / iOS 27.0 and reopened with this worktree's Metro
 server. Per the owner's request, final visual review of the scrubber and gear
 placement is left to them. Earlier screenshots above predate this polish.
+
+## Live preview follow-up
+
+Static course thumbnails are replaced by retained scene viewports. Each event
+shows its current user position in the actual scene; entry enlarges that scene's
+host rather than creating another Mapbox map. Native preview rectangles follow
+the card positions and clip to the home scroll viewport. Back restores the card
+viewport. GPS events use the native 3D course; points events retain their points
+field. No Static Images API request is needed for these cards. More visible
+courses can download more tiles and consume more device resources, even though
+native map billing remains based on monthly active users.
+
+Onboarding completion is monotonic when merging an older server snapshot for
+the same account. Completion requests an immediate save, and a completed account
+cannot display onboarding through a restored route (explicit previews remain
+available). A development build does not enable app debug mode; no database reset
+is part of this simulator build. The historical repeat-onboarding cause was not
+reproduced conclusively. Typecheck, tests and screenshot review were not run for
+this follow-up at the owner's request; GitHub CI owns code checks.
