@@ -749,7 +749,7 @@ export function FieldStage({
                         </svg>
                       }
                     />
-                    </div>
+                    </button>
                     <div className="focus-standing-bar-content">
                       <div className="focus-standing-bar-top">
                         <strong className="focus-standing-name">

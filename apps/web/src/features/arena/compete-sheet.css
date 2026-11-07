@@ -1,13 +1,8 @@
 .compete-sheet{position:fixed;left:0;right:0;bottom:0;height:calc(100dvh - env(safe-area-inset-top));z-index:120;border-radius:24px 24px 0 0;background:var(--paper);color:var(--ink);box-shadow:0 -8px 32px #142b3b18;display:flex;flex-direction:column;transition:transform 280ms cubic-bezier(.22,1,.36,1);overflow:visible}
 .compete-sheet-grip{height:44px;flex:none;display:grid;place-items:center;touch-action:none;cursor:ns-resize}
 .compete-sheet-grip span{height:4px;width:40px;border-radius:4px;background:var(--muted)}
-.compete-sheet-heading{display:flex;align-items:center;gap:8px;padding:0 20px 8px;min-height:32px;flex:none}
-.compete-sheet-heading strong{flex:1;font:var(--type-heading)}
-.compete-sheet-heading button{min-height:44px;border:0;background:transparent;color:var(--ink);font:var(--type-caption);padding:0 12px}
 .compete-sheet-body{overflow:auto;overscroll-behavior:contain;padding:0 20px 32px;min-height:0;flex:1}
 .compete-sheet-body .focus-arena-stage{padding-top:0}
-.compete-map-heading{position:absolute;top:max(56px,env(safe-area-inset-top));left:16px;right:16px;display:flex;justify-content:space-between;gap:12px;pointer-events:auto}
-.compete-map-heading>span{background:var(--card);color:var(--ink);border-radius:999px;padding:12px 18px;font:var(--type-label)}
 .phone-tabs{z-index:130}
 @media(prefers-reduced-motion:reduce){.compete-sheet{transition:none}}
 
@@ -17,13 +12,12 @@
 .compete-event-card{display:grid;gap:12px;text-align:left;padding:20px;border:1px solid var(--line);border-radius:20px;background:var(--card);color:var(--ink);font:var(--type-body);cursor:pointer}
 .compete-event-card>strong{font:var(--type-heading)}
 .compete-event-card>small{color:var(--muted)}
-.compete-event-preview{display:grid;align-content:space-around;min-height:64px;border-radius:12px;padding:8px 12px;background:var(--paper)}
 
 .compete-immersive-hud .focus-broadcast-top{top:max(12px,env(safe-area-inset-top))}
 .compete-immersive-hud .focus-broadcast-tower{top:76px}
 .focus-field-expanded:has(.compete-immersive-hud) .geographic-map-controls{top:112px;bottom:auto;left:auto;right:12px;max-width:50%}
 
-.compete-event-preview{width:100%;aspect-ratio:1;height:auto;min-height:0;padding:0;overflow:hidden;display:grid;place-items:center}
+.compete-event-preview{width:100%;aspect-ratio:1;border-radius:12px;background:var(--paper);height:auto;min-height:0;padding:0;overflow:hidden;display:grid;place-items:center}
 .compete-sheet-overview{padding:0 16px 8px;flex:none}.compete-sheet-overview-row{display:flex;align-items:center;gap:8px}.compete-sheet-overview-track{flex:1;min-width:0}
 
 .focus-field-expanded[aria-hidden="true"] .geographic-map-controls{display:none}

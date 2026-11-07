@@ -19,6 +19,7 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   const container = useRef<HTMLDivElement>(null), map = useRef<mapboxgl.Map | null>(null);
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(initialFlat), [following, setFollowing] = useState(true);
   const [spaced, setSpaced] = useState(true);
+  const earnedDistance = Math.max(0, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value));
   const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? RACE_LANE_SPACING_METRES : 0), [course, lanes, unit, selectedId, spaced]);
   const latest = useRef({ scene, onSelect, onFollowChange, onReady, onSnapshot }); latest.current = { scene, onSelect, onFollowChange, onReady, onSnapshot };
   const reduced = useRef(false);
@@ -87,11 +88,11 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   }, [ready, course, scene, replay]);
   useEffect(() => {
     if (!ready || !distanceTarget) return;
-    const metres = raceEffortMetres(Math.max(0, Math.min(distanceTarget.value, Math.max(0, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value)))), unit);
+    const metres = raceEffortMetres(Math.max(0, Math.min(distanceTarget.value, earnedDistance)), unit);
     if (metres === null) return;
     camera.current?.seek(course, metres);
     setFollowing(false);
-  }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request]);
+  }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request, earnedDistance]);
   const control = (label: string, action: () => void) => <button type="button" className="fb-btn-line" style={{ whiteSpace: "nowrap", minHeight: 44 }} onClick={() => { action(); const next = camera.current?.following ?? false; setFollowing(next); onFollowChange?.(next); }}>{label}</button>;
   return <div className="geographic-map" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", position: "relative", "--map-controls-bottom": `${controlsBottom}px` } as React.CSSProperties}>
     <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 0, position: "relative", overflow: "hidden" }} />

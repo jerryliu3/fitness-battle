@@ -190,3 +190,13 @@ backgrounding and teardown still cancel motion. Reduced motion stays immediate.
 Shared regression cases cover backward-facing behavior, bounded per-frame
 rotation, automatic travel and north wraparound. Tests/typecheck and visual
 review were not run at the owner's request. Native simulator build installed.
+
+## Light review and CI repair
+
+Read the failing GitHub Actions log: web standings avatar markup closed a button
+with a div tag, stopping TypeScript parsing. Corrected that closing tag. Camera
+seek clamps now react to changes in the earned leader distance, so corrected
+standings cannot leave a scrub target ahead of the leader. Removed obsolete sheet
+heading styles, merged duplicate preview styling, and removed an unused course
+position calculation. No local verification or CI reruns were requested after
+these changes; the PR is rebased onto the fetched origin/main.

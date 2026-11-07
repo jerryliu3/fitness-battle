@@ -153,7 +153,7 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
     focus(course: RaceCourse, metres: number, automatic = false, lateralMetres = 0) {
       if (automatic && !following) return;
       if (!automatic) following = true;
-      const position = raceCoursePosition(course, metres), current = driver.read();
+      const current = driver.read();
       const heading = courseForwardHeading(course, metres);
       const target = { ...current, center: raceCourseRacerPosition(course, metres, lateralMetres).coordinate, pitch: dimension === "3d" ? 60 : 0, bearing: dimension === "3d" ? heading : 0 };
       if (!reducedMotion && driver.trace && lastCourse === course && Math.abs(metres - lastMetres) > .1) {

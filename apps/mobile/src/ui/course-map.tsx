@@ -45,6 +45,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
   const ref = useRef<ComponentRef<typeof Camera>>(null);
   const reduced = useReducedMotion();
   const [spaced, setSpaced] = useState(true);
+  const earnedDistance = Math.max(0, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value));
   const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? RACE_LANE_SPACING_METRES : 0), [course, lanes, unit, selectedId, spaced]);
   const visibleTrails = useMemo(() => hiddenIds.length ? { ...scene.trails, features: scene.trails.features.filter(feature => !hiddenIds.includes(String(feature.id))) } : scene.trails, [scene.trails, hiddenIds]);
   const visibleMarkers = useMemo(() => hiddenIds.length ? { ...scene.markers, features: scene.markers.features.filter(feature => !hiddenIds.includes(String(feature.id))) } : scene.markers, [scene.markers, hiddenIds]);
@@ -115,10 +116,10 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
   }, [active, ready, course, replayActive, reduced]);
   useEffect(() => {
     if (!active || !ready || !distanceTarget) return;
-    const metres = raceEffortMetres(Math.max(0, Math.min(distanceTarget.value, Math.max(0, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value)))), unit);
+    const metres = raceEffortMetres(Math.max(0, Math.min(distanceTarget.value, earnedDistance)), unit);
     if (metres === null) return;
     controller.seek(course, metres);
-  }, [active, ready, course, unit, distanceTarget?.value, distanceTarget?.request, controller]);
+  }, [active, ready, course, unit, distanceTarget?.value, distanceTarget?.request, earnedDistance, controller]);
   const optionsHandlers = useRef({ onReplay, onChoose2D, toggleDimension: () => {}, toggleSpacing: () => {}, overview: () => {} });
   optionsHandlers.current = { onReplay, onChoose2D,
     toggleDimension: () => { controller.dimension(flat ? "3d" : "2d", !(followAthlete && controller.following && scene.selected)); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && controller.following) focus(); },
