@@ -134,3 +134,60 @@ it("leaves gaps where old milestone award times are unknown", () => {
  expect(chart.segments).toHaveLength(3); // two known settlement changes and a standalone current reading
  expect(chart.points.map(p => p.value)).toEqual(["1030", "1060", "1062"]);
 });
+
+it("grounds the Home week chart on Monday and includes non-competing activities despite mid-week enrollment", () => {
+  const now = new Date("2026-10-24T14:00:00Z"); // Saturday
+  const state = freshState(now);
+  // Mid-week enrollment starting Thursday (daily wave)
+  state.enrollments = [
+    {
+      sport: "running",
+      waveStart: "2026-10-22T10:00:00.000Z", // Thursday 06:00 ET
+      weekEnd: "2026-10-26T04:00:00.000Z", // Monday 00:00 ET
+      capacity: 8,
+      peerIds: [],
+      syntheticIds: [],
+      autoEnrollNext: true,
+      crewId: null,
+    },
+  ];
+  // Tuesday walk (non-competing sport before enrollment) and Friday run
+  state.activities = [
+    {
+      id: "tuesday-walk",
+      sport: "walking",
+      startedAt: "2026-10-20T14:00:00.000Z", // Tuesday
+      movingSec: 3600,
+      source: "strava",
+      provenance: "recorded",
+      disposition: "counted",
+      verified: true,
+      distanceM: 5000,
+      avgHr: null,
+    },
+    {
+      id: "friday-run",
+      sport: "running",
+      startedAt: "2026-10-23T14:00:00.000Z", // Friday
+      movingSec: 3600,
+      source: "strava",
+      provenance: "recorded",
+      disposition: "counted",
+      verified: true,
+      distanceM: 5000,
+      avgHr: null,
+    },
+  ] as typeof state.activities;
+
+  const model = homeTrainingLine(state, "week", now);
+  // Must start on Monday (Oct 19)
+  expect(model.points[0]?.label).toContain("Oct 19");
+  // Must include Tuesday's non-competing activity as well as Friday's run
+  expect(model.points.map(p => p.id)).toEqual([
+    expect.stringContaining("start:"),
+    "tuesday-walk",
+    "friday-run",
+    expect.stringContaining("end:"),
+  ]);
+  expect(model.value).toBe("2.0");
+});
