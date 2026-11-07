@@ -1,6 +1,6 @@
 # Appearance foundation
 
-This replaces the abandoned color-study integration with a small foundation based on current main. Light mode preserves every existing `SHELL_COLORS` value. No Slate/Steel theme, yellow-chart reinterpretation, diagnostic outlines or study pages are included.
+This replaces the abandoned color-study integration with a small foundation based on current main. Yellow owns actions, charts and progress; Slate owns secondary accents. `SHELL_COLORS` is a compatibility view of the canonical light appearance, not a second palette. Experimental alternate themes, diagnostic outlines and study pages are excluded.
 
 ## Contract
 
@@ -16,7 +16,7 @@ Production native routes and common UI now consume reactive palette hooks and ca
 
 Production web CSS and SVG/inline consumers resolve the shared namespaced variables and legacy aliases. Athlete Preferences exposes System/Light/Dark on both platforms, with the appearance control also available on the guest web profile. Supporting text and brand accents retain independent roles. Fixed foregrounds on artwork and yellow actions use explicit on-surface tokens.
 
-Geographic scenery, mascot artwork and categorical participant colors retain their distinct palettes. Historical design studies and native prototypes are not production routes and retain their reviewed study styling. The old Slate/Steel experiment, diagnostic outline mode and chart recoloring are excluded.
+Geographic scenery, mascot artwork and categorical participant colors retain their distinct palettes. Historical design studies and native prototypes are not production routes and retain their reviewed study styling. The chosen Slate/yellow roles are shared across both appearances; experimental alternate palettes and diagnostic outlines are excluded.
 
 Define new native styles with `createThemedStyles(colors => ({ surface: { backgroundColor: colors.surfaceCard } }))` and select them with `useThemedStyles` in the component. Read inline colors with `useThemeColors`. On web use `--app-*` variables or the CSS-variable adapter; never import static light colors into reactive product UI.
 

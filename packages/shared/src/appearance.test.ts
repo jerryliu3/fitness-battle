@@ -3,10 +3,22 @@ import { SHELL_COLORS } from "./shell";
 import { APP_COLORS, appColorVariables, getAppColors, resolveColorMode } from "./appearance";
 
 describe("appearance foundation", () => {
-  it("preserves every existing light-mode token from main", () => {
+  it("derives the compatibility palette from the canonical light appearance", () => {
+    expect(SHELL_COLORS).toBe(APP_COLORS.light);
     for (const [key, value] of Object.entries(SHELL_COLORS)) {
       expect(getAppColors("light")[key as keyof typeof SHELL_COLORS]).toBe(value);
     }
+  });
+  it("uses primary charts and Slate accents with matching compatibility aliases in both modes", () => {
+    for (const c of Object.values(APP_COLORS)) {
+      expect(c.chartSeries).toBe(c.actionPrimary);
+      expect(c.progressFill).toBe(c.actionPrimary);
+      expect(c.fieldTeal).toBe(c.chartSeries);
+      expect(c.fieldDeep).toBe(c.surfaceFeature);
+      expect(c.accentSecondary).not.toBe(c.chartSeries);
+    }
+    expect(APP_COLORS.light.accentSecondary).toBe("#637580");
+    expect(APP_COLORS.dark.accentSecondary).toBe("#b7c7d4");
   });
   it("resolves system and manual preferences with a stable fallback", () => {
     expect(resolveColorMode("system", "dark")).toBe("dark");
