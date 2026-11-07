@@ -78,6 +78,17 @@ export function getDemoCompeteState(
             lockPeriod: waveStartIso,
           };
         }
+        if (sport === "strength") {
+          return {
+            sport,
+            verifiedElo: 1015,
+            openElo: 1035,
+            optedIn: true,
+            lockVerified: 1005,
+            lockOpen: 1020,
+            lockPeriod: waveStartIso,
+          };
+        }
         return {
           sport,
           verifiedElo: 1000,
@@ -129,6 +140,23 @@ export function getDemoCompeteState(
           capacity: 8,
           peerIds: ["22222222-2222-4222-8222-222222222222"],
           syntheticIds: ["synth:cycling:0", "synth:cycling:1"],
+          autoEnrollNext: true,
+          crewId: null,
+        },
+        {
+          sport: "strength",
+          waveStart: waveStartIso,
+          weekEnd: weekEndIso,
+          capacity: 8,
+          peerIds: ["33333333-3333-4333-8333-333333333333"],
+          syntheticIds: [
+            "synth:strength:1",
+            "synth:strength:5",
+            "synth:strength:9",
+            "synth:strength:13",
+            "synth:strength:21",
+            "synth:strength:25",
+          ],
           autoEnrollNext: true,
           crewId: null,
         },
@@ -213,14 +241,70 @@ export function getDemoCompeteState(
           disposition: "counted",
         },
         {
+          id: "strava-act-alice-w0-mon-str",
+          sport: "strength",
+          startedAt: new Date(
+            monday.getTime() + 18 * 3600000,
+          ).toISOString(),
+          distanceM: 0,
+          movingSec: 2700,
+          avgHr: 136,
+          verified: false,
+          source: "whoop",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
           id: "strava-act-alice-w0-tue-2",
           sport: "strength",
           startedAt: new Date(
             monday.getTime() + 1 * 86400000 + 17 * 3600000 + 30 * 60000,
           ).toISOString(),
           distanceM: 0,
+          movingSec: 3300,
+          avgHr: 138,
+          verified: false,
+          source: "whoop",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w0-thu-str",
+          sport: "strength",
+          startedAt: new Date(
+            monday.getTime() + 3 * 86400000 + 12 * 3600000 + 15 * 60000,
+          ).toISOString(),
+          distanceM: 0,
+          movingSec: 3600,
+          avgHr: 144,
+          verified: false,
+          source: "whoop",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w0-fri-str",
+          sport: "strength",
+          startedAt: new Date(
+            monday.getTime() + 4 * 86400000 + 18 * 3600000 + 30 * 60000,
+          ).toISOString(),
+          distanceM: 0,
           movingSec: 2700,
-          avgHr: 132,
+          avgHr: 134,
+          verified: false,
+          source: "whoop",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w0-sat-str",
+          sport: "strength",
+          startedAt: new Date(
+            monday.getTime() + 5 * 86400000 + 15 * 3600000,
+          ).toISOString(),
+          distanceM: 0,
+          movingSec: 3900,
+          avgHr: 146,
           verified: false,
           source: "whoop",
           provenance: "recorded",
