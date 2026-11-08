@@ -430,7 +430,7 @@ export function HomeDeck({
             onPress={resetDeck}
             style={s.restorePill}
           >
-            <AppText role="caption" style={s.restorePillText}>
+            <AppText role="label" style={s.restorePillText}>
               Reset ↺
             </AppText>
           </Pressable>
@@ -598,7 +598,6 @@ const sThemes = createThemedStyles((c) => ({
   },
   restorePillText: {
     color: c.ink,
-    fontWeight: "600",
   },
   deckWrapper: {
     gap: 10,
@@ -660,9 +659,6 @@ const sThemes = createThemedStyles((c) => ({
   },
   cardBadgeText: {
     ...textStyle("nav"),
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.4,
   },
   dismissBtn: {
     width: 26,
@@ -672,8 +668,7 @@ const sThemes = createThemedStyles((c) => ({
     justifyContent: "center",
   },
   dismissBtnText: {
-    fontSize: 11,
-    fontWeight: "700",
+    ...textStyle("caption"),
   },
   dismissPlaceholder: {
     width: 26,
@@ -684,15 +679,10 @@ const sThemes = createThemedStyles((c) => ({
     justifyContent: "center",
   },
   cardTitle: {
-    ...textStyle("display"),
-    fontSize: 21,
-    lineHeight: 25,
-    letterSpacing: -0.6,
+    ...textStyle("heading"),
   },
   cardSubtitle: {
-    ...textStyle("body"),
-    fontSize: 13,
-    lineHeight: 18,
+    ...textStyle("caption"),
   },
   cardFooter: {
     flexDirection: "row",
@@ -709,8 +699,6 @@ const sThemes = createThemedStyles((c) => ({
   },
   ctaText: {
     ...textStyle("nav"),
-    fontSize: 12,
-    fontWeight: "700",
   },
   dotsRow: {
     flexDirection: "row",
@@ -768,18 +756,14 @@ const sThemes = createThemedStyles((c) => ({
     borderWidth: 1.5,
   },
   routeNodeGlyph: {
-    fontSize: 10,
-    fontWeight: "700",
-    lineHeight: 12,
+    ...textStyle("nav"),
   },
   routeDayLetter: {
-    fontSize: 9,
-    fontWeight: "600",
+    ...textStyle("nav"),
     color: c.muted,
   },
   routeDayLetterToday: {
     color: c.ink,
-    fontWeight: "800",
   },
   caughtUpRow: {
     paddingVertical: 14,

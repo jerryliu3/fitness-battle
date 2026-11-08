@@ -19,8 +19,7 @@
   border-radius: 999px;
   padding: 5px 10px;
   min-height: 30px;
-  font: var(--type-caption);
-  font-weight: 600;
+  font: var(--type-label);
   cursor: pointer;
 }
 .home-deck-wrapper {
@@ -134,9 +133,6 @@
   border-radius: 999px;
   padding: 3px 9px;
   font: var(--type-nav);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
 }
 .home-deck-dismiss {
   width: 26px;
@@ -145,8 +141,7 @@
   border: 0;
   background: var(--deck-orb-bg);
   color: var(--deck-orb-text);
-  font-size: 11px;
-  font-weight: 700;
+  font: var(--type-nav);
   cursor: pointer;
   display: grid;
   place-items: center;
@@ -161,10 +156,7 @@
 }
 .home-deck-title {
   margin: 0;
-  font: var(--type-display);
-  font-size: 21px;
-  line-height: 25px;
-  letter-spacing: -0.03em;
+  font: var(--type-heading);
   color: var(--deck-ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -172,9 +164,7 @@
 }
 .home-deck-subtitle {
   margin: 0;
-  font: var(--type-body);
-  font-size: 13px;
-  line-height: 18px;
+  font: var(--type-caption);
   color: var(--deck-muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -193,8 +183,6 @@
   padding: 7px 14px;
   min-height: 32px;
   font: var(--type-nav);
-  font-size: 12px;
-  font-weight: 700;
   cursor: pointer;
 }
 .home-route-strip-wrap {
@@ -232,9 +220,7 @@
   color: light-dark(#8ca398, #7a958b);
   display: grid;
   place-items: center;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
+  font: var(--type-nav);
 }
 .home-route-node-col.is-logged .home-route-node-circle {
   background: #24765c;
@@ -247,13 +233,11 @@
   color: #1f1715;
 }
 .home-route-node-day {
-  font-size: 9px;
-  font-weight: 600;
+  font: var(--type-nav);
   color: var(--deck-muted);
 }
 .home-route-node-col.is-today .home-route-node-day {
   color: var(--deck-ink);
-  font-weight: 800;
 }
 .home-deck-dots {
   display: flex;

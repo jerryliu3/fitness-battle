@@ -108,7 +108,9 @@ function DeckCardContent({
       </div>
 
       <div className="home-deck-card-body">
-        <h3 className="home-deck-title">{card.title}</h3>
+        <AppHeading level={3} role="heading" className="home-deck-title">
+          {card.title}
+        </AppHeading>
         <p className="home-deck-subtitle">{card.subtitle}</p>
         {card.routeWeek && (
           <CompactRouteStrip
