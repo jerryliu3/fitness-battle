@@ -49,8 +49,8 @@ const s=useThemedStyles(sThemes);
             <UserAvatar src={state?.avatarUrl} name={state?.name ?? "Athlete"} size={36} fallback={<AppIcon name="person" size={22} color={c.muted} />} onLoadEnd={imageSettled} />
           </Pressable>
           <View style={s.effort}><EffortRail compact /></View>
-          {streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.activeToday ? ", active today" : ", inactive today"}`} style={[s.streak, { opacity: streak.activeToday ? 1 : .4 }]}>
-            <AppIcon name={streak.activeToday ? "flameFilled" : "flame"} size={22} color={c.actionPressed} />
+          {streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.activeToday ? ", active today" : ", inactive today"}`} style={s.streak}>
+            <View style={{ opacity: streak.activeToday ? 1 : .4 }}><AppIcon name={streak.activeToday ? "flameFilled" : "flame"} size={22} color={c.actionPressed} /></View>
             <Text style={s.debugBtnText}>{streak.count}</Text>
           </View>}
         </View>
