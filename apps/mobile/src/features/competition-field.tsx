@@ -443,8 +443,8 @@ const f=useFocusStyles();
                 gap: 5,
               }}
             >
-              <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,0.65)" }}>
-                {timeline.frame ? "HISTORICAL POSITIONS" : "CURRENT LEADERS"}
+              <Text style={{ ...textStyle("label"), color: "rgba(255,255,255,0.65)" }}>
+                Current Leaders
               </Text>
               {coursePositionLeaders(ranked).map((peer, idx) => {
                 if (hiddenIds.includes(peer.id)) return <View key={peer.id} style={{ height: 24 }} />;

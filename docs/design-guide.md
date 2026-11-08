@@ -980,10 +980,22 @@ privacy filters hide blocked activity while retaining the complete field for ran
 calculation. Loading, empty and retry states do not substitute a preview for a
 failed authenticated request. Native and web share the feed presentation model.
 
-The event sheet shows Standings or Activity through one flip button, rather than
-stacking both. The meet heading and timeline remain outside the turning panel.
-The panel turns edge-on, switches its visible face, then turns back in 400 ms;
+The event sheet shows Standings or Feed through one flip button. The timeline stays
+outside the turning panel; there is no extra meet heading or back row below it.
+The panel turns edge-on, switches its visible face, then turns back in 420 ms;
 Reduced Motion switches immediately. Standings stays mounted to preserve its
-selection, while only the visible activity face loads its feed. Closing resets
+selection. Both faces share the loaded timeline ledger, so switching to Feed
+does not wait for another request. Closing resets
 to Standings; event/account/wave changes create a fresh panel. Queued-event
 registration cancellation stays directly accessible outside this presentation.
+
+### Event replay feed refinements (November 8, 2026)
+
+Native and web share the replay cursor between the field, standings and Feed.
+Feed lists completed events newest first and reveals new rows from above as
+playback advances; rewinding removes later entries. Logged activity uses the
+athlete portrait; overtakes name the athletes passed and retain place changes.
+Ties do not claim an outright overtake. Flip faces swap edge-on after committing
+the incoming layout, respecting reduced motion. The overlay title is always
+“Current Leaders” with the shared label typography. Product and debug builds
+use the same user-facing copy, preserving provenance internally.

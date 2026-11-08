@@ -593,7 +593,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
                         <AppText as="small" role="body" secondary style={{ ...typographyStyle("caption"), color: "var(--muted)", display: "block", marginTop: 2 }}>
                           {provider.blurb}
                           {link?.linked
-                            ? ` · ${offlineMode ? "Demo · sample data" : evidenceLabel(status === "stub" ? "stub" : status === "connected" ? "receiving_data" : "disconnected")}`
+                            ? ` · ${evidenceLabel(status === "connected" && !offlineMode ? "receiving_data" : "disconnected")}`
                             : ""}
                         </AppText>
                       </div>

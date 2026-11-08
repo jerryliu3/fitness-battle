@@ -12,7 +12,7 @@ interface Preview {
   fields: { id: string; name: string; sport: string; member_ids: string[] }[];
 }
 const ACTIONS: { id: ScenarioAction; label: string; help: string }[] = [
-  { id: "add-activity", label: "Add activity", help: "Adds a counted session to this athlete. Simulated GPS exercises Verified too; it does not connect a tracker." },
+  { id: "add-activity", label: "Add activity", help: "Adds a counted session to this athlete. GPS verification exercises the Verified track; it does not connect a tracker." },
   { id: "register", label: "Register sport", help: "Uses ordinary registration defaults. Open Compete as this athlete afterward to seat their field. Settle any overdue rounds first." },
   { id: "stop-renewal", label: "Stop after this wave", help: "Keeps the current wave and turns off automatic registration for the next wave." },
   { id: "resume-renewal", label: "Resume next-wave registration", help: "Re-enables automatic renewal of the selected sport." },
@@ -80,7 +80,7 @@ export function AdminScenarioControls({ target, owner, onTargetChange }: { targe
       <label>Sport<select disabled={busy} value={sport} onChange={(event) => setSport(event.target.value as SportId)}>{SPORTS.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
       <label>Scenario<select disabled={busy} value={action} onChange={(event) => { setAction(event.target.value as ScenarioAction); setConfirmation(""); }}>{ACTIONS.map((row) => <option key={row.id} value={row.id}>{row.label}</option>)}</select></label>
       <AppParagraph typographyRole="body">{ACTIONS.find((row) => row.id === action)?.help}</AppParagraph>
-      {(activity || overtake) && sport !== "strength" && <label>Score track<select disabled={busy} value={verified ? "verified" : "open"} onChange={(event) => setVerified(event.target.value === "verified")}><option value="open">Manual · Open only</option><option value="verified">Simulated GPS · Open + Verified</option></select></label>}
+      {(activity || overtake) && sport !== "strength" && <label>Score track<select disabled={busy} value={verified ? "verified" : "open"} onChange={(event) => setVerified(event.target.value === "verified")}><option value="open">Manual · Open only</option><option value="verified">GPS · Open + Verified</option></select></label>}
       {activity && <>
         {sport !== "strength" && <label>Miles<input className="fb-input" type="number" min="0" step="0.1" disabled={busy} value={miles} onChange={(event) => setMiles(event.target.value)}/></label>}
         <label>Duration (minutes)<input className="fb-input" type="number" min="1" disabled={busy} value={minutes} onChange={(event) => setMinutes(event.target.value)}/></label>

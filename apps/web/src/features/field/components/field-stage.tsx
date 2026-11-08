@@ -1,4 +1,5 @@
 "use client";
+import { useCompetitionTimeline } from "@/features/arena/competition-timeline-context";
 import { Sheet } from "@/ui/sheet";
 import { FieldViewSwitcher } from "./field-view-switcher";
 import { GeographicCourse } from "@/features/course/geographic-course";
@@ -85,7 +86,9 @@ export function FieldStage({
     model.sport,
   );
   const unit = model.unit;
-  const timeline = useFieldTimeline(!backgroundMode && !standingsOnly ? replayState : undefined, { sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: model.periodEnd }, !backgroundMode && !standingsOnly && tabActive && presentationVisible && Boolean(replayState) && !queueOverlay);
+  const sharedTimeline = useCompetitionTimeline();
+  const localTimeline = useFieldTimeline(!sharedTimeline && !backgroundMode && !standingsOnly ? replayState : undefined, { sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: model.periodEnd }, !backgroundMode && !standingsOnly && tabActive && presentationVisible && Boolean(replayState) && !queueOverlay);
+  const timeline = sharedTimeline ?? localTimeline;
   const runners = useMemo<SceneRunner[]>(
     () =>
       timeline.frame ? timeline.frame.rows.map(r => ({
@@ -377,7 +380,7 @@ export function FieldStage({
       <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Current leaders">
         <button type="button" className="focus-panel-toggle" aria-label={intervalsCollapsed ? "Expand live intervals" : "Collapse live intervals"} aria-expanded={!intervalsCollapsed} onClick={() => setIntervalsCollapsed(value => !value)}><span className="focus-panel-grip" aria-hidden="true" /></button>
         <div className="focus-panel-content" inert={intervalsCollapsed} aria-hidden={intervalsCollapsed}>
-          <span className="focus-broadcast-tower-kicker">{timeline.frame ? "HISTORICAL POSITIONS" : "CURRENT LEADERS"}</span>
+          <span className="focus-broadcast-tower-kicker">Current Leaders</span>
           {coursePositionLeaders(ranked).map((peer, idx) => {
             const delta = peer.value - leaderValue;
             const isSelected = (trackSelected || you.id) === peer.id;

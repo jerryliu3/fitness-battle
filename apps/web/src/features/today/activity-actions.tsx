@@ -57,7 +57,7 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
           return activity ? [activity] : [];
         });
         dispatch({ type: "apply-sync", provider: link.provider, activities, readiness: (body.readiness ?? []).flatMap((sample) => sample.provider === link.provider ? [{ id: sample.id, provider: link.provider, day: sample.day, score: sample.score }] : []), linkStatus: body.usedMock ? "stub" : "connected" });
-        messages.push(body.message ?? (body.usedMock ? `${link.provider}: sample data only; not a live connection.` : `${link.provider}: sync complete.`));
+        messages.push(body.message ?? (body.usedMock ? `${link.provider}: not connected.` : `${link.provider}: sync complete.`));
       }
       if (owner.current === accountId) setNote(messages.join(" "));
     } catch { if (owner.current === accountId) setNote("Sync could not finish. Retry from Athlete → Connections."); }

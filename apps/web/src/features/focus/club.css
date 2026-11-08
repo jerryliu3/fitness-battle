@@ -1767,7 +1767,7 @@
 .focus-broadcast-tower-kicker {
   letter-spacing: normal;
   text-transform: none;
-  font: var(--type-caption);
+  font: var(--type-label);
   color: rgba(255, 255, 255, 0.6);
 }
 .focus-broadcast-tower-row {

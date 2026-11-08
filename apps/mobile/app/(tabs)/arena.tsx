@@ -1,9 +1,9 @@
+import { MaterialBack } from "../../src/ui/material-back";
 import { CompetitionPanel } from "../../src/features/competition-panel";
 import { CompetitionTimelineProvider, CompetitionTimelineControls } from "../../src/features/competition-timeline-context";
 import { EventRegistration } from "../../src/features/event-registration";
 import { useCompeteExperience } from "../../src/features/compete-experience";
 import { RaceUpdates } from "../../src/features/race-updates";
-import { EventHeading } from "../../src/features/event-heading";
 import { EventHome } from "../../src/features/event-home";
 import { CompeteIcon, CrewEvents, ExploreEvents, CompeteResults } from "../../src/features/compete-home-sections";
 import { CompeteSheet } from "../../src/ui/compete-sheet";
@@ -112,12 +112,12 @@ const f=useFocusStyles();
   return (
     <CompetitionTimelineProvider state={state} selection={{ sport: selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary, track, periodStart: headerPeriod.startsAt.toISOString(), periodEnd: headerPeriod.endsAt.toISOString() }} enabled={persistent && Boolean(selectedSport) && selectedSport !== "sleep"} active={focused && experience.immersive && !queue?.queued && !queue?.awaitingField}>
     <SafeAreaView pointerEvents={persistent ? "box-none" : "auto"} style={[f.safe, persistent && { backgroundColor: "transparent" }]} edges={[]}>
-      {persistent && selectedSport && selectedSport !== "sleep" ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}`} sport={selectedSport} track={track} persistent backgroundMode externalAthleteFocus={athleteFocus} onOptionsChange={setCourseOptions} presentationActive={experience.immersive} onExit={exit} /> : null}
+      {persistent && selectedSport && selectedSport !== "sleep" && !queue?.queued && !queue?.awaitingField ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}`} sport={selectedSport} track={track} persistent backgroundMode externalAthleteFocus={athleteFocus} onOptionsChange={setCourseOptions} presentationActive={experience.immersive} onExit={exit} /> : null}
+      {persistent && experience.immersive && (queue?.queued || queue?.awaitingField) && <View style={{ position: "absolute", top: insets.top + 6, left: 12, zIndex: 20 }}><MaterialBack onPress={exit} /></View>}
       {persistent && experience.immersive && <View style={{ position: "absolute", top: insets.top + 54, right: 16, zIndex: 20 }}>{courseOptions}</View>}
       <ArenaSheet persistent={persistent} expandRequest={expandRequest} active={focused && experience.immersive} overview={persistent && !queue?.queued && !queue?.awaitingField ? <CompetitionTimelineControls /> : undefined}>
 <SectionStack divided={false}>
         {!persistent && <View style={{ gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><CompeteIcon name="wreath" size={34} gold /><AppText role="display" accessibilityRole="header">Compete</AppText></View></View><View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 }}><AppText role="body" secondary>{dateRange}</AppText><View style={{ backgroundColor: c.actionSoft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 }}><AppText role="label">{timeRemaining}</AppText></View></View></View>}
-        {persistent && selectedSport && selectedSport !== "sleep" && <EventHeading state={state} sport={selectedSport} onBack={exit} />}
         {standingsStale ? (
           <AppText role="body" secondary  accessibilityLiveRegion="polite">
             Standings may be out of date until the next refresh.
