@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { freshState, reduceCompete, type CompeteState } from "@fitness-battle/shared";
 const mock = vi.hoisted(() => ({ state: null as CompeteState | null, dispatch: vi.fn(), close: vi.fn(), enter: vi.fn() }));
 vi.mock("react-native", () => ({ Platform: { OS: "ios" }, StyleSheet: { create: (s: unknown) => s }, View: "View", Text: "Text", Pressable: "Pressable", ScrollView: "ScrollView", BackHandler: { addEventListener: () => ({ remove() {} }) } }));
-vi.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
+vi.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView", useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }));
 vi.mock("expo-router", () => ({ useGlobalSearchParams: () => ({}), usePathname: () => "/arena", useRouter: () => ({ navigate: vi.fn(), push: vi.fn() }) }));
 vi.mock("../theme", () => ({ useThemeColors: () => ({}) }));
 vi.mock("../ui/focus", () => ({ useFocusStyles: () => ({}), FocusSheet: "FocusSheet", FocusButton: "FocusButton" }));
@@ -22,6 +22,7 @@ vi.mock("./compete-home-sections", () => ({ CompeteIcon: "CompeteIcon", CrewEven
 vi.mock("./round-takeover", () => ({ RoundTakeover: () => null }));
 vi.mock("./sleep-panel", () => ({ SleepPanel: () => null }));
 vi.mock("../ui/wave-countdown", () => ({ WaveCountdown: "WaveCountdown" }));
+vi.mock("./competition-timeline-context", () => ({ CompetitionTimelineProvider: ({ children }: { children: unknown }) => children, CompetitionTimelineControls: () => null }));
 import { ArenaScreen } from "../../app/(tabs)/arena";
 let renderer: ReactTestRenderer;
 beforeEach(() => {

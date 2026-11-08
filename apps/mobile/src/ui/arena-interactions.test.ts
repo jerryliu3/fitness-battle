@@ -38,7 +38,7 @@ vi.mock("react-native", async () => {
     inspect(children);
     return createElement("View", props, children as never);
   }
-  return {useColorScheme: () => "light",
+  return {Platform: { OS: "ios" }, useColorScheme: () => "light",
     StyleSheet: { create: (styles: unknown) => styles },
     View,
     Image: "Image",
@@ -46,7 +46,7 @@ vi.mock("react-native", async () => {
     Animated: { View: "View", Value: class { constructor(public value: number) {} interpolate(config: unknown) { return config; } }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
     Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x },
     AppState: { addEventListener: () => ({ remove() {} }) },
-    useWindowDimensions: () => ({ width: 390, height: 844 }),
+    useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
     Pressable: "Pressable",
     ScrollView: "ScrollView",
     Switch: "Switch",
@@ -109,7 +109,7 @@ vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./arena-3d", () => ({ Arena3D: () => null }));
 vi.mock("./portrait-field", () => ({ PortraitField: "PortraitField" }));
 vi.mock("./award-shelf", () => ({ AwardShelf: () => null }));
-vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG" }));
+vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG", Path: "SvgPath", Defs: "SvgDefs", LinearGradient: "SvgGradient", Stop: "SvgStop", Rect: "SvgRect" }));
 vi.mock("./polished-racer", () => ({ PolishedRacer: "PolishedRacer" }));
 vi.mock("./field-view-switcher", () => ({ FieldViewSwitcher: "FieldViewSwitcher" }));
 vi.mock("./zoom-control", () => ({ ZoomControl: "ZoomControl" }));
@@ -190,8 +190,8 @@ it("offers event management on the home base and only enters a field on explicit
   await act(async () => { renderer = create(createElement(CompeteExperienceProvider, { value: { immersive: false, event: null, enter, close() {} }, children: createElement(ArenaScreen) })); });
   expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(0);
   expect(renderer.root.findAllByType("FieldViewSwitcher" as never)).toHaveLength(0);
-  const running = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.accessibilityLabel === "Enter Running field")!;
-  const cycling = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.accessibilityLabel === "Enter Cycling field")!;
+  const running = renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Enter Running field")!;
+  const cycling = renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Enter Cycling field")!;
   expect(running).toBeDefined(); expect(cycling).toBeDefined();
   expect(enter).not.toHaveBeenCalled();
   await act(async () => cycling.props.onPress());
@@ -202,9 +202,9 @@ it("opens registration from the event home without entering a field", async () =
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   mock.state = freshState();
   await act(async () => { renderer = create(createElement(ArenaScreen)); });
-  const register = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "+ Register")!;
+  const register = renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Explore walking")!;
   await act(async () => register.props.onPress());
-  expect(renderer.root.findAllByType("Sheet" as never).some(node => node.props.title === "Choose an event to join" && node.props.open)).toBe(true);
+  expect(renderer.root.findAllByType("Sheet" as never).some(node => node.props.title === "Weekly Walking Meet" && node.props.open)).toBe(true);
   expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(0);
 });
 
