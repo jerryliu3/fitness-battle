@@ -302,8 +302,8 @@ a {
 }
 
 .fb-btn {
-  background: var(--accent);
-  color: var(--lime);
+  background: var(--app-action-primary);
+  color: var(--app-text-on-action);
   border: none;
 }
 
@@ -346,9 +346,9 @@ a {
 }
 
 .fb-chip.on {
-  background: var(--ink);
-  color: var(--lime);
-  border-color: var(--ink);
+  background: var(--app-action-primary);
+  color: var(--app-text-on-action);
+  border-color: var(--app-action-primary);
 }
 
 .fb-field {

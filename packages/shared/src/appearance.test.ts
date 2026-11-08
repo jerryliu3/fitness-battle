@@ -35,3 +35,17 @@ describe("appearance foundation", () => {
     expect(appColorVariables("dark")["--app-surface-card"]).toBe(APP_COLORS.dark.surfaceCard);
   });
 });
+
+it("keeps shared control foregrounds readable in both appearances", () => {
+  const luminance = (hex: string) => {
+    const [r, g, b] = [1,3,5].map(i => parseInt(hex.slice(i,i+2),16)/255)
+      .map(v => v <= .04045 ? v/12.92 : ((v+.055)/1.055)**2.4);
+    return r!*.2126 + g!*.7152 + b!*.0722;
+  };
+  for (const c of Object.values(APP_COLORS)) {
+    for (const [foreground, background] of [[c.textOnAction,c.actionPrimary], [c.textPrimary,c.surfaceCard], [c.textPrimary,c.accentSecondarySoft], [c.textSecondary,c.surfaceCanvas], [c.textOnFeature,c.surfaceFeature]]) {
+      const [a,b] = [luminance(foreground!),luminance(background!)].sort((a,b)=>b-a);
+      expect((a!+.05)/(b!+.05)).toBeGreaterThanOrEqual(4.5);
+    }
+  }
+});
