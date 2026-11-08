@@ -128,7 +128,7 @@ export function ReplayViewer({ state, selection, initialDimension, embedded = fa
           <button type="button" onClick={() => seek(count)} disabled={!count || cursor >= count}>{closed ? "Finish" : "Latest"}</button>
           <button type="button" aria-label={`Playback speed ${speed} times`} onClick={() => setSpeed(nextCompetitionReplaySpeed)}>{speed}×</button>
         </div>
-        <p>{!count ? "No counted activity in this competition yet." : "Drag the timeline to move event by event."}{data?.scope === "local" ? debugActive ? " Debug preview · local practice field." : " Local preview · your sessions and available simulated athletes." : " Workout order, based on current counted activities."}{data?.athletes.some(a => a.synthetic) && " Simulated athletes use daily steps."}</p>
+        <p>{!count ? "No counted activity in this competition yet." : "Drag the timeline to move event by event."}</p>
       </footer>
     </>}
 

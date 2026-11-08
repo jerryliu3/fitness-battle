@@ -31,3 +31,6 @@
 .course-settings-switch::before{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:white;box-shadow:0 1px 3px #142b3b22}
 .course-settings-switch:checked::before{left:17px}
 .course-settings-switch:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+.compete-sheet[data-flipping="true"]{z-index:200}
+.compete-sheet[data-flipping="true"] .compete-sheet-body{position:relative;z-index:1;overflow:visible}

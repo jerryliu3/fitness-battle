@@ -970,3 +970,32 @@ rounded boundary so no internal gradient rectangle is visible.
 The header flame uses Phosphor Fire Regular when inactive today and Fire Fill
 when counted activity exists on the current Eastern day; the number retains its
 weekly streak meaning. The custom Compete wreath is awaiting a replacement choice.
+
+The immersive standings sheet identifies the meet with Back, sport, status and
+dates. Race updates below standings includes every counted event returned by the
+existing replay endpoint, newest first, with activity volume, chronological place
+changes and Eastern timestamps. It reconstructs workout order from the current
+counted ledger, not an immutable log of import/notification delivery. Native
+privacy filters hide blocked activity while retaining the complete field for rank
+calculation. Loading, empty and retry states do not substitute a preview for a
+failed authenticated request. Native and web share the feed presentation model.
+
+The event sheet shows Standings or Feed through one flip button. The timeline stays
+outside the turning panel; there is no extra meet heading or back row below it.
+The panel turns edge-on, switches its visible face, then turns back in 420 ms;
+Reduced Motion switches immediately. Standings stays mounted to preserve its
+selection. Both faces share the loaded timeline ledger, so switching to Feed
+does not wait for another request. Closing resets
+to Standings; event/account/wave changes create a fresh panel. Queued-event
+registration cancellation stays directly accessible outside this presentation.
+
+### Event replay feed refinements (November 8, 2026)
+
+Native and web share the replay cursor between the field, standings and Feed.
+Feed lists completed events newest first and reveals new rows from above as
+playback advances; rewinding removes later entries. Logged activity uses the
+athlete portrait; overtakes name the athletes passed and retain place changes.
+Ties do not claim an outright overtake. Flip faces swap edge-on after committing
+the incoming layout, respecting reduced motion. The overlay title is always
+“Current Leaders” with the shared label typography. Product and debug builds
+use the same user-facing copy, preserving provenance internally.

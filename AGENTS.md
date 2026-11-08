@@ -48,3 +48,12 @@ If those paths are not in this checkout, they live in the Fitness Battle Project
   - For any ambiguous product, UX, or domain decisions, hold off and report back to the user with clear options rather than making assumptions.
 - **Secrets & Auth**:
   - Do not copy secrets into the client. Strava client secret stays server-side. Update the matching living doc when tokens or domain rules change.
+
+## Production-parity copy
+
+Product UI must use the same copy in production and debug builds. Do not add
+labels, badges, captions or toasts identifying records as fake, simulated,
+synthetic, sample, mock or demo data, including local previews and replay feeds.
+Keep provenance flags, scoring exclusions, permissions and debug isolation in
+the data layer. Missing or unconfigured integrations still show their actual
+unavailable/not-connected state; never imply a working connection.

@@ -54,7 +54,7 @@ export const mockFitnessProvider: FitnessProvider = {
       provider: "mock",
       status: "stub",
       message:
-        "Using mock fitness tracker (demo data only — not a live athlete connection).",
+        "Fitness tracker is not connected.",
     };
     return result;
   },

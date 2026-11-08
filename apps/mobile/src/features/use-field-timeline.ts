@@ -74,7 +74,7 @@ export function useFieldTimeline(state: CompeteState | undefined, selection: Com
   };
   const frame = useMemo(() => index && position !== null ? competitionReplayFrame(index, bounded) : null, [index, position, bounded]);
   return {
-    frame,
+    frame, index,
     cursor: bounded, count, playing, seek, live, toggle, error, speed,
     changeSpeed: () => setSpeed(nextCompetitionReplaySpeed),
     ready: Boolean(index) && !error, retry: () => setAttempt(value => value + 1),

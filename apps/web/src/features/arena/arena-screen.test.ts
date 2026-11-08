@@ -11,6 +11,14 @@ vi.mock("next/navigation",()=>({useSearchParams:()=>new URLSearchParams(),useRou
 vi.mock("@/lib/score-track-lens",()=>({useScoreTrackLens:()=>["open",vi.fn()]}));
 vi.mock("@/lib/haptics",()=>({playCue:vi.fn()}));
 vi.mock("@/features/field/components/field-stage",()=>({FieldStage:({sportTitle, queueOverlay, standingsOnly, presentationVisible, onExit}:{sportTitle:string; standingsOnly?:boolean; presentationVisible?:boolean; onExit?:()=>void; queueOverlay?: import("react").ReactNode})=>createElement("div",{[standingsOnly ? "data-standings" : "data-active-field"]:sportTitle,"data-visible":presentationVisible,onDoubleClick:onExit}, queueOverlay)}));
+vi.mock("./competition-timeline-context", () => ({
+  CompetitionTimelineProvider: ({ children }: { children: import("react").ReactNode }) => children,
+  CompetitionTimelineControls: () => null,
+}));
+vi.mock("./competition-panel", () => ({
+  CompetitionPanel: ({ standings }: { standings: import("react").ReactNode }) => standings,
+}));
+vi.mock("./race-updates", () => ({ RaceUpdates: () => null }));
 vi.mock("@/features/health/sleep-panel",()=>({SleepPanel:()=>createElement("div",{"data-sleep-field":true})}));
 vi.mock("@/features/split/components/week-reveal",()=>({WeekReveal:()=>null}));
 vi.mock("@/ui/sheet",()=>({Sheet:()=>null}));
@@ -45,7 +53,8 @@ it("shows mystery competitors and a cancel action for a queued registration", ()
   expect(html).toContain("Cancel registration");
   expect(html).toContain("6:00 AM ET");
   expect(html).toContain("11:59 PM ET");
-  expect(html).toContain('data-active-field="Running"');
+  expect(html).not.toContain("data-active-field");
+  expect(html).not.toContain("data-standings");
   expect(html).not.toContain("hidden-peer");
 });
 

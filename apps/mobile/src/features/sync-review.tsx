@@ -42,7 +42,6 @@ const f=useFocusStyles();
   return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "fade"} onRequestClose={close}>
     <SafeAreaProvider><ScreenFade identity={receipt ? `receipt:${receipt.account}:${receipt.day}` : `moment:${moment?.id}`}>{!receipt && moment ? <CompetitionMoment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
       <ScrollView ref={scroll} contentContainerStyle={{ padding: 22, gap: 20, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        {debug && <Text style={f.kicker}>DEBUG PREVIEW · LOCAL DATA ONLY</Text>}
         {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete} resetScroll={resetScroll}/> : null}
       </ScrollView>
     </SafeAreaView>}</ScreenFade></SafeAreaProvider>
@@ -127,7 +126,6 @@ const c=useThemeColors();
     <ActivityMetricBars activity={activity} history={[...receipt.activities, ...state.activities]} units={state.units}/>
   </View>;
   return <View style={{ gap: 20, flex: 1 }}>
-    {receipt.preview && <Text style={f.kicker}>SAMPLE PREVIEW · NO COMPETITION CREDIT</Text>}
     <Text accessibilityRole="header" style={textStyle("display")}>Sync completed</Text>
     <Text style={f.massive}>{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</Text>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
@@ -298,7 +296,7 @@ const c=useThemeColors();
     <View style={{ marginTop: "auto", paddingTop: 16, gap: 12 }}>
       <View onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ height: 66, borderRadius: 36, backgroundColor: c.surfaceInverse, justifyContent: "center", position: "relative", overflow: "hidden" }}>
         <View pointerEvents="none" style={{ position: "absolute", left: progress * width, right: 0, top: 0, bottom: 0, overflow: "hidden", justifyContent: "center" }}>
-          <Text style={[textStyle("label"), { color: c.textOnInverse, textAlign: "center", width, marginLeft: -progress * width }]}>{receipt.preview ? "Swipe to preview" : selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</Text>
+          <Text style={[textStyle("label"), { color: c.textOnInverse, textAlign: "center", width, marginLeft: -progress * width }]}>{selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</Text>
         </View>
         <View accessible accessibilityRole="adjustable" accessibilityLabel="Swipe to confirm synced activities" accessibilityState={{ busy: saving }} accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }} accessibilityActions={[{ name: "increment", label: "Confirm activities" }]} onAccessibilityAction={finish} style={StyleSheet.absoluteFill}
           onStartShouldSetResponder={e => !saving && e.nativeEvent.locationX <= 64}
@@ -311,7 +309,6 @@ const c=useThemeColors();
           <View pointerEvents="none" style={{ position: "absolute", top: 5, left: 4, width: 56, height: 56, borderRadius: 28, backgroundColor: c.soft, justifyContent: "center", alignItems: "center", transform: [{ translateX: progress * travel }] }}>{saving ? <ActivityIndicator color={c.ink} /> : <Text style={{ ...textStyle("heading"), color: c.ink }}>→</Text>}</View>
         </View>
       </View>
-      {receipt.preview ? <Text style={[textStyle("caption"), { textAlign: "center" }]}>Preview only. No activities or points will be added.</Text> : null}
     </View>
   </View>;
 }

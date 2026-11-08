@@ -13,7 +13,6 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
 }) {
   const title = receipt ? "Sync completed" : moment?.plan.hasOvertake ? "Your overtakes" : moment && moment.plan.youAfter > moment.plan.youBefore ? "Your progress" : "Your field changed";
   return <Sheet open hideTitle={Boolean(receipt)} title={title} body="" fullScreen minimal={!receipt} scrollResetKey={receipt ? "review" : moment?.id} onClose={() => { if (receipt) onComplete(undefined, true); }}>
-    {debug && receipt && <p className="fb-kicker" style={{ textAlign: "center", marginTop: 20 }}>DEBUG PREVIEW · LOCAL DATA ONLY</p>}
     {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete}/> : moment ? <Moment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : null}
   </Sheet>;
 }
@@ -67,7 +66,6 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
     <ActivityMetricBars activity={activity} history={[...receipt.activities, ...state.activities]} units={state.units}/>
   </div>;
   return <div ref={step} className="sync-review-step">
-    {receipt.preview && <p className="fb-kicker">SAMPLE PREVIEW · NO COMPETITION CREDIT</p>}
     <AppHeading level={1} role="display">Sync completed</AppHeading>
     <div className="sync-review-total">{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</div>
     <div className="sync-review-selection-bar">
@@ -106,9 +104,8 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
         onPointerMove={e => { if (saving || !e.currentTarget.hasPointerCapture(e.pointerId)) return; setProgress(Math.max(0, Math.min(1, (e.clientX - start.current) / Math.max(1, e.currentTarget.clientWidth - 60)))); }}
         onPointerUp={e => { if (saving || !e.currentTarget.hasPointerCapture(e.pointerId)) return; const distance = (e.clientX - start.current) / Math.max(1, e.currentTarget.clientWidth - 60); e.currentTarget.releasePointerCapture(e.pointerId); if (distance >= .85) finish(); else setProgress(0); }}
         onPointerCancel={() => { if (!saving) setProgress(0); }}>
-        <span className="sync-review-swipe-label" style={{ clipPath: `inset(0 0 0 ${Math.round(progress * 100)}%)` }}>{receipt.preview ? "Swipe to preview" : selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</span><i style={{ left: `calc(${progress * 100}% - ${progress * 56}px)` }} aria-hidden="true">{saving ? <span className="sync-review-swipe-spin" /> : "→"}</i>
+        <span className="sync-review-swipe-label" style={{ clipPath: `inset(0 0 0 ${Math.round(progress * 100)}%)` }}>{selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</span><i style={{ left: `calc(${progress * 100}% - ${progress * 56}px)` }} aria-hidden="true">{saving ? <span className="sync-review-swipe-spin" /> : "→"}</i>
       </div>
-      {receipt.preview ? <p className="fb-note">Preview only. No activities or points will be added.</p> : null}
     </div>
   </div>;
 }
