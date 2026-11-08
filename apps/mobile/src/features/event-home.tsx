@@ -5,13 +5,14 @@ import { useCompeteStore } from "../lib/compete-store";
 import { Image, Linking, Pressable, Text, View } from "react-native";
 import { competePeriodWindow, buildArenaModel, competitionQueue, competitionTrack, competeNow, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppText, textStyle } from "../ui/section";
-import { SHELL_COLORS as c } from "../theme";
+import { useThemeColors } from "../theme";
 import { FocusButton } from "../ui/focus";
 
 const snapshotCache = new Map<string, string>();
 
 /** Read-only event previews; entering is an explicit presentation action. */
 export function EventHome({ state, accountKey, onEnter, onRecovery }: { state: CompeteState; accountKey: string; onEnter(account: string, sport: SportId): void; onRecovery(): void }) {
+  const c = useThemeColors();
   return <View style={{ gap: 16 }}>
     {state.ratings.filter(r => r.optedIn).map(rating => {
       const sport = rating.sport;
@@ -37,6 +38,7 @@ export function EventHome({ state, accountKey, onEnter, onRecovery }: { state: C
 }
 
 function CoursePreview({ state, sport, queued }: { state: CompeteState; sport: SportId; queued: boolean }) {
+  const c = useThemeColors();
   const period = competePeriodWindow(state, competeNow(state), sport);
   const { debugActive, accountKey } = useCompeteStore();
   const { course } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, !queued);
@@ -44,12 +46,13 @@ function CoursePreview({ state, sport, queued }: { state: CompeteState; sport: S
   const me = model?.lanes.find(lane => lane.you);
   const key = `race-card-v4:${accountKey}:${sport}:${course?.name}:${course?.length}:${me?.values[2]}:${state.units}`;
   return <View style={{ position: "relative", borderRadius: 12, overflow: "hidden" }}><SnapshotPreview key={key} cacheKey={key} course={course} lane={me} unit={model?.unit ?? ""} queued={queued} />
-    {!queued && course ? <View style={{ position: "absolute", bottom: 4, right: 6, maxWidth: "95%", flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 6, backgroundColor: "rgba(255,255,255,.85)", borderRadius: 4, paddingHorizontal: 4 }}>
+    {!queued && course ? <View style={{ position: "absolute", bottom: 4, right: 6, maxWidth: "95%", flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 6, backgroundColor: c.card, borderRadius: 4, paddingHorizontal: 4 }}>
       {[{ label: "© Mapbox", url: "https://www.mapbox.com/about/maps" }, { label: "© OpenStreetMap", url: "https://www.openstreetmap.org/copyright" }, { label: "ⓘ", url: "https://apps.mapbox.com/feedback/" }].map(link => <Pressable key={link.label} accessibilityRole="link" accessibilityLabel={link.label === "ⓘ" ? "Improve this map" : link.label} hitSlop={8} onPress={event => { event.stopPropagation(); void Linking.openURL(link.url); }}><Text style={{ ...textStyle("nav"), color: c.muted }}>{link.label}</Text></Pressable>)}
     </View> : null}
   </View>;
 }
 function SnapshotPreview({ cacheKey, course, lane, unit, queued }: { cacheKey: string; course: ReturnType<typeof useCompetitionCourse>["course"]; lane: NonNullable<ReturnType<typeof buildArenaModel>>["lanes"][number] | undefined; unit: string; queued: boolean }) {
+  const c = useThemeColors();
   const [uri, setUri] = useState(() => snapshotCache.get(cacheKey) ?? "");
   const capture = (value: string) => { if (snapshotCache.size >= 32) snapshotCache.delete(snapshotCache.keys().next().value!); snapshotCache.set(cacheKey, value); setUri(value); };
   const [expired, setExpired] = useState(false);

@@ -1,8 +1,9 @@
+import { useFocusStyles } from "./focus";
 import { playCue } from "../lib/haptics";
 import { textStyle } from "./section";
 import { AppIcon, type AppIconName } from "./app-icon";
 import { Pressable, Text, View } from "react-native";
-import { f } from "./focus";
+
 
 const settingsIcons: Record<string, AppIconName> = {
   "Data Sync": "sync", Preferences: "preferences", Notifications: "notifications",
@@ -18,6 +19,8 @@ export function SettingsRow({
   detail: string;
   onPress: () => void;
 }) {
+const f=useFocusStyles();
+
   return (
     <Pressable
       accessibilityRole="button"

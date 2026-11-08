@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { ActivityRoute } from "../ui/activity-route";
 import { AppText, Section, SectionStack, StatusBadge } from "../ui/section";
 import { TrainingAtlas } from "./training-atlas";
@@ -12,8 +13,8 @@ import {
   personalRecordHistory,
   type CompeteState,
 } from "@fitness-battle/shared";
-import { f } from "../ui/focus";
-import { SHELL_COLORS as c } from "../theme";
+
+
 const date = (v: string) =>
   new Date(v).toLocaleDateString("en-US", {
     month: "short",
@@ -21,6 +22,8 @@ const date = (v: string) =>
     timeZone: APP_TIMEZONE,
   });
 export function TrainingHistory({ state, children }: { state: CompeteState; children?: ReactNode }) {
+const f=useFocusStyles();
+
   const [distance,setDistance]=useState(""),[receipt,setReceipt]=useState<string|null>(null);
   const now=competeNow(state);
   const records = personalRecordHistory(state, now),

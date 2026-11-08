@@ -51,7 +51,7 @@ vi.mock("expo-router", () => ({
   useRouter: () => mock.router,
   usePathname: () => mock.pathname,
 }));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   Text: "Text",
   View: "View",
   Pressable: "Pressable",

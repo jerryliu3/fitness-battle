@@ -7,8 +7,8 @@
   padding: 24px 16px;
   background:
     radial-gradient(ellipse 90% 70% at 50% 42%, #4a2a5c 0%, transparent 58%),
-    linear-gradient(165deg, #2c1937 0%, #1a0f22 55%, #241428 100%);
-  color: #fff9e9;
+    linear-gradient(165deg, var(--app-soft) 0%, var(--app-surface-inverse) 55%, var(--app-surface-inverse) 100%);
+  color: var(--app-white);
 }
 
 .boot-splash-stage {
@@ -32,9 +32,9 @@
   line-height: 1;
   letter-spacing: 0;
   white-space: nowrap;
-  color: #fff9e9;
+  color: var(--app-white);
   /* Solid enough that Ember reads as behind the ink when depth < 0. */
-  text-shadow: 0 0 0 #fff9e9;
+  text-shadow: 0 0 0 var(--app-surface-card);
 }
 
 /* Keep tight tracking only inside the text run, not as space around the Ember slot. */

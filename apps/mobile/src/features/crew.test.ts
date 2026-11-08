@@ -32,7 +32,7 @@ vi.mock("react-native-svg", () => ({
   Rect: "Rect",
   Text: "SvgText",
 }));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   Pressable: "Pressable",
   Text: "Text",
   TextInput: "TextInput",
@@ -79,11 +79,11 @@ vi.mock("../lib/fetch-with-timeout", () => ({
   },
 }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
-vi.mock("../ui/focus", () => ({
+vi.mock("../ui/focus", () => ((()=>{const mock={
   FocusButton: "FocusButton",
   FocusSheet: "Sheet",
   f: {},
-}));
+};return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 vi.mock("./crew-relay",()=>({CrewRelay:"CrewRelay"}));
 import { CrewHub } from "./crew";
 import { clearApiReads } from "../lib/api-read-cache";

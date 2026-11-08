@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -8,7 +9,7 @@ import { requestApi } from "../lib/api";
 import { mobileEnv } from "../lib/env";
 import { useCompeteStore } from "../lib/compete-store";
 import { supabase } from "../lib/supabase";
-import { FocusButton, FocusSheet, f } from "../ui/focus";
+import { FocusButton, FocusSheet } from "../ui/focus";
 import { AppText, SectionHeader } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 import { AthleteProfileCard } from "./athlete-profile-card";
@@ -29,6 +30,8 @@ type PublicProfile = { city: string | null; created_at: string; lifetime_overtak
 const isAccountId = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
 export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProfileSelection | null; onClose: () => void }) {
+const f=useFocusStyles();
+
   const { user, accessToken, offlineMode } = useAuth();
   const { state } = useCompeteStore();
   const router = useRouter();

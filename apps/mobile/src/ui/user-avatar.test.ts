@@ -2,7 +2,7 @@ vi.mock("../lib/haptics", () => ({ playCue: vi.fn(), playPattern: vi.fn(() => vi
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
-vi.mock("react-native", () => ({ View: "View", Text: "Text", Image: "Image", StyleSheet: { create: (v: unknown) => v } }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  View: "View", Text: "Text", Image: "Image", StyleSheet: { create: (v: unknown) => v } }));
 import { UserAvatar } from "./user-avatar";
 let view: ReactTestRenderer;
 const images = () => view.root.findAll(node => (node.type as unknown) === "Image");

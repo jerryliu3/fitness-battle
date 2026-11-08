@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Mapbox from "@rnmapbox/maps";
 import { FocusButton, FocusSheet } from "./focus";
 import { textStyle } from "./section";
-import { SHELL_COLORS as c } from "../theme";
+import { useThemeColors } from "../theme";
 
 const TELEMETRY_KEY = "mapbox-telemetry-preference-v1";
 let preference: boolean | undefined;
@@ -17,6 +17,7 @@ function loadPreference() {
 
 /** Compact visible icon with a full touch target and the SDK's required privacy choice. */
 export function MapAttribution({ top }: { top: number }) {
+  const c = useThemeColors();
   const [open, setOpen] = useState(false);
   const [telemetry, setTelemetry] = useState<boolean | undefined>(preference);
   useEffect(() => { let alive = true; void loadPreference().then(() => { if (alive) setTelemetry(preference); }); return () => { alive = false; }; }, []);

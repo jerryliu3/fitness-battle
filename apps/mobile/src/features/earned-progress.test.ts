@@ -3,7 +3,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { freshState, reduceCompete, type Activity, type CompeteState } from "@fitness-battle/shared";
 const mock=vi.hoisted(()=>({state:null as CompeteState|null,account:"one",navigate:vi.fn()}));
-vi.mock("react-native",()=>({
+vi.mock("react-native",()=>({useColorScheme: () => "light",
  useWindowDimensions:()=>({width:390,height:844,fontScale:1}),
  Modal:"Modal",Pressable:"Pressable",ScrollView:"ScrollView",Text:"Text",View:"View",Image:"Image",StyleSheet:{create:(value:unknown)=>value},
  Animated:{View:"AnimatedView",Value:class{constructor(public value:number){}setValue(value:number){this.value=value;}interpolate(){return 0;}},timing:()=>({start(){},stop(){}})},
@@ -12,7 +12,7 @@ vi.mock("../ui/chart-scrubber",()=>({ChartScrubber:({children}:{children:unknown
 vi.mock("react-native-svg",()=>({default:"Svg",G:"G",Path:"Path",Text:"SvgText",Circle:"Circle",Line:"Line",Rect:"Rect"}));
 vi.mock("expo-router",()=>({useRouter:()=>({navigate:mock.navigate})}));
 vi.mock("../lib/compete-store",()=>({useCompeteStore:()=>({state:mock.state,accountKey:mock.account,canWrite:true,saveError:null})}));
-vi.mock("../ui/focus",()=>({FocusButton:"FocusButton",FocusDisclosure:"Disclosure",FocusSegments:"FocusSegments",FocusSheet:"FocusSheet",f:{chip:{},chipActive:{},row:{}}}));
+vi.mock("../ui/focus",()=>((()=>{const mock={FocusButton:"FocusButton",FocusDisclosure:"Disclosure",FocusSegments:"FocusSegments",FocusSheet:"FocusSheet",f:{chip:{},chipActive:{},row:{}}};return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 vi.mock("../ui/mascot/animated-ember",()=>({AnimatedEmber:"Ember"}));
 vi.mock("../ui/use-reduced-motion",()=>({useReducedMotion:()=>true}));
 vi.mock("../ui/field-course",()=>({drawFieldNode:()=>null}));

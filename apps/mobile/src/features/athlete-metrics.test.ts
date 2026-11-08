@@ -3,7 +3,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { freshState } from "@fitness-battle/shared";
 
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   View: "View",
   Text: "Text",
   StyleSheet: { create: (styles: unknown) => styles },
@@ -30,7 +30,7 @@ vi.mock("../ui/section", () => ({
   SectionHeader: "SectionHeader",
 }));
 
-vi.mock("../ui/focus", () => ({
+vi.mock("../ui/focus", () => ((()=>{const mock={
   f: {
     section: {},
     card: {},
@@ -38,7 +38,7 @@ vi.mock("../ui/focus", () => ({
     kicker: {},
   },
   FocusButton: "FocusButton",
-}));
+};return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 
 import { AthleteMetrics } from "./athlete-metrics";
 

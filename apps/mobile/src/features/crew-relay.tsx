@@ -1,12 +1,9 @@
+import { useFocusStyles } from "../ui/focus";
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { UserAvatar } from "../ui/user-avatar";
 import { chartTextProps, AppText } from "../ui/section";
 import { useEffect, useId, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import Svg, { G, Text as SvgText } from "react-native-svg";
 import {
   buildCrewRelayViewState,
@@ -16,8 +13,8 @@ import {
   type UnitSystem,
 } from "@fitness-battle/shared";
 import { drawFieldNode } from "../ui/field-course";
-import { SHELL_COLORS as c } from "../theme";
-import { f } from "../ui/focus";
+
+
 
 type Props = CrewWeekRelayInput & {
   units?: UnitSystem;
@@ -31,6 +28,10 @@ type Props = CrewWeekRelayInput & {
 };
 
 export function CrewRelay(props: Props) {
+const c=useThemeColors();
+const f=useFocusStyles();
+const s=useThemedStyles(sThemes);
+
   const { members, sport, units, userId, compact, hideTargetSummary, onSelectMember, hiddenIds = [] } = props;
   const [selected, setSelected] = useState("");
   const [width, setWidth] = useState(320);
@@ -179,7 +180,7 @@ export function CrewRelay(props: Props) {
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   marker: {
     position: "absolute",
     width: 56,
@@ -197,4 +198,4 @@ const s = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
-});
+};});

@@ -1,5 +1,7 @@
 # Product design guide — Everyday Club
 
+The [appearance foundation](appearance-system.md) adds shared light/dark roles and System preference infrastructure. Production web and native components adopt this contract and expose System/Light/Dark in Athlete Preferences; the chosen roles are yellow actions/charts/progress, Slate secondary accents, and independent neutral text. The canonical palette lives in `packages/shared/src/appearance.ts`; legacy shell names derive from it.
+
 ## Composition and copy principles — November 6, 2026
 
 These principles apply to new screens and refinements on web and native. They

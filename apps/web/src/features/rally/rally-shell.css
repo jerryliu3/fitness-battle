@@ -73,7 +73,7 @@
   justify-content: space-between;
   gap: 24px;
   padding: 30px 0 24px;
-  border-bottom: 1px solid #ffffff33;
+  border-bottom: 1px solid color-mix(in srgb, var(--app-surface-card) 20%, transparent);
   color: var(--rf-paper);
 }
 .rf-wordmark {
@@ -129,7 +129,7 @@
 }
 .rf-club {
   background: none;
-  border: 1px solid #ffffff66;
+  border: 1px solid color-mix(in srgb, var(--app-surface-card) 40%, transparent);
   border-radius: 30px;
   padding: 11px 17px;
   color: var(--rf-paper);
@@ -143,7 +143,7 @@
   justify-content: space-between;
   gap: 20px;
   padding: 15px 0;
-  color: #e0d6e4;
+  color: var(--app-border-subtle);
   letter-spacing: normal;
   text-transform: none;
   font: var(--type-caption);
@@ -339,7 +339,7 @@
   font: var(--type-caption);
 }
 .rf-court-reference .rf-court-travel {
-  background: #907595;
+  background: var(--app-soft);
 }
 .rf-court-reference .rf-court-dot {
   background: var(--rf-paper);
@@ -421,9 +421,9 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  background: #ffffff12;
+  background: color-mix(in srgb, var(--app-surface-card) 7.06%, transparent);
   color: var(--rf-paper);
-  border: 1px solid #ffffff22;
+  border: 1px solid color-mix(in srgb, var(--app-surface-card) 13.33%, transparent);
   border-radius: 10px;
   padding: 15px 18px;
   margin-top: 12px;
@@ -485,11 +485,11 @@
   min-width: 0;
 }
 .rf-move:not(:disabled):hover {
-  background: #fffde0;
+  background: var(--app-soft);
   border-color: #40234e77;
 }
 .rf-move:disabled {
-  background: #f0eadf;
+  background: var(--app-soft);
   opacity: 0.68;
 }
 .rf-move-day {
@@ -514,7 +514,7 @@
   font: var(--type-caption);
 }
 .rf-move:disabled .rf-move-day > span {
-  background: #e0d9df;
+  background: var(--app-soft);
 }
 .rf-ring {
   grid-column: 1;
@@ -533,7 +533,7 @@
   stroke-width: 7px;
 }
 .rf-ring-track {
-  stroke: #e2dbe4;
+  stroke: var(--app-border-subtle);
 }
 .rf-ring-value {
   stroke: var(--rf-plum);
@@ -643,7 +643,7 @@
   opacity: 0.55;
 }
 .rf-product-footer {
-  border-top: 1px solid #ffffff33;
+  border-top: 1px solid color-mix(in srgb, var(--app-surface-card) 20%, transparent);
   margin-top: 30px;
   padding: 23px 0 28px;
   display: flex;
@@ -664,8 +664,8 @@
   font: var(--type-caption);
 }
 .rf-matchup-choice {
-  background: #ffffff0c;
-  border: 1px solid #ffffff33;
+  background: color-mix(in srgb, var(--app-surface-card) 4.71%, transparent);
+  border: 1px solid color-mix(in srgb, var(--app-surface-card) 20%, transparent);
   color: var(--rf-paper);
   padding: 20px 24px;
   border-radius: 14px;
@@ -685,7 +685,7 @@
 }
 .rf-matchup-choice button {
   padding: 12px 16px;
-  border: 1px solid #ffffff44;
+  border: 1px solid color-mix(in srgb, var(--app-surface-card) 26.67%, transparent);
   color: var(--rf-paper);
   background: none;
   border-radius: 30px;
@@ -784,7 +784,7 @@
   background: #f6f25366;
 }
 .rf-field-you {
-  background: #ede6ef;
+  background: var(--app-soft);
   border-radius: 6px;
 }
 .rf-field-person {
@@ -795,7 +795,7 @@
   flex-shrink: 0;
 }
 .rf-field-person > b {
-  background: #e4dce7;
+  background: var(--app-soft);
   border-radius: 50%;
   width: 28px;
   height: 28px;
@@ -831,7 +831,7 @@
 }
 .rf-field-track > span {
   height: 100%;
-  background: #917497;
+  background: var(--app-soft);
   display: block;
   transition: width 0.65s;
 }
@@ -963,7 +963,7 @@
   font: var(--type-caption);
 }
 .rally-focus[data-view="moves"] .rf-ring-caption {
-  color: #e0d6e4;
+  color: var(--app-border-subtle);
 }
 .rf-moves-note {
   display: flex;
@@ -1111,8 +1111,8 @@
 }
 .rf-tracker-card {
   position: relative;
-  background: #ffffff0c;
-  border: 1px solid #ffffff44;
+  background: color-mix(in srgb, var(--app-surface-card) 4.71%, transparent);
+  border: 1px solid color-mix(in srgb, var(--app-surface-card) 26.67%, transparent);
   padding: 25px 28px;
   color: var(--rf-paper);
   border-radius: 18px;
@@ -1325,7 +1325,7 @@
 .rally-focus[data-ink="on"] .rf-highlight {
   border: 2px solid var(--rf-plum);
   border-radius: 4px;
-  box-shadow: 5px 5px 0 #24112f;
+  box-shadow: 5px 5px 0 var(--app-text-secondary);
 }
 .rally-focus[data-ink="on"] .rf-highlight-art {
   background: radial-gradient(#40234e33 1px, transparent 1px);

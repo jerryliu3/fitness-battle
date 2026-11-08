@@ -1,8 +1,9 @@
+import { createThemedStyles, useThemedStyles, legacyColors } from "../theme";
 import { useEffect, useRef } from "react";
-import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { View, type StyleProp, type ViewStyle } from "react-native";
 import { encodePolyline, type RouteReplaySample, type LngLat } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
-import { colors } from "../theme";
+import { useLegacyColors } from "../theme";
 
 export interface RouteTimelapseProps {
   coordinates: LngLat[] | string;
@@ -21,12 +22,16 @@ export function RouteTimelapse({
   routeReplay,
   mode = "3d-flyover",
   units = "metric",
-  accentColor = colors.lime,
+  accentColor: suppliedaccentColor,
   durationMs = 12000,
   onFinish,
   onUnavailable,
   style,
 }: RouteTimelapseProps) {
+  const colors = useLegacyColors();
+  const accentColor = suppliedaccentColor ?? colors.lime;
+const styles=useThemedStyles(stylesThemes);
+
   const polylineStr =
     typeof coordinates === "string" ? coordinates : encodePolyline(coordinates);
 
@@ -59,7 +64,8 @@ export function RouteTimelapse({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles(themeColors=>{const colors=legacyColors(themeColors);
+return {
   frame: {
     width: "100%",
     height: 380,
@@ -67,4 +73,4 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: colors.ink,
   },
-});
+};});

@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const platform = vi.hoisted(() => ({ OS: "ios", insets: { top: 59, left: 0, right: 0, bottom: 34 } }));
-vi.mock("react-native", () => ({ Platform: platform, View: "View", Pressable: "Pressable", PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) } }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  Platform: platform, View: "View", Pressable: "Pressable", PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) } }));
 vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => platform.insets }));
 vi.mock("./section", () => ({ AppText: "AppText" }));
 import { Toast, ToastProvider } from "./toast";

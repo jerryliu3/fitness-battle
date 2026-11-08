@@ -11,14 +11,14 @@ vi.mock("expo-image-picker", () => ({
   launchImageLibraryAsync: mock.pick,
   getMediaLibraryPermissionsAsync: mock.permission,
 }));
-vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
+vi.mock("react-native", () => ({useColorScheme: () => "light",  AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   StyleSheet: { create: (styles: unknown) => styles }, View: "View", Text: "Text", Image: "Image", Pressable: "Pressable" }));
 vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path" }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: mock.user, offlineMode: true }) }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ dispatch: mock.dispatch }) }));
 vi.mock("../lib/supabase", () => ({ supabase: {} }));
-vi.mock("../ui/focus", () => ({ FocusSheet: "Sheet", FocusButton: "Button", f: {} }));
+vi.mock("../ui/focus", () => ((()=>{const mock={ FocusSheet: "Sheet", FocusButton: "Button", f: {} };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 import { ProfilePhoto } from "./profile-photo";
 let renderer: ReactTestRenderer;
 const tree = () => createElement(ProfilePhoto, { state: freshState() });

@@ -1,6 +1,8 @@
 "use client";
+import { colors as c } from "@/theme/app-colors";
 
-import { SHELL_COLORS as c, chartClientXToModel, nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
+
+import { chartClientXToModel, nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
 import { useCallback, useId, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
 import { AppText } from "./section";
 import { playCue } from "@/lib/haptics";

@@ -1,18 +1,10 @@
+import { useFocusStyles } from "../ui/focus";
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import React, { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import {
-  SHELL_COLORS as c,
-  buildAnalyticsLabModel,
-  formatMinutesAsHoursMins,
-  getDomainTitle,
-  type AnalyticsDomainId,
-  type AnalyticsLabModel,
-  type AnalyticsTimeLens,
-  type CompeteState,
-  type VitalId,
-} from "@fitness-battle/shared";
+import { Pressable, ScrollView, View } from "react-native";
+import { buildAnalyticsLabModel, getDomainTitle, type AnalyticsDomainId, type AnalyticsLabModel, type AnalyticsTimeLens, type CompeteState, type VitalId } from "@fitness-battle/shared";
 import { AppText, ListRow, SectionHeader, StatusBadge, Surface } from "../ui/section";
-import { FocusSegments, f } from "../ui/focus";
+import { FocusSegments } from "../ui/focus";
 import { StandardLineChart } from "../ui/standard-line-chart";
 
 export { getDomainTitle };
@@ -33,6 +25,9 @@ export function AthleteTelemetryDetails({
   state?: CompeteState | null;
   signedOut?: boolean;
 }) {
+const f=useFocusStyles();
+const s=useThemedStyles(sThemes);
+
   const activeDomain: AnalyticsDomainId =
     domain === "market" ||
     domain === "vitals" ||
@@ -92,6 +87,8 @@ function KpiGrid({
 }: {
   stats: Array<{ label: string; value: string; color?: string }>;
 }) {
+const s=useThemedStyles(sThemes);
+
   return (
     <View style={s.kpiGrid}>
       {stats.map((st, i) => (
@@ -121,6 +118,8 @@ function InspectionCallout({
   detail?: string;
   subtitle?: string;
 }) {
+const s=useThemedStyles(sThemes);
+
   return (
     <Surface style={s.inspectionBox}>
       <View style={s.betweenRow}>
@@ -141,6 +140,9 @@ function InspectionCallout({
  * ========================================================================== */
 
 function MarketView({ model }: { model: AnalyticsLabModel }) {
+const c=useThemeColors();
+const f=useFocusStyles();
+
   const m = model.market;
   const series = m.equitySeries;
   const [selectedIdx, setSelectedIdx] = useState(series.length - 1);
@@ -210,6 +212,10 @@ function MarketView({ model }: { model: AnalyticsLabModel }) {
  * ========================================================================== */
 
 function VitalsView({ model }: { model: AnalyticsLabModel }) {
+const c=useThemeColors();
+const f=useFocusStyles();
+const s=useThemedStyles(sThemes);
+
   const vitals = model.vitals.metrics;
   const [activeVitalId, setActiveVitalId] = useState<VitalId>("hrv");
   const vital = vitals.find((v) => v.id === activeVitalId) ?? vitals[0]!;
@@ -292,6 +298,10 @@ function VitalsView({ model }: { model: AnalyticsLabModel }) {
  * ========================================================================== */
 
 function SleepView({ model }: { model: AnalyticsLabModel }) {
+const c=useThemeColors();
+const f=useFocusStyles();
+const s=useThemedStyles(sThemes);
+
   const sData = model.sleep;
   const nights = sData.nights;
   const [selectedIdx, setSelectedIdx] = useState(nights.length - 1);
@@ -360,6 +370,10 @@ function SleepView({ model }: { model: AnalyticsLabModel }) {
  * ========================================================================== */
 
 function LoadView({ model }: { model: AnalyticsLabModel }) {
+const c=useThemeColors();
+const f=useFocusStyles();
+const s=useThemedStyles(sThemes);
+
   const l = model.load;
   const [selectedIdx, setSelectedIdx] = useState(l.series.length - 1);
   const safeIdx = Math.max(0, Math.min(selectedIdx, l.series.length - 1));
@@ -428,6 +442,10 @@ function LoadView({ model }: { model: AnalyticsLabModel }) {
  * ========================================================================== */
 
 function PerformanceView({ model }: { model: AnalyticsLabModel }) {
+const c=useThemeColors();
+const f=useFocusStyles();
+const s=useThemedStyles(sThemes);
+
   const p = model.performance;
   const [selectedIdx, setSelectedIdx] = useState(p.series.length - 1);
   const safeIdx = Math.max(0, Math.min(selectedIdx, p.series.length - 1));
@@ -495,6 +513,10 @@ function PerformanceView({ model }: { model: AnalyticsLabModel }) {
  * ========================================================================== */
 
 function CombinedView({ model }: { model: AnalyticsLabModel }) {
+const c=useThemeColors();
+const f=useFocusStyles();
+const s=useThemedStyles(sThemes);
+
   const cmb = model.combined;
   const [selectedIdx, setSelectedIdx] = useState(cmb.series.length - 1);
   const safeIdx = Math.max(0, Math.min(selectedIdx, cmb.series.length - 1));
@@ -539,7 +561,7 @@ function CombinedView({ model }: { model: AnalyticsLabModel }) {
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   content: {
     padding: 16,
     gap: 16,
@@ -599,4 +621,4 @@ const s = StyleSheet.create({
     flexWrap: "wrap",
     gap: 6,
   },
-});
+};});

@@ -1,3 +1,6 @@
+import { AppearanceSync } from "../src/ui/appearance-sync";
+import { useThemeColors } from "../src/theme";
+import { AppThemeProvider, useAppTheme } from "../src/appearance";
 import { OnboardingNavigation } from "../src/lib/onboarding-navigation";
 import { ToastProvider } from "../src/ui/toast";
 import { textStyle } from "../src/ui/section";
@@ -33,13 +36,15 @@ import {
   useCompeteFieldRefresh,
 } from "../src/lib/compete-store";
 import { shellTabFromPath } from "@fitness-battle/shared";
-import { SHELL_COLORS } from "../src/theme";
+
 import { BootGate } from "../src/ui/boot-gate";
 import { LaunchGate } from "../src/ui/launch-gate";
 import { useReducedMotion } from "../src/ui/use-reduced-motion";
 import { NavigationWarmup } from "../src/lib/navigation-warmup";
 
 function BlockPrivacyGate({ children }: { children: ReactNode }) {
+const SHELL_COLORS=useThemeColors();
+
   const { ready, error, reload } = useAthleteBlocks();
   const { signOut } = useAuth();
   if (ready) return children;
@@ -95,6 +100,13 @@ function NotificationNavigation() {
 }
 
 export default function RootLayout() {
+  return <AppThemeProvider><AppearanceSync /><RootContent /></AppThemeProvider>;
+}
+
+function RootContent() {
+  const { mode } = useAppTheme();
+const SHELL_COLORS=useThemeColors();
+
   const reduced = useReducedMotion();
   const [dmLoaded, dmError] = useDmSans({
     DMSans_400Regular,
@@ -169,7 +181,7 @@ export default function RootLayout() {
                         <LiveFieldRefresh />
                         <NavigationWarmup />
                         <OnboardingNavigation />
-                        <StatusBar style="dark" />
+                        <StatusBar style={mode === "dark" ? "light" : "dark"} />
                         <Stack
                           screenOptions={{
                             headerShown: false,

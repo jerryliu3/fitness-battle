@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
 import {
   clamp,
   type BootLayout,
@@ -28,6 +29,8 @@ type BootSplashProps = {
  * One shared outline unfolds from K and returns to K after the flight.
  */
 export function EmberBootSplash({ waiting = false, onAnimationComplete }: BootSplashProps) {
+const styles=useThemedStyles(stylesThemes);
+
   const { width: windowWidth } = useWindowDimensions();
   const fontSize = Math.max(32, Math.min(108, windowWidth * 0.12));
   const completed = useRef(false);
@@ -277,7 +280,7 @@ export function EmberBootSplash({ waiting = false, onAnimationComplete }: BootSp
   );
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles(themeColors=>{return {
   root: {
     flex: 1,
     alignItems: "center",
@@ -334,4 +337,4 @@ const styles = StyleSheet.create({
   spacer: {
     minHeight: 52,
   },
-});
+};});

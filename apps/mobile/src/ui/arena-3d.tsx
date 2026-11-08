@@ -1,8 +1,9 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { useSceneActive } from "./use-scene-active";
 import { textStyle } from "./section";
-import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
+
 import { useRef, useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text } from "react-native";
 import WebView, { type WebViewMessageEvent } from "react-native-webview";
 import type { ArenaSceneMessage } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
@@ -22,6 +23,8 @@ export function Arena3D({
   onPan,
   onUnavailable,
 }: Arena3DProps) {
+const styles=useThemedStyles(stylesThemes);
+
   const active = useSceneActive();
   const sceneActive = useRef(active);
   sceneActive.current = active;
@@ -116,7 +119,7 @@ export function Arena3D({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles(themeColors=>{const clubColors=themeColors;return {
   frame: {
     height: 520,
     borderRadius: 20,
@@ -125,4 +128,4 @@ const styles = StyleSheet.create({
   },
   web: { flex: 1, backgroundColor: clubColors.soft },
   caption: { ...textStyle("caption"), color: clubColors.muted, padding: 9, textAlign: "center" },
-});
+};});

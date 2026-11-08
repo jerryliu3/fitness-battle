@@ -1,7 +1,9 @@
+import { useFocusStyles } from "../src/ui/focus";
+import { createThemedStyles, useThemedStyles } from "../src/theme";
 import { SectionStack, AppText } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { WeekChart } from "../src/features/week-chart";
@@ -10,10 +12,13 @@ import { SessionStage } from "../src/features/session-stage";
 import { HomeActivityActions } from "../src/features/home-activity-actions";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { APP_TIMEZONE, buildTodayRoute, competeNow, countsOnTrack, dayKey } from "@fitness-battle/shared";
-import { FocusSheet, f } from "../src/ui/focus";
-import { SHELL_COLORS as c } from "../src/theme";
+import { FocusSheet } from "../src/ui/focus";
+
 
 export default function Week() {
+const f=useFocusStyles();
+const s=useThemedStyles(sThemes);
+
   const { state, dispatch } = useCompeteStore();
   const router = useRouter();
   const [todayOpen, setTodayOpen] = useState(false);
@@ -74,7 +79,7 @@ export default function Week() {
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   todayCta: {
     flexDirection: "row",
     alignItems: "center",
@@ -84,4 +89,4 @@ const s = StyleSheet.create({
     borderBottomColor: c.line,
     minHeight: 52,
   },
-});
+};});

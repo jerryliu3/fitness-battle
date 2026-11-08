@@ -1,12 +1,15 @@
+import { createThemedStyles, useThemedStyles, legacyColors } from "../src/theme";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
+import { ScrollView, Text, View, Pressable } from "react-native";
 import { Stack } from "expo-router";
 import { EMBER_ACTIONS, EMBER_CLIPS, type EmberAction } from "@fitness-battle/shared/mascot";
 import { AnimatedEmber } from "../src/ui/mascot/animated-ember";
-import { colors, fonts } from "../src/theme";
+import { fonts } from "../src/theme";
 
 /** Isolated native review screen, available at /mascot. */
 export default function MascotScreen() {
+const styles=useThemedStyles(stylesThemes);
+
   const [action, setAction] = useState<EmberAction>("idle");
   const [playing, setPlaying] = useState(true);
   return <ScrollView contentContainerStyle={styles.page}>
@@ -22,7 +25,7 @@ export default function MascotScreen() {
   </ScrollView>;
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles(themeColors=>{const colors=legacyColors(themeColors);return {
   page: { padding: 24, gap: 18, backgroundColor: colors.paper, flexGrow: 1 },
   kicker: { color: colors.muted, fontFamily: fonts.bodyBold, fontSize: 11, letterSpacing: 2 },
   title: { color: colors.ink, fontFamily: fonts.bodyBold, fontSize: 32 },
@@ -32,4 +35,4 @@ const styles = StyleSheet.create({
   button: { backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.line, padding: 14 },
   selected: { backgroundColor: colors.lime, borderColor: colors.limeDeep },
   buttonText: { color: colors.ink, fontFamily: fonts.bodyBold, textTransform: "capitalize" },
-});
+};});

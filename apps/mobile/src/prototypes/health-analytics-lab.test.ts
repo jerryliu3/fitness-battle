@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   Pressable: "Pressable",
   ScrollView: "ScrollView",
   Text: "Text",
@@ -36,7 +36,7 @@ vi.mock("../ui/chart-scrubber", () => ({
 vi.mock("../ui/screen-header", () => ({
   ScreenHeader: "ScreenHeader",
 }));
-vi.mock("../ui/focus", () => ({
+vi.mock("../ui/focus", () => ((()=>{const mock={
   f: {
     safe: {},
     content: {},
@@ -50,7 +50,7 @@ vi.mock("../ui/focus", () => ({
     chip: {},
     chipActive: {},
   },
-}));
+};return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 
 import HealthAnalyticsLab from "./health-analytics-lab";
 

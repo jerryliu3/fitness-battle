@@ -1,6 +1,8 @@
 "use client";
+import { colors as c } from "@/theme/app-colors";
+
 import { useState } from "react";
-import { benchmarkBars, SHELL_COLORS as c, type TrainingBucket } from "@fitness-battle/shared";
+import { benchmarkBars, type TrainingBucket } from "@fitness-battle/shared";
 import { ChartScrubber } from "./chart-scrubber";
 import { ChartSvg, ChartText } from "./chart-text";
 import "./benchmark-chart.css";

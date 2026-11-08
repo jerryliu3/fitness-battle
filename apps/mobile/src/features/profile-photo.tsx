@@ -1,3 +1,4 @@
+import { useThemeColors } from "../theme";
 import { playCue } from "../lib/haptics";
 import { UserAvatar } from "../ui/user-avatar";
 import { AppText } from "../ui/section";
@@ -24,10 +25,12 @@ import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { decodePhoto } from "../lib/profile-photo";
 import { supabase } from "../lib/supabase";
-import { SHELL_COLORS as c } from "../theme";
-import { FocusButton, FocusSheet, f } from "../ui/focus";
+
+import { FocusButton, FocusSheet } from "../ui/focus";
 
 export function ProfilePhoto({ state }: { state: CompeteState }) {
+const c=useThemeColors();
+
   const { user, offlineMode } = useAuth();
   const { dispatch } = useCompeteStore();
   const [busy, setBusy] = useState(false);

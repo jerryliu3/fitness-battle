@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { Toast } from "../ui/toast";
 import { playCue } from "../lib/haptics";
 import { SectionHeader, AppText } from "../ui/section";
@@ -15,8 +16,10 @@ import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
-import { FocusButton, f } from "../ui/focus";
+import { FocusButton } from "../ui/focus";
 export function DataSyncActions({ provider, includeCalibration = true }: { provider?: ProviderId; includeCalibration?: boolean }) {
+const f=useFocusStyles();
+
   const { user, accessToken, offlineMode } = useAuth();
   const { state, dispatch, previewSyncReview } = useCompeteStore();
   const [busy, setBusy] = useState(false),

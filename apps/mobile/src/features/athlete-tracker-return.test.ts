@@ -13,7 +13,7 @@ const mock = vi.hoisted(() => ({
   canGoBackValue: true,
   user: { id: "alice" } as { id: string } | null,
 }));
-vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
+vi.mock("react-native", () => ({useColorScheme: () => "light",  AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   StyleSheet: { create: (styles: unknown) => styles },
   Pressable: "Pressable",
@@ -65,14 +65,14 @@ vi.mock("../ui/sport-icon", () => ({ SportIcon: "SportIcon" }));
 vi.mock("../ui/integration-icon", () => ({ IntegrationIcon: "IntegrationIcon" }));
 vi.mock("../ui/choice-picker", () => ({ ChoicePicker: "ChoicePicker" }));
 vi.mock("../ui/settings-row", () => ({ SettingsRow: "SettingsRow" }));
-vi.mock("../ui/focus", () => ({
+vi.mock("../ui/focus", () => ((()=>{const mock={
   FocusButton: "Button",
   FocusSegments: "Segments",
   FocusSheet: "Sheet",
   FocusSidePanel: "SidePanel",
   FocusTextButton: "TextButton",
   f: {},
-}));
+};return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 import AthleteScreen from "../../app/athlete";
 let renderer: ReactTestRenderer;
 afterEach(async () => {

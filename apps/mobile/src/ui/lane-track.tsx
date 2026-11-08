@@ -1,27 +1,9 @@
+import { useThemeColors } from "../theme";
 import { AthletePennant } from "./athlete-pennant";
 import { chartTextProps, textStyle  } from "./section";
-import {
-  fieldCourse, fieldCourseScene, fieldScaleMarks, fieldLap, defaultFieldAppearance, fieldGrounds, type FieldAppearance, type FieldGround,
-  fieldZoomSpan, pinchFieldView, fieldFlightDuration, fieldFlightEase, fieldProgressTrail,
-  arenaPosition,
-  arenaWindow,
-  fieldDefaultSpan,
-  ordinalPlace,
-  athletePennantOffset,
-  arenaFieldHigh,
-  clampCourseCenter,
-  initialsFromName,
-  orderedArenaLanes,
-  competeAthleteTrailColors,
-  fieldLaneMarkerScale,
-  polishedCapsulePath,
-  type ArenaLane,
-  type ArenaOvertakeFrame,
-  type ArenaOvertakePlan,
-  type ArenaViewWindow,
-} from "@fitness-battle/shared";
+import { fieldCourse, fieldCourseScene, fieldScaleMarks, defaultFieldAppearance, type FieldAppearance, fieldZoomSpan, pinchFieldView, fieldFlightDuration, fieldFlightEase, fieldProgressTrail, arenaPosition, arenaWindow, fieldDefaultSpan, ordinalPlace, athletePennantOffset, arenaFieldHigh, clampCourseCenter, initialsFromName, orderedArenaLanes, competeAthleteTrailColors, fieldLaneMarkerScale, polishedCapsulePath, type ArenaLane, type ArenaOvertakeFrame, type ArenaOvertakePlan, type ArenaViewWindow } from "@fitness-battle/shared";
 import { memo, useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
-import { PanResponder, Pressable, ScrollView, Text, View } from "react-native";
+import { PanResponder, Pressable, Text, View } from "react-native";
 import Svg, {
   Circle,
   G,
@@ -29,8 +11,8 @@ import Svg, {
   Rect,
   Text as SvgText,
 } from "react-native-svg";
-import { SHELL_COLORS as c } from "../theme";
-import { playCue } from "../lib/haptics";
+
+
 import { drawFieldNode } from "./field-course";
 import { FieldOverlayGroup } from "./field-overlay-motion";
 import { PolishedRacer } from "./polished-racer";
@@ -103,6 +85,10 @@ function LaneTrackContent({
   overtakeFrame?: ArenaOvertakeFrame | null;
   overtakePlan?: ArenaOvertakePlan | null;
 }) {
+const appearanceColors = useThemeColors();
+
+const c=useThemeColors();
+
   const prefix = useId();
   const [width, setWidth] = useState(340);
   const [visibleScroll, setVisibleScroll] = useState(anchor?.current?.scroll ?? 0);
@@ -268,7 +254,7 @@ function LaneTrackContent({
                           x={(String(d).length * 7 + 20) / 2}
                           y={4}
                           textAnchor="middle"
-                          fill="#ffffff"
+                          fill={appearanceColors.white}
                         >
                           {`${d} ${unit}`}
                         </SvgText>
@@ -393,7 +379,7 @@ function LaneTrackContent({
                     <Path
                       d={polishedCapsulePath()}
                       fill="transparent"
-                      stroke="#ffffff"
+                      stroke={appearanceColors.white}
                       strokeWidth={1.5}
                       strokeDasharray="4 4"
                     />
@@ -419,7 +405,7 @@ function LaneTrackContent({
                       x={0}
                       y={3.5}
                       textAnchor="middle"
-                      fill="#ffffff"
+                      fill={appearanceColors.white}
                     >
                       Last week
                     </SvgText>
@@ -479,7 +465,7 @@ function LaneTrackContent({
             paddingVertical: 6,
           }}
         >
-          <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
+          <Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>
             Tap to open full screen
           </Text>
         </View>

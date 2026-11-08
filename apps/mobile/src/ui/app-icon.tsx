@@ -1,4 +1,5 @@
 import IconSettings from "@tabler/icons-react-native/IconSettings";
+import { useThemeColors } from "../theme";
 import IconRun from "@tabler/icons-react-native/IconRun";
 import IconWalk from "@tabler/icons-react-native/IconWalk";
 import IconBike from "@tabler/icons-react-native/IconBike";
@@ -22,7 +23,7 @@ import IconChartBar from "@tabler/icons-react-native/IconChartBar";
 import IconChevronRight from "@tabler/icons-react-native/IconChevronRight";
 import IconFlameFilled from "@tabler/icons-react-native/IconFlameFilled";
 import { Platform } from "react-native";
-import { SHELL_COLORS as c } from "../theme";
+
 
 const icons = {
   running: IconRun, walking: IconWalk, cycling: IconBike, strength: IconBarbell,
@@ -35,10 +36,12 @@ const icons = {
 export type AppIconName = keyof typeof icons;
 
 /** Decorative icons: the enclosing control or row owns its accessible name. */
-export function AppIcon({ name, size = 24, color = c.ink }: {
+export function AppIcon({ name, size = 24, color: suppliedColor }: {
   name: AppIconName; size?: number; color?: string;
 }) {
   const Icon = icons[name];
+  const c = useThemeColors();
+  const color = suppliedColor ?? c.ink;
   return <Icon size={size} color={color} strokeWidth={1.8}
     aria-hidden={Platform.OS === "web" ? true : undefined}
     accessible={Platform.OS === "web" ? undefined : false}

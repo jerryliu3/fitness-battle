@@ -1,4 +1,6 @@
 "use client";
+import { colors as appearanceColors } from "@/theme/app-colors";
+
 import { useBootLoading } from "@/shell/boot-readiness";
 import { UserAvatar } from "@/ui/user-avatar";
 import { AppParagraph, AppText, AppHeading, Section, typographyStyle } from "@/ui/section";
@@ -815,7 +817,7 @@ export function CrewPanel() {
             style={{
               background: "var(--red, #b83a38)",
               borderColor: "var(--red, #b83a38)",
-              color: "#fff",
+              color: appearanceColors.white,
             }}
             disabled={busy || !crew?.id}
             onClick={() => {

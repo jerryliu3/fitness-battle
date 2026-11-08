@@ -1,12 +1,16 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { Circle, G, Line, Rect } from "react-native-svg";
-import { benchmarkBars, SHELL_COLORS as c, type TrainingBucket } from "@fitness-battle/shared";
+import { benchmarkBars, type TrainingBucket } from "@fitness-battle/shared";
 import { ChartScrubber } from "./chart-scrubber";
 import { ChartSvg, ChartText } from "./chart-text";
 import { AppText, textStyle } from "./section";
 
 export function BenchmarkChart({ buckets, now, dateLabel }: { buckets: TrainingBucket[]; now: Date; dateLabel: string }) {
+const c=useThemeColors();
+const s=useThemedStyles(sThemes);
+
   const chart = benchmarkBars(buckets, now);
   const [selected, setSelected] = useState<string | null>(null);
   const total = buckets.reduce((sum, bucket) => sum + bucket.movingSec, 0);
@@ -30,8 +34,8 @@ export function BenchmarkChart({ buckets, now, dateLabel }: { buckets: TrainingB
     </ChartSvg>
   </ChartScrubber>;
 }
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   reading: { minHeight: 92, gap: 4 },
   value: { ...textStyle("hero"), color: c.ink, fontVariant: ["tabular-nums"] },
   unit: { ...textStyle("body"), color: c.muted },
-});
+};});

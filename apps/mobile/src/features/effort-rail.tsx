@@ -1,12 +1,15 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { textStyle } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ELO_UNRANKED, competitionTrack, competitionTrackLabel, effortPointProgress, formatEffortScore, formatVolume, rankForElo, sportById } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
 import { useReducedMotion } from "../ui/use-reduced-motion";
-import { SHELL_COLORS as c } from "../theme";
+
 export function EffortRail({ compact = false }: { compact?: boolean }){
+const s=useThemedStyles(sThemes);
+
   const {state,accountKey,canWrite,saveError}=useCompeteStore();
   const router=useRouter(), reduced=useReducedMotion();
   const model=state?effortPointProgress(state,state.primary,competitionTrack(state.primary)):null;
@@ -37,4 +40,4 @@ export function EffortRail({ compact = false }: { compact?: boolean }){
     {gain>0?<Animated.View accessibilityLiveRegion="polite" style={[s.gain,{opacity:reduced?1:burst.interpolate({inputRange:[0,.2,.8,1],outputRange:[0,1,1,0]}),transform:[{translateY:reduced?0:burst.interpolate({inputRange:[0,1],outputRange:[4,-18]})}]}]}><Text style={s.gainText}>+{gain}{reduced?"":"  ✦ ✧ ✦"}</Text></Animated.View>:null}
   </Pressable>;
 }
-const s=StyleSheet.create({rail:{marginHorizontal:0,marginBottom:0,padding:10,gap:5,borderWidth:1,borderColor:c.line,borderRadius:12,backgroundColor:c.card,minHeight:64},row:{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8},caption:{ ...textStyle("caption"), color: c.muted },score:{ ...textStyle("label"), color: c.ink, fontVariant: ["tabular-nums"] },remaining:{position:"absolute",left:8,right:8,top:4,...textStyle("label"),color:c.ink},track:{height:24,borderRadius:8,backgroundColor:c.soft,overflow:"hidden"},fill:{height:24,borderRadius:8,backgroundColor:c.tennis},gain:{position:"absolute",right:8,top:0,backgroundColor:c.tennis,borderRadius:8,paddingHorizontal:8,paddingVertical:4},gainText:{...textStyle("label"),color:c.ink}});
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {rail:{marginHorizontal:0,marginBottom:0,padding:10,gap:5,borderWidth:1,borderColor:c.line,borderRadius:12,backgroundColor:c.card,minHeight:64},row:{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8},caption:{ ...textStyle("caption"), color: c.muted },score:{ ...textStyle("label"), color: c.ink, fontVariant: ["tabular-nums"] },remaining:{position:"absolute",left:8,right:8,top:4,...textStyle("label"),color:c.ink},track:{height:24,borderRadius:8,backgroundColor:c.soft,overflow:"hidden"},fill:{height:24,borderRadius:8,backgroundColor:c.tennis},gain:{position:"absolute",right:8,top:0,backgroundColor:c.tennis,borderRadius:8,paddingHorizontal:8,paddingVertical:4},gainText:{...textStyle("label"),color:c.ink}};});

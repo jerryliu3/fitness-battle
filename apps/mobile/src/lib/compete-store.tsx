@@ -52,7 +52,7 @@ import {
   hydrateAccountIdentity,
   saveFailure,
 } from "./account-state";
-import { SHELL_COLORS } from "../theme";
+
 import { useAuth } from "./auth";
 import { mobileEnv } from "./env";
 import { fetchWithTimeout } from "./fetch-with-timeout";

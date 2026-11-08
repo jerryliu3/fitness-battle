@@ -35,7 +35,7 @@ vi.mock("react-native", async () => {
     inspect(children);
     return createElement("View", props, children as never);
   }
-  return {
+  return {useColorScheme: () => "light",
     StyleSheet: { create: (styles: unknown) => styles },
     View,
     Image: "Image",
@@ -115,7 +115,7 @@ vi.mock("./use-reduced-motion", () => ({
 }));
 vi.mock("./focus", async () => {
   const { createElement } = await import("react");
-  return {
+  return (()=>{const mock={
     FocusButton: "FocusButton",
     FocusSegments: ({ options, onChange }: { options: readonly { value: string; label: string }[]; onChange: (v: string) => void }) =>
       createElement(
@@ -134,7 +134,7 @@ vi.mock("./focus", async () => {
     FocusDisclosure: "Disclosure",
     FocusSheet: "Sheet",
     f: {},
-  };
+  };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})();
 });
 vi.mock("./lane-track", async () => {
   const { createElement, useEffect } = await import("react");

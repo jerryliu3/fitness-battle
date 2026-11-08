@@ -2,12 +2,12 @@ import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
 
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) },
   Text: "Text", View: "View", StyleSheet: { create: (value: unknown) => value },
 }));
 vi.mock("react-native-svg", () => ({ default: "Svg", Circle: "Circle", Line: "Line" }));
-vi.mock("./focus", () => ({ f: {} }));
+vi.mock("./focus", () => ((()=>{const mock={ f: {} };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
 import { playCue } from "../lib/haptics";
 import { nearestChartDatum } from "@fitness-battle/shared";

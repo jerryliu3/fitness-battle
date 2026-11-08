@@ -1,22 +1,13 @@
+import { useFocusStyles } from "../ui/focus";
+import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
-import {
-  APP_TIMEZONE,
-  dayKey,
-  formatVolume,
-  groupActivitiesByDay,
-  planJourneyTrail,
-  routeThroughCenters,
-  sportById,
-  type Activity,
-  type JourneyLane,
-  type UnitSystem,
-} from "@fitness-battle/shared";
+import { APP_TIMEZONE, dayKey, groupActivitiesByDay, planJourneyTrail, routeThroughCenters, sportById, type Activity, type JourneyLane, type UnitSystem } from "@fitness-battle/shared";
 import { useEffect, useState, useCallback } from "react";
 import { useFocusEffect } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { SHELL_COLORS as c } from "../theme";
-import { FocusButton, FocusSheet, f } from "../ui/focus";
+
+import { FocusButton, FocusSheet } from "../ui/focus";
 import { Ember } from "../ui/mascot/ember";
 import { SessionStage } from "./session-stage";
 import { useCompeteStore } from "../lib/compete-store";
@@ -43,6 +34,9 @@ export function Journey({
   units: UnitSystem;
   onToday: () => void;
 }) {
+const c=useThemeColors();
+const f=useFocusStyles();
+
   const { state, dispatch, accountKey } = useCompeteStore();
   const [removed, setRemoved] = useState<Activity | null>(null);
   useEffect(() => {

@@ -1,7 +1,10 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
+import { useFocusStyles } from "../ui/focus";
+import { useThemeColors } from "../theme";
 import { AppText, Section } from "../ui/section";
 import { BenchmarkChart } from "../ui/benchmark-chart";
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import {
   APP_TIMEZONE,
   clampTrainingAnchor,
@@ -22,10 +25,16 @@ import {
   type SportId,
   type TrainingRange,
 } from "@fitness-battle/shared";
-import { FocusDisclosure, f } from "../ui/focus";
+import { FocusDisclosure } from "../ui/focus";
 import { ChartRangeToggle } from "./chart-range-toggle";
 import { TrainingSportMenu } from "./training-sport-menu";
-import { SHELL_COLORS as c } from "../theme";
+
+
+export function TrainingAtlas({ state }: { state: CompeteState }) {
+const s=useThemedStyles(sThemes);
+
+const f=useFocusStyles();
+const c=useThemeColors();
 const colors = [
   c.soft,
   `${c.secondary}33`,
@@ -33,7 +42,7 @@ const colors = [
   `${c.secondary}bb`,
   c.ink,
 ];
-export function TrainingAtlas({ state }: { state: CompeteState }) {
+
   const now = competeNow(state);
   const [gridWidth, setGridWidth] = useState(280);
   const [sports, setSports] = useState<SportId[]>(() => defaultTrainingSports()),
@@ -209,7 +218,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     </Section>
   );
 }
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{return {
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -230,4 +239,4 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-});
+};});

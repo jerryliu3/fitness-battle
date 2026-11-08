@@ -1,7 +1,8 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { useReducedMotion } from "./use-reduced-motion";
 import { textStyle } from "./section";
 import { useEffect, useMemo, useState } from "react";
-import { Modal, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { Modal, SafeAreaView, Text, View } from "react-native";
 import { activityRoute, normalizeRouteReplay, type RouteReplaySample, type Activity } from "@fitness-battle/shared";
 import { FocusSegments } from "./focus";
 import { IconButton } from "./icon-button";
@@ -11,7 +12,7 @@ import { RouteTimelapse } from "./route-timelapse";
 import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
 import { mobileEnv } from "../lib/env";
-import { SHELL_COLORS as c } from "../theme";
+
 
 export function ActivityRoute({
   activity,
@@ -22,6 +23,8 @@ export function ActivityRoute({
   milestone?: boolean;
   units?: "us" | "metric";
 }) {
+const s=useThemedStyles(sThemes);
+
   const auth = useAuth();
   const reduced = useReducedMotion();
   const [fetched, setFetched] = useState<{ id: string; owner?: string; detailedPolyline?: string; samples: RouteReplaySample[] } | null>(null);
@@ -157,7 +160,7 @@ export function ActivityRoute({
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   container: { gap: 12 },
   controlBar: {
     flexDirection: "row",
@@ -169,7 +172,7 @@ const s = StyleSheet.create({
   playerWrap: {
     borderRadius: 16,
     overflow: "hidden",
-    backgroundColor: "#142b3b",
+    backgroundColor: themeColors.textPrimary,
     borderWidth: 1,
     borderColor: c.line,
   },
@@ -184,7 +187,7 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: c.line,
   },
-  fullContent: { flex: 1, backgroundColor: "#142b3b" },
+  fullContent: { flex: 1, backgroundColor: themeColors.textPrimary },
   fullPlayer: { flex: 1, width: "100%" },
   unavailableBox: { padding: 12, gap: 10, alignItems: "center" },
-});
+};});

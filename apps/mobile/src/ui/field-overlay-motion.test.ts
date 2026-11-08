@@ -5,7 +5,7 @@ import { afterEach, expect, it, vi } from "vitest";
 const motion = vi.hoisted(() => ({ reduced: false, runs: [] as Array<{ toValue: number; duration: number; stop: ReturnType<typeof vi.fn> }> }));
 vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => motion.reduced }));
 vi.mock("react-native-svg", () => ({ G: "Group" }));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   View: "View", Pressable: "Pressable",
   Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x },
   Animated: {

@@ -5,6 +5,7 @@ import { EventHome } from "../../src/features/event-home";
 import { CompeteSheet } from "../../src/ui/compete-sheet";
 import { NavigationAction, SectionStack, AppText, StatusBadge } from "../../src/ui/section";
 import { APP_TIMEZONE, competePeriodWindow, weeklyCompetitionLastDay, weeklyPeriodBounds, buildArenaModel, competitionQueue, competeNow, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
+import { useFocusStyles } from "../../src/ui/focus";
 import {
   SPORTS,
   type CrewBoardPin,
@@ -23,11 +24,12 @@ import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
 
 import { playCue } from "../../src/lib/haptics";
-import { FocusButton, FocusSheet, f } from "../../src/ui/focus";
+import { FocusButton, FocusSheet } from "../../src/ui/focus";
 
 export default function ArenaRoute() { return <ArenaScreen />; }
 
 export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
+const f=useFocusStyles();
   const {
     state,
     accountKey,
@@ -251,5 +253,6 @@ export function ArenaScreen({ persistent = false }: { persistent?: boolean }) {
 }
 
 function ArenaSheet({ persistent, children, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean; overview?: React.ReactNode }) {
+  const f = useFocusStyles();
   return persistent ? <CompeteSheet {...props}>{children}</CompeteSheet> : <ScrollView contentContainerStyle={f.content}>{children}</ScrollView>;
 }

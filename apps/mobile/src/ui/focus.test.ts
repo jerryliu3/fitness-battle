@@ -5,7 +5,7 @@ const mock = vi.hoisted(() => ({
   finish: null as null | ((result: { finished: boolean }) => void),
   animations: [] as { toValue: number; duration: number }[],
 }));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   Animated: {
     add: () => 0,
     Value: class {

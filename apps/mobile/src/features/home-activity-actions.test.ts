@@ -4,7 +4,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { freshState } from "@fitness-battle/shared";
 const mock = vi.hoisted(() => ({ state: null as any, user: { id: "athlete", mode: "demo" } as any, canWrite: true, dispatch: vi.fn(), supported: ["strava"], device: vi.fn(), begin: vi.fn(), end: vi.fn(), refresh: vi.fn() }));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   StyleSheet: { create: (styles: unknown) => styles }, Text: "Text", TextInput: "TextInput", View: "View" }));
 vi.mock("expo-router", () => ({ Link: "Link" }));
@@ -18,7 +18,7 @@ vi.mock("../ui/toast", () => ({ Toast: (props: any) => props.message ? createEle
 vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("../ui/form-picker", () => ({ NumberPicker: "NumberPicker", DateTimeField: "DateTimeField" }));
 vi.mock("../ui/choice-picker", () => ({ ChoicePicker: "ChoicePicker" }));
-vi.mock("../ui/focus", () => ({ f: {}, FocusButton: (props: any) => createElement("Button", props), FocusSheet: (props: any) => props.open ? createElement("Sheet", props) : null }));
+vi.mock("../ui/focus", () => ((()=>{const mock={ f: {}, FocusButton: (props: any) => createElement("Button", props), FocusSheet: (props: any) => props.open ? createElement("Sheet", props) : null };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 import { HomeActivityActions } from "./home-activity-actions";
 let renderer: ReactTestRenderer;
 const button = (label: string) => renderer.root.findAllByType("Button" as any).find((node) => node.props.label === label)!;

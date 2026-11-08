@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { startActivePlayback } from "../ui/active-playback";
 import { useCompetitionCourse } from "./use-competition-course";
 import { GeographicCourse } from "./geographic-course";
@@ -12,11 +13,14 @@ import { LaneTrack } from "../ui/lane-track";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { textStyle } from "../ui/section";
 import { FocusButton } from "../ui/focus";
-import { SHELL_COLORS as c } from "../theme";
+
 import { playCue, playPattern } from "../lib/haptics";
 const ignore = () => {};
 
 export function CompetitionMoment({ moment, remaining, onConfirm, debug = false, embedded = false, dimension = moment.unit === "pts" ? "2d" : "4d", course = null, autoStart = true }: { moment: Moment; remaining: number; onConfirm: () => void; debug?: boolean; embedded?: boolean; dimension?: "2d" | "4d"; course?: RaceCourse | null; autoStart?: boolean }) {
+const c=useThemeColors();
+const styles=useThemedStyles(stylesThemes);
+
   const { accountKey, state } = useCompeteStore();
   const period = state ? competePeriodWindow(state, undefined, moment.sport) : null;
   const { blocks } = useAthleteBlocks();
@@ -87,4 +91,4 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
     </View>
   </View>;
 }
-const styles = StyleSheet.create({ panel: { backgroundColor: "rgba(248,249,246,0.94)", borderRadius: 20, padding: 14, gap: 6, borderWidth: 1, borderColor: c.line } });
+const stylesThemes = createThemedStyles(themeColors=>{const c=themeColors;return { panel: { backgroundColor: "rgba(248,249,246,0.94)", borderRadius: 20, padding: 14, gap: 6, borderWidth: 1, borderColor: c.line } };});

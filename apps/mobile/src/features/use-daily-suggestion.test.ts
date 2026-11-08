@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { freshState } from "@fitness-battle/shared";
 import { useDailySuggestion } from "./use-daily-suggestion";
 const values = vi.hoisted(() => new Map<string, string>());
-vi.mock("react-native", () => ({ AppState: { addEventListener: () => ({ remove() {} }) } }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  AppState: { addEventListener: () => ({ remove() {} }) } }));
 vi.mock("@react-native-async-storage/async-storage", () => ({ default: {
   getItem: async (key: string) => values.get(key) ?? null,
   setItem: async (key: string, value: string) => { values.set(key, value); },

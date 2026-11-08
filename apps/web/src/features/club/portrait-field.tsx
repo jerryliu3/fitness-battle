@@ -1,4 +1,6 @@
 "use client";
+import { colors as appearanceColors } from "@/theme/app-colors";
+
 import { typographyStyle, AppText  } from "@/ui/section";
 
 import { useFieldGestures } from "../field/use-field-gestures";
@@ -185,12 +187,12 @@ export function PortraitField({
         </defs>
         <rect y={80} width={420} height={520} fill={`url(#${prefix}-shade)`} />
         {scene.ground.map(drawFieldNode)}
-        {scene.ticks.map(t => <g key={t.value} pointerEvents="none"><rect x={4} y={t.y - 10} width={78} height={20} rx={6} fill="#103e46"/><text x={12} y={t.y + 4} fill="#f8f9f6" style={typographyStyle("caption")}>{t.value === 0 ? "START" : `${t.value.toLocaleString("en-US", { maximumFractionDigits: 3 })} ${unit}`}</text></g>)}
+        {scene.ticks.map(t => <g key={t.value} pointerEvents="none"><rect x={4} y={t.y - 10} width={78} height={20} rx={6} fill={appearanceColors.surfaceFeature}/><text x={12} y={t.y + 4} fill={appearanceColors.white} style={typographyStyle("caption")}>{t.value === 0 ? "START" : `${t.value.toLocaleString("en-US", { maximumFractionDigits: 3 })} ${unit}`}</text></g>)}
         <defs>
           <linearGradient id={`${prefix}-horizon`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#b4d3cd" stopOpacity={0} />
-            <stop offset="55%" stopColor="#b4d3cd" stopOpacity={0.2} />
-            <stop offset="100%" stopColor="#b4d3cd" stopOpacity={0} />
+            <stop offset="0%" stopColor={appearanceColors.textSecondary} stopOpacity={0} />
+            <stop offset="55%" stopColor={appearanceColors.textSecondary} stopOpacity={0.2} />
+            <stop offset="100%" stopColor={appearanceColors.textSecondary} stopOpacity={0} />
           </linearGradient>
         </defs>
         <rect
@@ -271,11 +273,11 @@ export function PortraitField({
                   width={46}
                   height={58}
                   rx={12}
-                  fill="#f8f9f6"
+                  fill={appearanceColors.white}
                   stroke={m.you ? "#f7c948" : "#b3c9c5"}
                   strokeWidth={m.you ? 3 : 1.5}
                 />}
-<g>{m.mystery ? <g><circle cy={-14} r={22} fill="white" stroke="#616c63" strokeWidth={2} strokeDasharray="3 3"/><text y={-8} textAnchor="middle" fill="#142b3b">?</text></g> : <>                <defs>
+<g>{m.mystery ? <g><circle cy={-14} r={22} fill="white" stroke={appearanceColors.textSecondary} strokeWidth={2} strokeDasharray="3 3"/><text y={-8} textAnchor="middle" fill={appearanceColors.textSecondary}>?</text></g> : <>                <defs>
                   <clipPath id={id}>
                     <rect x={-19} y={-39} width={38} height={50} rx={9} />
                   </clipPath>
@@ -303,7 +305,7 @@ export function PortraitField({
                     <text style={typographyStyle("caption")}
                       y={-8}
                       textAnchor="middle"
-                      fill="#142b3b"
+                      fill={appearanceColors.textSecondary}
 
                     >
                       {m.initials}
@@ -320,12 +322,12 @@ export function PortraitField({
                       width={44}
                       height={18}
                       rx={9}
-                      fill="#f7c948"
+                      fill={appearanceColors.actionPrimary}
                     />
                     <text style={typographyStyle("caption")}
                       y={-53}
                       textAnchor="middle"
-                      fill="#142b3b"
+                      fill={appearanceColors.textSecondary}
 
                     >
                       YOU
@@ -341,7 +343,7 @@ export function PortraitField({
                   {m.ghost ? "Past you" : m.you ? "You" : m.name.split(" ")[0]}
                 </text>
                 {!m.you && !m.mystery ? (
-                  <text style={typographyStyle("caption")} y={61} textAnchor="middle" fill="#e5eee5" >
+                  <text style={typographyStyle("caption")} y={61} textAnchor="middle" fill={appearanceColors.soft} >
                     {m.outside ? `${m.direction} ` : ""}
                     {m.gap > 0 ? "+" : ""}
                     {m.gap.toFixed(unit === "pts" ? 0 : 2)} {unit}

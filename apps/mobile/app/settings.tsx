@@ -1,13 +1,16 @@
+import { useFocusStyles } from "../src/ui/focus";
 import { SectionStack } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 
 import { router } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { f } from "../src/ui/focus";
+
 import { SettingsRow } from "../src/ui/settings-row";
 
 export default function SettingsScreen() {
+const f=useFocusStyles();
+
   return (
     <SafeAreaView style={f.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={f.content}>

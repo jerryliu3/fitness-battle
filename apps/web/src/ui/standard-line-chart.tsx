@@ -1,5 +1,7 @@
 "use client";
-import { SHELL_COLORS as c, buildStandardChartGeometry } from "@fitness-battle/shared";
+import { colors as c } from "@/theme/app-colors";
+
+import { buildStandardChartGeometry } from "@fitness-battle/shared";
 import { ChartScrubber } from "./chart-scrubber";
 import { ChartSvg, ChartText } from "./chart-text";
 export interface StandardLineChartProps {

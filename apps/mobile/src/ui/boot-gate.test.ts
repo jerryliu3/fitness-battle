@@ -10,7 +10,7 @@ vi.mock("../lib/compete-store", () => ({
     loadStatus: mock.state === null ? "loading" : "ready",
   }),
 }));
-vi.mock("react-native", () => ({ View: "View", StyleSheet: { absoluteFill: {} } }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  View: "View", StyleSheet: { absoluteFill: {} } }));
 vi.mock("./boot-splash", () => ({ BootSplash: ({ onAnimationComplete }: { onAnimationComplete: () => void }) => {
   mock.complete = onAnimationComplete;
   return createElement("splash");

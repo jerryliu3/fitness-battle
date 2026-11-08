@@ -1,19 +1,19 @@
 /* Semantic adapters; metrics and achievement illustration geometry remain feature-owned. */
-.ui-text { color: var(--ink, #142b3b); }
-.ui-text-secondary { color: var(--muted, #637482); }
+.ui-text { color: var(--ink, var(--app-text-primary)); }
+.ui-text-secondary { color: var(--muted, var(--app-text-secondary)); }
 .ui-section-heading { flex: 1 1 auto; min-width: min(100%, 12.5rem); display: grid; gap: .25rem; }
 .ui-section-heading :is(h1,h2,p) { margin: 0; overflow-wrap: anywhere; }
 .ui-section-header { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .75rem; row-gap: .25rem; }
-.ui-text-action { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; padding-block: .75rem; color: var(--ink, #142b3b); text-decoration: none; overflow-wrap: anywhere; max-width: 100%; }
-.ui-text-action:focus-visible { outline: 2px solid #176c75; outline-offset: 3px; border-radius: 4px; }
+.ui-text-action { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; padding-block: .75rem; color: var(--ink, var(--app-text-primary)); text-decoration: none; overflow-wrap: anywhere; max-width: 100%; }
+.ui-text-action:focus-visible { outline: 2px solid var(--app-chart-series); outline-offset: 3px; border-radius: 4px; }
 .ui-section, .ui-section-content { display: grid; gap: .75rem; min-width: 0; }
 .ui-section-stack { display: grid; min-width: 0; }
 .ui-section-boundary { height: 28px; }
 .is-divided > .ui-section-boundary { height: 29px; padding-top: 16px; padding-bottom: 12px; }
-.is-divided > .ui-section-boundary::after { content: ""; display: block; height: 1px; background: #d0dad7; }
-.ui-status-badge { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .25rem; padding: .2rem .55rem; border-radius: 999px; max-width: 100%; background: linear-gradient(180deg, #f8fbfa 0%, #e8f0ed 100%); color: #142b3b; border: 1px solid #c5d5cf; box-shadow: 0 1px 0 rgba(255,255,255,.85) inset, 0 1px 2px rgba(20,43,59,.06); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); overflow-wrap: anywhere; }
-.ui-status-badge.is-success { color: #1d6b52; background: linear-gradient(180deg, #f3fbf6 0%, #e3f3ea 100%); border-color: #a9d4bc; }
-.ui-surface { padding: 20px; border: 1px solid #e3e9e7; border-radius: 20px; background: white; }
+.is-divided > .ui-section-boundary::after { content: ""; display: block; height: 1px; background: var(--app-divider); }
+.ui-status-badge { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .25rem; padding: .2rem .55rem; border-radius: 999px; max-width: 100%; background: linear-gradient(180deg, var(--app-surface-card) 0%, var(--app-soft) 100%); color: var(--app-text-primary); border: 1px solid var(--app-text-secondary); box-shadow: 0 1px 0 rgba(255,255,255,.85) inset, 0 1px 2px rgba(20,43,59,.06); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); overflow-wrap: anywhere; }
+.ui-status-badge.is-success { color: var(--app-status-success); background: linear-gradient(180deg, var(--app-surface-card) 0%, var(--app-soft) 100%); border-color: var(--app-text-secondary); }
+.ui-surface { padding: 20px; border: 1px solid var(--app-border-subtle); border-radius: 20px; background: var(--app-surface-card); }
 .ui-list-row { display: flex; align-items: center; gap: .75rem; min-height: 44px; }
 .ui-list-row > div { flex: 1; min-width: 0; }
 /* Keep migrated open sections independent of legacy card padding and gaps. */
@@ -23,8 +23,8 @@
 .ui-section-stack.is-open { gap: 28px; }
 
 /* One surface composition for peer feature cards, whether informational or linked. */
-.ui-feature-card { display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 20px; border: 1px solid #e3e9e7; border-radius: 20px; background: #fff; color: #142b3b; text-decoration: none; min-width: 0; }
+.ui-feature-card { display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 20px; border: 1px solid var(--app-border-subtle); border-radius: 20px; background: var(--app-surface-card); color: var(--app-text-primary); text-decoration: none; min-width: 0; }
 .ui-feature-card h2, .ui-feature-card p { margin: 0; }
 .ui-feature-card .ui-status-badge { align-self: flex-start; }
-a.ui-feature-card:focus-visible { outline: 2px solid #176c75; outline-offset: 3px; }
-.ui-feature-card .ui-text-secondary { color: #637482; }
+a.ui-feature-card:focus-visible { outline: 2px solid var(--app-chart-series); outline-offset: 3px; }
+.ui-feature-card .ui-text-secondary { color: var(--app-text-secondary); }

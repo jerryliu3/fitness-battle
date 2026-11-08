@@ -1,7 +1,8 @@
+import { createThemedStyles, useThemedStyles, legacyColors } from "../theme";
 import { textStyle } from "./section";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, Text, View } from "react-native";
 import { DEFAULT_MASCOT, MASCOTS, type MascotVariant } from "@fitness-battle/shared";
-import { colors, fonts } from "../theme";
+
 import { Ember } from "./mascot/ember";
 
 export function AceStrip({
@@ -15,6 +16,8 @@ export function AceStrip({
   detail: string;
   variant?: MascotVariant;
 }) {
+const styles=useThemedStyles(stylesThemes);
+
   return (
     <View style={styles.strip}>
       {variant === "star-ember" ? <View style={styles.ember}><Ember size={72} label={MASCOTS[variant].description}/></View> : <Image
@@ -31,7 +34,7 @@ export function AceStrip({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles(themeColors=>{const colors=legacyColors(themeColors);return {
   strip: {
     flexDirection: "row",
     alignItems: "center",
@@ -48,4 +51,4 @@ const styles = StyleSheet.create({
   kicker: { ...textStyle("label"), color: colors.muted },
   title: { ...textStyle("heading"), color: colors.ink },
   detail: { ...textStyle("body"), color: colors.muted },
-});
+};});

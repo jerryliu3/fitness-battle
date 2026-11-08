@@ -1,3 +1,5 @@
+
+import { colors as appearanceColors } from "@/theme/app-colors";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { RouteScene } from "./scene";
@@ -16,7 +18,7 @@ export default function Page() {
           style={{
             height: "100dvh",
             width: "100vw",
-            background: "#142b3b",
+            background: appearanceColors.soft,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

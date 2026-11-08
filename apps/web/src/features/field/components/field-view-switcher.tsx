@@ -1,5 +1,7 @@
 "use client";
-import { SHELL_COLORS as c } from "@fitness-battle/shared";
+import { colors as c } from "@/theme/app-colors";
+
+
 import { typographyStyle } from "@/ui/section";
 export function FieldViewSwitcher({ compact = false, value, geographic, onChange, standings = false, onStandings, onZoomIn, onZoomOut }: {
   compact?: boolean;

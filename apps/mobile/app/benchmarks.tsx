@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../src/ui/focus";
 import { AthleteProfileSheet, type AthleteProfileSelection } from "../src/features/athlete-profile-sheet";
 import { SectionStack, AppText } from "../src/ui/section";
 import {
@@ -15,8 +16,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { mobileEnv } from "../src/lib/env";
 import { ScreenHeader } from "../src/ui/screen-header";
-import { FocusButton, FocusHeading, f } from "../src/ui/focus";
+import { FocusButton, FocusHeading } from "../src/ui/focus";
 export default function Benchmarks() {
+const f=useFocusStyles();
+
   const { state } = useCompeteStore();
   const router = useRouter();
   const [sport, setSport] = useState<"running" | "cycling">("running");

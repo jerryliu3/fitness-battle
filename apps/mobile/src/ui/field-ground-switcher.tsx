@@ -1,8 +1,9 @@
+import { useThemeColors } from "../theme";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { AnchoredMenu, useAnchoredMenu } from "./anchored-menu";
 import { textStyle } from "./section";
 import { playCue } from "../lib/haptics";
-import { SHELL_COLORS as c } from "../theme";
+
 import { fieldGrounds, type FieldAppearance, type FieldGround } from "@fitness-battle/shared";
 
 export function FieldGroundSwitcher({
@@ -12,6 +13,10 @@ export function FieldGroundSwitcher({
   appearance: FieldAppearance;
   onChangeAppearance?(appearance: FieldAppearance): void;
 }) {
+const appearanceColors = useThemeColors();
+
+const c=useThemeColors();
+
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
     minWidth: 150,
     estimatedHeight: 220,
@@ -52,7 +57,7 @@ export function FieldGroundSwitcher({
         <Text
           style={{
             ...textStyle("caption"),
-            color: "#ffffff",
+            color: appearanceColors.white,
           }}
         >
           {currentGround.name} ▾

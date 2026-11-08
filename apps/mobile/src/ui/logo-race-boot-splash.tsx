@@ -1,14 +1,18 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useEffect, useRef, useState } from "react";
-import { AccessibilityInfo, ActivityIndicator, AppState, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { AccessibilityInfo, ActivityIndicator, AppState, Text, View, useWindowDimensions } from "react-native";
 import Svg, { G, Text as SvgText } from "react-native-svg";
 import { clamp, LOGO_RACE_DURATION_MS, logoRaceWords } from "@fitness-battle/shared/boot";
 import { textStyle } from "./section";
-import { SHELL_COLORS as c } from "../theme";
+
 
 export function LogoRaceBootSplash({ waiting = false, onAnimationComplete }: {
   waiting?: boolean;
   onAnimationComplete: () => void;
 }) {
+const c=useThemeColors();
+const s=useThemedStyles(sThemes);
+
   const [position, setPosition] = useState(0);
   const onComplete = useRef(onAnimationComplete);
   onComplete.current = onAnimationComplete;
@@ -77,8 +81,8 @@ export function LogoRaceBootSplash({ waiting = false, onAnimationComplete }: {
     <View style={s.wait}>{waiting && <><ActivityIndicator color={c.ink} /><Text style={s.label}>Loading…</Text></>}</View>
   </View>;
 }
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   root: { flex: 1, alignItems: "center", justifyContent: "center", gap: 28, paddingHorizontal: 12, paddingVertical: 24, backgroundColor: c.paper },
   wait: { minHeight: 52, alignItems: "center", gap: 12 },
   label: { ...textStyle("caption"), color: c.muted },
-});
+};});

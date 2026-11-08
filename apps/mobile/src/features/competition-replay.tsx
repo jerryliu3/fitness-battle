@@ -1,10 +1,13 @@
+import { useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { ResultCard } from "./result-card";
 import { playCue } from "../lib/haptics";
 import { GeographicCourse } from "./geographic-course";
 import { useCompetitionCourse } from "./use-competition-course";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AppState, Modal, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
+import { AppState, Modal, PanResponder, Pressable, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import {
   orderedArenaLanes,
@@ -20,13 +23,13 @@ import { mobileEnv } from "../lib/env";
 import { requestApi } from "../lib/api";
 import { AppText, textStyle } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
-import { FocusButton, f } from "../ui/focus";
+import { FocusButton } from "../ui/focus";
 import { IconButton } from "../ui/icon-button";
 import { LaneTrack } from "../ui/lane-track";
 import { PortraitField } from "../ui/portrait-field";
 import { useFieldAppearance } from "../ui/field-course";
 import { useReducedMotion } from "../ui/use-reduced-motion";
-import { SHELL_COLORS as c } from "../theme";
+
 
 export function CompetitionReplayButton({
   state,
@@ -43,6 +46,8 @@ export function CompetitionReplayButton({
   label?: string;
   variant?: "button" | "inline";
 }) {
+const appearanceColors = useThemeColors();
+
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -67,8 +72,8 @@ export function CompetitionReplayButton({
             pressed && { opacity: 0.75 },
           ]}
         >
-          <AppIcon name="replay" size={14} color="#ffffff" />
-          <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
+          <AppIcon name="replay" size={14} color={appearanceColors.white} />
+          <Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>
             {label || "View replay"}
           </Text>
         </Pressable>
@@ -88,6 +93,8 @@ export function CompetitionReplayModal({ open, state, selection, dimension, onCl
   dimension: "2d" | "3d" | "4d";
   onClose(): void;
 }) {
+const f=useFocusStyles();
+
   const reduced = useReducedMotion();
   return open ? <Modal visible animationType={reduced ? "none" : "fade"} presentationStyle="fullScreen" onRequestClose={onClose}>
     <SafeAreaProvider>
@@ -99,6 +106,8 @@ export function CompetitionReplayModal({ open, state, selection, dimension, onCl
 }
 
 function ReplayTimeline({ cursor, count, caption, onSeek }: { cursor: number; count: number; caption: string; onSeek: (cursor: number) => void }) {
+const s=useThemedStyles(sThemes);
+
   const width = useRef(1), left = useRef(0);
   const latest = useRef({ count, onSeek }); latest.current = { count, onSeek };
   const pan = useMemo(() => PanResponder.create({
@@ -118,9 +127,15 @@ function ReplayTimeline({ cursor, count, caption, onSeek }: { cursor: number; co
   </View>;
 }
 function ReplayAction({ label, text, disabled, onPress, primary = false }: { label: string; text: string; disabled?: boolean; onPress: () => void; primary?: boolean }) {
+const s=useThemedStyles(sThemes);
+
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: Boolean(disabled) }} disabled={disabled} onPress={() => { if (!disabled) { void playCue("selection"); onPress(); } }} style={[s.action, primary && s.primary, disabled && { opacity: .4 }]}><AppText role="label">{text}</AppText></Pressable>;
 }
 export function ReplayViewer({ state, selection, initialDimension, onClose, embedded=false, initialFlat = false, result }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; initialFlat?: boolean; onClose: () => void; embedded?: boolean; result?: PeriodResult }) {
+const appearanceColors = useThemeColors();
+
+const s=useThemedStyles(sThemes);
+
   const { user, accessToken, offlineMode } = useAuth();
   const { debugActive } = useCompeteStore();
   const { blocks } = useAthleteBlocks();
@@ -197,7 +212,7 @@ export function ReplayViewer({ state, selection, initialDimension, onClose, embe
     {!index ? <View style={s.message}><AppText role="body" accessibilityLiveRegion="polite">{error || "Loading the competition timeline…"}</AppText>{error && <FocusButton label="Retry" onPress={() => setAttempt(a => a + 1)} />}</View> : <>
       <View style={[s.scene, embedded && { flex: 0, height: 360 }]} onLayout={event => setHeight(Math.max(100, event.nativeEvent.layout.height))}>
         <View style={{ position: "absolute", top: 12, right: 12, zIndex: 10, flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Pressable accessibilityRole="button" accessibilityState={{ selected: following }} accessibilityLabel={`Camera: ${following ? "Follow athlete" : "Fixed"}`} onPress={() => { setCenter(following ? view.center : null); setFollowing(value => !value); if (!following) setFocusRequest(value => value + 1); }} style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: "center", borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.78)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.2)" }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{following ? "Follow athlete" : "Fixed"}</Text></Pressable>
+          <Pressable accessibilityRole="button" accessibilityState={{ selected: following }} accessibilityLabel={`Camera: ${following ? "Follow athlete" : "Fixed"}`} onPress={() => { setCenter(following ? view.center : null); setFollowing(value => !value); if (!following) setFocusRequest(value => value + 1); }} style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: "center", borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.78)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.2)" }}><Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>{following ? "Follow athlete" : "Fixed"}</Text></Pressable>
           <FieldViewSwitcher value={dimension} geographic={unit !== "pts"} onChange={setDimension} />
         </View>
         {dimension === "4d" ? <GeographicCourse initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following} onFollowChange={next => { setCenter(next ? null : view.center); setFollowing(next); }} optionsTop={64} hiddenIds={hiddenIds} course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <LaneTrack clampView={following} hiddenIds={hiddenIds} onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField hiddenIds={hiddenIds} onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
@@ -222,16 +237,16 @@ export function ReplayViewer({ state, selection, initialDimension, onClose, embe
 
   </View>;
 }
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   header: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10 },
   message: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, padding: 24 },
   scene: { flex: 1, minHeight: 100, overflow: "hidden" },
   controls: { gap: 4, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 8, borderTopWidth: 1, borderColor: c.line, backgroundColor: c.paper },
   timeline: { height: 44, justifyContent: "center", marginHorizontal: 10 },
   rail: { height: 4, borderRadius: 2, backgroundColor: c.line, overflow: "hidden" },
-  fill: { height: 4, backgroundColor: "#176c75" },
-  thumb: { position: "absolute", top: 12, width: 20, height: 20, marginLeft: -10, borderRadius: 10, backgroundColor: "#176c75", borderWidth: 2, borderColor: "white" },
+  fill: { height: 4, backgroundColor: themeColors.chartSeries },
+  thumb: { position: "absolute", top: 12, width: 20, height: 20, marginLeft: -10, borderRadius: 10, backgroundColor: themeColors.chartSeries, borderWidth: 2, borderColor: "white" },
   actions: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 3, marginBottom: 4 },
-  action: { minWidth: 44, minHeight: 44, paddingHorizontal: 8, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: "white", borderWidth: 1, borderColor: c.line },
-  primary: { backgroundColor: c.tennis, minWidth: 66 },
-});
+  action: { minWidth: 44, minHeight: 44, paddingHorizontal: 8, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: themeColors.card, borderWidth: 1, borderColor: c.line },
+  primary: { backgroundColor: c.soft, minWidth: 66 },
+};});

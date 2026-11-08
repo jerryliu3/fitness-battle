@@ -1,3 +1,5 @@
+import { useFocusStyles } from "../src/ui/focus";
+import { createThemedStyles, useThemedStyles, legacyColors, useLegacyColors } from "../src/theme";
 import { textStyle } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { IconButton } from "../src/ui/icon-button";
@@ -30,10 +32,14 @@ import {
 } from "../src/lib/push-notifications";
 import { mobileEnv } from "../src/lib/env";
 import { supabase } from "../src/lib/supabase";
-import { FocusButton, f } from "../src/ui/focus";
-import { colors, fonts } from "../src/theme";
+import { FocusButton } from "../src/ui/focus";
+
 
 export default function NotificationsScreen() {
+const f=useFocusStyles();
+const colors=useLegacyColors();
+const styles=useThemedStyles(stylesThemes);
+
   const params = useLocalSearchParams<{ returnTo?: string }>();
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   const [busy, setBusy] = useState(false);
@@ -209,7 +215,7 @@ export default function NotificationsScreen() {
               <Text style={styles.rowTitle}>Push notifications</Text>
               <Text style={styles.rowDetail}>
                 {permissionLabel(prefs.permissionStatus)}
-                
+
               </Text>
             </View>
             <Switch
@@ -257,7 +263,7 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles(themeColors=>{const colors=legacyColors(themeColors);return {
   safe: { flex: 1, backgroundColor: colors.paper },
   scroll: { padding: 20, gap: 12 },
   back: {
@@ -310,4 +316,4 @@ const styles = StyleSheet.create({
   },
   lineText: { ...textStyle("label"), color: colors.ink },
   disabled: { opacity: 0.45 },
-});
+};});

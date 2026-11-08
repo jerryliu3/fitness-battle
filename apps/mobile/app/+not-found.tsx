@@ -1,10 +1,13 @@
+import { useFocusStyles } from "../src/ui/focus";
 import { AppText } from "../src/ui/section";
 import { useRouter } from "expo-router";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { IconButton } from "../src/ui/icon-button";
-import { FocusButton, f } from "../src/ui/focus";
+import { FocusButton } from "../src/ui/focus";
 export default function NotFound() {
+const f=useFocusStyles();
+
   const router = useRouter();
   return (
     <SafeAreaView style={f.safe} edges={["bottom"]}>

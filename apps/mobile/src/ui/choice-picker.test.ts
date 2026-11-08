@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   Dimensions: { get: () => ({ width: 375, height: 812 }) },
   Platform: { OS: "ios" },
   View: "View",
@@ -11,7 +11,7 @@ vi.mock("react-native", () => ({
   ScrollView: "ScrollView",
   StyleSheet: { create: (v: unknown) => v, hairlineWidth: 1, absoluteFill: {} },
 }));
-vi.mock("./focus", () => ({ f: { row: {}, input: {} } }));
+vi.mock("./focus", () => ((()=>{const mock={ f: { row: {}, input: {} } };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path" }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
 import { ChoicePicker } from "./choice-picker";

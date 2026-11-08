@@ -1,3 +1,4 @@
+import { getAppColors } from "./appearance";
 import { stripWebProductPrefix } from "./product-routes";
 
 /**
@@ -52,40 +53,8 @@ export function shellTabFromPath(
   );
 }
 
-/**
- * Everyday Club palette: warm canvas, navy typography, solar yellow and alpine teal.
- * Legacy plum/tennis keys remain for component compatibility.
- */
-export const SHELL_COLORS = {
-  plum: "#142b3b",
-  plumDeep: "#0c1d29",
-  tennis: "#f7c948",
-  paper: "#f8f9f6",
-  card: "#ffffff",
-  starEmber: "#f7c948",
-  ink: "#142b3b",
-  muted: "#637482",
-  line: "#e3e9e7",
-  green: "#24765c",
-  greenSoft: "#eef3f1",
-  soft: "#eef3f1",
-  secondary: "#668e91",
-  gold: "#f7c948",
-  podiumGold: "#dfad3c",
-  podiumSilver: "#9fa5af",
-  podiumBronze: "#b87945",
-  actionPrimary: "#f7c948",
-  actionPressed: "#dfb237",
-  actionSoft: "#fff5d1",
-  textPrimary: "#142b3b",
-  surfaceCanvas: "#f8f9f6",
-  surfaceCard: "#ffffff",
-  fieldDeep: "#103e46",
-  fieldTeal: "#176c75",
-  statusSuccess: "#24765c",
-  statusSuccessSoft: "#e9f5ee",
-  statusError: "#b93c3c",
-} as const;
+/** Compatibility view of the canonical light appearance, never a second palette. */
+export const SHELL_COLORS = getAppColors("light");
 
 export const SHELL_RADIUS = {
   control: 12,

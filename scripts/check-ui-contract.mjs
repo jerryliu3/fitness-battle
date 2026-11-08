@@ -10,6 +10,14 @@ function fail(file, line, text) { console.error(`${file}:${line}: ${text}`); fai
 for (const file of files) {
   const source = ts.createSourceFile(file, fs.readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   function visit(node) {
+    if (!file.includes("/prototypes/") && ts.isImportSpecifier(node)) {
+      const name = (node.propertyName ?? node.name).text;
+      if (["SHELL_COLORS", "HOME_HEALTH_COLORS"].includes(name)) {
+        const { line } = source.getLineAndCharacterOfPosition(node.getStart(source));
+        fail(file, line + 1, "product UI must consume reactive appearance hooks or the web CSS-variable adapter");
+      }
+    }
+
     const rawType = (ts.isPropertyAssignment(node) || ts.isJsxAttribute(node)) && forbidden.has(node.name.getText(source));
     const legacyHeading = ts.isPropertyAccessExpression(node) && /^f\.(h2|sectionTitle|title|copy|small|rowTitle)$/.test(node.getText(source));
     const rawHeading = (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) && /^h[1-3]$/.test(node.tagName.getText(source));

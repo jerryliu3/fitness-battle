@@ -1,4 +1,6 @@
 "use client";
+import { colors as appearanceColors } from "@/theme/app-colors";
+
 import {memo,createElement,useEffect,useId,useMemo,useState,type RefObject} from "react";
 import {polishedCapsulePath,polishedCapsuleScene,polishedLaneScale,type CapsuleNode} from "@fitness-battle/shared";
 
@@ -38,7 +40,7 @@ export const PolishedRacer = memo(function PolishedRacer({
       {independentWake ? <LocalWake gold={gold} wake={wake} animate={animateWake} /> : draw(wake, 1)}
     </g>}
     {head.map(draw)}
-    {active && !you && <path d={polishedCapsulePath(-3)} fill="none" stroke="#282f2c" strokeWidth="1.5" />}
+    {active && !you && <path d={polishedCapsulePath(-3)} fill="none" stroke={appearanceColors.textSecondary} strokeWidth="1.5" />}
   </g>;
 });
 

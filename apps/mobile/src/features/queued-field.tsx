@@ -1,12 +1,15 @@
+import { useFocusStyles } from "../ui/focus";
 import { WaveCountdown } from "../ui/wave-countdown";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { competitionQueue, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppText } from "../ui/section";
-import { FocusButton, f } from "../ui/focus";
-import { SHELL_COLORS as c } from "../theme";
+import { FocusButton } from "../ui/focus";
+
 
 export function QueuedField({ state, event, now, onCancel, overlay = false }: { state: CompeteState; event: SportId | "sleep"; now: Date; onCancel: () => void; overlay?: boolean }) {
+const f=useFocusStyles();
+
   const [expanded, setExpanded] = useState(true);
   const queue = competitionQueue(state, event, now);
   if (!queue) return null;

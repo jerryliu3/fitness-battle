@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   View: "View",
   Text: "Text",
   Pressable: "Pressable",
@@ -12,7 +12,7 @@ vi.mock("react-native", () => ({
 vi.mock("../ui/section", () => ({
   AppText: "AppText",
 }));
-vi.mock("../ui/focus", () => ({
+vi.mock("../ui/focus", () => ((()=>{const mock={
   FocusSegments: ({
     label,
     options,
@@ -42,7 +42,7 @@ vi.mock("../ui/focus", () => ({
       ),
     ),
   f: {},
-}));
+};return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 import { EventCarousel } from "./event-carousel";
 
 function layoutCarousel(r: ReturnType<typeof create>) {

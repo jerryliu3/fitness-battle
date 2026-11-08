@@ -1,3 +1,4 @@
+import { useThemeColors } from "../src/theme";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,9 +8,11 @@ import { SessionStage } from "../src/features/session-stage";
 import { example, studyNow, type Example } from "../src/prototypes/activity-context/model";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { AppText } from "../src/ui/section";
-import { SHELL_COLORS as c } from "../src/theme";
+
 
 export default function ActivityDetailPreview() {
+const c=useThemeColors();
+
   const router = useRouter(), params = useLocalSearchParams<{ sample?: Example; review?: string }>();
   const [sample, setSample] = useState<Example>(params.sample ?? "run");
   const [removed, setRemoved] = useState(false);

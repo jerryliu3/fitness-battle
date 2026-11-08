@@ -1,5 +1,6 @@
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MapAttribution } from "./map-attribution";
+import { useThemeColors } from "../theme";
 import { useAuth } from "../lib/auth";
 import Svg, { G } from "react-native-svg";
 import { AthletePennant } from "./athlete-pennant";
@@ -27,6 +28,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
   onReady?: () => void; onSnapshot?: (uri: string) => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null;
   hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; onChoose2D?: () => void; onOptionsChange?: (options: ReactNode | null) => void; overlaysHidden?: boolean;
 }) {
+const appearanceColors = useThemeColors();
   const insets = useSafeAreaInsets();
   const sceneActive = useSceneActive();
   const active = sceneActive && presentationActive;
@@ -169,7 +171,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
       </ShapeSource>
       {!reduced && replay ? replay.passEffects.filter(pass => !hiddenIds.includes(pass.id)).map(pass => {
         const lane = scene.callouts.find(lane => lane.id === pass.id);
-        return lane ? <MarkerView key={`pass-${pass.id}`} coordinate={lane.coordinate} anchor={{x:.5,y:.5}} allowOverlap allowOverlapWithPuck><View pointerEvents="none" style={{width:100,height:100,alignItems:"center",justifyContent:"center"}}><View style={{width:32+64*(1-pass.strength),height:32+64*(1-pass.strength),borderRadius:60,borderWidth:4,borderColor:"#f7c948",backgroundColor:"#f7c94833",opacity:pass.strength}}/></View></MarkerView> : null;
+        return lane ? <MarkerView key={`pass-${pass.id}`} coordinate={lane.coordinate} anchor={{x:.5,y:.5}} allowOverlap allowOverlapWithPuck><View pointerEvents="none" style={{width:100,height:100,alignItems:"center",justifyContent:"center"}}><View style={{width:32+64*(1-pass.strength),height:32+64*(1-pass.strength),borderRadius:60,borderWidth:4,borderColor:appearanceColors.actionPrimary,backgroundColor:"#f7c94833",opacity:pass.strength}}/></View></MarkerView> : null;
       }) : null}
       {!overlaysHidden ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id) && !dismissed.includes(lane.id)).map(lane => <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: lane.callout.left ? 1 : 0, y: lane.callout.originY / lane.callout.height }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
         <View collapsable={false} pointerEvents="box-none" style={{ width: 170, height: lane.callout.height }}>
@@ -177,12 +179,12 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
             <AthletePennant lane={lane} x={lane.callout.left ? -158 : 12} y={lane.callout.y} detail={courseAthleteDetail(lanes, lane, unit)} prefix={`${prefix}-${lane.id}`} />
           </G></Svg>
           <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${courseAthleteDetail(lanes, lane, unit)}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: 12, top: lane.callout.cardTop, width: 146, height: 46 }} />
-          {!onSnapshot && lane.id === selectedId && <Pressable accessibilityRole="button" accessibilityLabel={`Hide ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={8} style={{ position: "absolute", right: 4, top: lane.callout.cardTop - 8, width: 28, height: 28, borderRadius: 14, backgroundColor: "white", alignItems: "center", justifyContent: "center" }}><Text style={textStyle("label")}>−</Text></Pressable>}
+          {!onSnapshot && lane.id === selectedId && <Pressable accessibilityRole="button" accessibilityLabel={`Hide ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={8} style={{ position: "absolute", right: 4, top: lane.callout.cardTop - 8, width: 28, height: 28, borderRadius: 14, backgroundColor: appearanceColors.card, alignItems: "center", justifyContent: "center" }}><Text style={textStyle("label")}>−</Text></Pressable>}
         </View>
       </MarkerView>) : null}
     </MapView>
     {!onSnapshot ? <MapAttribution top={insets.top + 9} /> : null}
-    {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), position: "absolute", left: 8, right: 8, bottom: controlsBottom + 136, padding: 12, borderRadius: 12, backgroundColor: "#ffffff" }}>{error}</Text> : null}
+    {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), position: "absolute", left: 8, right: 8, bottom: controlsBottom + 136, padding: 12, borderRadius: 12, backgroundColor: appearanceColors.surfaceCard }}>{error}</Text> : null}
     {!onOptionsChange && optionsTop != null ? <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()} style={{ position: "absolute", top: optionsTop, right: 12 }}>
       <CourseOptions
         onReplay={onReplay} onChoose2D={onChoose2D}

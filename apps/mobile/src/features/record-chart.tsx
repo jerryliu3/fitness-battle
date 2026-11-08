@@ -1,9 +1,10 @@
+import { useThemeColors } from "../theme";
 import { ChartSvg, ChartText } from "../ui/chart-text";
 
-import { chartTextProps } from "../ui/section";
-import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
-import { View, Text } from "react-native";
-import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
+
+
+import { View } from "react-native";
+import Svg, { Circle, G, Line, Path } from "react-native-svg";
 import {
   formatClockTime,
   personalRecordChart,
@@ -11,7 +12,7 @@ import {
   type RecordAttempt,
 } from "@fitness-battle/shared";
 import { ChartScrubber } from "../ui/chart-scrubber";
-import { f } from "../ui/focus";
+
 const date = (at: string) =>
   new Date(at).toLocaleDateString("en-US", {
     month: "short",
@@ -29,6 +30,8 @@ export function RecordChart({
   now: Date;
   onSelect: (id: string) => void;
 }) {
+const clubColors=useThemeColors();
+
   const chart = personalRecordChart(rows, now);
   if (!chart) return null;
   return (
@@ -73,7 +76,7 @@ export function RecordChart({
             </ChartText>
           </G>
         ))}
-        <Path d={chart.path} fill="none" stroke={clubColors.ink} strokeWidth={2} />
+        <Path d={chart.path} fill="none" stroke={clubColors.chartSeries} strokeWidth={2} />
         {chart.points.map((p) => (
           <G
             key={p.activityId}
@@ -85,8 +88,8 @@ export function RecordChart({
               cx={p.x}
               cy={p.y}
               r={selected === p.activityId ? 6 : 4}
-              fill={selected === p.activityId ? clubColors.ink : "#fff"}
-              stroke={clubColors.ink}
+              fill={selected === p.activityId ? clubColors.chartSeries : clubColors.surfaceCard}
+              stroke={clubColors.chartSeries}
               strokeWidth={2}
             />
           </G>

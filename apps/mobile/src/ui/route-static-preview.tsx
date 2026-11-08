@@ -1,16 +1,9 @@
+import { useThemeColors } from "../theme";
+import { createThemedStyles, useThemedStyles, legacyColors, useLegacyColors } from "../theme";
 import { textStyle } from "./section";
 import { useBootImage } from "./boot-readiness";
 import { useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
+import { View, Text, Image, TouchableOpacity, ActivityIndicator, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Polyline, Circle } from "react-native-svg";
 import {
   buildMapboxStaticImageUrl,
@@ -18,7 +11,7 @@ import {
   type LngLat,
 } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
-import { colors, fonts } from "../theme";
+
 
 export interface MobileRouteStaticPreviewProps {
   /** Array of [lng, lat] coordinates or an encoded polyline string. */
@@ -60,6 +53,9 @@ export function RouteStaticPreview({
   mapboxToken,
   style,
 }: MobileRouteStaticPreviewProps) {
+const colors=useLegacyColors();
+const styles=useThemedStyles(stylesThemes);
+
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -181,6 +177,11 @@ function FallbackMobileSvgRoute({
   strokeWidth: number;
   showMarkers: boolean;
 }) {
+const appearanceColors = useThemeColors();
+
+const colors=useLegacyColors();
+const styles=useThemedStyles(stylesThemes);
+
   if (coords.length < 2) {
     return (
       <View style={styles.emptyContainer}>
@@ -243,7 +244,7 @@ function FallbackMobileSvgRoute({
               cy={parseFloat(startCoord[1])}
               r={3.5}
               fill="#22c55e"
-              stroke="#ffffff"
+              stroke={appearanceColors.white}
               strokeWidth={1.2}
             />
             <Circle
@@ -251,7 +252,7 @@ function FallbackMobileSvgRoute({
               cy={parseFloat(endCoord[1])}
               r={3.5}
               fill={colors.lime}
-              stroke="#ffffff"
+              stroke={appearanceColors.white}
               strokeWidth={1.2}
             />
           </>
@@ -261,7 +262,7 @@ function FallbackMobileSvgRoute({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles(themeColors=>{const colors=legacyColors(themeColors);return {
   container: {
     width: "100%",
     borderRadius: 20,
@@ -325,7 +326,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
-    shadowColor: "#000",
+    shadowColor: themeColors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -337,6 +338,6 @@ const styles = StyleSheet.create({
 },
   badgeText: {
     ...textStyle("label"),
-    color: "#ffffff"
+    color: themeColors.white
 },
-});
+};});

@@ -1,4 +1,5 @@
-import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
+import { useThemeColors } from "../theme";
+
 import { createElement } from "react";
 import { resolveArenaSelectedId } from "@fitness-battle/shared";
 import {
@@ -18,6 +19,8 @@ export function Arena3D({
   onPan,
   onUnavailable,
 }: Arena3DProps) {
+const clubColors=useThemeColors();
+
   const runners: SceneRunner[] = model.lanes
     .filter((lane) => !lane.ghost)
     .map((lane) => ({

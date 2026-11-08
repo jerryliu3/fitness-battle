@@ -1,8 +1,10 @@
+import { useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { playCue, playPattern } from "../lib/haptics";
 import { UserAvatar } from "../ui/user-avatar";
-import { textStyle, Section, AppText  } from "../ui/section";
+import { Section, AppText } from "../ui/section";
 import { DateTimeField } from "../ui/form-picker";
-import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import {
@@ -18,7 +20,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../lib/auth";
 import { mobileEnv } from "../lib/env";
 import { requestApi } from "../lib/api";
-import { FocusButton, FocusSheet, f } from "../ui/focus";
+import { FocusButton, FocusSheet } from "../ui/focus";
 export function CrewSessions({
   crewId,
   portraits = {},
@@ -32,6 +34,9 @@ export function CrewSessions({
   hiddenIds?: readonly string[];
   onSelectMember?: (id: string, name: string) => void;
 }) {
+const colors=useThemeColors();
+const f=useFocusStyles();
+
   const { user, accessToken, offlineMode } = useAuth();
   const [sessions, setSessions] = useState<CrewSession[]>([]),
     [open, setOpen] = useState(false),
@@ -129,10 +134,10 @@ export function CrewSessions({
           <View
             key={s.id}
             style={{
-              backgroundColor: "#f7f4e9",
+              backgroundColor: colors.card,
               borderRadius: 18,
               borderBottomWidth: 3,
-              borderColor: "#e0d5b2",
+              borderColor: colors.line,
               padding: 20,
               gap: 10,
               marginVertical: 8,

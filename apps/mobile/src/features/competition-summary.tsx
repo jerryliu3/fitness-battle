@@ -1,3 +1,5 @@
+import { useFocusStyles } from "../ui/focus";
+import { useThemeColors } from "../theme";
 import { AppText, StatusBadge, SectionHeader } from "../ui/section";
 import {
   competeNow,
@@ -12,8 +14,8 @@ import {
 } from "@fitness-battle/shared";
 import { type ReactNode } from "react";
 import { Pressable, View } from "react-native";
-import { SHELL_COLORS as c } from "../theme";
-import { f } from "../ui/focus";
+
+
 import { playCue } from "../lib/haptics";
 export function CompetitionSummary({
   state,
@@ -26,6 +28,9 @@ export function CompetitionSummary({
   selectedSport?: SportId | "sleep";
   onRegister?: () => void;
 }) {
+const c=useThemeColors();
+const f=useFocusStyles();
+
   const now = competeNow(state);
   const active = state.ratings.filter((rating) => rating.optedIn);
   const sport = selectedSport === "sleep" ? undefined : selectedSport ??

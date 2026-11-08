@@ -12,7 +12,7 @@ const mock = vi.hoisted(() => ({
   push: vi.fn(),
   setParams: vi.fn(),
 }));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({useColorScheme: () => "light",
   StyleSheet: { create: (styles: unknown) => styles },
   Image: "Image",
   Platform:{OS:"ios"},

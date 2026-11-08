@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { type ComponentRef, useRef, useState, type ReactNode } from "react";
 import {
   Dimensions,
@@ -73,6 +74,8 @@ export function AnchoredMenu({
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
 }) {
+const s=useThemedStyles(sThemes);
+
   // Keep iOS Modal mounted through dismissal when a caller needs its completion.
   if (!open && !onDismiss) return null;
   return (
@@ -111,21 +114,21 @@ export function AnchoredMenu({
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles(themeColors=>{return {
   backdrop: {
     backgroundColor: "rgba(10, 15, 20, 0.2)",
   },
   dropdown: {
-    backgroundColor: "rgba(255, 255, 255, 0.94)",
+    backgroundColor: `${themeColors.card}f0`,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.65)",
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: themeColors.shadow,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.18,
     shadowRadius: 24,
     elevation: 12,
     zIndex: 9999,
   },
-});
+};});

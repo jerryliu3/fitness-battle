@@ -1,3 +1,4 @@
+import { APPEARANCE_COOKIE, appearanceVariables, parseAppearance } from "@/theme/app-colors";
 import { typographyVariables } from "@/ui/section";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
@@ -44,16 +45,18 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const jar = await cookies();
+  const appearance = parseAppearance(jar.get(APPEARANCE_COOKIE)?.value);
   const theme = getTheme(parseThemeId(jar.get("fb_theme")?.value));
   return (
     <html
       lang="en"
-      style={typographyVariables()}
+      style={{ ...typographyVariables(), ...appearanceVariables(appearance) }}
+      data-appearance={appearance}
       data-theme={theme.id}
       className={`${display.variable} ${body.variable} ${formType.variable} ${rallyDisplay.variable} ${rallyComic.variable} ${overtaek.variable} ${theme.htmlClass}`}
     >
       <body>
-        <Providers initialTheme={theme.id}>{children}</Providers>
+        <Providers initialTheme={theme.id} initialAppearance={appearance}>{children}</Providers>
       </body>
     </html>
   );

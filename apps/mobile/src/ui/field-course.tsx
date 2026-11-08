@@ -1,11 +1,13 @@
+import { useFocusStyles } from "./focus";
+import { useThemeColors } from "../theme";
 import { textStyle } from "./section";
-import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
+
 import { createElement, useEffect, useRef, useState, type ComponentType } from "react";
 import { PanResponder, Pressable, Text, View } from "react-native";
 import { Circle, ClipPath, Defs, Ellipse, G, Line, LinearGradient, Mask, Path, Pattern, Rect, Stop, Text as SvgText } from "react-native-svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { defaultFieldAppearance, fieldAppearanceKey, fieldGrounds, readFieldAppearance, fieldOverview, overviewTarget, type FieldAppearance, type FieldNode, type ArenaSceneLane, type ArenaViewWindow } from "@fitness-battle/shared";
-import { FocusSheet, f } from "./focus";
+import { FocusSheet } from "./focus";
 
 const elements = { circle: Circle, clipPath: ClipPath, defs: Defs, ellipse: Ellipse, g: G, line: Line, linearGradient: LinearGradient, mask: Mask, path: Path, pattern: Pattern, rect: Rect, stop: Stop, text: SvgText };
 export function drawFieldNode(node: FieldNode, key: number): React.ReactNode {
@@ -30,6 +32,9 @@ export function useFieldAppearance(account: string, sport: string) {
   return [value, update] as const;
 }
 export function FieldGroundPicker({ appearance, onChange }: { appearance: FieldAppearance; onChange: (value: FieldAppearance) => void }) {
+const clubColors=useThemeColors();
+const f=useFocusStyles();
+
   const [open, setOpen] = useState(false);
   return <>
     <Pressable accessibilityRole="button" accessibilityLabel="Choose field ground" style={[f.row, { minHeight: 44 }]} onPress={() => setOpen(true)}><Text style={textStyle("label")}>{fieldGrounds[appearance.ground].name}</Text><Text style={textStyle("caption")}>Customize</Text></Pressable>
@@ -43,6 +48,8 @@ export function FieldGroundPicker({ appearance, onChange }: { appearance: FieldA
   </>;
 }
 export function FieldOverview({ lanes, view, unit, onNavigate, positionOnly = false, hiddenIds = [] }: { hiddenIds?: readonly string[]; lanes: ArenaSceneLane[]; view: ArenaViewWindow; unit: string; onNavigate: (value: number) => void; positionOnly?: boolean }) {
+const clubColors=useThemeColors();
+const f=useFocusStyles();
   const baseOverview = fieldOverview(lanes, view);
   const overview = positionOnly ? { ...baseOverview, high: Math.max(.001, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value)) } : baseOverview, [width, setWidth] = useState(240);
   const latest = useRef({ overview, onNavigate, width }); latest.current = { overview, onNavigate, width };

@@ -1,12 +1,13 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { AppText } from "./section";
 import { AppIcon } from "./app-icon";
 import {
   SHELL_TABS,
   type ShellTabId,
 } from "@fitness-battle/shared";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { SHELL_COLORS } from "../theme";
+
 import { playCue } from "../lib/haptics";
 
 const tabIcons = { today: "home", arena: "compete", you: "progress", field: "crew" } as const;
@@ -40,6 +41,9 @@ export function PhoneTabBar({
   navigateToTab,
   emitter,
 }: PhoneTabBarProps) {
+const SHELL_COLORS=useThemeColors();
+const styles=useThemedStyles(stylesThemes);
+
   const insets = useSafeAreaInsets();
   return (
     <View
@@ -88,8 +92,8 @@ export function PhoneTabBar({
             }}
             style={[styles.tab, selected ? styles.tabOn : null]}
           >
-            <AppIcon name={tabIcons[tab.id]} size={22} color={selected ? SHELL_COLORS.starEmber : SHELL_COLORS.muted} />
-            <AppText role="caption" style={{ color: selected ? SHELL_COLORS.paper : SHELL_COLORS.muted }}>{tab.label}</AppText>
+            <AppIcon name={tabIcons[tab.id]} size={22} color={selected ? SHELL_COLORS.ink : SHELL_COLORS.muted} />
+            <AppText role="caption" style={{ color: selected ? SHELL_COLORS.ink : SHELL_COLORS.muted }}>{tab.label}</AppText>
           </Pressable>
         );
       })}
@@ -97,7 +101,7 @@ export function PhoneTabBar({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles(themeColors=>{const SHELL_COLORS=themeColors;return {
   bar: {
     flexDirection: "row",
     gap: 6,
@@ -107,14 +111,14 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: "#ffffffcc",
-    shadowColor: SHELL_COLORS.ink,
+    borderColor: `${themeColors.card}cc`,
+    shadowColor: themeColors.shadow,
     shadowOpacity: 0.12,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
     paddingHorizontal: 12,
-    backgroundColor: "#ffffffed",
+    backgroundColor: `${themeColors.surfaceNavigation}ed`,
     borderTopWidth: 1,
     borderTopColor: SHELL_COLORS.line,
   },
@@ -128,6 +132,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   tabOn: {
-    backgroundColor: "#142b3bf2",
+    backgroundColor: themeColors.soft,
   },
-});
+};});
