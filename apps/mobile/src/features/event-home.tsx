@@ -47,12 +47,12 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
   return <View style={{ width: cardWidth, padding: 12, gap: 12, borderRadius: 20, backgroundColor: c.card, borderWidth: 1, borderColor: c.line }}>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
       <View style={{ padding: 9, borderRadius: 12, backgroundColor: c.actionSoft }}><CompeteIcon name={sport} /></View>
-      <View style={{ flex: 1 }}><AppText role="label">{SPORTS.find(item => item.id === sport)?.name}</AppText><AppText role="caption" style={{ color: queued ? c.muted : c.statusSuccess }}>{queued ? "Upcoming wave" : "Live"}</AppText></View>
+      <View style={{ flex: 1 }}><AppText role="label">{SPORTS.find(item => item.id === sport)?.name}</AppText><AppText role="caption" secondary>{queued ? "Upcoming wave" : `Last update: ${update === "—" ? "Unavailable" : update}`}</AppText></View>
       <AppText role="caption" secondary>{queued ? "" : `Place ${place} / ${lanes.length}`}</AppText>
     </View>
     <CoursePreview state={state} sport={sport} queued={Boolean(queued)} />
     <Pressable accessibilityRole="button" accessibilityLabel={`Enter ${SPORTS.find(item => item.id === sport)?.name} field`} onPress={onEnter} style={({ pressed }) => ({ minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, opacity: pressed ? 0.6 : 1 })}>
-      <AppText role="caption" secondary style={{ flex: 1 }}>{queued ? "Your race opens with the wave" : `Last update: ${update === "—" ? "Unavailable" : update}${rows[0]?.simulated ? " · Simulated" : ""}`}</AppText><AppIcon name="chevron" size={20} />
+      <AppText role="caption" secondary style={{ flex: 1 }}>See race</AppText><AppIcon name="chevron" size={20} />
     </Pressable>
   </View>;
 }

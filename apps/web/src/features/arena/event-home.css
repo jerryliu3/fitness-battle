@@ -21,24 +21,23 @@
 .compete-recovery-card>span:last-child{margin-top:auto}
 .compete-empty{display:grid;justify-items:center;gap:12px;padding:32px 20px;border:1px dashed var(--line);background:var(--card);color:var(--ink);border-radius:20px;cursor:pointer}
 .compete-category{display:grid;gap:10px}
-.compete-sport-card{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;flex:0 0 158px;min-height:112px;padding:16px;border:0;border-radius:20px;overflow:hidden;text-align:left;cursor:pointer;color:var(--ink);background:var(--accent-soft)}
-.is-distance .compete-sport-card{background:var(--green-soft)}
-.is-time .compete-sport-card{background:var(--action-soft)}
-.compete-art{position:absolute;z-index:-1;right:-30px;bottom:-15px;width:160px;height:125px;color:var(--app-podium-gold);opacity:.35;pointer-events:none}
+.compete-sport-card{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;flex:0 0 158px;min-height:104px;padding:14px;border:1px solid var(--line);border-radius:20px;overflow:hidden;text-align:left;cursor:pointer;color:var(--ink);background:var(--card)}
+.compete-art{position:absolute;z-index:-1;right:0;bottom:0;width:100%;height:100%;pointer-events:none}
 .compete-recovery-card .compete-art{z-index:0;width:240px;height:200px}
 .compete-result-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .compete-result-card{border:1px solid var(--line);border-radius:20px;overflow:hidden;background:var(--card);color:var(--ink);text-decoration:none;display:flex;flex-direction:column}
-.compete-result-card>div{position:relative;isolation:isolate;display:grid;align-content:start;gap:8px;padding:16px;min-height:180px;flex:1;background:linear-gradient(120deg,var(--action-soft),var(--card) 55%,var(--action-soft))}
+.compete-result-card>div{position:relative;isolation:isolate;display:flex;align-items:center;gap:10px;padding:14px;min-height:76px;flex:1;background:linear-gradient(120deg,var(--action-soft),var(--card) 55%,var(--action-soft))}
 .compete-result-card:nth-child(2)>div{background:linear-gradient(120deg,var(--accent-soft),var(--card) 55%,var(--accent-soft))}
-.compete-result-card>div>svg:not(.compete-art){color:var(--app-podium-gold)}
-.compete-result-card footer{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:60px;padding:14px}
+.compete-result-card>div>svg:not(.compete-art){color:var(--app-podium-gold);flex:none}
+.compete-result-card>div>div{display:grid;gap:4px;min-width:0}
+.compete-result-card footer{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:12px}
 .compete-race-entry:focus-visible,.compete-sport-card:focus-visible,.compete-result-card:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
 @media(max-width:359px){.compete-result-grid{grid-template-columns:1fr}}
-.compete-feature-banner{position:relative;isolation:isolate;scroll-snap-align:start;flex:0 0 min(560px,94%);min-height:184px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:12px;padding:20px 64px 20px 20px;border:0;border-radius:24px;overflow:hidden;text-align:left;color:var(--ink);background:linear-gradient(115deg,var(--action-soft),var(--card) 55%,var(--action-soft));cursor:pointer}
-.compete-feature-banner .compete-art{width:240px;height:180px;opacity:.5}
-.compete-feature-badge{display:flex;align-items:center;gap:6px}
-.compete-feature-badge svg{color:var(--app-podium-gold)}
-.compete-feature-arrow{position:absolute;right:16px;bottom:20px;border-radius:50%;background:var(--card);width:32px;height:32px;display:grid;place-items:center}
+.compete-feature-banner{position:relative;isolation:isolate;scroll-snap-align:start;flex:0 0 min(560px,94%);min-height:112px;display:flex;align-items:center;gap:14px;padding:16px;border:1px solid var(--line);border-radius:20px;overflow:hidden;text-align:left;color:var(--ink);background:linear-gradient(115deg,var(--action-soft),var(--card) 55%,var(--action-soft));cursor:pointer}
+.compete-feature-banner>svg:not(.compete-art){flex:none;color:var(--app-podium-gold)}
+.compete-feature-banner .compete-art{width:240px;height:160px;opacity:.5}
+.compete-feature-copy{display:grid;gap:4px;flex:1}
+.compete-feature-arrow{flex:none;border-radius:99px;background:var(--card);min-height:44px;padding:0 14px;display:grid;place-items:center}
 .compete-feature-banner:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
 .compete-race-card .compete-event-preview{aspect-ratio:1.6}
 .compete-carousel-dots{display:flex;justify-content:center;gap:6px}
@@ -46,10 +45,6 @@
 .compete-carousel-dots span[data-active="true"]{background:var(--app-podium-gold)}
 .compete-home-header .compete-section-heading{flex-wrap:nowrap}
 .compete-home-header .fb-btn-ghost{width:auto;min-height:44px;flex:none;padding:8px 0}
-.compete-sport-card .compete-art{opacity:.2;stroke-width:6}
-.is-distance .compete-art{color:var(--app-status-success)}
-.is-time .compete-art{color:var(--app-action-pressed)}
-.is-recovery .compete-art{color:var(--app-accent-secondary)}
 .event-registration{display:grid;gap:20px}
 .event-registration>p{margin:0}
 .registration-details{display:grid;gap:10px}
@@ -73,3 +68,5 @@
 .compete-event-heading>div{flex:1;min-width:0;display:grid;gap:6px}
 .compete-event-heading>.compete-sport-icon{flex:none}
 .compete-event-heading .club-icon-button{width:44px;height:44px;flex:none;border:1px solid var(--line);border-radius:50%}
+
+.compete-sports:has(>.compete-sport-card:only-child) .compete-sport-card{flex-basis:min(340px,100%)}

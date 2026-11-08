@@ -918,15 +918,15 @@ The immersive timeline always shows playback speed in a fixed 48px target, with 
 Native mobile is the design target; web follows the same composition. Compete
 opens with a gold wreath, the existing event date and remaining-time badge.
 Your events is a snapping horizontal carousel with landscape static course
-snapshots, place, Live/upcoming status and pagination dots. Last update and the event activity feed read the same membership-scoped replay
-ledger; absent data remains Unavailable. Simulated updates remain labeled, and
+snapshots, place, last-update/upcoming status and pagination dots. Last update and the event activity feed read the same membership-scoped replay
+ledger; absent data remains Unavailable. The home cards omit a separate simulation label;
 blocked athletes' events are omitted without changing field ranks.
 
-Larger gold Crew event banners follow, linking to the existing Crew hub for
+Compact horizontal gold Crew event banners follow, linking to the existing Crew hub for
 membership and shared individual fields. They do not claim limited availability,
 relay rules or team-versus-team scoring. Explore follows in Distance, Time and
-Recovery horizontal rows: running/cycling/walking share one surface, strength
-another, and sleep another. Each tile has one icon, one title and abstract sport
-lines. Only supported events appear. Results & rankings finishes the page with
-gold and silver metallic surfaces, recorded placements and existing history and
-ranking destinations; missing results have an honest first-finish state.
+Recovery horizontal rows: neutral bordered tiles carry one outline icon, one title, and filled sport artwork
+in the lower-right corner (track curves, a walking hill, strength bars and sleep
+waves). Registered events are omitted from discovery, including empty categories. Only supported events appear. Results & rankings finishes the page with
+compact gold and silver metallic surfaces, recorded placements, the existing
+rank tier, and history and ranking destinations; missing results have an honest first-finish state.

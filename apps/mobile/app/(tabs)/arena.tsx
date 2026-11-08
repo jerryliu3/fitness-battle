@@ -163,11 +163,7 @@ const f=useFocusStyles();
           {selectedSport === "sleep" && (queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event="sleep" now={now} onCancel={() => dispatch({ type: "opt-out-health", metric: "sleep" })} /> : <SleepPanel state={state} dispatch={dispatch} />)}
         </>}
         {!persistent && <CrewEvents onChoose={() => router.navigate("/field")} />}
-        {!persistent && <ExploreEvents onChoose={event => {
-          if (event === "sleep" && sleepOptedIn) setSelection({ account: accountKey, sport: "sleep" });
-          else if (event !== "sleep" && active.some(r => r.sport === event)) experience.enter(accountKey, event);
-          else openRegistration();
-        }} />}
+        {!persistent && <ExploreEvents state={state} onChoose={() => openRegistration()} />}
         {!persistent && <CompeteResults state={state} onHistory={() => router.push("/progress-history")} onRankings={() => router.push("/benchmarks")} />}
       </SectionStack>
 </ArenaSheet>

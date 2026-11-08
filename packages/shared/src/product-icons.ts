@@ -1,9 +1,10 @@
-/** Shared SVG paths: presentation only, no platform imports. */
+/** Sport outlines from Tabler Icons (MIT), matching the native AppIcon set.
+ * Shared SVG paths: presentation only, no platform imports. */
 export const SPORT_ICON_PATHS = {
-  running: "M15 3a1.5 1.5 0 1 0 0 .01M12 7l3 3 4 1M12 7l-4 4H4m8-4-2 7 4 3v5m-4-8-3 6H3",
-  cycling: "M6 14a4 4 0 1 0 0 8 4 4 0 0 0 0-8m12 0a4 4 0 1 0 0 8 4 4 0 0 0 0-8M6 18l5-9 4 9H6m5-9h5l2 9M9 6h4m2-1h3l1 3",
-  walking: "M13 3a1.5 1.5 0 1 0 0 .01M12 7l-2 7-3 7m3-7 5 3 1 5M12 7l4 5 4 1M12 7l-5 4-3 1",
-  strength: "M3 8v8m3-11v14m0-7h12m0-7v14m3-11v8",
+  running: "M11.007 5a2 2 0 1 0 4 0a2 2 0 1 0 -4 0 M4 17l5 1l.75 -1.5 M15 21v-4l-4 -3l1 -6 M7 12v-3l5 -1l3 3l3 1",
+  cycling: "M2 18a3 3 0 1 0 6 0a3 3 0 0 0 -6 0 M16 18a3 3 0 1 0 6 0a3 3 0 0 0 -6 0 M12 19v-4l-3 -3l5 -4l2 3h3 M13.007 5a2 2 0 1 0 4 0a2 2 0 1 0 -4 0",
+  walking: "M12 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M7 21l3 -4 M16 21l-2 -4l-3 -3l1 -6 M6 12l2 -3l4 -1l3 3l3 1",
+  strength: "M2 12h1 M6 8h-2a1 1 0 0 0 -1 1v6a1 1 0 0 0 1 1h2 M6 7v10a1 1 0 0 0 1 1h1a1 1 0 0 0 1 -1v-10a1 1 0 0 0 -1 -1h-1a1 1 0 0 0 -1 1 M9 12h6 M15 7v10a1 1 0 0 0 1 1h1a1 1 0 0 0 1 -1v-10a1 1 0 0 0 -1 -1h-1a1 1 0 0 0 -1 1 M18 8h2a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-2 M22 12h-1",
 } as const;
 export const SETTINGS_ICON_PATHS = {
   "Data Sync": "M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4",

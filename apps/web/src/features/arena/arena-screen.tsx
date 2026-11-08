@@ -126,11 +126,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         {standingsStale && <AppParagraph typographyRole="caption" role="status" className="fb-note">Standings may be out of date until the next refresh.</AppParagraph>}
         <EventHome active={tabActive && !immersive} state={state} onEnter={event => { setSelection({ account, sport: event }); setImmersiveAccount(account); }} onRecovery={() => setSelection({ account, sport: "sleep" })} onRegister={() => openRegistration()} />
         <CrewEvents onChoose={() => router.push("/field")} />
-        <ExploreEvents onChoose={event => {
-          if (event === "sleep" && sleepOptedIn) setSelection({ account, sport: "sleep" });
-          else if (event !== "sleep" && active.some(r => r.sport === event)) { setSelection({ account, sport: event }); setImmersiveAccount(account); }
-          else openRegistration();
-        }} />
+        <ExploreEvents state={state} onChoose={() => openRegistration()} />
         <CompeteResults state={state} />
       </div>}
       <CompeteSheet overview={overviewModel && !queue?.queued && !queue?.awaitingField ? <div className="compete-sheet-overview-row"><div className="compete-sheet-overview-track"><FieldOverview lanes={overviewModel.lanes.filter(lane => !lane.ghost).map(lane => ({ ...lane, value: lane.values[2], initials: "" }))} unit={overviewModel.unit} positionOnly view={{ center: courseTarget?.value ?? overviewModel.lanes.find(lane => lane.you)?.values[2] ?? 0, span: 1 }} onNavigate={value => setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }))} /></div>{courseOptions}</div> : undefined} active={immersive} expandRequest={expandRequest}>
