@@ -970,3 +970,12 @@ rounded boundary so no internal gradient rectangle is visible.
 The header flame uses Phosphor Fire Regular when inactive today and Fire Fill
 when counted activity exists on the current Eastern day; the number retains its
 weekly streak meaning. The custom Compete wreath is awaiting a replacement choice.
+
+The immersive standings sheet identifies the meet with Back, sport, status and
+dates. Race updates below standings includes every counted event returned by the
+existing replay endpoint, newest first, with activity volume, chronological place
+changes and Eastern timestamps. It reconstructs workout order from the current
+counted ledger, not an immutable log of import/notification delivery. Native
+privacy filters hide blocked activity while retaining the complete field for rank
+calculation. Loading, empty and retry states do not substitute a preview for a
+failed authenticated request. Native and web share the feed presentation model.
