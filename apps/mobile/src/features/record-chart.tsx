@@ -76,7 +76,7 @@ const clubColors=useThemeColors();
             </ChartText>
           </G>
         ))}
-        <Path d={chart.path} fill="none" stroke={clubColors.ink} strokeWidth={2} />
+        <Path d={chart.path} fill="none" stroke={clubColors.chartSeries} strokeWidth={2} />
         {chart.points.map((p) => (
           <G
             key={p.activityId}
@@ -88,8 +88,8 @@ const clubColors=useThemeColors();
               cx={p.x}
               cy={p.y}
               r={selected === p.activityId ? 6 : 4}
-              fill={selected === p.activityId ? clubColors.ink : "#fff"}
-              stroke={clubColors.ink}
+              fill={selected === p.activityId ? clubColors.chartSeries : clubColors.surfaceCard}
+              stroke={clubColors.chartSeries}
               strokeWidth={2}
             />
           </G>

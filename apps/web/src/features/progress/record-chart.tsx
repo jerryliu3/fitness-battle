@@ -1,6 +1,6 @@
 "use client";
 import { ChartSvg, ChartText } from "@/ui/chart-text";
-import { typographyStyle } from "@/ui/section";
+import { colors as c } from "@/theme/app-colors";
 
 import {
   formatClockTime,
@@ -58,7 +58,7 @@ export function RecordChart({
         <path
           d={chart.path}
           fill="none"
-          stroke="var(--ink, #282f2c)"
+          stroke={c.chartSeries}
           strokeWidth={2}
           strokeLinejoin="round"
         />
@@ -83,8 +83,8 @@ export function RecordChart({
               cx={p.x}
               cy={p.y}
               r={selected === p.activityId ? 6 : 4}
-              fill={selected === p.activityId ? "var(--ink, #282f2c)" : "#fff"}
-              stroke="var(--ink, #282f2c)"
+              fill={selected === p.activityId ? c.chartSeries : c.surfaceCard}
+              stroke={c.chartSeries}
               strokeWidth={2}
             />
           </g>

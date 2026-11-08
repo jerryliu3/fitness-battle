@@ -2727,7 +2727,7 @@
 .record-chart .record-chart-caption { color:var(--muted); margin:0; letter-spacing: normal; text-transform: none; font: var(--type-caption); }
 .record-chart svg { min-height:150px; max-height:240px; margin:8px 0; }
 .record-chart-point { cursor:pointer; }
-.record-chart-point:focus-visible { outline:2px solid #a67c00; }
+.record-chart-point:focus-visible { outline:2px solid var(--app-focus-ring); }
 
 .focus-sync-status { position: absolute; top: 100%; right: 0; z-index: 5; width: min(280px, 75vw); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; box-shadow: 0 5px 16px #0001; }
 .focus-chart-actions { position: relative; }

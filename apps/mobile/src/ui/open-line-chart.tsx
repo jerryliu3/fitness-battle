@@ -45,7 +45,7 @@ const s=useThemedStyles(sThemes);
           {chart.yTicks.map((tick, i) => <G key={`${tick.y}-${i}`}><Line x1={chart.left} x2={chart.right} y1={tick.y} y2={tick.y} stroke={c.line} strokeWidth={.5}/><ChartText x={chart.left - 6} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</ChartText></G>)}
           {chart.xTicks.map((tick, i) => <ChartText key={i} x={tick.x} y={chart.height - 22} textAnchor={i === 0 ? "start" : i === chart.xTicks.length - 1 ? "end" : "middle"} fill={c.muted}>{tick.label}</ChartText>)}
         </G>}
-        {!!chart.previous && <Polyline points={chart.previous} fill="none" stroke={c.muted} strokeWidth={1.5} strokeDasharray="2 5" strokeLinecap="round" opacity={.65} />}
+        {!!chart.previous && <Polyline points={chart.previous} fill="none" stroke={c.chartComparison} strokeWidth={1.5} strokeDasharray="2 5" strokeLinecap="round" opacity={.65} />}
         {chart.bridges?.map((line, index) => <Polyline key={`bridge-${index}`} points={line} fill="none" stroke={c.tennis} strokeWidth={2.5} />)}
         {chart.segments.map((line, i) => {
           if (!line) return null;
