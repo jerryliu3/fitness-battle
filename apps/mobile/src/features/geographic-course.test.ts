@@ -1,0 +1,28 @@
+import { createElement } from "react";
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
+import { afterEach, expect, it, vi } from "vitest";
+import { createRaceCourse } from "@fitness-battle/shared";
+vi.mock("react-native", () => ({ View: "View", Text: "Text", Pressable: "Pressable", ActivityIndicator: "ActivityIndicator" }));
+vi.mock("../ui/boot-readiness", () => ({ useBootLoading() {} }));
+vi.mock("../lib/env", () => ({ mobileEnv: { mapboxAccessToken: "test" } }));
+vi.mock("../ui/section", () => ({ textStyle: () => ({}) }));
+vi.mock("./deferred-course-map", () => ({ nativeCourseMapAvailable: true, DeferredCourseMap: (props: object) => createElement("CourseMap", props) }));
+import { GeographicCourse } from "./geographic-course";
+let renderer: ReactTestRenderer;
+afterEach(async () => { await act(async () => renderer?.unmount()); vi.useRealTimers(); vi.unstubAllGlobals(); });
+it("starts the timeout when presented and keeps the map mounted so a late load can recover", async () => {
+  vi.useFakeTimers(); vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const onReady = vi.fn();
+  const props = { course: createRaceCourse("Test", [[0, 0], [.02, 0]]), lanes: [], unit: "mi", selectedId: "", focusRequest: 0, onSelect() {}, onReady };
+  await act(async () => { renderer = create(createElement(GeographicCourse, { ...props, presentationActive: false })); });
+  await act(async () => { vi.advanceTimersByTime(13000); });
+  expect(renderer.root.findAllByProps({ accessibilityRole: "button" })).toHaveLength(0);
+  await act(async () => renderer.update(createElement(GeographicCourse, { ...props, presentationActive: true })));
+  await act(async () => { vi.advanceTimersByTime(13000); });
+  const map = renderer.root.findByType("CourseMap" as never);
+  expect(renderer.root.findAllByProps({ accessibilityRole: "button" })).toHaveLength(1);
+  await act(async () => map.props.onReady());
+  expect(onReady).toHaveBeenCalledOnce();
+  expect(renderer.root.findByType("CourseMap" as never)).toBe(map);
+  expect(renderer.root.findAllByProps({ accessibilityRole: "button" })).toHaveLength(0);
+});

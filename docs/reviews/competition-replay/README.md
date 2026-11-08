@@ -160,3 +160,25 @@ recenter, retained course selection and visible overview in collapsed/expanded
 panels. Adapters use mocked map engines; no installed-device or live Mapbox-rendering
 validation is claimed. Typecheck/build and expensive suites were skipped per the
 owner's requested workflow.
+
+## November 5 persistent field timeline
+
+Current Compete fields on web and native show the workout timeline inline and in
+fullscreen. A single parent-owned cursor survives expansion and 2D/3D changes.
+The field starts at Latest, using its ordinary live totals. Seeking reconstructs
+positions through the existing read-only replay ledger and pauses automatic
+playback. Replay/Pause and the existing playback speeds now operate in that same
+field; playback completion or Latest restores current totals. Past-self is hidden
+while inspecting history because the ledger does not reconstruct its earlier
+positions. Historical positions are labeled in the fullscreen positions panel.
+The timeline stays available when the athlete panel collapses and follows the
+existing hold-to-hide treatment. Near the starting line, historical 2D fields can
+center below zero so the athletes remain above the bottom controls.
+
+Queued waves have no history controls. Loading and retry states keep the live
+field available. Account, sport, track, wave and Debug-source changes clear the
+historical cursor, and late responses from the previous source are ignored.
+Inactive tabs and backgrounding pause playback. Changes to counted activities or
+enrollments reload the ledger; no polling or competition writes are added. Local
+previews remain partial (own workouts and known simulated peers), with simulated
+daily steps disclosed. Archived rounds and recaps retain their existing viewer.

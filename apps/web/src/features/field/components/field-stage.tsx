@@ -36,6 +36,8 @@ import {
 } from "./field-course";
 import { placeAt, valueAt, type SceneRunner } from "../geometry";
 import { coursePositionLeaders } from "@fitness-battle/shared";
+import { useFieldTimeline } from "@/features/replay/use-field-timeline";
+import { FieldTimeline } from "@/features/replay/field-timeline";
 import { CompetitionReplayButton } from "@/features/replay/competition-replay";
 import type { FieldModel } from "../model";
 
@@ -83,9 +85,14 @@ export function FieldStage({
     model.sport,
   );
   const unit = model.unit;
+  const timeline = useFieldTimeline(!backgroundMode && !standingsOnly ? replayState : undefined, { sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: model.periodEnd }, !backgroundMode && !standingsOnly && tabActive && presentationVisible && Boolean(replayState) && !queueOverlay);
   const runners = useMemo<SceneRunner[]>(
     () =>
-      model.runners.map((r) => ({
+      timeline.frame ? timeline.frame.rows.map(r => ({
+        id: r.id, name: r.name, avatarUrl: r.avatarUrl,
+        initials: model.runners.find(lane => lane.id === r.id)?.initials ?? r.name.slice(0, 1),
+        series: [r.value], you: r.you,
+      })) : model.runners.map((r) => ({
         id: r.id,
         name: r.name,
         avatarUrl: r.avatarUrl,
@@ -94,7 +101,7 @@ export function FieldStage({
         you: r.you,
         mystery: r.mystery,
       })),
-    [model.runners],
+    [model.runners, timeline.frame],
   );
   const time = Math.max(
     0,
@@ -102,7 +109,7 @@ export function FieldStage({
   );
   const you = runners.find((r) => r.you);
   const total = you ? valueAt(you, time) : 0;
-  const ghost: SceneRunner | null = model.ghost
+  const ghost: SceneRunner | null = !timeline.frame && model.ghost
     ? {
         id: model.ghost.id,
         name: model.ghost.name,
@@ -172,18 +179,18 @@ export function FieldStage({
         initials: r.initials,
         value: valueAt(r, time),
         avatarUrl: r.avatarUrl,
-        lastUpdated: model.runners.find((runner) => runner.id === r.id)
+        lastUpdated: timeline.frame ? undefined : model.runners.find((runner) => runner.id === r.id)
           ?.lastUpdated,
         you: r.you,
         mystery: r.mystery,
       })),
-    [runners, time, model.runners],
+    [runners, time, model.runners, timeline.frame],
   );
   const fieldHigh = useMemo(() => arenaFieldHigh(fieldLanes), [fieldLanes]);
   const clampViewCenter = useCallback(
     (value: number, viewSpan: number) =>
-      clampCourseCenter(value, viewSpan, fieldHigh, unit, appearance.ground),
-    [fieldHigh, unit, appearance.ground],
+      timeline.frame ? value : clampCourseCenter(value, viewSpan, fieldHigh, unit, appearance.ground),
+    [fieldHigh, unit, appearance.ground, Boolean(timeline.frame)],
   );
 
   const sceneLanes: ArenaSceneLane[] = useMemo(
@@ -345,7 +352,7 @@ export function FieldStage({
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
 
   const broadcastHud = lanesImmersive ? (
-    <div className={`focus-broadcast-hud${backgroundMode ? " compete-immersive-hud" : ""}`} aria-label="Broadcast race controls">
+    <div className={`focus-broadcast-hud${backgroundMode ? " compete-immersive-hud" : ""}${replayState && !queueOverlay && !backgroundMode ? " has-timeline" : ""}`} aria-label="Broadcast race controls">
       <div className="focus-broadcast-top">
         <button
           type="button"
@@ -365,11 +372,12 @@ export function FieldStage({
           onZoomOut={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)); } : undefined} />}
       </div>
 
+      {!backgroundMode && !queueOverlay && replayState && <div className="field-timeline-fullscreen"><FieldTimeline timeline={timeline} /></div>}
       {!queueOverlay && (viewDimension !== "4d" || course) ? <>
       <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Current leaders">
         <button type="button" className="focus-panel-toggle" aria-label={intervalsCollapsed ? "Expand live intervals" : "Collapse live intervals"} aria-expanded={!intervalsCollapsed} onClick={() => setIntervalsCollapsed(value => !value)}><span className="focus-panel-grip" aria-hidden="true" /></button>
         <div className="focus-panel-content" inert={intervalsCollapsed} aria-hidden={intervalsCollapsed}>
-          <span className="focus-broadcast-tower-kicker">CURRENT LEADERS</span>
+          <span className="focus-broadcast-tower-kicker">{timeline.frame ? "HISTORICAL POSITIONS" : "CURRENT LEADERS"}</span>
           {coursePositionLeaders(ranked).map((peer, idx) => {
             const delta = peer.value - leaderValue;
             const isSelected = (trackSelected || you.id) === peer.id;
@@ -438,9 +446,7 @@ export function FieldStage({
             ↓ Behind
           </button>
         ) : null}
-        <div className="focus-broadcast-replay-chip">
-        {replayState && <CompetitionReplayButton state={replayState} selection={{ sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: model.periodEnd }} initialFlat={courseFlat} dimension={viewDimension} label="Replay" />}
-        </div>
+      {backgroundMode && replayState && !queueOverlay && <div className="focus-broadcast-replay-chip"><CompetitionReplayButton state={replayState} selection={{ sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: model.periodEnd }} initialFlat={courseFlat} dimension={viewDimension} label="Replay" /></div>}
       </div>
 
       {focusedLane && !backgroundMode ? (
@@ -542,7 +548,7 @@ export function FieldStage({
           hud={presentationVisible ? broadcastHud : undefined}
         >
           {viewDimension === "4d" && (persistent || tabActive) ? <div className="focus-geographic-host" style={{ position: "relative", height: persistent || lanesImmersive ? "100%" : 460 }}>
-            <GeographicCourse cardSessionKey={lanesImmersive} initialFlat={courseFlat} onFlatChange={setCourseFlat} lanes={fieldLanes} unit={unit} selectedId={(lanesImmersive ? trackSelected : null) || you.id} focusRequest={lanesImmersive ? focusRequest : 0} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={lanesImmersive ? courseTarget : null} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? spotlightCollapsed ? 136 : 236 : 8} />
+            <GeographicCourse cardSessionKey={lanesImmersive} initialFlat={courseFlat} onFlatChange={setCourseFlat} lanes={fieldLanes} unit={unit} selectedId={(lanesImmersive ? trackSelected : null) || you.id} focusRequest={lanesImmersive ? focusRequest : 0} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={lanesImmersive ? courseTarget : null} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? (spotlightCollapsed ? 136 : 236) + (replayState && !backgroundMode ? 128 : 0) : 8} />
             {!lanesImmersive ? <button type="button" className="focus-portal-pill is-accent" style={{ position: "absolute", top: 12, right: 12 }} aria-label="Expand 3D course to full screen" onClick={() => setLanesImmersive(true)}>Full Arena ⤢</button> : null}
           </div> : null}
           {viewDimension === "3d" && (persistent || tabActive) ? (
@@ -595,6 +601,8 @@ export function FieldStage({
               ) : null}
 
               <ArenaLanes
+                clampView={!timeline.frame}
+                playback={Boolean(timeline.frame)}
                 appearance={appearance}
                 presentation="lanes"
                 scores={scoreMap}
@@ -648,6 +656,7 @@ export function FieldStage({
         </ExpandingField>
       </div>}
 
+      {!standingsOnly && !lanesImmersive && !queueOverlay && replayState && <FieldTimeline timeline={timeline} />}
       <div className="focus-standings-collapsible" hidden={!standingsOpen} style={{ paddingTop: standingsOnly ? 0 : 64 }}>
         {standingsOpen ? (
           <div className="focus-standings-body">

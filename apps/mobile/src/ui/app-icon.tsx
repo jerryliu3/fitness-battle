@@ -1,3 +1,6 @@
+import IconStack2 from "@tabler/icons-react-native/IconStack2";
+import IconPlayerPlay from "@tabler/icons-react-native/IconPlayerPlay";
+import IconPlayerPause from "@tabler/icons-react-native/IconPlayerPause";
 import IconSettings from "@tabler/icons-react-native/IconSettings";
 import { useThemeColors } from "../theme";
 import IconRun from "@tabler/icons-react-native/IconRun";
@@ -29,6 +32,7 @@ const icons = {
   running: IconRun, walking: IconWalk, cycling: IconBike, strength: IconBarbell,
   person: IconUser, home: IconHome, compete: IconFlag, progress: IconChartLine, crew: IconUsers,
   sync: IconRefresh, back: IconArrowLeft, plus: IconPlus, expand: IconMaximize, edit: IconPencil,
+  layers: IconStack2, play: IconPlayerPlay, pause: IconPlayerPause,
   settings: IconSettings, preferences: IconAdjustmentsHorizontal, notifications: IconBell, scoring: IconChartBar,
   external: IconArrowUpRight, chevron: IconChevronRight, flame: IconFlameFilled,
   replay: IconReload, block: IconBan,

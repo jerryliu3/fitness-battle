@@ -56,18 +56,18 @@ const c=useThemeColors();
       hitSlop={8}
       onPress={toggle}
       style={({ pressed }) => [{
-        minHeight: 28,
-        minWidth: 28,
+        minHeight: 44,
+        minWidth: 44,
         alignItems: "center",
         paddingHorizontal: 0,
         justifyContent: "center",
         borderRadius: 999,
-        backgroundColor: "transparent",
-        borderWidth: 0,
+        backgroundColor: "rgba(20, 20, 19, 0.72)",
+        borderWidth: 1,
         borderColor: "rgba(255, 255, 255, 0.2)",
       }, pressed && { opacity: 0.75 }]}
     >
-      <AppIcon name="settings" size={22} color={c.ink} />
+      <AppIcon name="layers" size={22} color="#ffffff" />
     </Pressable>
     <AnchoredMenu open={open} onClose={close} onDismiss={finishPendingAction} style={{ width: menuLayout?.width ?? 220 }} menuLayout={menuLayout} accessibilityLabel="Close course options">
       {options.map(option => "value" in option ? <SettingsToggleRow key={option.label} label={option.label} value={Boolean(option.value)} onChange={() => { void playCue("selection"); option.action(); }} /> : <Pressable

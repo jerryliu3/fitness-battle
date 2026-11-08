@@ -46,20 +46,22 @@ const c=useThemeColors();
         onPress={toggle}
         style={({ pressed }) => [
           {
-            minHeight: compact ? 28 : 44,
-            paddingHorizontal: compact ? 2 : 12,
+            minHeight: 44,
+            minWidth: 44,
+            justifyContent: "center",
+            paddingHorizontal: compact ? 10 : 12,
             flexDirection: "row",
             alignItems: "center",
             gap: 6,
             borderRadius: 999,
-            backgroundColor: compact ? "transparent" : "rgba(20, 20, 19, 0.78)",
-            borderWidth: compact ? 0 : 1,
+            backgroundColor: "rgba(20, 20, 19, 0.72)",
+            borderWidth: 1,
             borderColor: "rgba(255, 255, 255, 0.2)",
           },
           pressed && { opacity: 0.75 },
         ]}
       >
-        {compact ? <AppIcon name="settings" size={22} color={c.ink} /> : <Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>
+        {compact ? <AppIcon name="layers" size={22} color="#ffffff" /> : <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
           {(value === "4d" ? "3D" : value.toUpperCase())} ▾
         </Text>}
       </Pressable>

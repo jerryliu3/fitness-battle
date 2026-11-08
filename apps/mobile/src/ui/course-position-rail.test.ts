@@ -1,0 +1,23 @@
+import { createElement } from "react";
+import { act, create } from "react-test-renderer";
+import { expect, it, vi } from "vitest";
+vi.mock("react-native", () => ({ View: "View", Text: "Text", PanResponder: { create: (handlers: unknown) => ({ panHandlers: handlers }) } }));
+vi.mock("./section", () => ({ textStyle: () => ({}) }));
+import { CoursePositionRail } from "./course-position-rail";
+it("seeks toward the leader upward, clamps dragging, and supports accessibility steps", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const onChange = vi.fn();
+  let renderer: ReturnType<typeof create>;
+  await act(async () => { renderer = create(createElement(CoursePositionRail, { value: 10, maximum: 20, unit: "mi", height: 100, onChange })); });
+  const rail = renderer!.root.findByProps({ accessibilityLabel: "Course position" });
+  rail.props.onPanResponderGrant({ nativeEvent: { pageY: 200, locationY: 0 } });
+  expect(onChange).toHaveBeenLastCalledWith(20);
+  rail.props.onPanResponderMove({ nativeEvent: { pageY: 300 } });
+  expect(onChange).toHaveBeenLastCalledWith(0);
+  rail.props.onPanResponderMove({ nativeEvent: { pageY: 400 } });
+  expect(onChange).toHaveBeenLastCalledWith(0);
+  rail.props.onAccessibilityAction({ nativeEvent: { actionName: "decrement" } });
+  expect(onChange).toHaveBeenLastCalledWith(9);
+  await act(async () => renderer!.unmount());
+  vi.unstubAllGlobals();
+});

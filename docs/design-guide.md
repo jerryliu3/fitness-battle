@@ -161,6 +161,12 @@ map instance. Replay's compact athlete rows can restore dismissed cards. Web
 competition and recorded-route maps share compact upper-left attribution.
 See the [stack review](reviews/map-ui-stack-review.md).
 
+The timeline feature branch retains workout scrubbing for legacy inline and
+fullscreen fields. The November 7 event-home immersive field retains its
+existing course-position sheet and replay viewer while time/course dock
+placements are evaluated. Do not overlay the legacy timeline card on that sheet.
+See the [timeline rebase review](reviews/field-timeline/rebase-2026-11-07.md).
+
 Sync receipts use one “Sync completed” heading and keep the sample-preview
 notice when applicable. Activity metadata uses two columns of labeled values,
 each above a thin grey track with a teal magnitude fill. Compare each metric
@@ -892,3 +898,17 @@ forward race tangent over time. Racer travel backward retraces course distance
 without turning the lens around. Automatic position updates use the same route
 motion; reduced motion skips animation. Zoom and interruption behavior remain
 consistent across native and web.
+
+### Native time and course dock — November 7
+
+The immersive standings sheet owns the time scrubber and circular Play/Pause
+control. Its header measures its own content so date and time
+remain visible at the minimized stop. A separate vertical Course position rail
+sits beneath Current Leaders on the map: Start below, earned Leader above.
+Both sliders are directly available; dragging either never drags the sheet.
+The layers button opens existing course settings at the map's upper right,
+below attribution and clear of the top safe area. One timeline provider drives
+the retained map and sheet standings. Course seeking changes the camera only
+and stays bounded by the leader at the selected time. Event snapshots stay live.
+
+The immersive timeline always shows playback speed in a fixed 48px target, with tabular numerals. Its caption contains the date and time to minute precision, including at the live endpoint; omit local/simulated source labels. The course rail shares the leaders panel’s dark translucent surface and begins 12px below its measured bottom. The layers button has a visible dark translucent 44px target.

@@ -1,10 +1,9 @@
-import { useAthleteBlocks } from "../../src/lib/athlete-blocks";
-import { FieldOverview } from "../../src/ui/field-course";
+import { CompetitionTimelineProvider, CompetitionTimelineControls } from "../../src/features/competition-timeline-context";
 import { useCompeteExperience } from "../../src/features/compete-experience";
 import { EventHome } from "../../src/features/event-home";
 import { CompeteSheet } from "../../src/ui/compete-sheet";
 import { NavigationAction, SectionStack, AppText, StatusBadge } from "../../src/ui/section";
-import { APP_TIMEZONE, competePeriodWindow, weeklyCompetitionLastDay, weeklyPeriodBounds, buildArenaModel, competitionQueue, competeNow, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
+import { APP_TIMEZONE, competePeriodWindow, weeklyCompetitionLastDay, weeklyPeriodBounds, competitionQueue, competeNow, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
 import { useFocusStyles } from "../../src/ui/focus";
 import {
   SPORTS,
@@ -14,7 +13,7 @@ import {
 import { useGlobalSearchParams, usePathname, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { BackHandler, Pressable, ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { CompetitionField } from "../../src/features/competition-field";
 import { useCrewApi } from "../../src/features/crew";
 import { RoundTakeover } from "../../src/features/round-takeover";
@@ -39,7 +38,7 @@ const f=useFocusStyles();
     canWrite,
   } = useCompeteStore();
   const { user } = useAuth();
-  const { blocks } = useAthleteBlocks();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const experience = useCompeteExperience();
   const exit = experience.close;
@@ -50,8 +49,6 @@ const f=useFocusStyles();
   const crewApi = useCrewApi();
   const [athleteFocus, setAthleteFocus] = useState<{ id: string; request: number } | null>(null);
   const [courseOptions, setCourseOptions] = useState<React.ReactNode>(null);
-  const [courseTarget, setCourseTarget] = useState<{ value: number; request: number } | null>(null);
-  useEffect(() => setCourseTarget(null), [accountKey, experience.event?.sport]);
   const [expandRequest, setExpandRequest] = useState(0);
   const [register, setRegister] = useState(false);
   const [selection,setSelection]=useState<{account:string;sport:SportId|"sleep"}|null>(null);
@@ -145,11 +142,12 @@ const f=useFocusStyles();
   }
 
 
-  const overviewModel = persistent && selectedSport && selectedSport !== "sleep" ? buildArenaModel(state, undefined, track, selectedSport) : null;
   return (
+    <CompetitionTimelineProvider state={state} selection={{ sport: selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary, track, periodStart: headerPeriod.startsAt.toISOString(), periodEnd: headerPeriod.endsAt.toISOString() }} enabled={persistent && Boolean(selectedSport) && selectedSport !== "sleep"} active={focused && experience.immersive && !queue?.queued && !queue?.awaitingField}>
     <SafeAreaView pointerEvents={persistent ? "box-none" : "auto"} style={[f.safe, persistent && { backgroundColor: "transparent" }]} edges={[]}>
-      {persistent && selectedSport && selectedSport !== "sleep" ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}`} sport={selectedSport} track={track} persistent backgroundMode externalAthleteFocus={athleteFocus} onOptionsChange={setCourseOptions} externalCourseTarget={courseTarget} presentationActive={experience.immersive} onExit={exit} /> : null}
-      <ArenaSheet persistent={persistent} expandRequest={expandRequest} active={focused && experience.immersive} overview={overviewModel && !queue?.queued && !queue?.awaitingField ? <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><View style={{ flex: 1 }}><FieldOverview hiddenIds={blocks.map(block => block.id)} lanes={overviewModel.lanes.filter(lane => !lane.ghost).map(lane => ({ ...lane, value: lane.values[2], initials: "" }))} unit={overviewModel.unit} positionOnly view={{ center: courseTarget?.value ?? overviewModel.lanes.find(lane => lane.you)?.values[2] ?? 0, span: 1 }} onNavigate={value => setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }))} /></View>{courseOptions}</View> : undefined}>
+      {persistent && selectedSport && selectedSport !== "sleep" ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}`} sport={selectedSport} track={track} persistent backgroundMode externalAthleteFocus={athleteFocus} onOptionsChange={setCourseOptions} presentationActive={experience.immersive} onExit={exit} /> : null}
+      {persistent && experience.immersive && <View style={{ position: "absolute", top: insets.top + 54, right: 16, zIndex: 20 }}>{courseOptions}</View>}
+      <ArenaSheet persistent={persistent} expandRequest={expandRequest} active={focused && experience.immersive} overview={persistent && !queue?.queued && !queue?.awaitingField ? <CompetitionTimelineControls /> : undefined}>
 <SectionStack divided={false}>
         {!persistent && <View style={{ gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><AppText role="display" accessibilityRole="header">Compete</AppText><FocusButton label="+ Register" secondary onPress={openRegistration} /></View><View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 }}><AppText role="body" secondary>{dateRange}</AppText><StatusBadge>{timeRemaining}</StatusBadge></View></View>}
         {standingsStale ? (
@@ -158,7 +156,7 @@ const f=useFocusStyles();
           </AppText>
         ) : null}
         {!persistent && <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />}
-        {persistent ? selectedSport && selectedSport !== "sleep" ? <CompetitionField sport={selectedSport} track={track} standingsOnly onFocusAthlete={id => { setCourseTarget(null); setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} /> : null : <>
+        {persistent ? selectedSport && selectedSport !== "sleep" ? <CompetitionField sport={selectedSport} track={track} standingsOnly onFocusAthlete={id => { setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} /> : null : <>
           <EventHome state={state} accountKey={accountKey} onEnter={experience.enter} onRecovery={() => setSelection({ account: accountKey, sport: "sleep" })} />
           {selectedSport === "sleep" && (queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event="sleep" now={now} onCancel={() => dispatch({ type: "opt-out-health", metric: "sleep" })} /> : <SleepPanel state={state} dispatch={dispatch} />)}
         </>}
@@ -249,6 +247,7 @@ const f=useFocusStyles();
         )}
       </FocusSheet>
     </SafeAreaView>
+    </CompetitionTimelineProvider>
   );
 }
 

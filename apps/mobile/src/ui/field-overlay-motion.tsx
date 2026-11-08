@@ -31,13 +31,14 @@ export function FieldOverlayGroup({ hidden, ...props }: GProps & { hidden: boole
   return <AnimatedGroup {...props} opacity={opacity} />;
 }
 
-export function SlidingFieldPanel({ label, collapsed, onToggle, overlaysHidden, style, surfaceStyle, children }: {
+export function SlidingFieldPanel({ label, collapsed, onToggle, overlaysHidden, style, surfaceStyle, onHeightChange, children }: {
   label: string;
   collapsed: boolean;
   onToggle: () => void;
   overlaysHidden: boolean;
   style: ViewStyle;
   surfaceStyle: ViewStyle;
+  onHeightChange?: (height: number) => void;
   children: ReactNode;
 }) {
   const reduced = useReducedMotion();
@@ -59,7 +60,7 @@ export function SlidingFieldPanel({ label, collapsed, onToggle, overlaysHidden, 
     <FieldOverlayView
       hidden={overlaysHidden || collapsed && width === 0}
       pointerEvents="box-none"
-      onLayout={event => setWidth(event.nativeEvent.layout.width)}
+      onLayout={event => { setWidth(event.nativeEvent.layout.width); onHeightChange?.(event.nativeEvent.layout.height); }}
       style={[style, { transform: [{ translateX }] }]}
     >
       <Pressable
