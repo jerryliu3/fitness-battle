@@ -72,7 +72,7 @@ function CompactRouteStrip({
                 style={[
                   s.routeNodeCircle,
                   isToday && s.routeNodeToday,
-                  isLogged && !isToday && [s.routeNodeLogged, { backgroundColor: activeColor }],
+                  isLogged && !isToday && { backgroundColor: activeColor },
                   !isLogged && !isToday && [s.routeNodeEmpty, { borderColor: trackColor }],
                 ]}
               >
@@ -586,9 +586,6 @@ const sThemes = createThemedStyles((c) => ({
     flexWrap: "wrap",
     gap: 8,
   },
-  headerLeft: {
-    gap: 1,
-  },
   restorePill: {
     backgroundColor: c.soft,
     borderWidth: 1,
@@ -766,7 +763,6 @@ const sThemes = createThemedStyles((c) => ({
   routeNodeToday: {
     backgroundColor: "#f48c72",
   },
-  routeNodeLogged: {},
   routeNodeEmpty: {
     backgroundColor: "transparent",
     borderWidth: 1.5,

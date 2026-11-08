@@ -8,7 +8,7 @@ import {
   type Activity,
 } from "@fitness-battle/shared";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LatestActivity } from "../../src/features/club-latest-activity";
@@ -29,22 +29,21 @@ export default function Home() {
   const router = useRouter();
   const { state, dispatch, accountKey } = useCompeteStore();
   const [removed, setRemoved] = useState<Activity | null>(null);
-  const [selectedActivities, setSelectedActivities] = useState<{
+  const [sheet, setSheet] = useState<{
     items: Activity[];
     title: string;
+    isTodaySuggestion?: boolean;
   } | null>(null);
-  const [expanded, setExpanded] = useState<"suggestion" | null>(null);
 
   useEffect(() => {
-    setSelectedActivities(null);
+    setSheet(null);
     setRemoved(null);
   }, [accountKey]);
 
   useFocusEffect(
     useCallback(
       () => () => {
-        setExpanded(null);
-        setSelectedActivities(null);
+        setSheet(null);
       },
       [],
     ),
@@ -114,9 +113,15 @@ export default function Home() {
             <HomeDeck
               accountKey={accountKey}
               state={state}
-              onOpenTodaySession={() => setExpanded("suggestion")}
+              onOpenTodaySession={() =>
+                setSheet({
+                  items: todayActivities,
+                  title: "Today",
+                  isTodaySuggestion: true,
+                })
+              }
               onOpenActivities={(items, title = "Your activity") =>
-                setSelectedActivities({ items, title })
+                setSheet({ items, title, isTodaySuggestion: false })
               }
             />
 
@@ -125,9 +130,10 @@ export default function Home() {
             <LatestActivity
               state={state}
               onOpen={(activity) =>
-                setSelectedActivities({
+                setSheet({
                   items: [activity],
                   title: "Your activity",
+                  isTodaySuggestion: false,
                 })
               }
             />
@@ -136,57 +142,37 @@ export default function Home() {
       </View>
 
       <FocusSheet
-        open={Boolean(selectedActivities)}
-        title={selectedActivities?.title ?? "Your activity"}
-        onClose={() => setSelectedActivities(null)}
+        open={Boolean(sheet)}
+        title={sheet?.title ?? "Your activity"}
+        onClose={() => setSheet(null)}
       >
-        {selectedActivities ? (
+        {sheet ? (
           <SessionStage
             state={state}
-            activities={selectedActivities.items}
+            activities={sheet.items}
+            suggestion={sheet.isTodaySuggestion ? route.suggestion : undefined}
+            actions={
+              sheet.isTodaySuggestion ? <HomeActivityActions /> : undefined
+            }
             onRemove={(id) => {
-              const target =
-                selectedActivities.items.find((a) => a.id === id) ?? null;
+              const target = sheet.items.find((a) => a.id === id) ?? null;
               setRemoved(target);
               dispatch({
                 type: "set-disposition",
                 activityId: id,
                 disposition: "excluded",
               });
-              if (selectedActivities.items.length <= 1) {
-                setSelectedActivities(null);
+              if (sheet.items.length <= 1) {
+                setSheet(null);
               } else {
-                setSelectedActivities({
-                  ...selectedActivities,
-                  items: selectedActivities.items.filter((a) => a.id !== id),
+                setSheet({
+                  ...sheet,
+                  items: sheet.items.filter((a) => a.id !== id),
                 });
               }
             }}
           />
         ) : null}
-      </FocusSheet>
-
-      <FocusSheet
-        open={expanded === "suggestion"}
-        title="Today"
-        onClose={() => setExpanded(null)}
-      >
-        <SessionStage
-          state={state}
-          activities={todayActivities}
-          suggestion={route.suggestion}
-          actions={<HomeActivityActions />}
-          onRemove={(activityId) => {
-            const target =
-              todayActivities.find((a) => a.id === activityId) ?? null;
-            setRemoved(target);
-            dispatch({
-              type: "set-disposition",
-              activityId,
-              disposition: "excluded",
-            });
-          }}
-        />
       </FocusSheet>
     </SafeAreaView>
   );

@@ -151,8 +151,8 @@ export function TodayScreen() {
         <SessionStage
           state={state}
           activities={detailActivities}
-          suggestion={route.suggestion}
-          actions={<ActivityActions />}
+          suggestion={session.kind === "today" ? route.suggestion : undefined}
+          actions={session.kind === "today" ? <ActivityActions /> : undefined}
           onRemove={(activityId) => {
             setRemoved(
               detailActivities.find((a) => a.id === activityId) ?? null,

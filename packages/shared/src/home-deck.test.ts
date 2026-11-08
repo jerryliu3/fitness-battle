@@ -69,8 +69,6 @@ describe("home-deck shared model", () => {
     expect(route.stops[2]?.volumeLabel).toBe("6.4 km");
     expect(route.headline).toBe("Good things are in motion.");
     expect(route.subtitle).toContain("2 sessions logged across 2 days");
-    expect(route.fullPath).toContain("C ");
-    expect(route.activePath).toContain("C ");
   });
 
   it("orders the 4 swipeable deck cards and updates session & insight copy when today is logged", () => {

@@ -9,11 +9,7 @@
   flex-wrap: wrap;
   gap: 8px;
 }
-.home-deck-header-left {
-  display: grid;
-  gap: 1px;
-}
-.home-deck-header-left h2 {
+.home-deck-header h2 {
   margin: 0;
 }
 .home-deck-restore-btn {

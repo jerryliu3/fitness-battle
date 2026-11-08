@@ -5,7 +5,6 @@ import { competitionTrack, sportById, type Activity, type CompeteState } from ".
 import { suggestionForState } from "./compete/suggestion";
 import { buildHealth7DayCorridorModel, homeHealthMetrics } from "./home-health";
 import { APP_TIMEZONE, dayKey, getZonedWeekday, shiftAppDay, weeklyPeriodBounds } from "./period";
-import { effortPointProgress, trainingBuckets } from "./training-view";
 import { portfolioWeekChart } from "./week-chart";
 
 export type HomeDeckCardId = "session" | "compete" | "route" | "insight";
@@ -100,8 +99,6 @@ export interface HomeRouteDayStop {
   day: string;
   weekdayShort: string;
   dateLabel: string;
-  x: number;
-  y: number;
   status: HomeRouteStopStatus;
   sessionCount: number;
   movingSec: number;
@@ -112,18 +109,10 @@ export interface HomeRouteDayStop {
 
 export interface HomeRouteWeekModel {
   weekNumber: number;
-  weekLabel: string;
-  todayBadge: string;
   headline: string;
   subtitle: string;
-  width: number;
-  height: number;
   todayIndex: number;
   stops: HomeRouteDayStop[];
-  fullPath: string;
-  activePath: string;
-  footerStatus: string;
-  footerHint: string;
 }
 
 export type HomeDeckCardAction =
@@ -141,7 +130,6 @@ export interface HomeDeckCard {
   routeWeek?: HomeRouteWeekModel;
 }
 
-const ROUTE_Y_WAVE = [68, 34, 72, 36, 70, 34, 58] as const;
 const WEEKDAY_SHORT = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
 const VALID_CARD_IDS: readonly HomeDeckCardId[] = ["session", "compete", "route", "insight"];
 
@@ -153,21 +141,6 @@ function easternWeekNumber(at: Date): number {
   utc.setUTCDate(utc.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
   return Math.max(1, Math.ceil(((utc.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7));
-}
-
-function buildSmoothHorizontalPath(points: readonly { x: number; y: number }[]): string {
-  if (points.length === 0) return "";
-  if (points.length === 1) return `M ${points[0]!.x.toFixed(1)} ${points[0]!.y.toFixed(1)}`;
-  const parts = [`M ${points[0]!.x.toFixed(1)} ${points[0]!.y.toFixed(1)}`];
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = points[i]!;
-    const p1 = points[i + 1]!;
-    const midX = (p0.x + p1.x) / 2;
-    parts.push(
-      `C ${midX.toFixed(1)} ${p0.y.toFixed(1)}, ${midX.toFixed(1)} ${p1.y.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`,
-    );
-  }
-  return parts.join(" ");
 }
 
 function formatDayVolume(activities: readonly Activity[], state: CompeteState): string | null {
@@ -191,7 +164,6 @@ export function buildHomeRouteWeek(
   const weekday = getZonedWeekday(now, APP_TIMEZONE);
   const todayIndex = Math.min(6, Math.max(0, weekday === 0 ? 6 : weekday - 1));
   const weekNumber = easternWeekNumber(now);
-  const suggestion = suggestionForState(state, now);
 
   const eligible = state.activities.filter(
     (a) =>
@@ -240,8 +212,6 @@ export function buildHomeRouteWeek(
         day: "numeric",
         timeZone: APP_TIMEZONE,
       }),
-      x: 28 + index * 44,
-      y: ROUTE_Y_WAVE[index]!,
       status,
       sessionCount,
       movingSec,
@@ -253,14 +223,6 @@ export function buildHomeRouteWeek(
 
   const activeDays = stops.filter((s) => s.sessionCount > 0).length;
   const totalSessions = stops.reduce((sum, s) => sum + s.sessionCount, 0);
-  const todayStop = stops[todayIndex]!;
-  const todayWeekdayName = now
-    .toLocaleDateString("en-US", { weekday: "long", timeZone: APP_TIMEZONE })
-    .toUpperCase();
-  const todayShortTitle = now.toLocaleDateString("en-US", {
-    weekday: "short",
-    timeZone: APP_TIMEZONE,
-  });
 
   const headline =
     totalSessions > 0 ? "Good things are in motion." : "Your week is taking shape.";
@@ -269,25 +231,12 @@ export function buildHomeRouteWeek(
       ? `${totalSessions} session${totalSessions === 1 ? "" : "s"} logged across ${activeDays} day${activeDays === 1 ? "" : "s"}. Here’s the path you’re building.`
       : "No sessions logged yet this week. Start today’s move to light up your path.";
 
-  const footerStatus =
-    todayStop.sessionCount > 0 && todayStop.volumeLabel
-      ? `${todayShortTitle} · ${todayStop.volumeLabel} logged`
-      : `${todayShortTitle} · ${suggestion.title} suggested`;
-
   return {
     weekNumber,
-    weekLabel: `WEEK ${weekNumber} · THE PATH SO FAR`,
-    todayBadge: `${todayWeekdayName} · TODAY`,
     headline,
     subtitle,
-    width: 320,
-    height: 116,
     todayIndex,
     stops,
-    fullPath: buildSmoothHorizontalPath(stops),
-    activePath: buildSmoothHorizontalPath(stops.slice(0, todayIndex + 1)),
-    footerStatus,
-    footerHint: "Tap a step to explore",
   };
 }
 
