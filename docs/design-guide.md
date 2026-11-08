@@ -944,3 +944,6 @@ Category rows show only their icon and title. Registration packages use a gold
 illustrated hero, tinted detail icons, and a metallic ticket with side cutouts;
 scoring explanations and the explicit entry commitment remain unchanged. Native
 AppIcon sport outlines and web sport icons consume the shared SVG artwork.
+
+Registration hero, detail-icon tiles, and entry-pass artwork reuse the selected
+event’s Explore artwork color. Gold remains the primary action color.
