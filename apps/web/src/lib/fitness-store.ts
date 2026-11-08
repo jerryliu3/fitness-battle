@@ -233,9 +233,9 @@ export async function persistSyncedActivities(
     (categories ?? []).map((row) => [row.slug as string, row.id as string]),
   );
 
-  const table = db.from("activities") as {
+  const table = db.from("activities") as unknown as {
     select?: (cols: string) => {
-      eq: (col: string, val: string) => Promise<{ data: Record<string, string | null>[] | null }>;
+      eq: (col: string, val: string) => PromiseLike<{ data: Record<string, string | null>[] | null }>;
     };
   };
   const existingByKey = new Map(
