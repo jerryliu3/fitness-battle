@@ -155,10 +155,9 @@ export function HomeDeck({
   );
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [dragOffset, setDragOffset] = useState(0);
-  const [exitingCard, setExitingCard] = useState<{
-    card: HomeDeckCard;
+  const [dismissing, setDismissing] = useState<{
+    id: HomeDeckCardId;
     direction: "left" | "right";
-    dragOffset: number;
   } | null>(null);
 
   useEffect(() => {
@@ -232,30 +231,32 @@ export function HomeDeck({
     (
       cardId: HomeDeckCardId,
       direction: "left" | "right" = "left",
-      currentDx = 0,
+      _currentDx = 0,
     ) => {
+      if (dismissing) return;
       const targetCard =
         visibleCards.find((c) => c.id === cardId) ?? activeCard;
       if (!targetCard) return;
       void playCue("light");
-      setDragOffset(0);
+      setDismissing({ id: cardId, direction });
       const nextDismissed = [...new Set([...dismissedIds, cardId])];
       const nextCount = Math.max(0, visibleCards.length - 1);
-      setActiveIndex((curr) => (nextCount > 0 ? curr % nextCount : 0));
-      setExitingCard({ card: targetCard, direction, dragOffset: currentDx });
-      persistDismissed(nextDismissed);
+
       setTimeout(() => {
-        setExitingCard(null);
-      }, 220);
+        setDragOffset(0);
+        setDismissing(null);
+        setActiveIndex((curr) => (nextCount > 0 ? curr % nextCount : 0));
+        persistDismissed(nextDismissed);
+      }, 280);
     },
-    [activeCard, dismissedIds, persistDismissed, visibleCards],
+    [activeCard, dismissedIds, dismissing, persistDismissed, visibleCards],
   );
 
   const resetDeck = useCallback(() => {
     void playCue("selection");
     setDragOffset(0);
     setActiveIndex(0);
-    setExitingCard(null);
+    setDismissing(null);
     persistDismissed([]);
   }, [persistDismissed]);
 
@@ -282,7 +283,7 @@ export function HomeDeck({
   };
 
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || dismissing) return;
     const target = event.target as HTMLElement | null;
     if (target?.closest("button, a")) return;
     suppressClickRef.current = false;
@@ -339,7 +340,7 @@ export function HomeDeck({
         ) : null}
       </div>
 
-      {!activeCard && !exitingCard ? (
+      {!activeCard && !dismissing ? (
         <div className="home-deck-caught-up">
           <AppText role="body" secondary>
             You’re all caught up.
@@ -348,7 +349,9 @@ export function HomeDeck({
       ) : (
         <div className="home-deck-wrapper">
           <div
-            className={`home-deck-stage${nextCard ? " has-back" : ""}`}
+            className={`home-deck-stage${nextCard ? " has-back" : ""}${
+              dismissing ? " is-dismissing" : ""
+            }`}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
@@ -388,9 +391,15 @@ export function HomeDeck({
             {activeCard && (
               <article
                 key={`top-${activeCard.id}`}
-                className={`home-deck-card depth-0 tone-${activeCard.tone}`}
+                className={`home-deck-card depth-0 tone-${activeCard.tone}${
+                  dismissing?.id === activeCard.id
+                    ? ` is-dismissing dismiss-${dismissing.direction}`
+                    : ""
+                }`}
                 style={
-                  dragOffset !== 0
+                  dismissing?.id === activeCard.id
+                    ? undefined
+                    : dragOffset !== 0
                     ? {
                         transform: `translateX(${dragOffset.toFixed(1)}px) rotate(${(
                           dragOffset * 0.018
@@ -406,22 +415,6 @@ export function HomeDeck({
                   onAction={() => handleCardAction(activeCard)}
                   onSelectStop={handleRouteStopSelect}
                 />
-              </article>
-            )}
-
-            {/* Exiting Card (Glides smoothly off-screen with zero snap-back) */}
-            {exitingCard && (
-              <article
-                key={`exit-${exitingCard.card.id}`}
-                aria-hidden="true"
-                className={`home-deck-card depth-exit exit-${exitingCard.direction} tone-${exitingCard.card.tone}`}
-                style={
-                  {
-                    "--exit-start-x": `${exitingCard.dragOffset}px`,
-                  } as React.CSSProperties
-                }
-              >
-                <DeckCardContent card={exitingCard.card} />
               </article>
             )}
           </div>

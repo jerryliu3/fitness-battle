@@ -101,6 +101,7 @@ describe("Web HomeDeck", () => {
     );
     await act(async () => {
       dismissBtn1.props.onClick();
+      await new Promise((r) => setTimeout(r, 320));
     });
     expect(text()).not.toContain("Reset ↺");
 
@@ -114,13 +115,9 @@ describe("Web HomeDeck", () => {
       );
       await act(async () => {
         dismissBtn.props.onClick();
+        await new Promise((r) => setTimeout(r, 320));
       });
     }
-
-    // Wait for smooth exit animation to complete
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 260));
-    });
 
     // Now all caught up: compact message and Reset button appear
     expect(text()).toContain("You’re all caught up.");

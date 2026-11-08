@@ -207,12 +207,9 @@ export function HomeDeck({
     () => memoryDismissed.get(storageKey) ?? [],
   );
   const [activeIndex, setActiveIndex] = useState(initialIndex ?? 0);
-  const [exitingCard, setExitingCard] = useState<{
-    card: HomeDeckCard;
-    animX: Animated.Value;
-    animOpacity: Animated.Value;
-  } | null>(null);
+  const [dismissingId, setDismissingId] = useState<HomeDeckCardId | null>(null);
   const dragX = useRef(new Animated.Value(0)).current;
+  const cardOpacity = useRef(new Animated.Value(1)).current;
   const swipingRef = useRef(false);
 
   useEffect(() => {
@@ -291,48 +288,42 @@ export function HomeDeck({
 
       if (reduceMotion) {
         dragX.setValue(0);
+        cardOpacity.setValue(1);
         setActiveIndex((curr) => (nextCount > 0 ? curr % nextCount : 0));
         persistDismissed(nextDismissed);
         return;
       }
 
       swipingRef.current = true;
-      const animX = new Animated.Value(currentDx);
-      const animOpacity = new Animated.Value(1);
+      setDismissingId(cardId);
+      dragX.setValue(currentDx);
 
-      // Reset dragX immediately for the incoming card
-      dragX.setValue(0);
-      setActiveIndex((curr) => (nextCount > 0 ? curr % nextCount : 0));
-
-      // Put card in exiting state and remove from visibleCards
-      setExitingCard({
-        card: targetCard,
-        animX,
-        animOpacity,
-      });
-      persistDismissed(nextDismissed);
-
-      // Animate smoothly off screen without snapping back
+      // Animate smoothly off screen continuing from currentDx with zero snap-back
       Animated.parallel([
-        Animated.timing(animX, {
+        Animated.timing(dragX, {
           toValue: direction === "left" ? -460 : 460,
-          duration: 220,
+          duration: 280,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
-        Animated.timing(animOpacity, {
+        Animated.timing(cardOpacity, {
           toValue: 0,
-          duration: 200,
+          duration: 240,
           easing: Easing.in(Easing.quad),
           useNativeDriver: true,
         }),
       ]).start(() => {
-        setExitingCard(null);
+        dragX.setValue(0);
+        cardOpacity.setValue(1);
+        setDismissingId(null);
+        setActiveIndex((curr) => (nextCount > 0 ? curr % nextCount : 0));
+        persistDismissed(nextDismissed);
         swipingRef.current = false;
       });
     },
     [
       activeCard,
+      cardOpacity,
       dismissedIds,
       dragX,
       persistDismissed,
@@ -344,11 +335,12 @@ export function HomeDeck({
   const resetDeck = useCallback(() => {
     void playCue("selection");
     dragX.setValue(0);
+    cardOpacity.setValue(1);
     setActiveIndex(0);
-    setExitingCard(null);
+    setDismissingId(null);
     swipingRef.current = false;
     persistDismissed([]);
-  }, [dragX, persistDismissed]);
+  }, [cardOpacity, dragX, persistDismissed]);
 
   const activeCardRef = useRef<HomeDeckCard | null>(activeCard);
   activeCardRef.current = activeCard;
@@ -437,7 +429,7 @@ export function HomeDeck({
         ) : null}
       </View>
 
-      {!activeCard && !exitingCard ? (
+      {!activeCard && !dismissingId ? (
         <View style={s.caughtUpRow}>
           <AppText role="body" secondary>
             You’re all caught up.
@@ -469,7 +461,7 @@ export function HomeDeck({
 
             {/* Depth 1 Card: FULLY RENDERED NEXT CARD (Immediately visible underneath top card) */}
             {nextCard && (
-              <View
+              <Animated.View
                 pointerEvents="none"
                 accessible={false}
                 style={[
@@ -478,11 +470,30 @@ export function HomeDeck({
                   {
                     backgroundColor: paletteForDeckTone(nextCard.tone, isDark).bg,
                     borderColor: paletteForDeckTone(nextCard.tone, isDark).border,
+                    transform: [
+                      {
+                        scaleX: dragX.interpolate({
+                          inputRange: [-240, 0, 240],
+                          outputRange: [1, 0.96, 1],
+                          extrapolate: "clamp",
+                        }),
+                      },
+                    ],
+                    bottom: dragX.interpolate({
+                      inputRange: [-240, 0, 240],
+                      outputRange: [0, -7, 0],
+                      extrapolate: "clamp",
+                    }),
+                    opacity: dragX.interpolate({
+                      inputRange: [-240, 0, 240],
+                      outputRange: [1, 0.95, 1],
+                      extrapolate: "clamp",
+                    }),
                   },
                 ]}
               >
                 <DeckCardContent card={nextCard} isDark={isDark} />
-              </View>
+              </Animated.View>
             )}
 
             {/* Top Card: Active Animated Swipable Card */}
@@ -490,19 +501,21 @@ export function HomeDeck({
               const pal = paletteForDeckTone(activeCard.tone, isDark);
               const rotate = dragX.interpolate({
                 inputRange: [-240, 0, 240],
-                outputRange: ["-4deg", "0deg", "4deg"],
+                outputRange: ["-5deg", "0deg", "5deg"],
                 extrapolate: "clamp",
               });
 
               return (
                 <Animated.View
                   {...panResponder.panHandlers}
+                  pointerEvents={dismissingId ? "none" : "auto"}
                   style={[
                     s.deckCard,
                     s.cardTop,
                     {
                       backgroundColor: pal.bg,
                       borderColor: pal.border,
+                      opacity: cardOpacity,
                       transform: [{ translateX: dragX }, { rotate }],
                     },
                   ]}
@@ -514,34 +527,6 @@ export function HomeDeck({
                     onAction={() => handleCardAction(activeCard)}
                     onSelectStop={handleRouteStopPress}
                   />
-                </Animated.View>
-              );
-            })()}
-
-            {/* Exiting Card (Glides smoothly off-screen with zero snap-back) */}
-            {exitingCard && (() => {
-              const pal = paletteForDeckTone(exitingCard.card.tone, isDark);
-              const rotate = exitingCard.animX.interpolate({
-                inputRange: [-240, 0, 240],
-                outputRange: ["-6deg", "0deg", "6deg"],
-                extrapolate: "clamp",
-              });
-              return (
-                <Animated.View
-                  pointerEvents="none"
-                  accessible={false}
-                  style={[
-                    s.deckCard,
-                    s.cardExiting,
-                    {
-                      backgroundColor: pal.bg,
-                      borderColor: pal.border,
-                      opacity: exitingCard.animOpacity,
-                      transform: [{ translateX: exitingCard.animX }, { rotate }],
-                    },
-                  ]}
-                >
-                  <DeckCardContent card={exitingCard.card} isDark={isDark} />
                 </Animated.View>
               );
             })()}
@@ -768,12 +753,5 @@ const sThemes = createThemedStyles((c) => ({
   caughtUpRow: {
     paddingVertical: 14,
     paddingHorizontal: 2,
-  },
-  cardExiting: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
   },
 }));
