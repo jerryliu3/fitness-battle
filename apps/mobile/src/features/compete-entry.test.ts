@@ -45,6 +45,11 @@ it("opens the chosen sport package without registering until entry is claimed", 
   await act(async () => { entry.props.onClaim(); entry.props.onClaim(); });
   expect(mock.dispatch.mock.calls.map(([action]) => action.type)).toEqual(["set-primary", "opt-in"]);
   expect(mock.dispatch).toHaveBeenLastCalledWith(expect.objectContaining({ sport: "walking", crewBoard: null, accountId: "alice" }));
+  expect(renderer.root.findByType("FocusSheet" as never).props.open).toBe(true);
+  await act(async () => entry.props.onView());
+  expect(mock.enter).not.toHaveBeenCalled();
+  await act(async () => renderer.root.findByType("FocusSheet" as never).props.onClosed());
+  expect(mock.enter).toHaveBeenCalledWith("alice", "walking");
 });
 it("shows queued walking details and cancellation in the foreground sheet even when the renderer has no field", async () => {
   mock.state = reduceCompete(mock.state!, { type: "opt-in", sport: "walking" });

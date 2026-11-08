@@ -1013,3 +1013,14 @@ Ties do not claim an outright overtake. Flip faces swap edge-on after committing
 the incoming layout, respecting reduced motion. The overlay title is always
 “Current Leaders” with the shared label typography. Product and debug builds
 use the same user-facing copy, preserving provenance internally.
+
+### Registration ticket — November 8
+
+Registration leads with one entry ticket and its claim action. Claiming retains
+that screen, flips the ticket to “You’re on the start list”, then lands a stamp
+with the event icon, name, wave dates and year. The reverse has a live countdown
+and an explicit View upcoming race action; dates derive from the actual enrollment
+once registered, including server-rebased starts. Keep the ticket composition
+consistent across events; its art and stamp identify the event/week. Reduced
+Motion reveals the final state immediately. Renewal and end-time information
+live in expandable Schedule & renewal details, rather than below the CTA.

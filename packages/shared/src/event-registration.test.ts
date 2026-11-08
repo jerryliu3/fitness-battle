@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { freshState } from "./compete/engine";
+import { freshState, reduceCompete } from "./compete/engine";
 import { eventRegistration } from "./event-registration";
 
 describe("event registration package", () => {
@@ -20,4 +20,13 @@ describe("event registration package", () => {
     expect(eventRegistration(state, "walking", now).details[3]?.summary).toBe("Open");
     expect(eventRegistration(state, "sleep", now).details[0]?.detail).toContain("Missing nights reduce");
   });
+});
+
+it("uses the registered wave for the ticket stamp after the next daily cutoff", () => {
+  const joined = new Date("2026-11-08T12:00:00Z");
+  const state = reduceCompete(freshState(joined), { type: "opt-in", sport: "running", now: joined.toISOString() });
+  const detail = eventRegistration(state, "running", new Date("2026-11-09T12:00:00Z"));
+  expect(detail.start).toBe(state.enrollments[0]!.waveStart);
+  expect(detail.dateRange).toBe("Nov 9 – Nov 15");
+  expect(detail.stampYear).toBe("2026");
 });

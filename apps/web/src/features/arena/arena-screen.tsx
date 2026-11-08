@@ -37,7 +37,7 @@ function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
 }
 
 export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean; onExit?: () => void }) {
-  const { state, dispatch, loadStatus, standingsStale, refresh } = useCompete();
+  const { state, dispatch, loadStatus, standingsStale, refresh, saveError } = useCompete();
   const { user } = useAuth();
   const router = useRouter();
   const requestedEvent=useSearchParams().get("event");
@@ -126,7 +126,6 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
       }
       committed = true;
       setSelection({ account: joiningAccount, sport: event });
-      setRegister(false);
       void playCue("success");
     } catch (error) {
       if (currentAccount.current === joiningAccount && joinFlight.current === flight) setJoinError(error instanceof Error ? error.message : "Could not claim your entry pass.");
@@ -190,10 +189,10 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
 
       </div>
       </div>
-      <Sheet open={register} title={sport ? eventRegistration(state, sport, now).title : "Choose an event"} body={sport ? eventRegistration(state, sport, now).description : "Review the event details before claiming an entry pass."} onClose={() => { if (!joinBusy) setRegister(false); }} scrollResetKey={sport ?? "choose"}>
+      <Sheet open={register} title={sport ? eventRegistration(state, sport, now).title : "Choose an event"} body={sport ? "" : "Pick your next start line."} onClose={() => { if (!joinBusy) setRegister(false); }} scrollResetKey={sport ?? "choose"}>
         {sport ? <>
-          {sport !== "sleep" && <div className="compete-section-heading" style={{ marginBottom: 20 }}><AppText role="label">Compete with your crew</AppText><button type="button" role="switch" aria-label="Compete with your crew" aria-checked={competeWithCrew} disabled={joinBusy} className={competeWithCrew ? "fb-switch on" : "fb-switch"} onClick={() => setCompeteWithCrew(!competeWithCrew)}><span className="fb-switch-knob" /></button></div>}
-          <EventRegistration key={`${account}:${sport}`} state={state} event={sport} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} busy={joinBusy} error={joinError} onClaim={() => void claimEntry()} />
+          {sport !== "sleep" && <div className="compete-section-heading" style={{ marginBottom: 20 }}><AppText role="label">Compete with your crew</AppText><button type="button" role="switch" aria-label="Compete with your crew" aria-checked={competeWithCrew} disabled={joinBusy || active.some(r => r.sport === sport)} className={competeWithCrew ? "fb-switch on" : "fb-switch"} onClick={() => setCompeteWithCrew(!competeWithCrew)}><span className="fb-switch-knob" /></button></div>}
+          <EventRegistration key={`${account}:${sport}`} state={state} event={sport} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} busy={joinBusy} error={joinError || saveError || ""} onClaim={() => void claimEntry()} onView={() => { setRegister(false); setSelection({ account, sport }); if (sport !== "sleep") setImmersiveAccount(account); }} />
         </> : <div className="focus-sport-options" aria-label="Sport or category">
           {[...SPORTS.map(item => ({ id: item.id, name: item.name })), { id: "sleep" as const, name: "Sleep & recovery" }].map(item => {
             const registered = item.id === "sleep" ? sleepOptedIn : active.some(r => r.sport === item.id);

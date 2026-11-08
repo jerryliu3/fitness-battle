@@ -40,6 +40,7 @@ const f=useFocusStyles();
     standingsStale,
     refresh,
     canWrite,
+    saveError,
   } = useCompeteStore();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
@@ -57,8 +58,9 @@ const f=useFocusStyles();
   const [selection,setSelection]=useState<{account:string;sport:SportId|"sleep"}|null>(null);
   useEffect(()=>{if(requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:accountKey,sport:requestedEvent as SportId});},[requestedEvent,accountKey]);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
-  useEffect(() => { setRegister(false); setSport(null); }, [accountKey]);
   const joinFlight = useRef(false);
+  const pendingEntry = useRef<CompeteEvent | null>(null);
+  useEffect(() => { setRegister(false); setSport(null); pendingEntry.current = null; }, [accountKey]);
   const [, updateClock] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => updateClock(value => value + 1), 30_000);
@@ -105,7 +107,6 @@ const f=useFocusStyles();
       dispatch({ type: "opt-in", sport, crewBoard: null, accountId: user.id });
     }
     setSelection({ account: accountKey, sport });
-    setRegister(false);
   }
 
 
@@ -137,8 +138,13 @@ const f=useFocusStyles();
         {!persistent && <CompeteResults state={state} onHistory={() => router.push("/progress-history")} onRankings={() => router.push("/benchmarks")} />}
       </SectionStack>
 </ArenaSheet>
-      <FocusSheet open={register} title={sport ? eventRegistration(state, sport, now).title : "Choose an event"} onClose={() => setRegister(false)}>
-        {sport ? <EventRegistration key={`${accountKey}:${sport}`} state={state} event={sport} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} onClaim={claimEntry} /> : <View style={{ gap: 10 }}>
+      <FocusSheet open={register} title={sport ? eventRegistration(state, sport, now).title : "Choose an event"} onClose={() => setRegister(false)} onClosed={() => {
+        const event = pendingEntry.current;
+        pendingEntry.current = null;
+        if (event === "sleep") setSelection({ account: accountKey, sport: event });
+        else if (event) experience.enter(accountKey, event);
+      }}>
+        {sport ? <EventRegistration key={`${accountKey}:${sport}`} state={state} event={sport} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} error={saveError ?? undefined} onClaim={claimEntry} onView={() => { pendingEntry.current = sport; setRegister(false); }} /> : <View style={{ gap: 10 }}>
           {[...SPORTS.map(item => ({ id: item.id, name: item.name })), { id: "sleep" as const, name: "Sleep & recovery" }].map(item => {
             const registered = item.id === "sleep" ? sleepOptedIn : active.some(r => r.sport === item.id);
             return <Pressable key={item.id} accessibilityRole="button" disabled={registered} accessibilityLabel={`${item.name}, ${registered ? "already registered" : "view event details"}`} onPress={() => setSport(item.id)} style={[f.chip, { opacity: registered ? 0.5 : 1 }]}><AppText role="label">{item.name}</AppText><AppText role="caption" secondary>{registered ? "Already registered" : "View event details →"}</AppText></Pressable>;

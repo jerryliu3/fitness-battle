@@ -1,12 +1,20 @@
 import { APP_TIMEZONE, weeklyCompetitionLastDay } from "./period";
 import { nextDailyWaveWindowAt } from "./matching/waves";
-import { waveTimeLabel } from "./compete/participation";
+import { competitionQueue, waveTimeLabel } from "./compete/participation";
 import { rankForElo } from "./compete/ranks";
 import { ELO_UNRANKED, competitionTrack, competitionTrackLabel, sportById, type CompeteState } from "./compete/sports";
 import type { CompeteEvent } from "./compete-home";
 
+export function waveCountdown(start: string, now: number) {
+  const seconds = Math.max(0, Math.ceil((Date.parse(start) - now) / 1000));
+  return [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60]
+    .map(value => String(value).padStart(2, "0")).join(":");
+}
+
 export function eventRegistration(state: CompeteState, event: CompeteEvent, now: Date) {
-  const window = nextDailyWaveWindowAt(now);
+  const queue = competitionQueue(state, event, now);
+  const next = nextDailyWaveWindowAt(now);
+  const window = queue ? { waveStart: new Date(queue.start), weekEnd: new Date(queue.end) } : next;
   const sleep = event === "sleep";
   const name = sleep ? "Sleep" : sportById(event).name;
   const verified = !sleep && competitionTrack(event) === "verified";
@@ -18,6 +26,9 @@ export function eventRegistration(state: CompeteState, event: CompeteEvent, now:
   const dateRange = firstDay === lastDay ? firstDay : `${firstDay} – ${lastDay}`;
   return {
     name, title: `Weekly ${name} Meet`, dateRange,
+    start: window.waveStart.toISOString(),
+    stampYear: window.waveStart.toLocaleDateString("en-US", { timeZone: APP_TIMEZONE, year: "numeric" }),
+    headline: sleep ? "Rest up. Rise up." : event === "strength" ? "Make every rep matter." : "Your next start line.",
     starts: waveTimeLabel(window.waveStart), ends: waveTimeLabel(window.weekEnd),
     description: sleep ? "Make rest part of your competition. Your counted sleep nights build a score from sleep quality and consistency." : event === "strength" ? "Build your week through strength training. Counted session time and recorded heart rate contribute effort points." : `Build your total ${name.toLowerCase()} distance throughout the wave and climb your matched field.`,
     details: [
