@@ -304,6 +304,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             if (isCompeteState(body.state)) {
               stateRef.current = body.state;
               setState(body.state);
+              writeLocal(accountId, body.state, body.updatedAt);
             }
             removeStorageItem(deviceOnlyKey(accountId));
             unsavedRef.current = false; unitsUnsavedRef.current = false;

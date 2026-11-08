@@ -121,3 +121,46 @@ it("normalizes sample generation to one instant for a clearly marked preview", (
   expect(plan.activities[0]!.startedAt).toBe(plan.immediate.now);
   expect(plan.deferred).toBeNull();
 });
+
+it("treats equivalent ISO timestamps (+00:00 vs .000Z) as unchanged", () => {
+  const state = {
+    ...freshState(now),
+    activities: [activity("hk-1", "2026-10-22T12:00:00.000Z", { source: "apple_health" })],
+  };
+  const result = planSyncReview(
+    {
+      type: "apply-sync",
+      provider: "apple_health",
+      activities: [activity("hk-1", "2026-10-22T12:00:00+00:00", { source: "apple_health" })],
+      now: now.toISOString(),
+    },
+    state,
+  );
+  expect(result.activities).toEqual([]);
+  expect(result.deferred).toBeNull();
+});
+
+it("deduplicates sameWorkout sessions in incoming syncs and against known workouts", () => {
+  const stateWithKnown = {
+    ...freshState(now),
+    activities: [activity("hk-known", "2026-10-20T12:00:00Z", { source: "apple_health" })],
+  };
+  const plan = planSyncReview(
+    {
+      type: "apply-sync",
+      provider: "apple_health",
+      activities: [
+        activity("hk-known-dup", "2026-10-20T12:00:30Z", { source: "apple_health", distanceM: 6050 }),
+        activity("hk-new-1", "2026-10-22T12:00:00Z", { source: "apple_health" }),
+        activity("hk-new-2", "2026-10-22T12:00:15Z", { source: "apple_health", distanceM: 6020 }),
+      ],
+      now: now.toISOString(),
+    },
+    stateWithKnown,
+  );
+  expect(plan.activities.map((a) => a.id)).toEqual(["hk-new-1"]);
+  expect(plan.deferred?.activities?.map((a) => a.id)).toEqual(["hk-new-1"]);
+  const immediateDup = plan.immediate.activities?.find((a) => a.id === "hk-new-2");
+  expect(immediateDup?.disposition).toBe("excluded");
+  expect(immediateDup?.verified).toBe(false);
+});

@@ -1,5 +1,12 @@
 import { dayKey } from "./period";
-import { countsOnTrack } from "./compete/ledger";
+import {
+  countsOnTrack,
+  dispositionOf,
+  isSampleActivity,
+  prefer,
+  provenanceOf,
+  sameWorkout,
+} from "./compete/ledger";
 import { competeNow, reduceCompete, type Action } from "./compete/engine";
 import type { Activity, CompeteState } from "./compete/sports";
 /** Brief beat before applying sync review so the confirm affordance can show progress. */
@@ -13,13 +20,13 @@ export interface SyncReviewReceipt {
 }
 const fingerprint = (a: Activity) =>
   JSON.stringify([
-    a.startedAt,
+    Date.parse(a.startedAt),
     a.sport,
-    a.distanceM,
-    a.movingSec,
+    Math.round(a.distanceM * 100),
+    Math.round(a.movingSec),
     a.verified,
-    a.provenance,
-    a.disposition,
+    provenanceOf(a),
+    dispositionOf(a),
   ]);
 export function changedSyncActivities(
   incoming: Activity[],
@@ -27,16 +34,44 @@ export function changedSyncActivities(
   now: Date,
 ) {
   const previous = new Map(known.map((a) => [a.id, a]));
-  return [...new Map(incoming.map((a) => [a.id, a])).values()].filter((a) => {
-    const at = Date.parse(a.startedAt),
-      old = previous.get(a.id);
-    return (
-      Number.isFinite(at) &&
-      at <= now.getTime() &&
-      (!old || fingerprint(old) !== fingerprint(a)) &&
-      old?.disposition !== "excluded"
+  const activeKnown = known.filter(
+    (a) => !isSampleActivity(a) && dispositionOf(a) !== "excluded",
+  );
+  const candidates = [...new Map(incoming.map((a) => [a.id, a])).values()].filter(
+    (a) => {
+      const at = Date.parse(a.startedAt),
+        old = previous.get(a.id);
+      if (
+        !Number.isFinite(at) ||
+        at > now.getTime() ||
+        (old && fingerprint(old) === fingerprint(a)) ||
+        old?.disposition === "excluded"
+      ) {
+        return false;
+      }
+      if (
+        !old &&
+        !isSampleActivity(a) &&
+        activeKnown.some((k) => sameWorkout(k, a) && prefer(k, a).id === k.id)
+      ) {
+        return false;
+      }
+      return true;
+    },
+  );
+  const deduped: Activity[] = [];
+  for (const a of candidates) {
+    if (isSampleActivity(a)) {
+      deduped.push(a);
+      continue;
+    }
+    const twinIdx = deduped.findIndex(
+      (item) => !isSampleActivity(item) && sameWorkout(item, a),
     );
-  });
+    if (twinIdx < 0) deduped.push(a);
+    else deduped[twinIdx] = prefer(deduped[twinIdx]!, a);
+  }
+  return deduped;
 }
 /** Current-day convenience for sample previews; real sync reviews every changed activity. */
 export function changedTodaySync(incoming: Activity[], known: Activity[], now: Date) {
@@ -81,7 +116,21 @@ export function planSyncReview(action: Action, state: CompeteState) {
   return {
     immediate: {
       ...immediate,
-      activities: incoming.filter((a) => !held.has(a.id)),
+      activities: incoming
+        .filter((a) => !held.has(a.id))
+        .map((a) => {
+          if (isSampleActivity(a) || dispositionOf(a) === "excluded") return a;
+          const winner = activities.find(
+            (w) => !isSampleActivity(w) && sameWorkout(w, a),
+          );
+          if (!winner) return a;
+          return {
+            ...a,
+            disposition: "excluded" as const,
+            verified: false,
+            dispositionReason: `Already counted from ${provenanceOf(winner)} ${winner.source}.`,
+          };
+        }),
     },
     deferred: { ...action, activities, readiness: [], sleepNights: [] },
     activities,

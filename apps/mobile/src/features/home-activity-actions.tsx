@@ -83,6 +83,12 @@ export function HomeActivityActions({
           ) {
             const auth = {
               localOnly: offlineMode,
+              lastSyncAt:
+                state!.activities
+                  .filter((a) => a.source === link.provider)
+                  .map((a) => a.startedAt)
+                  .sort()
+                  .at(-1) ?? null,
               getAccessToken: async () => ({
                 token: accessToken ?? undefined,
                 userId: id,

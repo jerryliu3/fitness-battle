@@ -98,7 +98,7 @@ export function sameWorkout(left: Activity, right: Activity): boolean {
   return distanceGap <= tolerance;
 }
 
-function prefer(left: Activity, right: Activity): Activity {
+export function prefer(left: Activity, right: Activity): Activity {
   const leftRank = PRECEDENCE[provenanceOf(left)];
   const rightRank = PRECEDENCE[provenanceOf(right)];
   if (leftRank !== rightRank) return leftRank > rightRank ? left : right;
@@ -135,8 +135,14 @@ export function mergeActivities(
         ? normalizeSampleActivity(activity)
         : {
             ...activity,
-            disposition: dispositionOf(twin),
-            dispositionReason: twin.dispositionReason,
+            disposition:
+              activity.disposition === "excluded"
+                ? "excluded"
+                : dispositionOf(twin),
+            dispositionReason:
+              activity.disposition === "excluded"
+                ? (activity.dispositionReason ?? twin.dispositionReason)
+                : twin.dispositionReason,
           };
       continue;
     }

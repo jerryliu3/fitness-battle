@@ -138,4 +138,73 @@ describe("syncHealthConnect", () => {
       }),
     );
   });
+
+  it("uses incremental cursor and deduplicates duplicate Health Connect sessions", async () => {
+    const store = new Map<string, string>();
+    const cursorStore = {
+      getItem: vi.fn(async (key: string) => store.get(key) ?? null),
+      setItem: vi.fn(async (key: string, val: string) => {
+        store.set(key, val);
+      }),
+    };
+    const health = mockHealthModule();
+    health.readRecords = vi.fn(async (type: string) => {
+      if (type === "ExerciseSession") {
+        return {
+          records: [
+            {
+              metadata: { id: "hc-1" },
+              startTime: "2026-10-01T12:00:00.000Z",
+              endTime: "2026-10-01T12:30:00.000Z",
+              title: "Run",
+              exerciseType: 56,
+            },
+            {
+              metadata: { id: "hc-2" },
+              startTime: "2026-10-01T12:00:10.000Z",
+              endTime: "2026-10-01T12:30:10.000Z",
+              title: "Run",
+              exerciseType: 56,
+            },
+          ],
+        };
+      }
+      return {
+        records: [
+          {
+            startTime: "2026-10-01T12:05:00.000Z",
+            distance: { inMeters: 5000 },
+          },
+        ],
+      };
+    });
+    const fetchFn = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({}),
+    })) as unknown as typeof fetch;
+    const recentSync = new Date(Date.now() - 2 * 86_400_000).toISOString();
+    const result = await syncHealthConnect(
+      createHealthConnectDeps({
+        platform: "android",
+        fetchFn,
+        lastSyncAt: recentSync,
+        cursorStore,
+        getAccessToken: async () => ({ token: "live-token", userId: "user-2" }),
+        healthModule: health,
+      }),
+    );
+    expect(result.ok).toBe(true);
+    expect(result.count).toBe(1);
+    expect(result.activities?.map((a) => a.externalId)).toEqual(["hc-1"]);
+    const rangeArg = (health.readRecords as ReturnType<typeof vi.fn>).mock.calls[0]?.[1] as {
+      timeRangeFilter: { startTime: string };
+    };
+    expect(Date.parse(rangeArg.timeRangeFilter.startTime)).toBeGreaterThan(
+      Date.now() - 5 * 86_400_000,
+    );
+    expect(cursorStore.setItem).toHaveBeenCalledWith(
+      "device-sync-cursor:google_health:user-2",
+      expect.any(String),
+    );
+  });
 });
