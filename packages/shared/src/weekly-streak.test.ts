@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { weeklyActivityStreak } from "./weekly-streak";
+import { hasCountedActivityToday, weeklyActivityStreak } from "./weekly-streak";
 import type { Activity } from "./compete/sports";
 const row = (startedAt: string, extra: Partial<Activity> = {}): Activity => ({ id: startedAt, sport: "running", startedAt, movingSec: 600, distanceM: 1000, avgHr: null, verified: false, source: "manual", provenance: "manual", disposition: "counted", ...extra });
 it("counts active Eastern weeks across DST and ignores duplicate sessions", () => {
@@ -14,4 +14,11 @@ it("dims the still-completable week and breaks after a missed full week", () => 
 it("ignores future, excluded, sample, pending and zero-volume sessions", () => {
   const rows = [row("2026-10-24T12:00:00Z"), row("2026-10-20T12:00:00Z", { disposition: "excluded" }), row("2026-10-20T12:00:00Z", { provenance: "demo" }), row("2026-10-20T12:00:00Z", { disposition: "pending" }), row("2026-10-20T12:00:00Z", { movingSec: 0, distanceM: 0 })];
   expect(weeklyActivityStreak(rows, new Date("2026-10-23T12:00:00Z"))).toEqual({ count: 0, active: false });
+});
+
+it("fills the daily flame only for counted activity on the current Eastern day", () => {
+  const now = new Date("2026-11-08T17:00:00Z");
+  expect(hasCountedActivityToday([row("2026-11-08T04:59:59Z")], now)).toBe(false);
+  expect(hasCountedActivityToday([row("2026-11-08T05:00:00Z")], now)).toBe(true);
+  expect(hasCountedActivityToday([row("2026-11-08T18:00:00Z"), row("2026-11-08T06:00:00Z", { provenance: "demo" }), row("2026-11-08T07:00:00Z", { disposition: "pending" })], now)).toBe(false);
 });

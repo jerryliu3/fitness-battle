@@ -8,10 +8,9 @@ import { FieldScreen } from "@/features/field/field-screen";
 import { TodayScreen } from "@/features/today/today-screen";
 import { AthletePage, ProgressPage } from "@/features/you/you-route";
 import {
-  weeklyActivityStreak, competeNow,
-  PERSON_ICON_PATH,
+  hasCountedActivityToday, weeklyActivityStreak, competeNow,
+  APP_ICON_PATHS,
   SHELL_TABS,
-  SHELL_TAB_ICONS,
   isShellTabId,
   shellTabFromPath,
   stripWebProductPrefix,
@@ -67,7 +66,9 @@ export function PhoneShell({
     loadStatus,
     retryLoad,
   } = useCompete();
-  const streak = useMemo(() => state ? weeklyActivityStreak(state.activities, competeNow(state)) : null, [state]);
+  const [clock, setClock] = useState(0);
+  useEffect(() => { const timer = setInterval(() => setClock(value => value + 1), 60_000); return () => clearInterval(timer); }, []);
+  const streak = useMemo(() => state ? ({ ...weeklyActivityStreak(state.activities, competeNow(state)), activeToday: hasCountedActivityToday(state.activities, competeNow(state)) }) : null, [state, clock]);
   const tab = shellTabFromPath(path);
   const onAthlete = productPath.startsWith("/athlete");
   const progressDetail =
@@ -180,7 +181,7 @@ export function PhoneShell({
       <div className="phone-shell">
         {!onAthlete && productPath !== "/week" && !progressDetail && <header className="focus-shell-header">
           <div className="club-header-effort"><EffortRail compact /></div>
-          {streak && <span className={`club-week-streak${streak.active ? " is-active" : ""}`} aria-label={`${streak.count} week activity streak${streak.active ? "" : ", inactive this week"}`}><svg width="18" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2c1 6 7 7 7 13a8 8 0 0 1-16 0c0-3 2-6 5-8-1 4 0 5 2 6 2-3 3-6 2-11Z" fill="currentColor" /></svg><b>{streak.count}</b></span>}
+          {streak && <span className={`club-week-streak${streak.activeToday ? " is-active" : ""}`} aria-label={`${streak.count} week activity streak${streak.activeToday ? ", active today" : ", inactive today"}`}><svg width="18" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d={APP_ICON_PATHS[streak.activeToday ? "flameFilled" : "flame"]} fill="currentColor" /></svg><b>{streak.count}</b></span>}
           {process.env.NODE_ENV === "development" && <DebugEventMenu activeTab={active} onNavigate={navigateDebugTarget} />}
           <Link
             href={webProductPath("/athlete")}
@@ -189,7 +190,7 @@ export function PhoneShell({
             aria-current={onAthlete ? "page" : undefined}
           >
             <UserAvatar src={state?.avatarUrl} name={state?.name ?? "Athlete"} size={34} fallback={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ color: "var(--muted)" }}>
-                <path d={PERSON_ICON_PATH} />
+                <path d={APP_ICON_PATHS.person} fill="currentColor" stroke="none" />
               </svg>} />
           </Link>
         </header>}
@@ -253,9 +254,9 @@ export function PhoneShell({
                         style={{ position: "relative", zIndex: 1 }}
                       >
                         <path
-                          d={SHELL_TAB_ICONS[tab.id]}
-                          fill="none"
-                          stroke="currentColor"
+                          d={APP_ICON_PATHS[({ today: "home", arena: "compete", you: "progress", field: "crew" } as const)[tab.id]]}
+                          fill="currentColor"
+                          stroke="none"
                           strokeWidth="1.6"
                           strokeLinecap="round"
                           strokeLinejoin="round"

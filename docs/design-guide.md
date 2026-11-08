@@ -877,8 +877,8 @@ Racer selection travels along course distance, facing race-forward even when rev
 reduced motion uses an immediate position change.
 
 Compete home restores the shared competition date range beneath its title;
-event cards omit repeated days-left labels. Snapshot previews use a 1:1 aspect
-ratio at the existing card width. Utility map credits use the compact shared nav text recipe
+event cards omit repeated days-left labels. Snapshot previews use a landscape 1.6:1 aspect
+ratio inside the horizontal event carousel. Utility map credits use the compact shared nav text recipe
 with a feedback info glyph carrying its full accessible label. Live maps retain
 the standard SDK wordmark and align a 14-point info control beside it; the info
 sheet includes source links, feedback and the telemetry privacy choice.
@@ -912,3 +912,61 @@ the retained map and sheet standings. Course seeking changes the camera only
 and stays bounded by the leader at the selected time. Event snapshots stay live.
 
 The immersive timeline always shows playback speed in a fixed 48px target, with tabular numerals. Its caption contains the date and time to minute precision, including at the live endpoint; omit local/simulated source labels. The course rail shares the leaders panel’s dark translucent surface and begins 12px below its measured bottom. The layers button has a visible dark translucent 44px target.
+
+### Compete discovery layout — November 8, 2026
+
+Native mobile is the design target; web follows the same composition. Compete
+opens with a gold wreath, the existing event date and remaining-time badge.
+Your events is a snapping horizontal carousel with landscape static course
+snapshots, place, last-update/upcoming status and pagination dots. Last update and the event activity feed read the same membership-scoped replay
+ledger; absent data remains Unavailable. The home cards omit a separate simulation label;
+blocked athletes' events are omitted without changing field ranks.
+
+Compact horizontal gold Crew event banners follow, linking to the existing Crew hub for
+membership and shared individual fields. They do not claim limited availability,
+relay rules or team-versus-team scoring. Explore follows in Distance, Time and
+Recovery horizontal rows: neutral bordered tiles carry one outline icon, one title, and filled sport artwork
+in the lower-right corner (track curves, a walking hill, strength bars and sleep
+waves). All supported events remain visible in discovery for visual testing. Only supported events appear. Results & rankings finishes the page with
+compact gold and silver metallic surfaces, recorded placements, the existing
+rank tier, and history and ranking destinations; missing results have an honest first-finish state.
+
+Compete discovery currently keeps all supported event tiles visible for visual
+testing. Registered tiles open their existing event; unregistered tiles open
+that event's entry package. Choosing a sport never registers it; Claim entry pass
+is the explicit commitment. The general Register control still opens an event
+chooser before the same package. Queued event details and Cancel registration
+live in the foreground competition sheet, independently of map preparation;
+Back and successful cancellation return to the event home.
+
+Explore sport cards retain a fixed 158-point width even for a single event.
+Category rows show only their icon and title. Registration packages use a gold
+illustrated hero, tinted detail icons, and a metallic ticket with side cutouts;
+scoring explanations and the explicit entry commitment remain unchanged. Native
+AppIcon sport outlines and web sport icons consume the shared SVG artwork.
+
+Registration hero, detail-icon tiles, and entry-pass artwork reuse the selected
+event’s Explore artwork color. Gold remains the primary action color.
+
+Compete discovery is titled Event registration and replaces the header Register
+action. Category artwork uses green for Distance, blue for Time, and purple for
+Recovery, including entry packages. Registered event previews are square with a
+compact See race action. Last-update text uses the shared support recipe, actions
+and Crew event use label, all in Manrope. A slow pulsing live dot accompanies
+last update, pauses when inactive, and stays still with Reduced Motion.
+
+Crew banners use a gold Special event badge with a vector star. Registration
+tiles fade from their neutral surface at left to a 15% category tint at right.
+Sport icons use the official Phosphor Regular family (MIT); shared filled path
+geometry preserves the authored stroke weight across native and web sizes.
+Other app utility icons retain the existing Tabler family.
+
+Shared app controls, navigation, profile fallbacks, and competition utility icons
+use Phosphor Regular. iOS native tabs use bundled template PNGs at 1x/2x/3x
+from the same official SVGs, retaining system tint and native tab behavior.
+Card tint layers extend 24 points beyond every edge and clip at the parent’s
+rounded boundary so no internal gradient rectangle is visible.
+
+The header flame uses Phosphor Fire Regular when inactive today and Fire Fill
+when counted activity exists on the current Eastern day; the number retains its
+weekly streak meaning. The custom Compete wreath is awaiting a replacement choice.

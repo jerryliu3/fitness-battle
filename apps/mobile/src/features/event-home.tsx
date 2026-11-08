@@ -1,39 +1,60 @@
-import { useEffect, useState } from "react";
+import { useReducedMotion } from "../ui/use-reduced-motion";
+import { useEffect, useRef, useState } from "react";
 import { useCompetitionCourse } from "./use-competition-course";
 import { GeographicCourse } from "./geographic-course";
 import { useCompeteStore } from "../lib/compete-store";
-import { Image, Linking, Pressable, Text, View } from "react-native";
-import { competePeriodWindow, buildArenaModel, competitionQueue, competitionTrack, competeNow, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { Animated, Image, Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { competeEventCarouselPageIndex, formatActivityAge, competePeriodWindow, buildArenaModel, competitionQueue, competitionTrack, competeNow, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppText, textStyle } from "../ui/section";
 import { useThemeColors } from "../theme";
-import { FocusButton } from "../ui/focus";
+import { AppIcon } from "../ui/app-icon";
+import { useEventActivity } from "./use-event-activity";
+import { CompeteIcon, EventArt } from "./compete-home-sections";
 
 const snapshotCache = new Map<string, string>();
 
 /** Read-only event previews; entering is an explicit presentation action. */
-export function EventHome({ state, accountKey, onEnter, onRecovery }: { state: CompeteState; accountKey: string; onEnter(account: string, sport: SportId): void; onRecovery(): void }) {
+export function EventHome({ state, accountKey, onEnter, onRecovery, active }: { active: boolean; state: CompeteState; accountKey: string; onEnter(account: string, sport: SportId): void; onRecovery(): void }) {
   const c = useThemeColors();
-  return <View style={{ gap: 16 }}>
-    {state.ratings.filter(r => r.optedIn).map(rating => {
-      const sport = rating.sport;
-      const queue = competitionQueue(state, sport, competeNow(state));
+  const { width } = useWindowDimensions();
+  const [page, setPage] = useState(0);
+  const cardWidth = Math.min(360, width - 64);
+  const count = state.ratings.filter(r => r.optedIn).length + Number(state.healthRatings.some(r => r.optedIn));
+  return <View style={{ gap: 14 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><AppText role="heading" accessibilityRole="header">Your events</AppText><AppText role="caption" secondary>{count} registered</AppText></View>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={cardWidth + 12} decelerationRate="fast" onScroll={event => setPage(competeEventCarouselPageIndex(event.nativeEvent.contentOffset.x, cardWidth + 12, count))} scrollEventThrottle={100} contentContainerStyle={{ gap: 12, paddingRight: 20 }}>
+    {state.ratings.filter(r => r.optedIn).map(rating => <RegisteredEventCard key={rating.sport} state={state} sport={rating.sport} active={active} cardWidth={cardWidth} onEnter={() => onEnter(accountKey, rating.sport)} />)}
+    {state.healthRatings.some(r => r.optedIn) ? <Pressable accessibilityRole="button" accessibilityLabel="Open Recovery" onPress={onRecovery} style={{ width: cardWidth, padding: 20, gap: 12, backgroundColor: c.accentSecondarySoft, borderRadius: 20, borderWidth: 1, borderColor: c.line, overflow: "hidden" }}><EventArt event="sleep" feature /><CompeteIcon name="sleep" /><AppText role="heading">Recovery</AppText><AppText role="body" secondary>Sleep competition</AppText><View style={{ flex: 1, minHeight: 120 }} /><AppText role="label">View event →</AppText></Pressable> : null}
+    </ScrollView>
+    {count > 1 && <View accessibilityLabel={`Event ${Math.min(page + 1, count)} of ${count}`} style={{ flexDirection: "row", justifyContent: "center", gap: 6 }}>{Array.from({ length: count }, (_, index) => <View key={index} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: index === Math.min(page, count - 1) ? c.podiumGold : c.line }} />)}</View>}
+    {!count ? <AppText role="body" secondary>Explore an event below to join your first field.</AppText> : null}
+  </View>;
+}
 
-      const queued = queue?.queued || queue?.awaitingField;
-      const model = buildArenaModel(state, undefined, competitionTrack(sport), sport);
-      const lanes = model?.lanes.filter(lane => !lane.ghost) ?? [];
-      const me = lanes.find(lane => lane.you);
-      const total = me?.values[2] ?? 0;
-      const place = 1 + lanes.filter(lane => lane.values[2] > total).length;
+function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { state: CompeteState; sport: SportId; active: boolean; cardWidth: number; onEnter(): void }) {
+  const c = useThemeColors();
 
-      return <View key={sport} style={{ padding: 20, gap: 14, borderRadius: 20, backgroundColor: c.card, borderWidth: 1, borderColor: c.line }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}><AppText role="heading">{SPORTS.find(item => item.id === sport)?.name}</AppText><AppText role="caption" secondary>{queued ? "Upcoming wave" : `Place ${place} / ${lanes.length}`}</AppText></View>
-        <CoursePreview state={state} sport={sport} queued={Boolean(queued)} />
-        {queued ? <AppText role="body">Your race opens when the wave starts.</AppText> : null}
-        <FocusButton label="See race" accessibilityLabel={`Enter ${SPORTS.find(item => item.id === sport)?.name} field`} onPress={() => onEnter(accountKey, sport)} />
-      </View>;
-    })}
-    {state.healthRatings.some(r => r.optedIn) ? <Pressable accessibilityRole="button" accessibilityLabel="Open Recovery" onPress={onRecovery} style={{ padding: 20, gap: 8, backgroundColor: c.card, borderRadius: 20, borderWidth: 1, borderColor: c.line }}><AppText role="heading">Recovery</AppText><AppText role="body" secondary>View your recovery event →</AppText></Pressable> : null}
-    {!state.ratings.some(r => r.optedIn) && !state.healthRatings.some(r => r.optedIn) ? <AppText role="body" secondary>Register for an event to open your first field.</AppText> : null}
+  const queue = competitionQueue(state, sport, competeNow(state));
+
+  const queued = queue?.queued || queue?.awaitingField;
+  const model = buildArenaModel(state, undefined, competitionTrack(sport), sport);
+  const lanes = model?.lanes.filter(lane => !lane.ghost) ?? [];
+  const me = lanes.find(lane => lane.you);
+  const total = me?.values[2] ?? 0;
+  const place = 1 + lanes.filter(lane => lane.values[2] > total).length;
+
+  const { rows } = useEventActivity(state, sport, active && !queued);
+  const update = formatActivityAge(rows[0]?.at, competeNow(state));
+  return <View style={{ width: cardWidth, padding: 12, gap: 12, borderRadius: 20, backgroundColor: c.card, borderWidth: 1, borderColor: c.line }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+      <View style={{ padding: 9, borderRadius: 12, backgroundColor: c.actionSoft }}><CompeteIcon name={sport} /></View>
+      <View style={{ flex: 1 }}><AppText role="label">{SPORTS.find(item => item.id === sport)?.name}</AppText><View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>{!queued && <LiveIndicator active={active} />}<AppText role="support" secondary style={{ flexShrink: 1 }}>{queued ? "Upcoming wave" : `last update: ${update === "—" ? "Unavailable" : update}`}</AppText></View></View>
+      <AppText role="caption" secondary>{queued ? "" : `Place ${place} / ${lanes.length}`}</AppText>
+    </View>
+    <CoursePreview state={state} sport={sport} queued={Boolean(queued)} />
+    <Pressable accessibilityRole="button" accessibilityLabel={`Enter ${SPORTS.find(item => item.id === sport)?.name} field`} onPress={onEnter} hitSlop={{ top: 6, bottom: 6 }} style={({ pressed }) => ({ minHeight: 32, marginTop: -8, marginBottom: -8, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, opacity: pressed ? 0.6 : 1 })}>
+      <AppText role="label" style={{ flex: 1 }}>See race</AppText><AppIcon name="chevron" size={20} />
+    </Pressable>
   </View>;
 }
 
@@ -44,7 +65,7 @@ function CoursePreview({ state, sport, queued }: { state: CompeteState; sport: S
   const { course } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, !queued);
   const model = buildArenaModel(state, undefined, competitionTrack(sport), sport);
   const me = model?.lanes.find(lane => lane.you);
-  const key = `race-card-v4:${accountKey}:${sport}:${course?.name}:${course?.length}:${me?.values[2]}:${state.units}`;
+  const key = `race-card-square-v5:${accountKey}:${sport}:${course?.name}:${course?.length}:${me?.values[2]}:${state.units}`;
   return <View style={{ position: "relative", borderRadius: 12, overflow: "hidden" }}><SnapshotPreview key={key} cacheKey={key} course={course} lane={me} unit={model?.unit ?? ""} queued={queued} />
     {!queued && course ? <View style={{ position: "absolute", bottom: 4, right: 6, maxWidth: "95%", flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 6, backgroundColor: c.card, borderRadius: 4, paddingHorizontal: 4 }}>
       {[{ label: "© Mapbox", url: "https://www.mapbox.com/about/maps" }, { label: "© OpenStreetMap", url: "https://www.openstreetmap.org/copyright" }, { label: "ⓘ", url: "https://apps.mapbox.com/feedback/" }].map(link => <Pressable key={link.label} accessibilityRole="link" accessibilityLabel={link.label === "ⓘ" ? "Improve this map" : link.label} hitSlop={8} onPress={event => { event.stopPropagation(); void Linking.openURL(link.url); }}><Text style={{ ...textStyle("nav"), color: c.muted }}>{link.label}</Text></Pressable>)}
@@ -60,4 +81,20 @@ function SnapshotPreview({ cacheKey, course, lane, unit, queued }: { cacheKey: s
   return <View pointerEvents="none" style={{ width: "100%", aspectRatio: 1, borderRadius: 12, overflow: "hidden", backgroundColor: c.paper }}>
     {uri ? <Image source={{ uri }} resizeMode="cover" accessibilityLabel="3D snapshot of your current race position" style={{ width: "100%", height: "100%" }} /> : !expired && !queued && course && lane && (unit === "mi" || unit === "km") ? <GeographicCourse course={course} lanes={[{ id: lane.id, name: "You", initials: "", you: true, value: lane.values[2] }]} unit={unit} selectedId={lane.id} focusRequest={0} onSelect={() => {}} onSnapshot={capture} optionsTop={null} /> : <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><AppText role="caption" secondary>{queued ? "Course assigned when your wave starts" : unit === "pts" ? "Points event" : "Preview unavailable"}</AppText></View>}
   </View>;
+}
+
+function LiveIndicator({ active }: { active: boolean }) {
+  const c = useThemeColors();
+  const reduced = useReducedMotion();
+  const opacity = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (reduced || !active) { opacity.setValue(1); return; }
+    const pulse = Animated.loop(Animated.sequence([
+      Animated.timing(opacity, { toValue: 0.35, duration: 900, useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration: 900, useNativeDriver: true }),
+    ]));
+    pulse.start();
+    return () => pulse.stop();
+  }, [active, reduced, opacity]);
+  return <Animated.View accessible={false} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.statusSuccess, opacity }} />;
 }

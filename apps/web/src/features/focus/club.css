@@ -1482,9 +1482,10 @@
 .effort-rail-track { position: relative; height: 24px; overflow: hidden; }
 .effort-rail-track > .effort-rail-remaining { position: absolute; inset: 0; display: flex; align-items: center; padding: 0 8px; color: var(--ink); background: transparent; letter-spacing: normal; text-transform: none; font: var(--type-caption); }
 .effort-rail-compact .effort-rail-caption { display: none; }
-.club-week-streak { display: inline-flex; align-items: center; gap: 3px; color: var(--app-podium-gold); opacity: .4; letter-spacing: normal; text-transform: none; font: var(--type-caption); }
+.club-week-streak { display: inline-flex; align-items: center; gap: 3px; color: var(--app-podium-gold); letter-spacing: normal; text-transform: none; font: var(--type-caption); }
 .club-week-streak b { color: var(--ink); }
-.club-week-streak.is-active { opacity: 1; }
+.club-week-streak svg { opacity: .4; }
+.club-week-streak.is-active svg { opacity: 1; }
 .club-map-status { position: static; padding: 8px 0; background: transparent; color: var(--ink); border-radius: 0; }
 .focus-track-frame:has(>.club-map-status)>.focus-lane-surface { margin-top: 0; }
 .club-preference-row { padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--app-surface-card); }

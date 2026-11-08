@@ -734,7 +734,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
               <button type="button" className="fb-btn-ghost" onClick={() => setConfirmFreeze(false)}>Cancel</button></div>}
             <SectionHeader title="Active Sports"/><AppParagraph typographyRole="caption" className="fb-note">Turning off a queued sport cancels registration. Started waves finish Sunday; turning off stops renewal.</AppParagraph>
             {SPORTS.map(sport => { const enrollment = state.enrollments.find(e => e.sport === sport.id); const registered = Boolean(state.ratings.find(r => r.sport === sport.id)?.optedIn); const queued = Boolean(enrollment && Date.parse(enrollment.waveStart) > competeNow(state).getTime()); const active = registered && (queued || enrollment?.autoEnrollNext !== false); return <div key={sport.id} className="club-preference-row">
-              <strong className="club-sport-label"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={SPORT_ICON_PATHS[sport.id]} /></svg>{sport.name}</strong><button type="button" role="switch" aria-label={`Toggle ${sport.name} active status`} aria-checked={active} className={active ? "fb-switch on" : "fb-switch"}
+              <strong className="club-sport-label"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={SPORT_ICON_PATHS[sport.id]} fill="currentColor" stroke="none" /></svg>{sport.name}</strong><button type="button" role="switch" aria-label={`Toggle ${sport.name} active status`} aria-checked={active} className={active ? "fb-switch on" : "fb-switch"}
                 onClick={() => requireAuth(`Sign in to activate ${sport.name}.`, () => dispatch(active ? { type: queued ? "opt-out" : "schedule-leave", sport: sport.id } : registered ? { type: "resume-renewal", sport: sport.id } : { type: "opt-in", sport: sport.id, crewBoard: null }))}><span className="fb-switch-knob" /></button>
             </div>; })}
           </section> : null}
@@ -898,7 +898,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
               setPanel(id);
             }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={SETTINGS_ICON_PATHS[PANEL_TITLES[id] as keyof typeof SETTINGS_ICON_PATHS]} /></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={SETTINGS_ICON_PATHS[PANEL_TITLES[id] as keyof typeof SETTINGS_ICON_PATHS]} fill="currentColor" stroke="none" /></svg>
             <span className="focus-settings-copy">
               <b>{PANEL_TITLES[id]}</b>
               <AppText as="small" role="support" secondary>{detail}</AppText>
