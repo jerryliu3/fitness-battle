@@ -122,9 +122,9 @@ export function AthleteTelemetryMatrix({
                     ...typographyStyle("caption"),
                     padding: "4px 10px",
                     borderRadius: 99,
-                    border: `1px solid ${active ? c.fieldTeal : c.line}`,
-                    backgroundColor: active ? c.fieldTeal : "transparent",
-                    color: active ? "#ffffff" : c.muted,
+                    border: `1px solid ${active ? c.ink : c.line}`,
+                    backgroundColor: active ? c.soft : "transparent",
+                    color: active ? c.ink : c.muted,
                     cursor: "pointer",
                   }}
                 >

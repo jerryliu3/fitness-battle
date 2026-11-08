@@ -22,4 +22,6 @@ Define new native styles with `createThemedStyles(colors => ({ surface: { backgr
 
 Before shipping, check release-device native appearance and real connected-account states. Browser review and renderer tests do not establish device rendering parity.
 
-Filter triggers and selected chips use the quiet soft surface, primary text and primary-text border in both apps. Selection is conveyed through the border and accessible state; yellow fills are reserved for primary actions and quantitative progress. Neutral checkbox marks use the foreground paired with their selected fill.
+Filter triggers, analytics time-range toggles and selected chips use the quiet soft surface, primary text and primary-text border in both apps. Selection is conveyed through the border and accessible state; yellow fills are reserved for primary actions and quantitative progress. Neutral checkbox marks use the foreground paired with their selected fill.
+
+Chart-series roles (including the legacy `fieldTeal` alias) are for data marks, not control fills. Time-range selectors use the neutral control treatment in both apps, independently of the chart palette.

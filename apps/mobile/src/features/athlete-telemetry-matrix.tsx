@@ -125,7 +125,7 @@ const s=useThemedStyles(sThemes);
                 onPress={() => setTimeLens(lens)}
                 style={[s.lensPill, active && s.lensPillActive]}
               >
-                <AppText role="caption" style={{ color: active ? "#ffffff" : c.muted }}>
+                <AppText role="caption" style={{ color: active ? c.ink : c.muted }}>
                   {lens.toUpperCase()}
                 </AppText>
               </Pressable>
@@ -227,8 +227,8 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
     backgroundColor: "transparent",
   },
   lensPillActive: {
-    borderColor: c.fieldTeal,
-    backgroundColor: c.fieldTeal,
+    borderColor: c.ink,
+    backgroundColor: c.soft,
   },
   bentoGrid: {
     flexDirection: "row",
