@@ -11,6 +11,7 @@ export type CompeteCategory = typeof COMPETE_CATEGORIES[number]["id"];
 export type CompeteEvent = typeof COMPETE_CATEGORIES[number]["events"][number];
 
 export const COMPETE_ICONS = {
+  special: "m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z",
   wreath: "M10 21C3 18 2 10 6 4m8 17c7-3 8-11 4-17M5 8C1 8 2 4 3 3c3 0 4 2 2 5Zm-1 5c-4-1-4-4-3-5 3 1 4 2 3 5Zm2 5c-4 0-5-3-5-4 3 0 5 1 5 4Zm13-10c4 0 3-4 2-5-3 0-4 2-2 5Zm1 5c4-1 4-4 3-5-3 1-4 2-3 5Zm-2 5c4 0 5-3 5-4-3 0-5 1-5 4Z",
   sleep: "M3 4v16m0-4h18v4m0-4v-5a2 2 0 0 0-2-2h-8v7M6 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm-3 3h8",
   recovery: "M20 15a8 8 0 0 1-11-11A8 8 0 1 0 20 15Z",

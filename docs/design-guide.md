@@ -954,3 +954,9 @@ Recovery, including entry packages. Registered event previews are square with a
 compact See race action. Last-update text uses the shared support recipe, actions
 and Crew event use label, all in Manrope. A slow pulsing live dot accompanies
 last update, pauses when inactive, and stays still with Reduced Motion.
+
+Crew banners use a gold Special event badge with a vector star. Registration
+tiles fade from their neutral surface at left to a 15% category tint at right.
+Sport icons use the official Phosphor Regular family (MIT); shared filled path
+geometry preserves the authored stroke weight across native and web sizes.
+Other app utility icons retain the existing Tabler family.

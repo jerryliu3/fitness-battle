@@ -42,7 +42,7 @@ export function AppIcon({ name, size = 24, color: suppliedColor }: {
 }) {
   const c = useThemeColors();
   const color = suppliedColor ?? c.ink;
-  if (name in SPORT_ICON_PATHS) return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" accessible={Platform.OS === "web" ? undefined : false} aria-hidden={Platform.OS === "web" ? true : undefined}><Path d={SPORT_ICON_PATHS[name as keyof typeof SPORT_ICON_PATHS]} /></Svg>;
+  if (name in SPORT_ICON_PATHS) return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" accessible={Platform.OS === "web" ? undefined : false} aria-hidden={Platform.OS === "web" ? true : undefined}><Path d={SPORT_ICON_PATHS[name as keyof typeof SPORT_ICON_PATHS]} fill={color} stroke="none" /></Svg>;
   const Icon = icons[name as keyof typeof icons];
   return <Icon size={size} color={color} strokeWidth={1.8}
     aria-hidden={Platform.OS === "web" ? true : undefined}

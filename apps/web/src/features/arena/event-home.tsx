@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { competeEventCarouselPageIndex, formatActivityAge, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, SPORTS, buildArenaModel, competitionQueue, competitionTrack, competeNow, competeHomeResult, type CompeteEvent, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppHeading, AppText } from "@/ui/section";
 import { useEventActivity } from "./use-event-activity";
@@ -9,7 +9,7 @@ import "./event-home.css";
 
 export function CompeteIcon({ name, size = 26 }: { name: keyof typeof COMPETE_ICONS | CompeteEvent; size?: number }) {
   const path = name in COMPETE_ICONS ? COMPETE_ICONS[name as keyof typeof COMPETE_ICONS] : SPORT_ICON_PATHS[name as keyof typeof SPORT_ICON_PATHS];
-  return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d={path} /></svg>;
+  return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d={path} fill={name in SPORT_ICON_PATHS ? "currentColor" : "none"} stroke={name in SPORT_ICON_PATHS ? "none" : undefined} /></svg>;
 }
 export function EventArt({ event, gold = false }: { event: CompeteEvent; gold?: boolean }) {
   return <svg className="compete-art" aria-hidden="true" viewBox="0 0 240 160" preserveAspectRatio="none">{COMPETE_ART[event].map((path, index) => <path key={path} d={path} fill={index === 0 || event === "sleep" ? gold ? "var(--app-podium-gold)" : COMPETE_ART_COLORS[event] : "none"} fillOpacity={index === 0 ? 0.45 : 0.25} stroke={event === "running" || event === "cycling" ? "var(--card)" : "none"} strokeWidth={index === 0 ? 0 : 3} />)}</svg>;
@@ -58,7 +58,7 @@ export function ExploreEvents({ onChoose }: { onChoose(event: CompeteEvent): voi
     {categories.map(category => <div key={category.id} className="compete-category">
       <div className="compete-section-heading"><div><CompeteIcon name={category.id === "recovery" ? "recovery" : category.id} size={22} /><AppHeading role="label" level={3}>{category.title}</AppHeading></div></div>
       <div className={`compete-carousel compete-sports is-${category.id}`} tabIndex={0} aria-label={`${category.title} events carousel`}>
-        {category.events.map(event => <button type="button" key={event} className="compete-sport-card" onClick={() => onChoose(event)}><EventArt event={event} /><CompeteIcon name={event} size={28} /><AppText role="label">{event[0].toUpperCase() + event.slice(1)}</AppText></button>)}
+        {category.events.map(event => <button type="button" key={event} className="compete-sport-card" style={{ "--event-tint": COMPETE_ART_COLORS[event] } as CSSProperties} onClick={() => onChoose(event)}><EventArt event={event} /><CompeteIcon name={event} size={28} /><AppText role="label">{event[0].toUpperCase() + event.slice(1)}</AppText></button>)}
       </div>
     </div>)}
   </section>;
@@ -78,7 +78,7 @@ export function CrewEvents({ onChoose }: { onChoose(sport: SportId): void }) {
     {SPORTS.map(sport => <button type="button" key={sport.id} className="compete-feature-banner" onClick={() => onChoose(sport.id)}>
       <EventArt event="running" gold />
       <CompeteIcon name="crew" size={42} />
-      <div className="compete-feature-copy"><AppText role="label">Crew event</AppText><AppHeading role="label">{sport.name} challenge</AppHeading><AppText role="caption">Compete with your crew</AppText></div>
+      <div className="compete-feature-copy"><span className="compete-special-badge"><CompeteIcon name="special" size={12} /><AppText role="caption">Special event</AppText></span><AppHeading role="label">{sport.name} challenge</AppHeading><AppText role="caption">Compete with your crew</AppText></div>
       <span className="compete-feature-arrow" aria-hidden="true">Join →</span>
     </button>)}
   </div></section>;
