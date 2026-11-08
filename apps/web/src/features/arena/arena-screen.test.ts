@@ -3,8 +3,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { freshState, reduceCompete, type CompeteState } from "@fitness-battle/shared";
-const mock=vi.hoisted(()=>({state:null as CompeteState|null}));
-vi.mock("@/components/compete-context",()=>({useCompete:()=>({state:mock.state,dispatch:vi.fn(),loadStatus:"local"})}));
+const mock=vi.hoisted(()=>({state:null as CompeteState|null, dispatch: vi.fn()}));
+vi.mock("@/components/compete-context",()=>({useCompete:()=>({state:mock.state,dispatch:mock.dispatch,loadStatus:"local"})}));
 vi.mock("@/components/auth-context",()=>({useAuth:()=>({user:{id:"demo"}})}));
 vi.mock("next/link",()=>({default:"a"}));
 vi.mock("next/navigation",()=>({useSearchParams:()=>new URLSearchParams(),useRouter:()=>({push:vi.fn()})}));
@@ -21,7 +21,7 @@ vi.mock("./competition-panel", () => ({
 vi.mock("./race-updates", () => ({ RaceUpdates: () => null }));
 vi.mock("@/features/health/sleep-panel",()=>({SleepPanel:()=>createElement("div",{"data-sleep-field":true})}));
 vi.mock("@/features/split/components/week-reveal",()=>({WeekReveal:()=>null}));
-vi.mock("@/ui/sheet",()=>({Sheet:()=>null}));
+vi.mock("@/ui/sheet",()=>({Sheet:({ open, fullScreen, children, onClose }: { open: boolean; fullScreen?: boolean; children: import("react").ReactNode; onClose(): void }) => open ? createElement("section", { "data-event-page": fullScreen }, createElement("button", { "aria-label": "Back to events", onClick: onClose }, "Back"), children) : null}));
 vi.mock("@/components/auth-gate",()=>({AuthPrompt:()=>null}));
 import { ArenaScreen } from "./arena-screen";
 beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-21T12:00:00Z")); });
@@ -40,19 +40,18 @@ describe("single-sport competition",()=>{
  it("shows recovery alone when it is the only registration",()=>{
   mock.state=reduceCompete(freshState(),{type:"opt-in-health",metric:"sleep",now:"2026-10-21T09:00:00Z"});
   const html=renderToStaticMarkup(createElement(ArenaScreen));
-  expect(html).toContain("data-sleep-field");expect(html).not.toContain("data-active-field");
+  expect(html).not.toContain("data-sleep-field");expect(html).not.toContain("data-active-field");
+  expect(html).toContain("Sleep competition");
  });
 });
 
-it("shows mystery competitors and a cancel action for a queued registration", () => {
+it("keeps queued race details and cancellation off the Compete home", () => {
   mock.state=reduceCompete(freshState(), { type: "opt-in", sport: "running" });
   mock.state.enrollments[0]!.peerIds=["hidden-peer"];
   const html=renderToStaticMarkup(createElement(ArenaScreen));
-  expect(html).toContain("Finding your competitors");
-  expect(html).toContain("7 mystery competitors");
-  expect(html).toContain("Cancel registration");
-  expect(html).toContain("6:00 AM ET");
-  expect(html).toContain("11:59 PM ET");
+  expect(html).not.toContain("Cancel registration");
+  expect(html).not.toContain("7 mystery competitors");
+  expect(html).toContain("See race");
   expect(html).not.toContain("data-active-field");
   expect(html).not.toContain("data-standings");
   expect(html).not.toContain("hidden-peer");
@@ -73,5 +72,28 @@ it("enters a selected event and returns home without replacing its prepared fiel
     expect(map.props["data-visible"]).toBe(false);
     expect(renderer.root.findByProps({ "aria-label": "Enter Running field" })).toBeDefined();
     expect(renderer.root.findByProps({ "data-active-field": "Running" })).toBe(map);
+  } finally { await act(async () => renderer.unmount()); vi.unstubAllGlobals(); }
+});
+
+it("enters a queued race before exposing its countdown and cancellation", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  // The countdown's document visibility listener is supplied by the browser.
+  vi.stubGlobal("document", { hidden: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
+  mock.dispatch.mockClear();
+  mock.state = reduceCompete(freshState(), { type: "opt-in", sport: "running" });
+  let renderer!: ReactTestRenderer;
+  await act(async () => { renderer = create(createElement(ArenaScreen)); });
+  try {
+    expect(renderer.root.findAllByProps({ "data-event-page": true })).toHaveLength(0);
+    await act(async () => renderer.root.findByProps({ "aria-label": "Enter Running field" }).props.onClick());
+    const page = renderer.root.findByProps({ "data-event-page": true });
+    const cancel = page.findAllByType("button").find(node => node.children.includes("Cancel registration"));
+    expect(cancel).toBeDefined();
+    expect(page.findAllByProps({ "aria-label": "Time until competition starts" })).not.toHaveLength(0);
+    expect(renderer.root.findAllByProps({ "data-active-field": "Running" })).toHaveLength(0);
+    await act(async () => cancel!.props.onClick());
+    expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-out", sport: "running" });
+    expect(renderer.root.findAllByProps({ "data-event-page": true })).toHaveLength(0);
+    expect(renderer.root.findByProps({ "aria-label": "Enter Running field" })).toBeDefined();
   } finally { await act(async () => renderer.unmount()); vi.unstubAllGlobals(); }
 });

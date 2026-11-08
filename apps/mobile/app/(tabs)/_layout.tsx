@@ -1,5 +1,5 @@
 import { CompeteExperienceProvider } from "../../src/features/compete-experience";
-import type { SportId } from "@fitness-battle/shared";
+import type { CompeteEvent } from "@fitness-battle/shared";
 import { ArenaScreen } from "./arena";
 import { useEffect, useState } from "react";
 import { usePathname } from "expo-router";
@@ -19,10 +19,10 @@ export default function TabLayout() {
   const SHELL_COLORS = useThemeColors();
   const pathname = usePathname();
   const compete = pathname.endsWith("/arena");
-  const [event, setEvent] = useState<{ account: string; sport: SportId } | null>(null);
+  const [event, setEvent] = useState<{ account: string; sport: CompeteEvent } | null>(null);
   const [immersive, setImmersive] = useState(false);
   useEffect(() => { if (!compete) setImmersive(false); }, [compete]);
-  const experience = { event, immersive: immersive && compete, enter: (account: string, sport: SportId) => { setEvent({ account, sport }); setImmersive(true); }, close: () => setImmersive(false) };
+  const experience = { event, immersive: immersive && compete, enter: (account: string, sport: CompeteEvent) => { setEvent({ account, sport }); setImmersive(true); }, close: () => setImmersive(false) };
   const host = <View pointerEvents={experience.immersive ? "auto" : "none"} accessibilityElementsHidden={!experience.immersive} importantForAccessibility={experience.immersive ? "auto" : "no-hide-descendants"} style={{ position: "absolute", inset: 0, opacity: experience.immersive ? 1 : 0, zIndex: experience.immersive ? 100 : -1 }}><ArenaScreen persistent /></View>;
   const { pending, required } = useOnboardingRequired();
   if (pending) return <View style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }} />;

@@ -1024,3 +1024,13 @@ once registered, including server-rebased starts. Keep the ticket composition
 consistent across events; its art and stamp identify the event/week. Reduced
 Motion reveals the final state immediately. Renewal and end-time information
 live in expandable Schedule & renewal details, rather than below the CTA.
+
+Queued events open from See race into a full-height upcoming-event destination,
+with Back, the start countdown, exact start/end times and Cancel registration.
+Cancellation is absent from Compete home and from the live standings sheet.
+The same navigation applies to Recovery. Keep cancellation limited to the queue;
+a started wave waiting on its field reveals a waiting state without cancellation.
+When its field arrives, the selected sport continues into the existing live field.
+Native uses the retained experience host; web reuses the full-screen dialog with
+its focus, Escape and Back behavior. No roster, scoring or registration-write
+rules change.
