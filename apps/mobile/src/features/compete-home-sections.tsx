@@ -1,7 +1,7 @@
 import { useId } from "react";
 import { Platform, ScrollView, Pressable, View, useWindowDimensions } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect, Path } from "react-native-svg";
-import { SPORTS, type SportId, COMPETE_ART, COMPETE_ART_COLORS, competeExploreCategories, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, competeHomeResult, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
+import { SPORTS, type SportId, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, competeHomeResult, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
@@ -32,11 +32,10 @@ export function EventArt({ event, feature = false, gold = false }: { event: Comp
   </View>;
 }
 
-export function ExploreEvents({ state, onChoose }: { state: CompeteState; onChoose(event: CompeteEvent): void }) {
+export function ExploreEvents({ onChoose }: { onChoose(event: CompeteEvent): void }) {
   const c = useThemeColors();
   const { width } = useWindowDimensions();
-  const categories = competeExploreCategories(state);
-  if (!categories.length) return null;
+  const categories = COMPETE_CATEGORIES;
   return <View style={{ gap: 20 }}>
     <AppText role="heading" accessibilityRole="header">Explore events</AppText>
     {categories.map(category => <View key={category.id} style={{ gap: 10 }}>

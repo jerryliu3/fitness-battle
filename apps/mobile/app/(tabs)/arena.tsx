@@ -1,16 +1,15 @@
 import { CompetitionTimelineProvider, CompetitionTimelineControls } from "../../src/features/competition-timeline-context";
-import { useCrewApi } from "../../src/features/crew";
+import { EventRegistration } from "../../src/features/event-registration";
 import { useCompeteExperience } from "../../src/features/compete-experience";
 import { EventHome } from "../../src/features/event-home";
 import { CompeteIcon, CrewEvents, ExploreEvents, CompeteResults } from "../../src/features/compete-home-sections";
 import { CompeteSheet } from "../../src/ui/compete-sheet";
 import { SectionStack, AppText } from "../../src/ui/section";
-import { APP_TIMEZONE, competePeriodWindow, weeklyCompetitionLastDay, weeklyPeriodBounds, buildArenaModel, competitionQueue, competeNow, competitionTrack, competitionTrackLabel, waveTimeLabel, nextDailyWaveWindowAt } from "@fitness-battle/shared";
+import { APP_TIMEZONE, competePeriodWindow, weeklyCompetitionLastDay, weeklyPeriodBounds, buildArenaModel, competitionQueue, competeNow, competitionTrack, eventRegistration, type CompeteEvent } from "@fitness-battle/shared";
 import { useThemeColors } from "../../src/theme";
 import { useFocusStyles } from "../../src/ui/focus";
 import {
   SPORTS,
-  type CrewBoardPin,
   type SportId,
 } from "@fitness-battle/shared";
 import { useGlobalSearchParams, usePathname, useRouter } from "expo-router";
@@ -48,7 +47,6 @@ const f=useFocusStyles();
   const focused = usePathname().endsWith("/arena");
   useEffect(() => { if (!persistent || !focused || !experience.immersive) return; const sub = BackHandler.addEventListener("hardwareBackPress", () => { exit(); return true; }); return () => sub.remove(); }, [focused, persistent, experience.immersive, exit]);
   const requestedEvent=useGlobalSearchParams<{event?:string}>().event;
-  const crewApi = useCrewApi();
   const [athleteFocus, setAthleteFocus] = useState<{ id: string; request: number } | null>(null);
   const [courseOptions, setCourseOptions] = useState<React.ReactNode>(null);
   const [expandRequest, setExpandRequest] = useState(0);
@@ -57,9 +55,6 @@ const f=useFocusStyles();
   useEffect(()=>{if(requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:accountKey,sport:requestedEvent as SportId});},[requestedEvent,accountKey]);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   useEffect(() => { setRegister(false); setSport(null); }, [accountKey]);
-  const [joinBusy, setJoinBusy] = useState(false);
-  const [joinError, setJoinError] = useState("");
-  const currentUser = useRef(user?.id); currentUser.current = user?.id;
   const joinFlight = useRef(false);
   const [, updateClock] = useState(0);
   useEffect(() => {
@@ -88,59 +83,26 @@ const f=useFocusStyles();
   const timeRemaining = remainingMs === 0 ? "Ended" : remainingDays >= 1 ? `${remainingDays} day${remainingDays === 1 ? "" : "s"} left` : `${remainingHours} hour${remainingHours === 1 ? "" : "s"} left`;
   const queue = selectedSport ? competitionQueue(state, selectedSport, now) : null;
   const track = competitionTrack(selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary);
-  function openRegistration() {
-    setSport(null);
-    setJoinError("");
+  function openRegistration(event: CompeteEvent | null = null) {
+    setSport(event);
+    joinFlight.current = false;
     setRegister(true);
   }
-  async function join(nextSport: SportId, crewId?: string) {
-    if (!user) {
+  function claimEntry() {
+    if (!sport || joinFlight.current || (sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport))) return;
+    if (!user || !state!.onboardingCompleted) {
       setRegister(false);
-      setSport(null);
-      router.navigate("/athlete");
+      router.navigate(user ? "/onboarding" : "/athlete");
       return;
     }
-    if (joinFlight.current) return;
-    if (!state?.onboardingCompleted) {
-      setRegister(false);
-      router.navigate("/onboarding");
-      return;
-    }
-    const joiningAccount = user.id;
     joinFlight.current = true;
-    setJoinBusy(true);
-    setJoinError("");
-    try {
-      let pin: CrewBoardPin | null = null;
-      if (crewId && state.crewBoard && state.crewBoard.crewId === crewId) {
-        pin = state.crewBoard;
-      } else if (crewId) {
-        const result = await crewApi.request("/field", { crewId });
-        pin = result.pin ?? null;
-        if (!pin || pin.sport !== nextSport)
-          throw new Error("Could not join that crew field. Please try again.");
-      }
-      if (currentUser.current !== joiningAccount) return;
-      dispatch({
-        type: "set-primary",
-        sport: nextSport,
-        accountId: joiningAccount,
-      });
-      dispatch({
-        type: "opt-in",
-        sport: nextSport,
-        crewBoard: pin,
-        accountId: joiningAccount,
-      });
-      setSelection({account:accountKey,sport:nextSport});
-      setRegister(false);
-      setSport(null);
-    } catch (e) {
-      setJoinError(e instanceof Error ? e.message : "Could not join.");
-    } finally {
-      joinFlight.current = false;
-      setJoinBusy(false);
+    if (sport === "sleep") dispatch({ type: "opt-in-health", metric: "sleep", accountId: user.id });
+    else {
+      dispatch({ type: "set-primary", sport, accountId: user.id });
+      dispatch({ type: "opt-in", sport, crewBoard: null, accountId: user.id });
     }
+    setSelection({ account: accountKey, sport });
+    setRegister(false);
   }
 
 
@@ -158,96 +120,26 @@ const f=useFocusStyles();
           </AppText>
         ) : null}
         {!persistent && <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />}
-        {persistent ? selectedSport && selectedSport !== "sleep" ? <CompetitionField sport={selectedSport} track={track} standingsOnly onFocusAthlete={id => { setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} /> : null : <>
+        {persistent ? selectedSport && selectedSport !== "sleep" ? queue?.queued || queue?.awaitingField ? <View style={{ gap: 16 }}><Pressable accessibilityRole="button" onPress={exit} style={{ minHeight: 44, justifyContent: "center" }}><AppText role="label">← Back to events</AppText></Pressable><AppText role="heading">{SPORTS.find(item => item.id === selectedSport)?.name}</AppText><QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch({ type: "opt-out", sport: selectedSport }); exit(); }} /></View> : <CompetitionField sport={selectedSport} track={track} standingsOnly onFocusAthlete={id => { setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} /> : null : <>
           <EventHome active={focused && !experience.immersive} state={state} accountKey={accountKey} onEnter={experience.enter} onRecovery={() => setSelection({ account: accountKey, sport: "sleep" })} />
           {selectedSport === "sleep" && (queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event="sleep" now={now} onCancel={() => dispatch({ type: "opt-out-health", metric: "sleep" })} /> : <SleepPanel state={state} dispatch={dispatch} />)}
         </>}
         {!persistent && <CrewEvents onChoose={() => router.navigate("/field")} />}
-        {!persistent && <ExploreEvents state={state} onChoose={() => openRegistration()} />}
+        {!persistent && <ExploreEvents onChoose={event => {
+          if (event === "sleep" && sleepOptedIn) setSelection({ account: accountKey, sport: "sleep" });
+          else if (event !== "sleep" && active.some(r => r.sport === event)) experience.enter(accountKey, event);
+          else openRegistration(event);
+        }} />}
         {!persistent && <CompeteResults state={state} onHistory={() => router.push("/progress-history")} onRankings={() => router.push("/benchmarks")} />}
       </SectionStack>
 </ArenaSheet>
-      <FocusSheet
-        open={register}
-        minimal
-        title="Choose an event to join"
-        onClose={() => {
-          setRegister(false);
-          setSport(null);
-        }}
-      >
-        <AppText role="body" secondary>Next wave starts {waveTimeLabel(nextDailyWaveWindowAt(now).waveStart)}. Everyone starts at zero.</AppText>
-        {SPORTS.map((s) => {
-          const isRegistered = state.ratings.find(
-            (r) => r.sport === s.id,
-          )?.optedIn;
-          return (
-            <View key={s.id} style={{ gap: 8 }}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${s.name}, ${isRegistered ? "Already registered" : competitionTrackLabel(s.id)}`}
-                disabled={Boolean(isRegistered) || joinBusy}
-                onPress={() => {
-                  if (isRegistered || joinBusy) return;
-                  setSport(s.id);
-                  void join(s.id);
-                }}
-                style={({ pressed }) => [
-                  f.chip,
-                  sport === s.id && f.chipActive,
-                  Boolean(isRegistered) && { opacity: 0.5 },
-                  pressed && !isRegistered && { opacity: 0.7 },
-                ]}
-              >
-                <AppText role="label">{s.name}</AppText>
-                <AppText role="caption" secondary>
-                  {isRegistered
-                    ? "Already registered"
-                    : competitionTrackLabel(s.id)}
-                </AppText>
-              </Pressable>
-            </View>
-          );
-        })}
-        <View style={{ gap: 8 }}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Recovery, ${sleepOptedIn ? "Already registered" : "Health Tracked"}`}
-            disabled={Boolean(sleepOptedIn) || joinBusy}
-            onPress={() => {
-              if (sleepOptedIn || joinBusy) return;
-              if (!user) {
-                setRegister(false);
-                router.navigate("/athlete");
-                return;
-              }
-              if (!state.onboardingCompleted) {
-                setRegister(false);
-                router.navigate("/onboarding");
-                return;
-              }
-              setSelection({ account: accountKey, sport: "sleep" });
-              dispatch({ type: "opt-in-health", metric: "sleep" });
-              setRegister(false);
-            }}
-            style={({ pressed }) => [
-              f.chip,
-              sport === "sleep" && f.chipActive,
-              Boolean(sleepOptedIn) && { opacity: 0.5 },
-              pressed && !sleepOptedIn && { opacity: 0.7 },
-            ]}
-          >
-            <AppText role="label">Recovery</AppText>
-            <AppText role="caption" secondary>
-              {sleepOptedIn ? "Already registered" : "Health Tracked"}
-            </AppText>
-          </Pressable>
-        </View>
-        {Boolean(joinError) && (
-          <AppText role="body" secondary  accessibilityLiveRegion="polite">
-            {joinError}
-          </AppText>
-        )}
+      <FocusSheet open={register} title={sport ? eventRegistration(state, sport, now).title : "Choose an event"} onClose={() => setRegister(false)}>
+        {sport ? <EventRegistration key={`${accountKey}:${sport}`} state={state} event={sport} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} onClaim={claimEntry} /> : <View style={{ gap: 10 }}>
+          {[...SPORTS.map(item => ({ id: item.id, name: item.name })), { id: "sleep" as const, name: "Sleep & recovery" }].map(item => {
+            const registered = item.id === "sleep" ? sleepOptedIn : active.some(r => r.sport === item.id);
+            return <Pressable key={item.id} accessibilityRole="button" disabled={registered} accessibilityLabel={`${item.name}, ${registered ? "already registered" : "view event details"}`} onPress={() => setSport(item.id)} style={[f.chip, { opacity: registered ? 0.5 : 1 }]}><AppText role="label">{item.name}</AppText><AppText role="caption" secondary>{registered ? "Already registered" : "View event details →"}</AppText></Pressable>;
+          })}
+        </View>}
       </FocusSheet>
     </SafeAreaView>
     </CompetitionTimelineProvider>

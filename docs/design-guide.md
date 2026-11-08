@@ -927,6 +927,14 @@ membership and shared individual fields. They do not claim limited availability,
 relay rules or team-versus-team scoring. Explore follows in Distance, Time and
 Recovery horizontal rows: neutral bordered tiles carry one outline icon, one title, and filled sport artwork
 in the lower-right corner (track curves, a walking hill, strength bars and sleep
-waves). Registered events are omitted from discovery, including empty categories. Only supported events appear. Results & rankings finishes the page with
+waves). All supported events remain visible in discovery for visual testing. Only supported events appear. Results & rankings finishes the page with
 compact gold and silver metallic surfaces, recorded placements, the existing
 rank tier, and history and ranking destinations; missing results have an honest first-finish state.
+
+Compete discovery currently keeps all supported event tiles visible for visual
+testing. Registered tiles open their existing event; unregistered tiles open
+that event's entry package. Choosing a sport never registers it; Claim entry pass
+is the explicit commitment. The general Register control still opens an event
+chooser before the same package. Queued event details and Cancel registration
+live in the foreground competition sheet, independently of map preparation;
+Back and successful cancellation return to the event home.

@@ -32,10 +32,6 @@ export const COMPETE_ART = {
 
 export const COMPETE_ART_COLORS = { running: "#9ab596", cycling: "#9dbed0", walking: "#c7b897", strength: "#b8acc7", sleep: "#afa1c4" } as const;
 
-export function competeExploreCategories(state: CompeteState) {
-  return COMPETE_CATEGORIES.map(category => ({ ...category, events: category.events.filter(event => event === "sleep" ? !state.healthRatings.some(r => r.optedIn) : !state.ratings.some(r => r.sport === event && r.optedIn)) })).filter(category => category.events.length);
-}
-
 export function competeHomeRank(state: CompeteState) {
   const rating = state.ratings.find(r => r.sport === state.primary);
   const score = competitionTrack(state.primary) === "verified" ? rating?.verifiedElo : rating?.openElo;

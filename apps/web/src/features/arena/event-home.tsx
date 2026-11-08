@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { competeEventCarouselPageIndex, formatActivityAge, COMPETE_ART, COMPETE_ART_COLORS, competeExploreCategories, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, SPORTS, buildArenaModel, competitionQueue, competitionTrack, competeNow, competeHomeResult, type CompeteEvent, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { competeEventCarouselPageIndex, formatActivityAge, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, SPORTS, buildArenaModel, competitionQueue, competitionTrack, competeNow, competeHomeResult, type CompeteEvent, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppHeading, AppText } from "@/ui/section";
 import { useEventActivity } from "./use-event-activity";
 import { CoursePreview } from "./course-preview";
@@ -51,9 +51,8 @@ function RegisteredEventCard({ state, sport, active, onEnter }: { state: Compete
   </article>;
 }
 
-export function ExploreEvents({ state, onChoose }: { state: CompeteState; onChoose(event: CompeteEvent): void }) {
-  const categories = competeExploreCategories(state);
-  if (!categories.length) return null;
+export function ExploreEvents({ onChoose }: { onChoose(event: CompeteEvent): void }) {
+  const categories = COMPETE_CATEGORIES;
   return <section className="compete-home-section" aria-label="Explore events">
     <AppHeading>Explore events</AppHeading>
     {categories.map(category => <div key={category.id} className="compete-category">
