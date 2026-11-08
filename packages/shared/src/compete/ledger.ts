@@ -102,6 +102,11 @@ export function prefer(left: Activity, right: Activity): Activity {
   const leftRank = PRECEDENCE[provenanceOf(left)];
   const rightRank = PRECEDENCE[provenanceOf(right)];
   if (leftRank !== rightRank) return leftRank > rightRank ? left : right;
+  const leftMs = Date.parse(left.startedAt);
+  const rightMs = Date.parse(right.startedAt);
+  if (Number.isFinite(leftMs) && Number.isFinite(rightMs) && leftMs !== rightMs) {
+    return leftMs < rightMs ? left : right;
+  }
   return left.startedAt <= right.startedAt ? left : right;
 }
 
@@ -123,7 +128,9 @@ export function mergeActivities(
     const twinIndex = next.findIndex(
       (item) =>
         item.id === activity.id ||
-        (dispositionOf(item) !== "excluded" && sameWorkout(item, activity)),
+        (dispositionOf(item) !== "excluded" &&
+          dispositionOf(activity) !== "excluded" &&
+          sameWorkout(item, activity)),
     );
     if (twinIndex < 0) {
       next.push(activity);

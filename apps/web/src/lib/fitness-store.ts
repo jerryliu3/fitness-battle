@@ -266,9 +266,10 @@ export async function persistSyncedActivities(
   const existingByKey = new Map(
     existingData.map((r) => [`${r.provider}:${r.external_id}`, r]),
   );
-  const activePool: Activity[] = existingData
-    .filter((r) => r.sport && (r.disposition ?? "counted") !== "excluded")
-    .map((r) => ({
+  const activePool: Activity[] = [];
+  for (const r of existingData) {
+    if (!r.sport || (r.disposition ?? "counted") === "excluded") continue;
+    const item: Activity = {
       id: r.compete_key ?? `${r.provider}-${r.external_id}`,
       sport: r.sport as SportId,
       startedAt: r.started_at,
@@ -279,7 +280,11 @@ export async function persistSyncedActivities(
       source: (r.source_label ?? r.provider) as Activity["source"],
       provenance: (r.provenance ?? "recorded") as Activity["provenance"],
       disposition: (r.disposition ?? "counted") as Activity["disposition"],
-    }));
+    };
+    if (!activePool.some((prev) => prev.id === item.id || sameWorkout(prev, item))) {
+      activePool.push(item);
+    }
+  }
 
   const rows = activities.flatMap((activity) => {
     if (!CLOUD_PROVIDERS.has(activity.provider) || activity.provider === "mock") return [];
@@ -315,7 +320,7 @@ export async function persistSyncedActivities(
       disposition,
     };
 
-    if (!existing && disposition !== "excluded") {
+    if (disposition !== "excluded") {
       const twin = activePool.find(
         (item) => item.id !== candidate.id && sameWorkout(item, candidate),
       );
@@ -323,7 +328,7 @@ export async function persistSyncedActivities(
         disposition = "excluded";
         verified = false;
         dispositionReason = `Already counted from ${twin.provenance ?? "recorded"} ${twin.source}.`;
-      } else {
+      } else if (!activePool.some((item) => item.id === candidate.id)) {
         activePool.push(candidate);
       }
     }
