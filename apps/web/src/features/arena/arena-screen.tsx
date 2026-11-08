@@ -154,7 +154,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
       {selectedSport && selectedSport !== "sleep" && !queue?.queued && !queue?.awaitingField ? <FieldStage externalAthleteFocus={athleteFocus} key={`${account}:${selectedSport}:${state.units}`} onOptionsChange={setCourseOptions} persistent backgroundMode presentationVisible={immersive} onExit={() => setImmersiveAccount(null)} tabActive={tabActive} replayState={state} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
       {immersive && !detailDestination && <div className="compete-field-options">{courseOptions}</div>}
 
-      {!immersive && <div className="compete-event-home">
+      <div className="compete-event-home" hidden={immersive} inert={immersive} style={{ display: immersive ? "none" : undefined }}>
         <header className="compete-home-header">
           <div className="compete-section-heading"><div className="compete-home-title"><CompeteIcon name="wreath" size={34} /><AppHeading role="display" level={1}>Compete</AppHeading></div></div>
           <div className="compete-home-date"><AppText secondary>{dateRangeLabel}</AppText><StatusBadge>{badgeLabel}</StatusBadge></div>
@@ -167,7 +167,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
           else openRegistration(event);
         }} />
         <CompeteResults state={state} />
-      </div>}
+      </div>
       <CompeteSheet overview={!queue?.queued && !queue?.awaitingField ? <CompetitionTimelineControls /> : undefined} active={immersive && !detailDestination} expandRequest={expandRequest}>
 
 
