@@ -34,7 +34,6 @@ export function EventArt({ event, feature = false, gold = false }: { event: Comp
 
 export function ExploreEvents({ onChoose }: { onChoose(event: CompeteEvent): void }) {
   const c = useThemeColors();
-  const { width } = useWindowDimensions();
   const categories = COMPETE_CATEGORIES;
   return <View style={{ gap: 20 }}>
     <AppText role="heading" accessibilityRole="header">Explore events</AppText>
@@ -42,10 +41,9 @@ export function ExploreEvents({ onChoose }: { onChoose(event: CompeteEvent): voi
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <CompeteIcon name={category.id === "recovery" ? "recovery" : category.id} size={22} />
         <AppText role="label">{category.title}</AppText>
-        <AppText role="caption" secondary style={{ marginLeft: "auto" }}>{category.events.map(event => event[0].toUpperCase() + event.slice(1)).join(", ")}</AppText>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 20 }}>
-        {category.events.map(event => <Pressable key={event} accessibilityRole="button" accessibilityLabel={`Explore ${event}`} onPress={() => onChoose(event)} style={({ pressed }) => ({ width: category.events.length === 1 ? Math.min(340, width - 48) : 158, minHeight: 104, padding: 14, gap: 8, borderWidth: 1, borderColor: c.line, borderRadius: 20, backgroundColor: c.card, overflow: "hidden", opacity: pressed ? 0.7 : 1 })}>
+        {category.events.map(event => <Pressable key={event} accessibilityRole="button" accessibilityLabel={`Explore ${event}`} onPress={() => onChoose(event)} style={({ pressed }) => ({ width: 158, minHeight: 104, padding: 14, gap: 8, borderWidth: 1, borderColor: c.line, borderRadius: 20, backgroundColor: c.card, overflow: "hidden", opacity: pressed ? 0.7 : 1 })}>
           <EventArt event={event} />
           <CompeteIcon name={event} size={28} />
           <AppText role="label">{event[0].toUpperCase() + event.slice(1)}</AppText>

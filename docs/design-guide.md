@@ -938,3 +938,9 @@ is the explicit commitment. The general Register control still opens an event
 chooser before the same package. Queued event details and Cancel registration
 live in the foreground competition sheet, independently of map preparation;
 Back and successful cancellation return to the event home.
+
+Explore sport cards retain a fixed 158-point width even for a single event.
+Category rows show only their icon and title. Registration packages use a gold
+illustrated hero, tinted detail icons, and a metallic ticket with side cutouts;
+scoring explanations and the explicit entry commitment remain unchanged. Native
+AppIcon sport outlines and web sport icons consume the shared SVG artwork.
