@@ -966,3 +966,7 @@ use Phosphor Regular. iOS native tabs use bundled template PNGs at 1x/2x/3x
 from the same official SVGs, retaining system tint and native tab behavior.
 Card tint layers extend 24 points beyond every edge and clip at the parent’s
 rounded boundary so no internal gradient rectangle is visible.
+
+The header flame uses Phosphor Fire Regular when inactive today and Fire Fill
+when counted activity exists on the current Eastern day; the number retains its
+weekly streak meaning. The custom Compete wreath is awaiting a replacement choice.

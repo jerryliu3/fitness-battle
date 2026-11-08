@@ -1,6 +1,6 @@
 import { countsOnTrack } from "./compete/ledger";
 import type { Activity } from "./compete/sports";
-import { shiftAppDay, weeklyPeriodBounds } from "./period";
+import { dayKey, shiftAppDay, weeklyPeriodBounds } from "./period";
 
 /** Consecutive Eastern calendar weeks with counted activity in any sport.
  * The current week can still be completed: show the prior streak dimmed until active.
@@ -26,4 +26,14 @@ export function weeklyActivityStreak(activities: readonly Activity[], now = new 
     start = shiftAppDay(start, -7);
   }
   return { count, active };
+}
+
+/** Today’s counted activity controls the flame fill, independently of the weekly count. */
+export function hasCountedActivityToday(activities: readonly Activity[], now = new Date()) {
+  const today = dayKey(now);
+  return activities.some(activity => {
+    const at = Date.parse(activity.startedAt);
+    return countsOnTrack(activity, "open") && Number.isFinite(at) && at <= now.getTime()
+      && (activity.movingSec > 0 || activity.distanceM > 0) && dayKey(new Date(at)) === today;
+  });
 }

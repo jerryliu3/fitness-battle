@@ -5,11 +5,11 @@ import { useBootImage } from "./boot-readiness";
 import { EffortRail } from "../features/effort-rail";
 
 import { usePathname, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppIcon } from "./app-icon";
-import { weeklyActivityStreak, competeNow, DEBUG_EVENT_OPTIONS, type DebugEventId } from "@fitness-battle/shared";
+import { hasCountedActivityToday, weeklyActivityStreak, competeNow, DEBUG_EVENT_OPTIONS, type DebugEventId } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
 import { isAthleteSettingsPath } from "../lib/navigation";
 
@@ -23,7 +23,9 @@ const s=useThemedStyles(sThemes);
   const [debugOpen, setDebugOpen] = useState(false);
   const router = useRouter();
   const path = usePathname();
-  const streak = useMemo(() => state ? weeklyActivityStreak(state.activities, competeNow(state)) : null, [state]);
+  const [clock, setClock] = useState(0);
+  useEffect(() => { const timer = setInterval(() => setClock(value => value + 1), 60_000); return () => clearInterval(timer); }, []);
+  const streak = useMemo(() => state ? ({ ...weeklyActivityStreak(state.activities, competeNow(state)), activeToday: hasCountedActivityToday(state.activities, competeNow(state)) }) : null, [state, clock]);
   const onAthlete = isAthleteSettingsPath(path);
 
   function handleSelectDebug(eventId: DebugEventId) {
@@ -47,8 +49,8 @@ const s=useThemedStyles(sThemes);
             <UserAvatar src={state?.avatarUrl} name={state?.name ?? "Athlete"} size={36} fallback={<AppIcon name="person" size={22} color={c.muted} />} onLoadEnd={imageSettled} />
           </Pressable>
           <View style={s.effort}><EffortRail compact /></View>
-          {streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.active ? "" : ", inactive this week"}`} style={[s.streak, { opacity: streak.active ? 1 : .4 }]}>
-            <AppIcon name="flame" size={22} color={c.actionPressed} />
+          {streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.activeToday ? ", active today" : ", inactive today"}`} style={[s.streak, { opacity: streak.activeToday ? 1 : .4 }]}>
+            <AppIcon name={streak.activeToday ? "flameFilled" : "flame"} size={22} color={c.actionPressed} />
             <Text style={s.debugBtnText}>{streak.count}</Text>
           </View>}
         </View>
