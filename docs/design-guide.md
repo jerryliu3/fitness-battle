@@ -898,3 +898,17 @@ forward race tangent over time. Racer travel backward retraces course distance
 without turning the lens around. Automatic position updates use the same route
 motion; reduced motion skips animation. Zoom and interruption behavior remain
 consistent across native and web.
+
+### Native time and course dock — November 7
+
+The immersive standings sheet owns the time scrubber and circular Play/Pause
+control. Its header measures its own content so date and time
+remain visible at the minimized stop. A separate vertical Course position rail
+sits beneath Current Leaders on the map: Start below, earned Leader above.
+Both sliders are directly available; dragging either never drags the sheet.
+The layers button opens existing course settings at the map's upper right,
+below attribution and clear of the top safe area. One timeline provider drives
+the retained map and sheet standings. Course seeking changes the camera only
+and stays bounded by the leader at the selected time. Event snapshots stay live.
+
+The immersive timeline always shows playback speed in a fixed 48px target, with tabular numerals. Its caption contains the date and time to minute precision, including at the live endpoint; omit local/simulated source labels. The course rail shares the leaders panel’s dark translucent surface and begins 12px below its measured bottom. The layers button has a visible dark translucent 44px target.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { freshState } from "./compete/engine";
 import { findSynthetic, pickSynthetics, syntheticVolumeInWindow } from "./matching";
-import { addSimulatedReplay, competitionReplayFrame, indexCompetitionReplay, localCompetitionReplay, type CompetitionReplay, type CompetitionReplayEvent } from "./competition-replay";
+import { addSimulatedReplay, competitionReplayDate, competitionReplayFrame, indexCompetitionReplay, localCompetitionReplay, type CompetitionReplay, type CompetitionReplayEvent } from "./competition-replay";
 const selection = { sport: "running" as const, track: "verified" as const, periodStart: "2026-10-19T04:00:00Z", periodEnd: "2026-10-26T04:00:00Z" };
 const event = (id: string, athleteId: string, distanceM: number, at = "2026-10-20T12:00:00Z"): CompetitionReplayEvent => ({ id, athleteId, distanceM, movingSec: distanceM / 3, effort: distanceM / 1000, at });
 const ledger = (events: CompetitionReplayEvent[]): CompetitionReplay => ({ ...selection, through: "2026-10-25T14:00:00Z", athletes: [{ id: "you", name: "You", you: true }, { id: "peer", name: "Peer", you: false }], events, scope: "field" });
@@ -61,4 +61,12 @@ describe("competition replay presentation ledger", () => {
     expect(replay.athletes.some(a => a.you)).toBe(true);
     expect(replay.athletes.filter(a => !a.you).length).toBe(7);
   });
+});
+
+it("interpolates the displayed clock within an event, including reverse seeking", () => {
+  const index = indexCompetitionReplay(ledger([event("first", "you", 1000, "2026-10-19T08:00:00Z")]), "metric");
+  expect(competitionReplayDate(index, 0)).toContain("12:00 AM");
+  expect(competitionReplayDate(index, .5)).toContain("2:00 AM");
+  expect(competitionReplayDate(index, .75)).toContain("3:00 AM");
+  expect(competitionReplayDate(index, .25)).toContain("1:00 AM");
 });

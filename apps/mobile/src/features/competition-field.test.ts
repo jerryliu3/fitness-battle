@@ -1,3 +1,6 @@
+vi.mock("react-native-reanimated", () => ({ default: { View: "AnimatedRow" }, LinearTransition: { duration: () => ({}) } }));
+vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
+import { CompetitionTimelineProvider, CompetitionTimelineControls } from "./competition-timeline-context";
 vi.mock("./competition-replay", () => ({ CompetitionReplayModal: "ReplayModal" }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: null, offlineMode: true }) }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "" } }));
@@ -7,7 +10,7 @@ vi.mock("./athlete-profile-sheet", () => ({ AthleteProfileSheet: "AthleteProfile
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { defaultFieldAppearance, freshState, reduceCompete, DEMO_RACE_COURSE } from "@fitness-battle/shared";
+import { competePeriodWindow, competeNow, defaultFieldAppearance, freshState, reduceCompete, DEMO_RACE_COURSE } from "@fitness-battle/shared";
 const mocks = vi.hoisted(() => ({ fly: vi.fn(), path: "/arena", appState: null as null | ((status: string) => void) }));
 vi.mock("expo-router", () => ({ usePathname: () => mocks.path }));
 vi.mock("react-native", () => ({useColorScheme: () => "light",
@@ -247,4 +250,26 @@ it("leaves the redesigned immersive sheet free of the legacy timeline and keeps 
   expect(renderer.root.findByType("ReplayModal" as never).props.open).toBe(true);
   await act(async () => renderer.root.findByType("ReplayModal" as never).props.onClose());
   expect(renderer.root.findByType("ReplayModal" as never).props.open).toBe(false);
+});
+
+it("shares historical positions between the retained map and standings and bounds the vertical course rail", async () => {
+  await act(async () => renderer.unmount());
+  const period = competePeriodWindow(fieldState, competeNow(fieldState), "running");
+  await act(async () => { renderer = create(createElement(CompetitionTimelineProvider, {
+    state: fieldState, selection: { sport: "running", track: "verified", periodStart: period.startsAt.toISOString(), periodEnd: period.endsAt.toISOString() }, enabled: true, active: true,
+    children: createElement("View", null,
+      createElement(CompetitionField, { sport: "running", track: "verified", persistent: true, backgroundMode: true }),
+      createElement(CompetitionTimelineControls),
+      createElement(CompetitionField, { sport: "running", track: "verified", standingsOnly: true })),
+  })); });
+  const timeline = () => renderer.root.findAllByProps({ accessibilityLabel: "Competition timeline" })[0];
+  expect(timeline().props.accessibilityValue.max).toBeGreaterThan(0);
+  await act(async () => timeline().props.onAccessibilityAction({ nativeEvent: { actionName: "decrement" } }));
+  const map = renderer.root.findByType("GeographicCourse" as never);
+  expect(map.props.lanes.every((lane: { value: number }) => lane.value === 0)).toBe(true);
+  expect(renderer.root.findByProps({ accessibilityLabel: "Course position" }).props.accessibilityValue.max).toBe(0);
+  const rows = renderer.root.findAllByType("Pressable" as never).filter(node => /^.+, place \d+,/.test(node.props.accessibilityLabel ?? ""));
+  expect(rows[0].props.accessibilityLabel).toContain("0.00");
+  await act(async () => timeline().props.onAccessibilityAction({ nativeEvent: { actionName: "increment" } }));
+  expect(map.props.lanes.some((lane: { value: number }) => lane.value > 0)).toBe(true);
 });

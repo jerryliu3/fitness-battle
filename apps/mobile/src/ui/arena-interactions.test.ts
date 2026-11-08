@@ -1,3 +1,4 @@
+vi.mock("react-native-reanimated", () => ({ default: { View: "AnimatedRow" }, LinearTransition: { duration: () => ({}) } }));
 vi.mock("../features/use-competition-course", () => ({ useCompetitionCourse: () => ({ course: null, error: "" }) }));
 vi.mock("../lib/env", () => ({ mobileEnv: { mapboxAccessToken: "", apiUrl: "" } }));
 vi.mock("./compete-sheet", () => ({ CompeteSheet: "CompeteSheet" }));

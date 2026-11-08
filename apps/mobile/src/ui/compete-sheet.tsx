@@ -11,7 +11,8 @@ export function CompeteSheet({ children, expandRequest, active, overview }: { ch
   const { height } = useWindowDimensions();
   const bottom = 0;
   const maximum = Math.max(160, height - insets.top - bottom);
-  const headingHeight = overview ? 96 : 44;
+  const [controlsHeight, setControlsHeight] = useState(76);
+  const headingHeight = 44 + (overview ? controlsHeight : 0);
   const minimum = headingHeight + insets.bottom;
   const stops = [minimum, maximum * .42, maximum];
   const [visibleHeight, setVisibleHeight] = useState(maximum * .42);
@@ -46,7 +47,7 @@ export function CompeteSheet({ children, expandRequest, active, overview }: { ch
   return <Animated.View pointerEvents={active ? "auto" : "none"} accessibilityElementsHidden={!active} style={{ opacity: active ? 1 : 0, position: "absolute", left: 0, right: 0, bottom, height: maximum, zIndex: 30, transform: [{ translateY: offset }], backgroundColor: c.paper, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: "visible" }}>
 
     <View {...pan.panHandlers} accessible accessibilityRole="adjustable" accessibilityLabel="Competition sheet height" accessibilityValue={{ text: ["Minimized", "Partially expanded", "Fully expanded"][index] }} accessibilityActions={[{ name: "increment", label: "Expand" }, { name: "decrement", label: "Minimize" }]} onAccessibilityAction={event => snap(Math.max(0, Math.min(2, index + (event.nativeEvent.actionName === "increment" ? 1 : -1))))} style={{ height: 44, alignItems: "center", justifyContent: "center" }}><View style={{ width: 40, height: 4, borderRadius: 4, backgroundColor: c.muted }} /></View>
-    {overview && <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>{overview}</View>}
+    {overview && <View onLayout={event => setControlsHeight(Math.ceil(event.nativeEvent.layout.height))} style={{ paddingHorizontal: 16, paddingBottom: 8 }}>{overview}</View>}
     <ScrollView removeClippedSubviews={false} style={{ height: maximum - headingHeight, flexGrow: 0 }} nestedScrollEnabled scrollEnabled={index !== 0} accessibilityElementsHidden={index === 0} contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: Math.max(0, maximum - visibleHeight) + insets.bottom + 32 }}>{children}</ScrollView>
   </Animated.View>;
 }

@@ -35,6 +35,9 @@ async function mount() { await act(async () => { renderer = create(createElement
 it("starts with live totals, seeks forward and backward, and explicitly returns to Latest", async () => {
   await mount();
   expect(timeline().frame).toBeNull(); expect(timeline().count).toBe(2);
+  expect(timeline().label).toContain("Oct 25");
+  expect(timeline().label).toContain("2:00 PM");
+  expect(timeline().label).not.toMatch(/:00:00/);
   await act(async () => timeline().seek(1.5));
   expect(timeline().frame!.rows.find(row => row.id === "peer")!.value).toBe(1);
   await act(async () => timeline().seek(.5));

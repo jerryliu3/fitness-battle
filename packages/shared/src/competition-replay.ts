@@ -133,9 +133,12 @@ export function competitionReplayCaption(index: CompetitionReplayIndex, cursor: 
   const delta = after.value - before.value;
   return `${athlete.you ? "You" : athlete.name} +${delta.toLocaleString("en-US", { maximumFractionDigits: 2 })} ${index.unit} · ${before.place === after.place ? `#${after.place}` : `#${before.place} → #${after.place}`}${event.simulated ? " · simulated" : ""}`;
 }
-export function competitionReplayDate(index: CompetitionReplayIndex, cursor: number): string {
-  const event = index.replay.events[Math.max(0, Math.ceil(cursor) - 1)];
-  return new Date(cursor > 0 && event ? event.at : index.replay.periodStart).toLocaleString("en-US", { timeZone: APP_TIMEZONE, month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+export function competitionReplayDate(index: CompetitionReplayIndex, cursor: number, live = false): string {
+  const position = Math.max(0, Math.min(index.replay.events.length, Number.isFinite(cursor) ? cursor : 0));
+  const step = Math.floor(position), fraction = position - step;
+  const before = Date.parse(step ? index.replay.events[step - 1]!.at : index.replay.periodStart);
+  const after = Date.parse(index.replay.events[step]?.at ?? index.replay.through);
+  return new Date(live ? Date.parse(index.replay.through) : before + (after - before) * fraction).toLocaleString("en-US", { timeZone: APP_TIMEZONE, month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
 }
 
 export function competitionReplayDimension(sport: SportId, requested: "2d" | "3d" | "4d" = "4d") {
