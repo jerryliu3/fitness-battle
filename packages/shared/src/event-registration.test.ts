@@ -11,7 +11,8 @@ describe("event registration package", () => {
     expect(detail.details[0]?.detail).toContain("Lift weights and rep totals are not scored");
     expect(detail.starts).toContain("Nov 8");
     expect(detail.starts).toContain("6:00 AM");
-    expect(detail.ends).toContain("Nov 9");
+    expect(detail.ends).toContain("Nov 8");
+    expect(detail.ends).toContain("11:59 PM");
     expect(detail.renewal).toContain("Cancel before");
   });
   it("keeps track eligibility and sleep coverage explicit", () => {

@@ -29,7 +29,7 @@ export function eventRegistration(state: CompeteState, event: CompeteEvent, now:
     start: window.waveStart.toISOString(),
     stampYear: window.waveStart.toLocaleDateString("en-US", { timeZone: APP_TIMEZONE, year: "numeric" }),
     headline: sleep ? "Rest up. Rise up." : event === "strength" ? "Make every rep matter." : "Your next start line.",
-    starts: waveTimeLabel(window.waveStart), ends: waveTimeLabel(window.weekEnd),
+    starts: waveTimeLabel(window.waveStart), ends: waveTimeLabel(new Date(window.weekEnd.getTime() - 60_000)),
     description: sleep ? "Make rest part of your competition. Your counted sleep nights build a score from sleep quality and consistency." : event === "strength" ? "Build your week through strength training. Counted session time and recorded heart rate contribute effort points." : `Build your total ${name.toLowerCase()} distance throughout the wave and climb your matched field.`,
     details: [
       { title: "How scoring works", summary: sleep ? "Sleep quality & consistency" : event === "strength" ? "Training effort points" : "Total distance", detail: sleep ? "The field ranks your average nightly sleep score, adjusted for how many eligible nights you log. Missing nights reduce the contest score; more hours alone do not guarantee a higher score." : event === "strength" ? "Time in training earns effort points. Recorded heart rate can add a small bonus. Lift weights and rep totals are not scored." : "Your exact counted distance determines place. Equal totals share a place; rounded display values do not create ties." },
