@@ -43,7 +43,7 @@ vi.mock("react-native", async () => {
     View,
     Image: "Image",
     Modal: "Modal",
-    Animated: { View: "View", Value: class { constructor(public value: number) {} interpolate(config: unknown) { return config; } }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
+    Animated: { View: "View", Value: class { constructor(public value: number) {} setValue(value: number) { this.value = value; } interpolate(config: unknown) { return config; } }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
     Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x },
     AppState: { addEventListener: () => ({ remove() {} }) },
     useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
