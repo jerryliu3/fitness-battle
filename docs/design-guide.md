@@ -979,3 +979,11 @@ counted ledger, not an immutable log of import/notification delivery. Native
 privacy filters hide blocked activity while retaining the complete field for rank
 calculation. Loading, empty and retry states do not substitute a preview for a
 failed authenticated request. Native and web share the feed presentation model.
+
+The event sheet shows Standings or Activity through one flip button, rather than
+stacking both. The meet heading and timeline remain outside the turning panel.
+The panel turns edge-on, switches its visible face, then turns back in 400 ms;
+Reduced Motion switches immediately. Standings stays mounted to preserve its
+selection, while only the visible activity face loads its feed. Closing resets
+to Standings; event/account/wave changes create a fresh panel. Queued-event
+registration cancellation stays directly accessible outside this presentation.

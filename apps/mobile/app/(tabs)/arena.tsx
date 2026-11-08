@@ -1,3 +1,4 @@
+import { CompetitionPanel } from "../../src/features/competition-panel";
 import { CompetitionTimelineProvider, CompetitionTimelineControls } from "../../src/features/competition-timeline-context";
 import { EventRegistration } from "../../src/features/event-registration";
 import { useCompeteExperience } from "../../src/features/compete-experience";
@@ -123,11 +124,10 @@ const f=useFocusStyles();
           </AppText>
         ) : null}
         {!persistent && <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />}
-        {persistent ? selectedSport && selectedSport !== "sleep" ? queue?.queued || queue?.awaitingField ? <View style={{ gap: 16 }}><QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch({ type: "opt-out", sport: selectedSport }); exit(); }} /></View> : <CompetitionField sport={selectedSport} track={track} standingsOnly onFocusAthlete={id => { setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} /> : null : <>
+        {persistent ? selectedSport && selectedSport !== "sleep" ? queue?.queued || queue?.awaitingField ? <View style={{ gap: 16 }}><QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch({ type: "opt-out", sport: selectedSport }); exit(); }} /></View> : <CompetitionPanel key={`${accountKey}:${selectedSport}:${headerPeriod.startsAt.toISOString()}`} active={focused && experience.immersive} standings={<CompetitionField sport={selectedSport} track={track} standingsOnly onFocusAthlete={id => { setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} />} activity={visible => <RaceUpdates state={state} sport={selectedSport} active={visible} />} /> : null : <>
           <EventHome active={focused && !experience.immersive} state={state} accountKey={accountKey} onEnter={experience.enter} onRecovery={() => setSelection({ account: accountKey, sport: "sleep" })} />
           {selectedSport === "sleep" && (queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event="sleep" now={now} onCancel={() => dispatch({ type: "opt-out-health", metric: "sleep" })} /> : <SleepPanel state={state} dispatch={dispatch} />)}
         </>}
-        {persistent && selectedSport && selectedSport !== "sleep" && <RaceUpdates state={state} sport={selectedSport} active={focused && experience.immersive && !queue?.queued && !queue?.awaitingField} />}
         {!persistent && <CrewEvents onChoose={() => router.navigate("/field")} />}
         {!persistent && <ExploreEvents onChoose={event => {
           if (event === "sleep" && sleepOptedIn) setSelection({ account: accountKey, sport: "sleep" });

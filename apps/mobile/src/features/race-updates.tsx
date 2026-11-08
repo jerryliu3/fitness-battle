@@ -10,7 +10,6 @@ export function RaceUpdates({ state, sport, active }: { state: CompeteState; spo
   const { rows, loading, error, scope, retry } = useEventActivity(state, sport, active);
   if (!active) return null;
   return <View style={{ gap: 14 }}>
-    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}><AppText role="heading" accessibilityRole="header">Race updates</AppText><AppText role="caption" secondary>This wave</AppText></View>
     {error ? <View style={{ gap: 8 }}><AppText role="caption" accessibilityLiveRegion="polite">{error}</AppText><Pressable accessibilityRole="button" onPress={() => retry()} style={{ minHeight: 44, justifyContent: "center" }}><AppText role="label">Retry</AppText></Pressable></View> : loading ? <AppText role="caption" secondary>Loading race updates…</AppText> : <>
       {!rows.length && <AppText secondary>No counted activity in this wave yet.</AppText>}
       <View style={{ borderRadius: 20, backgroundColor: c.card, overflow: "hidden" }}>{rows.map((row, i) => <View key={row.id} style={{ padding: 16, flexDirection: "row", gap: 12, borderTopWidth: i ? 1 : 0, borderColor: c.line }}>
