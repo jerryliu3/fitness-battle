@@ -1,52 +1,73 @@
-import { useFocusStyles } from "../../src/ui/focus";
-import { createThemedStyles, useThemedStyles } from "../../src/theme";
-import { AppText, SectionStack } from "../../src/ui/section";
-import { useDailySuggestion } from "../../src/features/use-daily-suggestion";
-
-import { WeekChart } from "../../src/features/week-chart";
-import { DailyHealth } from "../../src/features/daily-health";
-import { LatestActivity } from "../../src/features/club-latest-activity";
-import type { Activity } from "@fitness-battle/shared";
-
-import { AnimatedEmber } from "../../src/ui/mascot/animated-ember";
-import { RivalCard } from "../../src/features/club-rival-card";
-
-import { APP_TIMEZONE, buildTodayRoute, competeNow, countsOnTrack, dayKey, primaryFreezePeriodStart } from "@fitness-battle/shared";
-import { useState, useCallback, useEffect } from "react";
+import {
+  APP_TIMEZONE,
+  buildTodayRoute,
+  competeNow,
+  countsOnTrack,
+  dayKey,
+  primaryFreezePeriodStart,
+  type Activity,
+} from "@fitness-battle/shared";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Platform, Pressable, ScrollView, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import { SessionStage } from "../../src/features/session-stage";
+import { LatestActivity } from "../../src/features/club-latest-activity";
+import { DailyHealth } from "../../src/features/daily-health";
 import { HomeActivityActions } from "../../src/features/home-activity-actions";
-import { Journey } from "../../src/features/journey";
+import { HomeDeck } from "../../src/features/home-deck";
+import { SessionStage } from "../../src/features/session-stage";
+import { WeekChart } from "../../src/features/week-chart";
 import { useCompeteStore } from "../../src/lib/compete-store";
-import { FocusDisclosure, FocusSheet } from "../../src/ui/focus";
+import { createThemedStyles, useThemedStyles } from "../../src/theme";
+import { FocusSheet, useFocusStyles } from "../../src/ui/focus";
+import { AppText, SectionStack } from "../../src/ui/section";
+
 export default function Home() {
-const f=useFocusStyles();
-const s=useThemedStyles(sThemes);
+  const f = useFocusStyles();
+  const s = useThemedStyles(sThemes);
 
   const router = useRouter();
   const { state, dispatch, accountKey } = useCompeteStore();
-  const suggestionPrompt = useDailySuggestion(accountKey, state);
-  const openSuggestion = () => { suggestionPrompt.dismiss(); setExpanded("suggestion"); };
-  const [removed,setRemoved]=useState<Activity|null>(null);
-  const [latest,setLatest]=useState<Activity|null>(null);
-  const [expanded, setExpanded] = useState<"suggestion" | null>(null);
-  useEffect(()=>{setLatest(null);setRemoved(null);},[accountKey]);
-  useFocusEffect(useCallback(()=>()=>{setExpanded(null);setLatest(null);},[]));
+  const [removed, setRemoved] = useState<Activity | null>(null);
+  const [sheet, setSheet] = useState<{
+    items: Activity[];
+    title: string;
+    isTodaySuggestion?: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    setSheet(null);
+    setRemoved(null);
+  }, [accountKey]);
+
+  useFocusEffect(
+    useCallback(
+      () => () => {
+        setSheet(null);
+      },
+      [],
+    ),
+  );
+
   if (!state)
     return (
       <SafeAreaView style={f.safe}>
-        <AppText role="body" secondary >Loading your week…</AppText>
+        <AppText role="body" secondary>
+          Loading your week…
+        </AppText>
       </SafeAreaView>
     );
+
   const route = buildTodayRoute(state);
   const now = competeNow(state);
   const counted = state.activities.filter(
     (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
   );
-  const units = state.units;
+  const todayKey = dayKey(now, APP_TIMEZONE);
+  const todayActivities = counted.filter(
+    (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === todayKey,
+  );
+
   return (
     <SafeAreaView style={f.safe} edges={[]}>
       <View style={s.homeStage}>
@@ -55,120 +76,131 @@ const s=useThemedStyles(sThemes);
           contentContainerStyle={s.homeOverlayContent}
           showsVerticalScrollIndicator={false}
         >
-          {removed?<View style={f.row}><AppText role="body" secondary accessibilityLiveRegion="polite" >Session removed.</AppText><Pressable accessibilityRole="button" onPress={()=>{dispatch({type:"set-disposition",activityId:removed.id,disposition:removed.disposition});setRemoved(null);}} style={{minHeight:44,justifyContent:"center"}}><AppText role="label" >Undo</AppText></Pressable></View>:null}
-          {state.frozenPeriods.includes(primaryFreezePeriodStart(state)) ? (
-            <AppText role="body" secondary >
-              ❄ Week frozen · Your effort score is protected through next
-              Monday.
-            </AppText>
+          {removed ? (
+            <View style={f.row}>
+              <AppText role="body" secondary accessibilityLiveRegion="polite">
+                Session removed.
+              </AppText>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  dispatch({
+                    type: "set-disposition",
+                    activityId: removed.id,
+                    disposition: removed.disposition,
+                  });
+                  setRemoved(null);
+                }}
+                style={{ minHeight: 44, justifyContent: "center" }}
+              >
+                <AppText role="label">Undo</AppText>
+              </Pressable>
+            </View>
           ) : null}
+
+          {state.frozenPeriods.includes(primaryFreezePeriodStart(state)) ? (
+            <View style={s.frozenBanner}>
+              <AppText role="body" secondary>
+                ❄ Week frozen · Your effort score is protected through next
+                Monday.
+              </AppText>
+            </View>
+          ) : null}
+
           <SectionStack divided={false}>
-          <WeekChart state={state} onOpen={() => router.push("/week")} />
-          <DailyHealth state={state} />
-          <RivalCard state={state} />
-          <LatestActivity state={state} onOpen={setLatest} />
-          {Platform.OS === "web" && <FocusDisclosure title="Your activity journey">
-          <View style={s.homeJourneyLayer} pointerEvents="box-none">
-            <Journey
-              activities={counted}
-              units={units}
-              onToday={openSuggestion}
+            <WeekChart state={state} onOpen={() => router.push("/week")} />
+
+            <HomeDeck
+              accountKey={accountKey}
+              state={state}
+              onOpenTodaySession={() =>
+                setSheet({
+                  items: todayActivities,
+                  title: "Today",
+                  isTodaySuggestion: true,
+                })
+              }
+              onOpenActivities={(items, title = "Your activity") =>
+                setSheet({ items, title, isTodaySuggestion: false })
+              }
             />
-          </View>
-          </FocusDisclosure>}
+
+            <DailyHealth state={state} />
+
+            <LatestActivity
+              state={state}
+              onOpen={(activity) =>
+                setSheet({
+                  items: [activity],
+                  title: "Your activity",
+                  isTodaySuggestion: false,
+                })
+              }
+            />
           </SectionStack>
         </ScrollView>
-        {suggestionPrompt.visible && !expanded && !latest ? (
-          <View style={s.suggestionPrompt}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Today's recommended session. Tap to view."
-              onPress={openSuggestion}
-              style={s.suggestionBody}
-            >
-              <AnimatedEmber size={36} expression="happy" action="idle" loop />
-              <View style={{ flex: 1, gap: 2 }}>
-                <AppText role="label" numberOfLines={1}>Today’s recommended session</AppText>
-                <AppText role="caption" secondary>Tap to view</AppText>
-              </View>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Dismiss suggested session for today"
-              onPress={suggestionPrompt.dismiss}
-              hitSlop={8}
-              style={s.suggestionDismiss}
-            >
-              <AppText role="caption" secondary>✕</AppText>
-            </Pressable>
-          </View>
-        ) : null}
       </View>
-      <FocusSheet open={Boolean(latest)} title="Your activity" onClose={()=>setLatest(null)}>{latest?<SessionStage state={state} activities={[latest]} onRemove={id=>{setRemoved(latest);dispatch({type:"set-disposition",activityId:id,disposition:"excluded"});setLatest(null);}}/>:null}</FocusSheet>
+
       <FocusSheet
-        open={expanded === "suggestion"}
-        title="Today"
-        onClose={() => setExpanded(null)}
+        open={Boolean(sheet)}
+        title={sheet?.title ?? "Your activity"}
+        onClose={() => setSheet(null)}
       >
-        <SessionStage state={state} activities={counted.filter(a=>dayKey(new Date(a.startedAt),APP_TIMEZONE)===dayKey(now,APP_TIMEZONE))} suggestion={route.suggestion} actions={<HomeActivityActions/>} onRemove={activityId=>dispatch({type:"set-disposition",activityId,disposition:"excluded"})}/>
+        {sheet ? (
+          <SessionStage
+            state={state}
+            activities={sheet.items}
+            suggestion={sheet.isTodaySuggestion ? route.suggestion : undefined}
+            actions={
+              sheet.isTodaySuggestion ? <HomeActivityActions /> : undefined
+            }
+            onRemove={(id) => {
+              const target = sheet.items.find((a) => a.id === id) ?? null;
+              setRemoved(target);
+              dispatch({
+                type: "set-disposition",
+                activityId: id,
+                disposition: "excluded",
+              });
+              if (sheet.items.length <= 1) {
+                setSheet(null);
+              } else {
+                setSheet({
+                  ...sheet,
+                  items: sheet.items.filter((a) => a.id !== id),
+                });
+              }
+            }}
+          />
+        ) : null}
       </FocusSheet>
     </SafeAreaView>
   );
 }
-const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
-  suggestionPrompt: {
-    position: "absolute",
-    bottom: 92,
-    left: 16,
-    right: 16,
-    maxWidth: 500,
-    alignSelf: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: c.card,
-    borderWidth: 1,
-    borderColor: c.line,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    shadowColor: c.ink,
-    shadowOpacity: 0.14,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-    gap: 8,
-  },
-  suggestionBody: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    minHeight: 44,
-  },
-  suggestionDismiss: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 16,
-  },
+
+const sThemes = createThemedStyles((c) => ({
   homeStage: {
     flex: 1,
     position: "relative",
-  },
-  homeJourneyLayer: {
-    width: "100%",
   },
   homeOverlayScroll: {
     flex: 1,
   },
   homeOverlayContent: {
     paddingHorizontal: 20,
-    paddingTop: 4,
-    paddingBottom: 220,
-    gap: 28,
+    paddingTop: 8,
+    paddingBottom: 140,
+    gap: 24,
     maxWidth: 880,
     width: "100%",
     alignSelf: "center",
   },
-};});
+  frozenBanner: {
+    backgroundColor: c.soft,
+    borderWidth: 1,
+    borderColor: c.line,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+}));
