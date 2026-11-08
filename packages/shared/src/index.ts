@@ -45,6 +45,7 @@ export * from "./integration-icons";
 export * from "./week-chart";
 export * from "./chart-scrubber";
 export * from "./home-health";
+export * from "./home-deck";
 export * from "./sport-mark";
 
 export * from "./account-runtime";
