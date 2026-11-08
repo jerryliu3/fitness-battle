@@ -947,3 +947,10 @@ AppIcon sport outlines and web sport icons consume the shared SVG artwork.
 
 Registration hero, detail-icon tiles, and entry-pass artwork reuse the selected
 event’s Explore artwork color. Gold remains the primary action color.
+
+Compete discovery is titled Event registration and replaces the header Register
+action. Category artwork uses green for Distance, blue for Time, and purple for
+Recovery, including entry packages. Registered event previews are square with a
+compact See race action. Last-update text uses the shared support recipe, actions
+and Crew event use label, all in Manrope. A slow pulsing live dot accompanies
+last update, pauses when inactive, and stays still with Reduced Motion.

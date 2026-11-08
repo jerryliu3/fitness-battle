@@ -30,7 +30,7 @@ export const COMPETE_ART = {
   sleep: ["M35 160C80 158 90 104 140 120S184 82 240 113V160Z", "M70 160C130 110 165 160 240 147V160Z"],
 } as const;
 
-export const COMPETE_ART_COLORS = { running: "#9ab596", cycling: "#9dbed0", walking: "#c7b897", strength: "#b8acc7", sleep: "#afa1c4" } as const;
+export const COMPETE_ART_COLORS = { running: "#9ab596", cycling: "#9ab596", walking: "#9ab596", strength: "#9dbed0", sleep: "#afa1c4" } as const;
 
 export function competeHomeRank(state: CompeteState) {
   const rating = state.ratings.find(r => r.sport === state.primary);

@@ -143,7 +143,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
       {selectedSport && selectedSport !== "sleep" ? <FieldStage externalAthleteFocus={athleteFocus} key={`${account}:${selectedSport}:${state.units}`} onOptionsChange={setCourseOptions} externalCourseTarget={courseTarget} persistent backgroundMode presentationVisible={immersive} onExit={() => setImmersiveAccount(null)} tabActive={tabActive} replayState={state} queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField overlay state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
       {!immersive && <div className="compete-event-home">
         <header className="compete-home-header">
-          <div className="compete-section-heading"><div className="compete-home-title"><CompeteIcon name="wreath" size={34} /><AppHeading role="display" level={1}>Compete</AppHeading></div><button type="button" className="fb-btn-ghost" onClick={() => openRegistration()}>+ Register</button></div>
+          <div className="compete-section-heading"><div className="compete-home-title"><CompeteIcon name="wreath" size={34} /><AppHeading role="display" level={1}>Compete</AppHeading></div></div>
           <div className="compete-home-date"><AppText secondary>{dateRangeLabel}</AppText><StatusBadge>{badgeLabel}</StatusBadge></div>
         </header>
         {standingsStale && <AppParagraph typographyRole="caption" role="status" className="fb-note">Standings may be out of date until the next refresh.</AppParagraph>}

@@ -16,7 +16,7 @@
 .compete-race-heading>span:last-child{margin-left:auto}
 .compete-sport-icon{padding:9px;border-radius:12px;background:var(--action-soft);display:flex}
 .compete-live{color:var(--app-status-success)}
-.compete-race-entry{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;border:0;background:transparent;color:var(--ink);text-align:left;cursor:pointer;width:100%}
+.compete-race-entry{margin-top:-8px;margin-bottom:-8px;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;border:0;background:transparent;color:var(--ink);text-align:left;cursor:pointer;width:100%}
 .compete-recovery-card{position:relative;flex:0 0 min(328px,88%);scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-height:390px;padding:20px;border:1px solid var(--line);border-radius:20px;background:var(--accent-soft);color:var(--ink);text-align:left;overflow:hidden;cursor:pointer}
 .compete-recovery-card>span:last-child{margin-top:auto}
 .compete-empty{display:grid;justify-items:center;gap:12px;padding:32px 20px;border:1px dashed var(--line);background:var(--card);color:var(--ink);border-radius:20px;cursor:pointer}
@@ -39,7 +39,7 @@
 .compete-feature-copy{display:grid;gap:4px;flex:1}
 .compete-feature-arrow{flex:none;border-radius:99px;background:var(--card);min-height:44px;padding:0 14px;display:grid;place-items:center}
 .compete-feature-banner:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
-.compete-race-card .compete-event-preview{aspect-ratio:1.6}
+.compete-race-card .compete-event-preview{aspect-ratio:1}
 .compete-carousel-dots{display:flex;justify-content:center;gap:6px}
 .compete-carousel-dots span{width:6px;height:6px;border-radius:50%;background:var(--line)}
 .compete-carousel-dots span[data-active="true"]{background:var(--app-podium-gold)}
@@ -81,3 +81,9 @@
 .event-registration .registration-hero,.event-registration .registration-pass,.event-registration .registration-detail-icon{background:color-mix(in srgb,var(--registration-color) 20%,var(--card))}
 .event-registration .registration-detail-icon{color:var(--ink)}
 .event-registration .registration-barcode{background:repeating-linear-gradient(90deg,var(--ink) 0 3px,transparent 3px 6px,var(--ink) 6px 8px,transparent 8px 11px)}
+
+.compete-last-update{display:flex;align-items:center;gap:6px}
+.compete-live-dot{flex:none;width:6px;height:6px;border-radius:50%;background:var(--app-status-success)}
+.compete-live-dot[data-active="true"]{animation:compete-live-pulse 1.8s ease-in-out infinite}
+@keyframes compete-live-pulse{50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.compete-live-dot[data-active="true"]{animation:none}}

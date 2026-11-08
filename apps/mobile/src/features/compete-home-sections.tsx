@@ -36,7 +36,7 @@ export function ExploreEvents({ onChoose }: { onChoose(event: CompeteEvent): voi
   const c = useThemeColors();
   const categories = COMPETE_CATEGORIES;
   return <View style={{ gap: 20 }}>
-    <AppText role="heading" accessibilityRole="header">Explore events</AppText>
+    <AppText role="heading" accessibilityRole="header">Event registration</AppText>
     {categories.map(category => <View key={category.id} style={{ gap: 10 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <CompeteIcon name={category.id === "recovery" ? "recovery" : category.id} size={22} />
@@ -82,7 +82,7 @@ export function CrewEvents({ onChoose }: { onChoose(sport: SportId): void }) {
       <MetallicFill />
       <EventArt event="running" feature gold />
       <View style={{ flexShrink: 0 }}><CompeteIcon name="crew" size={42} gold /></View>
-      <View style={{ flex: 1, gap: 4 }}><AppText role="caption">CREW EVENT</AppText><AppText role="label">{sport.name} challenge</AppText><AppText role="caption" secondary>Compete with your crew</AppText></View><View style={{ flexDirection: "row", alignItems: "center", minHeight: 44, gap: 6, paddingHorizontal: 16, borderRadius: 99, backgroundColor: c.card }}><AppText role="label">Join</AppText><AppIcon name="chevron" size={16} /></View>
+      <View style={{ flex: 1, gap: 4 }}><AppText role="label">Crew event</AppText><AppText role="label">{sport.name} challenge</AppText><AppText role="caption" secondary>Compete with your crew</AppText></View><View style={{ flexDirection: "row", alignItems: "center", minHeight: 44, gap: 6, paddingHorizontal: 16, borderRadius: 99, backgroundColor: c.card }}><AppText role="label">Join</AppText><AppIcon name="chevron" size={16} /></View>
     </Pressable>)}
   </ScrollView>;
 }

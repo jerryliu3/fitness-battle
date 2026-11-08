@@ -45,16 +45,16 @@ function RegisteredEventCard({ state, sport, active, onEnter }: { state: Compete
   const { rows } = useEventActivity(state, sport, active && !queued);
   const update = formatActivityAge(rows[0]?.at, now);
   return <article className="compete-race-card">
-    <div className="compete-race-heading"><span className="compete-sport-icon"><CompeteIcon name={sport} /></span><div><AppText role="label">{SPORTS.find(s => s.id === sport)?.name}</AppText><AppText role="caption" secondary>{queued ? "Upcoming wave" : `Last update: ${update === "—" ? "Unavailable" : update}`}</AppText></div>{!queued && <AppText role="caption" secondary>Place {place} / {lanes.length}</AppText>}</div>
+    <div className="compete-race-heading"><span className="compete-sport-icon"><CompeteIcon name={sport} /></span><div><AppText role="label">{SPORTS.find(s => s.id === sport)?.name}</AppText><div className="compete-last-update">{!queued && <span aria-hidden="true" className="compete-live-dot" data-active={active} />}<AppText role="support" secondary>{queued ? "Upcoming wave" : `last update: ${update === "—" ? "Unavailable" : update}`}</AppText></div></div>{!queued && <AppText role="caption" secondary>Place {place} / {lanes.length}</AppText>}</div>
     <CoursePreview sport={sport} queued={queued} state={state} />
-    <button type="button" className="compete-race-entry" aria-label={`Enter ${SPORTS.find(s => s.id === sport)?.name} field`} onClick={onEnter}><AppText role="caption" secondary>See race</AppText><span aria-hidden="true">→</span></button>
+    <button type="button" className="compete-race-entry" aria-label={`Enter ${SPORTS.find(s => s.id === sport)?.name} field`} onClick={onEnter}><AppText role="label">See race</AppText><span aria-hidden="true">→</span></button>
   </article>;
 }
 
 export function ExploreEvents({ onChoose }: { onChoose(event: CompeteEvent): void }) {
   const categories = COMPETE_CATEGORIES;
-  return <section className="compete-home-section" aria-label="Explore events">
-    <AppHeading>Explore events</AppHeading>
+  return <section className="compete-home-section" aria-label="Event registration">
+    <AppHeading>Event registration</AppHeading>
     {categories.map(category => <div key={category.id} className="compete-category">
       <div className="compete-section-heading"><div><CompeteIcon name={category.id === "recovery" ? "recovery" : category.id} size={22} /><AppHeading role="label" level={3}>{category.title}</AppHeading></div></div>
       <div className={`compete-carousel compete-sports is-${category.id}`} tabIndex={0} aria-label={`${category.title} events carousel`}>
@@ -78,7 +78,7 @@ export function CrewEvents({ onChoose }: { onChoose(sport: SportId): void }) {
     {SPORTS.map(sport => <button type="button" key={sport.id} className="compete-feature-banner" onClick={() => onChoose(sport.id)}>
       <EventArt event="running" gold />
       <CompeteIcon name="crew" size={42} />
-      <div className="compete-feature-copy"><AppText role="caption">CREW EVENT</AppText><AppHeading role="label">{sport.name} challenge</AppHeading><AppText role="caption">Compete with your crew</AppText></div>
+      <div className="compete-feature-copy"><AppText role="label">Crew event</AppText><AppHeading role="label">{sport.name} challenge</AppHeading><AppText role="caption">Compete with your crew</AppText></div>
       <span className="compete-feature-arrow" aria-hidden="true">Join →</span>
     </button>)}
   </div></section>;
