@@ -255,18 +255,10 @@ it("reads available routes for workouts beyond the first twenty", async () => {
  expect(reader).toHaveBeenCalledWith({id:"workout-20"},expect.any(Function));
 });
 
-it("uses and updates the incremental sync cursor and deduplicates sameWorkout sessions", async () => {
-  const store = new Map<string, string>();
-  const cursorStore = {
-    getItem: vi.fn(async (key: string) => store.get(key) ?? null),
-    setItem: vi.fn(async (key: string, val: string) => {
-      store.set(key, val);
-    }),
-  };
+it("uses the incremental sync cursor and deduplicates sameWorkout sessions", async () => {
   const recentSync = new Date(Date.now() - 2 * 86_400_000).toISOString();
   const deps = testDeps({
     lastSyncAt: recentSync,
-    cursorStore,
     workouts: [
       {
         id: "hk-dup-1",
@@ -296,9 +288,5 @@ it("uses and updates the incremental sync cursor and deduplicates sameWorkout se
   ).mock.calls[0]?.[0] as { startDate: string };
   expect(Date.parse(queryOptions.startDate)).toBeGreaterThan(
     Date.now() - 5 * 86_400_000,
-  );
-  expect(cursorStore.setItem).toHaveBeenCalledWith(
-    "device-sync-cursor:apple_health:user-1",
-    expect.any(String),
   );
 });

@@ -1,4 +1,4 @@
-import { normalizeRouteReplay, sameWorkout, type Activity, type SportId } from "@fitness-battle/shared";
+import { activityFromSample, mergeActivities, normalizeRouteReplay } from "@fitness-battle/shared";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type {
   ActivitySample,
@@ -233,106 +233,45 @@ export async function persistSyncedActivities(
     (categories ?? []).map((row) => [row.slug as string, row.id as string]),
   );
 
-  type ExistingRow = {
-    provider: string;
-    external_id: string;
-    compete_key: string | null;
-    sport: string | null;
-    started_at: string;
-    distance_m: number | null;
-    moving_sec: number | null;
-    verified: boolean | null;
-    provenance: string | null;
-    disposition: string | null;
-    disposition_reason: string | null;
-    source_label: string | null;
-  };
-  const activitiesTable = db.from("activities") as unknown as {
-    select?: (columns: string) => {
-      eq: (col: string, val: string) => Promise<{ data: ExistingRow[] | null; error: { message: string } | null }>;
+  const table = db.from("activities") as {
+    select?: (cols: string) => {
+      eq: (col: string, val: string) => Promise<{ data: Record<string, string | null>[] | null }>;
     };
-    upsert: SupabaseClient["from"] extends (t: string) => infer R ? R extends { upsert: infer U } ? U : never : never;
   };
-  const existingData =
-    typeof activitiesTable.select === "function"
-      ? (
-          await activitiesTable
-            .select(
-              "provider, external_id, compete_key, sport, started_at, distance_m, moving_sec, verified, provenance, disposition, disposition_reason, source_label",
-            )
-            .eq("user_id", userId)
-        ).data ?? []
-      : [];
   const existingByKey = new Map(
-    existingData.map((r) => [`${r.provider}:${r.external_id}`, r]),
+    (typeof table.select === "function"
+      ? (await table.select("provider, external_id, disposition, disposition_reason").eq("user_id", userId)).data ?? []
+      : []
+    ).map((r) => [`${r.provider}:${r.external_id}`, r]),
   );
-  const activePool: Activity[] = [];
-  for (const r of existingData) {
-    if (!r.sport || (r.disposition ?? "counted") === "excluded") continue;
-    const item: Activity = {
-      id: r.compete_key ?? `${r.provider}-${r.external_id}`,
-      sport: r.sport as SportId,
-      startedAt: r.started_at,
-      distanceM: Number(r.distance_m ?? 0),
-      movingSec: Number(r.moving_sec ?? 0),
-      avgHr: null,
-      verified: Boolean(r.verified),
-      source: (r.source_label ?? r.provider) as Activity["source"],
-      provenance: (r.provenance ?? "recorded") as Activity["provenance"],
-      disposition: (r.disposition ?? "counted") as Activity["disposition"],
-    };
-    if (!activePool.some((prev) => prev.id === item.id || sameWorkout(prev, item))) {
-      activePool.push(item);
-    }
-  }
+  const mergedById = new Map(
+    mergeActivities(
+      [],
+      activities.flatMap((a) => {
+        const act = activityFromSample(a, provenance);
+        return act ? [act] : [];
+      }),
+    ).map((a) => [a.id, a]),
+  );
 
   const rows = activities.flatMap((activity) => {
     if (!CLOUD_PROVIDERS.has(activity.provider) || activity.provider === "mock") return [];
     const categoryId = bySlug.get(activity.categorySlug);
     if (!categoryId) return [];
     const sport = activity.categorySlug;
-    const distanceM = sport === "strength" ? 0 : Number(activity.metricValue ?? 0);
-    const movingSec = activity.movingSec ?? 0;
     const existing = existingByKey.get(`${activity.provider}:${activity.externalId}`);
-    let disposition: "counted" | "pending" | "excluded" =
-      existing?.disposition === "excluded" || existing?.disposition === "counted" || existing?.disposition === "pending"
-        ? existing.disposition
-        : provenance === "imported"
-          ? "pending"
-          : "counted";
-    let dispositionReason: string | null = existing?.disposition_reason ?? null;
-    let verified =
+    const merged = mergedById.get(activity.id);
+    const disposition =
+      existing?.disposition === "excluded" || merged?.disposition === "excluded"
+        ? "excluded"
+        : (existing?.disposition as "counted" | "pending" | undefined) ??
+          (provenance === "imported" ? "pending" : "counted");
+    const dispositionReason = existing?.disposition_reason ?? merged?.dispositionReason;
+    const verified =
       disposition !== "excluded" &&
       provenance === "recorded" &&
       sport !== "strength" &&
       (activity.verified ?? activity.provider !== "garmin");
-
-    const candidate: Activity = {
-      id: activity.id,
-      sport,
-      startedAt: activity.startedAt,
-      distanceM,
-      movingSec,
-      avgHr: activity.avgHr ?? null,
-      verified,
-      source: activity.provider,
-      provenance,
-      disposition,
-    };
-
-    if (disposition !== "excluded") {
-      const twin = activePool.find(
-        (item) => item.id !== candidate.id && sameWorkout(item, candidate),
-      );
-      if (twin) {
-        disposition = "excluded";
-        verified = false;
-        dispositionReason = `Already counted from ${twin.provenance ?? "recorded"} ${twin.source}.`;
-      } else if (!activePool.some((item) => item.id === candidate.id)) {
-        activePool.push(candidate);
-      }
-    }
-
     return [
       {
         user_id: userId,
@@ -350,7 +289,7 @@ export async function persistSyncedActivities(
         route_bounds: activity.routeBounds ?? null,
         elevation_gain_m: activity.elevationGainM ?? null,
         sport,
-        distance_m: distanceM,
+        distance_m: sport === "strength" ? 0 : Number(activity.metricValue ?? 0),
         verified,
         provenance,
         disposition,

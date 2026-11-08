@@ -98,16 +98,11 @@ export function sameWorkout(left: Activity, right: Activity): boolean {
   return distanceGap <= tolerance;
 }
 
-export function prefer(left: Activity, right: Activity): Activity {
+function prefer(left: Activity, right: Activity): Activity {
   const leftRank = PRECEDENCE[provenanceOf(left)];
   const rightRank = PRECEDENCE[provenanceOf(right)];
   if (leftRank !== rightRank) return leftRank > rightRank ? left : right;
-  const leftMs = Date.parse(left.startedAt);
-  const rightMs = Date.parse(right.startedAt);
-  if (Number.isFinite(leftMs) && Number.isFinite(rightMs) && leftMs !== rightMs) {
-    return leftMs < rightMs ? left : right;
-  }
-  return left.startedAt <= right.startedAt ? left : right;
+  return Date.parse(left.startedAt) <= Date.parse(right.startedAt) ? left : right;
 }
 
 /**
@@ -138,18 +133,15 @@ export function mergeActivities(
     }
     const twin = next[twinIndex]!;
     if (twin.id === activity.id) {
+      const excluded = activity.disposition === "excluded";
       next[twinIndex] = isSampleActivity(activity)
         ? normalizeSampleActivity(activity)
         : {
             ...activity,
-            disposition:
-              activity.disposition === "excluded"
-                ? "excluded"
-                : dispositionOf(twin),
-            dispositionReason:
-              activity.disposition === "excluded"
-                ? (activity.dispositionReason ?? twin.dispositionReason)
-                : twin.dispositionReason,
+            disposition: excluded ? "excluded" : dispositionOf(twin),
+            dispositionReason: excluded
+              ? (activity.dispositionReason ?? twin.dispositionReason)
+              : twin.dispositionReason,
           };
       continue;
     }

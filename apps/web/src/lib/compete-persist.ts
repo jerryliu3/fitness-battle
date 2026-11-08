@@ -461,37 +461,32 @@ export async function loadCompeteAccount(
     ];
   });
 
-  const activities: Activity[] = mergeActivities(
-    [],
-    (activityRows ?? []).flatMap((row) => {
-      const sport = asSport(String(row.sport ?? ""));
-      const competeKey = row.compete_key ? String(row.compete_key) : "";
-      if (!sport || !competeKey) return [];
-      return [
-        {
-          id: competeKey,
-          summaryPolyline: row.summary_polyline == null ? null : String(row.summary_polyline),
-          detailedPolyline: row.detailed_polyline == null ? null : String(row.detailed_polyline),
-          routeBounds: Array.isArray(row.route_bounds) && row.route_bounds.length === 4 ? row.route_bounds.map(Number) as [number, number, number, number] : null,
-          elevationGainM: row.elevation_gain_m == null ? null : Number(row.elevation_gain_m),
-          sport,
-          startedAt: Number.isNaN(Date.parse(String(row.started_at)))
-            ? String(row.started_at)
-            : new Date(String(row.started_at)).toISOString(),
-          distanceM: Number(row.distance_m ?? 0),
-          movingSec: Number(row.moving_sec ?? 0),
-          avgHr: row.avg_hr == null ? null : Number(row.avg_hr),
-          verified: Boolean(row.verified),
-          source: asActivitySource(String(row.source_label ?? row.provider ?? "manual")),
-          provenance: asProvenance(row.provenance),
-          disposition: asDisposition(row.disposition),
-          dispositionReason: row.disposition_reason
-            ? String(row.disposition_reason)
-            : undefined,
-        },
-      ];
-    }),
-  );
+  const activities: Activity[] = mergeActivities([], (activityRows ?? []).flatMap((row) => {
+    const sport = asSport(String(row.sport ?? ""));
+    const competeKey = row.compete_key ? String(row.compete_key) : "";
+    if (!sport || !competeKey) return [];
+    return [
+      {
+        id: competeKey,
+        summaryPolyline: row.summary_polyline == null ? null : String(row.summary_polyline),
+        detailedPolyline: row.detailed_polyline == null ? null : String(row.detailed_polyline),
+        routeBounds: Array.isArray(row.route_bounds) && row.route_bounds.length === 4 ? row.route_bounds.map(Number) as [number, number, number, number] : null,
+        elevationGainM: row.elevation_gain_m == null ? null : Number(row.elevation_gain_m),
+        sport,
+        startedAt: Number.isNaN(Date.parse(String(row.started_at))) ? String(row.started_at) : new Date(String(row.started_at)).toISOString(),
+        distanceM: Number(row.distance_m ?? 0),
+        movingSec: Number(row.moving_sec ?? 0),
+        avgHr: row.avg_hr == null ? null : Number(row.avg_hr),
+        verified: Boolean(row.verified),
+        source: asActivitySource(String(row.source_label ?? row.provider ?? "manual")),
+        provenance: asProvenance(row.provenance),
+        disposition: asDisposition(row.disposition),
+        dispositionReason: row.disposition_reason
+          ? String(row.disposition_reason)
+          : undefined,
+      },
+    ];
+  }));
 
   const sleepNights: SleepNight[] = (sleepRows ?? []).map((row) => ({
     id: String(row.night_id),

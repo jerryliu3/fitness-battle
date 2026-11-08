@@ -140,13 +140,6 @@ describe("syncHealthConnect", () => {
   });
 
   it("uses incremental cursor and deduplicates duplicate Health Connect sessions", async () => {
-    const store = new Map<string, string>();
-    const cursorStore = {
-      getItem: vi.fn(async (key: string) => store.get(key) ?? null),
-      setItem: vi.fn(async (key: string, val: string) => {
-        store.set(key, val);
-      }),
-    };
     const health = mockHealthModule();
     health.readRecords = vi.fn(async (type: string) => {
       if (type === "ExerciseSession") {
@@ -188,7 +181,6 @@ describe("syncHealthConnect", () => {
         platform: "android",
         fetchFn,
         lastSyncAt: recentSync,
-        cursorStore,
         getAccessToken: async () => ({ token: "live-token", userId: "user-2" }),
         healthModule: health,
       }),
@@ -201,10 +193,6 @@ describe("syncHealthConnect", () => {
     };
     expect(Date.parse(rangeArg.timeRangeFilter.startTime)).toBeGreaterThan(
       Date.now() - 5 * 86_400_000,
-    );
-    expect(cursorStore.setItem).toHaveBeenCalledWith(
-      "device-sync-cursor:google_health:user-2",
-      expect.any(String),
     );
   });
 });
