@@ -92,8 +92,8 @@ const styles=useThemedStyles(stylesThemes);
             }}
             style={[styles.tab, selected ? styles.tabOn : null]}
           >
-            <AppIcon name={tabIcons[tab.id]} size={22} color={selected ? SHELL_COLORS.starEmber : SHELL_COLORS.muted} />
-            <AppText role="caption" style={{ color: selected ? SHELL_COLORS.paper : SHELL_COLORS.muted }}>{tab.label}</AppText>
+            <AppIcon name={tabIcons[tab.id]} size={22} color={selected ? SHELL_COLORS.ink : SHELL_COLORS.muted} />
+            <AppText role="caption" style={{ color: selected ? SHELL_COLORS.ink : SHELL_COLORS.muted }}>{tab.label}</AppText>
           </Pressable>
         );
       })}
@@ -132,6 +132,6 @@ const stylesThemes = createThemedStyles(themeColors=>{const SHELL_COLORS=themeCo
     paddingVertical: 6,
   },
   tabOn: {
-    backgroundColor: `${themeColors.textPrimary}f2`,
+    backgroundColor: themeColors.soft,
   },
 };});

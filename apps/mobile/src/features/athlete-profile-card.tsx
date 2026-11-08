@@ -26,7 +26,7 @@ const f=useFocusStyles();
     <View style={{ borderRadius: 24, backgroundColor: c.surfaceInverse, borderWidth: 1, borderColor: c.line, overflow: "hidden" }}>
       <View style={{ padding: 20, gap: 16 }}>
         <View style={[f.row, { gap: 16, alignItems: "center" }]}>
-          <UserAvatar src={avatarUrl} name={name} size={64} highlight fallback={<AppText role="heading" style={{ color: c.textOnAction }}>{initialsFromName(name)}</AppText>} />
+          <UserAvatar src={avatarUrl} name={name} size={64} highlight fallback={<AppText role="heading" style={{ color: c.ink }}>{initialsFromName(name)}</AppText>} />
           <View style={{ flex: 1, gap: 4 }}>
             <View style={[f.row, { justifyContent: "space-between", alignItems: "baseline" }]}>
               <AppText role={largeName ? "display" : "heading"} style={{ color: c.textOnFeature, flex: 1 }}>{name}</AppText>

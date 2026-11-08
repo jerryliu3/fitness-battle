@@ -13,8 +13,8 @@ const c=useThemeColors();
   const [failed, setFailed] = useState<string | null>(null);
   const url = src?.trim();
   return <View accessible={!decorative} accessibilityLabel={decorative ? undefined : name} accessibilityRole={decorative ? undefined : "image"}
-    style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden", alignItems: "center", justifyContent: "center", backgroundColor: highlight ? c.tennis : c.soft, borderWidth: highlight ? 2 : 0, borderColor: c.tennis }}>
+    style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden", alignItems: "center", justifyContent: "center", backgroundColor: c.soft, borderWidth: highlight ? 2 : 0, borderColor: c.ink }}>
     {url && failed !== url ? <Image source={{ uri: url }} resizeMode="cover" onError={() => { setFailed(url); onLoadEnd?.(); }} onLoadEnd={onLoadEnd} style={{ width: size, height: size }} />
-      : fallback ?? <Text style={[textStyle("label"), { color: highlight ? c.textOnAction : c.ink }]}>{initialsFromName(name) || "?"}</Text>}
+      : fallback ?? <Text style={[textStyle("label"), { color: c.ink }]}>{initialsFromName(name) || "?"}</Text>}
   </View>;
 }

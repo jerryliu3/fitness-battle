@@ -248,5 +248,5 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   thumb: { position: "absolute", top: 12, width: 20, height: 20, marginLeft: -10, borderRadius: 10, backgroundColor: themeColors.chartSeries, borderWidth: 2, borderColor: "white" },
   actions: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 3, marginBottom: 4 },
   action: { minWidth: 44, minHeight: 44, paddingHorizontal: 8, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: themeColors.card, borderWidth: 1, borderColor: c.line },
-  primary: { backgroundColor: c.tennis, minWidth: 66 },
+  primary: { backgroundColor: c.soft, minWidth: 66 },
 };});

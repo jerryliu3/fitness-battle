@@ -25,3 +25,5 @@ Before shipping, check release-device native appearance and real connected-accou
 Filter triggers, analytics time-range toggles and selected chips use the quiet soft surface, primary text and primary-text border in both apps. Selection is conveyed through the border and accessible state; yellow fills are reserved for primary actions and quantitative progress. Neutral checkbox marks use the foreground paired with their selected fill.
 
 Chart-series roles (including the legacy `fieldTeal` alias) are for data marks, not control fills. Time-range selectors use the neutral control treatment in both apps, independently of the chart palette.
+
+Navigation selections, replay controls, avatar fallbacks, rank badges and result containers use neutral surfaces and primary text on both platforms. Reserve filled yellow for primary actions; charts and progress retain the primary yellow series.

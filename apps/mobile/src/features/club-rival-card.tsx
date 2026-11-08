@@ -102,7 +102,7 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
     color: "#ffffffdd"
 },
   arrow: {
-    backgroundColor: c.tennis,
+    backgroundColor: c.soft,
     borderRadius: 22,
     width: 40,
     height: 40,

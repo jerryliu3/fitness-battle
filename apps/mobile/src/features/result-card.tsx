@@ -73,11 +73,11 @@ const f=useFocusStyles();
           padding: 24,
           gap: 14,
           borderRadius: 20,
-          backgroundColor: appearanceColors.actionSoft,
+          backgroundColor: appearanceColors.soft,
           borderWidth: 1,
           borderBottomWidth: 5,
           borderRightWidth: 3,
-          borderColor: "#c3a655",
+          borderColor: appearanceColors.line,
           minHeight: 260,
         }}
       >
@@ -173,7 +173,7 @@ const f=useFocusStyles();
               </View>
               <View style={{ flex: 1, gap: 10 }}>
                 <AppText role="body" secondary style={{ padding: 12, backgroundColor: `${appearanceColors.card}bb`, borderRadius: 14 }}>{formatVolume(result.sport, result.distanceM, result.movingSec, units)}</AppText>
-                <AppText role="label" style={{ padding: 12, backgroundColor: appearanceColors.actionSoft, borderRadius: 14 }}>{result.eloAfter} effort score · {formatEloDelta(result.eloBefore,result.eloAfter)}</AppText>
+                <AppText role="label" style={{ padding: 12, backgroundColor: appearanceColors.soft, borderRadius: 14 }}>{result.eloAfter} effort score · {formatEloDelta(result.eloBefore,result.eloAfter)}</AppText>
               </View>
             </View>
           </>
