@@ -8,10 +8,6 @@
 
 .phone-shell:has(.compete-sheet[data-active="true"])>.phone-tabs,
 .phone-shell:has(.compete-sheet[data-active="true"])>.focus-shell-header{visibility:hidden;pointer-events:none}
-.compete-event-home{display:grid;gap:16px;margin-bottom:24px}
-.compete-event-card{display:grid;gap:12px;text-align:left;padding:20px;border:1px solid var(--line);border-radius:20px;background:var(--card);color:var(--ink);font:var(--type-body);cursor:pointer}
-.compete-event-card>strong{font:var(--type-heading)}
-.compete-event-card>small{color:var(--muted)}
 
 .compete-immersive-hud .focus-broadcast-top{top:max(12px,env(safe-area-inset-top))}
 .compete-immersive-hud .focus-broadcast-tower{top:76px}
@@ -30,8 +26,6 @@
 .focus-field-expanded .mapboxgl-ctrl-attrib-button{width:16px;height:16px;background-size:14px 14px}
 .focus-field-expanded .mapboxgl-ctrl-attrib.mapboxgl-compact-show{width:auto;height:auto;max-width:260px;padding:4px 20px 4px 8px}
 
-.compete-event-card{cursor:default}
-button.compete-event-card{cursor:pointer}
 
 .course-settings-switch{appearance:none;flex:none;width:36px;height:22px;border-radius:999px;position:relative;cursor:pointer}
 .course-settings-switch::before{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:white;box-shadow:0 1px 3px #142b3b22}

@@ -877,8 +877,8 @@ Racer selection travels along course distance, facing race-forward even when rev
 reduced motion uses an immediate position change.
 
 Compete home restores the shared competition date range beneath its title;
-event cards omit repeated days-left labels. Snapshot previews use a 1:1 aspect
-ratio at the existing card width. Utility map credits use the compact shared nav text recipe
+event cards omit repeated days-left labels. Snapshot previews use a landscape 1.6:1 aspect
+ratio inside the horizontal event carousel. Utility map credits use the compact shared nav text recipe
 with a feedback info glyph carrying its full accessible label. Live maps retain
 the standard SDK wordmark and align a 14-point info control beside it; the info
 sheet includes source links, feedback and the telemetry privacy choice.
@@ -912,3 +912,21 @@ the retained map and sheet standings. Course seeking changes the camera only
 and stays bounded by the leader at the selected time. Event snapshots stay live.
 
 The immersive timeline always shows playback speed in a fixed 48px target, with tabular numerals. Its caption contains the date and time to minute precision, including at the live endpoint; omit local/simulated source labels. The course rail shares the leaders panel’s dark translucent surface and begins 12px below its measured bottom. The layers button has a visible dark translucent 44px target.
+
+### Compete discovery layout — November 8, 2026
+
+Native mobile is the design target; web follows the same composition. Compete
+opens with a gold wreath, the existing event date and remaining-time badge.
+Your events is a snapping horizontal carousel with landscape static course
+snapshots, place, Live/upcoming status and pagination dots. Last update and the event activity feed read the same membership-scoped replay
+ledger; absent data remains Unavailable. Simulated updates remain labeled, and
+blocked athletes' events are omitted without changing field ranks.
+
+Larger gold Crew event banners follow, linking to the existing Crew hub for
+membership and shared individual fields. They do not claim limited availability,
+relay rules or team-versus-team scoring. Explore follows in Distance, Time and
+Recovery horizontal rows: running/cycling/walking share one surface, strength
+another, and sleep another. Each tile has one icon, one title and abstract sport
+lines. Only supported events appear. Results & rankings finishes the page with
+gold and silver metallic surfaces, recorded placements and existing history and
+ranking destinations; missing results have an honest first-finish state.

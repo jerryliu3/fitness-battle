@@ -1,15 +1,14 @@
 "use client";
-import { CoursePreview } from "./course-preview";
+import { CompeteIcon, EventHome, CrewEvents, ExploreEvents, CompeteResults } from "./event-home";
 import { FieldOverview } from "@/features/field/components/field-course";
 import { CompeteSheet } from "./compete-sheet";
-import { FeatureCard, StatusBadge, AppParagraph, AppText, typographyStyle, SectionHeader, AppHeading } from "@/ui/section";
+import { StatusBadge, AppParagraph, AppText, typographyStyle, AppHeading } from "@/ui/section";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { playCue } from "@/lib/haptics";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { AuthPrompt } from "@/components/auth-gate";
@@ -22,7 +21,7 @@ import { SleepPanel } from "@/features/health/sleep-panel";
 import { QueuedField } from "./queued-field";
 import "./queued-field.css";
 import { Sheet } from "@/ui/sheet";
-import { APP_TIMEZONE, competitionQueue, waveTimeLabel, nextDailyWaveWindowAt, buildArenaModel, competitionTrack, competitionTrackLabel, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, type SportId } from "@fitness-battle/shared";
+import { APP_TIMEZONE, competitionQueue, buildArenaModel, competitionTrack, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, competitionTrackLabel, waveTimeLabel, nextDailyWaveWindowAt, type SportId } from "@fitness-battle/shared";
 
 function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
   const lastDay = weeklyCompetitionLastDay(endsAt);
@@ -54,6 +53,10 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const account = user?.id ?? "guest";
+  const [joinBusy, setJoinBusy] = useState(false), [joinError, setJoinError] = useState("");
+  const joinFlight = useRef<object | null>(null), currentAccount = useRef(account);
+  currentAccount.current = account;
+  useEffect(() => { setRegister(false); setSport(null); setJoinError(""); setJoinBusy(false); joinFlight.current = null; }, [account]);
 
   const [, updateClock] = useState(0);
   useEffect(() => {
@@ -108,39 +111,30 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
     action();
   }
 
-  const hasAnyRegistration = active.length > 0 || sleepOptedIn;
-
+  function openRegistration() { setSport(null); setRegister(true); }
   const sleep = sleepRenewal(state);
   const overviewModel = selectedSport && selectedSport !== "sleep" ? buildArenaModel(state, undefined, track, selectedSport) : null;
 
   return (
     <div className="focus-arena">
       {selectedSport && selectedSport !== "sleep" ? <FieldStage externalAthleteFocus={athleteFocus} key={`${account}:${selectedSport}:${state.units}`} onOptionsChange={setCourseOptions} externalCourseTarget={courseTarget} persistent backgroundMode presentationVisible={immersive} onExit={() => setImmersiveAccount(null)} tabActive={tabActive} replayState={state} queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField overlay state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
-      {!immersive && <section aria-label="Your events" className="compete-event-home">
-        <SectionHeader titleRole="display" title="Compete" action={<button type="button" className="fb-btn" onClick={() => { setSport(null); setRegister(true); }}>Register for an event</button>} />
-        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}><span>{dateRangeLabel}</span><StatusBadge>{badgeLabel}</StatusBadge></div>
-        {active.map(rating => {
-          const event = rating.sport;
-          const eventQueue = competitionQueue(state, event, now);
-
-          const queued = eventQueue?.queued || eventQueue?.awaitingField;
-          const model = buildArenaModel(state, undefined, competitionTrack(event), event);
-          const lanes = model?.lanes.filter(lane => !lane.ghost) ?? [];
-          const me = lanes.find(lane => lane.you);
-          const total = me?.values[2] ?? 0;
-          const place = 1 + lanes.filter(lane => lane.values[2] > total).length;
-
-          return <div key={event} className="compete-event-card">
-            <strong>{SPORTS.find(s => s.id === event)?.name}</strong><span>{queued ? "Upcoming wave" : `Place ${place} / ${lanes.length}`}</span>
-            <CoursePreview sport={event} queued={Boolean(queued)} state={state} />
-            {queued ? <p>Your race opens when the wave starts.</p> : null}
-            <button type="button" className="fb-btn" style={{ width: "100%" }} aria-label={`Enter ${SPORTS.find(s => s.id === event)?.name} field`} onClick={() => { setSelection({ account, sport: event }); setImmersiveAccount(account); }}>See race</button>
-          </div>;
-        })}
-        {sleepOptedIn && <button type="button" className="compete-event-card" onClick={() => setSelection({ account, sport: "sleep" })}><strong>Recovery</strong><span>View your recovery event →</span></button>}
-        {!hasAnyRegistration && <p className="fb-copy">Register for an event to open your first field.</p>}
-      </section>}
+      {!immersive && <div className="compete-event-home">
+        <header className="compete-home-header">
+          <div className="compete-section-heading"><div className="compete-home-title"><CompeteIcon name="wreath" size={34} /><AppHeading role="display" level={1}>Compete</AppHeading></div><button type="button" className="fb-btn-ghost" onClick={() => openRegistration()}>+ Register</button></div>
+          <div className="compete-home-date"><AppText secondary>{dateRangeLabel}</AppText><StatusBadge>{badgeLabel}</StatusBadge></div>
+        </header>
+        {standingsStale && <AppParagraph typographyRole="caption" role="status" className="fb-note">Standings may be out of date until the next refresh.</AppParagraph>}
+        <EventHome active={tabActive && !immersive} state={state} onEnter={event => { setSelection({ account, sport: event }); setImmersiveAccount(account); }} onRecovery={() => setSelection({ account, sport: "sleep" })} onRegister={() => openRegistration()} />
+        <CrewEvents onChoose={() => router.push("/field")} />
+        <ExploreEvents onChoose={event => {
+          if (event === "sleep" && sleepOptedIn) setSelection({ account, sport: "sleep" });
+          else if (event !== "sleep" && active.some(r => r.sport === event)) { setSelection({ account, sport: event }); setImmersiveAccount(account); }
+          else openRegistration();
+        }} />
+        <CompeteResults state={state} />
+      </div>}
       <CompeteSheet overview={overviewModel && !queue?.queued && !queue?.awaitingField ? <div className="compete-sheet-overview-row"><div className="compete-sheet-overview-track"><FieldOverview lanes={overviewModel.lanes.filter(lane => !lane.ghost).map(lane => ({ ...lane, value: lane.values[2], initials: "" }))} unit={overviewModel.unit} positionOnly view={{ center: courseTarget?.value ?? overviewModel.lanes.find(lane => lane.you)?.values[2] ?? 0, span: 1 }} onNavigate={value => setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }))} /></div>{courseOptions}</div> : undefined} active={immersive} expandRequest={expandRequest}>
+
 
 
 
@@ -163,11 +157,6 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
       {selectedSport === "sleep" && (queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event="sleep" now={now} onCancel={() => dispatch({type:"opt-out-health",metric:"sleep"})} /> : <SleepPanel state={state} now={now} onJoin={()=>participate("join sleep",()=>dispatch({type:"opt-in-health",metric:"sleep"}))} onLeave={()=>dispatch({type:sleep.renews?"schedule-leave":"resume-renewal",metric:"sleep"})} leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"} />)}
 
 
-      {state.periodResults.length ? (
-        <Link className="fb-btn-ghost" href="/arena?results=latest">
-          Last week results ↗
-        </Link>
-      ) : null}
       <div className="club-competition-extras">
       <WeekReveal
         state={state}
@@ -175,7 +164,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         onDismiss={(revealIds) => dispatch({ type: "acknowledge-reveal", revealIds })}
       />
 
-      <FeatureCard title="Beyond this week" description="All-time pace and race rankings." href="/pace"/>
+
 
       </div>
       </div>

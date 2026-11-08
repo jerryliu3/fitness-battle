@@ -77,3 +77,5 @@ export * from "./onboarding-overtake";
 export * from "./chart-presentation";
 
 export * from "./appearance";
+export * from "./compete-home";
+export * from "./competition-activity-log";

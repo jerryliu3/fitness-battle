@@ -20,7 +20,7 @@ function Snapshot({ cacheKey, course, value, unit, queued }: { cacheKey: string;
   const [uri, setUri] = useState(() => snapshotCache.get(cacheKey) ?? ""), [expired, setExpired] = useState(false);
   useEffect(() => { const timer = setTimeout(() => setExpired(true), 15000); return () => clearTimeout(timer); }, []);
   const capture = (value: string) => { if (snapshotCache.size >= 32) snapshotCache.delete(snapshotCache.keys().next().value!); snapshotCache.set(cacheKey, value); setUri(value); };
-  return <div className="compete-event-preview" style={{ position: "relative", display: "block", pointerEvents: "none" }}>
+  return <div className="compete-event-preview" style={{ position: "relative", pointerEvents: "none" }}>
     {uri ? <img src={uri} alt="3D snapshot of your current race position" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} /> : !expired && !queued && course && (unit === "mi" || unit === "km") ? <GeographicCourse course={course} lanes={[{ id: "you", name: "You", initials: "", you: true, value }]} unit={unit} selectedId="you" focusRequest={0} onSelect={() => {}} onSnapshot={capture} /> : <small>{queued ? "Course assigned when your wave starts" : unit === "pts" ? "Points event" : "Preview unavailable"}</small>}
   </div>;
 }
