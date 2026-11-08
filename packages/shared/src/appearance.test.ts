@@ -43,7 +43,7 @@ it("keeps shared control foregrounds readable in both appearances", () => {
     return r!*.2126 + g!*.7152 + b!*.0722;
   };
   for (const c of Object.values(APP_COLORS)) {
-    for (const [foreground, background] of [[c.textOnAction,c.actionPrimary], [c.textPrimary,c.surfaceCard], [c.textPrimary,c.accentSecondarySoft], [c.textSecondary,c.surfaceCanvas], [c.textOnFeature,c.surfaceFeature]]) {
+    for (const [foreground, background] of [[c.card,c.textPrimary], [c.textOnAction,c.actionPrimary], [c.textPrimary,c.surfaceCard], [c.textPrimary,c.accentSecondarySoft], [c.textSecondary,c.surfaceCanvas], [c.textOnFeature,c.surfaceFeature]]) {
       const [a,b] = [luminance(foreground!),luminance(background!)].sort((a,b)=>b-a);
       expect((a!+.05)/(b!+.05)).toBeGreaterThanOrEqual(4.5);
     }

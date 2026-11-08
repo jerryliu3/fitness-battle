@@ -47,8 +47,8 @@ const s=useThemedStyles(sThemes);
           onPress={toggle}
           style={[f.chip, allSelected && f.chipActive, { flexDirection: "row", gap: 4 }]}
         >
-          <AppText role="caption" secondary>{label}</AppText>
-          <AppText role="caption" secondary aria-hidden>
+          <AppText role="caption">{label}</AppText>
+          <AppText role="caption" style={{ opacity: 0.65 }} aria-hidden>
             ▾
           </AppText>
         </Pressable>
@@ -143,7 +143,7 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
     backgroundColor: c.ink,
   },
   checkmark: {
-    color: themeColors.white,
+    color: c.card,
   },
   optionSelected: {
     backgroundColor: c.soft,

@@ -338,6 +338,7 @@ a {
 }
 
 .fb-chip {
+  color: var(--app-text-primary);
   border: 1px solid var(--line);
   background: var(--app-surface-card);
   border-radius: 999px;
@@ -346,9 +347,9 @@ a {
 }
 
 .fb-chip.on {
-  background: var(--app-action-primary);
-  color: var(--app-text-on-action);
-  border-color: var(--app-action-primary);
+  background: var(--app-soft);
+  color: var(--app-text-primary);
+  border-color: var(--app-text-primary);
 }
 
 .fb-field {

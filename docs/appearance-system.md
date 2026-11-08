@@ -21,3 +21,5 @@ Geographic scenery, mascot artwork and categorical participant colors retain the
 Define new native styles with `createThemedStyles(colors => ({ surface: { backgroundColor: colors.surfaceCard } }))` and select them with `useThemedStyles` in the component. Read inline colors with `useThemeColors`. On web use `--app-*` variables or the CSS-variable adapter; never import static light colors into reactive product UI.
 
 Before shipping, check release-device native appearance and real connected-account states. Browser review and renderer tests do not establish device rendering parity.
+
+Filter triggers and selected chips use the quiet soft surface, primary text and primary-text border in both apps. Selection is conveyed through the border and accessible state; yellow fills are reserved for primary actions and quantitative progress. Neutral checkbox marks use the foreground paired with their selected fill.

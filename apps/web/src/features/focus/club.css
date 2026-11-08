@@ -454,9 +454,9 @@
   cursor: pointer;
 }
 .club-event-chip[aria-selected="true"] {
-  background: var(--app-action-primary);
-  border-color: var(--app-action-primary);
-  color: var(--app-text-on-action);
+  background: var(--app-soft);
+  border-color: var(--app-text-primary);
+  color: var(--app-text-primary);
 }
 .club-event-chip.is-register {
   border-style: dashed;
@@ -2143,12 +2143,12 @@
   font: var(--type-label);
 }
 .week-result-podium-step.is-you {
-  background: var(--app-action-primary);
+  background: var(--app-action-soft);
   border: 2px solid var(--app-action-primary);
-  color: var(--app-text-on-action);
+  color: var(--app-text-primary);
 }
 .week-result-podium-step.is-you small {
-  color: var(--app-text-on-action);
+  color: var(--app-text-primary);
   letter-spacing: normal;
   text-transform: none;
   font: var(--type-caption);
