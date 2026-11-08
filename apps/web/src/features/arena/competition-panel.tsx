@@ -1,4 +1,5 @@
 "use client";
+import { useCompeteFlipLayer } from "./compete-sheet";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { motion, useAnimationControls, useReducedMotion } from "motion/react";
 import { APP_ICON_PATHS } from "@fitness-battle/shared";
@@ -9,6 +10,11 @@ export function CompetitionPanel({ active, standings, activity }: { active: bool
   const controls = useAnimationControls();
   const [feed, setFeed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const setFlipping = useCompeteFlipLayer();
+  useLayoutEffect(() => {
+    setFlipping(busy);
+    return () => setFlipping(false);
+  }, [busy, setFlipping]);
   const turning = useRef(false);
   const generation = useRef(0);
   const incoming = useRef(false);

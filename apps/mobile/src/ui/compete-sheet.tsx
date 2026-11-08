@@ -1,11 +1,15 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Animated, PanResponder, ScrollView, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeColors } from "../theme";
 import { useReducedMotion } from "./use-reduced-motion";
 
+const FlipLayer = createContext<(flipping: boolean) => void>(() => {});
+export const useCompeteFlipLayer = () => useContext(FlipLayer);
+
 /** Moving the sheet changes coverage without resizing the retained field. */
 export function CompeteSheet({ children, expandRequest, active, overview }: { children: ReactNode; expandRequest: number; active: boolean; overview?: ReactNode }) {
+  const [flipping, setFlipping] = useState(false);
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
@@ -44,10 +48,10 @@ export function CompeteSheet({ children, expandRequest, active, overview }: { ch
     },
     onPanResponderTerminate: () => snapRef.current(indexRef.current),
   }), [maximum, offset, insets.bottom, minimum]);
-  return <Animated.View pointerEvents={active ? "auto" : "none"} accessibilityElementsHidden={!active} style={{ opacity: active ? 1 : 0, position: "absolute", left: 0, right: 0, bottom, height: maximum, zIndex: 30, transform: [{ translateY: offset }], backgroundColor: c.paper, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: "visible" }}>
+  return <Animated.View pointerEvents={active ? "auto" : "none"} accessibilityElementsHidden={!active} style={{ opacity: active ? 1 : 0, position: "absolute", left: 0, right: 0, bottom, height: maximum, zIndex: flipping ? 100 : 30, transform: [{ translateY: offset }], backgroundColor: c.paper, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: "visible" }}>
 
     <View {...pan.panHandlers} accessible accessibilityRole="adjustable" accessibilityLabel="Competition sheet height" accessibilityValue={{ text: ["Minimized", "Partially expanded", "Fully expanded"][index] }} accessibilityActions={[{ name: "increment", label: "Expand" }, { name: "decrement", label: "Minimize" }]} onAccessibilityAction={event => snap(Math.max(0, Math.min(2, index + (event.nativeEvent.actionName === "increment" ? 1 : -1))))} style={{ height: 44, alignItems: "center", justifyContent: "center" }}><View style={{ width: 40, height: 4, borderRadius: 4, backgroundColor: c.muted }} /></View>
     {overview && <View onLayout={event => setControlsHeight(Math.ceil(event.nativeEvent.layout.height))} style={{ paddingHorizontal: 16, paddingBottom: 8 }}>{overview}</View>}
-    <ScrollView removeClippedSubviews={false} style={{ height: maximum - headingHeight, flexGrow: 0 }} nestedScrollEnabled scrollEnabled={index !== 0} accessibilityElementsHidden={index === 0} contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: Math.max(0, maximum - visibleHeight) + insets.bottom + 32 }}>{children}</ScrollView>
+    <ScrollView removeClippedSubviews={false} style={{ height: maximum - headingHeight, flexGrow: 0, overflow: flipping ? "visible" : "hidden", zIndex: flipping ? 1 : 0 }} nestedScrollEnabled scrollEnabled={index !== 0 && !flipping} accessibilityElementsHidden={index === 0} contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: Math.max(0, maximum - visibleHeight) + insets.bottom + 32 }}><FlipLayer.Provider value={setFlipping}>{children}</FlipLayer.Provider></ScrollView>
   </Animated.View>;
 }

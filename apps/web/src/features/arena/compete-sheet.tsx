@@ -1,8 +1,21 @@
 "use client";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import "./compete-sheet.css";
 
+const FlipLayer = createContext<(flipping: boolean) => void>(() => {});
+export const useCompeteFlipLayer = () => useContext(FlipLayer);
+
 export function CompeteSheet({ children, active, expandRequest = 0, overview }: { children: ReactNode; active: boolean; expandRequest?: number; overview?: ReactNode }) {
+  const [flipping, setFlipping] = useState(false);
+  const body = useRef<HTMLDivElement>(null);
+  const scrollTop = useRef(0);
+  const flipLayer = useCallback((next: boolean) => {
+    if (next) scrollTop.current = body.current?.scrollTop ?? 0;
+    setFlipping(next);
+  }, []);
+  useLayoutEffect(() => {
+    if (!flipping && body.current) body.current.scrollTop = scrollTop.current;
+  }, [flipping]);
   const [stop, setStop] = useState(1);
   useEffect(() => { if (expandRequest) setStop(2); }, [expandRequest]);
   const [dragHeight, setDragHeight] = useState<number | null>(null);
@@ -12,7 +25,7 @@ export function CompeteSheet({ children, active, expandRequest = 0, overview }: 
   useEffect(() => { const node = sheet.current; if (!node || typeof ResizeObserver === "undefined") return; const update = () => setMaximum(node.offsetHeight); update(); const observer = new ResizeObserver(update); observer.observe(node); return () => observer.disconnect(); }, []);
   const minimum = overview ? 96 : 44;
   const visible = dragHeight !== null ? `${dragHeight}px` : stop === 0 ? `${minimum}px` : stop === 1 ? "42%" : "100%";
-  return <section onKeyDown={event => { if (event.key === "Escape") setStop(0); }} ref={sheet} className="compete-sheet" data-active={active} aria-label="Competition standings and events" data-stop={stop} inert={!active}
+  return <section onKeyDown={event => { if (event.key === "Escape") setStop(0); }} ref={sheet} className="compete-sheet" data-active={active} data-flipping={flipping} aria-label="Competition standings and events" data-stop={stop} inert={!active}
     style={{ visibility: active ? "visible" : "hidden", transform: `translateY(calc(100% - ${visible}))`, transition: dragHeight !== null ? "none" : undefined }}>
 
     <div className="compete-sheet-grip" role="slider" tabIndex={0} aria-label="Competition sheet height" aria-valuemin={0} aria-valuemax={2} aria-valuenow={stop} aria-valuetext={["Minimized", "Partially expanded", "Fully expanded"][stop]}
@@ -22,6 +35,6 @@ export function CompeteSheet({ children, active, expandRequest = 0, overview }: 
       onPointerUp={event => { const current = drag.current; if (!current) return; if (Math.abs(event.clientY - current.y) < 5) { setStop(stop === 2 ? 1 : 2); setDragHeight(null); drag.current = null; return; } const height = Math.max(minimum, Math.min(current.maximum, current.height + current.y - event.clientY)); const stops = [minimum, current.maximum * .42, current.maximum]; setStop(stops.reduce((best, item, index) => Math.abs(item - height) < Math.abs(stops[best] - height) ? index : best, 0)); setDragHeight(null); drag.current = null; }}
       onPointerCancel={() => { setDragHeight(null); drag.current = null; }}><span /></div>
     {overview && <div className="compete-sheet-overview">{overview}</div>}
-    <div className="compete-sheet-body" style={{ paddingBottom: 32 + Math.max(0, maximum - (dragHeight ?? (stop === 0 ? minimum : stop === 1 ? maximum * .42 : maximum))) }} inert={stop === 0 && dragHeight === null}>{children}</div>
+    <div ref={body} className="compete-sheet-body" style={{ paddingBottom: 32 + Math.max(0, maximum - (dragHeight ?? (stop === 0 ? minimum : stop === 1 ? maximum * .42 : maximum))) }} inert={stop === 0 && dragHeight === null}><div style={{ transform: flipping && scrollTop.current ? `translateY(-${scrollTop.current}px)` : undefined }}><FlipLayer.Provider value={flipLayer}>{children}</FlipLayer.Provider></div></div>
   </section>;
 }

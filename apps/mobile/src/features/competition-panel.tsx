@@ -1,3 +1,4 @@
+import { useCompeteFlipLayer } from "../ui/compete-sheet";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Animated, Easing, Pressable, View } from "react-native";
 import { useThemeColors } from "../theme";
@@ -11,6 +12,11 @@ export function CompetitionPanel({ active, standings, activity }: { active: bool
   const reduced = useReducedMotion();
   const [feed, setFeed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const setFlipping = useCompeteFlipLayer();
+  useLayoutEffect(() => {
+    setFlipping(busy);
+    return () => setFlipping(false);
+  }, [busy, setFlipping]);
   const turning = useRef(false);
   const generation = useRef(0);
   const incoming = useRef(false);

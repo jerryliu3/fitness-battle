@@ -402,7 +402,7 @@ export function FieldStage({
               >
                 <span className="focus-broadcast-tower-rank">{placeOf(peer.value)}</span>
                 <span className="focus-broadcast-tower-name">
-                  {peer.you ? "YOU" : peer.name.split(" ")[0]}
+                  {peer.you ? "You" : peer.name.split(" ")[0]}
                 </span>
                 <span className="focus-broadcast-tower-val">
                   {idx === 0 ? peer.value.toFixed(1) : delta.toFixed(1)}

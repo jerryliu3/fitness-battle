@@ -487,7 +487,7 @@ const f=useFocusStyles();
                         flex: 1,
                       }}
                     >
-                      {peer.you ? "YOU" : peer.name.split(" ")[0]}
+                      {peer.you ? "You" : peer.name.split(" ")[0]}
                     </Text>
                     <Text
                       style={{
