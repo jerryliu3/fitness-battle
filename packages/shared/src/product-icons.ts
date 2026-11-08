@@ -57,3 +57,6 @@ export const HOME_HEALTH_ICON_PATHS = {
   "resting-hr": "M20 5a5 5 0 0 0-8 1 5 5 0 0 0-8-1c-5 5 8 15 8 15S25 10 20 5Z",
   hrv: "M2 12h4l3-7 5 14 3-7h5",
 } as const;
+
+/** Compact forward marks for the Overtaek header lockup. */
+export const OVERTAEK_HEADER_MARK = "M1 22 14 2h10L11 22Zm17 0L31 2h10L28 22Z";

@@ -2,7 +2,7 @@ import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { UserAvatar } from "./user-avatar";
 import { textStyle } from "./section";
 import { useBootImage } from "./boot-readiness";
-import { EffortRail } from "../features/effort-rail";
+import { BrandWordmark } from "./brand-wordmark";
 
 import { usePathname, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -35,11 +35,7 @@ const s=useThemedStyles(sThemes);
     if (eventId === "week-closing") router.push(result.targetRoute);
   }
 
-  return (
-    <SafeAreaView edges={["top"]} style={s.safe}>
-      <View style={s.header}>
-        <View style={s.identity} testID="athlete-header-group">
-          <Pressable
+  const profile = (<Pressable
             accessibilityRole="button"
             accessibilityLabel="Open athlete settings"
             accessibilityState={{ selected: onAthlete }}
@@ -47,22 +43,17 @@ const s=useThemedStyles(sThemes);
             style={[s.profile, onAthlete && s.selected]}
           >
             <UserAvatar src={state?.avatarUrl} name={state?.name ?? "Athlete"} size={36} fallback={<AppIcon name="person" size={22} color={c.muted} />} onLoadEnd={imageSettled} />
-          </Pressable>
-          <View style={s.effort}><EffortRail compact /></View>
-          {streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.activeToday ? ", active today" : ", inactive today"}`} style={s.streak}>
+          </Pressable>);
+  const streakBadge = (streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.activeToday ? ", active today" : ", inactive today"}`} style={s.streak}>
             <View style={{ opacity: streak.activeToday ? 1 : .4 }}><AppIcon name={streak.activeToday ? "flameFilled" : "flame"} size={22} color={c.actionPressed} /></View>
-            <Text style={s.debugBtnText}>{streak.count}</Text>
-          </View>}
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Debug event triggers"
-          accessibilityState={{ expanded: debugOpen }}
-          onPress={() => setDebugOpen((open) => !open)}
-          style={[s.debugBtn, debugActive && s.debugBtnActive]}
-        >
-          <Text style={s.debugBtnText}>Debug {debugOpen ? "▴" : "▾"}</Text>
-        </Pressable>
+            <Text style={s.streakText}>{streak.count}</Text>
+          </View>);
+
+  return (
+    <SafeAreaView edges={["top"]} style={s.safe}>
+      <View style={s.header}>
+          <Pressable disabled={!__DEV__} accessibilityRole={__DEV__ ? "button" : "image"} accessibilityLabel={__DEV__ ? "Debug event triggers" : "Overtaek"} accessibilityHint={__DEV__ ? "Open development previews" : undefined} accessibilityState={__DEV__ ? { expanded: debugOpen } : undefined} onPress={() => setDebugOpen(open => !open)} style={{ flexShrink: 1, minHeight: 44, justifyContent: "center" }}><BrandWordmark /></Pressable>
+          <View style={s.brandControls} testID="athlete-header-group">{profile}<View style={s.brandDivider} />{streakBadge}</View>
       </View>
       {debugOpen ? (
         <View style={s.debugMenu} accessibilityLabel="Trigger UI events">
@@ -95,12 +86,10 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
     justifyContent: "space-between",
     gap: 8,
   },
-  identity: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 10 },
-  effort: { flex: 1, minWidth: 0, maxWidth: 190 },
-  streak: { flexDirection: "row", alignItems: "center", gap: 3, flexShrink: 0 },
-  debugBtn: { flexShrink: 0, minHeight: 44, justifyContent: "center", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: c.line, backgroundColor: c.card },
-  debugBtnActive: { borderColor: c.tennis, backgroundColor: themeColors.actionSoft },
-  debugBtnText: { ...textStyle("caption"), color: c.ink },
+  brandControls: { flexDirection: "row", alignItems: "center", gap: 12, flexShrink: 0 },
+  brandDivider: { height: 24, width: 1, backgroundColor: c.line },
+  streak: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 0, minHeight: 40, paddingHorizontal: 12, borderRadius: 99, borderWidth: 1, borderColor: c.line },
+  streakText: { ...textStyle("caption"), color: c.ink },
   debugMenu: { marginHorizontal: 22, marginBottom: 10, padding: 10, borderRadius: 16, borderWidth: 1, borderColor: c.line, backgroundColor: c.card, gap: 6 },
   debugKicker: { ...textStyle("label"), color: c.muted, marginHorizontal: 4, marginBottom: 2 },
   debugItem: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: c.paper, gap: 2 },
@@ -121,5 +110,4 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
     borderColor: c.line,
   },
   selected: { borderColor: c.tennis },
-  photo: { width: "100%", height: "100%" },
 };});

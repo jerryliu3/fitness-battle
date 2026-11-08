@@ -1,4 +1,5 @@
 "use client";
+import { BrandWordmark } from "@/ui/brand-wordmark";
 import { UserAvatar } from "@/ui/user-avatar";
 
 import { useAuth } from "@/components/auth-context";
@@ -23,7 +24,6 @@ import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { EffortRail } from "@/features/progress/effort-rail";
 import { ApplicationBootGate } from "./application-boot-gate";
 import { BootSplash } from "./boot-splash";
 import { ShellBootReadiness } from "./shell-boot-readiness";
@@ -172,6 +172,8 @@ export function PhoneShell({
     </p>,
   );
 
+  const streakBadge = (streak && <span className={`club-week-streak${streak.activeToday ? " is-active" : ""}`} aria-label={`${streak.count} week activity streak${streak.activeToday ? ", active today" : ", inactive today"}`}><svg width="18" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d={APP_ICON_PATHS[streak.activeToday ? "flameFilled" : "flame"]} fill="currentColor" /></svg><b>{streak.count}</b></span>);
+
   return (
     <ApplicationBootGate ready={!shouldShowBootSplash(dataReady, bootAnimDone) && !loading} splash={
       <BootSplash waiting={bootAnimDone} onAnimationComplete={() => setBootAnimDone(true)} />
@@ -180,9 +182,8 @@ export function PhoneShell({
     <div className="phone-frame">
       <div className="phone-shell">
         {!onAthlete && productPath !== "/week" && !progressDetail && <header className="focus-shell-header">
-          <div className="club-header-effort"><EffortRail compact /></div>
-          {streak && <span className={`club-week-streak${streak.activeToday ? " is-active" : ""}`} aria-label={`${streak.count} week activity streak${streak.activeToday ? ", active today" : ", inactive today"}`}><svg width="18" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d={APP_ICON_PATHS[streak.activeToday ? "flameFilled" : "flame"]} fill="currentColor" /></svg><b>{streak.count}</b></span>}
-          {process.env.NODE_ENV === "development" && <DebugEventMenu activeTab={active} onNavigate={navigateDebugTarget} />}
+          {process.env.NODE_ENV === "development" ? <DebugEventMenu activeTab={active} onNavigate={navigateDebugTarget} trigger={<BrandWordmark />} /> : <BrandWordmark />}
+
           <Link
             href={webProductPath("/athlete")}
             className={`focus-shell-profile${onAthlete ? " is-selected" : ""}`}
@@ -193,6 +194,7 @@ export function PhoneShell({
                 <path d={APP_ICON_PATHS.person} fill="currentColor" stroke="none" />
               </svg>} />
           </Link>
+          {streakBadge}
         </header>}
         {!dataReady ? (
           accountLoadingBody
