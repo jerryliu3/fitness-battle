@@ -5,7 +5,7 @@ import { AppText } from "../ui/section";
 import {
   buildAvatarCleanupPathsForProfileChange,
   getCanonicalAvatarObjectPath,
-  PERSON_ICON_PATH,
+  APP_ICON_PATHS,
   type CompeteState,
 } from "@fitness-battle/shared";
 import * as ImagePicker from "expo-image-picker";
@@ -145,9 +145,8 @@ const c=useThemeColors();
       >
         <UserAvatar src={state.avatarUrl} name={state.name} size={86} fallback={<Svg width={54} height={54} viewBox="0 0 24 24">
             <Path
-              d={PERSON_ICON_PATH}
-              fill="none"
-              stroke={c.muted}
+              d={APP_ICON_PATHS.person}
+              fill={c.muted} stroke="none"
               strokeWidth={1.6}
               strokeLinecap="round"
               strokeLinejoin="round"

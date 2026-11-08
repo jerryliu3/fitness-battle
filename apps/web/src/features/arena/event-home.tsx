@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState, type CSSProperties } from "react";
-import { competeEventCarouselPageIndex, formatActivityAge, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, SPORTS, buildArenaModel, competitionQueue, competitionTrack, competeNow, competeHomeResult, type CompeteEvent, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { competeEventCarouselPageIndex, formatActivityAge, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, APP_ICON_PATHS, SPORTS, buildArenaModel, competitionQueue, competitionTrack, competeNow, competeHomeResult, type CompeteEvent, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppHeading, AppText } from "@/ui/section";
 import { useEventActivity } from "./use-event-activity";
 import { CoursePreview } from "./course-preview";
@@ -9,7 +9,7 @@ import "./event-home.css";
 
 export function CompeteIcon({ name, size = 26 }: { name: keyof typeof COMPETE_ICONS | CompeteEvent; size?: number }) {
   const path = name in COMPETE_ICONS ? COMPETE_ICONS[name as keyof typeof COMPETE_ICONS] : SPORT_ICON_PATHS[name as keyof typeof SPORT_ICON_PATHS];
-  return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d={path} fill={name in SPORT_ICON_PATHS ? "currentColor" : "none"} stroke={name in SPORT_ICON_PATHS ? "none" : undefined} /></svg>;
+  return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d={path} fill={(name in SPORT_ICON_PATHS || name in APP_ICON_PATHS) ? "currentColor" : "none"} stroke={(name in SPORT_ICON_PATHS || name in APP_ICON_PATHS) ? "none" : undefined} /></svg>;
 }
 export function EventArt({ event, gold = false }: { event: CompeteEvent; gold?: boolean }) {
   return <svg className="compete-art" aria-hidden="true" viewBox="0 0 240 160" preserveAspectRatio="none">{COMPETE_ART[event].map((path, index) => <path key={path} d={path} fill={index === 0 || event === "sleep" ? gold ? "var(--app-podium-gold)" : COMPETE_ART_COLORS[event] : "none"} fillOpacity={index === 0 ? 0.45 : 0.25} stroke={event === "running" || event === "cycling" ? "var(--card)" : "none"} strokeWidth={index === 0 ? 0 : 3} />)}</svg>;

@@ -960,3 +960,9 @@ tiles fade from their neutral surface at left to a 15% category tint at right.
 Sport icons use the official Phosphor Regular family (MIT); shared filled path
 geometry preserves the authored stroke weight across native and web sizes.
 Other app utility icons retain the existing Tabler family.
+
+Shared app controls, navigation, profile fallbacks, and competition utility icons
+use Phosphor Regular. iOS native tabs use bundled template PNGs at 1x/2x/3x
+from the same official SVGs, retaining system tint and native tab behavior.
+Card tint layers extend 24 points beyond every edge and clip at the parent’s
+rounded boundary so no internal gradient rectangle is visible.

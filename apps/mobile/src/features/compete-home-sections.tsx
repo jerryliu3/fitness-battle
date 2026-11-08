@@ -1,7 +1,7 @@
 import { useId } from "react";
 import { Platform, ScrollView, Pressable, View, useWindowDimensions } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect, Path } from "react-native-svg";
-import { SPORTS, type SportId, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, competeHomeResult, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
+import { SPORTS, type SportId, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, APP_ICON_PATHS, competeHomeResult, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
@@ -9,7 +9,7 @@ import { AppIcon } from "../ui/app-icon";
 export function CompeteIcon({ name, size = 26, gold = false }: { name: keyof typeof COMPETE_ICONS | CompeteEvent; size?: number; gold?: boolean }) {
   const c = useThemeColors();
   const path = name in COMPETE_ICONS ? COMPETE_ICONS[name as keyof typeof COMPETE_ICONS] : SPORT_ICON_PATHS[name as keyof typeof SPORT_ICON_PATHS];
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={gold ? c.podiumGold : c.ink} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" accessible={Platform.OS === "web" ? undefined : false} aria-hidden={Platform.OS === "web" ? true : undefined}><Path d={path} fill={name in SPORT_ICON_PATHS ? (gold ? c.podiumGold : c.ink) : "none"} stroke={name in SPORT_ICON_PATHS ? "none" : undefined} /></Svg>;
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={gold ? c.podiumGold : c.ink} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" accessible={Platform.OS === "web" ? undefined : false} aria-hidden={Platform.OS === "web" ? true : undefined}><Path d={path} fill={(name in SPORT_ICON_PATHS || name in APP_ICON_PATHS) ? (gold ? c.podiumGold : c.ink) : "none"} stroke={(name in SPORT_ICON_PATHS || name in APP_ICON_PATHS) ? "none" : undefined} /></Svg>;
 }
 
 function MetallicFill({ silver = false }: { silver?: boolean }) {
@@ -34,10 +34,10 @@ export function EventArt({ event, feature = false, gold = false }: { event: Comp
 
 function EventTint({ event }: { event: CompeteEvent }) {
   const id = useId();
-  return <Svg pointerEvents="none" accessible={Platform.OS === "web" ? undefined : false} aria-hidden={Platform.OS === "web" ? true : undefined} width="100%" height="100%" style={{ position: "absolute", top: 0, left: 0 }}>
+  return <View pointerEvents="none" style={{ position: "absolute", top: -24, bottom: -24, left: -24, right: -24 }}><Svg pointerEvents="none" accessible={Platform.OS === "web" ? undefined : false} aria-hidden={Platform.OS === "web" ? true : undefined} width="100%" height="100%">
     <Defs><LinearGradient id={id} x1="0%" y1="0%" x2="100%" y2="0%"><Stop offset="0" stopColor={COMPETE_ART_COLORS[event]} stopOpacity={0} /><Stop offset="1" stopColor={COMPETE_ART_COLORS[event]} stopOpacity={0.15} /></LinearGradient></Defs>
     <Rect width="100%" height="100%" fill={`url(#${id})`} />
-  </Svg>;
+  </Svg></View>;
 }
 
 export function ExploreEvents({ onChoose }: { onChoose(event: CompeteEvent): void }) {

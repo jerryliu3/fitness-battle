@@ -1,3 +1,4 @@
+import { APP_ICON_PATHS } from "./product-icons";
 import { competitionTrack, type CompeteState } from "./compete/sports";
 import { rankForElo } from "./compete/ranks";
 
@@ -11,15 +12,15 @@ export type CompeteCategory = typeof COMPETE_CATEGORIES[number]["id"];
 export type CompeteEvent = typeof COMPETE_CATEGORIES[number]["events"][number];
 
 export const COMPETE_ICONS = {
-  special: "m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z",
+  special: APP_ICON_PATHS.special,
   wreath: "M10 21C3 18 2 10 6 4m8 17c7-3 8-11 4-17M5 8C1 8 2 4 3 3c3 0 4 2 2 5Zm-1 5c-4-1-4-4-3-5 3 1 4 2 3 5Zm2 5c-4 0-5-3-5-4 3 0 5 1 5 4Zm13-10c4 0 3-4 2-5-3 0-4 2-2 5Zm1 5c4-1 4-4 3-5-3 1-4 2-3 5Zm-2 5c4 0 5-3 5-4-3 0-5 1-5 4Z",
-  sleep: "M3 4v16m0-4h18v4m0-4v-5a2 2 0 0 0-2-2h-8v7M6 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm-3 3h8",
-  recovery: "M20 15a8 8 0 0 1-11-11A8 8 0 1 0 20 15Z",
-  trophy: "M8 3h8v7a4 4 0 0 1-8 0V3Zm0 2H3v3a5 5 0 0 0 5 5m8-8h5v3a5 5 0 0 1-5 5m-4 1v6m-4 1h8",
-  crown: "m3 7 5 4 4-7 4 7 5-4-2 12H5L3 7Z",
-  crew: "M7 21v-3a5 5 0 0 1 10 0v3M2 20v-3a4 4 0 0 1 3-4m17 7v-3a4 4 0 0 0-3-4M12 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6M4 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4m16 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4",
-  distance: "M3 17c4-14 14 14 18-10M3 17h.01M21 7h.01",
-  time: "M9 2h6m-3 6v5l3 2m-3-10a8 8 0 1 0 0 16 8 8 0 0 0 0-16Z",
+  sleep: APP_ICON_PATHS.sleep,
+  recovery: APP_ICON_PATHS.recovery,
+  trophy: APP_ICON_PATHS.trophy,
+  crown: APP_ICON_PATHS.crown,
+  crew: APP_ICON_PATHS.crew,
+  distance: APP_ICON_PATHS.distance,
+  time: APP_ICON_PATHS.time,
 } as const;
 
 /** Filled silhouettes recreate the reference's quiet, lower-right sport artwork. */

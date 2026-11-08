@@ -898,7 +898,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
               setPanel(id);
             }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={SETTINGS_ICON_PATHS[PANEL_TITLES[id] as keyof typeof SETTINGS_ICON_PATHS]} /></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={SETTINGS_ICON_PATHS[PANEL_TITLES[id] as keyof typeof SETTINGS_ICON_PATHS]} fill="currentColor" stroke="none" /></svg>
             <span className="focus-settings-copy">
               <b>{PANEL_TITLES[id]}</b>
               <AppText as="small" role="support" secondary>{detail}</AppText>

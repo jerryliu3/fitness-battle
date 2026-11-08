@@ -29,10 +29,10 @@ export default function TabLayout() {
   if (required) return <Redirect href="/onboarding" />;
   if (Platform.OS === "ios") return <CompeteExperienceProvider value={experience}><View style={{ flex: 1 }}><View style={{ flex: 1 }} accessibilityElementsHidden={experience.immersive} importantForAccessibility={experience.immersive ? "no-hide-descendants" : "auto"}><AppHeader />
     <NativeTabs tintColor={SHELL_COLORS.ink} blurEffect={mode === "dark" ? "systemUltraThinMaterialDark" : "systemUltraThinMaterialLight"} backgroundColor={SHELL_COLORS.surfaceNavigation} disableTransparentOnScrollEdge>
-      <NativeTabs.Trigger name="today" accessibilityLabel="Home"><NativeTabs.Trigger.Icon sf="house" /><NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label></NativeTabs.Trigger>
-      <NativeTabs.Trigger name="arena" accessibilityLabel="Compete"><NativeTabs.Trigger.Icon sf="flag.checkered" /><NativeTabs.Trigger.Label>Compete</NativeTabs.Trigger.Label></NativeTabs.Trigger>
-      <NativeTabs.Trigger name="you" accessibilityLabel="Progress"><NativeTabs.Trigger.Icon sf="chart.xyaxis.line" /><NativeTabs.Trigger.Label>Progress</NativeTabs.Trigger.Label></NativeTabs.Trigger>
-      <NativeTabs.Trigger name="field" accessibilityLabel="Crew"><NativeTabs.Trigger.Icon sf="person.2" /><NativeTabs.Trigger.Label>Crew</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="today" accessibilityLabel="Home"><NativeTabs.Trigger.Icon src={require("../../assets/icons/phosphor/home.png")} renderingMode="template" /><NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="arena" accessibilityLabel="Compete"><NativeTabs.Trigger.Icon src={require("../../assets/icons/phosphor/compete.png")} renderingMode="template" /><NativeTabs.Trigger.Label>Compete</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="you" accessibilityLabel="Progress"><NativeTabs.Trigger.Icon src={require("../../assets/icons/phosphor/progress.png")} renderingMode="template" /><NativeTabs.Trigger.Label>Progress</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="field" accessibilityLabel="Crew"><NativeTabs.Trigger.Icon src={require("../../assets/icons/phosphor/crew.png")} renderingMode="template" /><NativeTabs.Trigger.Label>Crew</NativeTabs.Trigger.Label></NativeTabs.Trigger>
     </NativeTabs></View>{host}
   </View></CompeteExperienceProvider>;
   return (

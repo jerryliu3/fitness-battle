@@ -89,4 +89,5 @@
 @media(prefers-reduced-motion:reduce){.compete-live-dot[data-active="true"]{animation:none}}
 
 .compete-special-badge{align-self:start;justify-self:start;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;border:1px solid var(--app-podium-gold);background:var(--action-soft)}
-.compete-sport-card{background:linear-gradient(90deg,var(--card),color-mix(in srgb,var(--event-tint) 15%,var(--card)))}
+.compete-sport-card{background:var(--card)}
+.compete-sport-card:before{content:"";position:absolute;inset:-24px;z-index:-1;background:linear-gradient(90deg,var(--card),color-mix(in srgb,var(--event-tint) 15%,var(--card)));pointer-events:none}
