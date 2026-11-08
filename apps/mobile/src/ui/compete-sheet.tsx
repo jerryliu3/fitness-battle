@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Animated, PanResponder, ScrollView, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { SHELL_COLORS as c } from "../theme";
+import { useThemeColors } from "../theme";
 import { useReducedMotion } from "./use-reduced-motion";
 
 /** Moving the sheet changes coverage without resizing the retained field. */
 export function CompeteSheet({ children, expandRequest, active, overview }: { children: ReactNode; expandRequest: number; active: boolean; overview?: ReactNode }) {
+  const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const bottom = 0;

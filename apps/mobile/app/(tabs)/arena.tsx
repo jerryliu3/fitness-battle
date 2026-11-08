@@ -253,5 +253,6 @@ const f=useFocusStyles();
 }
 
 function ArenaSheet({ persistent, children, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean; overview?: React.ReactNode }) {
+  const f = useFocusStyles();
   return persistent ? <CompeteSheet {...props}>{children}</CompeteSheet> : <ScrollView contentContainerStyle={f.content}>{children}</ScrollView>;
 }
