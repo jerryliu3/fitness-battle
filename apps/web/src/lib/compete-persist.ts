@@ -8,6 +8,7 @@ import {
   getDemoCompeteState,
   freshHealthRatings,
   freshState,
+  mergeActivities,
   periodResultId,
   prepareCompeteStateForAccount,
   provenanceOf,
@@ -460,7 +461,7 @@ export async function loadCompeteAccount(
     ];
   });
 
-  const activities: Activity[] = (activityRows ?? []).flatMap((row) => {
+  const activities: Activity[] = mergeActivities([], (activityRows ?? []).flatMap((row) => {
     const sport = asSport(String(row.sport ?? ""));
     const competeKey = row.compete_key ? String(row.compete_key) : "";
     if (!sport || !competeKey) return [];
@@ -472,7 +473,7 @@ export async function loadCompeteAccount(
         routeBounds: Array.isArray(row.route_bounds) && row.route_bounds.length === 4 ? row.route_bounds.map(Number) as [number, number, number, number] : null,
         elevationGainM: row.elevation_gain_m == null ? null : Number(row.elevation_gain_m),
         sport,
-        startedAt: String(row.started_at),
+        startedAt: Number.isNaN(Date.parse(String(row.started_at))) ? String(row.started_at) : new Date(String(row.started_at)).toISOString(),
         distanceM: Number(row.distance_m ?? 0),
         movingSec: Number(row.moving_sec ?? 0),
         avgHr: row.avg_hr == null ? null : Number(row.avg_hr),
@@ -485,7 +486,7 @@ export async function loadCompeteAccount(
           : undefined,
       },
     ];
-  });
+  }));
 
   const sleepNights: SleepNight[] = (sleepRows ?? []).map((row) => ({
     id: String(row.night_id),
@@ -694,7 +695,7 @@ export async function settleAccountFields(db: Db, userId: string, state: Compete
         const { data, error } = await db.rpc("competition_own_facts", { p_sport: enrollment.sport, p_start: enrollment.waveStart, p_end: enrollment.weekEnd });
         if (error || !Array.isArray(data)) throw new Error("accepted_facts_unavailable");
         return { ...enrollment, scoringActivities: data.map(row => ({
-          id: row.compete_key, sport: row.sport, startedAt: row.started_at, distanceM: Number(row.distance_m ?? 0), movingSec: Number(row.moving_sec ?? 0),
+          id: row.compete_key, sport: row.sport, startedAt: Number.isNaN(Date.parse(String(row.started_at))) ? String(row.started_at) : new Date(String(row.started_at)).toISOString(), distanceM: Number(row.distance_m ?? 0), movingSec: Number(row.moving_sec ?? 0),
           avgHr: row.avg_hr == null ? null : Number(row.avg_hr), verified: row.verified, provenance: row.provenance, disposition: row.disposition,
           source: row.source_label ?? row.provider,
         })) };

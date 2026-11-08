@@ -1,4 +1,4 @@
-import { normalizeRouteReplay } from "@fitness-battle/shared";
+import { activityFromSample, mergeActivities, normalizeRouteReplay } from "@fitness-battle/shared";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type {
   ActivitySample,
@@ -233,11 +233,45 @@ export async function persistSyncedActivities(
     (categories ?? []).map((row) => [row.slug as string, row.id as string]),
   );
 
+  const table = db.from("activities") as unknown as {
+    select?: (cols: string) => {
+      eq: (col: string, val: string) => PromiseLike<{ data: Record<string, string | null>[] | null }>;
+    };
+  };
+  const existingByKey = new Map(
+    (typeof table.select === "function"
+      ? (await table.select("provider, external_id, disposition, disposition_reason").eq("user_id", userId)).data ?? []
+      : []
+    ).map((r) => [`${r.provider}:${r.external_id}`, r]),
+  );
+  const mergedById = new Map(
+    mergeActivities(
+      [],
+      activities.flatMap((a) => {
+        const act = activityFromSample(a, provenance);
+        return act ? [act] : [];
+      }),
+    ).map((a) => [a.id, a]),
+  );
+
   const rows = activities.flatMap((activity) => {
     if (!CLOUD_PROVIDERS.has(activity.provider) || activity.provider === "mock") return [];
     const categoryId = bySlug.get(activity.categorySlug);
     if (!categoryId) return [];
     const sport = activity.categorySlug;
+    const existing = existingByKey.get(`${activity.provider}:${activity.externalId}`);
+    const merged = mergedById.get(activity.id);
+    const disposition =
+      existing?.disposition === "excluded" || merged?.disposition === "excluded"
+        ? "excluded"
+        : (existing?.disposition as "counted" | "pending" | undefined) ??
+          (provenance === "imported" ? "pending" : "counted");
+    const dispositionReason = existing?.disposition_reason ?? merged?.dispositionReason;
+    const verified =
+      disposition !== "excluded" &&
+      provenance === "recorded" &&
+      sport !== "strength" &&
+      (activity.verified ?? activity.provider !== "garmin");
     return [
       {
         user_id: userId,
@@ -256,9 +290,10 @@ export async function persistSyncedActivities(
         elevation_gain_m: activity.elevationGainM ?? null,
         sport,
         distance_m: sport === "strength" ? 0 : Number(activity.metricValue ?? 0),
-        verified: provenance === "recorded" && sport !== "strength" && (activity.verified ?? activity.provider !== "garmin"),
+        verified,
         provenance,
-        disposition: provenance === "imported" ? "pending" : "counted",
+        disposition,
+        ...(dispositionReason ? { disposition_reason: dispositionReason } : {}),
         compete_key: activity.id,
         source_label: activity.provider,
       },

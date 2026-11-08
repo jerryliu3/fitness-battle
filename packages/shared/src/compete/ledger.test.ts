@@ -70,6 +70,33 @@ describe("activity ledger", () => {
     expect(merged[0]?.dispositionReason).toBe("You left this session out of the week.");
   });
 
+  it("allows an incoming exclusion to update a counted activity and never resurrects excluded twins", () => {
+    const counted = run({
+      id: "hk-1",
+      source: "apple_health",
+      startedAt: "2026-10-13T12:00:10.000Z",
+    });
+    const deselected = run({
+      id: "hk-1",
+      source: "apple_health",
+      startedAt: "2026-10-13T12:00:10.000Z",
+      disposition: "excluded",
+      dispositionReason: "Deselected during sync review.",
+    });
+    expect(mergeActivities([counted], [deselected])[0]?.disposition).toBe("excluded");
+
+    const excludedEarlierTwin = run({
+      id: "hk-0",
+      source: "apple_health",
+      startedAt: "2026-10-13T12:00:00.000Z",
+      disposition: "excluded",
+      dispositionReason: "Already counted from recorded apple_health.",
+    });
+    const mergedWithTwin = mergeActivities([counted], [excludedEarlierTwin]);
+    expect(mergedWithTwin.find((a) => a.id === "hk-1")?.disposition).toBe("counted");
+    expect(mergedWithTwin.find((a) => a.id === "hk-0")?.disposition).toBe("excluded");
+  });
+
   it("builds distance and pace trends from counted sessions", () => {
     const trends = progressionTrends(
       [

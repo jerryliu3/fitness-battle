@@ -256,6 +256,12 @@ const styles=useThemedStyles(stylesThemes);
       const localOnly = offlineMode;
       const ingestAuth = {
         localOnly,
+        lastSyncAt:
+          state?.activities
+            .filter((a) => a.source === providerId)
+            .map((a) => a.startedAt)
+            .sort()
+            .at(-1) ?? null,
         getAccessToken: async () => ({
           token: accessToken ?? undefined,
           userId: user.id,

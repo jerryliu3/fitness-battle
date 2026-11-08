@@ -102,7 +102,7 @@ function prefer(left: Activity, right: Activity): Activity {
   const leftRank = PRECEDENCE[provenanceOf(left)];
   const rightRank = PRECEDENCE[provenanceOf(right)];
   if (leftRank !== rightRank) return leftRank > rightRank ? left : right;
-  return left.startedAt <= right.startedAt ? left : right;
+  return Date.parse(left.startedAt) <= Date.parse(right.startedAt) ? left : right;
 }
 
 /**
@@ -123,7 +123,9 @@ export function mergeActivities(
     const twinIndex = next.findIndex(
       (item) =>
         item.id === activity.id ||
-        (dispositionOf(item) !== "excluded" && sameWorkout(item, activity)),
+        (dispositionOf(item) !== "excluded" &&
+          dispositionOf(activity) !== "excluded" &&
+          sameWorkout(item, activity)),
     );
     if (twinIndex < 0) {
       next.push(activity);
@@ -131,12 +133,15 @@ export function mergeActivities(
     }
     const twin = next[twinIndex]!;
     if (twin.id === activity.id) {
+      const excluded = activity.disposition === "excluded";
       next[twinIndex] = isSampleActivity(activity)
         ? normalizeSampleActivity(activity)
         : {
             ...activity,
-            disposition: dispositionOf(twin),
-            dispositionReason: twin.dispositionReason,
+            disposition: excluded ? "excluded" : dispositionOf(twin),
+            dispositionReason: excluded
+              ? (activity.dispositionReason ?? twin.dispositionReason)
+              : twin.dispositionReason,
           };
       continue;
     }

@@ -834,6 +834,10 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             if (isCompeteState(body.state)) {
               stateRef.current = body.state;
               setState(body.state);
+              await AsyncStorage.setItem(
+                scoped.state,
+                JSON.stringify(body.state),
+              );
             }
             invalidateApiReads(apiReadScope(mobileEnv.apiUrl, account.token));
             setSaveError(null);

@@ -1,5 +1,5 @@
 import { dayKey } from "./period";
-import { countsOnTrack } from "./compete/ledger";
+import { countsOnTrack, dispositionOf, mergeActivities, provenanceOf } from "./compete/ledger";
 import { competeNow, reduceCompete, type Action } from "./compete/engine";
 import type { Activity, CompeteState } from "./compete/sports";
 /** Brief beat before applying sync review so the confirm affordance can show progress. */
@@ -13,21 +13,25 @@ export interface SyncReviewReceipt {
 }
 const fingerprint = (a: Activity) =>
   JSON.stringify([
-    a.startedAt,
+    Date.parse(a.startedAt),
     a.sport,
-    a.distanceM,
-    a.movingSec,
+    Math.round(a.distanceM * 100),
+    Math.round(a.movingSec),
     a.verified,
-    a.provenance,
-    a.disposition,
+    provenanceOf(a),
+    dispositionOf(a),
   ]);
+const resolveIncoming = (incoming: Activity[], known: Activity[]) => {
+  const merged = new Map(mergeActivities(known, incoming).map((a) => [a.id, a]));
+  return incoming.map((a) => merged.get(a.id) ?? a);
+};
 export function changedSyncActivities(
   incoming: Activity[],
   known: Activity[],
   now: Date,
 ) {
   const previous = new Map(known.map((a) => [a.id, a]));
-  return [...new Map(incoming.map((a) => [a.id, a])).values()].filter((a) => {
+  return [...new Map(resolveIncoming(incoming, known).map((a) => [a.id, a])).values()].filter((a) => {
     const at = Date.parse(a.startedAt),
       old = previous.get(a.id);
     return (
@@ -66,8 +70,9 @@ export function planSyncReview(action: Action, state: CompeteState) {
       activities: [],
       preview: false,
     };
-  const incoming = (action.activities ?? []).filter(
-    (a) => a.source === action.provider,
+  const incoming = resolveIncoming(
+    (action.activities ?? []).filter((a) => a.source === action.provider),
+    state.activities,
   );
   const today = changedSyncActivities(incoming, state.activities, now);
   const immediate = action;

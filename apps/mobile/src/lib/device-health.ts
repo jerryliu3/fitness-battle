@@ -1,5 +1,13 @@
 import { appleHealthExtra, androidHealthExtra, type DeviceHealthExtra } from "./device-health-metrics";
-import { routeMetadata, mapSportToCategory, type ActivitySample, type CategorySlug } from "@fitness-battle/shared";
+import {
+  activityFromSample,
+  routeMetadata,
+  mapSportToCategory,
+  sameWorkout,
+  syncWindow,
+  type ActivitySample,
+  type CategorySlug,
+} from "@fitness-battle/shared";
 import { NativeModules, Platform } from "react-native";
 import {
   resolveAppleHealthKit,
@@ -8,8 +16,6 @@ import {
 } from "./apple-health-kit";
 import { mobileEnv } from "./env";
 import { supabase } from "./supabase";
-
-const BACKFILL_MS = 90 * 24 * 60 * 60 * 1000;
 
 export interface DeviceSyncResult {
   ok: boolean;
@@ -39,6 +45,8 @@ export type SyncAppleHealthDeps = {
   fetchFn: typeof fetch;
   /** Demo accounts: keep workouts on-device; do not call the live ingest API. */
   localOnly?: boolean;
+  /** Known latest workout timestamp for incremental sync windowing. */
+  lastSyncAt?: string | null;
 };
 
 function readReactNativeHealthPackage(): AppleHealthKitPackageExport | null {
@@ -72,6 +80,16 @@ export function createAppleHealthDeps(
   overrides: Partial<SyncAppleHealthDeps> = {},
 ): SyncAppleHealthDeps {
   return { ...defaultAppleHealthDeps(), ...overrides };
+}
+
+export function dedupeActivitySamples(samples: ActivitySample[]): ActivitySample[] {
+  const unique: { sample: ActivitySample; activity: NonNullable<ReturnType<typeof activityFromSample>> }[] = [];
+  for (const sample of samples) {
+    const activity = activityFromSample(sample, "recorded");
+    if (!activity || unique.some((u) => u.sample.id === sample.id || u.sample.externalId === sample.externalId || sameWorkout(u.activity, activity))) continue;
+    unique.push({ sample, activity });
+  }
+  return unique.map((u) => u.sample);
 }
 
 export function sampleFromWorkout(
@@ -205,8 +223,7 @@ export async function syncAppleHealth(
     };
   }
 
-  const startDate = new Date(Date.now() - BACKFILL_MS).toISOString();
-  const endDate = new Date().toISOString();
+  const { since: startDate, until: endDate } = syncWindow({ lastSyncAt: deps.lastSyncAt });
   let workouts: WorkoutLike[];
   try {
     workouts = await new Promise<WorkoutLike[]>((resolve, reject) => {
@@ -234,7 +251,7 @@ export async function syncAppleHealth(
     return { ok: false, message: healthKitErrorMessage(error), count: 0 };
   }
 
-  const activities = workouts
+  const activities = dedupeActivitySamples(workouts
     .map((workout) =>
       sampleFromWorkout(
         "apple_health",
@@ -246,7 +263,7 @@ export async function syncAppleHealth(
         workout.activityName ?? "",
       ),
     )
-    .filter((item): item is ActivitySample => item != null);
+    .filter((item): item is ActivitySample => item != null));
   const routeReader=(kit as unknown as Record<string,unknown>).getWorkoutRouteSamples;
   if(typeof routeReader==="function")for(const activity of activities){
     const locations=await new Promise<{latitude:number;longitude:number;timestamp?:string;altitude?:number;speed?:number}[]>(resolve=>routeReader.call(kit,{id:activity.externalId},(error:unknown,result:{data?:{locations?:{latitude:number;longitude:number;timestamp?:string;altitude?:number;speed?:number}[]}})=>resolve(error?[]:result?.data?.locations??[])));
@@ -309,7 +326,7 @@ function healthConnectGrantedExerciseRead(granted: HealthConnectPermission[]): b
 
 export type SyncHealthConnectDeps = Pick<
   SyncAppleHealthDeps,
-  "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly"
+  "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly" | "lastSyncAt"
 > & {
   platform?: string;
   /** Injectable for tests; defaults to require("react-native-health-connect"). */
@@ -334,6 +351,7 @@ export function createHealthConnectDeps(
     getAccessToken: base.getAccessToken,
     fetchFn: base.fetchFn,
     localOnly: base.localOnly,
+    lastSyncAt: base.lastSyncAt,
     platform: overrides.platform ?? Platform.OS,
     healthModule: overrides.healthModule,
   };
@@ -400,8 +418,7 @@ export async function syncHealthConnect(
       count: 0,
     };
   }
-  const startTime = new Date(Date.now() - BACKFILL_MS).toISOString();
-  const endTime = new Date().toISOString();
+  const { since: startTime, until: endTime } = syncWindow({ lastSyncAt: deps.lastSyncAt });
   const range = { timeRangeFilter: { operator: "between", startTime, endTime } };
   let sessions: NonNullable<Awaited<ReturnType<HealthConnectModule["readRecords"]>>["records"]> = [];
   let distances: typeof sessions = [];
@@ -424,7 +441,7 @@ export async function syncHealthConnect(
   for (const [name, value] of Object.entries(health.ExerciseType ?? {})) {
     if (typeof value === "number") typeNames.set(value, name);
   }
-  const activities = sessions
+  const activities = dedupeActivitySamples(sessions
     .map((record) => {
       const typeName =
         typeof record.exerciseType === "string"
@@ -452,7 +469,7 @@ export async function syncHealthConnect(
       if(sample)Object.assign(sample,routeMetadata((record.exerciseRoute?.route??[]).map(p=>({lat:p.latitude,lon:p.longitude,time:p.time,elevation:p.altitude?.inMeters})),sample.categorySlug));
       return sample;
     })
-    .filter((item): item is ActivitySample => item != null);
+    .filter((item): item is ActivitySample => item != null));
   const healthExtra = await androidHealthExtra(
     health as unknown as Record<string, unknown>,
     (granted ?? []).filter(

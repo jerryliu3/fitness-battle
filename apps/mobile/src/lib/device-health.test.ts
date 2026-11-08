@@ -246,11 +246,47 @@ describe("sampleFromWorkout", () => {
 });
 
 it("reads available routes for workouts beyond the first twenty", async () => {
- const workouts=Array.from({length:21},(_,i)=>({id:`workout-${i}`,activityName:"Running",start:"2026-10-01T12:00:00Z",end:"2026-10-01T12:30:00Z",distance:1,duration:1800}));
+ const workouts=Array.from({length:21},(_,i)=>({id:`workout-${i}`,activityName:"Running",start:new Date(Date.UTC(2026,9,1,i)).toISOString(),end:new Date(Date.UTC(2026,9,1,i,30)).toISOString(),distance:1,duration:1800}));
  const deps=testDeps({workouts});
  const reader=vi.fn((_options:unknown,callback:Function)=>callback(null,{data:{locations:[]}}));
  Object.assign(deps.nativeModule!,{getWorkoutRouteSamples:reader});
  await syncAppleHealth(deps);
  expect(reader).toHaveBeenCalledTimes(21);
  expect(reader).toHaveBeenCalledWith({id:"workout-20"},expect.any(Function));
+});
+
+it("uses the incremental sync cursor and deduplicates sameWorkout sessions", async () => {
+  const recentSync = new Date(Date.now() - 2 * 86_400_000).toISOString();
+  const deps = testDeps({
+    lastSyncAt: recentSync,
+    workouts: [
+      {
+        id: "hk-dup-1",
+        activityName: "Running",
+        start: "2026-10-01T12:00:00.000Z",
+        end: "2026-10-01T12:30:00.000Z",
+        distance: 3.1,
+        duration: 1800,
+      },
+      {
+        id: "hk-dup-2",
+        activityName: "Running",
+        start: "2026-10-01T12:00:15.000Z",
+        end: "2026-10-01T12:30:15.000Z",
+        distance: 3.11,
+        duration: 1805,
+      },
+    ],
+  });
+
+  const result = await syncAppleHealth(deps);
+  expect(result.ok).toBe(true);
+  expect(result.count).toBe(1);
+  expect(result.activities?.map((a) => a.externalId)).toEqual(["hk-dup-1"]);
+  const queryOptions = (
+    deps.nativeModule?.getAnchoredWorkouts as unknown as ReturnType<typeof vi.fn>
+  ).mock.calls[0]?.[0] as { startDate: string };
+  expect(Date.parse(queryOptions.startDate)).toBeGreaterThan(
+    Date.now() - 5 * 86_400_000,
+  );
 });
