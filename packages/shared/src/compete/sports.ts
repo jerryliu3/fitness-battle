@@ -289,6 +289,10 @@ export interface CompeteState {
   onboardingCompleted: boolean;
   /** Lifetime count of field overtakes (server-owned; read from profile). */
   lifetimeOvertakes: number;
+  /** Sequential athlete registration number (1..10,000 for founding lifetime passes). */
+  athleteNumber?: number | null;
+  /** Server-verified entry pass / entitlement for multi-sport access. */
+  entryPass?: import("../entry-pass").AthleteEntitlement | null;
   /** Transient server acknowledgement; never accepted as account input. */
   committedOvertakeMoments?: import("../competition-moments").CompetitionMoment[];
   /** Closed-week placements and Elo transitions (newest first, capped). */

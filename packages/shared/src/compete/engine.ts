@@ -388,6 +388,8 @@ export function freshState(now: Date = new Date()): CompeteState {
     calibrated: false,
     onboardingCompleted: false,
     lifetimeOvertakes: 0,
+    athleteNumber: null,
+    entryPass: null,
     periodResults: [],
     pendingRevealIds: [],
     trainingGoal: null,
