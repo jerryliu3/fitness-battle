@@ -1,4 +1,5 @@
-import { useThemeColors } from "../theme";
+import { useAppTheme, useThemeColors } from "../theme";
+import { StatusBar } from "expo-status-bar";
 import { useFocusStyles } from "../ui/focus";
 import { createThemedStyles, useThemedStyles } from "../theme";
 import { ReplayTimeline } from "./replay-timeline";
@@ -95,10 +96,12 @@ export function CompetitionReplayModal({ open, state, selection, dimension, onCl
   onClose(): void;
 }) {
 const f=useFocusStyles();
+const { mode } = useAppTheme();
 
   const reduced = useReducedMotion();
   return open ? <Modal visible animationType={reduced ? "none" : "fade"} presentationStyle="fullScreen" onRequestClose={onClose}>
     <SafeAreaProvider>
+      <StatusBar style={mode === "dark" ? "light" : "dark"} />
       <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
         <ReplayViewer key={`${selection.sport}:${selection.track}:${selection.periodStart}`} state={state} selection={selection} initialFlat={initialFlat} initialDimension={dimension} onClose={onClose} />
       </SafeAreaView>

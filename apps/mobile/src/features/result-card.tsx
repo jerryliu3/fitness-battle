@@ -19,10 +19,12 @@ export function ResultCard({
   result,
   units,
   podiumAthletes = [],
+  compact = false,
 }: {
   result: PeriodResult;
   units: UnitSystem;
   podiumAthletes?: { id: string; name: string; place: number; you: boolean; avatarUrl?: string | null }[];
+  compact?: boolean;
 }) {
 const appearanceColors = useThemeColors();
 
@@ -44,7 +46,7 @@ const f=useFocusStyles();
   return (
     <Animated.View
       style={{
-        marginVertical: 18,
+        marginVertical: compact ? 0 : 18,
         transform: [
           { perspective: 900 },
           {
@@ -70,15 +72,15 @@ const f=useFocusStyles();
         onPressOut={() => tilt(0)}
         onPress={() => setReceipt(!receipt)}
         style={{
-          padding: 24,
-          gap: 14,
+          padding: compact ? 16 : 24,
+          gap: compact ? 10 : 14,
           borderRadius: 20,
           backgroundColor: appearanceColors.soft,
           borderWidth: 1,
           borderBottomWidth: 5,
           borderRightWidth: 3,
           borderColor: appearanceColors.line,
-          minHeight: 260,
+          minHeight: compact ? undefined : 260,
         }}
       >
         <Text style={f.kicker}>
