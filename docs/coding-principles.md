@@ -163,3 +163,7 @@ recovery. Positive field movement reuses the existing replay without requiring a
 rank change, and each sport remains independently queued. Committed overtake
 receipts survive subsequent save acknowledgements until device presentation can
 consume them.
+
+### Public road race reads
+
+The separate rankings database exposes bounded `rankings_page` and `rankings_result` reads via `/api/rankings`. Web and native share `race-rankings.ts` types and query normalization. Distance/category/year define a result cohort; athlete/bib search must not redefine its ranks. Calculate ranks before paging, preserve tied places, and keep source suppression consistent across lists, reports and counts. These observations never write weekly competition scores. Report distributions describe stored published results; complete-field percentile claims require verified import coverage. Deploy the rankings migrations before their consumers.
