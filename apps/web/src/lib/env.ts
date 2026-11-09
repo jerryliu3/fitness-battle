@@ -6,6 +6,8 @@
 
 /** Public / isomorphic env. Safe to import from client components. */
 export const webEnv = {
+  rankingsUrl: process.env.NEXT_PUBLIC_RANKINGS_SUPABASE_URL ?? "",
+  rankingsAnonKey: process.env.NEXT_PUBLIC_RANKINGS_SUPABASE_ANON_KEY ?? "",
   supabaseUrl:
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54621",
   supabaseAnonKey:
