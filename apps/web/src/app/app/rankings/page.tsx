@@ -8,10 +8,12 @@ export const dynamic = "force-dynamic";
 export default async function RankingsHomePage() {
   const client = createRankingsClient();
   const counts = new Map<string, number>();
+  let unavailable = !client;
   if (client) {
-    const { data } = await client
+    const { data, error } = await client
       .from("rankings_distance_stats")
       .select("distance_slug, result_count");
+    unavailable = !!error;
     for (const row of data ?? []) {
       counts.set(row.distance_slug, Number(row.result_count) || 0);
     }
@@ -38,17 +40,17 @@ export default async function RankingsHomePage() {
           const count = counts.get(stored) ?? 0;
           return (
             <li key={distance.slug}>
-              {count > 0 ? (
+              {!unavailable ? (
                 <Link href={`/rankings/${distance.slug}`}>
                   <strong>{distance.label}</strong>
                   <span>
-                    {count} {count === 1 ? "result" : "results"}
+                    {count.toLocaleString()} {count === 1 ? "result" : "results"}
                   </span>
                 </Link>
               ) : (
                 <div className="rankings-empty-card">
                   <strong>{distance.label}</strong>
-                  <span>No results yet</span>
+                  <span>Results unavailable</span>
                 </div>
               )}
             </li>
@@ -56,8 +58,7 @@ export default async function RankingsHomePage() {
         })}
       </ul>
       <AppParagraph typographyRole="body" className="rankings-note">
-        The count is every published finisher. A distance page shows the fastest
-        200 women and 200 men. The same person can appear twice until results
+        The count is every published finisher. Distance pages let you search and page through the full published field. The same person can appear twice until results
         are linked across events.
         {client
           ? ""

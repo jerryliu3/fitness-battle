@@ -149,3 +149,52 @@
 .rankings-table td:nth-child(2), .rankings-table td:last-child { white-space: normal; min-width: 160px; max-width: 260px; overflow-wrap: anywhere; }
 .rankings-overflow-hint { display: none; }
 @media(max-width:600px) { .rankings-overflow-hint { display:block; position:sticky; left:0; color:var(--muted); font-size:12px; } }
+
+/* Results use the product's neutral surfaces and yellow interaction accent. */
+.race-explorer { margin-top: 28px; }
+.race-distances { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:28px; }
+.race-distances a { padding:9px 16px; border-radius:999px; border:1px solid var(--line); text-decoration:none; font-size:14px; }
+.race-distances a[aria-current="page"] { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.race-filters { display:grid; grid-template-columns:minmax(180px,1fr) 160px 110px auto; gap:12px; align-items:end; }
+.race-filters label { display:grid; gap:8px; font-size:12px; color:var(--muted); }
+.race-explorer input,.race-explorer select { width:100%; min-width:0; box-sizing:border-box; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:12px; padding:12px; font:inherit; font-size:16px; min-height:46px; }
+.race-explorer button { border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:12px; padding:12px 16px; font:inherit; font-size:14px; min-height:46px; cursor:pointer; }
+.race-filters button { background:var(--tennis, #d9f44a); color:#161a18; border-color:transparent; font-weight:600; }
+.race-explorer button:disabled { opacity:.45; cursor:default; }
+.race-explorer :is(a,button,input,select):focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
+.race-summary { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:32px 0 24px; }
+.race-summary strong { font-size:clamp(32px,5vw,48px); font-variant-numeric:tabular-nums; letter-spacing:-.04em; display:block; line-height:1.15; }
+.race-summary span,.race-summary p { color:var(--muted); font-size:13px; line-height:1.6; }
+.race-summary p { text-align:right; }
+.race-table { border-top:1px solid var(--line); overflow-x:auto; }
+.race-table table { width:100%; border-collapse:collapse; font-size:14px; }
+.race-table th { text-align:left; font-size:11px; color:var(--muted); font-weight:500; text-transform:uppercase; letter-spacing:.08em; }
+.race-table :is(th,td) { padding:16px 12px; border-bottom:1px solid var(--line); }
+.race-table td { vertical-align:top; }
+.race-table tbody tr:hover { background:var(--card); }
+.race-table strong { font-weight:600; overflow-wrap:anywhere; }
+.race-table small { display:block; color:var(--muted); font-size:11px; margin-top:5px; }
+.race-place { color:var(--muted); font-variant-numeric:tabular-nums; width:60px; }
+.race-time { font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap; }
+.race-mobile-event { display:none; }
+.race-pagination { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-top:20px; }
+.race-pagination span { font-variant-numeric:tabular-nums; font-size:12px; color:var(--muted); text-align:center; }
+.race-jump { display:flex; gap:10px; justify-content:flex-end; align-items:center; margin-top:16px; font-size:12px; }
+.race-jump input { width:80px; margin-left:6px; }
+.race-empty { padding:48px 0; border-block:1px solid var(--line); margin-top:24px; }
+.race-empty p { color:var(--muted); }
+.race-skeleton { height:60px; background:var(--line); opacity:.5; border-radius:12px; margin:16px 0; }
+.race-skeleton-title { width:45%; height:80px; margin-bottom:50px; }
+@media(max-width:650px) {
+  .race-filters { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+  .race-search { grid-column:1/-1; }
+  .race-filters button { grid-column:1/-1; }
+  .race-summary { align-items:flex-start; gap:12px; }
+  .race-summary p { max-width:160px; font-size:11px; }
+  .race-event-column { display:none; }
+  .race-mobile-event { display:block; color:var(--muted); font-size:12px; line-height:1.4; margin-top:6px; }
+  .race-table :is(th,td) { padding:14px 6px; }
+  .race-place { width:38px; font-size:12px; }
+  .race-pagination button { padding:10px; font-size:12px; }
+}
+@media(prefers-reduced-motion:reduce) { .rankings-boards a { transition:none; } }
