@@ -13,7 +13,7 @@ Apply the additive migration to the **rankings** project before deploying consum
 ## Delivery tracking
 
 - Full-field read contract: implemented.
-- Responsive web explorer and native list: next stack layer.
+- Responsive web explorer and native list: implemented in layer 2. Search, category/year scope, full-field pages and recovery states share the layer 1 API. Native benchmarks now opens a native results screen.
 - Individual result reports, distributions, favorites and comparisons: next.
 - Import completeness, automatic discovery, identity/careers and checkpoint replay: pending subsequent focused PRs.
 

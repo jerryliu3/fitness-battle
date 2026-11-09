@@ -9,12 +9,10 @@ import {
   type PaceScope,
 } from "@fitness-battle/shared";
 import { useRouter } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../src/lib/compete-store";
-import { mobileEnv } from "../src/lib/env";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { FocusButton, FocusHeading } from "../src/ui/focus";
 export default function Benchmarks() {
@@ -111,9 +109,7 @@ const f=useFocusStyles();
         <FocusButton
           label="Published race rankings"
           secondary
-          onPress={() =>
-            void WebBrowser.openBrowserAsync(`${mobileEnv.apiUrl}/rankings`)
-          }
+          onPress={() => router.push("/race-rankings")}
         />
       </SectionStack>
 </ScrollView>
