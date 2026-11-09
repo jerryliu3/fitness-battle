@@ -14,7 +14,7 @@ Apply the additive migration to the **rankings** project before deploying consum
 
 - Full-field read contract: implemented.
 - Responsive web explorer and native list: implemented in layer 2. Search, category/year scope, full-field pages and recovery states share the layer 1 API. Native benchmarks now opens a native results screen.
-- Individual web/native result reports, edition/category distributions, source links and nearby-finisher navigation: implemented in layer 3. Percentile claims remain withheld until import completeness is verified. Favorites and comparisons remain next.
+- Individual web/native result reports, edition/category distributions, source links and nearby-finisher navigation: implemented in layer 3. Percentile claims remain withheld until import completeness is verified. Favorites and two-result comparisons are implemented in layers 5–6 below.
 - Importer integrity: layer 4 fixes RunSignup raw-count pagination, explicit result-set selection, repeated-page/ceiling failures and suppression preservation. Live coverage reconciliation, scheduled discovery, identity/careers and checkpoint replay remain pending subsequent focused PRs.
 
 Local checkout: `/Users/jerryliu/Documents/fitness-battle/fitness-battle/.worktrees/rankings`.
@@ -36,3 +36,7 @@ CI follow-up: #561 passed its original check. #562/#564/#565 failed because Flat
 ## Layer 5: device-local favorites
 
 Web and native save up to 100 result IDs locally. They do not claim identity, sync across devices, or affect competition. A bounded `rankings_saved` read fetches fresh public labels without computing distributions or ranks. Suppressed/removed results appear as unavailable and can be removed; cached personal labels are never used. Storage writes are optimistic, serialized and rolled back on failure; initial storage failures do not overwrite existing bookmarks. Apply the saved-results migration to the rankings project before deploying the saved-list API. No production migration, tests, typechecks or builds run.
+
+## Layer 6: two-result comparisons
+
+Select exactly two currently available saved results on web or native. Comparison URLs contain result IDs and can be opened without the sender's device-local saved list. Both performances retain their event, year, distance and clock; recorded-time gaps appear only for matching distances and clock types. Same result IDs are rejected. No course-adjusted times, cross-field rank deltas, identity merges, percentile claims or weekly scoring effects are introduced. Native can share the public comparison URL. Reports remain separately accessible for provenance. No new database migration beyond layer 5; no local verification suites run.

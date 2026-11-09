@@ -20,3 +20,11 @@ export async function loadRaceReport(id: number): Promise<import("@fitness-battl
   if (error) throw new Error("Result unavailable");
   return data;
 }
+
+export async function loadSavedRaceResults(ids: number[]): Promise<import("@fitness-battle/shared").SavedRaceResult[]> {
+  const client = createRankingsClient();
+  if (!client) throw new Error("Rankings are not configured");
+  const { data, error } = await client.rpc("rankings_saved", { p_ids: ids });
+  if (error || !Array.isArray(data)) throw new Error("Results unavailable");
+  return data;
+}

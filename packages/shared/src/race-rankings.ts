@@ -48,3 +48,18 @@ export function raceSourceUrl(value: string) {
   catch { return null; }
 }
 export type SavedRaceResult = Pick<RaceResult, "id" | "athlete_name" | "distance_slug" | "rank_time_ms" | "rank_clock" | "event_name" | "edition_year">;
+
+/** Descriptive comparisons only: no identity, course adjustment or equivalent times. */
+export function compareRaceResults(first: SavedRaceResult, second: SavedRaceResult) {
+  const reason = first.id === second.id ? "Choose two different results."
+    : first.distance_slug !== second.distance_slug ? "Finish-time gaps require the same race distance."
+    : first.rank_clock !== second.rank_clock ? "Finish-time gaps require the same clock type."
+    : null;
+  return { reason, deltaMs: reason ? null : second.rank_time_ms - first.rank_time_ms };
+}
+
+export function raceTimeGap(ms: number) {
+  const value = Math.abs(ms);
+  const fraction = String(Math.trunc(value % 1000)).padStart(3, "0").replace(/0+$/, "");
+  return raceClock(value) + (fraction ? `.${fraction}` : "");
+}
