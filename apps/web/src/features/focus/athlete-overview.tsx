@@ -1,8 +1,9 @@
 "use client";
-import { colors as appearanceColors } from "@/theme/app-colors";
+import { AthleteCrest } from "@/features/athlete-card/athlete-crest";
+import { athleteCardModel } from "@fitness-battle/shared";
 
 import { EffortTrend } from "@/features/progress/effort-trend";
-import { AppParagraph, AppText, SectionHeader, typographyStyle, AppHeading } from "@/ui/section";
+import { AppParagraph, AppText, SectionHeader, typographyStyle } from "@/ui/section";
 
 import { clubLifetimeTotals } from "@fitness-battle/shared";
 import { ProfilePhoto } from "@/features/you/profile-photo";
@@ -12,34 +13,9 @@ import { useCompete } from "@/components/compete-context";
 import {
   distanceUnitLabel,
   formatDistanceM,
-  rankForElo,
-  sportById,
-  personalRecordHistory,
-  RECORD_DISTANCES,
-  formatClockTime,
-  competeNow,
   type CompeteState,
 } from "@fitness-battle/shared";
 import { useEffect, useState } from "react";
-
-function EditIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M4 20h4.5L19 9.5 14.5 5 4 15.5V20z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M12.5 7l4.5 4.5"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
 
 export function AthleteOverview({
   state,
@@ -144,112 +120,13 @@ export function AthleteOverview({
           </div>
         </section>
       ) : showProfile ? (
-        <section
-          className="focus-profile-card"
-          aria-label="Athlete profile"
-          style={{
-            background: "var(--app-surface-inverse)",
-            color: "var(--app-text-on-inverse)",
-            border: "1px solid var(--line, #24384a)",
-            borderRadius: "24px",
-            padding: "20px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "16px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "16px", width: "100%" }}>
-            <ProfilePhoto state={state} email={email} />
-            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                <AppHeading level={1} role="display" style={{ color: appearanceColors.white, margin: 0 }}>
-                  {state.name}
-                </AppHeading>
-                <AppText role="caption" secondary style={{ color: appearanceColors.textOnFeatureMuted, whiteSpace: "nowrap" }}>Since Jan 2026</AppText>
-              </div>
-              {state.city ? (
-                <AppText role="caption" secondary style={{ color: appearanceColors.textOnFeatureMuted }}>{state.city}</AppText>
-              ) : null}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
-                {(() => {
-                  const primaryRating = state.ratings.find((r) => r.sport === state.primary);
-                  const elo = primaryRating?.openElo || 1000;
-                  const rank = rankForElo(elo);
-                  return (
-                    <div style={{ color: "var(--app-action-primary)", ...typographyStyle("label") }}>
-                      {sportById(state.primary).name} · Open Effort Score {elo} · {rank.name}
-                    </div>
-                  );
-                })()}
-                <button
-                  type="button"
-                  className="fb-pill"
-                  aria-label="Edit profile"
-                  style={{
-                    cursor: "pointer",
-                    padding: "6px 14px",
-                    borderRadius: "999px",
-                    border: "1px solid rgba(255, 255, 255, 0.2)",
-                    background: "rgba(255, 255, 255, 0.1)",
-                    color: appearanceColors.white,
-                    ...typographyStyle("label"),
-                  }}
-                  onClick={() => {
-                    if (onEditProfile) {
-                      onEditProfile();
-                    } else {
-                      setName(state.name);
-                      setCity(state.city);
-                      setEditing(true);
-                    }
-                  }}
-                >
-                  Edit profile
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {(() => {
-            const records = personalRecordHistory(state, competeNow(state));
-            const topRecords = records.slice(0, 3);
-            if (topRecords.length === 0) return null;
-            return (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: `repeat(${topRecords.length}, 1fr)`,
-                  gap: "8px",
-                  paddingTop: "14px",
-                  borderTop: "1px solid rgba(255, 255, 255, 0.15)",
-                  width: "100%",
-                  textAlign: "center",
-                }}
-              >
-                {topRecords.map((r) => {
-                  const label =
-                    RECORD_DISTANCES[r.sport]?.find((d) => d.id === r.distanceId)?.label ??
-                    r.distanceId;
-                  return (
-                    <div key={r.activityId} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <span
-                        style={{
-                          color: appearanceColors.textOnFeatureMuted,
-                          ...typographyStyle("caption"),
-                        }}
-                      >
-                        {label}
-                      </span>
-                      <strong style={{ color: appearanceColors.white, ...typographyStyle("heading") }}>
-                        {formatClockTime(r.seconds)}
-                      </strong>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
-        </section>
+        <>
+          <AthleteCrest key={email ?? "guest"} model={athleteCardModel(state)} />
+          <button type="button" className="fb-btn-line" onClick={() => {
+            if (onEditProfile) onEditProfile();
+            else { setName(state.name); setCity(state.city); setEditing(true); }
+          }}>Edit profile</button>
+        </>
       ) : null}
 
       {showProgress ? (

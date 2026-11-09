@@ -17,6 +17,8 @@ All presentation prototypes, sample data, study-only styles and prototype tests 
 
 Studies may reuse production modules under `src/features/`, `src/components/`, `src/theme/` and the platform-agnostic shared package. Production modules must not import study modules or sample fixtures from `src/app/design/_studies/`.
 
+- `athlete-cards`: `/design/athlete-cards` — four original athlete cards plus four crop-first Contender/Club variants, with Goalmaxxing-derived CSS 3D rotation, record backs, local photo/crop controls, a photo-versus-cutout comparison and Athlete placement previews. See `docs/design-studies/athlete-cards/README.md` for scope and integration decisions.
+
 The branding components already used by production are in `src/features/brand/brand-art.tsx`. Shared Rally chrome is in `src/features/rally/rally-shell.css`; Rally reviewer controls remain in `rally-lab/rally-focus.css`. Static study assets retain their `/design/` paths under `public/design/`, including the Ace asset reused by production.
 
 Tests remain discoverable through the existing `src/**/*.test.ts` Vitest pattern. This separation introduces no new routes, packages or write paths.

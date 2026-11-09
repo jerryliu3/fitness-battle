@@ -1,0 +1,47 @@
+.crest { --tone: #f7c948; --tone-ink: #142b3b; --depth: 8px; --edge: color-mix(in srgb,var(--tone) 40%,#87959e); --shine-tint: color-mix(in srgb,var(--tone) 12%,#fff); width: 100%; color: var(--tone-ink); font-family: var(--font-body),sans-serif; }
+.stage { position: relative; display: grid; place-items: center; perspective: 1200px; padding: 20px 20px 16px; }
+.object { position: relative; width: 100%; max-width: 300px; container-type: inline-size; transform-style: preserve-3d; transform: rotateX(var(--rx)) rotateY(var(--ry)); user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: grab; touch-action: none; }
+.object:focus-visible { outline: 2px solid var(--app-focus-ring); outline-offset: 9px; }
+.stage[data-dragging="true"] .object { cursor: grabbing; }
+.crest[data-still="true"] .object { touch-action: pan-y; cursor: default; }
+.body { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; }
+.edge { position: absolute; height: var(--depth); transform-origin: top left; background: linear-gradient(0deg,#0003,#fff5),var(--edge); transform: translateZ(calc(-1 * var(--depth))) rotateZ(var(--turn)) rotateX(90deg); backface-visibility: hidden; -webkit-backface-visibility: hidden; filter: brightness(calc(.85 + .3 * (var(--nx) * var(--rim-light-x,-.4) + var(--ny) * var(--rim-light-y,-.4)))); }
+/* Goalmaxxing category-materials/alloy surface, bevel and beam, verbatim
+   recipes with Overtaek's gold pigment and the selected shield silhouette. */
+.face { position: absolute; inset: 0; clip-path: var(--clip); overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; color: #27333d; font-size: 3cqi; line-height: 1.2; background: radial-gradient(ellipse at var(--light-x) var(--light-y),#fff8,transparent 60%),repeating-linear-gradient(0deg,#263c5409 0px,#263c5409 .5px,transparent .5px,transparent 2px),linear-gradient(135deg,color-mix(in srgb,var(--tone) 30%,#dee5e8),color-mix(in srgb,var(--tone) 14%,#f4f6f6) 42%,color-mix(in srgb,var(--tone) 34%,#c9d4dc)); box-shadow: inset 0 1px 2px #ffffffe0,inset 0 0 0 3px color-mix(in srgb,var(--tone) 27%,#b4c1c8),inset 0 0 0 4px #ffffff80; }
+.face::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: calc(var(--shine-strength) * .65); background: linear-gradient(var(--shine-angle),transparent calc(var(--shine-position) - 16%),color-mix(in srgb,var(--shine-tint) 16%,transparent) calc(var(--shine-position) - 5%),color-mix(in srgb,var(--shine-tint) 60%,transparent) var(--shine-position),color-mix(in srgb,var(--shine-tint) 16%,transparent) calc(var(--shine-position) + 5%),transparent calc(var(--shine-position) + 16%)); }
+.back { transform: translateZ(calc(-1 * var(--depth))) rotateY(180deg); }
+.track { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .12; pointer-events: none; }
+.shadow { position: absolute; width: 55%; height: 18px; bottom: 4px; background: #142b3b26; border-radius: 50%; filter: blur(12px); pointer-events: none; }
+.rating, .sport { position: absolute; top: 8cqi; width: 29cqi; }
+.rating { left: 8cqi; }
+.sport { right: 8cqi; text-align: right; }
+.rating strong, .sport strong { display: block; font: 400 8.5cqi/1 var(--font-display),sans-serif; letter-spacing: -.025em; text-transform: uppercase; }
+.rating > span, .sport > span { display: block; margin-top: 1cqi; font: 700 2.8cqi/1.2 var(--font-body),sans-serif; letter-spacing: .03em; text-transform: uppercase; }
+.portrait { position: absolute; top: 16cqi; left: 33cqi; width: 34cqi; height: 34cqi; border-radius: 50%; overflow: hidden; background: #c5d4d9; border: 1.2cqi solid color-mix(in srgb,var(--tone) 28%,#e0e5e6); box-shadow: 0 0 0 .35cqi #142b3b55,0 0 0 2cqi #fff3,0 1cqi 3cqi #142b3b25; }
+.portrait img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.portrait > span { display: grid; place-items: center; width: 100%; height: 100%; font: 400 15cqi var(--font-display),sans-serif; }
+.identity { position: absolute; top: 52cqi; left: 9cqi; right: 9cqi; text-align: center; }
+.crest .identity h2 { font: 400 10.5cqi/1 var(--font-display),sans-serif; text-transform: uppercase; margin: .5cqi 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.crest .identity[data-long-name="true"] h2 { font-size: 6.5cqi; }
+.stats { position: absolute; top: 66.5cqi; left: 13cqi; right: 13cqi; border-top: 1px solid #142b3b40; padding-top: 2.5cqi; }
+.records, .totals { display: grid; grid-template-columns: repeat(3,1fr); gap: 2cqi; text-align: center; }
+.totals { margin-top: 2.5cqi; }
+.stat { min-width: 0; display: flex; flex-direction: column; gap: .8cqi; }
+.stat strong { font: 700 5.6cqi/1.1 var(--font-form),sans-serif; letter-spacing: -.055em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stat > span { font-size: 2.8cqi; font-weight: 600; }
+.stat[data-dim="true"] strong { opacity: .5; }
+.noRecords { margin: 0; min-height: 10cqi; display: grid; place-items: center; font-size: 3cqi; }
+.brand { position: absolute; top: 98cqi; left: 0; right: 0; text-align: center; }
+.brand .wordmark { font-size: 4.5cqi; }
+.wordmark { font: 900 6cqi/1 var(--font-overtaek),var(--font-body),sans-serif; letter-spacing: -.075em; }
+.reverse { position: absolute; inset: 7cqi 10cqi 16cqi; }
+.crest .reverse h2 { font-size: 6.5cqi; line-height: 1.1; letter-spacing: -.05em; margin: 3cqi 0 2cqi; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reverse p { font-size: 3cqi; margin: 0 0 2cqi; }
+.crest .reverse h3 { font-size: 3.5cqi; line-height: 1.2; margin: 2cqi 0 1.5cqi; }
+.reverse dl { margin: 0; }
+.reverse dl > div { display: flex; justify-content: space-between; align-items: center; gap: 3cqi; padding: 1.2cqi 0; border-bottom: 1px solid #142b3b30; }
+.reverse dt { font-size: 3.3cqi; font-weight: 700; }
+.reverse time { display: block; font-size: 2.3cqi; font-weight: 400; margin-top: .5cqi; }
+.reverse dd { font: 600 5.2cqi var(--font-form),sans-serif; letter-spacing: -.04em; margin: 0; white-space: nowrap; }
+@media (forced-colors: active) { .edge,.shadow,.face::after { display: none; } .face { background: Canvas; color: CanvasText; } }
