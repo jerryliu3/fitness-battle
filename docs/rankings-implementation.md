@@ -20,3 +20,15 @@ Apply the additive migration to the **rankings** project before deploying consum
 Local checkout: `/private/tmp/overtaek-rankings`.
 Web: `pnpm install`, then `pnpm dev:web`; visit `/rankings/marathon`.
 Native: `pnpm dev:mobile`, press `i` for an installed development client.
+
+## Final approved phase: geographic race replay
+
+Owner explicitly scoped this as the last roadmap phase. Use an edition-specific GPX/GeoJSON course and cumulative timing-mat splits; individual runner GPS tracks are not required. Map each checkpoint to course distance, interpolate distance between the surrounding observed timestamps, then sample the course polyline at that distance. This gives an estimated position, not a GPS observation or an exact overtake timestamp. Handle loops and course changes using distance along the route, never nearest-point guessing.
+
+Deliver single-runner playback first, then selected groups/favorites, then an optional full-field overview. Use actual start/wave timestamps for wall-clock replay; chip-elapsed comparisons are a distinct mode when starts are unavailable. Missing or invalid splits, DNF and absent starts need explicit handling. No extrapolated movement after the last valid checkpoint. Keep interpolation shared and renderer-independent; use Mapbox layers/batched updates, bounded visible detail, and reduced-motion/paused/offscreen lifecycle handling on web and native. Acceptance requires validated course/checkpoint alignment, monotone times, honest missing data and measured device performance. This phase remains unimplemented.
+
+## Marathon Replay service reference
+
+Source: https://www.marathonreplay.com/privacy (effective October 26, 2026), retrieved November 9. The policy lists Vercel hosting/logs and cookieless Web Analytics; consent-based PostHog usage analytics; Google Fonts and optional Google Maps photorealistic 3D tiles; Esri/OpenStreetMap tiles and buildings; jsDelivr for a 3D library; Instagram for feedback. It describes browser-local preferences and published race timing data. This is the site's stated service inventory, not an independent network audit or evidence that it uses Mapbox. Our renderer can reuse the existing Mapbox integration; these additional vendors are not prerequisites.
+
+CI follow-up: #561 passed its original check. #562/#564/#565 failed because FlatList empty/footer slots used null where this dependency version expects undefined. Fixed the slots in #562 and propagated through both descendants. No local suites or typechecks were run; new CI results remain pending.
