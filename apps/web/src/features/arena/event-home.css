@@ -111,3 +111,5 @@
 
 .registration-hero{position:relative;isolation:isolate;overflow:hidden;display:grid;gap:12px;padding:20px;border-radius:24px;background:color-mix(in srgb,var(--registration-color) 20%,var(--card))}
 .registration-ticket-art{min-height:90px}
+.registration-mysteries{display:flex;flex-wrap:wrap;gap:8px}.registration-mysteries>span{display:grid;place-items:center;min-width:32px;height:32px;border-radius:50%;background:var(--soft);font:var(--type-caption)}
+.registration-step-actions{display:flex;justify-content:space-between;gap:12px}.registration-step-actions>button{flex:1}

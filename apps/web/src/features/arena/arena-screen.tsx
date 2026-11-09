@@ -96,7 +96,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const queue = selectedSport ? competitionQueue(state, selectedSport, now) : null;
   if (selectedSport === "sleep" && queue) period.endsAt = new Date(queue.end);
   const queued = Boolean(queue?.queued || queue?.awaitingField);
-  const detailDestination = selectedSport === "sleep" || queued;
+  const detailDestination = selectedSport === "sleep";
   const msLeft = Math.max(0, period.endsAt.getTime() - now.getTime());
   const daysLeft = Math.floor(msLeft / (24 * 3600 * 1000));
   const hoursLeft = Math.ceil(msLeft / (3600 * 1000));
@@ -142,7 +142,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   return (
     <CompetitionTimelineProvider state={state} selection={{ sport: selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary, track, periodStart: period.startsAt.toISOString(), periodEnd: period.endsAt.toISOString() }} active={immersive && !detailDestination}>
     <div className="focus-arena">
-      {selectedSport && selectedSport !== "sleep" && !queue?.queued && !queue?.awaitingField ? <FieldStage externalAthleteFocus={athleteFocus} key={`${account}:${selectedSport}:${state.units}`} onOptionsChange={setCourseOptions} persistent backgroundMode presentationVisible={immersive} onExit={() => setImmersiveAccount(null)} tabActive={tabActive} replayState={state} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
+      {selectedSport && selectedSport !== "sleep" ? <FieldStage externalAthleteFocus={athleteFocus} key={`${account}:${selectedSport}:${state.units}`} onOptionsChange={setCourseOptions} persistent backgroundMode queueOverlay={queued ? <></> : undefined} presentationVisible={immersive} onExit={() => setImmersiveAccount(null)} tabActive={tabActive} replayState={state} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
       {immersive && !detailDestination && <div className="compete-field-options">{courseOptions}</div>}
 
       <div className="compete-event-home" hidden={immersive} inert={immersive} style={{ display: immersive ? "none" : undefined }}>
@@ -176,7 +176,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         </AppParagraph>
       ) : null}
 
-      {selectedSport && selectedSport !== "sleep" && !queued ? <CompetitionPanel key={`${account}:${selectedSport}:${period.startsAt.toISOString()}`} active={immersive} standings={<FieldStage onFocusAthlete={id => { setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} standingsOnly key={`${account}:${selectedSport}:${state.units}`} tabActive={immersive} replayState={state} sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} />} activity={visible => <RaceUpdates state={state} sport={selectedSport} active={visible} />} /> : null}
+      {selectedSport && selectedSport !== "sleep" ? queued ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch({ type: "opt-out", sport: selectedSport }); setImmersiveAccount(null); }} /> : <CompetitionPanel key={`${account}:${selectedSport}:${period.startsAt.toISOString()}`} active={immersive} standings={<FieldStage onFocusAthlete={id => { setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} standingsOnly key={`${account}:${selectedSport}:${state.units}`} tabActive={immersive} replayState={state} sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} />} activity={visible => <RaceUpdates state={state} sport={selectedSport} active={visible} />} /> : null}
       </CompeteSheet>
       <div hidden={immersive}>
       <div className="club-competition-extras">

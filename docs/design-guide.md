@@ -1044,3 +1044,11 @@ at zero, both on Compete home and inside the upcoming event. Apply
 `20261109000100_queued_course_preview.sql` to permit an athlete to preview only
 the exact bounds of their own queued registration. This reveals no roster and
 does not seat athletes. No production migration was executed.
+
+Registration is now a three-step bottom sheet: Event (including anonymous field
+placeholders), Details (Scoring & eligibility, Matched field, Entry tier), Ticket.
+Only one detail expands at a time. Claiming flips and stamps the ticket, then
+automatically dismisses registration and enters the full-screen selected field.
+Queued sports use the same course host as live races, with mystery athletes at
+zero and cancellation in the foreground standings sheet. Recovery retains its
+full-height surface. This supersedes the separate queued-sport destination.

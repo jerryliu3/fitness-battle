@@ -53,11 +53,11 @@ it("opens the chosen sport package without registering until entry is claimed", 
   await act(async () => renderer.root.findByType("FocusSheet" as never).props.onClosed());
   expect(mock.enter).toHaveBeenCalledWith("alice", "walking");
 });
-it("opens queued walking as a full page with cancellation, without a standings sheet", async () => {
+it("opens queued walking on its course with cancellation in the standings sheet", async () => {
   mock.immersive = true;
   mock.state = reduceCompete(mock.state!, { type: "opt-in", sport: "walking" });
   await act(async () => { renderer = create(createElement(ArenaScreen, { persistent: true })); });
-  expect(renderer.root.findAllByType("CompeteSheet" as never)).toHaveLength(0);
+  expect(renderer.root.findAllByType("CompeteSheet" as never)).toHaveLength(1);
   const cancel = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "Cancel registration");
   expect(cancel).toBeTruthy();
   await act(async () => cancel!.props.onPress());
@@ -98,7 +98,7 @@ it("keeps the waiting-for-field destination open after the start without cancell
   mock.state.enrollments[0]!.waveStart = "2026-11-08T11:00:00Z";
   mock.state.enrollments[0]!.awaitingField = true;
   await act(async () => { renderer = create(createElement(ArenaScreen, { persistent: true })); });
-  expect(renderer.root.findAllByType("CompeteSheet" as never)).toHaveLength(0);
+  expect(renderer.root.findAllByType("CompeteSheet" as never)).toHaveLength(1);
   expect(renderer.root.findAllByType("FocusButton" as never).some(node => node.props.label === "Cancel registration")).toBe(false);
   expect(mock.close).not.toHaveBeenCalled();
 });

@@ -40,3 +40,12 @@ export function eventRegistration(state: CompeteState, event: CompeteEvent, now:
     renewal: "Starts at zero. Renews into the Monday 6 AM ET wave. Cancel before your wave starts, or turn off renewal during the week.",
   };
 }
+
+export function registrationDetailCards(detail: ReturnType<typeof eventRegistration>) {
+  const [scoring, matched, tier, eligibility] = detail.details;
+  return [
+    { title: "Scoring & eligibility", summary: scoring!.summary, detail: `${scoring!.detail} ${eligibility!.detail}` },
+    matched!,
+    { ...tier!, detail: `${tier!.detail} Ends ${detail.ends}. ${detail.renewal}` },
+  ];
+}

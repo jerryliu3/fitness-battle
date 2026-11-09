@@ -52,7 +52,7 @@ it("keeps queued race details and cancellation off the Compete home", () => {
   expect(html).not.toContain("Cancel registration");
   expect(html).not.toContain("7 mystery competitors");
   expect(html).toContain("See race");
-  expect(html).not.toContain("data-active-field");
+  expect(html).toContain("data-active-field");
   expect(html).not.toContain("data-standings");
   expect(html).not.toContain("hidden-peer");
 });
@@ -86,11 +86,12 @@ it("enters a queued race before exposing its countdown and cancellation", async 
   try {
     expect(renderer.root.findAllByProps({ "data-event-page": true })).toHaveLength(0);
     await act(async () => renderer.root.findByProps({ "aria-label": "Enter Running field" }).props.onClick());
-    const page = renderer.root.findByProps({ "data-event-page": true });
+    const page = renderer.root.findByProps({ className: "compete-sheet" });
+    expect(page.props["data-active"]).toBe(true);
     const cancel = page.findAllByType("button").find(node => node.children.includes("Cancel registration"));
     expect(cancel).toBeDefined();
     expect(page.findAllByProps({ "aria-label": "Time until competition starts" })).not.toHaveLength(0);
-    expect(renderer.root.findAllByProps({ "data-active-field": "Running" })).toHaveLength(0);
+    expect(renderer.root.findAllByProps({ "data-active-field": "Running" })).not.toHaveLength(0);
     await act(async () => cancel!.props.onClick());
     expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-out", sport: "running" });
     expect(renderer.root.findAllByProps({ "data-event-page": true })).toHaveLength(0);

@@ -1,18 +1,27 @@
 "use client";
-import type { CSSProperties } from "react";
-import { COMPETE_ART_COLORS, competeNow, eventRegistration, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { COMPETE_ART_COLORS, competeNow, eventRegistration, registrationDetailCards, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
 import { AppHeading, AppParagraph, AppText } from "@/ui/section";
 import { WaveCountdown } from "@/ui/wave-countdown";
 import { CompeteIcon, EventArt } from "./event-home";
 
 export function EventRegistration({ state, event, busy, error, registered, onClaim, onView }: { state: CompeteState; event: CompeteEvent; busy: boolean; error: string; registered: boolean; onClaim(): void; onView(): void }) {
+  const [step, setStep] = useState(0);
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const viewAction = useRef(onView); viewAction.current = onView;
+  useEffect(() => {
+    if (!registered || error) return;
+    const timer = setTimeout(() => viewAction.current(), 1900);
+    return () => clearTimeout(timer);
+  }, [registered, error]);
   const now = competeNow(state);
   const detail = eventRegistration(state, event, now);
   return <div className="event-registration" style={{ "--registration-color": COMPETE_ART_COLORS[event] } as CSSProperties}>
-    <div className="registration-hero"><EventArt event={event} /><AppHeading>{detail.name} Meet</AppHeading><AppText>{detail.dateRange}</AppText><AppParagraph>{detail.description}</AppParagraph></div>
-    <AppHeading>Event details</AppHeading>
-    <div className="registration-details">{[...detail.details, { title: "Schedule & renewal", summary: `Ends ${detail.ends}`, detail: detail.renewal }].map((item, i) => <details key={item.title}><summary><span className="registration-detail-icon"><CompeteIcon name={(["time", "crew", "trophy", event, "time"] as const)[i]!} /></span><span><AppText role="label">{item.title}</AppText><AppText role="caption" secondary>{item.summary}</AppText></span><span aria-hidden="true">＋</span></summary><AppParagraph typographyRole="caption" className="ui-text-secondary">{item.detail}</AppParagraph></details>)}</div>
-    <div className="registration-ticket-scene">
+    <AppText role="caption" secondary>{["Event", "Details", "Entry ticket"][step]} · {step + 1} / 3</AppText>
+    {step === 0 && <><div className="registration-hero"><EventArt event={event} /><AppHeading>{detail.name} Meet</AppHeading><AppText>{detail.dateRange}</AppText><AppParagraph>{detail.description}</AppParagraph></div>
+    <div className="registration-mysteries" aria-label="You and seven mystery athletes">{Array.from({ length: 8 }, (_, i) => <span key={i}>{i === 0 ? "You" : "?"}</span>)}</div></>}
+    {step === 1 && <div className="registration-details">{registrationDetailCards(detail).map((item, i) => <details key={item.title} open={expanded === i}><summary onClick={e => { e.preventDefault(); setExpanded(expanded === i ? null : i); }}><span className="registration-detail-icon"><CompeteIcon name={(["time", "crew", "trophy", event, "time"] as const)[i]!} /></span><span><AppText role="label">{item.title}</AppText><AppText role="caption" secondary>{item.summary}</AppText></span><span aria-hidden="true">＋</span></summary><AppParagraph typographyRole="caption" className="ui-text-secondary">{item.detail}</AppParagraph></details>)}</div>}
+    {step === 2 && <div className="registration-ticket-scene">
       <div className="registration-ticket" data-claimed={registered}>
         <div className="registration-face registration-front" inert={registered} aria-hidden={registered}>
           <div className="registration-ticket-art"><EventArt event={event} /><CompeteIcon name={event} size={44} /></div>
@@ -35,6 +44,8 @@ export function EventRegistration({ state, event, busy, error, registered, onCla
         </div>
       </div>
     </div>
+    }
+    <div className="registration-step-actions">{step > 0 && !registered && <button type="button" className="fb-btn-line" onClick={() => setStep(step - 1)}>Back</button>}{step < 2 && <button type="button" className="fb-btn" onClick={() => setStep(step + 1)}>Continue</button>}</div>
     <span className="sr-only" role="status">{registered ? "You’re on the start list." : ""}</span>
     {error && <AppParagraph typographyRole="caption" role="alert">{error}</AppParagraph>}
 
