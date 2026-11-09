@@ -4,7 +4,7 @@ import { useCompetitionCourse } from "./use-competition-course";
 import { GeographicCourse } from "./geographic-course";
 import { useCompeteStore } from "../lib/compete-store";
 import { Animated, Image, Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
-import { competeEventCarouselPageIndex, formatActivityAge, competePeriodWindow, buildArenaModel, competitionQueue, competitionTrack, competeNow, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { competeEventCarouselPageIndex, formatActivityAge, competePeriodWindow, buildArenaModel, competitionQueue, competitionTrack, competeNow, ordinalPlace, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppText, textStyle } from "../ui/section";
 import { useThemeColors } from "../theme";
 import { AppIcon } from "../ui/app-icon";
@@ -49,7 +49,11 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
       <View style={{ padding: 9, borderRadius: 12, backgroundColor: c.actionSoft }}><CompeteIcon name={sport} /></View>
       <View style={{ flex: 1 }}><AppText role="label">{SPORTS.find(item => item.id === sport)?.name}</AppText><View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>{!queued && <LiveIndicator active={active} />}<AppText role="support" secondary style={{ flexShrink: 1 }}>{queued ? "Upcoming wave" : `last update: ${update === "—" ? "Unavailable" : update}`}</AppText></View></View>
-      <AppText role="caption" secondary>{queued ? "" : `Place ${place} / ${lanes.length}`}</AppText>
+      {!queued && (
+        <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: c.soft, borderWidth: 1, borderColor: c.line }}>
+          <AppText role="caption" secondary>{`${ordinalPlace(place)} place`}</AppText>
+        </View>
+      )}
     </View>
     <CoursePreview state={state} sport={sport} queued={Boolean(queued)} />
     <Pressable accessibilityRole="button" accessibilityLabel={`Enter ${SPORTS.find(item => item.id === sport)?.name} field`} onPress={onEnter} hitSlop={{ top: 6, bottom: 6 }} style={({ pressed }) => ({ minHeight: 32, marginTop: -8, marginBottom: -8, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 4, opacity: pressed ? 0.6 : 1 })}>

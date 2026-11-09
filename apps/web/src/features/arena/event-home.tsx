@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState, type CSSProperties } from "react";
-import { competeEventCarouselPageIndex, formatActivityAge, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, APP_ICON_PATHS, SPORTS, buildArenaModel, competitionQueue, competitionTrack, competeNow, competeHomeResult, type CompeteEvent, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { competeEventCarouselPageIndex, formatActivityAge, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, APP_ICON_PATHS, SPORTS, buildArenaModel, competitionQueue, competitionTrack, competeNow, competeHomeResult, ordinalPlace, type CompeteEvent, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppHeading, AppText } from "@/ui/section";
 import { useEventActivity } from "./use-event-activity";
 import { CoursePreview } from "./course-preview";
@@ -45,7 +45,7 @@ function RegisteredEventCard({ state, sport, active, onEnter }: { state: Compete
   const { rows } = useEventActivity(state, sport, active && !queued);
   const update = formatActivityAge(rows[0]?.at, now);
   return <article className="compete-race-card">
-    <div className="compete-race-heading"><span className="compete-sport-icon"><CompeteIcon name={sport} /></span><div><AppText role="label">{SPORTS.find(s => s.id === sport)?.name}</AppText><div className="compete-last-update">{!queued && <span aria-hidden="true" className="compete-live-dot" data-active={active} />}<AppText role="support" secondary>{queued ? "Upcoming wave" : `last update: ${update === "—" ? "Unavailable" : update}`}</AppText></div></div>{!queued && <AppText role="caption" secondary>Place {place} / {lanes.length}</AppText>}</div>
+    <div className="compete-race-heading"><span className="compete-sport-icon"><CompeteIcon name={sport} /></span><div><AppText role="label">{SPORTS.find(s => s.id === sport)?.name}</AppText><div className="compete-last-update">{!queued && <span aria-hidden="true" className="compete-live-dot" data-active={active} />}<AppText role="support" secondary>{queued ? "Upcoming wave" : `last update: ${update === "—" ? "Unavailable" : update}`}</AppText></div></div>{!queued && <span className="compete-place-badge"><AppText role="caption" secondary>{`${ordinalPlace(place)} place`}</AppText></span>}</div>
     <CoursePreview sport={sport} queued={queued} state={state} />
     <button type="button" className="compete-race-entry" aria-label={`Enter ${SPORTS.find(s => s.id === sport)?.name} field`} onClick={onEnter}><AppText role="label">See race</AppText><span aria-hidden="true">→</span></button>
   </article>;
