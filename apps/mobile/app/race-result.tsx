@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Linking, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { raceClock, raceSourceUrl, raceFasterThan, type RaceResultReport } from "@fitness-battle/shared";
+import { raceClock, raceSourceUrl, raceFasterThan, racePercentLabel, type RaceResultReport } from "@fitness-battle/shared";
 import { useFocusStyles, FocusButton } from "../src/ui/focus";
 import { AppText } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
@@ -43,7 +43,7 @@ export default function RaceResult() {
         {!saved.ready && saved.error && <FocusButton label="Retry saved results" secondary onPress={() => void saved.reload()} />}
         <FocusButton label="Saved results" secondary onPress={() => router.push("/saved-race-results")} />
         <View style={f.row}><View style={f.grow}><AppText role="caption" secondary>Recorded field rank</AppText><AppText role="label">{report.place.toLocaleString()} / {report.total.toLocaleString()}</AppText></View><View><AppText role="caption" secondary>Field median</AppText><AppText role="label">{raceClock(report.medianMs)}</AppText></View></View>
-        {fasterThan !== null && <View style={{gap:8}}><AppText role="display">{fasterThan.toFixed(1)}%</AppText><AppText role="caption" secondary>of this published field finished slower · {report.total.toLocaleString()} eligible finishes</AppText></View>}
+        {fasterThan !== null && <View style={{gap:8}}><AppText role="display">{racePercentLabel(fasterThan)}</AppText><AppText role="caption" secondary>of this published field finished slower · {report.total.toLocaleString()} eligible finishes</AppText></View>}
         <AppText role="label">Your place in the field</AppText>
         <AppText role="caption" secondary>Published results from this edition and category. {report.coverage?.complete ? "Coverage reviewed; placements are calculated from recorded times." : "Completeness has not been verified; placements describe stored results."}</AppText>
         <FocusButton label="View coverage" secondary onPress={() => router.push("/race-coverage")} />

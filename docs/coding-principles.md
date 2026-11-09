@@ -167,3 +167,5 @@ consume them.
 ### Public road race reads
 
 The separate rankings database exposes bounded `rankings_page` and `rankings_result` reads via `/api/rankings`. Web and native share `race-rankings.ts` types and query normalization. Distance/category/year define a result cohort; athlete/bib search must not redefine its ranks. Calculate ranks before paging, preserve tied places, and keep source suppression consistent across lists, reports and counts. These observations never write weekly competition scores. Report distributions describe stored published results; complete-field percentile claims require verified import coverage. Deploy the rankings migrations before their consumers.
+
+Race explorer calendar-date windows use `[from, until)` source event dates, independently of weekly competition periods. An inclusive end date in UI becomes next-day-exclusive in the shared query adapter. Rolling windows anchor to the server UTC date; custom scopes reject impossible/reversed dates and exclude undated records. Edition-year selection uses the source edition year and preserves existing links.
