@@ -105,3 +105,7 @@ Web/native comparisons load the two source-gated reports and compare only shared
 ## Product layer 13: edition history
 
 Web/native compare the same event’s editions by published count, fastest/median time and clock mix. Event identity comes from the existing event/edition relationship, never event-name matching. Read scope preserves distance/category and source gates; up to the supported 1900–2100 edition years. Counts are explicitly stored coverage, not participation-growth claims. Apply `rankings_edition_history` before deployment. Added rollback-only SQL scenarios; not executed. No production changes or acquisition.
+
+## Product layer 14: reviewed athlete history
+
+Service-owned athlete entities and per-performance links require evidence URL/notes, review time and exact performance revision. No name matching, automatic merging, account claim or social graph. Reports expose a career link only for current reviewed associations. Web/native careers paginate every linked public performance and show bests by distance/clock across the full public linked cohort. Corrections invalidate links; suppression hides both performances and profiles with no remaining public results. Apply `rankings_verified_athletes`; no identities have been populated. Added rollback-only SQL regressions, not executed.

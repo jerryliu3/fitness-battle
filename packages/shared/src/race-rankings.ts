@@ -61,6 +61,7 @@ export function raceClock(ms: number) {
   return hours ? `${hours}:${String(minutes).padStart(2, "0")}:${rest}` : `${minutes}:${rest}`;
 }
 export type RaceResultReport = {
+  athleteId?: number | null;
   splits?: import("./race-splits").RaceTimingSplits | null;
   coverage?: RaceCoverage | null;
   result: Omit<RaceResult, "place"> & { event_edition_id: number };

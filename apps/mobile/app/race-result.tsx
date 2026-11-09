@@ -42,6 +42,7 @@ export default function RaceResult() {
         <FocusButton label={saved.ids.includes(report.result.id) ? "★ Saved" : "☆ Save result"} secondary disabled={!saved.ready || saved.busy} onPress={() => void saved.toggle(report.result.id)} />
         {saved.error && <AppText role="caption">{saved.error}</AppText>}
         {!saved.ready && saved.error && <FocusButton label="Retry saved results" secondary onPress={() => void saved.reload()} />}
+        {report.athleteId ? <FocusButton label="Athlete history" secondary onPress={()=>router.push({pathname:"/race-athlete-history",params:{id:String(report.athleteId)}})} /> : <AppText role="caption" secondary>Athlete history is not linked for this result.</AppText>}
         <FocusButton label="Explore this field" secondary onPress={() => router.push({pathname:"/race-rankings",params:{edition:String(report.result.event_edition_id),distance:RACE_DISTANCES.find(d => d.stored === report.result.distance_slug)?.slug ?? "marathon",sex:report.result.sex}})} />
         <FocusButton label="Saved results" secondary onPress={() => router.push("/saved-race-results")} />
         <View style={f.row}><View style={f.grow}><AppText role="caption" secondary>Recorded field rank</AppText><AppText role="label">{report.place.toLocaleString()} / {report.total.toLocaleString()}</AppText></View><View><AppText role="caption" secondary>Field median</AppText><AppText role="label">{raceClock(report.medianMs)}</AppText></View></View>

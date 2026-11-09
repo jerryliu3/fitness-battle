@@ -19,7 +19,7 @@ export async function loadRaceResults(distance: string, query: ReturnType<typeof
 export async function loadRaceReport(id: number): Promise<import("@fitness-battle/shared").RaceResultReport | null> {
   const client = createRankingsClient();
   if (!client) throw new Error("Rankings are not configured");
-  const { data, error } = await client.rpc("rankings_result_with_coverage", { p_id: id });
+  const { data, error } = await client.rpc("rankings_result_with_identity", { p_id: id });
   if (error) throw new Error("Result unavailable");
   return data;
 }
@@ -45,5 +45,13 @@ export async function loadEditionHistory(edition:number,distance:string,sex:stri
   if(!client) throw new Error("Rankings unavailable");
   const {data,error}=await client.rpc("rankings_edition_history",{p_edition_id:edition,p_distance:distance,p_sex:sex});
   if(error || !Array.isArray(data)) throw new Error("History unavailable");
+  return data;
+}
+
+export async function loadAthleteHistory(id:number,page:number):Promise<import("@fitness-battle/shared").RaceAthleteHistory | null> {
+  const client=createRankingsClient();
+  if(!client) throw new Error("Rankings unavailable");
+  const {data,error}=await client.rpc("rankings_athlete_page",{p_athlete_id:id,p_page:page});
+  if(error) throw new Error("Athlete history unavailable");
   return data;
 }

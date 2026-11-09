@@ -24,6 +24,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
     <header className="rankings-top"><Link href={`/rankings/${distance?.slug ?? "marathon"}?edition=${r.event_edition_id}&sex=${r.sex}`}>← {distance?.label} results</Link><span className="rankings-kicker">Race report</span></header>
     <p className="rankings-kicker">{r.event_name} · {r.edition_year}</p><AppHeading level={1} role="display" className="race-athlete-name">{r.athlete_name}</AppHeading>
     <div className="race-report-hero"><strong>{raceClock(r.rank_time_ms)}</strong><span>{r.rank_clock === "chip" ? "Chip time" : "Official time"} · {RACE_CATEGORIES.find(c => c.value === r.sex)?.label}{r.bib ? ` · #${r.bib}` : ""}</span></div>
+    {report.athleteId ? <p><Link href={`/rankings/athlete/${report.athleteId}`}>View athlete history →</Link></p> : <p className="rankings-note">Athlete history is not linked for this result.</p>}
     <SaveRaceResult id={r.id} />
     <p><Link href="/rankings/saved">Saved results →</Link></p>
     <section className="race-report-metrics" aria-label="Result context"><div><span>Recorded field rank</span><strong>{report.place.toLocaleString()} <small>/ {report.total.toLocaleString()}</small></strong></div><div><span>Field median</span><strong>{raceClock(report.medianMs)}</strong></div></section>
