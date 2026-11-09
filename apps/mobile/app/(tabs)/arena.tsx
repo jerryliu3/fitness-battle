@@ -130,7 +130,7 @@ const f=useFocusStyles();
         </ScrollView>
       </SafeAreaView>}
       {persistent && experience.immersive && !detailDestination && <View style={{ position: "absolute", top: insets.top + 54, right: 16, zIndex: 20 }}>{courseOptions}</View>}
-      {(!persistent || !detailDestination) && <ArenaSheet persistent={persistent} expandRequest={expandRequest} active={focused && experience.immersive} overview={persistent && !queue?.queued && !queue?.awaitingField ? <CompetitionTimelineControls /> : undefined}>
+      {(!persistent || !detailDestination) && <ArenaSheet scrollable={!queued} persistent={persistent} expandRequest={expandRequest} active={focused && experience.immersive} overview={persistent && !queue?.queued && !queue?.awaitingField ? <CompetitionTimelineControls /> : undefined}>
 <SectionStack divided={false}>
         {!persistent && <View style={{ gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><CompeteIcon name="wreath" size={34} gold /><AppText role="display" accessibilityRole="header">Compete</AppText></View></View><View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 }}><AppText role="body" secondary>{dateRange}</AppText><View style={{ backgroundColor: c.actionSoft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 }}><AppText role="label">{timeRemaining}</AppText></View></View></View>}
         {standingsStale ? (
@@ -150,7 +150,7 @@ const f=useFocusStyles();
         {!persistent && <CompeteResults state={state} onHistory={() => router.push("/progress-history")} onRankings={() => router.push("/benchmarks")} />}
       </SectionStack>
 </ArenaSheet>}
-      <FocusSheet open={register} title={sport ? eventRegistration(state, sport, now).title : "Choose an event"} onClose={() => setRegister(false)} onClosed={() => {
+      <FocusSheet open={register} title={sport ? `${eventRegistration(state, sport, now).name} Registration` : "Choose an event"} onClose={() => setRegister(false)} onClosed={() => {
         const event = pendingEntry.current;
         pendingEntry.current = null;
         if (event) experience.enter(accountKey, event);
@@ -167,7 +167,7 @@ const f=useFocusStyles();
   );
 }
 
-function ArenaSheet({ persistent, children, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean; overview?: React.ReactNode }) {
+function ArenaSheet({ persistent, children, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean; overview?: React.ReactNode; scrollable?: boolean }) {
   const f = useFocusStyles();
   return persistent ? <CompeteSheet {...props}>{children}</CompeteSheet> : <ScrollView contentContainerStyle={f.content}>{children}</ScrollView>;
 }

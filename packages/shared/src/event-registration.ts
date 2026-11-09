@@ -42,10 +42,17 @@ export function eventRegistration(state: CompeteState, event: CompeteEvent, now:
 }
 
 export function registrationDetailCards(detail: ReturnType<typeof eventRegistration>) {
-  const [scoring, matched, tier, eligibility] = detail.details;
+  const [scoring, , tier, eligibility] = detail.details;
   return [
     { title: "Scoring & eligibility", summary: scoring!.summary, detail: `${scoring!.detail} ${eligibility!.detail}` },
-    matched!,
-    { ...tier!, detail: `${tier!.detail} Ends ${detail.ends}. ${detail.renewal}` },
+    { title: "Schedule & renewal", summary: `Ends ${detail.ends}`, detail: detail.renewal },
+    tier!,
   ];
+}
+
+/** Decorative ticket bars; never an entitlement or scannable credential. */
+export function entryBarcode(seed: string) {
+  let value = 2166136261;
+  for (const char of seed) value = Math.imul(value ^ char.charCodeAt(0), 16777619);
+  return Array.from({ length: 60 }, () => { value ^= value << 13; value ^= value >>> 17; value ^= value << 5; return 1 + ((value >>> 0) % 4); });
 }

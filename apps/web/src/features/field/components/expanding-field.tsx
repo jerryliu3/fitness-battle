@@ -149,7 +149,7 @@ export function ExpandingField({
     return () => dialog.removeEventListener("keydown", loopTab);
   }, [dialog]);
 
-  if (persistent) return <div ref={persistentHost} data-persistent-field className={`focus-field-expanded${overlaysHidden ? " is-holding-field" : ""}`} style={{ position: "fixed", inset: 0, visibility: tabActive && open ? "visible" : "hidden", pointerEvents: tabActive && open ? "auto" : "none", zIndex: 100 }} aria-hidden={!tabActive || !open} inert={!tabActive || !open} onKeyDown={event => { if (event.key === "Escape") onClose(); }}><div className="focus-field-content" style={{ position: "absolute", inset: 0 }}>{children}</div>{hud}</div>;
+  if (persistent) return <div ref={persistentHost} data-persistent-field className={`focus-field-expanded${overlaysHidden ? " is-holding-field" : ""}`} style={{ position: "fixed", inset: 0, visibility: tabActive && open ? "visible" : "hidden", transform: tabActive && open ? "translateX(0)" : "translateX(100%)", transition: reduce ? "none" : `transform 320ms cubic-bezier(.22,1,.36,1), visibility 0s ${tabActive && open ? "0ms" : "320ms"}`, pointerEvents: tabActive && open ? "auto" : "none", zIndex: 100 }} aria-hidden={!tabActive || !open} inert={!tabActive || !open} onKeyDown={event => { if (event.key === "Escape") onClose(); }}><div className="focus-field-content" style={{ position: "absolute", inset: 0 }}>{children}</div>{hud}</div>;
 
   return <>
     <div

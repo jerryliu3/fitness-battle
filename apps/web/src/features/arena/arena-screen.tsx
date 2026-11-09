@@ -159,7 +159,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         }} />
         <CompeteResults state={state} />
       </div>
-      <CompeteSheet overview={!queue?.queued && !queue?.awaitingField ? <CompetitionTimelineControls /> : undefined} active={immersive && !detailDestination} expandRequest={expandRequest}>
+      <CompeteSheet scrollable={!queued} overview={!queue?.queued && !queue?.awaitingField ? <CompetitionTimelineControls /> : undefined} active={immersive && !detailDestination} expandRequest={expandRequest}>
 
 
 
@@ -193,7 +193,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         {selectedSport && selectedSport !== "sleep" && queued && <CoursePreview state={state} sport={selectedSport} queued />}
         {selectedSport && (queued ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch(selectedSport === "sleep" ? { type: "opt-out-health", metric: "sleep" } : { type: "opt-out", sport: selectedSport }); setImmersiveAccount(null); }} /> : selectedSport === "sleep" ? <SleepPanel state={state} now={now} onJoin={() => openRegistration("sleep")} onLeave={() => dispatch({ type: sleep.renews ? "schedule-leave" : "resume-renewal", metric: "sleep" })} leaveLabel={sleep.renews ? "Stop after this week" : "Keep playing next week"} /> : null)}
       </Sheet>
-      <Sheet open={register} title={sport ? eventRegistration(state, sport, now).title : "Choose an event"} body={sport ? "" : "Pick your next start line."} onClose={() => { if (!joinBusy) setRegister(false); }} scrollResetKey={sport ?? "choose"} onClosed={() => {
+      <Sheet open={register} title={sport ? `${eventRegistration(state, sport, now).name} Registration` : "Choose an event"} body={sport ? "" : "Pick your next start line."} onClose={() => { if (!joinBusy) setRegister(false); }} scrollResetKey={sport ?? "choose"} onClosed={() => {
         const event = pendingEntry.current;
         pendingEntry.current = null;
         if (event) enterEvent(event);

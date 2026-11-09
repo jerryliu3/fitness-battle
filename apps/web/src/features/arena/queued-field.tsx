@@ -16,9 +16,8 @@ export function QueuedField({ state, event, now, onCancel, overlay = false }: { 
     <AppParagraph typographyRole="body" className="fb-copy">{queue.queued
       ? "Your matched field is revealed when the wave starts."
       : "Your shared field is loading. Your activity counts from the start time below."}</AppParagraph>
-    {queue.queued && <WaveCountdown start={queue.start} now={now} />}
-    <dl className="wave-times"><div><dt>Starts</dt><dd>{queue.startsLabel}</dd></div><div><dt>Ends</dt><dd>{queue.endsLabel}</dd></div></dl>
-    <div className="wave-mysteries">{Array.from({ length: queue.mysteryCount + 1 }, (_, i) => <span key={i}>{i === 0 ? "You" : "?"}</span>)}</div>
+    {queue.queued && <><AppText role="caption" secondary>Starts in</AppText><WaveCountdown start={queue.start} now={now} /></>}
+    <dl className="wave-times"><div><dt>Ends</dt><dd>{queue.endsLabel}</dd></div></dl>
     {queue.queued ? <button type="button" className="fb-btn-line" onClick={onCancel}>Cancel registration</button> : null}
   </section>;
 }

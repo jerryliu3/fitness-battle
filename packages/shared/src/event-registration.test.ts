@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { freshState, reduceCompete } from "./compete/engine";
-import { eventRegistration } from "./event-registration";
+import { eventRegistration, entryBarcode, registrationDetailCards } from "./event-registration";
 
 describe("event registration package", () => {
   it("explains the actual strength scoring and next-wave commitment", () => {
@@ -30,4 +30,14 @@ it("uses the registered wave for the ticket stamp after the next daily cutoff", 
   expect(detail.start).toBe(state.enrollments[0]!.waveStart);
   expect(detail.dateRange).toBe("Nov 9 – Nov 15");
   expect(detail.stampYear).toBe("2026");
+});
+
+it("keeps registration details to scoring, schedule and league", () => {
+  const now = new Date("2026-11-08T12:00:00Z");
+  const detail = eventRegistration(freshState(now), "walking", now);
+  expect(registrationDetailCards(detail).map(card => card.title)).toEqual(["Scoring & eligibility", "Schedule & renewal", "Your entry tier"]);
+  expect(registrationDetailCards(detail)[0]!.detail).toContain(detail.details[3]!.detail);
+  expect(registrationDetailCards(detail)[1]!.detail).toBe(detail.renewal);
+  expect(entryBarcode("walking:week-a")).toHaveLength(60);
+  expect(entryBarcode("walking:week-a")).not.toEqual(entryBarcode("walking:week-b"));
 });

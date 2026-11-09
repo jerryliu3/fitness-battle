@@ -21,8 +21,7 @@ const f=useFocusStyles();
     <AppText role="body" secondary>{queue.queued
       ? "Your matched field is revealed when the wave starts."
       : "Your shared field is loading. Your activity counts from the start time below."}</AppText>
-    <View style={{ gap: 8 }}><View style={{flexDirection:"row",flexWrap:"wrap",gap:8,alignItems:"center"}}><AppText role="body">Starts {queue.startsLabel}</AppText>{queue.queued && <WaveCountdown start={queue.start} now={now}/>}</View><AppText role="body">Ends {queue.endsLabel}</AppText></View>
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{Array.from({ length: queue.mysteryCount + 1 }, (_, i) => <View key={i} style={{ padding: 12 }}><AppText role="label">{i === 0 ? "You" : "?"}</AppText></View>)}</View>
+    <View style={{ gap: 8 }}>{queue.queued && <><AppText role="caption" secondary>Starts in</AppText><WaveCountdown start={queue.start} now={now} prominent /></>}<AppText role="caption" secondary>Ends {queue.endsLabel}</AppText></View>
     {queue.queued ? <FocusButton label="Cancel registration" secondary onPress={onCancel} /> : null}
   </View>;
 }

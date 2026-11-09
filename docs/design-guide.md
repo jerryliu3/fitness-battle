@@ -1052,3 +1052,13 @@ automatically dismisses registration and enters the full-screen selected field.
 Queued sports use the same course host as live races, with mystery athletes at
 zero and cancellation in the foreground standings sheet. Recovery retains its
 full-height surface. This supersedes the separate queued-sport destination.
+
+The registration polish retains one viewport-relative sheet height for all steps,
+with no progress row, date range or backward step action. Continue fills the row
+on steps one and two; the ticket owns the only primary action on step three.
+Details are Scoring & eligibility, Schedule & renewal and Entry tier. The ticket
+includes the entry league and a full-width decorative barcode. Claiming starts
+a continuous two-face flip, then a firm stamp, and stays open on the countdown;
+only explicit View race enters the event. Respect Reduced Motion. Queued field
+sheets have no scrolling body: changing the sheet height reveals cancellation.
+Mystery athletes appear on the map only, not in the queued text card.
