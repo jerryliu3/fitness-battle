@@ -55,8 +55,8 @@ export default function RaceRankings() {
         <View style={f.grow}><AppText role="label">{item.athlete_name}</AppText><AppText role="caption" secondary>{item.event_name} · {item.edition_year}</AppText></View>
         <View><AppText role="label" style={{fontVariant:["tabular-nums"]}}>{raceClock(item.rank_time_ms)}</AppText><AppText role="caption" secondary>{item.rank_clock === "chip" ? "Chip" : "Official"}</AppText></View>
       </Pressable>}
-      ListEmptyComponent={!busy && !error ? <AppText role="body" secondary>No results in this field. Try another name, year or category.</AppText> : null}
-      ListFooterComponent={data && data.total > 0 ? <View style={{gap:12,marginTop:20}}><AppText role="caption" secondary>Page {data.page} of {Math.ceil(data.total / data.pageSize).toLocaleString()}</AppText><View style={f.chipRow}>{data.page > 1 && <FocusButton label="Previous" secondary onPress={() => setPage(data.page - 1)} />}{data.page * data.pageSize < data.total && <FocusButton label="Next" secondary onPress={() => setPage(data.page + 1)} />}</View></View> : null}
+      ListEmptyComponent={!busy && !error ? <AppText role="body" secondary>No results in this field. Try another name, year or category.</AppText> : undefined}
+      ListFooterComponent={data && data.total > 0 ? <View style={{gap:12,marginTop:20}}><AppText role="caption" secondary>Page {data.page} of {Math.ceil(data.total / data.pageSize).toLocaleString()}</AppText><View style={f.chipRow}>{data.page > 1 && <FocusButton label="Previous" secondary onPress={() => setPage(data.page - 1)} />}{data.page * data.pageSize < data.total && <FocusButton label="Next" secondary onPress={() => setPage(data.page + 1)} />}</View></View> : undefined}
     />
   </SafeAreaView>;
 }
