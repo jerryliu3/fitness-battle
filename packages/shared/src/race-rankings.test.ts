@@ -3,6 +3,7 @@ import { raceQuery, raceClock } from "./race-rankings";
 describe("public race query", () => {
   it("rejects invalid scopes and bounds input", () => {
     expect(raceQuery(new URLSearchParams("sex=invalid&year=1&page=Infinity"))).toEqual({ sex: "female", year: null, page: 1, query: "" });
+    expect(raceQuery(new URLSearchParams("page=2147483648")).page).toBe(1);
     expect(raceQuery(new URLSearchParams("sex=other&year=2025&page=401&q=Runner"))).toEqual({ sex: "other", year: 2025, page: 401, query: "Runner" });
   });
   it("formats observed clocks without scaling", () => {

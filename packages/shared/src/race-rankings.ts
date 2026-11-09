@@ -26,7 +26,7 @@ export function raceQuery(input: { get(name: string): string | null }) {
     sex: RACE_CATEGORIES.some(c => c.value === sex) ? sex : "female",
     year: Number.isInteger(year) && year >= 1900 && year <= 2100 ? year : null,
     query: (input.get("q") ?? "").trim().slice(0, 100),
-    page: Number.isSafeInteger(page) && page > 0 ? page : 1,
+    page: Number.isSafeInteger(page) && page > 0 && page <= 2147483647 ? page : 1,
   };
 }
 export function raceClock(ms: number) {
