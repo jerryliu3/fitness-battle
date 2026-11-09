@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AppHeading } from "@/ui/section";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { RACE_CATEGORIES, RACE_DISTANCES, raceClock, type RaceResultsPage, type raceQuery } from "@fitness-battle/shared";
@@ -29,9 +30,9 @@ export function RaceExplorer({ distance, initial, query }: { distance: string; i
       <label>Year<input aria-label="Edition year" type="number" min="1900" max="2100" value={year} onChange={e => setYear(e.target.value)} placeholder="All years" /></label>
       <button type="submit" disabled={pending}>{pending ? "Finding…" : "Find results"}</button>
     </form>
-    {!data ? <div className="race-empty" role="alert"><h2>Results are unavailable</h2><p>Please try again in a moment.</p><button onClick={() => startTransition(() => router.refresh())}>Retry</button></div> : <>
+    {!data ? <div className="race-empty" role="alert"><AppHeading level={2} role="heading">Results are unavailable</AppHeading><p>Please try again in a moment.</p><button onClick={() => startTransition(() => router.refresh())}>Retry</button></div> : <>
       <div className="race-summary" aria-live="polite"><div><strong>{data.total.toLocaleString()}</strong><span>{query.query ? "matching results" : "published results"}</span></div><p>{query.year ?? "All covered years"} · {RACE_CATEGORIES.find(c => c.value === query.sex)?.label}<br/>Chip time where available, otherwise official time</p></div>
-      {data.rows.length === 0 ? <div className="race-empty"><h2>{query.query ? "No matching finishers" : "No results in this field"}</h2><p>Try another name, category or year.</p></div> : <>
+      {data.rows.length === 0 ? <div className="race-empty"><AppHeading level={2} role="heading">{query.query ? "No matching finishers" : "No results in this field"}</AppHeading><p>Try another name, category or year.</p></div> : <>
         <div className="race-table" role="region" aria-label="Race results" tabIndex={0}>
           <table><caption className="sr-only">Rank within {data.cohortTotal.toLocaleString()} published results in the selected category and timeframe</caption><thead><tr><th scope="col">Rank</th><th scope="col">Athlete</th><th scope="col">Finish</th><th scope="col" className="race-event-column">Event</th></tr></thead><tbody>
             {data.rows.map(row => <tr key={row.id}><td className="race-place">{row.place.toLocaleString()}</td><td><Link className="race-result-link" href={`/rankings/result/${row.id}`}>{row.athlete_name}</Link><span className="race-mobile-event">{row.event_name}</span>{row.bib && <small>#{row.bib}</small>}</td><td className="race-time">{raceClock(row.rank_time_ms)}<small>{row.rank_clock === "chip" ? "Chip" : "Official"}</small></td><td className="race-event-column">{row.event_name}<small>{row.edition_year}</small></td></tr>)}

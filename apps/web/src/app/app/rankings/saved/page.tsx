@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { AppHeading } from "@/ui/section";
 import { useEffect, useState } from "react";
 import { raceClock, type SavedRaceResult } from "@fitness-battle/shared";
 import { useRaceFavorites } from "../favorites";
@@ -24,7 +25,7 @@ export default function SavedResultsPage() {
       .finally(() => { if (!controller.signal.aborted) setBusy(false); });
     return () => controller.abort();
   }, [ids, saved.ready, retry]);
-  return <main className="rankings-wrap race-explorer"><header className="rankings-top"><Link href="/rankings">← Race rankings</Link><span className="rankings-kicker">Saved on this browser</span></header><h1>Saved results</h1>
+  return <main className="rankings-wrap race-explorer"><header className="rankings-top"><Link href="/rankings">← Race rankings</Link><span className="rankings-kicker">Saved on this browser</span></header><AppHeading level={1} role="display">Saved results</AppHeading>
     {saved.error && <p role="alert">{saved.error} {!saved.ready && <button onClick={() => void saved.reload()}>Retry</button>}</p>}
     {busy && !saved.error ? <p role="status">Loading saved results…</p> : failed ? <div role="alert"><p>Saved results are unavailable.</p><button onClick={() => setRetry(n => n+1)}>Retry</button></div> : <section className="race-neighbors">
       {!saved.ids.length && <p>Save a result from its race report to find it here.</p>}
