@@ -16,7 +16,7 @@ export async function loadRaceResults(distance: string, query: ReturnType<typeof
 export async function loadRaceReport(id: number): Promise<import("@fitness-battle/shared").RaceResultReport | null> {
   const client = createRankingsClient();
   if (!client) throw new Error("Rankings are not configured");
-  const { data, error } = await client.rpc("rankings_result", { p_id: id });
+  const { data, error } = await client.rpc("rankings_result_with_coverage", { p_id: id });
   if (error) throw new Error("Result unavailable");
   return data;
 }
@@ -26,5 +26,13 @@ export async function loadSavedRaceResults(ids: number[]): Promise<import("@fitn
   if (!client) throw new Error("Rankings are not configured");
   const { data, error } = await client.rpc("rankings_saved", { p_ids: ids });
   if (error || !Array.isArray(data)) throw new Error("Results unavailable");
+  return data;
+}
+
+export async function loadRaceCoverage(): Promise<import("@fitness-battle/shared").RaceCoverage[]> {
+  const client = createRankingsClient();
+  if (!client) throw new Error("Rankings are not configured");
+  const {data,error} = await client.rpc("rankings_coverage");
+  if (error || !Array.isArray(data)) throw new Error("Coverage unavailable");
   return data;
 }

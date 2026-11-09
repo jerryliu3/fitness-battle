@@ -40,3 +40,9 @@ Web and native save up to 100 result IDs locally. They do not claim identity, sy
 ## Layer 6: two-result comparisons
 
 Select exactly two currently available saved results on web or native. Comparison URLs contain result IDs and can be opened without the sender's device-local saved list. Both performances retain their event, year, distance and clock; recorded-time gaps appear only for matching distances and clock types. Same result IDs are rejected. No course-adjusted times, cross-field rank deltas, identity merges, percentile claims or weekly scoring effects are introduced. Native can share the public comparison URL. Reports remain separately accessible for provenance. No new database migration beyond layer 5; no local verification suites run.
+
+## Layer 7: coverage reconciliation and gated percentiles
+
+Read-only hosted audit: [coverage audit](rankings-coverage-audit-2026-11-09.md). Additive service-owned coverage reviews bind each edition/distance/category to an expected eligible count, successful import, evidence and review time. Public coverage reads apply existing eligibility/source gates. Reports show a faster-than percentage only when the review matches all current published records and the report denominator; ties are not counted as slower. Corrections/reimports invalidate review evidence rather than silently preserving a complete label. Web and native expose the inventory. No reviews are pre-approved, no production writes performed, and no local suites run.
+
+The semantic typography CI failures on the preceding web PRs were fixed in their originating branches and propagated; new CI outcomes have not been polled.

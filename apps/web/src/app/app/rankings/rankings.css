@@ -238,3 +238,11 @@
 .race-comparison-gap { padding:32px 0; margin-top:32px; border-block:1px solid var(--line); }
 .race-comparison-gap strong { font-size:32px; font-variant-numeric:tabular-nums; }
 @media(max-width:500px) { .race-comparison-grid { grid-template-columns:1fr; gap:24px; } .race-comparison-grid article+article { border-top:1px solid var(--line); padding-top:16px; } }
+.race-coverage-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); gap:24px; margin-top:32px; }
+.race-coverage-list article { padding:24px 0; border-top:1px solid var(--line); }
+.race-coverage-list h2 { font-size:20px; }
+.race-coverage-list a { text-decoration:none; }
+.race-coverage-list a:hover { text-decoration:underline; }
+.race-coverage-list strong { font-variant-numeric:tabular-nums; }
+.race-percentile { padding:24px 0; font-size:14px; color:var(--muted); }
+.race-percentile strong { display:block; color:var(--ink); font-size:40px; font-variant-numeric:tabular-nums; }
