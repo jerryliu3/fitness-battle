@@ -17,6 +17,7 @@ export type RaceResult = {
 };
 export type RaceResultsPage = {
   rows: RaceResult[]; total: number; cohortTotal: number; page: number; pageSize: number;
+  analytics?: RaceEditionAnalytics | null;
   windowFrom?: string | null; windowUntil?: string | null;
 };
 export const RACE_TIMEFRAMES = [
@@ -133,4 +134,21 @@ export function raceEditionOptions(coverage: RaceCoverage[], distance: string) {
     if (row.distance_slug === distance) editions.set(row.edition_id, {edition_id:row.edition_id,event_name:row.event_name,edition_year:row.edition_year});
   }
   return [...editions.values()].sort((a, b) => b.edition_year - a.edition_year || a.event_name.localeCompare(b.event_name) || a.edition_id - b.edition_id);
+}
+
+export type RaceEditionAnalytics = {
+  total: number; fastestMs: number; slowestMs: number; medianMs: number;
+  minimumMs: number; binWidthMs: number; chipCount: number; officialCount: number;
+  bins: {bucket: number; count: number}[];
+};
+
+/** Renderers share bin boundaries and empty gaps; never derive counts from a page. */
+export function raceEditionChart(analytics: RaceEditionAnalytics) {
+  const counts = new Map(analytics.bins.map(b => [b.bucket,b.count]));
+  const peak = Math.max(...analytics.bins.map(b => b.count),1);
+  return Array.from({length:Math.max(...analytics.bins.map(b => b.bucket),0)+1}, (_,bucket) => {
+    const from = analytics.minimumMs+bucket*analytics.binWidthMs;
+    const count = counts.get(bucket) ?? 0;
+    return {bucket,count,height:count/peak*100,label:`${raceClock(from)} – under ${raceClock(from+analytics.binWidthMs)}`};
+  });
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { raceQuery, raceClock, raceEditionOptions, type RaceCoverage } from "./race-rankings";
+import { raceQuery, raceClock, raceEditionOptions, raceEditionChart, type RaceEditionAnalytics, type RaceCoverage } from "./race-rankings";
 describe("public race query", () => {
   it("rejects invalid scopes and bounds input", () => {
     expect(raceQuery(new URLSearchParams("sex=invalid&year=1&page=Infinity"))).toMatchObject({ sex: "female", year: null, page: 1, query: "", timeframe:"all",dateError:null });
@@ -26,5 +26,19 @@ describe("event edition scope", () => {
     const options = raceEditionOptions([row,{...row,sex:"male"},{...row,edition_id:2,edition_year:2026},{...row,edition_id:3,distance_slug:"10k"}],"marathon");
     expect(options.map(e=>e.edition_id)).toEqual([2,1]);
     expect(raceEditionOptions([],"marathon")).toEqual([]);
+  });
+});
+
+describe("edition distribution presentation", () => {
+  const analytics: RaceEditionAnalytics = {total:3,fastestMs:1000000,slowestMs:1002000,medianMs:1000000,minimumMs:1000000,binWidthMs:1000,chipCount:2,officialCount:1,bins:[{bucket:0,count:2},{bucket:2,count:1}]};
+  it("preserves missing ranges and counts instead of smoothing the field", () => {
+    const bins = raceEditionChart(analytics);
+    expect(bins.map(b => b.count)).toEqual([2,0,1]);
+    expect(bins.map(b => b.height)).toEqual([100,0,50]);
+    expect(bins[0].label).toBe("16:40 – under 16:41");
+    expect(bins.reduce((sum,b) => sum+b.count,0)).toBe(analytics.total);
+  });
+  it("handles identical finishes as one range", () => {
+    expect(raceEditionChart({...analytics,bins:[{bucket:0,count:3}]})).toHaveLength(1);
   });
 });

@@ -6,6 +6,7 @@ import { RACE_DISTANCES, RACE_CATEGORIES, RACE_TIMEFRAMES, raceQuery, raceEditio
 import { ScreenHeader } from "../src/ui/screen-header";
 import { useFocusStyles, FocusButton } from "../src/ui/focus";
 import { AppText } from "../src/ui/section";
+import { EditionAnalytics } from "../src/ui/race-edition-analytics";
 import { mobileEnv } from "../src/lib/env";
 
 export default function RaceRankings() {
@@ -86,6 +87,7 @@ export default function RaceRankings() {
         <FocusButton label="Results coverage" secondary onPress={() => router.push("/race-coverage")} />
         <AppText role="caption" secondary>Chip time where available, otherwise official time.</AppText>
         {!!data && !!raceWindowCaption(data) && <AppText role="caption" secondary>{raceWindowCaption(data)} · Undated results excluded.</AppText>}
+        {data?.analytics && <EditionAnalytics key={`${edition}:${sex}:${timeframe}:${year}:${from}:${through}`} analytics={data.analytics} />}
         {busy ? <ActivityIndicator accessibilityLabel="Loading race results" /> : error ? <View style={{gap:12}}><AppText role="body">Results are unavailable.</AppText><FocusButton label="Retry" secondary onPress={() => setRetry(n => n + 1)} /></View> : data ? <AppText role="label">{data.total.toLocaleString()} {query ? "matching results" : "published results"}</AppText> : <AppText role="caption" secondary>Choose a timeframe and find results.</AppText>}
       </View>}
       renderItem={({item}) => <Pressable accessibilityRole="button" onPress={() => router.push({pathname:"/race-result",params:{id:String(item.id)}})} style={[f.row, { alignItems:"flex-start", paddingVertical:16 }]}>
