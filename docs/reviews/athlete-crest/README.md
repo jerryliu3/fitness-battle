@@ -75,3 +75,7 @@ faces, pointer rotation, keyboard/reset, edit/cancel and narrow widths. Physical
 iOS/Android touch/rendering still needs device verification.
 
 Final refinement: smaller name, tighter name-to-stat spacing, and no visible turn/reset controls or gesture hint. Drag rotation and keyboard interaction remain available.
+
+The UI typography contract treats only the Crest face component and stylesheet as
+owner-approved scalable card artwork, alongside existing artwork exclusions.
+Product chrome and both native host components remain subject to the contract.
