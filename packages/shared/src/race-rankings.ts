@@ -17,14 +17,33 @@ export type RaceResult = {
 };
 export type RaceResultsPage = {
   rows: RaceResult[]; total: number; cohortTotal: number; page: number; pageSize: number;
+  windowFrom?: string | null; windowUntil?: string | null;
 };
+export const RACE_TIMEFRAMES = [
+  {value:"all",label:"All time"}, {value:"year",label:"Edition year"},
+  {value:"12m",label:"Past 12 months"}, {value:"custom",label:"Custom dates"},
+] as const;
+function validRaceDate(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && value >= "1900-01-01" && value <= "2100-12-31"
+    && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
+}
+export function raceDateError(from: string, through: string): string | null {
+  if (!validRaceDate(from) || !validRaceDate(through)) return "Enter valid dates from 1900 to 2100.";
+  return from > through ? "The end date must be on or after the start date." : null;
+}
 export function raceQuery(input: { get(name: string): string | null }) {
   const sex = input.get("sex") ?? "female";
   const year = Number(input.get("year"));
   const page = Number(input.get("page"));
+  const validYear = Number.isInteger(year) && year >= 1900 && year <= 2100;
+  const timeframe = RACE_TIMEFRAMES.find(t => t.value === input.get("timeframe"))?.value ?? (validYear ? "year" : "all");
+  const from = (input.get("from") ?? "").trim();
+  const through = (input.get("through") ?? "").trim();
   return {
     sex: RACE_CATEGORIES.some(c => c.value === sex) ? sex : "female",
-    year: Number.isInteger(year) && year >= 1900 && year <= 2100 ? year : null,
+    year: timeframe === "year" && validYear ? year : null,
+    timeframe, from: timeframe === "custom" ? from : "", through: timeframe === "custom" ? through : "",
+    dateError: timeframe === "custom" ? raceDateError(from,through) : timeframe === "year" && !validYear ? "Enter an edition year from 1900 to 2100." : null,
     query: (input.get("q") ?? "").trim().slice(0, 100),
     page: Number.isSafeInteger(page) && page > 0 && page <= 2147483647 ? page : 1,
   };
@@ -73,4 +92,32 @@ export type RaceCoverage = {
 export function raceFasterThan(report: RaceResultReport): number | null {
   return report.coverage?.complete && report.coverage.published_count === report.total && report.total > 0
     ? report.slower / report.total * 100 : null;
+}
+
+/** Race dates are calendar dates. Rolling boundaries use the server UTC date. */
+export function raceDateBounds(query: ReturnType<typeof raceQuery>, now = new Date()) {
+  if (query.dateError) throw new Error(query.dateError);
+  if (query.timeframe === "custom") {
+    const until = new Date(query.through); until.setUTCDate(until.getUTCDate()+1);
+    return {from:query.from,until:until.toISOString().slice(0,10)};
+  }
+  if (query.timeframe === "12m") {
+    const year=now.getUTCFullYear()-1, month=now.getUTCMonth();
+    const day=Math.min(now.getUTCDate(),new Date(Date.UTC(year,month+1,0)).getUTCDate());
+    const until=new Date(Date.UTC(now.getUTCFullYear(),month,now.getUTCDate()+1));
+    return {from:new Date(Date.UTC(year,month,day)).toISOString().slice(0,10),until:until.toISOString().slice(0,10)};
+  }
+  return {from:null,until:null};
+}
+
+export function raceWindowCaption(page: RaceResultsPage) {
+  if (!page.windowFrom || !page.windowUntil) return "";
+  const through = new Date(page.windowUntil); through.setUTCDate(through.getUTCDate()-1);
+  return `Event dates: ${page.windowFrom} – ${through.toISOString().slice(0,10)}`;
+}
+
+export function racePercentLabel(value: number) {
+  if (value > 0 && value < 0.1) return "<0.1%";
+  if (value > 99.9 && value < 100) return ">99.9%";
+  return `${value.toFixed(1)}%`;
 }

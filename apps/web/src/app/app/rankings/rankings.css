@@ -246,3 +246,5 @@
 .race-coverage-list strong { font-variant-numeric:tabular-nums; }
 .race-percentile { padding:24px 0; font-size:14px; color:var(--muted); }
 .race-percentile strong { display:block; color:var(--ink); font-size:40px; font-variant-numeric:tabular-nums; }
+.race-filters { grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr)); }
+@media(max-width:650px) { .race-filters { grid-template-columns:repeat(2,minmax(0,1fr)); } }

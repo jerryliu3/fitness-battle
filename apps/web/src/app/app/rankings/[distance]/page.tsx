@@ -16,7 +16,7 @@ export default async function DistanceBoardPage({ params, searchParams }: {
   const raw = await searchParams;
   const query = raceQuery({ get: name => typeof raw[name] === "string" ? raw[name] as string : null });
   let data = null;
-  try { data = await loadRaceResults(selected.stored, query); } catch { /* Render recoverable unavailable state. */ }
+  try { if (!query.dateError) data = await loadRaceResults(selected.stored, query); } catch { /* Render recoverable unavailable state. */ }
   return <main className="rankings-wrap">
     <header className="rankings-top"><Link href="/rankings">← Race rankings</Link><span className="rankings-kicker">Road running</span></header>
     <AppHeading level={1} role="display">{selected.label}</AppHeading>
