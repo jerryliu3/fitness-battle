@@ -27,7 +27,13 @@ begin
     or (select sum((b->>'count')::integer) from jsonb_array_elements(payload->'bins') b) <> 205 then
     raise exception 'report cohort or distribution drifted: %',payload;
   end if;
+  if jsonb_array_length(public.rankings_saved(array[(select id from public.performances where source_record_id=rec)])) <> 1 then
+    raise exception 'saved result missing';
+  end if;
   update public.sources set display_allowed=false where id=src;
+  if jsonb_array_length(public.rankings_saved(array[(select id from public.performances where source_record_id=rec)])) <> 0 then
+    raise exception 'saved result bypassed suppression';
+  end if;
   if public.rankings_result((select id from public.performances where source_record_id=rec)) is not null then
     raise exception 'suppressed report exposed';
   end if;

@@ -84,3 +84,4 @@ export * from "./athlete-card";
 export * from "./competition-activity-log";
 
 export * from "./race-rankings";
+export * from "./race-favorites";

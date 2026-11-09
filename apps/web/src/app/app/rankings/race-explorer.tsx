@@ -22,6 +22,7 @@ export function RaceExplorer({ distance, initial, query }: { distance: string; i
   const data = initial;
   return <div className="race-explorer" aria-busy={pending}>
     <nav className="race-distances" aria-label="Race distance">{RACE_DISTANCES.map(d => <Link aria-current={distance === d.slug ? "page" : undefined} key={d.slug} href={`/rankings/${d.slug}?sex=${query.sex}`}>{d.label}</Link>)}</nav>
+    <p><Link href="/rankings/saved">Saved results →</Link></p>
     <form className="race-filters" onSubmit={event => { event.preventDefault(); navigate(1); }}>
       <label className="race-search">Athlete or bib<input name="q" value={search} onChange={e => setSearch(e.target.value)} placeholder="Find a finisher…" maxLength={100} /></label>
       <label>Category<select value={sex} onChange={e => setSex(e.target.value)}>{RACE_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select></label>
