@@ -20,7 +20,6 @@ import {
   fieldDefaultSpan,
   clampCourseCenter,
   ordinalPlace,
-  selfLaneLabel,
   shellTabFromPath,
   resolveArenaSelectedId,
   type ArenaSceneLane,
@@ -402,7 +401,7 @@ export function FieldStage({
               >
                 <span className="focus-broadcast-tower-rank">{placeOf(peer.value)}</span>
                 <span className="focus-broadcast-tower-name">
-                  {peer.you ? "You" : peer.name.split(" ")[0]}
+                  {peer.name.split(" ")[0]}
                 </span>
                 <span className="focus-broadcast-tower-val">
                   {idx === 0 ? peer.value.toFixed(1) : delta.toFixed(1)}
@@ -463,13 +462,10 @@ export function FieldStage({
               <div className="focus-broadcast-spotlight-meta">
                 <span className="focus-broadcast-spotlight-kicker">
                   {ordinalPlace(focusedRank).toUpperCase()} PLACE
-                  {focusedLane.you ? " · YOU" : ""}
                   {focusedElo ? ` · ${focusedElo} ELO` : ""}
                 </span>
                 <strong className="focus-broadcast-spotlight-name">
-                  {focusedLane.you
-                    ? selfLaneLabel(focusedLane.name)
-                    : focusedLane.name}
+                  {focusedLane.name}
                 </strong>
               </div>
               <div className="focus-broadcast-spotlight-stat">
@@ -510,7 +506,7 @@ export function FieldStage({
                     }}
                   >
                     <span>#{placeOf(peer.value)}</span>
-                    <b>{peer.you ? "You" : peer.name.split(" ")[0]}</b>
+                    <b>{peer.name.split(" ")[0]}</b>
                   </button>
                 );
               })}
@@ -701,7 +697,7 @@ export function FieldStage({
                   />
                   <div className="focus-leader-stage-copy">
                     <strong>
-                      {leader.you ? selfLaneLabel(leader.name) : leader.name}
+                      {leader.name}
                     </strong>
                     <span>
                       {leadersTied
@@ -765,7 +761,7 @@ export function FieldStage({
                     <div className="focus-standing-bar-content">
                       <div className="focus-standing-bar-top">
                         <strong className="focus-standing-name">
-                          {lane.you ? selfLaneLabel(lane.name) : lane.name}
+                          {lane.name}
                           {elo != null
                             ? ` ${effortRankBadge(elo).symbol}`
                             : ""}

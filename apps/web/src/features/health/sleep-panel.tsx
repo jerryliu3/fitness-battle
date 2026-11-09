@@ -7,7 +7,6 @@ import {
   formatSleepDuration,
   healthMetricById,
   isSampleSleepNight,
-  selfLaneLabel,
   stageShares,
   type CompeteState,
   type SleepNight,
@@ -173,7 +172,7 @@ export function SleepPanel({
                 <li key={row.id} className={row.you ? "is-you" : ""}>
                   <span>{row.place}</span>
                   <span>
-                    {row.you ? selfLaneLabel(row.name) : row.name}
+                    {row.name}
                     <AppText as="small" role="caption" secondary>
                       {row.lastNight == null ? "No night yet" : `Latest this week ${row.lastNight}`}
                     </AppText>

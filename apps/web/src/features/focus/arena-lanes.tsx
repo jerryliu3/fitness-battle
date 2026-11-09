@@ -21,7 +21,6 @@ import {
   competeAthleteTrailColors,
   fieldLaneMarkerScale,
   fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
-  selfLaneLabel,
   type ArenaOvertakeFrame,
   type ArenaOvertakePlan,
   type ArenaSceneLane,
@@ -339,7 +338,7 @@ export function ArenaLanes({
                 <rect x={-30} y={-33} width={Math.max(200, width - 16)} height={70} rx={14} fill="transparent" />
                 <line x1={-22} x2={width - 52} y1={38} y2={38} stroke={appearanceColors.borderSubtle} />
                 <text style={typographyStyle("caption")} x={40} y={4} fill={appearanceColors.textSecondary} >{rank}</text>
-                <text style={typographyStyle("row")} x={64} y={-5} fill={appearanceColors.textSecondary}  >{l.you ? selfLaneLabel(l.name) : l.name}{scores[l.id] != null ? ` ${effortRankBadge(scores[l.id]).symbol}` : ""}</text>
+                <text style={typographyStyle("row")} x={64} y={-5} fill={appearanceColors.textSecondary}  >{l.name}{scores[l.id] != null ? ` ${effortRankBadge(scores[l.id]).symbol}` : ""}</text>
                 <text style={typographyStyle("caption")} x={64} y={15} fill="#a67c00" >{scores[l.id] ?? "—"} effort score</text>
                 <text style={typographyStyle("value")} x={width - 58} y={5} textAnchor="end" fill={appearanceColors.textSecondary}  >{l.value.toFixed(1)} {unit}</text>
               </motion.g>

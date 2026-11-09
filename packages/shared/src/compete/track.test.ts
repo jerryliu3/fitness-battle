@@ -139,13 +139,13 @@ describe("initialsFromName / interpolateSeries", () => {
 });
 
 describe("selfLaneLabel", () => {
-  it("labels unsigned guests as Guest and signed-in viewers as You", () => {
+  it("formats self lane label using the athlete's name", () => {
     expect(selfLaneLabel("Guest")).toBe("Guest");
     expect(selfLaneLabel("You")).toBe("You");
-    expect(selfLaneLabel("Maya")).toBe("You");
+    expect(selfLaneLabel("Maya")).toBe("Maya");
     expect(selfLaneLabel("Guest", "caps")).toBe("GUEST");
     expect(selfLaneLabel("You", "caps")).toBe("YOU");
-    expect(selfLaneLabel("Maya", "caps")).toBe("YOU");
+    expect(selfLaneLabel("Maya", "caps")).toBe("MAYA");
   });
 });
 

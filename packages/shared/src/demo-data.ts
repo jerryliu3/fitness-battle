@@ -143,7 +143,7 @@ export function demoStandings(viewerId = "demo-user"): StandingRow[] {
     {
       periodId: `period-${period.startsAt.toISOString()}`,
       userId: viewerId,
-      displayName: "You",
+      displayName: "Alex",
       score: 22150,
       rank: 2,
       isViewer: true,

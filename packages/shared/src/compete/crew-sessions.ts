@@ -101,6 +101,7 @@ export function demoCrewSessionMutation(
   mutation: CrewSessionMutation,
   userId: string,
   sport: string,
+  userName = "Athlete",
 ): CrewSession[] {
   if (mutation.action === "create") {
     if (rows.some((row) => row.id === mutation.id)) return rows;
@@ -116,7 +117,7 @@ export function demoCrewSessionMutation(
         duration_min: mutation.durationMin,
         time_zone: mutation.timeZone,
         cancelled_at: null,
-        participants: [{ user_id: userId, display_name: "You" }],
+        participants: [{ user_id: userId, display_name: userName }],
       },
     ].sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
   }
@@ -131,7 +132,7 @@ export function demoCrewSessionMutation(
     return {
       ...row,
       participants: mutation.join
-        ? [...others, { user_id: userId, display_name: "You" }]
+        ? [...others, { user_id: userId, display_name: userName }]
         : others,
     };
   });

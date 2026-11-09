@@ -340,7 +340,7 @@ export function PortraitField({
                   fill="white"
 
                 >
-                  {m.ghost ? "Past you" : m.you ? "You" : m.name.split(" ")[0]}
+                  {m.ghost ? "Past you" : m.name.split(" ")[0]}
                 </text>
                 {!m.you && !m.mystery ? (
                   <text style={typographyStyle("caption")} y={61} textAnchor="middle" fill={appearanceColors.soft} >
@@ -371,7 +371,7 @@ export function PortraitField({
         <div className="club-board-peers">
           <button type="button" aria-label="Previous lane" disabled={scene.focus <= 0} onClick={() => shift(-1)}>←</button>
           <button type="button" aria-label="Move backward" disabled={scene.min <= 0} onClick={() => panTo(view.center - view.span / 3)}>↓</button>
-          <button type="button" onClick={() => { onSelect(lanes.find(l => l.you)?.id ?? ""); }}>You</button>
+          <button type="button" onClick={() => { onSelect(lanes.find(l => l.you)?.id ?? ""); }}>{lanes.find(l => l.you)?.name.split(" ")[0] ?? "Athlete"}</button>
           <button type="button" aria-label="Move forward" onClick={() => panTo(view.center + view.span / 3)}>↑</button>
           <button type="button" aria-label="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onClick={() => shift(1)}>→</button>
         </div>

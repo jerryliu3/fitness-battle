@@ -131,7 +131,7 @@ export function competitionReplayCaption(index: CompetitionReplayIndex, cursor: 
   const before = competitionReplayFrame(index, Math.ceil(frame.position) - 1).rows.find(a => a.id === event.athleteId)!;
   const after = competitionReplayFrame(index, Math.ceil(frame.position)).rows.find(a => a.id === event.athleteId)!;
   const delta = after.value - before.value;
-  return `${athlete.you ? "You" : athlete.name} +${delta.toLocaleString("en-US", { maximumFractionDigits: 2 })} ${index.unit} · ${before.place === after.place ? `#${after.place}` : `#${before.place} → #${after.place}`}`;
+  return `${athlete.name} +${delta.toLocaleString("en-US", { maximumFractionDigits: 2 })} ${index.unit} · ${before.place === after.place ? `#${after.place}` : `#${before.place} → #${after.place}`}`;
 }
 export function competitionReplayDate(index: CompetitionReplayIndex, cursor: number, live = false): string {
   const position = Math.max(0, Math.min(index.replay.events.length, Number.isFinite(cursor) ? cursor : 0));
