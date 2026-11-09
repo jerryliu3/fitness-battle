@@ -83,7 +83,7 @@ const f=useFocusStyles();
     setError("");
     try {
       if (offlineMode && user) {
-        const next = demoCrewSessionMutation(sessions, body, user.id, sport);
+        const next = demoCrewSessionMutation(sessions, body, user.id, sport, user.displayName);
         await AsyncStorage.setItem(
           `fb-demo-start-line:${user.id}:${crewId}`,
           JSON.stringify(next),

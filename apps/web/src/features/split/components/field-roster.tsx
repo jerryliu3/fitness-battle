@@ -2,7 +2,7 @@
 import { AppText } from "@/ui/section";
 
 
-import { formatEffort, selfLaneLabel } from "@fitness-battle/shared";
+import { formatEffort } from "@fitness-battle/shared";
 import type { BoardRow } from "@fitness-battle/shared";
 import { motion, useReducedMotion } from "motion/react";
 
@@ -96,7 +96,7 @@ export function FieldRoster({
           <>
             <span className="place">{row.place}</span>
             <span className="grow">
-              {row.you ? selfLaneLabel(row.name) : row.name}
+              {row.name}
               <AppText as="small" role="caption" secondary>{secondary}</AppText>
             </span>
             <b>

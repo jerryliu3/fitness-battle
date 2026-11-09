@@ -53,7 +53,7 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false,
     </div>
     <header className="moment-replay-top">{debug&&!embedded&&<div style={{pointerEvents:"auto",display:"flex",gap:8}}>{(["2d","4d"] as const).map(mode=><button type="button" className="fb-chip" aria-pressed={viewDimension===mode} key={mode} onClick={()=>setViewDimension(mode)}>{mode==="4d"?"3D course":"2D field"}</button>)}</div>}
       {!embedded && <div className="moment-replay-label"><span className="fb-kicker">{sportById(moment.sport).name} · REPLAY</span></div>}
-      {!embedded && <div className="moment-replay-standings" aria-label="Live replay standings">{frame.standings.map(lane => <div key={lane.id} className={lane.you ? "is-you" : ""}><b>#{lane.place}</b><span>{lane.you ? "You" : lane.name}</span><small>{lane.value.toFixed(1)} {moment.unit}</small></div>)}</div>}
+      {!embedded && <div className="moment-replay-standings" aria-label="Live replay standings">{frame.standings.map(lane => <div key={lane.id} className={lane.you ? "is-you" : ""}><b>#{lane.place}</b><span>{lane.name}</span><small>{lane.value.toFixed(1)} {moment.unit}</small></div>)}</div>}
     </header>
     {moment.plan.hasOvertake && frame.count > 0 && <div className="moment-replay-label" role="status" style={{position:"absolute",left:16,top:100}}>{frame.count} overtake{frame.count === 1 ? "" : "s"}</div>}
     {!moment.plan.hasOvertake && !passedBy && <div className="moment-replay-label" role="status" style={{position:"absolute",left:16,top:100}}>+{(moment.plan.youAfter - moment.plan.youBefore).toFixed(moment.unit === "pts" ? 0 : 1)} {moment.unit}</div>}

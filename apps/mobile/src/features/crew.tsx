@@ -202,7 +202,7 @@ const f=useFocusStyles();
         {
           crew_id: crew.id,
           user_id: selfId,
-          display_name: state?.name ?? "You",
+          display_name: state?.name ?? "Athlete",
           rest_week: null,
         },
       ]
@@ -300,7 +300,7 @@ const f=useFocusStyles();
             members: [
               {
                 id: selfId,
-                name: state?.name ?? "You",
+                name: state?.name ?? "Athlete",
                 elo: 1000,
                 distanceM: 0,
                 movingSec: 0,
@@ -330,7 +330,7 @@ const f=useFocusStyles();
             members: [
               {
                 id: selfId,
-                name: state?.name ?? "You",
+                name: state?.name ?? "Athlete",
                 elo: 1000,
                 distanceM: 0,
                 movingSec: 0,

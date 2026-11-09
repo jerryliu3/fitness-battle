@@ -32,7 +32,6 @@ import {
   buildArenaModel,
   initialsFromName,
   ordinalPlace,
-  selfLaneLabel,
   shellTabFromPath,
   weeklyBoard,
   type CourseDistanceTarget,
@@ -487,7 +486,7 @@ const f=useFocusStyles();
                         flex: 1,
                       }}
                     >
-                      {peer.you ? "You" : peer.name.split(" ")[0]}
+                      {peer.name.split(" ")[0]}
                     </Text>
                     <Text
                       style={{
@@ -545,15 +544,12 @@ const f=useFocusStyles();
                       }}
                     >
                       {ordinalPlace(focusedRank).toUpperCase()} PLACE
-                      {focusedLane.you ? " · YOU" : ""}
                     </Text>
                     <Text
                       numberOfLines={1}
                       style={{ ...textStyle("label"), color: appearanceColors.white }}
                     >
-                      {focusedLane.you
-                        ? selfLaneLabel(focusedLane.name)
-                        : focusedLane.name}
+                      {focusedLane.name}
                     </Text>
                   </View>
                   <View style={{ alignItems: "flex-end", gap: 2 }}>
@@ -627,7 +623,7 @@ const f=useFocusStyles();
                             color: activeChip ? c.ink : "#ffffff",
                           }}
                         >
-                          {peer.you ? "You" : peer.name.split(" ")[0]}
+                          {peer.name.split(" ")[0]}
                         </Text>
                       </Pressable>
                     );
@@ -695,7 +691,7 @@ const f=useFocusStyles();
                   <View style={[f.row, { alignItems: "center", justifyContent: "space-between" }]}>
                     <View style={{ flex: 1, gap: 2, marginRight: 12 }}>
                       <Text style={textStyle("label")} numberOfLines={1}>
-                        {lane.you ? selfLaneLabel(lane.name) : lane.name}
+                        {lane.name}
                       </Text>
                       <Text style={[textStyle("caption"), { color: c.muted }]}>
                         {elo ?? "—"} effort score

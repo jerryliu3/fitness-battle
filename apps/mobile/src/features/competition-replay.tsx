@@ -201,7 +201,7 @@ const s=useThemedStyles(sThemes);
       <View style={s.controls}>
         <AppText role="row" numberOfLines={2}>{caption}</AppText>
         <AppText role="caption" secondary>{competitionReplayDate(index, cursor)}</AppText>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }} accessibilityLabel="Current positions">{coursePositionLeaders(frame?.rows ?? []).filter(row => !hiddenIds.includes(row.id)).map(row => <Pressable key={row.id} accessibilityRole="button" accessibilityLabel={`Focus ${row.name}`} accessibilityState={{ selected: row.id === focus?.id }} onPress={() => select(row.id)} style={[s.action, { flexDirection: "row", gap: 4 }]}><AppText role="caption">#{row.place} {row.you ? "You" : row.name.split(" ")[0]} · {row.value.toFixed(1)} {unit}</AppText></Pressable>)}</View>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }} accessibilityLabel="Current positions">{coursePositionLeaders(frame?.rows ?? []).filter(row => !hiddenIds.includes(row.id)).map(row => <Pressable key={row.id} accessibilityRole="button" accessibilityLabel={`Focus ${row.name}`} accessibilityState={{ selected: row.id === focus?.id }} onPress={() => select(row.id)} style={[s.action, { flexDirection: "row", gap: 4 }]}><AppText role="caption">#{row.place} {row.name.split(" ")[0]} · {row.value.toFixed(1)} {unit}</AppText></Pressable>)}</View>
         <ReplayTimeline cursor={cursor} count={count} caption={caption} onSeek={seek} />
         {embedded && <ReplayAction disabled={!count} label="Replay this round" text="Replay this round" onPress={() => { seek(0); setPlaying(true); }} />}
         <View style={s.actions}>

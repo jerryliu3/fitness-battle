@@ -48,7 +48,7 @@ function Setup({preview}:{preview:boolean}) {
 
       {step===3&&<><AppParagraph>Connect a tracker now to authorize your real account. Strava, WHOOP, and Oura start syncing after connection. Garmin sends new activities after your device syncs with Garmin Connect; Starter access does not include past activity history. You can also connect later under your profile.</AppParagraph>{preview?PROVIDERS.map(p=><button key={p.id} className="fb-btn-line" disabled>{p.name} · Connect (preview)</button>):<TrackerConnections/>}</>}
       {step===4&&<><AppParagraph>The moment your effort takes you ahead of another athlete. Don’t get overtaken!</AppParagraph><OnboardingOvertake/></>}
-      {step===5&&<OnboardingOutlook/>}
+      {step===5&&<OnboardingOutlook name={name}/>}
       {step===6&&<><OnboardingSummary sports={sports} units={units} sleep={sleep}/><motion.div initial={{opacity:reduced?1:0}} animate={{opacity:1}} transition={{delay:reduced?0:(sports.length+Number(sleep))*.3+.4}}><AppParagraph typographyRole="label">Your next wave starts at {waveTimeLabel(nextDailyWaveWindowAt(new Date(now)).waveStart)}.</AppParagraph></motion.div></>}
       <div style={{display:"flex",gap:12,alignItems:"stretch"}}>{step>0&&<button type="button" className="fb-btn-line" style={{flex:1}} onClick={()=>setStep(step-1)}>Back</button>}<button className="fb-btn" style={{flex:1}} type="button" onClick={()=>step<6?advance():finish()}>{step===6?preview?"Finish preview":"Finish":step===3?(state.links.some(link=>link.status==="connected")?"Continue":"Skip for now"):"Continue"}</button></div>
     </motion.div></AnimatePresence>

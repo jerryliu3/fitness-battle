@@ -1,5 +1,5 @@
 "use client";
-import { selfLaneLabel, SHELL_COLORS as c, PERSON_ICON_PATH, type ArenaViewWindow } from "@fitness-battle/shared";
+import { SHELL_COLORS as c, PERSON_ICON_PATH, type ArenaViewWindow } from "@fitness-battle/shared";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -361,11 +361,9 @@ export function LivePursuit(props: PursuitProps) {
         const label = {
           avatarUrl: r.avatarUrl,
           id,
-          name: r.you
-            ? selfLaneLabel(r.name, "caps")
-            : r.ghost
-              ? "PAST YOU"
-              : r.name.split(" ")[0]!,
+          name: r.ghost
+            ? "PAST YOU"
+            : r.name.split(" ")[0]!,
           gap: gapText(r, youRunner, p.time, p.extra, p.unit),
           x: Math.max(
             78,

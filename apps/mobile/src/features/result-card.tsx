@@ -130,7 +130,7 @@ const f=useFocusStyles();
                 const isYou = result.place === podium.step;
                 return (
                   <View key={podium.step} style={{ flex: 1, alignItems: "center", gap: 8 }}>
-                    {athletes.map(athlete => <View key={athlete.id} style={{ alignItems: "center", gap: 4, width: "100%" }}><UserAvatar src={athlete.avatarUrl} name={athlete.name} size={40} highlight={athlete.you} /><AppText role="caption" numberOfLines={2} style={{ textAlign: "center" }}>{athlete.you ? "You" : athlete.name}</AppText></View>)}
+                    {athletes.map(athlete => <View key={athlete.id} style={{ alignItems: "center", gap: 4, width: "100%" }}><UserAvatar src={athlete.avatarUrl} name={athlete.name} size={40} highlight={athlete.you} /><AppText role="caption" numberOfLines={2} style={{ textAlign: "center" }}>{athlete.name}</AppText></View>)}
                   <View
                     style={{
                       width: "100%",

@@ -193,7 +193,7 @@ export function CrewPanel() {
       !crewBoard.crewId.startsWith("field:"),
   );
 
-  const athleteName = state?.name || "You";
+  const athleteName = state?.name || "Athlete";
   const athleteSport = state?.primary ?? "running";
 
   const demoCrew: Crew | null =
@@ -464,7 +464,7 @@ export function CrewPanel() {
                     : "Every pace belongs here."}
                 </AppParagraph>
               </section>
-              {user && !isSolo ? <CrewSessions key={`${user.id}:${crew.id}`} crewId={crew.id} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} userId={user.id} demo={offlineMode} sport={crew.sport} /> : null}
+              {user && !isSolo ? <CrewSessions key={`${user.id}:${crew.id}`} crewId={crew.id} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} userId={user.id} userName={user.displayName} demo={offlineMode} sport={crew.sport} /> : null}
               {user ? (
                 <>
                   <Section title="Crew standings">

@@ -75,7 +75,7 @@ const f=useFocusStyles();
 
       {step===3 && <><AppText secondary>Connect a tracker now to authorize your real account. Strava, WHOOP, and Oura start syncing after connection. Garmin sends new activities after your device syncs with Garmin Connect; Starter access does not include past activity history. You can also connect later under your profile.</AppText>{preview ? PROVIDERS.map(p=><FocusButton key={p.id} secondary disabled label={`${p.name} · Connect (preview)`} onPress={()=>{}}/>) : <TrackerConnections/>}</>}
       {step===4 && <><AppText secondary>The moment your effort takes you ahead of another athlete. Don’t get overtaken!</AppText><OnboardingOvertake/></>}
-      {step===5&&<OnboardingOutlook/>}
+      {step===5&&<OnboardingOutlook name={name}/>}
       {step===6&&<><OnboardingSummary sports={sports} units={units} sleep={sleep}/><OnboardingFade delay={(sports.length+Number(sleep))*300+400}><AppText role="label">Your next wave starts at {waveTimeLabel(nextDailyWaveWindowAt(new Date(now)).waveStart)}.</AppText></OnboardingFade></>}
       <View style={{flexDirection:"row",gap:12,alignItems:"stretch"}}>{step>0&&<View style={{flex:1}}><FocusButton secondary label="Back" onPress={()=>setStep(step-1)}/></View>}<View style={{flex:1}}><FocusButton label={step===6?preview?"Finish preview":user?"Finish":"Sign in to finish setup":step===3?(state.links.some(link=>link.status==="connected")?"Continue":"Skip for now"):"Continue"} disabled={!preview && step===6 && Boolean(user) && !canWrite} onPress={()=>step<6?advance():!preview&&!user?router.replace("/athlete"):finish()}/></View></View>
     </MotionStep>

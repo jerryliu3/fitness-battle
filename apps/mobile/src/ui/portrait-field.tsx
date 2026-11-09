@@ -377,9 +377,7 @@ const appearanceColors = useThemeColors();
                     >
                       {m.ghost
                         ? "Past you"
-                        : m.you
-                          ? "You"
-                          : m.name.split(" ")[0]}
+                        : m.name.split(" ")[0]}
                     </SvgText>
                     {!m.you && !m.mystery ? (
                       <SvgText {...chartTextProps()}
@@ -473,7 +471,7 @@ const appearanceColors = useThemeColors();
         <View style={s.controlRow}>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Previous lane" disabled={scene.focus <= 0} onPress={() => shift(-1)}><Text style={s.white}>←</Text></Pressable>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move backward" disabled={scene.min <= 0} onPress={() => panTo(view.center - view.span / 3)}><Text style={s.white}>↓</Text></Pressable>
-          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Your lane" onPress={() => { onSelect(lanes.find(l => l.you)?.id ?? ""); }}><Text style={s.white}>You</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Your lane" onPress={() => { onSelect(lanes.find(l => l.you)?.id ?? ""); }}><Text style={s.white}>{lanes.find(l => l.you)?.name.split(" ")[0] ?? "Athlete"}</Text></Pressable>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move forward" onPress={() => panTo(view.center + view.span / 3)}><Text style={s.white}>↑</Text></Pressable>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onPress={() => shift(1)}><Text style={s.white}>→</Text></Pressable>
         </View>

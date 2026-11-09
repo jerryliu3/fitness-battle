@@ -17,12 +17,14 @@ export function CrewSessions({
   crewId,
   portraits = {},
   userId,
+  userName = "Athlete",
   demo = false,
   sport = "running",
 }: {
   crewId: string;
   portraits?: Record<string, string | null | undefined>;
   userId: string;
+  userName?: string;
   demo?: boolean;
   sport?: string;
 }) {
@@ -70,7 +72,7 @@ export function CrewSessions({
     setError("");
     try {
       if (demo) {
-        const next = demoCrewSessionMutation(sessions, body, userId, sport);
+        const next = demoCrewSessionMutation(sessions, body, userId, sport, userName);
         localStorage.setItem(
           `fb-demo-start-line:${userId}:${crewId}`,
           JSON.stringify(next),

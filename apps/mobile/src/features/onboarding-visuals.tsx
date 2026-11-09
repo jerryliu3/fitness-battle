@@ -9,8 +9,9 @@ import { SportIcon } from "../ui/sport-icon";
 import { StandardLineChart } from "../ui/standard-line-chart";
 
 
-export function OnboardingOutlook() {
+export function OnboardingOutlook({ name }: { name?: string } = {}) {
  const c = useThemeColors();
+ const selfName = name?.trim() || "Athlete";
 
  const reduced = useReducedMotion();
  const draw = useRef(new Animated.Value(0)).current;
@@ -46,7 +47,7 @@ export function OnboardingOutlook() {
  }, [chart, reduced, draw]);
  return <View style={{gap:18}}>
  <AppText secondary>Your effort builds throughout the week. Get your results at the end of each weekly competition.</AppText>
- <View style={{padding:24,borderRadius:24,backgroundColor:c.card,borderWidth:1,borderColor:c.line,gap:12}}>{(leading?[{place:1,name:"You",value:`${distance.toFixed(1)} km`},{place:2,name:"Alex",value:"22.1 km"},{place:3,name:"Sam",value:"19.4 km"}]:[{place:1,name:"Alex",value:"22.1 km"},{place:2,name:"You",value:`${distance.toFixed(1)} km`},{place:3,name:"Sam",value:"19.4 km"}]).map(row=><View key={row.name} style={{flexDirection:"row",alignItems:"center",gap:14,padding:14,borderRadius:14,backgroundColor:row.name==="You"?c.actionSoft:"transparent"}}><AppText role="heading">#{row.place}</AppText><AppText role="label" style={{flex:1}}>{row.name}</AppText><AppText role="caption">{row.value}</AppText></View>)}</View>
+ <View style={{padding:24,borderRadius:24,backgroundColor:c.card,borderWidth:1,borderColor:c.line,gap:12}}>{(leading?[{place:1,name:selfName,value:`${distance.toFixed(1)} km`},{place:2,name:"Alex",value:"22.1 km"},{place:3,name:"Sam",value:"19.4 km"}]:[{place:1,name:"Alex",value:"22.1 km"},{place:2,name:selfName,value:`${distance.toFixed(1)} km`},{place:3,name:"Sam",value:"19.4 km"}]).map(row=><View key={row.name} style={{flexDirection:"row",alignItems:"center",gap:14,padding:14,borderRadius:14,backgroundColor:row.name===selfName?c.actionSoft:"transparent"}}><AppText role="heading">#{row.place}</AppText><AppText role="label" style={{flex:1}}>{row.name}</AppText><AppText role="caption">{row.value}</AppText></View>)}</View>
  {chart&&<OnboardingFade delay={0}><View style={{padding:24,borderRadius:24,backgroundColor:c.card,borderWidth:1,borderColor:c.line,gap:12}}><AppText role="heading">Watch your progress climb.</AppText><AppText secondary>Effort during the week and your competition results help build your score.</AppText><StandardLineChart yAxisLabel="Effort score" xAxisLabel="Week" showAxes revealProgress={draw} values={[1000,1010,1008,1035,1054,1050,1080]} xLabels={["Week 1","Week 4","Week 7"]} accessibilityLabel="Illustrative score progress from 1000 to 1080 across seven weeks"/></View></OnboardingFade>}
 
  </View>;}
