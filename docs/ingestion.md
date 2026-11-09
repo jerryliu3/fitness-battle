@@ -14,7 +14,7 @@ Working practice, until a lawyer reviews it: copy a full public official results
 | OpenTrack JSON | `pnpm rankings:ingest` includes the committed 2025 Estonian 10 km fixture | Public competition JSON. Live OpenTrack hosts returned 403 from this network, so the fixture is the copy that imports. |
 | MikaTiming list | `pnpm rankings:ingest` walks the major-event catalog | Public HTML list pages, sex by sex, 100 rows at a time. Net finish time is stored as chip time. |
 | CSV | `pnpm rankings:ingest --csv results.csv --distance 5k --name "Race" --year 2026` | A forwarded full file. Headers: `name` or `first`/`last`, `sex`, `chip_time` or `time`, optional `bib`, `age`, `division`. |
-| RunSignup | `pnpm rankings:ingest --runsignup RACE_ID --event EVENT_ID --distance 5k --name "Race" --year 2026` | Public `get-results` JSON. Sets with `public_results=F` are skipped. |
+| RunSignup | `pnpm rankings:ingest --runsignup RACE_ID --event EVENT_ID --result-set RESULT_SET_ID --distance 5k --name "Race" --year 2026` | Public `get-results` JSON. Sets with `public_results=F` are skipped. |
 
 Each successful import writes `packages/rankings/imports/<slug>.jsonl` and `<slug>.import.sql`. Those files are gitignored because they are full fields. Apply them with `RANKINGS_DATABASE_URL='postgresql://...' pnpm rankings:ingest` after they exist, or `psql "$RANKINGS_DATABASE_URL" -f packages/rankings/imports/<slug>.import.sql`. The anon key cannot write this ledger.
 
@@ -23,3 +23,7 @@ Each successful import writes `packages/rankings/imports/<slug>.jsonl` and `<slu
 Readable public lists, copied in the latest run: Boston Marathon 2025 (28,404), London Marathon 2025 mass (55,226), Berlin Marathon 2025 runners (48,345), Chicago Marathon 2025 (54,109), Generali Berlin 5K 2025 (9,168), plus the OpenTrack 10 km fixture (44). Chicago's public page listed 54,315. The extra sex filter repeated people already stored, so that pass stopped.
 
 Not ingested: New York City Marathon (script shell, no list in the HTML), Tokyo Marathon (timing host not found), Sydney Marathon (host name did not resolve). No half marathon list was on those pages. The latest counts are in [ingestion-trial.json](ingestion-trial.json).
+
+## RunSignup completeness and source suppression
+
+Select an explicit public result set using the provider get-result-sets endpoint, then pass `--result-set`. Paging uses raw provider row counts, before youth/private/unparsed exclusions. Repeated pages and the page ceiling fail before writing import output; no truncated success is emitted. Non-binary category support is requested explicitly. A reimport can no longer reverse a source display suppression; restoring approval requires a separate source decision. Existing import SQL files need regeneration to use this behavior. No live imports were run for this change.
