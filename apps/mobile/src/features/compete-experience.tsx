@@ -1,9 +1,9 @@
 import { createContext, useContext, type ReactNode } from "react";
-import type { SportId } from "@fitness-battle/shared";
+import type { CompeteEvent } from "@fitness-battle/shared";
 export type CompeteExperience = {
-  event: { account: string; sport: SportId } | null;
+  event: { account: string; sport: CompeteEvent } | null;
   immersive: boolean;
-  enter(account: string, sport: SportId): void;
+  enter(account: string, sport: CompeteEvent): void;
   close(): void;
 
 };

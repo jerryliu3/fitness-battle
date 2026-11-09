@@ -91,7 +91,7 @@ const f=useFocusStyles();
   const now = state ? competeNow(state) : new Date();
   const queue = state ? competitionQueue(state, sport, now) : null;
   const queued = Boolean(queue && (queue.queued || queue.awaitingField));
-  const queueOverlay = queued && state ? <QueuedField overlay state={state} event={sport} now={now} onCancel={() => dispatch({ type: "opt-out", sport })} /> : null;
+  const queueOverlay = queued && state && !backgroundMode ? <QueuedField overlay state={state} event={sport} now={now} onCancel={() => dispatch({ type: "opt-out", sport })} /> : null;
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = (presentationActive ?? true) && shellTabFromPath(pathname)?.id === "arena";
@@ -154,7 +154,7 @@ const f=useFocusStyles();
     [state, track, sport],
   );
   const period = state ? competePeriodWindow(state, competeNow(state), sport) : null;
-  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(sport, period?.startsAt.toISOString() ?? "", period?.endsAt.toISOString() ?? "", debugActive, !standingsOnly && !queued && sceneDimension === "4d" && (persistent || isFocused));
+  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(sport, period?.startsAt.toISOString() ?? "", period?.endsAt.toISOString() ?? "", debugActive, !standingsOnly && sceneDimension === "4d" && (persistent || isFocused));
   useEffect(() => setCourseTarget(null), [accountKey, sport, period?.startsAt.getTime(), liveArena?.unit]);
   const sharedTimeline = useCompetitionTimeline();
   const localTimeline = useFieldTimeline(!backgroundMode && !standingsOnly ? state ?? undefined : undefined, {

@@ -1,8 +1,8 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { freshState, reduceCompete, type CompeteState } from "@fitness-battle/shared";
-const mock = vi.hoisted(() => ({ state: null as CompeteState | null, dispatch: vi.fn(), close: vi.fn(), enter: vi.fn() }));
+import { freshState, reduceCompete, type CompeteState, type CompeteEvent } from "@fitness-battle/shared";
+const mock = vi.hoisted(() => ({ state: null as CompeteState | null, dispatch: vi.fn(), close: vi.fn(), enter: vi.fn(), immersive: false, event: "walking" as CompeteEvent }));
 vi.mock("react-native", () => ({ Platform: { OS: "ios" }, StyleSheet: { create: (s: unknown) => s }, View: "View", Text: "Text", Pressable: "Pressable", ScrollView: "ScrollView", BackHandler: { addEventListener: () => ({ remove() {} }) } }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView", useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }));
 vi.mock("expo-router", () => ({ useGlobalSearchParams: () => ({}), usePathname: () => "/arena", useRouter: () => ({ navigate: vi.fn(), push: vi.fn() }) }));
@@ -17,9 +17,9 @@ vi.mock("../ui/compete-sheet", () => ({ CompeteSheet: "CompeteSheet" }));
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [] }) }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "alice" } }) }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: mock.state, accountKey: "alice", dispatch: mock.dispatch }) }));
-vi.mock("./compete-experience", () => ({ useCompeteExperience: () => ({ event: { account: "alice", sport: "walking" }, immersive: true, close: mock.close, enter: mock.enter }) }));
+vi.mock("./compete-experience", () => ({ useCompeteExperience: () => ({ event: { account: "alice", sport: mock.event }, immersive: mock.immersive, close: mock.close, enter: mock.enter }) }));
 vi.mock("./competition-field", () => ({ CompetitionField: () => null }));
-vi.mock("./event-home", () => ({ EventHome: "EventHome" }));
+vi.mock("./event-home", () => ({ EventHome: "EventHome", CoursePreview: "CoursePreview" }));
 vi.mock("./event-registration", () => ({ EventRegistration: "EventRegistration" }));
 vi.mock("./compete-home-sections", () => ({ CompeteIcon: "CompeteIcon", CrewEvents: "CrewEvents", ExploreEvents: "ExploreEvents", CompeteResults: "CompeteResults" }));
 vi.mock("./round-takeover", () => ({ RoundTakeover: () => null }));
@@ -30,6 +30,8 @@ import { ArenaScreen } from "../../app/(tabs)/arena";
 let renderer: ReactTestRenderer;
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mock.immersive = false;
+  mock.event = "walking";
   mock.state = freshState(new Date("2026-11-08T12:00:00Z"));
   mock.state.demoNow = "2026-11-08T12:00:00Z";
   mock.state.onboardingCompleted = true;
@@ -45,13 +47,18 @@ it("opens the chosen sport package without registering until entry is claimed", 
   await act(async () => { entry.props.onClaim(); entry.props.onClaim(); });
   expect(mock.dispatch.mock.calls.map(([action]) => action.type)).toEqual(["set-primary", "opt-in"]);
   expect(mock.dispatch).toHaveBeenLastCalledWith(expect.objectContaining({ sport: "walking", crewBoard: null, accountId: "alice" }));
+  expect(renderer.root.findByType("FocusSheet" as never).props.open).toBe(true);
+  await act(async () => entry.props.onView());
+  expect(mock.enter).not.toHaveBeenCalled();
+  await act(async () => renderer.root.findByType("FocusSheet" as never).props.onClosed());
+  expect(mock.enter).toHaveBeenCalledWith("alice", "walking");
 });
-it("shows queued walking details and cancellation in the foreground sheet even when the renderer has no field", async () => {
+it("opens queued walking on its course with cancellation in the standings sheet", async () => {
+  mock.immersive = true;
   mock.state = reduceCompete(mock.state!, { type: "opt-in", sport: "walking" });
   await act(async () => { renderer = create(createElement(ArenaScreen, { persistent: true })); });
-  const sheet = renderer.root.findByType("CompeteSheet" as never);
-  expect(sheet.props.active).toBe(true);
-  const cancel = sheet.findAllByType("FocusButton" as never).find(node => node.props.label === "Cancel registration");
+  expect(renderer.root.findAllByType("CompeteSheet" as never)).toHaveLength(1);
+  const cancel = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "Cancel registration");
   expect(cancel).toBeTruthy();
   await act(async () => cancel!.props.onPress());
   expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-out", sport: "walking" });
@@ -64,4 +71,34 @@ it("opens an existing event from Explore without opening registration", async ()
   expect(mock.enter).toHaveBeenCalledWith("alice", "walking");
   expect(renderer.root.findByType("FocusSheet" as never).props.open).toBe(false);
   expect(mock.dispatch).not.toHaveBeenCalled();
+});
+
+it("keeps queued cancellation off the event home", async () => {
+  mock.state = reduceCompete(mock.state!, { type: "opt-in", sport: "walking" });
+  await act(async () => { renderer = create(createElement(ArenaScreen)); });
+  expect(renderer.root.findAllByType("FocusButton" as never).some(node => node.props.label === "Cancel registration")).toBe(false);
+  await act(async () => renderer.root.findByType("EventHome" as never).props.onEnter("alice", "walking"));
+  expect(mock.enter).toHaveBeenCalledWith("alice", "walking");
+});
+it("opens queued Recovery as a destination and cancels its health registration", async () => {
+  mock.event = "sleep";
+  mock.immersive = true;
+  mock.state = reduceCompete(mock.state!, { type: "opt-in-health", metric: "sleep" });
+  await act(async () => { renderer = create(createElement(ArenaScreen, { persistent: true })); });
+  expect(mock.close).not.toHaveBeenCalled();
+  expect(renderer.root.findAllByType("CompeteSheet" as never)).toHaveLength(0);
+  const cancel = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "Cancel registration");
+  await act(async () => cancel!.props.onPress());
+  expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-out-health", metric: "sleep" });
+  expect(mock.close).toHaveBeenCalled();
+});
+it("keeps the waiting-for-field destination open after the start without cancellation", async () => {
+  mock.immersive = true;
+  mock.state = reduceCompete(mock.state!, { type: "opt-in", sport: "walking" });
+  mock.state.enrollments[0]!.waveStart = "2026-11-08T11:00:00Z";
+  mock.state.enrollments[0]!.awaitingField = true;
+  await act(async () => { renderer = create(createElement(ArenaScreen, { persistent: true })); });
+  expect(renderer.root.findAllByType("CompeteSheet" as never)).toHaveLength(1);
+  expect(renderer.root.findAllByType("FocusButton" as never).some(node => node.props.label === "Cancel registration")).toBe(false);
+  expect(mock.close).not.toHaveBeenCalled();
 });

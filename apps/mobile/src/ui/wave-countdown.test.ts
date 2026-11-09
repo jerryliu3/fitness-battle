@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
+vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: () => ({ remove() {} }) } }));
 vi.mock("./section", () => ({ AppText: "AppText" }));
 import { WaveCountdown, waveCountdown } from "./wave-countdown";
 
@@ -16,7 +17,7 @@ it("ticks each second and clears its timer on unmount", async () => {
   vi.setSystemTime(now);
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(WaveCountdown, { start: "2026-10-30T10:00:00Z", now })); });
-  const reading = () => r.root.findByType("AppText" as never).props.children.join("");
+  const reading = () => r.root.findByType("AppText" as never).props.children;
   expect(reading()).toBe("01:00:00 remaining");
   await act(async () => { vi.advanceTimersByTime(1000); });
   expect(reading()).toBe("00:59:59 remaining");

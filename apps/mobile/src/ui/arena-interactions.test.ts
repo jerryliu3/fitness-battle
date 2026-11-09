@@ -158,6 +158,7 @@ vi.mock("./field-course", async () => {
     FieldOverview: (props: object) => createElement("FieldOverview", props),
   };
 });
+vi.mock("../features/event-registration", () => ({ EventRegistration: "EventRegistration" }));
 import { CompeteExperienceProvider } from "../features/compete-experience";
 import { ArenaScreen } from "../../app/(tabs)/arena";
 let renderer: ReactTestRenderer;
@@ -204,7 +205,7 @@ it("opens registration from the event home without entering a field", async () =
   await act(async () => { renderer = create(createElement(ArenaScreen)); });
   const register = renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Explore walking")!;
   await act(async () => register.props.onPress());
-  expect(renderer.root.findAllByType("Sheet" as never).some(node => node.props.title === "Weekly Walking Meet" && node.props.open)).toBe(true);
+  expect(renderer.root.findAllByType("Sheet" as never).some(node => node.props.title === "Walking Registration" && node.props.open)).toBe(true);
   expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(0);
 });
 

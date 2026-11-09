@@ -1,12 +1,20 @@
 import { APP_TIMEZONE, weeklyCompetitionLastDay } from "./period";
 import { nextDailyWaveWindowAt } from "./matching/waves";
-import { waveTimeLabel } from "./compete/participation";
+import { competitionQueue, waveTimeLabel } from "./compete/participation";
 import { rankForElo } from "./compete/ranks";
 import { ELO_UNRANKED, competitionTrack, competitionTrackLabel, sportById, type CompeteState } from "./compete/sports";
 import type { CompeteEvent } from "./compete-home";
 
+export function waveCountdown(start: string, now: number) {
+  const seconds = Math.max(0, Math.ceil((Date.parse(start) - now) / 1000));
+  return [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60]
+    .map(value => String(value).padStart(2, "0")).join(":");
+}
+
 export function eventRegistration(state: CompeteState, event: CompeteEvent, now: Date) {
-  const window = nextDailyWaveWindowAt(now);
+  const queue = competitionQueue(state, event, now);
+  const next = nextDailyWaveWindowAt(now);
+  const window = queue ? { waveStart: new Date(queue.start), weekEnd: new Date(queue.end) } : next;
   const sleep = event === "sleep";
   const name = sleep ? "Sleep" : sportById(event).name;
   const verified = !sleep && competitionTrack(event) === "verified";
@@ -18,7 +26,10 @@ export function eventRegistration(state: CompeteState, event: CompeteEvent, now:
   const dateRange = firstDay === lastDay ? firstDay : `${firstDay} – ${lastDay}`;
   return {
     name, title: `Weekly ${name} Meet`, dateRange,
-    starts: waveTimeLabel(window.waveStart), ends: waveTimeLabel(window.weekEnd),
+    start: window.waveStart.toISOString(),
+    stampYear: window.waveStart.toLocaleDateString("en-US", { timeZone: APP_TIMEZONE, year: "numeric" }),
+    headline: sleep ? "Rest up. Rise up." : event === "strength" ? "Make every rep matter." : "Your next start line.",
+    starts: waveTimeLabel(window.waveStart), ends: waveTimeLabel(new Date(window.weekEnd.getTime() - 60_000)),
     description: sleep ? "Make rest part of your competition. Your counted sleep nights build a score from sleep quality and consistency." : event === "strength" ? "Build your week through strength training. Counted session time and recorded heart rate contribute effort points." : `Build your total ${name.toLowerCase()} distance throughout the wave and climb your matched field.`,
     details: [
       { title: "How scoring works", summary: sleep ? "Sleep quality & consistency" : event === "strength" ? "Training effort points" : "Total distance", detail: sleep ? "The field ranks your average nightly sleep score, adjusted for how many eligible nights you log. Missing nights reduce the contest score; more hours alone do not guarantee a higher score." : event === "strength" ? "Time in training earns effort points. Recorded heart rate can add a small bonus. Lift weights and rep totals are not scored." : "Your exact counted distance determines place. Equal totals share a place; rounded display values do not create ties." },
@@ -28,4 +39,20 @@ export function eventRegistration(state: CompeteState, event: CompeteEvent, now:
     ],
     renewal: "Starts at zero. Renews into the Monday 6 AM ET wave. Cancel before your wave starts, or turn off renewal during the week.",
   };
+}
+
+export function registrationDetailCards(detail: ReturnType<typeof eventRegistration>) {
+  const [scoring, , tier, eligibility] = detail.details;
+  return [
+    { title: "Scoring & eligibility", summary: scoring!.summary, detail: `${scoring!.detail} ${eligibility!.detail}` },
+    { title: "Schedule & renewal", summary: `Ends ${detail.ends}`, detail: detail.renewal },
+    tier!,
+  ];
+}
+
+/** Decorative ticket bars; never an entitlement or scannable credential. */
+export function entryBarcode(seed: string) {
+  let value = 2166136261;
+  for (const char of seed) value = Math.imul(value ^ char.charCodeAt(0), 16777619);
+  return Array.from({ length: 60 }, () => { value ^= value << 13; value ^= value >>> 17; value ^= value << 5; return 1 + ((value >>> 0) % 4); });
 }

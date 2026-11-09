@@ -11,6 +11,7 @@ export function Sheet({
   title,
   body,
   onClose,
+  onClosed,
   children,
   preventAutoFocus = true,
   returnFocusTo,
@@ -23,6 +24,8 @@ export function Sheet({
   title: string;
   body: string;
   onClose: () => void;
+  /** Present a follow-on dialog only after this one has finished dismissing. */
+  onClosed?: () => void;
   children?: ReactNode;
   minimal?: boolean;
   hideTitle?: boolean;
@@ -51,7 +54,7 @@ export function Sheet({
       <Dialog.Portal forceMount>
         <AnimatePresence
           onExitComplete={() => {
-            /* focus return handled by Radix */
+            onClosed?.();
           }}
         >
           {open ? (

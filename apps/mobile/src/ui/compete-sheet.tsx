@@ -8,7 +8,7 @@ const FlipLayer = createContext<(flipping: boolean) => void>(() => {});
 export const useCompeteFlipLayer = () => useContext(FlipLayer);
 
 /** Moving the sheet changes coverage without resizing the retained field. */
-export function CompeteSheet({ children, expandRequest, active, overview }: { children: ReactNode; expandRequest: number; active: boolean; overview?: ReactNode }) {
+export function CompeteSheet({ children, expandRequest, active, overview, scrollable = true }: { children: ReactNode; expandRequest: number; active: boolean; overview?: ReactNode; scrollable?: boolean }) {
   const [flipping, setFlipping] = useState(false);
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -52,6 +52,6 @@ export function CompeteSheet({ children, expandRequest, active, overview }: { ch
 
     <View {...pan.panHandlers} accessible accessibilityRole="adjustable" accessibilityLabel="Competition sheet height" accessibilityValue={{ text: ["Minimized", "Partially expanded", "Fully expanded"][index] }} accessibilityActions={[{ name: "increment", label: "Expand" }, { name: "decrement", label: "Minimize" }]} onAccessibilityAction={event => snap(Math.max(0, Math.min(2, index + (event.nativeEvent.actionName === "increment" ? 1 : -1))))} style={{ height: 44, alignItems: "center", justifyContent: "center" }}><View style={{ width: 40, height: 4, borderRadius: 4, backgroundColor: c.muted }} /></View>
     {overview && <View onLayout={event => setControlsHeight(Math.ceil(event.nativeEvent.layout.height))} style={{ paddingHorizontal: 16, paddingBottom: 8 }}>{overview}</View>}
-    <ScrollView removeClippedSubviews={false} style={{ height: maximum - headingHeight, flexGrow: 0, overflow: flipping ? "visible" : "hidden", zIndex: flipping ? 1 : 0 }} nestedScrollEnabled scrollEnabled={index !== 0 && !flipping} accessibilityElementsHidden={index === 0} contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: Math.max(0, maximum - visibleHeight) + insets.bottom + 32 }}><FlipLayer.Provider value={setFlipping}>{children}</FlipLayer.Provider></ScrollView>
+    <ScrollView removeClippedSubviews={false} style={{ height: maximum - headingHeight, flexGrow: 0, overflow: flipping ? "visible" : "hidden", zIndex: flipping ? 1 : 0 }} nestedScrollEnabled scrollEnabled={scrollable && index !== 0 && !flipping} accessibilityElementsHidden={index === 0} contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: Math.max(0, maximum - visibleHeight) + insets.bottom + 32 }}><FlipLayer.Provider value={setFlipping}>{children}</FlipLayer.Provider></ScrollView>
   </Animated.View>;
 }

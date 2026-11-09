@@ -33,3 +33,21 @@ Sleep/Recovery follows the same queue and renewal schedule through its existing 
 Apply `20261028210909_daily_competition_waves.sql`, `20261028231429_daily_wave_review_fixes.sql` and `20261029001132_competition_score_authority.sql` in order with the server and clients. The web/API environment now requires server-only `SUPABASE_SERVICE_ROLE_KEY` for ordinary score commits; it must never enter the client bundle. Older clients cannot bypass queue or cancellation restrictions; their immediate-registration UI should be upgraded with the server. No production deployment is performed by this change. See the [local verification](reviews/daily-waves/local-verification.md) and [code review](reviews/daily-waves/code-review.md).
 
 Coverage includes timezone cutoffs, spring/fall DST, Sunday rollover, queued scoring/identity suppression, cancellation, renewal, canonical roster failures, shared field identity, rating matching, generated fillers, stale renewal cancellation, Crew departure/deletion, and public/private database privileges. SQL fixtures run in a rollback transaction against the migrated schema. Existing TypeScript scoring, replay, provider lifecycle and interface tests exercise active fixtures registered before their benchmark.
+
+## Course access before field assignment
+
+The course API validates the authenticated athlete's saved sport/start/end
+registration using the existing owner-readable enrollment table. Course access
+is independent of roster finalization. The server reads the existing frozen
+`weekly_race_routes` snapshot, or chooses from the active catalog using the same
+rotation as the legacy RPC and inserts a snapshot without overwriting a winner.
+It always rereads the persisted snapshot after a competing insert. Catalog edits
+cannot replace saved geometry, and queued previews and started fields share the
+same course. No enrollment, field membership, scoring or roster is written here.
+
+Archived courses without a current enrollment retain the existing
+`competition_route` membership check. The server-only competition authority key
+(already required for account saves) accesses the catalog and snapshots only
+after registration authorization. Client table grants and RLS are unchanged.
+The queued-preview migration was removed from the PR before deployment; this
+flow requires no new schema or migration.

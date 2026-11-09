@@ -1013,3 +1013,59 @@ Ties do not claim an outright overtake. Flip faces swap edge-on after committing
 the incoming layout, respecting reduced motion. The overlay title is always
 “Current Leaders” with the shared label typography. Product and debug builds
 use the same user-facing copy, preserving provenance internally.
+
+### Registration ticket — November 8
+
+Registration retains its event introduction, schedule and expandable event details.
+Only the ticket beneath those sections is redesigned. Claiming retains
+that screen, flips the ticket to “You’re on the start list”, then lands a stamp
+with the event icon, name, wave dates and year. The reverse has a live countdown
+and an explicit View upcoming race action; dates derive from the actual enrollment
+once registered, including server-rebased starts. Keep the ticket composition
+consistent across events; its art and stamp identify the event/week. Reduced
+Motion reveals the final state immediately. Renewal and end-time information
+live in expandable Schedule & renewal details, rather than below the CTA.
+
+Queued events open from See race into a full-height upcoming-event destination,
+with Back, the start countdown, exact start/end times and Cancel registration.
+Cancellation is absent from Compete home and from the live standings sheet.
+The same navigation applies to Recovery. Keep cancellation limited to the queue;
+a started wave waiting on its field reveals a waiting state without cancellation.
+When its field arrives, the selected sport continues into the existing live field.
+Native uses the retained experience host; web reuses the full-screen dialog with
+its focus, Escape and Back behavior. No roster, scoring or registration-write
+rules change.
+
+The November 9 refinement removes the registration Crew toggle and promotional
+ticket slogans. The ticket carries the event, start time, barcode and claim action;
+its reverse carries the confirmation, countdown and sport/week stamp. Queued
+distance previews show the assigned GPS course with anonymous mystery markers
+at zero, both on Compete home and inside the upcoming event. The course API
+authorizes the athlete’s exact saved registration independently of field
+assignment. It reveals no roster and does not seat athletes. No queued-preview
+migration or schema change is required.
+
+Registration is now a three-step bottom sheet: Event (including anonymous field
+placeholders), Details (Scoring & eligibility, Matched field, Entry tier), Ticket.
+Only one detail expands at a time. Claiming flips and stamps the ticket, then
+automatically dismisses registration and enters the full-screen selected field.
+Queued sports use the same course host as live races, with mystery athletes at
+zero and cancellation in the foreground standings sheet. Recovery retains its
+full-height surface. This supersedes the separate queued-sport destination.
+
+The registration polish retains one viewport-relative sheet height for all steps,
+with no progress row, date range or backward step action. Continue fills the row
+on steps one and two; the ticket owns the only primary action on step three.
+Details are Scoring & eligibility, Schedule & renewal and Entry tier. The ticket
+includes the entry league and a full-width decorative barcode. Claiming starts
+a continuous two-face flip, then a firm stamp, and stays open on the countdown;
+only explicit View race enters the event. Respect Reduced Motion. Queued field
+sheets have no scrolling body: changing the sheet height reveals cancellation.
+Mystery athletes appear on the map only, not in the queued text card.
+
+Registration sizing uses a shared minimum across steps, reserving the measured
+height of both ticket faces before step three opens. Expanded details contribute
+to that reservation. Content remains in normal flow so Continue cannot overlap
+longer text. On compact screens or with larger accessibility text, the outer
+sheet's existing scrolling remains an accessibility fallback; ticket content is
+never clipped or scaled down. Hidden ticket measurement does not run a countdown.

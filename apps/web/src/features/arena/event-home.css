@@ -52,10 +52,8 @@
 .registration-details summary{cursor:pointer;display:flex;align-items:center;gap:12px;min-height:44px;list-style:none}
 .registration-details summary::-webkit-details-marker{display:none}
 .registration-details summary>svg{color:var(--app-podium-gold);flex:none}
-.registration-details summary>span:first-of-type{flex:1;display:grid;gap:4px}
+.registration-details summary>.registration-detail-icon+span{flex:1;display:grid;gap:4px}
 .registration-details p{margin:12px 0 0}
-.registration-pass{position:relative;isolation:isolate;display:grid;gap:12px;padding:20px;border-radius:24px;background:var(--action-soft);overflow:hidden;border:1px solid var(--line)}
-.registration-pass>div{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .registration-barcode{display:block;width:60px;height:22px;background:repeating-linear-gradient(90deg,var(--app-podium-gold) 0 3px,transparent 3px 6px,var(--app-podium-gold) 6px 8px,transparent 8px 11px)}
 .race-updates{display:grid;gap:14px;margin-top:24px}
 .race-updates ol{list-style:none;padding:0;margin:0;border-radius:20px;background:var(--card);overflow:hidden}
@@ -66,15 +64,9 @@
 .race-updates time{font:var(--type-caption);color:var(--muted)}
 
 
-.registration-hero{position:relative;isolation:isolate;overflow:hidden;display:grid;gap:16px;padding:20px;background:var(--action-soft);border-radius:24px}
-.registration-sport{display:flex;align-items:center;gap:8px;justify-self:start;padding:8px 12px;border-radius:99px;background:var(--card)}
 .registration-detail-icon{width:48px;height:48px;flex:none;display:grid;place-items:center;border-radius:14px;background:var(--action-soft);color:var(--app-podium-gold)}
 .registration-details details:nth-child(2) .registration-detail-icon{background:var(--accent-soft)}
-.registration-pass{min-height:200px;padding:24px;gap:16px;background:var(--accent-soft)}
-.registration-pass:before,.registration-pass:after{content:"";position:absolute;top:100px;width:30px;height:30px;border-radius:50%;background:var(--card)}
-.registration-pass:before{left:-15px}.registration-pass:after{right:-15px}
 
-.event-registration .registration-hero,.event-registration .registration-pass,.event-registration .registration-detail-icon{background:color-mix(in srgb,var(--registration-color) 20%,var(--card))}
 .event-registration .registration-detail-icon{color:var(--ink)}
 .event-registration .registration-barcode{background:repeating-linear-gradient(90deg,var(--ink) 0 3px,transparent 3px 6px,var(--ink) 6px 8px,transparent 8px 11px)}
 
@@ -94,4 +86,37 @@
 .competition-panel>.compete-section-heading>button{display:inline-flex;align-items:center;gap:8px}
 
 .compete-field-options{position:fixed;top:calc(env(safe-area-inset-top,0px) + 54px);right:16px;z-index:60}
-.compete-queued-back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:12px;z-index:60}
+
+/* Entry stays on one ticket: claim, flip, then the event/week stamp lands. */
+.registration-ticket-scene{perspective:1200px}
+.registration-ticket{display:grid;transform-style:preserve-3d;transition:transform 560ms cubic-bezier(.2,.7,.2,1)}
+.registration-ticket[data-claimed="true"]{transform:rotateY(180deg)}
+.registration-face{grid-area:1/1;backface-visibility:hidden;border-radius:24px;overflow:hidden;background:color-mix(in srgb,var(--registration-color) 20%,var(--card));min-width:0}
+.registration-back{transform:rotateY(180deg)}
+.registration-ticket-art{position:relative;isolation:isolate;overflow:hidden;display:grid;align-content:space-between;gap:20px;min-height:90px;padding:24px;background:var(--ink);color:var(--paper)}
+.registration-ticket-art>.ui-text{color:inherit}
+.registration-ticket-art>.compete-art{z-index:-1;opacity:.65}
+.registration-ticket-art>svg:not(.compete-art){color:var(--app-podium-gold)}
+.registration-ticket-body{display:grid;align-content:start;gap:18px;padding:24px}
+.registration-ticket-body>p{margin:0}
+.registration-ticket-countdown{display:grid;gap:6px;font-variant-numeric:tabular-nums}
+.registration-entry-stamp{display:flex;align-items:center;gap:10px;justify-self:start;max-width:100%;padding:12px;border:2px solid var(--ink);border-radius:10px;color:var(--ink);transform:rotate(-5deg)}
+.registration-entry-stamp>div{display:grid;gap:4px;min-width:0}
+.registration-entry-stamp>svg{flex:none}
+.registration-ticket[data-claimed="true"] .registration-entry-stamp{animation:registration-stamp 180ms 660ms both}
+.registration-ticket-stub{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px dashed var(--muted);padding-top:18px}
+.registration-ticket-stub .registration-barcode{flex:none}
+@keyframes registration-stamp{0%{opacity:0;transform:rotate(-5deg) scale(1.5)}65%{opacity:1;transform:rotate(-5deg) scale(1)}100%{opacity:1;transform:rotate(-5deg) scale(1)}}
+@media(prefers-reduced-motion:reduce){.registration-ticket{transition:none}.registration-ticket[data-claimed="true"] .registration-entry-stamp{animation:none}}
+
+.registration-hero{position:relative;isolation:isolate;overflow:hidden;display:grid;gap:12px;padding:20px;border-radius:24px;background:color-mix(in srgb,var(--registration-color) 20%,var(--card))}
+.registration-mysteries{display:flex;flex-wrap:wrap;gap:8px}.registration-mysteries>span{display:grid;place-items:center;min-width:32px;height:32px;border-radius:50%;background:var(--soft);font:var(--type-caption)}
+.registration-step-actions{display:flex;justify-content:space-between;gap:12px}.registration-step-actions>button{flex:1}
+.event-registration{min-height:min(540px,65dvh);grid-template-rows:1fr auto;align-content:start}
+.event-registration>.registration-step{align-self:start;width:100%}
+
+.registration-mysteries>span{animation:registration-person-in 220ms ease-out both}
+.registration-ticket-stub .registration-barcode{display:flex;width:100%;height:28px;background:none;gap:2px}
+.registration-barcode>i{display:block;background:var(--ink);height:100%}
+@keyframes registration-person-in{from{opacity:0;transform:translateY(6px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){.registration-step,.registration-mysteries>span{animation:none}}
