@@ -1040,10 +1040,10 @@ The November 9 refinement removes the registration Crew toggle and promotional
 ticket slogans. The ticket carries the event, start time, barcode and claim action;
 its reverse carries the confirmation, countdown and sport/week stamp. Queued
 distance previews show the assigned GPS course with anonymous mystery markers
-at zero, both on Compete home and inside the upcoming event. Apply
-`20261109000100_queued_course_preview.sql` to permit an athlete to preview only
-the exact bounds of their own queued registration. This reveals no roster and
-does not seat athletes. No production migration was executed.
+at zero, both on Compete home and inside the upcoming event. The course API
+authorizes the athlete’s exact saved registration independently of field
+assignment. It reveals no roster and does not seat athletes. No queued-preview
+migration or schema change is required.
 
 Registration is now a three-step bottom sheet: Event (including anonymous field
 placeholders), Details (Scoring & eligibility, Matched field, Entry tier), Ticket.
