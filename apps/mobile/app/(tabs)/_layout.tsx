@@ -19,6 +19,7 @@ export default function TabLayout() {
   const { mode } = useAppTheme();
   const SHELL_COLORS = useThemeColors();
   const pathname = usePathname();
+  const isHome = pathname === "/" || pathname === "/today" || pathname.endsWith("/today");
   const compete = pathname.endsWith("/arena");
   const [event, setEvent] = useState<{ account: string; sport: CompeteEvent } | null>(null);
   const [immersive, setImmersive] = useState(false);
@@ -33,7 +34,7 @@ export default function TabLayout() {
   const { pending, required } = useOnboardingRequired();
   if (pending) return <View style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }} />;
   if (required) return <Redirect href="/onboarding" />;
-  if (Platform.OS === "ios") return <CompeteExperienceProvider value={experience}><View style={{ flex: 1 }}><View style={{ flex: 1 }} accessibilityElementsHidden={experience.immersive} importantForAccessibility={experience.immersive ? "no-hide-descendants" : "auto"}><AppHeader />
+  if (Platform.OS === "ios") return <CompeteExperienceProvider value={experience}><View style={{ flex: 1 }}><View style={{ flex: 1 }} accessibilityElementsHidden={experience.immersive} importantForAccessibility={experience.immersive ? "no-hide-descendants" : "auto"}>{isHome && <AppHeader />}
     <NativeTabs tintColor={SHELL_COLORS.ink} blurEffect={mode === "dark" ? "systemUltraThinMaterialDark" : "systemUltraThinMaterialLight"} backgroundColor={SHELL_COLORS.surfaceNavigation} disableTransparentOnScrollEdge>
       <NativeTabs.Trigger name="today" accessibilityLabel="Home"><NativeTabs.Trigger.Icon src={require("../../assets/icons/phosphor/home.png")} renderingMode="template" /><NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="arena" accessibilityLabel="Compete"><NativeTabs.Trigger.Icon src={require("../../assets/icons/phosphor/compete.png")} renderingMode="template" /><NativeTabs.Trigger.Label>Compete</NativeTabs.Trigger.Label></NativeTabs.Trigger>
@@ -42,7 +43,7 @@ export default function TabLayout() {
     </NativeTabs></View>{host}
   </View></CompeteExperienceProvider>;
   return (
-    <CompeteExperienceProvider value={experience}><View style={{ flex: 1 }}><View style={{ flex: 1 }} accessibilityElementsHidden={experience.immersive} importantForAccessibility={experience.immersive ? "no-hide-descendants" : "auto"}><AppHeader /><Tabs
+    <CompeteExperienceProvider value={experience}><View style={{ flex: 1 }}><View style={{ flex: 1 }} accessibilityElementsHidden={experience.immersive} importantForAccessibility={experience.immersive ? "no-hide-descendants" : "auto"}>{isHome && <AppHeader />}<Tabs
       tabBar={(props) => <PhoneTabBar {...props} />}
       screenOptions={{
         headerShown: false,

@@ -120,7 +120,7 @@ const f=useFocusStyles();
 
   return (
     <CompetitionTimelineProvider state={state} selection={{ sport: selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary, track, periodStart: headerPeriod.startsAt.toISOString(), periodEnd: headerPeriod.endsAt.toISOString() }} enabled={persistent && Boolean(selectedSport) && selectedSport !== "sleep" && !queued} active={focused && experience.immersive && !detailDestination}>
-    <SafeAreaView pointerEvents={persistent ? "box-none" : "auto"} style={[f.safe, persistent && { backgroundColor: "transparent" }]} edges={[]}>
+    <SafeAreaView pointerEvents={persistent ? "box-none" : "auto"} style={[f.safe, persistent && { backgroundColor: "transparent" }]} edges={persistent ? [] : ["top"]}>
       {persistent && selectedSport && selectedSport !== "sleep" ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}`} sport={selectedSport} track={track} persistent backgroundMode externalAthleteFocus={athleteFocus} onOptionsChange={setCourseOptions} presentationActive={experience.immersive} onExit={exit} /> : null}
       {persistent && experience.immersive && selectedSport && detailDestination && <SafeAreaView style={{ position: "absolute", inset: 0, backgroundColor: c.paper, zIndex: 40 }} edges={["top", "bottom"]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingHorizontal: 16, paddingVertical: 8 }}><MaterialBack onPress={exit} /><AppText role="heading" accessibilityRole="header">{selectedSport === "sleep" ? "Recovery" : `${SPORTS.find(item => item.id === selectedSport)?.name} meet`}</AppText></View>

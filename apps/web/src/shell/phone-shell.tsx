@@ -179,7 +179,7 @@ export function PhoneShell({
     <ShellBootReadiness />
     <div className="phone-frame">
       <div className="phone-shell">
-        {!onAthlete && productPath !== "/week" && !progressDetail && <header className="focus-shell-header">
+        {!onAthlete && productPath !== "/week" && !progressDetail && active === "today" && <header className="focus-shell-header">
           <div className="club-header-effort"><EffortRail compact /></div>
           {streak && <span className={`club-week-streak${streak.activeToday ? " is-active" : ""}`} aria-label={`${streak.count} week activity streak${streak.activeToday ? ", active today" : ", inactive today"}`}><svg width="18" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d={APP_ICON_PATHS[streak.activeToday ? "flameFilled" : "flame"]} fill="currentColor" /></svg><b>{streak.count}</b></span>}
           {process.env.NODE_ENV === "development" && <DebugEventMenu activeTab={active} onNavigate={navigateDebugTarget} />}

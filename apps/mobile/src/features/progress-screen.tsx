@@ -25,7 +25,7 @@ const f=useFocusStyles();
   useEffect(()=>{if(params.view==="effort")setSection("effort");},[params.view]);
   if (!state) return null;
   return (
-    <SafeAreaView style={f.safe} edges={[]}>
+    <SafeAreaView style={f.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={f.content}>
 <SectionStack divided={false}>
         <FocusSegments variant="tabs" label="Progress view" value={section} options={[{value:"overview",label:"Overview"},{value:"effort",label:"Effort score"}]} onChange={setSection}/>
