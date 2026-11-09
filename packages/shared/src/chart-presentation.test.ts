@@ -17,7 +17,7 @@ it("preserves this week's counted totals and stops the line at today", () => {
   expect(model.value).toBe(weeklyHoursComparison(state, now).currTotalHours.toFixed(1));
   expect(model.points.map(point => point.id)).toEqual([expect.stringContaining("start:"), "current", expect.stringContaining("end:")]);
   expect(model.points.at(-1)?.label).toContain("Oct 22");
-  expect(model.previous.split(" ")).toHaveLength(5);
+  expect(model.previous.split(" ")).toHaveLength(3);
   expect(model.points.at(-1)!.x).toBeLessThan(336);
   expect(model.line).not.toMatch(/NaN|Infinity/);
 });

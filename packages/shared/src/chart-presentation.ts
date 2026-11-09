@@ -126,7 +126,7 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
     };
     const end = shiftAppDay(start, 7);
     return openLineModel(now < start ? [] : events(start, new Date(Math.min(now.getTime(), end.getTime()))), value => value.toFixed(1), [], 7, {
-      start, end, step: true, showTime: true,
+      start, end, showTime: true,
       previousRows: events(previousStart, start), previousStart,
     });
   }
