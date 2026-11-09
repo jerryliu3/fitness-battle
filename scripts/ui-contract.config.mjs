@@ -13,12 +13,19 @@ const roots = [
   "apps/web/src/app/app", "apps/web/src/app/(auth)", "apps/web/src/app/(legal)",
 ];
 // Artwork and historical design studies are not product typography.
+// The owner-approved Crest is a scalable printed card: its container-relative
+// lettering follows the card geometry. Keep this exception limited to its face;
+// surrounding product chrome and native hosts remain covered by the contract.
+const athleteCardArtwork = new Set([
+  "apps/web/src/features/athlete-card/athlete-crest.tsx",
+  "apps/web/src/features/athlete-card/athlete-crest.module.css",
+]);
 export const files = roots.flatMap(root => collect(root, ".tsx")).filter(file =>
-  !file.includes("/mascot/") && !file.endsWith(".test.tsx") && !file.endsWith("boot-splash.tsx") && ![
+  !athleteCardArtwork.has(file) && !file.includes("/mascot/") && !file.endsWith(".test.tsx") && !file.endsWith("boot-splash.tsx") && ![
     "apps/mobile/app/mascot.tsx", "apps/mobile/app/structure.tsx",
     "apps/mobile/src/ui/section.tsx",
     "apps/web/src/ui/section.tsx",
   ].includes(file));
 export const cssFiles = ["apps/web/src/app/globals.css", "apps/web/src/shell/shell.css", "apps/web/src/theme/themes.css",
   ...collect("apps/web/src/features", ".css"), ...collect("apps/web/src/ui", ".css")]
-  .filter(file => !file.endsWith("boot-splash.css"));
+  .filter(file => !athleteCardArtwork.has(file) && !file.endsWith("boot-splash.css"));

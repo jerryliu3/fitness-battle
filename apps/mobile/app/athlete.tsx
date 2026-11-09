@@ -54,7 +54,8 @@ import {
 import { SHELL_RADIUS } from "../src/theme";
 import { FocusButton, FocusSegments, FocusSheet, FocusSidePanel } from "../src/ui/focus";
 import { ProfilePhoto } from "../src/features/profile-photo";
-import { AthleteProfileCard } from "../src/features/athlete-profile-card";
+import { AthleteCrest } from "../src/features/athlete-crest";
+import { athleteCardModel } from "@fitness-battle/shared";
 
 function isDeviceProvider(
   id: ProviderId,
@@ -110,6 +111,7 @@ const styles=useThemedStyles(stylesThemes);
   const [authNote, setAuthNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
   const [editOpen, setEditOpen] = useState(params.edit === "1");
+  const [cardDragging, setCardDragging] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const panel = inlineConnections ? "connections" : params.panel ?? null;
   function setPanel(next: AthletePanel | null) {
@@ -736,57 +738,14 @@ const styles=useThemedStyles(stylesThemes);
         {pageHeader}
       <ScrollView
         automaticallyAdjustKeyboardInsets
+        scrollEnabled={!cardDragging}
         contentContainerStyle={f.content}
         keyboardShouldPersistTaps="handled"
       >
 <SectionStack divided={false}>
 
-        <AthleteProfileCard
-          largeName
-          name={state.name}
-          avatarUrl={state.avatarUrl}
-          city={state.city}
-          score={effortScore}
-          since={user?.createdAt && Number.isFinite(Date.parse(user.createdAt)) ? `Since ${new Date(user.createdAt).getUTCFullYear()}` : undefined}
-          action={<Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Edit profile"
-            onPress={() => setEditOpen(true)}
-            style={({ pressed }) => ({
-              paddingVertical: 5, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1,
-              borderColor: "rgba(255, 255, 255, 0.2)",
-              backgroundColor: pressed ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.1)",
-            })}
-          ><AppText role="label" style={{ color: appearanceColors.white }}>Edit profile</AppText></Pressable>}
-        >
-            {topRecords.length > 0 ? (
-              <View
-                style={[
-                  f.row,
-                  {
-                    paddingTop: 14,
-                    borderTopWidth: 1,
-                    borderColor: "#ffffff20",
-                    justifyContent: "space-around",
-                  },
-                ]}
-              >
-                {topRecords.map((r) => {
-                  const label = RECORD_DISTANCES[r.sport]?.find((d) => d.id === r.distanceId)?.label ?? r.distanceId;
-                  return (
-                    <View key={r.activityId} style={{ alignItems: "center", gap: 2, flex: 1 }}>
-                      <AppText role="heading" style={{ color: SHELL_COLORS.textOnFeature }}>
-                        {formatClockTime(r.seconds)}
-                      </AppText>
-                      <AppText role="caption" style={{ color: "#c9d6e3" }}>
-                        {label}
-                      </AppText>
-                    </View>
-                  );
-                })}
-              </View>
-            ) : null}
-        </AthleteProfileCard>
+        <AthleteCrest key={user?.id ?? "guest"} model={athleteCardModel(state, now)} onInteractionChange={setCardDragging} />
+        <FocusButton label="Edit profile" onPress={() => setEditOpen(true)} />
 
         {/* Since the first mile stats */}
         <View style={f.section}>
