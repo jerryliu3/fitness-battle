@@ -3,7 +3,7 @@ import { AppHeading } from "@/ui/section";
 import { SaveRaceResult } from "../../favorites";
 import { notFound } from "next/navigation";
 import { loadRaceReport } from "@/lib/race-results";
-import { raceClock, raceSourceUrl, RACE_DISTANCES, RACE_CATEGORIES } from "@fitness-battle/shared";
+import { raceClock, raceSourceUrl, raceFasterThan, RACE_DISTANCES, RACE_CATEGORIES } from "@fitness-battle/shared";
 export const dynamic = "force-dynamic";
 export default async function ResultPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -14,6 +14,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   catch { return <main className="rankings-wrap"><AppHeading level={1} role="display">Result unavailable</AppHeading><p>Please try again in a moment.</p><Link href={`/rankings/result/${id}`}>Retry</Link></main>; }
   if (!report) notFound();
   const r = report.result;
+  const fasterThan = raceFasterThan(report);
   const distance = RACE_DISTANCES.find(d => d.stored === r.distance_slug);
   const source = raceSourceUrl(r.source_url);
   const highest = Math.max(...report.bins.map(b => b.count), 1);
@@ -25,7 +26,8 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
     <SaveRaceResult id={r.id} />
     <p><Link href="/rankings/saved">Saved results →</Link></p>
     <section className="race-report-metrics" aria-label="Result context"><div><span>Recorded field rank</span><strong>{report.place.toLocaleString()} <small>/ {report.total.toLocaleString()}</small></strong></div><div><span>Field median</span><strong>{raceClock(report.medianMs)}</strong></div></section>
-    <section className="race-distribution"><AppHeading level={2} role="heading">Your place in the field</AppHeading><p className="rankings-note">Published results from this edition and category. Import completeness has not been verified; these are not official placements or worldwide percentiles.</p>
+    {fasterThan !== null && <p className="race-percentile"><strong>{fasterThan.toFixed(1)}%</strong> of this published field finished slower · {report.total.toLocaleString()} eligible finishes</p>}
+    <section className="race-distribution"><AppHeading level={2} role="heading">Your place in the field</AppHeading><p className="rankings-note">Published results from this edition and category. {report.coverage?.complete ? "Coverage reviewed; placements are calculated from recorded times." : "Completeness has not been verified; placements describe stored results."} <Link href="/rankings/coverage">View coverage</Link></p>
       <div className="race-histogram" role="img" aria-label={`Finish-time distribution. Selected time ${raceClock(r.rank_time_ms)}; median ${raceClock(report.medianMs)}.`}>
         {Array.from({length: Math.max(...report.bins.map(b => b.bucket), 0) + 1}, (_, bucket) => {
           const count = report.bins.find(b => b.bucket === bucket)?.count ?? 0;

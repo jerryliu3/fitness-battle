@@ -33,7 +33,7 @@ export default async function RankingsHomePage() {
         clock is chip time when the source provides one, otherwise the official
         time. People under 18 are not stored.
       </AppParagraph>
-      <p><Link href="/rankings/saved">Saved results →</Link></p>
+      <p><Link href="/rankings/saved">Saved results →</Link> · <Link href="/rankings/coverage">Results coverage</Link></p>
       <ul className="rankings-boards">
         {DISTANCES.map((distance) => {
           const stored =

@@ -50,6 +50,7 @@ export default function RaceRankings() {
         {yearDraft && (!Number.isInteger(Number(yearDraft)) || Number(yearDraft) < 1900 || Number(yearDraft) > 2100) ? <AppText role="caption">Enter a year from 1900 to 2100.</AppText> : null}
         <FocusButton label="Find results" onPress={search} />
         <FocusButton label="Saved results" secondary onPress={() => router.push("/saved-race-results")} />
+        <FocusButton label="Results coverage" secondary onPress={() => router.push("/race-coverage")} />
         <AppText role="caption" secondary>Chip time where available, otherwise official time.</AppText>
         {busy ? <ActivityIndicator accessibilityLabel="Loading race results" /> : error ? <View style={{gap:12}}><AppText role="body">Results are unavailable.</AppText><FocusButton label="Retry" secondary onPress={() => setRetry(n => n + 1)} /></View> : <AppText role="label">{data?.total.toLocaleString()} {query ? "matching results" : "published results"}</AppText>}
       </View>}

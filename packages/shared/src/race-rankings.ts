@@ -37,6 +37,7 @@ export function raceClock(ms: number) {
   return hours ? `${hours}:${String(minutes).padStart(2, "0")}:${rest}` : `${minutes}:${rest}`;
 }
 export type RaceResultReport = {
+  coverage?: RaceCoverage | null;
   result: Omit<RaceResult, "place">;
   total: number; place: number; slower: number; medianMs: number;
   minimumMs: number; binWidthMs: number;
@@ -62,4 +63,14 @@ export function raceTimeGap(ms: number) {
   const value = Math.abs(ms);
   const fraction = String(Math.trunc(value % 1000)).padStart(3, "0").replace(/0+$/, "");
   return raceClock(value) + (fraction ? `.${fraction}` : "");
+}
+export type RaceCoverage = {
+  edition_id: number; event_name: string; edition_year: number;
+  distance_slug: string; sex: string; published_count: number; undated_count: number;
+  expected_eligible_count: number | null; reviewed_at: string | null;
+  evidence_url: string | null; complete: boolean;
+};
+export function raceFasterThan(report: RaceResultReport): number | null {
+  return report.coverage?.complete && report.coverage.published_count === report.total && report.total > 0
+    ? report.slower / report.total * 100 : null;
 }
