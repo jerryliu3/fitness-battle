@@ -262,3 +262,9 @@
 .race-edition-chart button[aria-pressed="true"] span { background:var(--tennis); outline:1px solid var(--ink); }
 .race-bin-detail { min-height:2.8em; font-size:13px; font-variant-numeric:tabular-nums; }
 @media(max-width:500px) { .race-edition-analytics { padding:16px; } .race-edition-metrics { gap:10px; } }
+
+.race-split-report { margin:40px 0; }
+.race-split-report .race-table th[scope="row"] { color:var(--ink); text-transform:none; letter-spacing:normal; font-size:14px; }
+.race-pace-track { display:block; width:100%; height:6px; background:var(--line); border-radius:3px; margin-top:10px; }
+.race-pace-track>span { display:block; height:100%; background:var(--tennis); border-radius:3px; }
+.race-half-summary { font-size:20px; font-weight:600; font-variant-numeric:tabular-nums; }

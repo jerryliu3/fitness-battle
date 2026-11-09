@@ -8,6 +8,7 @@ import { AppText } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { useThemeColors } from "../src/theme";
 import { useRaceFavorites } from "../src/lib/race-favorites";
+import { SplitReport } from "../src/ui/race-split-report";
 import { mobileEnv } from "../src/lib/env";
 
 export default function RaceResult() {
@@ -55,6 +56,7 @@ export default function RaceResult() {
         })}</View>
         <FocusButton secondary label={showValues ? "Hide distribution values" : "Inspect distribution"} onPress={() => setShowValues(v => !v)} />
         {showValues && report.bins.map(b => <AppText key={b.bucket} role="caption">{raceClock(report.minimumMs+b.bucket*report.binWidthMs)}–{raceClock(report.minimumMs+(b.bucket+1)*report.binWidthMs)} · {b.count.toLocaleString()} results</AppText>)}
+        <SplitReport splits={report.splits} distance={report.result.distance_slug} />
         <AppText role="label">Nearby finishers</AppText>
         {report.neighbors.map(n => <Pressable accessibilityRole="button" key={n.id} onPress={() => router.replace({pathname:"/race-result",params:{id:String(n.id)}})} style={f.row}><AppText role="label" style={f.grow}>{n.athlete_name}</AppText><AppText role="label">{raceClock(n.rank_time_ms)}</AppText></Pressable>)}
         <AppText role="caption" secondary>{report.result.attribution}</AppText>
