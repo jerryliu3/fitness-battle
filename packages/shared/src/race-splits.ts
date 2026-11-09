@@ -53,3 +53,17 @@ export function analyzeRaceSplits(input: RaceTimingSplits | null | undefined, di
 export function raceHalfCaption(deltaMs: number) {
   return deltaMs===0 ? "Even halves" : `Second half ${raceTimeGap(deltaMs)} ${deltaMs<0 ? "faster" : "slower"}`;
 }
+
+export function compareRaceSplits(first:{distance_slug:string;splits?:RaceTimingSplits | null},second:{distance_slug:string;splits?:RaceTimingSplits | null}) {
+  const a=analyzeRaceSplits(first.splits,first.distance_slug),b=analyzeRaceSplits(second.splits,second.distance_slug);
+  const reason=first.distance_slug!==second.distance_slug ? "Checkpoint comparisons require the same race distance."
+    : a.status!=="ready" || b.status!=="ready" ? "Recorded checkpoints are not available for both results."
+    : a.clock!==b.clock ? "Checkpoint comparisons require the same clock type." : null;
+  if(reason || a.status!=="ready" || b.status!=="ready") return {reason,clock:null,rows:[]};
+  const other=new Map(b.rows.map(row=>[row.distanceM,row]));
+  return {reason:null,clock:a.clock,rows:a.rows.flatMap(row=>{
+    const match=other.get(row.distanceM);
+    return match ? [{distanceM:row.distanceM,label:row.label,firstMs:row.elapsedMs,secondMs:match.elapsedMs,
+      deltaMs:row.elapsedMs===null || match.elapsedMs===null ? null : match.elapsedMs-row.elapsedMs}] : [];
+  })};
+}

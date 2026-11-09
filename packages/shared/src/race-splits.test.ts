@@ -1,5 +1,5 @@
 import {describe,expect,it} from "vitest";
-import {analyzeRaceSplits,raceHalfCaption,racePaceLabel,type RaceTimingSplits} from "./race-splits";
+import {analyzeRaceSplits,compareRaceSplits,raceHalfCaption,racePaceLabel,type RaceTimingSplits} from "./race-splits";
 const timings:RaceTimingSplits={clock:"chip",finishMs:3000000,sourceUrl:"https://example.test/results",checkpoints:[{distanceM:5000,elapsedMs:1400000}]};
 function ready(input:RaceTimingSplits,distance="10k") {
   const result=analyzeRaceSplits(input,distance);
@@ -39,5 +39,19 @@ describe("recorded race splits",()=>{
       [{distanceM:2000,elapsedMs:2000},{distanceM:4000,elapsedMs:null},{distanceM:6000,elapsedMs:1000}]]) {
       expect(analyzeRaceSplits({...timings,checkpoints},"10k").status).toBe("invalid");
     }
+  });
+});
+
+describe("checkpoint comparisons",()=>{
+  const first={distance_slug:"10k",splits:timings};
+  it("matches distances and preserves missing times",()=>{
+    const comparison=compareRaceSplits(first,{...first,splits:{...timings,checkpoints:[{distanceM:5000,elapsedMs:null}]}});
+    expect(comparison.rows.map(row=>row.deltaMs)).toEqual([null,0]);
+    expect(compareRaceSplits(first,first).rows[0].deltaMs).toBe(0);
+  });
+  it("rejects incompatible distances and clocks",()=>{
+    expect(compareRaceSplits(first,{...first,distance_slug:"marathon"}).reason).toBeTruthy();
+    expect(compareRaceSplits(first,{...first,splits:{...timings,clock:"gun"}}).reason).toBeTruthy();
+    expect(compareRaceSplits(first,{distance_slug:"10k"}).reason).toBeTruthy();
   });
 });
