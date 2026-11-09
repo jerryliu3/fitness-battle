@@ -7,6 +7,7 @@ export async function GET(request: Request) {
   const distance = RACE_DISTANCES.find(d => d.slug === params.get("distance"));
   if (!distance) return NextResponse.json({ error: "Invalid distance" }, { status: 400 });
   const query = raceQuery(params);
+  if (query.editionError) return NextResponse.json({error:query.editionError},{status:400});
   if (query.dateError) return NextResponse.json({error:query.dateError},{status:400});
   try {
     const data = await loadRaceResults(distance.stored, query);

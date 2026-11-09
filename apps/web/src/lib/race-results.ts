@@ -6,10 +6,11 @@ import { createRankingsClient } from "./rankings";
 export async function loadRaceResults(distance: string, query: ReturnType<typeof raceQuery>): Promise<RaceResultsPage> {
   const client = createRankingsClient();
   if (!client) throw new Error("Rankings are not configured");
+  if (query.editionError) throw new Error(query.editionError);
   const bounds = raceDateBounds(query);
-  const { data, error } = await client.rpc("rankings_page_window", {
+  const { data, error } = await client.rpc("rankings_page_scoped", {
     p_distance: distance, p_sex: query.sex, p_year: query.year,
-    p_query: query.query, p_page: query.page, p_from: bounds.from, p_until: bounds.until,
+    p_edition_id: query.editionId, p_query: query.query, p_page: query.page, p_from: bounds.from, p_until: bounds.until,
   });
   if (error || !data) throw new Error("Rankings unavailable");
   return data as RaceResultsPage;

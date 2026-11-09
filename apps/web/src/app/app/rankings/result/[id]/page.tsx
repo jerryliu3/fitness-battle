@@ -20,7 +20,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   const highest = Math.max(...report.bins.map(b => b.count), 1);
   const selectedBin = Math.floor((r.rank_time_ms - report.minimumMs) / report.binWidthMs);
   return <main className="rankings-wrap">
-    <header className="rankings-top"><Link href={`/rankings/${distance?.slug ?? "marathon"}?sex=${r.sex}&year=${r.edition_year}`}>← {distance?.label} results</Link><span className="rankings-kicker">Race report</span></header>
+    <header className="rankings-top"><Link href={`/rankings/${distance?.slug ?? "marathon"}?edition=${r.event_edition_id}&sex=${r.sex}`}>← {distance?.label} results</Link><span className="rankings-kicker">Race report</span></header>
     <p className="rankings-kicker">{r.event_name} · {r.edition_year}</p><AppHeading level={1} role="display" className="race-athlete-name">{r.athlete_name}</AppHeading>
     <div className="race-report-hero"><strong>{raceClock(r.rank_time_ms)}</strong><span>{r.rank_clock === "chip" ? "Chip time" : "Official time"} · {RACE_CATEGORIES.find(c => c.value === r.sex)?.label}{r.bib ? ` · #${r.bib}` : ""}</span></div>
     <SaveRaceResult id={r.id} />

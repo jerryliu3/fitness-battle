@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, ScrollView, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { RACE_DISTANCES, RACE_CATEGORIES, RACE_TIMEFRAMES, raceQuery, raceWindowCaption, raceClock, type RaceResult, type RaceResultsPage } from "@fitness-battle/shared";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { RACE_DISTANCES, RACE_CATEGORIES, RACE_TIMEFRAMES, raceQuery, raceEditionOptions, raceWindowCaption, raceClock, type RaceCoverage, type RaceResult, type RaceResultsPage } from "@fitness-battle/shared";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { useFocusStyles, FocusButton } from "../src/ui/focus";
 import { AppText } from "../src/ui/section";
@@ -12,8 +12,14 @@ export default function RaceRankings() {
   const f = useFocusStyles();
   const router = useRouter();
   const list = useRef<FlatList<RaceResult>>(null);
-  const [distance, setDistance] = useState("marathon");
-  const [sex, setSex] = useState("female");
+  const params = useLocalSearchParams<{edition?: string; distance?: string; sex?: string}>();
+  const initial = raceQuery(new URLSearchParams({edition:params.edition ?? "",sex:params.sex ?? "female"}));
+  const [distance, setDistance] = useState(RACE_DISTANCES.find(d => d.slug === params.distance)?.slug ?? "marathon");
+  const [sex, setSex] = useState(initial.sex);
+  const [edition, setEdition] = useState(params.edition ?? "");
+  const [coverage, setCoverage] = useState<RaceCoverage[] | null>(null);
+  const [coverageError, setCoverageError] = useState(false);
+  const [coverageRetry, setCoverageRetry] = useState(0);
   const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
   const [yearDraft, setYearDraft] = useState("");
@@ -28,9 +34,20 @@ export default function RaceRankings() {
   const [error, setError] = useState(false);
   const [retry, setRetry] = useState(0);
   useEffect(() => {
-    const params = new URLSearchParams({ distance, sex, q: query, page: String(page), year, timeframe, from, through });
+    const controller = new AbortController();
+    setCoverageError(false);
+    fetch(`${mobileEnv.apiUrl}/api/rankings/coverage`, {signal:controller.signal})
+      .then(async response => { if (!response.ok) throw new Error(); return response.json() as Promise<RaceCoverage[]>; })
+      .then(rows => { if (!controller.signal.aborted) setCoverage(rows); })
+      .catch(() => { if (!controller.signal.aborted) setCoverageError(true); });
+    return () => controller.abort();
+  }, [coverageRetry]);
+  const editions = raceEditionOptions(coverage ?? [], RACE_DISTANCES.find(d => d.slug === distance)!.stored);
+  const selectedEdition = editions.find(e => String(e.edition_id) === edition);
+  useEffect(() => {
+    const params = new URLSearchParams({ distance, sex, edition, q: query, page: String(page), year, timeframe, from, through });
     const parsed = raceQuery(params);
-    if (parsed.dateError) {setBusy(false);setData(null);setError(false);return;}
+    if (parsed.dateError || parsed.editionError) {setValidation(parsed.editionError ?? parsed.dateError ?? "");setBusy(false);setData(null);setError(false);return;}
     const controller = new AbortController();
     setBusy(true); setError(false); setData(null);
     fetch(`${mobileEnv.apiUrl}/api/rankings?${params}`, { signal: controller.signal })
@@ -39,19 +56,26 @@ export default function RaceRankings() {
       .catch(() => { if (!controller.signal.aborted) setError(true); })
       .finally(() => { if (!controller.signal.aborted) setBusy(false); });
     return () => controller.abort();
-  }, [distance, sex, query, year, timeframe, from, through, page, retry]);
+  }, [distance, sex, edition, query, year, timeframe, from, through, page, retry]);
   function search() {
-    const parsed = raceQuery(new URLSearchParams({timeframe,year:yearDraft,from:fromDraft,through:throughDraft}));
-    setValidation(parsed.dateError ?? "");
-    if (parsed.dateError) return;
+    const parsed = raceQuery(new URLSearchParams({edition,timeframe,year:yearDraft,from:fromDraft,through:throughDraft}));
+    setValidation(parsed.editionError ?? parsed.dateError ?? "");
+    if (parsed.dateError || parsed.editionError) return;
     setQuery(draft.trim());setYear(yearDraft);setFrom(fromDraft);setThrough(throughDraft);setPage(1);setRetry(n=>n+1);
   }
   return <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
     <ScreenHeader title="Race rankings" onBack={() => router.back()} />
     <FlatList ref={list} data={data?.rows ?? []} keyExtractor={row => String(row.id)} contentContainerStyle={f.content}
       ListHeaderComponent={<View style={{ gap: 16 }}>
-        <View style={f.chipRow}>{RACE_DISTANCES.map(d => <Pressable key={d.slug} accessibilityRole="button" accessibilityState={{selected:distance === d.slug}} onPress={() => { setDistance(d.slug); setPage(1); }} style={[f.chip, distance === d.slug && f.chipActive]}><AppText role="label">{d.label}</AppText></Pressable>)}</View>
+        <View style={f.chipRow}>{RACE_DISTANCES.map(d => <Pressable key={d.slug} accessibilityRole="button" accessibilityState={{selected:distance === d.slug}} onPress={() => { setDistance(d.slug); setEdition(""); setPage(1); }} style={[f.chip, distance === d.slug && f.chipActive]}><AppText role="label">{d.label}</AppText></Pressable>)}</View>
         <View style={f.chipRow}>{RACE_CATEGORIES.map(c => <Pressable key={c.value} accessibilityRole="button" accessibilityState={{selected:sex === c.value}} onPress={() => { setSex(c.value); setPage(1); }} style={[f.chip, sex === c.value && f.chipActive]}><AppText role="label">{c.label}</AppText></Pressable>)}</View>
+        <AppText role="label">Event edition</AppText>
+        {coverageError ? <View style={{gap:8}}><AppText role="caption" secondary>Event selection unavailable.</AppText><FocusButton label="Retry events" secondary onPress={() => setCoverageRetry(n=>n+1)} /></View> : !coverage ? <ActivityIndicator accessibilityLabel="Loading events" /> : null}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
+          <Pressable accessibilityRole="button" accessibilityState={{selected:!edition}} onPress={() => {setEdition("");setPage(1);}} style={[f.chip,!edition && f.chipActive]}><AppText role="label">All events</AppText></Pressable>
+          {editions.map(e => <Pressable key={e.edition_id} accessibilityRole="button" accessibilityState={{selected:edition===String(e.edition_id)}} onPress={() => {setEdition(String(e.edition_id));setPage(1);}} style={[f.chip,edition===String(e.edition_id) && f.chipActive]}><AppText role="label">{e.event_name} · {e.edition_year}</AppText></Pressable>)}
+        </ScrollView>
+        {!!edition && <AppText role="caption" secondary>{selectedEdition ? `${selectedEdition.event_name} · ${selectedEdition.edition_year}` : "Selected event edition"} · Ranks apply to this edition, category and timeframe.</AppText>}
         <TextInput accessibilityLabel="Athlete name or bib" value={draft} maxLength={100} onChangeText={setDraft} onSubmitEditing={search} returnKeyType="search" placeholder="Athlete or bib" style={f.input} />
         <View style={f.chipRow}>{RACE_TIMEFRAMES.map(t => <Pressable key={t.value} accessibilityRole="button" accessibilityState={{selected:timeframe===t.value}} onPress={()=>{setTimeframe(t.value);setPage(1);setValidation("");}} style={[f.chip,timeframe===t.value && f.chipActive]}><AppText role="label">{t.label}</AppText></Pressable>)}</View>
         {timeframe === "year" && <TextInput accessibilityLabel="Edition year" value={yearDraft} onChangeText={setYearDraft} keyboardType="number-pad" maxLength={4} placeholder="Edition year" style={f.input} />}

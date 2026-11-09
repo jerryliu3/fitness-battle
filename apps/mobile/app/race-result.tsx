@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Linking, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { raceClock, raceSourceUrl, raceFasterThan, racePercentLabel, type RaceResultReport } from "@fitness-battle/shared";
+import { raceClock, raceSourceUrl, raceFasterThan, racePercentLabel, RACE_DISTANCES, type RaceResultReport } from "@fitness-battle/shared";
 import { useFocusStyles, FocusButton } from "../src/ui/focus";
 import { AppText } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
@@ -41,6 +41,7 @@ export default function RaceResult() {
         <FocusButton label={saved.ids.includes(report.result.id) ? "★ Saved" : "☆ Save result"} secondary disabled={!saved.ready || saved.busy} onPress={() => void saved.toggle(report.result.id)} />
         {saved.error && <AppText role="caption">{saved.error}</AppText>}
         {!saved.ready && saved.error && <FocusButton label="Retry saved results" secondary onPress={() => void saved.reload()} />}
+        <FocusButton label="Explore this field" secondary onPress={() => router.push({pathname:"/race-rankings",params:{edition:String(report.result.event_edition_id),distance:RACE_DISTANCES.find(d => d.stored === report.result.distance_slug)?.slug ?? "marathon",sex:report.result.sex}})} />
         <FocusButton label="Saved results" secondary onPress={() => router.push("/saved-race-results")} />
         <View style={f.row}><View style={f.grow}><AppText role="caption" secondary>Recorded field rank</AppText><AppText role="label">{report.place.toLocaleString()} / {report.total.toLocaleString()}</AppText></View><View><AppText role="caption" secondary>Field median</AppText><AppText role="label">{raceClock(report.medianMs)}</AppText></View></View>
         {fasterThan !== null && <View style={{gap:8}}><AppText role="display">{racePercentLabel(fasterThan)}</AppText><AppText role="caption" secondary>of this published field finished slower · {report.total.toLocaleString()} eligible finishes</AppText></View>}

@@ -33,6 +33,8 @@ export function raceDateError(from: string, through: string): string | null {
 }
 export function raceQuery(input: { get(name: string): string | null }) {
   const sex = input.get("sex") ?? "female";
+  const edition = input.get("edition") ?? "";
+  const editionId = /^[1-9]\d*$/.test(edition) && Number.isSafeInteger(Number(edition)) ? Number(edition) : null;
   const year = Number(input.get("year"));
   const page = Number(input.get("page"));
   const validYear = Number.isInteger(year) && year >= 1900 && year <= 2100;
@@ -40,6 +42,8 @@ export function raceQuery(input: { get(name: string): string | null }) {
   const from = (input.get("from") ?? "").trim();
   const through = (input.get("through") ?? "").trim();
   return {
+    editionId,
+    editionError: edition && !editionId ? "Choose a valid event edition." : null,
     sex: RACE_CATEGORIES.some(c => c.value === sex) ? sex : "female",
     year: timeframe === "year" && validYear ? year : null,
     timeframe, from: timeframe === "custom" ? from : "", through: timeframe === "custom" ? through : "",
@@ -57,7 +61,7 @@ export function raceClock(ms: number) {
 }
 export type RaceResultReport = {
   coverage?: RaceCoverage | null;
-  result: Omit<RaceResult, "place">;
+  result: Omit<RaceResult, "place"> & { event_edition_id: number };
   total: number; place: number; slower: number; medianMs: number;
   minimumMs: number; binWidthMs: number;
   bins: { bucket: number; count: number }[];
@@ -120,4 +124,13 @@ export function racePercentLabel(value: number) {
   if (value > 0 && value < 0.1) return "<0.1%";
   if (value > 99.9 && value < 100) return ">99.9%";
   return `${value.toFixed(1)}%`;
+}
+
+/** Public inventory only; categories share a single edition selector entry. */
+export function raceEditionOptions(coverage: RaceCoverage[], distance: string) {
+  const editions = new Map<number, Pick<RaceCoverage, "edition_id" | "event_name" | "edition_year">>();
+  for (const row of coverage) {
+    if (row.distance_slug === distance) editions.set(row.edition_id, {edition_id:row.edition_id,event_name:row.event_name,edition_year:row.edition_year});
+  }
+  return [...editions.values()].sort((a, b) => b.edition_year - a.edition_year || a.event_name.localeCompare(b.event_name) || a.edition_id - b.edition_id);
 }

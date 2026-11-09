@@ -2,6 +2,29 @@
 
 Approved direction: complete paginated fields; web first with native support. Research: all-time-rankings-research-2026-11-09.md.
 
+## Current scope and independent acquisition workstream
+
+Updated November 9 after source-policy review. This product stack owns data representation, public read contracts, web/native exploration, analytics and finally replay. Prioritize large marathon and half-marathon editions; coverage is limited to data with established reuse permission. Public accessibility, successful scraping and provider API access are not reuse approval.
+
+Product PRs #561–570 remain the foundation. Acquisition PRs #571–572 are deferred drafts on a separate branch chain; new product work branches directly from #570 and does not depend on their workers, credentials or workflows. The historical layer 9–10 notes below describe that separate work, not product prerequisites. No separate repository has been created and no acquisition schedule has been enabled.
+
+The acquisition workstream owns source permission review, adapters (HTML/public JSON/downloads/APIs), discovery, extraction, correction/removal reconciliation and coverage evidence. NYRR is excluded without express permission: its published terms restrict commercial statistics, archived race depictions and comprehensive databases. London and MikaTiming-hosted results are not cleared merely because public pages exist. Review edition-specific rights before further acquisition or publication. Policy evidence: [NYRR terms](https://prod.nyrr.org/terms-of-use), [London terms](https://www.londonmarathonevents.co.uk/terms-use), [MikaTiming service description](https://www.mikatiming.com/services/timing-result-service/result-service); the last describes capabilities, not a reuse licence.
+
+The handoff supplies edition identifiers/date/distance, stable result IDs, finish status and clock basis, attribution/source URLs, publication eligibility and coverage evidence. Optional checkpoints contain distance along the edition course and cumulative elapsed times with an explicit clock basis; missing values stay missing. Optional course geometry is stored once per edition. Splits do not imply GPS observations or verified athlete identity.
+
+### Remaining product sequence
+
+1. Event-edition exploration: precise event selection, full-field paging/search and clear cohort context on web/native. First slice adds edition scope, reusing the coverage inventory for selection.
+2. Richer edition analytics: field distributions and benchmarks with explicit denominators and completeness gates; keep searches from changing the underlying cohort.
+3. Split reports: optional checkpoint table, segment pace and first/second-half comparisons, conditional on delivered timing data. Finish-only results remain useful.
+4. Split comparisons: checkpoint gaps for selected runners with compatible clocks/checkpoints.
+5. Historical trends: edition comparisons first; athlete careers only after reliable identity evidence, never name-only merging.
+6. Geographic replay last: single runner, selected groups, then measured full-field rendering as described below.
+
+### Split storage budget
+
+Collect finish results plus available timing-mat splits when permitted. Store checkpoint definitions/course once per edition and cumulative elapsed values per result; derive segment pace and replay positions. Do not persist every runner's position at every playback second. Illustrative payload: 50,000 runners × 10 checkpoints × 4 bytes = 2 MB of elapsed values before IDs, row/index overhead and backups. This is arithmetic, not measured database usage. Measure one representative edition's actual storage, response size and fetch costs before selecting the split persistence layout or committing to a backfill budget.
+
 ## Layer 1: bounded full-field read contract
 
 `rankings_page` returns 50 rows with matching count, complete cohort count and competition ranks. Distance/category/year define the cohort; name/bib search only selects observations within it. Ties share a rank. Source suppression and result eligibility apply to every row and count. Requests are snapshot-consistent individually; concurrent source revisions can change subsequent pages. Historical snapshots and revision-pinned pagination remain follow-up work.
@@ -50,3 +73,9 @@ The semantic typography CI failures on the preceding web PRs were fixed in their
 ## Layer 8: calendar-date timeframe filters
 
 Web and native offer all time, edition year, past 12 months and custom event-date ranges. Custom end dates include the entire chosen day; the database receives half-open date bounds. Rolling bounds are anchored to the server's UTC calendar date, from the anniversary date in the preceding year through today (clamping February 29 to February 28). Actual bounds return with the results and are displayed as inclusive dates. Unknown event dates are excluded only from date-bounded scopes; edition-year links remain backward compatible. Search ranks are computed within the selected timeframe before filtering by name/bib. The old RPC delegates to the canonical new query, preventing duplicate semantics. No local suites or production migrations run.
+
+## Product layer 9: event-edition exploration
+
+New product work branches from #570, independently of deferred acquisition drafts #571–572. Web and native select an exact edition from the existing public coverage inventory. Coverage cards and reports open that edition's field. Edition scope intersects distance, category and timeframe before ranking; name/bib search preserves the cohort rank and count, and every page remains reachable. Changing distance clears edition scope. Missing inventory has a retry state and does not block results.
+
+Apply the additive `rankings_edition_scope` migration to the rankings project before deploying consumers. `rankings_page_scoped` is the canonical read; the prior date and legacy RPC signatures delegate without changing their all-edition behavior. Source suppression/eligibility gates remain in the canonical query. Shared regression cases and isolated SQL scenarios cover edition isolation, ties, paging beyond 200, search, date/category/distance/year intersections, suppression and backward compatibility. They were added but not executed. No production schema/data changes, scraping, test suites, typechecks or builds performed.
