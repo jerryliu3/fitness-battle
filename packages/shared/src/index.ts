@@ -82,4 +82,5 @@ export * from "./compete-home";
 export * from "./event-registration";
 export * from "./athlete-card";
 export * from "./competition-activity-log";
+export * from "./entry-pass";
 
