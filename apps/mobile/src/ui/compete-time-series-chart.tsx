@@ -13,7 +13,7 @@ import {
   type SportId,
 } from "@fitness-battle/shared";
 import { playCue } from "../lib/haptics";
-import { SHELL_COLORS as c } from "../theme";
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { textStyle } from "./section";
 
 function svgTag<K extends keyof typeof SvgModule>(
@@ -42,6 +42,7 @@ export function CompeteTimeSeriesChart({
   onSelectAthlete,
   hiddenIds,
   reserveTopControls = false,
+  compact = false,
 }: {
   state: CompeteState;
   sport?: SportId;
@@ -51,7 +52,10 @@ export function CompeteTimeSeriesChart({
   onSelectAthlete?: (id: string) => void;
   hiddenIds?: readonly string[];
   reserveTopControls?: boolean;
+  compact?: boolean;
 }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
   );
@@ -111,6 +115,7 @@ export function CompeteTimeSeriesChart({
   updateScrubRef.current = updateScrubFromLocationX;
 
   const panHandlers = useMemo(() => {
+    if (compact) return {};
     if (!("PanResponder" in RN) || !RN.PanResponder?.create) return {};
     return RN.PanResponder.create({
       onStartShouldSetPanResponder: () => false,
@@ -148,7 +153,7 @@ export function CompeteTimeSeriesChart({
         setScrubFraction(null);
       },
     }).panHandlers;
-  }, []);
+  }, [compact]);
 
   const selectedStroke = model.selectedAthlete.you
     ? c.fieldTeal
@@ -160,6 +165,7 @@ export function CompeteTimeSeriesChart({
       accessibilityLabel="Weekly competition time-series graph"
       style={[
         s.card,
+        compact && s.cardCompact,
         reserveTopControls && { paddingTop: 64 },
       ]}
     >
@@ -219,31 +225,35 @@ export function CompeteTimeSeriesChart({
           plotWidthRef.current = Math.max(1, event.nativeEvent.layout.width);
         }}
         onTouchStart={(event) => {
+          if (compact) return;
           if (event.nativeEvent.locationX != null) {
             updateScrubFromLocationX(event.nativeEvent.locationX);
           }
         }}
         onTouchMove={(event) => {
+          if (compact) return;
           if (event.nativeEvent.locationX != null) {
             updateScrubFromLocationX(event.nativeEvent.locationX);
           }
         }}
         onTouchEnd={() => {
+          if (compact) return;
           lastDayBucketRef.current = null;
           setScrubFraction(null);
         }}
         onTouchCancel={() => {
+          if (compact) return;
           lastDayBucketRef.current = null;
           setScrubFraction(null);
         }}
         accessible
         accessibilityRole="adjustable"
         accessibilityLabel={`Race timeline, ${model.selectedAthlete.firstName} ${model.selectedAthlete.formattedValueAtCursor} ${model.unit}, ${model.placeLabel}`}
-        style={s.plotWrap}
+        style={[s.plotWrap, compact && s.plotWrapCompact]}
       >
         <Svg
           width="100%"
-          height={model.height}
+          height={compact ? 140 : model.height}
           viewBox={`0 0 ${model.width} ${model.height}`}
         >
           {/* Future zone wash (now -> Sun) */}
@@ -406,69 +416,73 @@ export function CompeteTimeSeriesChart({
       </View>
 
       {/* Single-Select Athlete Quick-Focus Chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={s.chipsRow}
-      >
-        {model.athletes.map((athlete) => {
-          const active = athlete.selected;
-          return (
-            <Pressable
-              key={athlete.id}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={`Select ${athlete.you ? "You" : athlete.name}, place ${athlete.placeAtCursor}`}
-              onPress={() => handleSelectAthlete(athlete.id)}
-              style={[
-                s.chip,
-                active &&
-                  (athlete.you ? s.chipSelectedYou : s.chipSelectedRival),
-              ]}
-            >
-              <Text
+      {!compact && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={s.chipsRow}
+        >
+          {model.athletes.map((athlete) => {
+            const active = athlete.selected;
+            return (
+              <Pressable
+                key={athlete.id}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={`Select ${athlete.name}, place ${athlete.placeAtCursor}`}
+                onPress={() => handleSelectAthlete(athlete.id)}
                 style={[
-                  s.chipRank,
+                  s.chip,
                   active &&
-                    (athlete.you
-                      ? s.chipRankSelectedYou
-                      : s.chipRankSelectedRival),
+                    (athlete.you ? s.chipSelectedYou : s.chipSelectedRival),
                 ]}
               >
-                #{athlete.placeAtCursor}
-              </Text>
-              <Text
-                numberOfLines={1}
-                style={[
-                  s.chipName,
-                  active &&
-                    (athlete.you
-                      ? s.chipNameSelectedYou
-                      : s.chipNameSelectedRival),
-                ]}
-              >
-                {athlete.you ? "You" : athlete.firstName}
-              </Text>
-              <Text
-                style={[
-                  s.chipVal,
-                  active &&
-                    (athlete.you
-                      ? s.chipValSelectedYou
-                      : s.chipValSelectedRival),
-                ]}
-              >
-                {athlete.formattedValueAtCursor}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+                <Text
+                  style={[
+                    s.chipRank,
+                    active &&
+                      (athlete.you
+                        ? s.chipRankSelectedYou
+                        : s.chipRankSelectedRival),
+                  ]}
+                >
+                  #{athlete.placeAtCursor}
+                </Text>
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    s.chipName,
+                    active &&
+                      (athlete.you
+                        ? s.chipNameSelectedYou
+                        : s.chipNameSelectedRival),
+                  ]}
+                >
+                  {athlete.firstName}
+                </Text>
+                <Text
+                  style={[
+                    s.chipVal,
+                    active &&
+                      (athlete.you
+                        ? s.chipValSelectedYou
+                        : s.chipValSelectedRival),
+                  ]}
+                >
+                  {athlete.formattedValueAtCursor}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
     </View>
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => {
+  const c = themeColors;
+  return {
   card: {
     backgroundColor: c.card,
     borderRadius: 20,
@@ -476,6 +490,13 @@ const s = StyleSheet.create({
     borderColor: c.line,
     padding: 16,
     gap: 10,
+  },
+  cardCompact: {
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    padding: 8,
+    gap: 6,
+    borderRadius: 12,
   },
   headerRow: {
     flexDirection: "row",
@@ -544,6 +565,10 @@ const s = StyleSheet.create({
     width: "100%",
     minHeight: 204,
   },
+  plotWrapCompact: {
+    minHeight: 0,
+    flex: 1,
+  },
   chipsRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -603,4 +628,4 @@ const s = StyleSheet.create({
   chipValSelectedRival: {
     color: c.muted,
   },
-});
+};});

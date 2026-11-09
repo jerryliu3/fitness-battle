@@ -368,10 +368,10 @@ function finalizeTimeSeriesModel(input: {
   } else {
     const delta = selectedAthlete.valueAtCursor - youAthlete.valueAtCursor;
     if (Math.abs(delta) < 0.05) {
-      gapLabel = "Tied with You";
+      gapLabel = `Tied with ${youAthlete.firstName}`;
     } else {
       const sign = delta > 0 ? "+" : "−";
-      gapLabel = `${sign}${formatMetricValue(Math.abs(delta), input.unit)} ${input.unit} vs You`;
+      gapLabel = `${sign}${formatMetricValue(Math.abs(delta), input.unit)} ${input.unit} vs ${youAthlete.firstName}`;
     }
   }
 
@@ -385,9 +385,7 @@ function finalizeTimeSeriesModel(input: {
     day: "numeric",
     timeZone: APP_TIMEZONE,
   });
-  const subjectPart = selectedAthlete.you
-    ? "Your trajectory"
-    : `${selectedAthlete.firstName}’s trajectory`;
+  const subjectPart = `${selectedAthlete.firstName}’s trajectory`;
   const timeLabel = `${datePart} · ${isScrubbing ? "Inspected" : "Live"} · ${subjectPart}`;
 
   const nowDayIndex = Math.min(6, Math.floor(nowFraction * 6.999));

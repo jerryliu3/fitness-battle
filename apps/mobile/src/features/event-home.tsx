@@ -10,6 +10,7 @@ import { useThemeColors } from "../theme";
 import { AppIcon } from "../ui/app-icon";
 import { useEventActivity } from "./use-event-activity";
 import { CompeteIcon, EventArt } from "./compete-home-sections";
+import { CompeteTimeSeriesChart } from "../ui/compete-time-series-chart";
 
 const snapshotCache = new Map<string, string>();
 
@@ -69,6 +70,26 @@ export function CoursePreview({ state, sport, queued }: { state: CompeteState; s
   const { course } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, true);
   const model = buildArenaModel(state, undefined, competitionTrack(sport), sport);
   const me = model?.lanes.find(lane => lane.you);
+
+  if (!queued && model?.unit === "pts") {
+    return (
+      <View
+        style={{
+          width: "100%",
+          aspectRatio: 1,
+          borderRadius: 12,
+          overflow: "hidden",
+          backgroundColor: c.paper,
+          borderWidth: 1,
+          borderColor: c.line,
+          justifyContent: "space-between",
+        }}
+      >
+        <CompeteTimeSeriesChart state={state} sport={sport} track={competitionTrack(sport)} compact />
+      </View>
+    );
+  }
+
   const key = `race-card-square-v6:${queued}:${accountKey}:${sport}:${course?.name}:${course?.length}:${me?.values[2]}:${state.units}`;
   return <View style={{ position: "relative", borderRadius: 12, overflow: "hidden" }}><SnapshotPreview key={key} cacheKey={key} course={course} lane={me} unit={model?.unit ?? ""} queued={queued} mysteryCount={model?.lanes.filter(l => l.mystery).length ?? 0} />
     {course ? <View style={{ position: "absolute", bottom: 4, right: 6, maxWidth: "95%", flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 6, backgroundColor: c.card, borderRadius: 4, paddingHorizontal: 4 }}>

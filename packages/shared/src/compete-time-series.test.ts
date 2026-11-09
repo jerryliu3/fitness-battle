@@ -50,7 +50,7 @@ describe("compete-time-series", () => {
     expect(switched.selectedAthlete.you).toBe(false);
     expect(switched.athletes.filter((a) => a.selected)).toHaveLength(1);
     expect(switched.athletes.find((a) => a.you)?.selected).toBe(false);
-    expect(switched.gapLabel).toMatch(/vs You|Tied with You/);
+    expect(switched.gapLabel).toMatch(/vs Guest|Tied with Guest/);
   });
 
   it("computes overtake crossover nodes only for the selected athlete and supports scrubbing", () => {

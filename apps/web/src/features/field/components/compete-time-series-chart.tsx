@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { colors as c } from "@/theme/app-colors";
 import {
-  SHELL_COLORS as c,
   buildCompeteTimeSeriesModel,
   buildSleepTimeSeriesModel,
   clamp,
@@ -26,6 +26,7 @@ export function CompeteTimeSeriesChart({
   onSelectAthlete,
   hiddenIds,
   reserveTopControls = false,
+  compact = false,
 }: {
   state?: CompeteState | null;
   now?: Date;
@@ -36,6 +37,7 @@ export function CompeteTimeSeriesChart({
   onSelectAthlete?: (id: string) => void;
   hiddenIds?: readonly string[];
   reserveTopControls?: boolean;
+  compact?: boolean;
 }) {
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
@@ -118,13 +120,13 @@ export function CompeteTimeSeriesChart({
     <div
       aria-label="Weekly competition time-series graph"
       style={{
-        background: c.card,
-        borderRadius: 20,
-        border: `1px solid ${c.line}`,
-        padding: 16,
-        paddingTop: reserveTopControls ? 64 : 16,
+        background: compact ? "transparent" : c.card,
+        borderRadius: compact ? 12 : 20,
+        border: compact ? "none" : `1px solid ${c.line}`,
+        padding: compact ? 8 : 16,
+        paddingTop: compact ? 8 : reserveTopControls ? 64 : 16,
         display: "grid",
-        gap: 10,
+        gap: compact ? 6 : 10,
         color: c.ink,
       }}
     >
@@ -223,8 +225,9 @@ export function CompeteTimeSeriesChart({
         style={{
           position: "relative",
           width: "100%",
-          touchAction: "pan-y",
+          touchAction: compact ? "auto" : "pan-y",
           userSelect: "none",
+          pointerEvents: compact ? "none" : "auto",
         }}
       >
         <svg
@@ -233,9 +236,9 @@ export function CompeteTimeSeriesChart({
           style={{
             display: "block",
             width: "100%",
-            height: 204,
+            height: compact ? 150 : 204,
             overflow: "visible",
-            cursor: "ew-resize",
+            cursor: compact ? "default" : "ew-resize",
           }}
           onPointerMove={(event) => {
             updateScrubFromClientX(event.clientX);
@@ -418,86 +421,86 @@ export function CompeteTimeSeriesChart({
       </div>
 
       {/* Single-Select Athlete Quick-Focus Chips */}
-      <div
-        role="group"
-        aria-label="Select athlete trajectory"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          overflowX: "auto",
-          paddingTop: 6,
-          borderTop: `1px solid ${c.line}`,
-        }}
-      >
-        {model.athletes.map((athlete) => {
-          const active = athlete.selected;
-          return (
-            <button
-              key={athlete.id}
-              type="button"
-              aria-pressed={active}
-              aria-label={`Select ${athlete.you ? "You" : athlete.name}, place ${athlete.placeAtCursor}`}
-              onClick={() => handleSelectAthlete(athlete.id)}
-              style={{
-                ...typographyStyle("caption"),
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                padding: "5px 10px",
-                borderRadius: 999,
-                border: `1px solid ${
-                  active
+      {!compact && (
+        <div
+          role="group"
+          aria-label="Select athlete trajectory"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            overflowX: "auto",
+            paddingTop: 6,
+            borderTop: `1px solid ${c.line}`,
+          }}
+        >
+          {model.athletes.map((athlete) => {
+            const active = athlete.selected;
+            return (
+              <button
+                key={athlete.id}
+                type="button"
+                aria-pressed={active}
+                aria-label={`Select ${athlete.name}, place ${athlete.placeAtCursor}`}
+                onClick={() => handleSelectAthlete(athlete.id)}
+                style={{
+                  ...typographyStyle("caption"),
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  padding: "5px 10px",
+                  borderRadius: 999,
+                  border: `1px solid ${
+                    active
+                      ? athlete.you
+                        ? c.ink
+                        : c.podiumGold
+                      : c.line
+                  }`,
+                  background: active
                     ? athlete.you
                       ? c.ink
-                      : c.podiumGold
-                    : c.line
-                }`,
-                background: active
-                  ? athlete.you
-                    ? c.ink
-                    : "#fffbeb"
-                  : c.paper,
-                color: active
-                  ? athlete.you
-                    ? "#ffffff"
-                    : c.ink
-                  : c.ink,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              <span
-                style={{
-                  fontVariantNumeric: "tabular-nums",
+                      : "#fffbeb"
+                    : c.paper,
                   color: active
                     ? athlete.you
-                      ? c.tennis
-                      : "#b45309"
-                    : c.muted,
+                      ? "#ffffff"
+                      : c.ink
+                    : c.ink,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
                 }}
               >
-                #{athlete.placeAtCursor}
-              </span>
-              <strong>
-                {athlete.you ? "You" : athlete.firstName}
-              </strong>
-              <span
-                style={{
-                  fontVariantNumeric: "tabular-nums",
-                  color: active
-                    ? athlete.you
-                      ? "rgba(255, 255, 255, 0.78)"
-                      : c.muted
-                    : c.muted,
-                }}
-              >
-                {athlete.formattedValueAtCursor}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                <span
+                  style={{
+                    fontVariantNumeric: "tabular-nums",
+                    color: active
+                      ? athlete.you
+                        ? c.tennis
+                        : "#b45309"
+                      : c.muted,
+                  }}
+                >
+                  #{athlete.placeAtCursor}
+                </span>
+                <strong>{athlete.firstName}</strong>
+                <span
+                  style={{
+                    fontVariantNumeric: "tabular-nums",
+                    color: active
+                      ? athlete.you
+                        ? "rgba(255, 255, 255, 0.78)"
+                        : c.muted
+                      : c.muted,
+                  }}
+                >
+                  {athlete.formattedValueAtCursor}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
