@@ -54,3 +54,7 @@ Web and native offer all time, edition year, past 12 months and custom event-dat
 ## Layer 9: event discovery inbox
 
 RunSignup update-feed metadata is normalized into a local durable inbox with compound IDs, fixed scan windows, overlap deduplication, atomic checkpoints, exclusive locking and explicit access/failure reports. It does not fetch participant rows, infer event mappings or publish results. See [automation operations](rankings-automation.md) for configuration and recovery. Server-only worker credentials are unconfigured; no live discovery was run. No local verification suites executed.
+
+## Layer 10: reviewed refresh preparation and opt-in discovery schedule
+
+An explicitly mapped RunSignup result set can be prepared locally through the existing importer after public/final/count validation. Per-job metadata tracks provider versions and mapping hashes; failures do not advance preparation, missing artifacts are retried, and prepared outputs are separated by version. Database application is disabled explicitly. The new opt-in GitHub workflow schedules discovery and metadata-only planning; it never fetches participants or publishes results. The catalog is intentionally empty pending actual source mappings. See [operations](rankings-automation.md). No credentials/schedules configured, live jobs executed or local suites run.

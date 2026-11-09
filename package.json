@@ -20,7 +20,8 @@
     "rankings:db:reset": "supabase db reset --workdir rankings-db",
     "rankings:ingest": "node packages/rankings/scripts/ingest.mjs",
     "lint:ui": "node scripts/check-ui-contract.mjs",
-    "rankings:discover": "node packages/rankings/scripts/discover.mjs"
+    "rankings:discover": "node packages/rankings/scripts/discover.mjs",
+    "rankings:refresh": "node packages/rankings/scripts/refresh.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

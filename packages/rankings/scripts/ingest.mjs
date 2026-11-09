@@ -1,7 +1,8 @@
 import { register } from "node:module";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { providerJson } from "./lib/provider.mjs";
 
 register("./ts-resolve.mjs", import.meta.url);
 
@@ -17,12 +18,13 @@ const {
   parseRunSignupResults,
   runSignupResultsUrl,
   snapshotIdentity,
+  publicFinalResultSet,
 } = await import("../src/index.ts");
 
 const root = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(root, "..");
 const repoRoot = join(packageRoot, "..", "..");
-const importDir = join(packageRoot, "imports");
+const importDir = resolve(flag("--output-dir",process.argv.slice(2)) || join(packageRoot, "imports"));
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 const PAGE_SIZE = 100;
@@ -229,31 +231,58 @@ async function ingestCsv(file, flags) {
 
 async function ingestRunSignup(raceId, eventId, flags) {
   if (!flags.resultSet || !/^\d+$/.test(flags.resultSet)) throw new Error("RunSignup requires --result-set ID. Select a public set from get-result-sets before importing.");
+  const metadataUrl = new URL(`https://api.runsignup.com/rest/race/${raceId}/results/get-result-sets`);
+  metadataUrl.searchParams.set("format","json");metadataUrl.searchParams.set("event_id",eventId);metadataUrl.searchParams.set("include_total_finishers","T");
+  const initialMetadata = flags.providerAuth ? publicFinalResultSet(await providerJson(metadataUrl),flags.resultSet) : null;
   const pages = [];
   const seenPages = new Set();
+  const seenResultIds = new Set();
+  let rawCount = 0;
   let complete = false;
   for (let page = 1; page <= MAX_PAGES; page += 1) {
     const url = runSignupResultsUrl(raceId, eventId, page, PAGE_SIZE, flags.resultSet);
-    const payload = JSON.parse(await fetchText(url));
+    const requestUrl = new URL(url);
+    if(flags.providerAuth) {requestUrl.hostname="api.runsignup.com";requestUrl.pathname=requestUrl.pathname.replace("/Rest/","/rest/");}
+    const payload = flags.providerAuth ? await providerJson(requestUrl) : JSON.parse(await fetchText(url));
+    if(flags.providerAuth && (!Array.isArray(payload.individual_results_sets) || payload.individual_results_sets.length!==1
+      || String(payload.individual_results_sets[0].individual_result_set_id)!==flags.resultSet
+      || payload.individual_results_sets[0].public_results!=="T"
+      || payload.individual_results_sets[0].preliminary_results!=="F")) throw new Error("Result-page scope or publication status changed");
+    if(flags.providerAuth) {
+      const sourceRows=payload.individual_results_sets[0].results;
+      if(!Array.isArray(sourceRows)) throw new Error("Provider result rows are unavailable");
+      for(const row of sourceRows) {
+        const id=String(row?.result_id);
+        if(!/^\d+$/.test(id) || seenResultIds.has(id)) throw new Error("Provider returned missing or duplicate result identifiers");
+        seenResultIds.add(id);
+      }
+    }
     const parsed = parseRunSignupResults(payload, {
       distance: flags.distance || "5k",
       sourceUrl: url,
     });
     const signature = snapshotIdentity(JSON.stringify(payload.individual_results_sets ?? []), "").contentSha256;
+    if (parsed.inputCount > PAGE_SIZE) throw new Error("Provider exceeded the requested page size");
     if (parsed.inputCount > 0 && seenPages.has(signature)) throw new Error("RunSignup repeated a results page; import was not published.");
     seenPages.add(signature);
     pages.push(parsed);
-    if (parsed.inputCount < PAGE_SIZE) { complete = true; break; }
+    rawCount += parsed.inputCount;
+    if (parsed.inputCount < PAGE_SIZE || (initialMetadata && rawCount === initialMetadata.count)) { complete = true; break; }
     await sleep(200);
   }
   if (!complete) throw new Error("RunSignup reached the page limit; import was not published.");
+  if(flags.providerAuth) {
+    const finalMetadata=publicFinalResultSet(await providerJson(metadataUrl),flags.resultSet);
+    const inputCount=pages.reduce((count,page)=>count+page.inputCount,0);
+    if(initialMetadata.count!==finalMetadata.count || inputCount!==finalMetadata.count) throw new Error("Provider count changed or needs reconciliation; import was not prepared");
+  }
   const results = pages.flatMap((page) => page.results);
   if (!results.length) throw new Error("No eligible public results were returned.");
   const edition = {
     sourceSlug: `runsignup_${raceId}`,
     sourceName: flags.name || `RunSignup ${raceId}`,
     accessMethod: "RunSignup public results JSON",
-    reuseNotes: PUBLIC_LIST_REUSE,
+    reuseNotes: flags.reuseNotes || PUBLIC_LIST_REUSE,
     attribution: flags.attribution || "Official results via RunSignup",
     displayAllowed: true,
     externalEventId: eventId,
@@ -268,10 +297,10 @@ async function ingestRunSignup(raceId, eventId, flags) {
   const written = await writeEdition(
     `runsignup-${raceId}-${eventId}-${flags.resultSet}`,
     edition,
-    JSON.stringify(results),
-    `packages/rankings/imports/runsignup-${raceId}-${eventId}-${flags.resultSet}.jsonl`,
+    null,
+    join(importDir,`runsignup-${raceId}-${eventId}-${flags.resultSet}.jsonl`),
   );
-  return { slug: `runsignup-${raceId}-${eventId}-${flags.resultSet}`, status: "succeeded", results: results.length, sql: written.sqlPath };
+  return { slug: `runsignup-${raceId}-${eventId}-${flags.resultSet}`, status: "succeeded", results: results.length, sql: written.sqlPath, jsonl: written.jsonlPath };
 }
 
 function flag(name, argv) {
@@ -305,6 +334,8 @@ if (argv.includes("--csv")) {
   report.events.push(
     await ingestRunSignup(flag("--runsignup", argv), flag("--event", argv), {
       resultSet: flag("--result-set", argv),
+      providerAuth: argv.includes("--provider-auth"),
+      reuseNotes: flag("--reuse-notes", argv),
       distance: flag("--distance", argv),
       name: flag("--name", argv),
       year: flag("--year", argv),
@@ -331,7 +362,7 @@ if (argv.includes("--csv")) {
   }
 }
 
-if (process.env.RANKINGS_DATABASE_URL) {
+if (process.env.RANKINGS_DATABASE_URL && !argv.includes("--prepare-only")) {
   const { spawn } = await import("node:child_process");
   for (const event of report.events) {
     if (event.status !== "succeeded" || !event.sql) continue;
@@ -339,15 +370,17 @@ if (process.env.RANKINGS_DATABASE_URL) {
       const child = spawn("psql", [process.env.RANKINGS_DATABASE_URL, "-v", "ON_ERROR_STOP=1", "-f", event.sql], {
         stdio: "inherit",
       });
+      child.on("error",reject);
       child.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`psql exited ${code}`))));
     });
   }
   report.apply = "applied";
 } else {
-  report.apply =
+  report.apply = argv.includes("--prepare-only") ? "prepared_only" :
     "SQL files were written. Set RANKINGS_DATABASE_URL to apply them. The hosted rankings project in apps/web/.env.local has an anon key only, and that key cannot write the ledger.";
 }
 
-const reportPath = join(repoRoot, "docs/ingestion-trial.json");
+const reportPath = flag("--report",argv) || join(repoRoot, "docs/ingestion-trial.json");
+await mkdir(dirname(reportPath),{recursive:true});
 await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
 console.log(JSON.stringify(report, null, 2));

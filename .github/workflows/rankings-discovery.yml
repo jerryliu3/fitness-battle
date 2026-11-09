@@ -1,0 +1,58 @@
+name: Rankings discovery
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 */6 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: rankings-discovery
+  cancel-in-progress: false
+jobs:
+  discover:
+    if: vars.RANKINGS_DISCOVERY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+      - name: Restore discovery checkpoint
+        uses: actions/cache/restore@v4
+        with:
+          path: .local/rankings/discovery.json
+          key: rankings-discovery-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: rankings-discovery-
+      - name: Discover changed result sets
+        id: discovery
+        env:
+          RANKINGS_RUNSIGNUP_CALLER_ID: ${{ secrets.RANKINGS_RUNSIGNUP_CALLER_ID }}
+          RANKINGS_RUNSIGNUP_CALLER_SECRET: ${{ secrets.RANKINGS_RUNSIGNUP_CALLER_SECRET }}
+          BOOTSTRAP_SINCE: ${{ vars.RANKINGS_DISCOVERY_SINCE }}
+        run: |
+          if [ -f .local/rankings/discovery.json ]; then
+            node packages/rankings/scripts/discover.mjs
+          else
+            node packages/rankings/scripts/discover.mjs --since "$BOOTSTRAP_SINCE"
+          fi
+      - name: Plan catalogued refreshes without fetching participant rows
+        run: node packages/rankings/scripts/refresh.mjs --plan
+      - name: Retain successful discovery checkpoint
+        if: always() && steps.discovery.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: .local/rankings/discovery.json
+          key: rankings-discovery-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Archive metadata and attempt reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rankings-discovery-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .local/rankings/discovery.json
+            .local/rankings/discovery-report.json
+            .local/rankings/refresh-report.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 30
