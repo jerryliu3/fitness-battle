@@ -49,8 +49,10 @@ it("keeps queued race details and cancellation off the Compete home", () => {
   mock.state=reduceCompete(freshState(), { type: "opt-in", sport: "running" });
   mock.state.enrollments[0]!.peerIds=["hidden-peer"];
   const html=renderToStaticMarkup(createElement(ArenaScreen));
-  expect(html).not.toContain("Cancel registration");
-  expect(html).not.toContain("7 mystery competitors");
+  // The retained sheet may contain queued details, but it must remain inactive
+  // and inert until the athlete explicitly enters the event.
+  expect(html).toContain('data-active="false"');
+  expect(html).not.toContain('data-active="true"');
   expect(html).toContain("See race");
   expect(html).toContain("data-active-field");
   expect(html).not.toContain("data-standings");
