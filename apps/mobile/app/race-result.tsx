@@ -7,12 +7,14 @@ import { useFocusStyles, FocusButton } from "../src/ui/focus";
 import { AppText } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { useThemeColors } from "../src/theme";
+import { useRaceFavorites } from "../src/lib/race-favorites";
 import { mobileEnv } from "../src/lib/env";
 
 export default function RaceResult() {
   const f = useFocusStyles();
   const colors = useThemeColors();
   const router = useRouter();
+  const saved = useRaceFavorites();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [report, setReport] = useState<RaceResultReport | null>(null);
   const [error, setError] = useState("");
@@ -35,6 +37,10 @@ export default function RaceResult() {
     <ScrollView contentContainerStyle={f.content}>
       {!report ? error ? <View style={{gap:16}}><AppText role="body">{error}</AppText><FocusButton label="Retry" onPress={() => setRetry(n => n+1)} /></View> : <ActivityIndicator accessibilityLabel="Loading result" /> : <View style={{gap:24}}>
         <View style={{gap:12}}><AppText role="caption" secondary>{report.result.event_name} · {report.result.edition_year}</AppText><AppText role="display">{report.result.athlete_name}</AppText><AppText role="display" style={{fontVariant:["tabular-nums"]}}>{raceClock(report.result.rank_time_ms)}</AppText><AppText role="caption" secondary>{report.result.rank_clock === "chip" ? "Chip time" : "Official time"}</AppText></View>
+        <FocusButton label={saved.ids.includes(report.result.id) ? "★ Saved" : "☆ Save result"} secondary disabled={!saved.ready || saved.busy} onPress={() => void saved.toggle(report.result.id)} />
+        {saved.error && <AppText role="caption">{saved.error}</AppText>}
+        {!saved.ready && saved.error && <FocusButton label="Retry saved results" secondary onPress={() => void saved.reload()} />}
+        <FocusButton label="Saved results" secondary onPress={() => router.push("/saved-race-results")} />
         <View style={f.row}><View style={f.grow}><AppText role="caption" secondary>Recorded field rank</AppText><AppText role="label">{report.place.toLocaleString()} / {report.total.toLocaleString()}</AppText></View><View><AppText role="caption" secondary>Field median</AppText><AppText role="label">{raceClock(report.medianMs)}</AppText></View></View>
         <AppText role="label">Your place in the field</AppText>
         <AppText role="caption" secondary>Published results from this edition and category. Import completeness has not been verified; these are not official placements or worldwide percentiles.</AppText>

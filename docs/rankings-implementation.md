@@ -17,7 +17,7 @@ Apply the additive migration to the **rankings** project before deploying consum
 - Individual web/native result reports, edition/category distributions, source links and nearby-finisher navigation: implemented in layer 3. Percentile claims remain withheld until import completeness is verified. Favorites and comparisons remain next.
 - Importer integrity: layer 4 fixes RunSignup raw-count pagination, explicit result-set selection, repeated-page/ceiling failures and suppression preservation. Live coverage reconciliation, scheduled discovery, identity/careers and checkpoint replay remain pending subsequent focused PRs.
 
-Local checkout: `/private/tmp/overtaek-rankings`.
+Local checkout: `/Users/jerryliu/Documents/fitness-battle/fitness-battle/.worktrees/rankings`.
 Web: `pnpm install`, then `pnpm dev:web`; visit `/rankings/marathon`.
 Native: `pnpm dev:mobile`, press `i` for an installed development client.
 
@@ -32,3 +32,7 @@ Deliver single-runner playback first, then selected groups/favorites, then an op
 Source: https://www.marathonreplay.com/privacy (effective October 26, 2026), retrieved November 9. The policy lists Vercel hosting/logs and cookieless Web Analytics; consent-based PostHog usage analytics; Google Fonts and optional Google Maps photorealistic 3D tiles; Esri/OpenStreetMap tiles and buildings; jsDelivr for a 3D library; Instagram for feedback. It describes browser-local preferences and published race timing data. This is the site's stated service inventory, not an independent network audit or evidence that it uses Mapbox. Our renderer can reuse the existing Mapbox integration; these additional vendors are not prerequisites.
 
 CI follow-up: #561 passed its original check. #562/#564/#565 failed because FlatList empty/footer slots used null where this dependency version expects undefined. Fixed the slots in #562 and propagated through both descendants. No local suites or typechecks were run; new CI results remain pending.
+
+## Layer 5: device-local favorites
+
+Web and native save up to 100 result IDs locally. They do not claim identity, sync across devices, or affect competition. A bounded `rankings_saved` read fetches fresh public labels without computing distributions or ranks. Suppressed/removed results appear as unavailable and can be removed; cached personal labels are never used. Storage writes are optimistic, serialized and rolled back on failure; initial storage failures do not overwrite existing bookmarks. Apply the saved-results migration to the rankings project before deploying the saved-list API. No production migration, tests, typechecks or builds run.

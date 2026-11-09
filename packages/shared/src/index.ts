@@ -85,3 +85,4 @@ export * from "./competition-activity-log";
 
 export * from "./week-recap";
 export * from "./race-rankings";
+export * from "./race-favorites";

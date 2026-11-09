@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AppHeading } from "@/ui/section";
+import { SaveRaceResult } from "../../favorites";
 import { notFound } from "next/navigation";
 import { loadRaceReport } from "@/lib/race-results";
 import { raceClock, raceSourceUrl, RACE_DISTANCES, RACE_CATEGORIES } from "@fitness-battle/shared";
@@ -21,6 +22,8 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
     <header className="rankings-top"><Link href={`/rankings/${distance?.slug ?? "marathon"}?sex=${r.sex}&year=${r.edition_year}`}>← {distance?.label} results</Link><span className="rankings-kicker">Race report</span></header>
     <p className="rankings-kicker">{r.event_name} · {r.edition_year}</p><AppHeading level={1} role="display" className="race-athlete-name">{r.athlete_name}</AppHeading>
     <div className="race-report-hero"><strong>{raceClock(r.rank_time_ms)}</strong><span>{r.rank_clock === "chip" ? "Chip time" : "Official time"} · {RACE_CATEGORIES.find(c => c.value === r.sex)?.label}{r.bib ? ` · #${r.bib}` : ""}</span></div>
+    <SaveRaceResult id={r.id} />
+    <p><Link href="/rankings/saved">Saved results →</Link></p>
     <section className="race-report-metrics" aria-label="Result context"><div><span>Recorded field rank</span><strong>{report.place.toLocaleString()} <small>/ {report.total.toLocaleString()}</small></strong></div><div><span>Field median</span><strong>{raceClock(report.medianMs)}</strong></div></section>
     <section className="race-distribution"><AppHeading level={2} role="heading">Your place in the field</AppHeading><p className="rankings-note">Published results from this edition and category. Import completeness has not been verified; these are not official placements or worldwide percentiles.</p>
       <div className="race-histogram" role="img" aria-label={`Finish-time distribution. Selected time ${raceClock(r.rank_time_ms)}; median ${raceClock(report.medianMs)}.`}>

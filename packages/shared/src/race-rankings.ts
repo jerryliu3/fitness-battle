@@ -47,3 +47,4 @@ export function raceSourceUrl(value: string) {
   try { const url = new URL(value); return ["https:", "http:"].includes(url.protocol) ? url.href : null; }
   catch { return null; }
 }
+export type SavedRaceResult = Pick<RaceResult, "id" | "athlete_name" | "distance_slug" | "rank_time_ms" | "rank_clock" | "event_name" | "edition_year">;
