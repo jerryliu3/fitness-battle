@@ -297,10 +297,11 @@ export async function loadCompeteAccount(
     effortScoreEvents,
     attempts,
     overtakeResult,
+    { data: entitlementRow },
   ] = await Promise.all([
     db
       .from("profiles")
-      .select("display_name, city, primary_sport, avatar_url, lifetime_overtakes")
+      .select("display_name, city, primary_sport, avatar_url, lifetime_overtakes, athlete_number")
       .eq("id", userId)
       .maybeSingle(),
     db.from("sport_ratings").select("*").eq("user_id", userId),
@@ -337,6 +338,7 @@ export async function loadCompeteAccount(
     loadEffortScoreEvents(db, userId),
     loadAllRecordAttempts(db, userId),
     db.from("overtake_receipts").select("account_revision,sport,moment").eq("user_id", userId).order("account_revision", { ascending: false }).limit(50),
+    db.from("athlete_entitlements").select("tier, status, provider, product_id, current_period_start, expires_at, cancel_at_period_end").eq("user_id", userId).maybeSingle(),
   ]);
 
   if (overtakeResult.error) throw new Error("overtake_receipts_unavailable");
@@ -365,6 +367,22 @@ export async function loadCompeteAccount(
         0,
         Number(profile.lifetime_overtakes ?? 0) || 0,
       ),
+      athleteNumber: profile.athlete_number != null ? Number(profile.athlete_number) : null,
+    };
+  }
+
+  if (entitlementRow && typeof entitlementRow === "object" && !Array.isArray(entitlementRow) && "tier" in entitlementRow && entitlementRow.tier) {
+    state = {
+      ...state,
+      entryPass: {
+        tier: entitlementRow.tier,
+        status: entitlementRow.status,
+        provider: entitlementRow.provider,
+        productId: entitlementRow.product_id,
+        currentPeriodStart: entitlementRow.current_period_start ? String(entitlementRow.current_period_start) : undefined,
+        expiresAt: entitlementRow.expires_at ? String(entitlementRow.expires_at) : null,
+        cancelAtPeriodEnd: Boolean(entitlementRow.cancel_at_period_end),
+      },
     };
   }
 

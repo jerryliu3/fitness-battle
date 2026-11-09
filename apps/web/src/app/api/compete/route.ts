@@ -163,6 +163,13 @@ export async function PUT(request: Request): Promise<Response> {
         state: { ...live, requiresCanonicalFields: true, enrollments: live.enrollments.map(e => ({ ...e, awaitingField: e.awaitingField ?? !e.fieldBoard })) },
       });
     } catch (error) {
+      if (error instanceof Error && error.message.includes("entry_pass_required")) {
+        return NextResponse.json({
+          error: "entry_pass_required",
+          message: "An Entry Pass is required to compete in more than one sport simultaneously.",
+          persisted: false,
+        }, { status: 403 });
+      }
       if (error instanceof Error && error.message.includes("account_changed_reload")) {
         return NextResponse.json({ error: "account_changed_reload", persisted: false }, { status: 409 });
       }
