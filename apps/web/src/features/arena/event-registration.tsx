@@ -1,12 +1,30 @@
 "use client";
 import { useEffect, useState, type CSSProperties } from "react";
-import { COMPETE_ART_COLORS, competeNow, eventRegistration, entryBarcode, registrationDetailCards, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
+import { COMPETE_ART_COLORS, competeNow, eventRegistration, entryBarcode, registrationDetailCards, evaluateSportClaimAllowance, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
 import { AppHeading, AppParagraph, AppText } from "@/ui/section";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { WaveCountdown } from "@/ui/wave-countdown";
 import { CompeteIcon, EventArt } from "./event-home";
 
-export function EventRegistration({ state, event, busy, error, registered, onClaim, onView }: { state: CompeteState; event: CompeteEvent; busy: boolean; error: string; registered: boolean; onClaim(): void; onView(): void }) {
+export function EventRegistration({
+  state,
+  event,
+  busy,
+  error,
+  registered,
+  onClaim,
+  onView,
+  onNeedPass,
+}: {
+  state: CompeteState;
+  event: CompeteEvent;
+  busy: boolean;
+  error: string;
+  registered: boolean;
+  onClaim(): void;
+  onView(): void;
+  onNeedPass?: () => void;
+}) {
   const reduced = useReducedMotion();
   const transition = { duration: reduced ? 0 : .18 };
   const [step, setStep] = useState(0);
@@ -16,6 +34,17 @@ export function EventRegistration({ state, event, busy, error, registered, onCla
   useEffect(() => { if (error) setClaiming(false); }, [error]);
   const now = competeNow(state);
   const detail = eventRegistration(state, event, now);
+
+  const enrolledSports = (state?.enrollments ?? []).map((e) => e.sport);
+  const sleepOptedIn = Boolean(
+    state?.healthRatings?.some((r) => r.metric === "sleep" && r.optedIn)
+  );
+  const allowance = evaluateSportClaimAllowance({
+    entitlement: state.entryPass,
+    enrolledSports,
+    candidateSport: event,
+    sleepOptedIn,
+  });
   return <div className="event-registration" style={{ "--registration-color": COMPETE_ART_COLORS[event] } as CSSProperties}>
     <AnimatePresence mode="wait" initial={false}>
     {step === 0 && <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={transition} className="registration-step" key="event"><div className="registration-hero"><EventArt event={event} /><AppHeading>{detail.name} Meet</AppHeading><AppParagraph>{detail.description}</AppParagraph></div>
@@ -29,7 +58,25 @@ export function EventRegistration({ state, event, busy, error, registered, onCla
             <AppHeading>{detail.name} Meet</AppHeading><AppText role="label">{detail.details[2]!.summary} league</AppText>
             <AppText role="label">Starts {detail.starts}</AppText>
             <div className="registration-ticket-stub"><span className="registration-barcode" aria-hidden="true">{entryBarcode(`${event}:${detail.start}`).map((width, i) => <i key={i} style={{ flexGrow: width }} />)}</span></div>
-            <button type="button" className="fb-btn" disabled={busy || claimed} onClick={() => { setClaiming(true); setTimeout(onClaim, 60); }}>{busy ? "Claiming your spot…" : "Claim your spot"}</button>
+            <button
+              type="button"
+              className="fb-btn"
+              disabled={busy || (claimed && allowance.allowed)}
+              onClick={
+                !allowance.allowed
+                  ? () => onNeedPass?.()
+                  : () => {
+                      setClaiming(true);
+                      setTimeout(onClaim, 60);
+                    }
+              }
+            >
+              {busy
+                ? "Claiming your spot…"
+                : !allowance.allowed
+                ? "Unlock with Entry Pass ($0.99/mo)"
+                : "Claim your spot"}
+            </button>
           </div>
         </div>
         <div className="registration-face registration-back" inert={!claimed} aria-hidden={!claimed}>

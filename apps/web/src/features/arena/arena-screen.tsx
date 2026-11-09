@@ -5,6 +5,7 @@ import { EventRegistration } from "./event-registration";
 import { RaceUpdates } from "./race-updates";
 import { CompeteIcon, EventHome, CrewEvents, ExploreEvents, CompeteResults } from "./event-home";
 import { CompeteSheet } from "./compete-sheet";
+import { EntryPassSheet } from "./entry-pass-sheet";
 import { StatusBadge, AppParagraph, AppText, AppHeading } from "@/ui/section";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -24,7 +25,7 @@ import { CoursePreview } from "./course-preview";
 import { QueuedField } from "./queued-field";
 import "./queued-field.css";
 import { Sheet } from "@/ui/sheet";
-import { APP_TIMEZONE, competitionQueue, competitionTrack, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, eventRegistration, type CompeteEvent, type SportId } from "@fitness-battle/shared";
+import { APP_TIMEZONE, competitionQueue, competitionTrack, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, eventRegistration, evaluateSportClaimAllowance, type CompeteEvent, type SportId } from "@fitness-battle/shared";
 
 function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
   const lastDay = weeklyCompetitionLastDay(endsAt);
@@ -48,6 +49,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const immersive = immersiveAccount === (user?.id ?? "guest") && tabActive;
   useEffect(() => { if (!tabActive) setImmersiveAccount(null); }, [tabActive]);
   const [authOpen, setAuthOpen] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
   const [register, setRegister] = useState(false);
   const [selection, setSelection] = useState<{account:string; sport:SportId|"sleep"}|null>(null);
   useEffect(()=>{if(tabActive&&requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:user?.id??"guest",sport:requestedEvent as SportId});},[requestedEvent,user?.id,tabActive]);
@@ -199,14 +201,53 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         if (event) enterEvent(event);
       }}>
         {sport ? <>
-          <EventRegistration key={`${account}:${sport}`} state={state} event={sport} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} busy={joinBusy} error={joinError || saveError || ""} onClaim={() => void claimEntry()} onView={() => { pendingEntry.current = sport; setRegister(false); }} />
+          <EventRegistration
+            key={`${account}:${sport}`}
+            state={state}
+            event={sport}
+            registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)}
+            busy={joinBusy}
+            error={joinError || saveError || ""}
+            onClaim={() => void claimEntry()}
+            onView={() => { pendingEntry.current = sport; setRegister(false); }}
+            onNeedPass={() => setPaywallOpen(true)}
+          />
         </> : <div className="focus-sport-options" aria-label="Sport or category">
           {[...SPORTS.map(item => ({ id: item.id, name: item.name })), { id: "sleep" as const, name: "Sleep & recovery" }].map(item => {
             const registered = item.id === "sleep" ? sleepOptedIn : active.some(r => r.sport === item.id);
-            return <button key={item.id} type="button" disabled={registered} className="focus-sport-option" onClick={() => setSport(item.id)}><AppText role="label">{item.name}</AppText><AppText role="caption" secondary>{registered ? "Already registered" : "View event details →"}</AppText></button>;
+            const enrolledSports = (state?.enrollments ?? []).map((e) => e.sport);
+            const allowance = evaluateSportClaimAllowance({
+              entitlement: state.entryPass,
+              enrolledSports,
+              candidateSport: item.id,
+              sleepOptedIn,
+            });
+            return (
+              <button
+                key={item.id}
+                type="button"
+                disabled={registered}
+                className="focus-sport-option"
+                onClick={() => setSport(item.id)}
+              >
+                <AppText role="label">{item.name}</AppText>
+                <AppText role="caption" secondary>
+                  {registered
+                    ? "Already registered"
+                    : allowance.allowed
+                    ? "View event details →"
+                    : "Pass required →"}
+                </AppText>
+              </button>
+            );
           })}
         </div>}
       </Sheet>
+
+      <EntryPassSheet
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+      />
 
       <AuthPrompt
         open={authOpen}
