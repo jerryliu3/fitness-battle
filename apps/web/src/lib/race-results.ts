@@ -39,3 +39,11 @@ export async function loadRaceCoverage(): Promise<import("@fitness-battle/shared
   if (error || !Array.isArray(data)) throw new Error("Coverage unavailable");
   return data;
 }
+
+export async function loadEditionHistory(edition:number,distance:string,sex:string):Promise<import("@fitness-battle/shared").RaceEditionTrend[]> {
+  const client=createRankingsClient();
+  if(!client) throw new Error("Rankings unavailable");
+  const {data,error}=await client.rpc("rankings_edition_history",{p_edition_id:edition,p_distance:distance,p_sex:sex});
+  if(error || !Array.isArray(data)) throw new Error("History unavailable");
+  return data;
+}

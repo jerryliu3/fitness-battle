@@ -101,3 +101,7 @@ Apply `rankings_split_reports` to the rankings project before deploying. This sc
 ## Product layer 12: checkpoint comparisons
 
 Web/native comparisons load the two source-gated reports and compare only shared checkpoint distances with compatible race distance and split clocks. Missing observations retain unavailable gaps. Finish clocks remain separately labelled; cross-course elapsed gaps do not imply positions or overtakes. Added unexecuted shared regressions; no migration or acquisition.
+
+## Product layer 13: edition history
+
+Web/native compare the same event’s editions by published count, fastest/median time and clock mix. Event identity comes from the existing event/edition relationship, never event-name matching. Read scope preserves distance/category and source gates; up to the supported 1900–2100 edition years. Counts are explicitly stored coverage, not participation-growth claims. Apply `rankings_edition_history` before deployment. Added rollback-only SQL scenarios; not executed. No production changes or acquisition.

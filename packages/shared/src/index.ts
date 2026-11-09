@@ -88,3 +88,4 @@ export * from "./race-rankings";
 export * from "./race-favorites";
 
 export * from "./race-splits";
+export * from "./race-history";
