@@ -198,3 +198,22 @@
   .race-pagination button { padding:10px; font-size:12px; }
 }
 @media(prefers-reduced-motion:reduce) { .rankings-boards a { transition:none; } }
+.race-result-link { font-weight:600; text-decoration:none; overflow-wrap:anywhere; }
+.race-result-link:hover { text-decoration:underline; }
+.rankings-shell h1.race-athlete-name { font-family:var(--font-body),sans-serif; font-size:clamp(30px,5vw,48px); font-weight:600; line-height:1.15; letter-spacing:-.04em; overflow-wrap:anywhere; }
+.race-report-hero { display:grid; gap:10px; margin:32px 0; }
+.race-report-hero>strong { font-size:clamp(54px,10vw,88px); line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-.06em; }
+.race-report-hero>span,.race-report-metrics span { color:var(--muted); font-size:13px; }
+.race-report-metrics { display:grid; grid-template-columns:1fr 1fr; gap:20px; padding:24px 0; border-block:1px solid var(--line); }
+.race-report-metrics>div { display:grid; gap:10px; }
+.race-report-metrics strong { font-size:28px; font-variant-numeric:tabular-nums; }
+.race-report-metrics small { font-size:14px; color:var(--muted); font-weight:400; }
+.race-distribution,.race-neighbors { margin:40px 0; }
+.race-distribution h2,.race-neighbors h2 { font-size:20px; letter-spacing:-.02em; }
+.race-histogram { height:180px; display:flex; gap:3px; align-items:flex-end; padding-top:16px; }
+.race-histogram>div { flex:1; background:var(--muted); opacity:.35; border-radius:3px 3px 0 0; }
+.race-histogram>div.selected { background:var(--tennis,#d9f44a); opacity:1; outline:1px solid var(--ink); }
+.race-chart-axis { display:flex; justify-content:space-between; margin:10px 0 20px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.race-distribution details { font-size:12px; color:var(--muted); }
+.race-neighbors a { display:flex; justify-content:space-between; gap:16px; padding:18px 0; border-bottom:1px solid var(--line); text-decoration:none; font-size:14px; }
+.race-neighbors strong { font-variant-numeric:tabular-nums; white-space:nowrap; }

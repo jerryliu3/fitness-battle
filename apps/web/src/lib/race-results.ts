@@ -12,3 +12,11 @@ export async function loadRaceResults(distance: string, query: ReturnType<typeof
   if (error || !data) throw new Error("Rankings unavailable");
   return data as RaceResultsPage;
 }
+
+export async function loadRaceReport(id: number): Promise<import("@fitness-battle/shared").RaceResultReport | null> {
+  const client = createRankingsClient();
+  if (!client) throw new Error("Rankings are not configured");
+  const { data, error } = await client.rpc("rankings_result", { p_id: id });
+  if (error) throw new Error("Result unavailable");
+  return data;
+}
