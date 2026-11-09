@@ -2,6 +2,8 @@ import { MaterialBack } from "../../src/ui/material-back";
 import { CompetitionPanel } from "../../src/features/competition-panel";
 import { CompetitionTimelineProvider, CompetitionTimelineControls } from "../../src/features/competition-timeline-context";
 import { EventRegistration } from "../../src/features/event-registration";
+import { EntryPassSheet } from "../../src/features/entry-pass-sheet";
+import { useEntryPass } from "../../src/lib/entry-pass";
 import { useCompeteExperience } from "../../src/features/compete-experience";
 import { RaceUpdates } from "../../src/features/race-updates";
 import { EventHome, CoursePreview } from "../../src/features/event-home";
@@ -61,6 +63,8 @@ const f=useFocusStyles();
   const [courseOptions, setCourseOptions] = useState<React.ReactNode>(null);
   const [expandRequest, setExpandRequest] = useState(0);
   const [register, setRegister] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const { canClaimSport } = useEntryPass(state);
   const [selection,setSelection]=useState<{account:string;sport:SportId|"sleep"}|null>(null);
   useEffect(()=>{if(requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:accountKey,sport:requestedEvent as SportId});},[requestedEvent,accountKey]);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
@@ -155,13 +159,21 @@ const f=useFocusStyles();
         pendingEntry.current = null;
         if (event) experience.enter(accountKey, event);
       }}>
-        {sport ? <EventRegistration key={`${accountKey}:${sport}`} state={state} event={sport} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} error={saveError ?? undefined} onClaim={claimEntry} onView={() => { pendingEntry.current = sport; setRegister(false); }} /> : <View style={{ gap: 10 }}>
+        {sport ? <EventRegistration key={`${accountKey}:${sport}`} state={state} event={sport} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} error={saveError ?? undefined} onClaim={claimEntry} onView={() => { pendingEntry.current = sport; setRegister(false); }} onNeedPass={() => setPaywallOpen(true)} /> : <View style={{ gap: 10 }}>
           {[...SPORTS.map(item => ({ id: item.id, name: item.name })), { id: "sleep" as const, name: "Sleep & recovery" }].map(item => {
             const registered = item.id === "sleep" ? sleepOptedIn : active.some(r => r.sport === item.id);
-            return <Pressable key={item.id} accessibilityRole="button" disabled={registered} accessibilityLabel={`${item.name}, ${registered ? "already registered" : "view event details"}`} onPress={() => setSport(item.id)} style={[f.chip, { opacity: registered ? 0.5 : 1 }]}><AppText role="label">{item.name}</AppText><AppText role="caption" secondary>{registered ? "Already registered" : "View event details →"}</AppText></Pressable>;
+            const allowance = canClaimSport(item.id);
+            return <Pressable key={item.id} accessibilityRole="button" disabled={registered} accessibilityLabel={`${item.name}, ${registered ? "already registered" : allowance.allowed ? "view event details" : "entry pass required"}`} onPress={() => setSport(item.id)} style={[f.chip, { opacity: registered ? 0.5 : 1 }]}><AppText role="label">{item.name}</AppText><AppText role="caption" secondary>{registered ? "Already registered" : allowance.allowed ? "View event details →" : "Pass required →"}</AppText></Pressable>;
           })}
         </View>}
       </FocusSheet>
+      <EntryPassSheet
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+        onPurchased={() => {
+          refresh();
+        }}
+      />
     </SafeAreaView>
     </CompetitionTimelineProvider>
   );
