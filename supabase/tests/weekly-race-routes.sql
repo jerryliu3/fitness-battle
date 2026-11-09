@@ -69,6 +69,22 @@ begin
     insert into public.race_routes(id,name,coordinates) values('empty-distance','Invalid','[[0,0],[0,0]]');
     raise exception 'Zero length catalog route accepted';
   exception when check_violation then null; end;
+  -- A queued registrant can preview only their exact wave, without seating.
+  insert into public.wave_enrollments(user_id,sport,wave_start,week_end)
+    values(outsider,'walking',starts,ends);
+  perform set_config('request.jwt.claim.sub',outsider::text,true);
+  if public.competition_route('walking',starts,ends)->>'id' <> assigned.route_id then
+    raise exception 'Queued preview differs from assigned route';
+  end if;
+  begin
+    perform public.competition_route('walking',starts,ends+interval '1 day');
+    raise exception 'Queued preview accepted incorrect bounds';
+  exception when insufficient_privilege then null; end;
+  delete from public.wave_enrollments where user_id=outsider;
+  begin
+    perform public.competition_route('walking',starts,ends);
+    raise exception 'Cancelled registration retained preview access';
+  exception when insufficient_privilege then null; end;
   update public.race_routes set is_active=false;
   insert into public.week_fields(sport,wave_start,week_end,member_ids)
     values('running',starts+interval '14 days',ends+interval '14 days',array[athlete]);

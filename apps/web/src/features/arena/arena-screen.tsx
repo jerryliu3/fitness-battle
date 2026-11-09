@@ -18,9 +18,9 @@ import { AuthPrompt } from "@/components/auth-gate";
 import { FieldStage } from "@/features/field/components/field-stage";
 import { buildFieldModel } from "@/features/field/model";
 import { buildSplitBoard } from "@/features/split/model";
-import { loadCrewJoinOptions, seatCrewFieldPin } from "@/lib/crew-field";
 import { WeekReveal } from "@/features/split/components/week-reveal";
 import { SleepPanel } from "@/features/health/sleep-panel";
+import { CoursePreview } from "./course-preview";
 import { QueuedField } from "./queued-field";
 import "./queued-field.css";
 import { Sheet } from "@/ui/sheet";
@@ -51,7 +51,6 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const [register, setRegister] = useState(false);
   const [selection, setSelection] = useState<{account:string; sport:SportId|"sleep"}|null>(null);
   useEffect(()=>{if(tabActive&&requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:user?.id??"guest",sport:requestedEvent as SportId});},[requestedEvent,user?.id,tabActive]);
-  const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const account = user?.id ?? "guest";
   const [joinBusy, setJoinBusy] = useState(false), [joinError, setJoinError] = useState("");
@@ -111,7 +110,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   function openRegistration(event: CompeteEvent | null = null) {
     if (joinBusy) return;
     joinFlight.current = null;
-    setSport(event); setJoinError(""); setCompeteWithCrew(false); setRegister(true);
+    setSport(event); setJoinError(""); setRegister(true);
   }
   async function claimEntry() {
     if (!sport || joinFlight.current || (sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport))) return;
@@ -122,19 +121,11 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
     joinFlight.current = flight; setJoinBusy(true); setJoinError("");
     let committed = false;
     try {
-      let pin = null;
-      if (event !== "sleep" && competeWithCrew) {
-        const options = await loadCrewJoinOptions();
-        const crew = options.find(item => item.sport === event);
-        if (!crew) throw new Error("Join a crew for this sport in Crew before claiming a crew entry pass.");
-        pin = await seatCrewFieldPin({ crewId: crew.id, sport: event });
-        if (!pin) throw new Error("Could not prepare your crew entry. Please try again.");
-      }
       if (currentAccount.current !== joiningAccount || joinFlight.current !== flight) return;
       if (event === "sleep") dispatch({ type: "opt-in-health", metric: "sleep", accountId: joiningAccount });
       else {
         dispatch({ type: "set-primary", sport: event, accountId: joiningAccount });
-        dispatch({ type: "opt-in", sport: event, crewBoard: pin, accountId: joiningAccount });
+        dispatch({ type: "opt-in", sport: event, crewBoard: null, accountId: joiningAccount });
       }
       committed = true;
       setSelection({ account: joiningAccount, sport: event });
@@ -199,6 +190,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
       </div>
       </div>
       <Sheet open={immersive && detailDestination} fullScreen title={selectedSport === "sleep" ? "Recovery" : `${SPORTS.find(item => item.id === selectedSport)?.name} meet`} body="" onClose={() => setImmersiveAccount(null)} scrollResetKey={selectedSport ?? "none"}>
+        {selectedSport && selectedSport !== "sleep" && queued && <CoursePreview state={state} sport={selectedSport} queued />}
         {selectedSport && (queued ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch(selectedSport === "sleep" ? { type: "opt-out-health", metric: "sleep" } : { type: "opt-out", sport: selectedSport }); setImmersiveAccount(null); }} /> : selectedSport === "sleep" ? <SleepPanel state={state} now={now} onJoin={() => openRegistration("sleep")} onLeave={() => dispatch({ type: sleep.renews ? "schedule-leave" : "resume-renewal", metric: "sleep" })} leaveLabel={sleep.renews ? "Stop after this week" : "Keep playing next week"} /> : null)}
       </Sheet>
       <Sheet open={register} title={sport ? eventRegistration(state, sport, now).title : "Choose an event"} body={sport ? "" : "Pick your next start line."} onClose={() => { if (!joinBusy) setRegister(false); }} scrollResetKey={sport ?? "choose"} onClosed={() => {
@@ -207,7 +199,6 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         if (event) enterEvent(event);
       }}>
         {sport ? <>
-          {sport !== "sleep" && <div className="compete-section-heading" style={{ marginBottom: 20 }}><AppText role="label">Compete with your crew</AppText><button type="button" role="switch" aria-label="Compete with your crew" aria-checked={competeWithCrew} disabled={joinBusy || active.some(r => r.sport === sport)} className={competeWithCrew ? "fb-switch on" : "fb-switch"} onClick={() => setCompeteWithCrew(!competeWithCrew)}><span className="fb-switch-knob" /></button></div>}
           <EventRegistration key={`${account}:${sport}`} state={state} event={sport} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} busy={joinBusy} error={joinError || saveError || ""} onClaim={() => void claimEntry()} onView={() => { pendingEntry.current = sport; setRegister(false); }} />
         </> : <div className="focus-sport-options" aria-label="Sport or category">
           {[...SPORTS.map(item => ({ id: item.id, name: item.name })), { id: "sleep" as const, name: "Sleep & recovery" }].map(item => {

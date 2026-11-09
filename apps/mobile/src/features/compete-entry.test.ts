@@ -19,7 +19,7 @@ vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "alice" } }) }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: mock.state, accountKey: "alice", dispatch: mock.dispatch }) }));
 vi.mock("./compete-experience", () => ({ useCompeteExperience: () => ({ event: { account: "alice", sport: mock.event }, immersive: mock.immersive, close: mock.close, enter: mock.enter }) }));
 vi.mock("./competition-field", () => ({ CompetitionField: () => null }));
-vi.mock("./event-home", () => ({ EventHome: "EventHome" }));
+vi.mock("./event-home", () => ({ EventHome: "EventHome", CoursePreview: "CoursePreview" }));
 vi.mock("./event-registration", () => ({ EventRegistration: "EventRegistration" }));
 vi.mock("./compete-home-sections", () => ({ CompeteIcon: "CompeteIcon", CrewEvents: "CrewEvents", ExploreEvents: "ExploreEvents", CompeteResults: "CompeteResults" }));
 vi.mock("./round-takeover", () => ({ RoundTakeover: () => null }));

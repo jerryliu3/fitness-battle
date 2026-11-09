@@ -4,7 +4,7 @@ import { CompetitionTimelineProvider, CompetitionTimelineControls } from "../../
 import { EventRegistration } from "../../src/features/event-registration";
 import { useCompeteExperience } from "../../src/features/compete-experience";
 import { RaceUpdates } from "../../src/features/race-updates";
-import { EventHome } from "../../src/features/event-home";
+import { EventHome, CoursePreview } from "../../src/features/event-home";
 import { CompeteIcon, CrewEvents, ExploreEvents, CompeteResults } from "../../src/features/compete-home-sections";
 import { CompeteSheet } from "../../src/ui/compete-sheet";
 import { SectionStack, AppText } from "../../src/ui/section";
@@ -125,6 +125,7 @@ const f=useFocusStyles();
       {persistent && experience.immersive && selectedSport && detailDestination && <SafeAreaView style={{ position: "absolute", inset: 0, backgroundColor: c.paper, zIndex: 40 }} edges={["top", "bottom"]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingHorizontal: 16, paddingVertical: 8 }}><MaterialBack onPress={exit} /><AppText role="heading" accessibilityRole="header">{selectedSport === "sleep" ? "Recovery" : `${SPORTS.find(item => item.id === selectedSport)?.name} meet`}</AppText></View>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, gap: 20 }}>
+          {queued && selectedSport !== "sleep" && <CoursePreview state={state} sport={selectedSport} queued />}
           {queued ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch(selectedSport === "sleep" ? { type: "opt-out-health", metric: "sleep" } : { type: "opt-out", sport: selectedSport }); exit(); }} /> : <SleepPanel state={state} dispatch={dispatch} />}
         </ScrollView>
       </SafeAreaView>}

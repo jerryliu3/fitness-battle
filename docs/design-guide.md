@@ -1016,7 +1016,8 @@ use the same user-facing copy, preserving provenance internally.
 
 ### Registration ticket — November 8
 
-Registration leads with one entry ticket and its claim action. Claiming retains
+Registration retains its event introduction, schedule and expandable event details.
+Only the ticket beneath those sections is redesigned. Claiming retains
 that screen, flips the ticket to “You’re on the start list”, then lands a stamp
 with the event icon, name, wave dates and year. The reverse has a live countdown
 and an explicit View upcoming race action; dates derive from the actual enrollment
@@ -1034,3 +1035,12 @@ When its field arrives, the selected sport continues into the existing live fiel
 Native uses the retained experience host; web reuses the full-screen dialog with
 its focus, Escape and Back behavior. No roster, scoring or registration-write
 rules change.
+
+The November 9 refinement removes the registration Crew toggle and promotional
+ticket slogans. The ticket carries the event, start time, barcode and claim action;
+its reverse carries the confirmation, countdown and sport/week stamp. Queued
+distance previews show the assigned GPS course with anonymous mystery markers
+at zero, both on Compete home and inside the upcoming event. Apply
+`20261109000100_queued_course_preview.sql` to permit an athlete to preview only
+the exact bounds of their own queued registration. This reveals no roster and
+does not seat athletes. No production migration was executed.
