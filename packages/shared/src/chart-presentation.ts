@@ -126,7 +126,7 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
     };
     const end = shiftAppDay(start, 7);
     return openLineModel(now < start ? [] : events(start, new Date(Math.min(now.getTime(), end.getTime()))), value => value.toFixed(1), [], 7, {
-      start, end, step: true, showTime: true,
+      start, end, showTime: true,
       previousRows: events(previousStart, start), previousStart,
     });
   }
@@ -165,14 +165,15 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
     .map(result => ({ id: `settlement:${result.id}`, occurredAt: result.periodEnd, scoreBefore: result.eloBefore, scoreAfter: result.eloAfter }));
   const events = [...legacy, ...recorded].sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt) || a.id.localeCompare(b.id, "en", { numeric: true }));
   const rows: { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean }[] = [];
-  const prior = recorded.filter(event => Date.parse(event.occurredAt) < start.getTime()).at(-1);
-  if (prior) rows.push({ id: "baseline", date: start.toISOString(), value: prior.scoreAfter });
+  const prior = events.filter(event => Date.parse(event.occurredAt) < start.getTime()).at(-1);
+  const rating = state.ratings.find(r => r.sport === state.primary);
+  const current = (track === "open" ? rating?.openElo : rating?.verifiedElo) ?? 500;
+  const initialValue = prior ? prior.scoreAfter : (events.find(event => Date.parse(event.occurredAt) >= start.getTime())?.scoreBefore ?? current);
+  rows.push({ id: "baseline", date: start.toISOString(), value: initialValue, inspectable: false });
   for (const event of events.filter(event => Date.parse(event.occurredAt) >= start.getTime())) {
     if (!rows.length || rows.at(-1)!.value !== event.scoreBefore) rows.push({ id: `before:${event.id}`, date: new Date(Math.max(start.getTime(), Date.parse(event.occurredAt) - 1)).toISOString(), value: event.scoreBefore, breakBefore: true, inspectable: false });
     rows.push({ id: event.id, date: event.occurredAt, value: event.scoreAfter });
   }
-  const rating = state.ratings.find(r => r.sport === state.primary);
-  const current = (track === "open" ? rating?.openElo : rating?.verifiedElo) ?? 500;
   rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: !!rows.length && rows.at(-1)!.value !== current });
   const chart = openLineModel(rows, value => String(Math.round(value)), [], 7, { start, end, showTime: range === "week", step: true });
   // Unknown award times remain gaps in the data. Dashed bridges connect the

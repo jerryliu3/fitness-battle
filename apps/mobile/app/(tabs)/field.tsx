@@ -8,7 +8,7 @@ export default function CrewScreen() {
 const f=useFocusStyles();
 
   return (
-    <SafeAreaView style={f.safe} edges={[]}>
+    <SafeAreaView style={f.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={f.content}>
 <SectionStack divided={false}>
         <CrewHub />

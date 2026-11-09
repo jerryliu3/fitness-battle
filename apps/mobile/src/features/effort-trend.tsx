@@ -20,6 +20,6 @@ const f=useFocusStyles();
   const chart = effortScoreLine(state, track, range);
   return <ChartFrame><View style={f.section}>
     <FocusSegments label="Effort chart score track" value={track} options={[{ value: "open", label: "Open" }, { value: "verified", label: "GPS Tracked" }]} onChange={nextTrack => setLens({ scope, track: nextTrack })} />
-    <OpenLineChart showAxes={false} live key={`${scope}:${track}`} chart={chart} label={`${track === "open" ? "Open" : "GPS Tracked"} effort score history`} unit="Effort score" range={range} onRangeChange={setRange} />
+    <OpenLineChart showAxes={true} live key={`${scope}:${track}`} chart={chart} label={`${track === "open" ? "Open" : "GPS Tracked"} effort score history`} unit="Effort score" range={range} onRangeChange={setRange} />
   </View></ChartFrame>;
 }

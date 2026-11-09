@@ -5,6 +5,7 @@ import {
   CHECKPOINT_ANCHORS,
   awardCards,
   buildArenaModel,
+  competePeriodWindow,
   countedPrimarySessionsInPeriod,
   primaryFreezePeriodStart,
   resolveArenaSelectedId,
@@ -340,4 +341,22 @@ it("renders queued fields as zero-distance anonymous slots through the benchmark
     expect(JSON.stringify(model)).not.toContain("private-");
     expect(model.lanes.filter(l => !l.you).every(l => !l.avatarUrl && l.name === "Mystery competitor")).toBe(true);
   }
+});
+
+it("does not let upcoming future waves advance the current period window", () => {
+  const sunday = new Date("2026-11-08T20:00:00.000Z"); // Sunday evening
+  const state = freshState(sunday);
+  state.enrollments = [{
+    sport: "running",
+    waveStart: "2026-11-09T05:00:00.000Z", // Starts next Monday morning
+    weekEnd: "2026-11-16T05:00:00.000Z",
+    capacity: 8,
+    peerIds: [],
+    syntheticIds: [],
+    autoEnrollNext: true,
+    crewId: null,
+  }];
+  const window = competePeriodWindow(state, sunday, "running");
+  expect(window.startsAt.toISOString()).toBe("2026-11-02T05:00:00.000Z");
+  expect(window.endsAt.toISOString()).toBe("2026-11-09T05:00:00.000Z");
 });
