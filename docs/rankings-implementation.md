@@ -50,3 +50,7 @@ The semantic typography CI failures on the preceding web PRs were fixed in their
 ## Layer 8: calendar-date timeframe filters
 
 Web and native offer all time, edition year, past 12 months and custom event-date ranges. Custom end dates include the entire chosen day; the database receives half-open date bounds. Rolling bounds are anchored to the server's UTC calendar date, from the anniversary date in the preceding year through today (clamping February 29 to February 28). Actual bounds return with the results and are displayed as inclusive dates. Unknown event dates are excluded only from date-bounded scopes; edition-year links remain backward compatible. Search ranks are computed within the selected timeframe before filtering by name/bib. The old RPC delegates to the canonical new query, preventing duplicate semantics. No local suites or production migrations run.
+
+## Layer 9: event discovery inbox
+
+RunSignup update-feed metadata is normalized into a local durable inbox with compound IDs, fixed scan windows, overlap deduplication, atomic checkpoints, exclusive locking and explicit access/failure reports. It does not fetch participant rows, infer event mappings or publish results. See [automation operations](rankings-automation.md) for configuration and recovery. Server-only worker credentials are unconfigured; no live discovery was run. No local verification suites executed.

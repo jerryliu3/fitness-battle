@@ -30,3 +30,4 @@ export { editionFromOpenTrack } from "./ingest/opentrack-import";
 export { parseRunSignupResults, runSignupResultsUrl } from "./ingest/runsignup";
 export { editionImportSql, snapshotIdentity } from "./ingest/sql";
 export type { IngestedEdition, IngestedFinish } from "./ingest/types";
+export { parseUpdatedRaceSets, mergeRaceCandidates, updatedRaceSetsUrl, parseDiscoveryState, raceCandidateKey, type RaceCandidate, type DiscoveryState } from "./ingest/discovery";
