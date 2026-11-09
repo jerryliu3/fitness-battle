@@ -1062,3 +1062,10 @@ a continuous two-face flip, then a firm stamp, and stays open on the countdown;
 only explicit View race enters the event. Respect Reduced Motion. Queued field
 sheets have no scrolling body: changing the sheet height reveals cancellation.
 Mystery athletes appear on the map only, not in the queued text card.
+
+Registration sizing uses a shared minimum across steps, reserving the measured
+height of both ticket faces before step three opens. Expanded details contribute
+to that reservation. Content remains in normal flow so Continue cannot overlap
+longer text. On compact screens or with larger accessibility text, the outer
+sheet's existing scrolling remains an accessibility fallback; ticket content is
+never clipped or scaled down. Hidden ticket measurement does not run a countdown.
