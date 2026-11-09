@@ -125,7 +125,9 @@ export function competePeriodWindow(
   now: Date = competeNow(state),
   sport: SportId = state.primary,
 ) {
-  const enrollment = state.enrollments.find((item) => item.sport === sport);
+  const enrollment = state.enrollments.find(
+    (item) => item.sport === sport && Date.parse(item.waveStart) <= now.getTime(),
+  );
   if (enrollment) {
     return {
       startsAt: new Date(enrollment.waveStart),
