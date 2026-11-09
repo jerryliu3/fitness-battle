@@ -970,3 +970,8 @@ rounded boundary so no internal gradient rectangle is visible.
 The header flame uses Phosphor Fire Regular when inactive today and Fire Fill
 when counted activity exists on the current Eastern day; the number retains its
 weekly streak meaning. The custom Compete wreath is awaiting a replacement choice.
+
+Across all app tabs, the shared header uses an Overtaek wordmark with gold forward marks,
+then profile and an outlined weekly-streak badge with a quiet divider. Effort
+Score remains available through Progress. Development previews open from the
+wordmark in development builds. Home, Compete, Progress and Crew use the same header on native and web.

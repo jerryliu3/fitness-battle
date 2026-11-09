@@ -40,7 +40,6 @@ vi.mock("../features/progress-screen", () => ({
   ProgressScreen: "ProgressScreen",
 }));
 vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path" }));
-vi.mock("../features/effort-rail",()=>({EffortRail:"EffortRail"}));
 import ProgressTab from "../../app/(tabs)/you";
 import { AppHeader } from "./app-header";
 let renderer: ReactTestRenderer;
@@ -99,20 +98,34 @@ describe("mobile navigation parity", () => {
   });
 });
 
- it("groups the profile, effort and streak as separate accessible controls before Debug", async () => {
+ it("groups the profile and streak as separate accessible controls beside the wordmark", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   mock.state = freshState();
   mock.state.avatarUrl = "https://example.com/athlete.jpg";
   await act(async () => { renderer = create(createElement(AppHeader)); });
   const group = renderer.root.findByProps({ testID: "athlete-header-group" });
   expect(group.findAllByType("Pressable" as never)).toHaveLength(1);
-  expect(group.findByType("EffortRail" as never).props.compact).toBe(true);
+  expect(renderer.root.findAllByType("EffortRail" as never)).toHaveLength(0);
   expect(group.findAllByType("AppIcon" as never).some(node => node.props.name === "flame")).toBe(true);
   expect(group.findByType("Image" as never).props.source.uri).toBe(mock.state.avatarUrl);
   expect(group.findAllByProps({ accessibilityLabel: "Debug event triggers" })).toHaveLength(0);
   const buttons = renderer.root.findAllByType("Pressable" as never);
-  expect(buttons[0]!.props.accessibilityLabel).toBe("Open athlete settings");
-  expect(buttons[1]!.props.accessibilityLabel).toBe("Debug event triggers");
-  await act(async () => buttons[0]!.props.onPress());
+  const profile = buttons.find(node => node.props.accessibilityLabel === "Open athlete settings")!;
+  await act(async () => profile.props.onPress());
   expect(mock.navigate).toHaveBeenCalledWith("/athlete");
  });
+
+
+it("keeps development previews reachable from the shared wordmark", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mock.state = freshState();
+  await act(async () => { renderer = create(createElement(AppHeader)); });
+  expect(renderer.root.findAllByType("EffortRail" as never)).toHaveLength(0);
+  const buttons = renderer.root.findAllByType("Pressable" as never);
+  const profile = buttons.find(node => node.props.accessibilityLabel === "Open athlete settings")!;
+  await act(async () => profile.props.onPress());
+  expect(mock.navigate).toHaveBeenCalledWith("/athlete");
+  const debug = buttons.find(node => node.props.accessibilityLabel === "Debug event triggers")!;
+  await act(async () => debug.props.onPress());
+  expect(renderer.root.findAllByProps({ accessibilityLabel: "Trigger UI events" })).toHaveLength(1);
+});

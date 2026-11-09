@@ -3,12 +3,14 @@
 import { useCompete } from "@/components/compete-context";
 import { playCue } from "@/lib/haptics";
 import { DEBUG_EVENT_OPTIONS, type DebugEventId, type ShellTabId } from "@fitness-battle/shared";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 export function DebugEventMenu({
   activeTab,
   onNavigate,
+  trigger,
 }: {
+  trigger?: ReactNode;
   activeTab: ShellTabId | null;
   onNavigate: (href: string, tabId: ShellTabId) => void;
 }) {
@@ -39,17 +41,16 @@ export function DebugEventMenu({
   }
 
   return (
-    <div ref={wrapRef} className="focus-shell-debug">
+    <div ref={wrapRef} className={`focus-shell-debug${trigger ? " is-brand" : ""}`}>
       <button
         type="button"
-        className={`focus-shell-debug-btn${debugActive ? " is-active" : ""}`}
+        className={`focus-shell-debug-btn${trigger ? " is-brand" : ""}${debugActive ? " is-active" : ""}`}
         aria-label="Debug event triggers"
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((prev) => !prev)}
       >
-        <span className="focus-shell-debug-dot" aria-hidden="true" />
-        Debug {open ? "▴" : "▾"}
+        {trigger ?? <><span className="focus-shell-debug-dot" aria-hidden="true" />Debug {open ? "▴" : "▾"}</>}
       </button>
       {open ? (
         <div className="focus-shell-debug-menu" role="menu" aria-label="Trigger UI events">
