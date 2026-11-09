@@ -147,6 +147,30 @@ The [Brand & Ember study](brand-study/brand-and-ember-studio.md) is available at
 
 ## Shared visual language
 
+### Afterglow week recap — November 9
+
+The full-screen settled-week recap uses Afterglow's static gold-to-sage-to-ink
+background, with a dark wash for readable light text. Shared presentation colors
+live in `WEEK_RECAP_COLORS` in `packages/shared/src/shell.ts`. Result receipts,
+replay controls and charts retain their selected light or dark appearance. A thin,
+non-interactive segmented bar indicates the actual page. Both platforms use one
+opening page followed by a result/training pair for each sport, in product sport
+order. For example: opening, Running result, Running training, Cycling result,
+Cycling training. Back never acknowledges results; only Done or the final
+sport-settings action acknowledges the original complete result set.
+The progress bar replaces the redundant “Round complete” text row. Primary CTAs
+keep the shared yellow fill and dark labels, including in the web portal.
+The rest of the application retains its selected Everyday Club presentation.
+
+Recap pages fit the available viewport at natural size, scaling the central
+reading only when needed. Headings, progress and navigation remain outside the
+scaled reading. Short web landscape windows use two columns. Explicit larger
+text settings retain readable scrolling rather than being scaled back down.
+Replay controls and field choices open their existing focused details instead
+of extending the main page. Web and native share Eastern date buckets through
+`weekRecapTraining`; archived training must retain DST-safe half-open bounds.
+See the [implementation review](reviews/afterglow-week-recap/review.md).
+
 ### Selected chart system — October 29
 
 Home's hours chart and Progress's Effort Score use **Open line**: an unfilled

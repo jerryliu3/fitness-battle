@@ -1,0 +1,114 @@
+.focus-round-takeover.week-recap-afterglow {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding-block: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-bottom));
+  isolation: isolate;
+  background: var(--recap-background);
+  color: var(--recap-text);
+}
+
+.week-recap-afterglow::before,
+.week-recap-afterglow::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.week-recap-afterglow::before {
+  background: radial-gradient(ellipse at 73% 19%, var(--recap-glow) 0%, var(--recap-warm) 24%, var(--recap-sage) 46%, var(--recap-background) 77%);
+}
+
+.week-recap-afterglow::after {
+  background: var(--recap-scrim);
+  opacity: var(--recap-scrim-opacity);
+}
+
+.week-recap-afterglow .week-recap-progress {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-bottom: 18px;
+}
+
+.week-recap-afterglow .week-recap-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  gap: 12px;
+}
+
+.week-recap-progress > span {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--recap-text);
+  opacity: .24;
+}
+
+.week-recap-progress > .is-complete {
+  background: var(--recap-progress);
+  opacity: 1;
+}
+
+.week-recap-afterglow .week-recap-heading :is(h2, p),
+.week-recap-afterglow .week-recap-training > p {
+  color: var(--recap-text);
+}
+
+.week-recap-heading { flex-shrink: 0; }
+.week-recap-heading h2 { margin: 0; }
+.week-recap-heading p { margin: 8px 0 0; }
+.week-recap-fit { flex: 1; min-height: 0; position: relative; overflow: hidden; }
+.week-recap-fit-inner { position: absolute; top: 0; inset-inline: 0; padding: 6px; transform-origin: top center; }
+.week-recap-fit.is-large-text { overflow-y: auto; }
+.week-recap-fit.is-large-text .week-recap-fit-inner { position: relative; }
+.week-recap-arrival { display: grid; justify-items: center; gap: 24px; padding-top: 16px; }
+.week-recap-arrival p { width: 100%; }
+.week-recap-training { display: grid; gap: 16px; }
+.week-recap-training p { margin: 0; }
+.week-recap-fit-inner > .week-result-card { margin: 0; min-height: 0; padding: 16px; gap: 10px; }
+.week-recap-footer { display: grid; gap: 12px; flex-shrink: 0; }
+.week-recap-navigation, .week-recap-detail-actions { display: flex; gap: 10px; }
+.week-recap-navigation > .fb-btn { flex: 1; }
+.week-recap-detail-actions > button { flex: 1; min-width: 0; }
+.week-recap-afterglow .fb-btn-line { background: var(--card, #fff); color: var(--ink, #142b3b); }
+
+/* Existing instruments follow the selected appearance. */
+.week-recap-afterglow .chart-scrubber {
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--card, #fff);
+  color: var(--ink, #142b3b);
+}
+
+.week-recap-afterglow .fb-btn {
+  background: var(--recap-action);
+  border-color: var(--recap-action);
+  color: var(--recap-ink);
+}
+
+.week-recap-afterglow .fb-btn:active {
+  background: var(--recap-action-pressed);
+}
+
+.week-recap-choices-overlay { position: fixed; inset: 0; z-index: 300; background: #09191e99; }
+.week-recap-choices { position: fixed; inset: auto 0 0; z-index: 301; max-height: 85dvh; overflow: auto; padding: 24px; border-radius: 24px 24px 0 0; background: var(--card, #fff); color: var(--ink, #142b3b); }
+@media (max-height: 700px) {
+  .focus-round-takeover.week-recap-afterglow { padding-block: 12px; }
+  .week-recap-afterglow .week-recap-progress { margin-bottom: 10px; }
+  .week-recap-afterglow .week-recap-content { gap: 8px; }
+  .week-recap-footer { gap: 8px; }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .week-recap-afterglow .week-recap-content { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); grid-template-rows: auto 1fr; gap: 16px; }
+  .week-recap-heading { grid-column: 1; grid-row: 1; }
+  .week-recap-fit { grid-column: 2; grid-row: 1 / span 2; align-self: stretch; }
+  .week-recap-footer { grid-column: 1; grid-row: 2; align-self: end; }
+}

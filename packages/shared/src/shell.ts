@@ -74,6 +74,18 @@ export const HOME_HEALTH_COLORS = {
   comparison: SHELL_COLORS.secondary,
 } as const;
 
+/** Afterglow atmosphere, scoped to the existing full-screen settled-week recap. */
+export const WEEK_RECAP_COLORS = {
+  background: "#192f35",
+  glow: "#e6b548",
+  warm: "#a28745",
+  sage: "#4b5d52",
+  scrim: "#09191e",
+  scrimOpacity: 0.48,
+  text: "#f9f7ec",
+  progress: "#fff1bb",
+} as const;
+
 export const SHELL_TYPE = {
   display: "Manrope",
   body: "Manrope",

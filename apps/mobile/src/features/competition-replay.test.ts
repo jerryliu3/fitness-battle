@@ -16,6 +16,7 @@ vi.mock("../ui/section", () => ({ AppText: "AppText", textStyle: () => ({}) }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("../ui/focus", () => ((()=>{const mock={ FocusButton: "FocusButton", FocusSegments: "FocusSegments", f: {} };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
+vi.mock("expo-status-bar", () => ({ StatusBar: "StatusBar" }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaProvider: "SafeAreaProvider", SafeAreaView: "SafeAreaView" }));
 vi.mock("react-native", () => ({useColorScheme: () => "light",  Modal: "Modal", View: "View", Text: "Text", Pressable: "Pressable", StyleSheet: { create: (value: unknown) => value }, PanResponder: { create: () => ({ panHandlers: {} }) }, AppState: { addEventListener: () => ({ remove() {} }) } }));
 vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
@@ -40,6 +41,7 @@ async function open() {
 }
 it("uses the local practice ledger when signed in with Debug active and reloads from the server after reset", async () => {
   await open();
+  expect(renderer.root.findByType("StatusBar" as never).props.style).toBe("dark");
   expect(mock.request).not.toHaveBeenCalled();
   const field = () => renderer.root.findByType("LaneTrack" as never);
   expect(field().props.lanes.map((lane: { id: string }) => lane.id).sort()).toEqual(localCompetitionReplay(state, selection).athletes.map(a => a.id).sort());
