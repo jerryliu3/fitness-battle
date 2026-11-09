@@ -3,7 +3,7 @@ import { parseResultsCsv } from "./csv";
 import { divisionIsUnder18, personNameFromList } from "./names";
 import { parseMikaTimingList } from "./mikatiming";
 import { editionFromOpenTrack } from "./opentrack-import";
-import { parseRunSignupResults } from "./runsignup";
+import { parseRunSignupResults, runSignupResultsUrl } from "./runsignup";
 import { editionImportSql, snapshotIdentity } from "./sql";
 
 const MIKA_ROW = `
@@ -95,8 +95,16 @@ describe("public results parsers", () => {
     );
     expect(page.skippedYouth).toBe(1);
     expect(page.skippedPrivate).toBe(1);
+    expect(page.inputCount).toBe(3);
     expect(page.results).toHaveLength(1);
     expect(page.results[0]?.chipTimeMs).toBe(1_292_110);
+  });
+
+  it("selects one provider result set and preserves nonbinary category support", () => {
+    const url = new URL(runSignupResultsUrl("1", "2", 3, 100, "4"));
+    expect(url.searchParams.get("individual_result_set_id")).toBe("4");
+    expect(url.searchParams.get("page")).toBe("3");
+    expect(url.searchParams.get("supports_nb")).toBe("T");
   });
 
   it("turns the OpenTrack fixture shape into an edition", () => {
@@ -145,6 +153,7 @@ describe("public results parsers", () => {
     expect(sql).toContain("private.upsert_source_record");
     expect(sql).toContain("private.upsert_performance");
     expect(sql).toContain("on conflict (slug)");
+    expect(sql).toContain("display_allowed = public.sources.display_allowed and excluded.display_allowed");
     expect(snapshot.contentSha256).toHaveLength(64);
   });
 });

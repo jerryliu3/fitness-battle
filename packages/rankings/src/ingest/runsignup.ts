@@ -24,6 +24,7 @@ export type RunSignupPayload = {
 
 export type RunSignupPage = {
   results: IngestedFinish[];
+  inputCount: number;
   skippedYouth: number;
   skippedUnparsed: number;
   skippedPrivate: number;
@@ -35,6 +36,7 @@ export function parseRunSignupResults(
   options: { distance: RoadDistance; sourceUrl: string },
 ): RunSignupPage {
   const results: IngestedFinish[] = [];
+  const inputCount = (payload.individual_results_sets ?? []).reduce((count, set) => count + (set.results?.length ?? 0), 0);
   let skippedYouth = 0;
   let skippedUnparsed = 0;
   let skippedPrivate = 0;
@@ -74,12 +76,14 @@ export function parseRunSignupResults(
       results.push(built.finish);
     }
   }
-  return { results, skippedYouth, skippedUnparsed, skippedPrivate };
+  return { results, inputCount, skippedYouth, skippedUnparsed, skippedPrivate };
 }
 
-export function runSignupResultsUrl(raceId: string, eventId: string, page: number, pageSize: number): string {
+export function runSignupResultsUrl(raceId: string, eventId: string, page: number, pageSize: number, resultSetId?: string): string {
   const url = new URL(`https://runsignup.com/Rest/race/${raceId}/results/get-results`);
   url.searchParams.set("format", "json");
+  url.searchParams.set("supports_nb", "T");
+  if (resultSetId) url.searchParams.set("individual_result_set_id", resultSetId);
   url.searchParams.set("event_id", eventId);
   url.searchParams.set("page", String(page));
   url.searchParams.set("results_per_page", String(pageSize));
