@@ -16,7 +16,7 @@
 .compete-race-heading>span:last-child{margin-left:auto}
 .compete-sport-icon{padding:9px;border-radius:12px;background:var(--action-soft);display:flex}
 .compete-live{color:var(--app-status-success)}
-.compete-race-entry{margin-top:-8px;margin-bottom:-8px;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;border:0;background:transparent;color:var(--ink);text-align:left;cursor:pointer;width:100%}
+.compete-race-entry{margin-top:-8px;margin-bottom:-8px;display:flex;align-items:center;justify-content:flex-end;gap:6px;min-height:44px;border:0;background:transparent;color:var(--ink);text-align:right;cursor:pointer;width:100%}
 .compete-recovery-card{position:relative;flex:0 0 min(328px,88%);scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-height:390px;padding:20px;border:1px solid var(--line);border-radius:20px;background:var(--accent-soft);color:var(--ink);text-align:left;overflow:hidden;cursor:pointer}
 .compete-recovery-card>span:last-child{margin-top:auto}
 .compete-empty{display:grid;justify-items:center;gap:12px;padding:32px 20px;border:1px dashed var(--line);background:var(--card);color:var(--ink);border-radius:20px;cursor:pointer}

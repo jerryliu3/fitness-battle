@@ -52,8 +52,8 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
       <AppText role="caption" secondary>{queued ? "" : `Place ${place} / ${lanes.length}`}</AppText>
     </View>
     <CoursePreview state={state} sport={sport} queued={Boolean(queued)} />
-    <Pressable accessibilityRole="button" accessibilityLabel={`Enter ${SPORTS.find(item => item.id === sport)?.name} field`} onPress={onEnter} hitSlop={{ top: 6, bottom: 6 }} style={({ pressed }) => ({ minHeight: 32, marginTop: -8, marginBottom: -8, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, opacity: pressed ? 0.6 : 1 })}>
-      <AppText role="label" style={{ flex: 1 }}>See race</AppText><AppIcon name="chevron" size={20} />
+    <Pressable accessibilityRole="button" accessibilityLabel={`Enter ${SPORTS.find(item => item.id === sport)?.name} field`} onPress={onEnter} hitSlop={{ top: 6, bottom: 6 }} style={({ pressed }) => ({ minHeight: 32, marginTop: -8, marginBottom: -8, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 4, opacity: pressed ? 0.6 : 1 })}>
+      <AppText role="label">See race</AppText><AppIcon name="chevron" size={20} />
     </Pressable>
   </View>;
 }
