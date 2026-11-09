@@ -50,11 +50,11 @@ export default function RaceRankings() {
         <AppText role="caption" secondary>Chip time where available, otherwise official time.</AppText>
         {busy ? <ActivityIndicator accessibilityLabel="Loading race results" /> : error ? <View style={{gap:12}}><AppText role="body">Results are unavailable.</AppText><FocusButton label="Retry" secondary onPress={() => setRetry(n => n + 1)} /></View> : <AppText role="label">{data?.total.toLocaleString()} {query ? "matching results" : "published results"}</AppText>}
       </View>}
-      renderItem={({item}) => <View style={[f.row, { alignItems:"flex-start", paddingVertical:16 }]}>
+      renderItem={({item}) => <Pressable accessibilityRole="button" onPress={() => router.push({pathname:"/race-result",params:{id:String(item.id)}})} style={[f.row, { alignItems:"flex-start", paddingVertical:16 }]}>
         <AppText role="caption" secondary>{item.place.toLocaleString()}</AppText>
         <View style={f.grow}><AppText role="label">{item.athlete_name}</AppText><AppText role="caption" secondary>{item.event_name} · {item.edition_year}</AppText></View>
         <View><AppText role="label" style={{fontVariant:["tabular-nums"]}}>{raceClock(item.rank_time_ms)}</AppText><AppText role="caption" secondary>{item.rank_clock === "chip" ? "Chip" : "Official"}</AppText></View>
-      </View>}
+      </Pressable>}
       ListEmptyComponent={!busy && !error ? <AppText role="body" secondary>No results in this field. Try another name, year or category.</AppText> : null}
       ListFooterComponent={data && data.total > 0 ? <View style={{gap:12,marginTop:20}}><AppText role="caption" secondary>Page {data.page} of {Math.ceil(data.total / data.pageSize).toLocaleString()}</AppText><View style={f.chipRow}>{data.page > 1 && <FocusButton label="Previous" secondary onPress={() => setPage(data.page - 1)} />}{data.page * data.pageSize < data.total && <FocusButton label="Next" secondary onPress={() => setPage(data.page + 1)} />}</View></View> : null}
     />

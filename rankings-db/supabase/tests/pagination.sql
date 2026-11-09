@@ -22,9 +22,26 @@ begin
   if (payload->>'total')::integer <> 1 or (payload->'rows'->0->>'place')::integer <> 204 then
     raise exception 'search changed cohort rank: %',payload;
   end if;
+  payload := public.rankings_result((select id from public.performances where source_record_id=rec));
+  if (payload->>'total')::integer <> 205 or (payload->>'place')::integer <> 204
+    or (select sum((b->>'count')::integer) from jsonb_array_elements(payload->'bins') b) <> 205 then
+    raise exception 'report cohort or distribution drifted: %',payload;
+  end if;
   update public.sources set display_allowed=false where id=src;
+  if public.rankings_result((select id from public.performances where source_record_id=rec)) is not null then
+    raise exception 'suppressed report exposed';
+  end if;
   payload := public.rankings_page('marathon','unknown',2099,'',1);
   if (payload->>'total')::integer <> 0 then raise exception 'suppressed source leaked'; end if;
+end;
+$$;
+rollback;
+
+-- Report suppression uses the same source gate as the field.
+begin;
+do $$
+begin
+  if public.rankings_result(-1) is not null then raise exception 'unknown result exposed'; end if;
 end;
 $$;
 rollback;

@@ -36,3 +36,14 @@ export function raceClock(ms: number) {
   const rest = String(seconds % 60).padStart(2, "0");
   return hours ? `${hours}:${String(minutes).padStart(2, "0")}:${rest}` : `${minutes}:${rest}`;
 }
+export type RaceResultReport = {
+  result: Omit<RaceResult, "place">;
+  total: number; place: number; slower: number; medianMs: number;
+  minimumMs: number; binWidthMs: number;
+  bins: { bucket: number; count: number }[];
+  neighbors: Pick<RaceResult, "id" | "athlete_name" | "rank_time_ms">[];
+};
+export function raceSourceUrl(value: string) {
+  try { const url = new URL(value); return ["https:", "http:"].includes(url.protocol) ? url.href : null; }
+  catch { return null; }
+}
