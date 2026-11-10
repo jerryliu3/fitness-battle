@@ -1,33 +1,20 @@
 import { describe, expect, it, vi } from "vitest";
-import { createElement } from "react";
-import { create } from "react-test-renderer";
 
 vi.mock("react-native", () => ({
   Platform: { OS: "ios" },
 }));
 
 import { freshState } from "@fitness-battle/shared";
-import { useEntryPass } from "./entry-pass";
+import { computeEntryPass } from "./entry-pass";
 
-// RenderHook helper to execute the hook within React's render phase
-function runHook(state: Parameters<typeof useEntryPass>[0]) {
-  let observed!: ReturnType<typeof useEntryPass>;
-  function Consumer() {
-    observed = useEntryPass(state);
-    return null;
-  }
-  create(createElement(Consumer));
-  return observed;
-}
-
-describe("useEntryPass hook", () => {
+describe("computeEntryPass", () => {
   it("grants founding lifetime pass for athlete #42", () => {
     const state = {
       ...freshState(),
       athleteNumber: 42,
     };
 
-    const pass = runHook(state);
+    const pass = computeEntryPass(state);
     expect(pass.isFoundingLifetime).toBe(true);
     expect(pass.isActive).toBe(true);
     expect(pass.badgeText).toBe("#42 · Founding Lifetime");
@@ -53,7 +40,7 @@ describe("useEntryPass hook", () => {
       ],
     };
 
-    const pass = runHook(state);
+    const pass = computeEntryPass(state);
     expect(pass.isFoundingLifetime).toBe(false);
     expect(pass.isActive).toBe(false);
     expect(pass.badgeText).toBe("#10,450");
@@ -61,10 +48,14 @@ describe("useEntryPass hook", () => {
     // Re-claiming running is allowed
     expect(pass.canClaimSport("running").allowed).toBe(true);
 
-    // Claiming cycling (second sport) is blocked under Option A
+    // Claiming second sport (cycling) is blocked
     const cyclingClaim = pass.canClaimSport("cycling");
     expect(cyclingClaim.allowed).toBe(false);
     expect(cyclingClaim.reason).toBe("multi_sport_limit");
+
+    // Sleep is also blocked without pass
+    const sleepClaim = pass.canClaimSport("sleep");
+    expect(sleepClaim.allowed).toBe(false);
   });
 
   it("allows multi-sport for non-founder with active monthly subscription", () => {
@@ -91,7 +82,7 @@ describe("useEntryPass hook", () => {
       ],
     };
 
-    const pass = runHook(state);
+    const pass = computeEntryPass(state);
     expect(pass.isFoundingLifetime).toBe(false);
     expect(pass.isActive).toBe(true);
     expect(pass.badgeText).toBe("#12,000 · Pass Active");

@@ -26,74 +26,82 @@ export interface UseEntryPassResult {
 }
 
 /**
+ * Pure evaluator for athlete Entry Pass status and sport enrollment eligibility.
+ */
+export function computeEntryPass(
+  state: CompeteState | null | undefined,
+  options?: { isDemo?: boolean }
+): UseEntryPassResult {
+  const athleteNumber = state?.athleteNumber ?? null;
+  const isFounder = isFoundingAthlete(athleteNumber);
+  const isDemo = Boolean(options?.isDemo);
+
+  // If the athlete is within the first 10,000, they have founding lifetime entitlement.
+  // If in demo mode, provide full demo entitlement.
+  const entitlement: AthleteEntitlement | null =
+    state?.entryPass ??
+    (isFounder
+      ? {
+          tier: "founder_lifetime",
+          status: "active",
+          provider: "early_adopter_grant",
+          expiresAt: null,
+        }
+      : isDemo
+      ? {
+          tier: "founder_lifetime",
+          status: "active",
+          provider: "demo",
+          expiresAt: null,
+        }
+      : null);
+
+  const active = isEntitlementActive(entitlement);
+
+  let badgeText = "";
+  if (athleteNumber != null && athleteNumber > 0) {
+    const numLabel = formatAthleteNumber(athleteNumber);
+    if (isFounder) {
+      badgeText = `${numLabel} · Founding Lifetime`;
+    } else if (active) {
+      badgeText = `${numLabel} · Pass Active`;
+    } else {
+      badgeText = `${numLabel}`;
+    }
+  }
+
+  const enrolledSports = (state?.enrollments ?? []).map((e) => e.sport);
+  const sleepOptedIn = Boolean(
+    state?.healthRatings?.some((r) => r.metric === "sleep" && r.optedIn)
+  );
+
+  const canClaimSport = (candidateSport: string) => {
+    return evaluateSportClaimAllowance({
+      entitlement,
+      enrolledSports,
+      candidateSport,
+      sleepOptedIn,
+    });
+  };
+
+  return {
+    entitlement,
+    athleteNumber,
+    isFoundingLifetime: isFounder,
+    isActive: active,
+    badgeText,
+    canClaimSport,
+  };
+}
+
+/**
  * React hook to evaluate the athlete's current Entry Pass status and sport enrollment eligibility.
  */
 export function useEntryPass(
   state: CompeteState | null | undefined,
   options?: { isDemo?: boolean }
 ): UseEntryPassResult {
-  return useMemo(() => {
-    const athleteNumber = state?.athleteNumber ?? null;
-    const isFounder = isFoundingAthlete(athleteNumber);
-    const isDemo = Boolean(options?.isDemo);
-
-    // If the athlete is within the first 10,000, they have founding lifetime entitlement.
-    // If in demo mode, provide full demo entitlement.
-    const entitlement: AthleteEntitlement | null =
-      state?.entryPass ??
-      (isFounder
-        ? {
-            tier: "founder_lifetime",
-            status: "active",
-            provider: "early_adopter_grant",
-            expiresAt: null,
-          }
-        : isDemo
-        ? {
-            tier: "founder_lifetime",
-            status: "active",
-            provider: "demo",
-            expiresAt: null,
-          }
-        : null);
-
-    const active = isEntitlementActive(entitlement);
-
-    let badgeText = "";
-    if (athleteNumber != null && athleteNumber > 0) {
-      const numLabel = formatAthleteNumber(athleteNumber);
-      if (isFounder) {
-        badgeText = `${numLabel} · Founding Lifetime`;
-      } else if (active) {
-        badgeText = `${numLabel} · Pass Active`;
-      } else {
-        badgeText = `${numLabel}`;
-      }
-    }
-
-    const enrolledSports = (state?.enrollments ?? []).map((e) => e.sport);
-    const sleepOptedIn = Boolean(
-      state?.healthRatings?.some((r) => r.metric === "sleep" && r.optedIn)
-    );
-
-    const canClaimSport = (candidateSport: string) => {
-      return evaluateSportClaimAllowance({
-        entitlement,
-        enrolledSports,
-        candidateSport,
-        sleepOptedIn,
-      });
-    };
-
-    return {
-      entitlement,
-      athleteNumber,
-      isFoundingLifetime: isFounder,
-      isActive: active,
-      badgeText,
-      canClaimSport,
-    };
-  }, [state, options?.isDemo]);
+  return useMemo(() => computeEntryPass(state, options), [state, options?.isDemo]);
 }
 
 /**
