@@ -52,7 +52,7 @@ export function EntryPassSheet({
 
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ display: "inline-flex", padding: "8px", borderRadius: "12px", background: "rgba(183, 242, 85, 0.15)" }}>
-              <CompeteIcon name="wreath" size={20} gold />
+              <CompeteIcon name="wreath" size={20} />
             </span>
             <div>
               <AppText role="label">Matched 8-Athlete Fields</AppText>
