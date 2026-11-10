@@ -94,9 +94,17 @@ export function EntryPassSheet({
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <AppText role="heading">{plan.title}</AppText>
                     {Boolean(plan.badge) && (
-                      <span style={{ fontSize: "11px", fontWeight: "700", padding: "2px 8px", borderRadius: "99px", background: "var(--ink)", color: "var(--paper)" }}>
+                      <AppText
+                        role="label"
+                        style={{
+                          padding: "2px 8px",
+                          borderRadius: "99px",
+                          background: "var(--ink)",
+                          color: "var(--paper)",
+                        }}
+                      >
                         {plan.badge}
-                      </span>
+                      </AppText>
                     )}
                   </div>
                   <AppText role="display">{plan.priceDisplay}</AppText>
