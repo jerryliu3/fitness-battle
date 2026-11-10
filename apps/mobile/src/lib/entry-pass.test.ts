@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+import { createElement } from "react";
+import { create } from "react-test-renderer";
 
 vi.mock("react-native", () => ({
   Platform: { OS: "ios" },
@@ -7,9 +9,15 @@ vi.mock("react-native", () => ({
 import { freshState } from "@fitness-battle/shared";
 import { useEntryPass } from "./entry-pass";
 
-// Quick renderHook helper for testing hook pure return value
+// RenderHook helper to execute the hook within React's render phase
 function runHook(state: Parameters<typeof useEntryPass>[0]) {
-  return useEntryPass(state);
+  let observed!: ReturnType<typeof useEntryPass>;
+  function Consumer() {
+    observed = useEntryPass(state);
+    return null;
+  }
+  create(createElement(Consumer));
+  return observed;
 }
 
 describe("useEntryPass hook", () => {
