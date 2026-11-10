@@ -339,7 +339,7 @@ it("renders queued fields as zero-distance anonymous slots through the benchmark
     expect(model.lanes.filter(l => l.you)).toHaveLength(1);
     expect(model.lanes.every(l => !l.ghost && l.values.every(value => value === 0))).toBe(true);
     expect(JSON.stringify(model)).not.toContain("private-");
-    expect(model.lanes.filter(l => !l.you).every(l => !l.avatarUrl && l.name === "Mystery competitor")).toBe(true);
+    expect(model.lanes.filter(l => !l.you).every(l => !l.avatarUrl && /^Athlete #\d+$/.test(l.name))).toBe(true);
   }
 });
 

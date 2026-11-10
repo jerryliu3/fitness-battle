@@ -306,7 +306,7 @@ export function buildArenaModel(
     sportId: sport, sportName: spec.name, unit: spec.gps ? (state.units === "metric" ? "km" : "mi") : "pts",
     labels: ["Start", "Start", "Start"], optedIn,
     lanes: [{ id: "you", name: state.name, avatarUrl: state.avatarUrl, you: true, ghost: false, values: [0, 0, 0] },
-      ...Array.from({ length: queue.mysteryCount }, (_, i): ArenaLane => ({ id: `mystery-${i}`, name: "Mystery competitor", mystery: true, you: false, ghost: false, values: [0, 0, 0] }))],
+      ...Array.from({ length: queue.mysteryCount }, (_, i): ArenaLane => ({ id: `mystery-${i}`, name: `Athlete #${i + 1}`, mystery: true, you: false, ghost: false, values: [0, 0, 0] }))],
   };
   const youSeries = activityCheckpoints(
     state.activities,

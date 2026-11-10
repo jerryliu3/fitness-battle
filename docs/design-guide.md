@@ -107,13 +107,16 @@ Use semantic shared tokens: navy `#142b3b`, yellow `#f7c948`, canvas `#f8f9f6`, 
 
 ### Home and Compete refinements — November 9
 
-Home calls its dismissible card stack Updates, with no card-count indicators and
+Home shows its dismissible update cards without a section heading or card-count indicators, with
 an explicit Reset action when caught up. Historical chart comparisons use Slate.
 Registered event previews open the immersive field; registration lists exclude
 registered events. Strength and Recovery share the fullscreen time-series chart
-and competition bottom sheet. Points previews show only a close view of the
-current position and past day. The minimized sheet clips standings below its
+and competition bottom sheet. Points previews show the current position and past day with readable axes,
+all field traces inside the plot, and a Slate surface distinct from the sheet. The minimized sheet clips standings below its
 timeline; selected time and the latest available endpoint remain visible.
+Competition sheets open minimized. Registration steps exit left; avatars enter
+after the panel opens, and the event home remains frozen until it closes. Queued
+athletes use numbered names without subtitles.
 Debug deregistration uses the isolated preview state and can be reset.
 
 ### Compete event home and immersive fields — November 7

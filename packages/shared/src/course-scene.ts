@@ -60,7 +60,7 @@ export function raceCourseScene(course: RaceCourse, lanes: readonly ArenaSceneLa
 
 /** Geographic cards show each athlete’s full earned distance. */
 export function courseAthleteDetail(lanes: readonly ArenaSceneLane[], lane: ArenaSceneLane, unit: string) {
-  if (lanes.some(peer => peer.mystery)) return lane.mystery ? "Revealed at the start" : "Starts at zero";
+  if (lanes.some(peer => peer.mystery)) return "";
   const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
   return `${ordinalPlace(rank)} · ${lane.value.toFixed(1)} ${unit}`;
 }
