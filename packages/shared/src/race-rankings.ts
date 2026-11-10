@@ -140,6 +140,7 @@ export function raceEditionOptions(coverage: RaceCoverage[], distance: string) {
 }
 
 export type RaceEditionAnalytics = {
+  editionCount?: number;
   total: number; fastestMs: number; slowestMs: number; medianMs: number;
   minimumMs: number; binWidthMs: number; chipCount: number; officialCount: number;
   bins: {bucket: number; count: number}[];

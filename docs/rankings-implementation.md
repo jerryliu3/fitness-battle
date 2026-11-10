@@ -127,3 +127,7 @@ Race-day replay is limited to chip timing with observed runner start timestamps 
 ## Follow-up: unified events and clear year comparisons
 
 Event cards group categories into one edition/distance entry; All runners is the default and category is a dropdown/sheet filter on web/native. Full-field ranks and counts support the combined cohort while stored categories and coverage reviews remain separate. Compare years explicitly compares the same race across years and explains when only one year is available. Additive migration `pace_unified_event_fields` required; no source data changes.
+
+## Follow-up: distance-wide analytics
+
+The same bounded histogram and finish benchmarks are shown for the entire distance as well as an individual edition. Aggregates use every public eligible finish in the selected category/timeframe before search and pagination, and report the number of included editions. Repeat finishes are counted as separate observations; no course normalization or athlete deduplication is implied. Additive `pace_distance_analytics` migration required.
