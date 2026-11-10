@@ -23,7 +23,7 @@ export function EventRegistration({ state, event, registered, error, onClaim, on
   const stepMotion = useRef(new Animated.Value(1)).current;
   const { height } = useWindowDimensions();
   const claimed = registered || claiming;
-  useEffect(() => { entry.setValue(reduced ? 1 : 0); Animated.timing(entry, { toValue: 1, duration: reduced ? 0 : 600, useNativeDriver: true }).start(); return () => entry.stopAnimation(); }, [entry, reduced]);
+  useEffect(() => { entry.setValue(reduced ? 1 : 0); Animated.timing(entry, { toValue: 1, delay: reduced ? 0 : 800, duration: reduced ? 0 : 600, useNativeDriver: true }).start(); return () => entry.stopAnimation(); }, [entry, reduced]);
   const transitioning = useRef(false);
   const nextStep = () => {
     if (transitioning.current) return;
@@ -43,9 +43,11 @@ export function EventRegistration({ state, event, registered, error, onClaim, on
     if (error) setClaiming(false);
   }, [error]);
   useEffect(() => {
+    if (!claimed) { rotation.setValue(0); stamp.setValue(0); return; }
+    stamp.setValue(0);
     const motion = Animated.sequence([
       Animated.timing(rotation, { toValue: claimed ? 180 : 0, duration: reduced ? 0 : 600, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
-      Animated.timing(stamp, { toValue: claimed ? 1 : 0, duration: reduced ? 0 : 180, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(stamp, { toValue: 1, delay: reduced ? 0 : 120, duration: reduced ? 0 : 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]);
     motion.start();
     return () => motion.stop();
@@ -56,18 +58,18 @@ export function EventRegistration({ state, event, registered, error, onClaim, on
         {back ? <>
           <AppText role="display" accessibilityRole="header">You’re on the start list.</AppText>
           <View style={{ gap: 6 }}><AppText role="caption" secondary>YOUR WAVE STARTS IN</AppText>{step === 2 ? <WaveCountdown start={detail.start} now={now} prominent /> : <AppText role="display">00:00:00</AppText>}</View>
-          <Animated.View accessibilityLabel={`${detail.name}, ${detail.dateRange}, ${detail.stampYear}`} style={{ alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderWidth: 2, borderRadius: 10, borderColor: c.ink, opacity: stamp, transform: [{ rotate: "-5deg" }, { scale: stamp.interpolate({ inputRange: [0, 1], outputRange: [1.25, 1] }) }] }}><CompeteIcon name={event} size={30} /><View style={{ flexShrink: 1, gap: 4 }}><AppText role="label">{detail.name}</AppText><AppText role="caption">{detail.dateRange} · {detail.stampYear}</AppText></View></Animated.View>
+          <Animated.View accessibilityLabel={`${detail.name}, ${detail.dateRange}, ${detail.stampYear}`} style={{ alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderWidth: 2, borderRadius: 10, borderColor: c.ink, opacity: stamp, transform: [{ rotate: "-5deg" }, { scale: stamp.interpolate({ inputRange: [0, 1], outputRange: [1.8, 1] }) }] }}><CompeteIcon name={event} size={30} /><View style={{ flexShrink: 1, gap: 4 }}><AppText role="label">{detail.name}</AppText><AppText role="caption">{detail.dateRange} · {detail.stampYear}</AppText></View></Animated.View>
         </> : <>
           <AppText role="heading" accessibilityRole="header">{detail.name} Meet</AppText><AppText role="label">{detail.details[2]!.summary} league</AppText>
           <AppText role="label">Starts {detail.starts}</AppText>
         </>}
         <View style={{ borderTopWidth: 1, borderStyle: "dashed", borderColor: c.muted, paddingTop: 18, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}><View accessible={false} style={{ flexDirection: "row", flex: 1, gap: 2 }}>{barcode.map((width, i) => <View key={i} style={{ flex: width, height: 24, backgroundColor: c.ink }} />)}</View></View>
-        <FocusButton label={back ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →` : "Claim your spot"} disabled={claiming && !registered} onPress={back ? onView : () => { setClaiming(true); setTimeout(onClaim, 60); }} />
+        <FocusButton label={back ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →` : "Claim your spot"} disabled={claiming && !registered} onPress={back ? onView : () => { setClaiming(true); onClaim(); }} />
       </View>
     </Animated.View>;
 
   return <View style={{ minHeight: reservedHeight, gap: 16 }}>
-    <Animated.View style={{ flexGrow: 1, gap: 16, opacity: stepMotion, transform: [{ translateX: stepMotion.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] }}>
+    <Animated.View style={{ flexGrow: 1, gap: 16, opacity: stepMotion, transform: [{ translateX: stepMotion.interpolate({ inputRange: [0, 1], outputRange: [-16, 0] }) }] }}>
     {step === 0 && <>
     <View style={{ padding: 20, gap: 12, borderRadius: 24, backgroundColor: tint, overflow: "hidden" }}><EventArt event={event} feature /><AppText role="heading">{detail.name} Meet</AppText><AppText secondary>{detail.description}</AppText></View>
     <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>{Array.from({ length: 8 }, (_, i) => <Animated.View key={i} style={{ opacity: entry.interpolate({ inputRange: [i / 10, (i + 2) / 10], outputRange: [0, 1], extrapolate: "clamp" }), width: 32, height: 32, borderRadius: 16, backgroundColor: c.soft, alignItems: "center", justifyContent: "center" }}><AppText role="caption">{i === 0 ? "You" : "?"}</AppText></Animated.View>)}</View>

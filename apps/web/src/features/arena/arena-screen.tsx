@@ -26,7 +26,7 @@ import { CoursePreview } from "./course-preview";
 import { QueuedField } from "./queued-field";
 import "./queued-field.css";
 import { Sheet } from "@/ui/sheet";
-import { APP_TIMEZONE, competitionQueue, competitionTrack, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, eventRegistration, type CompeteEvent, type SportId } from "@fitness-battle/shared";
+import { APP_TIMEZONE, competitionQueue, competitionTrack, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, eventRegistration, type CompeteState, type CompeteEvent, type SportId } from "@fitness-battle/shared";
 
 function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
   const lastDay = weeklyCompetitionLastDay(endsAt);
@@ -50,6 +50,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const immersive = immersiveAccount === (user?.id ?? "guest") && tabActive;
   useEffect(() => { if (!tabActive) setImmersiveAccount(null); }, [tabActive]);
   const [authOpen, setAuthOpen] = useState(false);
+  const [registrationBackground, setRegistrationBackground] = useState<CompeteState | null>(null);
   const [register, setRegister] = useState(false);
   const [selection, setSelection] = useState<{account:string; sport:SportId|"sleep"}|null>(null);
   useEffect(()=>{if(tabActive&&requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:user?.id??"guest",sport:requestedEvent as SportId});},[requestedEvent,user?.id,tabActive]);
@@ -61,7 +62,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const joinFlight = useRef<object | null>(null), currentAccount = useRef(account);
   const pendingEntry = useRef<CompeteEvent | null>(null);
   currentAccount.current = account;
-  useEffect(() => { setRegister(false); setSport(null); setJoinError(""); setJoinBusy(false); joinFlight.current = null; pendingEntry.current = null; }, [account]);
+  useEffect(() => { setRegister(false); setRegistrationBackground(null); setSport(null); setJoinError(""); setJoinBusy(false); joinFlight.current = null; pendingEntry.current = null; }, [account]);
 
   useEffect(() => {
     if (!state || selection?.account !== account) return;
@@ -114,6 +115,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   function openRegistration(event: CompeteEvent | null = null) {
     if (joinBusy) return;
     joinFlight.current = null;
+    setRegistrationBackground(state);
     setSport(event); setJoinError(""); setRegister(true);
   }
   async function claimEntry() {
@@ -132,7 +134,6 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         dispatch({ type: "opt-in", sport: event, crewBoard: null, accountId: joiningAccount });
       }
       committed = true;
-      setSelection({ account: joiningAccount, sport: event });
       void playCue("success");
     } catch (error) {
       if (currentAccount.current === joiningAccount && joinFlight.current === flight) setJoinError(error instanceof Error ? error.message : "Could not claim your entry pass.");
@@ -148,7 +149,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
     <CompetitionTimelineProvider state={state} selection={{ sport: selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary, track, periodStart: period.startsAt.toISOString(), periodEnd: period.endsAt.toISOString() }} active={immersive && !detailDestination && !pointsEvent}>
     <div className="focus-arena">
       {selectedSport && !pointsEvent ? <FieldStage externalAthleteFocus={athleteFocus} key={`${account}:${selectedSport}:${state.units}`} onOptionsChange={setCourseOptions} persistent backgroundMode queueOverlay={queued ? <></> : undefined} presentationVisible={immersive} onExit={() => setImmersiveAccount(null)} tabActive={tabActive} replayState={state} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
-      {selectedSport && pointsEvent && !queued && <div className="compete-points-field" aria-hidden={!immersive} inert={!immersive} style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--paper)", opacity: immersive ? 1 : 0, pointerEvents: immersive ? "auto" : "none", transform: immersive ? "translateX(0)" : "translateX(100%)", transition: "transform 320ms cubic-bezier(.22,1,.36,1), opacity 320ms ease" }}><CompeteTimeSeriesChart state={state} sport={selectedSport === "sleep" ? undefined : selectedSport} mode={selectedSport === "sleep" ? "sleep" : "sport"} track={track} selectedId={athleteFocus?.id} immersive timelineFraction={pointsFraction} onTimelineChange={setPointsFraction} /><button type="button" className="club-icon-button compete-queued-back" aria-label="Back to events" onClick={() => setImmersiveAccount(null)}>←</button></div>}
+      {selectedSport && pointsEvent && !queued && <div className="compete-points-field" aria-hidden={!immersive} inert={!immersive} style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--app-accent-secondary-soft)", opacity: immersive ? 1 : 0, pointerEvents: immersive ? "auto" : "none", transform: immersive ? "translateX(0)" : "translateX(100%)", transition: "transform 320ms cubic-bezier(.22,1,.36,1), opacity 320ms ease" }}><CompeteTimeSeriesChart state={state} sport={selectedSport === "sleep" ? undefined : selectedSport} mode={selectedSport === "sleep" ? "sleep" : "sport"} track={track} selectedId={athleteFocus?.id} immersive timelineFraction={pointsFraction} onTimelineChange={setPointsFraction} /><button type="button" className="club-icon-button compete-queued-back" aria-label="Back to events" onClick={() => setImmersiveAccount(null)}>←</button></div>}
       {immersive && !detailDestination && !pointsEvent && <div className="compete-field-options">{courseOptions}</div>}
 
       <div className="compete-event-home" hidden={immersive} inert={immersive} style={{ display: immersive ? "none" : undefined }}>
@@ -157,9 +158,9 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
           <div className="compete-home-date"><AppText secondary>{dateRangeLabel}</AppText><StatusBadge>{badgeLabel}</StatusBadge></div>
         </header>
         {standingsStale && <AppParagraph typographyRole="caption" role="status" className="fb-note">Standings may be out of date until the next refresh.</AppParagraph>}
-        <EventHome active={tabActive && !immersive} state={state} onEnter={enterEvent} onRecovery={() => enterEvent("sleep")} onRegister={() => openRegistration()} />
+        <EventHome active={tabActive && !immersive} state={registrationBackground ?? state} onEnter={enterEvent} onRecovery={() => enterEvent("sleep")} onRegister={() => openRegistration()} />
         <CrewEvents onChoose={() => router.push("/field")} />
-        <ExploreEvents state={state} onChoose={event => {
+        <ExploreEvents state={registrationBackground ?? state} onChoose={event => {
           if (event === "sleep" ? sleepOptedIn : active.some(r => r.sport === event)) enterEvent(event);
           else openRegistration(event);
         }} />
@@ -203,6 +204,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         {selectedSport && (queued ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch(selectedSport === "sleep" ? { type: "opt-out-health", metric: "sleep" } : { type: "opt-out", sport: selectedSport }); setImmersiveAccount(null); }} /> : selectedSport === "sleep" ? <SleepPanel state={state} now={now} onJoin={() => openRegistration("sleep")} onLeave={() => dispatch({ type: sleep.renews ? "schedule-leave" : "resume-renewal", metric: "sleep" })} leaveLabel={sleep.renews ? "Stop after this week" : "Keep playing next week"} /> : null)}
       </Sheet>
       <Sheet open={register} title={sport ? `${eventRegistration(state, sport, now).name} Registration` : "Choose an event"} body={sport ? "" : "Pick your next start line."} onClose={() => { if (!joinBusy) setRegister(false); }} scrollResetKey={sport ?? "choose"} onClosed={() => {
+        setRegistrationBackground(null);
         const event = pendingEntry.current;
         pendingEntry.current = null;
         if (event) enterEvent(event);

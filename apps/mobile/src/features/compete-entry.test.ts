@@ -104,3 +104,14 @@ it("keeps the waiting-for-field destination open after the start without cancell
   expect(renderer.root.findAllByType("FocusButton" as never).some(node => node.props.label === "Cancel registration")).toBe(false);
   expect(mock.close).not.toHaveBeenCalled();
 });
+
+it("keeps the home background unchanged while a claimed registration panel remains open", async () => {
+  const background = mock.state;
+  await act(async () => { renderer = create(createElement(ArenaScreen)); });
+  await act(async () => renderer.root.findByType("ExploreEvents" as never).props.onChoose("walking"));
+  mock.state = reduceCompete(mock.state!, { type: "opt-in", sport: "walking" });
+  await act(async () => renderer.update(createElement(ArenaScreen)));
+  expect(renderer.root.findByType("EventHome" as never).props.state).toBe(background);
+  await act(async () => renderer.root.findByType("FocusSheet" as never).props.onClosed());
+  expect(renderer.root.findByType("EventHome" as never).props.state).toBe(mock.state);
+});
