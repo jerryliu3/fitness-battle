@@ -100,7 +100,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const queue = selectedSport ? competitionQueue(state, selectedSport, now) : null;
   if (selectedSport === "sleep" && queue && !queue.queued) period.endsAt = new Date(queue.end);
   const queued = Boolean(queue?.queued || queue?.awaitingField);
-  const detailDestination = selectedSport === "sleep" && queued;
+  const detailDestination = queued && (selectedSport === "sleep" || selectedSport === "strength");
   const msLeft = Math.max(0, period.endsAt.getTime() - now.getTime());
   const daysLeft = Math.floor(msLeft / (24 * 3600 * 1000));
   const hoursLeft = Math.ceil(msLeft / (3600 * 1000));

@@ -18,6 +18,8 @@ vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [] 
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "alice" } }) }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: mock.state, accountKey: "alice", dispatch: mock.dispatch }) }));
 vi.mock("./compete-experience", () => ({ useCompeteExperience: () => ({ event: { account: "alice", sport: mock.event }, immersive: mock.immersive, close: mock.close, enter: mock.enter }) }));
+vi.mock("../ui/compete-time-series-chart", () => ({ CompeteTimeSeriesChart: "CompeteTimeSeriesChart" }));
+vi.mock("./points-timeline", () => ({ PointsTimeline: "PointsTimeline" }));
 vi.mock("./competition-field", () => ({ CompetitionField: () => null }));
 vi.mock("./event-home", () => ({ EventHome: "EventHome", CoursePreview: "CoursePreview" }));
 vi.mock("./event-registration", () => ({ EventRegistration: "EventRegistration" }));

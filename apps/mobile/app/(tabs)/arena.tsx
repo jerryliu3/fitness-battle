@@ -98,7 +98,7 @@ const f=useFocusStyles();
   const timeRemaining = remainingMs === 0 ? "Ended" : remainingDays >= 1 ? `${remainingDays} day${remainingDays === 1 ? "" : "s"} left` : `${remainingHours} hour${remainingHours === 1 ? "" : "s"} left`;
   const queue = selectedSport ? competitionQueue(state, selectedSport, now) : null;
   const queued = Boolean(queue?.queued || queue?.awaitingField);
-  const detailDestination = selectedSport === "sleep" && queued;
+  const detailDestination = queued && (selectedSport === "sleep" || selectedSport === "strength");
   const pointsEvent = selectedSport === "sleep" || selectedSport === "strength";
   const track = competitionTrack(selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary);
   function openRegistration(event: CompeteEvent | null = null) {
