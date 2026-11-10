@@ -584,7 +584,7 @@ export function DesignLab() {
         <Link href="/design/pass">The art of the pass / 15 icons + 8 lane studies ↗</Link>
         <Link href="/design/spatial">Explore five spatial leaderboards ↗</Link>
         <Link href="/design/boards">Compete field lab / 9 grounds · 3 trails · 5 materials ↗</Link>
-        <Link href="/rankings">Existing published race rankings ↗</Link>
+        <Link href="/pace">Existing published race rankings ↗</Link>
       </footer>
     </div>
   );

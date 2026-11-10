@@ -1,3 +1,9 @@
+## Canonical product destination — correction
+
+Public race results and all analytics belong to the existing `/app/pace` (Times) section. The former `/app/rankings` and `/rankings` destinations redirect there, retaining subpaths and query strings. The section opens the full public-results explorer directly with the existing 5K default. Reports, saved results, comparisons, coverage, history, athletes and replay are subviews under `/app/pace`; web/native shared links now use that destination. The existing `/api/rankings` contracts, rankings database and imported public race data are unchanged.
+
+The old Pace page in this checkout called `paceBoard`, which models competitor benchmark times from ratings and scales the user's training activities. That modeled table is replaced here with recorded public results, not relabelled as race data. No additional dataset, ingestion, migration or production database write is introduced by this integration correction. Earlier `/rankings` references below describe the historical implementation paths; use `/app/pace` for local review. Runtime availability still requires the existing rankings configuration and the stack's migrations.
+
 # Race explorer delivery
 
 Approved direction: complete paginated fields; web first with native support. Research: all-time-rankings-research-2026-11-09.md.

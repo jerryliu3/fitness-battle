@@ -11,7 +11,7 @@ export function EditionAnalytics({ analytics }: { analytics: RaceEditionAnalytic
   const active = selected === null ? null : bins[selected];
   return <section className="race-edition-analytics" aria-label="Edition finish analytics">
     <AppHeading level={2} role="heading">Inside the field</AppHeading>
-    <p className="rankings-note">{analytics.total.toLocaleString()} published finishes in this edition, category and timeframe. Athlete search does not change this field. <Link href="/rankings/coverage">Check coverage</Link></p>
+    <p className="rankings-note">{analytics.total.toLocaleString()} published finishes in this edition, category and timeframe. Athlete search does not change this field. <Link href="/pace/coverage">Check coverage</Link></p>
     <div className="race-edition-metrics">{([["Fastest finish",analytics.fastestMs],["Median finish",analytics.medianMs],["Slowest finish",analytics.slowestMs]] as const).map(([label,time]) => <div key={label}><span>{label}</span><strong>{raceClock(time)}</strong></div>)}</div>
     <div className="race-edition-chart" aria-label="Inspect finish-time ranges">{bins.map(bin => <button key={bin.bucket} type="button" aria-pressed={selected===bin.bucket} aria-label={`${bin.label}: ${bin.count.toLocaleString()} finishes`} onClick={() => setSelected(bin.bucket)}><span style={{height:`${bin.height}%`}} /></button>)}</div>
     <div className="race-chart-axis"><span>{raceClock(analytics.minimumMs)}</span><span>{raceClock(analytics.minimumMs+bins.length*analytics.binWidthMs)}</span></div>

@@ -47,7 +47,7 @@ export default function CompareRaceResults() {
       <AppText role="heading">Checkpoint gaps</AppText>
       {checkpoints?.reason ? <AppText role="caption" secondary>{checkpoints.reason}</AppText> : <View style={{gap:16}}><AppText role="caption" secondary>{checkpoints?.clock==="chip" ? "Chip" : "Official"} elapsed times at shared distances. Gaps do not establish live positions or overtakes.</AppText>{checkpoints?.rows.map(row=><View key={row.distanceM} style={{gap:6}}><AppText role="label">{row.label}</AppText><AppText role="caption">{first.athlete_name}: {row.firstMs===null ? "Unavailable" : raceClock(row.firstMs)}</AppText><AppText role="caption">{second.athlete_name}: {row.secondMs===null ? "Unavailable" : raceClock(row.secondMs)}</AppText><AppText role="label">Second − first: {row.deltaMs===null ? "Unavailable" : row.deltaMs===0 ? "Equal" : `${row.deltaMs>0 ? "+" : "−"}${raceTimeGap(row.deltaMs)}`}</AppText></View>)}</View>}
       <AppText role="caption" secondary>Each time retains its source clock. Courses, conditions and fields may differ. This comparison does not adjust performance or establish athlete identity.</AppText>
-      <FocusButton label="Share comparison" secondary onPress={() => {setShareFailed(false); void Share.share({message:`${mobileEnv.apiUrl}/rankings/compare?first=${firstId}&second=${secondId}`}).catch(() => setShareFailed(true));}} />
+      <FocusButton label="Share comparison" secondary onPress={() => {setShareFailed(false); void Share.share({message:`${mobileEnv.apiUrl}/pace/compare?first=${firstId}&second=${secondId}`}).catch(() => setShareFailed(true));}} />
       {shareFailed && <AppText role="caption">The comparison could not be shared. Please try again.</AppText>}
     </View>}
   </ScrollView></SafeAreaView>;
