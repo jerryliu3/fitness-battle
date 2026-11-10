@@ -1,7 +1,7 @@
 import { useThemeColors } from "../theme";
-import { textStyle } from "./section";
+import { AppText } from "./section";
 import { useMemo, useRef, useState } from "react";
-import { PanResponder, Text, View } from "react-native";
+import { PanResponder, View } from "react-native";
 
 
 export function ZoomControl({
@@ -38,7 +38,7 @@ const c=useThemeColors();
   );
   return (
     <View style={{ gap: 4 }}>
-      <Text style={textStyle("caption")}>Zoom</Text>
+      <AppText role="caption">Zoom</AppText>
       <View
         {...pan.panHandlers}
         onLayout={(event) => setWidth(event.nativeEvent.layout.width)}

@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { colors as c } from "@/theme/app-colors";
 import {
+  competeChartPreview,
   buildCompeteTimeSeriesModel,
   buildSleepTimeSeriesModel,
   clamp,
@@ -27,6 +28,9 @@ export function CompeteTimeSeriesChart({
   hiddenIds,
   reserveTopControls = false,
   compact = false,
+  immersive = false,
+  timelineFraction,
+  onTimelineChange,
 }: {
   state?: CompeteState | null;
   now?: Date;
@@ -38,11 +42,16 @@ export function CompeteTimeSeriesChart({
   hiddenIds?: readonly string[];
   reserveTopControls?: boolean;
   compact?: boolean;
+  immersive?: boolean;
+  timelineFraction?: number | null;
+  onTimelineChange?: (value: number | null) => void;
 }) {
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
   );
-  const [scrubFraction, setScrubFraction] = useState<number | null>(null);
+  const [internalFraction, setInternalFraction] = useState<number | null>(null);
+  const scrubFraction = timelineFraction !== undefined ? timelineFraction : internalFraction;
+  const setScrubFraction = onTimelineChange ?? setInternalFraction;
   const svgRef = useRef<SVGSVGElement | null>(null);
   const lastBucketRef = useRef<number | null>(null);
 
@@ -116,15 +125,25 @@ export function CompeteTimeSeriesChart({
     : c.podiumGold;
   const unselectedAthletes = model.athletes.filter((a) => !a.selected);
 
+  if (compact) {
+    const preview = competeChartPreview(model);
+    return <svg aria-label="Current race position over the past day" role="img" viewBox={`0 0 ${preview.width} ${preview.height}`} style={{ display: "block", width: "100%", height: "100%", overflow: "hidden" }}>
+      {preview.athletes.map(athlete => <g key={athlete.id}>
+        <polyline points={athlete.points} fill="none" stroke={athlete.selected ? c.chartSeries : c.accentSecondary} strokeWidth={athlete.selected ? 4 : 2} opacity={athlete.selected ? 1 : .35} />
+        <circle cx={athlete.x} cy={athlete.y} r={athlete.selected ? 7 : 3} fill={athlete.selected ? c.chartSeries : c.accentSecondary} />
+      </g>)}
+    </svg>;
+  }
+
   return (
     <div
       aria-label="Weekly competition time-series graph"
       style={{
-        background: compact ? "transparent" : c.card,
-        borderRadius: compact ? 12 : 20,
-        border: compact ? "none" : `1px solid ${c.line}`,
+        background: immersive ? c.paper : c.card,
+        borderRadius: immersive ? 0 : 20,
+        border: immersive ? "none" : `1px solid ${c.line}`,
         padding: compact ? 8 : 16,
-        paddingTop: compact ? 8 : reserveTopControls ? 64 : 16,
+        paddingTop: immersive ? "calc(env(safe-area-inset-top) + 100px)" : reserveTopControls ? 64 : 16,
         display: "grid",
         gap: compact ? 6 : 10,
         color: c.ink,
@@ -236,7 +255,7 @@ export function CompeteTimeSeriesChart({
           style={{
             display: "block",
             width: "100%",
-            height: compact ? 150 : 204,
+            height: immersive ? "max(240px, calc(50dvh - 150px))" : 204,
             overflow: "visible",
             cursor: compact ? "default" : "ew-resize",
           }}
@@ -421,7 +440,7 @@ export function CompeteTimeSeriesChart({
       </div>
 
       {/* Single-Select Athlete Quick-Focus Chips */}
-      {!compact && (
+      {!compact && !immersive && (
         <div
           role="group"
           aria-label="Select athlete trajectory"

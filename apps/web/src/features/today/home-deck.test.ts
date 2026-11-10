@@ -70,29 +70,15 @@ describe("Web HomeDeck", () => {
     expect(text()).toContain("RECOVERY-FRIENDLY");
     expect(text()).not.toContain("4 cards");
 
-    const dot2 = renderer.root.find(
-      (n) =>
-        n.type === "button" &&
-        typeof n.props["aria-label"] === "string" &&
-        n.props["aria-label"].startsWith("Show card 2 of 4"),
-    );
-    await act(async () => {
-      dot2.props.onClick();
-    });
-    expect(text()).toContain("Your next chapter starts here.");
-
-    const dot3 = renderer.root.find(
-      (n) =>
-        n.type === "button" &&
-        typeof n.props["aria-label"] === "string" &&
-        n.props["aria-label"].startsWith("Show card 3 of 4"),
-    );
-    await act(async () => {
-      dot3.props.onClick();
-    });
+    expect(text()).toContain("Updates");
+    expect(text()).not.toContain("Show card");
+    for (let i = 0; i < 2; i++) {
+      const dismiss = renderer.root.find(n => n.type === "button" && typeof n.props["aria-label"] === "string" && n.props["aria-label"].startsWith("Dismiss "));
+      await act(async () => { dismiss.props.onClick(); await new Promise(r => setTimeout(r, 320)); });
+    }
     expect(text()).toContain("Good things are in motion.");
 
-    // Dismiss 1 card: Reset ↺ should NOT be visible yet
+    // Dismiss 1 card: Reset should NOT be visible yet
     const dismissBtn1 = renderer.root.find(
       (n) =>
         n.type === "button" &&
@@ -103,10 +89,10 @@ describe("Web HomeDeck", () => {
       dismissBtn1.props.onClick();
       await new Promise((r) => setTimeout(r, 320));
     });
-    expect(text()).not.toContain("Reset ↺");
+    expect(text()).not.toContain("Reset");
 
-    // Dismiss remaining 3 cards until all caught up
-    for (let i = 0; i < 3; i++) {
+    // Dismiss remaining card until all caught up
+    for (let i = 0; i < 1; i++) {
       const dismissBtn = renderer.root.find(
         (n) =>
           n.type === "button" &&
@@ -121,7 +107,7 @@ describe("Web HomeDeck", () => {
 
     // Now all caught up: compact message and Reset button appear
     expect(text()).toContain("You’re all caught up.");
-    expect(text()).toContain("Reset ↺");
+    expect(text()).toContain("Reset");
 
     // Restore cards via Reset button
     const resetBtn = renderer.root.find(

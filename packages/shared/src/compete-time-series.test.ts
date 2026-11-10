@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  competeChartPreview,
   buildCompeteTimeSeriesModel,
   buildSleepTimeSeriesModel,
   interpolateTimeSeriesAt,
@@ -7,6 +8,19 @@ import {
 import { demoSleepNight, freshState, reduceCompete } from "./compete";
 
 describe("compete-time-series", () => {
+  it("keeps the current position inside a finite, close preview even at the start of a wave", () => {
+    for (const iso of ["2026-10-19T10:00:00Z", "2026-10-22T18:00:00Z"]) {
+      const now = new Date(iso);
+      const state = freshState(now);
+      const preview = competeChartPreview(buildCompeteTimeSeriesModel(state, "strength", "open", now));
+      const selected = preview.athletes.find(a => a.selected)!;
+      expect(selected.x).toBeGreaterThanOrEqual(0);
+      expect(selected.x).toBeLessThanOrEqual(preview.width);
+      expect(selected.y).toBeGreaterThanOrEqual(0);
+      expect(selected.y).toBeLessThanOrEqual(preview.height);
+      expect(preview.athletes.every(a => !/NaN|Infinity/.test(a.points))).toBe(true);
+    }
+  });
   it("defaults selection to you and deselects you when another athlete is selected", () => {
     const start = new Date("2026-10-19T09:00:00Z");
     const now = new Date("2026-10-22T18:00:00Z");

@@ -105,6 +105,17 @@ joystick replacements remain under discussion pending release-device profiling.
 
 Use semantic shared tokens: navy `#142b3b`, yellow `#f7c948`, canvas `#f8f9f6`, white cards, muted `#637482`, border `#e3e9e7`, teal `#176c75`. Cards use quiet 20px corners. Yellow primary controls use dark labels. Historical decisions below describe earlier iterations; this selection supersedes their presentation rules.
 
+### Home and Compete refinements — November 9
+
+Home calls its dismissible card stack Updates, with no card-count indicators and
+an explicit Reset action when caught up. Historical chart comparisons use Slate.
+Registered event previews open the immersive field; registration lists exclude
+registered events. Strength and Recovery share the fullscreen time-series chart
+and competition bottom sheet. Points previews show only a close view of the
+current position and past day. The minimized sheet clips standings below its
+timeline; selected time and the latest available endpoint remain visible.
+Debug deregistration uses the isolated preview state and can be reset.
+
 ### Compete event home and immersive fields — November 7
 
 Compete is the home base for registered events, using the same app header and

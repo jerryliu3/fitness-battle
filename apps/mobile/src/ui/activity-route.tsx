@@ -1,6 +1,6 @@
 import { createThemedStyles, useThemedStyles } from "../theme";
 import { useReducedMotion } from "./use-reduced-motion";
-import { textStyle } from "./section";
+import { AppText, textStyle } from "./section";
 import { useEffect, useMemo, useState } from "react";
 import { Modal, SafeAreaView, Text, View } from "react-native";
 import { activityRoute, normalizeRouteReplay, type RouteReplaySample, type Activity } from "@fitness-battle/shared";
@@ -75,9 +75,9 @@ const s=useThemedStyles(sThemes);
   const player = unavailable ? (
     <View style={s.unavailableBox}>
       <RouteStaticPreview coordinates={coordinates} height={260} strokeColor="176c75" showPlayBadge={false} />
-      <Text style={textStyle("caption")}>
+      <AppText role="caption">
         Route outline only. Interactive maps and flyovers are currently unavailable.
-      </Text>
+      </AppText>
     </View>
   ) : (
     <RouteTimelapse
@@ -94,10 +94,10 @@ const s=useThemedStyles(sThemes);
   return (
     <View style={s.container}>
       {activity.id.startsWith("local-route-") && (
-        <Text style={textStyle("caption")}>Local file preview · original activity date · Open only</Text>
+        <AppText role="caption">Local file preview · original activity date · Open only</AppText>
       )}
       {milestone && (
-        <Text style={textStyle("caption")}>Full activity route · the record segment is not identified.</Text>
+        <AppText role="caption">Full activity route · the record segment is not identified.</AppText>
       )}
 
       {/* Control bar: 2D vs 3D switcher & Fullscreen button */}
@@ -125,9 +125,9 @@ const s=useThemedStyles(sThemes);
         {!fullScreen ? player : <View style={s.inlinePlayer} />}
       </View>
 
-      <Text style={textStyle("caption")}>
+      <AppText role="caption">
         Replay follows recorded GPS points. Playback speed is illustrative. Sensor readings appear only when recorded samples are available. Speed may be calculated from the recorded GPS interval.
-      </Text>
+      </AppText>
 
       {/* Dedicated native full screen mode that returns cleanly without closing activity */}
       <Modal

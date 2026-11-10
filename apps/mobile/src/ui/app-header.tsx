@@ -32,7 +32,7 @@ const s=useThemedStyles(sThemes);
     setDebugOpen(false);
     const result = triggerDebugEvent?.(eventId);
     if (!result) return;
-    if (eventId === "week-closing") router.push(result.targetRoute);
+    if (eventId === "week-closing" || eventId === "deregister-sport") router.push(result.targetRoute);
   }
 
   return (

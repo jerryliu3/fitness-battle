@@ -1,6 +1,6 @@
 # Appearance foundation
 
-This replaces the abandoned color-study integration with a small foundation based on current main. Yellow owns actions, charts and progress; Slate owns secondary accents. `SHELL_COLORS` is a compatibility view of the canonical light appearance, not a second palette. Experimental alternate themes, diagnostic outlines and study pages are excluded.
+This replaces the abandoned color-study integration with a small foundation based on current main. Yellow owns actions, primary chart series and progress; Slate owns secondary accents and historical chart comparisons. `SHELL_COLORS` is a compatibility view of the canonical light appearance, not a second palette. Experimental alternate themes, diagnostic outlines and study pages are excluded.
 
 ## Contract
 

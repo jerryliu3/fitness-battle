@@ -130,28 +130,12 @@ describe("Mobile HomeDeck", () => {
     expect(jsonText()).toContain("RECOVERY-FRIENDLY");
     expect(jsonText()).not.toContain("4 cards");
 
-    // Cycle to next card via dot navigation (Card 2: COMPETE / Rival)
-    const dot2 = renderer.root.find(
-      (n) =>
-        (n.type as unknown) === "Pressable" &&
-        typeof n.props.accessibilityLabel === "string" &&
-        n.props.accessibilityLabel.startsWith("Show card 2 of 4"),
-    );
-    await act(async () => {
-      dot2.props.onPress();
-    });
-    expect(jsonText()).toContain("Your next chapter starts here.");
-
-    // Cycle to Card 3 (Route)
-    const dot3 = renderer.root.find(
-      (n) =>
-        (n.type as unknown) === "Pressable" &&
-        typeof n.props.accessibilityLabel === "string" &&
-        n.props.accessibilityLabel.startsWith("Show card 3 of 4"),
-    );
-    await act(async () => {
-      dot3.props.onPress();
-    });
+    expect(jsonText()).toContain("Updates");
+    expect(jsonText()).not.toContain("Show card");
+    for (let i = 0; i < 2; i++) {
+      const dismiss = renderer.root.find(n => (n.type as unknown) === "Pressable" && typeof n.props.accessibilityLabel === "string" && n.props.accessibilityLabel.startsWith("Dismiss "));
+      await act(async () => dismiss.props.onPress());
+    }
     expect(jsonText()).toContain("Good things are in motion.");
 
     // Tap Monday's logged stop on the route card
@@ -176,11 +160,11 @@ describe("Mobile HomeDeck", () => {
     await act(async () => {
       dismissFirst.props.onPress();
     });
-    expect(jsonText()).not.toContain("Reset ↺");
+    expect(jsonText()).not.toContain("Reset");
     expect(jsonText()).not.toContain("3 cards");
 
-    // Dismiss remaining 3 cards until all caught up
-    for (let i = 0; i < 3; i++) {
+    // Dismiss remaining card until all caught up
+    for (let i = 0; i < 1; i++) {
       const dismissBtn = renderer.root.find(
         (n) =>
           (n.type as unknown) === "Pressable" &&
@@ -194,7 +178,7 @@ describe("Mobile HomeDeck", () => {
 
     // Now all caught up: compact message and Reset button appear
     expect(jsonText()).toContain("You’re all caught up.");
-    expect(jsonText()).toContain("Reset ↺");
+    expect(jsonText()).toContain("Reset");
 
     // Restore cards via Reset button
     const resetBtn = renderer.root.find(

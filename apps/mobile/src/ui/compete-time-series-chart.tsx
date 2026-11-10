@@ -1,8 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import * as RN from "react-native";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import * as SvgModule from "react-native-svg";
 import {
+  competeChartPreview,
   buildCompeteTimeSeriesModel,
   buildSleepTimeSeriesModel,
   clamp,
@@ -43,6 +44,9 @@ export function CompeteTimeSeriesChart({
   hiddenIds,
   reserveTopControls = false,
   compact = false,
+  immersive = false,
+  timelineFraction,
+  onTimelineChange,
 }: {
   state: CompeteState;
   sport?: SportId;
@@ -53,13 +57,19 @@ export function CompeteTimeSeriesChart({
   hiddenIds?: readonly string[];
   reserveTopControls?: boolean;
   compact?: boolean;
+  immersive?: boolean;
+  timelineFraction?: number | null;
+  onTimelineChange?: (value: number | null) => void;
 }) {
   const c = useThemeColors();
+  const { height: screenHeight } = RN.useWindowDimensions();
   const s = useThemedStyles(sThemes);
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
   );
-  const [scrubFraction, setScrubFraction] = useState<number | null>(null);
+  const [internalFraction, setInternalFraction] = useState<number | null>(null);
+  const scrubFraction = timelineFraction !== undefined ? timelineFraction : internalFraction;
+  const setScrubFraction = onTimelineChange ?? setInternalFraction;
   const plotWidthRef = useRef(300);
   const lastDayBucketRef = useRef<number | null>(null);
   const directionRef = useRef<"horizontal" | "vertical" | null>(null);
@@ -160,12 +170,25 @@ export function CompeteTimeSeriesChart({
     : c.podiumGold;
   const unselectedAthletes = model.athletes.filter((a) => !a.selected);
 
+  if (compact) {
+    const preview = competeChartPreview(model);
+    return <View accessibilityLabel="Current race position over the past day" style={{ flex: 1, width: "100%", aspectRatio: 1 }}>
+      <Svg width="100%" height="100%" viewBox={`0 0 ${preview.width} ${preview.height}`}>
+        {preview.athletes.map(athlete => <G key={athlete.id}>
+          <Polyline points={athlete.points} fill="none" stroke={athlete.selected ? c.chartSeries : c.accentSecondary} strokeWidth={athlete.selected ? 4 : 2} opacity={athlete.selected ? 1 : .35} />
+          <Circle cx={athlete.x} cy={athlete.y} r={athlete.selected ? 7 : 3} fill={athlete.selected ? c.chartSeries : c.accentSecondary} />
+        </G>)}
+      </Svg>
+    </View>;
+  }
+
   return (
     <View
       accessibilityLabel="Weekly competition time-series graph"
       style={[
         s.card,
         compact && s.cardCompact,
+        immersive && { flex: 1, borderWidth: 0, borderRadius: 0, paddingTop: 112, backgroundColor: c.paper },
         reserveTopControls && { paddingTop: 64 },
       ]}
     >
@@ -253,7 +276,7 @@ export function CompeteTimeSeriesChart({
       >
         <Svg
           width="100%"
-          height={compact ? 140 : model.height}
+          height={immersive ? Math.max(240, screenHeight * .5 - 150) : model.height}
           viewBox={`0 0 ${model.width} ${model.height}`}
         >
           {/* Future zone wash (now -> Sun) */}
@@ -416,7 +439,7 @@ export function CompeteTimeSeriesChart({
       </View>
 
       {/* Single-Select Athlete Quick-Focus Chips */}
-      {!compact && (
+      {!compact && !immersive && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}

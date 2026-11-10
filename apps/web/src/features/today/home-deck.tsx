@@ -323,10 +323,10 @@ export function HomeDeck({
   };
 
   return (
-    <section className="home-deck-section" aria-label="Today's focus and updates">
+    <section className="home-deck-section" aria-label="Updates">
       <div className="home-deck-header">
         <AppHeading level={2} role="heading">
-          Today’s focus
+          Updates
         </AppHeading>
         {visibleCards.length === 0 && dismissedIds.length > 0 ? (
           <button
@@ -335,7 +335,7 @@ export function HomeDeck({
             onClick={resetDeck}
             aria-label="Reset dismissed cards"
           >
-            Reset ↺
+            Reset
           </button>
         ) : null}
       </div>
@@ -418,30 +418,6 @@ export function HomeDeck({
               </article>
             )}
           </div>
-
-          {/* Clean minimal dot indicators (no Prev/Next buttons) */}
-          {visibleCards.length > 1 && (
-            <div className="home-deck-dots" role="toolbar" aria-label="Card navigation">
-              {visibleCards.map((card, index) => {
-                const active = index === safeIndex;
-                return (
-                  <button
-                    key={card.id}
-                    type="button"
-                    className={`home-deck-dot${active ? " is-active" : ""}`}
-                    aria-label={`Show card ${index + 1} of ${
-                      visibleCards.length
-                    }: ${card.title}`}
-                    aria-pressed={active}
-                    onClick={() => {
-                      void playCue("selection");
-                      setActiveIndex(index);
-                    }}
-                  />
-                );
-              })}
-            </div>
-          )}
         </div>
       )}
     </section>

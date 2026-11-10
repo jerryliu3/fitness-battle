@@ -7,7 +7,7 @@ import {
   buildSleepView,
   competeNow,
   formatSleepDuration,
-  isSampleSleepNight,
+
   type Action,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -16,8 +16,10 @@ import { Pressable, Text, View } from "react-native";
 export function SleepPanel({
   state,
   dispatch,
+  hideChart = false,
 }: {
   state: CompeteState;
+  hideChart?: boolean;
   dispatch: (a: Action) => void;
 }) {
 const f=useFocusStyles();
@@ -38,7 +40,7 @@ const f=useFocusStyles();
       <SectionHeader title={view.lastNight ? "Latest sleep" : "No night recorded yet"}/>
       {view.lastNight ? (
         <>
-          <AppText role="caption" secondary>{isSampleSleepNight(state, view.lastNight) ? "Sample reading · " : ""}Wake date {view.lastNight.day}. Weekly standings count nights in the current competition week.</AppText>
+          <AppText role="caption" secondary>Wake date {view.lastNight.day}. Weekly standings count nights in the current competition week.</AppText>
           <Text style={f.massive}>{view.lastNight.score}</Text>
           <AppText role="body" secondary >
             sleep score · {formatSleepDuration(view.lastNight.durationMin)}
@@ -79,7 +81,7 @@ const f=useFocusStyles();
           {view.place ?? "—"} / {view.fieldSize || "—"}
         </AppText>
       </View>
-      <CompeteTimeSeriesChart state={state} mode="sleep" />
+      {!hideChart && <CompeteTimeSeriesChart state={state} mode="sleep" />}
       {view.rows.map((r) => (
         <Pressable key={r.id} style={f.row} accessibilityRole="button" accessibilityLabel={`View ${r.name} profile`} onPress={() => setAthlete({ id: r.id, name: r.name, you: r.you, sample: !r.you, contextLabel: "Recovery this week", contextValue: `${r.score.toFixed(0)} contest score`, contextDetail: `Place ${r.place}` })}>
           <AppText role="body" secondary >{r.place}</AppText>

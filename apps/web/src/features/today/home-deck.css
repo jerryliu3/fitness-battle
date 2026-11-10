@@ -255,27 +255,6 @@
 .home-route-node-col.is-today .home-route-node-day {
   color: var(--deck-ink);
 }
-.home-deck-dots {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 4px 0;
-}
-.home-deck-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 3.5px;
-  border: 0;
-  padding: 0;
-  background: var(--line, #e3e9e7);
-  cursor: pointer;
-  transition: width 0.18s ease, background-color 0.18s ease;
-}
-.home-deck-dot.is-active {
-  width: 18px;
-  background: var(--ink, #142b3b);
-}
 .home-deck-caught-up {
   padding: 14px 2px;
 }

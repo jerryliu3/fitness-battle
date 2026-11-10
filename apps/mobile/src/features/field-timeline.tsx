@@ -16,6 +16,7 @@ export function FieldTimeline({ timeline: t, compact = false }: { timeline: Fiel
     </View>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, paddingLeft: 62 }}>
       <Text style={{ ...textStyle("caption"), color: c.muted, flex: 1 }}>{t.error || (!t.ready ? "Loading timeline…" : t.label)}</Text>
+      {t.ready && <Text style={{ ...textStyle("caption"), color: c.muted, flexShrink: 1, textAlign: "right" }}>{t.latestLabel}</Text>}
       {t.error && action("Retry", t.retry)}
     </View>
   </View>;

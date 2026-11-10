@@ -15,7 +15,7 @@ import { useFieldTimeline } from "./use-field-timeline";
 import { FieldTimeline } from "./field-timeline";
 import { CompetitionReplayModal } from "./competition-replay";
 import { UserAvatar } from "../ui/user-avatar";
-import { textStyle } from "../ui/section";
+import { AppText, textStyle } from "../ui/section";
 import { useFieldFlight } from "../ui/use-field-flight";
 import { FieldOverlayView, SlidingFieldPanel } from "../ui/field-overlay-motion";
 import { PortraitField } from "../ui/portrait-field";
@@ -704,9 +704,9 @@ const f=useFocusStyles();
                 <View style={[f.grow, { gap: 6 }]}>
                   <View style={[f.row, { alignItems: "center", justifyContent: "space-between" }]}>
                     <View style={{ flex: 1, gap: 2, marginRight: 12 }}>
-                      <Text style={textStyle("label")} numberOfLines={1}>
+                      <AppText role="label" numberOfLines={1}>
                         {lane.name}
-                      </Text>
+                      </AppText>
                       <Text style={[textStyle("caption"), { color: c.muted }]}>
                         {elo ?? "—"} effort score
                       </Text>

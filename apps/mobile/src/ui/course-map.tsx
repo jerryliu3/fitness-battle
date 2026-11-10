@@ -11,7 +11,7 @@ import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, createCo
 import { mobileEnv } from "../lib/env";
 import { CourseOptions } from "./course-options";
 import { FieldOverlayView } from "./field-overlay-motion";
-import { textStyle } from "./section";
+import { AppText, textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
 import { useSceneActive } from "./use-scene-active";
 
@@ -34,11 +34,12 @@ const appearanceColors = useThemeColors();
   const active = sceneActive && presentationActive;
   const initialized = useRef(false);
   const snapshotTaken = useRef(false);
+  const snapshotPending = useRef(false);
   const mapRef = useRef<ComponentRef<typeof MapView>>(null);
   const reported = useRef(false);
   const { user } = useAuth();
   const cameraKey = `${user?.id ?? "guest"}:${course.name}:${course.length}:${course.coordinates[0].join(",")}:${unit}`;
-  const cachedPose = replay ? undefined : rememberedCameras.get(cameraKey);
+  const cachedPose = replay || onSnapshot ? undefined : rememberedCameras.get(cameraKey);
   const restored = useRef(isValidPose(cachedPose) ? cachedPose : undefined);
   const [dismissed, setDismissed] = useState<string[]>([]);
   useEffect(() => { setDismissed([]); }, [course, cardSessionKey]);
@@ -153,7 +154,7 @@ const appearanceColors = useThemeColors();
         }
       }}
       onMapLoadingError={event => setError(ready && event?.type !== "style" ? "Some map scenery could not load. Check your connection." : "The map could not load. Check your connection and Mapbox access.")}
-      onMapIdle={() => { if (ready && onSnapshot && !snapshotTaken.current) { snapshotTaken.current = true; void mapRef.current?.takeSnap(true).then(onSnapshot).catch(() => {}); } if (ready) setError(""); if (ready && (initialized.current || replay) && !reported.current) { reported.current = true; onReady?.(); } }}
+      onMapIdle={() => { if (ready && onSnapshot && mapRef.current && !snapshotTaken.current && !snapshotPending.current) { snapshotPending.current = true; void mapRef.current.takeSnap(true).then(uri => { if (uri) { snapshotTaken.current = true; onSnapshot(uri); } }).catch(() => {}).finally(() => { snapshotPending.current = false; }); } if (ready) setError(""); if (ready && (initialized.current || replay) && !reported.current) { reported.current = true; onReady?.(); } }}
     >
       <Camera minZoomLevel={0} maxZoomLevel={20} ref={ref} defaultSettings={{ centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing }} />
       <CameraGestureObserver onCameraChanged={({ nativeEvent }) => {
@@ -179,7 +180,7 @@ const appearanceColors = useThemeColors();
             <AthletePennant lane={lane} x={lane.callout.left ? -158 : 12} y={lane.callout.y} detail={courseAthleteDetail(lanes, lane, unit)} prefix={`${prefix}-${lane.id}`} />
           </G></Svg>
           <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${courseAthleteDetail(lanes, lane, unit)}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: 12, top: lane.callout.cardTop, width: 146, height: 46 }} />
-          {!onSnapshot && lane.id === selectedId && <Pressable accessibilityRole="button" accessibilityLabel={`Hide ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={8} style={{ position: "absolute", right: 4, top: lane.callout.cardTop - 8, width: 28, height: 28, borderRadius: 14, backgroundColor: appearanceColors.card, alignItems: "center", justifyContent: "center" }}><Text style={textStyle("label")}>−</Text></Pressable>}
+          {!onSnapshot && lane.id === selectedId && <Pressable accessibilityRole="button" accessibilityLabel={`Hide ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={8} style={{ position: "absolute", right: 4, top: lane.callout.cardTop - 8, width: 28, height: 28, borderRadius: 14, backgroundColor: appearanceColors.card, alignItems: "center", justifyContent: "center" }}><AppText role="label">−</AppText></Pressable>}
         </View>
       </MarkerView>) : null}
     </MapView>

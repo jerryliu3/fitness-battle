@@ -168,7 +168,7 @@ const f=useThemedStyles(fThemes);
               {content.current.title}
             </AppText>}
             {Boolean(content.current.body) && (
-              <Text style={textStyle("body")}>{content.current.body}</Text>
+              <AppText role="body">{content.current.body}</AppText>
             )}
             {content.current.children}
           </ScrollView>
@@ -523,7 +523,7 @@ const f=useThemedStyles(fThemes);
         style={[f.disclosureHead, compact && f.disclosureHeadCompact]}
       >
         <View style={f.grow}>
-          <Text style={textStyle("row")}>{title}</Text>
+          <AppText role="row">{title}</AppText>
           {Boolean(detail) && <AppText role="support" secondary>{detail}</AppText>}
         </View>
         <AppText role="label">{open ? "−" : "＋"}</AppText>

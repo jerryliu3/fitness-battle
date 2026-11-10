@@ -1,4 +1,4 @@
-.compete-sheet{position:fixed;left:0;right:0;bottom:0;height:calc(100dvh - env(safe-area-inset-top));z-index:120;border-radius:24px 24px 0 0;background:var(--paper);color:var(--ink);box-shadow:0 -8px 32px #142b3b18;display:flex;flex-direction:column;transition:transform 280ms cubic-bezier(.22,1,.36,1);overflow:visible}
+.compete-sheet{position:fixed;left:0;right:0;bottom:0;height:calc(100dvh - env(safe-area-inset-top));z-index:120;border-radius:24px 24px 0 0;background:var(--paper);color:var(--ink);box-shadow:0 -8px 32px #142b3b18;display:flex;flex-direction:column;transition:transform 280ms cubic-bezier(.22,1,.36,1);overflow:hidden}
 .compete-sheet-grip{height:44px;flex:none;display:grid;place-items:center;touch-action:none;cursor:ns-resize}
 .compete-sheet-grip span{height:4px;width:40px;border-radius:4px;background:var(--muted)}
 .compete-sheet-body{overflow:auto;overscroll-behavior:contain;padding:0 20px 32px;min-height:0;flex:1}
@@ -14,7 +14,7 @@
 .focus-field-expanded:has(.compete-immersive-hud) .geographic-map-controls{top:112px;bottom:auto;left:auto;right:12px;max-width:50%}
 
 .compete-event-preview{width:100%;aspect-ratio:1;border-radius:12px;background:var(--paper);height:auto;min-height:0;padding:0;overflow:hidden;display:grid;place-items:center}
-.compete-sheet-overview{padding:0 16px 8px;flex:none}.compete-sheet-overview-row{display:flex;align-items:center;gap:8px}.compete-sheet-overview-track{flex:1;min-width:0}
+.compete-sheet-overview{padding:0 16px calc(8px + env(safe-area-inset-bottom));flex:none}.compete-sheet-overview-row{display:flex;align-items:center;gap:8px}.compete-sheet-overview-track{flex:1;min-width:0}
 
 .focus-field-expanded[aria-hidden="true"] .geographic-map-controls{display:none}
 
@@ -34,3 +34,8 @@
 
 .compete-sheet[data-flipping="true"]{z-index:200}
 .compete-sheet[data-flipping="true"] .compete-sheet-body{position:relative;z-index:1;overflow:visible}
+
+@media(prefers-reduced-motion:reduce){.compete-points-field{transition:none!important}}
+
+.compete-sheet[data-active="false"]{transition:transform 280ms cubic-bezier(.22,1,.36,1),visibility 0s linear 280ms}
+@media(prefers-reduced-motion:reduce){.compete-sheet[data-active="false"]{transition:none}}

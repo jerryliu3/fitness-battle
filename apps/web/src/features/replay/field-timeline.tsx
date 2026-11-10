@@ -11,6 +11,6 @@ export function FieldTimeline({ timeline: t }: { timeline: FieldTimelineState })
       <button type="button" onClick={t.live} disabled={!t.frame}>Latest</button>
     </div>
     <input type="range" min={0} max={Math.max(1, t.count)} step="any" value={t.cursor} disabled={!t.ready || !t.count} onChange={event => t.seek(Number(event.target.value))} aria-label="Competition timeline" aria-valuetext={`${Math.ceil(t.cursor)} of ${t.count} events. ${t.label}`} />
-    {t.ready && <small>{t.count ? "Workout timeline" : "No counted activity yet"}</small>}
+    {t.ready && <small>{t.count ? `Latest: ${t.latestLabel}` : "No counted activity yet"}</small>}
   </div>;
 }

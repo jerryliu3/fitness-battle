@@ -15,7 +15,7 @@ import {
   type HomeRouteDayStop,
 } from "@fitness-battle/shared";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useLayoutEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -313,12 +313,8 @@ export function HomeDeck({
           useNativeDriver: true,
         }),
       ]).start(() => {
-        dragX.setValue(0);
-        cardOpacity.setValue(1);
-        setDismissingId(null);
         setActiveIndex((curr) => (nextCount > 0 ? curr % nextCount : 0));
         persistDismissed(nextDismissed);
-        swipingRef.current = false;
       });
     },
     [
@@ -331,6 +327,15 @@ export function HomeDeck({
       visibleCards,
     ],
   );
+
+  // Reset native values only after the replacement card has committed.
+  useLayoutEffect(() => {
+    if (!dismissingId || activeCard?.id === dismissingId) return;
+    dragX.setValue(0);
+    cardOpacity.setValue(1);
+    setDismissingId(null);
+    swipingRef.current = false;
+  }, [activeCard?.id, dismissingId, dragX, cardOpacity]);
 
   const resetDeck = useCallback(() => {
     void playCue("selection");
@@ -410,10 +415,10 @@ export function HomeDeck({
   };
 
   return (
-    <View style={s.section} accessibilityLabel="Today's focus and updates">
+    <View style={s.section} accessibilityLabel="Updates">
       <View style={s.header}>
         <AppText role="heading" accessibilityRole="header">
-          Today’s focus
+          Updates
         </AppText>
         {visibleCards.length === 0 && dismissedIds.length > 0 ? (
           <Pressable
@@ -423,7 +428,7 @@ export function HomeDeck({
             style={s.restorePill}
           >
             <AppText role="label" style={s.restorePillText}>
-              Reset ↺
+              Reset
             </AppText>
           </Pressable>
         ) : null}
@@ -531,29 +536,6 @@ export function HomeDeck({
               );
             })()}
           </View>
-
-          {/* Clean minimal dot indicators (no Prev/Next buttons) */}
-          {visibleCards.length > 1 && (
-            <View style={s.dotsRow} accessibilityRole="toolbar">
-              {visibleCards.map((card, index) => {
-                const active = index === safeIndex;
-                return (
-                  <Pressable
-                    key={card.id}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Show card ${index + 1} of ${visibleCards.length}: ${card.title}`}
-                    accessibilityState={{ selected: active }}
-                    onPress={() => {
-                      void playCue("selection");
-                      setActiveIndex(index);
-                    }}
-                    hitSlop={8}
-                    style={[s.dot, active && s.dotActive]}
-                  />
-                );
-              })}
-            </View>
-          )}
         </View>
       )}
     </View>
@@ -684,23 +666,6 @@ const sThemes = createThemedStyles((c) => ({
   },
   ctaText: {
     ...textStyle("nav"),
-  },
-  dotsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 4,
-  },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: c.line,
-  },
-  dotActive: {
-    width: 18,
-    backgroundColor: c.ink,
   },
   routeStripWrap: {
     position: "relative",

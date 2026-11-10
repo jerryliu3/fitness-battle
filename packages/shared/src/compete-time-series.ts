@@ -84,6 +84,8 @@ export interface CompeteTimeSeriesModel {
   cursorX: number;
   isScrubbing: boolean;
   timeLabel: string;
+  cursorTimeLabel: string;
+  latestTimeLabel: string;
   athletes: CompeteTimeSeriesAthlete[];
   selectedAthlete: CompeteTimeSeriesAthlete;
   overtakes: CompeteTimeSeriesOvertake[];
@@ -442,6 +444,8 @@ function finalizeTimeSeriesModel(input: {
     cursorX,
     isScrubbing,
     timeLabel,
+    cursorTimeLabel: cursorDate.toLocaleString("en-US", { timeZone: APP_TIMEZONE, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
+    latestTimeLabel: new Date(startMs + nowFraction * spanMs).toLocaleString("en-US", { timeZone: APP_TIMEZONE, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
     athletes,
     selectedAthlete,
     overtakes,
@@ -799,4 +803,26 @@ export function buildSleepTimeSeriesModel(
     rawAthletes,
     options,
   });
+}
+
+/** A close view of the last day, with room around the current athlete. */
+export function competeChartPreview(model: CompeteTimeSeriesModel) {
+  const width = 320, height = 320, pad = 28;
+  const end = model.nowX;
+  const start = Math.max(model.left, end - (model.right - model.left) / 7);
+  const span = Math.max(1, end - start);
+  const parse = (line: string) => line.trim().split(/\s+/).filter(Boolean).map(pair => pair.split(",").map(Number) as [number, number]);
+  const selected = parse(model.selectedAthlete.polyline);
+  const recent = selected.filter(([x]) => x >= start && x <= end);
+  const ys = [model.selectedAthlete.cursorY, ...recent.map(([, y]) => y)];
+  const high = Math.min(...ys), low = Math.max(...ys);
+  const ySpan = Math.max(24, low - high);
+  const center = (high + low) / 2;
+  const x = (value: number) => pad + (value - start) / span * (width - pad * 2);
+  const y = (value: number) => height / 2 + (value - center) / ySpan * (height - pad * 2);
+  return { width, height, athletes: model.athletes.map(athlete => ({
+    id: athlete.id, selected: athlete.selected,
+    points: parse(athlete.polyline).map(([px, py]) => `${x(px)},${y(py)}`).join(" "),
+    x: x(athlete.cursorX), y: y(athlete.cursorY),
+  })) };
 }

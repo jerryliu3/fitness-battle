@@ -40,9 +40,10 @@ function EventTint({ event }: { event: CompeteEvent }) {
   </Svg></View>;
 }
 
-export function ExploreEvents({ onChoose }: { onChoose(event: CompeteEvent): void }) {
+export function ExploreEvents({ onChoose, state }: { onChoose(event: CompeteEvent): void; state: CompeteState }) {
   const c = useThemeColors();
-  const categories = COMPETE_CATEGORIES;
+  const categories = COMPETE_CATEGORIES.map(category => ({ ...category, events: category.events.filter(event => event === "sleep" ? !state.healthRatings.some(r => r.metric === "sleep" && r.optedIn) : !state.ratings.some(r => r.sport === event && r.optedIn)) })).filter(category => category.events.length > 0);
+  if (!categories.length) return null;
   return <View style={{ gap: 20 }}>
     <AppText role="heading" accessibilityRole="header">Event registration</AppText>
     {categories.map(category => <View key={category.id} style={{ gap: 10 }}>

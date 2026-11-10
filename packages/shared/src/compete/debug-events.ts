@@ -15,7 +15,7 @@ import {
   type SportId,
 } from "./sports";
 
-export type DebugEventId = "sync-activity" | "sync-combo" | "overtake" | "overtake-combo" | "overtaken" | "week-closing";
+export type DebugEventId = "deregister-sport" | "sync-activity" | "sync-combo" | "overtake" | "overtake-combo" | "overtaken" | "week-closing";
 
 export interface DebugEventOption {
   id: DebugEventId;
@@ -24,6 +24,7 @@ export interface DebugEventOption {
 }
 
 export const DEBUG_EVENT_OPTIONS: readonly DebugEventOption[] = [
+  { id: "deregister-sport", label: "Deregister from current sport", detail: "Test event registration; reset restores your account" },
   { id: "sync-activity", label: "Sync · no overtakes", detail: "Review activities, then watch your progress" },
   { id: "sync-combo", label: "Sync → photo finish + combo", detail: "Review multiple activities, then pass several rivals" },
   { id: "overtake", label: "Overtake someone", detail: "Open the full-screen photo finish" },
@@ -79,6 +80,16 @@ export function applyDebugEvent(
     inputState.ratings.find((r) => r.sport === inputState.primary && r.optedIn)?.sport ??
     inputState.ratings.find((r) => r.optedIn)?.sport ??
     inputState.primary;
+
+  if (event === "deregister-sport") {
+    return { event, state: {
+      ...inputState,
+      ratings: inputState.ratings.map(rating => rating.sport === sport ? { ...rating, optedIn: false } : rating),
+      enrollments: inputState.enrollments.filter(enrollment => enrollment.sport !== sport),
+      crewBoard: inputState.crewBoard?.sport === sport ? null : inputState.crewBoard,
+      duels: inputState.duels.filter(duel => duel.sport !== sport),
+    }, baselines: {}, targetRoute: "/arena" };
+  }
 
   // UI testing must work even in an empty, real or unusually seeded field.
   let base: CompeteState = { ...freshState(now), name: inputState.name, avatarUrl: inputState.avatarUrl,

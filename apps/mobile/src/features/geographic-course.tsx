@@ -5,14 +5,14 @@ import { Component, type ReactNode } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { type CourseReplayFrame, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
-import { textStyle } from "../ui/section";
+import { AppText, textStyle } from "../ui/section";
 
 
 import { DeferredCourseMap as CourseMap, nativeCourseMapAvailable } from "./deferred-course-map";
 class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean; missingNative: boolean }> {
   state = { failed: false, missingNative: false };
   static getDerivedStateFromError(error: Error) { return { failed: true, missingNative: /(?:RNMBX|RNMapbox).*(?:not found|not registered|not available)|native module.*(?:null|not found)|TurboModuleRegistry.*(?:RNMBX|RNMapbox)/i.test(error.message) }; }
-  render() { return this.state.failed ? <Text style={textStyle("body")}>{this.state.missingNative ? "This app build is missing native map support. Install the latest build." : "This course could not open. Return to Compete and try again."}</Text> : this.props.children; }
+  render() { return this.state.failed ? <AppText role="body">{this.state.missingNative ? "This app build is missing native map support. Install the latest build." : "This course could not open. Return to Compete and try again."}</AppText> : this.props.children; }
 }
 
 /** Presentation-only scene. The field/replay host owns the weekly course. */
@@ -49,12 +49,12 @@ const c=useThemeColors();
         </Text>
         {error && onRetry ? (
           <Pressable accessibilityRole="button" onPress={onRetry} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 16, backgroundColor: c.card, borderRadius: 12 }}>
-            <Text style={textStyle("label")}>Retry</Text>
+            <AppText role="label">Retry</AppText>
           </Pressable>
         ) : null}
       </View> :
       <MapBoundary key={attempt}><CourseMap presentationActive={presentationActive} cardSessionKey={cardSessionKey} initialFlat={initialFlat} onFlatChange={onFlatChange} followAthlete={followAthlete} onFollowChange={onFollowChange} key={course.name + course.length + ":" + attempt} course={course} replay={replay} onReady={prepared} onSnapshot={onSnapshot} lanes={lanes} hiddenIds={hiddenIds} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} optionsTop={optionsTop} onReplay={onReplay} onChoose2D={onChoose2D} onOptionsChange={onOptionsChange} /></MapBoundary>}
-    {expired && !settled && <View style={{ position: "absolute", bottom: 16, left: 16, right: 16, padding: 16, backgroundColor: c.card, borderRadius: 14 }}><Text style={textStyle("body")}>The field could not finish loading.</Text><Pressable accessibilityRole="button" onPress={() => { preparation.current = { expired: false, attempt: attempt + 1 }; setExpired(false); setAttempt(value => value + 1); onRetry?.(); }}><Text style={textStyle("label")}>Retry field</Text></Pressable></View>}
+    {expired && !settled && <View style={{ position: "absolute", bottom: 16, left: 16, right: 16, padding: 16, backgroundColor: c.card, borderRadius: 14 }}><AppText role="body">The field could not finish loading.</AppText><Pressable accessibilityRole="button" onPress={() => { preparation.current = { expired: false, attempt: attempt + 1 }; setExpired(false); setAttempt(value => value + 1); onRetry?.(); }}><AppText role="label">Retry field</AppText></Pressable></View>}
 
   </View>;
 }

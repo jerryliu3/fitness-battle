@@ -5,7 +5,7 @@ import { createRaceCourse } from "@fitness-battle/shared";
 vi.mock("react-native", () => ({ View: "View", Text: "Text", Pressable: "Pressable", ActivityIndicator: "ActivityIndicator" }));
 vi.mock("../ui/boot-readiness", () => ({ useBootLoading() {} }));
 vi.mock("../lib/env", () => ({ mobileEnv: { mapboxAccessToken: "test" } }));
-vi.mock("../ui/section", () => ({ textStyle: () => ({}) }));
+vi.mock("../ui/section", () => ({ AppText: "Text", textStyle: () => ({}) }));
 vi.mock("./deferred-course-map", () => ({ nativeCourseMapAvailable: true, DeferredCourseMap: (props: object) => createElement("CourseMap", props) }));
 import { GeographicCourse } from "./geographic-course";
 let renderer: ReactTestRenderer;
