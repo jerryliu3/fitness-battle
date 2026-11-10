@@ -24,6 +24,8 @@ vi.mock("./event-registration", () => ({ EventRegistration: "EventRegistration" 
 vi.mock("./compete-home-sections", () => ({ CompeteIcon: "CompeteIcon", CrewEvents: "CrewEvents", ExploreEvents: "ExploreEvents", CompeteResults: "CompeteResults" }));
 vi.mock("./round-takeover", () => ({ RoundTakeover: () => null }));
 vi.mock("./sleep-panel", () => ({ SleepPanel: () => null }));
+vi.mock("./entry-pass-sheet", () => ({ EntryPassSheet: () => null }));
+vi.mock("../lib/entry-pass", () => ({ useEntryPass: () => ({ canClaimSport: () => ({ allowed: true }) }) }));
 vi.mock("../ui/wave-countdown", () => ({ WaveCountdown: "WaveCountdown" }));
 vi.mock("./competition-timeline-context", () => ({ CompetitionTimelineProvider: ({ children }: { children: unknown }) => children, CompetitionTimelineControls: () => null }));
 import { ArenaScreen } from "../../app/(tabs)/arena";

@@ -1,4 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("react-native", () => ({
+  Platform: { OS: "ios" },
+}));
+
 import { freshState } from "@fitness-battle/shared";
 import { useEntryPass } from "./entry-pass";
 

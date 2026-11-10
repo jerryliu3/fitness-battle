@@ -1,6 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import React from "react";
 import renderer, { act } from "react-test-renderer";
+
+vi.mock("react-native", () => ({
+  Platform: { OS: "ios" },
+  StyleSheet: { create: (s: unknown) => s },
+  View: ({ children, ...props }: { children: React.ReactNode }) => React.createElement("View", props, children),
+  Text: ({ children, ...props }: { children: React.ReactNode }) => React.createElement("Text", props, children),
+  Pressable: ({ children, onPress, ...props }: { children: React.ReactNode; onPress?: () => void }) =>
+    React.createElement("Pressable", { ...props, onClick: onPress }, children),
+  ScrollView: ({ children, ...props }: { children: React.ReactNode }) => React.createElement("ScrollView", props, children),
+  ActivityIndicator: () => React.createElement("ActivityIndicator"),
+}));
+
 import { EntryPassSheet } from "./entry-pass-sheet";
 import { purchasesBridge } from "../lib/entry-pass";
 
@@ -21,7 +33,7 @@ vi.mock("../theme", () => ({
   useThemeColors: () => ({
     card: "#fff",
     line: "#eee",
-    accent: "#B7F255",
+    tennis: "#B7F255",
     ink: "#111",
     paper: "#fafafa",
   }),
