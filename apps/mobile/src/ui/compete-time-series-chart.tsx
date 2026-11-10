@@ -13,6 +13,7 @@ import {
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
+import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { playCue } from "../lib/haptics";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { chartTextProps, textStyle } from "./section";
@@ -62,6 +63,8 @@ export function CompeteTimeSeriesChart({
   onTimelineChange?: (value: number | null) => void;
 }) {
   const c = useThemeColors();
+  const { blocks } = useAthleteBlocks();
+  const excludedIds = useMemo(() => [...new Set([...(hiddenIds ?? []), ...blocks.map(block => block.id)])], [hiddenIds, blocks]);
   const { height: screenHeight } = RN.useWindowDimensions();
   const plotHeight = immersive ? Math.max(240, screenHeight - 380) : 204;
   const s = useThemedStyles(sThemes);
@@ -78,12 +81,12 @@ export function CompeteTimeSeriesChart({
   const activeSelectedId =
     selectedId !== undefined ? selectedId : internalSelectedId;
 
+  const now = competeNow(state);
   const model: CompeteTimeSeriesModel = useMemo(() => {
-    const now = competeNow(state);
     if (mode === "sleep") {
       return buildSleepTimeSeriesModel(state, now, {
         height: plotHeight,
-        hiddenIds,
+        hiddenIds: excludedIds,
         selectedAthleteId: activeSelectedId,
         scrubFraction,
       });
@@ -95,12 +98,12 @@ export function CompeteTimeSeriesChart({
       now,
       {
         height: plotHeight,
-        hiddenIds,
+        hiddenIds: excludedIds,
         selectedAthleteId: activeSelectedId,
         scrubFraction,
       },
     );
-  }, [state, sport, track, mode, hiddenIds, activeSelectedId, scrubFraction, plotHeight]);
+  }, [state, sport, track, mode, excludedIds, activeSelectedId, scrubFraction, plotHeight, now.getTime()]);
 
   const handleSelectAthlete = (id: string) => {
     void playCue("selection");
@@ -111,6 +114,7 @@ export function CompeteTimeSeriesChart({
   };
 
   const updateScrubFromLocationX = (locationX: number) => {
+    if (!model.historyAvailable) return;
     const width = Math.max(1, plotWidthRef.current);
     const svgX = (locationX / width) * model.width;
     const rawFraction =
@@ -194,7 +198,6 @@ export function CompeteTimeSeriesChart({
       accessibilityLabel="Weekly competition time-series graph"
       style={[
         s.card,
-        compact && s.cardCompact,
         immersive && { flex: 1, borderWidth: 0, borderRadius: 0, paddingTop: 112, backgroundColor: c.accentSecondarySoft },
         reserveTopControls && { paddingTop: 64 },
       ]}
@@ -236,7 +239,7 @@ export function CompeteTimeSeriesChart({
           <Text style={s.gapPrimary} numberOfLines={1}>
             {model.gapLabel}
           </Text>
-          <Text
+          {model.historyAvailable && <Text
             style={[
               s.overtakeSub,
               model.overtakeCount > 0 && { color: c.fieldTeal },
@@ -244,7 +247,7 @@ export function CompeteTimeSeriesChart({
             numberOfLines={1}
           >
             {model.overtakeLabel}
-          </Text>
+          </Text>}
         </View>
       </View>
 
@@ -277,9 +280,9 @@ export function CompeteTimeSeriesChart({
           setScrubFraction(null);
         }}
         accessible
-        accessibilityRole="adjustable"
+        accessibilityRole={model.historyAvailable ? "adjustable" : "image"}
         accessibilityLabel={`Race timeline, ${model.selectedAthlete.firstName} ${model.selectedAthlete.formattedValueAtCursor} ${model.unit}, ${model.placeLabel}`}
-        style={[s.plotWrap, compact && s.plotWrapCompact]}
+        style={s.plotWrap}
       >
         <Svg
           width="100%"
@@ -429,7 +432,7 @@ export function CompeteTimeSeriesChart({
               width={model.tipPill.width}
               height={model.tipPill.height}
               rx={6}
-              fill={model.selectedAthlete.you ? c.ink : "#fffbeb"}
+              fill={model.selectedAthlete.you ? c.surfaceInverse : c.actionSoft}
               stroke={model.selectedAthlete.you ? "none" : c.podiumGold}
               strokeWidth={model.selectedAthlete.you ? 0 : 1}
             />
@@ -446,7 +449,7 @@ export function CompeteTimeSeriesChart({
       </View>
 
       {/* Single-Select Athlete Quick-Focus Chips */}
-      {!compact && !immersive && (
+      {!immersive && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -521,13 +524,6 @@ const sThemes = createThemedStyles((themeColors) => {
     padding: 16,
     gap: 10,
   },
-  cardCompact: {
-    backgroundColor: "transparent",
-    borderWidth: 0,
-    padding: 8,
-    gap: 6,
-    borderRadius: 12,
-  },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -595,10 +591,6 @@ const sThemes = createThemedStyles((themeColors) => {
     width: "100%",
     minHeight: 204,
   },
-  plotWrapCompact: {
-    minHeight: 0,
-    flex: 1,
-  },
   chipsRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -619,11 +611,11 @@ const sThemes = createThemedStyles((themeColors) => {
     backgroundColor: c.paper,
   },
   chipSelectedYou: {
-    backgroundColor: c.ink,
-    borderColor: c.ink,
+    backgroundColor: c.surfaceInverse,
+    borderColor: c.surfaceInverse,
   },
   chipSelectedRival: {
-    backgroundColor: "#fffbeb",
+    backgroundColor: c.actionSoft,
     borderColor: c.podiumGold,
   },
   chipRank: {
@@ -635,14 +627,14 @@ const sThemes = createThemedStyles((themeColors) => {
     color: c.tennis,
   },
   chipRankSelectedRival: {
-    color: "#b45309",
+    color: c.ink,
   },
   chipName: {
     ...textStyle("caption"),
     color: c.ink,
   },
   chipNameSelectedYou: {
-    color: "#ffffff",
+    color: c.textOnInverse,
   },
   chipNameSelectedRival: {
     color: c.ink,
@@ -653,7 +645,7 @@ const sThemes = createThemedStyles((themeColors) => {
     fontVariant: ["tabular-nums"],
   },
   chipValSelectedYou: {
-    color: "rgba(255, 255, 255, 0.78)",
+    color: c.textOnInverse,
   },
   chipValSelectedRival: {
     color: c.muted,

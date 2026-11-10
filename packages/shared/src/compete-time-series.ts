@@ -15,7 +15,7 @@ import {
 } from "./compete/sports";
 import { initialsFromName, selfLaneLabel } from "./compete/track";
 import { findSynthetic, syntheticVolumeInWindow } from "./matching/synthetic-bank";
-import { APP_TIMEZONE, endOfZonedDay, shiftAppDay, startOfZonedDay } from "./period";
+import { APP_TIMEZONE, endOfZonedDay, shiftAppDay } from "./period";
 import { competePeriodWindow } from "./phone-views";
 
 export type FieldViewDimension = "2d" | "3d" | "4d" | "graph";
@@ -83,6 +83,7 @@ export interface CompeteTimeSeriesModel {
   cursorFraction: number;
   cursorX: number;
   isScrubbing: boolean;
+  historyAvailable: boolean;
   timeLabel: string;
   cursorTimeLabel: string;
   latestTimeLabel: string;
@@ -148,21 +149,16 @@ export function interpolateTimeSeriesAt(
   vertices: readonly CompeteTimeSeriesVertex[],
   t: number,
 ): number {
-  if (vertices.length === 0) return 0;
-  if (t <= vertices[0]!.t) return vertices[0]!.value;
-  const last = vertices[vertices.length - 1]!;
-  if (t >= last.t) return last.value;
-  for (let i = 0; i < vertices.length - 1; i += 1) {
+  if (!vertices.length) return 0;
+  if (t < vertices[0]!.t) return vertices[0]!.value;
+  // Right-continuous at activity timestamps, including multiple sessions at once.
+  for (let i = vertices.length - 1; i >= 0; i--) {
     const a = vertices[i]!;
-    const b = vertices[i + 1]!;
-    if (t >= a.t && t <= b.t) {
-      const span = b.t - a.t;
-      if (span <= 1e-9) return b.value;
-      const ratio = (t - a.t) / span;
-      return a.value + (b.value - a.value) * ratio;
-    }
+    if (t < a.t) continue;
+    const b = vertices[i + 1];
+    return b ? a.value + (b.value - a.value) * (t - a.t) / (b.t - a.t) : a.value;
   }
-  return last.value;
+  return vertices[0]!.value;
 }
 
 function clipVerticesToCursor(
@@ -197,6 +193,8 @@ function computeSelectedOvertakes(
 
   for (const other of others) {
     if (other.id === selected.id) continue;
+    const jumpTimes = new Set([selected.vertices, other.vertices].flatMap(points =>
+      points.filter((v, i) => i > 0 && points[i - 1]!.t === v.t && points[i - 1]!.value !== v.value).map(v => v.t)));
     const tSet = new Set<number>([0, cursorFraction]);
     for (const v of selected.vertices) {
       if (v.t > 0 && v.t < cursorFraction) tSet.add(v.t);
@@ -219,6 +217,9 @@ function computeSelectedOvertakes(
       const dA = sA - oA;
       const dB = sB - oB;
 
+      const jump = jumpTimes.has(tB);
+      const before = tB - Math.min(1e-8, (tB - tA) / 2);
+      if (jump && interpolateTimeSeriesAt(selected.vertices, before) < interpolateTimeSeriesAt(other.vertices, before) - 1e-4) wasBehind = true;
       if (dA < -1e-4) {
         wasBehind = true;
       }
@@ -231,6 +232,7 @@ function computeSelectedOvertakes(
           tCross = tA + alpha * (tB - tA);
           valCross = sA + alpha * (sB - sA);
         }
+        if (jump) { tCross = tB; valCross = sB; }
         if (valCross > 0.05 && tCross <= cursorFraction + 1e-6) {
           raw.push({
             id: `${selected.id}:pass:${other.id}:${tCross.toFixed(4)}`,
@@ -263,17 +265,19 @@ function finalizeTimeSeriesModel(input: {
     you: boolean;
     currentValue: number;
     vertices: CompeteTimeSeriesVertex[];
+    historyAvailable?: boolean;
   }[];
   options?: CompeteTimeSeriesOptions;
 }): CompeteTimeSeriesModel {
-  const chartHeight = input.options?.height ?? CHART_HEIGHT;
+  const chartHeight = Number.isFinite(input.options?.height) ? Math.max(CHART_HEIGHT, input.options!.height!) : CHART_HEIGHT;
   const plotBottom = chartHeight - 38;
   const startMs = input.periodStart.getTime();
   const endMs = input.periodEnd.getTime();
   const spanMs = Math.max(1, endMs - startMs);
   const clampedNowMs = clamp(startMs, endMs, input.now.getTime());
   const nowFraction = clamp(0, 1, (clampedNowMs - startMs) / spanMs);
-  const isScrubbing =
+  const historyAvailable = input.rawAthletes.every(athlete => athlete.historyAvailable !== false);
+  const isScrubbing = historyAvailable &&
     input.options?.scrubFraction != null &&
     Number.isFinite(input.options.scrubFraction);
   const cursorFraction = isScrubbing
@@ -347,13 +351,13 @@ function finalizeTimeSeriesModel(input: {
     athletes.find((a) => a.you) ??
     athletes[0]!;
 
-  const overtakes = computeSelectedOvertakes(
+  const overtakes = historyAvailable ? computeSelectedOvertakes(
     selectedAthlete,
     athletes.filter((a) => a.id !== selectedAthlete.id),
     cursorFraction,
     xForT,
     yForValue,
-  );
+  ) : [];
   const overtakeCount = overtakes.length;
 
   const youAthlete = athletes.find((a) => a.you) ?? selectedAthlete;
@@ -445,6 +449,7 @@ function finalizeTimeSeriesModel(input: {
     cursorFraction,
     cursorX,
     isScrubbing,
+    historyAvailable,
     timeLabel,
     cursorTimeLabel: cursorDate.toLocaleString("en-US", { timeZone: APP_TIMEZONE, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
     latestTimeLabel: new Date(startMs + nowFraction * spanMs).toLocaleString("en-US", { timeZone: APP_TIMEZONE, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
@@ -501,31 +506,14 @@ function buildYouVertices(
   for (const act of eligible) {
     const delta = spec.gps ? act.distanceM / divisor : activityEffort(act);
     if (delta <= 0) continue;
-    const prevValue = cumulative;
+    const t = clamp(0, nowFraction, (Date.parse(act.startedAt) - startMs) / spanMs);
+    vertices.push({ t, value: cumulative });
     cumulative += delta;
-    const tEnd = clamp(0, nowFraction, (Date.parse(act.startedAt) - startMs) / spanMs);
-    const prev = vertices[vertices.length - 1]!;
-    const riseSpan = Math.max(0.045, (act.movingSec * 1000) / spanMs);
-    const tStart = clamp(prev.t, tEnd, tEnd - riseSpan);
-    if (tStart - prev.t > 1e-4) {
-      vertices.push({ t: tStart, value: prevValue });
-    }
-    const lastAfterStart = vertices[vertices.length - 1]!;
-    if (Math.abs(tEnd - lastAfterStart.t) <= 1e-5) {
-      lastAfterStart.value = cumulative;
-    } else {
-      vertices.push({ t: tEnd, value: cumulative });
-    }
+    vertices.push({ t, value: cumulative });
   }
 
   if (nowFraction > 0) {
     const last = vertices[vertices.length - 1]!;
-    if (vertices.length > 1 && cumulative > 0 && Math.abs(cumulative - liveValue) > 1e-4) {
-      const scale = liveValue / cumulative;
-      for (let i = 1; i < vertices.length; i += 1) {
-        vertices[i]!.value *= scale;
-      }
-    }
     if (Math.abs(nowFraction - last.t) <= 1e-5) {
       last.value = liveValue;
     } else {
@@ -563,44 +551,15 @@ function buildCompetitorVertices(
   const spanMs = Math.max(1, endMs - startMs);
   const synthetic = findSynthetic(sport, athleteId);
 
+  if (!synthetic) return [{ t: nowFraction, value: liveValue }];
   const rawPoints: CompeteTimeSeriesVertex[] = [{ t: 0, value: 0 }];
   let cursor = new Date(startMs);
-  let runningPeerTotal = 0;
-
   while (cursor.getTime() < clampedNowMs) {
-    const dayStart = startOfZonedDay(cursor);
     const dayEnd = endOfZonedDay(cursor);
     const cutoffMs = Math.min(clampedNowMs, dayEnd.getTime());
     const t = clamp(0, nowFraction, (cutoffMs - startMs) / spanMs);
-    const day = dayKey(cursor);
-
-    if (synthetic) {
-      const vol = syntheticVolumeInWindow(
-        synthetic,
-        sport,
-        periodStart,
-        periodEnd,
-        track,
-        new Date(cutoffMs),
-        spec.gps,
-      );
-      const val = spec.gps ? vol.distanceM / divisor : vol.effort;
-      rawPoints.push({ t, value: val });
-    } else {
-      const elapsedShare =
-        (cutoffMs - cursor.getTime()) /
-        Math.max(1, dayEnd.getTime() - dayStart.getTime());
-      const active =
-        unitInterval(`${athleteId}:ts-active:${day}:${track}`) < 0.68;
-      if (active) {
-        const share =
-          (0.65 + unitInterval(`${athleteId}:ts-share:${day}`) * 0.7) *
-          elapsedShare;
-        runningPeerTotal += share;
-      }
-      rawPoints.push({ t, value: runningPeerTotal });
-    }
-
+    const vol = syntheticVolumeInWindow(synthetic, sport, periodStart, periodEnd, track, new Date(cutoffMs), spec.gps);
+    rawPoints.push({ t, value: spec.gps ? vol.distanceM / divisor : vol.effort });
     cursor = dayEnd;
   }
 
@@ -693,6 +652,7 @@ export function buildCompeteTimeSeriesModel(
       avatarUrl,
       you: row.you,
       currentValue: liveValue,
+      historyAvailable: row.you || Boolean(findSynthetic(sport, row.id)),
       vertices,
     };
   });

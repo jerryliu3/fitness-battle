@@ -65,9 +65,9 @@ export function CompeteTimeSeriesChart({
   const activeSelectedId =
     selectedId !== undefined ? selectedId : internalSelectedId;
 
+  const effectiveNow = now ?? (state ? competeNow(state) : new Date());
   const model: CompeteTimeSeriesModel = useMemo(() => {
-    const safeState = state ?? freshState(now);
-    const effectiveNow = now ?? competeNow(safeState);
+    const safeState = state ?? freshState(effectiveNow);
     if (mode === "sleep") {
       return buildSleepTimeSeriesModel(safeState, effectiveNow, {
         height: plotHeight,
@@ -98,6 +98,7 @@ export function CompeteTimeSeriesChart({
     activeSelectedId,
     scrubFraction,
     plotHeight,
+    effectiveNow.getTime(),
   ]);
 
   const handleSelectAthlete = (id: string) => {
@@ -109,6 +110,7 @@ export function CompeteTimeSeriesChart({
   };
 
   const updateScrubFromClientX = (clientX: number) => {
+    if (!model.historyAvailable) return;
     const svg = svgRef.current;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
@@ -156,10 +158,10 @@ export function CompeteTimeSeriesChart({
         background: immersive ? c.accentSecondarySoft : c.card,
         borderRadius: immersive ? 0 : 20,
         border: immersive ? "none" : `1px solid ${c.line}`,
-        padding: compact ? 8 : 16,
+        padding: 16,
         paddingTop: immersive ? "calc(env(safe-area-inset-top) + 100px)" : reserveTopControls ? 64 : 16,
         display: "grid",
-        gap: compact ? 6 : 10,
+        gap: 10,
         color: c.ink,
       }}
     >
@@ -242,14 +244,14 @@ export function CompeteTimeSeriesChart({
           >
             {model.gapLabel}
           </strong>
-          <span
+          {model.historyAvailable && <span
             style={{
               ...typographyStyle("caption"),
               color: model.overtakeCount > 0 ? c.fieldTeal : c.muted,
             }}
           >
             {model.overtakeLabel}
-          </span>
+          </span>}
         </div>
       </div>
 
@@ -258,9 +260,9 @@ export function CompeteTimeSeriesChart({
         style={{
           position: "relative",
           width: "100%",
-          touchAction: compact ? "auto" : "pan-y",
+          touchAction: "pan-y",
           userSelect: "none",
-          pointerEvents: compact ? "none" : "auto",
+          pointerEvents: "auto",
         }}
       >
         <svg
@@ -271,7 +273,7 @@ export function CompeteTimeSeriesChart({
             width: "100%",
             height: model.height,
             overflow: "visible",
-            cursor: compact ? "default" : "ew-resize",
+            cursor: model.historyAvailable ? "ew-resize" : "default",
           }}
           onPointerMove={(event) => {
             updateScrubFromClientX(event.clientX);
@@ -436,7 +438,7 @@ export function CompeteTimeSeriesChart({
               width={model.tipPill.width}
               height={model.tipPill.height}
               rx={6}
-              fill={model.selectedAthlete.you ? c.ink : "#fffbeb"}
+              fill={model.selectedAthlete.you ? c.surfaceInverse : c.actionSoft}
               stroke={model.selectedAthlete.you ? "none" : c.podiumGold}
               strokeWidth={model.selectedAthlete.you ? 0 : 1}
             />
@@ -454,7 +456,7 @@ export function CompeteTimeSeriesChart({
       </div>
 
       {/* Single-Select Athlete Quick-Focus Chips */}
-      {!compact && !immersive && (
+      {!immersive && (
         <div
           role="group"
           aria-label="Select athlete trajectory"
@@ -492,12 +494,12 @@ export function CompeteTimeSeriesChart({
                   }`,
                   background: active
                     ? athlete.you
-                      ? c.ink
-                      : "#fffbeb"
+                      ? c.surfaceInverse
+                      : c.actionSoft
                     : c.paper,
                   color: active
                     ? athlete.you
-                      ? "#ffffff"
+                      ? c.textOnInverse
                       : c.ink
                     : c.ink,
                   cursor: "pointer",
@@ -510,7 +512,7 @@ export function CompeteTimeSeriesChart({
                     color: active
                       ? athlete.you
                         ? c.tennis
-                        : "#b45309"
+                        : c.ink
                       : c.muted,
                   }}
                 >
@@ -522,7 +524,7 @@ export function CompeteTimeSeriesChart({
                     fontVariantNumeric: "tabular-nums",
                     color: active
                       ? athlete.you
-                        ? "rgba(255, 255, 255, 0.78)"
+                        ? c.textOnInverse
                         : c.muted
                       : c.muted,
                   }}

@@ -112,7 +112,10 @@ an explicit Reset action when caught up. Historical chart comparisons use Slate.
 Registered event previews open the immersive field; registration lists exclude
 registered events. Strength and Recovery share the fullscreen time-series chart
 and competition bottom sheet. Points previews show the current position and past day with readable axes,
-all field traces inside the plot, and a Slate surface distinct from the sheet. The minimized sheet clips standings below its
+all current field markers inside the plot, and a Slate surface distinct from the sheet.
+Recorded effort appears at its activity timestamp. Aggregate-only real rivals
+show current positions; omit historical scrubbing and overtake claims until
+authorized history is available. Native charts honor the athlete block list. The minimized sheet clips standings below its
 timeline; selected time and the latest available endpoint remain visible.
 Competition sheets open minimized. Registration steps exit left; avatars enter
 after the panel opens, and the event home remains frozen until it closes. Queued
