@@ -126,8 +126,7 @@ async function getEditionPublicationState(sourceSlug, editionYear) {
   const { spawn } = await import("node:child_process");
   const query = `select ed.publication_state, ed.revision from public.event_editions ed join public.events e on e.id = ed.event_id join public.sources s on s.id = e.source_id where s.slug = '${sourceSlug.replaceAll("'", "''")}' and ed.edition_year = ${editionYear} limit 1;`;
   return new Promise((resolve) => {
-    const child = spawn("psql", ["-X", "-t", "-A", "-F", ",", "-c", query], {
-      env: { ...process.env, PGDATABASE: process.env.RANKINGS_DATABASE_URL },
+    const child = spawn("psql", ["-X", "-d", process.env.RANKINGS_DATABASE_URL, "-t", "-A", "-F", ",", "-c", query], {
       stdio: ["ignore", "pipe", "ignore"],
     });
     let output = "";
@@ -360,8 +359,6 @@ async function ingestRunSignup(raceId, eventId, flags) {
   return { slug: `runsignup-${raceId}-${eventId}-${flags.resultSet}`, status: "succeeded", results: results.length, sql: written.sqlPath };
 }
 
-
-
 if (argv.includes("--csv") || argv.includes("--runsignup")) {
   if (!["5k", "10k", "half_marathon", "marathon"].includes(flag("--distance", argv))) {
     throw new Error("Provide --distance: 5k, 10k, half_marathon, or marathon.");
@@ -424,8 +421,7 @@ if (process.env.RANKINGS_DATABASE_URL) {
     if (event.status !== "succeeded" || !event.sql) continue;
     try {
       await new Promise((resolve, reject) => {
-        const child = spawn("psql", ["-X", "-v", "ON_ERROR_STOP=1", "-f", event.sql], {
-          env: { ...process.env, PGDATABASE: process.env.RANKINGS_DATABASE_URL },
+        const child = spawn("psql", ["-X", "-d", process.env.RANKINGS_DATABASE_URL, "-v", "ON_ERROR_STOP=1", "-f", event.sql], {
           stdio: "inherit",
         });
         child.on("error", reject);

@@ -12,8 +12,9 @@ function quote(value: string): string {
 }
 
 function rowJson(row: IngestedFinish) {
+  const externalId = row.externalResultId?.trim();
   return {
-    externalResultId: row.externalResultId,
+    externalResultId: externalId ? externalId : null,
     athleteName: row.athleteName,
     normalizedName: row.normalizedName,
     normalizedBib: row.normalizedBib,
@@ -100,7 +101,7 @@ begin
   returning id into v_run;
 
   insert into public.events (source_id, external_event_id, name)
-  values (v_source, ${quote(edition.externalEventId)}, ${quote(edition.eventName)})
+  values (v_source, ${edition.externalEventId ? quote(edition.externalEventId) : "null"}, ${quote(edition.eventName)})
   on conflict (source_id, external_event_id) where external_event_id is not null
   do update set name = excluded.name
   returning id into v_event;
@@ -134,6 +135,11 @@ begin
         frozen_at = case when ${options?.freeze ? "true" : "false"} then coalesce(frozen_at, now()) else frozen_at end
     where id = v_edition;
   else
+    ${
+      typeof options?.expectedRevision === "number"
+        ? `raise exception 'Expected edition revision % but edition does not exist; correction held', ${options.expectedRevision};`
+        : ""
+    }
     insert into public.event_editions (
       event_id, edition_year, name, starts_on, publication_state, revision, published_at, frozen_at
     ) values (
@@ -183,10 +189,9 @@ begin
     where source_id = v_source
       and event_edition_id = v_edition
       and (
-        (external_result_id is not null and external_result_id = v_row->>'externalResultId')
+        (external_result_id is not null and external_result_id = nullif(btrim(v_row->>'externalResultId'), ''))
         or (
           external_result_id is null
-          and event_edition_id = v_edition
           and normalized_name = v_row->>'normalizedName'
           and coalesce(normalized_bib, '') = coalesce(v_row->>'normalizedBib', '')
           and category_key = v_row->>'categoryKey'
@@ -194,6 +199,9 @@ begin
       )
     order by id desc
     limit 1;
+    if v_record is null then
+      raise exception 'Source record lookup failed for % in edition %', v_row->>'normalizedName', v_edition;
+    end if;
     perform private.upsert_performance(
       v_record,
       v_row->>'athleteName',

@@ -27,6 +27,7 @@ create index if not exists event_editions_publication_state_idx
 
 -- 2. Provider namespace widening: scope external_result_id uniqueness to (source, edition, external_result_id)
 -- Legacy index scoped external IDs source-wide, preventing valid multi-year reuse and risking row relocation.
+drop index if exists public.source_records_external_result_idx;
 drop index if exists public.source_records_source_external_idx;
 
 create unique index if not exists source_records_source_edition_external_idx
@@ -49,9 +50,26 @@ security definer
 set search_path = ''
 as $$
 declare
+  v_external text := nullif(btrim(coalesce(p_external_result_id, '')), '');
+  v_bib text := nullif(btrim(coalesce(p_normalized_bib, '')), '');
+  v_name text := btrim(p_normalized_name);
   v_inserted boolean;
 begin
-  if p_external_result_id is not null then
+  if v_name is null or v_name = '' then
+    raise exception 'normalized_name is required';
+  end if;
+
+  if not exists (
+    select 1
+    from public.event_editions ed
+    join public.events e on e.id = ed.event_id
+    where ed.id = p_event_edition_id
+      and e.source_id = p_source_id
+  ) then
+    raise exception 'event edition % does not belong to source %', p_event_edition_id, p_source_id;
+  end if;
+
+  if v_external is not null then
     insert into public.source_records (
       source_id,
       event_edition_id,
@@ -64,14 +82,15 @@ begin
     ) values (
       p_source_id,
       p_event_edition_id,
-      p_external_result_id,
-      p_normalized_name,
-      p_normalized_bib,
+      v_external,
+      v_name,
+      v_bib,
       p_category_key,
       p_snapshot_id,
       p_ingestion_run_id
     )
-    on conflict (source_id, event_edition_id, external_result_id) where external_result_id is not null
+    on conflict (source_id, event_edition_id, external_result_id)
+      where external_result_id is not null
     do update set
       normalized_name = excluded.normalized_name,
       normalized_bib = excluded.normalized_bib,
@@ -94,17 +113,14 @@ begin
       p_source_id,
       p_event_edition_id,
       null,
-      p_normalized_name,
-      p_normalized_bib,
+      v_name,
+      v_bib,
       p_category_key,
       p_snapshot_id,
       p_ingestion_run_id
     )
-    on conflict (
-      source_id,
-      event_edition_id,
-      (private.result_fingerprint(source_id, event_edition_id, normalized_name, normalized_bib, category_key))
-    ) where external_result_id is null
+    on conflict (source_id, event_edition_id, result_fingerprint)
+      where external_result_id is null
     do update set
       normalized_name = excluded.normalized_name,
       normalized_bib = excluded.normalized_bib,

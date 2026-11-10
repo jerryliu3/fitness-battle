@@ -244,6 +244,8 @@ describe("public results parsers", () => {
     const correctionSql = editionImportSql(edition, snapshot, { allowCorrection: true, expectedRevision: 2 });
     expect(correctionSql).toContain("revision = case when true then revision + 1 else revision end");
     expect(correctionSql).toContain("Expected edition revision % but found %; correction held', 2");
+    expect(correctionSql).toContain("Expected edition revision % but edition does not exist; correction held', 2");
+    expect(correctionSql).toContain("Source record lookup failed for % in edition %");
 
     // Freeze import marks frozen
     const freezeSql = editionImportSql(edition, snapshot, { allowCorrection: true, freeze: true });
