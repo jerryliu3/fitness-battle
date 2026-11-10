@@ -161,6 +161,13 @@ export function HomeDeck({
     direction: "left" | "right";
   } | null>(null);
 
+  const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    setDismissing(null);
+    setDragOffset(0);
+    return () => { if (dismissTimer.current) clearTimeout(dismissTimer.current); };
+  }, [storageKey]);
+
   useEffect(() => {
     if (typeof initialIndex === "number") {
       setActiveIndex(initialIndex);
@@ -243,7 +250,7 @@ export function HomeDeck({
       const nextDismissed = [...new Set([...dismissedIds, cardId])];
       const nextCount = Math.max(0, visibleCards.length - 1);
 
-      setTimeout(() => {
+      dismissTimer.current = setTimeout(() => {
         setDragOffset(0);
         setActiveIndex((curr) => (nextCount > 0 ? curr % nextCount : 0));
         persistDismissed(nextDismissed);
@@ -257,6 +264,7 @@ export function HomeDeck({
   }, [activeCard?.id, dismissing]);
 
   const resetDeck = useCallback(() => {
+    if (dismissTimer.current) clearTimeout(dismissTimer.current);
     void playCue("selection");
     setDragOffset(0);
     setActiveIndex(0);

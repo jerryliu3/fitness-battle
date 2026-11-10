@@ -210,6 +210,12 @@ export function HomeDeck({
   const [dismissingId, setDismissingId] = useState<HomeDeckCardId | null>(null);
   const dismissalRevision = useRef(0);
   const swipingRef = useRef(false);
+  const dismissalAnimation = useRef<Animated.CompositeAnimation | null>(null);
+  useEffect(() => {
+    setDismissingId(null);
+    swipingRef.current = false;
+    return () => { dismissalAnimation.current?.stop(); swipingRef.current = false; };
+  }, [storageKey]);
 
   useEffect(() => {
     if (typeof initialIndex === "number") {
@@ -251,7 +257,7 @@ export function HomeDeck({
     visibleCards.length > 0 ? activeIndex % visibleCards.length : 0;
   const activeCard = visibleCards[safeIndex] ?? null;
   // Each card owns its native animation values. Never reset an outgoing view.
-  const motion = useMemo(() => ({ x: new Animated.Value(0), opacity: new Animated.Value(1) }), [activeCard?.id]);
+  const motion = useMemo(() => ({ x: new Animated.Value(0), opacity: new Animated.Value(1) }), [storageKey, activeCard?.id]);
   const dragX = motion.x;
   const cardOpacity = motion.opacity;
 
@@ -304,7 +310,7 @@ export function HomeDeck({
       dragX.setValue(currentDx);
 
       // Animate smoothly off screen continuing from currentDx with zero snap-back
-      Animated.parallel([
+      const animation = Animated.parallel([
         Animated.timing(dragX, {
           toValue: direction === "left" ? -460 : 460,
           duration: 280,
@@ -317,7 +323,10 @@ export function HomeDeck({
           easing: Easing.in(Easing.quad),
           useNativeDriver: true,
         }),
-      ]).start(() => {
+      ]);
+      dismissalAnimation.current = animation;
+      animation.start(({ finished }) => {
+        if (!finished) return;
         setActiveIndex((curr) => (nextCount > 0 ? curr % nextCount : 0));
         persistDismissed(nextDismissed);
       });
@@ -511,7 +520,7 @@ export function HomeDeck({
 
               return (
                 <Animated.View
-                  key={activeCard.id}
+                  key={`${storageKey}:${activeCard.id}`}
                   {...panResponder.panHandlers}
                   pointerEvents={dismissingId ? "none" : "auto"}
                   style={[

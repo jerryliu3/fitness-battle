@@ -50,7 +50,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const immersive = immersiveAccount === (user?.id ?? "guest") && tabActive;
   useEffect(() => { if (!tabActive) setImmersiveAccount(null); }, [tabActive]);
   const [authOpen, setAuthOpen] = useState(false);
-  const [registrationBackground, setRegistrationBackground] = useState<CompeteState | null>(null);
+  const [registrationBackground, setRegistrationBackground] = useState<{ account: string; state: CompeteState } | null>(null);
   const [register, setRegister] = useState(false);
   const [selection, setSelection] = useState<{account:string; sport:SportId|"sleep"}|null>(null);
   useEffect(()=>{if(tabActive&&requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:user?.id??"guest",sport:requestedEvent as SportId});},[requestedEvent,user?.id,tabActive]);
@@ -113,9 +113,10 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
     setImmersiveAccount(account);
   }
   function openRegistration(event: CompeteEvent | null = null) {
+    if (!state) return;
     if (joinBusy) return;
     joinFlight.current = null;
-    setRegistrationBackground(state);
+    setRegistrationBackground({ account: account, state });
     setSport(event); setJoinError(""); setRegister(true);
   }
   async function claimEntry() {
@@ -158,9 +159,9 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
           <div className="compete-home-date"><AppText secondary>{dateRangeLabel}</AppText><StatusBadge>{badgeLabel}</StatusBadge></div>
         </header>
         {standingsStale && <AppParagraph typographyRole="caption" role="status" className="fb-note">Standings may be out of date until the next refresh.</AppParagraph>}
-        <EventHome active={tabActive && !immersive} state={registrationBackground ?? state} onEnter={enterEvent} onRecovery={() => enterEvent("sleep")} onRegister={() => openRegistration()} />
+        <EventHome active={tabActive && !immersive} state={registrationBackground?.account === account ? registrationBackground.state : state} onEnter={enterEvent} onRecovery={() => enterEvent("sleep")} onRegister={() => openRegistration()} />
         <CrewEvents onChoose={() => router.push("/field")} />
-        <ExploreEvents state={registrationBackground ?? state} onChoose={event => {
+        <ExploreEvents state={registrationBackground?.account === account ? registrationBackground.state : state} onChoose={event => {
           if (event === "sleep" ? sleepOptedIn : active.some(r => r.sport === event)) enterEvent(event);
           else openRegistration(event);
         }} />

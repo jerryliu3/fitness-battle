@@ -64,7 +64,7 @@ const f=useFocusStyles();
   const [expandRequest, setExpandRequest] = useState(0);
   const [pointsFraction, setPointsFraction] = useState<number | null>(null);
   useEffect(() => { setPointsFraction(null); setAthleteFocus(null); }, [experience.event?.sport, accountKey]);
-  const [registrationBackground, setRegistrationBackground] = useState<CompeteState | null>(null);
+  const [registrationBackground, setRegistrationBackground] = useState<{ account: string; state: CompeteState } | null>(null);
   const [register, setRegister] = useState(false);
   const [selection,setSelection]=useState<{account:string;sport:SportId|"sleep"}|null>(null);
   useEffect(()=>{if(requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:accountKey,sport:requestedEvent as SportId});},[requestedEvent,accountKey]);
@@ -103,7 +103,8 @@ const f=useFocusStyles();
   const pointsEvent = selectedSport === "sleep" || selectedSport === "strength";
   const track = competitionTrack(selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary);
   function openRegistration(event: CompeteEvent | null = null) {
-    setRegistrationBackground(state);
+    if (!state) return;
+    setRegistrationBackground({ account: accountKey, state });
     setSport(event);
     joinFlight.current = false;
     setRegister(true);
@@ -147,11 +148,11 @@ const f=useFocusStyles();
         ) : null}
         {!persistent && <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />}
         {persistent ? selectedSport && selectedSport !== "sleep" ? queue?.queued || queue?.awaitingField ? <View style={{ gap: 16 }}><QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch({ type: "opt-out", sport: selectedSport }); exit(); }} /></View> : <CompetitionPanel key={`${accountKey}:${selectedSport}:${headerPeriod.startsAt.toISOString()}`} active={focused && experience.immersive} standings={<CompetitionField sport={selectedSport} track={track} standingsOnly onFocusAthlete={id => { setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} />} activity={visible => <RaceUpdates state={state} sport={selectedSport} active={visible} />} /> : selectedSport === "sleep" ? queue?.queued || queue?.awaitingField ? <QueuedField state={state} event="sleep" now={now} onCancel={() => { dispatch({ type: "opt-out-health", metric: "sleep" }); exit(); }} /> : <SleepPanel state={state} dispatch={dispatch} hideChart /> : null : <>
-          <EventHome active={focused && !experience.immersive} state={registrationBackground ?? state} accountKey={accountKey} onEnter={experience.enter} onRecovery={() => experience.enter(accountKey, "sleep")} />
+          <EventHome active={focused && !experience.immersive} state={registrationBackground?.account === accountKey ? registrationBackground.state : state} accountKey={accountKey} onEnter={experience.enter} onRecovery={() => experience.enter(accountKey, "sleep")} />
 
         </>}
         {!persistent && <CrewEvents onChoose={() => router.navigate("/field")} />}
-        {!persistent && <ExploreEvents state={registrationBackground ?? state} onChoose={event => {
+        {!persistent && <ExploreEvents state={registrationBackground?.account === accountKey ? registrationBackground.state : state} onChoose={event => {
           if (event === "sleep" && sleepOptedIn) experience.enter(accountKey, "sleep");
           else if (event !== "sleep" && active.some(r => r.sport === event)) experience.enter(accountKey, event);
           else openRegistration(event);

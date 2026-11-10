@@ -69,7 +69,7 @@ vi.mock("react-native", () => ({
       }
     },
     timing: (value: { setValue(value: number): void }, config: { toValue: number }) => ({ start: (cb?: () => void) => { value.setValue(config.toValue); cb?.(); } }),
-    parallel: (animations: { start(): void }[]) => ({ start: (cb?: () => void) => { animations.forEach(animation => animation.start()); cb?.(); } }),
+    parallel: (animations: { start(): void }[]) => ({ stop() {}, start: (cb?: (result: { finished: boolean }) => void) => { animations.forEach(animation => animation.start()); cb?.({ finished: true }); } }),
     spring: () => ({ start: (cb?: () => void) => cb?.() }),
   },
 }));

@@ -122,3 +122,20 @@ describe("Web HomeDeck", () => {
     expect(text()).toContain("RECOVERY-FRIENDLY");
   });
 });
+
+it("cancels an outgoing dismissal when the account changes", async () => {
+  vi.useFakeTimers();
+  const state = freshState(new Date("2026-10-22T14:00:00Z"));
+  state.demoNow = "2026-10-22T14:00:00Z";
+  const props = { state, onOpenTodaySession() {}, onOpenActivities() {} };
+  await act(async () => { renderer = create(createElement(HomeDeck, { ...props, accountKey: "dismissal-account-before" })); });
+  try {
+    const title = () => renderer.root.findByType("article").findByType("h3").children.join("");
+    const original = title();
+    const dismiss = renderer.root.find(node => node.type === "button" && node.props["aria-label"]?.startsWith("Dismiss "));
+    await act(async () => dismiss.props.onClick());
+    await act(async () => renderer.update(createElement(HomeDeck, { ...props, accountKey: "dismissal-account-after" })));
+    await act(async () => { vi.advanceTimersByTime(320); });
+    expect(title()).toBe(original);
+  } finally { vi.useRealTimers(); }
+});

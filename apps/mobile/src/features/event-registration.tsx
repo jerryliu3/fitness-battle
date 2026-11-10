@@ -22,7 +22,7 @@ export function EventRegistration({ state, event, registered, error, onClaim, on
   const entry = useRef(new Animated.Value(0)).current;
   const stepMotion = useRef(new Animated.Value(1)).current;
   const { height } = useWindowDimensions();
-  const claimed = registered || claiming;
+  const claimed = registered;
   useEffect(() => { entry.setValue(reduced ? 1 : 0); Animated.timing(entry, { toValue: 1, delay: reduced ? 0 : 800, duration: reduced ? 0 : 600, useNativeDriver: true }).start(); return () => entry.stopAnimation(); }, [entry, reduced]);
   const transitioning = useRef(false);
   const nextStep = () => {
@@ -34,6 +34,7 @@ export function EventRegistration({ state, event, registered, error, onClaim, on
       Animated.timing(stepMotion, { toValue: 1, duration: reduced ? 0 : 190, useNativeDriver: true }).start(() => { transitioning.current = false; });
     });
   };
+  useEffect(() => () => { stepMotion.stopAnimation(); transitioning.current = false; }, [stepMotion]);
   const now = competeNow(state);
   const detail = eventRegistration(state, event, now);
   const details = registrationDetailCards(detail);
@@ -46,7 +47,7 @@ export function EventRegistration({ state, event, registered, error, onClaim, on
     if (!claimed) { rotation.setValue(0); stamp.setValue(0); return; }
     stamp.setValue(0);
     const motion = Animated.sequence([
-      Animated.timing(rotation, { toValue: claimed ? 180 : 0, duration: reduced ? 0 : 600, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(rotation, { toValue: 180, duration: reduced ? 0 : 600, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
       Animated.timing(stamp, { toValue: 1, delay: reduced ? 0 : 120, duration: reduced ? 0 : 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]);
     motion.start();
@@ -64,7 +65,7 @@ export function EventRegistration({ state, event, registered, error, onClaim, on
           <AppText role="label">Starts {detail.starts}</AppText>
         </>}
         <View style={{ borderTopWidth: 1, borderStyle: "dashed", borderColor: c.muted, paddingTop: 18, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}><View accessible={false} style={{ flexDirection: "row", flex: 1, gap: 2 }}>{barcode.map((width, i) => <View key={i} style={{ flex: width, height: 24, backgroundColor: c.ink }} />)}</View></View>
-        <FocusButton label={back ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →` : "Claim your spot"} disabled={claiming && !registered} onPress={back ? onView : () => { setClaiming(true); onClaim(); }} />
+        <FocusButton label={back ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →` : claiming ? "Claiming your spot…" : "Claim your spot"} disabled={claiming && !registered} onPress={back ? onView : () => { setClaiming(true); onClaim(); }} />
       </View>
     </Animated.View>;
 

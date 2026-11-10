@@ -12,7 +12,7 @@ export function EventRegistration({ state, event, busy, error, registered, onCla
   const [step, setStep] = useState(0);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [claiming, setClaiming] = useState(false);
-  const claimed = registered || claiming;
+  const claimed = registered;
   useEffect(() => { if (error) setClaiming(false); }, [error]);
   const now = competeNow(state);
   const detail = eventRegistration(state, event, now);
@@ -29,7 +29,7 @@ export function EventRegistration({ state, event, busy, error, registered, onCla
             <AppHeading>{detail.name} Meet</AppHeading><AppText role="label">{detail.details[2]!.summary} league</AppText>
             <AppText role="label">Starts {detail.starts}</AppText>
             <div className="registration-ticket-stub"><span className="registration-barcode" aria-hidden="true">{entryBarcode(`${event}:${detail.start}`).map((width, i) => <i key={i} style={{ flexGrow: width }} />)}</span></div>
-            <button type="button" className="fb-btn" disabled={busy || claimed} onClick={() => { setClaiming(true); onClaim(); }}>{busy ? "Claiming your spot…" : "Claim your spot"}</button>
+            <button type="button" className="fb-btn" disabled={busy || claiming || claimed} onClick={() => { setClaiming(true); onClaim(); }}>{busy || claiming ? "Claiming your spot…" : "Claim your spot"}</button>
           </div>
         </div>
         <div className="registration-face registration-back" inert={!claimed} aria-hidden={!claimed}>
