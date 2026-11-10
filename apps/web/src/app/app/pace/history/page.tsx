@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {AppHeading} from "@/ui/section";
-import {RACE_DISTANCES,RACE_CATEGORIES,raceQuery,raceClock} from "@fitness-battle/shared";
+import {RACE_DISTANCES,RACE_CATEGORY_FILTERS,raceQuery,raceClock} from "@fitness-battle/shared";
 import {loadEditionHistory} from "@/lib/race-results";
 export const dynamic="force-dynamic";
 export default async function EditionHistory({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}) {
@@ -10,7 +10,9 @@ export default async function EditionHistory({searchParams}:{searchParams:Promis
   let rows=null;
   try {if(distance && query.editionId && !query.editionError) rows=await loadEditionHistory(query.editionId,distance.stored,query.sex);} catch { /* Recovery below. */ }
   const maximum=Math.max(...(rows?.map(row=>row.median_ms) ?? []),1);
-  return <main className="rankings-wrap"><Link href="/pace">← Times</Link><AppHeading level={1} role="display">Across editions</AppHeading><p className="rankings-note">{distance?.label} · {RACE_CATEGORIES.find(c=>c.value===query.sex)?.label}. Published records for the same event. Counts can reflect import coverage; courses, conditions and clock mixes may change. <Link href="/pace/coverage">Check coverage</Link></p>
+  return <main className="rankings-wrap"><Link href="/pace">← Times</Link><AppHeading level={1} role="display">Compare race years</AppHeading><p className="rankings-note">{distance?.label} · {RACE_CATEGORY_FILTERS.find(c=>c.value===query.sex)?.label}. Compare median finish times and published field sizes across years of the same race. Times are not adjusted for course or conditions. <Link href="/pace/coverage">Check coverage</Link></p>
+    <form className="race-filters" method="get"><input type="hidden" name="edition" value={query.editionId ?? ""} /><input type="hidden" name="distance" value={distance?.slug ?? ""} /><label>Category<select name="sex" defaultValue={query.sex}>{RACE_CATEGORY_FILTERS.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}</select></label><button>Apply filter</button></form>
+    {rows?.length===1 && <p className="rankings-note">Only {rows[0].edition_year} is available for this race. Another year is needed for a year-over-year comparison.</p>}
     {!rows ? <p role="alert">History unavailable. <Link href={`/pace/history?${params}`}>Retry</Link></p> : !rows.length ? <p>No published editions in this field.</p> : <div className="race-coverage-list">{rows.map(row=><article key={row.edition_id}><AppHeading level={2} role="heading"><Link href={`/pace?distance=${distance?.slug}&edition=${row.edition_id}&sex=${query.sex}`}>{row.event_name} · {row.edition_year}</Link></AppHeading><p>{row.total.toLocaleString()} published finishes</p><strong>Median {raceClock(row.median_ms)}</strong><div className="race-pace-track" aria-hidden="true"><span style={{width:`${row.median_ms/maximum*100}%`}} /></div><p>Fastest {raceClock(row.fastest_ms)}</p><p className="rankings-note">{row.chip_count.toLocaleString()} chip · {row.official_count.toLocaleString()} official times</p></article>)}</div>}
   </main>;
 }

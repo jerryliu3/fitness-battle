@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, ScrollView, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { RACE_DISTANCES, RACE_CATEGORIES, RACE_TIMEFRAMES, raceQuery, raceEditionOptions, raceWindowCaption, raceClock, type RaceCoverage, type RaceResult, type RaceResultsPage } from "@fitness-battle/shared";
+import { RACE_DISTANCES, RACE_TIMEFRAMES, raceQuery, raceEditionOptions, raceWindowCaption, raceClock, type RaceCoverage, type RaceResult, type RaceResultsPage } from "@fitness-battle/shared";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { useFocusStyles, FocusButton } from "../src/ui/focus";
 import { AppText } from "../src/ui/section";
+import { RaceCategoryFilter } from "../src/ui/race-category-filter";
 import { EditionAnalytics } from "../src/ui/race-edition-analytics";
 import { mobileEnv } from "../src/lib/env";
 
@@ -14,7 +15,7 @@ export default function RaceRankings() {
   const router = useRouter();
   const list = useRef<FlatList<RaceResult>>(null);
   const params = useLocalSearchParams<{edition?: string; distance?: string; sex?: string}>();
-  const initial = raceQuery(new URLSearchParams({edition:params.edition ?? "",sex:params.sex ?? "female"}));
+  const initial = raceQuery(new URLSearchParams({edition:params.edition ?? "",sex:params.sex ?? "all"}));
   const [distance, setDistance] = useState(RACE_DISTANCES.find(d => d.slug === params.distance)?.slug ?? "marathon");
   const [sex, setSex] = useState(initial.sex);
   const [edition, setEdition] = useState(params.edition ?? "");
@@ -69,7 +70,7 @@ export default function RaceRankings() {
     <FlatList ref={list} data={data?.rows ?? []} keyExtractor={row => String(row.id)} contentContainerStyle={f.content}
       ListHeaderComponent={<View style={{ gap: 16 }}>
         <View style={f.chipRow}>{RACE_DISTANCES.map(d => <Pressable key={d.slug} accessibilityRole="button" accessibilityState={{selected:distance === d.slug}} onPress={() => { setDistance(d.slug); setEdition(""); setPage(1); }} style={[f.chip, distance === d.slug && f.chipActive]}><AppText role="label">{d.label}</AppText></Pressable>)}</View>
-        <View style={f.chipRow}>{RACE_CATEGORIES.map(c => <Pressable key={c.value} accessibilityRole="button" accessibilityState={{selected:sex === c.value}} onPress={() => { setSex(c.value); setPage(1); }} style={[f.chip, sex === c.value && f.chipActive]}><AppText role="label">{c.label}</AppText></Pressable>)}</View>
+        <RaceCategoryFilter value={sex} onChange={value=>{setSex(value);setPage(1);}} />
         <AppText role="label">Event edition</AppText>
         {coverageError ? <View style={{gap:8}}><AppText role="caption" secondary>Event selection unavailable.</AppText><FocusButton label="Retry events" secondary onPress={() => setCoverageRetry(n=>n+1)} /></View> : !coverage ? <ActivityIndicator accessibilityLabel="Loading events" /> : null}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
@@ -78,7 +79,7 @@ export default function RaceRankings() {
         </ScrollView>
         {!!edition && <AppText role="caption" secondary>{selectedEdition ? `${selectedEdition.event_name} · ${selectedEdition.edition_year}` : "Selected event edition"} · Ranks apply to this edition, category and timeframe.</AppText>}
         {!!edition && <FocusButton label="Replay options" secondary onPress={()=>router.push({pathname:"/race-replay",params:{edition,distance,sex,clock:"chip"}})} />}
-        {!!edition && <FocusButton label="Compare editions" secondary onPress={()=>router.push({pathname:"/race-edition-history",params:{edition,distance,sex}})} />}
+        {!!edition && <FocusButton label="Compare years" secondary onPress={()=>router.push({pathname:"/race-edition-history",params:{edition,distance,sex}})} />}
         <TextInput accessibilityLabel="Athlete name or bib" value={draft} maxLength={100} onChangeText={setDraft} onSubmitEditing={search} returnKeyType="search" placeholder="Athlete or bib" style={f.input} />
         <View style={f.chipRow}>{RACE_TIMEFRAMES.map(t => <Pressable key={t.value} accessibilityRole="button" accessibilityState={{selected:timeframe===t.value}} onPress={()=>{setTimeframe(t.value);setPage(1);setValidation("");}} style={[f.chip,timeframe===t.value && f.chipActive]}><AppText role="label">{t.label}</AppText></Pressable>)}</View>
         {timeframe === "year" && <TextInput accessibilityLabel="Edition year" value={yearDraft} onChangeText={setYearDraft} keyboardType="number-pad" maxLength={4} placeholder="Edition year" style={f.input} />}
