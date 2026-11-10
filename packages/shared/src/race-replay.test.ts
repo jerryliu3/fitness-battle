@@ -31,6 +31,7 @@ describe("edition course replay",()=>{
     expect(timeline.duration).toBe(2100000);
     expect(replayFeatures(course,[first,second],300000,timeline.origin).features).toHaveLength(1);
     expect(replayTimeline([first,compiled],true).origin).toBeNull();
+    expect(replayTimeline([{...first,splits:{...first.splits,clock:"gun"}}],true).wallAvailable).toBe(false);
   });
   it("handles a large field without per-runner DOM or argument-spread limits",()=>{
     const field=Array.from({length:50000},(_,id)=>({...compiled,id:id+1}));

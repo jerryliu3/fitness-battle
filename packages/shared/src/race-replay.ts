@@ -23,7 +23,7 @@ export function replayCoordinate(course:ReplayCourse,metres:number):[number,numb
 export function compileReplayRunner(runner:ReplayRunner,distance:string) {
   const analysis=analyzeRaceSplits(runner.splits,distance);
   if(analysis.status!=="ready") return null;
-  return {...runner,startMs:runner.startAt ? Date.parse(runner.startAt) : NaN,points:[{distanceM:0,elapsedMs:0,ordinal:-1},...analysis.rows.flatMap((row,ordinal)=>row.elapsedMs===null ? [] : [{distanceM:row.distanceM,elapsedMs:row.elapsedMs,ordinal}])]};
+  return {...runner,startMs:runner.splits.clock==="chip" && runner.startAt ? Date.parse(runner.startAt) : NaN,points:[{distanceM:0,elapsedMs:0,ordinal:-1},...analysis.rows.flatMap((row,ordinal)=>row.elapsedMs===null ? [] : [{distanceM:row.distanceM,elapsedMs:row.elapsedMs,ordinal}])]};
 }
 export type CompiledReplayRunner=NonNullable<ReturnType<typeof compileReplayRunner>>;
 export function replayDistance(runner:CompiledReplayRunner,time:number) {
@@ -39,7 +39,7 @@ export function replayDistance(runner:CompiledReplayRunner,time:number) {
 }
 export function replayTimeline(runners:CompiledReplayRunner[],wall:boolean) {
   const starts=runners.map(r=>r.startMs);
-  const wallAvailable=starts.length>0 && starts.every(Number.isFinite);
+  const wallAvailable=starts.length>0 && runners.every(r=>r.splits.clock==="chip") && starts.every(Number.isFinite);
   const origin=wall && wallAvailable ? starts.reduce((minimum,value)=>Math.min(minimum,value),Infinity) : null;
   return {wallAvailable,origin,duration:runners.reduce((maximum,r,i)=>Math.max(maximum,r.splits.finishMs+(origin!==null ? starts[i]-origin : 0)),0)};
 }
