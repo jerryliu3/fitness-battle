@@ -4,7 +4,7 @@ import Link from "next/link";
 import { AppHeading } from "@/ui/section";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { RACE_CATEGORIES, RACE_DISTANCES, RACE_TIMEFRAMES, raceClock, raceWindowCaption, raceEditionOptions, type RaceCoverage, type RaceResultsPage, type raceQuery } from "@fitness-battle/shared";
+import { RACE_CATEGORY_FILTERS, RACE_DISTANCES, RACE_TIMEFRAMES, raceClock, raceWindowCaption, raceEditionOptions, type RaceCoverage, type RaceResultsPage, type raceQuery } from "@fitness-battle/shared";
 
 import { EditionAnalytics } from "./edition-analytics";
 
@@ -38,17 +38,17 @@ export function RaceExplorer({ distance, initial, query, coverage }: { distance:
     <form className="race-filters" onSubmit={event => { event.preventDefault(); navigate(1); }}>
       <label className="race-search">Athlete or bib<input name="q" value={search} onChange={e => setSearch(e.target.value)} placeholder="Find a finisher…" maxLength={100} /></label>
       <label>Event edition<select value={edition} onChange={e => setEdition(e.target.value)}><option value="">All events</option>{edition && !editions.some(e => String(e.edition_id) === edition) && <option value={edition}>Selected event edition</option>}{editions.map(e => <option key={e.edition_id} value={e.edition_id}>{e.event_name} · {e.edition_year}</option>)}</select></label>
-      <label>Category<select value={sex} onChange={e => setSex(e.target.value)}>{RACE_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select></label>
+      <label>Category<select value={sex} onChange={e => setSex(e.target.value)}>{RACE_CATEGORY_FILTERS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select></label>
       <label>Timeframe<select value={timeframe} onChange={e => setTimeframe(e.target.value)}>{RACE_TIMEFRAMES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}</select></label>
       {timeframe === "year" && <label>Year<input aria-label="Edition year" type="number" min="1900" max="2100" value={year} onChange={e => setYear(e.target.value)} placeholder="2025" required /></label>}
       {timeframe === "custom" && <><label>From<input type="date" min="1900-01-01" max="2100-12-31" value={from} onChange={e => setFrom(e.target.value)} required /></label><label>Through<input type="date" min={from || "1900-01-01"} max="2100-12-31" value={through} onChange={e => setThrough(e.target.value)} required /></label></>}
       <button type="submit" disabled={pending}>{pending ? "Finding…" : "Find results"}</button>
     </form>
-    {query.editionId && <p className="race-edition-context">{selectedEdition ? `${selectedEdition.event_name} · ${selectedEdition.edition_year}` : "Selected event edition"}<span>Ranks apply to this edition, category and timeframe. <Link href={`/pace/history?edition=${query.editionId}&distance=${distance}&sex=${query.sex}`}>Compare editions →</Link> · <Link href={`/pace/replay?edition=${query.editionId}&distance=${distance}&sex=${query.sex}`}>Replay options →</Link></span></p>}
+    {query.editionId && <p className="race-edition-context">{selectedEdition ? `${selectedEdition.event_name} · ${selectedEdition.edition_year}` : "Selected event edition"}<span>Ranks apply to this edition, category and timeframe. <Link href={`/pace/history?edition=${query.editionId}&distance=${distance}&sex=${query.sex}`}>Compare years →</Link> · <Link href={`/pace/replay?edition=${query.editionId}&distance=${distance}&sex=${query.sex}`}>Replay options →</Link></span></p>}
     {!data ? <div className="race-empty" role="alert"><AppHeading level={2} role="heading">{query.editionError ? "Check the event edition" : query.dateError ? "Check the timeframe" : "Results are unavailable"}</AppHeading><p>{query.editionError ?? query.dateError ?? "Please try again in a moment."}</p><button onClick={() => startTransition(() => router.refresh())}>Retry</button></div> : <>
-      <div className="race-summary" aria-live="polite"><div><strong>{data.total.toLocaleString()}</strong><span>{query.query ? "matching results" : "published results"}</span></div><p>{query.timeframe === "year" ? query.year : RACE_TIMEFRAMES.find(t => t.value === query.timeframe)?.label} · {RACE_CATEGORIES.find(c => c.value === query.sex)?.label}<br/>Chip time where available, otherwise official time</p></div>
+      <div className="race-summary" aria-live="polite"><div><strong>{data.total.toLocaleString()}</strong><span>{query.query ? "matching results" : "published results"}</span></div><p>{query.timeframe === "year" ? query.year : RACE_TIMEFRAMES.find(t => t.value === query.timeframe)?.label} · {RACE_CATEGORY_FILTERS.find(c => c.value === query.sex)?.label}<br/>Chip time where available, otherwise official time</p></div>
       {data.windowFrom && data.windowUntil && <p className="rankings-note">{raceWindowCaption(data)} · Undated results excluded.</p>}
-      {data.analytics && <EditionAnalytics analytics={data.analytics} />}
+      {data.analytics && <EditionAnalytics analytics={data.analytics} scope={query.editionId ? "edition" : "distance"} />}
       {data.rows.length === 0 ? <div className="race-empty"><AppHeading level={2} role="heading">{query.query ? "No matching finishers" : "No results in this field"}</AppHeading><p>Try another name, category or year.</p></div> : <>
         <div className="race-table" role="region" aria-label="Race results" tabIndex={0}>
           <table><caption className="sr-only">Rank within {data.cohortTotal.toLocaleString()} published results in the selected category and timeframe</caption><thead><tr><th scope="col">Rank</th><th scope="col">Athlete</th><th scope="col">Finish</th><th scope="col" className="race-event-column">Event</th></tr></thead><tbody>

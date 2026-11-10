@@ -35,7 +35,7 @@ begin
   payload:=public.rankings_page_scoped('marathon','unknown',2096,'',1,'2096-05-02',null,ed);
   if payload->'analytics'<>'null'::jsonb then raise exception 'empty date scope exposed analytics'; end if;
   payload:=public.rankings_page_scoped('marathon','unknown',2096,'',1,null,null,null);
-  if payload->'analytics'<>'null'::jsonb then raise exception 'all-edition analytics should be omitted'; end if;
+  if (payload->'analytics'->>'total')::integer is distinct from 206 or (payload->'analytics'->>'editionCount')::integer is distinct from 2 then raise exception 'All-distance analytics lost editions'; end if;
   payload:=public.rankings_page_scoped('marathon','unknown',2096,'',1,null,null,other_ed);
   if (payload->'analytics'->>'total')::integer<>1 or jsonb_array_length(payload->'analytics'->'bins')<>1
     then raise exception 'single-finisher field incorrect'; end if;

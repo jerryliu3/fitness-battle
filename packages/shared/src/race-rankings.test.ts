@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { raceQuery, raceClock, raceEditionOptions, raceEditionChart, type RaceEditionAnalytics, type RaceCoverage } from "./race-rankings";
+import { raceQuery, raceClock, raceEditionOptions, raceEditionChart, raceEventGroups, type RaceEditionAnalytics, type RaceCoverage } from "./race-rankings";
 describe("public race query", () => {
   it("rejects invalid scopes and bounds input", () => {
-    expect(raceQuery(new URLSearchParams("sex=invalid&year=1&page=Infinity"))).toMatchObject({ sex: "female", year: null, page: 1, query: "", timeframe:"all",dateError:null });
+    expect(raceQuery(new URLSearchParams("sex=invalid&year=1&page=Infinity"))).toMatchObject({ sex: "all", year: null, page: 1, query: "", timeframe:"all",dateError:null });
     expect(raceQuery(new URLSearchParams("page=2147483648")).page).toBe(1);
     expect(raceQuery(new URLSearchParams("sex=other&year=2025&page=401&q=Runner"))).toMatchObject({ sex: "other", year: 2025, page: 401, query: "Runner",timeframe:"year",dateError:null });
   });
@@ -41,4 +41,12 @@ describe("edition distribution presentation", () => {
   it("handles identical finishes as one range", () => {
     expect(raceEditionChart({...analytics,bins:[{bucket:0,count:3}]})).toHaveLength(1);
   });
+});
+
+it("combines event cards and retains dropdown filtering",()=>{
+ const row:RaceCoverage={edition_id:1,event_name:"Race",edition_year:2025,distance_slug:"marathon",sex:"female",published_count:10,undated_count:0,expected_eligible_count:null,reviewed_at:null,evidence_url:null,complete:false};
+ expect(raceQuery(new URLSearchParams()).sex).toBe("all");
+ expect(raceQuery(new URLSearchParams("sex=all")).sex).toBe("all");
+ expect(raceEventGroups([row,{...row,sex:"male",published_count:20}])).toMatchObject([{published_count:30,categoryCount:2}]);
+ expect(raceEventGroups([row,{...row,sex:"male",published_count:20}],"female")).toMatchObject([{published_count:10,categoryCount:1}]);
 });

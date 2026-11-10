@@ -9,6 +9,7 @@ export const RACE_CATEGORIES = [
   { value: "female", label: "Women" }, { value: "male", label: "Men" },
   { value: "other", label: "Other categories" }, { value: "unknown", label: "Unspecified" },
 ] as const;
+export const RACE_CATEGORY_FILTERS = [{value:"all",label:"All runners"},...RACE_CATEGORIES] as const;
 export type RaceResult = {
   id: number; athlete_name: string; sex: string; distance_slug: string;
   rank_time_ms: number; rank_clock: "chip" | "gun"; age_years: number | null;
@@ -33,7 +34,7 @@ export function raceDateError(from: string, through: string): string | null {
   return from > through ? "The end date must be on or after the start date." : null;
 }
 export function raceQuery(input: { get(name: string): string | null }) {
-  const sex = input.get("sex") ?? "female";
+  const sex = input.get("sex") ?? "all";
   const edition = input.get("edition") ?? "";
   const editionId = /^[1-9]\d*$/.test(edition) && Number.isSafeInteger(Number(edition)) ? Number(edition) : null;
   const year = Number(input.get("year"));
@@ -45,7 +46,7 @@ export function raceQuery(input: { get(name: string): string | null }) {
   return {
     editionId,
     editionError: edition && !editionId ? "Choose a valid event edition." : null,
-    sex: RACE_CATEGORIES.some(c => c.value === sex) ? sex : "female",
+    sex: RACE_CATEGORY_FILTERS.some(c => c.value === sex) ? sex : "all",
     year: timeframe === "year" && validYear ? year : null,
     timeframe, from: timeframe === "custom" ? from : "", through: timeframe === "custom" ? through : "",
     dateError: timeframe === "custom" ? raceDateError(from,through) : timeframe === "year" && !validYear ? "Enter an edition year from 1900 to 2100." : null,
@@ -139,6 +140,7 @@ export function raceEditionOptions(coverage: RaceCoverage[], distance: string) {
 }
 
 export type RaceEditionAnalytics = {
+  editionCount?: number;
   total: number; fastestMs: number; slowestMs: number; medianMs: number;
   minimumMs: number; binWidthMs: number; chipCount: number; officialCount: number;
   bins: {bucket: number; count: number}[];
@@ -153,4 +155,19 @@ export function raceEditionChart(analytics: RaceEditionAnalytics) {
     const count = counts.get(bucket) ?? 0;
     return {bucket,count,height:count/peak*100,label:`${raceClock(from)} – under ${raceClock(from+analytics.binWidthMs)}`};
   });
+}
+
+/** Edition cards combine stored categories; category selection remains a filter. */
+export function raceEventGroups(coverage:RaceCoverage[],sex="all") {
+  const groups=new Map<string,{edition_id:number;event_name:string;edition_year:number;distance_slug:string;published_count:number;undated_count:number;categoryCount:number;reviewedCount:number;evidenceUrls:string[]}>();
+  for(const row of coverage) {
+    if(sex!=="all" && row.sex!==sex) continue;
+    const key=`${row.edition_id}:${row.distance_slug}`;
+    const group=groups.get(key) ?? {edition_id:row.edition_id,event_name:row.event_name,edition_year:row.edition_year,distance_slug:row.distance_slug,published_count:0,undated_count:0,categoryCount:0,reviewedCount:0,evidenceUrls:[]};
+    group.published_count+=row.published_count;group.undated_count+=row.undated_count;group.categoryCount++;group.reviewedCount+=Number(row.complete);
+    const url=row.evidence_url ? raceSourceUrl(row.evidence_url) : null;
+    if(url && !group.evidenceUrls.includes(url)) group.evidenceUrls.push(url);
+    groups.set(key,group);
+  }
+  return [...groups.values()].sort((a,b)=>b.edition_year-a.edition_year || a.event_name.localeCompare(b.event_name));
 }
