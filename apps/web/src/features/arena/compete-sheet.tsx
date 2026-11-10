@@ -16,7 +16,8 @@ export function CompeteSheet({ children, active, expandRequest = 0, overview, sc
   useLayoutEffect(() => {
     if (!flipping && body.current) body.current.scrollTop = scrollTop.current;
   }, [flipping]);
-  const [stop, setStop] = useState(1);
+  const [stop, setStop] = useState(0);
+  useEffect(() => { if (active) setStop(0); }, [active]);
   useEffect(() => { if (expandRequest) setStop(2); }, [expandRequest]);
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const drag = useRef<{ y: number; height: number; maximum: number } | null>(null);

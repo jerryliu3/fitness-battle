@@ -13,8 +13,8 @@ it("snaps by drag and keyboard, preserves content while minimized and across tab
   try {
     const panel = () => renderer.root.findByType("section");
     const handle = () => renderer.root.findByProps({ role: "slider" });
-    expect(panel().props["data-stop"]).toBe(1);
-    await act(async () => handle().props.onPointerDown({ clientY: 450, pointerId: 1, currentTarget: { setPointerCapture() {} } }));
+    expect(panel().props["data-stop"]).toBe(0);
+    await act(async () => handle().props.onPointerDown({ clientY: 850, pointerId: 1, currentTarget: { setPointerCapture() {} } }));
     await act(async () => handle().props.onPointerUp({ clientY: 50 }));
     expect(panel().props["data-stop"]).toBe(2);
     await act(async () => handle().props.onKeyDown({ key: "ArrowDown", preventDefault() {} }));

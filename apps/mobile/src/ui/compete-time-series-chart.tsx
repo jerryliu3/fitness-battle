@@ -15,7 +15,7 @@ import {
 } from "@fitness-battle/shared";
 import { playCue } from "../lib/haptics";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
-import { textStyle } from "./section";
+import { chartTextProps, textStyle } from "./section";
 
 function svgTag<K extends keyof typeof SvgModule>(
   key: K,
@@ -63,6 +63,7 @@ export function CompeteTimeSeriesChart({
 }) {
   const c = useThemeColors();
   const { height: screenHeight } = RN.useWindowDimensions();
+  const plotHeight = immersive ? Math.max(240, screenHeight - 380) : 204;
   const s = useThemedStyles(sThemes);
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
@@ -81,6 +82,7 @@ export function CompeteTimeSeriesChart({
     const now = competeNow(state);
     if (mode === "sleep") {
       return buildSleepTimeSeriesModel(state, now, {
+        height: plotHeight,
         hiddenIds,
         selectedAthleteId: activeSelectedId,
         scrubFraction,
@@ -92,12 +94,13 @@ export function CompeteTimeSeriesChart({
       track,
       now,
       {
+        height: plotHeight,
         hiddenIds,
         selectedAthleteId: activeSelectedId,
         scrubFraction,
       },
     );
-  }, [state, sport, track, mode, hiddenIds, activeSelectedId, scrubFraction]);
+  }, [state, sport, track, mode, hiddenIds, activeSelectedId, scrubFraction, plotHeight]);
 
   const handleSelectAthlete = (id: string) => {
     void playCue("selection");
@@ -174,8 +177,12 @@ export function CompeteTimeSeriesChart({
     const preview = competeChartPreview(model);
     return <View accessibilityLabel="Current race position over the past day" style={{ flex: 1, width: "100%", aspectRatio: 1 }}>
       <Svg width="100%" height="100%" viewBox={`0 0 ${preview.width} ${preview.height}`}>
+        <Rect width={preview.width} height={preview.height} fill={c.accentSecondarySoft} />
+        <SvgText {...chartTextProps()} x={preview.left} y={16} fill={c.muted}>{model.unit}</SvgText>
+        {preview.yTicks.map(tick => <G key={tick.y}><Line x1={preview.left} x2={preview.right} y1={tick.y} y2={tick.y} stroke={c.line} /><SvgText {...chartTextProps()} x={preview.left - 8} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</SvgText></G>)}
+        {preview.xTicks.map((tick, i) => <SvgText {...chartTextProps()} key={tick.label} x={tick.x} y={282} textAnchor={i ? "end" : "start"} fill={c.muted}>{tick.label}</SvgText>)}
         {preview.athletes.map(athlete => <G key={athlete.id}>
-          <Polyline points={athlete.points} fill="none" stroke={athlete.selected ? c.chartSeries : c.accentSecondary} strokeWidth={athlete.selected ? 4 : 2} opacity={athlete.selected ? 1 : .35} />
+          <Polyline points={athlete.points} fill="none" stroke={athlete.selected ? c.chartSeries : c.accentSecondary} strokeWidth={athlete.selected ? 4 : 2} opacity={athlete.selected ? 1 : .65} />
           <Circle cx={athlete.x} cy={athlete.y} r={athlete.selected ? 7 : 3} fill={athlete.selected ? c.chartSeries : c.accentSecondary} />
         </G>)}
       </Svg>
@@ -188,7 +195,7 @@ export function CompeteTimeSeriesChart({
       style={[
         s.card,
         compact && s.cardCompact,
-        immersive && { flex: 1, borderWidth: 0, borderRadius: 0, paddingTop: 112, backgroundColor: c.paper },
+        immersive && { flex: 1, borderWidth: 0, borderRadius: 0, paddingTop: 112, backgroundColor: c.accentSecondarySoft },
         reserveTopControls && { paddingTop: 64 },
       ]}
     >
@@ -276,7 +283,7 @@ export function CompeteTimeSeriesChart({
       >
         <Svg
           width="100%"
-          height={immersive ? Math.max(240, screenHeight * .5 - 150) : model.height}
+          height={model.height}
           viewBox={`0 0 ${model.width} ${model.height}`}
         >
           {/* Future zone wash (now -> Sun) */}

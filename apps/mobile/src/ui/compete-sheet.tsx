@@ -19,10 +19,10 @@ export function CompeteSheet({ children, expandRequest, active, overview, scroll
   const headingHeight = 44 + (overview ? controlsHeight : 0);
   const minimum = headingHeight + insets.bottom;
   const stops = [minimum, maximum * .42, maximum];
-  const [visibleHeight, setVisibleHeight] = useState(maximum * .42);
-  const [index, setIndex] = useState(1);
-  const indexRef = useRef(1);
-  const offset = useRef(new Animated.Value(maximum - stops[1])).current;
+  const [visibleHeight, setVisibleHeight] = useState(minimum);
+  const [index, setIndex] = useState(0);
+  const indexRef = useRef(0);
+  const offset = useRef(new Animated.Value(maximum - stops[0])).current;
   const origin = useRef(0);
   const reduced = useReducedMotion();
   const snap = (next: number) => {
@@ -34,6 +34,7 @@ export function CompeteSheet({ children, expandRequest, active, overview, scroll
   const snapRef = useRef(snap);
   snapRef.current = snap;
   useEffect(() => { setVisibleHeight([minimum, maximum * .42, maximum][indexRef.current]); offset.setValue(maximum - [minimum, maximum * .42, maximum][indexRef.current]); }, [maximum, offset, insets.bottom, minimum]);
+  useEffect(() => { if (active) snapRef.current(0); }, [active]);
   useEffect(() => { if (expandRequest) snapRef.current(2); }, [expandRequest]);
   useEffect(() => () => offset.stopAnimation(), [offset]);
   const pan = useMemo(() => PanResponder.create({

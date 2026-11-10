@@ -133,3 +133,17 @@ describe("compete-time-series", () => {
     expect(interpolateTimeSeriesAt(vertices, 1)).toBe(30);
   });
 });
+
+it("fits every preview marker inside the axes and honors fullscreen plot height", () => {
+  const now = new Date("2026-10-22T18:00:00Z");
+  const model = buildCompeteTimeSeriesModel(freshState(now), "strength", "open", now, { height: 460 });
+  expect(model.height).toBe(460);
+  const preview = competeChartPreview(model);
+  expect(preview.yTicks.length).toBeGreaterThan(1);
+  for (const athlete of preview.athletes) {
+    expect(athlete.x).toBeGreaterThanOrEqual(preview.left);
+    expect(athlete.x).toBeLessThanOrEqual(preview.right);
+    expect(athlete.y).toBeGreaterThanOrEqual(preview.top);
+    expect(athlete.y).toBeLessThanOrEqual(preview.bottom);
+  }
+});

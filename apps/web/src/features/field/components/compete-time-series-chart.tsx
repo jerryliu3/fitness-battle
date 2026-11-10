@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { colors as c } from "@/theme/app-colors";
 import {
   competeChartPreview,
@@ -46,6 +46,13 @@ export function CompeteTimeSeriesChart({
   timelineFraction?: number | null;
   onTimelineChange?: (value: number | null) => void;
 }) {
+  const [plotHeight, setPlotHeight] = useState(204);
+  useEffect(() => {
+    const resize = () => setPlotHeight(immersive ? Math.max(240, window.innerHeight - 380) : 204);
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, [immersive]);
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
   );
@@ -63,6 +70,7 @@ export function CompeteTimeSeriesChart({
     const effectiveNow = now ?? competeNow(safeState);
     if (mode === "sleep") {
       return buildSleepTimeSeriesModel(safeState, effectiveNow, {
+        height: plotHeight,
         hiddenIds,
         selectedAthleteId: activeSelectedId,
         scrubFraction,
@@ -74,6 +82,7 @@ export function CompeteTimeSeriesChart({
       track,
       effectiveNow,
       {
+        height: plotHeight,
         hiddenIds,
         selectedAthleteId: activeSelectedId,
         scrubFraction,
@@ -88,6 +97,7 @@ export function CompeteTimeSeriesChart({
     hiddenIds,
     activeSelectedId,
     scrubFraction,
+    plotHeight,
   ]);
 
   const handleSelectAthlete = (id: string) => {
@@ -128,8 +138,12 @@ export function CompeteTimeSeriesChart({
   if (compact) {
     const preview = competeChartPreview(model);
     return <svg aria-label="Current race position over the past day" role="img" viewBox={`0 0 ${preview.width} ${preview.height}`} style={{ display: "block", width: "100%", height: "100%", overflow: "hidden" }}>
+      <rect width={preview.width} height={preview.height} fill={c.accentSecondarySoft} />
+      <text style={typographyStyle("caption")} x={preview.left} y={16} fill={c.muted}>{model.unit}</text>
+      {preview.yTicks.map(tick => <g key={tick.y}><line x1={preview.left} x2={preview.right} y1={tick.y} y2={tick.y} stroke={c.line} /><text style={typographyStyle("caption")} x={preview.left - 8} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</text></g>)}
+      {preview.xTicks.map((tick, i) => <text style={typographyStyle("caption")} key={tick.label} x={tick.x} y={282} textAnchor={i ? "end" : "start"} fill={c.muted}>{tick.label}</text>)}
       {preview.athletes.map(athlete => <g key={athlete.id}>
-        <polyline points={athlete.points} fill="none" stroke={athlete.selected ? c.chartSeries : c.accentSecondary} strokeWidth={athlete.selected ? 4 : 2} opacity={athlete.selected ? 1 : .35} />
+        <polyline points={athlete.points} fill="none" stroke={athlete.selected ? c.chartSeries : c.accentSecondary} strokeWidth={athlete.selected ? 4 : 2} opacity={athlete.selected ? 1 : .65} />
         <circle cx={athlete.x} cy={athlete.y} r={athlete.selected ? 7 : 3} fill={athlete.selected ? c.chartSeries : c.accentSecondary} />
       </g>)}
     </svg>;
@@ -139,7 +153,7 @@ export function CompeteTimeSeriesChart({
     <div
       aria-label="Weekly competition time-series graph"
       style={{
-        background: immersive ? c.paper : c.card,
+        background: immersive ? c.accentSecondarySoft : c.card,
         borderRadius: immersive ? 0 : 20,
         border: immersive ? "none" : `1px solid ${c.line}`,
         padding: compact ? 8 : 16,
@@ -255,7 +269,7 @@ export function CompeteTimeSeriesChart({
           style={{
             display: "block",
             width: "100%",
-            height: immersive ? "max(240px, calc(50dvh - 150px))" : 204,
+            height: model.height,
             overflow: "visible",
             cursor: compact ? "default" : "ew-resize",
           }}

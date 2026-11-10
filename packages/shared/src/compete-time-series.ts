@@ -103,6 +103,7 @@ export interface CompeteTimeSeriesModel {
 }
 
 export interface CompeteTimeSeriesOptions {
+  height?: number;
   hiddenIds?: readonly string[];
   selectedAthleteId?: string | null;
   scrubFraction?: number | null;
@@ -113,7 +114,6 @@ const CHART_HEIGHT = 204;
 const PLOT_LEFT = 34;
 const PLOT_RIGHT = 296;
 const PLOT_TOP = 20;
-const PLOT_BOTTOM = 166;
 
 function firstNameOf(name: string, you: boolean): string {
   if (you) return selfLaneLabel(name);
@@ -266,6 +266,8 @@ function finalizeTimeSeriesModel(input: {
   }[];
   options?: CompeteTimeSeriesOptions;
 }): CompeteTimeSeriesModel {
+  const chartHeight = input.options?.height ?? CHART_HEIGHT;
+  const plotBottom = chartHeight - 38;
   const startMs = input.periodStart.getTime();
   const endMs = input.periodEnd.getTime();
   const spanMs = Math.max(1, endMs - startMs);
@@ -290,7 +292,7 @@ function finalizeTimeSeriesModel(input: {
   const xForT = (t: number) =>
     PLOT_LEFT + clamp(0, 1, t) * (PLOT_RIGHT - PLOT_LEFT);
   const yForValue = (v: number) =>
-    PLOT_BOTTOM - (clamp(0, yMax, v) / Math.max(1, yMax)) * (PLOT_BOTTOM - PLOT_TOP);
+    plotBottom - (clamp(0, yMax, v) / Math.max(1, yMax)) * (plotBottom - PLOT_TOP);
 
   const nowX = xForT(nowFraction);
   const cursorX = xForT(cursorFraction);
@@ -423,17 +425,17 @@ function finalizeTimeSeriesModel(input: {
   );
   const pillY = clamp(
     PLOT_TOP,
-    PLOT_BOTTOM - pillHeight,
+    plotBottom - pillHeight,
     selectedAthlete.cursorY - pillHeight / 2,
   );
 
   return {
     width: CHART_WIDTH,
-    height: CHART_HEIGHT,
+    height: chartHeight,
     left: PLOT_LEFT,
     right: PLOT_RIGHT,
     top: PLOT_TOP,
-    bottom: PLOT_BOTTOM,
+    bottom: plotBottom,
     unit: input.unit,
     yMax,
     yTicks,
@@ -805,24 +807,30 @@ export function buildSleepTimeSeriesModel(
   });
 }
 
-/** A close view of the last day, with room around the current athlete. */
+/** Fit the last day and every current position inside a labeled plot. */
 export function competeChartPreview(model: CompeteTimeSeriesModel) {
-  const width = 320, height = 320, pad = 28;
+  const width = 320, height = 300, left = 42, right = 296, top = 30, bottom = 258;
   const end = model.nowX;
   const start = Math.max(model.left, end - (model.right - model.left) / 7);
   const span = Math.max(1, end - start);
   const parse = (line: string) => line.trim().split(/\s+/).filter(Boolean).map(pair => pair.split(",").map(Number) as [number, number]);
-  const selected = parse(model.selectedAthlete.polyline);
-  const recent = selected.filter(([x]) => x >= start && x <= end);
-  const ys = [model.selectedAthlete.cursorY, ...recent.map(([, y]) => y)];
-  const high = Math.min(...ys), low = Math.max(...ys);
-  const ySpan = Math.max(24, low - high);
-  const center = (high + low) / 2;
-  const x = (value: number) => pad + (value - start) / span * (width - pad * 2);
-  const y = (value: number) => height / 2 + (value - center) / ySpan * (height - pad * 2);
-  return { width, height, athletes: model.athletes.map(athlete => ({
-    id: athlete.id, selected: athlete.selected,
-    points: parse(athlete.polyline).map(([px, py]) => `${x(px)},${y(py)}`).join(" "),
-    x: x(athlete.cursorX), y: y(athlete.cursorY),
-  })) };
+  const x = (value: number) => left + (value - start) / span * (right - left);
+  const y = (value: number) => top + (value - model.top) / (model.bottom - model.top) * (bottom - top);
+  return { width, height, left, right, top, bottom,
+    yTicks: model.yTicks.map(tick => ({ ...tick, y: y(tick.y) })),
+    xTicks: [{ x: left, label: model.nowFraction > 1 / 7 ? "24h ago" : "Start" }, { x: right, label: "Now" }],
+    athletes: [...model.athletes].sort((a, b) => Number(a.selected) - Number(b.selected)).map(athlete => {
+      const points = parse(athlete.polyline);
+      const first = points.findIndex(([px]) => px >= start);
+      const visible = points.slice(Math.max(0, first)).filter(([px]) => px <= end);
+      if (first > 0 && visible.length) {
+        const [ax, ay] = points[first - 1]!, [bx, by] = visible[0]!;
+        visible.unshift([start, ay + (by - ay) * (start - ax) / Math.max(.001, bx - ax)]);
+      }
+      return { id: athlete.id, selected: athlete.selected,
+        points: visible.map(([px, py]) => `${x(px)},${y(py)}`).join(" "),
+        x: x(athlete.cursorX), y: y(athlete.cursorY),
+      };
+    }),
+  };
 }
