@@ -57,6 +57,7 @@ export default function RaceResult() {
         })}</View>
         <FocusButton secondary label={showValues ? "Hide distribution values" : "Inspect distribution"} onPress={() => setShowValues(v => !v)} />
         {showValues && report.bins.map(b => <AppText key={b.bucket} role="caption">{raceClock(report.minimumMs+b.bucket*report.binWidthMs)}–{raceClock(report.minimumMs+(b.bucket+1)*report.binWidthMs)} · {b.count.toLocaleString()} results</AppText>)}
+        {report.splits && <FocusButton label="Replay this performance" secondary onPress={()=>router.push({pathname:"/race-replay",params:{edition:String(report.result.event_edition_id),distance:RACE_DISTANCES.find(d=>d.stored===report.result.distance_slug)?.slug ?? "marathon",sex:"all",clock:report.splits!.clock,ids:String(report.result.id)}})} />}
         <SplitReport splits={report.splits} distance={report.result.distance_slug} />
         <AppText role="label">Nearby finishers</AppText>
         {report.neighbors.map(n => <Pressable accessibilityRole="button" key={n.id} onPress={() => router.replace({pathname:"/race-result",params:{id:String(n.id)}})} style={f.row}><AppText role="label" style={f.grow}>{n.athlete_name}</AppText><AppText role="label">{raceClock(n.rank_time_ms)}</AppText></Pressable>)}

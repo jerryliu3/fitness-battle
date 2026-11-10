@@ -268,3 +268,11 @@
 .race-pace-track { display:block; width:100%; height:6px; background:var(--line); border-radius:3px; margin-top:10px; }
 .race-pace-track>span { display:block; height:100%; background:var(--tennis); border-radius:3px; }
 .race-half-summary { font-size:20px; font-weight:600; font-variant-numeric:tabular-nums; }
+
+.race-replay-player { display:grid; gap:16px; }
+.race-replay-map { height:clamp(320px,60vh,600px); border-radius:20px; overflow:hidden; }
+.race-replay-actions,.race-replay-controls { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+.race-replay-controls label { display:grid; gap:6px; color:var(--muted); font-size:12px; }
+.race-replay-controls strong { font-variant-numeric:tabular-nums; }
+.race-replay-seek { display:grid; gap:8px; font-size:12px; }
+.race-replay-seek input { padding:0; accent-color:var(--ink); min-height:44px; }

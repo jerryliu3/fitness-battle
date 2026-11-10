@@ -12,14 +12,14 @@ The acquisition workstream owns source permission review, adapters (HTML/public 
 
 The handoff supplies edition identifiers/date/distance, stable result IDs, finish status and clock basis, attribution/source URLs, publication eligibility and coverage evidence. Optional checkpoints contain distance along the edition course and cumulative elapsed times with an explicit clock basis; missing values stay missing. Optional course geometry is stored once per edition. Splits do not imply GPS observations or verified athlete identity.
 
-### Remaining product sequence
+### Product sequence and status
 
-1. Event-edition exploration: precise event selection, full-field paging/search and clear cohort context on web/native. First slice adds edition scope, reusing the coverage inventory for selection.
-2. Richer edition analytics: field distributions and benchmarks with explicit denominators and completeness gates; keep searches from changing the underlying cohort.
-3. Split reports: optional checkpoint table, segment pace and first/second-half comparisons, conditional on delivered timing data. Finish-only results remain useful.
-4. Split comparisons: checkpoint gaps for selected runners with compatible clocks/checkpoints.
-5. Historical trends: edition comparisons first; athlete careers only after reliable identity evidence, never name-only merging.
-6. Geographic replay last: single runner, selected groups, then measured full-field rendering as described below.
+1. Implemented in #573 — event-edition exploration: precise event selection, full-field paging/search and clear cohort context on web/native. First slice adds edition scope, reusing the coverage inventory for selection.
+2. Implemented in #574 — richer edition analytics: field distributions and benchmarks with explicit denominators and completeness gates; keep searches from changing the underlying cohort.
+3. Implemented in #575 — split reports: optional checkpoint table, segment pace and first/second-half comparisons, conditional on delivered timing data. Finish-only results remain useful.
+4. Implemented in #576 — split comparisons: checkpoint gaps for selected runners with compatible clocks/checkpoints.
+5. Implemented in #577–578 — historical trends and reviewed athlete history: edition comparisons first; athlete careers only after reliable identity evidence, never name-only merging.
+6. Implemented in the final product PR — geographic replay: single runner, selected groups, then measured full-field rendering as described below.
 
 ### Split storage budget
 
@@ -109,3 +109,9 @@ Web/native compare the same event’s editions by published count, fastest/media
 ## Product layer 14: reviewed athlete history
 
 Service-owned athlete entities and per-performance links require evidence URL/notes, review time and exact performance revision. No name matching, automatic merging, account claim or social graph. Reports expose a career link only for current reviewed associations. Web/native careers paginate every linked public performance and show bests by distance/clock across the full public linked cohort. Corrections invalidate links; suppression hides both performances and profiles with no remaining public results. Apply `rankings_verified_athletes`; no identities have been populated. Added rollback-only SQL regressions, not executed.
+
+## Product layer 15: geographic replay and release gates
+
+Renderer decision: [evaluation](rankings-replay-renderer-evaluation.md). Retain Mapbox on web and native. Reviewed course vertices carry explicit cumulative course metres; single/paired/saved runner selection and opt-in keyset-paged timing-field loading share the pure interpolation model. Missing timing intervals are hidden, elapsed comparison is labelled separately from actual-start race-day replay, and observed finishes remain at the finish. No data acquisition or course inference is added. Apply `rankings_race_replay` before deploying; populate only reviewed, display-approved course/split data through the acquisition workstream.
+
+CI inspected during this phase: #576, #577 and #578 pass Typecheck & Test. The implementation sequence is represented by separate stacked PRs, not a production release. Remaining release gates: review/merge the stack, run isolated SQL regression scenarios, apply the rankings migrations in order, supply permitted real identity/split/course records, validate geography/counts, and check browser/simulator/physical-device behavior and full-field memory/frame rate. No production migration, acquisition, identity linking or course loading was performed. No local broad typecheck, build or repository-wide test suite run. Focused shared split/replay regressions passed: 2 files, 11 tests (including 50,000-profile calculations and 2,501-profile pagination). Existing installed shared dependencies were reused through a temporary ignored symlink, then removed. This is functional validation, not a device/GPU benchmark.

@@ -55,3 +55,9 @@ export async function loadAthleteHistory(id:number,page:number):Promise<import("
   if(error) throw new Error("Athlete history unavailable");
   return data;
 }
+
+export async function loadReplayPage(edition:number,distance:string,sex:string,clock:string,ids:number[]|null,after:number):Promise<import("@fitness-battle/shared").ReplayPage|null> {
+  const client=createRankingsClient();if(!client) throw new Error("Rankings unavailable");
+  const {data,error}=await client.rpc("rankings_replay_page",{p_edition_id:edition,p_distance:distance,p_sex:sex,p_clock:clock,p_ids:ids,p_after:after});
+  if(error) throw new Error("Replay unavailable");return data;
+}

@@ -38,6 +38,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
       </div><div className="race-chart-axis"><span>{raceClock(report.minimumMs)}</span><span>{raceClock(report.minimumMs + (Math.max(...report.bins.map(b => b.bucket), 0) + 1) * report.binWidthMs)}</span></div>
       <details><summary>Distribution values</summary><ul>{report.bins.map(b => <li key={b.bucket}>{raceClock(report.minimumMs+b.bucket*report.binWidthMs)}–{raceClock(report.minimumMs+(b.bucket+1)*report.binWidthMs)}: {b.count.toLocaleString()} results</li>)}</ul></details>
     </section>
+    {report.splits && <p><Link href={`/rankings/replay?edition=${r.event_edition_id}&distance=${distance?.slug}&sex=all&clock=${report.splits.clock}&ids=${r.id}`}>Replay this performance →</Link></p>}
     <SplitReport splits={report.splits} distance={r.distance_slug} />
     <section className="race-neighbors"><AppHeading level={2} role="heading">Nearby finishers</AppHeading>{report.neighbors.map(n => <Link key={n.id} href={`/rankings/result/${n.id}`}><span>{n.athlete_name}</span><strong>{raceClock(n.rank_time_ms)}</strong></Link>)}{!report.neighbors.length && <p>No other results in this field.</p>}</section>
     <footer className="rankings-source">{r.attribution}{source && <> · <a href={source} target="_blank" rel="noreferrer">View source ↗</a></>}</footer>
