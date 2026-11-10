@@ -14,15 +14,15 @@ const {
   mikaListUrl,
   parseMikaTimingList,
   parseResultsCsv,
-  parseRunSignupResults,
-  runSignupResultsUrl,
+  fetchRunSignupResults,
+  readResultPages,
   snapshotIdentity,
 } = await import("../src/index.ts");
 
 const root = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(root, "..");
-const repoRoot = join(packageRoot, "..", "..");
-const importDir = join(packageRoot, "imports");
+const argv = process.argv.slice(2);
+const importDir = flag("--output-dir", argv) || join(packageRoot, "imports");
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 const PAGE_SIZE = 100;
@@ -41,6 +41,7 @@ async function fetchText(url) {
         accept: "text/html,application/json",
       },
       redirect: "follow",
+      signal: AbortSignal.timeout(30_000),
     });
     if (response.status === 429 || response.status >= 500) {
       lastError = new Error(`${response.status} ${url}`);
@@ -59,9 +60,8 @@ async function fetchMika(event) {
   const pages = [];
   const seen = new Set();
   for (const sex of ["M", "W", "X"]) {
-    let established = PAGE_SIZE;
-    let previousFirst = null;
-    for (let page = 1; page <= MAX_PAGES; page += 1) {
+    const categoryPages = await readResultPages(async (page) => {
+      if (page > 1) await sleep(200);
       const url = mikaListUrl({
         listUrl: event.listUrl,
         event: event.mikaEvent,
@@ -75,71 +75,47 @@ async function fetchMika(event) {
         distance: event.distance,
         sourceUrl: event.listUrl,
       });
-      const gained = parsed.results.length + parsed.skippedYouth + parsed.skippedUnparsed;
-      if (gained === 0) break;
-      const first = parsed.results[0]?.externalResultId ?? null;
-      if (page > 1 && first && first === previousFirst) break;
-      if (sex === "X" && page === 1) {
-        const overlap = parsed.results.filter((row) => seen.has(row.externalResultId)).length;
-        if (parsed.results.length > 0 && overlap / parsed.results.length > 0.5) break;
+      for (const key of parsed.rowKeys) {
+        if (seen.has(key)) throw new Error("MikaTiming category filters overlap; import held for review.");
       }
-      previousFirst = first;
-      for (const row of parsed.results) {
-        if (row.externalResultId) seen.add(row.externalResultId);
-      }
-      pages.push(parsed);
-      if (page === 1 && gained < PAGE_SIZE) established = gained;
       process.stdout.write(`\r${event.slug} ${sex} page ${page} (+${parsed.results.length})`);
-      if (gained < established) break;
-      await sleep(200);
-    }
+      return parsed;
+    }, MAX_PAGES);
+    for (const page of categoryPages) for (const key of page.rowKeys) seen.add(key);
+    pages.push(...categoryPages);
     process.stdout.write("\n");
   }
   return pages;
 }
 
 function editionFromMika(event, pages) {
-  const seen = new Set();
-  const results = [];
-  let skippedYouth = 0;
-  let skippedUnparsed = 0;
-  for (const page of pages) {
-    skippedYouth += page.skippedYouth;
-    skippedUnparsed += page.skippedUnparsed;
-    for (const row of page.results) {
-      const key =
-        row.externalResultId ??
-        `${row.normalizedName}|${row.normalizedBib ?? ""}|${row.categoryKey}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      results.push(row);
-    }
-  }
   return {
     sourceSlug: event.sourceSlug,
     sourceName: event.sourceName,
     accessMethod: "Public results list page",
     reuseNotes: event.note || PUBLIC_LIST_REUSE,
     attribution: event.attribution,
-    displayAllowed: true,
+    displayAllowed: false,
     externalEventId: event.externalEventId,
     eventName: event.eventName,
     editionYear: event.editionYear,
     startsOn: event.startsOn,
     sourceUrl: event.listUrl,
-    results,
-    skippedYouth,
-    skippedUnparsed,
+    results: pages.flatMap((page) => page.results),
+    skippedYouth: pages.reduce((sum, page) => sum + page.skippedYouth, 0),
+    skippedUnparsed: pages.reduce((sum, page) => sum + page.skippedUnparsed, 0),
   };
 }
 
 async function writeEdition(slug, edition, rawForHash, storagePath) {
+  if (edition.results.length === 0) throw new Error("No accepted results; import held.");
+  if (edition.skippedUnparsed > 0) throw new Error("Unparsed results; import held for review.");
   await mkdir(importDir, { recursive: true });
   const jsonlPath = join(importDir, `${slug}.jsonl`);
   const sqlPath = join(importDir, `${slug}.import.sql`);
   const body = edition.results.map((row) => JSON.stringify(row)).join("\n");
   await writeFile(jsonlPath, body);
-  const snapshot = snapshotIdentity(rawForHash ?? body, storagePath);
+  const snapshot = snapshotIdentity(rawForHash ?? body, rawForHash == null ? jsonlPath : storagePath);
   await writeFile(sqlPath, editionImportSql(edition, snapshot));
   return { jsonlPath, sqlPath, snapshot };
 }
@@ -184,7 +160,7 @@ async function ingestCatalogEvent(event) {
   const written = await writeEdition(
     event.slug,
     edition,
-    JSON.stringify(edition.results),
+    null,
     `packages/rankings/imports/${event.slug}.jsonl`,
   );
   return {
@@ -213,7 +189,7 @@ async function ingestCsv(file, flags) {
     accessMethod: "CSV file of a full public results list",
     reuseNotes: PUBLIC_LIST_REUSE,
     attribution: flags.attribution || flags.name || "Forwarded results file",
-    displayAllowed: true,
+    displayAllowed: false,
     externalEventId: flags.event || slug,
     eventName: flags.name || slug,
     editionYear: Number(flags.year || new Date().getUTCFullYear()),
@@ -228,25 +204,18 @@ async function ingestCsv(file, flags) {
 }
 
 async function ingestRunSignup(raceId, eventId, flags) {
-  if (!flags.resultSet || !/^\d+$/.test(flags.resultSet)) throw new Error("RunSignup requires --result-set ID. Select a public set from get-result-sets before importing.");
-  const pages = [];
-  const seenPages = new Set();
-  let complete = false;
-  for (let page = 1; page <= MAX_PAGES; page += 1) {
-    const url = runSignupResultsUrl(raceId, eventId, page, PAGE_SIZE, flags.resultSet);
-    const payload = JSON.parse(await fetchText(url));
-    const parsed = parseRunSignupResults(payload, {
-      distance: flags.distance || "5k",
-      sourceUrl: url,
-    });
-    const signature = snapshotIdentity(JSON.stringify(payload.individual_results_sets ?? []), "").contentSha256;
-    if (parsed.inputCount > 0 && seenPages.has(signature)) throw new Error("RunSignup repeated a results page; import was not published.");
-    seenPages.add(signature);
-    pages.push(parsed);
-    if (parsed.inputCount < PAGE_SIZE) { complete = true; break; }
-    await sleep(200);
-  }
-  if (!complete) throw new Error("RunSignup reached the page limit; import was not published.");
+  const pages = await fetchRunSignupResults({
+    raceId,
+    eventId,
+    resultSetId: flags.resultSet,
+    distance: flags.distance,
+    pageSize: PAGE_SIZE,
+    maxPages: MAX_PAGES,
+    fetchJson: async (url) => {
+      await sleep(200);
+      return JSON.parse(await fetchText(url));
+    },
+  });
   const results = pages.flatMap((page) => page.results);
   if (!results.length) throw new Error("No eligible public results were returned.");
   const edition = {
@@ -255,7 +224,7 @@ async function ingestRunSignup(raceId, eventId, flags) {
     accessMethod: "RunSignup public results JSON",
     reuseNotes: PUBLIC_LIST_REUSE,
     attribution: flags.attribution || "Official results via RunSignup",
-    displayAllowed: true,
+    displayAllowed: false,
     externalEventId: eventId,
     eventName: flags.name || `RunSignup race ${raceId}`,
     editionYear: Number(flags.year || new Date().getUTCFullYear()),
@@ -268,7 +237,7 @@ async function ingestRunSignup(raceId, eventId, flags) {
   const written = await writeEdition(
     `runsignup-${raceId}-${eventId}-${flags.resultSet}`,
     edition,
-    JSON.stringify(results),
+    null,
     `packages/rankings/imports/runsignup-${raceId}-${eventId}-${flags.resultSet}.jsonl`,
   );
   return { slug: `runsignup-${raceId}-${eventId}-${flags.resultSet}`, status: "succeeded", results: results.length, sql: written.sqlPath };
@@ -280,7 +249,17 @@ function flag(name, argv) {
   return argv[index + 1] ?? null;
 }
 
-const argv = process.argv.slice(2);
+if (argv.includes("--csv") || argv.includes("--runsignup")) {
+  if (!["5k", "10k", "half_marathon", "marathon"].includes(flag("--distance", argv))) {
+    throw new Error("Provide --distance: 5k, 10k, half_marathon, or marathon.");
+  }
+  if (!/^\d{4}$/.test(flag("--year", argv) ?? "")) throw new Error("Provide the edition --year.");
+}
+if (argv.includes("--runsignup") && !/^\d+$/.test(flag("--result-set", argv) ?? "")) {
+  throw new Error("Provide --result-set ID for one public, finalized RunSignup result set.");
+}
+const from = flag("--from", argv);
+if (from && !MAJOR_EVENTS.some((event) => event.slug === from)) throw new Error("Unknown --from catalog slug.");
 const report = {
   generatedAt: new Date().toISOString(),
   events: [],
@@ -288,9 +267,16 @@ const report = {
   apply: "skipped",
 };
 
+async function recordImport(slug, run) {
+  try {
+    report.events.push(await run());
+  } catch (error) {
+    report.events.push({ slug, status: "failed", error: error instanceof Error ? error.message : String(error) });
+  }
+}
+
 if (argv.includes("--csv")) {
-  report.events.push(
-    await ingestCsv(flag("--csv", argv), {
+  await recordImport(flag("--slug", argv) || "csv-import", () => ingestCsv(flag("--csv", argv), {
       distance: flag("--distance", argv),
       name: flag("--name", argv),
       year: flag("--year", argv),
@@ -299,35 +285,23 @@ if (argv.includes("--csv")) {
       source: flag("--source", argv),
       event: flag("--event", argv),
       attribution: flag("--attribution", argv),
-    }),
-  );
+    }));
 } else if (argv.includes("--runsignup")) {
-  report.events.push(
-    await ingestRunSignup(flag("--runsignup", argv), flag("--event", argv), {
-      resultSet: flag("--result-set", argv),
+  await recordImport(`runsignup-${flag("--runsignup", argv)}-${flag("--event", argv)}-${flag("--result-set", argv)}`, () => ingestRunSignup(flag("--runsignup", argv), flag("--event", argv), {
       distance: flag("--distance", argv),
       name: flag("--name", argv),
       year: flag("--year", argv),
       date: flag("--date", argv),
       attribution: flag("--attribution", argv),
-    }),
-  );
+      resultSet: flag("--result-set", argv),
+    }));
 } else {
-  const from = flag("--from", argv);
-  if (!from) report.events.push(await ingestOpenTrackFixture());
+  if (!from) await recordImport("opentrack-emv-10k-2025", ingestOpenTrackFixture);
   const events = from
     ? MAJOR_EVENTS.slice(MAJOR_EVENTS.findIndex((event) => event.slug === from))
     : MAJOR_EVENTS;
   for (const event of events) {
-    try {
-      report.events.push(await ingestCatalogEvent(event));
-    } catch (error) {
-      report.events.push({
-        slug: event.slug,
-        status: "failed",
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
+    await recordImport(event.slug, () => ingestCatalogEvent(event));
   }
 }
 
@@ -335,19 +309,33 @@ if (process.env.RANKINGS_DATABASE_URL) {
   const { spawn } = await import("node:child_process");
   for (const event of report.events) {
     if (event.status !== "succeeded" || !event.sql) continue;
-    await new Promise((resolve, reject) => {
-      const child = spawn("psql", [process.env.RANKINGS_DATABASE_URL, "-v", "ON_ERROR_STOP=1", "-f", event.sql], {
-        stdio: "inherit",
+    try {
+      await new Promise((resolve, reject) => {
+        const child = spawn("psql", ["-X", "-v", "ON_ERROR_STOP=1", "-f", event.sql], {
+          env: { ...process.env, PGDATABASE: process.env.RANKINGS_DATABASE_URL },
+          stdio: "inherit",
+        });
+        child.on("error", reject);
+        child.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`psql exited ${code}`))));
       });
-      child.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`psql exited ${code}`))));
-    });
+      event.apply = "applied";
+    } catch (error) {
+      event.apply = "failed";
+      event.error = error instanceof Error ? error.message : String(error);
+    }
   }
-  report.apply = "applied";
+  report.apply = report.events.some((event) => event.apply === "failed") ? "failed"
+    : report.events.some((event) => event.apply === "applied") ? "applied" : "skipped";
 } else {
-  report.apply =
-    "SQL files were written. Set RANKINGS_DATABASE_URL to apply them. The hosted rankings project in apps/web/.env.local has an anon key only, and that key cannot write the ledger.";
+  report.apply = "skipped";
 }
 
-const reportPath = join(repoRoot, "docs/ingestion-trial.json");
+await mkdir(importDir, { recursive: true });
+const reportPath = join(importDir, `run-${report.generatedAt.replaceAll(/[:.]/g, "-")}.json`);
 await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
 console.log(JSON.stringify(report, null, 2));
+console.log(`Report: ${reportPath}`);
+if (!process.env.RANKINGS_DATABASE_URL && report.events.some((event) => event.sql)) {
+  console.log("SQL files were written. Set RANKINGS_DATABASE_URL to apply imports; the anon key cannot write the ledger.");
+}
+if (report.events.some((event) => event.status === "failed" || event.apply === "failed")) process.exitCode = 1;

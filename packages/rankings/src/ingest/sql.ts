@@ -31,9 +31,11 @@ export function editionImportSql(
   snapshot: { storagePath: string; contentSha256: string; byteSize: number },
 ): string {
   const payload = JSON.stringify(edition.results.map(rowJson));
-  const tag = `imp_${snapshot.contentSha256.slice(0, 12)}`;
+  const input = JSON.stringify({ edition, snapshot });
+  let tag = `body_${createHash("sha256").update(input).digest("hex").slice(0, 16)}`;
+  while (input.includes(`$${tag}$`)) tag += "_";
   const starts = edition.startsOn ? `${quote(edition.startsOn)}::date` : "null";
-  return `do $body$
+  return `do $${tag}$
 declare
   v_source bigint;
   v_snapshot bigint;
@@ -99,8 +101,18 @@ begin
   do update set name = excluded.name, starts_on = excluded.starts_on
   returning id into v_edition;
 
-  for v_row in select value from jsonb_array_elements($${tag}$${payload}$${tag}$)
+  for v_row in select value from jsonb_array_elements(${quote(payload)}::jsonb)
   loop
+    -- The legacy unique index is source-wide. Never move an older edition's row.
+    -- A future additive migration can widen this provider namespace safely.
+    if exists (
+      select 1 from public.source_records
+      where source_id = v_source
+        and external_result_id = nullif(v_row->>'externalResultId', '')
+        and event_edition_id <> v_edition
+    ) then
+      raise exception 'External result ID already belongs to another edition; import held';
+    end if;
     v_action := private.upsert_source_record(
       v_source,
       v_edition,
@@ -119,6 +131,7 @@ begin
     select id into v_record
     from public.source_records
     where source_id = v_source
+      and event_edition_id = v_edition
       and (
         (external_result_id is not null and external_result_id = v_row->>'externalResultId')
         or (
@@ -152,7 +165,7 @@ begin
       update_count = v_updates
   where id = v_run;
 end
-$body$;
+$${tag}$;
 `;
 }
 

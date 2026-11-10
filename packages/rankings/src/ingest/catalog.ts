@@ -18,7 +18,7 @@ export type CatalogEvent = {
 };
 
 const PUBLIC_LIST =
-  "Public official results list. A person can send the results URL and the full list is copied from that page. Finishers under 18 are not stored. If the organizer says not to display the results, set this source's display_allowed to false.";
+  "Public official results list. Source-specific access and reuse review is required before display. Finishers known to be under 18 are not stored. Imports preserve existing source approval and suppression decisions.";
 
 export const PUBLIC_LIST_REUSE = PUBLIC_LIST;
 

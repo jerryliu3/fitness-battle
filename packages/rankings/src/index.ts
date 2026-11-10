@@ -27,6 +27,7 @@ export {
 export { parseResultsCsv } from "./ingest/csv";
 export { mikaListUrl, parseMikaTimingList } from "./ingest/mikatiming";
 export { editionFromOpenTrack } from "./ingest/opentrack-import";
-export { parseRunSignupResults, runSignupResultsUrl } from "./ingest/runsignup";
+export { fetchRunSignupResults, parseRunSignupResults, runSignupResultsUrl, runSignupResultSetsUrl } from "./ingest/runsignup";
+export { readResultPages } from "./ingest/pagination";
 export { editionImportSql, snapshotIdentity } from "./ingest/sql";
 export type { IngestedEdition, IngestedFinish } from "./ingest/types";

@@ -35,6 +35,8 @@ describe("public results parsers", () => {
       sourceUrl: "https://results.example/2025/",
     });
     expect(page.skippedYouth).toBe(1);
+    expect(page.inputCount).toBe(3);
+    expect(page.rowKeys).toEqual(["ABC123", "YOUTH1", "DNF1"]);
     expect(page.results.map((row) => row.externalResultId)).toEqual(["ABC123", "DNF1"]);
     expect(page.results[0]).toMatchObject({
       athleteName: "Jacob Kiplimo",
@@ -67,6 +69,7 @@ describe("public results parsers", () => {
         individual_results_sets: [
           {
             public_results: "T",
+            preliminary_results: "F",
             results: [
               {
                 result_id: 10,

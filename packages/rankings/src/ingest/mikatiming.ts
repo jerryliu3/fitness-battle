@@ -2,12 +2,9 @@ import type { RoadDistance, SexCategory } from "../fingerprint";
 import { buildFinish, clocksFromText, sexCode } from "./finish";
 import { divisionIsUnder18, personNameFromList } from "./names";
 import type { IngestedFinish } from "./types";
+import type { ResultsPage } from "./pagination";
 
-export type MikaPage = {
-  results: IngestedFinish[];
-  skippedYouth: number;
-  skippedUnparsed: number;
-};
+export type MikaPage = ResultsPage;
 
 const ROW_SPLIT = /<li class="[^"]*list-group-item row/;
 
@@ -34,9 +31,12 @@ export function parseMikaTimingList(
   const results: IngestedFinish[] = [];
   let skippedYouth = 0;
   let skippedUnparsed = 0;
+  const rowKeys: string[] = [];
   const pieces = html.split(ROW_SPLIT).slice(1);
   for (const row of pieces) {
     if (row.includes("list-group-header")) continue;
+    const idMatch = /(?:\?|&|&amp;)idp=([A-Za-z0-9]+)/.exec(row);
+    rowKeys.push(idMatch?.[1] ?? row.trim());
     const fields = labeledFields(row);
     const division = fields.get("Division") ?? null;
     if (divisionIsUnder18(division)) {
@@ -45,7 +45,6 @@ export function parseMikaTimingList(
     }
     const nameMatch = /type-fullname">\s*<a [^>]*>([^<]+)<\/a>/i.exec(row);
     const athleteName = nameMatch ? personNameFromList(nameMatch[1]) : "";
-    const idMatch = /(?:\?|&|&amp;)idp=([A-Za-z0-9]+)/.exec(row);
     const bib = fields.get("BIB") ?? null;
     // Chicago labels the net column Finish. Boston labels Finish Net and Finish Gun.
     const clocks = clocksFromText(fields.get("Finish Net") ?? fields.get("Finish") ?? null, fields.get("Finish Gun") ?? null);
@@ -72,7 +71,7 @@ export function parseMikaTimingList(
     }
     results.push(built.finish);
   }
-  return { results, skippedYouth, skippedUnparsed };
+  return { results, inputCount: rowKeys.length, rowKeys, skippedYouth, skippedUnparsed };
 }
 
 export function mikaListUrl(input: {
