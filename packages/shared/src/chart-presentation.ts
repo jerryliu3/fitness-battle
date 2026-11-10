@@ -52,8 +52,8 @@ export function openLineModel(
   const low = values.length ? Math.min(...values) : 0, high = values.length ? Math.max(...values) : 1;
   const padding = Math.max(1, (high - low) * .12);
   // Score histories use a local domain; cumulative hour comparisons retain zero.
-  const min = previous.length || timeline?.previousRows?.length ? Math.min(0, low) : low - padding;
-  const max = high + padding;
+  const min = Math.floor(previous.length || timeline?.previousRows?.length ? Math.min(0, low) : low - padding);
+  const max = Math.ceil(high + padding);
   const y = (value: number) => bottom - (value - min) / (max - min || 1) * (bottom - top);
   const x = (i: number) => left + i / Math.max(1, slots - 1) * (right - left);
   const origin = timeline ? calendarPosition(timeline.start) : 0;
@@ -84,7 +84,7 @@ export function openLineModel(
   const xTicks = tickDates.flatMap((at, i) => at ? [{ x: timeline ? timeX(at.toISOString()) : x([0, Math.floor((rows.length - 1) / 2), rows.length - 1][i]!), label: date(at.toISOString()) }] : [])
     .filter((tick, i, ticks) => ticks.findIndex(other => other.x === tick.x && other.label === tick.label) === i);
   return { width, height, top, bottom, left, right, points: points.filter((_, i) => rows[i]?.inspectable !== false), line, segments, xTicks,
-    yTicks: values.length ? [min, (min + max) / 2, max].map(value => ({ y: y(value), label: format(value) })) : [],
+    yTicks: values.length ? [min, Math.min(max, min + Math.ceil((max - min) / 2)), max].filter((value, i, ticks) => ticks.indexOf(value) === i).map(value => ({ y: y(value), label: String(value) })) : [],
     previous: timeline?.previousRows ? trace(timeline.previousRows.map(row => ({ x: timeX(row.date, true), y: y(row.value) }))) : previous.map((value, i) => `${x(i).toFixed(1)},${y(value).toFixed(1)}`).join(" "),
     value: rows.length ? format(rows[rows.length - 1]!.value) : format(0),
     date: rows.length ? `${date(rows[0]!.date)} – ${date(rows[rows.length - 1]!.date)}` : "No data",
@@ -125,10 +125,14 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
       return rows;
     };
     const end = shiftAppDay(start, 7);
-    return openLineModel(now < start ? [] : events(start, new Date(Math.min(now.getTime(), end.getTime()))), value => value.toFixed(1), [], 7, {
+    const chart = openLineModel(now < start ? [] : events(start, new Date(Math.min(now.getTime(), end.getTime()))), value => value.toFixed(1), [], 7, {
       start, end, showTime: true,
       previousRows: events(previousStart, start), previousStart,
     });
+    return { ...chart, xTicks: Array.from({ length: 7 }, (_, i) => ({
+      x: chart.left + i / 7 * (chart.right - chart.left),
+      label: shiftAppDay(start, i).toLocaleDateString("en-US", { weekday: "short", timeZone: APP_TIMEZONE }),
+    })) };
   }
   return openLineModel(cumulative(start, elapsed), value => value.toFixed(1), cumulative(previousStart, days).map(row => row.value), days);
 }
@@ -138,14 +142,15 @@ export function benchmarkBars(buckets: readonly TrainingBucket[], now: Date) {
   const width = 340, height = 200, top = 28, bottom = 154, left = 32, right = 332;
   const recorded = buckets.filter(bucket => Date.parse(bucket.start) <= now.getTime());
   const average = recorded.length ? recorded.reduce((sum, bucket) => sum + bucket.movingSec, 0) / recorded.length : 0;
-  const max = Math.max(3600, ...buckets.map(bucket => bucket.movingSec)) * 1.15;
+  const tickHours = Math.max(1, Math.ceil(Math.max(3600, ...buckets.map(bucket => bucket.movingSec)) * 1.15 / 7200));
+  const max = tickHours * 7200;
   const y = (seconds: number) => bottom - seconds / max * (bottom - top);
   const slot = (right - left) / Math.max(1, buckets.length);
   const bars = buckets.map((bucket, i) => ({ ...bucket, x: left + (i + .5) * slot, y: y(bucket.movingSec), future: Date.parse(bucket.start) > now.getTime() }));
   const points = bars.filter(bar => !bar.future).map(bar => ({ id: bar.start, x: bar.x, y: bar.y,
     label: new Date(bar.start).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE }), value: (bar.movingSec / 3600).toFixed(1) }));
   return { width, height, top, bottom, left, right, bars, points, barWidth: slot * .62, average, averageY: y(average),
-    ticks: [0, max / 2, max].map(value => ({ label: (value / 3600).toFixed(1), y: y(value) })),
+    ticks: [0, max / 2, max].map(value => ({ label: String(value / 3600), y: y(value) })),
   };
 }
 

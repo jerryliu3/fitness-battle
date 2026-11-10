@@ -191,3 +191,11 @@ it("grounds the Home week chart on Monday and includes non-competing activities 
   ]);
   expect(model.value).toBe("2.0");
 });
+
+it("labels the Home week by weekday with whole-number, distinct hour references", () => {
+  const now = new Date("2026-11-09T15:00:00Z");
+  const chart = homeTrainingLine(freshState(now), "week", now);
+  expect(chart.xTicks.map(tick => tick.label)).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+  expect(chart.yTicks.every(tick => /^-?\d+$/.test(tick.label))).toBe(true);
+  expect(new Set(chart.yTicks.map(tick => tick.label)).size).toBe(chart.yTicks.length);
+});
