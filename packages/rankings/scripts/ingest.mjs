@@ -21,8 +21,22 @@ const {
 
 const root = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(root, "..");
+
+function flag(name, list) {
+  const index = list.indexOf(name);
+  if (index === -1) return null;
+  return list[index + 1] ?? null;
+}
+
 const argv = process.argv.slice(2);
 const importDir = flag("--output-dir", argv) || join(packageRoot, "imports");
+const allowCorrection = argv.includes("--allow-correction");
+const freezeFlag = argv.includes("--freeze");
+const rawRevision = flag("--expected-revision", argv);
+if (rawRevision && (!/^\d+$/.test(rawRevision) || Number(rawRevision) < 1)) {
+  throw new Error("Provide --expected-revision as a positive integer.");
+}
+const expectedRevision = rawRevision ? Number(rawRevision) : undefined;
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 const PAGE_SIZE = 100;
@@ -107,7 +121,29 @@ function editionFromMika(event, pages) {
   };
 }
 
-async function writeEdition(slug, edition, rawForHash, storagePath) {
+async function getEditionPublicationState(sourceSlug, editionYear) {
+  if (!process.env.RANKINGS_DATABASE_URL) return null;
+  const { spawn } = await import("node:child_process");
+  const query = `select ed.publication_state, ed.revision from public.event_editions ed join public.events e on e.id = ed.event_id join public.sources s on s.id = e.source_id where s.slug = '${sourceSlug.replaceAll("'", "''")}' and ed.edition_year = ${editionYear} limit 1;`;
+  return new Promise((resolve) => {
+    const child = spawn("psql", ["-X", "-t", "-A", "-F", ",", "-c", query], {
+      env: { ...process.env, PGDATABASE: process.env.RANKINGS_DATABASE_URL },
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    let output = "";
+    child.stdout?.on("data", (chunk) => { output += chunk; });
+    child.on("error", () => resolve(null));
+    child.on("exit", (code) => {
+      if (code !== 0) return resolve(null);
+      const line = output.trim().split("\n")[0];
+      if (!line) return resolve(null);
+      const [state, rev] = line.split(",");
+      resolve({ state, revision: Number(rev) || 1 });
+    });
+  });
+}
+
+async function writeEdition(slug, edition, rawForHash, storagePath, options = {}) {
   if (edition.results.length === 0) throw new Error("No accepted results; import held.");
   if (edition.skippedUnparsed > 0) throw new Error("Unparsed results; import held for review.");
   await mkdir(importDir, { recursive: true });
@@ -116,11 +152,28 @@ async function writeEdition(slug, edition, rawForHash, storagePath) {
   const body = edition.results.map((row) => JSON.stringify(row)).join("\n");
   await writeFile(jsonlPath, body);
   const snapshot = snapshotIdentity(rawForHash ?? body, rawForHash == null ? jsonlPath : storagePath);
-  await writeFile(sqlPath, editionImportSql(edition, snapshot));
+  await writeFile(sqlPath, editionImportSql(edition, snapshot, options));
   return { jsonlPath, sqlPath, snapshot };
 }
 
 async function ingestOpenTrackFixture() {
+  const existing = await getEditionPublicationState("opentrack", 2025);
+  if (existing) {
+    if (existing.state === "frozen") {
+      return {
+        slug: "opentrack-emv-10k-2025",
+        status: "skipped",
+        reason: `Edition is frozen (revision ${existing.revision}); pre-fetch skipped.`,
+      };
+    }
+    if (existing.state === "published" && !allowCorrection) {
+      return {
+        slug: "opentrack-emv-10k-2025",
+        status: "skipped",
+        reason: `Edition is already published (revision ${existing.revision}); pre-fetch skipped (use --allow-correction to update).`,
+      };
+    }
+  }
   const fixturePath = join(packageRoot, "fixtures/emv-10k-2025.json");
   const raw = await readFile(fixturePath);
   const edition = editionFromOpenTrack(JSON.parse(raw.toString("utf8")), {
@@ -131,6 +184,7 @@ async function ingestOpenTrackFixture() {
     edition,
     raw,
     "packages/rankings/fixtures/emv-10k-2025.json",
+    { allowCorrection, freeze: freezeFlag, expectedRevision },
   );
   return {
     slug: "opentrack-emv-10k-2025",
@@ -143,6 +197,23 @@ async function ingestOpenTrackFixture() {
 }
 
 async function ingestCatalogEvent(event) {
+  const existing = await getEditionPublicationState(event.sourceSlug, event.editionYear);
+  if (existing) {
+    if (existing.state === "frozen") {
+      return {
+        slug: event.slug,
+        status: "skipped",
+        reason: `Edition is frozen (revision ${existing.revision}); pre-fetch skipped.`,
+      };
+    }
+    if (existing.state === "published" && !allowCorrection) {
+      return {
+        slug: event.slug,
+        status: "skipped",
+        reason: `Edition is already published (revision ${existing.revision}); pre-fetch skipped (use --allow-correction to update).`,
+      };
+    }
+  }
   const started = Date.now();
   const pages = await fetchMika(event);
   const edition = editionFromMika(event, pages);
@@ -162,6 +233,7 @@ async function ingestCatalogEvent(event) {
     edition,
     null,
     `packages/rankings/imports/${event.slug}.jsonl`,
+    { allowCorrection, freeze: freezeFlag, expectedRevision },
   );
   return {
     slug: event.slug,
@@ -177,14 +249,33 @@ async function ingestCatalogEvent(event) {
 }
 
 async function ingestCsv(file, flags) {
+  const slug = flags.slug || "csv-import";
+  const sourceSlug = flags.source || slug;
+  const editionYear = Number(flags.year || new Date().getUTCFullYear());
+  const existing = await getEditionPublicationState(sourceSlug, editionYear);
+  if (existing) {
+    if (existing.state === "frozen") {
+      return {
+        slug,
+        status: "skipped",
+        reason: `Edition is frozen (revision ${existing.revision}); pre-fetch skipped.`,
+      };
+    }
+    if (existing.state === "published" && !allowCorrection) {
+      return {
+        slug,
+        status: "skipped",
+        reason: `Edition is already published (revision ${existing.revision}); pre-fetch skipped (use --allow-correction to update).`,
+      };
+    }
+  }
   const raw = await readFile(file);
   const parsed = parseResultsCsv(raw.toString("utf8"), {
     distance: flags.distance,
     sourceUrl: file,
   });
-  const slug = flags.slug || "csv-import";
   const edition = {
-    sourceSlug: flags.source || slug,
+    sourceSlug,
     sourceName: flags.name || slug,
     accessMethod: "CSV file of a full public results list",
     reuseNotes: PUBLIC_LIST_REUSE,
@@ -192,18 +283,43 @@ async function ingestCsv(file, flags) {
     displayAllowed: false,
     externalEventId: flags.event || slug,
     eventName: flags.name || slug,
-    editionYear: Number(flags.year || new Date().getUTCFullYear()),
+    editionYear,
     startsOn: flags.date || null,
     sourceUrl: file,
     results: parsed.results,
     skippedYouth: parsed.skippedYouth,
     skippedUnparsed: parsed.skippedUnparsed,
   };
-  const written = await writeEdition(slug, edition, raw, file);
+  const written = await writeEdition(
+    slug,
+    edition,
+    raw,
+    file,
+    { allowCorrection, freeze: freezeFlag, expectedRevision },
+  );
   return { slug, status: "succeeded", results: parsed.results.length, sql: written.sqlPath };
 }
 
 async function ingestRunSignup(raceId, eventId, flags) {
+  const sourceSlug = `runsignup_${raceId}`;
+  const editionYear = Number(flags.year || new Date().getUTCFullYear());
+  const existing = await getEditionPublicationState(sourceSlug, editionYear);
+  if (existing) {
+    if (existing.state === "frozen") {
+      return {
+        slug: `runsignup-${raceId}-${eventId}`,
+        status: "skipped",
+        reason: `Edition is frozen (revision ${existing.revision}); pre-fetch skipped.`,
+      };
+    }
+    if (existing.state === "published" && !allowCorrection) {
+      return {
+        slug: `runsignup-${raceId}-${eventId}`,
+        status: "skipped",
+        reason: `Edition is already published (revision ${existing.revision}); pre-fetch skipped (use --allow-correction to update).`,
+      };
+    }
+  }
   const pages = await fetchRunSignupResults({
     raceId,
     eventId,
@@ -219,7 +335,7 @@ async function ingestRunSignup(raceId, eventId, flags) {
   const results = pages.flatMap((page) => page.results);
   if (!results.length) throw new Error("No eligible public results were returned.");
   const edition = {
-    sourceSlug: `runsignup_${raceId}`,
+    sourceSlug,
     sourceName: flags.name || `RunSignup ${raceId}`,
     accessMethod: "RunSignup public results JSON",
     reuseNotes: PUBLIC_LIST_REUSE,
@@ -227,7 +343,7 @@ async function ingestRunSignup(raceId, eventId, flags) {
     displayAllowed: false,
     externalEventId: eventId,
     eventName: flags.name || `RunSignup race ${raceId}`,
-    editionYear: Number(flags.year || new Date().getUTCFullYear()),
+    editionYear,
     startsOn: flags.date || null,
     sourceUrl: `https://runsignup.com/Race/Results/${raceId}`,
     results,
@@ -239,15 +355,12 @@ async function ingestRunSignup(raceId, eventId, flags) {
     edition,
     null,
     `packages/rankings/imports/runsignup-${raceId}-${eventId}-${flags.resultSet}.jsonl`,
+    { allowCorrection, freeze: freezeFlag, expectedRevision },
   );
   return { slug: `runsignup-${raceId}-${eventId}-${flags.resultSet}`, status: "succeeded", results: results.length, sql: written.sqlPath };
 }
 
-function flag(name, argv) {
-  const index = argv.indexOf(name);
-  if (index === -1) return null;
-  return argv[index + 1] ?? null;
-}
+
 
 if (argv.includes("--csv") || argv.includes("--runsignup")) {
   if (!["5k", "10k", "half_marathon", "marathon"].includes(flag("--distance", argv))) {

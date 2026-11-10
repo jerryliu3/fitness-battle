@@ -217,6 +217,37 @@ describe("public results parsers", () => {
     expect(sql).toContain("private.upsert_performance");
     expect(sql).toContain("on conflict (slug)");
     expect(sql).toContain("display_allowed = public.sources.display_allowed and excluded.display_allowed");
+    expect(sql).toContain("for update");
+    expect(sql).toContain("publication_state");
+    expect(sql).toContain("ordinary acquisition cannot mutate a published edition");
     expect(snapshot.contentSha256).toHaveLength(64);
+  });
+
+  it("emits publication gates for frozen editions and authorized corrections", () => {
+    const edition = editionFromOpenTrack({
+      id: "meet-2",
+      date: "2025-09-07",
+      fullName: "Sample 10K",
+      events: [
+        {
+          eventId: "1",
+          eventCode: "10K",
+          genders: "M",
+          units: [{ results: [{ bib: "20", performance: "31:00" }] }],
+        },
+      ],
+      competitors: [{ competitorId: "20", fullName: "Fast Runner", gender: "M", ageGroup: "SEN" }],
+    });
+    const snapshot = snapshotIdentity("{}", "fixtures/sample.json");
+
+    // Correction import bumps revision
+    const correctionSql = editionImportSql(edition, snapshot, { allowCorrection: true, expectedRevision: 2 });
+    expect(correctionSql).toContain("revision = case when true then revision + 1 else revision end");
+    expect(correctionSql).toContain("Expected edition revision % but found %; correction held', 2");
+
+    // Freeze import marks frozen
+    const freezeSql = editionImportSql(edition, snapshot, { allowCorrection: true, freeze: true });
+    expect(freezeSql).toContain("publication_state = 'frozen'");
+    expect(freezeSql).toContain("imports cannot mutate a frozen edition");
   });
 });

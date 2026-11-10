@@ -1,6 +1,6 @@
 # Race results ingestion
 
-New ingestion/discovery work follows [Public race results: ingestion and discovery scope](race-results-ingestion-scope.md). The owner requires weekly discovery of new editions, one-time publication, and report-driven corrections rather than routine refreshes. The first implementation slice hardens extraction and source decisions; publication freezing and scheduled discovery are not implemented yet. Do not schedule the current CLI: it still fetches/upserts existing editions.
+New ingestion/discovery work follows [Public race results: ingestion and discovery scope](race-results-ingestion-scope.md) and [Platform architecture](race-results-architecture.md). The platform enforces one-time publication and report-driven corrections rather than routine refreshes.
 
 The rankings ledger stores one row per finisher. Finish time is not part of the identity key. People under 18 are dropped before insert. A source is shown on `/rankings` only when `display_allowed` is true, which requires attribution and reuse notes.
 
@@ -8,6 +8,16 @@ New MikaTiming, CSV and RunSignup sources are stored with `display_allowed = fal
 
 - [Add an event from a public results link](https://athlinks.zendesk.com/hc/en-us/articles/217991618-I-can-t-find-my-event-listed-in-Athlinks-Can-I-add-the-event)
 - [Organizer opt-out example](https://athlinks.zendesk.com/hc/en-us/articles/218007878-Why-can-t-I-find-results-for-a-well-known-popular-event)
+
+## Publication Gates and Pre-Fetch Skipping
+
+Every edition in the database tracks publication state (`draft`, `staged`, `published`, `frozen`), `revision` (integer >= 1), `published_at`, and `frozen_at`:
+
+1. **Pre-fetch skipping**: When `RANKINGS_DATABASE_URL` is set, the CLI inspects the edition state before scraping the provider. If the edition is already frozen or published (without `--allow-correction`), scraping is skipped entirely.
+2. **Transaction row-lock**: Generated SQL row-locks `public.event_editions` (`for update`). Ordinary acquisition cannot mutate a published edition without `--allow-correction`.
+3. **Frozen editions**: Frozen editions cannot be mutated by ordinary imports or corrections.
+4. **Authorized corrections**: Pass `--allow-correction` (and optional `--expected-revision <N>`) to increment revision and apply reviewed updates.
+5. **Provider namespace**: The external result ID unique index is scoped to `(source_id, event_edition_id, external_result_id)`, safely allowing ID reuse across multiple editions of the same source.
 
 ## Methods
 
@@ -20,6 +30,11 @@ New MikaTiming, CSV and RunSignup sources are stored with `display_allowed = fal
 | MikaTiming list | `pnpm rankings:ingest` walks the major-event catalog | Public HTML list pages, sex by sex. Continues through short pages until an empty upstream page. Repeated rows, overlapping category requests, unparsed rows and page-cap exhaustion hold the import. Net finish time is stored as chip time. |
 | CSV | `pnpm rankings:ingest --csv results.csv --distance 5k --name "Race" --year 2026` | A forwarded full file. Headers: `name` or `first`/`last`, `sex`, `chip_time` or `time`, optional `bib`, `age`, `division`. Empty/unparsed imports are held. |
 | RunSignup | `pnpm rankings:ingest --runsignup RACE_ID --event EVENT_ID --result-set SET_ID --distance 5k --name "Race" --year 2026` | Enumerates result-set metadata, then fetches only the selected set. Requires explicit `public_results=T` and `preliminary_results=F` on metadata and every page. Uses upstream row counts, including excluded youth, for pagination. |
+
+Optional CLI controls:
+- `--allow-correction`: Authorize updating an already published edition (increments edition revision).
+- `--freeze`: Transition edition to frozen state after import.
+- `--expected-revision <N>`: Verify the database edition matches revision `N` before applying a correction.
 
 CSV and RunSignup require an explicit distance and edition year. Discover RunSignup set IDs using the documented [get-result-sets endpoint](https://runsignup.com/API/race/:race_id/results/get-result-sets/GET); choose the intended population rather than combining overlapping overall/division sets. API shape and paging follow [get-results](https://runsignup.com/API/race/:race_id/results/get-results/GET). Provider contract mismatches hold the import instead of treating an error response as an empty field. Live provider access and full-field totals still need validation before a source can be described as complete.
 

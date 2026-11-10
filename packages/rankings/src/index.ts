@@ -29,5 +29,5 @@ export { mikaListUrl, parseMikaTimingList } from "./ingest/mikatiming";
 export { editionFromOpenTrack } from "./ingest/opentrack-import";
 export { fetchRunSignupResults, parseRunSignupResults, runSignupResultsUrl, runSignupResultSetsUrl } from "./ingest/runsignup";
 export { readResultPages } from "./ingest/pagination";
-export { editionImportSql, snapshotIdentity } from "./ingest/sql";
+export { editionImportSql, snapshotIdentity, type EditionImportOptions } from "./ingest/sql";
 export type { IngestedEdition, IngestedFinish } from "./ingest/types";

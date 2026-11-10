@@ -1,6 +1,6 @@
 # Race results platform: architecture and delivery plan
 
-Status: November 9, 2026. This document distinguishes the implemented extraction-safety slice from the proposed operating platform. No scheduled ingestion, publication freeze, report service or production migration is included in this PR.
+Status: November 9, 2026. This branch builds on [PR #580](https://github.com/jerryliu3/fitness-battle/pull/580) (Slice A extraction safety) by delivering **Slice B & C: Publication Gate, Lifecycle & Provider Namespace Widening**. Scheduled ingestion, report service and production migration remain future slices.
 
 Read alongside [detailed acquisition scope](race-results-ingestion-scope.md), [operator instructions](ingestion.md), and [results explorer research](all-time-rankings-research-2026-11-09.md). The acquisition scope supplies source investigations, candidate events, privacy/access policies, acceptance cases and unresolved owner decisions. This document explains component boundaries and implementation dependencies.
 
@@ -16,17 +16,24 @@ The archive is separate from training activity ingestion and the weekly competit
 
 The ledger has sources, snapshots, ingestion runs, events, editions, source records and performances. Source display permission and per-performance eligibility determine public visibility. Chip and gun clocks are retained separately. Athlete identity across events remains unresolved.
 
-This PR implements:
+Implemented in PR #580 (Slice A: Extraction Safety):
 
 - A shared pagination reader using upstream row identities/counts. Excluded youth do not terminate pagination. Empty upstream pages end traversal; repeats, parse failures and exhausted page budgets reject extraction.
 - Explicit RunSignup result-set selection. Both metadata and each result page must affirm public visibility and finalized status. Overall/division sets are not silently combined. Nonbinary support is requested explicitly.
 - MikaTiming overlap detection. An ignored category filter causes a held import instead of guessed category assignment and silent deduplication.
 - New public-list sources default to display disabled. Existing source review metadata, approval and suppression survive imports.
-- A guard against source-wide external IDs relocating records into another edition. This is collision rejection, not the eventual wider identity namespace.
+- A guard against source-wide external IDs relocating records into another edition.
 - Shared SQL generation for both emitters, safe delimiter handling, corrected normalized snapshot hashes, per-run reports and nonzero failure exits.
 - Parser and process-level CLI tests plus a generated rollback-only SQL integration test.
 
-The CLI still re-fetches and upserts existing editions. It must not be scheduled until publication freezing and pre-fetch skipping are implemented. Normalized JSONL snapshots are not raw HTTP evidence and do not prove complete coverage.
+Implemented in this stacked follow-up (Slices B & C: Publication Gate & Provider Namespace):
+
+- **Additive schema**: `event_editions` adds `publication_state` (`draft`, `staged`, `published`, `frozen`), `revision` (integer >= 1), `published_at`, and `frozen_at`.
+- **Database transaction-locked publication gate**: Row-locks `event_editions` with `for update`. Ordinary acquisition cannot mutate an already published edition without `--allow-correction`. Frozen editions can never be mutated. Corrections bump revision and require matching prior `expectedRevision` when specified.
+- **Provider namespace widening**: Scopes `source_records` external result ID uniqueness to `(source_id, event_edition_id, external_result_id)`. Provider IDs across different editions no longer collide or relocate records.
+- **Worker pre-fetch check**: The CLI checks database publication state before scraping. If an edition is already frozen or published (without `--allow-correction`), network requests are skipped entirely.
+- **Publication management RPCs**: `public.freeze_event_edition(bigint)` and `public.publish_event_edition(bigint)`.
+- **CLI flags & reports**: Added `--allow-correction`, `--freeze`, and `--expected-revision` flags, reporting skipped and published states.
 
 ## 3. Target component flow
 
@@ -150,9 +157,8 @@ Ordinary scheduling continues to skip the corrected edition. No background fresh
 
 | Slice | Required work | Exit evidence |
 | --- | --- | --- |
-| A: extraction safety, this PR | Strict pagination, selected sets, source preservation, collision guard, failure reports | 32 package tests/typecheck passed in original checkout; SQL integration prepared but not executed |
-| B: audit and identity | Read-only hosted inventory; legacy completeness assessment; Chicago reconciliation; provider namespace audit | Audited counts and an explicit migration/backfill plan, with unresolved editions held |
-| C: publication gate | Additive schema, explicit revisions/freeze, locked database writer, all CLI paths integrated | Replay and concurrent writes cannot change a frozen edition; existing rows are not blindly declared complete |
+| A: extraction safety (PR #580) | Strict pagination, selected sets, source preservation, collision guard, failure reports | 32 package tests/typecheck passed |
+| B & C: publication gate & namespace (this branch) | Additive schema, explicit revisions/freeze, locked database writer, CLI pre-fetch skip, provider namespace widening | Integration test suite covers publication lock, revision bumps, freeze rejection, pre-fetch skips, and edition-scoped external IDs |
 | D: jobs and evidence | Durable runs, checkpoints, leases, private artifact retention and parser versions | Worker crash/resume and failed-publication recovery demonstrated |
 | E: weekly discovery | Canonical catalog, candidate review, scan cursor, overlapping windows and approved-source scheduling | Manual scan, duplicate/catch-up and published zero-fetch tests pass before activation |
 | F: first acquisition batch | Validate official fields, fill half/10K gaps, re-evaluate failed marathon sources | Reconciled fields with explicit coverage, not merely large row counts |

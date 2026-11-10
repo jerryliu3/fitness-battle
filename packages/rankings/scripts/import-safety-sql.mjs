@@ -20,11 +20,43 @@ const edition = {
 };
 const snapshot = snapshotIdentity("{}", "fixtures/import-safety.json");
 const corrected = { ...edition, displayAllowed: true, results: edition.results.map((row) => ({ ...row, gunTimeMs: 2_000_000 })) };
-const collision = { ...edition, editionYear: 2027, startsOn: "2027-04-20" };
+const nextYearEdition = { ...edition, editionYear: 2027, startsOn: "2027-04-20" };
+
 console.log(`
 begin;
 set local statement_timeout = '10s';
+
+-- 1. Initial import publishes edition at revision 1
 ${editionImportSql(edition, snapshot)}
+
+do $safety$
+declare
+  v_pub text;
+  v_rev integer;
+begin
+  select ed.publication_state, ed.revision into v_pub, v_rev
+  from public.event_editions ed
+  join public.events e on e.id = ed.event_id
+  join public.sources s on s.id = e.source_id
+  where s.slug = ${quote(slug)} and ed.edition_year = 2026;
+
+  if v_pub <> 'published' or v_rev <> 1 then
+    raise exception 'Initial import did not set publication_state=published and revision=1 (got %, %)', v_pub, v_rev;
+  end if;
+end $safety$;
+
+-- 2. Ordinary acquisition replay on published edition is rejected by publication gate
+do $safety$
+begin
+  begin
+    execute ${quote(editionImportSql(corrected, snapshot))};
+    raise exception 'Ordinary acquisition unexpectedly mutated a published edition';
+  exception when others then
+    if sqlerrm not like 'Edition % is already published%' then raise; end if;
+  end;
+end $safety$;
+
+-- 3. Source reviews survive imports
 update public.sources set
   display_allowed = false,
   audited_at = '2026-01-01T00:00:00Z',
@@ -32,8 +64,14 @@ update public.sources set
   attribution = 'Reviewed attribution',
   access_method = 'Reviewed method'
 where slug = ${quote(slug)};
-${editionImportSql(corrected, snapshot)}
+
+-- 4. Authorized correction updates performance, bumps revision, preserves source review
+${editionImportSql(corrected, snapshot, { allowCorrection: true })}
+
 do $safety$
+declare
+  v_pub text;
+  v_rev integer;
 begin
   if not exists (
     select 1 from public.sources where slug = ${quote(slug)}
@@ -41,37 +79,79 @@ begin
       and reuse_notes = 'Reviewed access decision'
       and attribution = 'Reviewed attribution' and access_method = 'Reviewed method'
   ) then raise exception 'Import overwrote source review or suppression'; end if;
+
+  select ed.publication_state, ed.revision into v_pub, v_rev
+  from public.event_editions ed
+  join public.events e on e.id = ed.event_id
+  join public.sources s on s.id = e.source_id
+  where s.slug = ${quote(slug)} and ed.edition_year = 2026;
+
+  if v_rev <> 2 then
+    raise exception 'Correction did not bump revision from 1 to 2 (got %)', v_rev;
+  end if;
+
   if (select count(*) from public.performances p join public.source_records sr on sr.id = p.source_record_id
       join public.sources s on s.id = sr.source_id where s.slug = ${quote(slug)}) <> 1 then
     raise exception 'Replay duplicated the result';
   end if;
+
   if not exists (
     select 1 from public.performances p join public.source_records sr on sr.id = p.source_record_id
     join public.sources s on s.id = sr.source_id where s.slug = ${quote(slug)}
       and p.rank_time_ms = 2000000 and p.athlete_name = ${quote(edition.results[0].athleteName)}
   ) then raise exception 'Correction or quoted source text was not preserved'; end if;
 end $safety$;
-update public.sources set display_allowed = true where slug = ${quote(slug)};
-${editionImportSql({ ...corrected, displayAllowed: false }, snapshot)}
+
+-- 5. Stale revision rejection: providing expectedRevision = 1 when revision is now 2 fails
 do $safety$
 begin
-  if not (select display_allowed from public.sources where slug = ${quote(slug)}) then
-    raise exception 'Import revoked an existing source approval';
-  end if;
   begin
-    execute ${quote(editionImportSql(collision, snapshot))};
-    raise exception 'Cross-edition result ID was accepted';
+    execute ${quote(editionImportSql(corrected, snapshot, { allowCorrection: true, expectedRevision: 1 }))};
+    raise exception 'Stale expectedRevision was accepted';
   exception when others then
-    if sqlerrm <> 'External result ID already belongs to another edition; import held' then raise; end if;
+    if sqlerrm not like 'Expected edition revision 1 but found 2%' then raise; end if;
   end;
-  if (select count(*) from public.event_editions ed join public.events e on e.id = ed.event_id
-      join public.sources s on s.id = e.source_id where s.slug = ${quote(slug)}) <> 1 then
-    raise exception 'Rejected collision left a partial edition';
+end $safety$;
+
+-- 6. Freeze edition and verify frozen editions cannot be mutated even with allowCorrection
+${editionImportSql(corrected, snapshot, { allowCorrection: true, freeze: true })}
+
+do $safety$
+declare
+  v_pub text;
+begin
+  select ed.publication_state into v_pub
+  from public.event_editions ed
+  join public.events e on e.id = ed.event_id
+  join public.sources s on s.id = e.source_id
+  where s.slug = ${quote(slug)} and ed.edition_year = 2026;
+
+  if v_pub <> 'frozen' then
+    raise exception 'Edition was not frozen (got %)', v_pub;
   end if;
-  if (select count(*) from public.source_snapshots sn join public.sources s on s.id = sn.source_id
-      where s.slug = ${quote(slug)}) <> 3 then
-    raise exception 'Rejected collision left snapshot writes';
+
+  begin
+    execute ${quote(editionImportSql(corrected, snapshot, { allowCorrection: true }))};
+    raise exception 'Frozen edition was mutated';
+  exception when others then
+    if sqlerrm not like 'Edition % is frozen%' then raise; end if;
+  end;
+end $safety$;
+
+-- 7. Widened provider namespace: next year edition with same external ID imports cleanly
+${editionImportSql(nextYearEdition, snapshot)}
+
+do $safety$
+begin
+  if (select count(*) from public.event_editions ed join public.events e on e.id = ed.event_id
+      join public.sources s on s.id = e.source_id where s.slug = ${quote(slug)}) <> 2 then
+    raise exception 'Provider namespace did not permit second edition for the same source';
+  end if;
+  if (select count(*) from public.source_records sr join public.sources s on s.id = sr.source_id
+      where s.slug = ${quote(slug)}) <> 2 then
+    raise exception 'Expected 2 distinct source records across the two editions';
   end if;
 end $safety$;
+
 rollback;
 `);

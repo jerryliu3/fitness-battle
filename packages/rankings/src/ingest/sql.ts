@@ -1,6 +1,12 @@
 import { createHash } from "node:crypto";
 import type { IngestedEdition, IngestedFinish } from "./types";
 
+export type EditionImportOptions = {
+  allowCorrection?: boolean;
+  freeze?: boolean;
+  expectedRevision?: number;
+};
+
 function quote(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
 }
@@ -24,14 +30,16 @@ function rowJson(row: IngestedFinish) {
 
 /**
  * One transaction that upserts a source, snapshot, edition, and every finisher.
- * Re-running the same file updates finish times without creating a second row.
+ * Enforces publication gates: frozen editions cannot be mutated; published editions
+ * require explicit allowCorrection; re-runs bump revision when authorized.
  */
 export function editionImportSql(
   edition: IngestedEdition,
   snapshot: { storagePath: string; contentSha256: string; byteSize: number },
+  options?: EditionImportOptions,
 ): string {
   const payload = JSON.stringify(edition.results.map(rowJson));
-  const input = JSON.stringify({ edition, snapshot });
+  const input = JSON.stringify({ edition, snapshot, options });
   let tag = `body_${createHash("sha256").update(input).digest("hex").slice(0, 16)}`;
   while (input.includes(`$${tag}$`)) tag += "_";
   const starts = edition.startsOn ? `${quote(edition.startsOn)}::date` : "null";
@@ -42,6 +50,8 @@ declare
   v_run bigint;
   v_event bigint;
   v_edition bigint;
+  v_pub_state text;
+  v_revision integer;
   v_record bigint;
   v_action text;
   v_row jsonb;
@@ -95,21 +105,61 @@ begin
   do update set name = excluded.name
   returning id into v_event;
 
-  insert into public.event_editions (event_id, edition_year, name, starts_on)
-  values (v_event, ${edition.editionYear}, ${quote(edition.eventName)}, ${starts})
-  on conflict (event_id, edition_year)
-  do update set name = excluded.name, starts_on = excluded.starts_on
-  returning id into v_edition;
+  -- Publication gate: lock edition row and enforce import-once policy
+  select id, publication_state, revision
+  into v_edition, v_pub_state, v_revision
+  from public.event_editions
+  where event_id = v_event and edition_year = ${edition.editionYear}
+  for update;
+
+  if v_edition is not null then
+    if v_pub_state = 'frozen' then
+      raise exception 'Edition % is frozen (revision %); imports cannot mutate a frozen edition', v_edition, v_revision;
+    elsif v_pub_state = 'published' and not ${options?.allowCorrection ? "true" : "false"} then
+      raise exception 'Edition % is already published (revision %); ordinary acquisition cannot mutate a published edition without an authorized correction', v_edition, v_revision;
+    end if;
+    ${
+      typeof options?.expectedRevision === "number"
+        ? `if v_revision <> ${options.expectedRevision} then
+      raise exception 'Expected edition revision % but found %; correction held', ${options.expectedRevision}, v_revision;
+    end if;`
+        : ""
+    }
+    update public.event_editions
+    set name = ${quote(edition.eventName)},
+        starts_on = ${starts},
+        revision = case when ${options?.allowCorrection ? "true" : "false"} then revision + 1 else revision end,
+        publication_state = ${options?.freeze ? "'frozen'" : "'published'"},
+        published_at = coalesce(published_at, now()),
+        frozen_at = case when ${options?.freeze ? "true" : "false"} then coalesce(frozen_at, now()) else frozen_at end
+    where id = v_edition;
+  else
+    insert into public.event_editions (
+      event_id, edition_year, name, starts_on, publication_state, revision, published_at, frozen_at
+    ) values (
+      v_event,
+      ${edition.editionYear},
+      ${quote(edition.eventName)},
+      ${starts},
+      ${options?.freeze ? "'frozen'" : "'published'"},
+      1,
+      now(),
+      ${options?.freeze ? "now()" : "null"}
+    )
+    returning id into v_edition;
+  end if;
 
   for v_row in select value from jsonb_array_elements(${quote(payload)}::jsonb)
   loop
-    -- The legacy unique index is source-wide. Never move an older edition's row.
-    -- A future additive migration can widen this provider namespace safely.
+    -- If an unmigrated database still has the legacy source-wide constraint, guard against cross-edition relocation.
     if exists (
       select 1 from public.source_records
       where source_id = v_source
         and external_result_id = nullif(v_row->>'externalResultId', '')
         and event_edition_id <> v_edition
+    ) and not exists (
+      select 1 from pg_indexes
+      where schemaname = 'public' and tablename = 'source_records' and indexname = 'source_records_source_edition_external_idx'
     ) then
       raise exception 'External result ID already belongs to another edition; import held';
     end if;
