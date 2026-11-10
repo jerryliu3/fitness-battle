@@ -12,3 +12,30 @@ vi.mock("expo-haptics", () => ({
 }));
 
 vi.mock("react-native-screens", () => ({ FullWindowOverlay: "FullWindowOverlay" }));
+
+vi.mock("expo-constants", () => ({
+  default: {
+    expoConfig: {
+      extra: {},
+    },
+  },
+}));
+
+vi.mock("react-native-purchases", () => ({
+  default: {
+    configure: vi.fn(),
+    logIn: vi.fn().mockResolvedValue({}),
+    getOfferings: vi.fn().mockResolvedValue({ current: null }),
+    purchasePackage: vi.fn().mockResolvedValue({ customerInfo: { entitlements: { active: {} } } }),
+    restorePurchases: vi.fn().mockResolvedValue({ entitlements: { active: {} } }),
+    addCustomerInfoUpdateListener: vi.fn(() => () => {}),
+  },
+  PACKAGE_TYPE: {
+    ANNUAL: "ANNUAL",
+    MONTHLY: "MONTHLY",
+    LIFETIME: "LIFETIME",
+  },
+  PURCHASES_ERROR_CODE: {
+    PURCHASE_CANCELLED_ERROR: "1",
+  },
+}));

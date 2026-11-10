@@ -22,4 +22,12 @@ export const mobileEnv = {
     process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN?.trim() ||
     extra.mapboxAccessToken?.trim() ||
     "",
+  revenueCatApiKeyApple:
+    process.env.EXPO_PUBLIC_REVENUECAT_APPLE_KEY?.trim() ||
+    extra.revenueCatApiKeyApple?.trim() ||
+    "",
+  revenueCatApiKeyGoogle:
+    process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_KEY?.trim() ||
+    extra.revenueCatApiKeyGoogle?.trim() ||
+    "",
 };

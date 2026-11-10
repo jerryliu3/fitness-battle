@@ -7,8 +7,25 @@ import { WaveCountdown } from "../ui/wave-countdown";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { useThemeColors } from "../theme";
 import { CompeteIcon, EventArt } from "./compete-home-sections";
+import { useEntryPass } from "../lib/entry-pass";
 
-export function EventRegistration({ state, event, registered, error, onClaim, onView }: { state: CompeteState; event: CompeteEvent; registered: boolean; error?: string; onClaim(): void; onView(): void }) {
+export function EventRegistration({
+  state,
+  event,
+  registered,
+  error,
+  onClaim,
+  onView,
+  onNeedPass,
+}: {
+  state: CompeteState;
+  event: CompeteEvent;
+  registered: boolean;
+  error?: string;
+  onClaim(): void;
+  onView(): void;
+  onNeedPass?: () => void;
+}) {
   const c = useThemeColors();
   const tint = `${COMPETE_ART_COLORS[event]}33`;
   const reduced = useReducedMotion();
@@ -23,6 +40,9 @@ export function EventRegistration({ state, event, registered, error, onClaim, on
   const stepMotion = useRef(new Animated.Value(1)).current;
   const { height } = useWindowDimensions();
   const claimed = registered || claiming;
+  const { canClaimSport } = useEntryPass(state);
+  const allowance = canClaimSport(event);
+
   useEffect(() => { entry.setValue(reduced ? 1 : 0); Animated.timing(entry, { toValue: 1, duration: reduced ? 0 : 600, useNativeDriver: true }).start(); return () => entry.stopAnimation(); }, [entry, reduced]);
   const transitioning = useRef(false);
   const nextStep = () => {
@@ -62,7 +82,26 @@ export function EventRegistration({ state, event, registered, error, onClaim, on
           <AppText role="label">Starts {detail.starts}</AppText>
         </>}
         <View style={{ borderTopWidth: 1, borderStyle: "dashed", borderColor: c.muted, paddingTop: 18, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}><View accessible={false} style={{ flexDirection: "row", flex: 1, gap: 2 }}>{barcode.map((width, i) => <View key={i} style={{ flex: width, height: 24, backgroundColor: c.ink }} />)}</View></View>
-        <FocusButton label={back ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →` : "Claim your spot"} disabled={claiming && !registered} onPress={back ? onView : () => { setClaiming(true); setTimeout(onClaim, 60); }} />
+        <FocusButton
+          label={
+            back
+              ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →`
+              : !allowance.allowed
+              ? "Unlock with Entry Pass ($0.99/mo)"
+              : "Claim your spot"
+          }
+          disabled={claiming && !registered}
+          onPress={
+            back
+              ? onView
+              : !allowance.allowed
+              ? () => onNeedPass?.()
+              : () => {
+                  setClaiming(true);
+                  setTimeout(onClaim, 60);
+                }
+          }
+        />
       </View>
     </Animated.View>;
 

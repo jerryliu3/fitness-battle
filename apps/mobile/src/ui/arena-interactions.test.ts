@@ -6,6 +6,8 @@ vi.mock("../features/field-timeline", () => ({ FieldTimeline: "FieldTimeline" })
 vi.mock("../lib/api", () => ({ requestApi: vi.fn() }));
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: vi.fn() }) }));
 vi.mock("../features/athlete-profile-sheet", () => ({ AthleteProfileSheet: "AthleteProfileSheet" }));
+vi.mock("../features/entry-pass-sheet", () => ({ EntryPassSheet: "EntryPassSheet" }));
+vi.mock("../lib/entry-pass", () => ({ useEntryPass: () => ({ canClaimSport: () => ({ allowed: true }) }) }));
 vi.mock("./app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("./club-art",()=>({alpineTrail:1}));
 import { createElement } from "react";
