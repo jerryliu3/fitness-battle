@@ -2,12 +2,16 @@
 import {useEffect,useMemo,useRef,useState} from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import {SHELL_COLORS,RACE_CATEGORIES,RACE_DISTANCES,compileReplayRunner,loadReplayField,raceClock,raceSourceUrl,replayFeatures,replayTimeline,validateReplayCourse,type ReplayData,type ReplayPage} from "@fitness-battle/shared";
+import {getAppColors,resolveColorMode,RACE_CATEGORIES,RACE_DISTANCES,compileReplayRunner,loadReplayField,raceClock,raceSourceUrl,replayFeatures,replayTimeline,validateReplayCourse,type ReplayData,type ReplayPage} from "@fitness-battle/shared";
 import {webEnv} from "@/lib/env";
 import {addMapboxAttribution,mapboxAttributionOptions} from "@/components/maps/mapbox-attribution";
+import {useAppearance} from "@/theme/appearance-provider";
 import {useRaceFavorites} from "../favorites";
 
 export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:string;sex:string;clock:string};initialIds:string}) {
+  const {preference}=useAppearance();
+  const [systemDark,setSystemDark]=useState(false);
+  const colors=useMemo(()=>getAppColors(resolveColorMode(preference,systemDark ? "dark" : "light")),[preference,systemDark]);
   const saved=useRaceFavorites(),[ids,setIds]=useState<string|null>(initialIds),[attempt,setAttempt]=useState(0);
   const [data,setData]=useState<ReplayData|null>(null),[busy,setBusy]=useState(false),[progress,setProgress]=useState(0),[error,setError]=useState("");
   const [time,setTime]=useState(0),[playing,setPlaying]=useState(false),[speed,setSpeed]=useState(128),[wall,setWall]=useState(false),[reduced,setReduced]=useState(true),[mapError,setMapError]=useState("");
@@ -26,6 +30,7 @@ export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:
   const timeline=useMemo(()=>replayTimeline(runners,wall),[runners,wall]);
   const features=useMemo(()=>data ? replayFeatures(data.course,runners,time,timeline.origin) : null,[data,runners,time,timeline.origin]);
   const latest=useRef(features);latest.current=features;
+  useEffect(()=>{const media=window.matchMedia("(prefers-color-scheme: dark)");const changed=()=>setSystemDark(media.matches);changed();media.addEventListener("change",changed);return ()=>media.removeEventListener("change",changed);},[]);
   useEffect(()=>{const preference=window.matchMedia("(prefers-reduced-motion: reduce)");const changed=()=>{setReduced(preference.matches);if(preference.matches) setPlaying(false);};changed();preference.addEventListener("change",changed);return ()=>preference.removeEventListener("change",changed);},[]);
   useEffect(()=>{const hidden=()=>{if(document.hidden) setPlaying(false);};document.addEventListener("visibilitychange",hidden);return ()=>document.removeEventListener("visibilitychange",hidden);},[]);
   useEffect(()=>{if(!playing || reduced) return;let previous=performance.now();const timer=window.setInterval(()=>{const now=performance.now(),delta=Math.min(now-previous,1000)*speed;previous=now;setTime(value=>Math.min(timeline.duration,value+delta));},runners.length>1000 ? 500 : 200);return ()=>clearInterval(timer);},[playing,reduced,speed,timeline.duration,runners.length]);
@@ -37,9 +42,9 @@ export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:
     map.current=instance;addMapboxAttribution(instance);
     instance.on("error",()=>{setMapError("Some map data could not load. Check your connection and Mapbox access.");setPlaying(false);});
     instance.on("load",()=>{instance.addSource("course",{type:"geojson",data:{type:"Feature",properties:{},geometry:{type:"LineString",coordinates:data.course.points.map(p=>p.slice(0,2))}}});
-      instance.addLayer({id:"course",type:"line",source:"course",paint:{"line-color":SHELL_COLORS.muted,"line-width":4}});
+      instance.addLayer({id:"course",type:"line",source:"course",paint:{"line-color":colors.muted,"line-width":4}});
       instance.addSource("runners",{type:"geojson",data:latest.current ?? {type:"FeatureCollection",features:[]}});
-      instance.addLayer({id:"runners",type:"circle",source:"runners",paint:{"circle-radius":5,"circle-color":SHELL_COLORS.tennis,"circle-stroke-width":1,"circle-stroke-color":SHELL_COLORS.ink}});
+      instance.addLayer({id:"runners",type:"circle",source:"runners",paint:{"circle-radius":5,"circle-color":colors.tennis,"circle-stroke-width":1,"circle-stroke-color":colors.ink}});
       const bounds=new mapboxgl.LngLatBounds();for(const point of data.course.points) bounds.extend([point[0],point[1]]);instance.fitBounds(bounds,{padding:40,duration:0});setReady(true);
     });
     instance.on("click","runners",event=>{const id=Number(event.features?.[0]?.properties?.id);if(Number.isSafeInteger(id)) setFocused(id);});
@@ -47,7 +52,7 @@ export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:
     return ()=>{observer.disconnect();instance.remove();map.current=null;};
   },[data,mapAttempt]);
   useEffect(()=>{if(ready && features) (map.current?.getSource("runners") as mapboxgl.GeoJSONSource | undefined)?.setData(features);},[ready,features]);
-  useEffect(()=>{if(ready) map.current?.setPaintProperty("runners","circle-color",["case",["==",["get","id"],focused ?? -1],SHELL_COLORS.tennis,SHELL_COLORS.muted]);},[ready,focused]);
+  useEffect(()=>{if(ready){map.current?.setPaintProperty("runners","circle-color",["case",["==",["get","id"],focused ?? -1],colors.tennis,colors.muted]);map.current?.setPaintProperty("runners","circle-stroke-color",colors.ink);map.current?.setPaintProperty("course","line-color",colors.muted);}},[ready,focused,colors]);
   const focusedRunner=useMemo(()=>runners.find(r=>r.id===focused),[runners,focused]),source=data ? raceSourceUrl(data.course.sourceUrl) : null;
   return <div className="race-replay-player"><p className="rankings-note">Estimated positions between recorded checkpoints, along a reviewed edition course. These are not runner GPS tracks or exact overtakes. Missing timing intervals are hidden.</p>
     <p className="rankings-note">Only saved results from this edition, category and clock can appear.</p><div className="race-replay-actions"><label>Category<select value={category} onChange={e=>setCategory(e.target.value)}><option value="all">All categories</option>{RACE_CATEGORIES.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}</select></label><label>Timing<select value={clock} onChange={e=>setClock(e.target.value)}><option value="chip">Chip</option><option value="gun">Official</option></select></label><button disabled={busy} onClick={()=>setIds(null)}>Load entire timing field</button><button disabled={busy || !saved.ready || !saved.ids.length} onClick={()=>setIds(saved.ids.join(","))}>Follow saved runners</button>{initialIds && <button disabled={busy} onClick={()=>setIds(initialIds)}>Selected runners</button>}</div>
