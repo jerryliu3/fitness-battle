@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -244,13 +245,16 @@ export function HomeDeck({
 
       setTimeout(() => {
         setDragOffset(0);
-        setDismissing(null);
         setActiveIndex((curr) => (nextCount > 0 ? curr % nextCount : 0));
         persistDismissed(nextDismissed);
       }, 280);
     },
     [activeCard, dismissedIds, dismissing, persistDismissed, visibleCards],
   );
+
+  useLayoutEffect(() => {
+    if (dismissing && activeCard?.id !== dismissing.id) setDismissing(null);
+  }, [activeCard?.id, dismissing]);
 
   const resetDeck = useCallback(() => {
     void playCue("selection");
@@ -324,11 +328,7 @@ export function HomeDeck({
 
   return (
     <section className="home-deck-section" aria-label="Updates">
-      <div className="home-deck-header">
-        <AppHeading level={2} role="heading">
-          Updates
-        </AppHeading>
-        {visibleCards.length === 0 && dismissedIds.length > 0 ? (
+      {visibleCards.length === 0 && dismissedIds.length > 0 && <div className="home-deck-header">
           <button
             type="button"
             className="home-deck-restore-btn"
@@ -337,8 +337,8 @@ export function HomeDeck({
           >
             Reset
           </button>
-        ) : null}
-      </div>
+
+      </div>}
 
       {!activeCard && !dismissing ? (
         <div className="home-deck-caught-up">

@@ -5,6 +5,7 @@ import { freshState } from "@fitness-battle/shared";
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
+  reduced: true,
   storage: new Map<string, string>(),
 }));
 
@@ -31,7 +32,7 @@ vi.mock("../lib/athlete-blocks", () => ({
 }));
 
 vi.mock("../ui/use-reduced-motion", () => ({
-  useReducedMotion: () => true,
+  useReducedMotion: () => mocks.reduced,
 }));
 
 vi.mock("react-native", () => ({
@@ -46,6 +47,8 @@ vi.mock("react-native", () => ({
   },
   Easing: {
     cubic: "cubic",
+    quad: "quad",
+    in: (v: unknown) => v,
     out: (v: unknown) => v,
   },
   PanResponder: {
@@ -65,7 +68,8 @@ vi.mock("react-native", () => ({
         return "0deg";
       }
     },
-    timing: () => ({ start: (cb?: () => void) => cb?.() }),
+    timing: (value: { setValue(value: number): void }, config: { toValue: number }) => ({ start: (cb?: () => void) => { value.setValue(config.toValue); cb?.(); } }),
+    parallel: (animations: { start(): void }[]) => ({ start: (cb?: () => void) => { animations.forEach(animation => animation.start()); cb?.(); } }),
     spring: () => ({ start: (cb?: () => void) => cb?.() }),
   },
 }));
@@ -86,6 +90,7 @@ let renderer: ReactTestRenderer;
 
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
+  mocks.reduced = true;
   mocks.push.mockReset();
   mocks.storage.clear();
   vi.unstubAllGlobals();
@@ -192,4 +197,22 @@ describe("Mobile HomeDeck", () => {
     expect(jsonText()).not.toContain("You’re all caught up.");
     expect(jsonText()).toContain("RECOVERY-FRIENDLY");
   });
+});
+
+it("never resets the dismissed native view when the next card takes its place", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mocks.reduced = false;
+  const state = freshState(new Date("2026-11-09T15:00:00Z"));
+  state.demoNow = "2026-11-09T15:00:00Z";
+  await act(async () => { renderer = create(createElement(HomeDeck, { accountKey: "animated-dismissal", state, onOpenTodaySession() {}, onOpenActivities() {} })); });
+  const top = renderer.root.findAllByType("AnimatedView" as never).find(node => node.props.panHandlers === undefined && node.props.pointerEvents === "auto")!;
+  const style = top.props.style.at(-1);
+  const outgoingX = style.transform[0].translateX, outgoingOpacity = style.opacity;
+  const dismiss = renderer.root.find(node => (node.type as unknown) === "Pressable" && node.props.accessibilityLabel?.startsWith("Dismiss "));
+  await act(async () => dismiss.props.onPress());
+  expect(outgoingX.value).toBe(-460);
+  expect(outgoingOpacity.value).toBe(0);
+  const incoming = renderer.root.findAllByType("AnimatedView" as never).find(node => node.props.pointerEvents === "auto")!;
+  expect(incoming.props.style.at(-1).opacity).not.toBe(outgoingOpacity);
+  expect(incoming.props.style.at(-1).opacity.value).toBe(1);
 });

@@ -208,8 +208,7 @@ export function HomeDeck({
   );
   const [activeIndex, setActiveIndex] = useState(initialIndex ?? 0);
   const [dismissingId, setDismissingId] = useState<HomeDeckCardId | null>(null);
-  const dragX = useRef(new Animated.Value(0)).current;
-  const cardOpacity = useRef(new Animated.Value(1)).current;
+  const dismissalRevision = useRef(0);
   const swipingRef = useRef(false);
 
   useEffect(() => {
@@ -220,12 +219,13 @@ export function HomeDeck({
 
   useEffect(() => {
     let alive = true;
+    const revision = dismissalRevision.current;
     const cached = memoryDismissed.get(storageKey);
     if (cached) setDismissedIds(cached);
     void AsyncStorage.getItem(storageKey)
       .catch(() => null)
       .then((raw) => {
-        if (!alive) return;
+        if (!alive || revision !== dismissalRevision.current) return;
         const parsed = parseDismissedCardIds(raw);
         if (parsed.length > 0 || !cached) {
           memoryDismissed.set(storageKey, parsed);
@@ -250,6 +250,10 @@ export function HomeDeck({
   const safeIndex =
     visibleCards.length > 0 ? activeIndex % visibleCards.length : 0;
   const activeCard = visibleCards[safeIndex] ?? null;
+  // Each card owns its native animation values. Never reset an outgoing view.
+  const motion = useMemo(() => ({ x: new Animated.Value(0), opacity: new Animated.Value(1) }), [activeCard?.id]);
+  const dragX = motion.x;
+  const cardOpacity = motion.opacity;
 
   const nextIndex =
     visibleCards.length > 1 ? (safeIndex + 1) % visibleCards.length : null;
@@ -262,6 +266,7 @@ export function HomeDeck({
 
   const persistDismissed = useCallback(
     (next: HomeDeckCardId[]) => {
+      dismissalRevision.current++;
       memoryDismissed.set(storageKey, next);
       setDismissedIds(next);
       void AsyncStorage.setItem(
@@ -328,14 +333,12 @@ export function HomeDeck({
     ],
   );
 
-  // Reset native values only after the replacement card has committed.
+  // Clear the gesture lock once the replacement card has committed.
   useLayoutEffect(() => {
     if (!dismissingId || activeCard?.id === dismissingId) return;
-    dragX.setValue(0);
-    cardOpacity.setValue(1);
     setDismissingId(null);
     swipingRef.current = false;
-  }, [activeCard?.id, dismissingId, dragX, cardOpacity]);
+  }, [activeCard?.id, dismissingId]);
 
   const resetDeck = useCallback(() => {
     void playCue("selection");
@@ -416,11 +419,7 @@ export function HomeDeck({
 
   return (
     <View style={s.section} accessibilityLabel="Updates">
-      <View style={s.header}>
-        <AppText role="heading" accessibilityRole="header">
-          Updates
-        </AppText>
-        {visibleCards.length === 0 && dismissedIds.length > 0 ? (
+      {visibleCards.length === 0 && dismissedIds.length > 0 && <View style={s.header}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Reset dismissed cards"
@@ -431,8 +430,8 @@ export function HomeDeck({
               Reset
             </AppText>
           </Pressable>
-        ) : null}
-      </View>
+
+      </View>}
 
       {!activeCard && !dismissingId ? (
         <View style={s.caughtUpRow}>
@@ -512,6 +511,7 @@ export function HomeDeck({
 
               return (
                 <Animated.View
+                  key={activeCard.id}
                   {...panResponder.panHandlers}
                   pointerEvents={dismissingId ? "none" : "auto"}
                   style={[
