@@ -62,8 +62,9 @@ begin
     access_method = excluded.access_method,
     reuse_notes = excluded.reuse_notes,
     attribution = excluded.attribution,
-    display_allowed = excluded.display_allowed,
-    audited_at = case when excluded.display_allowed then now() else public.sources.audited_at end
+    -- Imports may suppress display, but cannot reverse an existing opt-out.
+    display_allowed = public.sources.display_allowed and excluded.display_allowed,
+    audited_at = public.sources.audited_at
   returning id into v_source;
 
   insert into public.source_snapshots (source_id, storage_path, content_sha256, byte_size)

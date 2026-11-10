@@ -1,8 +1,9 @@
+import { webEnv } from "./env";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 export function rankingsConfig() {
-  const url = process.env.NEXT_PUBLIC_RANKINGS_SUPABASE_URL ?? "";
-  const anonKey = process.env.NEXT_PUBLIC_RANKINGS_SUPABASE_ANON_KEY ?? "";
+  const url = webEnv.rankingsUrl;
+  const anonKey = webEnv.rankingsAnonKey;
   return { url, anonKey, configured: url.length > 0 && anonKey.length > 0 };
 }
 

@@ -228,20 +228,27 @@ async function ingestCsv(file, flags) {
 }
 
 async function ingestRunSignup(raceId, eventId, flags) {
+  if (!flags.resultSet || !/^\d+$/.test(flags.resultSet)) throw new Error("RunSignup requires --result-set ID. Select a public set from get-result-sets before importing.");
   const pages = [];
+  const seenPages = new Set();
+  let complete = false;
   for (let page = 1; page <= MAX_PAGES; page += 1) {
-    const url = runSignupResultsUrl(raceId, eventId, page, PAGE_SIZE);
+    const url = runSignupResultsUrl(raceId, eventId, page, PAGE_SIZE, flags.resultSet);
     const payload = JSON.parse(await fetchText(url));
     const parsed = parseRunSignupResults(payload, {
       distance: flags.distance || "5k",
       sourceUrl: url,
     });
-    if (parsed.results.length === 0 && parsed.skippedYouth === 0) break;
+    const signature = snapshotIdentity(JSON.stringify(payload.individual_results_sets ?? []), "").contentSha256;
+    if (parsed.inputCount > 0 && seenPages.has(signature)) throw new Error("RunSignup repeated a results page; import was not published.");
+    seenPages.add(signature);
     pages.push(parsed);
-    if (parsed.results.length < PAGE_SIZE) break;
+    if (parsed.inputCount < PAGE_SIZE) { complete = true; break; }
     await sleep(200);
   }
+  if (!complete) throw new Error("RunSignup reached the page limit; import was not published.");
   const results = pages.flatMap((page) => page.results);
+  if (!results.length) throw new Error("No eligible public results were returned.");
   const edition = {
     sourceSlug: `runsignup_${raceId}`,
     sourceName: flags.name || `RunSignup ${raceId}`,
@@ -259,12 +266,12 @@ async function ingestRunSignup(raceId, eventId, flags) {
     skippedUnparsed: pages.reduce((sum, page) => sum + page.skippedUnparsed, 0),
   };
   const written = await writeEdition(
-    `runsignup-${raceId}-${eventId}`,
+    `runsignup-${raceId}-${eventId}-${flags.resultSet}`,
     edition,
     JSON.stringify(results),
-    `packages/rankings/imports/runsignup-${raceId}-${eventId}.jsonl`,
+    `packages/rankings/imports/runsignup-${raceId}-${eventId}-${flags.resultSet}.jsonl`,
   );
-  return { slug: `runsignup-${raceId}-${eventId}`, status: "succeeded", results: results.length, sql: written.sqlPath };
+  return { slug: `runsignup-${raceId}-${eventId}-${flags.resultSet}`, status: "succeeded", results: results.length, sql: written.sqlPath };
 }
 
 function flag(name, argv) {
@@ -297,6 +304,7 @@ if (argv.includes("--csv")) {
 } else if (argv.includes("--runsignup")) {
   report.events.push(
     await ingestRunSignup(flag("--runsignup", argv), flag("--event", argv), {
+      resultSet: flag("--result-set", argv),
       distance: flag("--distance", argv),
       name: flag("--name", argv),
       year: flag("--year", argv),

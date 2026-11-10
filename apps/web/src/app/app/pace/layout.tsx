@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
-import "./rankings.css";
+import "./pace.css";
 
 export const metadata: Metadata = {
-  title: "Race Rankings",
+  title: "Times",
   description: "Public road-race leaderboards from audited results sources.",
 };
 

@@ -1441,7 +1441,7 @@ function DesignSurface({
               Sample rankings for interface evaluation. Published race results
               live in their own source-attributed board.
             </p>
-            <a className="s-button secondary" href="/rankings">
+            <a className="s-button secondary" href="/pace">
               Open published race rankings ↗
             </a>
           </>
