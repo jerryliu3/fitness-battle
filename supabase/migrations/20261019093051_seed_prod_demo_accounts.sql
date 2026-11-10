@@ -373,17 +373,6 @@ begin
       true,
       v_crew_cycling
     ),
-    (
-      v_alice_uid,
-      'strength',
-      v_week_start,
-      v_week_end,
-      8,
-      array[v_carla_uid],
-      array['synth:strength:1', 'synth:strength:5', 'synth:strength:9', 'synth:strength:13', 'synth:strength:21', 'synth:strength:25'],
-      true,
-      null
-    ),
     -- Bob
     (
       v_bob_uid,
