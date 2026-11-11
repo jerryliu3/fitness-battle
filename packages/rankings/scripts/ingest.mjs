@@ -351,7 +351,7 @@ async function ingestRunSignup(raceId, eventId, flags) {
     eventName: flags.name || `RunSignup race ${raceId}`,
     editionYear,
     startsOn: flags.date || null,
-    sourceUrl: `https://runsignup.com/Race/Results/${raceId}`,
+    sourceUrl: `https://runsignup.com/Race/Results/${raceId}#resultSetId-${flags.resultSet}`,
     results,
     skippedYouth: pages.reduce((sum, page) => sum + page.skippedYouth, 0),
     skippedUnparsed: pages.reduce((sum, page) => sum + page.skippedUnparsed, 0),
@@ -361,7 +361,15 @@ async function ingestRunSignup(raceId, eventId, flags) {
     edition,
     null,
     `packages/rankings/imports/runsignup-${raceId}-${eventId}-${flags.resultSet}.jsonl`,
-    { allowCorrection, freeze: freezeFlag, expectedRevision },
+    {
+      allowCorrection,
+      freeze: freezeFlag,
+      expectedRevision,
+      populationScope: {
+        distanceSlug: flags.distance,
+        sourceUrlPattern: `%individual_result_set_id=${flags.resultSet}%`,
+      },
+    },
   );
   return { slug: `runsignup-${raceId}-${eventId}-${flags.resultSet}`, status: "succeeded", results: results.length, sql: written.sqlPath };
 }

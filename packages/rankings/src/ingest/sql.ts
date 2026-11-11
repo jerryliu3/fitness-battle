@@ -5,6 +5,11 @@ export type EditionImportOptions = {
   allowCorrection?: boolean;
   freeze?: boolean;
   expectedRevision?: number;
+  populationScope?: {
+    distanceSlug?: string;
+    categoryKeys?: string[];
+    sourceUrlPattern?: string;
+  };
 };
 
 function quote(value: string): string {
@@ -71,13 +76,7 @@ begin
     ${edition.displayAllowed ? "now()" : "null"}
   )
   on conflict (slug) do update set
-    name = excluded.name,
-    access_method = case when public.sources.audited_at is not null then public.sources.access_method else excluded.access_method end,
-    reuse_notes = case when public.sources.audited_at is not null then public.sources.reuse_notes else excluded.reuse_notes end,
-    attribution = case when public.sources.audited_at is not null then public.sources.attribution else excluded.attribution end,
-    -- Imports may suppress display, but cannot reverse an existing opt-out.
-    display_allowed = case when public.sources.audited_at is not null then public.sources.display_allowed else public.sources.display_allowed and excluded.display_allowed end,
-    audited_at = public.sources.audited_at
+    name = excluded.name
   returning id into v_source;
 
   insert into public.source_snapshots (source_id, storage_path, content_sha256, byte_size)
@@ -219,15 +218,28 @@ begin
     options?.allowCorrection
       ? `
   -- Reconcile corrected full-field population: remove missing results from the published field.
-  -- Only performances matching this edition and the imported distances and categories that were not updated in this run are unpublished.
+  -- Scoped strictly to the defined replacement population (edition, distances, categories, and optional result-set/source URL).
   update public.performances p
   set unpublished = true,
       updated_at = now()
   from public.source_records sr
   where p.source_record_id = sr.id
     and p.event_edition_id = v_edition
-    and p.distance_slug in (select distinct value->>'distance' from jsonb_array_elements(${quote(payload)}::jsonb))
-    and sr.category_key in (select distinct value->>'categoryKey' from jsonb_array_elements(${quote(payload)}::jsonb))
+    ${
+      options?.populationScope?.distanceSlug
+        ? `and p.distance_slug = ${quote(options.populationScope.distanceSlug)}`
+        : `and p.distance_slug in (select distinct value->>'distance' from jsonb_array_elements(${quote(payload)}::jsonb))`
+    }
+    ${
+      options?.populationScope?.categoryKeys?.length
+        ? `and sr.category_key in (${options.populationScope.categoryKeys.map(quote).join(",")})`
+        : `and sr.category_key in (select distinct value->>'categoryKey' from jsonb_array_elements(${quote(payload)}::jsonb))`
+    }
+    ${
+      options?.populationScope?.sourceUrlPattern
+        ? `and p.source_url like ${quote(options.populationScope.sourceUrlPattern)}`
+        : ""
+    }
     and sr.last_ingestion_run_id <> v_run
     and not p.unpublished;
 `

@@ -215,8 +215,8 @@ describe("public results parsers", () => {
     const sql = editionImportSql(edition, snapshot);
     expect(sql).toContain("private.upsert_source_record");
     expect(sql).toContain("private.upsert_performance");
-    expect(sql).toContain("on conflict (slug)");
-    expect(sql).toContain("display_allowed = case when public.sources.audited_at is not null");
+    expect(sql).toContain("on conflict (slug) do update set");
+    expect(sql).not.toContain("display_allowed = case");
     expect(sql).toContain("for update");
     expect(sql).toContain("publication_state");
     expect(sql).toContain("ordinary acquisition cannot mutate a published edition");

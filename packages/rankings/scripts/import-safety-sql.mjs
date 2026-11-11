@@ -74,9 +74,9 @@ begin
   end;
 end $safety$;
 
--- 3. Source reviews survive imports
+-- 3. Source reviews survive imports (both approval and attribution)
 update public.sources set
-  display_allowed = false,
+  display_allowed = true,
   audited_at = '2026-01-01T00:00:00Z',
   reuse_notes = 'Reviewed access decision',
   attribution = 'Reviewed attribution',
@@ -93,7 +93,7 @@ declare
 begin
   if not exists (
     select 1 from public.sources where slug = ${quote(slug)}
-      and not display_allowed and audited_at = '2026-01-01T00:00:00Z'
+      and display_allowed and audited_at = '2026-01-01T00:00:00Z'
       and reuse_notes = 'Reviewed access decision'
       and attribution = 'Reviewed attribution' and access_method = 'Reviewed method'
   ) then raise exception 'Import overwrote source review or suppression'; end if;
@@ -205,6 +205,51 @@ begin
       and p.unpublished
   ) then
     raise exception 'Correction failed to unpublish removed result';
+  end if;
+end $safety$;
+
+-- 9b. Evidence-backed re-import restores previously unpublished runner
+${editionImportSql(editionWithTwo, snapshot, { allowCorrection: true })}
+
+do $safety$
+begin
+  if not exists (
+    select 1 from public.performances p
+    join public.source_records sr on sr.id = p.source_record_id
+    join public.sources s on s.id = sr.source_id
+    where s.slug = ${quote(`${slug}_two`)}
+      and p.athlete_name = 'Runner Disqualified'
+      and not p.unpublished
+  ) then
+    raise exception 'Re-import failed to restore previously unpublished runner';
+  end if;
+end $safety$;
+
+-- 9c. Re-import does not un-suppress a runner with independent privacy suppression
+do $safety$
+begin
+  update public.performances p
+  set privacy_suppressed = true, unpublished = true
+  from public.source_records sr
+  join public.sources s on s.id = sr.source_id
+  where sr.id = p.source_record_id
+    and s.slug = ${quote(`${slug}_two`)}
+    and p.athlete_name = 'Runner Disqualified';
+end $safety$;
+
+${editionImportSql(editionWithTwo, snapshot, { allowCorrection: true })}
+
+do $safety$
+begin
+  if not exists (
+    select 1 from public.performances p
+    join public.source_records sr on sr.id = p.source_record_id
+    join public.sources s on s.id = sr.source_id
+    where s.slug = ${quote(`${slug}_two`)}
+      and p.athlete_name = 'Runner Disqualified'
+      and p.unpublished and p.privacy_suppressed
+  ) then
+    raise exception 'Re-import unexpectedly un-suppressed runner with independent privacy suppression';
   end if;
 end $safety$;
 
