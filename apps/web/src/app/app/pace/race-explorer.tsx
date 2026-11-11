@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AppHeading } from "@/ui/section";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { RACE_CATEGORY_FILTERS, RACE_DISTANCES, RACE_PERCENTILE_FILTERS, RACE_TIMEFRAMES, raceClock, racePercentileBadge, raceWindowCaption, raceEditionOptions, type RaceCoverage, type RaceResultsPage, type raceQuery } from "@fitness-battle/shared";
 
@@ -23,67 +23,59 @@ export function RaceExplorer({ distance, initial, query, coverage }: { distance:
   const [from, setFrom] = useState(query.from);
   const [through, setThrough] = useState(query.through);
 
-  useEffect(() => {
-    setEdition(query.editionId?.toString() ?? "");
-    setSearch(query.query);
-    setSex(query.sex);
-    setPercentile(query.percentile ?? "all");
-    setYear(query.year?.toString() ?? "");
-    setTimeframe(query.timeframe);
-    setFrom(query.from);
-    setThrough(query.through);
-  }, [query.editionId, query.query, query.sex, query.percentile, query.year, query.timeframe, query.from, query.through]);
-
-  function navigateFilters(overrides?: Partial<{
-    edition: string;
-    sex: string;
-    percentile: string;
-    timeframe: string;
-    year: string;
-    from: string;
-    through: string;
-    search: string;
-  }>) {
-    const nextEdition = overrides?.edition !== undefined ? overrides.edition : edition;
-    const nextSex = overrides?.sex !== undefined ? overrides.sex : sex;
-    const nextPercentile = overrides?.percentile !== undefined ? overrides.percentile : percentile;
-    const nextTimeframe = overrides?.timeframe !== undefined ? overrides.timeframe : timeframe;
-    const nextYear = overrides?.year !== undefined ? overrides.year : year;
-    const nextFrom = overrides?.from !== undefined ? overrides.from : from;
-    const nextThrough = overrides?.through !== undefined ? overrides.through : through;
-    const nextSearch = overrides?.search !== undefined ? overrides.search : search;
-
+  function serializeFilterParams(values: {
+    page: number;
+    edition?: string;
+    sex?: string;
+    percentile?: string;
+    timeframe?: string;
+    year?: string;
+    from?: string;
+    through?: string;
+    search?: string;
+  }) {
     const params = new URLSearchParams({
-      sex: nextSex,
-      timeframe: nextTimeframe,
-      page: "1",
+      sex: values.sex ?? query.sex,
+      timeframe: values.timeframe ?? query.timeframe,
+      page: String(values.page),
     });
-    if (nextEdition) params.set("edition", nextEdition);
-    if (nextSearch.trim()) params.set("q", nextSearch.trim());
-    if (nextPercentile && nextPercentile !== "all") params.set("percentile", nextPercentile);
-    if (nextTimeframe === "year" && nextYear) params.set("year", nextYear);
-    if (nextTimeframe === "custom") {
-      params.set("from", nextFrom);
-      params.set("through", nextThrough);
+    const editionVal = values.edition !== undefined ? values.edition : (query.editionId?.toString() ?? "");
+    if (editionVal) params.set("edition", editionVal);
+    const searchVal = values.search !== undefined ? values.search : query.query;
+    if (searchVal.trim()) params.set("q", searchVal.trim());
+    const percVal = values.percentile !== undefined ? values.percentile : (query.percentile ?? "all");
+    if (percVal && percVal !== "all") params.set("percentile", percVal);
+    const tfVal = values.timeframe !== undefined ? values.timeframe : query.timeframe;
+    const yearVal = values.year !== undefined ? values.year : (query.year?.toString() ?? "");
+    if (tfVal === "year" && yearVal) params.set("year", yearVal);
+    if (tfVal === "custom") {
+      params.set("from", values.from !== undefined ? values.from : query.from);
+      params.set("through", values.through !== undefined ? values.through : query.through);
     }
+    return params;
+  }
+
+  function navigate(params: URLSearchParams) {
     startTransition(() => router.push(`/pace?distance=${distance}&${params}`, { scroll: false }));
   }
 
+  function navigateFilters(overrides?: Partial<Parameters<typeof serializeFilterParams>[0]>) {
+    navigate(serializeFilterParams({
+      page: 1,
+      edition,
+      sex,
+      percentile,
+      timeframe,
+      year,
+      from,
+      through,
+      search,
+      ...overrides,
+    }));
+  }
+
   function navigatePage(targetPage: number) {
-    const params = new URLSearchParams({
-      sex: query.sex,
-      timeframe: query.timeframe,
-      page: String(targetPage),
-    });
-    if (query.editionId) params.set("edition", String(query.editionId));
-    if (query.query) params.set("q", query.query);
-    if (query.percentile && query.percentile !== "all") params.set("percentile", query.percentile);
-    if (query.timeframe === "year" && query.year) params.set("year", String(query.year));
-    if (query.timeframe === "custom") {
-      params.set("from", query.from);
-      params.set("through", query.through);
-    }
-    startTransition(() => router.push(`/pace?distance=${distance}&${params}`, { scroll: false }));
+    navigate(serializeFilterParams({ page: targetPage }));
   }
 
   const data = initial;
