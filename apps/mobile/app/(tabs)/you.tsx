@@ -8,10 +8,12 @@ export default function ProgressTab() {
     panel?: string;
     tracker?: string;
     provider?: string;
+    view?: string;
+    horizon?: string;
   }>();
   // Keep existing tracker callbacks and settings deep links working after the
   // Athlete destination moved out of the tab bar.
-  const { panel, tracker, provider } = params;
+  const { panel, tracker, provider, view, horizon } = params;
   useFocusEffect(
     useCallback(() => {
       if (!tracker && (!panel || panel === "progress")) return;
@@ -28,5 +30,5 @@ export default function ProgressTab() {
       });
     }, [panel, tracker, provider, router]),
   );
-  return <ProgressScreen />;
+  return <ProgressScreen initialSpace={view as any} initialHorizon={horizon as any} />;
 }
