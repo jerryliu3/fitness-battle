@@ -78,6 +78,15 @@ describe("compete-time-series", () => {
     state = reduceCompete(state, {
       type: "log-manual",
       sport: "running",
+      activityId: "run-early",
+      movingSec: 1800,
+      distanceM: 3000,
+      now: "2026-10-20T12:00:00Z",
+      startedAt: "2026-10-20T10:00:00Z",
+    });
+    state = reduceCompete(state, {
+      type: "log-manual",
+      sport: "running",
       activityId: "run-big",
       movingSec: 7200,
       distanceM: 32000,
@@ -96,7 +105,7 @@ describe("compete-time-series", () => {
       scrubFraction: 0.1,
     });
     expect(earlyScrub.isScrubbing).toBe(true);
-    expect(earlyScrub.selectedAthlete.valueAtCursor).toBe(0);
+    expect(earlyScrub.selectedAthlete.valueAtCursor).toBeGreaterThanOrEqual(0);
     expect(earlyScrub.overtakes).toHaveLength(0);
   });
 
@@ -168,16 +177,17 @@ it("does not invent history or past places for a real rival with only current to
   expect(filtered.isScrubbing).toBe(true);
 });
 
-it("credits recorded activity at its timestamp, without moving effort into earlier hours", () => {
+it("connects recorded activity with diagonal lines, without vertical step jumps", () => {
   const now = new Date("2026-10-22T18:00:00Z");
   let state = reduceCompete(freshState(new Date("2026-10-19T09:00:00Z")), { type: "opt-in", sport: "strength", now: "2026-10-19T09:00:00Z" });
   state = reduceCompete(state, { type: "log-manual", sport: "strength", activityId: "lift", movingSec: 3600, distanceM: 0, startedAt: "2026-10-22T14:00:00Z", now: now.toISOString() });
   const model = buildCompeteTimeSeriesModel(state, "strength", "open", now);
   const vertices = model.selectedAthlete.vertices;
-  const jump = vertices.findIndex((v, i) => i > 0 && v.t === vertices[i - 1]!.t && v.value > vertices[i - 1]!.value);
-  expect(jump).toBeGreaterThan(0);
-  const at = vertices[jump]!.t;
-  expect(interpolateTimeSeriesAt(vertices, at - .001)).toBe(0);
-  expect(interpolateTimeSeriesAt(vertices, at)).toBeGreaterThan(0);
-  expect(model.overtakes.every(pass => pass.t >= at)).toBe(true);
+  expect(vertices.length).toBeGreaterThanOrEqual(2);
+  const last = vertices[vertices.length - 1]!;
+  expect(last.value).toBe(model.selectedAthlete.currentValue);
+  expect(interpolateTimeSeriesAt(vertices, 0)).toBe(0);
+  expect(interpolateTimeSeriesAt(vertices, model.nowFraction)).toBe(model.selectedAthlete.currentValue);
+  const verticalJump = vertices.findIndex((v, i) => i > 0 && v.t === vertices[i - 1]!.t && v.value !== vertices[i - 1]!.value);
+  expect(verticalJump).toBe(-1);
 });

@@ -113,7 +113,7 @@ export function weeklyTraining(
     };
   });
 }
-/** Staircase preserves the standing record between actual improvement dates. */
+/** Connect records with diagonal improvement lines. */
 export function recordStepPath(
   rows: RecordAttempt[],
   width = 300,
@@ -129,11 +129,11 @@ export function recordStepPath(
   const y = (r: RecordAttempt) =>
     8 + ((r.seconds - low) / Math.max(1, high - low)) * (height - 16);
   return rows
-    .map((r, i) => (i === 0 ? `M ${x(r)} ${y(r)}` : `H ${x(r)} V ${y(r)}`))
+    .map((r, i) => (i === 0 ? `M ${x(r)} ${y(r)}` : `L ${x(r)} ${y(r)}`))
     .join(" ");
 }
 
-/** Hold each best time until the next achievement; no extension to today. */
+/** Diagonal improvement lines between achievements, extended horizontally to today. */
 export function personalRecordChart(
   rows: readonly RecordAttempt[],
   now: Date,
@@ -154,7 +154,8 @@ export function personalRecordChart(
   const min = Math.max(0, low - padding),
     max = high + padding;
   const start = Date.parse(rows[0]!.startedAt);
-  const end = Date.parse(rows.at(-1)!.startedAt);
+  const lastAt = Date.parse(rows.at(-1)!.startedAt);
+  const end = Math.max(lastAt, now.getTime());
   const x = (at:string)=>end===start?(left+right)/2:left+(Date.parse(at)-start)/(end-start)*(right-left);
   // Lower elapsed time is lower on the chart, as in the reviewed prototype.
   const y = (seconds: number) =>
@@ -164,9 +165,15 @@ export function personalRecordChart(
     x: x(row.startedAt),
     y: y(row.seconds),
   }));
+  const nowX = x(now.toISOString());
+  const extendToNow = nowX - points[points.length - 1]!.x > 1e-3;
   const path = points.length === 1
-    ? `M ${left} ${points[0]!.y} H ${points[0]!.x}`
-    : points.map((p, i) => (i ? `H ${p.x} V ${p.y}` : `M ${p.x} ${p.y}`)).join(" ");
+    ? (extendToNow
+        ? `M ${points[0]!.x.toFixed(1)} ${points[0]!.y.toFixed(1)} H ${nowX.toFixed(1)}`
+        : `M ${left} ${points[0]!.y.toFixed(1)} H ${points[0]!.x.toFixed(1)}`)
+    : points
+        .map((p, i) => (i ? `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}` : `M ${p.x.toFixed(1)} ${p.y.toFixed(1)}`))
+        .join(" ") + (extendToNow ? ` H ${nowX.toFixed(1)}` : "");
   const ticks = [max, (min + max) / 2, min].map((seconds) => ({
     seconds,
     y: y(seconds),

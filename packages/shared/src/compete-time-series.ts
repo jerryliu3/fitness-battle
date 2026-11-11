@@ -67,6 +67,8 @@ export interface CompeteTimeSeriesYTick {
   y: number;
 }
 
+export const REPLAY_MINUTES_PER_REAL_SECOND_1X = 360;
+
 export interface CompeteTimeSeriesModel {
   width: number;
   height: number;
@@ -80,6 +82,7 @@ export interface CompeteTimeSeriesModel {
   dayTicks: CompeteTimeSeriesDayTick[];
   nowFraction: number;
   nowX: number;
+  spanMs: number;
   cursorFraction: number;
   cursorX: number;
   isScrubbing: boolean;
@@ -444,6 +447,7 @@ function finalizeTimeSeriesModel(input: {
     dayTicks,
     nowFraction,
     nowX,
+    spanMs,
     cursorFraction,
     cursorX,
     isScrubbing,
@@ -505,7 +509,6 @@ function buildYouVertices(
     const delta = spec.gps ? act.distanceM / divisor : activityEffort(act);
     if (delta <= 0) continue;
     const t = clamp(0, nowFraction, (Date.parse(act.startedAt) - startMs) / spanMs);
-    vertices.push({ t, value: cumulative });
     cumulative += delta;
     vertices.push({ t, value: cumulative });
   }

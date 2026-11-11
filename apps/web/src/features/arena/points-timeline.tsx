@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { buildCompeteTimeSeriesModel, buildSleepTimeSeriesModel, competeNow, competitionTrack, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
+import { buildCompeteTimeSeriesModel, buildSleepTimeSeriesModel, competeNow, competitionTrack, REPLAY_MINUTES_PER_REAL_SECOND_1X, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
 import { AppText } from "@/ui/section";
 
 export function PointsTimeline({ state, event, fraction, onChange }: { state: CompeteState; event: CompeteEvent; fraction: number | null; onChange(value: number | null): void }) {
@@ -18,12 +18,13 @@ export function PointsTimeline({ state, event, fraction, onChange }: { state: Co
     let raf = 0;
     const start = Date.now();
     const startFraction = fractionRef.current ?? 0;
-    const totalDurationMs = 8000 / speed;
+    const spanMinutes = Math.max(1, (model.spanMs || (7 * 24 * 60 * 60 * 1000)) / 60_000);
+    const fractionPerMs = (REPLAY_MINUTES_PER_REAL_SECOND_1X * speed) / (spanMinutes * 1000);
     let lastPaint = -Infinity;
 
     const tick = () => {
       const elapsed = Date.now() - start;
-      const progress = startFraction + (elapsed / totalDurationMs) * nowFractionRef.current;
+      const progress = startFraction + elapsed * fractionPerMs;
       const nowMs = Date.now();
       if (nowMs - lastPaint >= 60 || progress >= nowFractionRef.current) {
         lastPaint = nowMs;
@@ -38,7 +39,7 @@ export function PointsTimeline({ state, event, fraction, onChange }: { state: Co
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [playing, speed, model.nowFraction]);
+  }, [playing, speed, model.nowFraction, model.spanMs]);
 
   if (!model.historyAvailable) return <AppText role="caption" secondary>Race history is not available yet.</AppText>;
 
@@ -59,6 +60,6 @@ export function PointsTimeline({ state, event, fraction, onChange }: { state: Co
         <AppText role="label">{speed}×</AppText>
       </button>
     </div>
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}><AppText role="caption" secondary>{model.cursorTimeLabel}</AppText><AppText role="caption" secondary>{model.latestTimeLabel}</AppText></div>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}><AppText role="caption" secondary>{model.cursorTimeLabel}</AppText><AppText role="caption" secondary>Now</AppText></div>
   </div>;
 }

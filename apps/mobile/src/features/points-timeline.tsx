@@ -5,6 +5,7 @@ import {
   buildSleepTimeSeriesModel,
   competeNow,
   competitionTrack,
+  REPLAY_MINUTES_PER_REAL_SECOND_1X,
   type CompeteEvent,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -57,12 +58,13 @@ export function PointsTimeline({
     let raf = 0;
     const start = Date.now();
     const startFraction = fractionRef.current ?? 0;
-    const totalDurationMs = 8000 / speed;
+    const spanMinutes = Math.max(1, (model.spanMs || (7 * 24 * 60 * 60 * 1000)) / 60_000);
+    const fractionPerMs = (REPLAY_MINUTES_PER_REAL_SECOND_1X * speed) / (spanMinutes * 1000);
     let lastPaint = -Infinity;
 
     const tick = () => {
       const elapsed = Date.now() - start;
-      const progress = startFraction + (elapsed / totalDurationMs) * nowFractionRef.current;
+      const progress = startFraction + elapsed * fractionPerMs;
       const nowMs = Date.now();
       if (nowMs - lastPaint >= 60 || progress >= nowFractionRef.current) {
         lastPaint = nowMs;
@@ -77,7 +79,7 @@ export function PointsTimeline({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [playing, speed, reduced, model.nowFraction]);
+  }, [playing, speed, reduced, model.nowFraction, model.spanMs]);
 
   const toggle = () => {
     if (!count) return;
@@ -166,7 +168,7 @@ export function PointsTimeline({
           {model.cursorTimeLabel}
         </AppText>
         <AppText role="caption" secondary style={{ flexShrink: 1, textAlign: "right" }}>
-          {model.latestTimeLabel}
+          Now
         </AppText>
       </View>
     </View>

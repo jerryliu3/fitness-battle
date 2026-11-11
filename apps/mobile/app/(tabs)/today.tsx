@@ -21,6 +21,7 @@ import { useCompeteStore } from "../../src/lib/compete-store";
 import { createThemedStyles, useThemedStyles } from "../../src/theme";
 import { FocusSheet, useFocusStyles } from "../../src/ui/focus";
 import { AppText, SectionStack } from "../../src/ui/section";
+import { AppHeader } from "../../src/ui/app-header";
 
 export default function Home() {
   const f = useFocusStyles();
@@ -70,6 +71,7 @@ export default function Home() {
 
   return (
     <SafeAreaView style={f.safe} edges={[]}>
+      <AppHeader />
       <View style={s.homeStage}>
         <ScrollView
           style={s.homeOverlayScroll}

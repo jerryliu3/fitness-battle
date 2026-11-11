@@ -66,10 +66,9 @@ export function openLineModel(
   const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE, timeZoneName: "short" });
   const date = (value: string) => dateFormatter.format(new Date(value));
   const points = rows.map((row, i) => ({ id: row.id, x: timeline ? timeX(row.date) : x(i), y: y(row.value), label: timeline?.showTime ? `${date(row.date)}, ${timeFormatter.format(new Date(row.date))}` : date(row.date), value: format(row.value) }));
-  const trace = (pts: readonly { x: number; y: number }[]) => pts.flatMap((point, i) => [
-    ...(timeline?.step && i ? [`${point.x.toFixed(1)},${pts[i - 1]!.y.toFixed(1)}`] : []),
-    `${point.x.toFixed(1)},${point.y.toFixed(1)}`,
-  ]).join(" ");
+  const trace = (pts: readonly { x: number; y: number }[]) => pts.map(point =>
+    `${point.x.toFixed(1)},${point.y.toFixed(1)}`
+  ).join(" ");
   const line = trace(points);
   const segments: string[] = [];
   let segment: typeof points = [];
@@ -177,11 +176,12 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
   const initialValue = prior ? prior.scoreAfter : (events.find(event => Date.parse(event.occurredAt) >= start.getTime())?.scoreBefore ?? current);
   rows.push({ id: "baseline", date: start.toISOString(), value: initialValue, inspectable: false });
   for (const event of events.filter(event => Date.parse(event.occurredAt) >= start.getTime())) {
-    if (!rows.length || rows.at(-1)!.value !== event.scoreBefore) rows.push({ id: `before:${event.id}`, date: new Date(Math.max(start.getTime(), Date.parse(event.occurredAt) - 1)).toISOString(), value: event.scoreBefore, breakBefore: true, inspectable: false });
-    rows.push({ id: event.id, date: event.occurredAt, value: event.scoreAfter });
+    const hasDiscontinuity = rows.length > 0 && rows.at(-1)!.value !== event.scoreBefore;
+    rows.push({ id: event.id, date: event.occurredAt, value: event.scoreAfter, breakBefore: hasDiscontinuity });
   }
-  rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: !!rows.length && rows.at(-1)!.value !== current });
-  const chart = openLineModel(rows, value => String(Math.round(value)), [], 7, { start, end, showTime: range === "week", step: true });
+  const currentDiscontinuity = rows.length > 0 && rows.at(-1)!.value !== current;
+  rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: currentDiscontinuity });
+  const chart = openLineModel(rows, value => String(Math.round(value)), [], 7, { start, end, showTime: range === "week" });
   // Unknown award times remain gaps in the data. Dashed bridges connect the
   // known readings visually without asserting an award time in that interval.
   return { ...chart, bridges: chart.segments.slice(1).map((line, index) =>

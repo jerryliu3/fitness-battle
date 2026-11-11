@@ -12,13 +12,13 @@ export function EventRegistration({ state, event, registered, error, onClaim, on
   const c = useThemeColors();
   const tint = `${COMPETE_ART_COLORS[event]}33`;
   const reduced = useReducedMotion();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(registered ? 2 : 0);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [ticketHeight, setTicketHeight] = useState(0);
   const [detailsHeight, setDetailsHeight] = useState(0);
   const rotation = useRef(new Animated.Value(registered ? 180 : 0)).current;
-  const stamp = useRef(new Animated.Value(registered ? 1 : 0)).current;
+  const stamp = useRef(new Animated.Value(0)).current;
   const entry = useRef(new Animated.Value(0)).current;
   const stepMotion = useRef(new Animated.Value(1)).current;
   const { height } = useWindowDimensions();
@@ -44,22 +44,57 @@ export function EventRegistration({ state, event, registered, error, onClaim, on
     if (error) setClaiming(false);
   }, [error]);
   useEffect(() => {
-    if (!claimed) { rotation.setValue(0); stamp.setValue(0); return; }
+    if (step !== 2 || !claimed) {
+      if (!claimed) {
+        rotation.setValue(0);
+        stamp.setValue(0);
+      }
+      return;
+    }
     stamp.setValue(0);
-    const motion = Animated.sequence([
-      Animated.timing(rotation, { toValue: 180, duration: reduced ? 0 : 600, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
-      Animated.timing(stamp, { toValue: 1, delay: reduced ? 0 : 120, duration: reduced ? 0 : 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-    ]);
+    const flipNeeded = (rotation as any)._value < 90;
+    const animations: Animated.CompositeAnimation[] = [];
+    if (flipNeeded) {
+      animations.push(
+        Animated.timing(rotation, {
+          toValue: 180,
+          duration: reduced ? 0 : 450,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      );
+    } else {
+      rotation.setValue(180);
+    }
+    animations.push(
+      Animated.sequence([
+        Animated.delay(reduced ? 0 : flipNeeded ? 100 : 150),
+        Animated.spring(stamp, {
+          toValue: 1,
+          friction: 6,
+          tension: 110,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    const motion = Animated.sequence(animations);
     motion.start();
     return () => motion.stop();
-  }, [claimed, reduced, rotation, stamp]);
-  const face = (back: boolean) => <Animated.View pointerEvents={back === claimed ? "auto" : "none"} accessibilityElementsHidden={back !== claimed} onLayout={e => setTicketHeight(value => Math.max(value, e.nativeEvent.layout.height))} style={{ position: "absolute", top: 0, left: 0, right: 0, borderRadius: 24, backgroundColor: tint, overflow: "hidden", backfaceVisibility: "hidden", transform: [{ perspective: 1200 }, { rotateY: rotation.interpolate({ inputRange: [0, 180], outputRange: back ? ["180deg", "360deg"] : ["0deg", "180deg"] }) }] }}>
+  }, [step, claimed, reduced, rotation, stamp]);
+  const frontOpacity = rotation.interpolate({ inputRange: [0, 89, 90, 180], outputRange: [1, 1, 0, 0] });
+  const backOpacity = rotation.interpolate({ inputRange: [0, 90, 91, 180], outputRange: [0, 0, 1, 1] });
+  const face = (back: boolean) => <Animated.View pointerEvents={back === claimed ? "auto" : "none"} accessibilityElementsHidden={back !== claimed} onLayout={e => setTicketHeight(value => Math.max(value, e.nativeEvent.layout.height))} style={{ position: "absolute", top: 0, left: 0, right: 0, borderRadius: 24, backgroundColor: tint, overflow: "hidden", backfaceVisibility: "hidden", opacity: back ? backOpacity : frontOpacity, transform: [{ perspective: 1200 }, { rotateY: rotation.interpolate({ inputRange: [0, 180], outputRange: back ? ["180deg", "360deg"] : ["0deg", "180deg"] }) }] }}>
       {!back && <View style={{ minHeight: 90, padding: 24, gap: 20, backgroundColor: c.ink }}><EventArt event={event} feature /><View style={{ padding: 10, borderRadius: 16, alignSelf: "flex-start", backgroundColor: c.card }}><CompeteIcon name={event} size={32} /></View></View>}
       <View style={{ padding: 20, gap: 12, minHeight: 0 }}>
         {back ? <>
           <AppText role="display" accessibilityRole="header">You’re on the start list.</AppText>
           <View style={{ gap: 6 }}><AppText role="caption" secondary>YOUR WAVE STARTS IN</AppText>{step === 2 ? <WaveCountdown start={detail.start} now={now} prominent /> : <AppText role="display">00:00:00</AppText>}</View>
-          <Animated.View accessibilityLabel={`${detail.name}, ${detail.dateRange}, ${detail.stampYear}`} style={{ alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderWidth: 2, borderRadius: 10, borderColor: c.ink, opacity: stamp, transform: [{ rotate: "-5deg" }, { scale: stamp.interpolate({ inputRange: [0, 1], outputRange: [1.8, 1] }) }] }}><CompeteIcon name={event} size={30} /><View style={{ flexShrink: 1, gap: 4 }}><AppText role="label">{detail.name}</AppText><AppText role="caption">{detail.dateRange} · {detail.stampYear}</AppText></View></Animated.View>
+          <View style={{ transform: [{ rotate: "-5deg" }], alignSelf: "flex-start" }}>
+            <Animated.View accessibilityLabel={`${detail.name}, ${detail.dateRange}, ${detail.stampYear}`} style={{ flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderWidth: 2, borderRadius: 10, borderColor: c.ink, opacity: stamp.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 1, 1] }), transform: [{ scale: stamp.interpolate({ inputRange: [0, 1], outputRange: [2.2, 1] }) }] }}>
+              <CompeteIcon name={event} size={30} />
+              <View style={{ flexShrink: 1, gap: 4 }}><AppText role="label">{detail.name}</AppText><AppText role="caption">{detail.dateRange} · {detail.stampYear}</AppText></View>
+            </Animated.View>
+          </View>
         </> : <>
           <AppText role="heading" accessibilityRole="header">{detail.name} Meet</AppText><AppText role="label">{detail.details[2]!.summary} league</AppText>
           <AppText role="label">Starts {detail.starts}</AppText>
@@ -81,8 +116,11 @@ export function EventRegistration({ state, event, registered, error, onClaim, on
       {expanded === i && <AppText role="caption" secondary>{item.detail}</AppText>}
     </Pressable>)}</View>
     </>}
-    <View pointerEvents={step === 2 ? "auto" : "none"} accessibilityElementsHidden={step !== 2} importantForAccessibility={step === 2 ? "auto" : "no-hide-descendants"} style={step === 2 ? { height: ticketHeight } : { position: "absolute", top: 0, left: 0, right: 0, opacity: 0 }}>{face(false)}{face(true)}</View>
+    <View pointerEvents={step === 2 ? "auto" : "none"} accessibilityElementsHidden={step !== 2} importantForAccessibility={step === 2 ? "auto" : "no-hide-descendants"} style={step === 2 ? { minHeight: 280, height: ticketHeight || undefined } : { position: "absolute", top: 0, left: 0, right: 0, opacity: 0 }}>{face(false)}{face(true)}</View>
     </Animated.View>
+    {step < 2 && <FocusButton label="Continue" onPress={nextStep} />}
+    {error && <AppText role="caption" accessibilityLiveRegion="polite">{error}</AppText>}
+  </View>;
     {step < 2 && <FocusButton label="Continue" onPress={nextStep} />}
     {error && <AppText role="caption" accessibilityLiveRegion="polite">{error}</AppText>}
   </View>;
