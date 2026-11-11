@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { raceQuery, raceClock, raceEditionOptions, raceEditionChart, raceEventGroups, raceFasterThan, racePercentileTier, type RaceEditionAnalytics, type RaceCoverage, type RaceResultReport } from "./race-rankings";
+import { raceQuery, raceClock, raceEditionOptions, raceEditionChart, raceEventGroups, raceFasterThan, racePercentileTier, racePercentileBadge, type RaceEditionAnalytics, type RaceCoverage, type RaceResultReport } from "./race-rankings";
 describe("public race query", () => {
   it("rejects invalid scopes and bounds input", () => {
     expect(raceQuery(new URLSearchParams("sex=invalid&year=1&page=Infinity"))).toMatchObject({ sex: "all", year: null, page: 1, query: "", timeframe:"all",dateError:null, percentile: "all" });
@@ -94,6 +94,17 @@ describe("racePercentileTier", () => {
     expect(racePercentileTier(78.0)?.label).toBe("Top 25%");
     expect(racePercentileTier(55.0)?.label).toBe("Top 50%");
     expect(racePercentileTier(40.0)).toBeNull();
+  });
+});
+
+describe("racePercentileBadge", () => {
+  it("formats top tiers and lower percentiles consistently", () => {
+    expect(racePercentileBadge(99.4)).toBe("Top 1%");
+    expect(racePercentileBadge(95.0)).toBe("Top 5%");
+    expect(racePercentileBadge(90.1)).toBe("Top 10%");
+    expect(racePercentileBadge(75.0)).toBe("Top 25%");
+    expect(racePercentileBadge(50.0)).toBe("Top 50%");
+    expect(racePercentileBadge(42.3)).toBe("42%");
   });
 });
 

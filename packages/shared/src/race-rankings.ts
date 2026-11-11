@@ -134,6 +134,11 @@ export function racePercentileTier(percentile: number): { label: string; topLabe
   return null;
 }
 
+export function racePercentileBadge(percentile: number): string {
+  const tier = racePercentileTier(percentile);
+  return tier ? tier.label : `${percentile.toFixed(0)}%`;
+}
+
 /** Race dates are calendar dates. Rolling boundaries use the server UTC date. */
 export function raceDateBounds(query: ReturnType<typeof raceQuery>, now = new Date()) {
   if (query.dateError) throw new Error(query.dateError);

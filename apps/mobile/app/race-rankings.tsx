@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, ScrollView, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { RACE_DISTANCES, RACE_PERCENTILE_FILTERS, RACE_TIMEFRAMES, raceQuery, raceEditionOptions, raceWindowCaption, raceClock, type RaceCoverage, type RaceResult, type RaceResultsPage } from "@fitness-battle/shared";
+import { RACE_DISTANCES, RACE_PERCENTILE_FILTERS, RACE_TIMEFRAMES, raceQuery, raceEditionOptions, raceWindowCaption, raceClock, racePercentileBadge, type RaceCoverage, type RaceResult, type RaceResultsPage } from "@fitness-battle/shared";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { useFocusStyles, FocusButton } from "../src/ui/focus";
 import { AppText } from "../src/ui/section";
@@ -101,7 +101,7 @@ export default function RaceRankings() {
       renderItem={({item}) => <Pressable accessibilityRole="button" onPress={() => router.push({pathname:"/race-result",params:{id:String(item.id)}})} style={[f.row, { alignItems:"flex-start", paddingVertical:16 }]}>
         <AppText role="caption" secondary>{item.place.toLocaleString()}</AppText>
         <View style={f.grow}><AppText role="label">{item.athlete_name}</AppText><AppText role="caption" secondary>{item.event_name} · {item.edition_year}</AppText></View>
-        <View style={{alignItems:"flex-end"}}><AppText role="label" style={{fontVariant:["tabular-nums"]}}>{raceClock(item.rank_time_ms)}</AppText><AppText role="caption" secondary>{item.percentile != null ? (item.percentile >= 99 ? "Top 1%" : item.percentile >= 95 ? "Top 5%" : item.percentile >= 90 ? "Top 10%" : item.percentile >= 75 ? "Top 25%" : item.percentile >= 50 ? "Top 50%" : `${item.percentile.toFixed(0)}%`) : (item.rank_clock === "chip" ? "Chip" : "Official")}</AppText></View>
+        <View style={{alignItems:"flex-end"}}><AppText role="label" style={{fontVariant:["tabular-nums"]}}>{raceClock(item.rank_time_ms)}</AppText><AppText role="caption" secondary>{item.percentile != null ? racePercentileBadge(item.percentile) : (item.rank_clock === "chip" ? "Chip" : "Official")}</AppText></View>
       </Pressable>}
       ListEmptyComponent={!busy && !error && !!data ? <AppText role="body" secondary>No results in this field. Try another name, year or category.</AppText> : undefined}
       ListFooterComponent={data && data.total > 0 ? <View style={{gap:12,marginTop:20}}><AppText role="caption" secondary>Page {data.page} of {Math.ceil(data.total / data.pageSize).toLocaleString()}</AppText><View style={f.chipRow}>{data.page > 1 && <FocusButton label="Previous" secondary onPress={() => setPage(data.page - 1)} />}{data.page * data.pageSize < data.total && <FocusButton label="Next" secondary onPress={() => setPage(data.page + 1)} />}</View></View> : undefined}
