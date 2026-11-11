@@ -7,7 +7,7 @@ import { ChartScrubber } from "./chart-scrubber";
 import { ChartSvg, ChartText } from "./chart-text";
 import { AppText, textStyle } from "./section";
 
-export function BenchmarkChart({ buckets, now, dateLabel, hideSummary = false }: { buckets: TrainingBucket[]; now: Date; dateLabel: string; hideSummary?: boolean }) {
+export function BenchmarkChart({ buckets, now, dateLabel, hideSummary = false, onSelectionChange }: { buckets: TrainingBucket[]; now: Date; dateLabel: string; hideSummary?: boolean; onSelectionChange?: (point: { id: string; label: string; value: string } | undefined) => void }) {
 const c=useThemeColors();
 const s=useThemedStyles(sThemes);
 
@@ -16,7 +16,7 @@ const s=useThemedStyles(sThemes);
   const total = buckets.reduce((sum, bucket) => sum + bucket.movingSec, 0);
   const tickStep = buckets.length > 7 ? Math.ceil(buckets.length / 4) : 1;
   return <ChartScrubber points={chart.points} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} label={`Training hours, ${dateLabel}`}
-    onSelectionChange={point => setSelected(point?.id ?? null)}
+    onSelectionChange={point => { setSelected(point?.id ?? null); onSelectionChange?.(point); }}
     hideSummary={hideSummary}
     renderSummary={hideSummary ? undefined : point => <View style={s.reading}><AppText role="caption" secondary>{point?.label ?? "Active time"}</AppText><Text style={s.value}>{point?.value ?? (total / 3600).toFixed(1)}<Text style={s.unit}> hrs</Text></Text></View>}>
     <ChartSvg width="100%" height={chart.height} viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" accessible={false}>

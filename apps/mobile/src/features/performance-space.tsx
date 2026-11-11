@@ -1,47 +1,47 @@
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
-import { useFocusStyles, FocusSegments, FocusSheet } from "../ui/focus";
+import { FocusSegments, FocusSheet } from "../ui/focus";
 import { AppText, StatusBadge } from "../ui/section";
 import { OpenLineChart } from "../ui/open-line-chart";
 import { BenchmarkChart } from "../ui/benchmark-chart";
 import { ActivityRoute } from "../ui/activity-route";
 import { ChartSvg, ChartText } from "../ui/chart-text";
+import { ChartScrubber } from "../ui/chart-scrubber";
 import { useScoreTrackLens } from "../lib/score-track-lens";
 import { useAuth } from "../lib/auth";
-import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import Svg, { Rect, G, Line, Path, Circle } from "react-native-svg";
+import { G, Line, Path, Circle } from "react-native-svg";
 import {
   APP_TIMEZONE,
   RECORD_DISTANCES,
-  buildAnalyticsLabModel,
-  clubLifetimeTotals,
+  activityEffort,
   competeNow,
-  countsOnTrack,
   defaultTrainingSports,
   distanceUnitLabel,
+  effortScoreComparison,
   effortScoreLine,
   formatClockTime,
   formatDistanceM,
+  formatEffort,
   personalRecordChart,
   personalRecordHistory,
-  shiftAppDay,
   sportById,
   trainingBuckets,
-  weeklyPeriodBounds,
+  trainingComparison,
   type Activity,
+  type ChartDatum,
   type CompeteState,
-  type OpenLineRange,
+  type EffortHistoryRange,
   type RecordAttempt,
   type ScoreTrack,
   type SportId,
   type TrainingRange,
 } from "@fitness-battle/shared";
 
-const EFFORT_RANGES: readonly { value: OpenLineRange; label: string }[] = [
-  { value: "fourWeeks", label: "1M" },
-  { value: "twelveWeeks", label: "3M" },
-  { value: "twentyFourWeeks", label: "6M" },
+const EFFORT_RANGES: readonly { value: EffortHistoryRange; label: string }[] = [
+  { value: "fourWeeks", label: "4W" },
+  { value: "twelveWeeks", label: "12W" },
+  { value: "twentyFourWeeks", label: "24W" },
   { value: "year", label: "1Y" },
 ];
 
@@ -53,19 +53,17 @@ const VOLUME_RANGES: readonly { value: TrainingRange; label: string }[] = [
 
 export function PerformanceSpace({
   state,
-  signedOut = false,
+  signedOut: _signedOut = false,
 }: {
   state: CompeteState;
   signedOut?: boolean;
 }) {
   const c = useThemeColors();
-  const f = useFocusStyles();
   const s = useThemedStyles(sThemes);
-  const router = useRouter();
   const { user } = useAuth();
   const [defaultTrack] = useScoreTrackLens();
 
-  const [effortRange, setEffortRange] = useState<OpenLineRange>("fourWeeks");
+  const [effortRange, setEffortRange] = useState<EffortHistoryRange>("fourWeeks");
   const [volumeRange, setVolumeRange] = useState<TrainingRange>("week");
   const [selectedSport, setSelectedSport] = useState<SportId | "all">("all");
 
@@ -73,6 +71,8 @@ export function PerformanceSpace({
   const [selectedPRKey, setSelectedPRKey] = useState<string>("running:5k");
   const [inspectedPRAttempt, setInspectedPRAttempt] = useState<RecordAttempt | null>(null);
   const [inspectedActivity, setInspectedActivity] = useState<Activity | null>(null);
+  const [inspectedEffort, setInspectedEffort] = useState<ChartDatum | undefined>();
+  const [inspectedVolume, setInspectedVolume] = useState<{ label: string; value: string } | undefined>();
 
   const now = useMemo(() => competeNow(state), [state]);
   const scope = `${user?.id}:${state.primary}`;
@@ -95,9 +95,13 @@ export function PerformanceSpace({
     [state.activities, sportsFilter, volumeRange, now],
   );
 
-  const analyticsModel = useMemo(
-    () => buildAnalyticsLabModel(state, "30d"),
-    [state],
+  const scoreComparison = useMemo(
+    () => effortScoreComparison(state, track, effortRange, now),
+    [state, track, effortRange, now],
+  );
+  const volumeComparison = useMemo(
+    () => trainingComparison(state.activities, sportsFilter, volumeRange, now, now),
+    [state.activities, sportsFilter, volumeRange, now],
   );
 
   // PR Records & Distances
@@ -169,18 +173,9 @@ export function PerformanceSpace({
     });
   };
 
-  // Dynamic athletic insight
-  const insightText = useMemo(() => {
-    const acwr = analyticsModel.load.acwrCurrent;
-    const efDelta = analyticsModel.performance.efDeltaPct;
-    if (acwr >= 0.8 && acwr <= 1.3) {
-      return `Effort is ${efDelta >= 0 ? "up" : "steady"} with training load in an optimal, progressive adaptation zone.`;
-    }
-    if (acwr > 1.3) {
-      return "Workload ratio is elevated. Maintain consistent aerobic base and prioritize recovery between intense efforts.";
-    }
-    return "Training load is light. Build consistency with steady base sessions to drive long-term adaptation.";
-  }, [analyticsModel]);
+  const insightText = volumeComparison.percent == null
+    ? null
+    : volumeComparison.label;
 
   return (
     <View style={s.container}>
@@ -193,41 +188,42 @@ export function PerformanceSpace({
             </AppText>
             <View style={s.valueRow}>
               <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
-                {effortChart.value}
+                {inspectedEffort?.value ?? effortChart.value}
               </AppText>
-              <View style={s.trendPill}>
-                <AppText role="caption" style={{ color: c.tennis, fontWeight: "700" }}>
-                  ↑ +8%
-                </AppText>
-              </View>
+              {scoreComparison && !inspectedEffort && (
+                <View style={s.trendPill}>
+                  <AppText role="caption" style={{ color: c.tennis, fontWeight: "700" }}>
+                    {scoreComparison.pct > 0 ? "↑ " : scoreComparison.pct < 0 ? "↓ " : ""}
+                    {scoreComparison.pct > 0 ? "+" : ""}
+                    {scoreComparison.pct.toFixed(0)}%
+                  </AppText>
+                </View>
+              )}
             </View>
-            <AppText role="caption" secondary>vs. prior 30d</AppText>
+            <AppText role="caption" secondary>
+              {inspectedEffort?.label
+                ?? (scoreComparison
+                  ? `vs. start of ${EFFORT_RANGES.find(r => r.value === effortRange)?.label ?? "range"}`
+                  : "No prior score in this range")}
+            </AppText>
           </View>
         </View>
 
-        {/* Track selector beside date range picker */}
-        <View style={s.chartControlsRow}>
-          <View style={{ width: 126 }}>
-            <FocusSegments
-              label="Effort track"
-              value={track}
-              options={[
-                { value: "open", label: "Open" },
-                { value: "verified", label: "GPS" },
-              ]}
-              onChange={(nextTrack) => setLens({ scope, track: nextTrack })}
-            />
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <FocusSegments
-              label="Effort time range"
-              value={effortRange}
-              options={EFFORT_RANGES}
-              onChange={setEffortRange}
-            />
-          </View>
-        </View>
+        <FocusSegments
+          label="Effort track"
+          value={track}
+          options={[
+            { value: "open", label: "Open" },
+            { value: "verified", label: "GPS" },
+          ]}
+          onChange={(nextTrack) => setLens({ scope, track: nextTrack })}
+        />
+        <FocusSegments
+          label="Effort time range"
+          value={effortRange}
+          options={EFFORT_RANGES}
+          onChange={(next) => { setEffortRange(next); setInspectedEffort(undefined); }}
+        />
 
         <View style={s.chartBody}>
           <OpenLineChart
@@ -241,6 +237,7 @@ export function PerformanceSpace({
             onRangeChange={setEffortRange}
             hideSummary={true}
             hideRangeToggle={true}
+            onSelectionChange={setInspectedEffort}
           />
         </View>
       </View>
@@ -252,24 +249,24 @@ export function PerformanceSpace({
             <AppText role="caption" secondary>Training Volume</AppText>
             <View style={s.valueRow}>
               <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
-                {(volumeBuckets.reduce((sum, b) => sum + b.movingSec, 0) / 3600).toFixed(1)}
+                {inspectedVolume?.value ?? (volumeBuckets.reduce((sum, b) => sum + b.movingSec, 0) / 3600).toFixed(1)}
               </AppText>
               <AppText role="value" secondary style={{ alignSelf: "flex-end", marginBottom: 4 }}>
                 hrs
               </AppText>
             </View>
             <AppText role="caption" secondary>
-              {volumeRange === "week" ? "this week" : volumeRange === "month" ? "this month" : "this year"}
+              {inspectedVolume?.label
+                ?? (volumeRange === "week" ? "this week" : volumeRange === "month" ? "this month" : "this year")}
             </AppText>
           </View>
-
-          <FocusSegments
-            label="Volume time range"
-            value={volumeRange}
-            options={VOLUME_RANGES}
-            onChange={setVolumeRange}
-          />
         </View>
+        <FocusSegments
+          label="Volume time range"
+          value={volumeRange}
+          options={VOLUME_RANGES}
+          onChange={(next) => { setVolumeRange(next); setInspectedVolume(undefined); }}
+        />
 
         {/* Sport selector chips */}
         <View style={s.sportChipRow}>
@@ -302,6 +299,7 @@ export function PerformanceSpace({
             now={now}
             dateLabel={volumeRange}
             hideSummary={true}
+            onSelectionChange={setInspectedVolume}
           />
         </View>
       </View>
@@ -380,6 +378,27 @@ export function PerformanceSpace({
               {/* Interactive PR Progression Chart */}
               {prChartData && (
                 <View style={{ marginVertical: 8 }}>
+                  <ChartScrubber
+                    points={prChartData.points.map((p) => ({
+                      id: p.activityId,
+                      x: p.x,
+                      y: p.y,
+                      label: formatActivityDate(p.startedAt),
+                      value: formatClockTime(p.seconds),
+                    }))}
+                    width={prChartData.width}
+                    height={prChartData.height}
+                    plotTop={prChartData.top}
+                    plotBottom={prChartData.bottom}
+                    label="Personal record progression"
+                    selectedPointId={inspectedPRAttempt?.activityId}
+                    hideSummary
+                    onSelect={(id) => {
+                      setInspectedPRAttempt(
+                        activeDistanceRows.find((r) => r.activityId === id) ?? null,
+                      );
+                    }}
+                  >
                   <ChartSvg
                     width="100%"
                     height={160}
@@ -460,20 +479,15 @@ export function PerformanceSpace({
                           key={p.activityId}
                           cx={p.x}
                           cy={p.y}
-                          r={isInspected ? 7 : 4.5}
+                          r={isInspected ? 8 : 7}
                           fill={isInspected ? c.tennis : c.card}
                           stroke={c.tennis}
                           strokeWidth={2.5}
-                          onPress={() => {
-                            const attempt = activeDistanceRows.find(
-                              (r) => r.activityId === p.activityId,
-                            );
-                            setInspectedPRAttempt(attempt ?? null);
-                          }}
                         />
                       );
                     })}
                   </ChartSvg>
+                  </ChartScrubber>
 
                   <AppText role="caption" secondary style={{ textAlign: "center", marginTop: 4 }}>
                     Tap any point along the progression curve to inspect that attempt
@@ -497,6 +511,7 @@ export function PerformanceSpace({
                       </StatusBadge>
                     </View>
                   </View>
+                  {state.activities.some((a) => a.id === inspectedPRAttempt.activityId) ? (
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel="View workout session"
@@ -512,6 +527,7 @@ export function PerformanceSpace({
                       View activity
                     </AppText>
                   </Pressable>
+                  ) : null}
                 </View>
               )}
             </View>
@@ -524,7 +540,7 @@ export function PerformanceSpace({
       </View>
       ) : null}
 
-      {/* 4. Key Athletic Insight Card */}
+      {insightText ? (
       <View style={s.insightCard}>
         <View style={s.insightIcon}>
           <AppText role="value" style={{ color: c.tennis }}>✦</AppText>
@@ -536,12 +552,13 @@ export function PerformanceSpace({
           </AppText>
         </View>
       </View>
+      ) : null}
 
       {/* Inspect Activity Modal from PR attempt */}
       {inspectedActivity && (
         <FocusSheet
           open={!!inspectedActivity}
-          title={inspectedActivity.title || sportById(inspectedActivity.sport).name}
+          title={sportById(inspectedActivity.sport).name}
           onClose={() => setInspectedActivity(null)}
         >
           <View style={{ gap: 16, paddingVertical: 12 }}>
@@ -563,7 +580,7 @@ export function PerformanceSpace({
               <View style={{ gap: 2 }}>
                 <AppText role="caption" secondary>Effort Earned</AppText>
                 <AppText role="value" style={{ color: c.tennis, fontVariant: ["tabular-nums"] }}>
-                  {inspectedActivity.effortScore ?? Math.round(inspectedActivity.movingSec / 60)} pts
+                  {formatEffort(activityEffort(inspectedActivity))} pts
                 </AppText>
               </View>
             </View>
