@@ -51,6 +51,11 @@ begin
       page->'rows'->0->>'percentile', page->'rows'->1->>'percentile';
   end if;
 
+  -- Ensure internal calculation columns are not leaked into the public response rows
+  if (page->'rows'->0 ? 'raw_percentile') or (page->'rows'->0 ? 'slower_count') then
+    raise exception 'Internal calculation columns leaked into public payload: %', page->'rows'->0;
+  end if;
+
   -- Trailing runner has 0 slower runners (0.0%)
   if (page->'rows'->2->>'percentile')::numeric <> 0.0 then
     raise exception 'Trailing runner percentile failed: expected 0.0, got %', page->'rows'->2->>'percentile';

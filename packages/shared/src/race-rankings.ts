@@ -162,8 +162,8 @@ export function raceWindowCaption(page: RaceResultsPage) {
 }
 
 export function racePercentLabel(value: number) {
-  if (value > 0 && value < 0.1) return "<0.1%";
-  if (value > 99.9 && value < 100) return ">99.9%";
+  if (value < 0.1) return "<0.1%";
+  if (value > 99.9) return ">99.9%";
   return `${value.toFixed(1)}%`;
 }
 
