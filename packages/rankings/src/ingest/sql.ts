@@ -9,8 +9,6 @@ export type EditionImportOptions = {
     distanceSlug?: string;
     categoryKeys?: string[];
     externalResultIdPrefix?: string;
-    sourceUrlPattern?: string;
-    sourceUrlRegex?: string;
   };
 };
 
@@ -230,13 +228,6 @@ begin
     ${
       options?.populationScope?.externalResultIdPrefix
         ? `and sr.external_result_id like ${quote(`${options.populationScope.externalResultIdPrefix}%`)}`
-        : ""
-    }
-    ${
-      options?.populationScope?.sourceUrlRegex
-        ? `and p.source_url ~ ${quote(options.populationScope.sourceUrlRegex)}`
-        : options?.populationScope?.sourceUrlPattern
-        ? `and p.source_url like ${quote(options.populationScope.sourceUrlPattern)}`
         : ""
     }
     and sr.last_ingestion_run_id <> v_run

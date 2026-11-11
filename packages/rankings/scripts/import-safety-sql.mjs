@@ -76,7 +76,7 @@ const editionSet100 = {
   sourceUrl: "https://example.com/rs",
   results: [
     {
-      externalResultId: "rs-100-1",
+      externalResultId: "100:1",
       athleteName: "Set 100 Runner",
       normalizedName: "set 100 runner",
       normalizedBib: "100",
@@ -98,7 +98,7 @@ const editionSet10And100 = {
   results: [
     ...editionSet100.results,
     {
-      externalResultId: "rs-10-1",
+      externalResultId: "10:1",
       athleteName: "Set 10 Runner",
       normalizedName: "set 10 runner",
       normalizedBib: "10",
@@ -118,7 +118,7 @@ const correctedSet10 = {
   results: [
     editionSet100.results[0],
     {
-      externalResultId: "rs-10-2",
+      externalResultId: "10:2",
       athleteName: "Set 10 New Runner",
       normalizedName: "set 10 new runner",
       normalizedBib: "12",
@@ -548,7 +548,7 @@ begin
   end if;
 end $safety$;
 
--- 13. RunSignup reconciliation with sourceUrlRegex does not unpublish other result sets (e.g. set 10 vs set 100)
+-- 13. RunSignup reconciliation with externalResultIdPrefix does not unpublish other result sets (e.g. set 10 vs set 100)
 ${editionImportSql(editionSet10And100, snapshot)}
 
 do $safety$
@@ -565,43 +565,43 @@ ${editionImportSql(correctedSet10, snapshot, {
   allowCorrection: true,
   populationScope: {
     distanceSlug: "10k",
-    sourceUrlRegex: `[?&]individual_result_set_id=10(&|$)`,
+    externalResultIdPrefix: "10:",
   },
 })}
 
 do $safety$
 begin
-  -- Set 10 old runner rs-10-1 was replaced by rs-10-2, so rs-10-1 must be unpublished
+  -- Set 10 old runner 10:1 was replaced by 10:2, so 10:1 must be unpublished
   if not exists (
     select 1 from public.performances p
     join public.source_records sr on sr.id = p.source_record_id
     join public.sources s on s.id = sr.source_id
     where s.slug = ${quote(`${slug}_rs`)}
-      and sr.external_result_id = 'rs-10-1'
+      and sr.external_result_id = '10:1'
       and p.unpublished and p.correction_removed
   ) then
     raise exception 'Missing set 10 runner failed to reconcile';
   end if;
 
-  -- Set 10 new runner rs-10-2 must be published
+  -- Set 10 new runner 10:2 must be published
   if not exists (
     select 1 from public.performances p
     join public.source_records sr on sr.id = p.source_record_id
     join public.sources s on s.id = sr.source_id
     where s.slug = ${quote(`${slug}_rs`)}
-      and sr.external_result_id = 'rs-10-2'
+      and sr.external_result_id = '10:2'
       and not p.unpublished
   ) then
     raise exception 'New set 10 runner not published';
   end if;
 
-  -- Set 100 runner rs-100-1 MUST REMAIN PUBLISHED (NOT unseated by set 10 correction!)
+  -- Set 100 runner 100:1 MUST REMAIN PUBLISHED (NOT unseated by set 10 correction!)
   if not exists (
     select 1 from public.performances p
     join public.source_records sr on sr.id = p.source_record_id
     join public.sources s on s.id = sr.source_id
     where s.slug = ${quote(`${slug}_rs`)}
-      and sr.external_result_id = 'rs-100-1'
+      and sr.external_result_id = '100:1'
       and not p.unpublished
   ) then
     raise exception 'Set 100 runner was mistakenly unpublished by set 10 correction!';
@@ -618,7 +618,7 @@ begin
   join public.sources s on s.id = sr.source_id
   where sr.id = p.source_record_id
     and s.slug = ${quote(`${slug}_rs`)}
-    and sr.external_result_id = 'rs-100-1';
+    and sr.external_result_id = '100:1';
 end $safety$;
 
 -- Re-import the exact row with evidence
@@ -631,7 +631,7 @@ begin
     join public.source_records sr on sr.id = p.source_record_id
     join public.sources s on s.id = sr.source_id
     where s.slug = ${quote(`${slug}_rs`)}
-      and sr.external_result_id = 'rs-100-1'
+      and sr.external_result_id = '100:1'
       and p.unpublished and p.privacy_suppressed
   ) then
     raise exception 'Pre-existing privacy suppression was cleared by re-import!';
