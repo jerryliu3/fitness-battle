@@ -194,8 +194,8 @@ export function HealthLabSpace({
           <AppText role="value" style={{ color: c.tennis }}>✦</AppText>
         </View>
         <View style={{ flex: 1, gap: 4 }}>
-          <AppText role="label" style={{ fontWeight: "700" }}>Health Insight</AppText>
-          <AppText role="body" secondary style={{ lineHeight: 20 }}>
+          <AppText role="label">Health Insight</AppText>
+          <AppText role="body" secondary>
             {healthInsight}
           </AppText>
         </View>
