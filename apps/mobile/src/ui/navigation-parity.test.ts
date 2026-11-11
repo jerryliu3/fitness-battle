@@ -39,7 +39,7 @@ vi.mock("../lib/compete-store", () => ({
 vi.mock("../features/progress-screen", () => ({
   ProgressScreen: "ProgressScreen",
 }));
-vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path" }));
+vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path", Circle: "Circle", Defs: "Defs", RadialGradient: "RadialGradient", Stop: "Stop" }));
 vi.mock("../features/effort-rail",()=>({EffortRail:"EffortRail"}));
 import ProgressTab from "../../app/(tabs)/you";
 import { AppHeader } from "./app-header";
@@ -101,14 +101,15 @@ describe("mobile navigation parity", () => {
 
  it("groups the profile, effort and streak as separate accessible controls before Debug", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  mock.state = freshState();
-  mock.state.avatarUrl = "https://example.com/athlete.jpg";
+  const state = freshState();
+  state.avatarUrl = "https://example.com/athlete.jpg";
+  mock.state = state;
   await act(async () => { renderer = create(createElement(AppHeader)); });
   const group = renderer.root.findByProps({ testID: "athlete-header-group" });
   expect(group.findAllByType("Pressable" as never)).toHaveLength(1);
   expect(group.findByType("EffortRail" as never).props.compact).toBe(true);
   expect(group.findAllByType("AppIcon" as never).some(node => node.props.name === "flame")).toBe(true);
-  expect(group.findByType("Image" as never).props.source.uri).toBe(mock.state.avatarUrl);
+  expect(group.findAllByType("Image" as never).some(node => node.props.source?.uri === state.avatarUrl)).toBe(true);
   expect(group.findAllByProps({ accessibilityLabel: "Debug event triggers" })).toHaveLength(0);
   const buttons = renderer.root.findAllByType("Pressable" as never);
   expect(buttons[0]!.props.accessibilityLabel).toBe("Open athlete settings");

@@ -25,9 +25,22 @@ vi.mock("react-native-svg", () => ({
   Text: "SvgText",
   Defs: "SvgDefs",
   LinearGradient: "SvgLinearGradient",
+  RadialGradient: "SvgRadialGradient",
   Stop: "SvgStop",
   ClipPath: "SvgClipPath",
   Mask: "SvgMask",
   Pattern: "SvgPattern",
+  Polygon: "SvgPolygon",
   Image: "SvgImage",
 }));
+
+// Rank art is required() as PNG. Stub image extensions when Vite does not rewrite them.
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const Module = require("node:module");
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+if (Module && Module._extensions) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Module._extensions[".png"] = (m: any) => { m.exports = 1; };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Module._extensions[".jpg"] = (m: any) => { m.exports = 1; };
+}

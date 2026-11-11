@@ -32,6 +32,7 @@ vi.mock("../ui/field-view-switcher", () => ({
 }));
 vi.mock("../ui/field-ground-switcher", () => ({ FieldGroundSwitcher: "FieldGroundSwitcher" }));
 vi.mock("../ui/user-avatar", () => ({ UserAvatar: "UserAvatar" }));
+vi.mock("../ui/rank-symbol", () => ({ RankAvatar: "RankAvatar", RankSymbol: "RankSymbol" }));
 vi.mock("../ui/section", () => ({ AppText: "AppText", textStyle: () => ({}) }));
 vi.mock("../ui/rank-badge", () => ({ RankBadge: "RankBadge" }));
 vi.mock("../ui/use-field-flight", () => ({ useFieldFlight: () => ({ cancel() {}, fly: mocks.fly }) }));

@@ -1,5 +1,6 @@
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { UserAvatar } from "./user-avatar";
+import { RankAvatar } from "./rank-symbol";
 import { textStyle } from "./section";
 import { useBootImage } from "./boot-readiness";
 import { EffortRail } from "../features/effort-rail";
@@ -9,7 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppIcon } from "./app-icon";
-import { hasCountedActivityToday, weeklyActivityStreak, competeNow, DEBUG_EVENT_OPTIONS, type DebugEventId } from "@fitness-battle/shared";
+import { hasCountedActivityToday, weeklyActivityStreak, competeNow, effectiveRankSymbol, DEBUG_EVENT_OPTIONS, type DebugEventId } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
 import { isAthleteSettingsPath } from "../lib/navigation";
 
@@ -46,7 +47,14 @@ const s=useThemedStyles(sThemes);
             onPress={() => router.navigate("/athlete")}
             style={[s.profile, onAthlete && s.selected]}
           >
-            <UserAvatar src={state?.avatarUrl} name={state?.name ?? "Athlete"} size={36} fallback={<AppIcon name="person" size={22} color={c.muted} />} onLoadEnd={imageSettled} />
+            <RankAvatar
+              rank={effectiveRankSymbol(state)}
+              src={state?.avatarUrl}
+              name={state?.name ?? "Athlete"}
+              size={52}
+              fallback={<AppIcon name="person" size={20} color={c.muted} />}
+              onLoadEnd={imageSettled}
+            />
           </Pressable>
           <View style={s.effort}><EffortRail compact /></View>
           {streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.activeToday ? ", active today" : ", inactive today"}`} style={s.streak}>
@@ -112,14 +120,12 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
     width: 44,
     height: 44,
     flexShrink: 0,
-    borderRadius: 22,
-    backgroundColor: c.card,
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
-    borderWidth: 2,
-    borderColor: c.line,
+    overflow: "visible",
   },
-  selected: { borderColor: c.tennis },
+  selected: {
+    opacity: 0.9,
+  },
   photo: { width: "100%", height: "100%" },
 };});

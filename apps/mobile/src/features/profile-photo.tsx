@@ -1,11 +1,13 @@
 import { useThemeColors } from "../theme";
 import { playCue } from "../lib/haptics";
 import { UserAvatar } from "../ui/user-avatar";
+import { RankAvatar } from "../ui/rank-symbol";
 import { AppText } from "../ui/section";
 import {
   buildAvatarCleanupPathsForProfileChange,
   getCanonicalAvatarObjectPath,
   APP_ICON_PATHS,
+  effectiveRankSymbol,
   type CompeteState,
 } from "@fitness-battle/shared";
 import * as ImagePicker from "expo-image-picker";
@@ -132,18 +134,20 @@ const c=useThemeColors();
           setMenuOpen(true);
         }}
         style={{
-          width: 86,
-          height: 86,
-          borderRadius: 43,
-          backgroundColor: c.card,
-          borderWidth: 1,
-          borderColor: c.line,
+          width: 144,
+          height: 144,
           alignItems: "center",
           justifyContent: "center",
-          overflow: "hidden",
+          overflow: "visible",
+          alignSelf: "center",
         }}
       >
-        <UserAvatar src={state.avatarUrl} name={state.name} size={86} fallback={<Svg width={54} height={54} viewBox="0 0 24 24">
+        <RankAvatar
+          rank={effectiveRankSymbol(state)}
+          src={state.avatarUrl}
+          name={state.name}
+          size={144}
+          fallback={<Svg width={48} height={48} viewBox="0 0 24 24">
             <Path
               d={APP_ICON_PATHS.person}
               fill={c.muted} stroke="none"
@@ -151,7 +155,8 @@ const c=useThemeColors();
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-          </Svg>} />
+          </Svg>}
+        />
       </Pressable>
       <FocusSheet
         open={menuOpen}

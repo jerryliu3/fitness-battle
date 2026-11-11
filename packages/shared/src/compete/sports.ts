@@ -262,6 +262,8 @@ export interface CompeteState {
   name: string;
   city: string;
   avatarUrl?: string | null;
+  /** Explicit preferred laurel rank symbol; falls back to current effort score band when omitted. */
+  rankSymbol?: import("../rank-symbols").RankSymbolId | null;
   /** Miles (us) or kilometres (metric). Chosen in onboarding; changeable later. */
   units: UnitSystem;
   primary: SportId;
@@ -332,6 +334,8 @@ export interface CrewBoardPin {
 
 export interface CrewBoardMember {
   avatarUrl?: string | null;
+  /** Explicit preferred laurel rank symbol; falls back to current effort score band when omitted. */
+  rankSymbol?: import("../rank-symbols").RankSymbolId | null;
   id: string;
   name: string;
   elo: number;

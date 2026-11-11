@@ -3,6 +3,7 @@ import { colors as appearanceColors } from "@/theme/app-colors";
 
 import { useBootLoading } from "@/shell/boot-readiness";
 import { UserAvatar } from "@/ui/user-avatar";
+import { RankAvatar } from "@/ui/rank-symbol";
 import { AppParagraph, AppText, AppHeading, Section, typographyStyle } from "@/ui/section";
 
 import { RankBadge } from "../progress/rank-badge";
@@ -13,7 +14,7 @@ import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import { Sheet } from "@/ui/sheet";
 import { playCue } from "@/lib/haptics";
-import { competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, getDemoCompeteState } from "@fitness-battle/shared";
+import { competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, getDemoCompeteState, rankSymbolForScore } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 interface Crew {
@@ -371,7 +372,7 @@ export function CrewPanel() {
                 }}
               >
                 {members.slice(0, 5).map((m) => (
-                  <UserAvatar key={m.user_id} src={m.avatar_url} name={m.display_name} decorative={false} />
+                  <RankAvatar key={m.user_id} rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} decorative={false} size={48} />
                 ))}
                 {members.length > 5 && (
                   <span
@@ -497,7 +498,7 @@ export function CrewPanel() {
                           }}
                         >
                           <span>{i + 1}</span>
-                          <UserAvatar src={m.avatar_url} name={m.display_name} size={32} />
+                          <RankAvatar rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} size={48} />
                           <b className="fb-grow">{m.display_name}</b>
                           <RankBadge score={m.effort_score} />
                           <AppText role="value">
@@ -694,7 +695,7 @@ export function CrewPanel() {
           <ul className="focus-member-list">
             {members.map((m) => (
               <li key={m.user_id}>
-                <UserAvatar src={m.avatar_url} name={m.display_name} size={56} />
+                <RankAvatar rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} size={64} />
                 <div><b>{m.display_name}</b><AppParagraph typographyRole="caption" className="fb-note">{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`} this week</AppParagraph></div>
                 <AppText as="small" role="caption" secondary>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</AppText>
               </li>
@@ -848,7 +849,7 @@ export function CrewPanel() {
         >
           <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "12px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-              <UserAvatar src={viewingMember.avatar_url} name={viewingMember.display_name} size={64} />
+              <RankAvatar rank={rankSymbolForScore(viewingMember.effort_score)} src={viewingMember.avatar_url} name={viewingMember.display_name} size={96} />
               <div>
                 <strong style={{ ...typographyStyle("heading"), display: "block" }}>{viewingMember.display_name}</strong>
                 <RankBadge score={viewingMember.effort_score} />

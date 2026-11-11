@@ -1,6 +1,6 @@
 import { useThemeColors } from "../theme";
 import { useFocusStyles } from "../ui/focus";
-import { UserAvatar } from "../ui/user-avatar";
+import { RankAvatar } from "../ui/rank-symbol";
 import { textStyle, SectionHeader, AppText  } from "../ui/section";
 import { useRef, useState } from "react";
 import { Animated, Pressable, Text, View } from "react-native";
@@ -10,6 +10,7 @@ import {
   formatVolume,
   formatEffort,
   sportById,
+  rankSymbolForRankName,
   type PeriodResult,
   type UnitSystem,
 } from "@fitness-battle/shared";
@@ -23,7 +24,7 @@ export function ResultCard({
 }: {
   result: PeriodResult;
   units: UnitSystem;
-  podiumAthletes?: { id: string; name: string; place: number; you: boolean; avatarUrl?: string | null }[];
+  podiumAthletes?: { id: string; name: string; place: number; you: boolean; avatarUrl?: string | null; rank?: string | null }[];
   compact?: boolean;
 }) {
 const appearanceColors = useThemeColors();
@@ -132,7 +133,7 @@ const f=useFocusStyles();
                 const isYou = result.place === podium.step;
                 return (
                   <View key={podium.step} style={{ flex: 1, alignItems: "center", gap: 8 }}>
-                    {athletes.map(athlete => <View key={athlete.id} style={{ alignItems: "center", gap: 4, width: "100%" }}><UserAvatar src={athlete.avatarUrl} name={athlete.name} size={40} highlight={athlete.you} /><AppText role="caption" numberOfLines={2} style={{ textAlign: "center" }}>{athlete.name}</AppText></View>)}
+                    {athletes.map(athlete => <View key={athlete.id} style={{ alignItems: "center", gap: 4, width: "100%" }}><RankAvatar rank={rankSymbolForRankName(athlete.rank)} src={athlete.avatarUrl} name={athlete.name} size={54} highlight={athlete.you} /><AppText role="caption" numberOfLines={2} style={{ textAlign: "center" }}>{athlete.name}</AppText></View>)}
                   <View
                     style={{
                       width: "100%",

@@ -1,5 +1,6 @@
 "use client";
 import { UserAvatar } from "@/ui/user-avatar";
+import { RankAvatar } from "@/ui/rank-symbol";
 
 import { useAuth } from "@/components/auth-context";
 import { useCompete, useCompeteFieldRefresh } from "@/components/compete-context";
@@ -8,7 +9,7 @@ import { FieldScreen } from "@/features/field/field-screen";
 import { TodayScreen } from "@/features/today/today-screen";
 import { AthletePage, ProgressPage } from "@/features/you/you-route";
 import {
-  hasCountedActivityToday, weeklyActivityStreak, competeNow,
+  hasCountedActivityToday, weeklyActivityStreak, competeNow, effectiveRankSymbol,
   APP_ICON_PATHS,
   SHELL_TABS,
   isShellTabId,
@@ -189,9 +190,15 @@ export function PhoneShell({
             aria-label="Open athlete settings"
             aria-current={onAthlete ? "page" : undefined}
           >
-            <UserAvatar src={state?.avatarUrl} name={state?.name ?? "Athlete"} size={34} fallback={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ color: "var(--muted)" }}>
+            <RankAvatar
+              rank={effectiveRankSymbol(state)}
+              src={state?.avatarUrl}
+              name={state?.name ?? "Athlete"}
+              size={48}
+              fallback={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ color: "var(--muted)" }}>
                 <path d={APP_ICON_PATHS.person} fill="currentColor" stroke="none" />
-              </svg>} />
+              </svg>}
+            />
           </Link>
         </header>}
         {!dataReady ? (

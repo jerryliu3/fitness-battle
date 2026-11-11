@@ -80,6 +80,7 @@ export interface Action {
     | "log-manual"
     | "set-city"
     | "set-avatar"
+    | "set-rank-symbol"
     | "set-units"
     | "set-primary"
     | "set-focus"
@@ -114,6 +115,7 @@ export interface Action {
   name?: string;
   city?: string;
   avatarUrl?: string | null;
+  rankSymbol?: import("../rank-symbols").RankSymbolId | null;
   units?: UnitSystem;
   sport?: SportId;
   metric?: HealthMetricId;
@@ -1056,6 +1058,9 @@ function reduceCompeteAction(
           ? action.avatarUrl.trim()
           : null;
       return { ...rolled, avatarUrl };
+    }
+    case "set-rank-symbol": {
+      return { ...rolled, rankSymbol: action.rankSymbol ?? null };
     }
     case "set-units": {
       if (action.units !== "us" && action.units !== "metric") return rolled;

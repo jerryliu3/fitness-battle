@@ -22,6 +22,7 @@ import { SeasonHistory } from "@/features/split/components/season-history";
 import { AwardShelf } from "./award-shelf";
 import { buildSplitBoard } from "@/features/split/model";
 import { SPORT_ICON_PATHS, SETTINGS_ICON_PATHS, activityFromSample, INTEGRATION_ICONS, awardCards, BACKFILL_DAYS, competeNow, competitionTrack, evidenceLabel, primaryFreezePeriodStart, PROVIDERS, RANK_BANDS, sleepRenewal, SPORTS, type SportId, type ActivitySample, type ProviderId, type ReadinessMark, type ReadinessSample } from "@fitness-battle/shared";
+import { RankSymbol } from "@/ui/rank-symbol";
 import { AuthPrompt } from "@/components/auth-gate";
 import { Sheet } from "@/ui/sheet";
 import Link from "next/link";
@@ -793,9 +794,10 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
                 Your rank sets the milestone size. Weekly placement can raise or lower your score. A week without counted activity decays toward the score floor. Activity milestone points already earned are kept.
               </AppParagraph>
               {RANK_BANDS.map((band) => (
-                <div key={band.name} className="fb-row">
+                <div key={band.name} className="fb-row" style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <RankSymbol rank={band.id} size={52} />
                   <span className="fb-grow">
-                    {band.name}
+                    <strong>{band.name}</strong>
                     <AppText as="small" role="body" secondary>
                       {band.min}+ · {band.blurb}
                     </AppText>
