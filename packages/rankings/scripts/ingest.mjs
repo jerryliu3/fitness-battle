@@ -188,7 +188,7 @@ async function ingestOpenTrackFixture() {
     edition,
     raw,
     "packages/rankings/fixtures/emv-10k-2025.json",
-    { allowCorrection, freeze: freezeFlag, expectedRevision },
+    { allowCorrection, freeze: freezeFlag, expectedRevision, populationScope: { distanceSlug: "10k" } },
   );
   return {
     slug: "opentrack-emv-10k-2025",
@@ -237,7 +237,7 @@ async function ingestCatalogEvent(event) {
     edition,
     null,
     `packages/rankings/imports/${event.slug}.jsonl`,
-    { allowCorrection, freeze: freezeFlag, expectedRevision },
+    { allowCorrection, freeze: freezeFlag, expectedRevision, populationScope: { distanceSlug: event.distance } },
   );
   return {
     slug: event.slug,
@@ -300,7 +300,7 @@ async function ingestCsv(file, flags) {
     edition,
     raw,
     file,
-    { allowCorrection, freeze: freezeFlag, expectedRevision },
+    { allowCorrection, freeze: freezeFlag, expectedRevision, populationScope: { distanceSlug: flags.distance } },
   );
   return { slug, status: "succeeded", results: parsed.results.length, sql: written.sqlPath };
 }
@@ -367,7 +367,7 @@ async function ingestRunSignup(raceId, eventId, flags) {
       expectedRevision,
       populationScope: {
         distanceSlug: flags.distance,
-        sourceUrlPattern: `%individual_result_set_id=${flags.resultSet}%`,
+        sourceUrlRegex: `[?&]individual_result_set_id=${flags.resultSet}(&|$)`,
       },
     },
   );

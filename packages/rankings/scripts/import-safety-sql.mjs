@@ -40,6 +40,100 @@ const correctedOneOnly = {
   results: [editionWithTwo.results[0]],
 };
 
+const editionWithTwoCategories = {
+  ...editionFromOpenTrack({
+    id: "event-categories",
+    date: "2026-06-20",
+    fullName: "Import safety multi-category",
+    events: [
+      { eventId: "1", eventCode: "10K", genders: "F", units: [{ results: [{ bib: "1", performance: "34:27" }] }] },
+      { eventId: "2", eventCode: "10K", genders: "M", units: [{ results: [{ bib: "2", performance: "30:00" }] }] },
+    ],
+    competitors: [
+      { competitorId: "1", fullName: "Female Runner", gender: "F", ageGroup: "SEN" },
+      { competitorId: "2", fullName: "Male Disqualified", gender: "M", ageGroup: "SEN" },
+    ],
+  }),
+  sourceSlug: `${slug}_cats`,
+  displayAllowed: true,
+};
+const correctedFemaleOnly = {
+  ...editionWithTwoCategories,
+  results: editionWithTwoCategories.results.filter((r) => r.sex === "female"),
+};
+
+const editionSet100 = {
+  sourceSlug: `${slug}_rs`,
+  sourceName: "RunSignup Test",
+  accessMethod: "RunSignup JSON",
+  reuseNotes: "Public",
+  attribution: "RunSignup",
+  displayAllowed: true,
+  externalEventId: "race-rs",
+  eventName: "RunSignup Test Race",
+  editionYear: 2026,
+  startsOn: "2026-07-04",
+  sourceUrl: "https://example.com/rs",
+  results: [
+    {
+      externalResultId: "rs-100-1",
+      athleteName: "Set 100 Runner",
+      normalizedName: "set 100 runner",
+      normalizedBib: "100",
+      sex: "female",
+      distance: "10k",
+      categoryKey: "10k:female",
+      ageYears: 25,
+      chipTimeMs: 2400000,
+      gunTimeMs: 2400000,
+      finishStatus: "finished",
+      sourceUrl: "https://api.runsignup.com/rest/race/1/get-results?individual_result_set_id=100&page=1",
+    },
+  ],
+  skippedYouth: 0,
+  skippedUnparsed: 0,
+};
+const editionSet10And100 = {
+  ...editionSet100,
+  results: [
+    ...editionSet100.results,
+    {
+      externalResultId: "rs-10-1",
+      athleteName: "Set 10 Runner",
+      normalizedName: "set 10 runner",
+      normalizedBib: "10",
+      sex: "female",
+      distance: "10k",
+      categoryKey: "10k:female",
+      ageYears: 30,
+      chipTimeMs: 2500000,
+      gunTimeMs: 2500000,
+      finishStatus: "finished",
+      sourceUrl: "https://api.runsignup.com/rest/race/1/get-results?individual_result_set_id=10&page=1",
+    },
+  ],
+};
+const correctedSet10 = {
+  ...editionSet10And100,
+  results: [
+    editionSet100.results[0],
+    {
+      externalResultId: "rs-10-2",
+      athleteName: "Set 10 New Runner",
+      normalizedName: "set 10 new runner",
+      normalizedBib: "12",
+      sex: "female",
+      distance: "10k",
+      categoryKey: "10k:female",
+      ageYears: 32,
+      chipTimeMs: 2600000,
+      gunTimeMs: 2600000,
+      finishStatus: "finished",
+      sourceUrl: "https://api.runsignup.com/rest/race/1/get-results?individual_result_set_id=10&page=1",
+    },
+  ],
+};
+
 console.log(`
 begin;
 set local statement_timeout = '10s';
@@ -354,6 +448,14 @@ begin
     raise exception 'Draft/staged performances leaked into leaderboard_rows';
   end if;
 
+  -- Verify rankings_edition_history hides draft and staged
+  if jsonb_array_length(public.rankings_edition_history(v_draft_ed, '10k', 'female')) <> 0 then
+    raise exception 'Draft edition leaked into rankings_edition_history';
+  end if;
+  if jsonb_array_length(public.rankings_edition_history(v_staged_ed, '10k', 'female')) <> 0 then
+    raise exception 'Staged edition leaked into rankings_edition_history';
+  end if;
+
   -- Verify refresh_rankings_distance_stats excludes draft and staged
   perform public.refresh_rankings_distance_stats();
   if (select result_count from public.rankings_distance_stats where distance_slug = '10k') <> (
@@ -364,6 +466,141 @@ begin
       and ed.publication_state in ('published', 'frozen')
   ) then
     raise exception 'Distance stats included unpublished edition results';
+  end if;
+end $safety$;
+
+-- 12. Correction reconciles disappearing categories when categoryKeys is omitted
+${editionImportSql(editionWithTwoCategories, snapshot)}
+
+do $safety$
+begin
+  if not exists (
+    select 1 from public.performances p
+    join public.source_records sr on sr.id = p.source_record_id
+    join public.sources s on s.id = sr.source_id
+    where s.slug = ${quote(`${slug}_cats`)}
+      and p.athlete_name = 'Male Disqualified'
+      and not p.unpublished
+  ) then
+    raise exception 'Initial category import failed';
+  end if;
+end $safety$;
+
+${editionImportSql(correctedFemaleOnly, snapshot, { allowCorrection: true, populationScope: { distanceSlug: "10k" } })}
+
+do $safety$
+begin
+  -- Male runner whose category disappeared must be unpublished with correction_removed = true
+  if not exists (
+    select 1 from public.performances p
+    join public.source_records sr on sr.id = p.source_record_id
+    join public.sources s on s.id = sr.source_id
+    where s.slug = ${quote(`${slug}_cats`)}
+      and p.athlete_name = 'Male Disqualified'
+      and p.unpublished and p.correction_removed
+  ) then
+    raise exception 'Disappearing category failed to reconcile missing runners';
+  end if;
+  -- Female runner must remain published
+  if not exists (
+    select 1 from public.performances p
+    join public.source_records sr on sr.id = p.source_record_id
+    join public.sources s on s.id = sr.source_id
+    where s.slug = ${quote(`${slug}_cats`)}
+      and p.athlete_name = 'Female Runner'
+      and not p.unpublished
+  ) then
+    raise exception 'Active runner unexpectedly unpublished during category reconciliation';
+  end if;
+end $safety$;
+
+-- 13. RunSignup reconciliation with sourceUrlRegex does not unpublish other result sets (e.g. set 10 vs set 100)
+${editionImportSql(editionSet10And100, snapshot)}
+
+do $safety$
+begin
+  if (select count(*) from public.performances p
+      join public.source_records sr on sr.id = p.source_record_id
+      join public.sources s on s.id = sr.source_id
+      where s.slug = ${quote(`${slug}_rs`)} and not p.unpublished) <> 2 then
+    raise exception 'Initial RunSignup multi-set import failed';
+  end if;
+end $safety$;
+
+${editionImportSql(correctedSet10, snapshot, {
+  allowCorrection: true,
+  populationScope: {
+    distanceSlug: "10k",
+    sourceUrlRegex: `[?&]individual_result_set_id=10(&|$)`,
+  },
+})}
+
+do $safety$
+begin
+  -- Set 10 old runner rs-10-1 was replaced by rs-10-2, so rs-10-1 must be unpublished
+  if not exists (
+    select 1 from public.performances p
+    join public.source_records sr on sr.id = p.source_record_id
+    join public.sources s on s.id = sr.source_id
+    where s.slug = ${quote(`${slug}_rs`)}
+      and sr.external_result_id = 'rs-10-1'
+      and p.unpublished and p.correction_removed
+  ) then
+    raise exception 'Missing set 10 runner failed to reconcile';
+  end if;
+
+  -- Set 10 new runner rs-10-2 must be published
+  if not exists (
+    select 1 from public.performances p
+    join public.source_records sr on sr.id = p.source_record_id
+    join public.sources s on s.id = sr.source_id
+    where s.slug = ${quote(`${slug}_rs`)}
+      and sr.external_result_id = 'rs-10-2'
+      and not p.unpublished
+  ) then
+    raise exception 'New set 10 runner not published';
+  end if;
+
+  -- Set 100 runner rs-100-1 MUST REMAIN PUBLISHED (NOT unseated by set 10 correction!)
+  if not exists (
+    select 1 from public.performances p
+    join public.source_records sr on sr.id = p.source_record_id
+    join public.sources s on s.id = sr.source_id
+    where s.slug = ${quote(`${slug}_rs`)}
+      and sr.external_result_id = 'rs-100-1'
+      and not p.unpublished
+  ) then
+    raise exception 'Set 100 runner was mistakenly unpublished by set 10 correction!';
+  end if;
+end $safety$;
+
+-- 14. Pre-existing privacy/manual suppression remains suppressed even after correction or re-import
+do $safety$
+begin
+  -- Mark set 100 runner with independent privacy suppression
+  update public.performances p
+  set privacy_suppressed = true, unpublished = true
+  from public.source_records sr
+  join public.sources s on s.id = sr.source_id
+  where sr.id = p.source_record_id
+    and s.slug = ${quote(`${slug}_rs`)}
+    and sr.external_result_id = 'rs-100-1';
+end $safety$;
+
+-- Re-import the exact row with evidence
+${editionImportSql(editionSet100, snapshot, { allowCorrection: true })}
+
+do $safety$
+begin
+  if not exists (
+    select 1 from public.performances p
+    join public.source_records sr on sr.id = p.source_record_id
+    join public.sources s on s.id = sr.source_id
+    where s.slug = ${quote(`${slug}_rs`)}
+      and sr.external_result_id = 'rs-100-1'
+      and p.unpublished and p.privacy_suppressed
+  ) then
+    raise exception 'Pre-existing privacy suppression was cleared by re-import!';
   end if;
 end $safety$;
 

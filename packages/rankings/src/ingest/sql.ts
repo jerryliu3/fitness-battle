@@ -9,6 +9,7 @@ export type EditionImportOptions = {
     distanceSlug?: string;
     categoryKeys?: string[];
     sourceUrlPattern?: string;
+    sourceUrlRegex?: string;
   };
 };
 
@@ -218,9 +219,11 @@ begin
     options?.allowCorrection
       ? `
   -- Reconcile corrected full-field population: remove missing results from the published field.
-  -- Scoped strictly to the defined replacement population (edition, distances, categories, and optional result-set/source URL).
+  -- Scoped strictly to the defined replacement population (edition, distances, optional categories, and optional result-set/source URL).
+  -- Note: if categoryKeys is omitted, the scope is the full distance; do not restrict by incoming categories so that disappeared categories are properly reconciled.
   update public.performances p
   set unpublished = true,
+      correction_removed = true,
       updated_at = now()
   from public.source_records sr
   where p.source_record_id = sr.id
@@ -233,10 +236,12 @@ begin
     ${
       options?.populationScope?.categoryKeys?.length
         ? `and sr.category_key in (${options.populationScope.categoryKeys.map(quote).join(",")})`
-        : `and sr.category_key in (select distinct value->>'categoryKey' from jsonb_array_elements(${quote(payload)}::jsonb))`
+        : ""
     }
     ${
-      options?.populationScope?.sourceUrlPattern
+      options?.populationScope?.sourceUrlRegex
+        ? `and p.source_url ~ ${quote(options.populationScope.sourceUrlRegex)}`
+        : options?.populationScope?.sourceUrlPattern
         ? `and p.source_url like ${quote(options.populationScope.sourceUrlPattern)}`
         : ""
     }

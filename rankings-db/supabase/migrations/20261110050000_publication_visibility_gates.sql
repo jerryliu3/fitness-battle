@@ -2,9 +2,15 @@
 -- Slices B & C from docs/race-results-architecture.md.
 -- Additive only: preserves existing records, views, and functions.
 
--- 1. Explicit privacy suppression flag on performances (distinct from correction unpublishing)
+-- 1. Explicit privacy suppression flag and correction removal flag on performances
 alter table public.performances
-  add column if not exists privacy_suppressed boolean not null default false;
+  add column if not exists privacy_suppressed boolean not null default false,
+  add column if not exists correction_removed boolean not null default false;
+
+-- Backfill: preserve any existing manual/privacy suppressions conservatively
+update public.performances
+set privacy_suppressed = true
+where unpublished = true;
 
 -- 2. Evidence-backed restoration in private.upsert_performance without overriding independent privacy suppression
 create or replace function private.upsert_performance(
@@ -100,8 +106,14 @@ begin
     finish_status = excluded.finish_status,
     result_date = excluded.result_date,
     source_url = excluded.source_url,
-    -- Evidence-backed restoration: unpublish is cleared on re-import unless athlete requested privacy suppression
-    unpublished = case when public.performances.privacy_suppressed then true else false end,
+    -- Conservative preservation: privacy-suppressed records remain unpublished.
+    -- Records removed by a previous correction (correction_removed = true) are restored upon re-import with new evidence.
+    unpublished = case
+      when public.performances.privacy_suppressed then true
+      when public.performances.correction_removed then false
+      else public.performances.unpublished
+    end,
+    correction_removed = false,
     updated_at = now()
   returning (xmax = 0) into v_inserted;
 
@@ -320,38 +332,46 @@ $$;
 revoke all on function public.rankings_coverage(text,bigint,text) from public;
 grant execute on function public.rankings_coverage(text,bigint,text) to anon,authenticated,service_role;
 
-create or replace function public.rankings_edition_history(p_distance text, p_sex text default 'female')
+drop function if exists public.rankings_edition_history(text, text);
+
+create or replace function public.rankings_edition_history(p_edition_id bigint, p_distance text, p_sex text default 'female')
 returns jsonb language sql stable security definer set search_path = '' as $$
-  with yearly as (
+  with selected as (
+    select ed.event_id from public.event_editions ed
+    where ed.id = p_edition_id
+      and ed.publication_state in ('published', 'frozen')
+      and exists (
+        select 1 from public.performances p
+        join public.source_records sr on sr.id = p.source_record_id
+        join public.sources s on s.id = sr.source_id
+        where p.event_edition_id = ed.id and p.distance_slug = p_distance
+          and (p_sex = 'all' or p.sex = p_sex)
+          and p.eligible and not p.unpublished and s.display_allowed
+      )
+  ), editions as (
     select
-      ed.edition_year as year,
-      min(p.rank_time_ms) as winning_time_ms,
-      percentile_cont(0.50) within group (order by p.rank_time_ms) as median_time_ms,
-      count(*) as total_finishers,
-      (select p_win.athlete_name from public.performances p_win
-       join public.source_records sr_win on sr_win.id = p_win.source_record_id
-       join public.sources s_win on s_win.id = sr_win.source_id
-       join public.event_editions ed_win on ed_win.id = p_win.event_edition_id
-       where p_win.event_edition_id = ed.id and p_win.distance_slug = p_distance
-         and (p_sex = 'all' or p_win.sex = p_sex)
-         and p_win.eligible and not p_win.unpublished and s_win.display_allowed
-         and ed_win.publication_state in ('published', 'frozen')
-       order by p_win.rank_time_ms asc, p_win.id asc limit 1) as winner_name
+      ed.id as edition_id,
+      ed.name as event_name,
+      ed.edition_year,
+      count(*) as total,
+      min(p.rank_time_ms) as fastest_ms,
+      percentile_cont(0.5) within group (order by p.rank_time_ms) as median_ms,
+      count(*) filter (where p.rank_clock = 'chip') as chip_count,
+      count(*) filter (where p.rank_clock = 'gun') as official_count
     from public.performances p
     join public.source_records sr on sr.id = p.source_record_id
     join public.sources s on s.id = sr.source_id
     join public.event_editions ed on ed.id = p.event_edition_id
+    join selected on selected.event_id = ed.event_id
     where p.distance_slug = p_distance
       and (p_sex = 'all' or p.sex = p_sex)
       and p.eligible and not p.unpublished and s.display_allowed
       and ed.publication_state in ('published', 'frozen')
-    group by ed.id, ed.edition_year
-  )
-  select coalesce(jsonb_agg(to_jsonb(y) order by y.year desc), '[]'::jsonb)
-  from yearly y;
+    group by ed.id, ed.name, ed.edition_year
+  ) select coalesce(jsonb_agg(to_jsonb(e) order by e.edition_year), '[]'::jsonb) from editions e;
 $$;
-revoke all on function public.rankings_edition_history(text, text) from public;
-grant execute on function public.rankings_edition_history(text, text) to anon, authenticated, service_role;
+revoke all on function public.rankings_edition_history(bigint, text, text) from public;
+grant execute on function public.rankings_edition_history(bigint, text, text) to anon, authenticated, service_role;
 
 create or replace function public.rankings_replay_page(
   p_edition_id bigint,

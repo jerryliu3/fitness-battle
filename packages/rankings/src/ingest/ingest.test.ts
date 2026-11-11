@@ -248,8 +248,15 @@ describe("public results parsers", () => {
     expect(correctionSql).toContain("Source record lookup failed for % in edition %");
     expect(correctionSql).toContain("Reconcile corrected full-field population");
     expect(correctionSql).toContain("set unpublished = true,");
-    expect(correctionSql).toContain("and sr.category_key in");
+    expect(correctionSql).toContain("correction_removed = true,");
     expect(correctionSql).toContain("and sr.last_ingestion_run_id <> v_run");
+
+    // Scoped category reconciliation bounds category keys when specified
+    const scopedCorrectionSql = editionImportSql(edition, snapshot, {
+      allowCorrection: true,
+      populationScope: { categoryKeys: ["10k:male"] },
+    });
+    expect(scopedCorrectionSql).toContain("and sr.category_key in ('10k:male')");
 
     // Standard import without correction does not run reconciliation
     const standardSql = editionImportSql(edition, snapshot);
