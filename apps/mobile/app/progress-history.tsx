@@ -14,11 +14,13 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   APP_TIMEZONE,
+  activityEffort,
   competeNow,
   countsOnTrack,
   distanceUnitLabel,
   formatClockTime,
   formatDistanceM,
+  formatEffort,
   shiftAppDay,
   sportById,
   type Activity,
@@ -89,10 +91,10 @@ export default function ProgressHistoryScreen() {
   const summary = useMemo(() => {
     const count = filteredActivities.length;
     const movingSec = filteredActivities.reduce((acc, a) => acc + Math.max(0, a.movingSec), 0);
-    const effort = filteredActivities.reduce(
-      (acc, a) => acc + (a.effortScore ?? Math.round(a.movingSec / 60)),
+    const effort = formatEffort(filteredActivities.reduce(
+      (acc, a) => acc + activityEffort(a),
       0,
-    );
+    ));
     return {
       count,
       hours: (movingSec / 3600).toFixed(1),
@@ -203,8 +205,7 @@ export default function ProgressHistoryScreen() {
               <View style={s.listContainer}>
                 {filteredActivities.map((activity) => {
                   const sportInfo = sportById(activity.sport);
-                  const effort =
-                    activity.effortScore ?? Math.round(activity.movingSec / 60);
+                  const effort = formatEffort(activityEffort(activity));
                   return (
                     <Pressable
                       key={activity.id}
@@ -214,11 +215,11 @@ export default function ProgressHistoryScreen() {
                       style={s.activityRow}
                     >
                       <View style={s.activityIconWrapper}>
-                        <SportActivityIcon sport={activity.sport} size={22} color={c.tennis} />
+                        <SportActivityIcon sport={activity.sport} />
                       </View>
                       <View style={{ flex: 1, gap: 2 }}>
                         <AppText role="row" style={{ fontWeight: "600" }}>
-                          {sportInfo.name} · {activity.title || (activity.distanceM > 0 ? "Outdoor" : "Session")}
+                          {sportInfo.name}
                         </AppText>
                         <AppText role="caption" secondary>
                           {formatActivityDate(activity.startedAt)}
@@ -251,7 +252,7 @@ export default function ProgressHistoryScreen() {
       {inspectedActivity && (
         <FocusSheet
           open={!!inspectedActivity}
-          title={inspectedActivity.title || sportById(inspectedActivity.sport).name}
+          title={sportById(inspectedActivity.sport).name}
           onClose={() => setInspectedActivity(null)}
         >
           <View style={{ gap: 16, paddingVertical: 12 }}>
@@ -273,7 +274,7 @@ export default function ProgressHistoryScreen() {
               <View style={{ gap: 2 }}>
                 <AppText role="caption" secondary>Effort Earned</AppText>
                 <AppText role="value" style={{ color: c.tennis, fontVariant: ["tabular-nums"] }}>
-                  {inspectedActivity.effortScore ?? Math.round(inspectedActivity.movingSec / 60)} pts
+                  {formatEffort(activityEffort(inspectedActivity))} pts
                 </AppText>
               </View>
             </View>

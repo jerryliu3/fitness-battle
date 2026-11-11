@@ -10,6 +10,7 @@ import {
   trainingBuckets,
   trainingComparison,
   trainingRangeNavigation,
+  trainingYearAnchor,
   isAllTrainingSports,
   toggleTrainingSports,
   normalizeTrainingSports,
@@ -94,6 +95,22 @@ it("compares actual eligible hours and keeps the selected sport and prior timefr
  const comparison=trainingComparison(rows,"running","week",now,now);
  expect(comparison.total).toBe(3600);expect(comparison.prior).toBe(1800);expect(comparison.percent).toBe(100);expect(comparison.label).toBe("↑ 100% vs all of previous week");
  expect(trainingComparison(rows,"cycling","week",now,now).percent).toBeNull();
+});
+
+it("anchors the annual atlas on the Eastern calendar year, not UTC midnight", () => {
+  const now = new Date("2026-01-01T04:30:00Z"); // Dec 31, 2025 in Eastern
+  const utcMidnight = new Date(Date.UTC(2026, 0, 1));
+  const rows = [activity("prior-year", "2025-06-15T16:00:00Z"), activity("this-year", "2026-06-15T16:00:00Z")];
+  const through = new Date("2026-11-10T17:00:00Z");
+  expect(dayKey(utcMidnight)).toBe("2025-12-31");
+  expect(dayKey(trainingYearAnchor(now))).toBe("2025-01-01");
+  expect(dayKey(trainingYearAnchor(through))).toBe("2026-01-01");
+  const year2026 = trainingBuckets(rows, "all", "year", trainingYearAnchor(through), through);
+  expect(year2026[5]!.sessions).toBe(1);
+  expect(trainingRangeNavigation(trainingYearAnchor(through), earliestDataDate({ ...freshState(through), activities: rows }, through), through, "year").nextAllowed).toBe(false);
+  const year2025 = trainingBuckets(rows, "all", "year", utcMidnight, through);
+  expect(year2025[5]!.sessions).toBe(1);
+  expect(year2025[5]!.start.startsWith("2025-")).toBe(true);
 });
 
 describe("training date boundaries & navigation limiting", () => {

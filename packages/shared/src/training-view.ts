@@ -69,6 +69,12 @@ export function shiftTrainingMonth(anchor: Date, months: number): Date {
   const [year, month] = dayKey(anchor).split("-").map(Number);
   return new Date(Date.UTC(year!, month! - 1 + months, 1, 12));
 }
+
+/** Noon UTC on January 1 of the Eastern calendar year, so buckets match the heading. */
+export function trainingYearAnchor(now: Date, yearOffset = 0): Date {
+  const year = Number(dayKey(now).slice(0, 4)) + yearOffset;
+  return new Date(Date.UTC(year, 0, 1, 12));
+}
 function eligible(
   activities: Activity[],
   sport: TrainingSportFilter,

@@ -1,17 +1,17 @@
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
-import { useFocusStyles, FocusSheet, FocusSegments } from "../ui/focus";
-import { AppText, SectionHeader } from "../ui/section";
+import { FocusSheet, FocusSegments } from "../ui/focus";
+import { AppText } from "../ui/section";
 import { SportActivityIcon } from "../ui/sport-activity-icon";
 import { ActivityRoute } from "../ui/activity-route";
 import { ResultCard } from "./result-card";
 import { CompetitionReplayButton } from "./competition-replay";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import Svg, { Circle, Defs, LinearGradient, Path, Stop } from "react-native-svg";
+import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import {
   APP_TIMEZONE,
-  clampTrainingAnchor,
+  activityEffort,
   competeNow,
   countsOnTrack,
   dayKey,
@@ -20,17 +20,20 @@ import {
   earliestDataDate,
   formatClockTime,
   formatDistanceM,
+  formatEffort,
+  formatEffortScoreDelta,
   formatTrainingHours,
+  formatWeeklyCompetitionRange,
   shiftAppDay,
   shiftTrainingMonth,
   sportById,
   trainingAtlas,
   trainingBuckets,
   trainingRangeNavigation,
+  trainingYearAnchor,
+  weeklyPeriodBounds,
   type Activity,
   type CompeteState,
-  type PeriodResult,
-  type SportId,
 } from "@fitness-battle/shared";
 
 type HorizonChoice = "week" | "month" | "year";
@@ -43,14 +46,13 @@ export function JourneySpace({
   initialHorizon?: HorizonChoice;
 }) {
   const c = useThemeColors();
-  const f = useFocusStyles();
   const s = useThemedStyles(sThemes);
   const router = useRouter();
 
   const now = useMemo(() => competeNow(state), [state]);
   const earliest = useMemo(() => earliestDataDate(state, now), [state, now]);
 
-  const [horizon, setHorizon] = useState<HorizonChoice>("week");
+  const [horizon, setHorizon] = useState<HorizonChoice>(initialHorizon);
   const [dayOffset, setDayOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
   const [yearOffset, setYearOffset] = useState(0);
@@ -63,12 +65,15 @@ export function JourneySpace({
   // Selected competition result for inline expansion
   const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
 
+  useEffect(() => {
+    setHorizon(initialHorizon);
+    setSelectedDayKey(null);
+  }, [initialHorizon]);
+
   // --- 1. Week Horizon (7 days strip) ---
   const calendarDays = useMemo(() => {
-    const anchor = shiftAppDay(now, dayOffset * 7);
-    const dayOfWeek = (anchor.getDay() + 6) % 7; // Monday = 0
-    const monday = shiftAppDay(anchor, -dayOfWeek);
-
+    const week = weeklyPeriodBounds(shiftAppDay(now, dayOffset * 7));
+    const monday = week.startsAt;
     const days: Array<{
       dayKey: string;
       dateNum: number;
@@ -78,26 +83,25 @@ export function JourneySpace({
     }> = [];
 
     const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const todayStr = dayKey(now, APP_TIMEZONE);
+    const todayStr = dayKey(now);
 
     for (let i = 0; i < 7; i++) {
       const d = shiftAppDay(monday, i);
-      const key = dayKey(d, APP_TIMEZONE);
+      const key = dayKey(d);
       const hasActivity = state.activities.some((a) => {
-        const t = new Date(a.startedAt);
-        return countsOnTrack(a, "open") && dayKey(t, APP_TIMEZONE) === key;
+        return countsOnTrack(a, "open") && dayKey(new Date(a.startedAt)) === key;
       });
 
       days.push({
         dayKey: key,
-        dateNum: d.getDate(),
+        dateNum: Number(key.slice(-2)),
         dayLabel: labels[i] ?? "",
         hasActivity,
         isToday: key === todayStr,
       });
     }
 
-    return { days, anchor, monday };
+    return { days, monday };
   }, [state.activities, now, dayOffset]);
 
   // Week summary
@@ -112,8 +116,8 @@ export function JourneySpace({
       );
     });
     const hours = (weekActs.reduce((sum, a) => sum + Math.max(0, a.movingSec), 0) / 3600).toFixed(1);
-    const effort = weekActs.reduce((sum, a) => sum + (a.effortScore ?? Math.round(a.movingSec / 60)), 0);
-    return { count: weekActs.length, hours, effort };
+    const effort = weekActs.reduce((sum, a) => sum + activityEffort(a), 0);
+    return { count: weekActs.length, hours, effort: formatEffort(effort) };
   }, [state.activities, calendarDays.monday]);
 
   // --- 2. Month Horizon (Training Atlas Heatmap) ---
@@ -146,14 +150,15 @@ export function JourneySpace({
     const sessions = inMonthCells.reduce((sum, cell) => sum + cell.sessions, 0);
     const movingSec = inMonthCells.reduce((sum, cell) => sum + cell.movingSec, 0);
     const hours = (movingSec / 3600).toFixed(1);
-    return { sessions, hours };
-  }, [monthCells]);
+    const monthDays = new Set(inMonthCells.map((cell) => cell.day));
+    const effort = formatEffort(state.activities.filter((a) =>
+      countsOnTrack(a, "open") && monthDays.has(dayKey(new Date(a.startedAt))),
+    ).reduce((sum, a) => sum + activityEffort(a), 0));
+    return { sessions, hours, effort };
+  }, [monthCells, state.activities]);
 
   // --- 3. Year Horizon (Annual Atlas & Monthly Progression) ---
-  const yearAnchor = useMemo(() => {
-    const yr = now.getFullYear() + yearOffset;
-    return new Date(Date.UTC(yr, 0, 1));
-  }, [now, yearOffset]);
+  const yearAnchor = useMemo(() => trainingYearAnchor(now, yearOffset), [now, yearOffset]);
 
   const { prevAllowed: yearPrevAllowed, nextAllowed: yearNextAllowed } = useMemo(
     () => trainingRangeNavigation(yearAnchor, earliest, now, "year"),
@@ -175,17 +180,17 @@ export function JourneySpace({
   }, [yearBuckets]);
 
   const yearSummary = useMemo(() => {
-    const yearStr = String(yearAnchor.getUTCFullYear());
+    const yearStr = dayKey(yearAnchor).slice(0, 4);
     const yearActs = state.activities.filter((a) => {
       return (
         countsOnTrack(a, "open") &&
-        dayKey(new Date(a.startedAt), APP_TIMEZONE).startsWith(yearStr) &&
+        dayKey(new Date(a.startedAt)).startsWith(yearStr) &&
         Date.parse(a.startedAt) <= now.getTime()
       );
     });
     const hours = (yearActs.reduce((sum, a) => sum + Math.max(0, a.movingSec), 0) / 3600).toFixed(0);
     const distanceM = yearActs.reduce((sum, a) => sum + Math.max(0, a.distanceM), 0);
-    const effort = yearActs.reduce((sum, a) => sum + (a.effortScore ?? Math.round(a.movingSec / 60)), 0);
+    const effort = formatEffort(yearActs.reduce((sum, a) => sum + activityEffort(a), 0));
     const battles = state.periodResults.filter((r) =>
       r.periodStart.startsWith(yearStr),
     ).length;
@@ -236,9 +241,9 @@ export function JourneySpace({
           options={[
             { value: "week", label: "Week" },
             { value: "month", label: "Month" },
-            { value: "year", label: "Year Atlas" },
+            { value: "year", label: "Year" },
           ]}
-          onChange={setHorizon}
+          onChange={(next) => { setHorizon(next); setSelectedDayKey(null); }}
         />
       </View>
 
@@ -250,24 +255,20 @@ export function JourneySpace({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Previous week"
-              onPress={() => setDayOffset((prev) => prev - 1)}
+              onPress={() => { setDayOffset((prev) => prev - 1); setSelectedDayKey(null); }}
               style={s.navBtn}
             >
               <AppText role="body" style={{ color: c.ink }}>←</AppText>
             </Pressable>
 
             <AppText role="heading">
-              {calendarDays.anchor.toLocaleDateString("en-US", {
-                month: "short",
-                year: "numeric",
-                timeZone: APP_TIMEZONE,
-              })}
+              {formatWeeklyCompetitionRange(calendarDays.monday)}
             </AppText>
 
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Next week"
-              onPress={() => setDayOffset((prev) => Math.min(0, prev + 1))}
+              onPress={() => { setDayOffset((prev) => Math.min(0, prev + 1)); setSelectedDayKey(null); }}
               disabled={dayOffset >= 0}
               style={[s.navBtn, dayOffset >= 0 && { opacity: 0.3 }]}
             >
@@ -358,7 +359,7 @@ export function JourneySpace({
               accessibilityRole="button"
               accessibilityLabel="Previous month"
               disabled={!monthPrevAllowed}
-              onPress={() => setMonthOffset((prev) => prev - 1)}
+              onPress={() => { setMonthOffset((prev) => prev - 1); setSelectedDayKey(null); }}
               style={[s.navBtn, !monthPrevAllowed && { opacity: 0.3 }]}
             >
               <AppText role="body" style={{ color: c.ink }}>←</AppText>
@@ -376,7 +377,7 @@ export function JourneySpace({
               accessibilityRole="button"
               accessibilityLabel="Next month"
               disabled={!monthNextAllowed}
-              onPress={() => setMonthOffset((prev) => prev + 1)}
+              onPress={() => { setMonthOffset((prev) => prev + 1); setSelectedDayKey(null); }}
               style={[s.navBtn, !monthNextAllowed && { opacity: 0.3 }]}
             >
               <AppText role="body" style={{ color: c.ink }}>→</AppText>
@@ -484,7 +485,7 @@ export function JourneySpace({
             </View>
             <View style={s.statBox}>
               <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
-                {(monthCells.filter((c) => c.inMonth && !c.future).reduce((acc, c) => acc + c.movingSec, 0) / 60).toFixed(0)}
+                {monthSummary.effort}
               </AppText>
               <AppText role="caption" secondary>Effort</AppText>
             </View>
@@ -507,7 +508,7 @@ export function JourneySpace({
             </Pressable>
 
             <AppText role="heading">
-              {yearAnchor.getUTCFullYear()} Season Atlas
+              {dayKey(yearAnchor).slice(0, 4)} Season Atlas
             </AppText>
 
             <Pressable
@@ -521,7 +522,7 @@ export function JourneySpace({
             </Pressable>
           </View>
 
-          {/* Stylized contour graphic */}
+          {yearBuckets.some((bucket) => bucket.movingSec > 0) ? (
           <View style={s.atlasChartWrapper}>
             <Svg width="100%" height={90} viewBox="0 0 320 90" preserveAspectRatio="none">
               <Defs>
@@ -531,19 +532,26 @@ export function JourneySpace({
                 </LinearGradient>
               </Defs>
               <Path
-                d="M 0 75 Q 40 25, 80 50 T 160 20 T 240 45 T 320 15 L 320 90 L 0 90 Z"
+                d={`M 0 90 ${yearBuckets.map((bucket, i) => {
+                  const x = (i / Math.max(1, yearBuckets.length - 1)) * 320;
+                  const y = 82 - (bucket.movingSec / maxMonthSec) * 64;
+                  return `L ${x.toFixed(1)} ${y.toFixed(1)}`;
+                }).join(" ")} L 320 90 Z`}
                 fill="url(#yearGradient)"
               />
               <Path
-                d="M 0 75 Q 40 25, 80 50 T 160 20 T 240 45 T 320 15"
+                d={yearBuckets.map((bucket, i) => {
+                  const x = (i / Math.max(1, yearBuckets.length - 1)) * 320;
+                  const y = 82 - (bucket.movingSec / maxMonthSec) * 64;
+                  return `${i ? "L" : "M"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+                }).join(" ")}
                 fill="none"
                 stroke={c.tennis}
                 strokeWidth={2.5}
               />
-              <Circle cx={160} cy={20} r={4} fill={c.tennis} />
-              <Circle cx={320} cy={15} r={4} fill={c.tennis} />
             </Svg>
           </View>
+          ) : null}
 
           {/* 12-Month Progression Bar Grid */}
           <View style={s.yearBarsRow}>
@@ -628,13 +636,14 @@ export function JourneySpace({
           <View style={{ gap: 8 }}>
             {pastResults.slice(0, 3).map((res) => {
               const isExpanded = expandedResultId === res.id;
-              const dateRangeStr = `${formatActivityDate(res.periodStart)} – ${formatActivityDate(res.periodEnd)}`;
+              const dateRangeStr = formatWeeklyCompetitionRange(new Date(res.periodStart));
               const delta = res.eloAfter - res.eloBefore;
+              const deltaLabel = formatEffortScoreDelta(res.eloBefore, res.eloAfter);
               return (
                 <View key={res.id} style={s.resultContainer}>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Competition result: place ${res.place} of ${res.fieldSize}, ${sportById(res.sport).name}, ${delta >= 0 ? "+" : ""}${delta} effort`}
+                    accessibilityLabel={`Competition result: place ${res.place} of ${res.fieldSize}, ${sportById(res.sport).name}, ${deltaLabel} effort score`}
                     onPress={() =>
                       setExpandedResultId(isExpanded ? null : res.id)
                     }
@@ -671,7 +680,7 @@ export function JourneySpace({
                           fontWeight: "600",
                         }}
                       >
-                        {delta >= 0 ? `+${delta}` : delta} effort
+                        {deltaLabel} effort score
                       </AppText>
                     </View>
 
@@ -742,7 +751,7 @@ export function JourneySpace({
           <View style={{ gap: 8 }}>
             {recentActivities.slice(0, 5).map((activity) => {
               const sportInfo = sportById(activity.sport);
-              const effort = activity.effortScore ?? Math.round(activity.movingSec / 60);
+              const effort = formatEffort(activityEffort(activity));
               return (
                 <Pressable
                   key={activity.id}
@@ -752,11 +761,11 @@ export function JourneySpace({
                   style={s.activityRow}
                 >
                   <View style={s.activityIconWrapper}>
-                    <SportActivityIcon sport={activity.sport} size={22} color={c.tennis} />
+                    <SportActivityIcon sport={activity.sport} />
                   </View>
                   <View style={{ flex: 1, gap: 2 }}>
                     <AppText role="row" style={{ fontWeight: "600" }}>
-                      {sportInfo.name} · {activity.title || (activity.distanceM > 0 ? "Outdoor" : "Session")}
+                      {sportInfo.name}
                     </AppText>
                     <AppText role="caption" secondary>
                       {formatActivityDate(activity.startedAt)}
@@ -787,7 +796,7 @@ export function JourneySpace({
       {inspectedActivity && (
         <FocusSheet
           open={!!inspectedActivity}
-          title={inspectedActivity.title || sportById(inspectedActivity.sport).name}
+          title={sportById(inspectedActivity.sport).name}
           onClose={() => setInspectedActivity(null)}
         >
           <View style={{ gap: 16, paddingVertical: 12 }}>
@@ -809,7 +818,7 @@ export function JourneySpace({
               <View style={{ gap: 2 }}>
                 <AppText role="caption" secondary>Effort Earned</AppText>
                 <AppText role="value" style={{ color: c.tennis, fontVariant: ["tabular-nums"] }}>
-                  {inspectedActivity.effortScore ?? Math.round(inspectedActivity.movingSec / 60)} pts
+                  {formatEffort(activityEffort(inspectedActivity))} pts
                 </AppText>
               </View>
             </View>
