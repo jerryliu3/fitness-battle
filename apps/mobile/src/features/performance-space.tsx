@@ -192,7 +192,7 @@ export function PerformanceSpace({
               </AppText>
               {scoreComparison && !inspectedEffort && (
                 <View style={s.trendPill}>
-                  <AppText role="caption" style={{ color: c.tennis, fontWeight: "700" }}>
+                  <AppText role="label" style={{ color: c.tennis }}>
                     {scoreComparison.pct > 0 ? "↑ " : scoreComparison.pct < 0 ? "↓ " : ""}
                     {scoreComparison.pct > 0 ? "+" : ""}
                     {scoreComparison.pct.toFixed(0)}%
@@ -283,7 +283,7 @@ export function PerformanceSpace({
               >
                 <AppText
                   role="caption"
-                  style={{ color: active ? c.card : c.ink, fontWeight: "600" }}
+                  style={{ color: active ? c.card : c.ink }}
                 >
                   {sport === "all" ? "All Sports" : sportById(sport).name}
                 </AppText>
@@ -332,10 +332,9 @@ export function PerformanceSpace({
                   style={[s.chip, active && s.chipActive]}
                 >
                   <AppText
-                    role="caption"
+                    role="label"
                     style={{
                       color: active ? c.card : c.ink,
-                      fontWeight: "600",
                     }}
                   >
                     {d.sport === "cycling" ? "Ride · " : "Run · "}
@@ -364,7 +363,7 @@ export function PerformanceSpace({
                   <View style={{ alignItems: "flex-end", gap: 2 }}>
                     <AppText role="caption" secondary>Improvement</AppText>
                     <View style={s.gainPill}>
-                      <AppText role="caption" style={{ color: c.tennis, fontWeight: "700" }}>
+                      <AppText role="label" style={{ color: c.tennis }}>
                         -{formatClockTime(prSummary.dropSeconds)} (-{prSummary.pct.toFixed(1)}%)
                       </AppText>
                     </View>
@@ -499,7 +498,7 @@ export function PerformanceSpace({
               {inspectedPRAttempt && (
                 <View style={s.inspectedPRBox}>
                   <View style={{ flex: 1, gap: 4 }}>
-                    <AppText role="label" style={{ fontWeight: "700" }}>
+                    <AppText role="label">
                       PR on {formatActivityDate(inspectedPRAttempt.startedAt)}
                     </AppText>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -523,7 +522,7 @@ export function PerformanceSpace({
                     }}
                     style={s.inspectActionBtn}
                   >
-                    <AppText role="caption" style={{ color: c.card, fontWeight: "600" }}>
+                    <AppText role="label" style={{ color: c.card }}>
                       View activity
                     </AppText>
                   </Pressable>
@@ -546,8 +545,8 @@ export function PerformanceSpace({
           <AppText role="value" style={{ color: c.tennis }}>✦</AppText>
         </View>
         <View style={{ flex: 1, gap: 4 }}>
-          <AppText role="label" style={{ fontWeight: "700" }}>Training Insight</AppText>
-          <AppText role="body" secondary style={{ lineHeight: 20 }}>
+          <AppText role="label">Training Insight</AppText>
+          <AppText role="body" secondary>
             {insightText}
           </AppText>
         </View>
