@@ -23,12 +23,14 @@ import { requestApi } from "../lib/api";
 import { FocusButton, FocusSheet } from "../ui/focus";
 export function CrewSessions({
   crewId,
+  compact = false,
   portraits = {},
   sport = "running",
   onSelectMember,
   hiddenIds = [],
 }: {
   crewId: string;
+  compact?: boolean;
   portraits?: Record<string, string | null | undefined>;
   sport?: string;
   hiddenIds?: readonly string[];
@@ -116,7 +118,10 @@ const f=useFocusStyles();
       if (mounted.current) setBusy(false);
     }
   }
-  return (
+  const pendingProfile = useRef<{ id: string; name: string } | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const nextSession = sessions.filter(s => !s.cancelled_at && Date.parse(s.starts_at) > Date.now()).sort((a,b) => Date.parse(a.starts_at) - Date.parse(b.starts_at))[0];
+  const content = (
     <Section  title="Start Line" action={<FocusButton
           label="Schedule +"
           secondary
@@ -174,7 +179,7 @@ const f=useFocusStyles();
               ]}
             >
               {s.participants.slice(0, 6).map((p) => hiddenIds.includes(p.user_id) ? <View key={p.user_id} style={{ width: 38, height: 38 }} /> : (
-                <Pressable key={p.user_id} accessibilityRole="button" accessibilityLabel={`View ${p.display_name}'s profile`} onPress={() => onSelectMember?.(p.user_id, p.display_name)}>
+                <Pressable key={p.user_id} accessibilityRole="button" accessibilityLabel={`View ${p.display_name}'s profile`} onPress={() => { if (compact) { pendingProfile.current = { id: p.user_id, name: p.display_name }; setDetailsOpen(false); } else onSelectMember?.(p.user_id, p.display_name); }}>
                   <UserAvatar src={portraits[p.user_id]} name={p.display_name} size={38} decorative={false} highlight={p.user_id === user?.id} />
                 </Pressable>
               ))}
@@ -306,4 +311,6 @@ const f=useFocusStyles();
       </FocusSheet>
     </Section>
   );
+  return compact ? <><Pressable accessibilityRole="button" onPress={() => setDetailsOpen(true)} style={[f.card, { flex: 1, minHeight: 170, justifyContent: "space-between", backgroundColor: colors.soft }]}><AppText role="label">Start Line ↗</AppText><AppText role="heading">{nextSession?.title ?? "Set the next start"}</AppText><AppText role="caption" secondary>{error ? "Sessions unavailable" : nextSession ? `${new Date(nextSession.starts_at).toLocaleDateString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: nextSession.time_zone })} · ${nextSession.participants.length} going` : "Schedule a session"}</AppText></Pressable><FocusSheet open={detailsOpen} minimal title="Start Line" onClosed={() => { const member = pendingProfile.current; pendingProfile.current = null; if (member) onSelectMember?.(member.id, member.name); }} onClose={() => { setDetailsOpen(false); setOpen(false); setCancelTarget(null); }}>{content}</FocusSheet></> : content;
+
 }

@@ -2,13 +2,13 @@ import { useFocusStyles } from "../ui/focus";
 import { useThemeColors } from "../theme";
 import { AthleteProfileSheet } from "./athlete-profile-sheet";
 import { RankAvatar } from "../ui/rank-symbol";
-import { AppText, Section, SectionStack } from "../ui/section";
+import { UserAvatar } from "../ui/user-avatar";
+import { AppText, SectionStack } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
-import { RankBadge } from "../ui/rank-badge";
 import { alpineTrail } from "../ui/club-art";
 
 import { CrewSessions } from "./crew-sessions";
-import { CrewRelay } from "./crew-relay";
+import { CrewOverview } from "./crew-overview";
 import {
   type SportId,
   type CrewBoardPin,
@@ -23,7 +23,6 @@ import {
   dayKey,
   APP_TIMEZONE,
   crewMemberWeekValue,
-  crewWeekRelay,
   getDemoCompeteState,
 } from "@fitness-battle/shared";
 import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
@@ -120,6 +119,8 @@ const f=useFocusStyles();
   const params = useGlobalSearchParams<{ invite?: string | string[] }>();
   const api = useCrewApi();
   const [selected, setSelected] = useState(crewId);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const createAfterSwitch = useRef(false);
   const [panel, setPanel] = useState<
     "add" | "invite" | "manage" | "leave" | "members" | null
   >(null);
@@ -261,7 +262,6 @@ const f=useFocusStyles();
     ? (api.data.previousProgress??[]).filter(row=>row.crew_id===crew.id && members.some(m=>m.user_id===row.user_id)).reduce((sum,row)=>sum+Number(row.distance_m),0)
     : null;
   const sessionsMetric = crew.format === "personal_target" || crew.sport === "strength";
-  const relay = crewWeekRelay({ members, entries, sport: crew.sport, format: crew.format, targetSessions: crew.target_sessions, targetDistanceM: crew.journey_km * 1000, previousDistanceM });
   const distance = (meters: number) =>
     `${formatDistanceM(meters, state?.units)} ${distanceUnitLabel(state?.units)}`;
   const memberTotal = (id: string) =>
@@ -425,7 +425,7 @@ const f=useFocusStyles();
       you: viewingMember.user_id === user?.id, score: viewingMember.effort_score,
       contextLabel: "This week's crew contribution",
       contextValue: viewingMember.status === "former" ? undefined : sessionsMetric ? `${memberTotal(viewingMember.user_id)} sessions` : distance(memberTotal(viewingMember.user_id)),
-      contextDetail: `${crew.name} · ${crew.sport} · Active this week`,
+      contextDetail: `${crew.name} · ${Math.round(memberTotal(viewingMember.user_id) / Math.max(1, members.reduce((sum, m) => sum + memberTotal(m.user_id), 0)) * 100)}% of crew total`,
     } : null}
     onClose={() => setViewingMember(null)}
   />;
@@ -464,125 +464,19 @@ const f=useFocusStyles();
         </SectionStack>
       ) : (
         <SectionStack divided={false}>
-          <View style={f.chipRow}>
-            {crews.map((c) => (
-              <Pressable
-                key={c.id}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: crew.id === c.id }}
-                onPress={() => setSelected(c.id)}
-                style={[f.chip, crew.id === c.id && f.chipActive]}
-              >
-                <AppText role="label" >{c.name}</AppText>
-              </Pressable>
-            ))}
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => open("add")}
-              style={[f.chip, { borderStyle: "dotted" }]}
-            >
-              <AppText role="label" >New crew +</AppText>
-            </Pressable>
-          </View>
-          <ImageBackground source={alpineTrail} style={[f.card,{backgroundColor:c.fieldDeep,gap:18,minHeight:260,overflow:"hidden",justifyContent:"space-between"}]} imageStyle={{borderRadius:20}}><View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3680"}]}/>
-            <View style={{ gap: 12, minHeight: 44, flex: 1 }}>
-              <Text style={[f.kicker, { color: c.tennis }]}>
-                {solo ? "Solo circle" : "Your people"} · {members.length} member
-                {members.length === 1 ? "" : "s"}
-              </Text>
-              <AppText accessibilityRole="header" role="display" style={{ color: c.paper }}>{crew.name}</AppText>
+          <View style={{ flexDirection: "row", gap: 12, alignItems: "center", paddingVertical: 8 }}>
+            <View style={{ flex: 1, gap: 8 }}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Switch crew" onPress={() => setSwitcherOpen(true)} style={{ minHeight: 44, justifyContent: "center" }}><AppText accessibilityRole="header" role="display">{crew.name} ⌄</AppText></Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel="View crew members" onPress={() => open("members")} style={{ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44 }}><View style={{ flexDirection: "row" }}>{members.slice(0, 3).map(m => <View key={m.user_id} style={{ marginRight: -5 }}>{!hiddenIds.includes(m.user_id) && <UserAvatar src={m.avatar_url} name={m.display_name} size={24} />}</View>)}</View><AppText role="caption" secondary>{members.length} {members.length === 1 ? "member" : "members"}</AppText></Pressable>
             </View>
-            <View style={[f.row, { flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 10 }]}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="View crew members"
-                onPress={() => open("members")}
-                style={[f.row, { alignItems: "center", gap: 4 }]}
-              >
-                <View style={f.chipRow}>
-                  {members.slice(0, 5).map((m) => hiddenIds.includes(m.user_id) ? <View key={m.user_id} style={{ width: 36, height: 36 }} /> : (
-                    <RankAvatar key={m.user_id} rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} decorative={false} size={48} />
-                  ))}
-                  {members.length > 5 ? (
-                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.card, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: c.line }}>
-                      <AppText role="caption">+{members.length - 5}</AppText>
-                    </View>
-                  ) : null}
-                </View>
-              </Pressable>
-              <View style={[f.row, { gap: 8 }]}>
-                {user ? (
-                  <FocusButton
-                    label="Invite"
-                    onPress={() => {
-                      open("invite");
-                      if (!solo && crew.invite_code) {
-                        const link = inviteLink(crew.invite_code);
-                        void Share.share({
-                          message: `Join my crew on overtaek: ${link}`,
-                        }).then(result => {
-                          if (result.action === Share.sharedAction) { setNote("Invite shared."); void playCue("success"); }
-                        }).catch(() => setNote("Could not share the invite. Try again."));
-                      }
-                    }}
-                  />
-                ) : null}
-                {user ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Crew settings"
-                    onPress={() => open("manage")}
-                    style={[f.chip, { minWidth: 48 }]}
-                  >
-                    <AppIcon name="preferences" />
-                  </Pressable>
-                ) : null}
-              </View>
-            </View>
-          </ImageBackground>
-          <View style={f.section}>
-            <Text style={f.kicker}>Our shared week · {crew.sport}</Text>
-            <Text style={f.massive} adjustsFontSizeToFit numberOfLines={1}>
-              {sessionsMetric
-                ? `${relay.model.total}${relay.target == null ? "" : ` / ${relay.target}`} sessions`
-                : `${formatDistanceM(relay.model.total, state?.units)}${relay.target == null ? "" : ` / ${formatDistanceM(relay.target, state?.units)}`} ${distanceUnitLabel(state?.units)}`}
-            </Text>
-            <AppText role="body" secondary>{relay.kind === "baseline" ? "Last week’s distance" : relay.target == null ? "No shared target set" : "Shared target"}</AppText>
-            <CrewRelay hiddenIds={hiddenIds} onSelectMember={(id) => { const member = members.find((item) => item.user_id === id); if (member) setViewingMember(member); }} hideTargetSummary userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
+            {user && <View style={{ flexDirection: "row", gap: 8 }}><Pressable accessibilityRole="button" accessibilityLabel="Invite to crew" onPress={() => open("invite")} style={[f.chip, { width: 44, height: 44, borderRadius: 22, justifyContent: "center", alignItems: "center" }]}><AppText role="heading">＋</AppText></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Crew settings" onPress={() => open("manage")} style={[f.chip, { width: 44, height: 44, borderRadius: 22, justifyContent: "center", alignItems: "center" }]}><AppIcon name="preferences" size={20} /></Pressable></View>}
           </View>
-          {user ? (
-            <>
-              {user && !solo ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} hiddenIds={hiddenIds} onSelectMember={(id, name) => { setViewingMember(members.find((item) => item.user_id === id) ?? { user_id: id, display_name: name, crew_id: crew.id, rest_week: null, status: "former" }); }} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} sport={crew.sport} /> : null}
-              <Section title="Crew standings">
-                {members
-                  .slice()
-                  .sort(
-                    (a, b) => memberTotal(b.user_id) - memberTotal(a.user_id),
-                  )
-                  .map((m, i) => hiddenIds.includes(m.user_id) ? <View key={m.user_id} style={{ minHeight: 52 }} /> : (
-                    <Pressable
-                      key={m.user_id}
-                      accessibilityRole="button"
-                      accessibilityLabel={`View ${m.display_name}'s profile`}
-                      onPress={() => {
-                        setViewingMember(m);
-                      }}
-                      style={[f.row, { paddingVertical: 8, alignItems: "center" }]}
-                    >
-                      <AppText role="body" secondary >{i + 1}</AppText>
-                      <RankAvatar rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} size={48} />
-                      <AppText role="row" style={f.grow}>{m.display_name}</AppText>
-                      <RankBadge score={m.effort_score} />
-                      <AppText role="value" >
-                        {sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))}
-                      </AppText>
-                    </Pressable>
-                  ))}
-              </Section>
-            </>
-          ) : null}
+          <CrewOverview crewId={crew.id} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} hiddenIds={hiddenIds} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)}>
+            {user && <CrewSessions compact key={`${user.id}:${crew.id}`} crewId={crew.id} hiddenIds={hiddenIds} onSelectMember={(id, name) => setViewingMember(members.find(m => m.user_id === id) ?? { user_id: id, display_name: name, crew_id: crew.id, rest_week: null, status: "former" })} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} sport={crew.sport} />}
+          </CrewOverview>
         </SectionStack>
       )}
+      <FocusSheet open={switcherOpen} minimal title="Your crews" onClosed={() => { if (createAfterSwitch.current) { createAfterSwitch.current = false; open("add"); } }} onClose={() => setSwitcherOpen(false)}>{crews.map(item => <FocusButton key={item.id} label={item.name} secondary={item.id !== crew.id} onPress={() => { setSelected(item.id); setSwitcherOpen(false); }} />)}<FocusButton label="New crew +" secondary onPress={() => { createAfterSwitch.current = true; setSwitcherOpen(false); }} /></FocusSheet>
       {memberSheet}
       {!panel && (note || api.error) ? (
         <AppText role="body" secondary  accessibilityLiveRegion="polite">

@@ -53,11 +53,12 @@ export function buildCrewRelayViewState(
     scenePrefix: string;
     sport: SportId;
     units?: UnitSystem;
+    compact?: boolean;
   },
 ) {
   const { model, sessions, kind, target, label, inactiveCount, rosterSize } =
     relay;
-  const width = crewRelayTrackWidth(options.containerWidth, model);
+  const width = options.compact ? Math.max(180, options.containerWidth) : crewRelayTrackWidth(options.containerWidth, model);
   return {
     model,
     sessions,

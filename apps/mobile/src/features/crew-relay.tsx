@@ -4,7 +4,7 @@ import { UserAvatar } from "../ui/user-avatar";
 import { chartTextProps, AppText } from "../ui/section";
 import { useEffect, useId, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import Svg, { G, Text as SvgText } from "react-native-svg";
+import Svg, { G, Line, Text as SvgText } from "react-native-svg";
 import {
   buildCrewRelayViewState,
   crewWeekRelay,
@@ -44,6 +44,7 @@ const s=useThemedStyles(sThemes);
     scenePrefix: prefix,
     sport: sport as SportId,
     units,
+    compact: props.compact,
   });
 
   useEffect(() => {
@@ -56,6 +57,10 @@ const s=useThemedStyles(sThemes);
   }, [view.segmentKey, selected, view.model.segments]);
 
   const volume = view.volume;
+  const ghostFraction = !relay.sessions && props.previousDistanceM != null
+    ? Math.min(1, props.previousDistanceM / (Math.max(1, relay.model.total, relay.target ?? 0) * 1.2)) : null;
+  const ghost = ghostFraction == null ? null : { x: 16 + ghostFraction * Math.max(180, view.width - 52), y: 174 - ghostFraction * 30 };
+
 
   return (
     <View
@@ -76,10 +81,11 @@ const s=useThemedStyles(sThemes);
         horizontal
         showsHorizontalScrollIndicator={view.width > width}
       >
-        <View style={{ width: view.width, height: view.scene.height }}>
+        <View style={{ width: view.width, height: compact ? 132 : view.scene.height }}>
           <Svg
             width={view.width}
-            height={view.scene.height}
+            height={compact ? 132 : view.scene.height}
+            viewBox={compact ? `0 90 ${view.width} 132` : undefined}
             accessibilityLabel={`${volume(view.model.total)} together${view.target ? ` of ${volume(view.target)} target` : "; target unavailable"}`}
           >
             {view.scene.ground.map(drawFieldNode)}
@@ -87,7 +93,8 @@ const s=useThemedStyles(sThemes);
               <G key={s.id}>{s.nodes.map(drawFieldNode)}</G>
             ))}
             {view.scene.finish.map(drawFieldNode)}
-            {view.target ? (
+            {ghost && <Line x1={ghost.x} y1={ghost.y + 18} x2={ghost.x + 24} y2={ghost.y - 46} stroke={c.ink} strokeWidth={2} strokeDasharray="4 4" />}
+            {!props.compact && view.target ? (
               <SvgText
                 {...chartTextProps()}
                 x={Math.max(
@@ -103,7 +110,7 @@ const s=useThemedStyles(sThemes);
               >
                 FINISH · {volume(view.target)}
               </SvgText>
-            ) : (
+            ) : !props.compact ? (
               <SvgText
                 {...chartTextProps()}
                 x={view.width / 2}
@@ -113,9 +120,9 @@ const s=useThemedStyles(sThemes);
               >
                 A shared target has not been set
               </SvgText>
-            )}
+            ) : null}
           </Svg>
-          {view.scene.people.filter(p => !hiddenIds.includes(p.id)).map((p) => {
+          {!compact && view.scene.people.filter(p => !hiddenIds.includes(p.id)).map((p) => {
             const m = view.model.segments.find(
               (segment) => segment.id === p.id,
             )!;

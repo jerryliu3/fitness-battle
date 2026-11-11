@@ -13,7 +13,7 @@ import {
 } from "@fitness-battle/shared";
 import { drawFieldNode as drawFieldNodeDom } from "@/features/field/components/field-course";
 
-type Props = CrewWeekRelayInput & { units?: UnitSystem; userId?: string };
+type Props = CrewWeekRelayInput & { units?: UnitSystem; userId?: string; compact?: boolean; onSelectMember?: (id: string) => void };
 
 export function CrewRelay(props: Props) {
   const { members, sport, units, userId } = props;
@@ -29,6 +29,7 @@ export function CrewRelay(props: Props) {
     scenePrefix: prefix,
     sport: sport as SportId,
     units,
+    compact: props.compact,
   });
 
   useEffect(() => {
@@ -51,24 +52,28 @@ export function CrewRelay(props: Props) {
   }, []);
 
   const volume = view.volume;
+  const ghostFraction = !relay.sessions && props.previousDistanceM != null
+    ? Math.min(1, props.previousDistanceM / (Math.max(1, relay.model.total, relay.target ?? 0) * 1.2)) : null;
+  const ghost = ghostFraction == null ? null : { x: 16 + ghostFraction * Math.max(180, view.width - 52), y: 174 - ghostFraction * 30 };
+
 
   return (
     <div ref={host} className="crew-dimensional-relay">
-      <div className="crew-relay-context">
+      {!props.compact && <div className="crew-relay-context">
         <span>{view.label}</span>
         {view.target ? (
           <AppText role="value">{volume(view.target)}</AppText>
         ) : null}
-      </div>
+      </div>}
       <div className="club-crew-track-scroll">
         <div
           className="club-crew-track"
-          style={{ width: view.width, height: view.scene.height }}
+          style={{ width: view.width, height: props.compact ? 132 : view.scene.height }}
         >
           <svg
             width={view.width}
-            height={view.scene.height}
-            viewBox={`0 0 ${view.width} ${view.scene.height}`}
+            height={props.compact ? 132 : view.scene.height}
+            viewBox={props.compact ? `0 90 ${view.width} 132` : `0 0 ${view.width} ${view.scene.height}`}
             role="img"
             aria-label={`${volume(view.model.total)} together${view.target ? ` of ${volume(view.target)} target` : "; target unavailable"}`}
           >
@@ -77,7 +82,8 @@ export function CrewRelay(props: Props) {
               <g key={s.id}>{s.nodes.map(drawFieldNodeDom)}</g>
             ))}
             {view.scene.finish.map(drawFieldNodeDom)}
-            {view.target ? (
+            {ghost && <line x1={ghost.x} y1={ghost.y + 18} x2={ghost.x + 24} y2={ghost.y - 46} stroke={appearanceColors.ink} strokeWidth={2} strokeDasharray="4 4" />}
+            {!props.compact && view.target ? (
               <text
                 style={typographyStyle("caption")}
                 x={Math.max(
@@ -93,7 +99,7 @@ export function CrewRelay(props: Props) {
               >
                 FINISH · {volume(view.target)}
               </text>
-            ) : (
+            ) : !props.compact ? (
               <text
                 style={typographyStyle("caption")}
                 x={view.width / 2}
@@ -103,9 +109,9 @@ export function CrewRelay(props: Props) {
               >
                 A shared target has not been set
               </text>
-            )}
+            ) : null}
           </svg>
-          {view.scene.people.map((p) => {
+          {!props.compact && view.scene.people.map((p) => {
             const m = view.model.segments.find((segment) => segment.id === p.id)!;
             const person = members.find((member) => member.user_id === p.id);
             return (
@@ -116,7 +122,7 @@ export function CrewRelay(props: Props) {
                 style={{ left: p.x - 28, top: p.y }}
                 aria-pressed={view.member?.id === p.id}
                 aria-label={`${m.name}, ${volume(m.value)}`}
-                onClick={() => setSelected(p.id)}
+                onClick={() => { setSelected(p.id); props.onSelectMember?.(p.id); }}
               >
                 <span
                   className="crew-member-photo"
@@ -135,11 +141,11 @@ export function CrewRelay(props: Props) {
           })}
         </div>
       </div>
-      {view.empty ? (
+      {!props.compact && view.empty ? (
         <AppParagraph typographyRole="caption" className="fb-note">
           No one has logged activity this week yet.
         </AppParagraph>
-      ) : view.member ? (
+      ) : !props.compact && view.member ? (
         <AppParagraph
           typographyRole="body"
           className="crew-member-receipt"
@@ -153,12 +159,12 @@ export function CrewRelay(props: Props) {
           </span>
         </AppParagraph>
       ) : null}
-      {view.rosterFootnote ? (
+      {!props.compact && view.rosterFootnote ? (
         <AppParagraph typographyRole="caption" className="fb-note">
           {view.rosterFootnote}
         </AppParagraph>
       ) : null}
-      {view.target ? (
+      {!props.compact && view.target ? (
         <AppParagraph typographyRole="caption" className="fb-note">
           {view.model.remaining
             ? `${volume(view.model.remaining)} ${view.kind === "baseline" ? "to match last week" : "to the target"}`
@@ -166,11 +172,7 @@ export function CrewRelay(props: Props) {
               ? `${volume(view.model.total - view.target)} beyond ${view.kind === "baseline" ? "last week" : "the target"}`
               : "Target reached together."}
         </AppParagraph>
-      ) : (
-        <AppParagraph typographyRole="caption" className="fb-note">
-          Recorded contributions are shown without inventing a finish.
-        </AppParagraph>
-      )}
+      ) : null}
     </div>
   );
 }
