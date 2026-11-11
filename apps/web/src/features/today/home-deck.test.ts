@@ -70,29 +70,15 @@ describe("Web HomeDeck", () => {
     expect(text()).toContain("RECOVERY-FRIENDLY");
     expect(text()).not.toContain("4 cards");
 
-    const dot2 = renderer.root.find(
-      (n) =>
-        n.type === "button" &&
-        typeof n.props["aria-label"] === "string" &&
-        n.props["aria-label"].startsWith("Show card 2 of 4"),
-    );
-    await act(async () => {
-      dot2.props.onClick();
-    });
-    expect(text()).toContain("Your next chapter starts here.");
-
-    const dot3 = renderer.root.find(
-      (n) =>
-        n.type === "button" &&
-        typeof n.props["aria-label"] === "string" &&
-        n.props["aria-label"].startsWith("Show card 3 of 4"),
-    );
-    await act(async () => {
-      dot3.props.onClick();
-    });
+    expect(text()).toContain("Updates");
+    expect(text()).not.toContain("Show card");
+    for (let i = 0; i < 2; i++) {
+      const dismiss = renderer.root.find(n => n.type === "button" && typeof n.props["aria-label"] === "string" && n.props["aria-label"].startsWith("Dismiss "));
+      await act(async () => { dismiss.props.onClick(); await new Promise(r => setTimeout(r, 320)); });
+    }
     expect(text()).toContain("Good things are in motion.");
 
-    // Dismiss 1 card: Reset ↺ should NOT be visible yet
+    // Dismiss 1 card: Reset should NOT be visible yet
     const dismissBtn1 = renderer.root.find(
       (n) =>
         n.type === "button" &&
@@ -103,10 +89,10 @@ describe("Web HomeDeck", () => {
       dismissBtn1.props.onClick();
       await new Promise((r) => setTimeout(r, 320));
     });
-    expect(text()).not.toContain("Reset ↺");
+    expect(text()).not.toContain("Reset");
 
-    // Dismiss remaining 3 cards until all caught up
-    for (let i = 0; i < 3; i++) {
+    // Dismiss remaining card until all caught up
+    for (let i = 0; i < 1; i++) {
       const dismissBtn = renderer.root.find(
         (n) =>
           n.type === "button" &&
@@ -121,7 +107,7 @@ describe("Web HomeDeck", () => {
 
     // Now all caught up: compact message and Reset button appear
     expect(text()).toContain("You’re all caught up.");
-    expect(text()).toContain("Reset ↺");
+    expect(text()).toContain("Reset");
 
     // Restore cards via Reset button
     const resetBtn = renderer.root.find(
@@ -135,4 +121,21 @@ describe("Web HomeDeck", () => {
     expect(text()).not.toContain("You’re all caught up.");
     expect(text()).toContain("RECOVERY-FRIENDLY");
   });
+});
+
+it("cancels an outgoing dismissal when the account changes", async () => {
+  vi.useFakeTimers();
+  const state = freshState(new Date("2026-10-22T14:00:00Z"));
+  state.demoNow = "2026-10-22T14:00:00Z";
+  const props = { state, onOpenTodaySession() {}, onOpenActivities() {} };
+  await act(async () => { renderer = create(createElement(HomeDeck, { ...props, accountKey: "dismissal-account-before" })); });
+  try {
+    const title = () => renderer.root.findByType("article").findByType("h3").children.join("");
+    const original = title();
+    const dismiss = renderer.root.find(node => node.type === "button" && node.props["aria-label"]?.startsWith("Dismiss "));
+    await act(async () => dismiss.props.onClick());
+    await act(async () => renderer.update(createElement(HomeDeck, { ...props, accountKey: "dismissal-account-after" })));
+    await act(async () => { vi.advanceTimersByTime(320); });
+    expect(title()).toBe(original);
+  } finally { vi.useRealTimers(); }
 });

@@ -5,13 +5,14 @@ import { colors as c } from "@/theme/app-colors";
 import { typographyStyle } from "@/ui/section";
 export function FieldViewSwitcher({ compact = false, value, geographic, onChange, standings = false, onStandings, onZoomIn, onZoomOut }: {
   compact?: boolean;
-  value: "2d" | "3d" | "4d"; geographic: boolean; onChange(value: "2d" | "3d" | "4d"): void;
+  value: "2d" | "3d" | "4d" | "graph"; geographic: boolean; onChange(value: "2d" | "3d" | "4d" | "graph"): void;
   standings?: boolean; onStandings?: () => void;
   onZoomIn?: () => void; onZoomOut?: () => void;
 }) {
   const selector = <select aria-label="Field view" value={standings ? "standings" : value}
-    onChange={event => { const next = event.target.value; if (next === "standings") onStandings?.(); else if (next === "zoom-in") onZoomIn?.(); else if (next === "zoom-out") onZoomOut?.(); else onChange(next as "2d" | "3d" | "4d"); }}
+    onChange={event => { const next = event.target.value; if (next === "standings") onStandings?.(); else if (next === "zoom-in") onZoomIn?.(); else if (next === "zoom-out") onZoomOut?.(); else onChange(next as "2d" | "3d" | "4d" | "graph"); }}
     style={{ ...typographyStyle("label"), minHeight: 44, maxWidth: 160, borderRadius: 14, padding: "8px 12px", border: `1px solid ${c.line}`, background: c.card, color: c.ink }}>
+    <option value="graph">Graph</option>
     <option value="2d">2D map</option>
     {geographic ? <option value="4d">3D course</option> : null}
     {onStandings ? <option value="standings">Standings</option> : null}

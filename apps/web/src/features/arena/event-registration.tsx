@@ -12,14 +12,14 @@ export function EventRegistration({ state, event, busy, error, registered, onCla
   const [step, setStep] = useState(0);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [claiming, setClaiming] = useState(false);
-  const claimed = registered || claiming;
+  const claimed = registered;
   useEffect(() => { if (error) setClaiming(false); }, [error]);
   const now = competeNow(state);
   const detail = eventRegistration(state, event, now);
   return <div className="event-registration" style={{ "--registration-color": COMPETE_ART_COLORS[event] } as CSSProperties}>
     <AnimatePresence mode="wait" initial={false}>
     {step === 0 && <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={transition} className="registration-step" key="event"><div className="registration-hero"><EventArt event={event} /><AppHeading>{detail.name} Meet</AppHeading><AppParagraph>{detail.description}</AppParagraph></div>
-    <div className="registration-mysteries" aria-label="You and seven mystery athletes">{Array.from({ length: 8 }, (_, i) => <span key={i} style={{ animationDelay: `${i * 65}ms` }}>{i === 0 ? "You" : "?"}</span>)}</div></motion.div>}
+    <div className="registration-mysteries" aria-label="You and seven mystery athletes">{Array.from({ length: 8 }, (_, i) => <span key={i} style={{ animationDelay: `${800 + i * 65}ms` }}>{i === 0 ? "You" : "?"}</span>)}</div></motion.div>}
     {step === 1 && <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={transition} className="registration-details registration-step" key="details">{registrationDetailCards(detail).map((item, i) => <details key={item.title} open={expanded === i}><summary onClick={e => { e.preventDefault(); setExpanded(expanded === i ? null : i); }}><span className="registration-detail-icon"><CompeteIcon name={(["time", "time", "trophy"] as const)[i]!} /></span><span><AppText role="label">{item.title}</AppText><AppText role="caption" secondary>{item.summary}</AppText></span><span aria-hidden="true">＋</span></summary><AppParagraph typographyRole="caption" className="ui-text-secondary">{item.detail}</AppParagraph></details>)}</motion.div>}
     {step === 2 && <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={transition} className="registration-ticket-scene registration-step" key="ticket">
       <div className="registration-ticket" data-claimed={claimed}>
@@ -29,7 +29,7 @@ export function EventRegistration({ state, event, busy, error, registered, onCla
             <AppHeading>{detail.name} Meet</AppHeading><AppText role="label">{detail.details[2]!.summary} league</AppText>
             <AppText role="label">Starts {detail.starts}</AppText>
             <div className="registration-ticket-stub"><span className="registration-barcode" aria-hidden="true">{entryBarcode(`${event}:${detail.start}`).map((width, i) => <i key={i} style={{ flexGrow: width }} />)}</span></div>
-            <button type="button" className="fb-btn" disabled={busy || claimed} onClick={() => { setClaiming(true); setTimeout(onClaim, 60); }}>{busy ? "Claiming your spot…" : "Claim your spot"}</button>
+            <button type="button" className="fb-btn" disabled={busy || claiming || claimed} onClick={() => { setClaiming(true); onClaim(); }}>{busy || claiming ? "Claiming your spot…" : "Claim your spot"}</button>
           </div>
         </div>
         <div className="registration-face registration-back" inert={!claimed} aria-hidden={!claimed}>

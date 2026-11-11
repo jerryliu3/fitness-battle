@@ -30,7 +30,7 @@ export function WeekChart({
           <HomeActivityActions compact />
         </View>
         <OpenLineChart
-          showAxes={true}
+          showDateRange={false} showAxes={true}
           key={range}
           chart={chart}
           label="Cumulative training hours"

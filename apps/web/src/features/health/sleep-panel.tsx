@@ -1,12 +1,12 @@
 "use client";
 import { AppParagraph, AppText, typographyStyle, SectionHeader } from "@/ui/section";
+import { CompeteTimeSeriesChart } from "@/features/field/components/compete-time-series-chart";
 
 import {
   buildSleepView,
   formatClock,
   formatSleepDuration,
   healthMetricById,
-  isSampleSleepNight,
   stageShares,
   type CompeteState,
   type SleepNight,
@@ -34,12 +34,14 @@ function StageBar({ night }: { night: SleepNight }) {
 
 export function SleepPanel({
   state,
+  hideChart = false,
   now,
   onJoin,
   onLeave,
   leaveLabel = "Stop after this week",
 }: {
   state: CompeteState;
+  hideChart?: boolean;
   now: Date;
   onJoin: () => void;
   onLeave: () => void;
@@ -86,7 +88,7 @@ export function SleepPanel({
         <>
           <div className="sl-hero">
             <AppParagraph typographyRole="caption" className="fb-note">
-              {isSampleSleepNight(state, night) ? "Sample reading · " : ""}Wake date {night.day}. Weekly standings count nights in the current competition week.
+              Wake date {night.day}. Weekly standings count nights in the current competition week.
             </AppParagraph>
             <div>
               <p className="sl-score">
@@ -165,6 +167,8 @@ export function SleepPanel({
               </strong>
             </div>
           </div>
+
+          {!hideChart && <CompeteTimeSeriesChart state={state} now={now} mode="sleep" />}
 
           {view.rows.length > 0 ? (
             <ol className="sl-board">

@@ -16,31 +16,35 @@ export function FieldViewSwitcher({
   onChange,
 }: {
   compact?: boolean;
-  value: "2d" | "3d" | "4d";
+  value: "2d" | "3d" | "4d" | "graph";
   geographic: boolean;
-  onChange(value: "2d" | "3d" | "4d"): void;
+  onChange(value: "2d" | "3d" | "4d" | "graph"): void;
 }) {
 const appearanceColors = useThemeColors();
 
 const c=useThemeColors();
 
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
-    minWidth: compact ? 220 : 90,
-    estimatedHeight: compact ? 52 : 130,
+    minWidth: compact ? 220 : 96,
+    estimatedHeight: compact ? 52 : 165,
   });
 
   const pendingChange = useRef<(() => void) | null>(null);
   const finishChange = () => { const action = pendingChange.current; pendingChange.current = null; action?.(); };
-  const options: Array<{ value: "2d" | "3d" | "4d"; label: string }> = [
+  const options: Array<{ value: "2d" | "3d" | "4d" | "graph"; label: string }> = [
+    { value: "graph", label: "Graph" },
     { value: "2d", label: "2D" },
     ...(geographic ? [{ value: "4d" as const, label: "3D" }] : []),
   ];
+
+  const currentLabel =
+    value === "4d" ? "3D" : value === "graph" ? "Graph" : value.toUpperCase();
 
   return (
     <View ref={anchorRef} collapsable={false}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={compact ? "Course options" : `Dimension: ${(value === "4d" ? "3D" : value.toUpperCase())}`}
+        accessibilityLabel={compact ? "Course options" : `Dimension: ${currentLabel}`}
         accessibilityState={{ expanded: open }}
         hitSlop={compact ? 8 : undefined}
         onPress={toggle}
@@ -62,7 +66,7 @@ const c=useThemeColors();
         ]}
       >
         {compact ? <AppIcon name="layers" size={22} color="#ffffff" /> : <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
-          {(value === "4d" ? "3D" : value.toUpperCase())} ▾
+          {currentLabel} ▾
         </Text>}
       </Pressable>
       <AnchoredMenu

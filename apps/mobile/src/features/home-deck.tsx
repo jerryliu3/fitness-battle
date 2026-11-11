@@ -15,7 +15,7 @@ import {
   type HomeRouteDayStop,
 } from "@fitness-battle/shared";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useLayoutEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -127,21 +127,19 @@ function DeckCardContent({
             {card.badge}
           </Text>
         </View>
-        {onDismiss ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Dismiss ${card.title} card`}
-            hitSlop={8}
-            onPress={onDismiss}
-            style={[s.dismissBtn, { backgroundColor: pal.accentCircleBg }]}
-          >
-            <Text style={[s.dismissBtnText, { color: pal.accentCircleText }]}>
-              ✕
-            </Text>
-          </Pressable>
-        ) : (
-          <View style={s.dismissPlaceholder} />
-        )}
+        <Pressable
+          accessibilityRole={onDismiss ? "button" : "none"}
+          accessibilityLabel={onDismiss ? `Dismiss ${card.title} card` : undefined}
+          accessible={Boolean(onDismiss)}
+          hitSlop={8}
+          disabled={!onDismiss}
+          onPress={onDismiss}
+          style={[s.dismissBtn, { backgroundColor: pal.accentCircleBg }]}
+        >
+          <Text style={[s.dismissBtnText, { color: pal.accentCircleText }]}>
+            ✕
+          </Text>
+        </Pressable>
       </View>
 
       <View style={s.cardBody}>
@@ -208,9 +206,14 @@ export function HomeDeck({
   );
   const [activeIndex, setActiveIndex] = useState(initialIndex ?? 0);
   const [dismissingId, setDismissingId] = useState<HomeDeckCardId | null>(null);
-  const dragX = useRef(new Animated.Value(0)).current;
-  const cardOpacity = useRef(new Animated.Value(1)).current;
+  const dismissalRevision = useRef(0);
   const swipingRef = useRef(false);
+  const dismissalAnimation = useRef<Animated.CompositeAnimation | null>(null);
+  useEffect(() => {
+    setDismissingId(null);
+    swipingRef.current = false;
+    return () => { dismissalAnimation.current?.stop(); swipingRef.current = false; };
+  }, [storageKey]);
 
   useEffect(() => {
     if (typeof initialIndex === "number") {
@@ -220,12 +223,13 @@ export function HomeDeck({
 
   useEffect(() => {
     let alive = true;
+    const revision = dismissalRevision.current;
     const cached = memoryDismissed.get(storageKey);
     if (cached) setDismissedIds(cached);
     void AsyncStorage.getItem(storageKey)
       .catch(() => null)
       .then((raw) => {
-        if (!alive) return;
+        if (!alive || revision !== dismissalRevision.current) return;
         const parsed = parseDismissedCardIds(raw);
         if (parsed.length > 0 || !cached) {
           memoryDismissed.set(storageKey, parsed);
@@ -250,6 +254,10 @@ export function HomeDeck({
   const safeIndex =
     visibleCards.length > 0 ? activeIndex % visibleCards.length : 0;
   const activeCard = visibleCards[safeIndex] ?? null;
+  // Each card owns its native animation values. Never reset an outgoing view.
+  const motion = useMemo(() => ({ x: new Animated.Value(0), opacity: new Animated.Value(1) }), [storageKey, activeCard?.id]);
+  const dragX = motion.x;
+  const cardOpacity = motion.opacity;
 
   const nextIndex =
     visibleCards.length > 1 ? (safeIndex + 1) % visibleCards.length : null;
@@ -262,6 +270,7 @@ export function HomeDeck({
 
   const persistDismissed = useCallback(
     (next: HomeDeckCardId[]) => {
+      dismissalRevision.current++;
       memoryDismissed.set(storageKey, next);
       setDismissedIds(next);
       void AsyncStorage.setItem(
@@ -299,7 +308,7 @@ export function HomeDeck({
       dragX.setValue(currentDx);
 
       // Animate smoothly off screen continuing from currentDx with zero snap-back
-      Animated.parallel([
+      const animation = Animated.parallel([
         Animated.timing(dragX, {
           toValue: direction === "left" ? -460 : 460,
           duration: 280,
@@ -312,13 +321,12 @@ export function HomeDeck({
           easing: Easing.in(Easing.quad),
           useNativeDriver: true,
         }),
-      ]).start(() => {
-        dragX.setValue(0);
-        cardOpacity.setValue(1);
-        setDismissingId(null);
+      ]);
+      dismissalAnimation.current = animation;
+      animation.start(({ finished }) => {
+        if (!finished) return;
         setActiveIndex((curr) => (nextCount > 0 ? curr % nextCount : 0));
         persistDismissed(nextDismissed);
-        swipingRef.current = false;
       });
     },
     [
@@ -331,6 +339,13 @@ export function HomeDeck({
       visibleCards,
     ],
   );
+
+  // Clear the gesture lock once the replacement card has committed.
+  useLayoutEffect(() => {
+    if (!dismissingId || activeCard?.id === dismissingId) return;
+    setDismissingId(null);
+    swipingRef.current = false;
+  }, [activeCard?.id, dismissingId]);
 
   const resetDeck = useCallback(() => {
     void playCue("selection");
@@ -410,42 +425,31 @@ export function HomeDeck({
   };
 
   return (
-    <View style={s.section} accessibilityLabel="Today's focus and updates">
-      <View style={s.header}>
-        <AppText role="heading" accessibilityRole="header">
-          Today’s focus
-        </AppText>
-        {visibleCards.length === 0 && dismissedIds.length > 0 ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Reset dismissed cards"
-            onPress={resetDeck}
-            style={s.restorePill}
-          >
-            <AppText role="label" style={s.restorePillText}>
-              Reset ↺
-            </AppText>
-          </Pressable>
-        ) : null}
-      </View>
-
+    <View style={s.section} accessibilityLabel="Updates">
       {!activeCard && !dismissingId ? (
         <View style={s.caughtUpRow}>
           <AppText role="body" secondary>
             You’re all caught up.
           </AppText>
+          {dismissedIds.length > 0 && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Reset dismissed cards"
+              onPress={resetDeck}
+              style={s.restorePill}
+            >
+              <AppText role="label" style={s.restorePillText}>
+                Reset
+              </AppText>
+            </Pressable>
+          )}
         </View>
       ) : (
         <View style={s.deckWrapper}>
-          <View
-            style={[
-              s.stackStage,
-              nextCard && s.stackStageWithBack,
-            ]}
-          >
-            {/* Depth 2 Preview Card */}
+          <View style={s.stackStage}>
+            {/* Depth 2 Card (Underneath next card) */}
             {depth2Card && (
-              <View
+              <Animated.View
                 pointerEvents="none"
                 accessible={false}
                 style={[
@@ -454,12 +458,21 @@ export function HomeDeck({
                   {
                     backgroundColor: paletteForDeckTone(depth2Card.tone, isDark).bg,
                     borderColor: paletteForDeckTone(depth2Card.tone, isDark).border,
+                    transform: [
+                      {
+                        translateY: dragX.interpolate({
+                          inputRange: [-240, 0, 240],
+                          outputRange: [7, 14, 7],
+                          extrapolate: "clamp",
+                        }),
+                      },
+                    ],
                   },
                 ]}
               />
             )}
 
-            {/* Depth 1 Card: FULLY RENDERED NEXT CARD (Immediately visible underneath top card) */}
+            {/* Depth 1 Card: FULLY RENDERED NEXT CARD (Same size directly beneath top card) */}
             {nextCard && (
               <Animated.View
                 pointerEvents="none"
@@ -472,23 +485,13 @@ export function HomeDeck({
                     borderColor: paletteForDeckTone(nextCard.tone, isDark).border,
                     transform: [
                       {
-                        scaleX: dragX.interpolate({
+                        translateY: dragX.interpolate({
                           inputRange: [-240, 0, 240],
-                          outputRange: [1, 0.96, 1],
+                          outputRange: [0, 7, 0],
                           extrapolate: "clamp",
                         }),
                       },
                     ],
-                    bottom: dragX.interpolate({
-                      inputRange: [-240, 0, 240],
-                      outputRange: [0, -7, 0],
-                      extrapolate: "clamp",
-                    }),
-                    opacity: dragX.interpolate({
-                      inputRange: [-240, 0, 240],
-                      outputRange: [1, 0.95, 1],
-                      extrapolate: "clamp",
-                    }),
                   },
                 ]}
               >
@@ -507,6 +510,7 @@ export function HomeDeck({
 
               return (
                 <Animated.View
+                  key={`${storageKey}:${activeCard.id}`}
                   {...panResponder.panHandlers}
                   pointerEvents={dismissingId ? "none" : "auto"}
                   style={[
@@ -531,29 +535,6 @@ export function HomeDeck({
               );
             })()}
           </View>
-
-          {/* Clean minimal dot indicators (no Prev/Next buttons) */}
-          {visibleCards.length > 1 && (
-            <View style={s.dotsRow} accessibilityRole="toolbar">
-              {visibleCards.map((card, index) => {
-                const active = index === safeIndex;
-                return (
-                  <Pressable
-                    key={card.id}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Show card ${index + 1} of ${visibleCards.length}: ${card.title}`}
-                    accessibilityState={{ selected: active }}
-                    onPress={() => {
-                      void playCue("selection");
-                      setActiveIndex(index);
-                    }}
-                    hitSlop={8}
-                    style={[s.dot, active && s.dotActive]}
-                  />
-                );
-              })}
-            </View>
-          )}
         </View>
       )}
     </View>
@@ -589,11 +570,9 @@ const sThemes = createThemedStyles((c) => ({
   },
   stackStage: {
     position: "relative",
-    height: CARD_HEIGHT,
+    height: CARD_HEIGHT + 14,
   },
-  stackStageWithBack: {
-    marginBottom: 10,
-  },
+  stackStageWithBack: {},
   deckCard: {
     height: CARD_HEIGHT,
     borderRadius: 22,
@@ -606,26 +585,25 @@ const sThemes = createThemedStyles((c) => ({
     elevation: 3,
   },
   cardTop: {
-    position: "relative",
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
     zIndex: 3,
   },
   cardDepth1: {
     position: "absolute",
-    left: 8,
-    right: 8,
-    bottom: -7,
+    left: 0,
+    right: 0,
+    top: 0,
     zIndex: 2,
-    transform: [{ scaleX: 0.96 }],
-    opacity: 0.95,
   },
   cardDepth2: {
     position: "absolute",
-    left: 16,
-    right: 16,
-    bottom: -13,
+    left: 0,
+    right: 0,
+    top: 0,
     zIndex: 1,
-    transform: [{ scaleX: 0.92 }],
-    opacity: 0.6,
   },
   cardInner: {
     flex: 1,
@@ -685,23 +663,6 @@ const sThemes = createThemedStyles((c) => ({
   ctaText: {
     ...textStyle("nav"),
   },
-  dotsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 4,
-  },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: c.line,
-  },
-  dotActive: {
-    width: 18,
-    backgroundColor: c.ink,
-  },
   routeStripWrap: {
     position: "relative",
     paddingTop: 6,
@@ -751,7 +712,11 @@ const sThemes = createThemedStyles((c) => ({
     color: c.ink,
   },
   caughtUpRow: {
-    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 2,
     paddingHorizontal: 2,
+    minHeight: 30,
   },
 }));

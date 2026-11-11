@@ -33,8 +33,15 @@ function sceneLanesFromState(state: ReturnType<typeof freshState>) {
 }
 
 describe("applyDebugEvent", () => {
+  it("deregisters the selected sport without changing recorded activities", () => {
+    const input = applyDebugEvent(pinnedState("2026-10-21T15:00:00.000Z"), "sync-activity").state;
+    const result = applyDebugEvent(input, "deregister-sport");
+    expect(result.state.ratings.find(r => r.sport === input.primary)?.optedIn).toBe(false);
+    expect(result.state.activities).toEqual(input.activities);
+    expect(input.ratings.find(r => r.sport === input.primary)?.optedIn).toBe(true);
+  });
   it("exposes all four primary UI event mechanisms", () => {
-    expect(DEBUG_EVENT_OPTIONS.map((o) => o.id)).toEqual(["sync-activity", "sync-combo", "overtake", "overtake-combo", "overtaken", "week-closing"]);
+    expect(DEBUG_EVENT_OPTIONS.map((o) => o.id)).toEqual(["deregister-sport", "sync-activity", "sync-combo", "overtake", "overtake-combo", "overtaken", "week-closing"]);
   });
 
   it("simulates a new synced activity with forward Arena movement and Today reveal", () => {

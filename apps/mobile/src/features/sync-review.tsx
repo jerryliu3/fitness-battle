@@ -119,17 +119,17 @@ const c=useThemeColors();
   const activity = activities.find(a => a.id === detail);
   if (activity) return <View style={{ gap: 20 }}>
     <FocusButton secondary label="← All activities" disabled={saving} onPress={() => setDetail(null)}/>
-    <Text style={f.kicker}>ACTIVITY DETAILS</Text><Text accessibilityRole="header" style={textStyle("display")}>{sportById(activity.sport).name}</Text>
+    <Text style={f.kicker}>ACTIVITY DETAILS</Text><Text accessibilityRole="header" style={[textStyle("display"), { color: c.ink }]}>{sportById(activity.sport).name}</Text>
     <ActivityRoute activity={activity} units={state.units}/>
-    <Text style={textStyle("heading")}>{formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units)} · {clubDuration(activity.movingSec)}</Text>
-    <Text style={textStyle("body")}>{new Date(activity.startedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: APP_TIMEZONE })}</Text>
+    <Text style={[textStyle("heading"), { color: c.ink }]}>{formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units)} · {clubDuration(activity.movingSec)}</Text>
+    <Text style={[textStyle("body"), { color: c.ink }]}>{new Date(activity.startedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: APP_TIMEZONE })}</Text>
     <ActivityMetricBars activity={activity} history={[...receipt.activities, ...state.activities]} units={state.units}/>
   </View>;
   return <View style={{ gap: 20, flex: 1 }}>
-    <Text accessibilityRole="header" style={textStyle("display")}>Sync completed</Text>
+    <Text accessibilityRole="header" style={[textStyle("display"), { color: c.ink }]}>Sync completed</Text>
     <Text style={f.massive}>{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</Text>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-      <Text style={textStyle("body")}>{selected.length} of {activities.length} activities selected.</Text>
+      <Text style={[textStyle("body"), { color: c.ink }]}>{selected.length} of {activities.length} activities selected.</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Pressable
           accessibilityRole="button"
@@ -245,14 +245,14 @@ const c=useThemeColors();
                         width: 24,
                         height: 24,
                         borderRadius: 7,
-                        backgroundColor: isCounted ? c.ink : "white",
+                        backgroundColor: isCounted ? c.surfaceInverse : c.card,
                         borderWidth: 1.5,
-                        borderColor: isCounted ? c.ink : c.line,
+                        borderColor: isCounted ? c.surfaceInverse : c.line,
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
-                      <Text style={{ ...textStyle("caption"), color: "white" }}>
+                      <Text style={{ ...textStyle("caption"), color: c.textOnInverse }}>
                         {isCounted ? "✓" : ""}
                       </Text>
                     </View>
@@ -292,7 +292,7 @@ const c=useThemeColors();
         }}
       />
     </View>
-    {!receipt.preview && excluded.length > 0 && <Text style={textStyle("caption")}>Deselected activities stay saved, excluded from competition.</Text>}
+    {!receipt.preview && excluded.length > 0 && <Text style={[textStyle("caption"), { color: c.ink }]}>Deselected activities stay saved, excluded from competition.</Text>}
     <View style={{ marginTop: "auto", paddingTop: 16, gap: 12 }}>
       <View onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ height: 66, borderRadius: 36, backgroundColor: c.surfaceInverse, justifyContent: "center", position: "relative", overflow: "hidden" }}>
         <View pointerEvents="none" style={{ position: "absolute", left: progress * width, right: 0, top: 0, bottom: 0, overflow: "hidden", justifyContent: "center" }}>

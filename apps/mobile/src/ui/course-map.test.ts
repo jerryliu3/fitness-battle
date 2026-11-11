@@ -15,7 +15,7 @@ vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
 vi.mock("./athlete-pennant", () => ({ AthletePennant: "AthletePennant" }));
 vi.mock("react-native-svg", () => ({ default: "Svg", G: "G" }));
 vi.mock("./field-overlay-motion", () => ({ FieldOverlayView: "FieldOverlayView" }));
-vi.mock("./section", () => ({ textStyle: () => ({}) }));
+vi.mock("./section", () => ({ AppText: "AppText", textStyle: () => ({}) }));
 vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => false }));
 vi.mock("../lib/env", () => ({ mobileEnv: { mapboxAccessToken: "public-test-token" } }));
 vi.mock("@rnmapbox/maps", () => ({ default: { setAccessToken: vi.fn() }, MapView: "Map", Camera: "Camera", ShapeSource: "ShapeSource", LineLayer: "Line", CircleLayer: "Circle", MarkerView: "MarkerView", CameraGestureObserver: "Observer" }));

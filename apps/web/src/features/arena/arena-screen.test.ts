@@ -40,7 +40,8 @@ describe("single-sport competition",()=>{
  it("shows recovery alone when it is the only registration",()=>{
   mock.state=reduceCompete(freshState(),{type:"opt-in-health",metric:"sleep",now:"2026-10-21T09:00:00Z"});
   const html=renderToStaticMarkup(createElement(ArenaScreen));
-  expect(html).not.toContain("data-sleep-field");expect(html).not.toContain("data-active-field");
+  expect(html).toContain("data-sleep-field");expect(html).not.toContain("data-active-field");
+  expect(html).toContain('data-active="false"');
   expect(html).toContain("Sleep competition");
  });
 });

@@ -1,5 +1,5 @@
 import { useThemeColors } from "../theme";
-import { textStyle } from "./section";
+import { AppText, textStyle } from "./section";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { PanResponder, Text, View } from "react-native";
 import Svg, { Circle, Line } from "react-native-svg";
@@ -88,9 +88,9 @@ const c=useThemeColors();
   return <View style={{ gap: 8 }}>
     {!hideSummary && (
       <View style={{ minHeight: summaryOnSelection ? 18 : 44, gap: 2 }} accessibilityLiveRegion="polite">
-        {renderSummary ? renderSummary(selected) : summaryOnSelection ? (selected ? <Text style={textStyle("caption")}>{`${selected.label} · ${selected.value}`}</Text> : null) : <>
-        <Text style={[textStyle("label"), { fontVariant: ["tabular-nums"] }]}>{selected?.value ?? points.at(-1)?.value ?? "No data"}</Text>
-        <Text style={textStyle("caption")}>{selected?.label ?? points.at(-1)?.label ?? ""}</Text></>}
+        {renderSummary ? renderSummary(selected) : summaryOnSelection ? (selected ? <AppText role="caption">{`${selected.label} · ${selected.value}`}</AppText> : null) : <>
+        <AppText role="label" style={{ fontVariant: ["tabular-nums"] }}>{selected?.value ?? points.at(-1)?.value ?? "No data"}</AppText>
+        <AppText role="caption">{selected?.label ?? points.at(-1)?.label ?? ""}</AppText></>}
       </View>
     )}
     <View

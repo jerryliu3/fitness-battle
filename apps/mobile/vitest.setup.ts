@@ -12,3 +12,22 @@ vi.mock("expo-haptics", () => ({
 }));
 
 vi.mock("react-native-screens", () => ({ FullWindowOverlay: "FullWindowOverlay" }));
+vi.mock("react-native-svg", () => ({
+  default: "Svg",
+  Svg: "Svg",
+  G: "SvgG",
+  Line: "SvgLine",
+  Polyline: "SvgPolyline",
+  Path: "SvgPath",
+  Circle: "SvgCircle",
+  Ellipse: "SvgEllipse",
+  Rect: "SvgRect",
+  Text: "SvgText",
+  Defs: "SvgDefs",
+  LinearGradient: "SvgLinearGradient",
+  Stop: "SvgStop",
+  ClipPath: "SvgClipPath",
+  Mask: "SvgMask",
+  Pattern: "SvgPattern",
+  Image: "SvgImage",
+}));

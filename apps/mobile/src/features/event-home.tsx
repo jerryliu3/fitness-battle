@@ -10,6 +10,7 @@ import { useThemeColors } from "../theme";
 import { AppIcon } from "../ui/app-icon";
 import { useEventActivity } from "./use-event-activity";
 import { CompeteIcon, EventArt } from "./compete-home-sections";
+import { CompeteTimeSeriesChart } from "../ui/compete-time-series-chart";
 
 const snapshotCache = new Map<string, string>();
 
@@ -43,19 +44,28 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
   const total = me?.values[2] ?? 0;
   const place = 1 + lanes.filter(lane => lane.values[2] > total).length;
 
-  const { rows } = useEventActivity(state, sport, active && !queued);
+  const { rows, loading, error } = useEventActivity(state, sport, active && !queued);
   const update = formatActivityAge(rows[0]?.at, competeNow(state));
+  const updateText = queued ? "Upcoming wave" : update !== "—" ? `Last update: ${update}` : !loading && !error ? "No updates yet" : null;
   return <View style={{ width: cardWidth, padding: 12, gap: 12, borderRadius: 20, backgroundColor: c.card, borderWidth: 1, borderColor: c.line }}>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
       <View style={{ padding: 9, borderRadius: 12, backgroundColor: c.actionSoft }}><CompeteIcon name={sport} /></View>
-      <View style={{ flex: 1 }}><AppText role="label">{SPORTS.find(item => item.id === sport)?.name}</AppText><View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>{!queued && <LiveIndicator active={active} />}<AppText role="support" secondary style={{ flexShrink: 1 }}>{queued ? "Upcoming wave" : `last update: ${update === "—" ? "Unavailable" : update}`}</AppText></View></View>
+      <View style={{ flex: 1 }}>
+        <AppText role="label">{SPORTS.find(item => item.id === sport)?.name}</AppText>
+        {updateText ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            {!queued && <LiveIndicator active={active} />}
+            <AppText role="support" secondary style={{ flexShrink: 1 }}>{updateText}</AppText>
+          </View>
+        ) : null}
+      </View>
       {!queued && (
         <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: c.soft, borderWidth: 1, borderColor: c.line }}>
           <AppText role="caption" secondary>{`${ordinalPlace(place)} place`}</AppText>
         </View>
       )}
     </View>
-    <CoursePreview state={state} sport={sport} queued={Boolean(queued)} />
+    <Pressable accessibilityRole="button" accessibilityLabel="Open race fullscreen" onPress={onEnter}><CoursePreview state={state} sport={sport} queued={Boolean(queued)} /></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={`Enter ${SPORTS.find(item => item.id === sport)?.name} field`} onPress={onEnter} hitSlop={{ top: 6, bottom: 6 }} style={({ pressed }) => ({ minHeight: 32, marginTop: -8, marginBottom: -8, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 4, opacity: pressed ? 0.6 : 1 })}>
       <AppText role="label">See race</AppText><AppIcon name="chevron" size={20} />
     </Pressable>
@@ -69,7 +79,27 @@ export function CoursePreview({ state, sport, queued }: { state: CompeteState; s
   const { course } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, true);
   const model = buildArenaModel(state, undefined, competitionTrack(sport), sport);
   const me = model?.lanes.find(lane => lane.you);
-  const key = `race-card-square-v6:${queued}:${accountKey}:${sport}:${course?.name}:${course?.length}:${me?.values[2]}:${state.units}`;
+
+  if (!queued && model?.unit === "pts") {
+    return (
+      <View
+        style={{
+          width: "100%",
+          aspectRatio: 1,
+          borderRadius: 12,
+          overflow: "hidden",
+          backgroundColor: c.paper,
+          borderWidth: 1,
+          borderColor: c.line,
+          justifyContent: "space-between",
+        }}
+      >
+        <CompeteTimeSeriesChart state={state} sport={sport} track={competitionTrack(sport)} compact />
+      </View>
+    );
+  }
+
+  const key = `race-card-square-v7:${queued}:${accountKey}:${sport}:${course?.name}:${course?.length}:${me?.values[2]}:${state.units}`;
   return <View style={{ position: "relative", borderRadius: 12, overflow: "hidden" }}><SnapshotPreview key={key} cacheKey={key} course={course} lane={me} unit={model?.unit ?? ""} queued={queued} mysteryCount={model?.lanes.filter(l => l.mystery).length ?? 0} />
     {course ? <View style={{ position: "absolute", bottom: 4, right: 6, maxWidth: "95%", flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 6, backgroundColor: c.card, borderRadius: 4, paddingHorizontal: 4 }}>
       {[{ label: "© Mapbox", url: "https://www.mapbox.com/about/maps" }, { label: "© OpenStreetMap", url: "https://www.openstreetmap.org/copyright" }, { label: "ⓘ", url: "https://apps.mapbox.com/feedback/" }].map(link => <Pressable key={link.label} accessibilityRole="link" accessibilityLabel={link.label === "ⓘ" ? "Improve this map" : link.label} hitSlop={8} onPress={event => { event.stopPropagation(); void Linking.openURL(link.url); }}><Text style={{ ...textStyle("nav"), color: c.muted }}>{link.label}</Text></Pressable>)}
@@ -80,10 +110,8 @@ function SnapshotPreview({ cacheKey, course, lane, unit, queued, mysteryCount }:
   const c = useThemeColors();
   const [uri, setUri] = useState(() => snapshotCache.get(cacheKey) ?? "");
   const capture = (value: string) => { if (snapshotCache.size >= 32) snapshotCache.delete(snapshotCache.keys().next().value!); snapshotCache.set(cacheKey, value); setUri(value); };
-  const [expired, setExpired] = useState(false);
-  useEffect(() => { const timer = setTimeout(() => setExpired(true), 15000); return () => clearTimeout(timer); }, []);
   return <View pointerEvents="none" style={{ width: "100%", aspectRatio: 1, borderRadius: 12, overflow: "hidden", backgroundColor: c.paper }}>
-    {uri ? <Image source={{ uri }} resizeMode="cover" accessibilityLabel="3D snapshot of your current race position" style={{ width: "100%", height: "100%" }} /> : !expired && course && lane && (unit === "mi" || unit === "km") ? <GeographicCourse course={course} lanes={[{ id: lane.id, name: lane.name, initials: "", you: true, value: queued ? 0 : lane.values[2] }, ...(queued ? Array.from({ length: mysteryCount }, (_, i) => ({ id: `mystery-${i}`, name: "?", initials: "?", you: false, mystery: true, value: 0 })) : [])]} unit={unit} selectedId={lane.id} focusRequest={0} onSelect={() => {}} onSnapshot={capture} optionsTop={null} /> : <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><AppText role="caption" secondary>{unit === "pts" ? "Points event" : "Preview unavailable"}</AppText></View>}
+    {uri ? <Image source={{ uri }} resizeMode="cover" accessibilityLabel="3D snapshot of your current race position" style={{ width: "100%", height: "100%" }} /> : course && lane && (unit === "mi" || unit === "km") ? <GeographicCourse course={course} lanes={[{ id: lane.id, name: lane.name, initials: "", you: true, value: queued ? 0 : lane.values[2] }, ...(queued ? Array.from({ length: mysteryCount }, (_, i) => ({ id: `mystery-${i}`, name: `Athlete #${i + 1}`, initials: "?", you: false, mystery: true, value: 0 })) : [])]} unit={unit} selectedId={lane.id} focusRequest={0} onSelect={() => {}} onSnapshot={capture} optionsTop={null} /> : <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><AppText role="caption" secondary>{unit === "pts" ? "Points event" : "Preview unavailable"}</AppText></View>}
   </View>;
 }
 

@@ -11,7 +11,7 @@ import { useCompeteStore } from "../lib/compete-store";
 import { useFieldAppearance } from "../ui/field-course";
 import { LaneTrack } from "../ui/lane-track";
 import { useReducedMotion } from "../ui/use-reduced-motion";
-import { textStyle } from "../ui/section";
+import { AppText, textStyle } from "../ui/section";
 import { FocusButton } from "../ui/focus";
 
 import { playCue, playPattern } from "../lib/haptics";
@@ -68,14 +68,14 @@ const styles=useThemedStyles(stylesThemes);
       {viewDimension === "4d" ? <GeographicCourse course={course ?? assigned.course ?? (debug?DEMO_RACE_COURSE:null)} error={assigned.error} onRetry={assigned.retry} hiddenIds={hiddenIds} onReady={() => setSceneReady(true)} replay={frame} optionsTop={null} overlaysHidden lanes={frame.lanes} unit={moment.unit} selectedId={moment.plan.youId} focusRequest={0} onSelect={ignore}/> : height > 0 && <LaneTrack replayFocusIds={frame.replayFocusIds} hiddenIds={hiddenIds} fullscreen focusOnMount followSelected animateSelection={false} appearance={appearance} height={height} lanes={lanes} unit={moment.unit} showGhost={false} selectedId={moment.plan.youId} index={2} onSelect={ignore} view={frame.view}/>}
     </View>
     <View pointerEvents="box-none" style={{ position: "absolute", top: (embedded ? 0 : insets.top) + 12, left: 16, right: 16, gap: 10 }}>
-      {!embedded && <View style={styles.panel}><Text style={textStyle("label")}>{sportById(moment.sport).name} · REPLAY</Text></View>}
+      {!embedded && <View style={styles.panel}><AppText role="label">{sportById(moment.sport).name} · REPLAY</AppText></View>}
       <View pointerEvents="box-none" style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: 10 }}>
       <View pointerEvents="box-none" style={{ gap: 10 }}>
-      {debug&&!embedded&&<View style={{flexDirection:"row",alignItems:"center",gap:8}}><Text style={textStyle("label")}>3D course</Text><Switch accessibilityLabel="3D course" value={viewDimension==="4d"} onValueChange={value=>setViewDimension(value?"4d":"2d")}/></View>}
-      {moment.plan.hasOvertake && <View pointerEvents="none" accessibilityLiveRegion="polite" style={[styles.panel, { alignSelf: "flex-start" }]}><Text style={textStyle("label")}>{frame.count} overtake{frame.count === 1 ? "" : "s"}</Text></View>}
-      {!moment.plan.hasOvertake && !passedBy && <View style={styles.panel}><Text style={textStyle("label")}>+{(moment.plan.youAfter - moment.plan.youBefore).toFixed(moment.unit === "pts" ? 0 : 1)} {moment.unit}</Text></View>}
+      {debug&&!embedded&&<View style={{flexDirection:"row",alignItems:"center",gap:8}}><AppText role="label">3D course</AppText><Switch accessibilityLabel="3D course" value={viewDimension==="4d"} onValueChange={value=>setViewDimension(value?"4d":"2d")}/></View>}
+      {moment.plan.hasOvertake && <View pointerEvents="none" accessibilityLiveRegion="polite" style={[styles.panel, { alignSelf: "flex-start" }]}><AppText role="label">{frame.count} overtake{frame.count === 1 ? "" : "s"}</AppText></View>}
+      {!moment.plan.hasOvertake && !passedBy && <View style={styles.panel}><AppText role="label">+{(moment.plan.youAfter - moment.plan.youBefore).toFixed(moment.unit === "pts" ? 0 : 1)} {moment.unit}</AppText></View>}
       </View>
-      {!embedded && <View style={[styles.panel, { flex: 1, minWidth: 160 }]} accessibilityLabel="Live replay standings">{frame.standings.filter(lane => !hiddenIds.includes(lane.id)).map(lane => <View key={lane.id} style={{ flexDirection: "row", gap: 10, alignItems: "center", paddingVertical: 5 }}><Text style={textStyle("label")}>#{lane.place}</Text><Text numberOfLines={1} style={[textStyle(lane.you ? "label" : "caption"), { flex: 1, maxWidth: 140 }]}>{lane.name}</Text><Text style={textStyle("caption")}>{lane.value.toFixed(1)} {moment.unit}</Text></View>)}</View>}
+      {!embedded && <View style={[styles.panel, { flex: 1, minWidth: 160 }]} accessibilityLabel="Live replay standings">{frame.standings.filter(lane => !hiddenIds.includes(lane.id)).map(lane => <View key={lane.id} style={{ flexDirection: "row", gap: 10, alignItems: "center", paddingVertical: 5 }}><AppText role="label">#{lane.place}</AppText><AppText numberOfLines={1} role={lane.you ? "label" : "caption"} style={{ flex: 1, maxWidth: 140 }}>{lane.name}</AppText><AppText role="caption">{lane.value.toFixed(1)} {moment.unit}</AppText></View>)}</View>}
       </View>
     </View>
     {!reduced && frame.passEffects.length > 0 && <View pointerEvents="none" style={{ position:"absolute", top:"45%", alignSelf:"center", opacity:Math.max(...frame.passEffects.map(pass => pass.strength)) }}><Text style={{...textStyle("hero"),color:c.tennis}}>+1</Text></View>}

@@ -1,8 +1,8 @@
 import { useFocusStyles } from "./focus";
 import { playCue } from "../lib/haptics";
-import { textStyle } from "./section";
+import { AppText } from "./section";
 import { AppIcon, type AppIconName } from "./app-icon";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
 
 
 const settingsIcons: Record<string, AppIconName> = {
@@ -33,8 +33,8 @@ const f=useFocusStyles();
     >
       {settingsIcons[title] && <AppIcon name={settingsIcons[title]} />}
       <View style={f.grow}>
-        <Text style={textStyle("row")}>{title}</Text>
-        <Text style={textStyle("support")}>{detail}</Text>
+        <AppText role="row">{title}</AppText>
+        <AppText role="support" secondary>{detail}</AppText>
       </View>
       <AppIcon name="chevron" size={18} />
     </Pressable>

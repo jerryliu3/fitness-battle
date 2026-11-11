@@ -33,7 +33,7 @@ export function CourseCallout({ passStrength = 0, map, lane, coordinate, detail,
     {passStrength > 0 && <div aria-hidden style={{position:"absolute",left:placement.originX,top:placement.originY,width:32+64*(1-passStrength),height:32+64*(1-passStrength),transform:"translate(-50%, -50%)",borderRadius:"50%",border:"4px solid #f7c948",background:"#f7c94833",opacity:passStrength,pointerEvents:"none"}}/>}
     <svg width={170} height={placement.height} viewBox={`0 0 170 ${placement.height}`} aria-hidden="true" style={{ display: "block", pointerEvents: "none" }}>
       <g transform={`translate(${placement.originX} ${placement.originY})`}>
-        {lane.mystery ? <g><circle r={18} fill="white" stroke={appearanceColors.textSecondary} strokeWidth={2} strokeDasharray="3 3"/><text y={5} textAnchor="middle" fill={appearanceColors.textSecondary}>?</text></g> : <AthletePennant lane={lane} x={placement.left ? -158 : 12} y={placement.y} detail={detail} prefix={prefix} />}
+        <AthletePennant lane={lane} x={placement.left ? -158 : 12} y={placement.y} detail={detail} prefix={prefix} />
       </g>
     </svg>
     {!lane.mystery && <button type="button" className="course-callout-target" aria-label={`Focus ${lane.name}, ${detail}`} onClick={event => { event.stopPropagation(); onSelect(lane.id); }} style={{ position: "absolute", left: 12, top: placement.cardTop, width: 146, height: 46, padding: 0, border: 0, background: "transparent", cursor: "pointer", pointerEvents: "auto" }} />}

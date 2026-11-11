@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -93,18 +94,17 @@ function DeckCardContent({
     <div className="home-deck-card-inner">
       <div className="home-deck-card-top">
         <span className="home-deck-badge">{card.badge}</span>
-        {onDismiss ? (
-          <button
-            type="button"
-            className="home-deck-dismiss"
-            aria-label={`Dismiss ${card.title} card`}
-            onClick={onDismiss}
-          >
-            ✕
-          </button>
-        ) : (
-          <div className="home-deck-dismiss-placeholder" />
-        )}
+        <button
+          type="button"
+          className="home-deck-dismiss"
+          aria-label={onDismiss ? `Dismiss ${card.title} card` : undefined}
+          aria-hidden={!onDismiss}
+          tabIndex={onDismiss ? 0 : -1}
+          disabled={!onDismiss}
+          onClick={onDismiss}
+        >
+          ✕
+        </button>
       </div>
 
       <div className="home-deck-card-body">
@@ -159,6 +159,13 @@ export function HomeDeck({
     id: HomeDeckCardId;
     direction: "left" | "right";
   } | null>(null);
+
+  const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    setDismissing(null);
+    setDragOffset(0);
+    return () => { if (dismissTimer.current) clearTimeout(dismissTimer.current); };
+  }, [storageKey]);
 
   useEffect(() => {
     if (typeof initialIndex === "number") {
@@ -242,9 +249,8 @@ export function HomeDeck({
       const nextDismissed = [...new Set([...dismissedIds, cardId])];
       const nextCount = Math.max(0, visibleCards.length - 1);
 
-      setTimeout(() => {
+      dismissTimer.current = setTimeout(() => {
         setDragOffset(0);
-        setDismissing(null);
         setActiveIndex((curr) => (nextCount > 0 ? curr % nextCount : 0));
         persistDismissed(nextDismissed);
       }, 280);
@@ -252,7 +258,12 @@ export function HomeDeck({
     [activeCard, dismissedIds, dismissing, persistDismissed, visibleCards],
   );
 
+  useLayoutEffect(() => {
+    if (dismissing && activeCard?.id !== dismissing.id) setDismissing(null);
+  }, [activeCard?.id, dismissing]);
+
   const resetDeck = useCallback(() => {
+    if (dismissTimer.current) clearTimeout(dismissTimer.current);
     void playCue("selection");
     setDragOffset(0);
     setActiveIndex(0);
@@ -323,28 +334,22 @@ export function HomeDeck({
   };
 
   return (
-    <section className="home-deck-section" aria-label="Today's focus and updates">
-      <div className="home-deck-header">
-        <AppHeading level={2} role="heading">
-          Today’s focus
-        </AppHeading>
-        {visibleCards.length === 0 && dismissedIds.length > 0 ? (
-          <button
-            type="button"
-            className="home-deck-restore-btn"
-            onClick={resetDeck}
-            aria-label="Reset dismissed cards"
-          >
-            Reset ↺
-          </button>
-        ) : null}
-      </div>
-
+    <section className="home-deck-section" aria-label="Updates">
       {!activeCard && !dismissing ? (
         <div className="home-deck-caught-up">
           <AppText role="body" secondary>
             You’re all caught up.
           </AppText>
+          {dismissedIds.length > 0 && (
+            <button
+              type="button"
+              className="home-deck-restore-btn"
+              onClick={resetDeck}
+              aria-label="Reset dismissed cards"
+            >
+              Reset
+            </button>
+          )}
         </div>
       ) : (
         <div className="home-deck-wrapper">
@@ -418,30 +423,6 @@ export function HomeDeck({
               </article>
             )}
           </div>
-
-          {/* Clean minimal dot indicators (no Prev/Next buttons) */}
-          {visibleCards.length > 1 && (
-            <div className="home-deck-dots" role="toolbar" aria-label="Card navigation">
-              {visibleCards.map((card, index) => {
-                const active = index === safeIndex;
-                return (
-                  <button
-                    key={card.id}
-                    type="button"
-                    className={`home-deck-dot${active ? " is-active" : ""}`}
-                    aria-label={`Show card ${index + 1} of ${
-                      visibleCards.length
-                    }: ${card.title}`}
-                    aria-pressed={active}
-                    onClick={() => {
-                      void playCue("selection");
-                      setActiveIndex(index);
-                    }}
-                  />
-                );
-              })}
-            </div>
-          )}
         </div>
       )}
     </section>

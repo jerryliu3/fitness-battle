@@ -1,9 +1,9 @@
 import { useFocusStyles } from "./focus";
 import { useThemeColors } from "../theme";
-import { textStyle } from "./section";
+import { AppText, textStyle } from "./section";
 import { dayKey } from "@fitness-battle/shared";
 import { useState } from "react";
-import { Modal, Platform, Pressable, Text, View } from "react-native";
+import { Modal, Platform, Pressable, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 
@@ -16,9 +16,9 @@ const f=useFocusStyles();
   return <Modal transparent animationType="fade" onRequestClose={close}>
     <View style={{ flex: 1, backgroundColor: "#142b3b66", justifyContent: "center", padding: 24 }} accessibilityViewIsModal>
       <View style={[f.card, { backgroundColor: c.card }]}>
-        <Text accessibilityRole="header" style={textStyle("heading")}>{label}</Text>{children}
-        <View style={f.row}><Pressable accessibilityRole="button" onPress={close} style={{ padding: 12 }}><Text style={textStyle("label")}>Cancel</Text></Pressable>
-          <Pressable accessibilityRole="button" onPress={done} style={{ padding: 12 }}><Text style={textStyle("label")}>Done</Text></Pressable></View>
+        <AppText accessibilityRole="header" role="heading">{label}</AppText>{children}
+        <View style={f.row}><Pressable accessibilityRole="button" onPress={close} style={{ padding: 12 }}><AppText role="label">Cancel</AppText></Pressable>
+          <Pressable accessibilityRole="button" onPress={done} style={{ padding: 12 }}><AppText role="label">Done</AppText></Pressable></View>
       </View>
     </View>
   </Modal>;
@@ -33,7 +33,7 @@ const f=useFocusStyles();
   const whole = Math.floor(Number(draft));
   const tenth = Math.round((Number(draft) - whole) * 10);
   return <>
-    <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value || "Choose"} ${unit}`} style={f.input} onPress={() => { setDraft(value || "0"); setOpen(true); }}><Text style={textStyle("label")}>{value ? `${value} ${unit}` : `Choose ${label.toLowerCase()}`}</Text></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value || "Choose"} ${unit}`} style={f.input} onPress={() => { setDraft(value || "0"); setOpen(true); }}><AppText role="label">{value ? `${value} ${unit}` : `Choose ${label.toLowerCase()}`}</AppText></Pressable>
     {open && <PickerSurface label={label} close={() => setOpen(false)} done={() => { onChange(draft); setOpen(false); }}>
       <View style={{ flexDirection: "row" }}>
         <Picker itemStyle={textStyle("body")} accessibilityLabel={label} selectedValue={String(whole)} onValueChange={item => setDraft(String(Number(item) + (fractional && Number(item) < max ? tenth / 10 : 0)))} style={{ color: c.ink, flex: 1 }}>
@@ -60,8 +60,8 @@ const f=useFocusStyles();
     <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value || "Choose"}`} style={f.input} onPress={() => {
       const date = new Date(mode === "date" ? `${value || dayKey(new Date())}T12:00:00Z` : `2000-01-01T${value || "08:00"}:00Z`);
       setDraft(date); setOpen(true);
-    }}><Text style={textStyle("label")}>{value || `Choose ${mode}`}</Text></Pressable>
-    {value && clearLabel ? <Pressable accessibilityRole="button" accessibilityLabel={clearLabel} onPress={() => { onChange(""); setOpen(false); }} style={{ paddingVertical: 12 }}><Text style={textStyle("label")}>{clearLabel}</Text></Pressable> : null}
+    }}><AppText role="label">{value || `Choose ${mode}`}</AppText></Pressable>
+    {value && clearLabel ? <Pressable accessibilityRole="button" accessibilityLabel={clearLabel} onPress={() => { onChange(""); setOpen(false); }} style={{ paddingVertical: 12 }}><AppText role="label">{clearLabel}</AppText></Pressable> : null}
     {open && (Platform.OS === "android" ? picker : <PickerSurface label={label} close={() => setOpen(false)} done={() => accept(draft)}>{picker}</PickerSurface>)}
   </>;
 }

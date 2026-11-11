@@ -10,10 +10,10 @@ export function AthletePennant({ lane: l, x, y, detail, prefix }: {
   return <g>
                 <path d={`M0 0 L${x+146/2} ${y>0?y:y+46}`} fill="none" stroke={appearanceColors.textSecondary} strokeWidth="1.2"/>
                 <rect x={x} y={y+2} width={146} height={46} rx={12} fill={appearanceColors.textSecondary} opacity={.1}/>
-                <rect x={x} y={y} width={146} height={46} rx={12} fill={appearanceColors.white} stroke={l.you?"#f1c75b":"#e0e5dc"}/>
+                <rect x={x} y={y} width={146} height={46} rx={12} fill={appearanceColors.card} stroke={l.you?appearanceColors.tennis:appearanceColors.line}/>
                 <circle cx={x+24} cy={y+23} r={16} fill={appearanceColors.soft}/>
                 {l.avatarUrl ? <><defs><clipPath id={`${prefix}-portrait`}><circle cx={x+24} cy={y+23} r={16}/></clipPath></defs><image href={l.avatarUrl} x={x+8} y={y+7} width={32} height={32} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${prefix}-portrait)`}/></> : <path d={APP_ICON_PATHS.person} transform={`translate(${x+14} ${y+13}) scale(.83)`} fill={appearanceColors.textSecondary} stroke="none" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"/>}
-                <text style={typographyStyle("caption")} x={x+47} y={y+20}  fill={appearanceColors.textSecondary} >{l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</text>
-                <text style={typographyStyle("caption")} x={x+47} y={y+35}  fill={appearanceColors.textSecondary}>{detail}</text>
+                <text style={typographyStyle("caption")} x={x+47} y={y+(detail ? 20 : 27)} fill={appearanceColors.ink} >{l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</text>
+                {detail && <text style={typographyStyle("caption")} x={x+47} y={y+35} fill={appearanceColors.textSecondary}>{detail}</text>}
   </g>;
 }

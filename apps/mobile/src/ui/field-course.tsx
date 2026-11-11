@@ -1,6 +1,6 @@
 import { useFocusStyles } from "./focus";
 import { useThemeColors } from "../theme";
-import { textStyle } from "./section";
+import { AppText } from "./section";
 
 import { createElement, useEffect, useRef, useState, type ComponentType } from "react";
 import { PanResponder, Pressable, Text, View } from "react-native";
@@ -37,12 +37,12 @@ const f=useFocusStyles();
 
   const [open, setOpen] = useState(false);
   return <>
-    <Pressable accessibilityRole="button" accessibilityLabel="Choose field ground" style={[f.row, { minHeight: 44 }]} onPress={() => setOpen(true)}><Text style={textStyle("label")}>{fieldGrounds[appearance.ground].name}</Text><Text style={textStyle("caption")}>Customize</Text></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel="Choose field ground" style={[f.row, { minHeight: 44 }]} onPress={() => setOpen(true)}><AppText role="label">{fieldGrounds[appearance.ground].name}</AppText><AppText role="caption">Customize</AppText></Pressable>
     <FocusSheet open={open} title="Your field" body="Choose your ground and surroundings. Saved on this device for this event." onClose={() => setOpen(false)}>
       <View style={{ gap: 8 }}>
-        {Object.entries(fieldGrounds).map(([id, item]) => <Pressable accessibilityRole="button" accessibilityState={{ selected: appearance.ground === id }} key={id} style={[f.row, { minHeight: 48, borderWidth: 1, borderColor: appearance.ground === id ? "#a67c00" : clubColors.line, borderRadius: 12, padding: 10 }]} onPress={() => onChange({ ...appearance, ground: id as FieldAppearance["ground"] })}><View style={{ width: 22, height: 28, borderRadius: 6, backgroundColor: item.lane }}/><Text style={[textStyle("body"), f.grow]}>{item.name}</Text>{appearance.ground === id && <Text style={textStyle("caption")}>Selected</Text>}</Pressable>)}
-        <View style={f.row}>{(["open", "club"] as const).map(edges => <Pressable key={edges} accessibilityRole="button" accessibilityState={{ selected: appearance.edges === edges }} style={{ minHeight: 44, flex: 1, padding: 12, borderRadius: 10, backgroundColor: appearance.edges === edges ? "#f7edc9" : clubColors.soft }} onPress={() => onChange({ ...appearance, edges })}><Text style={textStyle("body")}>{edges === "club" ? "Club grounds" : "Open edges"}</Text></Pressable>)}</View>
-        <Pressable accessibilityRole="button" style={{ minHeight: 44, padding: 12 }} onPress={() => setOpen(false)}><Text style={textStyle("label")}>Done</Text></Pressable>
+        {Object.entries(fieldGrounds).map(([id, item]) => <Pressable accessibilityRole="button" accessibilityState={{ selected: appearance.ground === id }} key={id} style={[f.row, { minHeight: 48, borderWidth: 1, borderColor: appearance.ground === id ? "#a67c00" : clubColors.line, borderRadius: 12, padding: 10 }]} onPress={() => onChange({ ...appearance, ground: id as FieldAppearance["ground"] })}><View style={{ width: 22, height: 28, borderRadius: 6, backgroundColor: item.lane }}/><AppText role="body" style={f.grow}>{item.name}</AppText>{appearance.ground === id && <AppText role="caption">Selected</AppText>}</Pressable>)}
+        <View style={f.row}>{(["open", "club"] as const).map(edges => <Pressable key={edges} accessibilityRole="button" accessibilityState={{ selected: appearance.edges === edges }} style={{ minHeight: 44, flex: 1, padding: 12, borderRadius: 10, backgroundColor: appearance.edges === edges ? clubColors.actionSoft : clubColors.soft }} onPress={() => onChange({ ...appearance, edges })}><AppText role="body">{edges === "club" ? "Club grounds" : "Open edges"}</AppText></Pressable>)}</View>
+        <Pressable accessibilityRole="button" style={{ minHeight: 44, padding: 12 }} onPress={() => setOpen(false)}><AppText role="label">Done</AppText></Pressable>
       </View>
     </FocusSheet>
   </>;
@@ -61,11 +61,11 @@ const f=useFocusStyles();
     onPanResponderMove: (_, gesture) => { const p = latest.current; p.onNavigate(overviewTarget((start.current + gesture.dx) / p.width, p.overview.high)); },
   }));
   return <View style={[f.row, { gap: 8, backgroundColor: clubColors.card, paddingHorizontal: 10 }]}>
-    <Text style={textStyle("caption")}>{positionOnly ? "Start" : "0"}</Text>
+    <AppText role="caption">{positionOnly ? "Start" : "0"}</AppText>
     <View {...pan.panHandlers} onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ flex: 1, minHeight: 44, justifyContent: "center" }} accessible accessibilityRole="adjustable" accessibilityLabel={positionOnly ? "Course distance target" : "Field distance overview"} aria-valuemin={0} aria-valuemax={overview.high} aria-valuenow={Math.min(overview.high, Math.max(0, view.center))} aria-valuetext={`${view.center.toFixed(1)} ${unit}`} accessibilityValue={{ min: 0, max: overview.high, now: Math.min(overview.high, Math.max(0, view.center)), text: `${view.center.toFixed(1)} ${unit}` }} accessibilityActions={[{ name: "increment" }, { name: "decrement" }]} onAccessibilityAction={e => onNavigate(Math.max(0, Math.min(overview.high, view.center + (e.nativeEvent.actionName === "increment" ? 1 : -1) * view.span / 4)))}>
       <View pointerEvents="none" style={{ height: 1, backgroundColor: "#bdc8b5" }}/>
       <View pointerEvents="none" style={{ position: "absolute", top: positionOnly ? 8 : 12, height: positionOnly ? 28 : 20, left: `${(positionOnly ? Math.max(0, Math.min(1, view.center / overview.high)) : overview.from) * 100}%`, width: positionOnly ? 2 : `${overview.width * 100}%`, minWidth: 2, borderWidth: 1, borderColor: "#a9bc93", borderRadius: 4, backgroundColor: "#b4c79b26" }}/>
       {lanes.filter(l => !l.ghost && !hiddenIds.includes(l.id)).map(l => <View pointerEvents="none" key={l.id} style={{ position: "absolute", left: `${Math.max(0, Math.min(100, l.value / overview.high * 100))}%`, top: 18, width: 3, height: 9, borderRadius: 3, backgroundColor: l.you ? "#d6a900" : "#a6b9b5" }}/>) }
-    </View><Text style={textStyle("caption")}>{positionOnly ? "Leader" : `${overview.high.toFixed(1)} ${unit}`}</Text>
+    </View><AppText role="caption">{positionOnly ? "Leader" : `${overview.high.toFixed(1)} ${unit}`}</AppText>
   </View>;
 }

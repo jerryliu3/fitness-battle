@@ -35,7 +35,7 @@ export function DebugEventMenu({
     void playCue("selection");
     const result = triggerDebugEvent?.(eventId);
     if (!result) return;
-    if (eventId === "week-closing") onNavigate(result.targetRoute, "arena");
+    if (eventId === "week-closing" || eventId === "deregister-sport") onNavigate(result.targetRoute, "arena");
   }
 
   return (

@@ -18,6 +18,8 @@ vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [] 
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "alice" } }) }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: mock.state, accountKey: "alice", dispatch: mock.dispatch }) }));
 vi.mock("./compete-experience", () => ({ useCompeteExperience: () => ({ event: { account: "alice", sport: mock.event }, immersive: mock.immersive, close: mock.close, enter: mock.enter }) }));
+vi.mock("../ui/compete-time-series-chart", () => ({ CompeteTimeSeriesChart: "CompeteTimeSeriesChart" }));
+vi.mock("./points-timeline", () => ({ PointsTimeline: "PointsTimeline" }));
 vi.mock("./competition-field", () => ({ CompetitionField: () => null }));
 vi.mock("./event-home", () => ({ EventHome: "EventHome", CoursePreview: "CoursePreview" }));
 vi.mock("./event-registration", () => ({ EventRegistration: "EventRegistration" }));
@@ -101,4 +103,15 @@ it("keeps the waiting-for-field destination open after the start without cancell
   expect(renderer.root.findAllByType("CompeteSheet" as never)).toHaveLength(1);
   expect(renderer.root.findAllByType("FocusButton" as never).some(node => node.props.label === "Cancel registration")).toBe(false);
   expect(mock.close).not.toHaveBeenCalled();
+});
+
+it("keeps the home background unchanged while a claimed registration panel remains open", async () => {
+  const background = mock.state;
+  await act(async () => { renderer = create(createElement(ArenaScreen)); });
+  await act(async () => renderer.root.findByType("ExploreEvents" as never).props.onChoose("walking"));
+  mock.state = reduceCompete(mock.state!, { type: "opt-in", sport: "walking" });
+  await act(async () => renderer.update(createElement(ArenaScreen)));
+  expect(renderer.root.findByType("EventHome" as never).props.state).toBe(background);
+  await act(async () => renderer.root.findByType("FocusSheet" as never).props.onClosed());
+  expect(renderer.root.findByType("EventHome" as never).props.state).toBe(mock.state);
 });

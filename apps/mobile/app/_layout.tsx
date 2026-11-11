@@ -3,7 +3,7 @@ import { useThemeColors } from "../src/theme";
 import { AppThemeProvider, useAppTheme } from "../src/appearance";
 import { OnboardingNavigation } from "../src/lib/onboarding-navigation";
 import { ToastProvider } from "../src/ui/toast";
-import { textStyle } from "../src/ui/section";
+import { AppText, textStyle } from "../src/ui/section";
 import {
   DMSans_400Regular,
   DMSans_500Medium,
@@ -50,7 +50,7 @@ const SHELL_COLORS=useThemeColors();
   if (ready) return children;
   if (!error) return <View style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }} />;
   return <View style={{ flex: 1, padding: 24, justifyContent: "center", gap: 16 }}>
-    <Text style={textStyle("body")}>{error}</Text>
+    <AppText role="body">{error}</AppText>
     {error ? <><Text accessibilityRole="button" onPress={() => void reload()} style={textStyle("label")}>Retry</Text><Text accessibilityRole="button" onPress={() => void signOut()} style={textStyle("label")}>Sign out</Text></> : null}
   </View>;
 }

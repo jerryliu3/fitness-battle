@@ -42,17 +42,31 @@ function RegisteredEventCard({ state, sport, active, onEnter }: { state: Compete
   const lanes = model.lanes.filter(lane => !lane.ghost);
   const total = lanes.find(lane => lane.you)?.values[2] ?? 0;
   const place = 1 + lanes.filter(lane => lane.values[2] > total).length;
-  const { rows } = useEventActivity(state, sport, active && !queued);
+  const { rows, loading, error } = useEventActivity(state, sport, active && !queued);
   const update = formatActivityAge(rows[0]?.at, now);
+  const updateText = queued ? "Upcoming wave" : update !== "—" ? `Last update: ${update}` : !loading && !error ? "No updates yet" : null;
   return <article className="compete-race-card">
-    <div className="compete-race-heading"><span className="compete-sport-icon"><CompeteIcon name={sport} /></span><div><AppText role="label">{SPORTS.find(s => s.id === sport)?.name}</AppText><div className="compete-last-update">{!queued && <span aria-hidden="true" className="compete-live-dot" data-active={active} />}<AppText role="support" secondary>{queued ? "Upcoming wave" : `last update: ${update === "—" ? "Unavailable" : update}`}</AppText></div></div>{!queued && <span className="compete-place-badge"><AppText role="caption" secondary>{`${ordinalPlace(place)} place`}</AppText></span>}</div>
-    <CoursePreview sport={sport} queued={queued} state={state} />
+    <div className="compete-race-heading">
+      <span className="compete-sport-icon"><CompeteIcon name={sport} /></span>
+      <div>
+        <AppText role="label">{SPORTS.find(s => s.id === sport)?.name}</AppText>
+        {updateText ? (
+          <div className="compete-last-update">
+            {!queued && <span aria-hidden="true" className="compete-live-dot" data-active={active} />}
+            <AppText role="support" secondary>{updateText}</AppText>
+          </div>
+        ) : null}
+      </div>
+      {!queued && <span className="compete-place-badge"><AppText role="caption" secondary>{`${ordinalPlace(place)} place`}</AppText></span>}
+    </div>
+    <div style={{ position: "relative" }}><CoursePreview sport={sport} queued={queued} state={state} /><button type="button" aria-label="Open race fullscreen" onClick={onEnter} style={{ position: "absolute", inset: 0, zIndex: 1, padding: 0, border: 0, background: "transparent", cursor: "pointer" }} /></div>
     <button type="button" className="compete-race-entry" aria-label={`Enter ${SPORTS.find(s => s.id === sport)?.name} field`} onClick={onEnter}><AppText role="label">See race</AppText><span aria-hidden="true">→</span></button>
   </article>;
 }
 
-export function ExploreEvents({ onChoose }: { onChoose(event: CompeteEvent): void }) {
-  const categories = COMPETE_CATEGORIES;
+export function ExploreEvents({ onChoose, state }: { onChoose(event: CompeteEvent): void; state: CompeteState }) {
+  const categories = COMPETE_CATEGORIES.map(category => ({ ...category, events: category.events.filter(event => event === "sleep" ? !state.healthRatings.some(r => r.metric === "sleep" && r.optedIn) : !state.ratings.some(r => r.sport === event && r.optedIn)) })).filter(category => category.events.length > 0);
+  if (!categories.length) return null;
   return <section className="compete-home-section" aria-label="Event registration">
     <AppHeading>Event registration</AppHeading>
     {categories.map(category => <div key={category.id} className="compete-category">

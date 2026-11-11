@@ -318,7 +318,7 @@ const c=useThemeColors();
                       opacity={1 - effect.ripple}
                     />
                   ) : null}
-                  {l.mystery ? <G><Circle cx={0} cy={0} r={18} fill="white" stroke={c.muted} strokeWidth={2} strokeDasharray="3 3"/><SvgText {...chartTextProps()} x={0} y={4} textAnchor="middle" fill={c.ink}>?</SvgText></G> : edge ? (
+                  {l.mystery ? <G><Circle cx={0} cy={0} r={18} fill={c.card} stroke={c.muted} strokeWidth={2} strokeDasharray="3 3"/><SvgText {...chartTextProps()} x={0} y={4} textAnchor="middle" fill={c.ink}>?</SvgText><SvgText {...chartTextProps()} x={0} y={34} textAnchor="middle" fill={c.ink}>{l.name}</SvgText></G> : edge ? (
                     <Circle
                       cx={0}
                       cy={0}

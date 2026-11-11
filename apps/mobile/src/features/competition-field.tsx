@@ -8,13 +8,14 @@ import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-pro
 import { QueuedField } from "./queued-field";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { FieldGroundSwitcher } from "../ui/field-ground-switcher";
+import { CompeteTimeSeriesChart } from "../ui/compete-time-series-chart";
 import { GeographicCourse } from "./geographic-course";
 import { useCompetitionCourse } from "./use-competition-course";
 import { useFieldTimeline } from "./use-field-timeline";
 import { FieldTimeline } from "./field-timeline";
 import { CompetitionReplayModal } from "./competition-replay";
 import { UserAvatar } from "../ui/user-avatar";
-import { textStyle } from "../ui/section";
+import { AppText, textStyle } from "../ui/section";
 import { useFieldFlight } from "../ui/use-field-flight";
 import { FieldOverlayView, SlidingFieldPanel } from "../ui/field-overlay-motion";
 import { PortraitField } from "../ui/portrait-field";
@@ -95,10 +96,10 @@ const f=useFocusStyles();
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = (presentationActive ?? true) && shellTabFromPath(pathname)?.id === "arena";
-  const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d">(() => (state && buildArenaModel(state, undefined, track, sport)?.unit === "pts") ? "2d" : "4d");
+  const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d" | "graph">(() => (state && buildArenaModel(state, undefined, track, sport)?.unit === "pts") ? "graph" : "4d");
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
 
-  const chooseView = (value: "2d" | "3d" | "4d") => {
+  const chooseView = (value: "2d" | "3d" | "4d" | "graph") => {
     flight.cancel();
     setSceneDimension(value);
   };
@@ -212,7 +213,7 @@ const f=useFocusStyles();
     portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you));
     setSelectedId(id);
     setFocusRequest(value => value + 1);
-    if (sceneDimension !== "4d") flight.fly({ ...view, center: clampCourseCenter(lane.values[2], view.span, arenaFieldHigh(fieldLanes), arena.unit, appearance.ground) });
+    if (sceneDimension !== "4d" && sceneDimension !== "graph") flight.fly({ ...view, center: clampCourseCenter(lane.values[2], view.span, arenaFieldHigh(fieldLanes), arena.unit, appearance.ground) });
   };
 
   const ranked = arena.lanes
@@ -258,6 +259,19 @@ const f=useFocusStyles();
       onTouchEnd={() => hold.current?.end()}
       onTouchCancel={() => hold.current?.end()}
     >
+      {sceneDimension === "graph" ? (
+        <CompeteTimeSeriesChart
+          state={state}
+          sport={sport}
+          track={track}
+          selectedId={selectedId ?? me?.id}
+          onSelectAthlete={(id) => {
+            if (!hold.current?.suppressSelection()) selectAthlete(id);
+          }}
+          hiddenIds={hiddenIds}
+          reserveTopControls={!expanded}
+        />
+      ) : null}
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <View pointerEvents={expanded ? "auto" : "none"} style={{ flex: 1 }}>
           <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onReplay={sharedTimeline ? timeline.toggle : backgroundMode ? () => setCourseReplayOpen(true) : timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
@@ -690,9 +704,9 @@ const f=useFocusStyles();
                 <View style={[f.grow, { gap: 6 }]}>
                   <View style={[f.row, { alignItems: "center", justifyContent: "space-between" }]}>
                     <View style={{ flex: 1, gap: 2, marginRight: 12 }}>
-                      <Text style={textStyle("label")} numberOfLines={1}>
+                      <AppText role="label" numberOfLines={1}>
                         {lane.name}
-                      </Text>
+                      </AppText>
                       <Text style={[textStyle("caption"), { color: c.muted }]}>
                         {elo ?? "—"} effort score
                       </Text>
