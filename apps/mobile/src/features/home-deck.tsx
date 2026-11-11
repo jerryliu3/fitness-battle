@@ -127,21 +127,19 @@ function DeckCardContent({
             {card.badge}
           </Text>
         </View>
-        {onDismiss ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Dismiss ${card.title} card`}
-            hitSlop={8}
-            onPress={onDismiss}
-            style={[s.dismissBtn, { backgroundColor: pal.accentCircleBg }]}
-          >
-            <Text style={[s.dismissBtnText, { color: pal.accentCircleText }]}>
-              ✕
-            </Text>
-          </Pressable>
-        ) : (
-          <View style={s.dismissPlaceholder} />
-        )}
+        <Pressable
+          accessibilityRole={onDismiss ? "button" : "none"}
+          accessibilityLabel={onDismiss ? `Dismiss ${card.title} card` : undefined}
+          accessible={Boolean(onDismiss)}
+          hitSlop={8}
+          disabled={!onDismiss}
+          onPress={onDismiss}
+          style={[s.dismissBtn, { backgroundColor: pal.accentCircleBg }]}
+        >
+          <Text style={[s.dismissBtnText, { color: pal.accentCircleText }]}>
+            ✕
+          </Text>
+        </Pressable>
       </View>
 
       <View style={s.cardBody}>
@@ -428,32 +426,30 @@ export function HomeDeck({
 
   return (
     <View style={s.section} accessibilityLabel="Updates">
-      {visibleCards.length === 0 && dismissedIds.length > 0 && <View style={s.header}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Reset dismissed cards"
-            onPress={resetDeck}
-            style={s.restorePill}
-          >
-            <AppText role="label" style={s.restorePillText}>
-              Reset
-            </AppText>
-          </Pressable>
-
-      </View>}
-
       {!activeCard && !dismissingId ? (
         <View style={s.caughtUpRow}>
           <AppText role="body" secondary>
             You’re all caught up.
           </AppText>
+          {dismissedIds.length > 0 && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Reset dismissed cards"
+              onPress={resetDeck}
+              style={s.restorePill}
+            >
+              <AppText role="label" style={s.restorePillText}>
+                Reset
+              </AppText>
+            </Pressable>
+          )}
         </View>
       ) : (
         <View style={s.deckWrapper}>
           <View style={s.stackStage}>
             {/* Depth 2 Card (Underneath next card) */}
             {depth2Card && (
-              <View
+              <Animated.View
                 pointerEvents="none"
                 accessible={false}
                 style={[
@@ -462,6 +458,15 @@ export function HomeDeck({
                   {
                     backgroundColor: paletteForDeckTone(depth2Card.tone, isDark).bg,
                     borderColor: paletteForDeckTone(depth2Card.tone, isDark).border,
+                    transform: [
+                      {
+                        translateY: dragX.interpolate({
+                          inputRange: [-240, 0, 240],
+                          outputRange: [7, 14, 7],
+                          extrapolate: "clamp",
+                        }),
+                      },
+                    ],
                   },
                 ]}
               />
@@ -469,7 +474,7 @@ export function HomeDeck({
 
             {/* Depth 1 Card: FULLY RENDERED NEXT CARD (Same size directly beneath top card) */}
             {nextCard && (
-              <View
+              <Animated.View
                 pointerEvents="none"
                 accessible={false}
                 style={[
@@ -478,11 +483,20 @@ export function HomeDeck({
                   {
                     backgroundColor: paletteForDeckTone(nextCard.tone, isDark).bg,
                     borderColor: paletteForDeckTone(nextCard.tone, isDark).border,
+                    transform: [
+                      {
+                        translateY: dragX.interpolate({
+                          inputRange: [-240, 0, 240],
+                          outputRange: [0, 7, 0],
+                          extrapolate: "clamp",
+                        }),
+                      },
+                    ],
                   },
                 ]}
               >
                 <DeckCardContent card={nextCard} isDark={isDark} />
-              </View>
+              </Animated.View>
             )}
 
             {/* Top Card: Active Animated Swipable Card */}
@@ -556,7 +570,7 @@ const sThemes = createThemedStyles((c) => ({
   },
   stackStage: {
     position: "relative",
-    height: CARD_HEIGHT,
+    height: CARD_HEIGHT + 14,
   },
   stackStageWithBack: {},
   deckCard: {
@@ -571,7 +585,10 @@ const sThemes = createThemedStyles((c) => ({
     elevation: 3,
   },
   cardTop: {
-    position: "relative",
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
     zIndex: 3,
   },
   cardDepth1: {
@@ -579,7 +596,6 @@ const sThemes = createThemedStyles((c) => ({
     left: 0,
     right: 0,
     top: 0,
-    bottom: 0,
     zIndex: 2,
   },
   cardDepth2: {
@@ -587,7 +603,6 @@ const sThemes = createThemedStyles((c) => ({
     left: 0,
     right: 0,
     top: 0,
-    bottom: 0,
     zIndex: 1,
   },
   cardInner: {
@@ -697,7 +712,11 @@ const sThemes = createThemedStyles((c) => ({
     color: c.ink,
   },
   caughtUpRow: {
-    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 2,
     paddingHorizontal: 2,
+    minHeight: 30,
   },
 }));

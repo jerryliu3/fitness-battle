@@ -94,18 +94,17 @@ function DeckCardContent({
     <div className="home-deck-card-inner">
       <div className="home-deck-card-top">
         <span className="home-deck-badge">{card.badge}</span>
-        {onDismiss ? (
-          <button
-            type="button"
-            className="home-deck-dismiss"
-            aria-label={`Dismiss ${card.title} card`}
-            onClick={onDismiss}
-          >
-            ✕
-          </button>
-        ) : (
-          <div className="home-deck-dismiss-placeholder" />
-        )}
+        <button
+          type="button"
+          className="home-deck-dismiss"
+          aria-label={onDismiss ? `Dismiss ${card.title} card` : undefined}
+          aria-hidden={!onDismiss}
+          tabIndex={onDismiss ? 0 : -1}
+          disabled={!onDismiss}
+          onClick={onDismiss}
+        >
+          ✕
+        </button>
       </div>
 
       <div className="home-deck-card-body">
@@ -336,23 +335,21 @@ export function HomeDeck({
 
   return (
     <section className="home-deck-section" aria-label="Updates">
-      {visibleCards.length === 0 && dismissedIds.length > 0 && <div className="home-deck-header">
-          <button
-            type="button"
-            className="home-deck-restore-btn"
-            onClick={resetDeck}
-            aria-label="Reset dismissed cards"
-          >
-            Reset
-          </button>
-
-      </div>}
-
       {!activeCard && !dismissing ? (
         <div className="home-deck-caught-up">
           <AppText role="body" secondary>
             You’re all caught up.
           </AppText>
+          {dismissedIds.length > 0 && (
+            <button
+              type="button"
+              className="home-deck-restore-btn"
+              onClick={resetDeck}
+              aria-label="Reset dismissed cards"
+            >
+              Reset
+            </button>
+          )}
         </div>
       ) : (
         <div className="home-deck-wrapper">
