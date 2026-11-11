@@ -17,6 +17,16 @@ export function EditionAnalytics({ analytics, scope="edition" }: { analytics: Ra
     <AppText role="heading">{scope==="edition" ? "Inside this race" : "Across this distance"}</AppText>
     <AppText role="caption" secondary>{analytics.total.toLocaleString()} published finishes across {analytics.editionCount ?? 1} {analytics.editionCount===1 ? "race edition" : "race editions"} in the selected category and timeframe. Athlete search does not change this field.</AppText>
     <View style={{flexDirection:"row",flexWrap:"wrap",gap:20}}>{([["Fastest finish",analytics.fastestMs],["Median finish",analytics.medianMs],["Slowest finish",analytics.slowestMs]] as const).map(([label,time]) => <View key={label} style={{gap:6}}><AppText role="caption" secondary>{label}</AppText><AppText role="heading" style={{fontVariant:["tabular-nums"]}}>{raceClock(time)}</AppText></View>)}</View>
+    {analytics.benchmarks && <View style={{gap:8,padding:12,backgroundColor:colors.card,borderRadius:12,borderWidth:1,borderColor:colors.line}}>
+      <AppText role="caption" secondary>Percentile cutoffs</AppText>
+      <View style={{flexDirection:"row",flexWrap:"wrap",gap:16}}>
+        <View style={{gap:2}}><AppText role="caption" secondary>Top 1%</AppText><AppText role="label" style={{fontVariant:["tabular-nums"]}}>{analytics.benchmarks.top1Ms != null ? raceClock(analytics.benchmarks.top1Ms) : "—"}</AppText></View>
+        <View style={{gap:2}}><AppText role="caption" secondary>Top 5%</AppText><AppText role="label" style={{fontVariant:["tabular-nums"]}}>{analytics.benchmarks.top5Ms != null ? raceClock(analytics.benchmarks.top5Ms) : "—"}</AppText></View>
+        <View style={{gap:2}}><AppText role="caption" secondary>Top 10%</AppText><AppText role="label" style={{fontVariant:["tabular-nums"]}}>{analytics.benchmarks.top10Ms != null ? raceClock(analytics.benchmarks.top10Ms) : "—"}</AppText></View>
+        <View style={{gap:2}}><AppText role="caption" secondary>Top 25%</AppText><AppText role="label" style={{fontVariant:["tabular-nums"]}}>{analytics.benchmarks.top25Ms != null ? raceClock(analytics.benchmarks.top25Ms) : "—"}</AppText></View>
+        <View style={{gap:2}}><AppText role="caption" secondary>Median 50%</AppText><AppText role="label" style={{fontVariant:["tabular-nums"]}}>{raceClock(analytics.medianMs)}</AppText></View>
+      </View>
+    </View>}
     <View style={{height:160,flexDirection:"row",gap:2}}>{bins.map(bin => <Pressable key={bin.bucket} accessibilityRole="button" accessibilityState={{selected:selected===bin.bucket}} accessibilityLabel={`${bin.label}: ${bin.count.toLocaleString()} finishes`} onPress={() => setSelected(bin.bucket)} style={{flex:1,justifyContent:"flex-end"}}><View style={{height:`${bin.height}%`,backgroundColor:selected===bin.bucket ? colors.tennis : colors.muted,borderTopLeftRadius:3,borderTopRightRadius:3}} /></Pressable>)}</View>
     <View style={{flexDirection:"row",justifyContent:"space-between"}}><AppText role="caption" secondary>{raceClock(analytics.minimumMs)}</AppText><AppText role="caption" secondary>{raceClock(analytics.minimumMs+bins.length*analytics.binWidthMs)}</AppText></View>
     <AppText role="caption" accessibilityLiveRegion="polite">{active ? `${active.label} · ${active.count.toLocaleString()} finishes` : "Select a bar to inspect its finish-time range."}</AppText>

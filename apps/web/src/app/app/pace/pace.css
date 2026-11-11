@@ -276,3 +276,14 @@
 .race-replay-controls strong { font-variant-numeric:tabular-nums; }
 .race-replay-seek { display:grid; gap:8px; font-size:12px; }
 .race-replay-seek input { padding:0; accent-color:var(--ink); min-height:44px; }
+
+.race-benchmarks-panel { margin: 20px 0; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: rgba(0, 0, 0, 0.02); }
+.race-benchmarks-title { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 12px; font-weight: 600; }
+.race-benchmarks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 12px; }
+.race-benchmarks-grid div { display: flex; flex-direction: column; gap: 4px; }
+.race-benchmarks-grid span { font-size: 11px; color: var(--muted); }
+.race-benchmarks-grid strong { font-size: 16px; font-variant-numeric: tabular-nums; color: var(--ink); }
+
+.race-percentile-cell { white-space: nowrap; }
+.race-percentile-pill { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 999px; background: var(--tennis, #d9f44a); color: var(--ink, #0a0a0a); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.race-percentile-pill.muted { background: var(--line); color: var(--muted); }

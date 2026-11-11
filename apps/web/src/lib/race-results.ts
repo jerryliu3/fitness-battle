@@ -11,6 +11,7 @@ export async function loadRaceResults(distance: string, query: ReturnType<typeof
   const { data, error } = await client.rpc("rankings_page_scoped", {
     p_distance: distance, p_sex: query.sex, p_year: query.year,
     p_edition_id: query.editionId, p_query: query.query, p_page: query.page, p_from: bounds.from, p_until: bounds.until,
+    p_percentile: query.percentile ?? "all",
   });
   if (error || !data) throw new Error("Rankings unavailable");
   return data as RaceResultsPage;

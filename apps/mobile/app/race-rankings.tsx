@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, ScrollView, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { RACE_DISTANCES, RACE_TIMEFRAMES, raceQuery, raceEditionOptions, raceWindowCaption, raceClock, type RaceCoverage, type RaceResult, type RaceResultsPage } from "@fitness-battle/shared";
+import { RACE_DISTANCES, RACE_PERCENTILE_FILTERS, RACE_TIMEFRAMES, raceQuery, raceEditionOptions, raceWindowCaption, raceClock, type RaceCoverage, type RaceResult, type RaceResultsPage } from "@fitness-battle/shared";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { useFocusStyles, FocusButton } from "../src/ui/focus";
 import { AppText } from "../src/ui/section";
@@ -18,6 +18,7 @@ export default function RaceRankings() {
   const initial = raceQuery(new URLSearchParams({edition:params.edition ?? "",sex:params.sex ?? "all"}));
   const [distance, setDistance] = useState(RACE_DISTANCES.find(d => d.slug === params.distance)?.slug ?? "marathon");
   const [sex, setSex] = useState(initial.sex);
+  const [percentile, setPercentile] = useState(initial.percentile ?? "all");
   const [edition, setEdition] = useState(params.edition ?? "");
   const [coverage, setCoverage] = useState<RaceCoverage[] | null>(null);
   const [coverageError, setCoverageError] = useState(false);
@@ -47,7 +48,7 @@ export default function RaceRankings() {
   const editions = raceEditionOptions(coverage ?? [], RACE_DISTANCES.find(d => d.slug === distance)!.stored);
   const selectedEdition = editions.find(e => String(e.edition_id) === edition);
   useEffect(() => {
-    const params = new URLSearchParams({ distance, sex, edition, q: query, page: String(page), year, timeframe, from, through });
+    const params = new URLSearchParams({ distance, sex, edition, q: query, page: String(page), year, timeframe, from, through, percentile });
     const parsed = raceQuery(params);
     if (parsed.dateError || parsed.editionError) {setValidation(parsed.editionError ?? parsed.dateError ?? "");setBusy(false);setData(null);setError(false);return;}
     const controller = new AbortController();
@@ -58,7 +59,7 @@ export default function RaceRankings() {
       .catch(() => { if (!controller.signal.aborted) setError(true); })
       .finally(() => { if (!controller.signal.aborted) setBusy(false); });
     return () => controller.abort();
-  }, [distance, sex, edition, query, year, timeframe, from, through, page, retry]);
+  }, [distance, sex, edition, query, year, timeframe, from, through, percentile, page, retry]);
   function search() {
     const parsed = raceQuery(new URLSearchParams({edition,timeframe,year:yearDraft,from:fromDraft,through:throughDraft}));
     setValidation(parsed.editionError ?? parsed.dateError ?? "");
@@ -71,6 +72,10 @@ export default function RaceRankings() {
       ListHeaderComponent={<View style={{ gap: 16 }}>
         <View style={f.chipRow}>{RACE_DISTANCES.map(d => <Pressable key={d.slug} accessibilityRole="button" accessibilityState={{selected:distance === d.slug}} onPress={() => { setDistance(d.slug); setEdition(""); setPage(1); }} style={[f.chip, distance === d.slug && f.chipActive]}><AppText role="label">{d.label}</AppText></Pressable>)}</View>
         <RaceCategoryFilter value={sex} onChange={value=>{setSex(value);setPage(1);}} />
+        <AppText role="label">Percentile</AppText>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
+          {RACE_PERCENTILE_FILTERS.map(p => <Pressable key={p.value} accessibilityRole="button" accessibilityState={{selected:percentile===p.value}} onPress={()=>{setPercentile(p.value);setPage(1);}} style={[f.chip,percentile===p.value && f.chipActive]}><AppText role="label">{p.label}</AppText></Pressable>)}
+        </ScrollView>
         <AppText role="label">Event edition</AppText>
         {coverageError ? <View style={{gap:8}}><AppText role="caption" secondary>Event selection unavailable.</AppText><FocusButton label="Retry events" secondary onPress={() => setCoverageRetry(n=>n+1)} /></View> : !coverage ? <ActivityIndicator accessibilityLabel="Loading events" /> : null}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
@@ -96,7 +101,7 @@ export default function RaceRankings() {
       renderItem={({item}) => <Pressable accessibilityRole="button" onPress={() => router.push({pathname:"/race-result",params:{id:String(item.id)}})} style={[f.row, { alignItems:"flex-start", paddingVertical:16 }]}>
         <AppText role="caption" secondary>{item.place.toLocaleString()}</AppText>
         <View style={f.grow}><AppText role="label">{item.athlete_name}</AppText><AppText role="caption" secondary>{item.event_name} · {item.edition_year}</AppText></View>
-        <View><AppText role="label" style={{fontVariant:["tabular-nums"]}}>{raceClock(item.rank_time_ms)}</AppText><AppText role="caption" secondary>{item.rank_clock === "chip" ? "Chip" : "Official"}</AppText></View>
+        <View style={{alignItems:"flex-end"}}><AppText role="label" style={{fontVariant:["tabular-nums"]}}>{raceClock(item.rank_time_ms)}</AppText><AppText role="caption" secondary>{item.percentile != null ? (item.percentile >= 99 ? "Top 1%" : item.percentile >= 95 ? "Top 5%" : item.percentile >= 90 ? "Top 10%" : item.percentile >= 75 ? "Top 25%" : item.percentile >= 50 ? "Top 50%" : `${item.percentile.toFixed(0)}%`) : (item.rank_clock === "chip" ? "Chip" : "Official")}</AppText></View>
       </Pressable>}
       ListEmptyComponent={!busy && !error && !!data ? <AppText role="body" secondary>No results in this field. Try another name, year or category.</AppText> : undefined}
       ListFooterComponent={data && data.total > 0 ? <View style={{gap:12,marginTop:20}}><AppText role="caption" secondary>Page {data.page} of {Math.ceil(data.total / data.pageSize).toLocaleString()}</AppText><View style={f.chipRow}>{data.page > 1 && <FocusButton label="Previous" secondary onPress={() => setPage(data.page - 1)} />}{data.page * data.pageSize < data.total && <FocusButton label="Next" secondary onPress={() => setPage(data.page + 1)} />}</View></View> : undefined}
