@@ -55,11 +55,16 @@ export function PointsTimeline({ state, event, fraction, onChange }: { state: Co
       <button type="button" onClick={toggle} disabled={!model.nowFraction} aria-label={playing ? "Pause replay" : "Play replay"} style={{ minHeight: 32, padding: "4px 12px", borderRadius: 999, border: "1px solid var(--app-border-line)", background: "var(--app-canvas-card)", cursor: "pointer" }}>
         <AppText role="label">{playing ? "Pause" : "Play"}</AppText>
       </button>
-      <input type="range" aria-label="Competition timeline" aria-valuetext={model.cursorTimeLabel} min={0} max={model.nowFraction} step="any" value={model.cursorFraction} disabled={!model.nowFraction} onChange={e => { const value = Number(e.target.value); setPlaying(false); onChange(value >= model.nowFraction ? null : value); }} style={{ flex: 1, accentColor: "var(--app-chart-series)" }} />
+      <div style={{ flex: 1, display: "grid", gap: 4 }}>
+        <input type="range" aria-label="Competition timeline" aria-valuetext={model.cursorTimeLabel} min={0} max={model.nowFraction} step="any" value={model.cursorFraction} disabled={!model.nowFraction} onChange={e => { const value = Number(e.target.value); setPlaying(false); onChange(value >= model.nowFraction ? null : value); }} style={{ width: "100%", accentColor: "var(--app-chart-series)" }} />
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+          <AppText role="caption" secondary>{model.cursorTimeLabel}</AppText>
+          <AppText role="caption" secondary>Now</AppText>
+        </div>
+      </div>
       <button type="button" onClick={() => setSpeed(s => s === 1 ? 2 : s === 2 ? 4 : 1)} aria-label={`Playback speed ${speed} times`} style={{ minHeight: 32, padding: "4px 8px", borderRadius: 999, border: "1px solid var(--app-border-line)", background: "var(--app-canvas-card)", cursor: "pointer" }}>
         <AppText role="label">{speed}×</AppText>
       </button>
     </div>
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}><AppText role="caption" secondary>{model.cursorTimeLabel}</AppText><AppText role="caption" secondary>Now</AppText></div>
   </div>;
 }

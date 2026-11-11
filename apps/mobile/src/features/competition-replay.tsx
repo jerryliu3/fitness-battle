@@ -15,6 +15,7 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import {
   orderedArenaLanes,
   coursePositionLeaders, competitionReplayDimension, nextCompetitionReplaySpeed, competitionReplayFrame, competitionReplayCaption, competitionReplayDate,
+  competitionReplayTimeMs, competitionReplayCursorFromTimeMs, REPLAY_MINUTES_PER_REAL_SECOND_1X,
   indexCompetitionReplay, localCompetitionReplay, initialsFromName, fieldDefaultSpan,
   clampCourseCenter, sportById,
   type PeriodResult, type CompetitionReplay, type CompetitionReplaySelection, type CompeteState, type ArenaLane,
@@ -153,16 +154,19 @@ const s=useThemedStyles(sThemes);
   useEffect(() => { if (embedded && index) setCursor(count); }, [index, count, embedded]);
   const cursorRef = useRef(cursor); cursorRef.current = cursor;
   useEffect(() => {
-    if (!playing || !count) return;
+    if (!playing || !count || !index) return;
     let raf = 0; const from = cursorRef.current, start = Date.now();
+    const fromTimeMs = competitionReplayTimeMs(index, from);
     const tick = () => {
-      const progress = from + (Date.now() - start) * speed / 2200;
+      const now = Date.now();
+      const targetTimeMs = fromTimeMs + (now - start) * (REPLAY_MINUTES_PER_REAL_SECOND_1X * 60) * speed;
+      const progress = competitionReplayCursorFromTimeMs(index, targetTimeMs);
       setCursor(Math.min(count, reduced ? Math.floor(progress) : progress));
       if (progress < count) raf = requestAnimationFrame(tick); else setPlaying(false);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [playing, speed, count, reduced, dimension]);
+  }, [playing, speed, count, reduced, dimension, index]);
   useEffect(() => { const subscription = AppState.addEventListener("change", next => { if (next !== "active") setPlaying(false); }); return () => subscription.remove(); }, []);
   const seek = (next: number) => { const bounded = Math.max(0, Math.min(count, next)); if (Math.ceil(bounded) !== Math.ceil(cursor)) void playCue("selection"); setPlaying(false); setCursor(bounded); };
   const frame = index ? competitionReplayFrame(index, cursor) : null;

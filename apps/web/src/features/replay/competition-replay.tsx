@@ -14,6 +14,7 @@ import { PortraitField } from "@/features/club/portrait-field";
 import { useFieldAppearance } from "@/features/field/components/field-course";
 import {
   coursePositionLeaders, competitionReplayDimension, nextCompetitionReplaySpeed, competitionReplayFrame, competitionReplayCaption, competitionReplayDate,
+  competitionReplayTimeMs, competitionReplayCursorFromTimeMs, REPLAY_MINUTES_PER_REAL_SECOND_1X,
   indexCompetitionReplay, localCompetitionReplay, initialsFromName, fieldDefaultSpan,
   clampCourseCenter, sportById,
   type CompetitionReplay, type CompetitionReplaySelection, type CompeteState,
@@ -68,11 +69,13 @@ export function ReplayViewer({ state, selection, initialDimension, embedded = fa
   useEffect(() => { if (embedded && index) setCursor(count); }, [index, count, embedded]);
   const cursorRef = useRef(cursor); cursorRef.current = cursor;
   useEffect(() => {
-    if (!playing || !count) return;
+    if (!playing || !count || !index) return;
     let raf = 0; const from = cursorRef.current, start = performance.now();
+    const fromTimeMs = competitionReplayTimeMs(index, from);
     let lastPaint = -Infinity;
     const tick = (now: number) => {
-      const progress = from + (now - start) * speed / 2200;
+      const targetTimeMs = fromTimeMs + (now - start) * (REPLAY_MINUTES_PER_REAL_SECOND_1X * 60) * speed;
+      const progress = competitionReplayCursorFromTimeMs(index, targetTimeMs);
       // Bound GeoJSON/bridge updates during playback; seeking always paints immediately.
       const paintTime = Date.now();
       if (dimension !== "4d" || paintTime - lastPaint >= 100 || progress >= count) {
@@ -83,7 +86,7 @@ export function ReplayViewer({ state, selection, initialDimension, embedded = fa
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [playing, speed, count, reduced, dimension]);
+  }, [playing, speed, count, reduced, dimension, index]);
   useEffect(() => {
     const pause = () => { if (document.hidden) setPlaying(false); };
     document.addEventListener("visibilitychange", pause);

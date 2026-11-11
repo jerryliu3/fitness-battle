@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { freshState } from "./compete/engine";
 import { findSynthetic, pickSynthetics, syntheticVolumeInWindow } from "./matching";
-import { addSimulatedReplay, competitionReplayDate, competitionReplayFrame, indexCompetitionReplay, localCompetitionReplay, type CompetitionReplay, type CompetitionReplayEvent } from "./competition-replay";
+import { addSimulatedReplay, competitionReplayCursorFromTimeMs, competitionReplayDate, competitionReplayFrame, competitionReplayTimeMs, indexCompetitionReplay, localCompetitionReplay, type CompetitionReplay, type CompetitionReplayEvent } from "./competition-replay";
 const selection = { sport: "running" as const, track: "verified" as const, periodStart: "2026-10-19T04:00:00Z", periodEnd: "2026-10-26T04:00:00Z" };
 const event = (id: string, athleteId: string, distanceM: number, at = "2026-10-20T12:00:00Z"): CompetitionReplayEvent => ({ id, athleteId, distanceM, movingSec: distanceM / 3, effort: distanceM / 1000, at });
 const ledger = (events: CompetitionReplayEvent[]): CompetitionReplay => ({ ...selection, through: "2026-10-25T14:00:00Z", athletes: [{ id: "you", name: "You", you: true }, { id: "peer", name: "Peer", you: false }], events, scope: "field" });
@@ -69,4 +69,27 @@ it("interpolates the displayed clock within an event, including reverse seeking"
   expect(competitionReplayDate(index, .5)).toContain("2:00 AM");
   expect(competitionReplayDate(index, .75)).toContain("3:00 AM");
   expect(competitionReplayDate(index, .25)).toContain("1:00 AM");
+});
+
+it("converts bidirectionally between replay cursor and competition time ms", () => {
+  const e1 = "2026-10-19T08:00:00Z";
+  const e2 = "2026-10-20T12:00:00Z";
+  const index = indexCompetitionReplay(ledger([event("e1", "you", 1000, e1), event("e2", "peer", 2000, e2)]), "metric");
+  const startMs = Date.parse(selection.periodStart);
+  const e1Ms = Date.parse(e1);
+  const e2Ms = Date.parse(e2);
+
+  expect(competitionReplayTimeMs(index, 0)).toBe(startMs);
+  expect(competitionReplayTimeMs(index, 1)).toBe(e1Ms);
+  expect(competitionReplayTimeMs(index, 0.5)).toBe(startMs + (e1Ms - startMs) * 0.5);
+  expect(competitionReplayTimeMs(index, 1.5)).toBe(e1Ms + (e2Ms - e1Ms) * 0.5);
+  expect(competitionReplayTimeMs(index, 2)).toBe(e2Ms);
+
+  expect(competitionReplayCursorFromTimeMs(index, startMs)).toBe(0);
+  expect(competitionReplayCursorFromTimeMs(index, startMs - 1000)).toBe(0);
+  expect(competitionReplayCursorFromTimeMs(index, e1Ms)).toBe(1);
+  expect(competitionReplayCursorFromTimeMs(index, startMs + (e1Ms - startMs) * 0.5)).toBeCloseTo(0.5);
+  expect(competitionReplayCursorFromTimeMs(index, e1Ms + (e2Ms - e1Ms) * 0.5)).toBeCloseTo(1.5);
+  expect(competitionReplayCursorFromTimeMs(index, e2Ms)).toBe(2);
+  expect(competitionReplayCursorFromTimeMs(index, e2Ms + 10000)).toBe(2);
 });

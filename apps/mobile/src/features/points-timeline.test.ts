@@ -2,9 +2,11 @@ import { createElement } from "react";
 import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 import { freshState, reduceCompete } from "@fitness-battle/shared";
-vi.mock("react-native", () => ({ View: "View" }));
+vi.mock("react-native", () => ({ View: "View", Pressable: "Pressable", Text: "Text" }));
+vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
+vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => false }));
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [] }) }));
-vi.mock("../ui/section", () => ({ AppText: "AppText" }));
+vi.mock("../ui/section", () => ({ AppText: "AppText", textStyle: () => ({}) }));
 vi.mock("./replay-timeline", () => ({ ReplayTimeline: "ReplayTimeline" }));
 import { PointsTimeline } from "./points-timeline";
 it("uses the full scrubber range immediately after the wave starts", async () => {

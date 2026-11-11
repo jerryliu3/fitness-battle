@@ -14,9 +14,9 @@ export function FieldTimeline({ timeline: t, compact = false }: { timeline: Fiel
       <View style={{ flex: 1 }}><ReplayTimeline label="Competition timeline" count={t.ready ? t.count : 0} cursor={t.cursor} caption={t.label} onSeek={t.seek} /></View>
       {action(`${t.speed}×`, t.changeSpeed, false, `Playback speed ${t.speed} times`, true)}
     </View>
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, paddingLeft: 62 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, paddingLeft: 62, paddingRight: 66 }}>
       <Text style={{ ...textStyle("caption"), color: c.muted, flex: 1 }}>{t.error || (!t.ready ? "Loading timeline…" : t.label)}</Text>
-      {t.ready && <Text style={{ ...textStyle("caption"), color: c.muted, flexShrink: 1, textAlign: "right" }}>Now</Text>}
+      {t.ready && <View style={{ width: 0, alignItems: "center", overflow: "visible" }}><Text style={{ ...textStyle("caption"), color: c.muted, width: 44, textAlign: "center" }}>Now</Text></View>}
       {t.error && action("Retry", t.retry)}
     </View>
   </View>;

@@ -161,15 +161,18 @@ export function PointsTimeline({
           alignItems: "center",
           justifyContent: "space-between",
           gap: 8,
-          paddingLeft: 52,
+          paddingLeft: 62,
+          paddingRight: 66,
         }}
       >
         <AppText role="caption" secondary style={{ flex: 1 }}>
           {model.cursorTimeLabel}
         </AppText>
-        <AppText role="caption" secondary style={{ flexShrink: 1, textAlign: "right" }}>
-          Now
-        </AppText>
+        <View style={{ width: 0, alignItems: "center", overflow: "visible" }}>
+          <AppText role="caption" secondary style={{ width: 44, textAlign: "center" }}>
+            Now
+          </AppText>
+        </View>
       </View>
     </View>
   );
