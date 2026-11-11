@@ -216,7 +216,7 @@ describe("public results parsers", () => {
     expect(sql).toContain("private.upsert_source_record");
     expect(sql).toContain("private.upsert_performance");
     expect(sql).toContain("on conflict (slug)");
-    expect(sql).toContain("display_allowed = public.sources.display_allowed and excluded.display_allowed");
+    expect(sql).toContain("display_allowed = case when public.sources.audited_at is not null");
     expect(sql).toContain("for update");
     expect(sql).toContain("publication_state");
     expect(sql).toContain("ordinary acquisition cannot mutate a published edition");
@@ -247,7 +247,8 @@ describe("public results parsers", () => {
     expect(correctionSql).toContain("Expected edition revision % but edition does not exist; correction held', 2");
     expect(correctionSql).toContain("Source record lookup failed for % in edition %");
     expect(correctionSql).toContain("Reconcile corrected full-field population");
-    expect(correctionSql).toContain("set eligible = false,");
+    expect(correctionSql).toContain("set unpublished = true,");
+    expect(correctionSql).toContain("and sr.category_key in");
     expect(correctionSql).toContain("and sr.last_ingestion_run_id <> v_run");
 
     // Standard import without correction does not run reconciliation

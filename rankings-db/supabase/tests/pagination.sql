@@ -7,7 +7,7 @@ begin
   insert into public.sources(slug,name,attribution,reuse_notes,display_allowed,audited_at)
   values ('pagination_test','Pagination test','Test','Test',true,now()) returning id into src;
   insert into public.events(source_id,name) values(src,'Pagination test') returning id into evt;
-  insert into public.event_editions(event_id,edition_year,name) values(evt,2099,'Pagination test') returning id into ed;
+  insert into public.event_editions(event_id,edition_year,name,publication_state) values(evt,2099,'Pagination test','published') returning id into ed;
   for n in 1..205 loop
     insert into public.source_records(source_id,event_edition_id,normalized_name,normalized_bib,category_key)
     values(src,ed,'runner '||n,n::text,'marathon:unknown') returning id into rec;

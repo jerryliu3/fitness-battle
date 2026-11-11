@@ -202,9 +202,123 @@ begin
     join public.sources s on s.id = sr.source_id
     where s.slug = ${quote(`${slug}_two`)}
       and p.athlete_name = 'Runner Disqualified'
-      and not p.eligible and p.unpublished
+      and p.unpublished
   ) then
     raise exception 'Correction failed to unpublish removed result';
+  end if;
+end $safety$;
+
+-- 10. Direct update of a frozen edition to published or draft is rejected by trigger
+do $safety$
+declare
+  v_ed_id bigint;
+begin
+  select ed.id into v_ed_id
+  from public.event_editions ed
+  join public.events e on e.id = ed.event_id
+  join public.sources s on s.id = e.source_id
+  where s.slug = ${quote(slug)} and ed.edition_year = 2026;
+
+  begin
+    update public.event_editions set publication_state = 'published' where id = v_ed_id;
+    raise exception 'Direct update allowed unfreezing a frozen edition';
+  exception when others then
+    if sqlerrm not like '%is frozen and cannot transition%' then raise; end if;
+  end;
+end $safety$;
+
+-- 11. Draft and staged editions do not expose performances to public queries
+do $safety$
+declare
+  v_draft_ed bigint;
+  v_staged_ed bigint;
+  v_draft_perf bigint;
+  v_staged_perf bigint;
+  v_evt bigint;
+  v_src bigint;
+  v_rec bigint;
+  v_page jsonb;
+begin
+  select id into v_src from public.sources where slug = ${quote(slug)};
+  insert into public.events(source_id, external_event_id, name)
+  values (v_src, 'visibility_test', 'Visibility Test Event')
+  returning id into v_evt;
+
+  insert into public.event_editions(event_id, edition_year, name, publication_state)
+  values (v_evt, 2090, 'Draft Edition', 'draft')
+  returning id into v_draft_ed;
+
+  insert into public.event_editions(event_id, edition_year, name, publication_state)
+  values (v_evt, 2091, 'Staged Edition', 'staged')
+  returning id into v_staged_ed;
+
+  insert into public.source_records(source_id, event_edition_id, external_result_id, normalized_name, category_key)
+  values (v_src, v_draft_ed, 'draft_1', 'draft runner', '10k:female')
+  returning id into v_rec;
+
+  insert into public.performances(source_record_id, event_edition_id, athlete_name, sex, distance_slug, rank_time_ms, rank_clock, finish_status)
+  values (v_rec, v_draft_ed, 'Draft Runner', 'female', '10k', 2500000, 'chip', 'finished')
+  returning id into v_draft_perf;
+
+  insert into public.source_records(source_id, event_edition_id, external_result_id, normalized_name, category_key)
+  values (v_src, v_staged_ed, 'staged_1', 'staged runner', '10k:female')
+  returning id into v_rec;
+
+  insert into public.performances(source_record_id, event_edition_id, athlete_name, sex, distance_slug, rank_time_ms, rank_clock, finish_status)
+  values (v_rec, v_staged_ed, 'Staged Runner', 'female', '10k', 2600000, 'chip', 'finished')
+  returning id into v_staged_perf;
+
+  -- Ensure sources is display_allowed for testing public query gate
+  update public.sources set display_allowed = true where id = v_src;
+
+  -- Verify rankings_page_scoped hides draft and staged
+  v_page := public.rankings_page_scoped('10k', 'female', 2090);
+  if jsonb_array_length(v_page->'rows') <> 0 then
+    raise exception 'Draft edition leaked into rankings_page_scoped';
+  end if;
+
+  v_page := public.rankings_page_scoped('10k', 'female', 2091);
+  if jsonb_array_length(v_page->'rows') <> 0 then
+    raise exception 'Staged edition leaked into rankings_page_scoped';
+  end if;
+
+  -- Verify rankings_result hides draft and staged
+  if public.rankings_result(v_draft_perf) is not null then
+    raise exception 'Draft performance leaked into rankings_result';
+  end if;
+  if public.rankings_result(v_staged_perf) is not null then
+    raise exception 'Staged performance leaked into rankings_result';
+  end if;
+
+  -- Verify rankings_saved hides draft and staged
+  if jsonb_array_length(public.rankings_saved(array[v_draft_perf, v_staged_perf])) <> 0 then
+    raise exception 'Draft/staged performances leaked into rankings_saved';
+  end if;
+
+  -- Verify rankings_top hides draft and staged
+  if exists (
+    select 1 from public.rankings_top('10k', 'female') where id in (v_draft_perf, v_staged_perf)
+  ) then
+    raise exception 'Draft/staged performances leaked into rankings_top';
+  end if;
+
+  -- Verify private.leaderboard_rows hides draft and staged
+  if exists (
+    select 1 from private.leaderboard_rows() where id in (v_draft_perf, v_staged_perf)
+  ) then
+    raise exception 'Draft/staged performances leaked into leaderboard_rows';
+  end if;
+
+  -- Verify refresh_rankings_distance_stats excludes draft and staged
+  perform public.refresh_rankings_distance_stats();
+  if (select result_count from public.rankings_distance_stats where distance_slug = '10k') <> (
+    select count(*) from public.performances p
+    join public.event_editions ed on ed.id = p.event_edition_id
+    join public.sources s on s.id = (select source_id from public.events where id = ed.event_id)
+    where p.distance_slug = '10k' and p.eligible and not p.unpublished and s.display_allowed
+      and ed.publication_state in ('published', 'frozen')
+  ) then
+    raise exception 'Distance stats included unpublished edition results';
   end if;
 end $safety$;
 

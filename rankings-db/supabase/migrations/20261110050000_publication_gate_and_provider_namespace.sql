@@ -193,6 +193,24 @@ $$;
 revoke all on function public.publish_event_edition(bigint) from public;
 grant execute on function public.publish_event_edition(bigint) to service_role;
 
+create or replace function private.validate_event_edition_publication_state()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if old.publication_state = 'frozen' and new.publication_state <> 'frozen' then
+    raise exception 'Event edition % is frozen and cannot transition to %', old.id, new.publication_state;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists enforce_event_edition_freeze on public.event_editions;
+create trigger enforce_event_edition_freeze
+  before update on public.event_editions
+  for each row execute function private.validate_event_edition_publication_state();
+
 -- 5. Enforce publication gate across all public query RPCs.
 -- Draft and staged editions must remain hidden from public reads.
 
@@ -406,7 +424,7 @@ returns jsonb language sql stable security definer set search_path='' as $$
     'runners',coalesce((select jsonb_agg(to_jsonb(r) order by r.id) from runners r),'[]'::jsonb),
     'next',case when exists(select 1 from candidates where id>(select max(id) from page_ids)
       and (p_ids is null or (cardinality(p_ids)<=100 and id=any(p_ids)))) then (select max(id) from page_ids) else null end)
-  from course c;
+  from course c where exists(select 1 from candidates);
 $$;
 revoke all on function public.rankings_replay_page(bigint,text,text,text,bigint[],bigint) from public;
 grant execute on function public.rankings_replay_page(bigint,text,text,text,bigint[],bigint) to anon,authenticated,service_role;
@@ -433,3 +451,167 @@ returns jsonb language sql stable security definer set search_path='' as $$
 $$;
 revoke all on function public.rankings_athlete_page(bigint,integer) from public;
 grant execute on function public.rankings_athlete_page(bigint,integer) to anon,authenticated,service_role;
+
+create or replace function public.refresh_rankings_distance_stats()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  truncate public.rankings_distance_stats;
+  insert into public.rankings_distance_stats (distance_slug, result_count, refreshed_at)
+  select p.distance_slug, count(*)::bigint, now()
+  from public.performances p
+  join public.source_records sr on sr.id = p.source_record_id
+  join public.sources s on s.id = sr.source_id
+  join public.event_editions ed on ed.id = p.event_edition_id
+  where p.eligible
+    and not p.unpublished
+    and s.display_allowed
+    and ed.publication_state in ('published', 'frozen')
+  group by p.distance_slug;
+end;
+$$;
+revoke all on function public.refresh_rankings_distance_stats() from public;
+grant execute on function public.refresh_rankings_distance_stats() to service_role;
+
+create or replace function public.rankings_top(
+  p_distance text,
+  p_sex text,
+  p_limit integer default 200
+)
+returns table (
+  id bigint,
+  athlete_name text,
+  sex text,
+  distance_slug text,
+  rank_time_ms bigint,
+  rank_clock text,
+  age_years integer,
+  result_date date,
+  event_name text,
+  edition_year integer,
+  attribution text,
+  source_url text
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select
+    p.id,
+    p.athlete_name,
+    p.sex,
+    p.distance_slug,
+    p.rank_time_ms,
+    p.rank_clock,
+    p.age_years,
+    p.result_date,
+    e.name as event_name,
+    ed.edition_year,
+    s.attribution,
+    p.source_url
+  from public.performances p
+  join public.source_records sr on sr.id = p.source_record_id
+  join public.sources s on s.id = sr.source_id
+  join public.event_editions ed on ed.id = p.event_edition_id
+  join public.events e on e.id = ed.event_id
+  where p.eligible
+    and not p.unpublished
+    and s.display_allowed
+    and ed.publication_state in ('published', 'frozen')
+    and p.distance_slug = p_distance
+    and p.sex = p_sex
+  order by p.rank_time_ms, p.id
+  limit least(greatest(coalesce(p_limit, 200), 1), 500);
+$$;
+revoke all on function public.rankings_top(text, text, integer) from public;
+grant execute on function public.rankings_top(text, text, integer) to anon, authenticated, service_role;
+
+create or replace function public.rankings_page_window(
+  p_distance text, p_sex text default 'female', p_year integer default null,
+  p_query text default '', p_page integer default 1, p_from date default null, p_until date default null
+) returns jsonb
+language sql stable security definer set search_path = '' as $$
+  with cohort as materialized (
+    select p.id, p.athlete_name, p.sex, p.distance_slug, p.rank_time_ms,
+      p.rank_clock, p.age_years, p.result_date, ed.name as event_name,
+      ed.edition_year, s.attribution, p.source_url, sr.normalized_bib as bib,
+      rank() over (order by p.rank_time_ms) as place
+    from public.performances p
+    join public.source_records sr on sr.id = p.source_record_id
+    join public.sources s on s.id = sr.source_id
+    join public.event_editions ed on ed.id = p.event_edition_id
+    where p.eligible and not p.unpublished and s.display_allowed
+      and ed.publication_state in ('published', 'frozen')
+      and p.distance_slug = p_distance and p.sex = p_sex
+      and (p_year is null or ed.edition_year = p_year)
+      and (p_from is null or p.result_date >= p_from)
+      and (p_until is null or p.result_date < p_until)
+  ), matches as materialized (
+    select * from cohort
+    where btrim(coalesce(p_query, '')) = ''
+      or position(lower(left(btrim(p_query), 100)) in lower(athlete_name)) > 0
+      or bib = upper(btrim(p_query))
+  ), totals as (
+    select count(*) as total, greatest(1, least(greatest(1, coalesce(p_page, 1)),
+      ceil(count(*) / 50.0)::integer)) as page from matches
+  ), rows as (
+    select * from matches order by rank_time_ms, id
+    limit 50 offset (select (page - 1)::bigint * 50 from totals)
+  )
+  select jsonb_build_object(
+    'rows', coalesce((select jsonb_agg(to_jsonb(r) order by r.rank_time_ms, r.id) from rows r), '[]'::jsonb),
+    'total', t.total, 'cohortTotal', (select count(*) from cohort),
+    'page', t.page, 'pageSize', 50, 'windowFrom', p_from, 'windowUntil', p_until
+  ) from totals t;
+$$;
+revoke all on function public.rankings_page_window(text, text, integer, text, integer, date, date) from public;
+grant execute on function public.rankings_page_window(text, text, integer, text, integer, date, date) to anon, authenticated, service_role;
+
+create or replace function private.leaderboard_rows()
+returns table (
+  id bigint,
+  athlete_name text,
+  sex text,
+  distance_slug text,
+  rank_time_ms bigint,
+  rank_clock text,
+  age_years integer,
+  result_date date,
+  event_name text,
+  edition_year integer,
+  attribution text,
+  source_url text
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select
+    p.id,
+    p.athlete_name,
+    p.sex,
+    p.distance_slug,
+    p.rank_time_ms,
+    p.rank_clock,
+    p.age_years,
+    p.result_date,
+    e.name as event_name,
+    ed.edition_year,
+    s.attribution,
+    p.source_url
+  from public.performances p
+  join public.source_records sr on sr.id = p.source_record_id
+  join public.sources s on s.id = sr.source_id
+  join public.event_editions ed on ed.id = p.event_edition_id
+  join public.events e on e.id = ed.event_id
+  where p.eligible
+    and not p.unpublished
+    and s.display_allowed
+    and ed.publication_state in ('published', 'frozen');
+$$;
+revoke all on function private.leaderboard_rows() from public;

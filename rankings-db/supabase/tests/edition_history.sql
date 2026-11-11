@@ -6,9 +6,9 @@ begin
   insert into public.sources(slug,name,attribution,reuse_notes,display_allowed,audited_at)
   values('edition_history_test','Edition test','Test','Test',true,now()) returning id into src;
   insert into public.events(source_id,name) values(src,'Edition test') returning id into evt;
-  insert into public.event_editions(event_id,edition_year,name) values(evt,2096,'First race') returning id into ed;
+  insert into public.event_editions(event_id,edition_year,name,publication_state) values(evt,2096,'First race','published') returning id into ed;
   insert into public.events(source_id,name) values(src,'Second event') returning id into other_evt;
-  insert into public.event_editions(event_id,edition_year,name) values(other_evt,2096,'Second race') returning id into other_ed;
+  insert into public.event_editions(event_id,edition_year,name,publication_state) values(other_evt,2096,'Second race','published') returning id into other_ed;
   for n in 1..206 loop
     insert into public.source_records(source_id,event_edition_id,normalized_name,normalized_bib,category_key)
     values(src,case when n=206 then other_ed else ed end,'runner '||n,n::text,'marathon:unknown') returning id into rec;

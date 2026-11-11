@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -77,5 +77,106 @@ describe("ingestion CLI", () => {
     const { directory, args, env } = await setup();
     const badArgs = [...args, "--expected-revision", "invalid"];
     await expect(run(process.execPath, badArgs, { env })).rejects.toThrow();
+  });
+
+  it("stops scraping and fails when publication database check fails", async () => {
+    const { directory, args } = await setup();
+    const binDir = join(directory, "mock-bin");
+    await mkdir(binDir, { recursive: true });
+    await writeFile(join(binDir, "psql"), `#!/bin/sh\necho "connection to server failed" >&2\nexit 1\n`, { mode: 0o755 });
+
+    const failingEnv = {
+      ...process.env,
+      PATH: `${binDir}:${process.env.PATH}`,
+      RANKINGS_DATABASE_URL: "postgres://fake:5432/rankings",
+    };
+
+    await expect(run(process.execPath, args, { env: failingEnv })).rejects.toMatchObject({ code: 1 });
+    const outcome = await report(directory);
+    expect(outcome.events[0]).toMatchObject({
+      status: "failed",
+      error: expect.stringContaining("Database publication check failed with exit code 1"),
+    });
+    // No results fetched, no files written
+    expect((await readdir(directory)).filter((file) => file.endsWith(".import.sql") || file.endsWith(".jsonl"))).toEqual([]);
+  });
+
+  it("skips pre-fetch when database reports edition is already published, but queries exact external event ID", async () => {
+    const { directory, args } = await setup();
+    const binDir = join(directory, "mock-bin");
+    await mkdir(binDir, { recursive: true });
+    await writeFile(
+      join(binDir, "psql"),
+      `#!/bin/sh
+query="$*"
+if echo "$query" | grep -q "external_event_id = '2'"; then
+  echo "published,1"
+  exit 0
+else
+  exit 0
+fi
+`,
+      { mode: 0o755 },
+    );
+
+    const dbEnv = {
+      ...process.env,
+      PATH: `${binDir}:${process.env.PATH}`,
+      RANKINGS_DATABASE_URL: "postgres://fake:5432/rankings",
+    };
+
+    // Event 2 is published in the database -> pre-fetch skipped
+    await run(process.execPath, args, { env: dbEnv });
+    const outcome1 = await report(directory);
+    expect(outcome1.events[0]).toMatchObject({
+      status: "skipped",
+      reason: expect.stringContaining("Edition is already published (revision 1); pre-fetch skipped"),
+    });
+    expect((await readdir(directory)).filter((file) => file.endsWith(".import.sql"))).toEqual([]);
+
+    // Event 3 under the same race is NOT published -> pre-fetch proceeds and imports
+    const event3Directory = await mkdtemp(join(tmpdir(), "rankings-cli-event3-"));
+    directories.push(event3Directory);
+    const event3Preload = join(event3Directory, "fetch.mjs");
+    await writeFile(
+      event3Preload,
+      `
+      const set = { individual_result_set_id: 10, public_results: "T", preliminary_results: "F" };
+      globalThis.fetch = async (address) => {
+        const url = new URL(address);
+        const page = Number(url.searchParams.get("page") || "1");
+        const results = page === 1
+          ? [{ result_id: 301, first_name: "Runner", last_name: "Three", gender: "F", chip_time: "20:00", age: 25 }]
+          : [];
+        return new Response(JSON.stringify({
+          individual_results_sets: [{ ...set, results }]
+        }));
+      };
+    `,
+    );
+    const event3Args = [
+      "--import",
+      event3Preload,
+      cli,
+      "--runsignup",
+      "1",
+      "--event",
+      "3",
+      "--result-set",
+      "10",
+      "--distance",
+      "5k",
+      "--year",
+      "2026",
+      "--output-dir",
+      event3Directory,
+    ];
+    await run(process.execPath, event3Args, { env: dbEnv });
+    const outcome2 = await report(event3Directory);
+    expect(outcome2.events[0]).toMatchObject({
+      status: "succeeded",
+      results: 1,
+    });
+    expect((await readdir(event3Directory)).filter((file) => file.endsWith(".import.sql"))).toHaveLength(1);
   });
 });

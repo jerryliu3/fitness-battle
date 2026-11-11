@@ -72,11 +72,11 @@ begin
   )
   on conflict (slug) do update set
     name = excluded.name,
-    access_method = excluded.access_method,
-    reuse_notes = excluded.reuse_notes,
-    attribution = excluded.attribution,
+    access_method = case when public.sources.audited_at is not null then public.sources.access_method else excluded.access_method end,
+    reuse_notes = case when public.sources.audited_at is not null then public.sources.reuse_notes else excluded.reuse_notes end,
+    attribution = case when public.sources.audited_at is not null then public.sources.attribution else excluded.attribution end,
     -- Imports may suppress display, but cannot reverse an existing opt-out.
-    display_allowed = public.sources.display_allowed and excluded.display_allowed,
+    display_allowed = case when public.sources.audited_at is not null then public.sources.display_allowed else public.sources.display_allowed and excluded.display_allowed end,
     audited_at = public.sources.audited_at
   returning id into v_source;
 
@@ -219,17 +219,17 @@ begin
     options?.allowCorrection
       ? `
   -- Reconcile corrected full-field population: remove missing results from the published field.
-  -- Only performances matching this edition and the imported distances that were not updated in this run are unpublished.
+  -- Only performances matching this edition and the imported distances and categories that were not updated in this run are unpublished.
   update public.performances p
-  set eligible = false,
-      unpublished = true,
+  set unpublished = true,
       updated_at = now()
   from public.source_records sr
   where p.source_record_id = sr.id
     and p.event_edition_id = v_edition
     and p.distance_slug in (select distinct value->>'distance' from jsonb_array_elements(${quote(payload)}::jsonb))
+    and sr.category_key in (select distinct value->>'categoryKey' from jsonb_array_elements(${quote(payload)}::jsonb))
     and sr.last_ingestion_run_id <> v_run
-    and (p.eligible or not p.unpublished);
+    and not p.unpublished;
 `
       : ""
   }
