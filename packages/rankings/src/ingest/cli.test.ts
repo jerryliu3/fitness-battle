@@ -48,11 +48,11 @@ describe("ingestion CLI", () => {
     await run(process.execPath, args, { env });
     const outcome = await report(directory);
     expect(outcome.events[0]).toMatchObject({ status: "succeeded", results: 1 });
-    const rows = (await readFile(join(directory, "runsignup-1-2.jsonl"), "utf8")).split("\n").map((row) => JSON.parse(row));
+    const rows = (await readFile(join(directory, "runsignup-1-2-10.jsonl"), "utf8")).split("\n").map((row) => JSON.parse(row));
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ externalResultId: "2", sex: "other", ageYears: 30 });
-    const sql = await readFile(join(directory, "runsignup-1-2.import.sql"), "utf8");
-    expect(sql).toContain(join(directory, "runsignup-1-2.jsonl"));
+    const sql = await readFile(join(directory, "runsignup-1-2-10.import.sql"), "utf8");
+    expect(sql).toContain(join(directory, "runsignup-1-2-10.jsonl"));
   });
 
   it("exits unsuccessfully, retains a failure report and emits no import on repeated pages", async () => {

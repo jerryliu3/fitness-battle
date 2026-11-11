@@ -45,6 +45,7 @@ export function parseRunSignupResults(
   const rowKeys: string[] = [];
   if (!Array.isArray(payload?.individual_results_sets)) throw new Error("Invalid RunSignup result sets response.");
   for (const set of payload.individual_results_sets) {
+    inputCount += (set.results ?? []).length;
     if (set.public_results !== "T") {
       skippedPrivate += (set.results ?? []).length;
       continue;
@@ -55,7 +56,6 @@ export function parseRunSignupResults(
     }
     if (!Array.isArray(set.results)) throw new Error("Missing RunSignup results array.");
     for (const row of set.results) {
-      inputCount += 1;
       if (row.result_id == null || String(row.result_id).trim() === "") {
         throw new Error("Missing RunSignup result ID; import held.");
       }
