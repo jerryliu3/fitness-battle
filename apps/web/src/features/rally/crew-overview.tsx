@@ -2,11 +2,10 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import { APP_ICON_PATHS, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
-import { AppHeading, AppText, AppParagraph } from "@/ui/section";
+import { AppHeading, AppText } from "@/ui/section";
 import { UserAvatar } from "@/ui/user-avatar";
-import { Sheet } from "@/ui/sheet";
 import { CrewRelay } from "./crew-relay";
-import { CrewContractPanel } from "./crew-contract";
+import { CrewPassportPanel } from "./crew-passport";
 import "./crew-overview.css";
 import { useAuth } from "@/components/auth-context";
 
@@ -37,7 +36,6 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, children, 
   const frameRef = useRef(frame);
   frameRef.current = frame;
   const [playing, setPlaying] = useState(false);
-  const [detail, setDetail] = useState<"passport" | null>(null);
   const reduced = useReducedMotion();
   const view = crewOverview(input, frame, events);
   useEffect(() => {
@@ -78,17 +76,11 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, children, 
         <AppText role="caption" secondary>{full.volume(full.relay.model.segments.find(s => s.id === m.user_id)?.value ?? 0)}</AppText>
       </button>)}</div>
     </section>
-    <CrewContractPanel crewId={crewId} input={input} />
-    <div className="crew-bento">{children}<button type="button" className="crew-action-card crew-passport" onClick={() => setDetail("passport")}>
-      <span>Crew Passport</span><strong>Earned together.</strong><small>{full.highlights.length} weekly milestones</small>
-    </button></div>
+    <CrewPassportPanel crewId={crewId} input={input}>{children}</CrewPassportPanel>
     {full.highlights.length > 0 && <section>
       <AppHeading level={2} role="heading">Crew highlights</AppHeading>
       <ul className="crew-highlights">{full.highlights.map(h => <li key={h}><AppText role="body">{h}</AppText></li>)}</ul>
     </section>}
-    <Sheet open={detail !== null} minimal title={"Your crew passport"} body="" onClose={() => setDetail(null)}>
-      {!full.highlights.length ? <AppParagraph typographyRole="body">This week’s shared milestones will appear here.</AppParagraph> : null}
-      {full.highlights.map(h => <AppParagraph key={h} typographyRole="body">✦ {h}</AppParagraph>)}
-    </Sheet>
+
   </div>;
 }

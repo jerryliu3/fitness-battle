@@ -3,13 +3,13 @@ import { AppState, Pressable, ScrollView, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
-import { useFocusStyles, FocusSheet } from "../ui/focus";
+import { useFocusStyles } from "../ui/focus";
 import { AppText } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 import { UserAvatar } from "../ui/user-avatar";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { CrewRelay } from "./crew-relay";
-import { CrewContractPanel } from "./crew-contract";
+import { CrewPassportPanel } from "./crew-passport";
 import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
 import { mobileEnv } from "../lib/env";
@@ -42,7 +42,6 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
   const frameRef = useRef(frame);
   frameRef.current = frame;
   const [playing, setPlaying] = useState(false);
-  const [detail, setDetail] = useState<"passport" | null>(null);
   const [trackWidth, setTrackWidth] = useState(1);
   const view = crewOverview(input, frame, events);
   useFocusEffect(useCallback(() => () => setPlaying(false), []));
@@ -106,17 +105,11 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
         </Pressable>)}
       </ScrollView>
     </View>
-    <CrewContractPanel crewId={crewId} input={input} />
-    <View style={{ flexDirection: "row", gap: 12 }}>{children}<Pressable accessibilityRole="button" onPress={() => setDetail("passport")} style={[f.card, { flex: 1, minHeight: 170, justifyContent: "space-between", backgroundColor: c.surfaceInverse }]}>
-      <AppText role="label" style={{ color: c.textOnInverse }}>Crew Passport</AppText><AppText role="heading" style={{ color: c.textOnInverse }}>Earned together.</AppText><AppText role="caption" style={{ color: c.textOnInverse }}>{full.highlights.length} weekly milestones</AppText>
-    </Pressable></View>
+    <CrewPassportPanel crewId={crewId} input={input}>{children}</CrewPassportPanel>
     {full.highlights.length > 0 && <View style={{ gap: 12 }}>
       <AppText accessibilityRole="header" role="heading">Crew highlights</AppText>
       {full.highlights.map(h => <View key={h} style={{ borderBottomWidth: 1, borderColor: c.line, paddingVertical: 14 }}><AppText role="body">{h}</AppText></View>)}
     </View>}
-    <FocusSheet open={detail !== null} minimal title={"Your crew passport"} onClose={() => setDetail(null)}>
-      {!full.highlights.length ? <AppText role="body">This week’s shared milestones will appear here.</AppText> : null}
-      {full.highlights.map(h => <AppText key={h} role="body">✦ {h}</AppText>)}
-    </FocusSheet>
+
   </View>;
 }

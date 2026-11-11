@@ -55,7 +55,8 @@ reassigns settled history or backfills awards from old activities.
 
 Version 1 earns `contract_finish` for meeting the objective and `full_crew` when
 a completed objective also has a counted session from every snapshotted member. Receipts survive weekly
-resets and contract replacements. The season-management and passport UI follow in the next stacked PR.
+resets and contract replacements. Passport lists both current and archived
+seasons. The season bar describes elapsed calendar time, not a fitness target.
 Deleting the crew removes its private program records with the crew lifecycle.
 
 ## Access and rollout
