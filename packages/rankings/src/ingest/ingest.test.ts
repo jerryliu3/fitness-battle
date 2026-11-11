@@ -50,6 +50,29 @@ describe("public results parsers", () => {
     expect(page.results[1]?.chipTimeMs).toBeNull();
   });
 
+  it("recognizes an explicit empty MikaTiming results page", () => {
+    const emptyHtml = `<div class="list-container"><div class="alert alert-info">No results found</div></div>`;
+    const page = parseMikaTimingList(emptyHtml, {
+      sex: "M",
+      distance: "marathon",
+      sourceUrl: "https://results.example/2025/",
+    });
+    expect(page.inputCount).toBe(0);
+    expect(page.isExhausted).toBe(true);
+    expect(page.results).toEqual([]);
+  });
+
+  it("rejects an unrecognized HTML response as an unverified empty page", () => {
+    const challengeHtml = `<!DOCTYPE html><html><head><title>Just a moment...</title></head><body>Verify you are human</body></html>`;
+    expect(() =>
+      parseMikaTimingList(challengeHtml, {
+        sex: "M",
+        distance: "marathon",
+        sourceUrl: "https://results.example/2025/",
+      }),
+    ).toThrow("Unrecognized MikaTiming response");
+  });
+
   it("reads a forwarded CSV, including quoted commas", () => {
     const csv = [
       "name,bib,sex,chip_time,age,division",

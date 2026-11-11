@@ -8,6 +8,8 @@ export type ResultsPage = {
   rowKeys: string[];
   skippedYouth: number;
   skippedUnparsed: number;
+  /** Explicit confirmation of legitimate upstream completion/exhaustion. */
+  isExhausted?: boolean;
 };
 
 /** Only an empty upstream page proves exhaustion; providers may cap page sizes. */
@@ -21,7 +23,12 @@ export async function readResultPages<T extends ResultsPage>(
   for (let page = 1; page <= maxPages; page += 1) {
     const parsed = await fetchPage(page);
     if (parsed.inputCount !== parsed.rowKeys.length) throw new Error("Incomplete page accounting.");
-    if (parsed.inputCount === 0) return pages;
+    if (parsed.inputCount === 0) {
+      if (!parsed.isExhausted) {
+        throw new Error(`Empty page ${page} without explicit exhaustion signal; import held.`);
+      }
+      return pages;
+    }
     if (parsed.skippedUnparsed > 0) throw new Error(`Unparsed results on page ${page}; import held.`);
     for (const key of parsed.rowKeys) {
       if (seen.has(key)) throw new Error(`Repeated result on page ${page}; import held.`);

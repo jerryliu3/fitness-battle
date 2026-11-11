@@ -1,8 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import { readResultPages, type ResultsPage } from "./pagination";
 
-function page(keys: string[], skippedYouth = 0, skippedUnparsed = 0): ResultsPage {
-  return { results: [], inputCount: keys.length, rowKeys: keys, skippedYouth, skippedUnparsed };
+function page(keys: string[], skippedYouth = 0, skippedUnparsed = 0, isExhausted?: boolean): ResultsPage {
+  return {
+    results: [],
+    inputCount: keys.length,
+    rowKeys: keys,
+    skippedYouth,
+    skippedUnparsed,
+    isExhausted: isExhausted ?? (keys.length === 0),
+  };
 }
 
 describe("results pagination", () => {
@@ -38,5 +45,12 @@ describe("results pagination", () => {
   it("propagates upstream failures without returning earlier pages", async () => {
     const fetchPage = vi.fn().mockResolvedValueOnce(page(["1"])).mockRejectedValueOnce(new Error("429"));
     await expect(readResultPages(fetchPage)).rejects.toThrow("429");
+  });
+
+  it("rejects an empty page without an explicit exhaustion signal", async () => {
+    const fetchPage = vi.fn()
+      .mockResolvedValueOnce(page(["1"]))
+      .mockResolvedValueOnce(page([], 0, 0, false));
+    await expect(readResultPages(fetchPage)).rejects.toThrow("without explicit exhaustion signal");
   });
 });

@@ -7,6 +7,8 @@ import type { ResultsPage } from "./pagination";
 export type MikaPage = ResultsPage;
 
 const ROW_SPLIT = /<li class="[^"]*list-group-item row/;
+const MIKA_CONTAINER = /(?:class="[^"]*(?:list-group|list-container|list-field)|id="list-results")/i;
+const MIKA_EMPTY_STATE = /(?:alert-(?:info|warning|danger)|no results|keine ergebnisse|no participants found|no athletes found|0 results|keine daten)/i;
 
 function labeledFields(row: string): Map<string, string> {
   const fields = new Map<string, string>();
@@ -71,7 +73,14 @@ export function parseMikaTimingList(
     }
     results.push(built.finish);
   }
-  return { results, inputCount: rowKeys.length, rowKeys, skippedYouth, skippedUnparsed };
+  if (rowKeys.length === 0) {
+    const isRecognizedEmpty = MIKA_EMPTY_STATE.test(html) || (MIKA_CONTAINER.test(html) && !html.includes("cf-browser-verification"));
+    if (!isRecognizedEmpty) {
+      throw new Error("Unrecognized MikaTiming response; missing results list structure or explicit empty state.");
+    }
+    return { results: [], inputCount: 0, rowKeys: [], skippedYouth: 0, skippedUnparsed: 0, isExhausted: true };
+  }
+  return { results, inputCount: rowKeys.length, rowKeys, skippedYouth, skippedUnparsed, isExhausted: false };
 }
 
 export function mikaListUrl(input: {
