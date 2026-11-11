@@ -14,7 +14,7 @@ export const RANK_SYMBOLS = [
 export type RankSymbolId = (typeof RANK_SYMBOLS)[number]["id"];
 export type RankSymbolVariant = "badge" | "frame";
 
-/** Both variants share this exact portrait aperture, in SVG viewBox units. */
+/** Both variants share this exact portrait aperture, in logical 160×160 canvas units. */
 export const RANK_SYMBOL_GEOMETRY = {
   size: 160,
   portrait: { x: 38, y: 40, size: 84 },

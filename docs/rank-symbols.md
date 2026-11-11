@@ -3,8 +3,9 @@
 ![Nine symbols, standalone and around an avatar](design/rank-symbols.png)
 
 The nine visual identities follow the reference: Beginner, Rookie, Active,
-Challenger, Athlete, Elite, Master, Olympian and Champion. Leaves grow in number
-and height; Elite adds a ribbon, Master introduces gold and a faceted jewel,
+Challenger, Athlete, Elite, Master, Olympian and Champion. Beginner has one leaf per side, Rookie two, Active three and Challenger four.
+Athlete uses the fuller green wreath; Elite uses that same wreath with a ribbon.
+Master introduces gold and a faceted jewel,
 Olympian adds a star, and Champion finishes with a gold wreath and crown.
 
 ## Use on web or native
