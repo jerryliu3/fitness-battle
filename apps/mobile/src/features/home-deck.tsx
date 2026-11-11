@@ -491,12 +491,14 @@ export function HomeDeck({
                           extrapolate: "clamp",
                         }),
                       },
+                      {
+                        translateY: dragX.interpolate({
+                          inputRange: [-240, 0, 240],
+                          outputRange: [-7, 0, -7],
+                          extrapolate: "clamp",
+                        }),
+                      },
                     ],
-                    bottom: dragX.interpolate({
-                      inputRange: [-240, 0, 240],
-                      outputRange: [0, -7, 0],
-                      extrapolate: "clamp",
-                    }),
                     opacity: dragX.interpolate({
                       inputRange: [-240, 0, 240],
                       outputRange: [1, 0.95, 1],
