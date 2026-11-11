@@ -8,6 +8,7 @@ export type EditionImportOptions = {
   populationScope?: {
     distanceSlug?: string;
     categoryKeys?: string[];
+    externalResultIdPrefix?: string;
     sourceUrlPattern?: string;
     sourceUrlRegex?: string;
   };
@@ -157,18 +158,6 @@ begin
 
   for v_row in select value from jsonb_array_elements(${quote(payload)}::jsonb)
   loop
-    -- If an unmigrated database still has the legacy source-wide constraint, guard against cross-edition relocation.
-    if exists (
-      select 1 from public.source_records
-      where source_id = v_source
-        and external_result_id = nullif(v_row->>'externalResultId', '')
-        and event_edition_id <> v_edition
-    ) and not exists (
-      select 1 from pg_indexes
-      where schemaname = 'public' and tablename = 'source_records' and indexname = 'source_records_source_edition_external_idx'
-    ) then
-      raise exception 'External result ID already belongs to another edition; import held';
-    end if;
     v_action := private.upsert_source_record(
       v_source,
       v_edition,
@@ -236,6 +225,11 @@ begin
     ${
       options?.populationScope?.categoryKeys?.length
         ? `and sr.category_key in (${options.populationScope.categoryKeys.map(quote).join(",")})`
+        : ""
+    }
+    ${
+      options?.populationScope?.externalResultIdPrefix
+        ? `and sr.external_result_id like ${quote(`${options.populationScope.externalResultIdPrefix}%`)}`
         : ""
     }
     ${

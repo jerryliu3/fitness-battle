@@ -133,6 +133,40 @@ const correctedSet10 = {
     },
   ],
 };
+const editionRawCollision = {
+  ...edition,
+  sourceSlug: `${slug}_rs_collision`,
+  results: [
+    {
+      externalResultId: "10:1",
+      athleteName: "Set 10 Runner 1",
+      normalizedName: "set 10 runner 1",
+      normalizedBib: "101",
+      sex: "female",
+      distance: "10k",
+      categoryKey: "10k:female",
+      ageYears: 25,
+      chipTimeMs: 2400000,
+      gunTimeMs: 2400000,
+      finishStatus: "finished",
+      sourceUrl: "https://api.runsignup.com/rest/race/1/get-results?individual_result_set_id=10&page=1",
+    },
+    {
+      externalResultId: "20:1",
+      athleteName: "Set 20 Runner 1",
+      normalizedName: "set 20 runner 1",
+      normalizedBib: "201",
+      sex: "female",
+      distance: "10k",
+      categoryKey: "10k:female",
+      ageYears: 28,
+      chipTimeMs: 2450000,
+      gunTimeMs: 2450000,
+      finishStatus: "finished",
+      sourceUrl: "https://api.runsignup.com/rest/race/1/get-results?individual_result_set_id=20&page=1",
+    },
+  ],
+};
 
 console.log(`
 begin;
@@ -601,6 +635,37 @@ begin
       and p.unpublished and p.privacy_suppressed
   ) then
     raise exception 'Pre-existing privacy suppression was cleared by re-import!';
+  end if;
+end $safety$;
+
+-- 15. Namespaced result sets sharing raw result ID (1) insert distinct records without overwrite
+${editionImportSql(editionRawCollision, snapshot)}
+
+do $safety$
+begin
+  if (select count(*) from public.performances p
+      join public.source_records sr on sr.id = p.source_record_id
+      join public.sources s on s.id = sr.source_id
+      where s.slug = ${quote(`${slug}_rs_collision`)}) <> 2 then
+    raise exception 'Multi-set raw ID collision caused overwrites; expected 2 distinct performances';
+  end if;
+
+  if not exists (
+    select 1 from public.performances p
+    join public.source_records sr on sr.id = p.source_record_id
+    join public.sources s on s.id = sr.source_id
+    where s.slug = ${quote(`${slug}_rs_collision`)}
+      and sr.external_result_id = '10:1'
+      and p.athlete_name = 'Set 10 Runner 1'
+  ) or not exists (
+    select 1 from public.performances p
+    join public.source_records sr on sr.id = p.source_record_id
+    join public.sources s on s.id = sr.source_id
+    where s.slug = ${quote(`${slug}_rs_collision`)}
+      and sr.external_result_id = '20:1'
+      and p.athlete_name = 'Set 20 Runner 1'
+  ) then
+    raise exception 'Namespaced result set records were corrupted or overwritten';
   end if;
 end $safety$;
 

@@ -45,18 +45,21 @@ export function parseRunSignupResults(
   const rowKeys: string[] = [];
   if (!Array.isArray(payload?.individual_results_sets)) throw new Error("Invalid RunSignup result sets response.");
   for (const set of payload.individual_results_sets) {
+    const setId = set.individual_result_set_id != null ? String(set.individual_result_set_id).trim() : "";
     inputCount += (set.results ?? []).length;
     if (set.public_results !== "T") {
       skippedPrivate += (set.results ?? []).length;
       for (const row of set.results ?? []) {
-        rowKeys.push(String(row.result_id ?? `private_${rowKeys.length}`));
+        const id = row.result_id ?? `private_${rowKeys.length}`;
+        rowKeys.push(setId ? `${setId}:${id}` : String(id));
       }
       continue;
     }
     if (set.preliminary_results !== "F") {
       skippedPreliminary += (set.results ?? []).length;
       for (const row of set.results ?? []) {
-        rowKeys.push(String(row.result_id ?? `preliminary_${rowKeys.length}`));
+        const id = row.result_id ?? `preliminary_${rowKeys.length}`;
+        rowKeys.push(setId ? `${setId}:${id}` : String(id));
       }
       continue;
     }
@@ -65,7 +68,8 @@ export function parseRunSignupResults(
       if (row.result_id == null || String(row.result_id).trim() === "") {
         throw new Error("Missing RunSignup result ID; import held.");
       }
-      rowKeys.push(String(row.result_id));
+      const externalResultId = setId ? `${setId}:${row.result_id}` : String(row.result_id);
+      rowKeys.push(externalResultId);
       const ageYears = row.age == null || row.age === "" ? null : Number(row.age);
       if (ageYears != null && Number.isFinite(ageYears) && ageYears < 18) {
         skippedYouth += 1;
@@ -77,7 +81,7 @@ export function parseRunSignupResults(
         continue;
       }
       const built = buildFinish({
-        externalResultId: String(row.result_id),
+        externalResultId,
         athleteName: [row.first_name, row.last_name].filter(Boolean).join(" "),
         bib: row.bib == null ? null : String(row.bib),
         sex: sexCode(row.gender),

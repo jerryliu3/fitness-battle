@@ -254,9 +254,10 @@ describe("public results parsers", () => {
     // Scoped category reconciliation bounds category keys when specified
     const scopedCorrectionSql = editionImportSql(edition, snapshot, {
       allowCorrection: true,
-      populationScope: { categoryKeys: ["10k:male"] },
+      populationScope: { categoryKeys: ["10k:male"], externalResultIdPrefix: "10:" },
     });
     expect(scopedCorrectionSql).toContain("and sr.category_key in ('10k:male')");
+    expect(scopedCorrectionSql).toContain("and sr.external_result_id like '10:%'");
 
     // Standard import without correction does not run reconciliation
     const standardSql = editionImportSql(edition, snapshot);

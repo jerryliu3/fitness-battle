@@ -367,6 +367,7 @@ async function ingestRunSignup(raceId, eventId, flags) {
       expectedRevision,
       populationScope: {
         distanceSlug: flags.distance,
+        externalResultIdPrefix: `${flags.resultSet}:`,
         sourceUrlRegex: `[?&]individual_result_set_id=${flags.resultSet}(&|$)`,
       },
     },

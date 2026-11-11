@@ -50,7 +50,7 @@ describe("ingestion CLI", () => {
     expect(outcome.events[0]).toMatchObject({ status: "succeeded", results: 1 });
     const rows = (await readFile(join(directory, "runsignup-1-2-10.jsonl"), "utf8")).split("\n").map((row) => JSON.parse(row));
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ externalResultId: "2", sex: "other", ageYears: 30 });
+    expect(rows[0]).toMatchObject({ externalResultId: "10:2", sex: "other", ageYears: 30 });
     const sql = await readFile(join(directory, "runsignup-1-2-10.import.sql"), "utf8");
     expect(sql).toContain(join(directory, "runsignup-1-2-10.jsonl"));
   });
