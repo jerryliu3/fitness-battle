@@ -177,7 +177,6 @@ const recordedActivity = (
   source: "strava",
   provenance: "recorded",
   disposition: "counted",
-  effortScore: 100,
 });
 
 beforeEach(() => {
@@ -229,6 +228,10 @@ beforeEach(() => {
         place: 1,
         fieldSize: 7,
         track: "open",
+        effort: 12,
+        distanceM: 15000,
+        movingSec: 5460,
+        frozen: false,
         eloBefore: 1000,
         eloAfter: 1024,
         settledAt: "2026-11-09T05:00:00Z",
@@ -266,6 +269,8 @@ describe("Revamped Progress Screen & Spaces", () => {
     });
 
     expect(renderer.root.findByType(JourneySpace)).toBeTruthy();
+    expect(() => renderer.root.findByType(PerformanceSpace)).toThrow();
+    expect(() => renderer.root.findByType(HealthLabSpace)).toThrow();
 
     mock.params = { view: "health_lab" };
     await act(async () => {
@@ -273,6 +278,16 @@ describe("Revamped Progress Screen & Spaces", () => {
     });
 
     expect(renderer.root.findByType(HealthLabSpace)).toBeTruthy();
+    expect(() => renderer.root.findByType(JourneySpace)).toThrow();
+  });
+
+  it("opens Journey on the requested horizon", async () => {
+    await act(async () => {
+      renderer = create(createElement(JourneySpace, { state: mock.state!, initialHorizon: "year" }));
+    });
+    const json = JSON.stringify(renderer.toJSON());
+    expect(json).toContain("Season Atlas");
+    expect(json).not.toContain("Workouts");
   });
 
   it("PerformanceSpace displays Effort Score, Training Volume, and PR Lineage sequentially", async () => {
@@ -290,7 +305,8 @@ describe("Revamped Progress Screen & Spaces", () => {
     expect(json).toContain("PR Progression");
     expect(json).toContain("31:00"); // current PR
     expect(json).toContain("34:20"); // initial PR
-    expect(json).toContain("Training Insight");
+    expect(json).not.toContain("+8%");
+    expect(json).not.toContain("vs. prior 30d");
   });
 
   it("JourneySpace renders calendar strip, activities, and past competition results", async () => {
@@ -302,7 +318,7 @@ describe("Revamped Progress Screen & Spaces", () => {
     // Horizon options
     expect(json).toContain("Week");
     expect(json).toContain("Month");
-    expect(json).toContain("Year Atlas");
+    expect(json).toContain("Year");
 
     // Sequence elements
     expect(json).toContain("Recent Activities");
@@ -310,27 +326,24 @@ describe("Revamped Progress Screen & Spaces", () => {
 
     // Competition result
     expect(json).toContain("Took the field");
-    expect(json).toContain("+24 effort");
+    expect(json).toContain("+24 effort score");
   });
 
-  it("HealthLabSpace leads with recorded measurements, baseline corridors, and Advanced Analytics bento grid", async () => {
+  it("HealthLabSpace shows recorded measurements and an unavailable state without generated readings", async () => {
     await act(async () => {
       renderer = create(createElement(HealthLabSpace, { state: mock.state! }));
     });
 
     const json = JSON.stringify(renderer.toJSON());
-    // Recorded vitals cards
     expect(json).toContain("Overnight HRV");
-    expect(json).toContain("Sleep & Debt");
+    expect(json).toContain("Sleep");
     expect(json).toContain("Resting HR");
-
-    // Health insight & signals vs baseline
-    expect(json).toContain("Health Insight");
-    expect(json).toContain("Key Signals vs. Baseline");
-
-    // Advanced analytics bento 2x2 grid
     expect(json).toContain("Advanced Analytics");
     expect(json).toContain("Workload Ratio");
     expect(json).toContain("Aerobic Efficiency");
+    expect(json).toContain("No data");
+    expect(json).toContain("No recorded observations");
+    expect(json).not.toContain("Athletic Low");
+    expect(json).not.toContain("% Readiness");
   });
 });

@@ -2,7 +2,7 @@ import { competeNow } from "./compete/engine";
 import { collapseNights, formatSleepDuration, type SleepNight } from "./compete/health";
 import type { CompeteState } from "./compete/sports";
 import { INTEGRATIONS } from "./fitness/providers";
-import { dayKey, shiftAppDay } from "./period";
+import { APP_TIMEZONE, dayKey, shiftAppDay } from "./period";
 
 export interface HomeHealthMetric {
   id: "sleep" | "steps" | "resting-hr" | "hrv";
@@ -77,6 +77,44 @@ export function homeHealthMetrics(state: CompeteState, now = competeNow(state)):
       };
     }),
   ];
+}
+
+export type RecordedHealthMetric = "hrv" | "resting-hr" | "sleep";
+
+/** Recorded observations only; sample/stub nights and empty days are omitted. */
+export function recordedHealthSeries(
+  state: CompeteState,
+  metric: RecordedHealthMetric,
+  days: number,
+  now = competeNow(state),
+): { day: string; label: string; value: number }[] {
+  const today = dayKey(now);
+  const start = dayKey(shiftAppDay(now, -(Math.max(1, days) - 1)));
+  const label = (day: string) => new Date(`${day}T12:00:00Z`).toLocaleDateString("en-US", {
+    month: "short", day: "numeric", timeZone: APP_TIMEZONE,
+  });
+  if (metric === "sleep") {
+    return collapseNights(state.sleepNights.filter(night =>
+      !isSampleSleepNight(state, night) &&
+      night.day >= start && night.day <= today &&
+      Number.isFinite(night.durationMin) && night.durationMin > 0,
+    )).map(night => ({ day: night.day, label: label(night.day), value: night.durationMin }));
+  }
+  const key = metric === "hrv" ? "hrv" : "restingHr";
+  const readings = (state.dailyHealth ?? []).filter(row => {
+    const value = row[key];
+    return row.day >= start && row.day <= today && typeof value === "number" && Number.isFinite(value)
+      && (key === "restingHr" ? value > 0 : value >= 0);
+  }).sort((a, b) => a.day.localeCompare(b.day) || a.provider.localeCompare(b.provider));
+  const latestProvider = [...readings].reverse()[0]?.provider;
+  const byDay = new Map<string, number>();
+  for (const row of readings) {
+    if (key === "hrv" && latestProvider && row.provider !== latestProvider) continue;
+    if (!byDay.has(row.day)) byDay.set(row.day, row[key] as number);
+  }
+  return [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([day, value]) => ({
+    day, label: label(day), value,
+  }));
 }
 
 /** Normalize only recorded samples; keep missing calendar days disconnected. */

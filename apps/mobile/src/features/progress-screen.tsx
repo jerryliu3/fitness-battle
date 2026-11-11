@@ -77,14 +77,12 @@ export function ProgressScreen({
 
           {/* Animated Transition between Spaces */}
           <MotionStep identity={space}>
-            <View style={{ display: space === "performance" ? "flex" : "none" }}>
+            {space === "performance" ? (
               <PerformanceSpace
                 state={state}
                 signedOut={accountKey === "device"}
               />
-            </View>
-
-            <View style={{ display: space === "journey" ? "flex" : "none" }}>
+            ) : space === "journey" ? (
               <JourneySpace
                 state={state}
                 initialHorizon={
@@ -93,14 +91,12 @@ export function ProgressScreen({
                     : "week"
                 }
               />
-            </View>
-
-            <View style={{ display: space === "health_lab" ? "flex" : "none" }}>
+            ) : (
               <HealthLabSpace
                 state={state}
                 signedOut={accountKey === "device"}
               />
-            </View>
+            )}
           </MotionStep>
         </SectionStack>
       </ScrollView>

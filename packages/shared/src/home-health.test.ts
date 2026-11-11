@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { freshState } from "./compete/engine";
 import type { SleepNight } from "./compete/health";
-import { buildHealth7DayCorridorModel, getHealthMetricCorridor, healthSignal, healthSignalRange, healthSparkline, homeHealthMetrics, isSampleSleepNight } from "./home-health";
+import { buildHealth7DayCorridorModel, getHealthMetricCorridor, healthSignal, healthSignalRange, healthSparkline, homeHealthMetrics, isSampleSleepNight, recordedHealthSeries } from "./home-health";
 const now = new Date("2026-10-25T03:30:00Z"); // Oct 24 Eastern
 const night = (overrides: Partial<SleepNight> = {}): SleepNight => ({ id: "sleep", metric: "sleep", day: "2026-10-24", durationMin: 462, score: 80, efficiency: null, deepMin: null, remMin: null, lightMin: null, awakeMin: null, source: "oura", verified: true, ...overrides });
 describe("Home daily health", () => {
@@ -43,6 +43,17 @@ describe("Home daily health", () => {
     state.sleepNights = [night()];
     state.links = [{ provider: "oura", linked: true, status: "stub" }];
     expect(homeHealthMetrics(state, now)[0].value).toBe("—");
+  });
+  it("omits generated vitals and sample nights from recorded health series", () => {
+    const state = freshState(now);
+    expect(recordedHealthSeries(state, "hrv", 30, now)).toEqual([]);
+    expect(recordedHealthSeries(state, "sleep", 30, now)).toEqual([]);
+    state.sleepNights = [night(), night({ id: "sleep-oura-2026-10-20", day: "2026-10-20" })];
+    state.dailyHealth = [{ provider: "oura", day: "2026-10-24", hrv: 64, restingHr: 52 }];
+    expect(recordedHealthSeries(state, "sleep", 30, now).map(row => row.value)).toEqual([462]);
+    expect(recordedHealthSeries(state, "hrv", 30, now)).toEqual([
+      { day: "2026-10-24", label: "Oct 24", value: 64 },
+    ]);
   });
 });
 
