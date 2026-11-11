@@ -90,3 +90,4 @@ export * from "./race-favorites";
 export * from "./race-splits";
 export * from "./race-history";
 export * from "./race-replay";
+export * from "./rank-symbols";
