@@ -1,13 +1,25 @@
 import { createHash } from "node:crypto";
 import type { IngestedEdition, IngestedFinish } from "./types";
 
+export type EditionImportOptions = {
+  allowCorrection?: boolean;
+  freeze?: boolean;
+  expectedRevision?: number;
+  populationScope?: {
+    distanceSlug?: string;
+    categoryKeys?: string[];
+    externalResultIdPrefix?: string;
+  };
+};
+
 function quote(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
 }
 
 function rowJson(row: IngestedFinish) {
+  const externalId = row.externalResultId?.trim();
   return {
-    externalResultId: row.externalResultId,
+    externalResultId: externalId ? externalId : null,
     athleteName: row.athleteName,
     normalizedName: row.normalizedName,
     normalizedBib: row.normalizedBib,
@@ -24,22 +36,28 @@ function rowJson(row: IngestedFinish) {
 
 /**
  * One transaction that upserts a source, snapshot, edition, and every finisher.
- * Re-running the same file updates finish times without creating a second row.
+ * Enforces publication gates: frozen editions cannot be mutated; published editions
+ * require explicit allowCorrection; re-runs bump revision when authorized.
  */
 export function editionImportSql(
   edition: IngestedEdition,
   snapshot: { storagePath: string; contentSha256: string; byteSize: number },
+  options?: EditionImportOptions,
 ): string {
   const payload = JSON.stringify(edition.results.map(rowJson));
-  const tag = `imp_${snapshot.contentSha256.slice(0, 12)}`;
+  const input = JSON.stringify({ edition, snapshot, options });
+  let tag = `body_${createHash("sha256").update(input).digest("hex").slice(0, 16)}`;
+  while (input.includes(`$${tag}$`)) tag += "_";
   const starts = edition.startsOn ? `${quote(edition.startsOn)}::date` : "null";
-  return `do $body$
+  return `do $${tag}$
 declare
   v_source bigint;
   v_snapshot bigint;
   v_run bigint;
   v_event bigint;
   v_edition bigint;
+  v_pub_state text;
+  v_revision integer;
   v_record bigint;
   v_action text;
   v_row jsonb;
@@ -58,13 +76,7 @@ begin
     ${edition.displayAllowed ? "now()" : "null"}
   )
   on conflict (slug) do update set
-    name = excluded.name,
-    access_method = excluded.access_method,
-    reuse_notes = excluded.reuse_notes,
-    attribution = excluded.attribution,
-    -- Imports may suppress display, but cannot reverse an existing opt-out.
-    display_allowed = public.sources.display_allowed and excluded.display_allowed,
-    audited_at = public.sources.audited_at
+    name = excluded.name
   returning id into v_source;
 
   insert into public.source_snapshots (source_id, storage_path, content_sha256, byte_size)
@@ -88,18 +100,61 @@ begin
   returning id into v_run;
 
   insert into public.events (source_id, external_event_id, name)
-  values (v_source, ${quote(edition.externalEventId)}, ${quote(edition.eventName)})
+  values (v_source, ${edition.externalEventId ? quote(edition.externalEventId) : "null"}, ${quote(edition.eventName)})
   on conflict (source_id, external_event_id) where external_event_id is not null
   do update set name = excluded.name
   returning id into v_event;
 
-  insert into public.event_editions (event_id, edition_year, name, starts_on)
-  values (v_event, ${edition.editionYear}, ${quote(edition.eventName)}, ${starts})
-  on conflict (event_id, edition_year)
-  do update set name = excluded.name, starts_on = excluded.starts_on
-  returning id into v_edition;
+  -- Publication gate: lock edition row and enforce import-once policy
+  select id, publication_state, revision
+  into v_edition, v_pub_state, v_revision
+  from public.event_editions
+  where event_id = v_event and edition_year = ${edition.editionYear}
+  for update;
 
-  for v_row in select value from jsonb_array_elements($${tag}$${payload}$${tag}$)
+  if v_edition is not null then
+    if v_pub_state = 'frozen' then
+      raise exception 'Edition % is frozen (revision %); imports cannot mutate a frozen edition', v_edition, v_revision;
+    elsif v_pub_state = 'published' and not ${options?.allowCorrection ? "true" : "false"} then
+      raise exception 'Edition % is already published (revision %); ordinary acquisition cannot mutate a published edition without an authorized correction', v_edition, v_revision;
+    end if;
+    ${
+      typeof options?.expectedRevision === "number"
+        ? `if v_revision <> ${options.expectedRevision} then
+      raise exception 'Expected edition revision % but found %; correction held', ${options.expectedRevision}, v_revision;
+    end if;`
+        : ""
+    }
+    update public.event_editions
+    set name = ${quote(edition.eventName)},
+        starts_on = ${starts},
+        revision = case when ${options?.allowCorrection ? "true" : "false"} then revision + 1 else revision end,
+        publication_state = ${options?.freeze ? "'frozen'" : "'published'"},
+        published_at = coalesce(published_at, now()),
+        frozen_at = case when ${options?.freeze ? "true" : "false"} then coalesce(frozen_at, now()) else frozen_at end
+    where id = v_edition;
+  else
+    ${
+      typeof options?.expectedRevision === "number"
+        ? `raise exception 'Expected edition revision % but edition does not exist; correction held', ${options.expectedRevision};`
+        : ""
+    }
+    insert into public.event_editions (
+      event_id, edition_year, name, starts_on, publication_state, revision, published_at, frozen_at
+    ) values (
+      v_event,
+      ${edition.editionYear},
+      ${quote(edition.eventName)},
+      ${starts},
+      ${options?.freeze ? "'frozen'" : "'published'"},
+      1,
+      now(),
+      ${options?.freeze ? "now()" : "null"}
+    )
+    returning id into v_edition;
+  end if;
+
+  for v_row in select value from jsonb_array_elements(${quote(payload)}::jsonb)
   loop
     v_action := private.upsert_source_record(
       v_source,
@@ -119,11 +174,11 @@ begin
     select id into v_record
     from public.source_records
     where source_id = v_source
+      and event_edition_id = v_edition
       and (
-        (external_result_id is not null and external_result_id = v_row->>'externalResultId')
+        (external_result_id is not null and external_result_id = nullif(btrim(v_row->>'externalResultId'), ''))
         or (
           external_result_id is null
-          and event_edition_id = v_edition
           and normalized_name = v_row->>'normalizedName'
           and coalesce(normalized_bib, '') = coalesce(v_row->>'normalizedBib', '')
           and category_key = v_row->>'categoryKey'
@@ -131,6 +186,9 @@ begin
       )
     order by id desc
     limit 1;
+    if v_record is null then
+      raise exception 'Source record lookup failed for % in edition %', v_row->>'normalizedName', v_edition;
+    end if;
     perform private.upsert_performance(
       v_record,
       v_row->>'athleteName',
@@ -144,7 +202,39 @@ begin
       coalesce(v_row->>'sourceUrl', '')
     );
   end loop;
-
+  ${
+    options?.allowCorrection
+      ? `
+  -- Reconcile corrected full-field population: remove missing results from the published field.
+  -- Scoped strictly to the defined replacement population (edition, distances, optional categories, and optional result-set/source URL).
+  -- Note: if categoryKeys is omitted, the scope is the full distance; do not restrict by incoming categories so that disappeared categories are properly reconciled.
+  update public.performances p
+  set unpublished = true,
+      correction_removed = true,
+      updated_at = now()
+  from public.source_records sr
+  where p.source_record_id = sr.id
+    and p.event_edition_id = v_edition
+    ${
+      options?.populationScope?.distanceSlug
+        ? `and p.distance_slug = ${quote(options.populationScope.distanceSlug)}`
+        : `and p.distance_slug in (select distinct value->>'distance' from jsonb_array_elements(${quote(payload)}::jsonb))`
+    }
+    ${
+      options?.populationScope?.categoryKeys?.length
+        ? `and sr.category_key in (${options.populationScope.categoryKeys.map(quote).join(",")})`
+        : ""
+    }
+    ${
+      options?.populationScope?.externalResultIdPrefix
+        ? `and sr.external_result_id like ${quote(`${options.populationScope.externalResultIdPrefix}%`)}`
+        : ""
+    }
+    and sr.last_ingestion_run_id <> v_run
+    and not p.unpublished;
+`
+      : ""
+  }
   update public.ingestion_runs
   set status = 'succeeded',
       finished_at = now(),
@@ -152,7 +242,7 @@ begin
       update_count = v_updates
   where id = v_run;
 end
-$body$;
+$${tag}$;
 `;
 }
 

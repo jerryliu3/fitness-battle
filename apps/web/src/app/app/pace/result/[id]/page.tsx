@@ -27,8 +27,22 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
     {report.athleteId ? <p><Link href={`/pace/athlete/${report.athleteId}`}>View athlete history →</Link></p> : <p className="rankings-note">Athlete history is not linked for this result.</p>}
     <SaveRaceResult id={r.id} />
     <p><Link href="/pace/saved">Saved results →</Link></p>
-    <section className="race-report-metrics" aria-label="Result context"><div><span>Recorded field rank</span><strong>{report.place.toLocaleString()} <small>/ {report.total.toLocaleString()}</small></strong></div><div><span>Field median</span><strong>{raceClock(report.medianMs)}</strong></div></section>
+    <section className="race-report-metrics" aria-label="Result context">
+      <div><span>Recorded field rank</span><strong>{report.place.toLocaleString()} <small>/ {report.total.toLocaleString()}</small></strong></div>
+      <div><span>Field median</span><strong>{raceClock(report.medianMs)}</strong></div>
+      {fasterThan !== null && <div><span>Field percentile</span><strong>{racePercentLabel(fasterThan)} <small>(Top {racePercentLabel(100 - fasterThan)})</small></strong></div>}
+    </section>
     {fasterThan !== null && <p className="race-percentile"><strong>{racePercentLabel(fasterThan)}</strong> of this published field finished slower · {report.total.toLocaleString()} eligible finishes</p>}
+    {report.benchmarks && <div className="race-benchmarks-panel">
+      <span className="race-benchmarks-title">Field benchmark cutoffs</span>
+      <div className="race-benchmarks-grid">
+        <div><span>Top 1%</span><strong>{report.benchmarks.top1Ms != null ? raceClock(report.benchmarks.top1Ms) : "—"}</strong></div>
+        <div><span>Top 5%</span><strong>{report.benchmarks.top5Ms != null ? raceClock(report.benchmarks.top5Ms) : "—"}</strong></div>
+        <div><span>Top 10%</span><strong>{report.benchmarks.top10Ms != null ? raceClock(report.benchmarks.top10Ms) : "—"}</strong></div>
+        <div><span>Top 25%</span><strong>{report.benchmarks.top25Ms != null ? raceClock(report.benchmarks.top25Ms) : "—"}</strong></div>
+        <div><span>Median 50%</span><strong>{raceClock(report.medianMs)}</strong></div>
+      </div>
+    </div>}
     <section className="race-distribution"><AppHeading level={2} role="heading">Your place in the field</AppHeading><p className="rankings-note">Published results from this edition and category. {report.coverage?.complete ? "Coverage reviewed; placements are calculated from recorded times." : "Completeness has not been verified; placements describe stored results."} <Link href="/pace/coverage">View coverage</Link></p>
       <div className="race-histogram" role="img" aria-label={`Finish-time distribution. Selected time ${raceClock(r.rank_time_ms)}; median ${raceClock(report.medianMs)}.`}>
         {Array.from({length: Math.max(...report.bins.map(b => b.bucket), 0) + 1}, (_, bucket) => {

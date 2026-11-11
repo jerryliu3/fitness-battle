@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { raceQuery, raceClock, raceEditionOptions, raceEditionChart, raceEventGroups, type RaceEditionAnalytics, type RaceCoverage } from "./race-rankings";
+import { raceQuery, raceClock, raceEditionOptions, raceEditionChart, raceEventGroups, raceFasterThan, racePercentileTier, racePercentileBadge, type RaceEditionAnalytics, type RaceCoverage, type RaceResultReport } from "./race-rankings";
 describe("public race query", () => {
   it("rejects invalid scopes and bounds input", () => {
-    expect(raceQuery(new URLSearchParams("sex=invalid&year=1&page=Infinity"))).toMatchObject({ sex: "all", year: null, page: 1, query: "", timeframe:"all",dateError:null });
+    expect(raceQuery(new URLSearchParams("sex=invalid&year=1&page=Infinity"))).toMatchObject({ sex: "all", year: null, page: 1, query: "", timeframe:"all",dateError:null, percentile: "all" });
     expect(raceQuery(new URLSearchParams("page=2147483648")).page).toBe(1);
-    expect(raceQuery(new URLSearchParams("sex=other&year=2025&page=401&q=Runner"))).toMatchObject({ sex: "other", year: 2025, page: 401, query: "Runner",timeframe:"year",dateError:null });
+    expect(raceQuery(new URLSearchParams("sex=other&year=2025&page=401&q=Runner&percentile=top10"))).toMatchObject({ sex: "other", year: 2025, page: 401, query: "Runner",timeframe:"year",dateError:null, percentile: "top10" });
+    expect(raceQuery(new URLSearchParams("percentile=invalid")).percentile).toBe("all");
   });
   it("formats observed clocks without scaling", () => {
     expect(raceClock(12601000)).toBe("3:30:01");
@@ -50,3 +51,60 @@ it("combines event cards and retains dropdown filtering",()=>{
  expect(raceEventGroups([row,{...row,sex:"male",published_count:20}])).toMatchObject([{published_count:30,categoryCount:2}]);
  expect(raceEventGroups([row,{...row,sex:"male",published_count:20}],"female")).toMatchObject([{published_count:10,categoryCount:1}]);
 });
+
+describe("raceFasterThan percentile and field benchmarks", () => {
+  it("prefers cohort percentile over slower/total ratio", () => {
+    const baseReport: RaceResultReport = {
+      result: {
+        id: 1,
+        athlete_name: "Runner",
+        sex: "female",
+        distance_slug: "10k",
+        rank_time_ms: 1200000,
+        rank_clock: "chip",
+        age_years: null,
+        result_date: null,
+        event_name: "Race",
+        edition_year: 2025,
+        attribution: "Race",
+        source_url: "",
+        bib: null,
+        event_edition_id: 1,
+      },
+      place: 6,
+      slower: 94,
+      total: 100,
+      medianMs: 1200000,
+      minimumMs: 1000000,
+      binWidthMs: 10000,
+      bins: [],
+      neighbors: [],
+    };
+    expect(raceFasterThan({ ...baseReport, percentile: 94.8 })).toBe(94.8);
+    expect(raceFasterThan({ ...baseReport, percentile: null })).toBeNull();
+    expect(raceFasterThan({ ...baseReport, percentile: null, coverage: { complete: true, published_count: 100 } as any })).toBe(94);
+  });
+});
+
+describe("racePercentileTier", () => {
+  it("classifies percentiles into recognizable tier labels", () => {
+    expect(racePercentileTier(99.5)?.label).toBe("Top 1%");
+    expect(racePercentileTier(95.0)?.label).toBe("Top 5%");
+    expect(racePercentileTier(92.0)?.label).toBe("Top 10%");
+    expect(racePercentileTier(78.0)?.label).toBe("Top 25%");
+    expect(racePercentileTier(55.0)?.label).toBe("Top 50%");
+    expect(racePercentileTier(40.0)).toBeNull();
+  });
+});
+
+describe("racePercentileBadge", () => {
+  it("formats top tiers and lower percentiles consistently", () => {
+    expect(racePercentileBadge(99.4)).toBe("Top 1%");
+    expect(racePercentileBadge(95.0)).toBe("Top 5%");
+    expect(racePercentileBadge(90.1)).toBe("Top 10%");
+    expect(racePercentileBadge(75.0)).toBe("Top 25%");
+    expect(racePercentileBadge(50.0)).toBe("Top 50%");
+    expect(racePercentileBadge(42.3)).toBe("42%");
+  });
+});
+

@@ -35,6 +35,8 @@ describe("public results parsers", () => {
       sourceUrl: "https://results.example/2025/",
     });
     expect(page.skippedYouth).toBe(1);
+    expect(page.inputCount).toBe(3);
+    expect(page.rowKeys).toEqual(["ABC123", "YOUTH1", "DNF1"]);
     expect(page.results.map((row) => row.externalResultId)).toEqual(["ABC123", "DNF1"]);
     expect(page.results[0]).toMatchObject({
       athleteName: "Jacob Kiplimo",
@@ -46,6 +48,65 @@ describe("public results parsers", () => {
     });
     expect(page.results[1]?.finishStatus).toBe("dnf");
     expect(page.results[1]?.chipTimeMs).toBeNull();
+  });
+
+  it("recognizes an explicit empty MikaTiming results page", () => {
+    const emptyHtml = `<div class="list-container"><div class="alert alert-info">No results found</div></div>`;
+    const page = parseMikaTimingList(emptyHtml, {
+      sex: "M",
+      distance: "marathon",
+      sourceUrl: "https://results.example/2025/",
+    });
+    expect(page.inputCount).toBe(0);
+    expect(page.isExhausted).toBe(true);
+    expect(page.results).toEqual([]);
+
+    const emptyListHtml = `<div class="list-field"><ul class="list-group list-group-striped"></ul></div>`;
+    const emptyListPage = parseMikaTimingList(emptyListHtml, {
+      sex: "M",
+      distance: "marathon",
+      sourceUrl: "https://results.example/2025/",
+    });
+    expect(emptyListPage.inputCount).toBe(0);
+    expect(emptyListPage.isExhausted).toBe(true);
+  });
+
+  it("rejects an unrecognized HTML response or changed markup without explicit empty state", () => {
+    const challengeHtml = `<!DOCTYPE html><html><head><title>Just a moment...</title></head><body>Verify you are human</body></html>`;
+    expect(() =>
+      parseMikaTimingList(challengeHtml, {
+        sex: "M",
+        distance: "marathon",
+        sourceUrl: "https://results.example/2025/",
+      }),
+    ).toThrow("Unrecognized MikaTiming response");
+
+    const changedMarkupHtml = `<div class="list-container"><div class="changed-table"><span>Row 1</span></div></div>`;
+    expect(() =>
+      parseMikaTimingList(changedMarkupHtml, {
+        sex: "M",
+        distance: "marathon",
+        sourceUrl: "https://results.example/2025/",
+      }),
+    ).toThrow("Unrecognized MikaTiming response");
+
+    const errorBannerHtml = `<div class="list-container"><div class="alert alert-danger">Internal Server Error</div></div>`;
+    expect(() =>
+      parseMikaTimingList(errorBannerHtml, {
+        sex: "M",
+        distance: "marathon",
+        sourceUrl: "https://results.example/2025/",
+      }),
+    ).toThrow("MikaTiming upstream error banner encountered");
+
+    const warningBannerHtml = `<div class="list-container"><div class="alert alert-warning">Database temporarily unavailable</div></div>`;
+    expect(() =>
+      parseMikaTimingList(warningBannerHtml, {
+        sex: "M",
+        distance: "marathon",
+        sourceUrl: "https://results.example/2025/",
+      }),
+    ).toThrow("MikaTiming upstream error banner encountered");
   });
 
   it("reads a forwarded CSV, including quoted commas", () => {
@@ -67,6 +128,7 @@ describe("public results parsers", () => {
         individual_results_sets: [
           {
             public_results: "T",
+            preliminary_results: "F",
             results: [
               {
                 result_id: 10,
@@ -96,6 +158,7 @@ describe("public results parsers", () => {
     expect(page.skippedYouth).toBe(1);
     expect(page.skippedPrivate).toBe(1);
     expect(page.inputCount).toBe(3);
+    expect(page.rowKeys).toHaveLength(3);
     expect(page.results).toHaveLength(1);
     expect(page.results[0]?.chipTimeMs).toBe(1_292_110);
   });
@@ -152,8 +215,57 @@ describe("public results parsers", () => {
     const sql = editionImportSql(edition, snapshot);
     expect(sql).toContain("private.upsert_source_record");
     expect(sql).toContain("private.upsert_performance");
-    expect(sql).toContain("on conflict (slug)");
-    expect(sql).toContain("display_allowed = public.sources.display_allowed and excluded.display_allowed");
+    expect(sql).toContain("on conflict (slug) do update set");
+    expect(sql).not.toContain("display_allowed = case");
+    expect(sql).toContain("for update");
+    expect(sql).toContain("publication_state");
+    expect(sql).toContain("ordinary acquisition cannot mutate a published edition");
     expect(snapshot.contentSha256).toHaveLength(64);
+  });
+
+  it("emits publication gates for frozen editions and authorized corrections", () => {
+    const edition = editionFromOpenTrack({
+      id: "meet-2",
+      date: "2025-09-07",
+      fullName: "Sample 10K",
+      events: [
+        {
+          eventId: "1",
+          eventCode: "10K",
+          genders: "M",
+          units: [{ results: [{ bib: "20", performance: "31:00" }] }],
+        },
+      ],
+      competitors: [{ competitorId: "20", fullName: "Fast Runner", gender: "M", ageGroup: "SEN" }],
+    });
+    const snapshot = snapshotIdentity("{}", "fixtures/sample.json");
+
+    // Correction import bumps revision and reconciles missing records
+    const correctionSql = editionImportSql(edition, snapshot, { allowCorrection: true, expectedRevision: 2 });
+    expect(correctionSql).toContain("revision = case when true then revision + 1 else revision end");
+    expect(correctionSql).toContain("Expected edition revision % but found %; correction held', 2");
+    expect(correctionSql).toContain("Expected edition revision % but edition does not exist; correction held', 2");
+    expect(correctionSql).toContain("Source record lookup failed for % in edition %");
+    expect(correctionSql).toContain("Reconcile corrected full-field population");
+    expect(correctionSql).toContain("set unpublished = true,");
+    expect(correctionSql).toContain("correction_removed = true,");
+    expect(correctionSql).toContain("and sr.last_ingestion_run_id <> v_run");
+
+    // Scoped category reconciliation bounds category keys when specified
+    const scopedCorrectionSql = editionImportSql(edition, snapshot, {
+      allowCorrection: true,
+      populationScope: { categoryKeys: ["10k:male"], externalResultIdPrefix: "10:" },
+    });
+    expect(scopedCorrectionSql).toContain("and sr.category_key in ('10k:male')");
+    expect(scopedCorrectionSql).toContain("and sr.external_result_id like '10:%'");
+
+    // Standard import without correction does not run reconciliation
+    const standardSql = editionImportSql(edition, snapshot);
+    expect(standardSql).not.toContain("sr.last_ingestion_run_id <> v_run");
+
+    // Freeze import marks frozen
+    const freezeSql = editionImportSql(edition, snapshot, { allowCorrection: true, freeze: true });
+    expect(freezeSql).toContain("publication_state = 'frozen'");
+    expect(freezeSql).toContain("imports cannot mutate a frozen edition");
   });
 });

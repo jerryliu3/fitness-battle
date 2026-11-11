@@ -2,14 +2,16 @@ import type { RoadDistance, SexCategory } from "../fingerprint";
 import { buildFinish, clocksFromText, sexCode } from "./finish";
 import { divisionIsUnder18, personNameFromList } from "./names";
 import type { IngestedFinish } from "./types";
+import type { ResultsPage } from "./pagination";
 
-export type MikaPage = {
-  results: IngestedFinish[];
-  skippedYouth: number;
-  skippedUnparsed: number;
-};
+export type MikaPage = ResultsPage;
 
 const ROW_SPLIT = /<li class="[^"]*list-group-item row/;
+const MIKA_CONTAINER = /(?:class="[^"]*(?:list-group|list-container|list-field)|id="list-results")/i;
+const MIKA_ERROR_BANNER = /(?:alert-(?:danger|warning)|has-error|server error|internal server error|temporarily unavailable|database error)/i;
+const MIKA_EMPTY_STATE = /(?:alert-info|no results(?: found)?|keine ergebnisse|no participants found|no athletes found|0 results|keine daten)/i;
+const MIKA_EMPTY_LIST = /<(?:ul|ol)[^>]*class="[^"]*list-group[^"]*"[^>]*>\s*<\/(?:ul|ol)>/i;
+const MIKA_CHALLENGE = /(?:cf-browser-verification|cf-turnstile|cf-challenge|captcha|challenge-running|just a moment)/i;
 
 function labeledFields(row: string): Map<string, string> {
   const fields = new Map<string, string>();
@@ -34,9 +36,12 @@ export function parseMikaTimingList(
   const results: IngestedFinish[] = [];
   let skippedYouth = 0;
   let skippedUnparsed = 0;
+  const rowKeys: string[] = [];
   const pieces = html.split(ROW_SPLIT).slice(1);
   for (const row of pieces) {
     if (row.includes("list-group-header")) continue;
+    const idMatch = /(?:\?|&|&amp;)idp=([A-Za-z0-9]+)/.exec(row);
+    rowKeys.push(idMatch?.[1] ?? row.trim());
     const fields = labeledFields(row);
     const division = fields.get("Division") ?? null;
     if (divisionIsUnder18(division)) {
@@ -45,7 +50,6 @@ export function parseMikaTimingList(
     }
     const nameMatch = /type-fullname">\s*<a [^>]*>([^<]+)<\/a>/i.exec(row);
     const athleteName = nameMatch ? personNameFromList(nameMatch[1]) : "";
-    const idMatch = /(?:\?|&|&amp;)idp=([A-Za-z0-9]+)/.exec(row);
     const bib = fields.get("BIB") ?? null;
     // Chicago labels the net column Finish. Boston labels Finish Net and Finish Gun.
     const clocks = clocksFromText(fields.get("Finish Net") ?? fields.get("Finish") ?? null, fields.get("Finish Gun") ?? null);
@@ -72,7 +76,19 @@ export function parseMikaTimingList(
     }
     results.push(built.finish);
   }
-  return { results, skippedYouth, skippedUnparsed };
+  if (rowKeys.length === 0) {
+    if (MIKA_ERROR_BANNER.test(html)) {
+      throw new Error("MikaTiming upstream error banner encountered; halting import.");
+    }
+    const hasStructure = MIKA_CONTAINER.test(html);
+    const hasExplicitEmpty = MIKA_EMPTY_STATE.test(html) || MIKA_EMPTY_LIST.test(html);
+    const isChallenge = MIKA_CHALLENGE.test(html);
+    if (!hasStructure || !hasExplicitEmpty || isChallenge) {
+      throw new Error("Unrecognized MikaTiming response; missing results list structure or explicit empty state.");
+    }
+    return { results: [], inputCount: 0, rowKeys: [], skippedYouth: 0, skippedUnparsed: 0, isExhausted: true };
+  }
+  return { results, inputCount: rowKeys.length, rowKeys, skippedYouth, skippedUnparsed, isExhausted: false };
 }
 
 export function mikaListUrl(input: {

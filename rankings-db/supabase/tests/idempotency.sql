@@ -1,71 +1,79 @@
 -- Re-import and correction checks. Rolls back. Run with ON_ERROR_STOP.
 begin;
 
-insert into public.sources (slug, name, access_method, reuse_notes, attribution, display_allowed, audited_at)
-values (
-  'sample_timing',
-  'Sample timing export',
-  'csv',
-  'Local fixture. Storage and display allowed for tests.',
-  'Sample Timing',
-  true,
-  now()
-);
-
-insert into public.source_snapshots (source_id, storage_path, content_sha256, byte_size)
-values (
-  1,
-  'snapshots/sample.csv',
-  repeat('ab', 32),
-  120
-);
-
-insert into public.ingestion_runs (source_id, snapshot_id, status)
-values (1, 1, 'running');
-
-insert into public.events (source_id, external_event_id, name)
-values (1, 'city-marathon', 'City Marathon');
-
-insert into public.event_editions (event_id, edition_year, name, starts_on)
-values (1, 2026, 'City Marathon 2026', '2026-04-20');
-
 do $$
 declare
+  v_src bigint;
+  v_snap bigint;
+  v_run bigint;
+  v_evt bigint;
+  v_ed bigint;
   v_action text;
   v_count integer;
   v_fingerprint text;
   v_record_id bigint;
   v_rank bigint;
 begin
+  insert into public.sources (slug, name, access_method, reuse_notes, attribution, display_allowed, audited_at)
+  values (
+    'sample_timing',
+    'Sample timing export',
+    'csv',
+    'Local fixture. Storage and display allowed for tests.',
+    'Sample Timing',
+    true,
+    now()
+  ) returning id into v_src;
+
+  insert into public.source_snapshots (source_id, storage_path, content_sha256, byte_size)
+  values (
+    v_src,
+    'snapshots/sample.csv',
+    repeat('ab', 32),
+    120
+  ) returning id into v_snap;
+
+  insert into public.ingestion_runs (source_id, snapshot_id, status)
+  values (v_src, v_snap, 'running')
+  returning id into v_run;
+
+  insert into public.events (source_id, external_event_id, name)
+  values (v_src, 'city-marathon', 'City Marathon')
+  returning id into v_evt;
+
+  insert into public.event_editions (event_id, edition_year, name, starts_on, publication_state)
+  values (v_evt, 2026, 'City Marathon 2026', '2026-04-20', 'published')
+  returning id into v_ed;
+
   v_fingerprint := private.result_fingerprint(4, 18, 'ada lovelace', '1042', 'marathon:female');
   if v_fingerprint <> '5b57eb5a2924fe6f7c5465f373e434d9e925187c245258717a39e8caf1401cd5' then
     raise exception 'fingerprint drifted from the TypeScript fixture: %', v_fingerprint;
   end if;
 
-  v_action := private.upsert_source_record(1, 1, 'res-1', 'ada lovelace', '1042', 'marathon:female', 1, 1);
+  v_action := private.upsert_source_record(v_src, v_ed, 'res-1', 'ada lovelace', '1042', 'marathon:female', v_run, v_snap);
   if v_action <> 'inserted' then
     raise exception 'expected insert, got %', v_action;
   end if;
 
-  v_action := private.upsert_source_record(1, 1, 'res-1', 'ada lovelace', '1042', 'marathon:female', 1, 1);
+  v_action := private.upsert_source_record(v_src, v_ed, 'res-1', 'ada lovelace', '1042', 'marathon:female', v_run, v_snap);
   if v_action <> 'updated' then
     raise exception 'expected update on replay, got %', v_action;
   end if;
 
-  select count(*) into v_count from public.source_records;
+  select count(*) into v_count from public.source_records where source_id = v_src;
   if v_count <> 1 then
     raise exception 'replay created % source records', v_count;
   end if;
 
-  select id into v_record_id from public.source_records where external_result_id = 'res-1';
+  select id into v_record_id from public.source_records where source_id = v_src and external_result_id = 'res-1';
   perform private.upsert_performance(v_record_id, 'Ada Lovelace', 'female', 'marathon', 34, 7800000, 7810000, 'finished', '2026-04-20', 'https://example.test/result');
   perform private.upsert_performance(v_record_id, 'Ada Lovelace', 'female', 'marathon', 34, 7790000, 7810000, 'finished', '2026-04-20', 'https://example.test/result');
 
-  select count(*) into v_count from public.source_records;
+  select count(*) into v_count from public.source_records where source_id = v_src;
   if v_count <> 1 then
     raise exception 'time correction duplicated the source record (% rows)', v_count;
   end if;
-  select count(*) into v_count from public.performances;
+  select count(*) into v_count from public.performances where event_edition_id = v_ed;
   if v_count <> 1 then
     raise exception 'time correction duplicated the performance (% rows)', v_count;
   end if;
@@ -78,7 +86,7 @@ begin
   end if;
 
   set local role anon;
-  select count(*) into v_count from public.leaderboard_entries;
+  select count(*) into v_count from public.leaderboard_entries where event_name = 'City Marathon';
   if v_count <> 1 then
     raise exception 'public leaderboard row count was %', v_count;
   end if;
@@ -91,25 +99,25 @@ begin
   end;
   reset role;
 
-  v_action := private.upsert_source_record(1, 1, null, 'ada lovelace', '200', 'marathon:female', 1, 1);
-  v_action := private.upsert_source_record(1, 1, null, 'ada lovelace', '201', 'marathon:female', 1, 1);
-  select count(*) into v_count from public.source_records where external_result_id is null;
+  v_action := private.upsert_source_record(v_src, v_ed, null, 'ada lovelace', '200', 'marathon:female', v_run, v_snap);
+  v_action := private.upsert_source_record(v_src, v_ed, null, 'ada lovelace', '201', 'marathon:female', v_run, v_snap);
+  select count(*) into v_count from public.source_records where source_id = v_src and external_result_id is null;
   if v_count <> 2 then
     raise exception 'same name with different bibs collapsed to % rows', v_count;
   end if;
 
-  v_action := private.upsert_source_record(1, 1, null, 'grace hopper', null, '10k:female', 1, 1);
+  v_action := private.upsert_source_record(v_src, v_ed, null, 'grace hopper', null, '10k:female', v_run, v_snap);
   if v_action <> 'inserted' then
     raise exception 'missing bib insert got %', v_action;
   end if;
-  v_action := private.upsert_source_record(1, 1, null, 'grace hopper', null, '10k:female', 1, 1);
+  v_action := private.upsert_source_record(v_src, v_ed, null, 'grace hopper', null, '10k:female', v_run, v_snap);
   if v_action <> 'updated' then
     raise exception 'missing bib replay got %', v_action;
   end if;
 
   begin
     perform private.upsert_performance(
-      (select id from public.source_records where normalized_name = 'grace hopper'),
+      (select id from public.source_records where source_id = v_src and normalized_name = 'grace hopper'),
       'Young Runner', 'female', '10k', 17, 2400000, null, 'finished', '2026-04-20', ''
     );
     raise exception 'youth row was stored';

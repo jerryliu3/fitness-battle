@@ -6,7 +6,7 @@ begin
   values('coverage_test','Coverage test','Test','Test',true,now()) returning id into src;
   insert into public.ingestion_runs(source_id,status) values(src,'succeeded') returning id into run;
   insert into public.events(source_id,name) values(src,'Coverage test') returning id into evt;
-  insert into public.event_editions(event_id,edition_year,name) values(evt,2098,'Coverage test') returning id into ed;
+  insert into public.event_editions(event_id,edition_year,name,publication_state) values(evt,2098,'Coverage test','published') returning id into ed;
   insert into public.source_records(source_id,event_edition_id,normalized_name,category_key,last_ingestion_run_id)
   values(src,ed,'runner','10k:unknown',run) returning id into rec;
   insert into public.performances(source_record_id,event_edition_id,athlete_name,sex,distance_slug,chip_time_ms,rank_time_ms,rank_clock,finish_status)

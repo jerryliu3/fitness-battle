@@ -10,11 +10,21 @@ export const RACE_CATEGORIES = [
   { value: "other", label: "Other categories" }, { value: "unknown", label: "Unspecified" },
 ] as const;
 export const RACE_CATEGORY_FILTERS = [{value:"all",label:"All runners"},...RACE_CATEGORIES] as const;
+export const RACE_PERCENTILE_FILTERS = [
+  { value: "all", label: "All percentiles" },
+  { value: "top50", label: "Top 50% (faster than median)" },
+  { value: "top25", label: "Top 25% (faster than 75%)" },
+  { value: "top10", label: "Top 10% (faster than 90%)" },
+  { value: "top5", label: "Top 5% (faster than 95%)" },
+  { value: "top1", label: "Top 1% (faster than 99%)" },
+] as const;
 export type RaceResult = {
   id: number; athlete_name: string; sex: string; distance_slug: string;
   rank_time_ms: number; rank_clock: "chip" | "gun"; age_years: number | null;
   result_date: string | null; event_name: string; edition_year: number;
   attribution: string; source_url: string; bib: string | null; place: number;
+  percentile?: number | null;
+  cohort_total?: number | null;
 };
 export type RaceResultsPage = {
   rows: RaceResult[]; total: number; cohortTotal: number; page: number; pageSize: number;
@@ -39,6 +49,7 @@ export function raceQuery(input: { get(name: string): string | null }) {
   const editionId = /^[1-9]\d*$/.test(edition) && Number.isSafeInteger(Number(edition)) ? Number(edition) : null;
   const year = Number(input.get("year"));
   const page = Number(input.get("page"));
+  const percentile = input.get("percentile") ?? "all";
   const validYear = Number.isInteger(year) && year >= 1900 && year <= 2100;
   const timeframe = RACE_TIMEFRAMES.find(t => t.value === input.get("timeframe"))?.value ?? (validYear ? "year" : "all");
   const from = (input.get("from") ?? "").trim();
@@ -47,6 +58,7 @@ export function raceQuery(input: { get(name: string): string | null }) {
     editionId,
     editionError: edition && !editionId ? "Choose a valid event edition." : null,
     sex: RACE_CATEGORY_FILTERS.some(c => c.value === sex) ? sex : "all",
+    percentile: RACE_PERCENTILE_FILTERS.some(p => p.value === percentile) ? percentile : "all",
     year: timeframe === "year" && validYear ? year : null,
     timeframe, from: timeframe === "custom" ? from : "", through: timeframe === "custom" ? through : "",
     dateError: timeframe === "custom" ? raceDateError(from,through) : timeframe === "year" && !validYear ? "Enter an edition year from 1900 to 2100." : null,
@@ -61,12 +73,21 @@ export function raceClock(ms: number) {
   const rest = String(seconds % 60).padStart(2, "0");
   return hours ? `${hours}:${String(minutes).padStart(2, "0")}:${rest}` : `${minutes}:${rest}`;
 }
+export type RaceBenchmarks = {
+  top1Ms?: number | null;
+  top5Ms?: number | null;
+  top10Ms?: number | null;
+  top25Ms?: number | null;
+  medianMs: number;
+};
 export type RaceResultReport = {
   athleteId?: number | null;
   splits?: import("./race-splits").RaceTimingSplits | null;
   coverage?: RaceCoverage | null;
   result: Omit<RaceResult, "place"> & { event_edition_id: number };
   total: number; place: number; slower: number; medianMs: number;
+  percentile?: number | null;
+  benchmarks?: RaceBenchmarks | null;
   minimumMs: number; binWidthMs: number;
   bins: { bucket: number; count: number }[];
   neighbors: Pick<RaceResult, "id" | "athlete_name" | "rank_time_ms">[];
@@ -98,8 +119,24 @@ export type RaceCoverage = {
   evidence_url: string | null; complete: boolean;
 };
 export function raceFasterThan(report: RaceResultReport): number | null {
+  if (report.percentile != null && Number.isFinite(report.percentile)) return report.percentile;
   return report.coverage?.complete && report.coverage.published_count === report.total && report.total > 0
-    ? report.slower / report.total * 100 : null;
+    ? (report.slower / report.total) * 100
+    : null;
+}
+
+export function racePercentileTier(percentile: number): { label: string; topLabel: string } | null {
+  if (percentile >= 99) return { label: "Top 1%", topLabel: "Top 1% finisher" };
+  if (percentile >= 95) return { label: "Top 5%", topLabel: "Top 5% finisher" };
+  if (percentile >= 90) return { label: "Top 10%", topLabel: "Top 10% finisher" };
+  if (percentile >= 75) return { label: "Top 25%", topLabel: "Top 25% finisher" };
+  if (percentile >= 50) return { label: "Top 50%", topLabel: "Top 50% finisher" };
+  return null;
+}
+
+export function racePercentileBadge(percentile: number): string {
+  const tier = racePercentileTier(percentile);
+  return tier ? tier.label : `${percentile.toFixed(0)}%`;
 }
 
 /** Race dates are calendar dates. Rolling boundaries use the server UTC date. */
@@ -125,8 +162,8 @@ export function raceWindowCaption(page: RaceResultsPage) {
 }
 
 export function racePercentLabel(value: number) {
-  if (value > 0 && value < 0.1) return "<0.1%";
-  if (value > 99.9 && value < 100) return ">99.9%";
+  if (value < 0.1) return "<0.1%";
+  if (value > 99.9) return ">99.9%";
   return `${value.toFixed(1)}%`;
 }
 
@@ -144,6 +181,7 @@ export type RaceEditionAnalytics = {
   total: number; fastestMs: number; slowestMs: number; medianMs: number;
   minimumMs: number; binWidthMs: number; chipCount: number; officialCount: number;
   bins: {bucket: number; count: number}[];
+  benchmarks?: RaceBenchmarks | null;
 };
 
 /** Renderers share bin boundaries and empty gaps; never derive counts from a page. */
