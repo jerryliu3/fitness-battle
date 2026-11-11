@@ -1131,4 +1131,5 @@ shows current-week milestones from recorded progress. Session scheduling and RSV
 retain their existing writes. Highlights appear only for a shared finish or full
 participation. Contracts and configurable season passports use the shared program data model
 or isolated device storage for offline accounts. See [crew programs](crew-programs.md).
-Derby follows separately.
+Derby shows aggregate scores from normal sport-event fields in the same wave
+and opens team standings. Registration remains in the ordinary event flow.

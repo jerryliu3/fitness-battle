@@ -6,6 +6,7 @@ import { AppHeading, AppText } from "@/ui/section";
 import { UserAvatar } from "@/ui/user-avatar";
 import { CrewRelay } from "./crew-relay";
 import { CrewPassportPanel } from "./crew-passport";
+import { CrewDerbyCard } from "./crew-derby";
 import "./crew-overview.css";
 import { useAuth } from "@/components/auth-context";
 
@@ -82,5 +83,6 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, children, 
       <ul className="crew-highlights">{full.highlights.map(h => <li key={h}><AppText role="body">{h}</AppText></li>)}</ul>
     </section>}
 
+    <CrewDerbyCard crewId={crewId} units={input.units} />
   </div>;
 }

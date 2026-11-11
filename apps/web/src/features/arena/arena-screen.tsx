@@ -26,7 +26,7 @@ import { CoursePreview } from "./course-preview";
 import { QueuedField } from "./queued-field";
 import "./queued-field.css";
 import { Sheet } from "@/ui/sheet";
-import { APP_TIMEZONE, competitionQueue, competitionTrack, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, eventRegistration, type CompeteState, type CompeteEvent, type SportId } from "@fitness-battle/shared";
+import { APP_TIMEZONE, competitionQueue, competitionTrack, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, eventRegistration, type CompeteState, type CrewBoardPin, type CompeteEvent, type SportId } from "@fitness-battle/shared";
 
 function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
   const lastDay = weeklyCompetitionLastDay(endsAt);
@@ -42,7 +42,9 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const { state, dispatch, loadStatus, standingsStale, refresh, saveError } = useCompete();
   const { user } = useAuth();
   const router = useRouter();
-  const requestedEvent=useSearchParams().get("event");
+  const searchParams = useSearchParams();
+  const requestedEvent = searchParams.get("event"), requestedCrew = searchParams.get("crewId");
+  const [registrationCrew, setRegistrationCrew] = useState<string | null>(null);
   const [immersiveAccount, setImmersiveAccount] = useState<string | null>(null);
   const [athleteFocus, setAthleteFocus] = useState<{ id: string; request: number } | null>(null);
   const [courseOptions, setCourseOptions] = useState<ReactNode>(null);
@@ -62,7 +64,18 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const joinFlight = useRef<object | null>(null), currentAccount = useRef(account);
   const pendingEntry = useRef<CompeteEvent | null>(null);
   currentAccount.current = account;
-  useEffect(() => { setRegister(false); setRegistrationBackground(null); setSport(null); setJoinError(""); setJoinBusy(false); joinFlight.current = null; pendingEntry.current = null; }, [account]);
+  const latestState = useRef(state);
+  latestState.current = state;
+  useEffect(() => { setRegister(false); setRegistrationBackground(null); setSport(null); setRegistrationCrew(null); setJoinError(""); setJoinBusy(false); joinFlight.current = null; pendingEntry.current = null; }, [account]);
+
+  useEffect(() => {
+    if (!tabActive || !state || !requestedCrew || !requestedEvent || !SPORTS.some(s => s.id === requestedEvent)) return;
+    if (!state.ratings.some(r => r.sport === requestedEvent && r.optedIn)) {
+      setRegistrationBackground({ account: account, state });
+      setRegistrationCrew(requestedCrew); setSport(requestedEvent as SportId); setRegister(true); setJoinError("");
+    }
+    router.replace(`/arena?event=${requestedEvent}`, { scroll: false });
+  }, [tabActive, state, requestedCrew, requestedEvent, router]);
 
   useEffect(() => {
     if (!state || selection?.account !== account) return;
@@ -117,7 +130,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
     if (joinBusy) return;
     joinFlight.current = null;
     setRegistrationBackground({ account: account, state });
-    setSport(event); setJoinError(""); setRegister(true);
+    setRegistrationCrew(null); setSport(event); setJoinError(""); setRegister(true);
   }
   async function claimEntry() {
     if (!sport || joinFlight.current || (sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport))) return;
@@ -131,8 +144,17 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
       if (currentAccount.current !== joiningAccount || joinFlight.current !== flight) return;
       if (event === "sleep") dispatch({ type: "opt-in-health", metric: "sleep", accountId: joiningAccount });
       else {
+        let crewBoard: CrewBoardPin | null = null;
+        if (registrationCrew) {
+          const response = await fetch("/api/crews/field", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ crewId: registrationCrew }), signal: AbortSignal.timeout(15000) });
+          const result = await response.json();
+          if (!response.ok || !result.pin || result.pin.sport !== event) throw Error("Could not join this crew event.");
+          crewBoard = result.pin;
+        }
+        if (currentAccount.current !== joiningAccount || joinFlight.current !== flight) return;
+        if (latestState.current?.ratings.some(r => r.sport === event && r.optedIn)) throw Error("You already have an entry for this sport.");
         dispatch({ type: "set-primary", sport: event, accountId: joiningAccount });
-        dispatch({ type: "opt-in", sport: event, crewBoard: null, accountId: joiningAccount });
+        dispatch({ type: "opt-in", sport: event, crewBoard, accountId: joiningAccount });
       }
       committed = true;
       void playCue("success");
@@ -204,7 +226,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         {selectedSport && selectedSport !== "sleep" && queued && <CoursePreview state={state} sport={selectedSport} queued />}
         {selectedSport && (queued ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch(selectedSport === "sleep" ? { type: "opt-out-health", metric: "sleep" } : { type: "opt-out", sport: selectedSport }); setImmersiveAccount(null); }} /> : selectedSport === "sleep" ? <SleepPanel state={state} now={now} onJoin={() => openRegistration("sleep")} onLeave={() => dispatch({ type: sleep.renews ? "schedule-leave" : "resume-renewal", metric: "sleep" })} leaveLabel={sleep.renews ? "Stop after this week" : "Keep playing next week"} /> : null)}
       </Sheet>
-      <Sheet open={register} title={sport ? `${eventRegistration(state, sport, now).name} Registration` : "Choose an event"} body={sport ? "" : "Pick your next start line."} onClose={() => { if (!joinBusy) setRegister(false); }} scrollResetKey={sport ?? "choose"} onClosed={() => {
+      <Sheet open={register} title={registrationCrew ? "Crew Derby" : sport ? `${eventRegistration(state, sport, now).name} Registration` : "Choose an event"} body={sport ? "" : "Pick your next start line."} onClose={() => { if (!joinBusy) setRegister(false); }} scrollResetKey={sport ?? "choose"} onClosed={() => {
         setRegistrationBackground(null);
         const event = pendingEntry.current;
         pendingEntry.current = null;

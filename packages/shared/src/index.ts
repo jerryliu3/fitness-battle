@@ -96,3 +96,4 @@ export * from "./crew-overview";
 export * from "./crew-passport";
 
 export * from "./crew-local-program";
+export * from "./crew-derby";

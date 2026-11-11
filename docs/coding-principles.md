@@ -175,3 +175,8 @@ contracts, configurable seasons and durable stamps. Any active member may manage
 them through RPCs. Contract settlement reuses accepted competition facts and
 exclusive deadlines; it does not modify sport-event scoring or Elo. See
 [crew programs](crew-programs.md) for lifecycle, access and rollout.
+
+Crew Derby is a team projection of existing crew event fields within the same
+sport/wave bounds. Individual and team reads share `private.week_field_scores`;
+GPS/Open eligibility, accepted facts, ordinary result settlement and Elo retain
+one authority. Only team identity and aggregate totals cross crew boundaries.

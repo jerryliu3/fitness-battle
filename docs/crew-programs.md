@@ -81,3 +81,38 @@ observed closed-week outcome. These local records never enter authenticated RPCs
 or global award/scoring tables. Live accounts use the backend exclusively; a
 missing server migration is reported as unavailable server setup rather than a
 request to reconnect an already signed-in athlete.
+
+## Derby reuse
+
+Derby adds no table or column. It groups the existing `week_fields.crew_id`
+participants by the exact `(sport, wave_start, week_end)` event cohort. Each
+crew's score is the sum of its frozen field members' ordinary event scores:
+GPS distance for running/cycling, Open distance for walking, and existing
+HR-weighted Open effort for strength. Scores are not normalized by crew size or
+compared to cooperative contract targets. Equal totals use ordinary competition
+ranks (1, 1, 3). Synthetic fillers do not belong to a real crew and add no team
+credit.
+
+`private.week_field_scores` extracts the pre-existing authorized roster reader's
+score query without changing its eligibility, accepted-fact deadlines, effort
+formula or result fields. Both the original `week_field_roster` wrapper and the
+new Derby projection call it. The original wrapper keeps its caller-on-roster
+authorization; the private helper is not executable by clients. The Derby reader
+requires active membership in the requested crew and returns only team names,
+IDs, aggregate scores and places across that event cohort, never opponent
+athlete identities, activity details or individual ratings. Crew event names
+come from their existing field snapshots.
+
+A Crew page favors the viewer's enrolled field, then its latest started crew
+field. Queued fields and different event cohorts are excluded. The compact card
+appears only with at least two real crews and opens full team standings. Ordinary
+individual results, Elo settlement, registration and daily-wave deadlines remain
+authoritative; there is no separate team rating or award writer. Crew settings
+provides entry to normal registration with the existing crew context. Each
+athlete registers themselves; an existing sport entry is opened rather than
+silently replaced. Event seats are still assigned at the ordinary benchmark.
+
+Apply `20261111152749_crew_derby_event_standings.sql` after the program migration
+before deploying Derby. The SQL regression cases cover parity with normal GPS
+and strength scores, excluded inputs, ties, cohort isolation, membership checks
+and private-reader permissions. They have not been run.

@@ -10,6 +10,7 @@ import { UserAvatar } from "../ui/user-avatar";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { CrewRelay } from "./crew-relay";
 import { CrewPassportPanel } from "./crew-passport";
+import { CrewDerbyCard } from "./crew-derby";
 import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
 import { mobileEnv } from "../lib/env";
@@ -111,5 +112,6 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
       {full.highlights.map(h => <View key={h} style={{ borderBottomWidth: 1, borderColor: c.line, paddingVertical: 14 }}><AppText role="body">{h}</AppText></View>)}
     </View>}
 
+    <CrewDerbyCard crewId={crewId} units={input.units} />
   </View>;
 }

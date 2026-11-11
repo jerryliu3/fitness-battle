@@ -127,6 +127,7 @@ const f=useFocusStyles();
   const [selected, setSelected] = useState(crewId);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const createAfterSwitch = useRef(false);
+  const derbyAfterClose = useRef(false);
   const [panel, setPanel] = useState<
     "add" | "invite" | "manage" | "leave" | "members" | null
   >(null);
@@ -518,7 +519,7 @@ const f=useFocusStyles();
       <FocusSheet
         open={!!panel}
         minimal
-        onClosed={() => { if (pendingMember.current) { setViewingMember(pendingMember.current); pendingMember.current = null; } }}
+        onClosed={() => { if (derbyAfterClose.current) { derbyAfterClose.current = false; router.navigate({ pathname: "/arena", params: { event: crew.sport, ...(state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? {} : { crewId: crew.id }) } }); } if (pendingMember.current) { setViewingMember(pendingMember.current); pendingMember.current = null; } }}
         fullScreen={panel === "members"}
         title={
           panel === "add"
@@ -659,6 +660,7 @@ const f=useFocusStyles();
             <AppText role="body" secondary >
               {crew.sport} · {crew.format.replaceAll("_", " ")}
             </AppText>
+            <FocusButton label={state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? "View sport event" : "Join Crew Derby"} disabled={busy} onPress={() => { derbyAfterClose.current = true; setPanel(null); }} />
             <FocusButton
               label="Leave crew"
               secondary

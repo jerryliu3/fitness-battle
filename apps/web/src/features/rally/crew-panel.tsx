@@ -576,6 +576,9 @@ export function CrewPanel() {
             <AppParagraph typographyRole="body" className="fb-copy">
               {crew?.name} · {crew?.sport} · {crew?.format.replaceAll("_", " ")}
             </AppParagraph>
+            <Link className="fb-btn" onClick={() => setPanel(null)} href={`/arena?event=${crew.sport}${state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? "" : `&crewId=${encodeURIComponent(crew.id)}`}`}>
+              {state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? "View sport event" : "Join Crew Derby"}
+            </Link>
             <button
               className="fb-btn-line"
               disabled={busy}
