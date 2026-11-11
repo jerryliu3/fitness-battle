@@ -296,20 +296,18 @@ export function JourneySpace({
                   ]}
                 >
                   <AppText
-                    role="caption"
+                    role="label"
                     style={{
                       color: isSelected ? c.card : c.muted,
-                      fontWeight: "600",
                     }}
                   >
                     {item.dayLabel}
                   </AppText>
 
                   <AppText
-                    role="label"
+                    role={item.isToday ? "value" : "label"}
                     style={{
                       color: isSelected ? c.card : c.ink,
-                      fontWeight: item.isToday ? "700" : "500",
                     }}
                   >
                     {item.dateNum}
@@ -399,7 +397,6 @@ export function JourneySpace({
                   style={{
                     width: (gridWidth - 24) / 7,
                     textAlign: "center",
-                    fontWeight: "600",
                     paddingVertical: 2,
                   }}
                 >
@@ -434,10 +431,9 @@ export function JourneySpace({
                     ]}
                   >
                     <AppText
-                      role="caption"
+                      role={d.movingSec > 0 ? "label" : "caption"}
                       style={{
                         color: d.intensity >= 3 ? c.card : c.ink,
-                        fontWeight: d.movingSec > 0 ? "700" : "500",
                       }}
                     >
                       {d.inMonth ? d.label : ""}
@@ -574,7 +570,7 @@ export function JourneySpace({
                       ]}
                     />
                   </View>
-                  <AppText role="caption" secondary style={{ fontSize: 11, textAlign: "center" }}>
+                  <AppText role="caption" secondary style={{ textAlign: "center" }}>
                     {bucket.label.slice(0, 1)}
                   </AppText>
                 </View>
@@ -655,13 +651,13 @@ export function JourneySpace({
                         res.place === 1 && { backgroundColor: `${c.tennis}33` },
                       ]}
                     >
-                      <AppText role="value" style={{ fontWeight: "700" }}>
+                      <AppText role="value">
                         #{res.place}
                       </AppText>
                     </View>
 
                     <View style={{ flex: 1, gap: 2 }}>
-                      <AppText role="row" style={{ fontWeight: "600" }}>
+                      <AppText role="row">
                         {res.place === 1 ? "Took the field" : "Weekly Battle"}
                       </AppText>
                       <AppText role="caption" secondary>
@@ -670,14 +666,13 @@ export function JourneySpace({
                     </View>
 
                     <View style={{ alignItems: "flex-end", gap: 2 }}>
-                      <AppText role="value" style={{ fontWeight: "700" }}>
+                      <AppText role="value">
                         {res.place} / {res.fieldSize}
                       </AppText>
                       <AppText
-                        role="caption"
+                        role="label"
                         style={{
                           color: delta >= 0 ? c.tennis : c.muted,
-                          fontWeight: "600",
                         }}
                       >
                         {deltaLabel} effort score
@@ -723,7 +718,7 @@ export function JourneySpace({
                 onPress={() => setSelectedDayKey(null)}
                 style={s.textLink}
               >
-                <AppText role="caption" style={{ color: c.tennis, fontWeight: "600" }}>
+                <AppText role="label" style={{ color: c.tennis }}>
                   Clear filter
                 </AppText>
               </Pressable>
@@ -764,7 +759,7 @@ export function JourneySpace({
                     <SportActivityIcon sport={activity.sport} />
                   </View>
                   <View style={{ flex: 1, gap: 2 }}>
-                    <AppText role="row" style={{ fontWeight: "600" }}>
+                    <AppText role="row">
                       {sportInfo.name}
                     </AppText>
                     <AppText role="caption" secondary>
@@ -778,7 +773,7 @@ export function JourneySpace({
                     <AppText role="value" style={{ fontVariant: ["tabular-nums"] }}>
                       {formatClockTime(activity.movingSec)}
                     </AppText>
-                    <AppText role="caption" style={{ color: c.tennis, fontWeight: "600" }}>
+                    <AppText role="label" style={{ color: c.tennis }}>
                       {effort} effort
                     </AppText>
                   </View>

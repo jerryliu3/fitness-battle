@@ -161,7 +161,7 @@ export default function ProgressHistoryScreen() {
                   >
                     <AppText
                       role="caption"
-                      style={{ color: active ? c.card : c.ink, fontWeight: "600" }}
+                      style={{ color: active ? c.card : c.ink }}
                     >
                       {sport === "all" ? "All Sports" : sportById(sport).name}
                     </AppText>
@@ -218,7 +218,7 @@ export default function ProgressHistoryScreen() {
                         <SportActivityIcon sport={activity.sport} />
                       </View>
                       <View style={{ flex: 1, gap: 2 }}>
-                        <AppText role="row" style={{ fontWeight: "600" }}>
+                        <AppText role="row">
                           {sportInfo.name}
                         </AppText>
                         <AppText role="caption" secondary>
@@ -232,7 +232,7 @@ export default function ProgressHistoryScreen() {
                         <AppText role="value" style={{ fontVariant: ["tabular-nums"] }}>
                           {formatClockTime(activity.movingSec)}
                         </AppText>
-                        <AppText role="caption" style={{ color: c.tennis, fontWeight: "600" }}>
+                        <AppText role="label" style={{ color: c.tennis }}>
                           {effort} effort
                         </AppText>
                       </View>
