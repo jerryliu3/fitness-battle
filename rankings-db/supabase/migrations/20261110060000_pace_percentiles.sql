@@ -1,17 +1,22 @@
 -- Migration: Percentiles throughout race results, athlete reports, and edition/distance analytics.
 -- Additive only: preserves existing records, views, and functions.
 
--- 1. Full-field reads with percentile calculation, percentile filtering, and benchmark cutoffs.
+-- Drop legacy overloads to avoid ambiguous function call resolution and clear parameter defaults
+drop function if exists public.rankings_page_scoped(text, text, integer, text, integer, date, date, bigint);
+drop function if exists public.rankings_page_scoped(text, text, integer, text, integer, date, date, bigint, text);
+
+-- 1. Full-field reads with strict-slower percentile calculation, unrounded percentile filtering, and qualifying cutoffs.
+-- The canonical 9-argument implementation has no default on p_percentile to prevent signature ambiguity with the 8-argument compatibility wrapper.
 create or replace function public.rankings_page_scoped(
   p_distance text,
-  p_sex text default 'female',
-  p_year integer default null,
-  p_query text default '',
-  p_page integer default 1,
-  p_from date default null,
-  p_until date default null,
-  p_edition_id bigint default null,
-  p_percentile text default 'all'
+  p_sex text,
+  p_year integer,
+  p_query text,
+  p_page integer,
+  p_from date,
+  p_until date,
+  p_edition_id bigint,
+  p_percentile text
 ) returns jsonb
 language sql stable security definer set search_path = '' as $$
   with cohort as materialized (
@@ -32,7 +37,9 @@ language sql stable security definer set search_path = '' as $$
       sr.normalized_bib as bib,
       rank() over (order by p.rank_time_ms) as place,
       count(*) over () as cohort_total,
-      round(((count(*) over () - rank() over (order by p.rank_time_ms))::numeric / greatest(1, count(*) over ()) * 100.0), 1) as percentile
+      (count(*) over () - count(*) over (order by p.rank_time_ms range between unbounded preceding and current row)) as slower_count,
+      ((count(*) over () - count(*) over (order by p.rank_time_ms range between unbounded preceding and current row))::numeric / greatest(1, count(*) over ()) * 100.0) as raw_percentile,
+      round(((count(*) over () - count(*) over (order by p.rank_time_ms range between unbounded preceding and current row))::numeric / greatest(1, count(*) over ()) * 100.0), 1) as percentile
     from public.performances p
     join public.source_records sr on sr.id = p.source_record_id
     join public.sources s on s.id = sr.source_id
@@ -52,10 +59,11 @@ language sql stable security definer set search_path = '' as $$
       min(rank_time_ms) as fastest_ms,
       max(rank_time_ms) as slowest_ms,
       percentile_cont(0.50) within group (order by rank_time_ms) as median_ms,
-      percentile_cont(0.01) within group (order by rank_time_ms) as p99_ms,
-      percentile_cont(0.05) within group (order by rank_time_ms) as p95_ms,
-      percentile_cont(0.10) within group (order by rank_time_ms) as p90_ms,
-      percentile_cont(0.25) within group (order by rank_time_ms) as p75_ms,
+      -- Derived from the exact qualifying population: slowest time among runners who meet each percentile filter
+      max(rank_time_ms) filter (where raw_percentile >= 99.0) as p99_ms,
+      max(rank_time_ms) filter (where raw_percentile >= 95.0) as p95_ms,
+      max(rank_time_ms) filter (where raw_percentile >= 90.0) as p90_ms,
+      max(rank_time_ms) filter (where raw_percentile >= 75.0) as p75_ms,
       floor(min(rank_time_ms) / 1000.0) * 1000 as minimum_ms,
       greatest(1000, ceil((max(rank_time_ms) - floor(min(rank_time_ms) / 1000.0) * 1000) / 40000.0) * 1000) as width_ms,
       count(*) filter (where rank_clock = 'chip') as chip_count,
@@ -72,11 +80,11 @@ language sql stable security definer set search_path = '' as $$
       or bib = upper(btrim(p_query))
     ) and (
       p_percentile is null or p_percentile = 'all'
-      or (p_percentile = 'top1' and percentile >= 99.0)
-      or (p_percentile = 'top5' and percentile >= 95.0)
-      or (p_percentile = 'top10' and percentile >= 90.0)
-      or (p_percentile = 'top25' and percentile >= 75.0)
-      or (p_percentile = 'top50' and percentile >= 50.0)
+      or (p_percentile = 'top1' and raw_percentile >= 99.0)
+      or (p_percentile = 'top5' and raw_percentile >= 95.0)
+      or (p_percentile = 'top10' and raw_percentile >= 90.0)
+      or (p_percentile = 'top25' and raw_percentile >= 75.0)
+      or (p_percentile = 'top50' and raw_percentile >= 50.0)
     )
   ), totals as (
     select count(*) as total, greatest(1, least(greatest(1, coalesce(p_page, 1)),
@@ -109,20 +117,41 @@ language sql stable security definer set search_path = '' as $$
       'bins', coalesce((select jsonb_agg(to_jsonb(b) order by b.bucket) from bins b), '[]'::jsonb)
     ) else null end from stats s),
     'page', t.page,
-    'pageSize', 50,
-    'windowFrom', p_from,
-    'windowUntil', p_until
-  ) from totals t;
+    'pageSize', 50
+  )
+  from totals t;
 $$;
 revoke all on function public.rankings_page_scoped(text, text, integer, text, integer, date, date, bigint, text) from public;
 grant execute on function public.rankings_page_scoped(text, text, integer, text, integer, date, date, bigint, text) to anon, authenticated, service_role;
 
--- 2. Individual result reports with percentile rank and benchmarks.
+-- Compatibility 8-argument wrapper with defaults that delegates to the canonical 9-argument function
+create or replace function public.rankings_page_scoped(
+  p_distance text,
+  p_sex text default 'female',
+  p_year integer default null,
+  p_query text default '',
+  p_page integer default 1,
+  p_from date default null,
+  p_until date default null,
+  p_edition_id bigint default null
+) returns jsonb
+language sql stable security definer set search_path = '' as $$
+  select public.rankings_page_scoped(
+    p_distance, p_sex, p_year, p_query, p_page, p_from, p_until, p_edition_id, 'all'
+  );
+$$;
+revoke all on function public.rankings_page_scoped(text, text, integer, text, integer, date, date, bigint) from public;
+grant execute on function public.rankings_page_scoped(text, text, integer, text, integer, date, date, bigint) to anon, authenticated, service_role;
+
+-- 2. Result detail with strict-slower percentile and exact qualifying benchmark cutoffs
 create or replace function public.rankings_result(p_id bigint)
 returns jsonb language sql stable security definer set search_path = '' as $$
   with selected as (
-    select p.*, ed.name as event_name, ed.edition_year, s.attribution,
-      sr.normalized_bib as bib
+    select
+      p.id, p.athlete_name, p.sex, p.distance_slug, p.rank_time_ms, p.rank_clock,
+      p.chip_time_ms, p.gun_time_ms, p.age_years, p.result_date, p.source_url,
+      p.event_edition_id, p.updated_at, ed.name as event_name, ed.edition_year,
+      s.attribution, s.reuse_notes, sr.normalized_bib as bib
     from public.performances p
     join public.source_records sr on sr.id = p.source_record_id
     join public.sources s on s.id = sr.source_id
@@ -130,7 +159,9 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     where p.id = p_id and p.eligible and not p.unpublished and s.display_allowed
       and ed.publication_state in ('published', 'frozen')
   ), field as materialized (
-    select p.id, p.athlete_name, p.rank_time_ms
+    select
+      p.id, p.athlete_name, p.rank_time_ms,
+      ((count(*) over () - count(*) over (order by p.rank_time_ms range between unbounded preceding and current row))::numeric / greatest(1, count(*) over ()) * 100.0) as raw_percentile
     from public.performances p
     join public.source_records sr on sr.id = p.source_record_id
     join public.sources s on s.id = sr.source_id
@@ -146,10 +177,10 @@ returns jsonb language sql stable security definer set search_path = '' as $$
       count(*) filter (where f.rank_time_ms > r.rank_time_ms) as slower,
       round(((count(*) filter (where f.rank_time_ms > r.rank_time_ms))::numeric / greatest(1, count(*)) * 100.0), 1) as percentile,
       percentile_cont(0.50) within group (order by f.rank_time_ms) as median_ms,
-      percentile_cont(0.01) within group (order by f.rank_time_ms) as p99_ms,
-      percentile_cont(0.05) within group (order by f.rank_time_ms) as p95_ms,
-      percentile_cont(0.10) within group (order by f.rank_time_ms) as p90_ms,
-      percentile_cont(0.25) within group (order by f.rank_time_ms) as p75_ms,
+      max(f.rank_time_ms) filter (where f.raw_percentile >= 99.0) as p99_ms,
+      max(f.rank_time_ms) filter (where f.raw_percentile >= 95.0) as p95_ms,
+      max(f.rank_time_ms) filter (where f.raw_percentile >= 90.0) as p90_ms,
+      max(f.rank_time_ms) filter (where f.raw_percentile >= 75.0) as p75_ms,
       min(f.rank_time_ms) as minimum_ms,
       greatest(1000, ceil((max(f.rank_time_ms) - min(f.rank_time_ms)) / 40.0)::bigint) as width_ms
     from field f cross join selected r
@@ -157,13 +188,13 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     select floor((f.rank_time_ms - s.minimum_ms) / s.width_ms)::integer as bucket, count(*) as count
     from field f cross join stats s group by 1
   ), neighbors as (
-    (select f.* from field f cross join selected r
+    (select f.id, f.athlete_name, f.rank_time_ms from field f cross join selected r
       where (f.rank_time_ms, f.id) < (r.rank_time_ms, r.id)
       order by f.rank_time_ms desc, f.id desc limit 3)
     union all
-    (select f.* from field f cross join selected r
+    (select f.id, f.athlete_name, f.rank_time_ms from field f cross join selected r
       where (f.rank_time_ms, f.id) > (r.rank_time_ms, r.id)
-      order by f.rank_time_ms, f.id limit 3)
+      order by f.rank_time_ms asc, f.id asc limit 3)
   )
   select jsonb_build_object(
     'result', to_jsonb(r),
