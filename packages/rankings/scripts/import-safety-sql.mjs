@@ -21,6 +21,24 @@ const edition = {
 const snapshot = snapshotIdentity("{}", "fixtures/import-safety.json");
 const corrected = { ...edition, displayAllowed: true, results: edition.results.map((row) => ({ ...row, gunTimeMs: 2_000_000 })) };
 const nextYearEdition = { ...edition, editionYear: 2027, startsOn: "2027-04-20" };
+const editionWithTwo = {
+  ...editionFromOpenTrack({
+    id: "event-two",
+    date: "2026-05-20",
+    fullName: "Import safety two-runner",
+    events: [{ eventId: "1", eventCode: "10K", genders: "F", units: [{ results: [{ bib: "1", performance: "34:27" }, { bib: "2", performance: "35:00" }] }] }],
+    competitors: [
+      { competitorId: "1", fullName: "Runner One", gender: "F", ageGroup: "SEN" },
+      { competitorId: "2", fullName: "Runner Disqualified", gender: "F", ageGroup: "SEN" },
+    ],
+  }),
+  sourceSlug: `${slug}_two`,
+  displayAllowed: true,
+};
+const correctedOneOnly = {
+  ...editionWithTwo,
+  results: [editionWithTwo.results[0]],
+};
 
 console.log(`
 begin;
@@ -150,6 +168,43 @@ begin
   if (select count(*) from public.source_records sr join public.sources s on s.id = sr.source_id
       where s.slug = ${quote(slug)}) <> 2 then
     raise exception 'Expected 2 distinct source records across the two editions';
+  end if;
+end $safety$;
+
+-- 8. publish_event_edition rejects frozen editions
+do $safety$
+declare
+  v_ed_id bigint;
+begin
+  select ed.id into v_ed_id
+  from public.event_editions ed
+  join public.events e on e.id = ed.event_id
+  join public.sources s on s.id = e.source_id
+  where s.slug = ${quote(slug)} and ed.edition_year = 2026;
+
+  begin
+    perform public.publish_event_edition(v_ed_id);
+    raise exception 'publish_event_edition allowed unfreezing a frozen edition';
+  exception when others then
+    if sqlerrm not like '%frozen and cannot be published%' then raise; end if;
+  end;
+end $safety$;
+
+-- 9. Correction reconciliation unpublishes removed results from the field
+${editionImportSql(editionWithTwo, snapshot)}
+${editionImportSql(correctedOneOnly, snapshot, { allowCorrection: true })}
+
+do $safety$
+begin
+  if not exists (
+    select 1 from public.performances p
+    join public.source_records sr on sr.id = p.source_record_id
+    join public.sources s on s.id = sr.source_id
+    where s.slug = ${quote(`${slug}_two`)}
+      and p.athlete_name = 'Runner Disqualified'
+      and not p.eligible and p.unpublished
+  ) then
+    raise exception 'Correction failed to unpublish removed result';
   end if;
 end $safety$;
 

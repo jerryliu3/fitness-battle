@@ -240,12 +240,18 @@ describe("public results parsers", () => {
     });
     const snapshot = snapshotIdentity("{}", "fixtures/sample.json");
 
-    // Correction import bumps revision
+    // Correction import bumps revision and reconciles missing records
     const correctionSql = editionImportSql(edition, snapshot, { allowCorrection: true, expectedRevision: 2 });
     expect(correctionSql).toContain("revision = case when true then revision + 1 else revision end");
     expect(correctionSql).toContain("Expected edition revision % but found %; correction held', 2");
     expect(correctionSql).toContain("Expected edition revision % but edition does not exist; correction held', 2");
     expect(correctionSql).toContain("Source record lookup failed for % in edition %");
+    expect(correctionSql).toContain("Reconcile corrected full-field population");
+    expect(correctionSql).toContain("set eligible = false,");
+    expect(correctionSql).toContain("and sr.last_ingestion_run_id <> v_run");
+
+    // Standard import without correction does not run reconciliation
+    expect(sql).not.toContain("sr.last_ingestion_run_id <> v_run");
 
     // Freeze import marks frozen
     const freezeSql = editionImportSql(edition, snapshot, { allowCorrection: true, freeze: true });

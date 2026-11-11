@@ -121,19 +121,24 @@ function editionFromMika(event, pages) {
   };
 }
 
-async function getEditionPublicationState(sourceSlug, editionYear) {
+async function getEditionPublicationState(sourceSlug, externalEventId, editionYear) {
   if (!process.env.RANKINGS_DATABASE_URL) return null;
   const { spawn } = await import("node:child_process");
-  const query = `select ed.publication_state, ed.revision from public.event_editions ed join public.events e on e.id = ed.event_id join public.sources s on s.id = e.source_id where s.slug = '${sourceSlug.replaceAll("'", "''")}' and ed.edition_year = ${editionYear} limit 1;`;
-  return new Promise((resolve) => {
+  const eventClause = externalEventId != null && externalEventId !== ""
+    ? `e.external_event_id = '${String(externalEventId).replaceAll("'", "''")}'`
+    : `e.external_event_id is null`;
+  const query = `select ed.publication_state, ed.revision from public.event_editions ed join public.events e on e.id = ed.event_id join public.sources s on s.id = e.source_id where s.slug = '${sourceSlug.replaceAll("'", "''")}' and ${eventClause} and ed.edition_year = ${editionYear} limit 1;`;
+  return new Promise((resolve, reject) => {
     const child = spawn("psql", ["-X", "-d", process.env.RANKINGS_DATABASE_URL, "-t", "-A", "-F", ",", "-c", query], {
-      stdio: ["ignore", "pipe", "ignore"],
+      stdio: ["ignore", "pipe", "pipe"],
     });
     let output = "";
+    let stderr = "";
     child.stdout?.on("data", (chunk) => { output += chunk; });
-    child.on("error", () => resolve(null));
+    child.stderr?.on("data", (chunk) => { stderr += chunk; });
+    child.on("error", (err) => reject(new Error(`Failed to check edition publication state: ${err.message}`)));
     child.on("exit", (code) => {
-      if (code !== 0) return resolve(null);
+      if (code !== 0) return reject(new Error(`Database publication check failed with exit code ${code}: ${stderr.trim()}`));
       const line = output.trim().split("\n")[0];
       if (!line) return resolve(null);
       const [state, rev] = line.split(",");
@@ -156,7 +161,7 @@ async function writeEdition(slug, edition, rawForHash, storagePath, options = {}
 }
 
 async function ingestOpenTrackFixture() {
-  const existing = await getEditionPublicationState("opentrack", 2025);
+  const existing = await getEditionPublicationState("opentrack", "a8c3d9b0-e5a1-44a9-bc15-71d6497e3a0d", 2025);
   if (existing) {
     if (existing.state === "frozen") {
       return {
@@ -196,7 +201,7 @@ async function ingestOpenTrackFixture() {
 }
 
 async function ingestCatalogEvent(event) {
-  const existing = await getEditionPublicationState(event.sourceSlug, event.editionYear);
+  const existing = await getEditionPublicationState(event.sourceSlug, event.externalEventId, event.editionYear);
   if (existing) {
     if (existing.state === "frozen") {
       return {
@@ -250,8 +255,9 @@ async function ingestCatalogEvent(event) {
 async function ingestCsv(file, flags) {
   const slug = flags.slug || "csv-import";
   const sourceSlug = flags.source || slug;
+  const externalEventId = flags.event || slug;
   const editionYear = Number(flags.year || new Date().getUTCFullYear());
-  const existing = await getEditionPublicationState(sourceSlug, editionYear);
+  const existing = await getEditionPublicationState(sourceSlug, externalEventId, editionYear);
   if (existing) {
     if (existing.state === "frozen") {
       return {
@@ -302,18 +308,19 @@ async function ingestCsv(file, flags) {
 async function ingestRunSignup(raceId, eventId, flags) {
   const sourceSlug = `runsignup_${raceId}`;
   const editionYear = Number(flags.year || new Date().getUTCFullYear());
-  const existing = await getEditionPublicationState(sourceSlug, editionYear);
+  const existing = await getEditionPublicationState(sourceSlug, eventId, editionYear);
+  const importSlug = `runsignup-${raceId}-${eventId}-${flags.resultSet}`;
   if (existing) {
     if (existing.state === "frozen") {
       return {
-        slug: `runsignup-${raceId}-${eventId}`,
+        slug: importSlug,
         status: "skipped",
         reason: `Edition is frozen (revision ${existing.revision}); pre-fetch skipped.`,
       };
     }
     if (existing.state === "published" && !allowCorrection) {
       return {
-        slug: `runsignup-${raceId}-${eventId}`,
+        slug: importSlug,
         status: "skipped",
         reason: `Edition is already published (revision ${existing.revision}); pre-fetch skipped (use --allow-correction to update).`,
       };

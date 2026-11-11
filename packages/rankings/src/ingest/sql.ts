@@ -215,7 +215,24 @@ begin
       coalesce(v_row->>'sourceUrl', '')
     );
   end loop;
-
+  ${
+    options?.allowCorrection
+      ? `
+  -- Reconcile corrected full-field population: remove missing results from the published field.
+  -- Only performances matching this edition and the imported distances that were not updated in this run are unpublished.
+  update public.performances p
+  set eligible = false,
+      unpublished = true,
+      updated_at = now()
+  from public.source_records sr
+  where p.source_record_id = sr.id
+    and p.event_edition_id = v_edition
+    and p.distance_slug in (select distinct value->>'distance' from jsonb_array_elements(${quote(payload)}::jsonb))
+    and sr.last_ingestion_run_id <> v_run
+    and (p.eligible or not p.unpublished);
+`
+      : ""
+  }
   update public.ingestion_runs
   set status = 'succeeded',
       finished_at = now(),
