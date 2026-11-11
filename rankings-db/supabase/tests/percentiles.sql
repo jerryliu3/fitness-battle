@@ -44,9 +44,9 @@ begin
     raise exception 'Expected 3 rows in rankings_page_scoped, got %', page;
   end if;
 
-  -- For times [10, 10, 20], exactly 1 runner is slower than the leaders (1/3 = 33.3%).
+  -- For times [10, 10, 20], exactly 1 runner is slower than the leaders (1/3 = 33.333...%).
   -- The leaders must receive 33.3%, NOT 66.7%!
-  if (page->'rows'->0->>'percentile')::numeric <> 33.3 or (page->'rows'->1->>'percentile')::numeric <> 33.3 then
+  if round((page->'rows'->0->>'percentile')::numeric, 1) <> 33.3 or round((page->'rows'->1->>'percentile')::numeric, 1) <> 33.3 then
     raise exception 'Tied finish explorer percentile failed: expected 33.3, got % and %',
       page->'rows'->0->>'percentile', page->'rows'->1->>'percentile';
   end if;
@@ -58,13 +58,13 @@ begin
 
   -- 2. Test individual report rankings_result gives identical percentile to explorer
   res1 := public.rankings_result(p1);
-  if (res1->>'percentile')::numeric <> 33.3 or (res1->>'slower')::integer <> 1 then
+  if round((res1->>'percentile')::numeric, 1) <> 33.3 or (res1->>'slower')::integer <> 1 then
     raise exception 'rankings_result for leader one gave % (slower %), expected 33.3 (slower 1)',
       res1->>'percentile', res1->>'slower';
   end if;
 
   res2 := public.rankings_result(p2);
-  if (res2->>'percentile')::numeric <> 33.3 or (res2->>'slower')::integer <> 1 then
+  if round((res2->>'percentile')::numeric, 1) <> 33.3 or (res2->>'slower')::integer <> 1 then
     raise exception 'rankings_result for leader two gave % (slower %), expected 33.3 (slower 1)',
       res2->>'percentile', res2->>'slower';
   end if;
@@ -88,6 +88,12 @@ begin
   page := public.rankings_page_scoped('10k', 'female', 2026, '', 1, null, null, null);
   if (page->>'total')::integer <> 3 then
     raise exception '8-argument wrapper failed: %', page;
+  end if;
+
+  -- 6. Date-window metadata is preserved in the response
+  page := public.rankings_page_scoped('10k', 'female', 2026, '', 1, '2026-04-01'::date, '2026-04-30'::date, null, 'all');
+  if page->>'windowFrom' <> '2026-04-01' or page->>'windowUntil' <> '2026-04-30' then
+    raise exception 'Date window metadata missing from rankings_page_scoped: %', page;
   end if;
 end;
 $$;

@@ -39,7 +39,7 @@ language sql stable security definer set search_path = '' as $$
       count(*) over () as cohort_total,
       (count(*) over () - count(*) over (order by p.rank_time_ms range between unbounded preceding and current row)) as slower_count,
       ((count(*) over () - count(*) over (order by p.rank_time_ms range between unbounded preceding and current row))::numeric / greatest(1, count(*) over ()) * 100.0) as raw_percentile,
-      round(((count(*) over () - count(*) over (order by p.rank_time_ms range between unbounded preceding and current row))::numeric / greatest(1, count(*) over ()) * 100.0), 1) as percentile
+      ((count(*) over () - count(*) over (order by p.rank_time_ms range between unbounded preceding and current row))::numeric / greatest(1, count(*) over ()) * 100.0) as percentile
     from public.performances p
     join public.source_records sr on sr.id = p.source_record_id
     join public.sources s on s.id = sr.source_id
@@ -117,7 +117,9 @@ language sql stable security definer set search_path = '' as $$
       'bins', coalesce((select jsonb_agg(to_jsonb(b) order by b.bucket) from bins b), '[]'::jsonb)
     ) else null end from stats s),
     'page', t.page,
-    'pageSize', 50
+    'pageSize', 50,
+    'windowFrom', p_from,
+    'windowUntil', p_until
   )
   from totals t;
 $$;
@@ -175,7 +177,7 @@ returns jsonb language sql stable security definer set search_path = '' as $$
       count(*) as total,
       count(*) filter (where f.rank_time_ms < r.rank_time_ms) + 1 as place,
       count(*) filter (where f.rank_time_ms > r.rank_time_ms) as slower,
-      round(((count(*) filter (where f.rank_time_ms > r.rank_time_ms))::numeric / greatest(1, count(*)) * 100.0), 1) as percentile,
+      ((count(*) filter (where f.rank_time_ms > r.rank_time_ms))::numeric / greatest(1, count(*)) * 100.0) as percentile,
       percentile_cont(0.50) within group (order by f.rank_time_ms) as median_ms,
       max(f.rank_time_ms) filter (where f.raw_percentile >= 99.0) as p99_ms,
       max(f.rank_time_ms) filter (where f.raw_percentile >= 95.0) as p95_ms,
@@ -239,11 +241,11 @@ returns jsonb language sql stable security definer set search_path = '' as $$
       (select count(*) filter (where f.rank_time_ms < p.rank_time_ms) + 1 from public.performances f
        where f.event_edition_id = p.event_edition_id and f.distance_slug = p.distance_slug and f.sex = p.sex
          and f.eligible and not f.unpublished) as field_place,
-      round(((select count(*) filter (where f.rank_time_ms > p.rank_time_ms) from public.performances f
+      ((select count(*) filter (where f.rank_time_ms > p.rank_time_ms) from public.performances f
        where f.event_edition_id = p.event_edition_id and f.distance_slug = p.distance_slug and f.sex = p.sex
          and f.eligible and not f.unpublished)::numeric / greatest(1, (select count(*) from public.performances f
        where f.event_edition_id = p.event_edition_id and f.distance_slug = p.distance_slug and f.sex = p.sex
-         and f.eligible and not f.unpublished)) * 100.0), 1) as percentile
+         and f.eligible and not f.unpublished)) * 100.0) as percentile
     from public.rankings_athlete_results l
     join public.performances p on p.id = l.performance_id and p.updated_at = l.performance_updated_at
     join public.source_records sr on sr.id = p.source_record_id
