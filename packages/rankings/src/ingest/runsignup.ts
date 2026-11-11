@@ -48,10 +48,16 @@ export function parseRunSignupResults(
     inputCount += (set.results ?? []).length;
     if (set.public_results !== "T") {
       skippedPrivate += (set.results ?? []).length;
+      for (const row of set.results ?? []) {
+        rowKeys.push(String(row.result_id ?? `private_${rowKeys.length}`));
+      }
       continue;
     }
     if (set.preliminary_results !== "F") {
       skippedPreliminary += (set.results ?? []).length;
+      for (const row of set.results ?? []) {
+        rowKeys.push(String(row.result_id ?? `preliminary_${rowKeys.length}`));
+      }
       continue;
     }
     if (!Array.isArray(set.results)) throw new Error("Missing RunSignup results array.");

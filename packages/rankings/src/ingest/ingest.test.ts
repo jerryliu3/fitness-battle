@@ -60,12 +60,30 @@ describe("public results parsers", () => {
     expect(page.inputCount).toBe(0);
     expect(page.isExhausted).toBe(true);
     expect(page.results).toEqual([]);
+
+    const emptyListHtml = `<div class="list-field"><ul class="list-group list-group-striped"></ul></div>`;
+    const emptyListPage = parseMikaTimingList(emptyListHtml, {
+      sex: "M",
+      distance: "marathon",
+      sourceUrl: "https://results.example/2025/",
+    });
+    expect(emptyListPage.inputCount).toBe(0);
+    expect(emptyListPage.isExhausted).toBe(true);
   });
 
-  it("rejects an unrecognized HTML response as an unverified empty page", () => {
+  it("rejects an unrecognized HTML response or changed markup without explicit empty state", () => {
     const challengeHtml = `<!DOCTYPE html><html><head><title>Just a moment...</title></head><body>Verify you are human</body></html>`;
     expect(() =>
       parseMikaTimingList(challengeHtml, {
+        sex: "M",
+        distance: "marathon",
+        sourceUrl: "https://results.example/2025/",
+      }),
+    ).toThrow("Unrecognized MikaTiming response");
+
+    const changedMarkupHtml = `<div class="list-container"><div class="changed-table"><span>Row 1</span></div></div>`;
+    expect(() =>
+      parseMikaTimingList(changedMarkupHtml, {
         sex: "M",
         distance: "marathon",
         sourceUrl: "https://results.example/2025/",
@@ -122,6 +140,7 @@ describe("public results parsers", () => {
     expect(page.skippedYouth).toBe(1);
     expect(page.skippedPrivate).toBe(1);
     expect(page.inputCount).toBe(3);
+    expect(page.rowKeys).toHaveLength(3);
     expect(page.results).toHaveLength(1);
     expect(page.results[0]?.chipTimeMs).toBe(1_292_110);
   });

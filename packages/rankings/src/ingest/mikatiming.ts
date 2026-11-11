@@ -9,6 +9,8 @@ export type MikaPage = ResultsPage;
 const ROW_SPLIT = /<li class="[^"]*list-group-item row/;
 const MIKA_CONTAINER = /(?:class="[^"]*(?:list-group|list-container|list-field)|id="list-results")/i;
 const MIKA_EMPTY_STATE = /(?:alert-(?:info|warning|danger)|no results|keine ergebnisse|no participants found|no athletes found|0 results|keine daten)/i;
+const MIKA_EMPTY_LIST = /<(?:ul|ol)[^>]*class="[^"]*list-group[^"]*"[^>]*>\s*<\/(?:ul|ol)>/i;
+const MIKA_CHALLENGE = /(?:cf-browser-verification|cf-turnstile|cf-challenge|captcha|challenge-running|just a moment)/i;
 
 function labeledFields(row: string): Map<string, string> {
   const fields = new Map<string, string>();
@@ -74,8 +76,10 @@ export function parseMikaTimingList(
     results.push(built.finish);
   }
   if (rowKeys.length === 0) {
-    const isRecognizedEmpty = MIKA_EMPTY_STATE.test(html) || (MIKA_CONTAINER.test(html) && !html.includes("cf-browser-verification"));
-    if (!isRecognizedEmpty) {
+    const hasStructure = MIKA_CONTAINER.test(html);
+    const hasExplicitEmpty = MIKA_EMPTY_STATE.test(html) || MIKA_EMPTY_LIST.test(html);
+    const isChallenge = MIKA_CHALLENGE.test(html);
+    if (!hasStructure || !hasExplicitEmpty || isChallenge) {
       throw new Error("Unrecognized MikaTiming response; missing results list structure or explicit empty state.");
     }
     return { results: [], inputCount: 0, rowKeys: [], skippedYouth: 0, skippedUnparsed: 0, isExhausted: true };
