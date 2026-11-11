@@ -1,9 +1,9 @@
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
-import { FocusSegments, FocusSheet } from "../ui/focus";
+import { FocusSegments } from "../ui/focus";
+import { ActivityDetailSheet } from "./activity-detail-sheet";
 import { AppText, StatusBadge } from "../ui/section";
 import { OpenLineChart } from "../ui/open-line-chart";
 import { BenchmarkChart } from "../ui/benchmark-chart";
-import { ActivityRoute } from "../ui/activity-route";
 import { ChartSvg, ChartText } from "../ui/chart-text";
 import { ChartScrubber } from "../ui/chart-scrubber";
 import { useScoreTrackLens } from "../lib/score-track-lens";
@@ -14,15 +14,11 @@ import { G, Line, Path, Circle } from "react-native-svg";
 import {
   APP_TIMEZONE,
   RECORD_DISTANCES,
-  activityEffort,
   competeNow,
   defaultTrainingSports,
-  distanceUnitLabel,
   effortScoreComparison,
   effortScoreLine,
   formatClockTime,
-  formatDistanceM,
-  formatEffort,
   personalRecordChart,
   personalRecordHistory,
   sportById,
@@ -53,10 +49,8 @@ const VOLUME_RANGES: readonly { value: TrainingRange; label: string }[] = [
 
 export function PerformanceSpace({
   state,
-  signedOut: _signedOut = false,
 }: {
   state: CompeteState;
-  signedOut?: boolean;
 }) {
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
@@ -319,7 +313,7 @@ export function PerformanceSpace({
             contentContainerStyle={{ gap: 8, paddingBottom: 12 }}
           >
             {availableDistances.map((d) => {
-              const active = d.key === selectedPRKey;
+              const active = d.key === activeDistance.key;
               return (
                 <Pressable
                   key={d.key}
@@ -553,41 +547,11 @@ export function PerformanceSpace({
       </View>
       ) : null}
 
-      {/* Inspect Activity Modal from PR attempt */}
-      {inspectedActivity && (
-        <FocusSheet
-          open={!!inspectedActivity}
-          title={sportById(inspectedActivity.sport).name}
-          onClose={() => setInspectedActivity(null)}
-        >
-          <View style={{ gap: 16, paddingVertical: 12 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-              <View style={{ gap: 2 }}>
-                <AppText role="caption" secondary>Duration</AppText>
-                <AppText role="value" style={{ fontVariant: ["tabular-nums"] }}>
-                  {formatClockTime(inspectedActivity.movingSec)}
-                </AppText>
-              </View>
-              {inspectedActivity.distanceM > 0 && (
-                <View style={{ gap: 2 }}>
-                  <AppText role="caption" secondary>Distance</AppText>
-                  <AppText role="value" style={{ fontVariant: ["tabular-nums"] }}>
-                    {formatDistanceM(inspectedActivity.distanceM, state.units)} {distanceUnitLabel(state.units)}
-                  </AppText>
-                </View>
-              )}
-              <View style={{ gap: 2 }}>
-                <AppText role="caption" secondary>Effort Earned</AppText>
-                <AppText role="value" style={{ color: c.tennis, fontVariant: ["tabular-nums"] }}>
-                  {formatEffort(activityEffort(inspectedActivity))} pts
-                </AppText>
-              </View>
-            </View>
-
-            <ActivityRoute activity={inspectedActivity} units={state.units} />
-          </View>
-        </FocusSheet>
-      )}
+      <ActivityDetailSheet
+        activity={inspectedActivity}
+        units={state.units}
+        onClose={() => setInspectedActivity(null)}
+      />
     </View>
   );
 }
@@ -618,12 +582,6 @@ const sThemes = createThemedStyles((themeColors) => {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
-    },
-    chartControlsRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 8,
     },
     valueRow: {
       flexDirection: "row",
@@ -661,9 +619,6 @@ const sThemes = createThemedStyles((themeColors) => {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-    },
-    textLink: {
-      paddingVertical: 4,
     },
     chip: {
       paddingHorizontal: 14,

@@ -354,11 +354,10 @@ describe("Revamped Progress Screen & Spaces", () => {
     expect(json).toContain("Overnight HRV");
     expect(json).toContain("Sleep");
     expect(json).toContain("Resting HR");
-    expect(json).toContain("Advanced Analytics");
-    expect(json).toContain("Workload Ratio");
-    expect(json).toContain("Aerobic Efficiency");
-    expect(json).toContain("No data");
     expect(json).toContain("No recorded observations");
+    expect(json).not.toContain("Advanced Analytics");
+    expect(json).not.toContain("Workload Ratio");
+    expect(json).not.toContain("Aerobic Efficiency");
     expect(json).not.toContain("Athletic Low");
     expect(json).not.toContain("% Readiness");
   });

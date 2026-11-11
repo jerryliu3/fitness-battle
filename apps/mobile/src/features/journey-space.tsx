@@ -1,14 +1,13 @@
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
-import { FocusSheet, FocusSegments } from "../ui/focus";
+import { FocusSegments } from "../ui/focus";
+import { ActivityDetailSheet } from "./activity-detail-sheet";
 import { AppText } from "../ui/section";
 import { SportActivityIcon } from "../ui/sport-activity-icon";
-import { ActivityRoute } from "../ui/activity-route";
 import { ResultCard } from "./result-card";
 import { CompetitionReplayButton } from "./competition-replay";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import {
   APP_TIMEZONE,
   activityEffort,
@@ -519,37 +518,6 @@ export function JourneySpace({
             </Pressable>
           </View>
 
-          {yearBuckets.some((bucket) => bucket.movingSec > 0) ? (
-          <View style={s.atlasChartWrapper}>
-            <Svg width="100%" height={90} viewBox="0 0 320 90" preserveAspectRatio="none">
-              <Defs>
-                <LinearGradient id="yearGradient" x1="0" y1="0" x2="0" y2="1">
-                  <Stop offset="0%" stopColor={c.tennis} stopOpacity="0.45" />
-                  <Stop offset="100%" stopColor={c.tennis} stopOpacity="0.0" />
-                </LinearGradient>
-              </Defs>
-              <Path
-                d={`M 0 90 ${yearBuckets.map((bucket, i) => {
-                  const x = (i / Math.max(1, yearBuckets.length - 1)) * 320;
-                  const y = 82 - (bucket.movingSec / maxMonthSec) * 64;
-                  return `L ${x.toFixed(1)} ${y.toFixed(1)}`;
-                }).join(" ")} L 320 90 Z`}
-                fill="url(#yearGradient)"
-              />
-              <Path
-                d={yearBuckets.map((bucket, i) => {
-                  const x = (i / Math.max(1, yearBuckets.length - 1)) * 320;
-                  const y = 82 - (bucket.movingSec / maxMonthSec) * 64;
-                  return `${i ? "L" : "M"} ${x.toFixed(1)} ${y.toFixed(1)}`;
-                }).join(" ")}
-                fill="none"
-                stroke={c.tennis}
-                strokeWidth={2.5}
-              />
-            </Svg>
-          </View>
-          ) : null}
-
           {/* 12-Month Progression Bar Grid */}
           <View style={s.yearBarsRow}>
             {yearBuckets.map((bucket, i) => {
@@ -790,42 +758,11 @@ export function JourneySpace({
         )}
       </View>
 
-      {/* Inspect Activity Modal */}
-      {inspectedActivity && (
-        <FocusSheet
-          open={!!inspectedActivity}
-          title={sportById(inspectedActivity.sport).name}
-          onClose={() => setInspectedActivity(null)}
-        >
-          <View style={{ gap: 16, paddingVertical: 12 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-              <View style={{ gap: 2 }}>
-                <AppText role="caption" secondary>Duration</AppText>
-                <AppText role="value" style={{ fontVariant: ["tabular-nums"] }}>
-                  {formatClockTime(inspectedActivity.movingSec)}
-                </AppText>
-              </View>
-              {inspectedActivity.distanceM > 0 && (
-                <View style={{ gap: 2 }}>
-                  <AppText role="caption" secondary>Distance</AppText>
-                  <AppText role="value" style={{ fontVariant: ["tabular-nums"] }}>
-                    {formatDistanceM(inspectedActivity.distanceM, state.units)} {distanceUnitLabel(state.units)}
-                  </AppText>
-                </View>
-              )}
-              <View style={{ gap: 2 }}>
-                <AppText role="caption" secondary>Effort Earned</AppText>
-                <AppText role="value" style={{ color: c.tennis, fontVariant: ["tabular-nums"] }}>
-                  {formatEffort(activityEffort(inspectedActivity))} pts
-                </AppText>
-              </View>
-            </View>
-
-            {/* Activity Route & Timelapse */}
-            <ActivityRoute activity={inspectedActivity} units={state.units} />
-          </View>
-        </FocusSheet>
-      )}
+      <ActivityDetailSheet
+        activity={inspectedActivity}
+        units={state.units}
+        onClose={() => setInspectedActivity(null)}
+      />
     </View>
   );
 }
@@ -935,13 +872,6 @@ const sThemes = createThemedStyles((themeColors) => {
     yearBar: {
       width: 8,
       borderRadius: 4,
-    },
-    atlasChartWrapper: {
-      marginVertical: 4,
-      borderRadius: 14,
-      overflow: "hidden",
-      backgroundColor: c.card,
-      padding: 6,
     },
     atlasStatsRow: {
       flexDirection: "row",

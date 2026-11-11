@@ -2,15 +2,12 @@ import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { FocusSegments } from "../ui/focus";
 import { AppText } from "../ui/section";
 import { StandardLineChart } from "../ui/standard-line-chart";
-import { ChartSvg } from "../ui/chart-text";
 import { useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
-import { Circle, Path } from "react-native-svg";
 import {
   competeNow,
   formatHealthNumber,
   formatSleepDuration,
-  healthSparkline,
   recordedHealthSeries,
   type AnalyticsTimeLens,
   type CompeteState,
@@ -23,29 +20,6 @@ const TIME_LENSES: readonly { value: AnalyticsTimeLens; label: string; days: num
   { value: "30d", label: "30D", days: 30 },
   { value: "90d", label: "90D", days: 90 },
 ];
-
-function MiniSparkline({ history, stroke }: { history: (number | null)[]; stroke: string }) {
-  const spark = healthSparkline(history);
-  if (!spark.dots.length) return null;
-  return (
-    <ChartSvg width="100%" height={36} viewBox="0 0 80 32">
-      {spark.segments.map((segment) => (
-        <Path
-          key={segment}
-          d={`M ${segment}`}
-          fill="none"
-          stroke={stroke}
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ))}
-      {spark.dots.map((p, i) => (
-        <Circle key={i} cx={p.x} cy={p.y} r={1.5} fill={stroke} />
-      ))}
-    </ChartSvg>
-  );
-}
 
 export function HealthLabSpace({
   state,
@@ -169,29 +143,6 @@ export function HealthLabSpace({
         </View>
       </View>
 
-      <View style={{ gap: 12 }}>
-        <AppText role="heading">Advanced Analytics</AppText>
-        <View style={s.bentoGrid}>
-          {([
-            { id: "hrv", kicker: "Overnight HRV", reading: latest("hrv"), history: series.hrv.map((row) => row.value) },
-            { id: "sleep", kicker: "Sleep", reading: latest("sleep"), history: series.sleep.map((row) => row.value) },
-            { id: "load", kicker: "Workload Ratio", reading: null, history: [] as (number | null)[] },
-            { id: "performance", kicker: "Aerobic Efficiency", reading: null, history: [] as (number | null)[] },
-          ]).map((tile) => (
-            <View key={tile.id} style={s.bentoTile} accessibilityLabel={`${tile.kicker}, ${tile.reading ? tile.reading.value : "no data"}`}>
-              <AppText role="caption" secondary numberOfLines={1}>{tile.kicker}</AppText>
-              <AppText role="value" style={{ fontVariant: ["tabular-nums"] }}>
-                {tile.reading?.value ?? "—"}
-              </AppText>
-              <MiniSparkline history={tile.history} stroke={c.tennis} />
-              <AppText role="caption" secondary numberOfLines={1}>
-                {tile.reading ? tile.reading.label : "No data"}
-              </AppText>
-            </View>
-          ))}
-        </View>
-      </View>
-
       <View style={s.insightCard}>
         <View style={s.insightIcon}>
           <AppText role="value" style={{ color: c.tennis }}>✦</AppText>
@@ -255,20 +206,6 @@ const sThemes = createThemedStyles((themeColors) => {
       alignItems: "center",
       justifyContent: "center",
       marginTop: 2,
-    },
-    bentoGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 10,
-    },
-    bentoTile: {
-      width: "48.2%",
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: c.line,
-      backgroundColor: c.soft,
-      padding: 12,
-      gap: 6,
     },
   };
 });

@@ -10,8 +10,5 @@ export function OpenLineRangeToggle({ value, onChange, includeYear = true, calen
 }
 
 export function ChartRangeToggle({ value, onChange }: { value: TrainingRange; onChange: (range: TrainingRange) => void }) {
- return <OpenLineRangeToggle calendar value={value === "month" ? "fourWeeks" : value} onChange={next => {
-   if (next === "fourWeeks") onChange("month");
-   else if (next === "week" || next === "year") onChange(next);
- }} />;
+ return <OpenLineRangeToggle calendar value={value === "month" ? "fourWeeks" : value} onChange={next => onChange(next === "fourWeeks" ? "month" : next)} />;
 }

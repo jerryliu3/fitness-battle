@@ -1,11 +1,11 @@
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../src/theme";
-import { useFocusStyles, FocusSegments, FocusSheet } from "../src/ui/focus";
-import { AppText, SectionStack, StatusBadge } from "../src/ui/section";
+import { useFocusStyles, FocusSegments } from "../src/ui/focus";
+import { AppText, SectionStack } from "../src/ui/section";
+import { ActivityDetailSheet } from "../src/features/activity-detail-sheet";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { WeeklyChapters } from "../src/features/weekly-chapters";
 import { AwardShelf } from "../src/ui/award-shelf";
 import { SportActivityIcon } from "../src/ui/sport-activity-icon";
-import { ActivityRoute } from "../src/ui/activity-route";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { awardCards } from "@fitness-battle/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -248,41 +248,11 @@ export default function ProgressHistoryScreen() {
         )}
       </ScrollView>
 
-      {/* Inspect Activity Modal */}
-      {inspectedActivity && (
-        <FocusSheet
-          open={!!inspectedActivity}
-          title={sportById(inspectedActivity.sport).name}
-          onClose={() => setInspectedActivity(null)}
-        >
-          <View style={{ gap: 16, paddingVertical: 12 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-              <View style={{ gap: 2 }}>
-                <AppText role="caption" secondary>Duration</AppText>
-                <AppText role="value" style={{ fontVariant: ["tabular-nums"] }}>
-                  {formatClockTime(inspectedActivity.movingSec)}
-                </AppText>
-              </View>
-              {inspectedActivity.distanceM > 0 && (
-                <View style={{ gap: 2 }}>
-                  <AppText role="caption" secondary>Distance</AppText>
-                  <AppText role="value" style={{ fontVariant: ["tabular-nums"] }}>
-                    {formatDistanceM(inspectedActivity.distanceM, state.units)} {distanceUnitLabel(state.units)}
-                  </AppText>
-                </View>
-              )}
-              <View style={{ gap: 2 }}>
-                <AppText role="caption" secondary>Effort Earned</AppText>
-                <AppText role="value" style={{ color: c.tennis, fontVariant: ["tabular-nums"] }}>
-                  {formatEffort(activityEffort(inspectedActivity))} pts
-                </AppText>
-              </View>
-            </View>
-
-            <ActivityRoute activity={inspectedActivity} units={state.units} />
-          </View>
-        </FocusSheet>
-      )}
+      <ActivityDetailSheet
+        activity={inspectedActivity}
+        units={state.units}
+        onClose={() => setInspectedActivity(null)}
+      />
     </SafeAreaView>
   );
 }

@@ -78,10 +78,7 @@ export function ProgressScreen({
           {/* Animated Transition between Spaces */}
           <MotionStep identity={space}>
             {space === "performance" ? (
-              <PerformanceSpace
-                state={state}
-                signedOut={accountKey === "device"}
-              />
+              <PerformanceSpace state={state} />
             ) : space === "journey" ? (
               <JourneySpace
                 state={state}
