@@ -121,7 +121,4 @@ export function EventRegistration({ state, event, registered, error, onClaim, on
     {step < 2 && <FocusButton label="Continue" onPress={nextStep} />}
     {error && <AppText role="caption" accessibilityLiveRegion="polite">{error}</AppText>}
   </View>;
-    {step < 2 && <FocusButton label="Continue" onPress={nextStep} />}
-    {error && <AppText role="caption" accessibilityLiveRegion="polite">{error}</AppText>}
-  </View>;
 }
