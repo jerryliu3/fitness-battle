@@ -329,6 +329,22 @@ describe("Revamped Progress Screen & Spaces", () => {
     expect(json).toContain("+24 effort score");
   });
 
+  it("labels the selected Journey day in Eastern without shifting through UTC", async () => {
+    await act(async () => {
+      renderer = create(createElement(JourneySpace, { state: mock.state! }));
+    });
+    const tuesday = renderer.root.findAllByType("Pressable").find((node) =>
+      String(node.props.accessibilityLabel ?? "").startsWith("Tue 10"),
+    );
+    expect(tuesday).toBeTruthy();
+    await act(async () => {
+      tuesday!.props.onPress();
+    });
+    const json = JSON.stringify(renderer.toJSON());
+    expect(json).toContain("Activities on Tue, Nov 10");
+    expect(json).not.toContain("Activities on Mon, Nov 9");
+  });
+
   it("HealthLabSpace shows recorded measurements and an unavailable state without generated readings", async () => {
     await act(async () => {
       renderer = create(createElement(HealthLabSpace, { state: mock.state! }));

@@ -5,12 +5,12 @@ import { StandardLineChart } from "../ui/standard-line-chart";
 import { ChartSvg } from "../ui/chart-text";
 import { useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
-import { Circle, Path, G } from "react-native-svg";
+import { Circle, Path } from "react-native-svg";
 import {
-  buildSvgLineGeometry,
   competeNow,
   formatHealthNumber,
   formatSleepDuration,
+  healthSparkline,
   recordedHealthSeries,
   type AnalyticsTimeLens,
   type CompeteState,
@@ -24,25 +24,25 @@ const TIME_LENSES: readonly { value: AnalyticsTimeLens; label: string; days: num
   { value: "90d", label: "90D", days: 90 },
 ];
 
-function MiniSparkline({ values, stroke }: { values: number[]; stroke: string }) {
-  if (values.length < 2) return null;
-  const low = Math.min(...values), high = Math.max(...values);
-  const geometry = buildSvgLineGeometry(values, 78, 28, 2, { min: low, max: high });
+function MiniSparkline({ history, stroke }: { history: (number | null)[]; stroke: string }) {
+  const spark = healthSparkline(history);
+  if (!spark.dots.length) return null;
   return (
-    <ChartSvg width="100%" height={36} viewBox="0 0 82 32">
-      <G transform="translate(2 2)">
+    <ChartSvg width="100%" height={36} viewBox="0 0 80 32">
+      {spark.segments.map((segment) => (
         <Path
-          d={`M ${geometry.polyline}`}
+          key={segment}
+          d={`M ${segment}`}
           fill="none"
           stroke={stroke}
           strokeWidth={2}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {geometry.points.map((p, i) => (
-          <Circle key={i} cx={p.x} cy={p.y} r={1.5} fill={stroke} />
-        ))}
-      </G>
+      ))}
+      {spark.dots.map((p, i) => (
+        <Circle key={i} cx={p.x} cy={p.y} r={1.5} fill={stroke} />
+      ))}
     </ChartSvg>
   );
 }
@@ -76,13 +76,15 @@ export function HealthLabSpace({
   }, [state, signedOut, days, now]);
 
   const activeRows = selectedMetric === "hrv" ? series.hrv : selectedMetric === "rhr" ? series.rhr : series.sleep;
-  const inspected = selectedIdx != null ? activeRows[selectedIdx] : activeRows.at(-1);
+  const lastRecorded = [...activeRows].reverse().find((row) => row.value != null);
+  const selected = selectedIdx != null ? activeRows[selectedIdx] : undefined;
+  const inspected = selected?.value != null ? selected : lastRecorded;
   const formatReading = (metric: HealthMetricKey, value: number) =>
     metric === "sleep" ? formatSleepDuration(value) : metric === "hrv" ? `${formatHealthNumber(value)} ms` : `${formatHealthNumber(value)} bpm`;
   const latest = (metric: HealthMetricKey) => {
     const rows = metric === "hrv" ? series.hrv : metric === "rhr" ? series.rhr : series.sleep;
-    const last = rows.at(-1);
-    return last ? { value: formatReading(metric, last.value), label: last.label } : null;
+    const last = [...rows].reverse().find((row) => row.value != null);
+    return last?.value != null ? { value: formatReading(metric, last.value), label: last.label } : null;
   };
 
   const titles: Record<HealthMetricKey, string> = {
@@ -131,7 +133,7 @@ export function HealthLabSpace({
           <AppText role="caption" secondary>{titles[selectedMetric]}</AppText>
           <View style={s.valueRow}>
             <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
-              {inspected ? formatReading(selectedMetric, inspected.value) : "—"}
+              {inspected?.value != null ? formatReading(selectedMetric, inspected.value) : "—"}
             </AppText>
           </View>
           <AppText role="caption" secondary>
@@ -145,11 +147,12 @@ export function HealthLabSpace({
           onChange={(next) => { setTimeLens(next); setSelectedIdx(undefined); }}
         />
         <View style={s.chartBody}>
-          {activeRows.length ? (
+          {lastRecorded ? (
             <StandardLineChart
               height={180}
               showAxes={true}
               showSummary={false}
+              xAxisLabel="Date"
               values={activeRows.map((row) => row.value)}
               pointLabels={activeRows.map((row) => row.label)}
               selectedIdx={selectedIdx}
@@ -170,17 +173,17 @@ export function HealthLabSpace({
         <AppText role="heading">Advanced Analytics</AppText>
         <View style={s.bentoGrid}>
           {([
-            { id: "hrv", kicker: "Overnight HRV", reading: latest("hrv"), points: series.hrv.map((row) => row.value) },
-            { id: "sleep", kicker: "Sleep", reading: latest("sleep"), points: series.sleep.map((row) => row.value) },
-            { id: "load", kicker: "Workload Ratio", reading: null, points: [] as number[] },
-            { id: "performance", kicker: "Aerobic Efficiency", reading: null, points: [] as number[] },
+            { id: "hrv", kicker: "Overnight HRV", reading: latest("hrv"), history: series.hrv.map((row) => row.value) },
+            { id: "sleep", kicker: "Sleep", reading: latest("sleep"), history: series.sleep.map((row) => row.value) },
+            { id: "load", kicker: "Workload Ratio", reading: null, history: [] as (number | null)[] },
+            { id: "performance", kicker: "Aerobic Efficiency", reading: null, history: [] as (number | null)[] },
           ]).map((tile) => (
             <View key={tile.id} style={s.bentoTile} accessibilityLabel={`${tile.kicker}, ${tile.reading ? tile.reading.value : "no data"}`}>
               <AppText role="caption" secondary numberOfLines={1}>{tile.kicker}</AppText>
               <AppText role="value" style={{ fontVariant: ["tabular-nums"] }}>
                 {tile.reading?.value ?? "—"}
               </AppText>
-              <MiniSparkline values={[...tile.points]} stroke={c.tennis} />
+              <MiniSparkline history={tile.history} stroke={c.tennis} />
               <AppText role="caption" secondary numberOfLines={1}>
                 {tile.reading ? tile.reading.label : "No data"}
               </AppText>

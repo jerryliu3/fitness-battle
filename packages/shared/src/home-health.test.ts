@@ -50,10 +50,22 @@ describe("Home daily health", () => {
     expect(recordedHealthSeries(state, "sleep", 30, now)).toEqual([]);
     state.sleepNights = [night(), night({ id: "sleep-oura-2026-10-20", day: "2026-10-20" })];
     state.dailyHealth = [{ provider: "oura", day: "2026-10-24", hrv: 64, restingHr: 52 }];
-    expect(recordedHealthSeries(state, "sleep", 30, now).map(row => row.value)).toEqual([462]);
-    expect(recordedHealthSeries(state, "hrv", 30, now)).toEqual([
+    expect(recordedHealthSeries(state, "sleep", 30, now).map(row => row.value).filter(value => value != null)).toEqual([462]);
+    expect(recordedHealthSeries(state, "hrv", 30, now).find(row => row.value != null)).toEqual(
       { day: "2026-10-24", label: "Oct 24", value: 64 },
+    );
+  });
+  it("keeps recorded health on the Eastern calendar and leaves missing days as gaps", () => {
+    const state = freshState(now);
+    state.dailyHealth = [
+      { provider: "oura", day: "2026-10-20", hrv: 58, restingHr: 51 },
+      { provider: "oura", day: "2026-10-24", hrv: 64, restingHr: 52 },
+    ];
+    const series = recordedHealthSeries(state, "hrv", 7, now);
+    expect(series.map(row => row.day)).toEqual([
+      "2026-10-18", "2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24",
     ]);
+    expect(series.map(row => row.value)).toEqual([null, null, 58, null, null, null, 64]);
   });
 });
 
