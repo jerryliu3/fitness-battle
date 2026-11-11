@@ -6,13 +6,48 @@ import { useReducedMotion } from "./use-reduced-motion";
 export function MotionStep({ identity, children }: { identity: string; children: ReactNode }) {
   const reduced = useReducedMotion();
   const progress = useRef(new Animated.Value(1)).current;
+  const prevIdentity = useRef(identity);
+
   useEffect(() => {
-    progress.setValue(reduced ? 1 : 0);
-    const animation = Animated.timing(progress, { toValue: 1, duration: reduced ? 0 : 260,
-      easing: Easing.out(Easing.cubic), useNativeDriver: true });
+    if (prevIdentity.current === identity) {
+      progress.setValue(1);
+      return;
+    }
+    prevIdentity.current = identity;
+    if (reduced) {
+      progress.setValue(1);
+      return;
+    }
+    progress.setValue(0);
+    const animation = Animated.timing(progress, {
+      toValue: 1,
+      duration: 240,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    });
     animation.start();
-    return () => animation.stop();
+    return () => {
+      animation.stop();
+      progress.setValue(1);
+    };
   }, [identity, reduced, progress]);
-  return <Animated.View style={{ gap: 18, opacity: progress,
-    transform: [{ translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }] }}>{children}</Animated.View>;
+
+  return (
+    <Animated.View
+      style={{
+        gap: 18,
+        opacity: progress,
+        transform: [
+          {
+            translateX: progress.interpolate({
+              inputRange: [0, 1],
+              outputRange: [24, 0],
+            }),
+          },
+        ],
+      }}
+    >
+      {children}
+    </Animated.View>
+  );
 }
