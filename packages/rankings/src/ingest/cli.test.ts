@@ -67,7 +67,7 @@ describe("ingestion CLI", () => {
     const { directory, args, env } = await setup();
     const freezeArgs = [...args, "--allow-correction", "--freeze", "--expected-revision", "1"];
     await run(process.execPath, freezeArgs, { env });
-    const sql = await readFile(join(directory, "runsignup-1-2.import.sql"), "utf8");
+    const sql = await readFile(join(directory, "runsignup-1-2-10.import.sql"), "utf8");
     expect(sql).toContain("publication_state = 'frozen'");
     expect(sql).toContain("Expected edition revision % but found %; correction held', 1");
     expect(sql).toContain("revision = case when true then revision + 1 else revision end");
