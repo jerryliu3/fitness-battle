@@ -89,6 +89,24 @@ describe("public results parsers", () => {
         sourceUrl: "https://results.example/2025/",
       }),
     ).toThrow("Unrecognized MikaTiming response");
+
+    const errorBannerHtml = `<div class="list-container"><div class="alert alert-danger">Internal Server Error</div></div>`;
+    expect(() =>
+      parseMikaTimingList(errorBannerHtml, {
+        sex: "M",
+        distance: "marathon",
+        sourceUrl: "https://results.example/2025/",
+      }),
+    ).toThrow("MikaTiming upstream error banner encountered");
+
+    const warningBannerHtml = `<div class="list-container"><div class="alert alert-warning">Database temporarily unavailable</div></div>`;
+    expect(() =>
+      parseMikaTimingList(warningBannerHtml, {
+        sex: "M",
+        distance: "marathon",
+        sourceUrl: "https://results.example/2025/",
+      }),
+    ).toThrow("MikaTiming upstream error banner encountered");
   });
 
   it("reads a forwarded CSV, including quoted commas", () => {
