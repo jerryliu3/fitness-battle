@@ -20,7 +20,6 @@ export function CompeteSheet({ children, expandRequest, active, overview, scroll
   const minimum = Math.min(maximum, headingHeight + insets.bottom);
   const middle = Math.max(minimum, maximum * .42);
   const stops = [minimum, middle, maximum];
-  const [visibleHeight, setVisibleHeight] = useState(minimum);
   const [index, setIndex] = useState(0);
   const indexRef = useRef(0);
   const offset = useRef(new Animated.Value(maximum - stops[0])).current;
@@ -29,19 +28,21 @@ export function CompeteSheet({ children, expandRequest, active, overview, scroll
   const snap = (next: number) => {
     indexRef.current = next;
     setIndex(next);
-    setVisibleHeight(stops[next]);
     Animated.timing(offset, { toValue: maximum - stops[next], duration: reduced ? 0 : 280, useNativeDriver: true }).start();
   };
   const snapRef = useRef(snap);
   snapRef.current = snap;
-  useEffect(() => { setVisibleHeight([minimum, middle, maximum][indexRef.current]); offset.setValue(maximum - [minimum, middle, maximum][indexRef.current]); }, [maximum, offset, minimum, middle]);
+  useEffect(() => { offset.setValue(maximum - [minimum, middle, maximum][indexRef.current]); }, [maximum, offset, minimum, middle]);
   useEffect(() => { if (active) snapRef.current(0); }, [active]);
   useEffect(() => { if (expandRequest) snapRef.current(2); }, [expandRequest]);
   useEffect(() => () => offset.stopAnimation(), [offset]);
   const pan = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onPanResponderGrant: () => offset.stopAnimation(value => { origin.current = value; }),
-    onPanResponderMove: (_, gesture) => { const value = Math.max(0, Math.min(maximum - minimum, origin.current + gesture.dy)); offset.setValue(value); setVisibleHeight(maximum - value); },
+    onPanResponderMove: (_, gesture) => {
+      const value = Math.max(0, Math.min(maximum - minimum, origin.current + gesture.dy));
+      offset.setValue(value);
+    },
     onPanResponderRelease: (_, gesture) => {
       if (Math.abs(gesture.dy) < 5) { snapRef.current(indexRef.current === 2 ? 1 : 2); return; }
       const visible = maximum - origin.current - gesture.dy - gesture.vy * 100;
@@ -54,6 +55,6 @@ export function CompeteSheet({ children, expandRequest, active, overview, scroll
 
     <View {...pan.panHandlers} accessible accessibilityRole="adjustable" accessibilityLabel="Competition sheet height" accessibilityValue={{ text: ["Minimized", "Partially expanded", "Fully expanded"][index] }} accessibilityActions={[{ name: "increment", label: "Expand" }, { name: "decrement", label: "Minimize" }]} onAccessibilityAction={event => snap(Math.max(0, Math.min(2, index + (event.nativeEvent.actionName === "increment" ? 1 : -1))))} style={{ height: 44, alignItems: "center", justifyContent: "center" }}><View style={{ width: 40, height: 4, borderRadius: 4, backgroundColor: c.muted }} /></View>
     {overview && <View onLayout={event => setControlsHeight(Math.ceil(event.nativeEvent.layout.height))} style={{ paddingHorizontal: 16, paddingBottom: 8 }}>{overview}</View>}
-    <ScrollView removeClippedSubviews={false} style={{ marginTop: insets.bottom, height: Math.max(0, maximum - headingHeight - insets.bottom), flexGrow: 0, overflow: flipping ? "visible" : "hidden", zIndex: flipping ? 1 : 0 }} nestedScrollEnabled scrollEnabled={scrollable && index !== 0 && !flipping} accessibilityElementsHidden={index === 0} contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: Math.max(0, maximum - visibleHeight) + insets.bottom + 32 }}><FlipLayer.Provider value={setFlipping}>{children}</FlipLayer.Provider></ScrollView>
+    <ScrollView removeClippedSubviews={false} style={{ height: Math.max(0, maximum - headingHeight), flexGrow: 0, overflow: flipping ? "visible" : "hidden", zIndex: flipping ? 1 : 0 }} nestedScrollEnabled scrollEnabled={scrollable && index !== 0 && !flipping} accessibilityElementsHidden={index === 0} contentContainerStyle={{ padding: 20, paddingTop: 4, paddingBottom: insets.bottom + 48 }}><FlipLayer.Provider value={setFlipping}>{children}</FlipLayer.Provider></ScrollView>
   </Animated.View>;
 }

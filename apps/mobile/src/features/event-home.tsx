@@ -46,10 +46,19 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
 
   const { rows, loading, error } = useEventActivity(state, sport, active && !queued);
   const update = formatActivityAge(rows[0]?.at, competeNow(state));
+  const updateText = queued ? "Upcoming wave" : update !== "—" ? `Last update: ${update}` : !loading && !error ? "No updates yet" : null;
   return <View style={{ width: cardWidth, padding: 12, gap: 12, borderRadius: 20, backgroundColor: c.card, borderWidth: 1, borderColor: c.line }}>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
       <View style={{ padding: 9, borderRadius: 12, backgroundColor: c.actionSoft }}><CompeteIcon name={sport} /></View>
-      <View style={{ flex: 1 }}><AppText role="label">{SPORTS.find(item => item.id === sport)?.name}</AppText><View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>{!queued && <LiveIndicator active={active} />}<AppText role="support" secondary style={{ flexShrink: 1 }}>{queued ? "Upcoming wave" : update !== "—" ? `Last update: ${update}` : !loading && !error ? "No updates yet" : ""}</AppText></View></View>
+      <View style={{ flex: 1 }}>
+        <AppText role="label">{SPORTS.find(item => item.id === sport)?.name}</AppText>
+        {updateText ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            {!queued && <LiveIndicator active={active} />}
+            <AppText role="support" secondary style={{ flexShrink: 1 }}>{updateText}</AppText>
+          </View>
+        ) : null}
+      </View>
       {!queued && (
         <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: c.soft, borderWidth: 1, borderColor: c.line }}>
           <AppText role="caption" secondary>{`${ordinalPlace(place)} place`}</AppText>

@@ -133,15 +133,13 @@ function formatMetricValue(value: number, unit: string): string {
 function niceAxisCeiling(peak: number, unit: string): number {
   if (unit === "score") return 100;
   const safePeak = Number.isFinite(peak) ? Math.max(0, peak) : 0;
+  if (safePeak <= 0) return unit === "pts" ? 10 : 2;
+  const padded = safePeak * 1.08;
   if (unit === "pts") {
-    const minCeil = 40;
-    const padded = Math.max(minCeil, safePeak * 1.15);
-    const step = padded <= 100 ? 20 : padded <= 300 ? 50 : 100;
+    const step = padded <= 10 ? 2 : padded <= 25 ? 5 : padded <= 60 ? 10 : padded <= 150 ? 25 : 50;
     return Math.ceil(padded / step) * step;
   }
-  const minCeil = 6;
-  const padded = Math.max(minCeil, safePeak * 1.15);
-  const step = padded <= 12 ? 2 : padded <= 30 ? 5 : 10;
+  const step = padded <= 6 ? 1 : padded <= 15 ? 2 : padded <= 30 ? 5 : 10;
   return Math.ceil(padded / step) * step;
 }
 
@@ -317,7 +315,7 @@ function finalizeTimeSeriesModel(input: {
     .map((a, idx) => {
       const valueAtCursor = valuesAtCursor[idx]!;
       const placeAtCursor = competitionPlace(valuesAtCursor, valueAtCursor);
-      const clipped = clipVerticesToCursor(a.vertices, nowFraction);
+      const clipped = clipVerticesToCursor(a.vertices, cursorFraction);
       const polyline = clipped
         .map((v) => `${xForT(v.t).toFixed(1)},${yForValue(v.value).toFixed(1)}`)
         .join(" ");
@@ -770,26 +768,33 @@ export function buildSleepTimeSeriesModel(
 /** Fit the last day and every current position inside a labeled plot. */
 export function competeChartPreview(model: CompeteTimeSeriesModel) {
   const width = 320, height = 300, left = 42, right = 296, top = 30, bottom = 258;
-  const end = model.nowX;
-  const start = Math.max(model.left, end - (model.right - model.left) / 7);
-  const span = Math.max(1, end - start);
-  const parse = (line: string) => line.trim().split(/\s+/).filter(Boolean).map(pair => pair.split(",").map(Number) as [number, number]);
-  const x = (value: number) => left + (value - start) / span * (right - left);
-  const y = (value: number) => top + (value - model.top) / (model.bottom - model.top) * (bottom - top);
-  return { width, height, left, right, top, bottom,
-    yTicks: model.yTicks.map(tick => ({ ...tick, y: y(tick.y) })),
+  const tEnd = Math.max(1e-4, model.nowFraction);
+  const tStart = Math.max(0, tEnd - 1 / 7);
+  const tSpan = Math.max(1e-4, tEnd - tStart);
+  const x = (t: number) => left + clamp(0, 1, (t - tStart) / tSpan) * (right - left);
+  const y = (v: number) => bottom - (clamp(0, model.yMax, v) / Math.max(1, model.yMax)) * (bottom - top);
+
+  return {
+    width, height, left, right, top, bottom,
+    yTicks: model.yTicks.map(tick => ({ ...tick, y: y(tick.value) })),
     xTicks: [{ x: left, label: model.nowFraction > 1 / 7 ? "24h ago" : "Start" }, { x: right, label: "Now" }],
     athletes: [...model.athletes].sort((a, b) => Number(a.selected) - Number(b.selected)).map(athlete => {
-      const points = parse(athlete.polyline);
-      const first = points.findIndex(([px]) => px >= start);
-      const visible = points.slice(Math.max(0, first)).filter(([px]) => px <= end);
-      if (first > 0 && visible.length) {
-        const [ax, ay] = points[first - 1]!, [bx, by] = visible[0]!;
-        visible.unshift([start, ay + (by - ay) * (start - ax) / Math.max(.001, bx - ax)]);
+      const pts: [number, number][] = [];
+      const vStart = interpolateTimeSeriesAt(athlete.vertices, tStart);
+      pts.push([left, y(vStart)]);
+      for (const vertex of athlete.vertices) {
+        if (vertex.t > tStart + 1e-5 && vertex.t < tEnd - 1e-5) {
+          pts.push([x(vertex.t), y(vertex.value)]);
+        }
       }
-      return { id: athlete.id, selected: athlete.selected,
-        points: visible.map(([px, py]) => `${x(px)},${y(py)}`).join(" "),
-        x: x(athlete.cursorX), y: y(athlete.cursorY),
+      const vEnd = interpolateTimeSeriesAt(athlete.vertices, tEnd);
+      pts.push([right, y(vEnd)]);
+      return {
+        id: athlete.id,
+        selected: athlete.selected,
+        points: pts.map(([px, py]) => `${px.toFixed(1)},${py.toFixed(1)}`).join(" "),
+        x: right,
+        y: y(vEnd),
       };
     }),
   };

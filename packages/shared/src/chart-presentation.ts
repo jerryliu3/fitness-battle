@@ -19,7 +19,7 @@ export interface OpenLineModel {
   line: string; previous: string; points: ChartDatum[];
   value: string; date: string;
   left: number; right: number;
-  xTicks: { x: number; label: string }[];
+  xTicks: { x: number; label: string; anchor?: "start" | "middle" | "end" }[];
   yTicks: { y: number; label: string }[];
 }
 
@@ -130,8 +130,9 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
       previousRows: events(previousStart, start), previousStart,
     });
     return { ...chart, xTicks: Array.from({ length: 7 }, (_, i) => ({
-      x: chart.left + i / 7 * (chart.right - chart.left),
+      x: chart.left + (i + 0.5) / 7 * (chart.right - chart.left),
       label: shiftAppDay(start, i).toLocaleDateString("en-US", { weekday: "short", timeZone: APP_TIMEZONE }),
+      anchor: "middle" as const,
     })) };
   }
   return openLineModel(cumulative(start, elapsed), value => value.toFixed(1), cumulative(previousStart, days).map(row => row.value), days);

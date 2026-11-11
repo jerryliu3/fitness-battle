@@ -16,6 +16,7 @@ import {
 } from "@fitness-battle/shared";
 import { playCue } from "@/lib/haptics";
 import { typographyStyle } from "@/ui/section";
+import { AthletePennant } from "./athlete-pennant";
 
 export function CompeteTimeSeriesChart({
   state,
@@ -285,19 +286,6 @@ export function CompeteTimeSeriesChart({
           onPointerLeave={clearScrub}
           onPointerCancel={clearScrub}
         >
-          {/* Future zone wash (now -> Sun) */}
-          {model.nowX < model.right ? (
-            <rect
-              x={model.nowX}
-              y={model.top - 4}
-              width={Math.max(0, model.right - model.nowX)}
-              height={model.bottom - model.top + 8}
-              fill={c.paper}
-              opacity={0.75}
-              rx={4}
-            />
-          ) : null}
-
           {/* Horizontal Y gridlines & labels */}
           {model.yTicks.map((tick, idx) => (
             <g key={`y-${idx}`}>
@@ -331,7 +319,6 @@ export function CompeteTimeSeriesChart({
                 y2={model.bottom}
                 stroke={c.line}
                 strokeWidth={0.6}
-                strokeDasharray={day.future ? "2 3" : undefined}
               />
               <text
                 x={day.x}
@@ -346,17 +333,19 @@ export function CompeteTimeSeriesChart({
             </g>
           ))}
 
-          {/* Active time cursor line */}
-          <line
-            x1={model.cursorX}
-            x2={model.cursorX}
-            y1={model.top - 4}
-            y2={model.bottom}
-            stroke={c.ink}
-            strokeWidth={1}
-            strokeDasharray={model.isScrubbing ? undefined : "2 3"}
-            opacity={model.isScrubbing ? 0.45 : 0.25}
-          />
+          {/* Active time cursor line (visible when scrubbing) */}
+          {model.isScrubbing && (
+            <line
+              x1={model.cursorX}
+              x2={model.cursorX}
+              y1={model.top - 4}
+              y2={model.bottom}
+              stroke={c.ink}
+              strokeWidth={1}
+              strokeDasharray="2 3"
+              opacity={0.45}
+            />
+          )}
 
           {/* Unselected background competitor traces */}
           {unselectedAthletes.map((athlete) => (
@@ -432,25 +421,44 @@ export function CompeteTimeSeriesChart({
               stroke="#ffffff"
               strokeWidth={1.8}
             />
-            <rect
-              x={model.tipPill.x}
-              y={model.tipPill.y}
-              width={model.tipPill.width}
-              height={model.tipPill.height}
-              rx={6}
-              fill={model.selectedAthlete.you ? c.surfaceInverse : c.actionSoft}
-              stroke={model.selectedAthlete.you ? "none" : c.podiumGold}
-              strokeWidth={model.selectedAthlete.you ? 0 : 1}
-            />
-            <text
-              x={model.tipPill.x + model.tipPill.width / 2}
-              y={model.tipPill.y + 13.5}
-              textAnchor="middle"
-              fill={model.selectedAthlete.you ? c.tennis : c.ink}
-              style={typographyStyle("caption")}
-            >
-              {model.tipPill.text}
-            </text>
+            {/* Athlete Callout (Full pennant card in fullscreen aligned to right; clean pill in card preview) */}
+            {immersive ? (
+              <g transform={`translate(${model.selectedAthlete.cursorX} ${model.selectedAthlete.cursorY})`}>
+                <AthletePennant
+                  lane={{
+                    name: model.selectedAthlete.name,
+                    you: model.selectedAthlete.you,
+                    avatarUrl: model.selectedAthlete.avatarUrl,
+                  }}
+                  x={Math.max(16, model.width - 158 - model.selectedAthlete.cursorX)}
+                  y={clamp(model.top - model.selectedAthlete.cursorY, model.bottom - 46 - model.selectedAthlete.cursorY, -23)}
+                  detail={`${model.placeLabel} · ${model.selectedAthlete.formattedValueAtCursor} ${model.unit}`}
+                  prefix={`athlete-${model.selectedAthlete.id}`}
+                />
+              </g>
+            ) : (
+              <g>
+                <rect
+                  x={model.tipPill.x}
+                  y={model.tipPill.y}
+                  width={model.tipPill.width}
+                  height={model.tipPill.height}
+                  rx={6}
+                  fill={model.selectedAthlete.you ? c.surfaceInverse : c.card}
+                  stroke={model.selectedAthlete.you ? "none" : c.line}
+                  strokeWidth={1}
+                />
+                <text
+                  x={model.tipPill.x + model.tipPill.width / 2}
+                  y={model.tipPill.y + 13.5}
+                  textAnchor="middle"
+                  fill={model.selectedAthlete.you ? c.textOnInverse : c.ink}
+                  style={typographyStyle("caption")}
+                >
+                  {model.tipPill.text}
+                </text>
+              </g>
+            )}
           </g>
         </svg>
       </div>
@@ -511,7 +519,7 @@ export function CompeteTimeSeriesChart({
                     fontVariantNumeric: "tabular-nums",
                     color: active
                       ? athlete.you
-                        ? c.tennis
+                        ? c.textOnInverse
                         : c.ink
                       : c.muted,
                   }}

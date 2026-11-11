@@ -450,13 +450,8 @@ export function HomeDeck({
         </View>
       ) : (
         <View style={s.deckWrapper}>
-          <View
-            style={[
-              s.stackStage,
-              nextCard && s.stackStageWithBack,
-            ]}
-          >
-            {/* Depth 2 Preview Card */}
+          <View style={s.stackStage}>
+            {/* Depth 2 Card (Underneath next card) */}
             {depth2Card && (
               <View
                 pointerEvents="none"
@@ -472,9 +467,9 @@ export function HomeDeck({
               />
             )}
 
-            {/* Depth 1 Card: FULLY RENDERED NEXT CARD (Immediately visible underneath top card) */}
+            {/* Depth 1 Card: FULLY RENDERED NEXT CARD (Same size directly beneath top card) */}
             {nextCard && (
-              <Animated.View
+              <View
                 pointerEvents="none"
                 accessible={false}
                 style={[
@@ -483,32 +478,11 @@ export function HomeDeck({
                   {
                     backgroundColor: paletteForDeckTone(nextCard.tone, isDark).bg,
                     borderColor: paletteForDeckTone(nextCard.tone, isDark).border,
-                    transform: [
-                      {
-                        scaleX: dragX.interpolate({
-                          inputRange: [-240, 0, 240],
-                          outputRange: [1, 0.96, 1],
-                          extrapolate: "clamp",
-                        }),
-                      },
-                      {
-                        translateY: dragX.interpolate({
-                          inputRange: [-240, 0, 240],
-                          outputRange: [-7, 0, -7],
-                          extrapolate: "clamp",
-                        }),
-                      },
-                    ],
-                    opacity: dragX.interpolate({
-                      inputRange: [-240, 0, 240],
-                      outputRange: [1, 0.95, 1],
-                      extrapolate: "clamp",
-                    }),
                   },
                 ]}
               >
                 <DeckCardContent card={nextCard} isDark={isDark} />
-              </Animated.View>
+              </View>
             )}
 
             {/* Top Card: Active Animated Swipable Card */}
@@ -584,9 +558,7 @@ const sThemes = createThemedStyles((c) => ({
     position: "relative",
     height: CARD_HEIGHT,
   },
-  stackStageWithBack: {
-    marginBottom: 10,
-  },
+  stackStageWithBack: {},
   deckCard: {
     height: CARD_HEIGHT,
     borderRadius: 22,
@@ -604,21 +576,19 @@ const sThemes = createThemedStyles((c) => ({
   },
   cardDepth1: {
     position: "absolute",
-    left: 8,
-    right: 8,
-    bottom: -7,
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
     zIndex: 2,
-    transform: [{ scaleX: 0.96 }],
-    opacity: 0.95,
   },
   cardDepth2: {
     position: "absolute",
-    left: 16,
-    right: 16,
-    bottom: -13,
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
     zIndex: 1,
-    transform: [{ scaleX: 0.92 }],
-    opacity: 0.6,
   },
   cardInner: {
     flex: 1,

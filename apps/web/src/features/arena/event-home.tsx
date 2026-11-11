@@ -44,8 +44,21 @@ function RegisteredEventCard({ state, sport, active, onEnter }: { state: Compete
   const place = 1 + lanes.filter(lane => lane.values[2] > total).length;
   const { rows, loading, error } = useEventActivity(state, sport, active && !queued);
   const update = formatActivityAge(rows[0]?.at, now);
+  const updateText = queued ? "Upcoming wave" : update !== "—" ? `Last update: ${update}` : !loading && !error ? "No updates yet" : null;
   return <article className="compete-race-card">
-    <div className="compete-race-heading"><span className="compete-sport-icon"><CompeteIcon name={sport} /></span><div><AppText role="label">{SPORTS.find(s => s.id === sport)?.name}</AppText><div className="compete-last-update">{!queued && <span aria-hidden="true" className="compete-live-dot" data-active={active} />}<AppText role="support" secondary>{queued ? "Upcoming wave" : update !== "—" ? `Last update: ${update}` : !loading && !error ? "No updates yet" : ""}</AppText></div></div>{!queued && <span className="compete-place-badge"><AppText role="caption" secondary>{`${ordinalPlace(place)} place`}</AppText></span>}</div>
+    <div className="compete-race-heading">
+      <span className="compete-sport-icon"><CompeteIcon name={sport} /></span>
+      <div>
+        <AppText role="label">{SPORTS.find(s => s.id === sport)?.name}</AppText>
+        {updateText ? (
+          <div className="compete-last-update">
+            {!queued && <span aria-hidden="true" className="compete-live-dot" data-active={active} />}
+            <AppText role="support" secondary>{updateText}</AppText>
+          </div>
+        ) : null}
+      </div>
+      {!queued && <span className="compete-place-badge"><AppText role="caption" secondary>{`${ordinalPlace(place)} place`}</AppText></span>}
+    </div>
     <div style={{ position: "relative" }}><CoursePreview sport={sport} queued={queued} state={state} /><button type="button" aria-label="Open race fullscreen" onClick={onEnter} style={{ position: "absolute", inset: 0, zIndex: 1, padding: 0, border: 0, background: "transparent", cursor: "pointer" }} /></div>
     <button type="button" className="compete-race-entry" aria-label={`Enter ${SPORTS.find(s => s.id === sport)?.name} field`} onClick={onEnter}><AppText role="label">See race</AppText><span aria-hidden="true">→</span></button>
   </article>;
