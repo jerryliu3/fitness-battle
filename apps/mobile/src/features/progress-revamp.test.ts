@@ -333,7 +333,7 @@ describe("Revamped Progress Screen & Spaces", () => {
     await act(async () => {
       renderer = create(createElement(JourneySpace, { state: mock.state! }));
     });
-    const tuesday = renderer.root.findAllByType("Pressable").find((node) =>
+    const tuesday = renderer.root.findAllByType("Pressable" as never).find((node) =>
       String(node.props.accessibilityLabel ?? "").startsWith("Tue 10"),
     );
     expect(tuesday).toBeTruthy();
