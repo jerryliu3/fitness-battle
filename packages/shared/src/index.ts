@@ -92,3 +92,5 @@ export * from "./rank-symbols";
 export * from "./compete-time-series";
 
 export * from "./crew-overview";
+
+export * from "./crew-passport";

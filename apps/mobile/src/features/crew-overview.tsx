@@ -9,6 +9,7 @@ import { AppIcon } from "../ui/app-icon";
 import { UserAvatar } from "../ui/user-avatar";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { CrewRelay } from "./crew-relay";
+import { CrewContractPanel } from "./crew-contract";
 import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
 import { mobileEnv } from "../lib/env";
@@ -41,7 +42,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
   const frameRef = useRef(frame);
   frameRef.current = frame;
   const [playing, setPlaying] = useState(false);
-  const [detail, setDetail] = useState<"contract" | "passport" | null>(null);
+  const [detail, setDetail] = useState<"passport" | null>(null);
   const [trackWidth, setTrackWidth] = useState(1);
   const view = crewOverview(input, frame, events);
   useFocusEffect(useCallback(() => () => setPlaying(false), []));
@@ -105,11 +106,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
         </Pressable>)}
       </ScrollView>
     </View>
-    <Pressable accessibilityRole="button" onPress={() => setDetail("contract")} style={[f.card, { backgroundColor: c.actionSoft, borderWidth: 1, borderColor: c.tennis, gap: 10 }]}>
-      <AppText role="caption">Weekly contract</AppText>
-      <AppText role="heading">{full.relay.target ? `${full.volume(full.relay.target)} together` : "All hands on deck"}</AppText>
-      <AppText role="caption">{full.contributors} / {input.members.length} contributed</AppText>
-    </Pressable>
+    <CrewContractPanel crewId={crewId} sport={input.sport} units={input.units} />
     <View style={{ flexDirection: "row", gap: 12 }}>{children}<Pressable accessibilityRole="button" onPress={() => setDetail("passport")} style={[f.card, { flex: 1, minHeight: 170, justifyContent: "space-between", backgroundColor: c.surfaceInverse }]}>
       <AppText role="label" style={{ color: c.textOnInverse }}>Crew Passport</AppText><AppText role="heading" style={{ color: c.textOnInverse }}>Earned together.</AppText><AppText role="caption" style={{ color: c.textOnInverse }}>{full.highlights.length} weekly milestones</AppText>
     </Pressable></View>
@@ -117,9 +114,8 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
       <AppText accessibilityRole="header" role="heading">Crew highlights</AppText>
       {full.highlights.map(h => <View key={h} style={{ borderBottomWidth: 1, borderColor: c.line, paddingVertical: 14 }}><AppText role="body">{h}</AppText></View>)}
     </View>}
-    <FocusSheet open={detail !== null} minimal title={detail === "contract" ? "Weekly contract" : "Your crew passport"} onClose={() => setDetail(null)}>
-      {detail === "contract" ? <AppText role="body">{full.relay.target ? `${full.volume(full.relay.model.total)} / ${full.volume(full.relay.target)}` : `${full.contributors} / ${input.members.length} contributed`}</AppText> : null}
-      {!full.highlights.length && detail !== "contract" ? <AppText role="body">This week’s shared milestones will appear here.</AppText> : null}
+    <FocusSheet open={detail !== null} minimal title={"Your crew passport"} onClose={() => setDetail(null)}>
+      {!full.highlights.length ? <AppText role="body">This week’s shared milestones will appear here.</AppText> : null}
       {full.highlights.map(h => <AppText key={h} role="body">✦ {h}</AppText>)}
     </FocusSheet>
   </View>;

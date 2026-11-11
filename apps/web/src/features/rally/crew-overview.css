@@ -211,3 +211,6 @@
 .crew-header-chevron { position:absolute; right:0; top:50%; transform:translateY(-50%) rotate(90deg); pointer-events:none; }
 .club-crew-marker.is-compact { width:44px; min-height:44px; justify-content:flex-start; }
 .club-crew-marker.is-compact .crew-member-photo { width:34px; height:34px; border-radius:50%; overflow:hidden; }
+.crew-editor { display: grid; gap: 18px; }
+.crew-editor section { display: grid; gap: 12px; }
+.crew-editor input, .crew-editor select { width: 100%; min-height: 44px; }

@@ -1130,3 +1130,7 @@ and Crew Passport form two action cards, with details kept in sheets. The passpo
 shows current-week milestones from recorded progress. Session scheduling and RSVPs
 retain their existing writes. Highlights appear only for a shared finish or full
 participation. Persisted contract/season features and Derby follow separately.
+
+Weekly contracts now have a persisted editor available to all active members.
+The shared contract/season/receipt schema is documented in [crew programs](crew-programs.md).
+Season-management and passport presentation follow in the next stacked change.

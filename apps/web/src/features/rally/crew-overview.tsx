@@ -6,6 +6,7 @@ import { AppHeading, AppText, AppParagraph } from "@/ui/section";
 import { UserAvatar } from "@/ui/user-avatar";
 import { Sheet } from "@/ui/sheet";
 import { CrewRelay } from "./crew-relay";
+import { CrewContractPanel } from "./crew-contract";
 import "./crew-overview.css";
 import { useAuth } from "@/components/auth-context";
 
@@ -36,7 +37,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, children, 
   const frameRef = useRef(frame);
   frameRef.current = frame;
   const [playing, setPlaying] = useState(false);
-  const [detail, setDetail] = useState<"contract" | "passport" | null>(null);
+  const [detail, setDetail] = useState<"passport" | null>(null);
   const reduced = useReducedMotion();
   const view = crewOverview(input, frame, events);
   useEffect(() => {
@@ -77,11 +78,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, children, 
         <AppText role="caption" secondary>{full.volume(full.relay.model.segments.find(s => s.id === m.user_id)?.value ?? 0)}</AppText>
       </button>)}</div>
     </section>
-    <button type="button" className="crew-contract" onClick={() => setDetail("contract")}>
-      <AppText role="caption">Weekly contract</AppText>
-      <AppText role="heading">{full.relay.target ? `${full.volume(full.relay.target)} together` : "All hands on deck"}</AppText>
-      <AppText role="caption">{full.contributors} / {input.members.length} contributed</AppText>
-    </button>
+    <CrewContractPanel crewId={crewId} sport={input.sport} units={input.units} />
     <div className="crew-bento">{children}<button type="button" className="crew-action-card crew-passport" onClick={() => setDetail("passport")}>
       <span>Crew Passport</span><strong>Earned together.</strong><small>{full.highlights.length} weekly milestones</small>
     </button></div>
@@ -89,9 +86,8 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, children, 
       <AppHeading level={2} role="heading">Crew highlights</AppHeading>
       <ul className="crew-highlights">{full.highlights.map(h => <li key={h}><AppText role="body">{h}</AppText></li>)}</ul>
     </section>}
-    <Sheet open={detail !== null} minimal title={detail === "contract" ? "Weekly contract" : "Your crew passport"} body="" onClose={() => setDetail(null)}>
-      {detail === "contract" ? <AppParagraph typographyRole="body">{full.relay.target ? `${full.volume(full.relay.model.total)} / ${full.volume(full.relay.target)}` : `${full.contributors} / ${input.members.length} contributed`}</AppParagraph> : null}
-      {!full.highlights.length && detail !== "contract" ? <AppParagraph typographyRole="body">This week’s shared milestones will appear here.</AppParagraph> : null}
+    <Sheet open={detail !== null} minimal title={"Your crew passport"} body="" onClose={() => setDetail(null)}>
+      {!full.highlights.length ? <AppParagraph typographyRole="body">This week’s shared milestones will appear here.</AppParagraph> : null}
       {full.highlights.map(h => <AppParagraph key={h} typographyRole="body">✦ {h}</AppParagraph>)}
     </Sheet>
   </div>;
