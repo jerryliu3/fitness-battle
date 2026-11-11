@@ -251,7 +251,8 @@ describe("public results parsers", () => {
     expect(correctionSql).toContain("and sr.last_ingestion_run_id <> v_run");
 
     // Standard import without correction does not run reconciliation
-    expect(sql).not.toContain("sr.last_ingestion_run_id <> v_run");
+    const standardSql = editionImportSql(edition, snapshot);
+    expect(standardSql).not.toContain("sr.last_ingestion_run_id <> v_run");
 
     // Freeze import marks frozen
     const freezeSql = editionImportSql(edition, snapshot, { allowCorrection: true, freeze: true });
