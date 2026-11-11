@@ -6,11 +6,21 @@ import type { ChartDatum } from "./chart-scrubber";
 import type { TrainingBucket } from "./training-view";
 
 export type OpenLineRange = "week" | "fourWeeks" | "year";
+export type EffortHistoryRange = OpenLineRange | "twelveWeeks" | "twentyFourWeeks";
 export const OPEN_LINE_RANGES: readonly { value: OpenLineRange; label: string; ariaLabel: string }[] = [
   { value: "week", label: "1W", ariaLabel: "One week" },
   { value: "fourWeeks", label: "4W", ariaLabel: "Four weeks" },
   { value: "year", label: "1Y", ariaLabel: "One year" },
 ];
+
+/** Inclusive Eastern lookback excluding today: 7 / 28 / 84 / 168 / 365 calendar days. */
+export function effortScoreLookbackDays(range: EffortHistoryRange): number {
+  return range === "week" ? 6
+    : range === "fourWeeks" ? 27
+    : range === "twelveWeeks" ? 83
+    : range === "twentyFourWeeks" ? 167
+    : 364;
+}
 
 export interface OpenLineModel {
   width: number; height: number; top: number; bottom: number;
@@ -66,9 +76,10 @@ export function openLineModel(
   const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE, timeZoneName: "short" });
   const date = (value: string) => dateFormatter.format(new Date(value));
   const points = rows.map((row, i) => ({ id: row.id, x: timeline ? timeX(row.date) : x(i), y: y(row.value), label: timeline?.showTime ? `${date(row.date)}, ${timeFormatter.format(new Date(row.date))}` : date(row.date), value: format(row.value) }));
-  const trace = (pts: readonly { x: number; y: number }[]) => pts.map(point =>
-    `${point.x.toFixed(1)},${point.y.toFixed(1)}`
-  ).join(" ");
+  const trace = (pts: readonly { x: number; y: number }[]) => pts.flatMap((point, i) => [
+    ...(timeline?.step && i ? [`${point.x.toFixed(1)},${pts[i - 1]!.y.toFixed(1)}`] : []),
+    `${point.x.toFixed(1)},${point.y.toFixed(1)}`,
+  ]).join(" ");
   const line = trace(points);
   const segments: string[] = [];
   let segment: typeof points = [];
@@ -142,46 +153,80 @@ export function benchmarkBars(buckets: readonly TrainingBucket[], now: Date) {
   const width = 340, height = 200, top = 28, bottom = 154, left = 32, right = 332;
   const recorded = buckets.filter(bucket => Date.parse(bucket.start) <= now.getTime());
   const average = recorded.length ? recorded.reduce((sum, bucket) => sum + bucket.movingSec, 0) / recorded.length : 0;
-  const tickHours = Math.max(1, Math.ceil(Math.max(3600, ...buckets.map(bucket => bucket.movingSec)) * 1.15 / 7200));
-  const max = tickHours * 7200;
+  const maxSec = Math.max(3600, ...buckets.map(bucket => bucket.movingSec));
+  const topHour = Math.max(1, Math.ceil(maxSec / 3600 * 1.05));
+  const max = topHour * 3600;
   const y = (seconds: number) => bottom - seconds / max * (bottom - top);
   const slot = (right - left) / Math.max(1, buckets.length);
   const bars = buckets.map((bucket, i) => ({ ...bucket, x: left + (i + .5) * slot, y: y(bucket.movingSec), future: Date.parse(bucket.start) > now.getTime() }));
   const points = bars.filter(bar => !bar.future).map(bar => ({ id: bar.start, x: bar.x, y: bar.y,
     label: new Date(bar.start).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE }), value: (bar.movingSec / 3600).toFixed(1) }));
+  const tickHours = [0, topHour / 2, topHour];
+  const formatHour = (h: number) => Number.isInteger(h) ? String(h) : h.toFixed(1);
   return { width, height, top, bottom, left, right, bars, points, barWidth: slot * .62, average, averageY: y(average),
-    ticks: [0, max / 2, max].map(value => ({ label: String(value / 3600), y: y(value) })),
+    ticks: tickHours.map(h => ({ label: formatHour(h), y: y(h * 3600) })),
   };
 }
 
-/** Score events are committed changes, not estimates from activity distance. */
-export function effortScoreLine(state: CompeteState, track: "open" | "verified", range: OpenLineRange, now = competeNow(state)) {
-  const start = shiftAppDay(now, -(range === "week" ? 6 : range === "fourWeeks" ? 27 : 364));
-  const end = shiftAppDay(now, 1);
+function effortScoreAt(
+  events: readonly { occurredAt: string; scoreBefore: number; scoreAfter: number }[],
+  at: Date,
+  fallback: number,
+) {
+  const prior = events.filter(event => Date.parse(event.occurredAt) < at.getTime()).at(-1);
+  if (prior) return prior.scoreAfter;
+  const next = events.find(event => Date.parse(event.occurredAt) >= at.getTime());
+  return next ? next.scoreBefore : fallback;
+}
+
+/** Current score versus the score at the start of the selected Eastern window. */
+export function effortScoreComparison(
+  state: CompeteState,
+  track: "open" | "verified",
+  range: EffortHistoryRange,
+  now = competeNow(state),
+): { current: number; prior: number; pct: number } | null {
+  const chartEvents = effortScoreEvents(state, track, now);
+  if (!chartEvents.length) return null;
+  const start = shiftAppDay(now, -effortScoreLookbackDays(range));
+  const inWindow = chartEvents.some(event => Date.parse(event.occurredAt) >= start.getTime());
+  if (!inWindow) return null;
+  const rating = state.ratings.find(r => r.sport === state.primary);
+  const current = (track === "verified" ? rating?.verifiedElo : rating?.openElo) ?? 500;
+  const prior = effortScoreAt(chartEvents, start, current);
+  if (!Number.isFinite(prior) || prior === 0) return null;
+  return { current, prior, pct: ((current - prior) / prior) * 100 };
+}
+
+function effortScoreEvents(state: CompeteState, track: "open" | "verified", now: Date) {
   const recorded = (state.effortScoreEvents ?? []).filter(event => event.sport === state.primary && event.track === track
     && Number.isFinite(Date.parse(event.occurredAt)) && Date.parse(event.occurredAt) <= now.getTime()
     && Number.isFinite(event.scoreBefore) && Number.isFinite(event.scoreAfter))
     .slice().sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt) || a.id.localeCompare(b.id, "en", { numeric: true }));
-  // Once durable recording begins, settlement is already part of those events.
   const firstRecordedAt = recorded[0] ? Date.parse(recorded[0].occurredAt) : Infinity;
   const legacy = state.periodResults.filter(result => result.sport === state.primary && result.track === track
     && Number.isFinite(Date.parse(result.periodEnd)) && Date.parse(result.periodEnd) < firstRecordedAt
     && Date.parse(result.periodEnd) <= now.getTime() && result.eloBefore !== result.eloAfter)
     .map(result => ({ id: `settlement:${result.id}`, occurredAt: result.periodEnd, scoreBefore: result.eloBefore, scoreAfter: result.eloAfter }));
-  const events = [...legacy, ...recorded].sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt) || a.id.localeCompare(b.id, "en", { numeric: true }));
+  return [...legacy, ...recorded].sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt) || a.id.localeCompare(b.id, "en", { numeric: true }));
+}
+
+/** Score events are committed changes, not estimates from activity distance. */
+export function effortScoreLine(state: CompeteState, track: "open" | "verified", range: EffortHistoryRange, now = competeNow(state)) {
+  const start = shiftAppDay(now, -effortScoreLookbackDays(range));
+  const end = shiftAppDay(now, 1);
+  const events = effortScoreEvents(state, track, now);
   const rows: { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean }[] = [];
-  const prior = events.filter(event => Date.parse(event.occurredAt) < start.getTime()).at(-1);
   const rating = state.ratings.find(r => r.sport === state.primary);
   const current = (track === "open" ? rating?.openElo : rating?.verifiedElo) ?? 500;
-  const initialValue = prior ? prior.scoreAfter : (events.find(event => Date.parse(event.occurredAt) >= start.getTime())?.scoreBefore ?? current);
+  const initialValue = effortScoreAt(events, start, current);
   rows.push({ id: "baseline", date: start.toISOString(), value: initialValue, inspectable: false });
   for (const event of events.filter(event => Date.parse(event.occurredAt) >= start.getTime())) {
-    const hasDiscontinuity = rows.length > 0 && rows.at(-1)!.value !== event.scoreBefore;
-    rows.push({ id: event.id, date: event.occurredAt, value: event.scoreAfter, breakBefore: hasDiscontinuity });
+    if (!rows.length || rows.at(-1)!.value !== event.scoreBefore) rows.push({ id: `before:${event.id}`, date: new Date(Math.max(start.getTime(), Date.parse(event.occurredAt) - 1)).toISOString(), value: event.scoreBefore, breakBefore: true, inspectable: false });
+    rows.push({ id: event.id, date: event.occurredAt, value: event.scoreAfter });
   }
-  const currentDiscontinuity = rows.length > 0 && rows.at(-1)!.value !== current;
-  rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: currentDiscontinuity });
-  const chart = openLineModel(rows, value => String(Math.round(value)), [], 7, { start, end, showTime: range === "week" });
+  rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: !!rows.length && rows.at(-1)!.value !== current });
+  const chart = openLineModel(rows, value => String(Math.round(value)), [], 7, { start, end, showTime: range === "week", step: true });
   // Unknown award times remain gaps in the data. Dashed bridges connect the
   // known readings visually without asserting an award time in that interval.
   return { ...chart, bridges: chart.segments.slice(1).map((line, index) =>

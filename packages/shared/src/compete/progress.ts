@@ -1,14 +1,17 @@
-import { shiftAppDay, weeklyPeriodBounds } from "../period";
+import { APP_TIMEZONE, shiftAppDay, weeklyPeriodBounds } from "../period";
+import { formatClockTime } from "./pace";
 import { countsOnTrack, isVerifiedActivity, provenanceOf } from "./ledger";
 import { type Activity, type CompeteState, type SportId } from "./sports";
 export const RECORD_DISTANCES = {
   running: [
+    { id: "1k", label: "1K", meters: 1000 },
     { id: "5k", label: "5K", meters: 5000 },
     { id: "10k", label: "10K", meters: 10000 },
     { id: "half", label: "Half marathon", meters: 21097.5 },
     { id: "marathon", label: "Marathon", meters: 42195 },
   ],
   cycling: [
+    { id: "10k", label: "10K", meters: 10000 },
     { id: "50k", label: "50K", meters: 50000 },
     { id: "100k", label: "100K", meters: 100000 },
     { id: "150k", label: "150K", meters: 150000 },
@@ -113,7 +116,7 @@ export function weeklyTraining(
     };
   });
 }
-/** Connect records with diagonal improvement lines. */
+/** Staircase preserves the standing record between actual improvement dates. */
 export function recordStepPath(
   rows: RecordAttempt[],
   width = 300,
@@ -129,11 +132,11 @@ export function recordStepPath(
   const y = (r: RecordAttempt) =>
     8 + ((r.seconds - low) / Math.max(1, high - low)) * (height - 16);
   return rows
-    .map((r, i) => (i === 0 ? `M ${x(r)} ${y(r)}` : `L ${x(r)} ${y(r)}`))
+    .map((r, i) => (i === 0 ? `M ${x(r)} ${y(r)}` : `H ${x(r)} V ${y(r)}`))
     .join(" ");
 }
 
-/** Diagonal improvement lines between achievements, extended horizontally to today. */
+/** Hold each best time until the next achievement; no extension to today. */
 export function personalRecordChart(
   rows: readonly RecordAttempt[],
   now: Date,
@@ -154,8 +157,7 @@ export function personalRecordChart(
   const min = Math.max(0, low - padding),
     max = high + padding;
   const start = Date.parse(rows[0]!.startedAt);
-  const lastAt = Date.parse(rows.at(-1)!.startedAt);
-  const end = Math.max(lastAt, now.getTime());
+  const end = Date.parse(rows.at(-1)!.startedAt);
   const x = (at:string)=>end===start?(left+right)/2:left+(Date.parse(at)-start)/(end-start)*(right-left);
   // Lower elapsed time is lower on the chart, as in the reviewed prototype.
   const y = (seconds: number) =>
@@ -165,19 +167,26 @@ export function personalRecordChart(
     x: x(row.startedAt),
     y: y(row.seconds),
   }));
-  const nowX = x(now.toISOString());
-  const extendToNow = nowX - points[points.length - 1]!.x > 1e-3;
-  const path = points.length === 1
-    ? (extendToNow
-        ? `M ${points[0]!.x.toFixed(1)} ${points[0]!.y.toFixed(1)} H ${nowX.toFixed(1)}`
-        : `M ${left} ${points[0]!.y.toFixed(1)} H ${points[0]!.x.toFixed(1)}`)
-    : points
-        .map((p, i) => (i ? `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}` : `M ${p.x.toFixed(1)} ${p.y.toFixed(1)}`))
-        .join(" ") + (extendToNow ? ` H ${nowX.toFixed(1)}` : "");
+  const path = points.length <= 1
+    ? ""
+    : points.map((p, i) => (i ? `H ${p.x} V ${p.y}` : `M ${p.x} ${p.y}`)).join(" ");
   const ticks = [max, (min + max) / 2, min].map((seconds) => ({
-    seconds,
+    seconds: Math.round(seconds),
     y: y(seconds),
+    label: formatClockTime(Math.round(seconds)),
   }));
+  const dateFormatter = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: APP_TIMEZONE,
+  });
+  const xTicks =
+    points.length === 1
+      ? [{ x: points[0]!.x, label: dateFormatter.format(new Date(rows[0]!.startedAt)) }]
+      : [
+          { x: points[0]!.x, label: dateFormatter.format(new Date(rows[0]!.startedAt)) },
+          { x: points.at(-1)!.x, label: dateFormatter.format(new Date(rows.at(-1)!.startedAt)) },
+        ];
   return {
     left,
     right,
@@ -188,6 +197,7 @@ export function personalRecordChart(
     path,
     points,
     ticks,
+    xTicks,
     start: rows[0]!.startedAt,
     end: new Date(end).toISOString(),
     gain: high - low,

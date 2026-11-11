@@ -457,6 +457,7 @@ const f=useThemedStyles(fThemes);
           ]}
         >
           <Text
+            numberOfLines={1}
             style={[f.segmentText, value === option.value && { color: variant === "tabs" ? c.ink : accent ? c.textOnAction : c.card }]}
           >
             {option.label}

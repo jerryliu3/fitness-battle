@@ -6,6 +6,7 @@ import {
   isWithinPeriod,
   monthlyPeriodBounds,
   startOfZonedDay,
+  formatAppCalendarDate,
   formatWeeklyCompetitionRange,
   weeklyPeriodBounds,
 } from "./period";
@@ -104,5 +105,12 @@ describe("Eastern calendar offsets", () => {
     expect(shiftAppDay(new Date("2026-03-08T12:00:00Z"), 1).toISOString()).toBe("2026-03-09T04:00:00.000Z");
     expect(shiftAppDay(new Date("2026-11-01T12:00:00Z"), 1).toISOString()).toBe("2026-11-02T05:00:00.000Z");
     expect(dayKey(shiftAppDay(new Date("2026-10-20T02:00:00Z"), -1))).toBe("2026-10-18");
+  });
+
+  it("formats YYYY-MM-DD calendar days without a UTC midnight shift", () => {
+    expect(formatAppCalendarDate("2026-11-10", { weekday: "short", month: "short", day: "numeric" })).toBe("Tue, Nov 10");
+    expect(new Date("2026-11-10").toLocaleDateString("en-US", {
+      weekday: "short", month: "short", day: "numeric", timeZone: "America/New_York",
+    })).toBe("Mon, Nov 9");
   });
 });

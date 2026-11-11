@@ -1,6 +1,7 @@
 export interface StandardChartGeometry {
-  points: Array<{ x: number; y: number; val: number }>;
+  points: Array<{ x: number; y: number; val: number; index: number }>;
   polyline: string;
+  polylines: string[];
   areaPath: string;
   corridorPath?: string;
   corridorHighPolyline?: string;
@@ -21,7 +22,7 @@ export interface StandardChartGeometry {
  * Computes pixel-aligned SVG geometry, clean Y-axis ticks, and gridline alignments.
  */
 export function buildStandardChartGeometry(
-  values: number[],
+  values: readonly (number | null)[],
   width = 340,
   height = 150,
   corridor?: { high: number[]; low: number[] },
@@ -34,11 +35,14 @@ export function buildStandardChartGeometry(
   const yTop = 28;
   const yBottom = Math.max(yTop + 1, height - 44);
   let yMidPos = (yTop + yBottom) / 2;
+  const finite = (nums: readonly (number | null)[]) =>
+    nums.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
 
-  if (values.length === 0) {
+  if (!values.length || !finite(values).length) {
     return {
       points: [],
       polyline: "",
+      polylines: [],
       areaPath: "",
       yMin: 0,
       yMid: 0,
@@ -53,8 +57,8 @@ export function buildStandardChartGeometry(
   }
 
   const allNumbers = corridor
-    ? [...values, ...corridor.high, ...corridor.low]
-    : values;
+    ? [...finite(values), ...corridor.high, ...corridor.low]
+    : finite(values);
   const rawMin = Math.min(...allNumbers);
   const rawMax = Math.max(...allNumbers);
 
@@ -90,18 +94,32 @@ export function buildStandardChartGeometry(
   const usableW = Math.max(1, xEnd - xStart);
   const usableH = Math.max(1, yBottom - yTop);
 
-  const points = values.map((val, i) => {
-    const x = xStart + (i / Math.max(1, values.length - 1)) * usableW;
-    const y = yBottom - ((val - yMin) / ySpan) * usableH;
-    return { x, y, val };
+  const points: StandardChartGeometry["points"] = [];
+  const polylines: string[] = [];
+  let current: string[] = [];
+  const xAt = (i: number) => xStart + (i / Math.max(1, values.length - 1)) * usableW;
+  values.forEach((val, i) => {
+    if (val == null || !Number.isFinite(val)) {
+      if (current.length > 1) polylines.push(current.join(" "));
+      current = [];
+      return;
+    }
+    const point = {
+      x: xAt(i),
+      y: yBottom - ((val - yMin) / ySpan) * usableH,
+      val,
+      index: i,
+    };
+    points.push(point);
+    current.push(`${point.x.toFixed(1)},${point.y.toFixed(1)}`);
   });
-
-  const polyline = points
-    .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
-    .join(" ");
-  const first = points[0]!;
-  const last = points[points.length - 1]!;
-  const areaPath = `M ${first.x.toFixed(1)},${yBottom} L ${polyline} L ${last.x.toFixed(1)},${yBottom} Z`;
+  if (current.length > 1) polylines.push(current.join(" "));
+  const polyline = polylines[0] ?? "";
+  const first = points[0];
+  const last = points[points.length - 1];
+  const areaPath = first && last && polylines.length === 1
+    ? `M ${first.x.toFixed(1)},${yBottom} L ${polyline} L ${last.x.toFixed(1)},${yBottom} Z`
+    : "";
 
   let corridorPath: string | undefined;
   let corridorHighPolyline: string | undefined;
@@ -130,6 +148,7 @@ export function buildStandardChartGeometry(
   return {
     points,
     polyline,
+    polylines,
     areaPath,
     corridorPath,
     corridorHighPolyline,

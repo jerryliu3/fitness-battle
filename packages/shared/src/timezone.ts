@@ -89,3 +89,12 @@ export function shiftAppDay(date: Date, offset: number): Date {
   const [year, month, day] = dayKey(date).split("-").map(Number);
   return startOfZonedDay(new Date(Date.UTC(year!, month! - 1, day! + offset, 12)));
 }
+
+/** Format a YYYY-MM-DD app calendar day without shifting it through local UTC midnight. */
+export function formatAppCalendarDate(
+  day: string,
+  options: Intl.DateTimeFormatOptions,
+  timeZone: string = APP_TIMEZONE,
+): string {
+  return new Date(`${day}T12:00:00Z`).toLocaleDateString("en-US", { timeZone, ...options });
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { freshState } from "./compete/engine";
 import type { SleepNight } from "./compete/health";
-import { buildHealth7DayCorridorModel, getHealthMetricCorridor, healthSignal, healthSignalRange, healthSparkline, homeHealthMetrics, isSampleSleepNight } from "./home-health";
+import { buildHealth7DayCorridorModel, getHealthMetricCorridor, healthSignal, healthSignalRange, healthSparkline, homeHealthMetrics, isSampleSleepNight, recordedHealthSeries } from "./home-health";
 const now = new Date("2026-10-25T03:30:00Z"); // Oct 24 Eastern
 const night = (overrides: Partial<SleepNight> = {}): SleepNight => ({ id: "sleep", metric: "sleep", day: "2026-10-24", durationMin: 462, score: 80, efficiency: null, deepMin: null, remMin: null, lightMin: null, awakeMin: null, source: "oura", verified: true, ...overrides });
 describe("Home daily health", () => {
@@ -43,6 +43,29 @@ describe("Home daily health", () => {
     state.sleepNights = [night()];
     state.links = [{ provider: "oura", linked: true, status: "stub" }];
     expect(homeHealthMetrics(state, now)[0].value).toBe("—");
+  });
+  it("omits generated vitals and sample nights from recorded health series", () => {
+    const state = freshState(now);
+    expect(recordedHealthSeries(state, "hrv", 30, now)).toEqual([]);
+    expect(recordedHealthSeries(state, "sleep", 30, now)).toEqual([]);
+    state.sleepNights = [night(), night({ id: "sleep-oura-2026-10-20", day: "2026-10-20" })];
+    state.dailyHealth = [{ provider: "oura", day: "2026-10-24", hrv: 64, restingHr: 52 }];
+    expect(recordedHealthSeries(state, "sleep", 30, now).map(row => row.value).filter(value => value != null)).toEqual([462]);
+    expect(recordedHealthSeries(state, "hrv", 30, now).find(row => row.value != null)).toEqual(
+      { day: "2026-10-24", label: "Oct 24", value: 64 },
+    );
+  });
+  it("keeps recorded health on the Eastern calendar and leaves missing days as gaps", () => {
+    const state = freshState(now);
+    state.dailyHealth = [
+      { provider: "oura", day: "2026-10-20", hrv: 58, restingHr: 51 },
+      { provider: "oura", day: "2026-10-24", hrv: 64, restingHr: 52 },
+    ];
+    const series = recordedHealthSeries(state, "hrv", 7, now);
+    expect(series.map(row => row.day)).toEqual([
+      "2026-10-18", "2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24",
+    ]);
+    expect(series.map(row => row.value)).toEqual([null, null, 58, null, null, null, 64]);
   });
 });
 

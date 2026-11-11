@@ -55,7 +55,9 @@ import { SHELL_RADIUS } from "../src/theme";
 import { FocusButton, FocusSegments, FocusSheet, FocusSidePanel } from "../src/ui/focus";
 import { ProfilePhoto } from "../src/features/profile-photo";
 import { AthleteCrest } from "../src/features/athlete-crest";
-import { athleteCardModel } from "@fitness-battle/shared";
+import { Achievements } from "../src/features/club-achievements";
+import { AwardShelf } from "../src/ui/award-shelf";
+import { athleteCardModel, awardCards } from "@fitness-battle/shared";
 
 function isDeviceProvider(
   id: ProviderId,
@@ -726,6 +728,7 @@ const styles=useThemedStyles(stylesThemes);
   const season = clubLifetimeTotals(state);
   const unit = distanceUnitLabel(state.units);
   const records = personalRecordHistory(state, now);
+  const awards = awardCards(state);
   const topRecords = records.slice(0, 3);
   const primaryTrack = competitionTrack(state.primary);
   const primaryRating = state.ratings.find(r => r.sport === state.primary);
@@ -746,6 +749,25 @@ const styles=useThemedStyles(stylesThemes);
 
         <AthleteCrest key={user?.id ?? "guest"} model={athleteCardModel(state, now)} onInteractionChange={setCardDragging} />
         <FocusButton label="Edit profile" onPress={() => setEditOpen(true)} />
+
+        {/* Achievements section under Athlete Crest */}
+        <Achievements state={state} />
+
+        {/* Awards Shelf under Athlete Crest */}
+        {awards.length > 0 && (
+          <View style={f.section}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+              <SectionHeader title="Podium & Awards" subtitle="Season awards and battle honors" />
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push("/progress-achievements")}
+              >
+                <AppText role="caption" secondary>View all →</AppText>
+              </Pressable>
+            </View>
+            <AwardShelf cards={awards} />
+          </View>
+        )}
 
         {/* Since the first mile stats */}
         <View style={f.section}>

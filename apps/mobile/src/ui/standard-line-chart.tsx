@@ -15,7 +15,7 @@ export interface StandardLineChartProps {
   yAxisLabel?: string;
   showSummary?: boolean;
   pointLabels?: string[];
-  values: number[];
+  values: (number | null)[];
   xLabels?: [string, string, string]; // [start, mid, end]
   formatAxisY?: (value: number) => string;
   formatY?: (value: number) => string;
@@ -37,13 +37,14 @@ const stroke=suppliedstroke ?? c.tennis;
 
  const clipId = useId();
  const geo = buildStandardChartGeometry(values, 340, height, corridor);
- if (!values.length) return null;
+ if (!values.length || !geo.points.length) return null;
  const safeSelectedIdx = selectedIdx === undefined ? undefined : Math.max(0, Math.min(selectedIdx, values.length - 1));
- const points = geo.points.map((point, index) => ({ id: String(index), x: point.x, y: point.y, label: pointLabels?.[index] ?? (index === 0 ? xLabels?.[0] ?? "Day 1" : index === values.length - 1 ? xLabels?.[2] ?? `Day ${index + 1}` : `Day ${index + 1}`), value: formatY(values[index]!) }));
+ const xAt = (index: number) => geo.xStart + (index / Math.max(1, values.length - 1)) * (geo.xEnd - geo.xStart);
+ const points = geo.points.map((point) => ({ id: String(point.index), x: point.x, y: point.y, label: pointLabels?.[point.index] ?? (point.index === 0 ? xLabels?.[0] ?? "Day 1" : point.index === values.length - 1 ? xLabels?.[2] ?? `Day ${point.index + 1}` : `Day ${point.index + 1}`), value: formatY(point.val) }));
  const xTicks: Array<{ x: number; label: string; anchor: "start" | "middle" | "end" }> = xLabels
    ? [
        { x: geo.xStart, label: xLabels[0], anchor: "start" },
-       { x: geo.points[Math.floor((values.length - 1) / 2)]!.x, label: xLabels[1], anchor: "middle" },
+       { x: xAt(Math.floor((values.length - 1) / 2)), label: xLabels[1], anchor: "middle" },
        { x: geo.xEnd, label: xLabels[2], anchor: "end" },
      ]
    : values.length === 1
@@ -55,7 +56,7 @@ const stroke=suppliedstroke ?? c.tennis;
          ]
        : [
            { x: geo.xStart, label: pointLabels?.[0] ?? "1", anchor: "start" },
-           { x: geo.points[Math.floor((values.length - 1) / 2)]!.x, label: pointLabels?.[Math.floor((values.length - 1) / 2)] ?? String(Math.floor((values.length - 1) / 2) + 1), anchor: "middle" },
+           { x: xAt(Math.floor((values.length - 1) / 2)), label: pointLabels?.[Math.floor((values.length - 1) / 2)] ?? String(Math.floor((values.length - 1) / 2) + 1), anchor: "middle" },
            { x: geo.xEnd, label: pointLabels?.at(-1) ?? String(values.length), anchor: "end" },
          ];
  return <ChartScrubber hideSummary={!showSummary} selectedPointId={safeSelectedIdx === undefined ? undefined : String(safeSelectedIdx)} points={points} width={340} height={height} plotTop={geo.yTop} plotBottom={geo.yBottom} label={ariaLabel ?? accessibilityLabel ?? "Daily trend"} onSelect={id => onSelectIdx?.(Number(id))}>
@@ -70,17 +71,19 @@ const stroke=suppliedstroke ?? c.tennis;
    {geo.corridorPath && <Path d={geo.corridorPath} fill={stroke} opacity={0.16}/>}
    {geo.corridorHighPolyline && <Polyline points={geo.corridorHighPolyline} fill="none" stroke={stroke} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.65} />}
    {geo.corridorLowPolyline && <Polyline points={geo.corridorLowPolyline} fill="none" stroke={stroke} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.65} />}
-   <Polyline points={geo.polyline} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-   {geo.points.map((p, i) => {
-     const isSelected = safeSelectedIdx !== undefined && i === safeSelectedIdx;
-     const isOutOfBand = corridor && (p.val < corridor.low[i]! || p.val > corridor.high[i]!);
+   {geo.polylines.map((segment) => (
+     <Polyline key={segment} points={segment} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+   ))}
+   {geo.points.map((p) => {
+     const isSelected = safeSelectedIdx !== undefined && p.index === safeSelectedIdx;
+     const isOutOfBand = corridor && (p.val < corridor.low[p.index]! || p.val > corridor.high[p.index]!);
      return (
        <Circle
-         key={i}
+         key={p.index}
          cx={p.x}
          cy={p.y}
          r={isSelected ? 5 : 3.5}
-         fill={isOutOfBand ? (p.val < corridor!.low[i]! ? c.gold : stroke) : (isSelected ? stroke : "#ffffff")}
+         fill={isOutOfBand ? (p.val < corridor!.low[p.index]! ? c.gold : stroke) : (isSelected ? stroke : "#ffffff")}
          stroke={stroke}
          strokeWidth={isSelected ? 2.5 : 1.5}
        />

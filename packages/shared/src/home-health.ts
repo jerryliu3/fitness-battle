@@ -2,7 +2,7 @@ import { competeNow } from "./compete/engine";
 import { collapseNights, formatSleepDuration, type SleepNight } from "./compete/health";
 import type { CompeteState } from "./compete/sports";
 import { INTEGRATIONS } from "./fitness/providers";
-import { dayKey, shiftAppDay } from "./period";
+import { APP_TIMEZONE, dayKey, formatAppCalendarDate, shiftAppDay } from "./period";
 
 export interface HomeHealthMetric {
   id: "sleep" | "steps" | "resting-hr" | "hrv";
@@ -77,6 +77,50 @@ export function homeHealthMetrics(state: CompeteState, now = competeNow(state)):
       };
     }),
   ];
+}
+
+export type RecordedHealthMetric = "hrv" | "resting-hr" | "sleep";
+
+export type RecordedHealthPoint = { day: string; label: string; value: number | null };
+
+/** Recorded observations on the Eastern calendar window; missing days stay as gaps. */
+export function recordedHealthSeries(
+  state: CompeteState,
+  metric: RecordedHealthMetric,
+  days: number,
+  now = competeNow(state),
+): RecordedHealthPoint[] {
+  const span = Math.max(1, days);
+  const today = dayKey(now);
+  const start = dayKey(shiftAppDay(now, -(span - 1)));
+  const label = (day: string) => formatAppCalendarDate(day, { month: "short", day: "numeric" });
+  const observed = new Map<string, number>();
+  if (metric === "sleep") {
+    for (const night of collapseNights(state.sleepNights.filter(item =>
+      !isSampleSleepNight(state, item) &&
+      item.day >= start && item.day <= today &&
+      Number.isFinite(item.durationMin) && item.durationMin > 0,
+    ))) {
+      observed.set(night.day, night.durationMin);
+    }
+  } else {
+    const key = metric === "hrv" ? "hrv" : "restingHr";
+    const readings = (state.dailyHealth ?? []).filter(row => {
+      const value = row[key];
+      return row.day >= start && row.day <= today && typeof value === "number" && Number.isFinite(value)
+        && (key === "restingHr" ? value > 0 : value >= 0);
+    }).sort((a, b) => a.day.localeCompare(b.day) || a.provider.localeCompare(b.provider));
+    const latestProvider = [...readings].reverse()[0]?.provider;
+    for (const row of readings) {
+      if (key === "hrv" && latestProvider && row.provider !== latestProvider) continue;
+      if (!observed.has(row.day)) observed.set(row.day, row[key] as number);
+    }
+  }
+  if (!observed.size) return [];
+  return Array.from({ length: span }, (_, index) => {
+    const day = dayKey(shiftAppDay(now, -(span - 1 - index)));
+    return { day, label: label(day), value: observed.get(day) ?? null };
+  });
 }
 
 /** Normalize only recorded samples; keep missing calendar days disconnected. */

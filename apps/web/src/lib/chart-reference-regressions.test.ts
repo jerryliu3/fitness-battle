@@ -6,7 +6,7 @@ describe("chart reference regressions", () => {
   it("anchors both middle labels to their observation on each platform", () => {
     for (const path of ["../ui/standard-line-chart.tsx", "../../../mobile/src/ui/standard-line-chart.tsx"]) {
       const source = readFileSync(new URL(path, import.meta.url), "utf8");
-      expect(source.match(/x: geo\.points\[Math\.floor\(\(values\.length - 1\) \/ 2\)\]!\.x, label:/g)).toHaveLength(2);
+      expect(source.match(/x: xAt\(Math\.floor\(\(values\.length - 1\) \/ 2\)\), label:/g)).toHaveLength(2);
     }
   });
 });

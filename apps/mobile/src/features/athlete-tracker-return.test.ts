@@ -14,6 +14,7 @@ const mock = vi.hoisted(() => ({
   user: { id: "alice" } as { id: string } | null,
 }));
 vi.mock("react-native", () => ({useColorScheme: () => "light",  AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
+  Platform: { OS: "ios" },
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   StyleSheet: { create: (styles: unknown) => styles },
   Pressable: "Pressable",
@@ -37,6 +38,12 @@ vi.mock("expo-router", () => ({
 }));
 vi.mock("heroui-native/button", () => ({ Button: "Button" }));
 vi.mock("heroui-native/input", () => ({ Input: "Input" }));
+vi.mock("heroui-native/card", () => {
+  const Card: any = () => null;
+  Card.Header = () => null;
+  Card.Body = () => null;
+  return { Card };
+});
 vi.mock("../lib/auth", () => ({
   useAuth: () => ({ user: mock.user, offlineMode: true }),
 }));

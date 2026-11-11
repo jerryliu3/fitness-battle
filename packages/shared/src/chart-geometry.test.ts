@@ -6,6 +6,7 @@ describe("buildStandardChartGeometry", () => {
     const geo = buildStandardChartGeometry([]);
     expect(geo.points).toHaveLength(0);
     expect(geo.polyline).toBe("");
+    expect(geo.polylines).toEqual([]);
     expect(geo.areaPath).toBe("");
   });
 
@@ -55,4 +56,19 @@ it("places a rounded middle tick using the same Y scale as its value", () => {
   const geo = buildStandardChartGeometry([.11, .98], 340, 151);
   const expected = geo.yBottom - (geo.yMid - geo.yMin) / (geo.yMax - geo.yMin) * (geo.yBottom - geo.yTop);
   expect(geo.yMidPos).toBe(expected);
+});
+
+it("keeps calendar spacing and breaks the line across missing days", () => {
+  const geo = buildStandardChartGeometry([50, null, 100], 340, 150);
+  expect(geo.points).toHaveLength(2);
+  expect(geo.points[0]!.index).toBe(0);
+  expect(geo.points[1]!.index).toBe(2);
+  expect(geo.points[1]!.x).toBe(geo.xEnd);
+  expect(geo.points[0]!.x).toBe(geo.xStart);
+  expect(geo.polylines).toHaveLength(0);
+  const connected = buildStandardChartGeometry([50, null, 75, 100], 340, 150);
+  expect(connected.polylines).toHaveLength(1);
+  expect(connected.points[1]!.x - connected.points[0]!.x).toBeGreaterThan(
+    (connected.xEnd - connected.xStart) / 3,
+  );
 });

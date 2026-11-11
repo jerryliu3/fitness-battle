@@ -37,7 +37,7 @@ export function WeekChart({
           unit="hrs"
           range={range}
           onRangeChange={(next) => {
-            if (next !== "year") setRange(next);
+            if (next === "week" || next === "fourWeeks") setRange(next);
           }}
           includeYear={false}
           live
