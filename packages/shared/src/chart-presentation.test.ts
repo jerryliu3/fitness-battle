@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { freshState } from "./compete/engine";
-import { benchmarkBars, homeTrainingLine, openLineModel, effortScoreLine } from "./chart-presentation";
+import { benchmarkBars, homeTrainingLine, openLineModel, effortScoreLine, effortScoreComparison } from "./chart-presentation";
 import { weeklyHoursComparison } from "./week-chart";
 import { effortHistory } from "./effort-history";
 import { trainingBuckets } from "./training-view";
@@ -96,6 +96,33 @@ it("keeps equal day spacing through DST and distinct repeated-hour events", () =
   expect(chart.points[2]!.x).toBeLessThan(chart.points[3]!.x);
   expect(chart.points[2]!.label).toContain("EDT");
   expect(chart.points[3]!.label).toContain("EST");
+});
+
+it("uses 84 and 168 Eastern days for 12-week and 24-week effort histories", () => {
+  const now = new Date("2026-11-10T17:00:00Z"), state = freshState(now);
+  state.ratings[0]!.openElo = 1100;
+  state.effortScoreEvents = [
+    { id: "near", sport: "running", track: "open", occurredAt: "2026-10-01T12:00:00Z", scoreBefore: 1000, scoreAfter: 1080 },
+    { id: "far", sport: "running", track: "open", occurredAt: "2026-07-01T12:00:00Z", scoreBefore: 900, scoreAfter: 950 },
+  ];
+  expect(effortScoreLine(state, "open", "twelveWeeks", now).points.some(p => p.id === "near")).toBe(true);
+  expect(effortScoreLine(state, "open", "twelveWeeks", now).points.some(p => p.id === "far")).toBe(false);
+  expect(effortScoreLine(state, "open", "twentyFourWeeks", now).points.some(p => p.id === "far")).toBe(true);
+  expect(effortScoreLine(state, "open", "year", now).date).not.toBe(effortScoreLine(state, "open", "twelveWeeks", now).date);
+});
+
+it("compares the current score to the recorded score at the start of the window", () => {
+  const now = new Date("2026-11-10T17:00:00Z"), state = freshState(now);
+  expect(effortScoreComparison(state, "open", "fourWeeks", now)).toBeNull();
+  state.ratings[0]!.openElo = 1100;
+  state.effortScoreEvents = [
+    { id: "start", sport: "running", track: "open", occurredAt: "2026-10-01T12:00:00Z", scoreBefore: 1000, scoreAfter: 1000 },
+    { id: "now", sport: "running", track: "open", occurredAt: "2026-11-09T12:00:00Z", scoreBefore: 1000, scoreAfter: 1100 },
+  ];
+  const comparison = effortScoreComparison(state, "open", "fourWeeks", now);
+  expect(comparison?.prior).toBe(1000);
+  expect(comparison?.current).toBe(1100);
+  expect(comparison?.pct).toBe(10);
 });
 
 it("shows every recorded score change, filters sport/track/future, and never reconstructs milestone dates", () => {

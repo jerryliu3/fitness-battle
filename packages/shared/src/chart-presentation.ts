@@ -6,11 +6,21 @@ import type { ChartDatum } from "./chart-scrubber";
 import type { TrainingBucket } from "./training-view";
 
 export type OpenLineRange = "week" | "fourWeeks" | "year";
+export type EffortHistoryRange = OpenLineRange | "twelveWeeks" | "twentyFourWeeks";
 export const OPEN_LINE_RANGES: readonly { value: OpenLineRange; label: string; ariaLabel: string }[] = [
   { value: "week", label: "1W", ariaLabel: "One week" },
   { value: "fourWeeks", label: "4W", ariaLabel: "Four weeks" },
   { value: "year", label: "1Y", ariaLabel: "One year" },
 ];
+
+/** Inclusive Eastern lookback excluding today: 7 / 28 / 84 / 168 / 365 calendar days. */
+export function effortScoreLookbackDays(range: EffortHistoryRange): number {
+  return range === "week" ? 6
+    : range === "fourWeeks" ? 27
+    : range === "twelveWeeks" ? 83
+    : range === "twentyFourWeeks" ? 167
+    : 364;
+}
 
 export interface OpenLineModel {
   width: number; height: number; top: number; bottom: number;
@@ -19,7 +29,7 @@ export interface OpenLineModel {
   line: string; previous: string; points: ChartDatum[];
   value: string; date: string;
   left: number; right: number;
-  xTicks: { x: number; label: string }[];
+  xTicks: { x: number; label: string; anchor?: "start" | "middle" | "end" }[];
   yTicks: { y: number; label: string }[];
 }
 
@@ -130,8 +140,9 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
       previousRows: events(previousStart, start), previousStart,
     });
     return { ...chart, xTicks: Array.from({ length: 7 }, (_, i) => ({
-      x: chart.left + i / 7 * (chart.right - chart.left),
+      x: chart.left + (i + 0.5) / 7 * (chart.right - chart.left),
       label: shiftAppDay(start, i).toLocaleDateString("en-US", { weekday: "short", timeZone: APP_TIMEZONE }),
+      anchor: "middle" as const,
     })) };
   }
   return openLineModel(cumulative(start, elapsed), value => value.toFixed(1), cumulative(previousStart, days).map(row => row.value), days);
@@ -157,26 +168,58 @@ export function benchmarkBars(buckets: readonly TrainingBucket[], now: Date) {
   };
 }
 
-/** Score events are committed changes, not estimates from activity distance. */
-export function effortScoreLine(state: CompeteState, track: "open" | "verified", range: OpenLineRange, now = competeNow(state)) {
-  const start = shiftAppDay(now, -(range === "week" ? 6 : range === "fourWeeks" ? 27 : 364));
-  const end = shiftAppDay(now, 1);
+function effortScoreAt(
+  events: readonly { occurredAt: string; scoreBefore: number; scoreAfter: number }[],
+  at: Date,
+  fallback: number,
+) {
+  const prior = events.filter(event => Date.parse(event.occurredAt) < at.getTime()).at(-1);
+  if (prior) return prior.scoreAfter;
+  const next = events.find(event => Date.parse(event.occurredAt) >= at.getTime());
+  return next ? next.scoreBefore : fallback;
+}
+
+/** Current score versus the score at the start of the selected Eastern window. */
+export function effortScoreComparison(
+  state: CompeteState,
+  track: "open" | "verified",
+  range: EffortHistoryRange,
+  now = competeNow(state),
+): { current: number; prior: number; pct: number } | null {
+  const chartEvents = effortScoreEvents(state, track, now);
+  if (!chartEvents.length) return null;
+  const start = shiftAppDay(now, -effortScoreLookbackDays(range));
+  const inWindow = chartEvents.some(event => Date.parse(event.occurredAt) >= start.getTime());
+  if (!inWindow) return null;
+  const rating = state.ratings.find(r => r.sport === state.primary);
+  const current = (track === "verified" ? rating?.verifiedElo : rating?.openElo) ?? 500;
+  const prior = effortScoreAt(chartEvents, start, current);
+  if (!Number.isFinite(prior) || prior === 0) return null;
+  return { current, prior, pct: ((current - prior) / prior) * 100 };
+}
+
+function effortScoreEvents(state: CompeteState, track: "open" | "verified", now: Date) {
   const recorded = (state.effortScoreEvents ?? []).filter(event => event.sport === state.primary && event.track === track
     && Number.isFinite(Date.parse(event.occurredAt)) && Date.parse(event.occurredAt) <= now.getTime()
     && Number.isFinite(event.scoreBefore) && Number.isFinite(event.scoreAfter))
     .slice().sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt) || a.id.localeCompare(b.id, "en", { numeric: true }));
-  // Once durable recording begins, settlement is already part of those events.
   const firstRecordedAt = recorded[0] ? Date.parse(recorded[0].occurredAt) : Infinity;
   const legacy = state.periodResults.filter(result => result.sport === state.primary && result.track === track
     && Number.isFinite(Date.parse(result.periodEnd)) && Date.parse(result.periodEnd) < firstRecordedAt
     && Date.parse(result.periodEnd) <= now.getTime() && result.eloBefore !== result.eloAfter)
     .map(result => ({ id: `settlement:${result.id}`, occurredAt: result.periodEnd, scoreBefore: result.eloBefore, scoreAfter: result.eloAfter }));
-  const events = [...legacy, ...recorded].sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt) || a.id.localeCompare(b.id, "en", { numeric: true }));
+  return [...legacy, ...recorded].sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt) || a.id.localeCompare(b.id, "en", { numeric: true }));
+}
+
+/** Score events are committed changes, not estimates from activity distance. */
+export function effortScoreLine(state: CompeteState, track: "open" | "verified", range: EffortHistoryRange, now = competeNow(state)) {
+  const start = shiftAppDay(now, -effortScoreLookbackDays(range));
+  const end = shiftAppDay(now, 1);
+  const events = effortScoreEvents(state, track, now);
   const rows: { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean }[] = [];
-  const prior = events.filter(event => Date.parse(event.occurredAt) < start.getTime()).at(-1);
   const rating = state.ratings.find(r => r.sport === state.primary);
   const current = (track === "open" ? rating?.openElo : rating?.verifiedElo) ?? 500;
-  const initialValue = prior ? prior.scoreAfter : (events.find(event => Date.parse(event.occurredAt) >= start.getTime())?.scoreBefore ?? current);
+  const initialValue = effortScoreAt(events, start, current);
   rows.push({ id: "baseline", date: start.toISOString(), value: initialValue, inspectable: false });
   for (const event of events.filter(event => Date.parse(event.occurredAt) >= start.getTime())) {
     if (!rows.length || rows.at(-1)!.value !== event.scoreBefore) rows.push({ id: `before:${event.id}`, date: new Date(Math.max(start.getTime(), Date.parse(event.occurredAt) - 1)).toISOString(), value: event.scoreBefore, breakBefore: true, inspectable: false });

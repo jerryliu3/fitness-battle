@@ -17,7 +17,10 @@ const c=useThemeColors();
 }
 
 export function ChartRangeToggle({ value, onChange }: { value: TrainingRange; onChange: (range: TrainingRange) => void }) {
- return <OpenLineRangeToggle calendar value={value === "month" ? "fourWeeks" : value} onChange={next => onChange(next === "fourWeeks" ? "month" : next)} />;
+ return <OpenLineRangeToggle calendar value={value === "month" ? "fourWeeks" : value} onChange={next => {
+   if (next === "fourWeeks") onChange("month");
+   else if (next === "week" || next === "year") onChange(next);
+ }} />;
 }
 const sThemes = createThemedStyles(themeColors=>{return {
   openRoot: { flexDirection: "row", gap: 4 },

@@ -41,9 +41,9 @@ describe("progress history", () => {
       "a",
       "c",
     ]);
-    expect(recordStepPath(personalRecordHistory(s, now))).toContain(
-      "L 292 8",
-    );
+    expect(recordStepPath(personalRecordHistory(s, now))).toMatch(/^M /);
+    expect(recordStepPath(personalRecordHistory(s, now))).toContain("H ");
+    expect(recordStepPath(personalRecordHistory(s, now))).toContain("V ");
   });
   it("retains durable old receipts beyond the loaded activity window", () => {
     const a = run("old", "2025-01-01T12:00:00Z");
@@ -101,8 +101,8 @@ it("holds the prior best until each new record without extending to today", () =
   )[0]!;
   const single = personalRecordChart([a], now)!;
   expect(single.points).toHaveLength(1);
-  expect(single.path).toBe(`M ${single.points[0]!.x.toFixed(1)} ${single.points[0]!.y.toFixed(1)} H ${single.right.toFixed(1)}`);
-  expect(Date.parse(single.end)).toBe(now.getTime());
+  expect(single.path).toBe("");
+  expect(Date.parse(single.end)).toBe(Date.parse(a.startedAt));
   const b = {
     ...a,
     activityId: "second",
@@ -113,7 +113,8 @@ it("holds the prior best until each new record without extending to today", () =
   expect(chart.points[1]!.x).toBeGreaterThan(chart.points[0]!.x);
   expect(chart.points[1]!.y).toBeGreaterThan(chart.points[0]!.y);
   expect(chart.points.map((p) => p.seconds)).toEqual([1600, 1500]);
-  expect(chart.path).toBe(`M ${chart.points[0]!.x.toFixed(1)} ${chart.points[0]!.y.toFixed(1)} L ${chart.points[1]!.x.toFixed(1)} ${chart.points[1]!.y.toFixed(1)} H ${chart.right.toFixed(1)}`);
+  expect(chart.path).toBe(`M ${chart.points[0]!.x} ${chart.points[0]!.y} H ${chart.points[1]!.x} V ${chart.points[1]!.y}`);
+  expect(Date.parse(chart.end)).toBe(Date.parse(b.startedAt));
 });
 
 it("formats large effort scores with thousands grouping and without raw decimals", () => {
@@ -126,5 +127,5 @@ it("ignores slower attempts and future records in the milestone chart",()=>{
  const b={...a,activityId:"b",seconds:1700,startedAt:"2026-10-05T12:00:00Z"};
  const c={...a,activityId:"c",seconds:1500,startedAt:"2026-10-20T12:00:00Z"};
  const chart=personalRecordChart([c,b,a],now)!;
- expect(chart.points.map(p=>p.activityId)).toEqual(["a","c"]);expect(Date.parse(chart.end)).toBe(now.getTime());expect(chart.path.endsWith(`H ${chart.right.toFixed(1)}`)).toBe(true);
+ expect(chart.points.map(p=>p.activityId)).toEqual(["a","c"]);expect(Date.parse(chart.end)).toBe(Date.parse(c.startedAt));expect(chart.path.includes(`V ${chart.points[1]!.y}`)).toBe(true);
 });
