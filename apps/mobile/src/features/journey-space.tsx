@@ -18,6 +18,7 @@ import {
   defaultTrainingSports,
   distanceUnitLabel,
   earliestDataDate,
+  formatAppCalendarDate,
   formatClockTime,
   formatDistanceM,
   formatEffort,
@@ -708,7 +709,9 @@ export function JourneySpace({
       <View style={{ gap: 12 }}>
         <View style={s.sectionHeaderRow}>
           <AppText role="heading">
-            {selectedDayKey ? `Activities on ${formatActivityDate(selectedDayKey)}` : "Recent Activities"}
+            {selectedDayKey
+              ? `Activities on ${formatAppCalendarDate(selectedDayKey, { weekday: "short", month: "short", day: "numeric" })}`
+              : "Recent Activities"}
           </AppText>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
             {selectedDayKey && (
