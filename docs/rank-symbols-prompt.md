@@ -27,3 +27,15 @@ The built-in image tool edited individual assets using these constraints:
 All three generation calls requested true transparency, no text, no chevrons,
 no crown or jewel, and unchanged circular rim placement. The results were
 normalized to the shared portrait aperture and copied to both asset locations.
+
+
+## Elite symbol replacement
+
+Final edit: replace Elite’s green ribbon with the gold jewel from Master,
+retaining Athlete/Elite foliage unchanged. Built-in image tool prompt:
+
+> Extract ONLY the faceted gold diamond/star-shaped jewel at the bottom center of this supplied rank emblem. Preserve the jewel exactly: same silhouette, gold material, facets, size and placement within the original square canvas. Remove ALL green foliage, circular rim and everything else. Output the isolated original bottom gold diamond on a truly transparent canvas, with the same framing as the input. No redesign, no extra elements, no new star, no text.
+
+The extracted jewel is normalized to the original jewel’s footprint and composed
+over the unchanged Athlete wreath, which removes the ribbon without regenerating
+any foliage.

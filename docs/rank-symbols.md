@@ -4,8 +4,8 @@
 
 The nine visual identities follow the reference: Beginner, Rookie, Active,
 Challenger, Athlete, Elite, Master, Olympian and Champion. Beginner has one leaf per side, Rookie two, Active three and Challenger four.
-Athlete uses the fuller green wreath; Elite uses that same wreath with a ribbon.
-Master introduces gold and a faceted jewel,
+Athlete uses the fuller green wreath; Elite uses that same wreath with Master’s gold jewel beneath it.
+Master adds gold upper leaves,
 Olympian adds a star, and Champion finishes with a gold wreath and crown.
 
 ## Use on web or native
