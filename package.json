@@ -18,6 +18,7 @@
     "supabase:reset": "supabase db reset",
     "rankings:db:start": "supabase start --workdir rankings-db",
     "rankings:db:reset": "supabase db reset --workdir rankings-db",
+    "rankings:db:test": "bash rankings-db/scripts/run-sql-tests.sh",
     "rankings:ingest": "node packages/rankings/scripts/ingest.mjs",
     "lint:ui": "node scripts/check-ui-contract.mjs"
   },
