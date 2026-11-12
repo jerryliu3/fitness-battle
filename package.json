@@ -20,6 +20,9 @@
     "rankings:db:reset": "supabase db reset --workdir rankings-db",
     "rankings:db:test": "bash rankings-db/scripts/run-sql-tests.sh",
     "rankings:ingest": "node packages/rankings/scripts/ingest.mjs",
+    "rankings:candidate": "node packages/rankings/scripts/candidate.mjs",
+    "rankings:acquire": "node packages/rankings/scripts/acquire.mjs",
+    "rankings:schedule": "node packages/rankings/scripts/schedule.mjs",
     "lint:ui": "node scripts/check-ui-contract.mjs"
   },
   "devDependencies": {

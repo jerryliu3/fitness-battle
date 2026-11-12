@@ -266,6 +266,9 @@ describe("public results parsers", () => {
     // Freeze import marks frozen
     const freezeSql = editionImportSql(edition, snapshot, { allowCorrection: true, freeze: true });
     expect(freezeSql).toContain("publication_state = 'frozen'");
+    const stagedSql = editionImportSql(edition, snapshot, { stageOnly: true });
+    expect(stagedSql).toContain("publication_state = 'staged'");
+    expect(stagedSql).toContain("published_at = null");
     expect(freezeSql).toContain("imports cannot mutate a frozen edition");
   });
 });

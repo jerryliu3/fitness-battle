@@ -4,6 +4,8 @@ import type { IngestedEdition, IngestedFinish } from "./types";
 export type EditionImportOptions = {
   allowCorrection?: boolean;
   freeze?: boolean;
+  /** Stage without public visibility until publish_event_edition. */
+  stageOnly?: boolean;
   expectedRevision?: number;
   populationScope?: {
     distanceSlug?: string;
@@ -129,8 +131,8 @@ begin
     set name = ${quote(edition.eventName)},
         starts_on = ${starts},
         revision = case when ${options?.allowCorrection ? "true" : "false"} then revision + 1 else revision end,
-        publication_state = ${options?.freeze ? "'frozen'" : "'published'"},
-        published_at = coalesce(published_at, now()),
+        publication_state = ${options?.freeze ? "'frozen'" : options?.stageOnly ? "'staged'" : "'published'"},
+        published_at = case when ${options?.stageOnly ? "true" : "false"} then published_at else coalesce(published_at, now()) end,
         frozen_at = case when ${options?.freeze ? "true" : "false"} then coalesce(frozen_at, now()) else frozen_at end
     where id = v_edition;
   else
@@ -146,9 +148,9 @@ begin
       ${edition.editionYear},
       ${quote(edition.eventName)},
       ${starts},
-      ${options?.freeze ? "'frozen'" : "'published'"},
+      ${options?.freeze ? "'frozen'" : options?.stageOnly ? "'staged'" : "'published'"},
       1,
-      now(),
+      ${options?.stageOnly ? "null" : "now()"},
       ${options?.freeze ? "now()" : "null"}
     )
     returning id into v_edition;
