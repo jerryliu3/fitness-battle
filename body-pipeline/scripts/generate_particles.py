@@ -23,6 +23,7 @@ from lib.mesh_common import (  # noqa: E402
 
 import numpy as np
 import trimesh
+from scipy.spatial import cKDTree
 
 MAGIC = b"VBD1"
 CLASS_SURFACE = 1
@@ -107,11 +108,42 @@ def poisson_surface(
         grid.setdefault(key, []).append(idx)
 
     if len(selected_pts) < count:
-        extra, extra_idx = trimesh.sample.sample_surface(mesh, count - len(selected_pts))
-        selected_pts.extend(extra)
-        selected_n.extend(mesh.face_normals[extra_idx])
+        need = count - len(selected_pts)
+        extra_pts, extra_idx = trimesh.sample.sample_surface(mesh, max(need * 4, 2000))
+        extra_n = mesh.face_normals[extra_idx]
+        min_dist_sq = min_dist * min_dist
+        for p, n in zip(extra_pts, extra_n):
+            if len(selected_pts) >= count:
+                break
+            if all(np.sum((np.asarray(sp) - p) ** 2) >= min_dist_sq for sp in selected_pts):
+                selected_pts.append(p)
+                selected_n.append(n)
 
     return np.asarray(selected_pts, dtype=np.float32), np.asarray(selected_n, dtype=np.float32)
+
+
+def load_vertex_regions(mesh: trimesh.Trimesh, mesh_dir: Path, sex: str) -> np.ndarray:
+    path = mesh_dir / f"{sex}-vertex-regions.uint8"
+    if path.exists():
+        regions = np.fromfile(path, dtype=np.uint8)
+        if len(regions) == len(mesh.vertices):
+            return regions
+    return assign_region(mesh.vertices, mesh.bounds)
+
+
+def regions_for_points(
+    mesh: trimesh.Trimesh, points: np.ndarray, vertex_regions: np.ndarray
+) -> np.ndarray:
+    _, vi = cKDTree(mesh.vertices).query(points)
+    return vertex_regions[vi]
+
+
+def interior_normals(mesh: trimesh.Trimesh, points: np.ndarray) -> np.ndarray:
+    _, _, face_idx = trimesh.proximity.closest_point(mesh, points)
+    normals = mesh.face_normals[face_idx]
+    lengths = np.linalg.norm(normals, axis=1, keepdims=True)
+    lengths = np.maximum(lengths, 1e-6)
+    return (normals / lengths).astype(np.float32)
 
 
 def sample_interior(
@@ -178,16 +210,17 @@ def build_for_mesh(glb: Path, out_dir: Path, preset: QualityPreset, seed: int) -
     if isinstance(mesh, trimesh.Scene):
         mesh = trimesh.util.concatenate(tuple(mesh.geometry.values()))
     sex = glb.stem
+    mesh_dir = glb.parent
     rng = np.random.default_rng(seed)
-    bounds = mesh.bounds
+    vertex_regions = load_vertex_regions(mesh, mesh_dir, sex)
 
     surf_pos, surf_n = poisson_surface(mesh, preset.surface, rng, preset.poisson_min)
-    surf_regions = assign_region(surf_pos, bounds)
+    surf_regions = regions_for_points(mesh, surf_pos, vertex_regions)
     surf_class = np.full(len(surf_pos), CLASS_SURFACE, dtype=np.uint8)
 
     int_pos = sample_interior(mesh, preset.interior, rng)
-    int_n = np.zeros_like(int_pos)
-    int_regions = assign_region(int_pos, bounds)
+    int_n = interior_normals(mesh, int_pos) if len(int_pos) else np.zeros_like(int_pos)
+    int_regions = regions_for_points(mesh, int_pos, vertex_regions) if len(int_pos) else np.array([], dtype=np.uint8)
     int_class = np.full(len(int_pos), CLASS_INTERIOR, dtype=np.uint8)
 
     outline_dir = out_dir / sex

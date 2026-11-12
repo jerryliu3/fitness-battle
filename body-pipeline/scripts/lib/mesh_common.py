@@ -17,6 +17,18 @@ REGION_RESPIRATORY = 2
 REGION_MOVEMENT = 3
 
 
+def bone_label_to_region(label: str) -> int:
+    """Map Anny / MakeHuman bone label to vitals highlight region."""
+    l = label.lower()
+    if any(k in l for k in ("thigh", "calf", "foot", "toe", "upperarm", "lowerarm", "hand", "finger", "clavicle")):
+        return REGION_MOVEMENT
+    if any(k in l for k in ("chest", "heart", "sternum")):
+        return REGION_CARDIO
+    if any(k in l for k in ("spine", "ribs", "breath", "lung")):
+        return REGION_RESPIRATORY
+    return REGION_NONE
+
+
 def standing_arm_rotvec_deg() -> dict[str, tuple[float, float, float]]:
     """Small arm abduction so hands clear the torso (degrees, bone-local axes)."""
     return {

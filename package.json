@@ -25,7 +25,8 @@
     "rankings:schedule": "node packages/rankings/scripts/schedule.mjs",
     "lint:ui": "node scripts/check-ui-contract.mjs",
     "bodies:generate": "python3 body-pipeline/scripts/generate_humans.py && python3 body-pipeline/scripts/process_meshes.py && python3 body-pipeline/scripts/generate_particles.py",
-    "bodies:sync": "bash body-pipeline/scripts/sync_runtime_assets.sh"
+    "bodies:sync": "bash body-pipeline/scripts/sync_runtime_assets.sh",
+    "bodies:verify-sync": "bash body-pipeline/scripts/verify_asset_sync.sh"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { assetUrl, loadVbody } from "./load-vbody";
-import { applyHighlight, createParticleMaterial } from "./particle-material";
+import { applyHighlight, createParticleMaterial, setAppearance } from "./particle-material";
 import type {
   AppearanceMode,
   BodySex,
@@ -29,6 +29,8 @@ export interface VitalsBodyRendererProps {
   tuning?: VitalsBodyTuning;
   autoRotate?: boolean;
   className?: string;
+  onLoadError?: (message: string) => void;
+  onLoadSuccess?: () => void;
 }
 
 function cameraFor(view: ViewPreset, zoom: ZoomPreset): {
@@ -75,8 +77,18 @@ export function VitalsBodyRenderer({
   tuning = defaultTuning,
   autoRotate = false,
   className,
+  onLoadError,
+  onLoadSuccess,
 }: VitalsBodyRendererProps) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const ctxRef = useRef<{
+    schedule: () => void;
+    material: THREE.ShaderMaterial | null;
+    scene: THREE.Scene | null;
+    fog: THREE.FogExp2 | null;
+    groundMat: THREE.MeshBasicMaterial | null;
+    renderer: THREE.WebGLRenderer | null;
+  } | null>(null);
   const stateRef = useRef({
     view,
     zoom,
@@ -88,22 +100,32 @@ export function VitalsBodyRenderer({
   });
   stateRef.current = { view, zoom, system, mode, appearance, tuning, autoRotate };
 
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
+  const [ctxReady, setCtxReady] = useState(false);
+
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
 
     let disposed = false;
-    let geom: THREE.BufferGeometry | null = null;
     let material: THREE.ShaderMaterial | null = null;
     let points: THREE.Points | null = null;
+    let dampFrames = 0;
+    let viewSnap = "";
+    let raf = 0;
+
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(
+    const fog = new THREE.FogExp2(
       appearance === "dark" ? "#0a1418" : "#eef6f5",
       appearance === "dark" ? 0.14 : 0.06,
     );
+    scene.fog = fog;
 
     const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 40);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -121,63 +143,45 @@ export function VitalsBodyRenderer({
       "(prefers-reduced-motion: reduce)",
     ).matches;
 
+    material = createParticleMaterial(appearance, reducedMotion);
+
     const resize = () => {
       const w = host.clientWidth || 320;
       const h = host.clientHeight || 480;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
+      schedule();
     };
     resize();
     const ro = new ResizeObserver(resize);
     ro.observe(host);
 
+    const groundMat = new THREE.MeshBasicMaterial({
+      color: appearance === "dark" ? "#3fd6c5" : "#2aa89a",
+      transparent: true,
+      opacity: 0.25,
+      side: THREE.DoubleSide,
+    });
     const ground = new THREE.Mesh(
       new THREE.RingGeometry(0.55, 0.58, 64),
-      new THREE.MeshBasicMaterial({
-        color: appearance === "dark" ? "#3fd6c5" : "#2aa89a",
-        transparent: true,
-        opacity: 0.25,
-        side: THREE.DoubleSide,
-      }),
+      groundMat,
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = 0.002;
     scene.add(ground);
 
-    const load = async () => {
-      const url = assetUrl(assetBase, sex, mode, quality);
-      try {
-        const asset = await loadVbody(url);
-        if (disposed) return;
-        if (points) {
-          scene.remove(points);
-          geom?.dispose();
-          material?.dispose();
-        }
-        geom = buildGeometry(asset);
-        material = createParticleMaterial(appearance);
-        points = new THREE.Points(geom, material);
-        scene.add(points);
-      } catch (error) {
-        console.error("VitalsBodyRenderer: failed to load particle asset", error);
-      }
-    };
-    void load();
-
-    let raf = 0;
-    let viewSnap = "";
-    const start = performance.now();
-    const snapCamera = (view: ViewPreset, zoom: ZoomPreset) => {
-      const cam = cameraFor(view, zoom);
+    const snapCamera = (v: ViewPreset, z: ZoomPreset) => {
+      const cam = cameraFor(v, z);
       camera.position.copy(cam.position);
       controls.target.copy(cam.target);
     };
     snapCamera(view, zoom);
     viewSnap = `${view}:${zoom}`;
 
-    const tick = () => {
-      raf = requestAnimationFrame(tick);
+    const start = performance.now();
+
+    const draw = () => {
       const t = (performance.now() - start) / 1000;
       const s = stateRef.current;
       const camKey = `${s.view}:${s.zoom}`;
@@ -188,11 +192,13 @@ export function VitalsBodyRenderer({
           snapCamera("free", s.zoom);
         }
         viewSnap = camKey;
+        dampFrames = 45;
       }
       const cam = cameraFor(s.view, s.zoom);
       if (s.view !== "free") {
         camera.position.lerp(cam.position, 0.18);
         controls.target.lerp(cam.target, 0.18);
+        dampFrames = Math.max(dampFrames, 8);
       }
       controls.autoRotate =
         s.autoRotate && !reducedMotion && s.view === "free";
@@ -210,21 +216,107 @@ export function VitalsBodyRenderer({
       }
       renderer.render(scene, camera);
     };
-    tick();
+
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        draw();
+        const s = stateRef.current;
+        const spin = s.autoRotate && !reducedMotion && s.view === "free";
+        if (spin || dampFrames > 0) {
+          if (dampFrames > 0) dampFrames -= 1;
+          schedule();
+        }
+      });
+    };
+
+    const bumpDamping = () => {
+      dampFrames = 90;
+      schedule();
+    };
+    controls.addEventListener("change", bumpDamping);
+
+    ctxRef.current = {
+      schedule,
+      material,
+      scene,
+      fog,
+      groundMat,
+      renderer,
+    };
+    setCtxReady(true);
+    schedule();
 
     return () => {
       disposed = true;
+      setCtxReady(false);
+      ctxRef.current = null;
       cancelAnimationFrame(raf);
       ro.disconnect();
+      controls.removeEventListener("change", bumpDamping);
       controls.dispose();
-      geom?.dispose();
       material?.dispose();
       ground.geometry.dispose();
-      (ground.material as THREE.Material).dispose();
+      groundMat.dispose();
       renderer.dispose();
       host.removeChild(renderer.domElement);
     };
-  }, [assetBase, sex, mode, quality, appearance]);
+  }, [appearance]);
+
+  useEffect(() => {
+    if (!ctxReady) return;
+    const ctx = ctxRef.current;
+    const scene = ctx?.scene;
+    if (!scene || !ctx?.material) return;
+
+    let cancelled = false;
+    let geom: THREE.BufferGeometry | null = null;
+    let points: THREE.Points | null = null;
+
+    setLoadState("loading");
+    const url = assetUrl(assetBase, sex, mode, quality);
+
+    void (async () => {
+      try {
+        const asset = await loadVbody(url);
+        if (cancelled) return;
+        const existing = scene.getObjectByName("vitals-particles");
+        if (existing) {
+          scene.remove(existing);
+          (existing as THREE.Points).geometry.dispose();
+        }
+        geom = buildGeometry(asset);
+        const mat = ctx.material;
+        if (!mat) return;
+        points = new THREE.Points(geom, mat);
+        points.name = "vitals-particles";
+        scene.add(points);
+        setLoadState("ready");
+        onLoadSuccess?.();
+        ctx.schedule();
+      } catch (error) {
+        if (cancelled) return;
+        const message =
+          error instanceof Error ? error.message : "Failed to load body scan";
+        console.error("VitalsBodyRenderer:", message);
+        setLoadState("error");
+        onLoadError?.(message);
+        ctx.schedule();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (points) {
+        scene.remove(points);
+        geom?.dispose();
+      }
+    };
+  }, [assetBase, sex, mode, quality, ctxReady, onLoadError, onLoadSuccess]);
+
+  useEffect(() => {
+    ctxRef.current?.schedule();
+  }, [view, zoom, system, mode, tuning]);
 
   return (
     <div
@@ -232,7 +324,28 @@ export function VitalsBodyRenderer({
       className={className}
       role="img"
       aria-label={`${sex} body ${mode} particle scan`}
-      style={{ width: "100%", height: "100%", touchAction: "none" }}
-    />
+      aria-busy={loadState === "loading"}
+      style={{ width: "100%", height: "100%", touchAction: "none", position: "relative" }}
+    >
+      {loadState === "error" ? (
+        <div
+          className="vitals-body-load-error"
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            padding: 24,
+            textAlign: "center",
+            fontSize: 14,
+            opacity: 0.85,
+            pointerEvents: "none",
+          }}
+        >
+          Body scan assets could not be loaded. Run{" "}
+          <code style={{ fontSize: 12 }}>pnpm bodies:sync</code> after generation.
+        </div>
+      ) : null}
+    </div>
   );
 }

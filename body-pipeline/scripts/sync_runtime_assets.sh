@@ -8,5 +8,6 @@ mkdir -p "$DST"
 mkdir -p "$DST/pointclouds" "$DST/meshes"
 rm -rf "$DST/pointclouds"
 cp -a "$SRC/pointclouds" "$DST/"
-cp -a "$SRC/meshes/"*.glb "$DST/meshes/"
+cp -a "$SRC/meshes/"*.glb "$DST/meshes/" 2>/dev/null || true
+cp -a "$SRC/meshes/"*-vertex-regions.uint8 "$DST/meshes/" 2>/dev/null || true
 echo "Synced to $DST"

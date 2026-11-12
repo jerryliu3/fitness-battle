@@ -20,10 +20,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib.mesh_common import (  # noqa: E402
     BodySex,
+    assign_region,
+    bone_label_to_region,
     standing_arm_rotvec_deg,
     validate_mesh,
     write_json,
 )
+
+import numpy as np
 
 import roma
 import torch
@@ -67,12 +71,31 @@ def export_body(model: Anny, sex: BodySex, out_dir: Path) -> Path:
     faces = model.faces.cpu().numpy()
 
     mesh = trimesh.Trimesh(vertices=vertices, faces=faces, process=False)
+
+    weights = model.vertex_bone_weights.detach().cpu().numpy()
+    if weights.ndim == 3:
+        weights = weights[0]
+    bone_regions = np.array([bone_label_to_region(l) for l in model.bone_labels], dtype=np.uint8)
+    if weights.shape[0] == len(vertices):
+        vertex_regions = bone_regions[weights.argmax(axis=1)]
+    else:
+        vertex_regions = assign_region(vertices, np.array([vertices.min(0), vertices.max(0)]))
+    pre_merge_verts = vertices.copy()
+
     mesh.merge_vertices()
 
     source_dir = out_dir / "source-models"
     source_dir.mkdir(parents=True, exist_ok=True)
     obj_path = source_dir / f"{sex}-standing.obj"
     mesh.export(obj_path)
+    if len(vertex_regions) != len(mesh.vertices):
+        from scipy.spatial import cKDTree
+
+        _, idx = cKDTree(pre_merge_verts).query(mesh.vertices)
+        vertex_regions = vertex_regions[idx]
+
+    regions_path = source_dir / f"{sex}-vertex-regions.uint8"
+    regions_path.write_bytes(vertex_regions.astype(np.uint8).tobytes())
 
     meta = {
         "sex": sex,

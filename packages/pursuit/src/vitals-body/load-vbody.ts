@@ -13,30 +13,27 @@ export function assetUrl(
   return `${root}/pointclouds/${sex}/${mode}-${quality}.vbody`;
 }
 
-export async function loadVbody(url: string): Promise<VitalsParticleAsset> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
-  const buf = await res.arrayBuffer();
+export function parseVbodyBuffer(buf: ArrayBuffer, source = "buffer"): VitalsParticleAsset {
   const view = new DataView(buf);
   const magic = view.getUint32(0, true);
-  if (magic !== MAGIC) throw new Error(`Invalid vbody magic at ${url}`);
+  if (magic !== MAGIC) throw new Error(`Invalid vbody magic at ${source}`);
   const version = view.getUint32(4, true);
   if (version !== 1) throw new Error(`Unsupported vbody version ${version}`);
   const count = view.getUint32(8, true);
   const stride = view.getUint32(12, true);
   if (stride !== STRIDE) throw new Error(`Unexpected stride ${stride}`);
 
+  const expected = 16 + count * stride;
+  if (buf.byteLength < expected) {
+    throw new Error(
+      `Truncated vbody at ${source}: expected ${expected} bytes, got ${buf.byteLength}`,
+    );
+  }
+
   const positions = new Float32Array(count * 3);
   const normals = new Float32Array(count * 3);
   const regions = new Uint8Array(count);
   const classes = new Uint8Array(count);
-
-  const expected = 16 + count * stride;
-  if (buf.byteLength < expected) {
-    throw new Error(
-      `Truncated vbody at ${url}: expected ${expected} bytes, got ${buf.byteLength}`,
-    );
-  }
 
   let offset = 16;
   for (let i = 0; i < count; i++) {
@@ -52,4 +49,11 @@ export async function loadVbody(url: string): Promise<VitalsParticleAsset> {
   }
 
   return { count, positions, normals, regions, classes };
+}
+
+export async function loadVbody(url: string): Promise<VitalsParticleAsset> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
+  const buf = await res.arrayBuffer();
+  return parseVbodyBuffer(buf, url);
 }

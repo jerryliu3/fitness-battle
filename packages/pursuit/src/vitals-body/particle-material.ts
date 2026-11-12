@@ -8,24 +8,13 @@ const REGION_MAP: Record<HealthSystem, number> = {
   movement: 3,
 };
 
-export interface ParticleUniforms {
-  uTime: { value: number };
-  uMode: { value: number };
-  uHighlight: { value: number };
-  uOpacity: { value: number };
-  uBrightness: { value: number };
-  uGlow: { value: number };
-  uEdge: { value: number };
-  uSize: { value: number };
-  uTeal: { value: THREE.Color };
-  uGold: { value: THREE.Color };
-}
-
 export function createParticleMaterial(
   appearance: AppearanceMode,
+  reducedMotion: boolean,
 ): THREE.ShaderMaterial {
   const teal = appearance === "dark" ? "#5fe8d6" : "#2aa89a";
   const gold = appearance === "dark" ? "#e8c468" : "#c49a3c";
+
   return new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
@@ -39,9 +28,10 @@ export function createParticleMaterial(
       uGlow: { value: 1.1 },
       uEdge: { value: 0.8 },
       uSize: { value: 3.2 },
+      uAnimate: { value: reducedMotion ? 0 : 1 },
       uTeal: { value: new THREE.Color(teal) },
       uGold: { value: new THREE.Color(gold) },
-    } satisfies ParticleUniforms,
+    },
     vertexShader: /* glsl */ `
       attribute float aRegion;
       attribute float aClass;
@@ -72,6 +62,7 @@ export function createParticleMaterial(
       uniform float uOpacity;
       uniform float uBrightness;
       uniform float uGlow;
+      uniform float uAnimate;
       uniform vec3 uTeal;
       uniform vec3 uGold;
       void main() {
@@ -79,7 +70,9 @@ export function createParticleMaterial(
         float r = length(c);
         if (r > 0.5) discard;
         float soft = smoothstep(0.5, 0.08, r);
-        float pulse = 0.92 + 0.08 * sin(uTime * 1.2 + vRegion * 3.0);
+        float pulse = uAnimate > 0.5
+          ? 0.92 + 0.08 * sin(uTime * 1.2 + vRegion * 3.0)
+          : 1.0;
 
         vec3 base = mix(uTeal, uGold, clamp(vRim * 0.35, 0.0, 1.0));
         float interiorFade = (uMode > 0.5 && vClass > 1.5) ? 0.55 : 1.0;
@@ -95,6 +88,18 @@ export function createParticleMaterial(
       }
     `,
   });
+}
+
+export function setAppearance(
+  material: THREE.ShaderMaterial,
+  appearance: AppearanceMode,
+  renderer: THREE.WebGLRenderer,
+): void {
+  const teal = appearance === "dark" ? "#5fe8d6" : "#2aa89a";
+  const gold = appearance === "dark" ? "#e8c468" : "#c49a3c";
+  (material.uniforms.uTeal!.value as THREE.Color).set(teal);
+  (material.uniforms.uGold!.value as THREE.Color).set(gold);
+  renderer.toneMappingExposure = appearance === "dark" ? 1.15 : 1.05;
 }
 
 export function applyHighlight(

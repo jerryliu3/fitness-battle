@@ -27,7 +27,10 @@ python3 body-pipeline/scripts/process_meshes.py
 python3 body-pipeline/scripts/generate_particles.py
 python3 body-pipeline/scripts/validate_assets.py
 bash body-pipeline/scripts/sync_runtime_assets.sh
+pnpm bodies:verify-sync
 ```
+
+`apps/web` runs `sync_runtime_assets.sh` automatically before `dev` and `build`. Canonical generated output lives under `body-pipeline/generated/`; `apps/web/public/bodies/` is the synced runtime mirror.
 
 ## Interactive demo
 
