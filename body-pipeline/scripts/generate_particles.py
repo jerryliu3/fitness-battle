@@ -40,10 +40,11 @@ class QualityPreset:
     poisson_min: float
 
 
+# Quality = particle density. Counts were shifted down: old medium → high, old low → medium, new sparse low.
 PRESETS: dict[str, QualityPreset] = {
-    "high": QualityPreset(surface=12000, interior=9000, poisson_min=0.0042),
-    "medium": QualityPreset(surface=7000, interior=5000, poisson_min=0.0055),
-    "low": QualityPreset(surface=3500, interior=2500, poisson_min=0.0075),
+    "high": QualityPreset(surface=6500, interior=8500, poisson_min=0.005),
+    "medium": QualityPreset(surface=3200, interior=4800, poisson_min=0.0063),
+    "low": QualityPreset(surface=1400, interior=3000, poisson_min=0.0088),
 }
 
 
@@ -205,101 +206,79 @@ def write_vbody(
     write_json(path.with_suffix(".json"), meta)
 
 
-def build_for_mesh(glb: Path, out_dir: Path, preset: QualityPreset, seed: int) -> None:
+def build_for_mesh(glb: Path, out_dir: Path, seed: int) -> None:
     mesh = trimesh.load(glb, force="mesh")
     if isinstance(mesh, trimesh.Scene):
         mesh = trimesh.util.concatenate(tuple(mesh.geometry.values()))
     sex = glb.stem
     mesh_dir = glb.parent
-    rng = np.random.default_rng(seed)
     vertex_regions = load_vertex_regions(mesh, mesh_dir, sex)
-
-    surf_pos, surf_n = poisson_surface(mesh, preset.surface, rng, preset.poisson_min)
-    surf_regions = regions_for_points(mesh, surf_pos, vertex_regions)
-    surf_class = np.full(len(surf_pos), CLASS_SURFACE, dtype=np.uint8)
-
-    int_pos = sample_interior(mesh, preset.interior, rng)
-    int_n = interior_normals(mesh, int_pos) if len(int_pos) else np.zeros_like(int_pos)
-    int_regions = regions_for_points(mesh, int_pos, vertex_regions) if len(int_pos) else np.array([], dtype=np.uint8)
-    int_class = np.full(len(int_pos), CLASS_INTERIOR, dtype=np.uint8)
 
     outline_dir = out_dir / sex
     outline_dir.mkdir(parents=True, exist_ok=True)
 
-    write_vbody(
-        outline_dir / "outline-high.vbody",
-        surf_pos,
-        surf_n,
-        surf_regions,
-        surf_class,
-        {
-            "sex": sex,
-            "mode": "outline",
-            "quality": "high",
-            "seed": seed,
-            "count": len(surf_pos),
-            "stride_bytes": STRIDE,
-        },
-    )
+    for qi, (label, preset) in enumerate(PRESETS.items()):
+        rng = np.random.default_rng(seed + qi)
+        surf_pos, surf_n = poisson_surface(mesh, preset.surface, rng, preset.poisson_min)
+        surf_regions = regions_for_points(mesh, surf_pos, vertex_regions)
+        surf_class = np.full(len(surf_pos), CLASS_SURFACE, dtype=np.uint8)
 
-    cloud_pos = np.vstack([surf_pos, int_pos])
-    cloud_n = np.vstack([surf_n, int_n])
-    cloud_regions = np.concatenate([surf_regions, int_regions])
-    cloud_class = np.concatenate([surf_class, int_class])
+        int_pos = sample_interior(mesh, preset.interior, rng)
+        int_n = interior_normals(mesh, int_pos) if len(int_pos) else np.zeros_like(int_pos)
+        int_regions = (
+            regions_for_points(mesh, int_pos, vertex_regions)
+            if len(int_pos)
+            else np.array([], dtype=np.uint8)
+        )
+        int_class = np.full(len(int_pos), CLASS_INTERIOR, dtype=np.uint8)
 
-    write_vbody(
-        outline_dir / "cloud-high.vbody",
-        cloud_pos,
-        cloud_n,
-        cloud_regions,
-        cloud_class,
-        {
-            "sex": sex,
-            "mode": "cloud",
-            "quality": "high",
-            "seed": seed,
-            "surface_count": len(surf_pos),
-            "interior_count": len(int_pos),
-            "stride_bytes": STRIDE,
-        },
-    )
-
-    # Medium / low downsampled copies for mobile presets
-    for label, factor in (("medium", PRESETS["medium"]), ("low", PRESETS["low"])):
-        surf_n_pts = min(factor.surface, len(surf_pos))
-        idx = rng.choice(len(surf_pos), size=surf_n_pts, replace=False)
         write_vbody(
             outline_dir / f"outline-{label}.vbody",
-            surf_pos[idx],
-            surf_n[idx],
-            surf_regions[idx],
-            surf_class[idx],
-            {"sex": sex, "mode": "outline", "quality": label, "seed": seed},
+            surf_pos,
+            surf_n,
+            surf_regions,
+            surf_class,
+            {
+                "sex": sex,
+                "mode": "outline",
+                "quality": label,
+                "density": {"surface": len(surf_pos), "interior_target": preset.interior},
+                "seed": seed + qi,
+                "stride_bytes": STRIDE,
+            },
         )
-        if len(int_pos) == 0:
-            iidx = np.array([], dtype=np.int64)
+
+        if len(int_pos):
+            c_pos = np.vstack([surf_pos, int_pos])
+            c_n = np.vstack([surf_n, int_n])
+            c_r = np.concatenate([surf_regions, int_regions])
+            c_c = np.concatenate([surf_class, int_class])
         else:
-            int_n_pts = min(factor.interior, len(int_pos))
-            iidx = rng.choice(len(int_pos), size=int_n_pts, replace=False)
-        if len(iidx):
-            c_pos = np.vstack([surf_pos[idx], int_pos[iidx]])
-            c_n = np.vstack([surf_n[idx], int_n[iidx]])
-            c_r = np.concatenate([surf_regions[idx], int_regions[iidx]])
-            c_c = np.concatenate(
-                [surf_class[idx], np.full(len(iidx), CLASS_INTERIOR, dtype=np.uint8)]
-            )
-        else:
-            c_pos, c_n, c_r, c_c = surf_pos[idx], surf_n[idx], surf_regions[idx], surf_class[idx]
+            c_pos, c_n, c_r, c_c = surf_pos, surf_n, surf_regions, surf_class
+
         write_vbody(
             outline_dir / f"cloud-{label}.vbody",
             c_pos,
             c_n,
             c_r,
             c_c,
-            {"sex": sex, "mode": "cloud", "quality": label, "seed": seed},
+            {
+                "sex": sex,
+                "mode": "cloud",
+                "quality": label,
+                "density": {
+                    "surface": len(surf_pos),
+                    "interior": len(int_pos),
+                },
+                "seed": seed + qi,
+                "stride_bytes": STRIDE,
+            },
         )
 
-    print(f"Particles for {sex}: outline={len(surf_pos)} cloud={len(cloud_pos)}")
+        print(
+            f"Particles {sex} {label}: outline={len(surf_pos)} "
+            f"cloud={len(c_pos)} (interior {len(int_pos)})",
+        )
 
 
 def main() -> None:
@@ -317,13 +296,12 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
-    preset = PRESETS["high"]
     for sex in ("male", "female"):
         glb = args.mesh_dir / f"{sex}.glb"
         if not glb.exists():
             print(f"Missing {glb}", file=sys.stderr)
             raise SystemExit(1)
-        build_for_mesh(glb, args.out_dir, preset, args.seed + (0 if sex == "male" else 1))
+        build_for_mesh(glb, args.out_dir, args.seed + (0 if sex == "male" else 1))
 
     schema = {
         "magic": "VBD1",

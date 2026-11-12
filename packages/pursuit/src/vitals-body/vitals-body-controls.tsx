@@ -124,11 +124,16 @@ export function VitalsBodyControls(props: VitalsBodyControlProps) {
         { id: "dark", label: "Dark" },
         { id: "light", label: "Light" },
       ]} />
-      <Seg label="QUALITY" value={props.quality} onChange={props.onQuality} options={[
-        { id: "high", label: "High" },
-        { id: "medium", label: "Medium" },
-        { id: "low", label: "Low" },
-      ]} />
+      <Seg
+        label="DENSITY"
+        value={props.quality}
+        onChange={props.onQuality}
+        options={[
+          { id: "high", label: "High" },
+          { id: "medium", label: "Med" },
+          { id: "low", label: "Low" },
+        ]}
+      />
       {props.devTuning ? (
         <div
           style={{
@@ -139,7 +144,7 @@ export function VitalsBodyControls(props: VitalsBodyControlProps) {
           }}
         >
           <span style={{ fontSize: 11, opacity: 0.6 }}>DEV TUNING</span>
-          {slider("particleScale", "Particle size", 0.35, 1.25, 0.02)}
+          {slider("particleScale", "Particle size", 0.18, 0.85, 0.01)}
           {slider("opacity", "Opacity", 0.25, 0.95, 0.02)}
           {slider("brightness", "Brightness", 0.5, 1.35, 0.02)}
           {slider("glow", "Glow", 0.2, 1.1, 0.02)}

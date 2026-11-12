@@ -29,14 +29,25 @@ def bone_label_to_region(label: str) -> int:
     return REGION_NONE
 
 
-def standing_arm_rotvec_deg() -> dict[str, tuple[float, float, float]]:
-    """Small arm abduction so hands clear the torso (degrees, bone-local axes)."""
+def standing_pose_rotvec_deg() -> dict[str, tuple[float, float, float]]:
+    """Relaxed scan pose: arms at sides, feet slightly narrower (degrees, bone-local)."""
     return {
-        "upperarm01.L": (18.0, 8.0, 6.0),
-        "upperarm01.R": (-18.0, -8.0, -6.0),
+        "upperarm01.L": (6.0, 0.0, -10.0),
+        "upperarm01.R": (-6.0, 0.0, 10.0),
+        "upperarm02.L": (2.0, 0.0, 0.0),
+        "upperarm02.R": (-2.0, 0.0, 0.0),
         "lowerarm01.L": (6.0, 0.0, 0.0),
         "lowerarm01.R": (-6.0, 0.0, 0.0),
+        "upperleg01.L": (0.0, -7.0, 0.0),
+        "upperleg01.R": (0.0, 7.0, 0.0),
+        "upperleg02.L": (0.0, -4.0, 0.0),
+        "upperleg02.R": (0.0, 4.0, 0.0),
     }
+
+
+def standing_arm_rotvec_deg() -> dict[str, tuple[float, float, float]]:
+    """Deprecated alias for standing_pose_rotvec_deg."""
+    return standing_pose_rotvec_deg()
 
 
 def normalize_standing(mesh: trimesh.Trimesh, target_height: float = 1.72) -> trimesh.Trimesh:

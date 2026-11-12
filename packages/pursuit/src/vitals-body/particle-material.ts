@@ -53,8 +53,8 @@ export function createParticleMaterial(
         float classBoost = aClass < 1.5 ? 1.0 : 0.78;
         float cloudBoost = (uMode > 0.5 && aClass > 1.5) ? 1.08 : 1.0;
         float dist = max(0.55, -mv.z);
-        gl_PointSize = uSize * classBoost * cloudBoost * (64.0 / dist);
-        gl_PointSize = min(gl_PointSize, 14.0);
+        gl_PointSize = uSize * classBoost * cloudBoost * (52.0 / dist);
+        gl_PointSize = min(gl_PointSize, 10.0);
         gl_Position = projectionMatrix * mv;
       }
     `,
@@ -84,7 +84,7 @@ export function createParticleMaterial(
           : 1.0;
 
         vec3 base = mix(uTeal, uGold, clamp(vRim * uRimMix, 0.0, 1.0));
-        float interiorFade = (uMode > 0.5 && vClass > 1.5) ? 0.38 : 1.0;
+        float interiorFade = (uMode > 0.5 && vClass > 1.5) ? 0.52 : 1.0;
         float highlight = 1.0;
         if (uHighlight > 0.5) {
           highlight = abs(vRegion - uHighlight) < 0.5 ? 1.45 : 0.42;
