@@ -35,6 +35,12 @@ export { candidateDedupeKey, normalizeUrl } from "./acquire/dedupe";
 export { buildAcquisitionPreview, type AcquisitionPreview } from "./acquire/preview";
 export { assertPreviewAllowsApply } from "./acquire/validate";
 export {
+  buildFailedRunPatch,
+  buildPreparedRunPatch,
+  buildStagedRunPatch,
+  type RunPatch,
+} from "./acquire/run-lifecycle";
+export {
   upsertCandidateSql,
   upsertEditionMappingSql,
   upsertSourceDecisionSql,

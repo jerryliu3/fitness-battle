@@ -10,6 +10,9 @@ const {
   NYRR_FINISHERS_API,
   assertNyrrPayloadNotChallenge,
   assertPreviewAllowsApply,
+  buildFailedRunPatch,
+  buildPreparedRunPatch,
+  buildStagedRunPatch,
   fetchNyrrFinishers,
   buildAcquisitionPreview,
   editionImportSql,
@@ -21,7 +24,7 @@ const packageRoot = join(root, "..");
 const { requireDatabaseUrl, psqlFile, psqlQuery } = await import("./psql-util.mjs");
 
 const argv = process.argv.slice(2);
-const PARSER_VERSION = "acquire-2026-11-13";
+const PARSER_VERSION = "acquire-2026-11-14";
 
 function flag(name) {
   const index = argv.indexOf(name);
@@ -111,6 +114,25 @@ function getEditionPublicationState(databaseUrl, sourceSlug, externalEventId, ed
   return { state, revision: Number(revision) || 1 };
 }
 
+function readStagedEditionBinding(databaseUrl, mapping) {
+  const eventCode = mapping.externalEventId ?? mapping.adapterConfig?.eventCode;
+  const row = psqlQuery(
+    databaseUrl,
+    `select ee.id::text, ee.revision::text
+     from public.event_editions ee
+     join public.events e on e.id = ee.event_id
+     join public.sources s on s.id = e.source_id
+     where s.slug = ${quote(mapping.sourceSlug)}
+       and e.external_event_id = ${quote(String(eventCode))}
+       and ee.edition_year = ${mapping.editionYear}
+       and ee.publication_state = 'staged'
+     limit 1;`,
+  );
+  if (!row) return null;
+  const [editionId, revision] = row.split("|");
+  return { editionId: Number(editionId), revision: Number(revision) };
+}
+
 async function claimRun(mappingId, owner) {
   const databaseUrl = requireDatabaseUrl();
   return Number(
@@ -118,35 +140,12 @@ async function claimRun(mappingId, owner) {
   );
 }
 
-function updateRunOwned(runId, owner, patch) {
+function patchRun(runId, owner, patch) {
   const databaseUrl = requireDatabaseUrl();
-  const assignments = Object.entries(patch)
-    .map(([key, value]) => {
-      if (value == null) return `${key} = null`;
-      if (typeof value === "number") return `${key} = ${value}`;
-      if (typeof value === "boolean") return `${key} = ${value ? "true" : "false"}`;
-      if (Array.isArray(value)) return `${key} = array[${value.map((v) => quote(v)).join(",")}]::text[]`;
-      if (typeof value === "object") return `${key} = ${quote(JSON.stringify(value))}::jsonb`;
-      return `${key} = ${quote(value)}`;
-    })
-    .join(", ");
-  const terminal =
-    patch.status != null && ["succeeded", "failed", "cancelled", "blocked"].includes(patch.status);
-  const updated = psqlQuery(
+  psqlQuery(
     databaseUrl,
-    `update public.acquisition_runs
-     set ${assignments},
-         finished_at = case
-           when ${terminal ? "true" : "false"} then coalesce(finished_at, now())
-           else finished_at
-         end
-     where id = ${runId}
-       and lease_owner = ${quote(owner)}
-       and status = 'leased'
-       and lease_until > now()
-     returning id;`,
+    `select public.acquisition_patch_run(${runId}, ${quote(owner)}, ${quote(JSON.stringify(patch))}::jsonb);`,
   );
-  if (!updated) throw new Error(`Run ${runId} is not leased to ${owner} or lease expired.`);
 }
 
 async function fetchNyrrEdition(mapping) {
@@ -209,21 +208,18 @@ async function writeRunArtifacts(runId, edition, providerResponses, totalItems) 
   return { dir, normalized, providerSnapshot, preview };
 }
 
-function findStagedEditionId(databaseUrl, mapping, runId) {
-  const eventCode = mapping.externalEventId ?? mapping.adapterConfig?.eventCode;
+function resolveStagedRunId(databaseUrl, populationKey, explicitRunId) {
+  if (explicitRunId) return Number(explicitRunId);
   const row = psqlQuery(
     databaseUrl,
-    `select ee.id::text
-     from public.event_editions ee
-     join public.events e on e.id = ee.event_id
-     join public.sources s on s.id = e.source_id
-     join public.acquisition_runs ar on ar.id = ${runId}
+    `select ar.id::text
+     from public.acquisition_runs ar
      join public.acquisition_edition_mappings m on m.id = ar.mapping_id
-     where s.slug = ${quote(mapping.sourceSlug)}
-       and e.external_event_id = ${quote(String(eventCode))}
-       and ee.edition_year = ${mapping.editionYear}
-       and ee.publication_state = 'staged'
-       and m.population_key = ${quote(mapping.populationKey)}
+     where m.population_key = ${quote(populationKey)}
+       and ar.status = 'succeeded'
+       and ar.publication_outcome = 'staged'
+       and ar.staged_edition_id is not null
+     order by ar.finished_at desc nulls last, ar.id desc
      limit 1;`,
   );
   return row ? Number(row) : null;
@@ -232,7 +228,7 @@ function findStagedEditionId(databaseUrl, mapping, runId) {
 if (argv.includes("--help") || argv.length === 0) {
   console.log(`Usage:
   node packages/rankings/scripts/acquire.mjs --population-key nyrr:M2026:finishers [--owner HOST] [--apply]
-  node packages/rankings/scripts/acquire.mjs --publish-staged --population-key nyrr:M2026:finishers [--run RUN_ID]
+  node packages/rankings/scripts/acquire.mjs --publish-staged --population-key nyrr:M2026:finishers [--run RUN_ID] [--owner HOST]
 `);
   process.exit(0);
 }
@@ -245,20 +241,8 @@ if (argv.includes("--publish-staged")) {
   const mapping = await loadMapping(populationKey);
   assertMappingPermitted(mapping);
   const databaseUrl = requireDatabaseUrl();
-  const runId = flag("--run")
-    ? Number(flag("--run"))
-    : Number(
-        psqlQuery(
-          databaseUrl,
-          `select ar.id from public.acquisition_runs ar
-           join public.acquisition_edition_mappings m on m.id = ar.mapping_id
-           where m.population_key = ${quote(populationKey)}
-             and ar.publication_outcome = 'staged'
-           order by ar.finished_at desc nulls last, ar.id desc
-           limit 1;`,
-        ) || "",
-      );
-  if (!runId) throw new Error("No staged acquisition run found for mapping.");
+  const runId = resolveStagedRunId(databaseUrl, populationKey, flag("--run"));
+  if (!runId) throw new Error("No staged acquisition run with edition binding found.");
   const runMapping = psqlQuery(
     databaseUrl,
     `select m.population_key from public.acquisition_runs ar
@@ -266,15 +250,11 @@ if (argv.includes("--publish-staged")) {
      where ar.id = ${runId};`,
   );
   if (runMapping !== populationKey) throw new Error(`Run ${runId} does not belong to mapping ${populationKey}.`);
-  const editionId = findStagedEditionId(databaseUrl, mapping, runId);
-  if (!editionId) throw new Error("No staged edition for this mapping and source.");
-  psqlQuery(databaseUrl, `select public.publish_event_edition(${editionId});`);
-  psqlQuery(
+  const editionId = psqlQuery(
     databaseUrl,
-    `update public.acquisition_runs set publication_outcome = 'published', finished_at = coalesce(finished_at, now())
-     where id = ${runId};`,
+    `select public.acquisition_publish_staged_run(${runId}, ${quote(owner)});`,
   );
-  console.log(JSON.stringify({ populationKey, runId, editionId, published: true }, null, 2));
+  console.log(JSON.stringify({ populationKey, runId, editionId: Number(editionId), published: true }, null, 2));
   process.exit(0);
 }
 
@@ -302,8 +282,6 @@ if (existing?.state === "staged" && !replaceStaged) {
 const runId = await claimRun(mapping.mappingId, owner);
 
 try {
-  updateRunOwned(runId, owner, { parser_version: PARSER_VERSION });
-
   const fetched =
     mapping.adapter === "nyrr"
       ? await fetchNyrrEdition(mapping)
@@ -326,24 +304,31 @@ try {
   const sqlPath = join(artifacts.dir, "import.sql");
   await writeFile(sqlPath, importSql);
 
-  updateRunOwned(runId, owner, {
-    status: "succeeded",
-    artifact_dir: artifacts.dir,
-    normalized_sha256: artifacts.normalized.contentSha256,
-    raw_sha256: artifacts.providerSnapshot.contentSha256,
-    counts: {
-      extracted: fetched.edition.results.length,
-      skippedYouth: fetched.edition.skippedYouth,
-      skippedUnparsed: fetched.edition.skippedUnparsed,
-      expectedTotal: fetched.totalItems,
-    },
-    warnings: artifacts.preview.warnings,
-    publication_outcome: "prepared",
-  });
+  patchRun(
+    runId,
+    owner,
+    buildPreparedRunPatch({
+      parserVersion: PARSER_VERSION,
+      artifactDir: artifacts.dir,
+      normalizedSha256: artifacts.normalized.contentSha256,
+      rawSha256: artifacts.providerSnapshot.contentSha256,
+      counts: {
+        extracted: fetched.edition.results.length,
+        skippedYouth: fetched.edition.skippedYouth,
+        skippedUnparsed: fetched.edition.skippedUnparsed,
+        expectedTotal: fetched.totalItems,
+      },
+      warnings: artifacts.preview.warnings,
+    }),
+  );
 
+  let publication = "prepared";
   if (argv.includes("--apply")) {
     await psqlFile(databaseUrl, sqlPath);
-    updateRunOwned(runId, owner, { publication_outcome: "staged" });
+    const binding = readStagedEditionBinding(databaseUrl, mapping);
+    if (!binding) throw new Error("Import applied but no staged edition binding was found.");
+    patchRun(runId, owner, buildStagedRunPatch(binding));
+    publication = "staged";
   }
 
   console.log(
@@ -355,29 +340,13 @@ try {
         preview: artifacts.preview,
         sqlPath,
         apply: argv.includes("--apply") ? "applied" : "prepared-only",
-        publication: argv.includes("--apply") ? "staged" : "prepared",
+        publication,
       },
       null,
       2,
     ),
   );
 } catch (error) {
-  try {
-    updateRunOwned(runId, owner, {
-      status: "failed",
-      error_summary: error instanceof Error ? error.message : String(error),
-      publication_outcome: "failed",
-    });
-  } catch {
-    psqlQuery(
-      databaseUrl,
-      `update public.acquisition_runs
-       set status = 'failed',
-           error_summary = ${quote(error instanceof Error ? error.message : String(error))},
-           publication_outcome = 'failed',
-           finished_at = coalesce(finished_at, now())
-       where id = ${runId};`,
-    );
-  }
+  patchRun(runId, owner, buildFailedRunPatch(error instanceof Error ? error.message : String(error)));
   throw error;
 }
