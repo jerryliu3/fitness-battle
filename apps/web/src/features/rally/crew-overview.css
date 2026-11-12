@@ -55,9 +55,6 @@
   flex-wrap:wrap;
   margin:12px 0
 }
-.crew-week-value>span:first-child {
-  letter-spacing:-.05em
-}
 .crew-ghost {
   display:block;
   border:1px solid color-mix(in srgb,var(--ink) 12%,transparent);
@@ -258,7 +255,7 @@
   background:var(--app-action-soft)
 }
 .crew-detail-stamps>div>span:first-child {
-  font-size:28px;
+  font-size:var(--type-metric-size);
   color:var(--app-focus-ring)
 }
 .crew-derby-card { display: grid; gap: 16px; width: 100%; padding: 20px; border: 0; border-radius: 20px; text-align: left; background: var(--app-surface-inverse); color: var(--app-text-on-inverse); }

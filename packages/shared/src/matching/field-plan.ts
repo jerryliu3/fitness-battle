@@ -9,7 +9,6 @@ export interface WeekFieldPlanInput {
   crewId?: string | null;
   crewName?: string;
   members: readonly CrewBoardMember[];
-  seed?: string;
 }
 
 /**

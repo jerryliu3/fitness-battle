@@ -4,15 +4,6 @@ import type { PoolPlayer, WaveEnrollment } from "./types";
 import { DEFAULT_GROUP_CAPACITY } from "./types";
 import { nextDailyWaveWindowAt } from "./waves";
 
-/** Stable seed shared by every crew mate for the same wave. */
-export function crewFieldSeed(
-  crewId: string,
-  sport: SportId,
-  waveStartIso: string,
-): string {
-  return `crew:${crewId}:${sport}:${waveStartIso}`;
-}
-
 export interface CrewFieldMember {
   id: string;
   name: string;
