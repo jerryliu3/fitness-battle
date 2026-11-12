@@ -6,13 +6,14 @@ const path = (
   fill: string,
   extra: FieldNode["attrs"] = {},
 ): FieldNode => ({ tag: "path", attrs: { d, fill, ...extra } });
-export function crewRelayScene(model: Relay, width: number, prefix: string) {
+export function crewRelayScene(model: Relay, width: number, prefix: string, compact = false) {
   const length = Math.max(180, width - 52),
     left = 16;
   const point = (fraction: number, back = false, bottom = false) => ({
     x: left + fraction * length + (back ? 24 : 0),
     y:
       174 -
+      (compact ? 34 : 0) -
       fraction * 30 +
       (back ? -46 : 0) +
       (bottom ? 18 : 0),
@@ -28,6 +29,7 @@ export function crewRelayScene(model: Relay, width: number, prefix: string) {
   const ground: FieldNode[] = [
     path(top(0, 1), "#e4ece8"),
     path(face(0, 1), "#c7d5cf"),
+    path(`M${p(1)} L${p(1, true)} L${p(1, true, true)} L${p(1, false, true)}Z`, "#a8bdb4"),
     path(`M${p(0)} L${p(1)}`, "none", { stroke: "#d3dfd9", strokeWidth: 2 }),
   ];
   const segments = model.segments
@@ -103,16 +105,16 @@ export function crewRelayScene(model: Relay, width: number, prefix: string) {
     return {
       id: s.id,
       x,
-      y: 20,
+      y: compact ? 4 : 20,
       anchorX: left + fraction * length + 12,
-      anchorY: 151 - fraction * 30,
+      anchorY: 151 - (compact ? 34 : 0) - fraction * 30,
       color: s.color,
     };
   });
   for (const person of people)
     ground.push(
       path(
-        `M${person.x} 94 Q${person.x} 116 ${person.anchorX} ${person.anchorY}`,
+        `M${person.x} ${compact ? 38 : 94} Q${person.x} ${compact ? 82 : 116} ${person.anchorX} ${person.anchorY}`,
         "none",
         { stroke: person.color, strokeWidth: 1.5, strokeDasharray: "3 4" },
       ),
@@ -123,6 +125,6 @@ export function crewRelayScene(model: Relay, width: number, prefix: string) {
     finish,
     people,
     finishX: model.finish === null ? null : left + model.finish * length,
-    height: 250,
+    height: compact ? 176 : 250,
   };
 }

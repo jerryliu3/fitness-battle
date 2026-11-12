@@ -90,3 +90,10 @@ export * from "./race-history";
 export * from "./race-replay";
 export * from "./rank-symbols";
 export * from "./compete-time-series";
+
+export * from "./crew-overview";
+
+export * from "./crew-passport";
+
+export * from "./crew-local-program";
+export * from "./crew-derby";

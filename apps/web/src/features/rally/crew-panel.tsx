@@ -3,17 +3,16 @@ import { colors as appearanceColors } from "@/theme/app-colors";
 
 import { useBootLoading } from "@/shell/boot-readiness";
 import { RankAvatar } from "@/ui/rank-symbol";
-import { AppParagraph, AppText, AppHeading, Section, typographyStyle } from "@/ui/section";
+import { AppParagraph, AppText, AppHeading, typographyStyle } from "@/ui/section";
 
 import { RankBadge } from "../progress/rank-badge";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { CrewSessions } from "./crew-sessions";
-import { CrewRelay } from "./crew-relay";
+import { CrewOverview } from "./crew-overview";
 import { Sheet } from "@/ui/sheet";
-import { playCue } from "@/lib/haptics";
-import { competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, getDemoCompeteState, rankSymbolForScore } from "@fitness-battle/shared";
+import { rankSymbolForScore, APP_ICON_PATHS, competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, crewLineup, getDemoCompeteState } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 interface Crew {
@@ -53,6 +52,7 @@ interface CrewData {
   previousProgress?: {crew_id:string;user_id:string;distance_m:number;moving_sec:number;session_count:number}[];
   previousProgressAvailable?: Record<string,boolean>;
   notices: { id: string; body: string }[];
+  seasonWeeks?: Record<string, number>;
 }
 
 function humanCrewError(code?: string): string {
@@ -297,19 +297,9 @@ export function CrewPanel() {
   const sessionsMetric = crew?.format === "personal_target" || crew?.sport === "strength";
   const memberTotal = (id: string) =>
     crewMemberWeekValue(entries, id, sessionsMetric);
-  const totalM = entries.reduce((t, e) => t + Number(e.distance_m), 0);
   const previousDistanceM = data?.previousProgressAvailable?.[crew.id]
     ? (data.previousProgress??[]).filter(row=>row.crew_id===crew.id && members.some(m=>m.user_id===row.user_id)).reduce((sum,row)=>sum+Number(row.distance_m),0)
     : null;
-  const memberNames = members.map((m) => m.display_name);
-  const memberCountLabel =
-    members.length === 1 ? "1 member" : `${members.length} members`;
-  const memberCaption =
-    members.length === 1
-      ? "1 member · Solo circle"
-      : memberNames.length <= 3
-        ? memberNames.join(", ") || "No members yet"
-        : `${memberNames.slice(0, 3).join(", ")} + ${memberNames.length - 3} more`;
   return (
     <>
       {user && !offlineMode && !data && (
@@ -323,195 +313,18 @@ export function CrewPanel() {
 
       {(!user || offlineMode || data) && (
         <>
-          <div className="focus-registration-tabs focus-crew-tabs">
-            {crews.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                aria-pressed={crew.id === c.id}
-                onClick={() => setSelected(c.id)}
-              >
-                {c.name}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => {
-                setName("");
-                setCode("");
-                setPanel("add");
-              }}
-            >
-              New crew
-            </button>
-          </div>
-          <section
-            className="focus-crew-hero"
-          >
-            <img className="club-landscape" src="/club/alpine-trail.jpg" alt=""/>
-            <AppParagraph typographyRole="label" className="fb-kicker">
-              {isSolo
-                ? "Solo circle · 1 member"
-                : `Your people · ${memberCountLabel}`}
-            </AppParagraph>
-            <AppHeading level={1} role="display"><button type="button" className="club-crew-name" onClick={()=>setPanel("members")} aria-label={`View ${crew.name} members`}>{crew.name}</button></AppHeading>
-            <div className="focus-row">
-              <button
-                type="button"
-                className="focus-avatar-stack"
-                onClick={() => setPanel("members")}
-                aria-label="View crew members"
-                style={{
-                  cursor: "pointer",
-                  background: "none",
-                  border: 0,
-                  padding: 0,
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                {members.slice(0, 5).map((m) => (
-                  <RankAvatar key={m.user_id} rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} decorative={false} size={48} />
-                ))}
-                {members.length > 5 && (
-                  <span
-                    style={{
-                      width: "36px",
-                      height: "36px",
-                      borderRadius: "18px",
-                      background: "var(--card, #fff)",
-                      color: "var(--ink, #00101b)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: "1px solid var(--line, #e0e5dc)",
-                      marginLeft: "-8px",
-                      ...typographyStyle("caption"),
-                    }}
-                  >
-                    +{members.length - 5}
-                  </span>
-                )}
-              </button>
-              <div className="focus-crew-hero-buttons">
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setPanel("invite");
-                    if (!crew || crew.id === "solo-preview") return;
-                    const link = `${window.location.origin}/field?invite=${encodeURIComponent(crew.invite_code)}`;
-                    void navigator.clipboard
-                      .writeText(link)
-                      .then(
-                        () => {
-                          void playCue("success");
-                          setNote("Invite link copied.");
-                        },
-                        () => {
-                          setNote(`Invite link: ${link}`);
-                        },
-                      );
-                  }}
-                >
-                  Invite
-                </button>
-                <button
-                  type="button"
-                  className="focus-crew-gear-btn"
-                  title="Crew settings"
-                  aria-label="Crew settings"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setPanel("manage");
-                  }}
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                  </svg>
-                </button>
-              </div>
+          <header className="crew-header">
+            <div className="crew-header-main">
+              <AppHeading level={1} role="heading" className="crew-header-name"><select aria-label="Switch crew" value={crew.id} onChange={e => {
+                if (e.target.value === "new") setPanel("add");
+                else setSelected(e.target.value);
+              }}>{crews.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}<option value="new">New crew +</option></select><svg aria-hidden="true" className="crew-header-chevron" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.chevron} /></svg></AppHeading>
             </div>
-          </section>
-          <div className="focus-crew-layout">
-            <div className="focus-crew-main">
-              <section className="focus-card">
-                <AppParagraph typographyRole="label" className="fb-kicker">Our shared week · {crew.sport}</AppParagraph>
-                {sessionsMetric ? (
-                  <AppText role="hero">{entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} <AppText role="caption" secondary>sessions</AppText></AppText>
-                ) : (
-                  <AppText role="hero" className="focus-goal">
-                    {formatDistanceM(totalM, state?.units)}{" "}
-                    <AppText role="caption" secondary>
-                      {`${unitLabel} together`}
-                    </AppText>
-                  </AppText>
-                )}
-                <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
-                <AppParagraph typographyRole="body" className="fb-copy">
-                  {sessionsMetric
-                    ? `Each member aims for ${crew.target_sessions} sessions.`
-                    : "Every pace belongs here."}
-                </AppParagraph>
-              </section>
-              {user && !isSolo ? <CrewSessions key={`${user.id}:${crew.id}`} crewId={crew.id} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} userId={user.id} userName={user.displayName} demo={offlineMode} sport={crew.sport} /> : null}
-              {user ? (
-                <>
-                  <Section title="Crew standings">
-                    {members
-                      .slice()
-                      .sort((a, b) => memberTotal(b.user_id) - memberTotal(a.user_id))
-                      .map((m, i) => (
-                        <button
-                          type="button"
-                          className="fb-row"
-                          key={m.user_id}
-                          style={{
-                            width: "100%",
-                            textAlign: "left",
-                            cursor: "pointer",
-                            background: "none",
-                            border: 0,
-                            padding: "8px 0",
-                            borderBottom: "1px solid var(--line, #e0e5dc)",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                          onClick={() => {
-                            if (m.user_id === user?.id) {
-                              router.push("/athlete");
-                            } else {
-                              setViewingMember(m);
-                            }
-                          }}
-                        >
-                          <span>{i + 1}</span>
-                          <RankAvatar rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} size={48} />
-                          <b className="fb-grow">{m.display_name}</b>
-                          <RankBadge score={m.effort_score} />
-                          <AppText role="value">
-                            {sessionsMetric
-                              ? `${memberTotal(m.user_id)} sessions`
-                              : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`}
-                          </AppText>
-                        </button>
-                      ))}
-                  </Section>
-                </>
-              ) : null}
-            </div>
-          </div>
+            <div className="crew-header-actions"><button type="button" className="crew-invite" onClick={() => setPanel(isSolo ? "add" : "invite")}>Invite</button><button type="button" aria-label="Crew settings" onClick={() => setPanel("manage")}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.settings} /></svg></button></div>
+          </header>
+          {!isSolo ? <CrewOverview crewId={crew.id} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => setPanel("members")}>
+            {user && <CrewSessions compact key={`${user.id}:${crew.id}`} crewId={crew.id} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} userId={user.id} userName={user.displayName} demo={offlineMode} sport={crew.sport} />}
+          </CrewOverview> : user ? <section className="focus-card"><AppHeading level={2} role="display">Make room for your people.</AppHeading><button type="button" className="fb-btn" onClick={() => setPanel("add")}>Create or join a crew</button></section> : null}
         </>
       )}
       {!panel && note && (
@@ -692,7 +505,7 @@ export function CrewPanel() {
           </>
         ) : panel === "members" ? (
           <ul className="focus-member-list">
-            {members.map((m) => (
+            {crewLineup(members, entries, crew.sport).map((m) => (
               <li key={m.user_id}>
                 <RankAvatar rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} size={64} />
                 <div><b>{m.display_name}</b><AppParagraph typographyRole="caption" className="fb-note">{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`} this week</AppParagraph></div>
@@ -763,6 +576,9 @@ export function CrewPanel() {
             <AppParagraph typographyRole="body" className="fb-copy">
               {crew?.name} · {crew?.sport} · {crew?.format.replaceAll("_", " ")}
             </AppParagraph>
+            <Link className="fb-btn" onClick={() => setPanel(null)} href={`/arena?event=${crew.sport}${state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? "" : `&crewId=${encodeURIComponent(crew.id)}`}`}>
+              {state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? "View sport event" : "Join Crew Derby"}
+            </Link>
             <button
               className="fb-btn-line"
               disabled={busy}
@@ -774,7 +590,7 @@ export function CrewPanel() {
             </button>
             <AppParagraph typographyRole="caption" className="fb-note">
               A crew rest marker does not freeze effort score. Week freezes live in
-              Athlete → Preferences.
+              Athlete preferences.
             </AppParagraph>
             {crew?.id && crew.id !== "solo-preview" && (
               <div
@@ -869,7 +685,7 @@ export function CrewPanel() {
                   : `${formatDistanceM(memberTotal(viewingMember.user_id), state?.units)} ${unitLabel}`}
               </div>
               <span style={{ ...typographyStyle("body"), color: "var(--muted)" }}>
-                {crew.name} · {crew.sport}
+                {crew.name} · {crew.sport} · {Math.round(memberTotal(viewingMember.user_id) / Math.max(1, members.reduce((sum, m) => sum + memberTotal(m.user_id), 0)) * 100)}% of crew total
               </span>
             </div>
             <button

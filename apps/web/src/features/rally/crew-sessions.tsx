@@ -15,6 +15,7 @@ import {
 import { Sheet } from "@/ui/sheet";
 export function CrewSessions({
   crewId,
+  compact = false,
   portraits = {},
   userId,
   userName = "Athlete",
@@ -22,6 +23,7 @@ export function CrewSessions({
   sport = "running",
 }: {
   crewId: string;
+  compact?: boolean;
   portraits?: Record<string, string | null | undefined>;
   userId: string;
   userName?: string;
@@ -105,7 +107,9 @@ export function CrewSessions({
       setBusy(false);
     }
   }
-  return (
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const nextSession = sessions.filter(s => !s.cancelled_at && Date.parse(s.starts_at) > Date.now()).sort((a,b) => Date.parse(a.starts_at) - Date.parse(b.starts_at))[0];
+  const content = (
     <Section className="focus-card start-line" title="Start Line" action={<button
           type="button"
           className="fb-btn-ghost"
@@ -118,7 +122,6 @@ export function CrewSessions({
           ＋ Schedule
         </button>}>
 
-      {demo ? <AppParagraph typographyRole="caption" className="fb-note">Demo · saved on this device</AppParagraph> : null}
       {sessions.map((s) => {
         const joined = s.participants.some((p) => p.user_id === userId),
           closed = !!s.cancelled_at || Date.parse(s.starts_at) <= Date.now();
@@ -171,7 +174,7 @@ export function CrewSessions({
                       void write({ action: "rsvp", id: s.id, join: !joined })
                     }
                   >
-                    {joined ? "Leave session" : "Count me in ↗"}
+                    {joined ? "Leave session" : "Count me in"}
                   </button>
                   {s.created_by === userId ? (
                     <button
@@ -295,4 +298,6 @@ export function CrewSessions({
       </Sheet>
     </Section>
   );
+  return compact ? <><button type="button" className="crew-action-card" onClick={() => setDetailsOpen(true)}><span>Start Line </span><strong>{nextSession?.title ?? "Set the next start"}</strong><small>{error ? "Sessions unavailable" : nextSession ? `${new Date(nextSession.starts_at).toLocaleDateString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: nextSession.time_zone })} · ${nextSession.participants.length} going` : "Schedule a session"}</small></button><Sheet open={detailsOpen} title="Start Line" body="" minimal onClose={() => setDetailsOpen(false)}>{content}</Sheet></> : content;
+
 }

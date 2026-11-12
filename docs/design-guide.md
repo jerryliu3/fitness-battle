@@ -1110,3 +1110,26 @@ to that reservation. Content remains in normal flow so Continue cannot overlap
 longer text. On compact screens or with larger accessibility text, the outer
 sheet's existing scrolling remains an accessibility fallback; ticket content is
 never clipped or scaled down. Hidden ticket measurement does not run a countdown.
+
+### Crew overview — November 11
+
+Crew uses a compact name switcher, member count and invite/settings actions above
+one shared weekly progress hero. The existing dimensional relay keeps member
+colors and the checkered finish; Crew Ghost is explicitly last week's total,
+not an inferred same-day pace. Replay reads all pages of the existing scoped
+activity endpoint and interpolates through chronological activity events using
+a fractional cursor, like competition replay. Equal timestamps remain distinct
+events. Scale and member colors stay fixed; interpolation is presentation only.
+Aggregate weekly totals remain the current reading.
+
+The header contains the crew title, Invite and settings. The teammate lineup
+orders weekly distance descending (sessions for strength), keeps four cards in
+view and scrolls horizontally with View all when more members are present.
+Highlights are non-interactive feed rows. The full-width weekly contract presents existing shared progress. Start Line
+and Crew Passport form two action cards, with details kept in sheets. The passport
+shows current-week milestones from recorded progress. Session scheduling and RSVPs
+retain their existing writes. Highlights appear only for a shared finish or full
+participation. Contracts and configurable season passports use the shared program data model
+or isolated device storage for offline accounts. See [crew programs](crew-programs.md).
+Derby shows aggregate scores from normal sport-event fields in the same wave
+and opens team standings. Registration remains in the ordinary event flow.
