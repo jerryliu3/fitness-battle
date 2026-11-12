@@ -145,18 +145,6 @@ export function VitalsBodyRenderer({
 
     material = createParticleMaterial(appearance, reducedMotion);
 
-    const resize = () => {
-      const w = host.clientWidth || 320;
-      const h = host.clientHeight || 480;
-      renderer.setSize(w, h, false);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      schedule();
-    };
-    resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(host);
-
     const groundMat = new THREE.MeshBasicMaterial({
       color: appearance === "dark" ? "#3fd6c5" : "#2aa89a",
       transparent: true,
@@ -229,6 +217,18 @@ export function VitalsBodyRenderer({
         }
       });
     };
+
+    const resize = () => {
+      const w = host.clientWidth || 320;
+      const h = host.clientHeight || 480;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      schedule();
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(host);
 
     const bumpDamping = () => {
       dampFrames = 90;
