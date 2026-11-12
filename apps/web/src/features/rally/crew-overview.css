@@ -226,3 +226,38 @@
   height:100%;
   background:var(--ink)
 }
+.crew-stamps {
+  display:flex;
+  gap:6px;
+  color:var(--action-primary)
+}
+.crew-stamps span {
+  border:1px solid currentColor;
+  border-radius:50%;
+  width:32px;
+  height:32px;
+  display:grid;
+  place-items:center
+}
+.crew-detail-stamps {
+  display:grid;
+  gap:12px
+}
+.crew-detail-stamps>div {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:18px;
+  border:1px solid var(--line);
+  border-radius:18px
+}
+.crew-detail-stamps>div>div {
+  flex:1
+}
+.crew-detail-stamps .is-earned {
+  background:var(--app-action-soft)
+}
+.crew-detail-stamps>div>span:first-child {
+  font-size:28px;
+  color:var(--app-focus-ring)
+}
