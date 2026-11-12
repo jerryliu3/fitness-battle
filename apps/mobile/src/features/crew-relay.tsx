@@ -59,7 +59,7 @@ const s=useThemedStyles(sThemes);
   const volume = view.volume;
   const ghostFraction = !relay.sessions && props.previousDistanceM != null
     ? Math.min(1, props.previousDistanceM / (Math.max(1, relay.model.total, relay.target ?? 0) * 1.2)) : null;
-  const ghost = ghostFraction == null ? null : { x: 16 + ghostFraction * Math.max(180, view.width - 52), y: 174 - ghostFraction * 30 };
+  const ghost = ghostFraction == null ? null : { x: 16 + ghostFraction * Math.max(180, view.width - 52), y: 174 - (props.compact ? 34 : 0) - ghostFraction * 30 };
 
 
   return (
@@ -81,11 +81,11 @@ const s=useThemedStyles(sThemes);
         horizontal
         showsHorizontalScrollIndicator={view.width > width}
       >
-        <View style={{ width: view.width, height: compact ? 132 : view.scene.height }}>
+        <View style={{ width: view.width, height: view.scene.height }}>
           <Svg
             width={view.width}
-            height={compact ? 132 : view.scene.height}
-            viewBox={compact ? `0 90 ${view.width} 132` : undefined}
+            height={view.scene.height}
+            viewBox={`0 0 ${view.width} ${view.scene.height}`}
             accessibilityLabel={`${volume(view.model.total)} together${view.target ? ` of ${volume(view.target)} target` : "; target unavailable"}`}
           >
             {view.scene.ground.map(drawFieldNode)}
@@ -122,7 +122,7 @@ const s=useThemedStyles(sThemes);
               </SvgText>
             ) : null}
           </Svg>
-          {!compact && view.scene.people.filter(p => !hiddenIds.includes(p.id)).map((p) => {
+          {view.scene.people.filter(p => !hiddenIds.includes(p.id)).map((p) => {
             const m = view.model.segments.find(
               (segment) => segment.id === p.id,
             )!;
@@ -131,35 +131,38 @@ const s=useThemedStyles(sThemes);
               <Pressable
                 key={p.id}
                 accessibilityRole="button"
-                accessibilityState={{ selected: view.member?.id === p.id }}
+                accessibilityState={compact ? undefined : { selected: view.member?.id === p.id }}
                 accessibilityLabel={`${m.name}, ${volume(m.value)}`}
                 onPress={() => {
                   setSelected(p.id);
                   onSelectMember?.(p.id);
                 }}
-                style={[s.marker, { left: p.x - 28, top: p.y }]}
+                style={[s.marker, compact && { width: 44, minHeight: 44 }, { left: p.x - (compact ? 22 : 28), top: p.y }]}
               >
                 <View
                   style={[
                     s.photo,
+                    compact && { width: 34, height: 34, borderRadius: 17, borderWidth: 2 },
                     {
                       borderColor:
-                        view.member?.id === p.id ? c.ink : p.color,
+                        !compact && view.member?.id === p.id ? c.ink : p.color,
                     },
                   ]}
                 >
                   <UserAvatar
                     src={person?.avatar_url}
                     name={m.name}
-                    size={34}
+                    size={compact ? 30 : 34}
                   />
                 </View>
-                <AppText role="label" numberOfLines={1}>
-                  {m.name.split(" ")[0]}
-                </AppText>
-                <AppText role="caption" secondary numberOfLines={1}>
-                  {volume(m.value)}
-                </AppText>
+                {!compact && <>
+                  <AppText role="label" numberOfLines={1}>
+                    {m.name.split(" ")[0]}
+                  </AppText>
+                  <AppText role="caption" secondary numberOfLines={1}>
+                    {volume(m.value)}
+                  </AppText>
+                </>}
               </Pressable>
             );
           })}

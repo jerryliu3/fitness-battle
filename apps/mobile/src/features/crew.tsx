@@ -110,6 +110,12 @@ function inviteLink(code: string): string {
 export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: boolean; crewId?: string } = {}) {
 const c=useThemeColors();
 const f=useFocusStyles();
+  const headerAction = {
+    width: 44, height: 44, borderRadius: 22, borderWidth: 1,
+    borderColor: c.line, backgroundColor: c.card,
+    alignItems: "center", justifyContent: "center", flexShrink: 0,
+  } as const;
+
 
   const { state, refresh, dispatch } = useCompeteStore();
   const { user } = useAuth();
@@ -464,12 +470,21 @@ const f=useFocusStyles();
         </SectionStack>
       ) : (
         <SectionStack divided={false}>
-          <View style={{ flexDirection: "row", gap: 12, alignItems: "center", paddingVertical: 8 }}>
-            <View style={{ flex: 1, gap: 8 }}>
-              <Pressable accessibilityRole="button" accessibilityLabel="Switch crew" onPress={() => setSwitcherOpen(true)} style={{ minHeight: 44, justifyContent: "center" }}><AppText accessibilityRole="header" role="display">{crew.name} ⌄</AppText></Pressable>
-              <Pressable accessibilityRole="button" accessibilityLabel="View crew members" onPress={() => open("members")} style={{ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44 }}><View style={{ flexDirection: "row" }}>{members.slice(0, 3).map(m => <View key={m.user_id} style={{ marginRight: -5 }}>{!hiddenIds.includes(m.user_id) && <UserAvatar src={m.avatar_url} name={m.display_name} size={24} />}</View>)}</View><AppText role="caption" secondary>{members.length} {members.length === 1 ? "member" : "members"}</AppText></Pressable>
+          <View style={{ gap: 4, paddingVertical: 4 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <Pressable accessibilityRole="button" accessibilityLabel={`Switch crew, ${crew.name}`} onPress={() => setSwitcherOpen(true)} style={{ flex: 1, minWidth: 0, minHeight: 44, flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <AppText accessibilityRole="header" role="heading" numberOfLines={1} style={{ flexShrink: 1 }}>{crew.name}</AppText>
+                <View style={{ transform: [{ rotate: "90deg" }] }}><AppIcon name="chevron" size={16} /></View>
+              </Pressable>
+              {user && <View style={{ flexDirection: "row", gap: 8 }}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Invite to crew" onPress={() => open("invite")} style={headerAction}><AppIcon name="plus" size={20} /></Pressable>
+                <Pressable accessibilityRole="button" accessibilityLabel="Crew settings" onPress={() => open("manage")} style={headerAction}><AppIcon name="settings" size={20} /></Pressable>
+              </View>}
             </View>
-            {user && <View style={{ flexDirection: "row", gap: 8 }}><Pressable accessibilityRole="button" accessibilityLabel="Invite to crew" onPress={() => open("invite")} style={[f.chip, { width: 44, height: 44, borderRadius: 22, justifyContent: "center", alignItems: "center" }]}><AppText role="heading">＋</AppText></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Crew settings" onPress={() => open("manage")} style={[f.chip, { width: 44, height: 44, borderRadius: 22, justifyContent: "center", alignItems: "center" }]}><AppIcon name="preferences" size={20} /></Pressable></View>}
+            <Pressable accessibilityRole="button" accessibilityLabel="View crew members" onPress={() => open("members")} style={{ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44 }}>
+              <View style={{ flexDirection: "row", gap: 4 }}>{members.slice(0, 3).map(m => <View key={m.user_id} style={{ width: 24, height: 24 }}>{!hiddenIds.includes(m.user_id) && <UserAvatar src={m.avatar_url} name={m.display_name} size={24} />}</View>)}</View>
+              <AppText role="caption" secondary>{members.length} {members.length === 1 ? "member" : "members"}</AppText>
+            </Pressable>
           </View>
           <CrewOverview crewId={crew.id} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} hiddenIds={hiddenIds} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)}>
             {user && <CrewSessions compact key={`${user.id}:${crew.id}`} crewId={crew.id} hiddenIds={hiddenIds} onSelectMember={(id, name) => setViewingMember(members.find(m => m.user_id === id) ?? { user_id: id, display_name: name, crew_id: crew.id, rest_week: null, status: "former" })} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} sport={crew.sport} />}

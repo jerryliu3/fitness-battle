@@ -13,7 +13,7 @@ import { useCompete } from "@/components/compete-context";
 import { CrewSessions } from "./crew-sessions";
 import { CrewOverview } from "./crew-overview";
 import { Sheet } from "@/ui/sheet";
-import { competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, getDemoCompeteState } from "@fitness-battle/shared";
+import { APP_ICON_PATHS, competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, getDemoCompeteState } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 interface Crew {
@@ -317,15 +317,15 @@ export function CrewPanel() {
         <>
           <header className="crew-header">
             <div className="crew-header-main">
-              <AppHeading level={1} role="display"><select aria-label="Switch crew" value={crew.id} onChange={e => {
+              <AppHeading level={1} role="heading" className="crew-header-name"><select aria-label="Switch crew" value={crew.id} onChange={e => {
                 if (e.target.value === "new") setPanel("add");
                 else setSelected(e.target.value);
-              }}>{crews.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}<option value="new">New crew +</option></select></AppHeading>
+              }}>{crews.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}<option value="new">New crew +</option></select><svg aria-hidden="true" className="crew-header-chevron" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.chevron} /></svg></AppHeading>
               <button type="button" className="crew-header-meta fb-btn-ghost" onClick={() => setPanel("members")} aria-label={`View ${memberCountLabel}`}>
-                <span className="focus-avatar-stack">{members.slice(0, 3).map(m => <UserAvatar key={m.user_id} src={m.avatar_url} name={m.display_name} size={24} />)}</span>{memberCountLabel}
+                <span className="crew-header-avatars">{members.slice(0, 3).map(m => <UserAvatar key={m.user_id} src={m.avatar_url} name={m.display_name} size={24} />)}</span>{memberCountLabel}
               </button>
             </div>
-            <div className="crew-header-actions"><button type="button" aria-label="Invite to crew" onClick={() => setPanel(isSolo ? "add" : "invite")}>＋</button><button type="button" aria-label="Crew settings" onClick={() => setPanel("manage")}>⚙</button></div>
+            <div className="crew-header-actions"><button type="button" aria-label="Invite to crew" onClick={() => setPanel(isSolo ? "add" : "invite")}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.plus} /></svg></button><button type="button" aria-label="Crew settings" onClick={() => setPanel("manage")}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.settings} /></svg></button></div>
           </header>
           {!isSolo ? <CrewOverview crewId={crew.id} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)}>
             {user && <CrewSessions compact key={`${user.id}:${crew.id}`} crewId={crew.id} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} userId={user.id} userName={user.displayName} demo={offlineMode} sport={crew.sport} />}

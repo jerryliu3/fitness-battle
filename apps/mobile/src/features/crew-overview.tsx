@@ -5,6 +5,7 @@ import { crewOverview, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage
 import { useThemeColors } from "../theme";
 import { useFocusStyles, FocusSheet } from "../ui/focus";
 import { AppText } from "../ui/section";
+import { AppIcon } from "../ui/app-icon";
 import { UserAvatar } from "../ui/user-avatar";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { CrewRelay } from "./crew-relay";
@@ -65,8 +66,8 @@ export function CrewOverview({ crewId, onSelectMember, hiddenIds, children, ...i
         <CrewRelay {...input} entries={view.entries} compact hiddenIds={hiddenIds} onSelectMember={onSelectMember} />
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderColor: c.line, paddingTop: 10 }}>
-        <Pressable accessibilityRole="button" disabled={!replayEntries} accessibilityLabel={playing ? "Pause replay" : "Replay this week"} accessibilityState={{ selected: playing }} onPress={() => { if (!playing && frame === lastFrame) setFrame(0); setPlaying(!playing); }} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.surfaceInverse, alignItems: "center", justifyContent: "center" }}>
-          <AppText role="label" style={{ color: c.textOnInverse }}>{playing ? "Ⅱ" : "▶"}</AppText>
+        <Pressable accessibilityRole="button" disabled={!replayEntries} accessibilityLabel={playing ? "Pause replay" : "Replay this week"} accessibilityState={{ selected: playing }} onPress={() => { if (!playing && frame === lastFrame) setFrame(0); setPlaying(!playing); }} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.surfaceInverse, opacity: replayEntries ? 1 : 0.4, alignItems: "center", justifyContent: "center" }}>
+          <AppIcon name={playing ? "pause" : "play"} size={20} color={c.textOnInverse} />
         </Pressable>
         <View accessible accessibilityRole="adjustable" accessibilityLabel="Weekly replay timeline" accessibilityValue={{ min: 0, max: lastFrame, now: frame, text: frame === lastFrame ? "Now" : `Day ${frame}` }} accessibilityActions={[{ name: "increment" }, { name: "decrement" }]} onAccessibilityAction={e => selectFrame(frame + (e.nativeEvent.actionName === "increment" ? 1 : -1))} onLayout={e => setTrackWidth(e.nativeEvent.layout.width)} onStartShouldSetResponder={() => true} onResponderGrant={e => selectFrame(Math.round(e.nativeEvent.locationX / trackWidth * lastFrame))} onResponderMove={e => selectFrame(Math.round(e.nativeEvent.locationX / trackWidth * lastFrame))} style={{ flex: 1, height: 44, justifyContent: "center" }}>
           <View pointerEvents="none" style={{ height: 5, borderRadius: 4, backgroundColor: c.line }}>

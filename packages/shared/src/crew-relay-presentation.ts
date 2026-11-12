@@ -58,7 +58,7 @@ export function buildCrewRelayViewState(
 ) {
   const { model, sessions, kind, target, label, inactiveCount, rosterSize } =
     relay;
-  const width = options.compact ? Math.max(180, options.containerWidth) : crewRelayTrackWidth(options.containerWidth, model);
+  const width = options.compact ? Math.max(220, options.containerWidth, model.segments.length * 44 + 52) : crewRelayTrackWidth(options.containerWidth, model);
   return {
     model,
     sessions,
@@ -73,7 +73,7 @@ export function buildCrewRelayViewState(
     ),
     segmentKey: crewRelaySegmentKey(model),
     width,
-    scene: crewRelayScene(model, width, options.scenePrefix),
+    scene: crewRelayScene(model, width, options.scenePrefix, options.compact),
     member: crewRelaySelectedMember(
       model,
       options.selected,

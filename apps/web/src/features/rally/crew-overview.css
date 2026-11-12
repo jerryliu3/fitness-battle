@@ -4,9 +4,9 @@
   min-width:0
 }
 .crew-header {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:start;
   gap:12px;
   margin:8px 0 24px
 }
@@ -15,11 +15,12 @@
   flex:1
 }
 .crew-header select {
-  font:var(--type-display);
+  font:var(--type-heading);
   color:var(--ink);
   background:transparent;
   border:0;
-  max-width:100%;
+  width:100%;
+  appearance:none;
   min-height:44px;
   padding:0 24px 0 0;
   text-overflow:ellipsis
@@ -36,8 +37,12 @@
   gap:4px
 }
 .crew-header-actions button {
-  min-height:44px;
-  min-width:44px;
+  display:grid;
+  place-items:center;
+  width:44px;
+  height:44px;
+  padding:0;
+  flex-shrink:0;
   border:1px solid var(--line);
   border-radius:50%;
   background:var(--card);
@@ -89,6 +94,10 @@
   width:34px
 }
 .crew-play {
+  display:grid;
+  place-items:center;
+  padding:0;
+  flex-shrink:0;
   width:44px;
   height:44px;
   border:0;
@@ -267,3 +276,9 @@
   padding:0;
   min-height:44px
 }
+
+.crew-header-name { position:relative; min-width:0; margin:0; }
+.crew-header-chevron { position:absolute; right:0; top:50%; transform:translateY(-50%) rotate(90deg); pointer-events:none; }
+.crew-header-avatars { display:flex; gap:4px; }
+.club-crew-marker.is-compact { width:44px; min-height:44px; justify-content:flex-start; }
+.club-crew-marker.is-compact .crew-member-photo { width:34px; height:34px; border-radius:50%; overflow:hidden; }

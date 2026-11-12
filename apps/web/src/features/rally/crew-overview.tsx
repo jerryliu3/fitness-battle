@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
-import { crewOverview, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
+import { APP_ICON_PATHS, crewOverview, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
 import { AppHeading, AppText, AppParagraph } from "@/ui/section";
 import { UserAvatar } from "@/ui/user-avatar";
 import { Sheet } from "@/ui/sheet";
@@ -54,7 +54,7 @@ export function CrewOverview({ crewId, onSelectMember, children, ...input }: Pro
       {input.previousDistanceM != null && !view.relay.sessions && <AppText role="caption" className="crew-ghost">Crew Ghost · {view.volume(input.previousDistanceM)} last week</AppText>}
       <CrewRelay {...input} entries={view.entries} compact onSelectMember={onSelectMember} />
       <div className="crew-replay">
-        <button type="button" className="crew-play" disabled={!replayEntries} aria-label={playing ? "Pause replay" : "Replay this week"} aria-pressed={playing} onClick={() => { if (!playing && frame === lastFrame) setFrame(0); setPlaying(!playing); }}>{playing ? "Ⅱ" : "▶"}</button>
+        <button type="button" className="crew-play" disabled={!replayEntries} aria-label={playing ? "Pause replay" : "Replay this week"} aria-pressed={playing} onClick={() => { if (!playing && frame === lastFrame) setFrame(0); setPlaying(!playing); }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS[playing ? "pause" : "play"]} /></svg></button>
         <input aria-label="Weekly replay timeline" type="range" disabled={!replayEntries} min={0} max={lastFrame} step={1} value={frame} onChange={e => { setPlaying(false); setFrame(Number(e.target.value)); }} />
         <AppText role="caption">{frame === lastFrame ? "Now" : frame === 0 ? "Start" : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][frame - 1]}</AppText>
       </div>

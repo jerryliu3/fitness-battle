@@ -54,7 +54,7 @@ export function CrewRelay(props: Props) {
   const volume = view.volume;
   const ghostFraction = !relay.sessions && props.previousDistanceM != null
     ? Math.min(1, props.previousDistanceM / (Math.max(1, relay.model.total, relay.target ?? 0) * 1.2)) : null;
-  const ghost = ghostFraction == null ? null : { x: 16 + ghostFraction * Math.max(180, view.width - 52), y: 174 - ghostFraction * 30 };
+  const ghost = ghostFraction == null ? null : { x: 16 + ghostFraction * Math.max(180, view.width - 52), y: 174 - (props.compact ? 34 : 0) - ghostFraction * 30 };
 
 
   return (
@@ -68,12 +68,12 @@ export function CrewRelay(props: Props) {
       <div className="club-crew-track-scroll">
         <div
           className="club-crew-track"
-          style={{ width: view.width, height: props.compact ? 132 : view.scene.height }}
+          style={{ width: view.width, height: view.scene.height }}
         >
           <svg
             width={view.width}
-            height={props.compact ? 132 : view.scene.height}
-            viewBox={props.compact ? `0 90 ${view.width} 132` : `0 0 ${view.width} ${view.scene.height}`}
+            height={view.scene.height}
+            viewBox={`0 0 ${view.width} ${view.scene.height}`}
             role="img"
             aria-label={`${volume(view.model.total)} together${view.target ? ` of ${volume(view.target)} target` : "; target unavailable"}`}
           >
@@ -111,31 +111,33 @@ export function CrewRelay(props: Props) {
               </text>
             ) : null}
           </svg>
-          {!props.compact && view.scene.people.map((p) => {
+          {view.scene.people.map((p) => {
             const m = view.model.segments.find((segment) => segment.id === p.id)!;
             const person = members.find((member) => member.user_id === p.id);
             return (
               <button
                 type="button"
-                className="club-crew-marker"
+                className={`club-crew-marker${props.compact ? " is-compact" : ""}`}
                 key={p.id}
-                style={{ left: p.x - 28, top: p.y }}
-                aria-pressed={view.member?.id === p.id}
+                style={{ left: p.x - (props.compact ? 22 : 28), top: p.y }}
+                aria-pressed={props.compact ? undefined : view.member?.id === p.id}
                 aria-label={`${m.name}, ${volume(m.value)}`}
                 onClick={() => { setSelected(p.id); props.onSelectMember?.(p.id); }}
               >
                 <span
                   className="crew-member-photo"
                   style={{
-                    border: `3px solid ${view.member?.id === p.id ? "#142b3b" : p.color}`,
+                    border: `${props.compact ? 2 : 3}px solid ${!props.compact && view.member?.id === p.id ? appearanceColors.ink : p.color}`,
                   }}
                 >
-                  <UserAvatar src={person?.avatar_url} name={m.name} size={34} />
+                  <UserAvatar src={person?.avatar_url} name={m.name} size={props.compact ? 30 : 34} />
                 </span>
-                <b>{m.name.split(" ")[0]}</b>
-                <AppText as="small" role="caption" secondary>
-                  {volume(m.value)}
-                </AppText>
+                {!props.compact && <>
+                  <b>{m.name.split(" ")[0]}</b>
+                  <AppText as="small" role="caption" secondary>
+                    {volume(m.value)}
+                  </AppText>
+                </>}
               </button>
             );
           })}
