@@ -8,10 +8,12 @@ import {
   competeNow,
   formatHealthNumber,
   formatSleepDuration,
+  getHealthMetricCorridor,
   recordedHealthSeries,
   type AnalyticsTimeLens,
   type CompeteState,
 } from "@fitness-battle/shared";
+import { AthleteTelemetryMatrix } from "./athlete-telemetry-matrix";
 
 type HealthMetricKey = "hrv" | "rhr" | "sleep";
 
@@ -55,6 +57,16 @@ export function HealthLabSpace({
   const inspected = selected?.value != null ? selected : lastRecorded;
   const formatReading = (metric: HealthMetricKey, value: number) =>
     metric === "sleep" ? formatSleepDuration(value) : metric === "hrv" ? `${formatHealthNumber(value)} ms` : `${formatHealthNumber(value)} bpm`;
+  const corridorSeries = useMemo(() => {
+    const values = activeRows.map((row) => row.value);
+    const metricId = selectedMetric === "rhr" ? "resting-hr" : selectedMetric;
+    const personal = getHealthMetricCorridor(metricId, values);
+    if (!personal) return undefined;
+    return {
+      high: values.map(() => personal.high),
+      low: values.map(() => personal.low),
+    };
+  }, [activeRows, selectedMetric]);
   const latest = (metric: HealthMetricKey) => {
     const rows = metric === "hrv" ? series.hrv : metric === "rhr" ? series.rhr : series.sleep;
     const last = [...rows].reverse().find((row) => row.value != null);
@@ -132,6 +144,7 @@ export function HealthLabSpace({
               selectedIdx={selectedIdx}
               onSelectIdx={setSelectedIdx}
               stroke={c.tennis}
+              corridor={corridorSeries}
               formatY={(v) => formatReading(selectedMetric, v)}
               accessibilityLabel={`${titles[selectedMetric]} recorded history`}
             />
@@ -142,6 +155,8 @@ export function HealthLabSpace({
           )}
         </View>
       </View>
+
+      {state && !signedOut ? <AthleteTelemetryMatrix state={state} signedOut={false} /> : null}
 
       <View style={s.insightCard}>
         <View style={s.insightIcon}>
