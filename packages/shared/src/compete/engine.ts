@@ -15,6 +15,7 @@ import {
   type WaveEnrollment,
 } from "../matching";
 import { eloFromWeeklyEffort, periodEffort } from "./effort";
+import type { RankSymbolId } from "../rank-symbols";
 import { mergeActivities, normalizeSampleActivity, provenanceOf } from "./ledger";
 import { isTrainingGoal } from "./suggestion";
 import { settleElo } from "./elo";
@@ -80,6 +81,7 @@ export interface Action {
     | "log-manual"
     | "set-city"
     | "set-avatar"
+    | "set-rank-symbol"
     | "set-units"
     | "set-primary"
     | "set-focus"
@@ -114,6 +116,7 @@ export interface Action {
   name?: string;
   city?: string;
   avatarUrl?: string | null;
+  rankSymbol?: RankSymbolId | null;
   units?: UnitSystem;
   sport?: SportId;
   metric?: HealthMetricId;
@@ -1056,6 +1059,9 @@ function reduceCompeteAction(
           ? action.avatarUrl.trim()
           : null;
       return { ...rolled, avatarUrl };
+    }
+    case "set-rank-symbol": {
+      return { ...rolled, rankSymbol: action.rankSymbol ?? null };
     }
     case "set-units": {
       if (action.units !== "us" && action.units !== "metric") return rolled;

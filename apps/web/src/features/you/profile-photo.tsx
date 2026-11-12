@@ -1,9 +1,9 @@
 "use client";
-import { UserAvatar } from "@/ui/user-avatar";
+import { RankAvatar } from "@/ui/rank-symbol";
 import { AppParagraph } from "@/ui/section";
 
 import { useEffect, useRef, useState } from "react";
-import { APP_ICON_PATHS, type CompeteState } from "@fitness-battle/shared";
+import { APP_ICON_PATHS, effectiveRankSymbol, type CompeteState } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { createClient } from "@/lib/supabase/client";
@@ -90,7 +90,13 @@ export function ProfilePhoto({ state, email }: { state: CompeteState; email?: st
   return <div className="club-profile-photo">
     <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onAvatarChosen} />
     <button type="button" className="focus-portrait" aria-label="Profile photo options" disabled={avatarBusy} onClick={() => setOpen(true)}>
-      <UserAvatar src={state.avatarUrl} name={state.name} size={86} fallback={<svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={APP_ICON_PATHS.person} fill="currentColor" stroke="none" /></svg>} />
+      <RankAvatar
+        rank={effectiveRankSymbol(state)}
+        src={state.avatarUrl}
+        name={state.name}
+        size={144}
+        fallback={<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={APP_ICON_PATHS.person} fill="currentColor" stroke="none" /></svg>}
+      />
     </button>
     {avatarError && <AppParagraph typographyRole="body" role="alert" className="fb-error">{avatarError}</AppParagraph>}
     <Sheet open={open} title="Profile photo" body="" onClose={() => setOpen(false)}>

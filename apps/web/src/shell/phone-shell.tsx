@@ -1,5 +1,5 @@
 "use client";
-import { UserAvatar } from "@/ui/user-avatar";
+import { RankAvatar } from "@/ui/rank-symbol";
 
 import { useAuth } from "@/components/auth-context";
 import { useCompete, useCompeteFieldRefresh } from "@/components/compete-context";
@@ -8,7 +8,7 @@ import { FieldScreen } from "@/features/field/field-screen";
 import { TodayScreen } from "@/features/today/today-screen";
 import { AthletePage, ProgressPage } from "@/features/you/you-route";
 import {
-  hasCountedActivityToday, weeklyActivityStreak, competeNow,
+  hasCountedActivityToday, weeklyActivityStreak, competeNow, effectiveRankSymbol,
   APP_ICON_PATHS,
   SHELL_TABS,
   isShellTabId,
@@ -180,19 +180,27 @@ export function PhoneShell({
     <div className="phone-frame">
       <div className="phone-shell">
         {!onAthlete && productPath !== "/week" && !progressDetail && active === "today" && <header className="focus-shell-header">
-          <div className="club-header-effort"><EffortRail compact /></div>
-          {streak && <span className={`club-week-streak${streak.activeToday ? " is-active" : ""}`} aria-label={`${streak.count} week activity streak${streak.activeToday ? ", active today" : ", inactive today"}`}><svg width="18" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d={APP_ICON_PATHS[streak.activeToday ? "flameFilled" : "flame"]} fill="currentColor" /></svg><b>{streak.count}</b></span>}
+          <div className="focus-shell-identity">
+            <Link
+              href={webProductPath("/athlete")}
+              className={`focus-shell-profile${onAthlete ? " is-selected" : ""}`}
+              aria-label="Open athlete settings"
+              aria-current={onAthlete ? "page" : undefined}
+            >
+              <RankAvatar
+                rank={effectiveRankSymbol(state)}
+                src={state?.avatarUrl}
+                name={state?.name ?? "Athlete"}
+                size={48}
+                fallback={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ color: "var(--muted)" }}>
+                  <path d={APP_ICON_PATHS.person} fill="currentColor" stroke="none" />
+                </svg>}
+              />
+            </Link>
+            <div className="club-header-effort"><EffortRail compact /></div>
+            {streak && <span className={`club-week-streak${streak.activeToday ? " is-active" : ""}`} aria-label={`${streak.count} week activity streak${streak.activeToday ? ", active today" : ", inactive today"}`}><svg width="18" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d={APP_ICON_PATHS[streak.activeToday ? "flameFilled" : "flame"]} fill="currentColor" /></svg><b>{streak.count}</b></span>}
+          </div>
           {process.env.NODE_ENV === "development" && <DebugEventMenu activeTab={active} onNavigate={navigateDebugTarget} />}
-          <Link
-            href={webProductPath("/athlete")}
-            className={`focus-shell-profile${onAthlete ? " is-selected" : ""}`}
-            aria-label="Open athlete settings"
-            aria-current={onAthlete ? "page" : undefined}
-          >
-            <UserAvatar src={state?.avatarUrl} name={state?.name ?? "Athlete"} size={34} fallback={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ color: "var(--muted)" }}>
-                <path d={APP_ICON_PATHS.person} fill="currentColor" stroke="none" />
-              </svg>} />
-          </Link>
         </header>}
         {!dataReady ? (
           accountLoadingBody

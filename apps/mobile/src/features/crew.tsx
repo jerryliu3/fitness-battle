@@ -1,7 +1,7 @@
 import { useFocusStyles } from "../ui/focus";
 import { useThemeColors } from "../theme";
 import { AthleteProfileSheet } from "./athlete-profile-sheet";
-import { UserAvatar } from "../ui/user-avatar";
+import { RankAvatar } from "../ui/rank-symbol";
 import { AppText, Section, SectionStack } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 import { RankBadge } from "../ui/rank-badge";
@@ -18,6 +18,7 @@ import {
   distanceUnitLabel,
   formatDistanceM,
   formatNoticeUnits,
+  rankSymbolForScore,
   weeklyPeriodBounds,
   dayKey,
   APP_TIMEZONE,
@@ -399,7 +400,7 @@ const f=useFocusStyles();
               if (membersOnly) setViewingMember(m);
               else { pendingMember.current = m; setPanel(null); }
             }}>
-              <UserAvatar src={m.avatar_url} name={m.display_name} size={56} />
+              <RankAvatar rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} size={64} />
               <View style={f.grow}><AppText role="row">{m.display_name}</AppText><AppText role="support" secondary >Active</AppText>
                 <AppText role="support" secondary >{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))} this week</AppText>
               </View>
@@ -500,7 +501,7 @@ const f=useFocusStyles();
               >
                 <View style={f.chipRow}>
                   {members.slice(0, 5).map((m) => hiddenIds.includes(m.user_id) ? <View key={m.user_id} style={{ width: 36, height: 36 }} /> : (
-                    <UserAvatar key={m.user_id} src={m.avatar_url} name={m.display_name} decorative={false} size={36} />
+                    <RankAvatar key={m.user_id} rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} decorative={false} size={48} />
                   ))}
                   {members.length > 5 ? (
                     <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.card, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: c.line }}>
@@ -569,7 +570,7 @@ const f=useFocusStyles();
                       style={[f.row, { paddingVertical: 8, alignItems: "center" }]}
                     >
                       <AppText role="body" secondary >{i + 1}</AppText>
-                      <UserAvatar src={m.avatar_url} name={m.display_name} size={32} />
+                      <RankAvatar rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} size={48} />
                       <AppText role="row" style={f.grow}>{m.display_name}</AppText>
                       <RankBadge score={m.effort_score} />
                       <AppText role="value" >

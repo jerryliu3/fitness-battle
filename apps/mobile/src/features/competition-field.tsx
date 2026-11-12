@@ -14,7 +14,7 @@ import { useCompetitionCourse } from "./use-competition-course";
 import { useFieldTimeline } from "./use-field-timeline";
 import { FieldTimeline } from "./field-timeline";
 import { CompetitionReplayModal } from "./competition-replay";
-import { UserAvatar } from "../ui/user-avatar";
+import { RankAvatar } from "../ui/rank-symbol";
 import { AppText, textStyle } from "../ui/section";
 import { useFieldFlight } from "../ui/use-field-flight";
 import { FieldOverlayView, SlidingFieldPanel } from "../ui/field-overlay-motion";
@@ -33,6 +33,7 @@ import {
   buildArenaModel,
   initialsFromName,
   ordinalPlace,
+  rankSymbolForScore,
   shellTabFromPath,
   weeklyBoard,
   type CourseDistanceTarget,
@@ -694,11 +695,12 @@ const f=useFocusStyles();
                 ]}
               >
                 <Text style={[textStyle("label"), { width: 22 }]}>{rank}</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel={`Open ${lane.name}'s profile`} onPress={event => { event.stopPropagation(); openProfile(lane); }} hitSlop={4}>
-                <UserAvatar
+                <Pressable accessibilityRole="button" accessibilityLabel={`Open ${lane.name}'s profile`} onPress={event => { event.stopPropagation(); openProfile(lane); }} hitSlop={4} style={{ overflow: "visible" }}>
+                <RankAvatar
+                  rank={rankSymbolForScore(elo)}
                   src={lane.avatarUrl}
                   name={lane.name}
-                  size={36}
+                  size={52}
                 />
                 </Pressable>
                 <View style={[f.grow, { gap: 6 }]}>

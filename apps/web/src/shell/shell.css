@@ -13,6 +13,14 @@
   gap: 12px;
   padding: 10px var(--shell-pad-x) 8px;
 }
+.focus-shell-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+.focus-shell-identity .club-header-effort:empty { display: none; }
 .focus-shell-brand {
   display: flex;
   flex-direction: column;
@@ -33,27 +41,24 @@
   font: var(--type-caption);
 }
 .focus-shell-profile {
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--card);
-  display: grid;
-  place-items: center;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--ink);
   text-decoration: none;
   flex-shrink: 0;
-  box-sizing: border-box;
   letter-spacing: normal;
   text-transform: none;
   font: var(--type-caption);
 }
 .focus-shell-profile.is-selected {
-  border: 2px solid var(--lime);
-  box-shadow: 0 0 0 2px #f1c75b44;
+  filter: drop-shadow(0 0 4px var(--lime));
 }
-.focus-shell-debug { position: relative; margin-right: auto; display: flex; align-items: center; z-index: 35; }
+.focus-shell-debug { position: relative; margin-left: auto; display: flex; align-items: center; z-index: 35; }
 .focus-shell-debug-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 10px; border-radius: 999px; border: 1px dashed var(--line); background: var(--card); color: var(--ink); cursor: pointer; letter-spacing: normal; text-transform: none; font: var(--type-caption); }
 .focus-shell-debug-btn.is-active { border-style: solid; border-color: var(--lime-deep, var(--app-action-pressed)); background: var(--action-soft, var(--app-action-soft)); }
 .focus-shell-debug-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--muted); }

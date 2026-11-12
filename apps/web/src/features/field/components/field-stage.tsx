@@ -7,7 +7,7 @@ import { GeographicCourse } from "@/features/course/geographic-course";
 import { useCompetitionCourse } from "@/features/course/use-competition-course";
 import { PortraitField } from "@/features/club/portrait-field";
 import { PolishedRacer } from "@/features/brand/polished-racer";
-import { UserAvatar } from "@/ui/user-avatar";
+import { RankAvatar } from "@/ui/rank-symbol";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { playCue } from "@/lib/haptics";
 import { usePathname } from "next/navigation";
@@ -18,6 +18,7 @@ import {
   type CourseDistanceTarget,
   type CompeteState,
   effortRankBadge,
+  rankSymbolForScore,
   fieldDefaultSpan,
   clampCourseCenter,
   ordinalPlace,
@@ -534,7 +535,7 @@ export function FieldStage({
       hidden={!persistent && !tabActive}
       aria-hidden={!persistent && !tabActive}
     >
-      <Sheet open={Boolean(profileLane)} title={profileLane?.name ?? "Athlete"} body="" onClose={() => setProfileLane(null)}>{profileLane ? <><UserAvatar src={profileLane.avatarUrl} name={profileLane.name} size={64} /><p>{profileLane.value.toFixed(2)} {unit} this event</p><p>{scoreMap[profileLane.id] ?? "—"} effort score</p></> : null}</Sheet>
+      <Sheet open={Boolean(profileLane)} title={profileLane?.name ?? "Athlete"} body="" onClose={() => setProfileLane(null)}>{profileLane ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "16px 0" }}><RankAvatar rank={rankSymbolForScore(scoreMap[profileLane.id])} src={profileLane.avatarUrl} name={profileLane.name} size={112} /><p>{profileLane.value.toFixed(2)} {unit} this event</p><p>{scoreMap[profileLane.id] ?? "—"} effort score</p></div> : null}</Sheet>
       {!standingsOnly && !lanesImmersive ? <div style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
         <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
           standings={standingsOpen} onStandings={queueOverlay ? undefined : () => { cancelCenterTween(); setStandingsOpen(true); }} />
@@ -685,10 +686,11 @@ export function FieldStage({
                   </span>
                 </div>
                 <div className="focus-leader-stage-main">
-                  <UserAvatar
+                  <RankAvatar
+                    rank={rankSymbolForScore(scoreMap[leader.id])}
                     src={leader.avatarUrl}
                     name={leader.name}
-                    size={42}
+                    size={64}
                     fallback={
                       <svg
                         width="32"
@@ -745,11 +747,12 @@ export function FieldStage({
                     onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); if (onFocusAthlete) onFocusAthlete(lane.id); else toggleSelect(lane.id); } }}
                   >
                     <span className="focus-standing-rank">{r}</span>
-                    <button type="button" aria-label={`Open ${lane.name}'s profile`} onClick={event => { event.stopPropagation(); setProfileLane(lane); }} style={{ border: 0, padding: 0, background: "transparent", cursor: "pointer" }}>
-                    <UserAvatar
+                    <button type="button" aria-label={`Open ${lane.name}'s profile`} onClick={event => { event.stopPropagation(); setProfileLane(lane); }} style={{ border: 0, padding: 0, background: "transparent", cursor: "pointer", overflow: "visible" }}>
+                    <RankAvatar
+                      rank={rankSymbolForScore(elo)}
                       src={lane.avatarUrl}
                       name={lane.name}
-                      size={36}
+                      size={52}
                       fallback={
                         <svg
                           className="focus-standing-avatar"

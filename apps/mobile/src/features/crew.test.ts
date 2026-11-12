@@ -24,12 +24,15 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
 }));
 vi.mock("react-native-svg", () => ({
   default: "Svg",
+  Circle: "Circle",
   ClipPath: "ClipPath",
   Defs: "Defs",
   G: "G",
   Path: "Path",
   Pattern: "Pattern",
+  RadialGradient: "RadialGradient",
   Rect: "Rect",
+  Stop: "Stop",
   Text: "SvgText",
 }));
 vi.mock("react-native", () => ({useColorScheme: () => "light",
@@ -37,6 +40,7 @@ vi.mock("react-native", () => ({useColorScheme: () => "light",
   Text: "Text",
   TextInput: "TextInput",
   View: "View",
+  Image: "Image",
   ImageBackground: "ImageBackground",
   StyleSheet: {absoluteFill:{}, create: (value: unknown) => value},
   useWindowDimensions: () => ({width:390,height:844,fontScale:1}),

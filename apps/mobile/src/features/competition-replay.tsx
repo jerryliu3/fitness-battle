@@ -17,7 +17,7 @@ import {
   coursePositionLeaders, competitionReplayDimension, nextCompetitionReplaySpeed, competitionReplayFrame, competitionReplayCaption, competitionReplayDate,
   competitionReplayTimeMs, competitionReplayCursorFromTimeMs, REPLAY_MINUTES_PER_REAL_SECOND_1X,
   indexCompetitionReplay, localCompetitionReplay, initialsFromName, fieldDefaultSpan,
-  clampCourseCenter, sportById,
+  clampCourseCenter, sportById, rankForElo, findSynthetic,
   type PeriodResult, type CompetitionReplay, type CompetitionReplaySelection, type CompeteState, type ArenaLane,
 } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
@@ -186,8 +186,12 @@ const s=useThemedStyles(sThemes);
   const podiumAthletes = useMemo(() => index
     ? competitionReplayFrame(index, count).rows
       .filter(row => row.place <= 3 && !hiddenIds.includes(row.id))
-      .map(row => ({ ...row, avatarUrl: row.you ? state.avatarUrl : row.avatarUrl }))
-    : [], [index, count, hiddenIds, state.avatarUrl]);
+      .map(row => ({
+        ...row,
+        avatarUrl: row.you ? state.avatarUrl : row.avatarUrl,
+        rank: rankForElo(row.you ? result?.eloAfter ?? 0 : findSynthetic(selection.sport, row.id)?.elo ?? 0).name,
+      }))
+    : [], [index, count, hiddenIds, state.avatarUrl, result?.eloAfter, selection.sport]);
   const closed = data && Date.parse(data.through) >= Date.parse(data.periodEnd);
   const caption = index ? (frame?.event && hiddenIds.includes(frame.event.athleteId) ? "An athlete recorded activity" : competitionReplayCaption(index, cursor)) : "";
   return <View style={embedded ? undefined : { flex: 1 }}>

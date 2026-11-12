@@ -82,6 +82,9 @@ export {
   rankForEffortScore,
   eloInBand,
   effortScoreInBand,
+  rankSymbolForScore,
+  rankSymbolForRankName,
+  effectiveRankSymbol,
   type RankBand,
 } from "./ranks";
 export {

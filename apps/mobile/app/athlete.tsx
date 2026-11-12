@@ -12,6 +12,7 @@ import { ScreenHeader } from "../src/ui/screen-header";
 import { IntegrationIcon } from "../src/ui/integration-icon";
 
 import { ChoicePicker } from "../src/ui/choice-picker";
+import { RankSymbol } from "../src/ui/rank-symbol";
 import {
   SPORTS,
   RANK_BANDS,
@@ -593,11 +594,14 @@ const styles=useThemedStyles(stylesThemes);
             before the week ends. Activity milestones can still grow your score.
           </AppText>
           {RANK_BANDS.map((band) => (
-            <View key={band.name} style={f.card}>
-              <AppText role="heading" >
-                {band.name} · {band.min}+
-              </AppText>
-              <AppText role="body" secondary >{band.blurb}</AppText>
+            <View key={band.name} style={[f.card, { flexDirection: "row", alignItems: "center", gap: 14 }]}>
+              <RankSymbol rank={band.id} size={52} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <AppText role="heading">
+                  {band.name} · {band.min}+
+                </AppText>
+                <AppText role="body" secondary>{band.blurb}</AppText>
+              </View>
             </View>
           ))}
         </SectionStack>
