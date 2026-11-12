@@ -147,25 +147,52 @@ export function VitalsBodyRenderer({
 
     const load = async () => {
       const url = assetUrl(assetBase, sex, mode, quality);
-      const asset = await loadVbody(url);
-      if (disposed) return;
-      geom = buildGeometry(asset);
-      material = createParticleMaterial(appearance, mode);
-      points = new THREE.Points(geom, material);
-      scene.add(points);
+      try {
+        const asset = await loadVbody(url);
+        if (disposed) return;
+        if (points) {
+          scene.remove(points);
+          geom?.dispose();
+          material?.dispose();
+        }
+        geom = buildGeometry(asset);
+        material = createParticleMaterial(appearance);
+        points = new THREE.Points(geom, material);
+        scene.add(points);
+      } catch (error) {
+        console.error("VitalsBodyRenderer: failed to load particle asset", error);
+      }
     };
     void load();
 
     let raf = 0;
+    let viewSnap = "";
     const start = performance.now();
+    const snapCamera = (view: ViewPreset, zoom: ZoomPreset) => {
+      const cam = cameraFor(view, zoom);
+      camera.position.copy(cam.position);
+      controls.target.copy(cam.target);
+    };
+    snapCamera(view, zoom);
+    viewSnap = `${view}:${zoom}`;
+
     const tick = () => {
       raf = requestAnimationFrame(tick);
       const t = (performance.now() - start) / 1000;
       const s = stateRef.current;
+      const camKey = `${s.view}:${s.zoom}`;
+      if (camKey !== viewSnap) {
+        if (s.view !== "free") {
+          snapCamera(s.view, s.zoom);
+        } else if (viewSnap.split(":")[0] !== "free") {
+          snapCamera("free", s.zoom);
+        }
+        viewSnap = camKey;
+      }
       const cam = cameraFor(s.view, s.zoom);
       if (s.view !== "free") {
-        camera.position.lerp(cam.position, 0.12);
-        controls.target.lerp(cam.target, 0.12);
+        camera.position.lerp(cam.position, 0.18);
+        controls.target.lerp(cam.target, 0.18);
       }
       controls.autoRotate =
         s.autoRotate && !reducedMotion && s.view === "free";

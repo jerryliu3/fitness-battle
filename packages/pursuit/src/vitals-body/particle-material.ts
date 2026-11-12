@@ -19,17 +19,13 @@ export interface ParticleUniforms {
   uSize: { value: number };
   uTeal: { value: THREE.Color };
   uGold: { value: THREE.Color };
-  uDim: { value: THREE.Color };
 }
 
 export function createParticleMaterial(
   appearance: AppearanceMode,
-  _mode: VizMode,
 ): THREE.ShaderMaterial {
   const teal = appearance === "dark" ? "#5fe8d6" : "#2aa89a";
   const gold = appearance === "dark" ? "#e8c468" : "#c49a3c";
-  const dim = appearance === "dark" ? "#1a2a32" : "#e8f4f2";
-
   return new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
@@ -45,7 +41,6 @@ export function createParticleMaterial(
       uSize: { value: 3.2 },
       uTeal: { value: new THREE.Color(teal) },
       uGold: { value: new THREE.Color(gold) },
-      uDim: { value: new THREE.Color(dim) },
     } satisfies ParticleUniforms,
     vertexShader: /* glsl */ `
       attribute float aRegion;
@@ -53,7 +48,6 @@ export function createParticleMaterial(
       varying float vRegion;
       varying float vClass;
       varying float vRim;
-      varying vec3 vNormalV;
       uniform float uSize;
       uniform float uEdge;
       void main() {
@@ -61,7 +55,6 @@ export function createParticleMaterial(
         vClass = aClass;
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
         vec3 nView = normalize(normalMatrix * normal);
-        vNormalV = nView;
         vec3 viewDir = normalize(-mv.xyz);
         vRim = pow(1.0 - max(0.0, dot(nView, viewDir)), 2.0) * uEdge;
         float classBoost = aClass < 1.5 ? 1.0 : 0.72;
@@ -73,7 +66,6 @@ export function createParticleMaterial(
       varying float vRegion;
       varying float vClass;
       varying float vRim;
-      varying vec3 vNormalV;
       uniform float uTime;
       uniform float uMode;
       uniform float uHighlight;
@@ -82,7 +74,6 @@ export function createParticleMaterial(
       uniform float uGlow;
       uniform vec3 uTeal;
       uniform vec3 uGold;
-      uniform vec3 uDim;
       void main() {
         vec2 c = gl_PointCoord - 0.5;
         float r = length(c);
@@ -94,7 +85,7 @@ export function createParticleMaterial(
         float interiorFade = (uMode > 0.5 && vClass > 1.5) ? 0.55 : 1.0;
         float highlight = 1.0;
         if (uHighlight > 0.5) {
-          highlight = vRegion == uHighlight ? 1.55 : 0.35;
+          highlight = abs(vRegion - uHighlight) < 0.5 ? 1.55 : 0.35;
         }
         vec3 col = base * uBrightness * pulse * highlight * interiorFade;
         col += vRim * uGold * uGlow * 0.4;

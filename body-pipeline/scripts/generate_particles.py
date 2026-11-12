@@ -243,14 +243,20 @@ def build_for_mesh(glb: Path, out_dir: Path, preset: QualityPreset, seed: int) -
             surf_class[idx],
             {"sex": sex, "mode": "outline", "quality": label, "seed": seed},
         )
-        int_n_pts = min(factor.interior, len(int_pos))
-        iidx = rng.choice(len(int_pos), size=int_n_pts, replace=False) if len(int_pos) else idx
-        c_pos = np.vstack([surf_pos[idx], int_pos[iidx]])
-        c_n = np.vstack([surf_n[idx], int_n[iidx]])
-        c_r = np.concatenate([surf_regions[idx], int_regions[iidx]])
-        c_c = np.concatenate(
-            [surf_class[idx], np.full(len(iidx), CLASS_INTERIOR, dtype=np.uint8)]
-        )
+        if len(int_pos) == 0:
+            iidx = np.array([], dtype=np.int64)
+        else:
+            int_n_pts = min(factor.interior, len(int_pos))
+            iidx = rng.choice(len(int_pos), size=int_n_pts, replace=False)
+        if len(iidx):
+            c_pos = np.vstack([surf_pos[idx], int_pos[iidx]])
+            c_n = np.vstack([surf_n[idx], int_n[iidx]])
+            c_r = np.concatenate([surf_regions[idx], int_regions[iidx]])
+            c_c = np.concatenate(
+                [surf_class[idx], np.full(len(iidx), CLASS_INTERIOR, dtype=np.uint8)]
+            )
+        else:
+            c_pos, c_n, c_r, c_c = surf_pos[idx], surf_n[idx], surf_regions[idx], surf_class[idx]
         write_vbody(
             outline_dir / f"cloud-{label}.vbody",
             c_pos,

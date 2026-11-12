@@ -25,7 +25,6 @@ from lib.mesh_common import (  # noqa: E402
     write_json,
 )
 
-import numpy as np
 import roma
 import torch
 import trimesh

@@ -31,6 +31,13 @@ export async function loadVbody(url: string): Promise<VitalsParticleAsset> {
   const regions = new Uint8Array(count);
   const classes = new Uint8Array(count);
 
+  const expected = 16 + count * stride;
+  if (buf.byteLength < expected) {
+    throw new Error(
+      `Truncated vbody at ${url}: expected ${expected} bytes, got ${buf.byteLength}`,
+    );
+  }
+
   let offset = 16;
   for (let i = 0; i < count; i++) {
     positions[i * 3] = view.getFloat32(offset, true);
