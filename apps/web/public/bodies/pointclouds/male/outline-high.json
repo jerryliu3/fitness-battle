@@ -1,0 +1,8 @@
+{
+  "sex": "male",
+  "mode": "outline",
+  "quality": "high",
+  "seed": 42,
+  "count": 12000,
+  "stride_bytes": 28
+}

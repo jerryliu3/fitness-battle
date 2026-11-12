@@ -1,0 +1,70 @@
+{
+  "meshes": {
+    "male": {
+      "path": "/agent/repos/fitness-battle/body-pipeline/generated/meshes/male.glb",
+      "vertices": 13718,
+      "watertight": true,
+      "feet_on_ground": true,
+      "centered_x": true,
+      "height_m": 1.7400000095367432
+    },
+    "female": {
+      "path": "/agent/repos/fitness-battle/body-pipeline/generated/meshes/female.glb",
+      "vertices": 13718,
+      "watertight": true,
+      "feet_on_ground": true,
+      "centered_x": true,
+      "height_m": 1.659999966621399
+    }
+  },
+  "particles": {
+    "male/outline": {
+      "path": "/agent/repos/fitness-battle/body-pipeline/generated/pointclouds/male/outline-high.vbody",
+      "count": 12000,
+      "y_min": 0.0001154939309344627,
+      "y_max": 1.7390233278274536,
+      "interior_fraction": 0.0,
+      "region_counts": {
+        "cardio": 392,
+        "respiratory": 1740,
+        "movement": 4438
+      }
+    },
+    "male/cloud": {
+      "path": "/agent/repos/fitness-battle/body-pipeline/generated/pointclouds/male/cloud-high.vbody",
+      "count": 21000,
+      "y_min": 0.0001154939309344627,
+      "y_max": 1.7390233278274536,
+      "interior_fraction": 0.42857142857142855,
+      "region_counts": {
+        "cardio": 1189,
+        "respiratory": 4471,
+        "movement": 6770
+      }
+    },
+    "female/outline": {
+      "path": "/agent/repos/fitness-battle/body-pipeline/generated/pointclouds/female/outline-high.vbody",
+      "count": 12000,
+      "y_min": 0.0006011615041643381,
+      "y_max": 1.6595360040664673,
+      "interior_fraction": 0.0,
+      "region_counts": {
+        "cardio": 356,
+        "respiratory": 1629,
+        "movement": 4552
+      }
+    },
+    "female/cloud": {
+      "path": "/agent/repos/fitness-battle/body-pipeline/generated/pointclouds/female/cloud-high.vbody",
+      "count": 21000,
+      "y_min": 0.0006011615041643381,
+      "y_max": 1.6595360040664673,
+      "interior_fraction": 0.42857142857142855,
+      "region_counts": {
+        "cardio": 985,
+        "respiratory": 4278,
+        "movement": 7125
+      }
+    }
+  }
+}

@@ -23,7 +23,9 @@
     "rankings:candidate": "node packages/rankings/scripts/candidate.mjs",
     "rankings:acquire": "node packages/rankings/scripts/acquire.mjs",
     "rankings:schedule": "node packages/rankings/scripts/schedule.mjs",
-    "lint:ui": "node scripts/check-ui-contract.mjs"
+    "lint:ui": "node scripts/check-ui-contract.mjs",
+    "bodies:generate": "python3 body-pipeline/scripts/generate_humans.py && python3 body-pipeline/scripts/process_meshes.py && python3 body-pipeline/scripts/generate_particles.py",
+    "bodies:sync": "bash body-pipeline/scripts/sync_runtime_assets.sh"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

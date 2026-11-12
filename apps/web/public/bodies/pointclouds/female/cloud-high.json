@@ -1,0 +1,9 @@
+{
+  "sex": "female",
+  "mode": "cloud",
+  "quality": "high",
+  "seed": 43,
+  "surface_count": 12000,
+  "interior_count": 9000,
+  "stride_bytes": 28
+}
