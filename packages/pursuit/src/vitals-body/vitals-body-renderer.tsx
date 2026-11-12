@@ -83,6 +83,7 @@ export function VitalsBodyRenderer({
   const hostRef = useRef<HTMLDivElement>(null);
   const ctxRef = useRef<{
     schedule: () => void;
+    resize: () => void;
     material: THREE.ShaderMaterial | null;
     scene: THREE.Scene | null;
     fog: THREE.FogExp2 | null;
@@ -124,13 +125,28 @@ export function VitalsBodyRenderer({
     scene.fog = fog;
 
     const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 40);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      // Static render-on-demand still needs a retained buffer (Safari / many browsers).
+      preserveDrawingBuffer: true,
+    });
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = appearance === "dark" ? 1.15 : 1.05;
-    host.appendChild(renderer.domElement);
+    const canvas = renderer.domElement;
+    Object.assign(canvas.style, {
+      display: "block",
+      width: "100%",
+      height: "100%",
+      position: "absolute",
+      inset: "0",
+    });
+    host.style.position = "absolute";
+    host.style.inset = "0";
+    host.appendChild(canvas);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -219,8 +235,9 @@ export function VitalsBodyRenderer({
     };
 
     const resize = () => {
-      const w = host.clientWidth || 320;
-      const h = host.clientHeight || 480;
+      const box = host.getBoundingClientRect();
+      const w = Math.max(1, Math.round(box.width)) || 320;
+      const h = Math.max(1, Math.round(box.height)) || 480;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
@@ -238,6 +255,7 @@ export function VitalsBodyRenderer({
 
     ctxRef.current = {
       schedule,
+      resize,
       material,
       scene,
       fog,
@@ -293,6 +311,7 @@ export function VitalsBodyRenderer({
         scene.add(points);
         setLoadState("ready");
         onLoadSuccess?.();
+        ctx.resize();
         ctx.schedule();
       } catch (error) {
         if (cancelled) return;

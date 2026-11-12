@@ -54,6 +54,8 @@
 }
 
 .vitals-body-stage {
+  position: relative;
+  height: min(72vh, 640px);
   min-height: min(72vh, 640px);
   border-radius: 24px;
   overflow: hidden;
