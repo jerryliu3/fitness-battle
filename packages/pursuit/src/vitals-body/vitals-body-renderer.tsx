@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { assetUrl, loadVbody } from "./load-vbody";
-import { applyHighlight, createParticleMaterial, setAppearance } from "./particle-material";
+import { applyHighlight, createParticleMaterial } from "./particle-material";
 import type {
   AppearanceMode,
   BodySex,
