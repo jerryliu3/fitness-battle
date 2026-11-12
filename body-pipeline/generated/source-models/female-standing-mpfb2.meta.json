@@ -1,0 +1,16 @@
+{
+  "sex": "female",
+  "source": "mpfb2",
+  "macros": {
+    "gender": 1.0,
+    "age": 0.35,
+    "muscle": 0.08,
+    "weight": 0.4,
+    "proportions": 0.52,
+    "height": 0.48,
+    "cupsize": 0.5,
+    "firmness": 0.5
+  },
+  "blender_version": "5.2.2 LTS",
+  "vertex_count": 19158
+}

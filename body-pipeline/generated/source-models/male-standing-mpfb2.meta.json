@@ -1,0 +1,16 @@
+{
+  "sex": "male",
+  "source": "mpfb2",
+  "macros": {
+    "gender": 0.0,
+    "age": 0.35,
+    "muscle": 0.15,
+    "weight": 0.45,
+    "proportions": 0.5,
+    "height": 0.52,
+    "cupsize": 0.5,
+    "firmness": 0.5
+  },
+  "blender_version": "5.2.2 LTS",
+  "vertex_count": 19158
+}

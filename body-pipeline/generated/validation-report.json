@@ -1,17 +1,17 @@
 {
   "meshes": {
     "male": {
-      "path": "/agent/repos/fitness-battle/body-pipeline/generated/meshes/male.glb",
-      "vertices": 13718,
-      "watertight": true,
+      "path": "/Users/jerryliu/Documents/fitness-battle/fitness-battle/body-pipeline/generated/meshes/male.glb",
+      "vertices": 21833,
+      "watertight": false,
       "feet_on_ground": true,
       "centered_x": true,
       "height_m": 1.7400000095367432
     },
     "female": {
-      "path": "/agent/repos/fitness-battle/body-pipeline/generated/meshes/female.glb",
-      "vertices": 13718,
-      "watertight": true,
+      "path": "/Users/jerryliu/Documents/fitness-battle/fitness-battle/body-pipeline/generated/meshes/female.glb",
+      "vertices": 21833,
+      "watertight": false,
       "feet_on_ground": true,
       "centered_x": true,
       "height_m": 1.659999966621399
@@ -19,51 +19,51 @@
   },
   "particles": {
     "male/outline": {
-      "path": "/agent/repos/fitness-battle/body-pipeline/generated/pointclouds/male/outline-high.vbody",
+      "path": "/Users/jerryliu/Documents/fitness-battle/fitness-battle/body-pipeline/generated/pointclouds/male/outline-high.vbody",
       "count": 12000,
-      "y_min": 0.0001154939309344627,
-      "y_max": 1.7390233278274536,
+      "y_min": 0.0011095969239249825,
+      "y_max": 1.705917477607727,
       "interior_fraction": 0.0,
       "region_counts": {
-        "cardio": 392,
-        "respiratory": 1740,
-        "movement": 4438
+        "cardio": 510,
+        "respiratory": 1504,
+        "movement": 8171
       }
     },
     "male/cloud": {
-      "path": "/agent/repos/fitness-battle/body-pipeline/generated/pointclouds/male/cloud-high.vbody",
+      "path": "/Users/jerryliu/Documents/fitness-battle/fitness-battle/body-pipeline/generated/pointclouds/male/cloud-high.vbody",
       "count": 21000,
-      "y_min": 0.0001154939309344627,
-      "y_max": 1.7390233278274536,
+      "y_min": 0.0011095969239249825,
+      "y_max": 1.711816430091858,
       "interior_fraction": 0.42857142857142855,
       "region_counts": {
-        "cardio": 1189,
-        "respiratory": 4471,
-        "movement": 6770
+        "cardio": 805,
+        "respiratory": 2675,
+        "movement": 14299
       }
     },
     "female/outline": {
-      "path": "/agent/repos/fitness-battle/body-pipeline/generated/pointclouds/female/outline-high.vbody",
+      "path": "/Users/jerryliu/Documents/fitness-battle/fitness-battle/body-pipeline/generated/pointclouds/female/outline-high.vbody",
       "count": 12000,
-      "y_min": 0.0006011615041643381,
-      "y_max": 1.6595360040664673,
+      "y_min": 0.00243569677695632,
+      "y_max": 1.6342800855636597,
       "interior_fraction": 0.0,
       "region_counts": {
-        "cardio": 356,
-        "respiratory": 1629,
-        "movement": 4552
+        "cardio": 78,
+        "respiratory": 1241,
+        "movement": 9176
       }
     },
     "female/cloud": {
-      "path": "/agent/repos/fitness-battle/body-pipeline/generated/pointclouds/female/cloud-high.vbody",
+      "path": "/Users/jerryliu/Documents/fitness-battle/fitness-battle/body-pipeline/generated/pointclouds/female/cloud-high.vbody",
       "count": 21000,
-      "y_min": 0.0006011615041643381,
-      "y_max": 1.6595360040664673,
+      "y_min": 0.00243569677695632,
+      "y_max": 1.6744815111160278,
       "interior_fraction": 0.42857142857142855,
       "region_counts": {
-        "cardio": 985,
-        "respiratory": 4278,
-        "movement": 7125
+        "cardio": 91,
+        "respiratory": 2076,
+        "movement": 16077
       }
     }
   }

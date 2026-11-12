@@ -1,38 +1,38 @@
 {
   "male": {
-    "vertices": 13718,
-    "faces": 27420,
-    "watertight": true,
-    "euler_number": 8,
+    "vertices": 21833,
+    "faces": 36972,
+    "watertight": false,
+    "euler_number": 386,
     "degenerate_faces": 0,
     "bounds_min": [
-      -0.5271057137986888,
+      -2.0878565030748564,
       0.0,
-      -0.2738582701453569
+      -3.4837466001813233
     ],
     "bounds_max": [
-      0.5271057137986888,
+      2.0878565030748564,
       1.74,
-      0.2738582701453569
+      3.4837466001813238
     ],
-    "path": "/agent/repos/fitness-battle/body-pipeline/generated/meshes/male.glb"
+    "path": "/Users/jerryliu/Documents/fitness-battle/fitness-battle/body-pipeline/generated/meshes/male.glb"
   },
   "female": {
-    "vertices": 13718,
-    "faces": 27420,
-    "watertight": true,
-    "euler_number": 8,
+    "vertices": 21833,
+    "faces": 36972,
+    "watertight": false,
+    "euler_number": 386,
     "degenerate_faces": 0,
     "bounds_min": [
-      -0.4805878733038933,
+      -1.9039256072734643,
       0.0,
-      -0.26480779946607647
+      -3.0300841247616503
     ],
     "bounds_max": [
-      0.4805878733038933,
+      1.9039256072734643,
       1.66,
-      0.26480779946607647
+      3.030084124761651
     ],
-    "path": "/agent/repos/fitness-battle/body-pipeline/generated/meshes/female.glb"
+    "path": "/Users/jerryliu/Documents/fitness-battle/fitness-battle/body-pipeline/generated/meshes/female.glb"
   }
 }
