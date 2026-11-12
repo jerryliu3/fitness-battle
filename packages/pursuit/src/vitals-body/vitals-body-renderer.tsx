@@ -219,7 +219,7 @@ export function VitalsBodyRenderer({
         material.uniforms.uBrightness!.value = s.tuning.brightness;
         material.uniforms.uGlow!.value = s.tuning.glow;
         material.uniforms.uEdge!.value = s.tuning.edgeLight;
-        material.uniforms.uSize!.value = 0.85 * s.tuning.particleScale;
+        material.uniforms.uSize!.value = 0.62 * s.tuning.particleScale;
         applyHighlight(material, s.system, s.mode);
       }
       renderer.render(scene, camera);

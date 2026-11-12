@@ -18,7 +18,7 @@ import "./vitals-body.css";
 
 export function VitalsBodyDemo() {
   const [sex, setSex] = useState<BodySex>("male");
-  const [mode, setMode] = useState<VizMode>("outline");
+  const [mode, setMode] = useState<VizMode>("cloud");
   const [view, setView] = useState<ViewPreset>("front");
   const [zoom, setZoom] = useState<ZoomPreset>("full");
   const [system, setSystem] = useState<HealthSystem>("full");
@@ -35,8 +35,9 @@ export function VitalsBodyDemo() {
         <span className="vitals-body-kicker">OVERTAEK / VITALS LAB / BODY SCAN</span>
         <h1>MakeHuman particle body</h1>
         <p>
-          Illustrative health visualization. Male and female CC0-derived scans with
-          outline and volumetric cloud modes. Drag to orbit in Rotate view.
+          Illustrative health visualization. Male and female CC0-derived scans — use
+          Cloud for interior fill, Outline for a thin shell. Density controls dot count.
+          Drag to orbit in Rotate view.
         </p>
       </header>
       <div className="vitals-body-layout">

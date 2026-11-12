@@ -2,8 +2,10 @@
   "sex": "male",
   "mode": "cloud",
   "quality": "high",
+  "density": {
+    "surface": 6500,
+    "interior": 8500
+  },
   "seed": 42,
-  "surface_count": 12000,
-  "interior_count": 9000,
   "stride_bytes": 28
 }

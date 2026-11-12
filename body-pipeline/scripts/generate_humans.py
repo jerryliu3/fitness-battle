@@ -22,7 +22,7 @@ from lib.mesh_common import (  # noqa: E402
     BodySex,
     assign_region,
     bone_label_to_region,
-    standing_arm_rotvec_deg,
+    standing_pose_rotvec_deg,
     validate_mesh,
     write_json,
 )
@@ -50,7 +50,7 @@ def _phenotype(sex: BodySex) -> dict[str, float]:
 def _pose_rotvec(model: Anny) -> torch.Tensor:
     dtype = torch.float32
     bones_rotvec = torch.zeros((len(model.bone_labels), 3), dtype=dtype)
-    arm_map = standing_arm_rotvec_deg()
+    arm_map = standing_pose_rotvec_deg()
     for index, label in enumerate(model.bone_labels):
         if label in arm_map:
             bones_rotvec[index] = torch.tensor(arm_map[label], dtype=dtype)

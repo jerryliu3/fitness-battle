@@ -2,5 +2,10 @@
   "sex": "female",
   "mode": "outline",
   "quality": "low",
-  "seed": 43
+  "density": {
+    "surface": 1400,
+    "interior_target": 3000
+  },
+  "seed": 45,
+  "stride_bytes": 28
 }
