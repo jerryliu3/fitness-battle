@@ -4,7 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { assetUrl, loadVbody } from "./load-vbody";
-import { applyHighlight, createParticleMaterial } from "./particle-material";
+import {
+  applyHighlight,
+  createParticleMaterial,
+  setAppearance,
+} from "./particle-material";
 import type {
   AppearanceMode,
   BodySex,
@@ -215,7 +219,7 @@ export function VitalsBodyRenderer({
         material.uniforms.uBrightness!.value = s.tuning.brightness;
         material.uniforms.uGlow!.value = s.tuning.glow;
         material.uniforms.uEdge!.value = s.tuning.edgeLight;
-        material.uniforms.uSize!.value = 2.6 * s.tuning.particleScale;
+        material.uniforms.uSize!.value = 0.85 * s.tuning.particleScale;
         applyHighlight(material, s.system, s.mode);
       }
       renderer.render(scene, camera);
@@ -279,7 +283,22 @@ export function VitalsBodyRenderer({
       renderer.dispose();
       host.removeChild(renderer.domElement);
     };
-  }, [appearance]);
+    // WebGL context is created once; theme is updated in the appearance effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only init
+  }, []);
+
+  useEffect(() => {
+    const ctx = ctxRef.current;
+    if (!ctxReady || !ctx?.material || !ctx.renderer || !ctx.fog || !ctx.groundMat) {
+      return;
+    }
+    setAppearance(ctx.material, appearance, ctx.renderer);
+    ctx.fog.color.set(appearance === "dark" ? "#0a1418" : "#ddeae8");
+    ctx.fog.density = appearance === "dark" ? 0.11 : 0.035;
+    ctx.groundMat.color.set(appearance === "dark" ? "#3fd6c5" : "#1f7f72");
+    ctx.groundMat.opacity = appearance === "dark" ? 0.22 : 0.32;
+    ctx.schedule();
+  }, [appearance, ctxReady]);
 
   useEffect(() => {
     if (!ctxReady) return;
