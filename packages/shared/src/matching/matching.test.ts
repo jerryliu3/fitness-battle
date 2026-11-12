@@ -33,7 +33,7 @@ describe("wave windows", () => {
 describe("DensityMatcher", () => {
   const matcher = new DensityMatcher({ capacity: DEFAULT_GROUP_CAPACITY });
 
-  it("fills a solo viewer entirely with synthetics", () => {
+  it("leaves a solo viewer unmatched until another account is available", () => {
     const assignment = matcher.assignGroup({
       viewerId: "you",
       viewerName: "You",
@@ -44,12 +44,12 @@ describe("DensityMatcher", () => {
       seed: "solo",
     });
     expect(assignment.peers).toHaveLength(0);
-    expect(assignment.synthetics).toHaveLength(7);
-    expect(assignment.enrollment.syntheticIds).toHaveLength(7);
+    expect(assignment.synthetics).toHaveLength(0);
+    expect(assignment.enrollment.syntheticIds).toHaveLength(0);
     expect(assignment.enrollment.capacity).toBe(8);
   });
 
-  it("seats real peers first and fills the rest with synthetics", () => {
+  it("seats real peers and leaves the remaining seats empty", () => {
     const monday = waveWindowAt(new Date("2026-10-12T12:00:00.000Z"));
     const pool: PoolPlayer[] = [
       {
@@ -71,7 +71,7 @@ describe("DensityMatcher", () => {
       seed: "with-real",
     });
     expect(assignment.peers.map((peer) => peer.id)).toEqual(["real-1"]);
-    expect(assignment.synthetics).toHaveLength(6);
+    expect(assignment.synthetics).toHaveLength(0);
   });
 
   it("seats forced crew peers before density picks and synthetics", () => {
@@ -106,7 +106,7 @@ describe("DensityMatcher", () => {
       crewId: "crew-1",
     });
     expect(assignment.peers.map((peer) => peer.id)).toEqual(["mate-a", "mate-b"]);
-    expect(assignment.synthetics).toHaveLength(5);
+    expect(assignment.synthetics).toHaveLength(0);
     expect(assignment.enrollment.crewId).toBe("crew-1");
   });
 
@@ -154,7 +154,7 @@ describe("DensityMatcher", () => {
     );
   });
 
-  it("drops synthetics first when preferReals finds newcomers", () => {
+  it("seats newcomers without inventing extra athletes", () => {
     const wave = waveWindowAt(new Date("2026-10-12T12:00:00.000Z"));
     const initial = matcher.assignGroup({
       viewerId: "you",
@@ -165,7 +165,7 @@ describe("DensityMatcher", () => {
       realPool: [],
       seed: "refresh",
     });
-    expect(initial.synthetics).toHaveLength(7);
+    expect(initial.synthetics).toHaveLength(0);
 
     const newcomers: PoolPlayer[] = Array.from({ length: 3 }, (_, index) => ({
       id: `real-${index}`,
@@ -182,9 +182,9 @@ describe("DensityMatcher", () => {
       "prefer",
     );
     expect(refreshed.peers).toHaveLength(3);
-    expect(refreshed.synthetics).toHaveLength(4);
+    expect(refreshed.synthetics).toHaveLength(0);
     expect(refreshed.enrollment.peerIds).toHaveLength(3);
-    expect(refreshed.enrollment.syntheticIds).toHaveLength(4);
+    expect(refreshed.enrollment.syntheticIds).toHaveLength(0);
   });
 });
 
@@ -294,7 +294,7 @@ describe("local view clipping", () => {
 });
 
 describe("crew shared field", () => {
-  it("gives every mate the same synthetics and mutual peers", () => {
+  it("gives every mate the same real roster", () => {
     const plan = planCrewWeekField({
       crewId: "crew-42",
       sport: "running",
@@ -306,7 +306,7 @@ describe("crew shared field", () => {
       now: new Date("2026-10-12T12:00:00.000Z"),
     });
     expect(plan.memberIds).toEqual(["a", "b", "c"]);
-    expect(plan.syntheticIds).toHaveLength(5);
+    expect(plan.syntheticIds).toHaveLength(0);
 
     const forA = enrollmentFromCrewPlan(plan, "a");
     const forB = enrollmentFromCrewPlan(plan, "b");
@@ -335,7 +335,7 @@ describe("crew shared field", () => {
 });
 
 describe("planWeekField & fieldPinMatchesEnrollment", () => {
-  it("plans a solo open field with real athletes and synthetic fillers up to capacity", () => {
+  it("plans an open field from the supplied accounts only", () => {
     const field = planWeekField({
       sport: "running",
       waveStart: "2026-10-12T00:00:00.000Z",
@@ -352,7 +352,7 @@ describe("planWeekField & fieldPinMatchesEnrollment", () => {
     expect(field.sport).toBe("running");
     expect(field.memberIds).toEqual(["user-1", "user-2"]);
     expect(field.members).toHaveLength(2);
-    expect(field.syntheticIds).toHaveLength(6);
+    expect(field.syntheticIds).toHaveLength(0);
     expect(field.members[0]?.distanceM).toBe(5000);
     expect(field.members[1]?.distanceM).toBe(3200);
   });

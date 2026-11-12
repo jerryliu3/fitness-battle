@@ -173,8 +173,7 @@ export function createOuraProvider(
       authorizeUrl: "https://cloud.ouraring.com/oauth/authorize",
       tokenUrl: "https://api.ouraring.com/oauth/token",
       scopes: "daily workout",
-      missingCredentialsMessage:
-        "Oura credentials missing — using stub readiness. Set OURA_CLIENT_ID, OURA_CLIENT_SECRET, and OURA_REDIRECT_URI.",
+      missingCredentialsMessage: "This tracker is not connected.",
       pull: pullOura,
     },
     env,

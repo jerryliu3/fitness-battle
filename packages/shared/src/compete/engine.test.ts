@@ -166,7 +166,7 @@ describe("compete engine", () => {
     expect(joined.enrollments).toHaveLength(1);
     expect(joined.enrollments[0]?.waveStart).toBe("2026-10-13T10:00:00.000Z");
     expect(joined.enrollments[0]?.weekEnd).toBe("2026-10-19T04:00:00.000Z");
-    expect(joined.enrollments[0]?.syntheticIds).toHaveLength(7);
+    expect(joined.enrollments[0]?.syntheticIds).toHaveLength(0);
 
     const withWork = reduceCompete(joined, {
       type: "apply-sync",
@@ -199,7 +199,7 @@ describe("compete engine", () => {
       (row) => row.sport === "running" && row.track === "open",
     );
     expect(open?.place).toBeGreaterThanOrEqual(1);
-    expect(open?.fieldSize).toBe(8);
+    expect(open?.fieldSize).toBe(1);
     expect(open?.eloBefore).toBe(1003);
     expect(open?.eloBefore).toBeGreaterThan(1000);
     expect(typeof open?.eloAfter).toBe("number");
@@ -360,7 +360,7 @@ describe("compete engine", () => {
     const board = weeklyBoard(seated, "running", "open", new Date("2026-10-13T12:00:00Z"));
     expect(board.some((row) => row.id === "user-b")).toBe(true);
     expect(board.find((row) => row.id === "user-b")?.distanceM).toBe(8000);
-    expect(board).toHaveLength(8);
+    expect(board).toHaveLength(2);
 
     const alone = reduceCompete(seated, {
       type: "opt-in",
@@ -415,16 +415,14 @@ describe("compete engine", () => {
     };
 
     const board = weeklyBoard(seatedState, "running", "open", new Date("2026-10-13T12:00:00Z"));
-    expect(board).toHaveLength(8);
+    expect(board).toHaveLength(2);
     const bobRow = board.find((row) => row.id === "bob");
     expect(bobRow).toBeDefined();
     expect(bobRow?.name).toBe("Bob");
     expect(bobRow?.distanceM).toBe(6500);
     expect(bobRow?.movingSec).toBe(2100);
     expect(bobRow?.you).toBe(false);
-
-    const synthetics = board.filter((row) => !row.you && row.id !== "bob");
-    expect(synthetics).toHaveLength(6);
+    expect(board.filter((row) => !row.you && row.id !== "bob")).toHaveLength(0);
   });
 
   it("drops a stale crew pin when the week rolls", () => {

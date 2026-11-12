@@ -1,8 +1,6 @@
 import type { CrewBoardMember, CrewBoardPin, SportId } from "../compete/sports";
 import type { WaveEnrollment } from "./types";
 import { DEFAULT_GROUP_CAPACITY } from "./types";
-import { pickSynthetics } from "./synthetic-bank";
-
 export interface WeekFieldPlanInput {
   sport: SportId;
   waveStart: string;
@@ -11,35 +9,23 @@ export interface WeekFieldPlanInput {
   crewId?: string | null;
   crewName?: string;
   members: readonly CrewBoardMember[];
-  seed?: string;
 }
 
 /**
  * Plan a unified week field for either solo or crew play.
- * Real members occupy seats; synthetic rivals fill gaps up to capacity.
+ * Only the supplied accounts are seated.
  */
 export function planWeekField(input: WeekFieldPlanInput): CrewBoardPin {
   const capacity = input.capacity ?? DEFAULT_GROUP_CAPACITY;
   const isCrew = Boolean(input.crewId && input.crewId !== "solo" && !input.crewId.startsWith("field:"));
   const crewId = input.crewId ?? "solo";
   const crewName = input.crewName ?? (isCrew ? "Crew Field" : "Open Field");
-  const seed = input.seed ?? `${crewId}:${input.sport}:${input.waveStart}`;
 
   const seated = [...input.members]
     .filter((m) => m.id.trim().length > 0)
     .sort((a, b) => a.id.localeCompare(b.id))
     .slice(0, capacity);
   const memberIds = seated.map((m) => m.id);
-  const elos = seated.map((m) => m.elo).sort((a, b) => a - b);
-  const medianElo = elos.length === 0 ? 1000 : elos[Math.floor((elos.length - 1) / 2)]!;
-
-  const synthetics = pickSynthetics(
-    input.sport,
-    medianElo,
-    Math.max(0, capacity - seated.length),
-    memberIds,
-    seed,
-  );
 
   return {
     crewId,
@@ -50,7 +36,7 @@ export function planWeekField(input: WeekFieldPlanInput): CrewBoardPin {
     capacity,
     memberIds,
     members: seated,
-    syntheticIds: synthetics.map((s) => s.id),
+    syntheticIds: [],
   };
 }
 

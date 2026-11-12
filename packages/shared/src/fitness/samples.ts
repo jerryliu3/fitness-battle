@@ -45,7 +45,7 @@ export function activityFromSample(
     provenance: isDemo ? "demo" : provenance,
     disposition: isDemo ? "excluded" : provenance === "imported" ? "pending" : "counted",
     dispositionReason: isDemo
-      ? "Sample tracker data does not count."
+      ? "This session does not count toward competition."
       : provenance === "imported"
         ? "File import is pending until you count it."
         : undefined,

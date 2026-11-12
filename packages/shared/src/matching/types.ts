@@ -34,8 +34,8 @@ export interface WaveWindow {
 
 /**
  * Per-viewer enrollment. Usually local density seating.
- * When `crewId` is set, every crew mate uses the same member roster and
- * synthetic fillers so they share one individual leaderboard.
+ * When `crewId` is set, every crew mate uses the same member roster
+ * and shares one individual leaderboard.
  */
 export interface WaveEnrollment {
   sport: SportId;
@@ -44,7 +44,7 @@ export interface WaveEnrollment {
   capacity: number;
   /** Real peer ids in this viewer’s local group (may overlap other viewers). */
   peerIds: string[];
-  /** Synthetic fillers; dropped first when real peers are available. */
+  /** Stored compatibility column. Seating always leaves this empty. */
   syntheticIds: string[];
   /** After weekEnd, automatically enroll in the next open wave. */
   autoEnrollNext: boolean;

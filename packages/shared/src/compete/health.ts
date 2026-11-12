@@ -4,8 +4,6 @@ import { APP_TIMEZONE, endOfZonedDay, startOfZonedDay } from "../period";
 import { settleElo } from "./elo";
 import {
   ELO_BASE,
-  ELO_CAP,
-  ELO_FLOOR,
   clamp,
   dayKey,
   unitInterval,
@@ -117,23 +115,7 @@ export type CategoryFocus =
   | { family: "health"; id: HealthMetricId };
 
 const DAY_MS = 86_400_000;
-const FIELD_RIVALS = 7;
 const MAX_HEALTH_RESULTS = 104;
-
-const RIVAL_NAMES = [
-  "Maya Chen",
-  "Leo Park",
-  "Ava Singh",
-  "Noah Brooks",
-  "Priya Shah",
-  "Hana Ito",
-  "Sofia Rossi",
-  "Mina Cho",
-  "Lila Berg",
-  "Omar Farouk",
-  "Kai Lind",
-  "Riley Quinn",
-] as const;
 
 export function healthMetricById(id: HealthMetricId): HealthMetric {
   const metric = HEALTH_METRICS.find((item) => item.id === id);
@@ -331,30 +313,6 @@ export function sleepBoard(input: {
       place: 0,
     },
   ];
-
-  for (let index = 0; index < FIELD_RIVALS; index += 1) {
-    const name = RIVAL_NAMES[index % RIVAL_NAMES.length]!;
-    const id = `sleep-rival:${input.periodStart}:${index}`;
-    const elo = clamp(
-      ELO_FLOOR,
-      ELO_CAP,
-      input.elo + Math.round((unitInterval(`${id}:elo`) - 0.5) * 220),
-    );
-    const base = 64 + ((elo - 800) / 800) * 18;
-    const mean = clamp(42, 96, base + (unitInterval(`${id}:mean`) - 0.5) * 14);
-    const lastNight = clamp(40, 99, mean + (unitInterval(`${id}:last`) - 0.5) * 8);
-    rows.push({
-      id,
-      name,
-      elo,
-      score: Math.round(mean * 10) / 10,
-      mean: Math.round(mean * 10) / 10,
-      lastNight: Math.round(lastNight),
-      nights: yours.elapsed || 1,
-      you: false,
-      place: 0,
-    });
-  }
 
   rows.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
   const scores = rows.map(row => row.score);

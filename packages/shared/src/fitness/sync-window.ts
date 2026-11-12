@@ -94,7 +94,7 @@ export function evidenceLabel(evidence: SyncEvidence): string {
     case "disconnected":
       return "Disconnected";
     case "stub":
-      return "Demo sync (no API keys)";
+      return "Not connected";
     case "asked":
       return "Linked · waiting for data";
     case "receiving_data":

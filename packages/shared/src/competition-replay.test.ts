@@ -53,13 +53,12 @@ describe("competition replay presentation ledger", () => {
     expect(index.unit).toBe("pts");
     expect(competitionReplayFrame(index, 1).rows.find(r => r.you)?.value).toBe(4);
   });
-  it("synthesizes canonical rivals when enrollment syntheticIds are absent so athlete is never alone", () => {
+  it("keeps a local preview to the signed-in athlete when no other account is seated", () => {
     const state = freshState(new Date("2026-10-25T14:00:00Z"));
-    state.enrollments = [];
+    state.enrollments = [{ sport: "running", waveStart: selection.periodStart, weekEnd: selection.periodEnd, capacity: 8, peerIds: [], syntheticIds: ["synth:running:0"], autoEnrollNext: true }];
     const replay = localCompetitionReplay(state, selection);
-    expect(replay.athletes.length).toBeGreaterThan(1);
-    expect(replay.athletes.some(a => a.you)).toBe(true);
-    expect(replay.athletes.filter(a => !a.you).length).toBe(7);
+    expect(replay.athletes).toEqual([expect.objectContaining({ you: true })]);
+    expect(replay.events.every(event => !event.simulated)).toBe(true);
   });
 });
 

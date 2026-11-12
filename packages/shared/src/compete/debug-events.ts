@@ -41,6 +41,33 @@ export interface DebugEventResult {
   revealStopKey?: string;
 }
 
+const PREVIEW_FIELD = [
+  { id: "preview-noah", name: "Noah Brooks" },
+  { id: "preview-priya", name: "Priya Shah" },
+  { id: "preview-hana", name: "Hana Ito" },
+  { id: "preview-owen", name: "Owen Blake" },
+] as const;
+
+/** Local overtake previews need stored totals. Matching still leaves empty seats empty. */
+function withPreviewField(state: CompeteState, sport: SportId): CompeteState {
+  const enrollment = state.enrollments.find(item => item.sport === sport);
+  if (!enrollment) return state;
+  const gps = sportById(sport).gps;
+  const unit = state.units === "metric" ? 1000 : 1609.344;
+  const members = PREVIEW_FIELD.map((peer, index) => {
+    const display = (index + 1) * (gps ? 3 : 30);
+    const distanceM = gps ? Math.round(display * unit) : 0;
+    const movingSec = gps ? Math.round(distanceM * 0.3) : display * 60;
+    const effort = gps ? distanceM : display;
+    return { id: peer.id, name: peer.name, elo: 1000 + index * 40, distanceM, movingSec, effort, verifiedDistanceM: distanceM, verifiedMovingSec: movingSec, verifiedEffort: effort };
+  });
+  const fieldBoard = {
+    crewId: "solo", crewName: "Open Field", sport, waveStart: enrollment.waveStart, weekEnd: enrollment.weekEnd,
+    capacity: members.length + 1, memberIds: ["you", ...members.map(member => member.id)], members, syntheticIds: [],
+  };
+  return { ...state, enrollments: state.enrollments.map(item => item.sport === sport ? { ...item, peerIds: members.map(member => member.id), syntheticIds: [], fieldBoard, awaitingField: false } : item) };
+}
+
 function makeDebugActivity(
   sport: SportId,
   displayValue: number,
@@ -115,7 +142,7 @@ export function applyDebugEvent(
     const single = applyDebugEvent(base, "overtake", accountKey, stepIndex);
     const arena = buildArenaModel(single.state, now, competitionTrack(sport), sport);
     const rivals = arena.lanes.filter(l => !l.you && !l.ghost).sort((a, b) => a.values[2] - b.values[2]);
-    // Early in the week several synthetics are still at zero. Aim past the third rival who has actually moved.
+    // Aim past the third rival who has a stored total.
     const racing = rivals.filter(l => l.values[2] > stepUnit * 0.05);
     const pool = racing.length >= 2 ? racing : rivals;
     const target = (pool[Math.min(2, pool.length - 1)]?.values[2] ?? 5 * stepUnit) + stepUnit;
@@ -157,6 +184,7 @@ export function applyDebugEvent(
   }
 
   if (event === "overtake" || event === "overtaken") {
+    base = withPreviewField(base, sport);
     const tracks: readonly ScoreTrack[] = gps ? ["open", "verified"] : ["open"];
     const displayed = buildArenaModel(base, now, competitionTrack(sport), sport);
     const youCurrent = displayed.lanes.find((l) => l.you && !l.ghost)?.values[2] ?? 0;

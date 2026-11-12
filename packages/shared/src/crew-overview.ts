@@ -5,7 +5,7 @@ import type { CrewActivityPage } from "./crew-activity";
 import { distanceUnitLabel, formatDistanceM } from "./compete/engine";
 import type { SportId, UnitSystem } from "./compete/sports";
 
-export type CrewOverviewInput = CrewWeekRelayInput & {
+export type CrewOverviewInput = Omit<CrewWeekRelayInput, "entries"> & {
   entries: (CrewWeekRelayInput["entries"][number] & { started_at: string })[];
   units?: UnitSystem;
   now: string;

@@ -38,7 +38,7 @@ export function CrewDerbyCard({ crewId, units }: { crewId: string; units?: UnitS
       <AppHeading level={3} role="heading">Crew standings</AppHeading>
       {derby.teams.map(team => <div className="crew-derby-standing" key={team.crew_id} aria-label={`${team.name}, place ${team.place}, ${crewDerbyScore(derby.sport, team.score, units)}`}><AppText role="caption">{team.place}</AppText><AppText role="row">{team.name}{team.crew_id === crewId ? " · Us" : ""}</AppText><AppText role="value">{crewDerbyScore(derby.sport, team.score, units)}</AppText></div>)}
       <AppText role="caption" secondary>Each crew’s total is the sum of its registered members’ normal event scores.</AppText>
-      {error && <AppText role="caption" role="status">{error}</AppText>}
+      {error && <AppText role="caption">{error}</AppText>}
       <Link className="fb-btn" onClick={() => setOpen(false)} href={`/arena?event=${derby.sport}`}>Open sport event</Link></div>
     </Sheet>
   </>;

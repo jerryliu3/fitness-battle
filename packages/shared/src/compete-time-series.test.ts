@@ -48,6 +48,22 @@ describe("compete-time-series", () => {
       startedAt: "2026-10-22T14:00:00Z",
     });
 
+    const enrollment = state.enrollments.find((item) => item.sport === "strength")!;
+    enrollment.peerIds = ["real-rival"];
+    enrollment.syntheticIds = [];
+    enrollment.capacity = 2;
+    enrollment.fieldBoard = {
+      crewId: "solo",
+      crewName: "Open Field",
+      sport: "strength",
+      waveStart: enrollment.waveStart,
+      weekEnd: enrollment.weekEnd,
+      capacity: 2,
+      memberIds: ["you", "real-rival"],
+      members: [{ id: "real-rival", name: "Rival", elo: 1000, effort: 40, movingSec: 1800, distanceM: 0 }],
+      syntheticIds: [],
+    };
+
     const initial = buildCompeteTimeSeriesModel(state, "strength", "open", now);
     expect(initial.unit).toBe("pts");
     expect(initial.selectedAthlete.you).toBe(true);
@@ -67,7 +83,7 @@ describe("compete-time-series", () => {
     expect(switched.gapLabel).toMatch(/vs Guest|Tied with Guest/);
   });
 
-  it("computes overtake crossover nodes only for the selected athlete and supports scrubbing", () => {
+  it("does not invent an overtake against an account that has only a current total", () => {
     const start = new Date("2026-10-19T09:00:00Z");
     const now = new Date("2026-10-24T18:00:00Z");
     let state = reduceCompete(freshState(start), {
@@ -94,19 +110,26 @@ describe("compete-time-series", () => {
       startedAt: "2026-10-24T14:00:00Z",
     });
 
+    const enrollment = state.enrollments.find((item) => item.sport === "running")!;
+    enrollment.peerIds = ["real-rival"];
+    enrollment.syntheticIds = [];
+    enrollment.capacity = 2;
+    enrollment.fieldBoard = {
+      crewId: "solo",
+      crewName: "Open Field",
+      sport: "running",
+      waveStart: enrollment.waveStart,
+      weekEnd: enrollment.weekEnd,
+      capacity: 2,
+      memberIds: ["you", "real-rival"],
+      members: [{ id: "real-rival", name: "Rival", elo: 1000, distanceM: 8000, movingSec: 2400 }],
+      syntheticIds: [],
+    };
+
     const liveModel = buildCompeteTimeSeriesModel(state, "running", "open", now);
     expect(liveModel.unit).toBe("mi");
-    expect(liveModel.overtakes.length).toBeGreaterThan(0);
-    expect(
-      liveModel.overtakes.every((o) => o.id.startsWith("you:pass:")),
-    ).toBe(true);
-
-    const earlyScrub = buildCompeteTimeSeriesModel(state, "running", "open", now, {
-      scrubFraction: 0.1,
-    });
-    expect(earlyScrub.isScrubbing).toBe(true);
-    expect(earlyScrub.selectedAthlete.valueAtCursor).toBeGreaterThanOrEqual(0);
-    expect(earlyScrub.overtakes).toHaveLength(0);
+    expect(liveModel.athletes.some((athlete) => athlete.id === "real-rival")).toBe(true);
+    expect(liveModel.overtakes).toEqual([]);
   });
 
   it("builds a sleep time-series model aligned with weekly sleep standings", () => {
@@ -125,7 +148,7 @@ describe("compete-time-series", () => {
     const sleepModel = buildSleepTimeSeriesModel(state, now);
     expect(sleepModel.unit).toBe("score");
     expect(sleepModel.yMax).toBe(100);
-    expect(sleepModel.athletes.length).toBeGreaterThan(1);
+    expect(sleepModel.athletes).toHaveLength(1);
     expect(sleepModel.selectedAthlete.you).toBe(true);
     expect(sleepModel.selectedAthlete.currentValue).toBeGreaterThan(0);
   });

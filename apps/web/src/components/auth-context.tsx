@@ -230,7 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return {};
       }
       try { setLegacyBackup(archiveLegacyDemo()); }
-      catch { return { error: "Your local demo backup could not be saved. Free device storage and try again; your existing data is intact." }; }
+      catch { return { error: "Your on-device backup could not be saved. Free device storage and try again; your existing data is intact." }; }
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -259,7 +259,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return {};
       }
       try { setLegacyBackup(archiveLegacyDemo()); }
-      catch { return { error: "Your local demo backup could not be saved. Free device storage and try again; your existing data is intact." }; }
+      catch { return { error: "Your on-device backup could not be saved. Free device storage and try again; your existing data is intact." }; }
       const supabase = createClient();
       const { data, error } = await supabase.auth.signUp({
         email: input.email,

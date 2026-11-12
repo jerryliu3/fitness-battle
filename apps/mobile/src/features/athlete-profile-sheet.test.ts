@@ -45,10 +45,12 @@ it("shows own details and navigates only after the sheet closes", async () => {
   await act(async () => renderer.root.findByType("FocusSheet" as never).props.onClosed());
   expect(mocks.navigate).toHaveBeenCalledWith("/athlete");
 });
-it("labels sample athletes and does not look them up as accounts", async () => {
-  await act(async () => { renderer = create(createElement(AthleteProfileSheet, { athlete: { id, name: "Sample", sample: true }, onClose: mocks.close })); });
-  expect(mocks.lookup).not.toHaveBeenCalled();
-  expect(JSON.stringify(renderer.toJSON())).toContain("Sample athlete");
+it("treats every other profile as an account, including seeded field athletes", async () => {
+  await act(async () => { renderer = create(createElement(AthleteProfileSheet, { athlete: { id, name: "Jordan Lee" }, onClose: mocks.close })); });
+  expect(mocks.lookup).toHaveBeenCalled();
+  expect(JSON.stringify(renderer.toJSON())).not.toContain("Sample athlete");
+  expect(renderer.root.findByProps({ accessibilityLabel: "Block athlete" })).toBeDefined();
+  expect(renderer.root.findByProps({ accessibilityLabel: "Report athlete" })).toBeDefined();
 });
 
 it("sends a report identifying the athlete through the support email endpoint", async () => {

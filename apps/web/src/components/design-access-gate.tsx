@@ -59,8 +59,8 @@ export function DesignAccessGate({ children }: { children: ReactNode }) {
           <AppParagraph typographyRole="label" className="fb-kicker">Restricted Access</AppParagraph>
           <AppHeading level={1} role="display" className="fb-title">Access denied</AppHeading>
           <AppParagraph typographyRole="body" className="fb-copy">
-            The design lab is restricted to <strong>3jerryliu@gmail.com</strong>
-            {isLocal ? " (or demo accounts on local)" : ""}. You are signed in as{" "}
+            The design lab is restricted to <strong>3jerryliu@gmail.com</strong>.
+            You are signed in as{" "}
             <strong>{user.email}</strong>.
           </AppParagraph>
           <div className="fb-stack">

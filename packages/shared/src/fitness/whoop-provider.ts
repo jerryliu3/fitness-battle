@@ -189,8 +189,7 @@ export function createWhoopProvider(
       authorizeUrl: "https://api.prod.whoop.com/oauth/oauth2/auth",
       tokenUrl: "https://api.prod.whoop.com/oauth/oauth2/token",
       scopes: "offline read:recovery read:workout read:sleep",
-      missingCredentialsMessage:
-        "WHOOP credentials missing — using stub readiness. Set WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET, and WHOOP_REDIRECT_URI.",
+      missingCredentialsMessage: "This tracker is not connected.",
       pull: pullWhoop,
       async revoke(accessToken, http) {
         const response = await http.fetch(`${WHOOP_API}/user/access`, {

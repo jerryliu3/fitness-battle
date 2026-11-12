@@ -488,7 +488,7 @@ const styles=useThemedStyles(stylesThemes);
             const status =
               link?.status === "connected"
                 ? "Connected"
-                : link?.status === "stub" ? "Demo stub · not live" : "Not connected";
+                : "Not connected";
             const onPhone = isDeviceProvider(provider.id);
             const cloud = isCloudOAuthProvider(provider.id);
             const hint = onPhone
@@ -580,7 +580,7 @@ const styles=useThemedStyles(stylesThemes);
 <SectionStack divided={false}>
           <AppText role="body" secondary >
             Open includes your eligible sessions. GPS Tracked uses sessions recorded
-            by a GPS tracker. Sample workouts do not count toward competition.
+            by a GPS tracker.
           </AppText>
           <AppText role="body" secondary >
             Each active sport has its own effort score. Rank-priced activity

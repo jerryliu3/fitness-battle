@@ -148,10 +148,17 @@ lost. Receipt IDs normalize timestamps; per-device acknowledgement suppresses
 already-viewed plans. Historical-wave receipts remain durable but do not interrupt
 the current wave's experience.
 
-The reserved Alice-field fixture IDs are informationally classified as synthetic
-training data while retaining ordinary Supabase sessions, ownership, field
-membership, blocking and reporting. They are not generated `synth:` competitors
-and never receive the Sample athlete UI flag. Administrative fixture reseeding
+Product UI and client account actions do not label or special-case anyone as a
+demo or sample account. Provenance stays in the database and admin tools.
+Every profile row, including reserved Alice-field fixture accounts, keeps
+ordinary sessions, ownership, field membership, blocking and reporting.
+Week fields, recovery boards, and benchmark boards contain only profile accounts.
+Open matching fills empty seats from the same ten stored house accounts in
+every sport, every week. Those accounts keep profiles, ratings, and counted
+workouts.
+Crew fields stay limited to their registered members. Generated filler ids are
+not seated.
+Administrative fixture reseeding
 requires explicit approval for active frozen fields and refuses unrelated live
 members; the ordinary seating path and historical results remain unchanged.
 

@@ -235,13 +235,13 @@ const f=useFocusStyles();
           <AppText role="body" secondary >
             {state.calibrated
               ? "History is locked in. This one-time calibration cannot run again."
-              : "Calibrate your starting effort score from the shared sample history. Imported sample sessions remain excluded from competition."}
+              : "Calibrate your starting effort score from your training history. Imported history stays excluded from competition."}
           </AppText>
           <FocusButton
             label={
               state.calibrated
                 ? "History calibrated"
-                : "Import fitness history (sample calibration)"
+                : "Import fitness history"
             }
             disabled={busy || state.calibrated}
             onPress={() => dispatch({ type: "import-history" })}

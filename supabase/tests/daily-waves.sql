@@ -42,7 +42,9 @@ begin
  perform set_config('request.jwt.claim.sub',a::text,true);
  select * into f from public.resolve_week_field('running',s,e);
  if not (a=any(f.member_ids) and b=any(f.member_ids)) or c=any(f.member_ids) then raise exception 'level matching wrong'; end if;
- if cardinality(f.member_ids)+cardinality(f.synthetic_ids)<>f.capacity then raise exception 'fillers wrong'; end if;
+ if cardinality(f.synthetic_ids)<>0 then raise exception 'generated fillers seated'; end if;
+ if cardinality(f.member_ids)<>f.capacity then raise exception 'open field was not filled from stored accounts'; end if;
+ if (select count(*) from auth.users u where u.id=any(f.member_ids) and u.raw_app_meta_data->>'fixture'='house-match-pool')<>f.capacity-2 then raise exception 'stored accounts missing'; end if;
  if f.roster_locked_at is null then raise exception 'roster not frozen'; end if;
  perform set_config('request.jwt.claim.sub',b::text,true);
  select * into other from public.resolve_week_field('running',s,e);

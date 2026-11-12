@@ -24,7 +24,7 @@ export const EXPERIENCE_CONCEPTS = {
       { eyebrow: "THE WEEK YOU SHOWED UP", title: "Small days. Quite a week.", body: "Three sessions. Three moments you made time for yourself. Let’s follow the trail.", action: "Unpack my week" },
       { eyebrow: "YOUR FINISH", title: "Third place. All your effort.", body: "The sample field is settled. Your finish gets a moment of its own.", action: "See what added up" },
       { eyebrow: "THE BIGGER PICTURE", title: "More than a place.", body: "A 4-week activity streak and 12.4 km of counted running. Your consistency is part of the story too.", action: "Turn the page" },
-      { eyebrow: "A FRESH START", title: "New week. Same you, growing.", body: "This sample athlete is registered for the next round. In the app, this step would reflect your actual registration.", action: "Finish preview" },
+      { eyebrow: "A FRESH START", title: "New week. Same you, growing.", body: "You're registered for the next round.", action: "Finish preview" },
     ],
   },
 } as const;

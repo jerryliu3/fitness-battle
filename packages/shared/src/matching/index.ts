@@ -38,7 +38,6 @@ export {
   type AssignGroupInput,
 } from "./compose";
 export {
-  crewFieldSeed,
   planCrewWeekField,
   crewBoardPinFromPlan,
   planFromCrewBoardPin,

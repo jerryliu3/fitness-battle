@@ -1,11 +1,9 @@
 import { unitInterval } from "../compete/sports";
 import type { SportId } from "../compete/sports";
-import { findSynthetic, pickSynthetics } from "./synthetic-bank";
 import type {
   DensityMatcherConfig,
   GroupAssignment,
   PoolPlayer,
-  SyntheticRival,
   WaveEnrollment,
   WaveWindow,
 } from "./types";
@@ -29,7 +27,7 @@ export interface AssignGroupInput {
   realPool?: readonly PoolPlayer[];
   /**
    * Must-seat peers (crew mates). Taken first up to capacity-1; remaining
-   * seats use Elo density picks then synthetics. Team scoring is out of scope.
+   * seats use Elo density picks. Empty seats stay empty. Team scoring is out of scope.
    */
   forcedPeers?: readonly PoolPlayer[];
   /** Stable seed so seating does not reshuffle on reload. */
@@ -43,9 +41,8 @@ export interface AssignGroupInput {
 }
 
 /**
- * Density matcher: builds a per-viewer local group of size N.
- * Reals are preferred; synthetics fill gaps and are dropped first when
- * more reals become available (`preferReals`).
+ * Density matcher: builds a per-viewer local group from real accounts only.
+ * Empty seats stay empty.
  */
 export class DensityMatcher {
   readonly capacity: number;
@@ -90,31 +87,22 @@ export class DensityMatcher {
         : [];
     const peers = [...forced, ...picked];
 
-    const synthetics = pickSynthetics(
-      input.sport,
-      input.viewerElo,
-      need - peers.length,
-      peers.map((peer) => peer.id),
-      seed,
-    );
-
     const enrollment: WaveEnrollment = {
       sport: input.sport,
       waveStart: window.waveStart.toISOString(),
       weekEnd: window.weekEnd.toISOString(),
       capacity,
       peerIds: peers.map((peer) => peer.id),
-      syntheticIds: synthetics.map((rival) => rival.id),
+      syntheticIds: [],
       autoEnrollNext: input.autoEnrollNext ?? true,
       crewId: input.crewId ?? null,
     };
 
-    return { enrollment, synthetics, peers };
+    return { enrollment, synthetics: [], peers };
   }
 
   /**
-   * When new reals appear, drop synthetics first to make room — never kick
-   * an existing real peer unless capacity is somehow exceeded.
+   * When new accounts appear, seat them in open spots.
    * `protectIds` (crew mates) are never dropped to free seats.
    */
   preferReals(
@@ -140,54 +128,28 @@ export class DensityMatcher {
         ),
     );
 
-    const openSlots = Math.max(0, seats - existingPeers.length);
     const added = newcomers
       .map((player) => ({
         player,
         rank: unitInterval(`prefer:${seed}:${player.id}`),
       }))
       .sort((a, b) => a.rank - b.rank)
-      .slice(0, openSlots)
+      .slice(0, Math.max(0, seats - existingPeers.length))
       .map((row) => row.player);
 
-    // Drop synthetics to free seats for newcomers beyond openSlots.
-    const stillNeed = Math.max(
-      0,
-      Math.min(newcomers.length, seats - existingPeers.length) - added.length,
-    );
-    const forced = newcomers
-      .filter((player) => !added.some((row) => row.id === player.id))
-      .slice(0, stillNeed);
-
-    let peers = [...existingPeers, ...added, ...forced];
+    let peers = [...existingPeers, ...added];
     if (peers.length > seats) {
       const protectedPeers = peers.filter((peer) => protectedSet.has(peer.id));
       const flexible = peers.filter((peer) => !protectedSet.has(peer.id));
       peers = [...protectedPeers, ...flexible].slice(0, seats);
     }
-    const syntheticSlots = Math.max(0, seats - peers.length);
-    const keptSyntheticIds = enrollment.syntheticIds.slice(0, syntheticSlots);
-    // Top up if preferReals ran when the group was under-filled.
-    const topUp = pickSynthetics(
-      enrollment.sport,
-      peers[0]?.elo ?? 1000,
-      syntheticSlots - keptSyntheticIds.length,
-      [...peers.map((p) => p.id), ...keptSyntheticIds],
-      seed,
-    );
-    const synthetics = [
-      ...keptSyntheticIds
-        .map((id) => findSynthetic(enrollment.sport, id))
-        .filter((row): row is SyntheticRival => row != null),
-      ...topUp,
-    ].slice(0, syntheticSlots);
 
     const next: WaveEnrollment = {
       ...enrollment,
       peerIds: peers.map((peer) => peer.id),
-      syntheticIds: synthetics.map((rival) => rival.id),
+      syntheticIds: [],
     };
-    return { enrollment: next, synthetics, peers };
+    return { enrollment: next, synthetics: [], peers };
   }
 }
 
