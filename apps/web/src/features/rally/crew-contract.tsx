@@ -1,17 +1,14 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  crewContractMetrics, crewContractTarget, crewContractValue,
-  type CrewContractMetric, type CrewPassport, type CrewPassportMutation, type UnitSystem,
-} from "@fitness-battle/shared";
-import { useAuth } from "@/components/auth-context";
+import { useRef, useState } from "react";
+import { crewContractMetrics, crewContractTarget, crewContractValue, type CrewContractMetric, type CrewPassportMutation, type CrewOverviewInput } from "@fitness-battle/shared";
+import { useCrewPassport } from "./use-crew-passport";
 import { AppHeading, AppParagraph, AppText } from "@/ui/section";
 import { Sheet } from "@/ui/sheet";
 
-export function CrewContractPanel({ crewId, sport, units }: { crewId: string; sport: string; units?: UnitSystem }) {
-  const { user, offlineMode } = useAuth();
-  const live = !!user && !offlineMode;
-  const [data, setData] = useState<CrewPassport>();
+export function CrewContractPanel({ crewId, input }: { crewId: string; input: CrewOverviewInput }) {
+  const { sport, units } = input;
+  const { data, error: loadError, reload, save: write, available, unavailable } = useCrewPassport(crewId, input);
+  const contract = data?.contract;
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const flight = useRef(false);
@@ -21,13 +18,6 @@ export function CrewContractPanel({ crewId, sport, units }: { crewId: string; sp
   const [title, setTitle] = useState("");
   const [metric, setMetric] = useState<CrewContractMetric>(sport === "strength" ? "sessions" : "distance_m");
   const [target, setTarget] = useState("");
-  const reload = useCallback(async () => {
-    const response = await fetch(`/api/crews/passport?crewId=${encodeURIComponent(crewId)}`, { cache: "no-store", signal: AbortSignal.timeout(15000) });
-    if (!response.ok) throw Error("Passport unavailable. Try again.");
-    setData(await response.json());
-  }, [crewId]);
-  useEffect(() => { if (live) void reload().catch(e => setError(e.message)); }, [live, reload]);
-  const contract = data?.contract;
   const progress = contract ? Math.min(100, contract.value / contract.target * 100) : 0;
   function editContract() {
     setExpectedId(contract?.id ?? null);
@@ -39,16 +29,8 @@ export function CrewContractPanel({ crewId, sport, units }: { crewId: string; sp
   async function save(body: CrewPassportMutation) {
     if (flight.current) return;
     flight.current = true; setBusy(true); setError("");
-    try {
-      const response = await fetch("/api/crews/passport", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(15000) });
-      const result = await response.json();
-      if (!response.ok || result.persisted !== true) {
-        if (response.status === 409) await reload();
-        throw Error(result.error || "Could not save your crew.");
-      }
-      setEditing(false); setPanel(null);
-      await reload().catch(() => { throw Error("Saved. Refresh to load your updated crew."); });
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not save your crew."); }
+    try { await write(body); setEditing(false); setPanel(null); }
+    catch (e) { setError(e instanceof Error ? e.message : "Could not save your crew."); }
     finally { flight.current = false; setBusy(false); }
   }
   function submit() {
@@ -58,11 +40,11 @@ export function CrewContractPanel({ crewId, sport, units }: { crewId: string; sp
   }
   return <>
     <button type="button" className="crew-contract" onClick={() => { setPanel("contract"); setEditing(false); setError(""); }}>
-      <AppText role="caption">Weekly contract ↗</AppText><AppText role="heading">{contract?.title ?? (live ? "Choose this week’s contract" : "Contracts unavailable")}</AppText>
+      <AppText role="caption">Weekly contract</AppText><AppText role="heading">{contract?.title ?? (available ? "Choose this week’s contract" : "Contracts unavailable")}</AppText>
       {contract && <><AppText role="caption">{crewContractValue(contract.metric, contract.value, units)} / {crewContractValue(contract.metric, contract.target, units)}{progress >= 100 ? " · Reached" : ""}</AppText><div className="crew-contract-track"><span style={{ width: `${progress}%` }} /></div></>}
     </button>
     <Sheet open={panel !== null} minimal title="Weekly contract" body="" onClose={() => { if (!busy) setPanel(null); }}>
-      {!live ? <AppParagraph typographyRole="body">Connect your account to manage contracts.</AppParagraph> : !data ? <><AppParagraph typographyRole="body">{error || "Loading your crew…"}</AppParagraph><button className="fb-btn-line" onClick={() => void reload().catch(e => setError(e.message))}>Refresh</button></> : editing ? <div className="crew-editor">
+      {!available ? <AppParagraph typographyRole="body">{unavailable}</AppParagraph> : !data ? <><AppParagraph typographyRole="body">{error || loadError || "Loading your crew…"}</AppParagraph><button className="fb-btn-line" onClick={() => void reload().catch(e => setError(e.message))}>Refresh</button></> : editing ? <div className="crew-editor">
         <label className="fb-field">Name<input maxLength={80} value={title} onChange={e => setTitle(e.target.value)} disabled={busy} /></label>
         <label className="fb-field">Measure<select value={metric} onChange={e => setMetric(e.target.value as CrewContractMetric)} disabled={busy}>{crewContractMetrics(sport).map(m => <option key={m.id} value={m.id}>{m.label}</option>)}</select></label>
         <label className="fb-field">Target<input type="number" min="0" step="any" value={target} onChange={e => setTarget(e.target.value)} disabled={busy} /></label>

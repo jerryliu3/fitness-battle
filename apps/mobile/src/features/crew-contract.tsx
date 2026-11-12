@@ -1,23 +1,16 @@
 import { useRef, useState } from "react";
+import { crewContractMetrics, crewContractTarget, crewContractValue, type CrewContractMetric, type CrewPassportMutation, type CrewOverviewInput } from "@fitness-battle/shared";
+import { useCrewPassport } from "./use-crew-passport";
 import { Pressable, TextInput, View } from "react-native";
-import {
-  crewContractMetrics, crewContractTarget, crewContractValue,
-  type CrewContractMetric, type CrewPassport, type CrewPassportMutation, type UnitSystem,
-} from "@fitness-battle/shared";
-import { useAuth } from "../lib/auth";
-import { useCachedApi } from "../lib/use-cached-api";
-import { requestApi } from "../lib/api";
-import { mobileEnv } from "../lib/env";
 import { useFocusStyles, FocusSheet, FocusButton } from "../ui/focus";
 import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
 
-export function CrewContractPanel({ crewId, sport, units }: { crewId: string; sport: string; units?: UnitSystem }) {
+export function CrewContractPanel({ crewId, input }: { crewId: string; input: CrewOverviewInput }) {
+  const { sport, units } = input;
   const c = useThemeColors(), f = useFocusStyles();
-  const { user, accessToken, offlineMode } = useAuth();
-  const live = !!user && !!accessToken && !offlineMode;
-  const api = useCachedApi<CrewPassport>(live ? `/api/crews/passport?crewId=${encodeURIComponent(crewId)}` : null);
-  const data = api.data, contract = data?.contract;
+  const { data, error: loadError, reload, save: write, available, unavailable } = useCrewPassport(crewId, input);
+  const contract = data?.contract;
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const flight = useRef(false);
@@ -36,12 +29,8 @@ export function CrewContractPanel({ crewId, sport, units }: { crewId: string; sp
   async function save(body: CrewPassportMutation) {
     if (flight.current) return;
     flight.current = true; setBusy(true); setError("");
-    try {
-      await requestApi(mobileEnv.apiUrl, accessToken, "/api/crews/passport", { body });
-      setEditing(false); setPanel(null);
-      const refreshed = await api.reload();
-      if (!refreshed) throw Error("Saved. Refresh to load your updated crew.");
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not save your crew."); void api.reload(); }
+    try { await write(body); setEditing(false); setPanel(null); }
+    catch (e) { setError(e instanceof Error ? e.message : "Could not save your crew."); }
     finally { flight.current = false; setBusy(false); }
   }
   function submit() {
@@ -51,11 +40,11 @@ export function CrewContractPanel({ crewId, sport, units }: { crewId: string; sp
   }
   return <>
     <Pressable accessibilityRole="button" onPress={() => { setPanel("contract"); setEditing(false); setError(""); }} style={[f.card, { backgroundColor: c.actionSoft, borderWidth: 1, borderColor: c.tennis, padding: 20, gap: 10 }]}>
-      <AppText role="caption">Weekly contract ↗</AppText><AppText role="heading">{contract?.title ?? (live ? "Choose this week’s contract" : "Contracts unavailable")}</AppText>
+      <AppText role="caption">Weekly contract</AppText><AppText role="heading">{contract?.title ?? (available ? "Choose this week’s contract" : "Contracts unavailable")}</AppText>
       {contract && <><AppText role="caption">{crewContractValue(contract.metric, contract.value, units)} / {crewContractValue(contract.metric, contract.target, units)}{progress >= 100 ? " · Reached" : ""}</AppText><View style={{ height: 5, backgroundColor: c.line, borderRadius: 4, overflow: "hidden" }}><View style={{ height: 5, width: `${progress}%`, backgroundColor: c.ink }} /></View></>}
     </Pressable>
     <FocusSheet open={panel !== null} minimal title="Weekly contract" onClose={() => { if (!busy) setPanel(null); }}>
-      {!live ? <AppText role="body">Connect your account to manage contracts.</AppText> : !data ? <><AppText role="body">{api.error || "Loading your crew…"}</AppText><FocusButton secondary label="Refresh" onPress={() => void api.reload()} /></> : editing ? <View style={{ gap: 16 }}>
+      {!available ? <AppText role="body">{unavailable}</AppText> : !data ? <><AppText role="body">{loadError || "Loading your crew…"}</AppText><FocusButton secondary label="Refresh" onPress={() => void reload()} /></> : editing ? <View style={{ gap: 16 }}>
         <AppText role="caption">Name</AppText><TextInput accessibilityLabel="Name" maxLength={80} style={f.input} value={title} onChangeText={setTitle} editable={!busy} />
         <View style={f.chipRow}>{crewContractMetrics(sport).map(m => <Pressable key={m.id} accessibilityRole="radio" accessibilityState={{ checked: m.id === metric }} disabled={busy} onPress={() => setMetric(m.id)} style={[f.chip, m.id === metric && f.chipActive]}><AppText role="label">{m.label}</AppText></Pressable>)}</View>
         <AppText role="caption">Target</AppText><TextInput accessibilityLabel="Contract target" style={f.input} keyboardType="decimal-pad" value={target} onChangeText={setTarget} editable={!busy} />
@@ -65,7 +54,7 @@ export function CrewContractPanel({ crewId, sport, units }: { crewId: string; sp
         {contract ? <><AppText role="display">{contract.title}</AppText><AppText role="value">{crewContractValue(contract.metric, contract.value, units)} / {crewContractValue(contract.metric, contract.target, units)}</AppText><AppText role="caption" secondary>{contract.contributors} / {contract.roster_size} teammates contributed.</AppText></> : <AppText role="body">Choose one shared objective for this week.</AppText>}
         <FocusButton label={contract ? "Change contract" : "Set contract"} onPress={editContract} />
       </View>}
-      {error || api.error ? <AppText role="body" accessibilityRole="alert">{error || api.error}</AppText> : null}
+      {error || loadError ? <AppText role="body" accessibilityRole="alert">{error || loadError}</AppText> : null}
     </FocusSheet>
   </>;
 }

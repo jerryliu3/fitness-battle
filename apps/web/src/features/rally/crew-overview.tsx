@@ -78,7 +78,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, children, 
         <AppText role="caption" secondary>{full.volume(full.relay.model.segments.find(s => s.id === m.user_id)?.value ?? 0)}</AppText>
       </button>)}</div>
     </section>
-    <CrewContractPanel crewId={crewId} sport={input.sport} units={input.units} />
+    <CrewContractPanel crewId={crewId} input={input} />
     <div className="crew-bento">{children}<button type="button" className="crew-action-card crew-passport" onClick={() => setDetail("passport")}>
       <span>Crew Passport</span><strong>Earned together.</strong><small>{full.highlights.length} weekly milestones</small>
     </button></div>

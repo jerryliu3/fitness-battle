@@ -70,3 +70,13 @@ Apply `20261111134237_crew_objectives_passports_derbies.sql` before deploying th
 passport API and clients. This task only prepares the migration; it does not
 apply it to a hosted database. `supabase/tests/crew-passport.sql`, the shared
 Vitest cases and the API route cases accompany the change; they have not been run.
+
+## Offline account behavior
+
+Offline accounts use device-local program storage scoped by account and crew,
+following the existing local Start Line behavior. Contract/season forms remain
+functional; progress uses the local crew snapshot and stamps retain the last
+observed closed-week outcome. These local records never enter authenticated RPCs
+or global award/scoring tables. Live accounts use the backend exclusively; a
+missing server migration is reported as unavailable server setup rather than a
+request to reconnect an already signed-in athlete.

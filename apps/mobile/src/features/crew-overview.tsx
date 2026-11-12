@@ -106,7 +106,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
         </Pressable>)}
       </ScrollView>
     </View>
-    <CrewContractPanel crewId={crewId} sport={input.sport} units={input.units} />
+    <CrewContractPanel crewId={crewId} input={input} />
     <View style={{ flexDirection: "row", gap: 12 }}>{children}<Pressable accessibilityRole="button" onPress={() => setDetail("passport")} style={[f.card, { flex: 1, minHeight: 170, justifyContent: "space-between", backgroundColor: c.surfaceInverse }]}>
       <AppText role="label" style={{ color: c.textOnInverse }}>Crew Passport</AppText><AppText role="heading" style={{ color: c.textOnInverse }}>Earned together.</AppText><AppText role="caption" style={{ color: c.textOnInverse }}>{full.highlights.length} weekly milestones</AppText>
     </Pressable></View>
