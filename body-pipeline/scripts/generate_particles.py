@@ -64,7 +64,7 @@ def poisson_surface(
     height = bounds[1][1] - bounds[0][1]
     yn = (pts[:, 1] - bounds[0][1]) / max(height, 1e-6)
     lateral = np.abs(pts[:, 0]) / max((bounds[1][0] - bounds[0][0]) / 2, 1e-6)
-    boost_mask = (yn < 0.08) | ((yn < 0.55) & (lateral > 0.55))
+    boost_mask = (yn < 0.08) | ((yn < 0.48) & (lateral > 0.62))
     if boost_mask.any():
         boost_pts, boost_idx = trimesh.sample.sample_surface(mesh, oversample // 3)
         # Keep only boosted extremity samples
@@ -135,8 +135,9 @@ def load_vertex_regions(mesh: trimesh.Trimesh, mesh_dir: Path, sex: str) -> np.n
 def regions_for_points(
     mesh: trimesh.Trimesh, points: np.ndarray, vertex_regions: np.ndarray
 ) -> np.ndarray:
-    _, vi = cKDTree(mesh.vertices).query(points)
-    return vertex_regions[vi]
+    """Vitals highlight regions in body space (Y-up, feet on ground)."""
+    del vertex_regions  # bone labels kept for mesh export; particles use spatial bands
+    return assign_region(points, mesh.bounds)
 
 
 def interior_normals(mesh: trimesh.Trimesh, points: np.ndarray) -> np.ndarray:

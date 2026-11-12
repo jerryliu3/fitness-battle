@@ -1,11 +1,17 @@
 import * as THREE from "three";
-import type { AppearanceMode, HealthSystem, VizMode } from "./types";
+import type { AppearanceMode, FaceStyle, HealthSystem, VizMode } from "./types";
 
 const REGION_MAP: Record<HealthSystem, number> = {
   full: 0,
   cardiovascular: 1,
   respiratory: 2,
   movement: 3,
+};
+
+const FACE_MAP: Record<FaceStyle, number> = {
+  mannequin: 0,
+  soft: 1,
+  natural: 2,
 };
 
 export function createParticleMaterial(
@@ -19,6 +25,7 @@ export function createParticleMaterial(
       uTime: { value: 0 },
       uMode: { value: 0 },
       uHighlight: { value: 0 },
+      uFace: { value: 1 },
       uOpacity: { value: 0.7 },
       uBrightness: { value: 0.9 },
       uGlow: { value: 0.65 },
@@ -35,10 +42,12 @@ export function createParticleMaterial(
       varying float vRegion;
       varying float vClass;
       varying float vRim;
+      varying vec3 vLocalPos;
       uniform float uSize;
       uniform float uEdge;
       uniform float uMode;
       void main() {
+        vLocalPos = position;
         vRegion = aRegion;
         vClass = aClass;
         if (uMode < 0.5 && aClass > 1.5) {
@@ -62,9 +71,11 @@ export function createParticleMaterial(
       varying float vRegion;
       varying float vClass;
       varying float vRim;
+      varying vec3 vLocalPos;
       uniform float uTime;
       uniform float uMode;
       uniform float uHighlight;
+      uniform float uFace;
       uniform float uOpacity;
       uniform float uBrightness;
       uniform float uGlow;
@@ -86,13 +97,34 @@ export function createParticleMaterial(
         vec3 base = mix(uTeal, uGold, clamp(vRim * uRimMix, 0.0, 1.0));
         float interiorFade = (uMode > 0.5 && vClass > 1.5) ? 0.52 : 1.0;
         float highlight = 1.0;
+        float regionMix = 0.0;
         if (uHighlight > 0.5) {
-          highlight = abs(vRegion - uHighlight) < 0.5 ? 1.45 : 0.42;
+          regionMix = 1.0 - smoothstep(0.0, 1.05, abs(vRegion - uHighlight));
+          highlight = mix(0.22, 1.65, regionMix);
         }
-        vec3 col = base * uBrightness * pulse * highlight * interiorFade;
-        col += vRim * uGold * uGlow * 0.22;
 
+        float headT = clamp((vLocalPos.y - 1.36) / 0.36, 0.0, 1.0);
+        float faceMask = headT;
+        if (headT > 0.01) {
+          float front = smoothstep(-0.06, 0.12, -vLocalPos.z);
+          float mid = smoothstep(0.17, 0.05, abs(vLocalPos.x));
+          faceMask = headT * front * mid;
+        }
+        float faceDetail = faceMask * (0.55 + vRim * 0.85);
+
+        vec3 col = base * uBrightness * pulse * highlight * interiorFade;
+        col = mix(col, mix(col, uGold, 0.55) * 1.15, regionMix * 0.72);
         float alpha = soft * uOpacity * highlight * interiorFade;
+
+        if (uFace < 0.5) {
+          col = mix(col, uTeal, faceDetail * 0.45);
+          alpha *= mix(1.0, 0.12, faceDetail);
+        } else if (uFace < 1.5) {
+          col = mix(col, uTeal, faceDetail * 0.18);
+          alpha *= mix(1.0, 0.5, faceDetail * vRim);
+        }
+
+        col += vRim * uGold * uGlow * (0.22 + regionMix * 0.35);
         if (uMode < 0.5) {
           alpha = pow(alpha, 1.25);
         }
@@ -136,4 +168,11 @@ export function applyHighlight(
 ): void {
   material.uniforms.uMode!.value = mode === "cloud" ? 1 : 0;
   material.uniforms.uHighlight!.value = REGION_MAP[system];
+}
+
+export function applyFaceStyle(
+  material: THREE.ShaderMaterial,
+  style: FaceStyle,
+): void {
+  material.uniforms.uFace!.value = FACE_MAP[style];
 }

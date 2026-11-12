@@ -6,6 +6,7 @@ import {
   VitalsBodyRenderer,
   type AppearanceMode,
   type BodySex,
+  type FaceStyle,
   type HealthSystem,
   type QualityPreset,
   type ViewPreset,
@@ -15,6 +16,7 @@ import {
 } from "@fitness-battle/pursuit/vitals-body";
 import { useState } from "react";
 import "./vitals-body.css";
+import { VitalsPhenotypeDev } from "./vitals-phenotype-dev";
 
 export function VitalsBodyDemo() {
   const [sex, setSex] = useState<BodySex>("male");
@@ -23,6 +25,7 @@ export function VitalsBodyDemo() {
   const [zoom, setZoom] = useState<ZoomPreset>("full");
   const [system, setSystem] = useState<HealthSystem>("full");
   const [appearance, setAppearance] = useState<AppearanceMode>("dark");
+  const [faceStyle, setFaceStyle] = useState<FaceStyle>("soft");
   const [quality, setQuality] = useState<QualityPreset>("medium");
   const [tuning, setTuning] = useState<VitalsBodyTuning>(DEFAULT_TUNING);
 
@@ -49,6 +52,7 @@ export function VitalsBodyDemo() {
             zoom={zoom}
             system={system}
             appearance={appearance}
+            faceStyle={faceStyle}
             quality={quality}
             tuning={tuning}
             autoRotate={view === "free"}
@@ -68,12 +72,15 @@ export function VitalsBodyDemo() {
             onSystem={setSystem}
             appearance={appearance}
             onAppearance={setAppearance}
+            faceStyle={faceStyle}
+            onFaceStyle={setFaceStyle}
             quality={quality}
             onQuality={setQuality}
             tuning={tuning}
             onTuning={setTuning}
             devTuning
           />
+          <VitalsPhenotypeDev sex={sex} />
         </aside>
       </div>
     </main>

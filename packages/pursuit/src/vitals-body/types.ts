@@ -5,6 +5,7 @@ export type ViewPreset = "front" | "side" | "back" | "free";
 export type ZoomPreset = "full" | "upper" | "lower";
 export type HealthSystem = "full" | "cardiovascular" | "respiratory" | "movement";
 export type AppearanceMode = "light" | "dark";
+export type FaceStyle = "mannequin" | "soft" | "natural";
 
 export interface VitalsParticleAsset {
   count: number;
