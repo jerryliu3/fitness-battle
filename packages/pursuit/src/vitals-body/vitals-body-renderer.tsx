@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { assetUrl, loadVbody } from "./load-vbody";
 import {
+  applyFaceStyle,
   applyHighlight,
   createParticleMaterial,
   setAppearance,
@@ -12,6 +13,7 @@ import {
 import type {
   AppearanceMode,
   BodySex,
+  FaceStyle,
   HealthSystem,
   QualityPreset,
   ViewPreset,
@@ -30,6 +32,7 @@ export interface VitalsBodyRendererProps {
   zoom: ZoomPreset;
   system: HealthSystem;
   appearance?: AppearanceMode;
+  faceStyle?: FaceStyle;
   tuning?: VitalsBodyTuning;
   autoRotate?: boolean;
   className?: string;
@@ -78,6 +81,7 @@ export function VitalsBodyRenderer({
   zoom,
   system,
   appearance = "dark",
+  faceStyle = "soft",
   tuning = defaultTuning,
   autoRotate = false,
   className,
@@ -100,10 +104,20 @@ export function VitalsBodyRenderer({
     system,
     mode,
     appearance,
+    faceStyle,
     tuning,
     autoRotate,
   });
-  stateRef.current = { view, zoom, system, mode, appearance, tuning, autoRotate };
+  stateRef.current = {
+    view,
+    zoom,
+    system,
+    mode,
+    appearance,
+    faceStyle,
+    tuning,
+    autoRotate,
+  };
 
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -221,6 +235,7 @@ export function VitalsBodyRenderer({
         material.uniforms.uEdge!.value = s.tuning.edgeLight;
         material.uniforms.uSize!.value = 0.62 * s.tuning.particleScale;
         applyHighlight(material, s.system, s.mode);
+        applyFaceStyle(material, s.faceStyle);
       }
       renderer.render(scene, camera);
     };
@@ -353,8 +368,10 @@ export function VitalsBodyRenderer({
   }, [assetBase, sex, mode, quality, ctxReady, onLoadError, onLoadSuccess]);
 
   useEffect(() => {
-    ctxRef.current?.schedule();
-  }, [view, zoom, system, mode, tuning]);
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+    ctx.schedule();
+  }, [view, zoom, system, mode, faceStyle, tuning]);
 
   return (
     <div

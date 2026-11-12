@@ -1,6 +1,7 @@
 import type {
   AppearanceMode,
   BodySex,
+  FaceStyle,
   HealthSystem,
   QualityPreset,
   ViewPreset,
@@ -22,6 +23,8 @@ export interface VitalsBodyControlProps {
   onSystem: (s: HealthSystem) => void;
   appearance: AppearanceMode;
   onAppearance: (a: AppearanceMode) => void;
+  faceStyle: FaceStyle;
+  onFaceStyle: (f: FaceStyle) => void;
   quality: QualityPreset;
   onQuality: (q: QualityPreset) => void;
   tuning: VitalsBodyTuning;
@@ -113,6 +116,11 @@ export function VitalsBodyControls(props: VitalsBodyControlProps) {
         { id: "full", label: "Full" },
         { id: "upper", label: "Upper" },
         { id: "lower", label: "Lower" },
+      ]} />
+      <Seg label="FACE" value={props.faceStyle} onChange={props.onFaceStyle} options={[
+        { id: "mannequin", label: "Mannequin" },
+        { id: "soft", label: "Soft" },
+        { id: "natural", label: "Natural" },
       ]} />
       <Seg label="SYSTEM" value={props.system} onChange={props.onSystem} options={[
         { id: "full", label: "Full" },

@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib.mesh_common import (  # noqa: E402
     BodySex,
+    REGION_NONE,
     assign_region,
     bone_label_to_region,
     standing_pose_rotvec_deg,
@@ -72,14 +73,22 @@ def export_body(model: Anny, sex: BodySex, out_dir: Path) -> Path:
 
     mesh = trimesh.Trimesh(vertices=vertices, faces=faces, process=False)
 
-    weights = model.vertex_bone_weights.detach().cpu().numpy()
-    if weights.ndim == 3:
-        weights = weights[0]
-    bone_regions = np.array([bone_label_to_region(l) for l in model.bone_labels], dtype=np.uint8)
-    if weights.shape[0] == len(vertices):
-        vertex_regions = bone_regions[weights.argmax(axis=1)]
-    else:
-        vertex_regions = assign_region(vertices, np.array([vertices.min(0), vertices.max(0)]))
+    bone_regions = np.array(
+        [bone_label_to_region(l) for l in model.bone_labels], dtype=np.uint8
+    )
+    v_weights = model.vertex_bone_weights.detach().cpu().numpy()
+    v_indices = model.vertex_bone_indices.detach().cpu().numpy()
+    if v_weights.ndim == 3:
+        v_weights = v_weights[0]
+        v_indices = v_indices[0]
+    dominant = v_weights.argmax(axis=1)
+    bone_idx = v_indices[np.arange(len(vertices)), dominant]
+    vertex_regions = bone_regions[bone_idx]
+    # Torso / organs: spatial heuristic fills gaps where bone labels lack cardio splits.
+    spatial = assign_region(vertices, np.array([vertices.min(0), vertices.max(0)]))
+    fill = (vertex_regions == REGION_NONE) & (spatial > 0)
+    vertex_regions = vertex_regions.astype(np.uint8)
+    vertex_regions[fill] = spatial[fill]
     pre_merge_verts = vertices.copy()
 
     mesh.merge_vertices()
