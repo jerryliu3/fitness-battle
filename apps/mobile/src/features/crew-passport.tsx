@@ -23,8 +23,8 @@ export function CrewPassportPanel({ crewId, input, children }: { crewId: string;
   const [target, setTarget] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
-  const season = data?.seasons.find(s => Date.parse(s.starts_at) <= Date.parse(now) && Date.parse(s.ends_at) > Date.parse(now));
-  const stamps = data?.stamps.filter(s => s.season_id === season?.id) ?? [];
+  const season = data?.seasons?.find(s => Date.parse(s.starts_at) <= Date.parse(now) && Date.parse(s.ends_at) > Date.parse(now));
+  const stamps = data?.stamps?.filter(s => s.season_id === season?.id) ?? [];
   const progress = contract ? Math.min(100, contract.value / contract.target * 100) : 0;
   function editContract() {
     setExpectedId(contract?.id ?? null); setTitle(contract?.title ?? ""); setMetric(contract?.metric ?? (sport === "strength" ? "sessions" : "distance_m"));
@@ -74,8 +74,8 @@ export function CrewPassportPanel({ crewId, input, children }: { crewId: string;
         {contract ? <><AppText role="display">{contract.title}</AppText><AppText role="value">{crewContractValue(contract.metric, contract.value, units)} / {crewContractValue(contract.metric, contract.target, units)}</AppText><AppText role="caption" secondary>{contract.contributors} / {contract.roster_size} teammates contributed.</AppText></> : <AppText role="body">Choose one shared objective for this week.</AppText>}
         <FocusButton label={contract ? "Change contract" : "Set contract"} onPress={editContract} />
       </View> : <View style={{ gap: 20 }}>
-        {data.seasons.map(s => <View key={s.id} style={{ gap: 12 }}><AppText accessibilityRole="header" role="heading">{s.title}</AppText><AppText role="caption" secondary>{new Date(s.starts_at).toLocaleDateString("en-US", { timeZone: s.time_zone })} – {new Date(s.ends_at).toLocaleDateString("en-US", { timeZone: s.time_zone })}</AppText>{data.stamps.filter(stamp => stamp.season_id === s.id).map(stamp => <View key={stamp.id} style={[f.card, { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: c.actionSoft }]}><AppText role="heading">✦</AppText><View style={{ flex: 1, gap: 4 }}><AppText role="row">{crewStampLabel(stamp.code)}</AppText><AppText role="caption" secondary>{new Date(stamp.earned_at).toLocaleDateString("en-US", { timeZone: s.time_zone })}</AppText></View></View>)}</View>)}
-        {!data.seasons.length && <AppText role="body">Start a season to keep your crew’s earned stamps.</AppText>}
+        {(data.seasons ?? []).map(s => <View key={s.id} style={{ gap: 12 }}><AppText accessibilityRole="header" role="heading">{s.title}</AppText><AppText role="caption" secondary>{new Date(s.starts_at).toLocaleDateString("en-US", { timeZone: s.time_zone })} – {new Date(s.ends_at).toLocaleDateString("en-US", { timeZone: s.time_zone })}</AppText>{(data.stamps ?? []).filter(stamp => stamp.season_id === s.id).map(stamp => <View key={stamp.id} style={[f.card, { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: c.actionSoft }]}><AppText role="heading">✦</AppText><View style={{ flex: 1, gap: 4 }}><AppText role="row">{crewStampLabel(stamp.code)}</AppText><AppText role="caption" secondary>{new Date(stamp.earned_at).toLocaleDateString("en-US", { timeZone: s.time_zone })}</AppText></View></View>)}</View>)}
+        {!(data.seasons ?? []).length && <AppText role="body">Start a season to keep your crew’s earned stamps.</AppText>}
         <FocusButton label="New season" onPress={openSeason} />
       </View>}
       {panel && data && (error || loadError) ? <AppText role="body" accessibilityRole="alert">{error || loadError}</AppText> : null}

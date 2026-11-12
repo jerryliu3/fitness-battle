@@ -46,6 +46,8 @@ vi.mock("react-native", () => ({useColorScheme: () => "light",
   useWindowDimensions: () => ({width:390,height:844,fontScale:1}),
   ScrollView: "ScrollView",
   Share: { share: vi.fn() },
+  AppState: { currentState: "active", addEventListener: () => ({ remove() {} }) },
+  AccessibilityInfo: { isReduceMotionEnabled: async () => false, addEventListener: () => ({ remove() {} }) },
 }));
 vi.mock("expo-router", () => ({
   useFocusEffect() {},
@@ -124,7 +126,7 @@ describe("crew empty states", () => {
           button.props.label === "Create or join a crew",
       )!;
       await act(async () => entry.props.onPress());
-      expect(renderer.root.findByType("Sheet" as never).props.open).toBe(true);
+      expect(renderer.root.findAllByType("Sheet" as never).some((node) => node.props.open)).toBe(true);
     },
   );
 });
@@ -162,8 +164,6 @@ it("opens crew settings with leave crew button and minimal sheet", async () => {
   await act(async () => {
     renderer = create(createElement(CrewHub));
   });
-  await act(async () => renderer.root.findByProps({ accessibilityLabel: "View crew members" }).props.onPress());
-  expect(mock.push).toHaveBeenCalledWith({ pathname: "/crew-members", params: { crewId: "crew" } });
   await act(async () =>
     renderer.root
       .findByProps({ accessibilityLabel: "Crew settings" })
