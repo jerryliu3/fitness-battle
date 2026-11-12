@@ -115,11 +115,12 @@ export async function fetchNyrrFinishers(
     pageSize?: number;
     maxPages?: number;
   },
-): Promise<{ pages: NyrrPage[]; totalItems: number }> {
+): Promise<{ pages: NyrrPage[]; totalItems: number; rawResponses: NyrrFinishersResponse[] }> {
   const pageSize = options.pageSize ?? 100;
   const maxPages = options.maxPages ?? 800;
   let authoritativeTotal: number | null = null;
   const pages: NyrrPage[] = [];
+  const rawResponses: NyrrFinishersResponse[] = [];
   const seen = new Set<string>();
 
   for (let pageIndex = 1; pageIndex <= maxPages; pageIndex += 1) {
@@ -131,7 +132,8 @@ export async function fetchNyrrFinishers(
       sortDescending: false,
       pageIndex,
       pageSize,
-    })) as NyrrFinishersResponse;
+    })    ) as NyrrFinishersResponse;
+    rawResponses.push(payload);
 
     const parsed = parseNyrrFinishersPage(payload, {
       eventCode: options.eventCode,
@@ -172,7 +174,7 @@ export async function fetchNyrrFinishers(
     throw new Error(`NYRR field incomplete: extracted ${seen.size} identities vs totalItems ${totalItems}.`);
   }
 
-  return { pages, totalItems };
+  return { pages, totalItems, rawResponses };
 }
 
 export function assertNyrrPayloadNotChallenge(text: string): void {

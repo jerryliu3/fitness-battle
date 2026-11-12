@@ -95,6 +95,14 @@ on conflict (source_slug) do update set
 }
 
 export function upsertEditionMappingSql(input: EditionMappingInput): string {
+  const externalId = input.externalEventId?.trim() ?? null;
+  const adapterConfig =
+    input.adapter === "nyrr"
+      ? { eventCode: externalId }
+      : { ...(input.adapterConfig ?? {}), ...(externalId ? { eventCode: externalId } : {}) };
+  if (input.adapter === "nyrr" && !externalId) {
+    throw new Error("NYRR mappings require externalEventId (canonical event code).");
+  }
   return `
 insert into public.acquisition_edition_mappings (
   candidate_id, source_decision_id, adapter, population_key, external_event_id,
@@ -111,7 +119,7 @@ insert into public.acquisition_edition_mappings (
   ${quote(input.eventName)},
   ${input.startsOn ? `${quote(input.startsOn)}::date` : "null"},
   ${quote(input.sourceUrl)},
-  ${quote(JSON.stringify(input.adapterConfig ?? {}))}::jsonb,
+  ${quote(JSON.stringify(adapterConfig))}::jsonb,
   ${input.approvedBy ? "now()" : "null"},
   ${quoteNullable(input.approvedBy)}
 )

@@ -48,7 +48,11 @@ if (argv.includes("--queue-approved")) {
        and d.storage_allowed
        and not exists (
          select 1 from public.acquisition_runs r
-         where r.mapping_id = m.id and r.status in ('queued', 'leased', 'succeeded')
+         where r.mapping_id = m.id
+           and (
+             r.status in ('queued', 'leased')
+             or (r.status = 'succeeded' and r.publication_outcome in ('staged', 'published'))
+           )
        )
      returning id;`,
   );

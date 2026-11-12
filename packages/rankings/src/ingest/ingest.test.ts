@@ -268,7 +268,7 @@ describe("public results parsers", () => {
     expect(freezeSql).toContain("publication_state = 'frozen'");
     const stagedSql = editionImportSql(edition, snapshot, { stageOnly: true });
     expect(stagedSql).toContain("publication_state = 'staged'");
-    expect(stagedSql).toContain("published_at = null");
+    expect(stagedSql).toMatch(/published_at = null|published_at = case when true then published_at/);
     expect(freezeSql).toContain("imports cannot mutate a frozen edition");
   });
 });

@@ -33,6 +33,7 @@ export { editionImportSql, snapshotIdentity, type EditionImportOptions } from ".
 export type { IngestedEdition, IngestedFinish } from "./ingest/types";
 export { candidateDedupeKey, normalizeUrl } from "./acquire/dedupe";
 export { buildAcquisitionPreview, type AcquisitionPreview } from "./acquire/preview";
+export { assertPreviewAllowsApply } from "./acquire/validate";
 export {
   upsertCandidateSql,
   upsertEditionMappingSql,
