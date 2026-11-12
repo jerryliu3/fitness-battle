@@ -1,7 +1,6 @@
 "use client";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { UserAvatar } from "@/ui/user-avatar";
 import { RankAvatar } from "@/ui/rank-symbol";
 import { useCompetitionTimeline } from "./competition-timeline-context";
 import { APP_TIMEZONE, competitionActivityLog, type CompeteState, type SportId } from "@fitness-battle/shared";

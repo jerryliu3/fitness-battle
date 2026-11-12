@@ -1,5 +1,4 @@
 "use client";
-import { UserAvatar } from "@/ui/user-avatar";
 import { RankAvatar } from "@/ui/rank-symbol";
 import { AppParagraph } from "@/ui/section";
 

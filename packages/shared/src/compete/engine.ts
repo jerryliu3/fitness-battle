@@ -15,6 +15,7 @@ import {
   type WaveEnrollment,
 } from "../matching";
 import { eloFromWeeklyEffort, periodEffort } from "./effort";
+import type { RankSymbolId } from "../rank-symbols";
 import { mergeActivities, normalizeSampleActivity, provenanceOf } from "./ledger";
 import { isTrainingGoal } from "./suggestion";
 import { settleElo } from "./elo";
@@ -115,7 +116,7 @@ export interface Action {
   name?: string;
   city?: string;
   avatarUrl?: string | null;
-  rankSymbol?: import("../rank-symbols").RankSymbolId | null;
+  rankSymbol?: RankSymbolId | null;
   units?: UnitSystem;
   sport?: SportId;
   metric?: HealthMetricId;

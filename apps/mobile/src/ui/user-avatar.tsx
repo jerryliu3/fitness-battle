@@ -1,12 +1,12 @@
 import { useThemeColors } from "../theme";
 import { useState, type ReactNode } from "react";
 import { Image, Text, View } from "react-native";
-import { initialsFromName, type RankSymbolId } from "@fitness-battle/shared";
+import { initialsFromName } from "@fitness-battle/shared";
 
 import { textStyle } from "./section";
 
-export function UserAvatar({ src, name, size = 38, fallback, decorative = true, highlight = false, onLoadEnd, rank }: {
-  src?: string | null; name: string; size?: number; fallback?: ReactNode; decorative?: boolean; onLoadEnd?: () => void; highlight?: boolean; rank?: RankSymbolId | null;
+export function UserAvatar({ src, name, size = 38, fallback, decorative = true, highlight = false, onLoadEnd }: {
+  src?: string | null; name: string; size?: number; fallback?: ReactNode; decorative?: boolean; onLoadEnd?: () => void; highlight?: boolean;
 }) {
 const c=useThemeColors();
 

@@ -2,7 +2,6 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 import Animated, { FadeInUp, LinearTransition } from "react-native-reanimated";
 import { useCompetitionTimeline } from "./competition-timeline-context";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
-import { UserAvatar } from "../ui/user-avatar";
 import { RankAvatar } from "../ui/rank-symbol";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { Pressable, View } from "react-native";

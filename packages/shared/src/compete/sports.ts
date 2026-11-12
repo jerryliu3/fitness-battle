@@ -7,6 +7,7 @@ import type {
 import type { WaveEnrollment } from "../matching/types";
 import type { PeriodKind } from "../types";
 import type { DailyHealthSample } from "../fitness/types";
+import type { RankSymbolId } from "../rank-symbols";
 
 /** Starting effort score for signed-in accounts (and after first join). */
 export const ELO_BASE = 1000;
@@ -263,7 +264,7 @@ export interface CompeteState {
   city: string;
   avatarUrl?: string | null;
   /** Explicit preferred laurel rank symbol; falls back to current effort score band when omitted. */
-  rankSymbol?: import("../rank-symbols").RankSymbolId | null;
+  rankSymbol?: RankSymbolId | null;
   /** Miles (us) or kilometres (metric). Chosen in onboarding; changeable later. */
   units: UnitSystem;
   primary: SportId;
@@ -334,8 +335,6 @@ export interface CrewBoardPin {
 
 export interface CrewBoardMember {
   avatarUrl?: string | null;
-  /** Explicit preferred laurel rank symbol; falls back to current effort score band when omitted. */
-  rankSymbol?: import("../rank-symbols").RankSymbolId | null;
   id: string;
   name: string;
   elo: number;

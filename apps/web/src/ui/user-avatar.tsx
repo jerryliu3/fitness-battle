@@ -2,12 +2,12 @@
 import { colors as c } from "@/theme/app-colors";
 
 import { useState, type ReactNode } from "react";
-import { initialsFromName, type RankSymbolId } from "@fitness-battle/shared";
+import { initialsFromName } from "@fitness-battle/shared";
 import { typographyStyle } from "./section";
 
 /** Actual authorized portrait first; initials/icon only if absent or failed. */
-export function UserAvatar({ src, name, size = 38, className, fallback, decorative = true, highlight = false, rank }: {
-  src?: string | null; name: string; size?: number; className?: string; fallback?: ReactNode; decorative?: boolean; highlight?: boolean; rank?: RankSymbolId | null;
+export function UserAvatar({ src, name, size = 38, className, fallback, decorative = true, highlight = false }: {
+  src?: string | null; name: string; size?: number; className?: string; fallback?: ReactNode; decorative?: boolean; highlight?: boolean;
 }) {
   const [failed, setFailed] = useState<string | null>(null);
   const url = src?.trim();

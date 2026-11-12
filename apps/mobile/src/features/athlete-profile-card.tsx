@@ -7,7 +7,6 @@ import { RankAvatar } from "../ui/rank-symbol";
 
 
 import { AppText } from "../ui/section";
-import { UserAvatar } from "../ui/user-avatar";
 
 /** Shared identity card for your Athlete page and another athlete's sheet. */
 export function AthleteProfileCard({ name, avatarUrl, city, score, since, action, children, largeName = false }: {

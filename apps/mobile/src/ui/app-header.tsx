@@ -1,5 +1,4 @@
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
-import { UserAvatar } from "./user-avatar";
 import { RankAvatar } from "./rank-symbol";
 import { textStyle } from "./section";
 import { useBootImage } from "./boot-readiness";

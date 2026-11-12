@@ -1,6 +1,5 @@
 import { useThemeColors } from "../theme";
 import { playCue } from "../lib/haptics";
-import { UserAvatar } from "../ui/user-avatar";
 import { RankAvatar } from "../ui/rank-symbol";
 import { AppText } from "../ui/section";
 import {

@@ -5,6 +5,9 @@ import {
   RANK_BANDS,
   rankForEffortScore,
   rankForElo,
+  rankSymbolForRankName,
+  rankSymbolForScore,
+  effectiveRankSymbol,
 } from "./ranks";
 
 describe("fitness-style ranks", () => {
@@ -59,5 +62,22 @@ describe("fitness-style ranks", () => {
     expect(ladder.next?.name).toBe("Elite");
     expect(ladder.intoNext).toBe(50);
     expect(effortScoreInBand(1550)).toEqual(ladder);
+  });
+
+  it("maps scores and legacy rank names onto laurel symbols", () => {
+    expect(rankSymbolForScore(null)).toBe("beginner");
+    expect(rankSymbolForScore(0)).toBe("beginner");
+    expect(rankSymbolForScore(1000)).toBe("active");
+    expect(rankSymbolForRankName("Unranked")).toBe("beginner");
+    expect(rankSymbolForRankName("Developing")).toBe("rookie");
+    expect(rankSymbolForRankName("Steady")).toBe("challenger");
+    expect(rankSymbolForRankName("Strong")).toBe("athlete");
+    expect(rankSymbolForRankName("Master")).toBe("master");
+    expect(effectiveRankSymbol(null)).toBe("beginner");
+    expect(effectiveRankSymbol({ rankSymbol: "elite", primary: "run" })).toBe("elite");
+    expect(effectiveRankSymbol({
+      primary: "run",
+      ratings: [{ sport: "run", openElo: 1000, verifiedElo: 1800 }],
+    })).toBe("master");
   });
 });

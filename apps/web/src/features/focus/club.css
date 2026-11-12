@@ -55,11 +55,6 @@
 .focus-shell-brand .focus-shell-tagline {
   display: none;
 }
-.focus-shell-profile {
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--line);
-}
 .phone-shell .phone-tabs {
   max-width: 1080px;
   border-radius: 0;

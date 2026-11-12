@@ -1,7 +1,6 @@
 import { useFocusStyles } from "../ui/focus";
 import { useThemeColors } from "../theme";
 import { AthleteProfileSheet } from "./athlete-profile-sheet";
-import { UserAvatar } from "../ui/user-avatar";
 import { RankAvatar } from "../ui/rank-symbol";
 import { AppText, Section, SectionStack } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";

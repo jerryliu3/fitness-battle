@@ -7,7 +7,6 @@ import { GeographicCourse } from "@/features/course/geographic-course";
 import { useCompetitionCourse } from "@/features/course/use-competition-course";
 import { PortraitField } from "@/features/club/portrait-field";
 import { PolishedRacer } from "@/features/brand/polished-racer";
-import { UserAvatar } from "@/ui/user-avatar";
 import { RankAvatar } from "@/ui/rank-symbol";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { playCue } from "@/lib/haptics";

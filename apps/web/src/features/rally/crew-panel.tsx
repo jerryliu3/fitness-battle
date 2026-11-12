@@ -2,7 +2,6 @@
 import { colors as appearanceColors } from "@/theme/app-colors";
 
 import { useBootLoading } from "@/shell/boot-readiness";
-import { UserAvatar } from "@/ui/user-avatar";
 import { RankAvatar } from "@/ui/rank-symbol";
 import { AppParagraph, AppText, AppHeading, Section, typographyStyle } from "@/ui/section";
 

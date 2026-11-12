@@ -2,12 +2,19 @@
 
 import { useState, type CSSProperties } from "react";
 import { useReducedMotion } from "motion/react";
-import type { AthleteCardModel } from "@fitness-battle/shared";
+import { RANK_SYMBOL_GEOMETRY, rankSymbolForRankName, type AthleteCardModel } from "@fitness-battle/shared";
 import { cardOptics, REST_POSE } from "./card-optics";
 import { useCardRotation } from "./use-card-rotation";
 import styles from "./athlete-crest.module.css";
 
 const WIDTH = 320, HEIGHT = 368;
+const { size: WREATH, portrait: APERTURE } = RANK_SYMBOL_GEOMETRY;
+const WREATH_FRAME = {
+  width: `${(WREATH / APERTURE.size) * 100}%`,
+  height: `${(WREATH / APERTURE.size) * 100}%`,
+  left: `${(-APERTURE.x / APERTURE.size) * 100}%`,
+  top: `${(-APERTURE.y / APERTURE.size) * 100}%`,
+};
 const POINTS = [[24, 0], [296, 0], [320, 28], [320, 244], [300, 298], [160, 368], [20, 298], [0, 244], [0, 28]];
 const CLIP = `polygon(${POINTS.map(([x, y]) => `${x / WIDTH * 100}% ${y / HEIGHT * 100}%`).join(",")})`;
 function Wordmark() { return <span className={styles.wordmark}>overtaek↗</span>; }
@@ -38,7 +45,9 @@ export function AthleteCrest({ model, active = true }: { model: AthleteCardModel
           <svg className={styles.track} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} fill="none" aria-hidden="true">{[0, 1, 2, 3, 4, 5].map(i => <rect key={i} x={-114 - i * 15} y={96 - i * 15} width={385 + i * 30} height={460 + i * 30} rx={155 + i * 15} stroke="currentColor" transform="rotate(-28 160 224)" />)}</svg>
           <div className={styles.rating}><strong>{model.score === null ? "—" : model.score.toLocaleString("en-US")}</strong><span>Effort Score</span></div>
           <div className={styles.sport}><strong>{model.sport}</strong><span>Primary sport</span></div>
-          <div className={styles.portrait}>{photo ? <img src={model.avatarUrl!} alt="" draggable={false} onError={() => setFailedPhoto(model.avatarUrl)} /> : <span aria-hidden="true">{model.initials}</span>}</div>
+          <div className={styles.portrait}>{photo ? <img className={styles.photo} src={model.avatarUrl!} alt="" draggable={false} onError={() => setFailedPhoto(model.avatarUrl)} /> : <span aria-hidden="true">{model.initials}</span>}
+            <img className={styles.wreath} src={`/rank-symbols/${rankSymbolForRankName(model.rank)}.png`} alt="" draggable={false} style={WREATH_FRAME} />
+          </div>
           <div className={styles.identity} data-long-name={model.name.length > 18}><h2 title={model.name}>{model.name}</h2></div>
           <div className={styles.stats}>
             {model.records.length ? <div className={styles.records} style={{ gridTemplateColumns: `repeat(${Math.min(3, model.records.length)}, 1fr)` }}>{model.records.slice(0, 3).map(r => <Stat key={r.label} value={r.value} label={`${r.label} PB`} />)}</div> : <p className={styles.noRecords}>No personal bests yet</p>}
