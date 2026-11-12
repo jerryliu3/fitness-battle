@@ -139,11 +139,11 @@ export function VitalsBodyControls(props: VitalsBodyControlProps) {
           }}
         >
           <span style={{ fontSize: 11, opacity: 0.6 }}>DEV TUNING</span>
-          {slider("particleScale", "Particle size", 0.6, 1.8, 0.05)}
-          {slider("opacity", "Opacity", 0.35, 1, 0.02)}
-          {slider("brightness", "Brightness", 0.6, 1.6, 0.02)}
-          {slider("glow", "Glow", 0.5, 2, 0.05)}
-          {slider("edgeLight", "Edge light", 0, 1.5, 0.05)}
+          {slider("particleScale", "Particle size", 0.35, 1.25, 0.02)}
+          {slider("opacity", "Opacity", 0.25, 0.95, 0.02)}
+          {slider("brightness", "Brightness", 0.5, 1.35, 0.02)}
+          {slider("glow", "Glow", 0.2, 1.1, 0.02)}
+          {slider("edgeLight", "Edge light", 0, 1.2, 0.02)}
         </div>
       ) : null}
     </div>

@@ -63,6 +63,14 @@
   background: color-mix(in srgb, currentColor 4%, transparent);
 }
 
+.vitals-body-page--dark .vitals-body-stage {
+  background: radial-gradient(ellipse at 50% 40%, #14252c 0%, #0a1216 70%);
+}
+
+.vitals-body-page--light .vitals-body-stage {
+  background: radial-gradient(ellipse at 50% 40%, #f8fcfb 0%, #dbe8e5 75%);
+}
+
 .vitals-body-panel {
   padding: 16px 18px 20px;
   border-radius: 20px;
