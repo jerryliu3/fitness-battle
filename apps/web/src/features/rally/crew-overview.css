@@ -150,18 +150,6 @@
   display:flex;
   justify-content:space-between
 }
-.crew-contract-track {
-  height:5px;
-  border-radius:4px;
-  overflow:hidden;
-  background:var(--line);
-  margin-top:8px
-}
-.crew-contract-track span {
-  display:block;
-  height:100%;
-  background:var(--ink)
-}
 .crew-bento {
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -203,19 +191,6 @@
   color:inherit;
   opacity:.75
 }
-.crew-stamps {
-  display:flex;
-  gap:6px;
-  color:var(--action-primary)
-}
-.crew-stamps span {
-  border:1px solid currentColor;
-  border-radius:50%;
-  width:32px;
-  height:32px;
-  display:grid;
-  place-items:center
-}
 .crew-story {
   display:flex;
   align-items:center;
@@ -232,28 +207,6 @@
 }
 .crew-story>span:last-child {
   margin-left:auto
-}
-.crew-detail-stamps {
-  display:grid;
-  gap:12px
-}
-.crew-detail-stamps>div {
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:18px;
-  border:1px solid var(--line);
-  border-radius:18px
-}
-.crew-detail-stamps>div>div {
-  flex:1
-}
-.crew-detail-stamps .is-earned {
-  background:var(--app-action-soft)
-}
-.crew-detail-stamps>div>span:first-child {
-  font-size:28px;
-  color:var(--app-focus-ring)
 }
 .crew-overview button:focus-visible,.crew-header button:focus-visible,.crew-header select:focus-visible {
   outline:2px solid var(--app-focus-ring);
