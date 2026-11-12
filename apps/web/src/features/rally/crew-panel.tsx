@@ -3,7 +3,6 @@ import { colors as appearanceColors } from "@/theme/app-colors";
 
 import { useBootLoading } from "@/shell/boot-readiness";
 import { RankAvatar } from "@/ui/rank-symbol";
-import { UserAvatar } from "@/ui/user-avatar";
 import { AppParagraph, AppText, AppHeading, typographyStyle } from "@/ui/section";
 
 import { RankBadge } from "../progress/rank-badge";
@@ -13,7 +12,7 @@ import { useCompete } from "@/components/compete-context";
 import { CrewSessions } from "./crew-sessions";
 import { CrewOverview } from "./crew-overview";
 import { Sheet } from "@/ui/sheet";
-import { APP_ICON_PATHS, competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, getDemoCompeteState } from "@fitness-battle/shared";
+import { rankSymbolForScore, APP_ICON_PATHS, competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, crewLineup, getDemoCompeteState } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 interface Crew {
@@ -301,7 +300,6 @@ export function CrewPanel() {
   const previousDistanceM = data?.previousProgressAvailable?.[crew.id]
     ? (data.previousProgress??[]).filter(row=>row.crew_id===crew.id && members.some(m=>m.user_id===row.user_id)).reduce((sum,row)=>sum+Number(row.distance_m),0)
     : null;
-  const memberCountLabel = `${members.length} ${members.length === 1 ? "member" : "members"}`;
   return (
     <>
       {user && !offlineMode && !data && (
@@ -321,13 +319,10 @@ export function CrewPanel() {
                 if (e.target.value === "new") setPanel("add");
                 else setSelected(e.target.value);
               }}>{crews.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}<option value="new">New crew +</option></select><svg aria-hidden="true" className="crew-header-chevron" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.chevron} /></svg></AppHeading>
-              <button type="button" className="crew-header-meta fb-btn-ghost" onClick={() => setPanel("members")} aria-label={`View ${memberCountLabel}`}>
-                <span className="crew-header-avatars">{members.slice(0, 3).map(m => <UserAvatar key={m.user_id} src={m.avatar_url} name={m.display_name} size={24} />)}</span>{memberCountLabel}
-              </button>
             </div>
-            <div className="crew-header-actions"><button type="button" aria-label="Invite to crew" onClick={() => setPanel(isSolo ? "add" : "invite")}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.plus} /></svg></button><button type="button" aria-label="Crew settings" onClick={() => setPanel("manage")}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.settings} /></svg></button></div>
+            <div className="crew-header-actions"><button type="button" className="crew-invite" onClick={() => setPanel(isSolo ? "add" : "invite")}>Invite</button><button type="button" aria-label="Crew settings" onClick={() => setPanel("manage")}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.settings} /></svg></button></div>
           </header>
-          {!isSolo ? <CrewOverview crewId={crew.id} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)}>
+          {!isSolo ? <CrewOverview crewId={crew.id} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => setPanel("members")}>
             {user && <CrewSessions compact key={`${user.id}:${crew.id}`} crewId={crew.id} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} userId={user.id} userName={user.displayName} demo={offlineMode} sport={crew.sport} />}
           </CrewOverview> : user ? <section className="focus-card"><AppHeading level={2} role="display">Make room for your people.</AppHeading><button type="button" className="fb-btn" onClick={() => setPanel("add")}>Create or join a crew</button></section> : null}
         </>
@@ -510,7 +505,7 @@ export function CrewPanel() {
           </>
         ) : panel === "members" ? (
           <ul className="focus-member-list">
-            {members.map((m) => (
+            {crewLineup(members, entries, crew.sport).map((m) => (
               <li key={m.user_id}>
                 <RankAvatar rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} size={64} />
                 <div><b>{m.display_name}</b><AppParagraph typographyRole="caption" className="fb-note">{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`} this week</AppParagraph></div>
@@ -592,7 +587,7 @@ export function CrewPanel() {
             </button>
             <AppParagraph typographyRole="caption" className="fb-note">
               A crew rest marker does not freeze effort score. Week freezes live in
-              Athlete → Preferences.
+              Athlete preferences.
             </AppParagraph>
             {crew?.id && crew.id !== "solo-preview" && (
               <div

@@ -9,6 +9,7 @@ import {
   buildCrewRelayViewState,
   crewWeekRelay,
   type CrewWeekRelayInput,
+  type CrewRelayModel,
   type SportId,
   type UnitSystem,
 } from "@fitness-battle/shared";
@@ -17,6 +18,7 @@ import { drawFieldNode } from "../ui/field-course";
 
 
 type Props = CrewWeekRelayInput & {
+  model?: CrewRelayModel;
   units?: UnitSystem;
   userId?: string;
   /** Parent already presents the target and member details. */
@@ -37,6 +39,7 @@ const s=useThemedStyles(sThemes);
   const [width, setWidth] = useState(320);
   const prefix = useId();
   const relay = crewWeekRelay(props);
+  if (props.model) relay.model = props.model;
   const view = buildCrewRelayViewState(relay, {
     selected,
     userId,
@@ -58,7 +61,7 @@ const s=useThemedStyles(sThemes);
 
   const volume = view.volume;
   const ghostFraction = !relay.sessions && props.previousDistanceM != null
-    ? Math.min(1, props.previousDistanceM / (Math.max(1, relay.model.total, relay.target ?? 0) * 1.2)) : null;
+    ? Math.min(1, props.previousDistanceM / (relay.target && relay.model.finish ? relay.target / relay.model.finish : Math.max(1, relay.model.total, relay.target ?? 0) * 1.2)) : null;
   const ghost = ghostFraction == null ? null : { x: 16 + ghostFraction * Math.max(180, view.width - 52), y: 174 - (props.compact ? 34 : 0) - ghostFraction * 30 };
 
 

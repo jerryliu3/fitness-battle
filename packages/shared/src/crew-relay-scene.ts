@@ -29,6 +29,7 @@ export function crewRelayScene(model: Relay, width: number, prefix: string, comp
   const ground: FieldNode[] = [
     path(top(0, 1), "#e4ece8"),
     path(face(0, 1), "#c7d5cf"),
+    path(`M${p(1)} L${p(1, true)} L${p(1, true, true)} L${p(1, false, true)}Z`, "#a8bdb4"),
     path(`M${p(0)} L${p(1)}`, "none", { stroke: "#d3dfd9", strokeWidth: 2 }),
   ];
   const segments = model.segments

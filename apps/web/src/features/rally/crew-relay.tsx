@@ -8,12 +8,13 @@ import {
   buildCrewRelayViewState,
   crewWeekRelay,
   type CrewWeekRelayInput,
+  type CrewRelayModel,
   type SportId,
   type UnitSystem,
 } from "@fitness-battle/shared";
 import { drawFieldNode as drawFieldNodeDom } from "@/features/field/components/field-course";
 
-type Props = CrewWeekRelayInput & { units?: UnitSystem; userId?: string; compact?: boolean; onSelectMember?: (id: string) => void };
+type Props = CrewWeekRelayInput & { model?: CrewRelayModel; units?: UnitSystem; userId?: string; compact?: boolean; onSelectMember?: (id: string) => void };
 
 export function CrewRelay(props: Props) {
   const { members, sport, units, userId } = props;
@@ -22,6 +23,7 @@ export function CrewRelay(props: Props) {
   const host = useRef<HTMLDivElement>(null);
   const prefix = useId();
   const relay = crewWeekRelay(props);
+  if (props.model) relay.model = props.model;
   const view = buildCrewRelayViewState(relay, {
     selected,
     userId,
@@ -53,7 +55,7 @@ export function CrewRelay(props: Props) {
 
   const volume = view.volume;
   const ghostFraction = !relay.sessions && props.previousDistanceM != null
-    ? Math.min(1, props.previousDistanceM / (Math.max(1, relay.model.total, relay.target ?? 0) * 1.2)) : null;
+    ? Math.min(1, props.previousDistanceM / (relay.target && relay.model.finish ? relay.target / relay.model.finish : Math.max(1, relay.model.total, relay.target ?? 0) * 1.2)) : null;
   const ghost = ghostFraction == null ? null : { x: 16 + ghostFraction * Math.max(180, view.width - 52), y: 174 - (props.compact ? 34 : 0) - ghostFraction * 30 };
 
 

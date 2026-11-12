@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
-import { APP_ICON_PATHS, crewOverview, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
+import { APP_ICON_PATHS, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
 import { AppHeading, AppText, AppParagraph } from "@/ui/section";
 import { UserAvatar } from "@/ui/user-avatar";
 import { Sheet } from "@/ui/sheet";
@@ -9,8 +9,8 @@ import { CrewRelay } from "./crew-relay";
 import "./crew-overview.css";
 import { useAuth } from "@/components/auth-context";
 
-type Props = CrewOverviewInput & { crewId: string; onSelectMember: (id: string) => void; children?: ReactNode };
-export function CrewOverview({ crewId, onSelectMember, children, ...input }: Props) {
+type Props = CrewOverviewInput & { crewId: string; onSelectMember: (id: string) => void; onViewMembers: () => void; children?: ReactNode };
+export function CrewOverview({ crewId, onSelectMember, onViewMembers, children, ...input }: Props) {
   const { user, offlineMode } = useAuth();
   const [replayEntries, setReplayEntries] = useState<CrewOverviewInput["entries"]>();
   const [replayError, setReplayError] = useState("");
@@ -31,59 +31,65 @@ export function CrewOverview({ crewId, onSelectMember, children, ...input }: Pro
     return () => controller.abort();
   }, [crewId, user?.id, offlineMode]);
   const full = crewOverview(input);
-  const lastFrame = full.lastFrame;
-  const [frame, setFrame] = useState(lastFrame);
+  const events = useMemo(() => crewReplayEvents(input, offlineMode ? input.entries : replayEntries ?? []), [replayEntries, input.entries, input.members, input.now, offlineMode]);
+  const [frame, setFrame] = useState(1);
+  const frameRef = useRef(frame);
+  frameRef.current = frame;
   const [playing, setPlaying] = useState(false);
-  const [detail, setDetail] = useState<"contract" | "passport" | "story" | null>(null);
+  const [detail, setDetail] = useState<"contract" | "passport" | null>(null);
   const reduced = useReducedMotion();
-  const view = crewOverview({ ...input, replayEntries }, frame);
+  const view = crewOverview(input, frame, events);
   useEffect(() => {
-    if (!playing) return;
-    const timer = window.setInterval(() => {
+    if (!playing || !events.length) return;
+    if (reduced) { setFrame(1); setPlaying(false); return; }
+    let animation = 0, lastPaint = 0;
+    const from = frameRef.current, started = Date.now();
+    const duration = Math.min(12000, Math.max(1800, events.length * 700));
+    const tick = () => {
       if (document.hidden) { setPlaying(false); return; }
-      setFrame(old => Math.min(lastFrame, old + 1));
-    }, reduced ? 900 : 650);
-    return () => window.clearInterval(timer);
-  }, [playing, reduced, lastFrame]);
-  useEffect(() => { if (frame === lastFrame) setPlaying(false); }, [frame, lastFrame]);
+      const elapsed = Date.now() - started;
+      const next = Math.min(1, from + elapsed / duration);
+      if (elapsed - lastPaint >= 32 || next === 1) { setFrame(next); lastPaint = elapsed; }
+      if (next < 1) animation = requestAnimationFrame(tick); else setPlaying(false);
+    };
+    animation = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animation);
+  }, [playing, reduced, events.length]);
   return <div className="crew-overview">
     <section className="crew-week-hero" aria-label="Shared weekly progress">
       <AppText role="label">This week · {input.sport}</AppText>
       <div className="crew-week-value">
         <AppText role="hero">{view.reading}</AppText><AppText role="body">{view.targetReading != null ? `/ ${view.targetReading} ` : ""}{view.unit}</AppText></div>
       {input.previousDistanceM != null && !view.relay.sessions && <AppText role="caption" className="crew-ghost">Crew Ghost · {view.volume(input.previousDistanceM)} last week</AppText>}
-      <CrewRelay {...input} entries={view.entries} compact onSelectMember={onSelectMember} />
+      <CrewRelay {...input} entries={view.entries} model={view.relay.model} compact onSelectMember={onSelectMember} />
       <div className="crew-replay">
-        <button type="button" className="crew-play" disabled={!replayEntries} aria-label={playing ? "Pause replay" : "Replay this week"} aria-pressed={playing} onClick={() => { if (!playing && frame === lastFrame) setFrame(0); setPlaying(!playing); }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS[playing ? "pause" : "play"]} /></svg></button>
-        <input aria-label="Weekly replay timeline" type="range" disabled={!replayEntries} min={0} max={lastFrame} step={1} value={frame} onChange={e => { setPlaying(false); setFrame(Number(e.target.value)); }} />
-        <AppText role="caption">{frame === lastFrame ? "Now" : frame === 0 ? "Start" : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][frame - 1]}</AppText>
+        <button type="button" className="crew-play" disabled={!events.length} aria-label={playing ? "Pause replay" : "Replay this week"} aria-pressed={playing} onClick={() => { if (!playing && frame === 1) setFrame(0); setPlaying(!playing); }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS[playing ? "pause" : "play"]} /></svg></button>
+        <input aria-label="Weekly replay timeline" type="range" disabled={!events.length} min={0} max={1} step={0.001} value={frame} onChange={e => { setPlaying(false); setFrame(Number(e.target.value)); }} />
+        <AppText role="caption">{view.replayLabel}</AppText>
       </div>
       {replayError && <AppText role="caption" secondary>{replayError}</AppText>}
     </section>
     <section className="crew-lineup">
-      <AppHeading level={2} role="heading">Teammate lineup</AppHeading>
-      <div className="crew-lineup-grid">{input.members.map(m => <button type="button" key={m.user_id} onClick={() => onSelectMember(m.user_id)}>
-          <span style={{ borderColor: full.relay.model.segments.find(s => s.id === m.user_id)?.color }}>
-            <UserAvatar src={m.avatar_url} name={m.display_name} size={42} />
-          </span>
-          <AppText role="label">{m.display_name.split(" ")[0]}</AppText>
-          <AppText role="caption" secondary>{full.volume(full.relay.model.segments.find(s => s.id === m.user_id)?.value ?? 0)}</AppText>
-        </button>)}</div>
+      <div className="crew-lineup-header"><AppHeading level={2} role="heading">Teammate lineup</AppHeading>{input.members.length > 4 && <button type="button" className="fb-btn-ghost" onClick={onViewMembers}>View all</button>}</div>
+      <div className="crew-lineup-grid">{full.lineup.map(m => <button type="button" key={m.user_id} onClick={() => onSelectMember(m.user_id)}>
+        <span style={{ borderColor: full.relay.model.segments.find(s => s.id === m.user_id)?.color }}><UserAvatar src={m.avatar_url} name={m.display_name} size={42} /></span>
+        <AppText role="label">{m.display_name.split(" ")[0]}</AppText>
+        <AppText role="caption" secondary>{full.volume(full.relay.model.segments.find(s => s.id === m.user_id)?.value ?? 0)}</AppText>
+      </button>)}</div>
     </section>
     <button type="button" className="crew-contract" onClick={() => setDetail("contract")}>
-      <AppText role="caption">Weekly contract ↗</AppText>
+      <AppText role="caption">Weekly contract</AppText>
       <AppText role="heading">{full.relay.target ? `${full.volume(full.relay.target)} together` : "All hands on deck"}</AppText>
       <AppText role="caption">{full.contributors} / {input.members.length} contributed</AppText>
     </button>
     <div className="crew-bento">{children}<button type="button" className="crew-action-card crew-passport" onClick={() => setDetail("passport")}>
-      <span>Crew Passport ↗</span><strong>Earned together.</strong><small>{full.highlights.length} weekly milestones</small>
+      <span>Crew Passport</span><strong>Earned together.</strong><small>{full.highlights.length} weekly milestones</small>
     </button></div>
     {full.highlights.length > 0 && <section>
       <AppHeading level={2} role="heading">Crew highlights</AppHeading>
-      <button type="button" className="crew-story" onClick={() => setDetail("story")}>{full.highlights.map(h => <span key={h}>✦ {h}</span>)}<span aria-hidden="true">↗</span>
-      </button>
+      <ul className="crew-highlights">{full.highlights.map(h => <li key={h}><AppText role="body">{h}</AppText></li>)}</ul>
     </section>}
-    <Sheet open={detail !== null} minimal title={detail === "contract" ? "Weekly contract" : detail === "passport" ? "Your crew passport" : "This week, together"} body="" onClose={() => setDetail(null)}>
+    <Sheet open={detail !== null} minimal title={detail === "contract" ? "Weekly contract" : "Your crew passport"} body="" onClose={() => setDetail(null)}>
       {detail === "contract" ? <AppParagraph typographyRole="body">{full.relay.target ? `${full.volume(full.relay.model.total)} / ${full.volume(full.relay.target)}` : `${full.contributors} / ${input.members.length} contributed`}</AppParagraph> : null}
       {!full.highlights.length && detail !== "contract" ? <AppParagraph typographyRole="body">This week’s shared milestones will appear here.</AppParagraph> : null}
       {full.highlights.map(h => <AppParagraph key={h} typographyRole="body">✦ {h}</AppParagraph>)}

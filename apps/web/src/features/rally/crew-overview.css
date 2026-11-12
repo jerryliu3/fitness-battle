@@ -25,13 +25,6 @@
   padding:0 24px 0 0;
   text-overflow:ellipsis
 }
-.crew-header-meta {
-  display:flex;
-  align-items:center;
-  gap:8px;
-  color:var(--muted);
-  font:var(--type-caption)
-}
 .crew-header-actions {
   display:flex;
   gap:4px
@@ -107,13 +100,18 @@
 }
 .crew-lineup-grid {
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-auto-flow:column;
+  grid-auto-columns:calc((100% - 24px)/4);
+  overflow-x:auto;
+  scroll-snap-type:x proximity;
+  scrollbar-width:none;
   gap:8px;
   margin-top:12px
 }
 .crew-lineup-grid button {
   display:flex;
   flex-direction:column;
+  scroll-snap-align:start;
   align-items:center;
   gap:8px;
   min-width:0;
@@ -191,31 +189,16 @@
   color:inherit;
   opacity:.75
 }
-.crew-story {
-  display:flex;
-  align-items:center;
-  flex-wrap:wrap;
-  gap:12px;
-  width:100%;
-  padding:16px 0;
-  background:transparent;
-  border:0;
-  border-bottom:1px solid var(--line);
-  color:var(--ink);
-  text-align:left;
-  font:var(--type-body)
-}
-.crew-story>span:last-child {
-  margin-left:auto
-}
+.crew-highlights { list-style:none; padding:0; margin:0; }
+.crew-highlights li { padding:16px 0; border-bottom:1px solid var(--line); }
+.crew-lineup-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.crew-lineup-grid::-webkit-scrollbar { display:none; }
+.crew-header-actions .crew-invite { width:auto; min-width:68px; padding-inline:14px; font:var(--type-label); }
 .crew-overview button:focus-visible,.crew-header button:focus-visible,.crew-header select:focus-visible {
   outline:2px solid var(--app-focus-ring);
   outline-offset:3px
 }
 @media(min-width:700px) {
-  .crew-lineup-grid {
-    grid-template-columns:repeat(auto-fit,minmax(90px,1fr))
-  }
   .crew-week-hero {
     padding:28px
   }
@@ -223,15 +206,8 @@
 .crew-play:disabled {
   opacity:.4
 }
-.crew-header-meta {
-  border:0;
-  background:transparent;
-  padding:0;
-  min-height:44px
-}
 
 .crew-header-name { position:relative; min-width:0; margin:0; }
 .crew-header-chevron { position:absolute; right:0; top:50%; transform:translateY(-50%) rotate(90deg); pointer-events:none; }
-.crew-header-avatars { display:flex; gap:4px; }
 .club-crew-marker.is-compact { width:44px; min-height:44px; justify-content:flex-start; }
 .club-crew-marker.is-compact .crew-member-photo { width:34px; height:34px; border-radius:50%; overflow:hidden; }
