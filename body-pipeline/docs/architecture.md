@@ -13,7 +13,7 @@ body-pipeline/          Offline Python: MakeHuman-class meshes → particles
 packages/pursuit/
   src/vitals-body/      VitalsBodyRenderer, loaders, shaders (Three.js)
 apps/web/
-  src/app/design/vitals-body/   Comparison demo route
+  src/app/ux/vitals-body/   Comparison demo route (`/design/vitals-body` redirects here)
   public/bodies/                Synced runtime assets
 ```
 

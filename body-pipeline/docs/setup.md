@@ -33,5 +33,5 @@ bash body-pipeline/scripts/sync_runtime_assets.sh
 
 ```bash
 pnpm dev
-# Open /design/vitals-body (design access gate applies)
+# Open /ux/vitals-body (design / UX access gate applies)
 ```

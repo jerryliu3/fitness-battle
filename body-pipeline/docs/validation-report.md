@@ -1,7 +1,7 @@
 # Validation report
 
 Automated output: `generated/validation-report.json`  
-Screenshots: `generated/screenshots/` (captured from `/design/vitals-body`).
+Screenshots: `generated/screenshots/` (captured from `/ux/vitals-body`).
 
 ## Manual visual checklist
 

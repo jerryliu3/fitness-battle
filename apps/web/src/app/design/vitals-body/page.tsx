@@ -1,11 +1,6 @@
-import type { Metadata } from "next";
-import { VitalsBodyDemo } from "./vitals-body-demo";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Overtaek · Vitals Lab · Body scan demo",
-  robots: { index: false, follow: false },
-};
-
-export default function Page() {
-  return <VitalsBodyDemo />;
+/** Legacy path — vitals body demo lives under /ux (same access gate). */
+export default function VitalsBodyDesignRedirect() {
+  redirect("/ux/vitals-body");
 }

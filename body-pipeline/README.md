@@ -11,5 +11,5 @@ pip install -r body-pipeline/requirements.txt
 pnpm bodies:generate
 pnpm bodies:sync
 pnpm dev
-# http://localhost:3000/design/vitals-body
+# http://localhost:3000/ux/vitals-body
 ```
