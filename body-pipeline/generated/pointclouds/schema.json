@@ -1,0 +1,19 @@
+{
+  "magic": "VBD1",
+  "version": 1,
+  "stride_bytes": 28,
+  "fields": [
+    "position.xyz",
+    "normal.xyz",
+    "region_u8",
+    "class_u8"
+  ],
+  "class_surface": 1,
+  "class_interior": 2,
+  "regions": {
+    "0": "default",
+    "1": "cardiovascular",
+    "2": "respiratory",
+    "3": "movement"
+  }
+}

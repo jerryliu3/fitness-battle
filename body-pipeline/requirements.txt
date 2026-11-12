@@ -1,0 +1,8 @@
+# Offline asset generation (not required at app runtime).
+# Primary mesh source: Anny 0.6.x (Apache-2.0) over CC0 MakeHuman core assets.
+anny>=0.6.2
+numpy>=1.26
+scipy>=1.11
+trimesh>=4.0
+rtree>=1.2
+roma>=1.5
