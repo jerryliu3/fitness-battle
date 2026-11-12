@@ -2,6 +2,24 @@
 
 New ingestion/discovery work follows [Public race results: ingestion and discovery scope](race-results-ingestion-scope.md) and [Platform architecture](race-results-architecture.md). The platform enforces one-time publication and report-driven corrections rather than routine refreshes.
 
+## Reviewed acquisition (operator)
+
+Provider-independent acquisition uses the rankings database tables `acquisition_candidates`, `acquisition_source_decisions`, `acquisition_edition_mappings`, and `acquisition_runs`. Discovery feeds candidates; it does not grant source approval.
+
+| Step | Command |
+| --- | --- |
+| Bootstrap NYC 2026 candidate (blocked by default) | `RANKINGS_DATABASE_URL=... pnpm rankings:candidate -- --nyc-2026` |
+| Record source permission after review | `pnpm rankings:candidate -- --source-review --slug nyrr_nyc_marathon --decision permitted --storage-allowed --evidence-url URL --reuse-notes "..." --reviewer you` |
+| Approve edition mapping | `pnpm rankings:candidate -- --nyc-2026-map --approve --reviewer you` |
+| Fetch, validate, stage import | `pnpm rankings:acquire -- --population-key nyrr:M2026:finishers --apply` |
+| Replace an existing staged field | add `--replace-staged` (reconciles the staged population) |
+| Publish staged edition | `pnpm rankings:acquire -- --publish-staged --population-key nyrr:M2026:finishers` |
+| Queue approved mappings | `pnpm rankings:schedule -- --queue-approved` |
+
+Acquisition runs write immutable artifacts under `packages/rankings/imports/runs/<run-id>/` (`normalized.jsonl`, `provider-responses.json`, `preview.json`, `import.sql`). Blocked or unreviewed sources cannot fetch. `assertPreviewAllowsApply` must pass before `--apply`. Imports always stage (`publication_state = staged`); `publish-staged` calls `publish_event_edition` after re-checking mapping approval.
+
+Unattended scheduling and extra provider adapters remain deferred; these PRs deliver the operator-run flow only.
+
 The rankings ledger stores one row per finisher. Finish time is not part of the identity key. People under 18 are dropped before insert. A source is shown on `/rankings` only when `display_allowed` is true, which requires attribution and reuse notes.
 
 New MikaTiming, CSV and RunSignup sources are stored with `display_allowed = false`. Review source-specific access/reuse and attribution before enabling display through an authorized operator database action. Reimports preserve the source's existing approval, suppression, access method, attribution, reuse notes and audit timestamp. The committed OpenTrack fixture retains its existing ODbL metadata. These examples describe results submission and organizer opt-out; they are not licenses:

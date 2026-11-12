@@ -12,7 +12,7 @@ Approved direction: complete paginated fields; web first with native support. Re
 
 Updated November 9 after source-policy review. This product stack owns data representation, public read contracts, web/native exploration, analytics and finally replay. Prioritize large marathon and half-marathon editions; coverage is limited to data with established reuse permission. Public accessibility, successful scraping and provider API access are not reuse approval.
 
-Product PRs #561–570 remain the foundation. Acquisition PRs #571–572 are deferred drafts on a separate branch chain; new product work branches directly from #570 and does not depend on their workers, credentials or workflows. The historical layer 9–10 notes below describe that separate work, not product prerequisites. No separate repository has been created and no acquisition schedule has been enabled.
+Product PRs #561–579 and publication-safety work (#580, #582) are merged on `main`. Acquisition PRs #571–#572 remain superseded drafts; new acquisition work branches from current `main` and does not reuse their RunSignup discovery feed, credential headers, or GitHub cache checkpoints.
 
 The acquisition workstream owns source permission review, adapters (HTML/public JSON/downloads/APIs), discovery, extraction, correction/removal reconciliation and coverage evidence. NYRR is excluded without express permission: its published terms restrict commercial statistics, archived race depictions and comprehensive databases. London and MikaTiming-hosted results are not cleared merely because public pages exist. Review edition-specific rights before further acquisition or publication. Policy evidence: [NYRR terms](https://prod.nyrr.org/terms-of-use), [London terms](https://www.londonmarathonevents.co.uk/terms-use), [MikaTiming service description](https://www.mikatiming.com/services/timing-result-service/result-service); the last describes capabilities, not a reuse licence.
 
@@ -35,7 +35,7 @@ Collect finish results plus available timing-mat splits when permitted. Store ch
 
 `rankings_page` returns 50 rows with matching count, complete cohort count and competition ranks. Distance/category/year define the cohort; name/bib search only selects observations within it. Ties share a rank. Source suppression and result eligibility apply to every row and count. Requests are snapshot-consistent individually; concurrent source revisions can change subsequent pages. Historical snapshots and revision-pinned pagination remain follow-up work.
 
-Apply the additive migration to the **rankings** project before deploying consumers. No production database changes or test executions were performed. Shared query fixtures and SQL regression scenarios are committed for later verification.
+Apply the additive migration chain under `rankings-db/supabase/migrations` to the **rankings** project before deploying consumers. Local verification: `pnpm rankings:db:reset` then `pnpm rankings:db:test` against the rankings database (port 54422). Hosted migration parity is environment-specific and must be rechecked before publication.
 
 `/api/rankings?distance=marathon&sex=female&year=2025&page=2&q=` is the public native/web read contract. It requires the existing rankings URL and anon key. No new privileged client credentials.
 
@@ -44,7 +44,7 @@ Apply the additive migration to the **rankings** project before deploying consum
 - Full-field read contract: implemented.
 - Responsive web explorer and native list: implemented in layer 2. Search, category/year scope, full-field pages and recovery states share the layer 1 API. Native benchmarks now opens a native results screen.
 - Individual web/native result reports, edition/category distributions, source links and nearby-finisher navigation: implemented in layer 3. Percentile claims remain withheld until import completeness is verified. Favorites and two-result comparisons are implemented in layers 5–6 below.
-- Importer integrity: layer 4 fixes RunSignup raw-count pagination, explicit result-set selection, repeated-page/ceiling failures and suppression preservation. Live coverage reconciliation, scheduled discovery, identity/careers and checkpoint replay remain pending subsequent focused PRs.
+- Importer integrity: layer 4 (merged) fixes RunSignup raw-count pagination, explicit result-set selection, repeated-page/ceiling failures and suppression preservation. Provider-independent acquisition inbox, durable runs, staged publication, and selective scheduling ship in the acquisition pipeline PR stack; athlete identity at scale and unattended discovery remain follow-ups.
 
 Local checkout: `/Users/jerryliu/Documents/fitness-battle/fitness-battle/.worktrees/rankings`.
 Web: `pnpm install`, then `pnpm dev:web`; visit `/rankings/marathon`.

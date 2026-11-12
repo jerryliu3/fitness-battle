@@ -31,3 +31,30 @@ export { fetchRunSignupResults, parseRunSignupResults, runSignupResultsUrl, runS
 export { readResultPages } from "./ingest/pagination";
 export { editionImportSql, snapshotIdentity, type EditionImportOptions } from "./ingest/sql";
 export type { IngestedEdition, IngestedFinish } from "./ingest/types";
+export { candidateDedupeKey, normalizeUrl } from "./acquire/dedupe";
+export { buildAcquisitionPreview, type AcquisitionPreview } from "./acquire/preview";
+export { assertPreviewAllowsApply } from "./acquire/validate";
+export {
+  buildFailedRunPatch,
+  buildPreparedRunPatch,
+  buildStageApplySql,
+  buildStagedRunPatch,
+  type RunPatch,
+} from "./acquire/run-lifecycle";
+export {
+  upsertCandidateSql,
+  upsertEditionMappingSql,
+  upsertSourceDecisionSql,
+} from "./acquire/sql";
+export type {
+  AcquisitionAdapter,
+  CandidateInput,
+  EditionMappingInput,
+  SourceDecisionInput,
+} from "./acquire/types";
+export {
+  NYRR_FINISHERS_API,
+  assertNyrrPayloadNotChallenge,
+  fetchNyrrFinishers,
+  parseNyrrFinishersPage,
+} from "./ingest/nyrr";
