@@ -159,17 +159,17 @@ const s=useThemedStyles(sThemes);
                       />
                     );
                   }
-                  const isUnder = p.position === "under";
-                  const ptColor = isUnder ? colors.comparison : colors.accent;
+                  const isOutOfCorridor = p.position === "under" || p.position === "over";
+                  const ptColor = colors.accent;
                   return (
                     <G key={p.index}>
                       <Circle
                         cx={p.x}
                         cy={p.y}
                         r={p.index === 6 ? 4.5 : 3.5}
-                        fill={ptColor}
-                        stroke={colors.tile}
-                        strokeWidth={1.5}
+                        fill={isOutOfCorridor ? "none" : ptColor}
+                        stroke={isOutOfCorridor ? colors.accent : colors.tile}
+                        strokeWidth={isOutOfCorridor ? 2 : 1.5}
                       />
                       <SvgText
                         {...chartTextProps()}

@@ -469,7 +469,9 @@ export function HomeDeck({
                     ],
                   },
                 ]}
-              />
+              >
+                <DeckCardContent card={depth2Card} isDark={isDark} />
+              </Animated.View>
             )}
 
             {/* Depth 1 Card: FULLY RENDERED NEXT CARD (Same size directly beneath top card) */}

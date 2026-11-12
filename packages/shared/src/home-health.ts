@@ -217,7 +217,9 @@ export function buildHealth7DayCorridorModel(
   metric: HomeHealthMetric,
   now = new Date(),
 ): Health7DayChartModel {
-  const personal = getHealthMetricCorridor(metric.id, metric.baselineHistory);
+  const personal =
+    getHealthMetricCorridor(metric.id, metric.baselineHistory)
+    ?? getHealthMetricCorridor(metric.id, metric.history);
   const corridor = personal ?? { low: 0, high: 0, formattedRange: "Unavailable · insufficient prior readings", format: (value: number) => metric.id === "sleep" ? formatSleepDuration(value) : `${value} ${metric.unit}` };
   const width = 320;
   const height = 116;
