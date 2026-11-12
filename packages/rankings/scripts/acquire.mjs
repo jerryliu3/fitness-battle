@@ -150,12 +150,33 @@ async function writeRunArtifacts(runId, edition, rawPayload, totalItems) {
   return { dir, normalized, raw, preview };
 }
 
-if (argv.includes("--help") || !flag("--population-key")) {
+if (argv.includes("--help") || (!flag("--population-key") && !argv.includes("--publish-staged"))) {
   console.log(`Usage:
-  node packages/rankings/scripts/acquire.mjs --population-key nyrr:M2026:finishers [--owner HOST] [--stage] [--publish]
-  node packages/rankings/scripts/acquire.mjs --retry-run RUN_ID [--stage] [--publish]
+  node packages/rankings/scripts/acquire.mjs --population-key nyrr:M2026:finishers [--owner HOST] [--apply] [--publish]
+  node packages/rankings/scripts/acquire.mjs --publish-staged --population-key nyrr:M2026:finishers
+  node packages/rankings/scripts/acquire.mjs --retry-run RUN_ID [--apply] [--publish]
 `);
   process.exit(argv.includes("--help") ? 0 : 1);
+}
+
+if (argv.includes("--publish-staged")) {
+  const key = flag("--population-key");
+  if (!key) throw new Error("Provide --population-key");
+  const mapping = await loadMapping(key);
+  const databaseUrl = requireDatabaseUrl();
+  const editionId = psqlQuery(
+    databaseUrl,
+    `select ee.id from public.event_editions ee
+     join public.events e on e.id = ee.event_id
+     where e.external_event_id = ${quote(String(mapping.adapterConfig.eventCode))}
+       and ee.edition_year = ${mapping.editionYear}
+       and ee.publication_state = 'staged'
+     limit 1;`,
+  );
+  if (!editionId) throw new Error("No staged edition found for mapping.");
+  psqlQuery(databaseUrl, `select public.publish_event_edition(${editionId});`);
+  console.log(JSON.stringify({ populationKey: key, editionId: Number(editionId), published: true }, null, 2));
+  process.exit(0);
 }
 
 const populationKey = flag("--population-key");
