@@ -35,17 +35,44 @@ import torch
 import trimesh
 from anny import Anny
 
+PHENOTYPE_PATH = ROOT / "body-pipeline" / "local" / "phenotype.json"
 
-def _phenotype(sex: BodySex) -> dict[str, float]:
-    gender = 0.0 if sex == "male" else 1.0
-    return {
-        "gender": gender,
+DEFAULT_PHENOTYPE: dict[str, dict[str, float]] = {
+    "male": {
         "age": 0.58,
         "muscle": 0.32,
-        "weight": 0.48 if sex == "male" else 0.44,
-        "height": 0.54 if sex == "male" else 0.5,
+        "weight": 0.48,
+        "height": 0.54,
         "proportions": 0.5,
-    }
+    },
+    "female": {
+        "age": 0.58,
+        "muscle": 0.28,
+        "weight": 0.44,
+        "height": 0.5,
+        "proportions": 0.52,
+    },
+}
+
+
+def load_phenotype_file() -> dict[str, dict[str, float]]:
+    if not PHENOTYPE_PATH.exists():
+        return {}
+    import json
+
+    data = json.loads(PHENOTYPE_PATH.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"Invalid phenotype file: {PHENOTYPE_PATH}")
+    return data
+
+
+def _phenotype(sex: BodySex) -> dict[str, float]:
+    merged = {**DEFAULT_PHENOTYPE[sex]}
+    file_cfg = load_phenotype_file()
+    if sex in file_cfg and isinstance(file_cfg[sex], dict):
+        merged.update(file_cfg[sex])
+    merged["gender"] = 0.0 if sex == "male" else 1.0
+    return merged
 
 
 def _pose_rotvec(model: Anny) -> torch.Tensor:

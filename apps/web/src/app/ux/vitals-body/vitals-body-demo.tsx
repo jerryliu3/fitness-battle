@@ -16,6 +16,7 @@ import {
 } from "@fitness-battle/pursuit/vitals-body";
 import { useState } from "react";
 import "./vitals-body.css";
+import { VitalsPhenotypeDev } from "./vitals-phenotype-dev";
 
 export function VitalsBodyDemo() {
   const [sex, setSex] = useState<BodySex>("male");
@@ -79,6 +80,7 @@ export function VitalsBodyDemo() {
             onTuning={setTuning}
             devTuning
           />
+          <VitalsPhenotypeDev sex={sex} />
         </aside>
       </div>
     </main>

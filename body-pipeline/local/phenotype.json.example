@@ -1,0 +1,16 @@
+{
+  "male": {
+    "age": 0.58,
+    "muscle": 0.32,
+    "weight": 0.48,
+    "height": 0.54,
+    "proportions": 0.5
+  },
+  "female": {
+    "age": 0.58,
+    "muscle": 0.28,
+    "weight": 0.44,
+    "height": 0.5,
+    "proportions": 0.52
+  }
+}

@@ -38,3 +38,13 @@ pnpm bodies:verify-sync
 pnpm dev
 # Open /ux/vitals-body (design / UX access gate applies)
 ```
+
+### Local body-shape tuning (not production)
+
+On `pnpm dev` at `localhost`, the demo shows **LOCAL ANNY PHENOTYPE** sliders. Saving writes
+`body-pipeline/local/phenotype.json` (gitignored; see `local/phenotype.json.example`).
+Regenerate to preview:
+
+```bash
+pnpm bodies:generate && pnpm bodies:sync
+```
