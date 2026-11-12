@@ -405,8 +405,8 @@ const f=useFocusStyles();
             <AppText role="body" secondary >{crew.name}</AppText>
             <SectionStack>
             {lineup.map(m => hiddenIds.includes(m.user_id) ? <View key={m.user_id} style={{ minHeight: 72 }} /> : <Pressable key={m.user_id} style={[f.section, f.row]} accessibilityRole="button" accessibilityLabel={`View ${m.display_name}'s profile`} onPress={() => {
-              if (membersOnly) setViewingMember(m);
-              else { pendingMember.current = m; setPanel(null); }
+              setViewingMember(m);
+              if (!membersOnly) setPanel(null);
             }}>
               <RankAvatar rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} size={64} />
               <View style={f.grow}><AppText role="row">{m.display_name}</AppText><AppText role="support" secondary >Active</AppText>

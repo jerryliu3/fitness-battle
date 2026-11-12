@@ -1,8 +1,8 @@
 import { useFocusStyles } from "../ui/focus";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
-import { SPORTS } from "@fitness-battle/shared";
+import { SPORTS, athleteCardModel, athleteCardModelForPeer } from "@fitness-battle/shared";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
@@ -12,7 +12,7 @@ import { supabase } from "../lib/supabase";
 import { FocusButton, FocusSheet } from "../ui/focus";
 import { AppText, SectionHeader } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
-import { AthleteProfileCard } from "./athlete-profile-card";
+import { AthleteCrest } from "./athlete-crest";
 
 export type AthleteProfileSelection = {
   id: string;
@@ -91,11 +91,23 @@ const f=useFocusStyles();
   const overtakes = own ? own.lifetimeOvertakes : profile?.lifetime_overtakes;
   const joined = athlete?.you ? user?.createdAt : profile?.created_at;
   const joinedYear = joined && Number.isFinite(Date.parse(joined)) ? new Date(joined).getUTCFullYear() : null;
+  const cardModel = useMemo(() => {
+    if (!athlete) return null;
+    if (athlete.you && state) return athleteCardModel(state);
+    return athleteCardModelForPeer({
+      name: athlete.name,
+      avatarUrl: athlete.avatarUrl,
+      score: athlete.score,
+      city,
+      sport: sportName,
+    });
+  }, [athlete, state, city, sportName]);
   return <FocusSheet open={!!athlete} title="Athlete profile" onClose={onClose} onClosed={() => {
     if (openOwnPage) { setOpenOwnPage(false); router.navigate("/athlete"); }
   }}>
     {athlete ? <View style={{ gap: 20 }}>
-      <AthleteProfileCard name={athlete.name} avatarUrl={athlete.avatarUrl} city={city} score={athlete.score} since={joinedYear ? `Since ${joinedYear}` : undefined} />
+      {cardModel ? <AthleteCrest model={cardModel} /> : null}
+      {joinedYear ? <AppText role="caption" secondary>Since {joinedYear}</AppText> : null}
       {athlete.contextValue ? <View style={f.section}>
         <SectionHeader title={athlete.contextLabel ?? "This week"} />
         <AppText role="display">{athlete.contextValue}</AppText>
@@ -108,7 +120,7 @@ const f=useFocusStyles();
           {sportName ? <View style={{ flex: 1, gap: 4 }}><AppText role="heading">{sportName}</AppText><AppText role="caption" secondary>Primary sport</AppText></View> : null}
         </View>
       </View> : null}
-      {!athlete.you && isAccountId(athlete.id) && user && !offlineMode ? reporting ? <View style={{ gap: 10 }}>
+      {!athlete.you && isAccountId(athlete.id) && user ? reporting ? <View style={{ gap: 10 }}>
         <AppText role="heading">Report {athlete.name}?</AppText>
         <AppText role="body" secondary>Tell us what happened. Your report goes to the support team when you confirm.</AppText>
         <TextInput accessibilityLabel="Reason for reporting this athlete" multiline style={[f.input, { minHeight: 100, textAlignVertical: "top" }]} value={message} onChangeText={setMessage} maxLength={4900} editable={!busy} />
