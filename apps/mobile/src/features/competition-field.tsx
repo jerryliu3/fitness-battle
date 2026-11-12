@@ -226,7 +226,6 @@ const f=useFocusStyles();
   const openProfile = (lane: (typeof ranked)[number]) => {
     setProfileAthlete({
       id: lane.id, name: lane.name, avatarUrl: lane.avatarUrl, you: lane.you,
-      sample: !lane.you && Boolean(state.enrollments.find((item) => item.sport === sport)?.syntheticIds.includes(lane.id)),
       score: scores.find((row) => row.id === lane.id)?.elo,
       contextLabel: "This week", contextValue: `${lane.values[2].toFixed(arena.unit === "pts" ? 1 : 2)} ${arena.unit}`,
       contextDetail: `Place ${place(lane.values[2])} · ${sport}`,

@@ -53,8 +53,7 @@ export const mockFitnessProvider: FitnessProvider = {
     const result: FitnessAuthResult = {
       provider: "mock",
       status: "stub",
-      message:
-        "Fitness tracker is not connected.",
+      message: "This tracker is not connected.",
     };
     return result;
   },

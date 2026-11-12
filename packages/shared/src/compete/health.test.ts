@@ -15,13 +15,13 @@ import {
 } from "./health";
 
 describe("sleep health metric", () => {
-  it("shares a sleep contest place for equal scores", () => {
+  it("stands the signed-in athlete alone until another account is in the field", () => {
     const start = "2026-10-12T04:00:00.000Z";
     const input = { name: "You", nights: [], elo: 1000, periodStart: start, periodEnd: new Date("2026-10-19T04:00:00Z"), asOf: new Date("2026-10-12T16:00:00Z") };
-    const rival = sleepBoard(input)[0]!;
-    const tied = sleepBoard({ ...input, nights: [{ ...demoSleepNight("manual", "2026-10-12"), score: rival.score }] });
-    expect(tied.find(row => row.you)?.score).toBe(rival.score);
-    expect(tied.find(row => row.you)?.place).toBe(tied.find(row => row.id === rival.id)?.place);
+    const board = sleepBoard(input);
+    expect(board).toHaveLength(1);
+    expect(board[0]?.you).toBe(true);
+    expect(board[0]?.place).toBe(1);
   });
 
   it("keeps a device score and blends raw stages when one is missing", () => {
@@ -91,8 +91,9 @@ describe("sleep health metric", () => {
       now: new Date(now),
     });
     expect(view.lastNight?.day).toBe("2026-10-13");
-    expect(view.place).toBeGreaterThan(0);
-    expect(view.fieldSize).toBe(8);
+    expect(view.place).toBe(1);
+    expect(view.fieldSize).toBe(1);
+    expect(view.rows).toHaveLength(1);
     expect(joined.focus).toEqual({ family: "health", id: "sleep" });
   });
 

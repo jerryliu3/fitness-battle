@@ -322,8 +322,7 @@ export function createStravaProvider(
         return {
           provider: "strava",
           status: "stub",
-          message:
-            "Strava credentials missing — using stub/mock tracker. Set STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, and STRAVA_REDIRECT_URI to enable real OAuth.",
+          message: "This tracker is not connected.",
           authorizeUrl: undefined,
         };
       }

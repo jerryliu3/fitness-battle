@@ -6,10 +6,10 @@ What is loaded today versus what is still empty or synthetic.
 
 | Data | Source | Status |
 | --- | --- | --- |
-| Weekly effort board | Compete engine + `week_fields` / `week_field_roster` for signed-in athletes | Shared real peers with synthetic fillers; guests/demo retain local boards |
+| Weekly effort board | Compete engine + `week_fields` / `week_field_roster` for signed-in athletes | Open fields fill from ten stored house accounts and score their counted workouts. Crew fields stay on their registered members. |
 | Private crew shared field | `week_fields` + compete `crewBoard` pin | Crew and solo seating share one store and roster RPC. Crew scores still use sessions explicitly shared with that crew. No group-approval step yet; team-vs-team not built |
 | 1v1 rivals | Removed from product | Legacy `compete_duels` cleared on sanitize; action is a no-op |
-| Pace absolutes (5K–marathon, 20K/40K) | Your synced/history activities + synthetic field times from Elo | Works offline; empty for “you” until history/sync |
+| Pace absolutes (5K–marathon, 20K/40K) | Your synced/history activities | Your own benchmark time. Empty until history/sync. |
 | Lessons | Deterministic schedule in shared | Works offline |
 | 90-day calibration | Synthetic history generator (`import-history`) | One-time; not live tracker data |
 | Live activities | Strava, WHOOP, Oura, and Garmin sync APIs, plus Garmin file import and phone ingest | Stub without keys or in demo mode. With keys, a signed-in sync is stored and applied to the local effort board. FIT/GPX/TCX import does not need Garmin approval. |

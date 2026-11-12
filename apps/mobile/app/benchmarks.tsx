@@ -90,7 +90,7 @@ const f=useFocusStyles();
         ) : null}
         <View style={f.card}>
           {rows.slice(0, 20).map((r) => (
-            <Pressable key={r.id} style={f.row} accessibilityRole="button" accessibilityLabel={`View ${r.name} profile`} onPress={() => setAthlete({ id: r.id, name: r.name, you: r.you, sample: !r.you, contextLabel: `${benchmark.label} benchmark`, contextValue: formatClockTime(r.seconds), contextDetail: `Place ${r.place} · ${sport}` })}>
+            <Pressable key={r.id} style={f.row} accessibilityRole="button" accessibilityLabel={`View ${r.name} profile`} onPress={() => setAthlete({ id: r.id, name: r.name, you: r.you, contextLabel: `${benchmark.label} benchmark`, contextValue: formatClockTime(r.seconds), contextDetail: `Place ${r.place} · ${sport}` })}>
               <AppText role="body" secondary >{r.place}</AppText>
               <AppText role="label" style={f.grow}>{r.name}</AppText>
               <AppText role="label" >{formatClockTime(r.seconds)}</AppText>

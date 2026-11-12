@@ -19,7 +19,6 @@ export type AthleteProfileSelection = {
   name: string;
   avatarUrl?: string | null;
   you?: boolean;
-  sample?: boolean;
   score?: number | null;
   contextLabel?: string;
   contextValue?: string;
@@ -49,13 +48,13 @@ const f=useFocusStyles();
   useEffect(() => {
     let cancelled = false;
     setProfile(null); setConfirmBlock(false); setReporting(false); setMessage(""); setNotice(""); setBusy(false);
-    if (athlete && !athlete.you && !athlete.sample && user && !offlineMode && isAccountId(athlete.id)) {
+    if (athlete && !athlete.you && user && !offlineMode && isAccountId(athlete.id)) {
       void supabase.from("profiles").select("city, created_at, lifetime_overtakes, primary_sport").eq("id", athlete.id).maybeSingle().then(({ data }) => {
         if (!cancelled && data) setProfile(data as PublicProfile);
       });
     }
     return () => { cancelled = true; };
-  }, [athlete?.id, athlete?.you, athlete?.sample, user?.id, offlineMode]);
+  }, [athlete?.id, athlete?.you, user?.id, offlineMode]);
   async function submitReport() {
     if (!athlete || busy || message.trim().length < 10) return;
     const targetKey = key;
@@ -97,7 +96,6 @@ const f=useFocusStyles();
   }}>
     {athlete ? <View style={{ gap: 20 }}>
       <AthleteProfileCard name={athlete.name} avatarUrl={athlete.avatarUrl} city={city} score={athlete.score} since={joinedYear ? `Since ${joinedYear}` : undefined} />
-      {athlete.sample ? <AppText role="caption" secondary>Sample athlete</AppText> : null}
       {athlete.contextValue ? <View style={f.section}>
         <SectionHeader title={athlete.contextLabel ?? "This week"} />
         <AppText role="display">{athlete.contextValue}</AppText>
@@ -110,7 +108,7 @@ const f=useFocusStyles();
           {sportName ? <View style={{ flex: 1, gap: 4 }}><AppText role="heading">{sportName}</AppText><AppText role="caption" secondary>Primary sport</AppText></View> : null}
         </View>
       </View> : null}
-      {!athlete.you && !athlete.sample && isAccountId(athlete.id) && user && !offlineMode ? reporting ? <View style={{ gap: 10 }}>
+      {!athlete.you && isAccountId(athlete.id) && user && !offlineMode ? reporting ? <View style={{ gap: 10 }}>
         <AppText role="heading">Report {athlete.name}?</AppText>
         <AppText role="body" secondary>Tell us what happened. Your report goes to the support team when you confirm.</AppText>
         <TextInput accessibilityLabel="Reason for reporting this athlete" multiline style={[f.input, { minHeight: 100, textAlignVertical: "top" }]} value={message} onChangeText={setMessage} maxLength={4900} editable={!busy} />

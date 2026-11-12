@@ -1,11 +1,10 @@
 import type { CrewBoardPin } from "../compete/sports";
 import type { SportId } from "../compete/sports";
-import { pickSynthetics } from "./synthetic-bank";
 import type { PoolPlayer, WaveEnrollment } from "./types";
 import { DEFAULT_GROUP_CAPACITY } from "./types";
 import { nextDailyWaveWindowAt } from "./waves";
 
-/** Stable seed so every crew mate draws the same synthetic fillers. */
+/** Stable seed shared by every crew mate for the same wave. */
 export function crewFieldSeed(
   crewId: string,
   sport: SportId,
@@ -31,13 +30,12 @@ export interface CrewWeekFieldPlan {
   /** All active members, stable-sorted, capped to capacity. */
   memberIds: string[];
   members: CrewFieldMember[];
-  /** Shared synthetic fillers so every mate sees the same board size. */
   syntheticIds: string[];
 }
 
 /**
  * Plan one shared individual field for a crew this week.
- * Each member competes separately; seating is identical across mates.
+ * Each member competes separately; seating is the real roster only.
  */
 export function planCrewWeekField(input: {
   crewId: string;
@@ -50,24 +48,12 @@ export function planCrewWeekField(input: {
   const window = nextDailyWaveWindowAt(input.now ?? new Date());
   const waveStart = window.waveStart.toISOString();
   const weekEnd = window.weekEnd.toISOString();
-  const seed = crewFieldSeed(input.crewId, input.sport, waveStart);
 
   const seated = [...input.members]
     .filter((member) => member.id.trim().length > 0)
     .sort((a, b) => a.id.localeCompare(b.id))
     .slice(0, capacity);
   const memberIds = seated.map((member) => member.id);
-  const elos = seated.map((member) => member.elo).sort((a, b) => a - b);
-  const medianElo =
-    elos.length === 0 ? 1000 : elos[Math.floor((elos.length - 1) / 2)]!;
-
-  const synthetics = pickSynthetics(
-    input.sport,
-    medianElo,
-    Math.max(0, capacity - seated.length),
-    memberIds,
-    seed,
-  );
 
   return {
     crewId: input.crewId,
@@ -77,7 +63,7 @@ export function planCrewWeekField(input: {
     capacity,
     memberIds,
     members: seated,
-    syntheticIds: synthetics.map((rival) => rival.id),
+    syntheticIds: [],
   };
 }
 

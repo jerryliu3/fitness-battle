@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { SPORT_IDS, activityEffort, addSimulatedReplay, type CompetitionReplay } from "@fitness-battle/shared";
+import { SPORT_IDS, activityEffort, type CompetitionReplay } from "@fitness-battle/shared";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import { createRequestClient } from "@/lib/supabase/request";
 
@@ -21,5 +21,5 @@ export async function GET(request: Request) {
     sport: ledger.sport, track: ledger.track, periodStart: ledger.periodStart, periodEnd: ledger.periodEnd, through: ledger.through, scope: "field", athletes: ledger.athletes.map(athlete => ({ ...athlete, avatarUrl: photos.get(athlete.id) ?? null })),
     events: ledger.events.map(e => ({ id: e.id, athleteId: e.athleteId, at: e.at, distanceM: Number(e.distanceM), movingSec: Number(e.movingSec), effort: activityEffort({ id: e.id, sport: ledger.sport, startedAt: e.at, distanceM: Number(e.distanceM), movingSec: Number(e.movingSec), avgHr: e.avgHr == null ? null : Number(e.avgHr), verified: ledger.track === "verified", source: "manual" }) })),
   };
-  return NextResponse.json(addSimulatedReplay(replay, ledger.syntheticIds), { headers: { "Cache-Control": "private, no-store" } });
+  return NextResponse.json(replay, { headers: { "Cache-Control": "private, no-store" } });
 }

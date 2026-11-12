@@ -185,8 +185,7 @@ export function createGarminProvider(
         return {
           provider: "garmin",
           status: "stub",
-          message:
-            "Garmin API credentials missing. Set GARMIN_CONSUMER_KEY, GARMIN_CONSUMER_SECRET, and GARMIN_REDIRECT_URI after Garmin approves the app. FIT, GPX, and TCX import works without those keys.",
+          message: "This tracker is not connected.",
         };
       }
       const authorize = new URL(urls.authorizeUrl);

@@ -83,7 +83,7 @@ const f=useFocusStyles();
       </View>
       {!hideChart && <CompeteTimeSeriesChart state={state} mode="sleep" />}
       {view.rows.map((r) => (
-        <Pressable key={r.id} style={f.row} accessibilityRole="button" accessibilityLabel={`View ${r.name} profile`} onPress={() => setAthlete({ id: r.id, name: r.name, you: r.you, sample: !r.you, contextLabel: "Recovery this week", contextValue: `${r.score.toFixed(0)} contest score`, contextDetail: `Place ${r.place}` })}>
+        <Pressable key={r.id} style={f.row} accessibilityRole="button" accessibilityLabel={`View ${r.name} profile`} onPress={() => setAthlete({ id: r.id, name: r.name, you: r.you, contextLabel: "Recovery this week", contextValue: `${r.score.toFixed(0)} contest score`, contextDetail: `Place ${r.place}` })}>
           <AppText role="body" secondary >{r.place}</AppText>
           <AppText role="label" style={f.grow}>
             {r.name}

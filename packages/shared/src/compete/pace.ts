@@ -1,4 +1,3 @@
-import { athleteBenchmarkSeconds, fieldAthletes, sameRank } from "./field";
 import { rollClock } from "./engine";
 import type { CompeteState, SportId } from "./sports";
 
@@ -52,24 +51,11 @@ export function paceBoard(
   state: CompeteState,
   sport: "running" | "cycling",
   benchmark: Benchmark,
-  scope: PaceScope,
+  _scope: PaceScope,
   now: Date = new Date(),
 ): PaceRow[] {
   const live = rollClock(state, now);
-  const mine = live.ratings.find((item) => item.sport === sport);
-  const yourElo = mine?.openElo ?? 1000;
   const rows: Omit<PaceRow, "place">[] = [];
-  for (const athlete of fieldAthletes(sport)) {
-    if (scope === "local" && athlete.city !== live.city) continue;
-    if (scope === "category" && !sameRank(yourElo, athlete.elo)) continue;
-    rows.push({
-      id: athlete.id,
-      name: athlete.name,
-      city: athlete.city,
-      seconds: athleteBenchmarkSeconds(athlete.elo, benchmark.meters),
-      you: false,
-    });
-  }
   const yours = yourBenchmarkSeconds(live, sport, benchmark.meters);
   if (yours != null) {
     rows.push({

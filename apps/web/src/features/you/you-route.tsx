@@ -243,7 +243,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
       setSyncNote(`${provider} connected. Sync to pull activities.`);
     } else if (tracker === "stub") {
       dispatch({ type: "link", provider });
-      setSyncNote("Credentials are not set, so this link is a demo stub.");
+      setSyncNote("This tracker is not connected.");
     } else if (tracker === "already_linked") {
       setSyncNote("This account is already linked to another Overtaek account. Contact support if this is unexpected.");
     } else if (tracker === "error") {
@@ -366,12 +366,12 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
         }
         dispatch({ type: "link", provider: providerId });
         setSyncNote(
-          body.message ?? "Demo tracker linked. This is not a live connection.",
+          body.message ?? "This tracker is not connected.",
         );
       } catch {
         if (offlineMode) {
           dispatch({ type: "link", provider: providerId });
-          setSyncNote("Offline demo link only.");
+          setSyncNote("This tracker is not connected.");
           return;
         }
         setSyncNote("Could not reach the connect route. Nothing was linked.");
@@ -574,7 +574,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
 
                 <AppParagraph typographyRole="body" className="fb-copy" style={{ color: "var(--muted)", marginBottom: 16 }}>
                   Connect fitness trackers and wearables to sync your activities automatically.
-                  Eligible workouts count toward your registered events. Sleep and recovery have their own views; samples do not earn competition points.
+                  Eligible workouts count toward your registered events. Sleep and recovery have their own views.
                 </AppParagraph>
                 {PROVIDERS.map((provider) => {
                   const link = state.links.find(
@@ -752,9 +752,9 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
                 <ReportIssue />
                 {legacyBackup && <button type="button" className="fb-btn-line" onClick={() => {
                   const url = URL.createObjectURL(new Blob([legacyBackup], { type: "application/json" }));
-                  const link = document.createElement("a"); link.href = url; link.download = "overtaek-local-demo-backup.json"; link.click();
+                  const link = document.createElement("a"); link.href = url; link.download = "overtaek-on-device-backup.json"; link.click();
                   setTimeout(() => URL.revokeObjectURL(url), 1000);
-                }}>Download local demo backup</button>}
+                }}>Download on-device backup</button>}
               </section>
               {user ? (
                 <Section className="fb-card" style={{ borderColor: appearanceColors.borderSubtle }} title="Danger Zone">

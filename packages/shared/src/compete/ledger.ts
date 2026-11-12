@@ -56,7 +56,7 @@ export function normalizeSampleActivity(activity: Activity): Activity {
     disposition: "excluded",
     verified: false,
     dispositionReason:
-      activity.dispositionReason ?? "Sample tracker data does not count.",
+      activity.dispositionReason ?? "This session does not count toward competition.",
   };
 }
 

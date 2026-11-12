@@ -6,7 +6,6 @@ import {
 } from "../compete/track";
 import { athleteWeekEffort, type FieldAthlete } from "../compete/field";
 import { sportById, type Activity, type ScoreTrack, type SportId } from "../compete/sports";
-import { findSynthetic, syntheticVolumeInWindow } from "./synthetic-bank";
 import type {
   LocalBoardRow,
   PoolPlayer,
@@ -166,31 +165,6 @@ export function buildLocalBoard(input: LocalBoardInput): LocalBoardRow[] {
       name: peer.name,
       elo: peer.elo,
       kind: "real",
-      effort: volume.effort,
-      distanceM: volume.distanceM,
-      movingSec: volume.movingSec,
-      you: false,
-      place: 0,
-    });
-  }
-
-  for (const syntheticId of input.enrollment.syntheticIds) {
-    const rival = findSynthetic(sport, syntheticId);
-    if (!rival) continue;
-    const volume = syntheticVolumeInWindow(
-      rival,
-      sport,
-      waveStart,
-      weekEnd,
-      input.track,
-      asOf,
-      gps,
-    );
-    rows.push({
-      id: rival.id,
-      name: rival.name,
-      elo: rival.elo,
-      kind: "synthetic",
       effort: volume.effort,
       distanceM: volume.distanceM,
       movingSec: volume.movingSec,

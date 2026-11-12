@@ -1,4 +1,4 @@
-import { pickSynthetics, settleSportRound, weeklyPeriodBounds, weeklyWaveWindowAt, type CompeteState, type CrewBoardPin } from "@fitness-battle/shared";
+import { settleSportRound, weeklyPeriodBounds, weeklyWaveWindowAt, type CompeteState, type CrewBoardPin } from "@fitness-battle/shared";
 import type { WeekFieldRow } from "./week-field";
 
 export interface AdminWaveAccount { userId: string; updatedAt: string; state: CompeteState }
@@ -13,7 +13,7 @@ export function planAdminFieldWave(field: WeekFieldRow, accounts: AdminWaveAccou
   const matches = (row: CompeteState["enrollments"][number]) => row.sport === field.sport && Date.parse(row.waveStart) === Date.parse(field.wave_start) && Date.parse(row.weekEnd) === Date.parse(field.week_end);
   const renewing = accounts.filter((account) => account.state.enrollments.some((row) => matches(row) && row.autoEnrollNext));
   const memberIds = renewing.map((account) => account.userId);
-  const syntheticIds = pickSynthetics(field.sport, 1000, Math.max(0, field.capacity - memberIds.length), memberIds, `admin-wave:${field.id}:${nowIso}`).map((row) => row.id);
+  const syntheticIds: string[] = [];
   const snapshots = accounts.map((account, index) => {
     const enrollment = account.state.enrollments.find(matches);
     if (!enrollment) return { ...account, before: account.state, after: account.state, actionId: crypto.randomUUID() };

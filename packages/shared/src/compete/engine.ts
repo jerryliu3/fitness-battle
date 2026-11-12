@@ -868,7 +868,7 @@ function makeActivity(
     source,
     provenance,
     disposition: isDemo ? "excluded" : "counted",
-    dispositionReason: isDemo ? "Sample tracker data does not count." : undefined,
+    dispositionReason: isDemo ? "This session does not count toward competition." : undefined,
   };
 }
 
@@ -1005,7 +1005,7 @@ function syncProvider(
     provider,
     "demo",
   );
-  activity.dispositionReason = "Sample session. Not a live tracker pull.";
+  activity.dispositionReason = "This session does not count toward competition.";
   return { ...next, activities: [...next.activities, activity] };
 }
 

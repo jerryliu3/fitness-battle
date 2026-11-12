@@ -189,7 +189,7 @@ export function FieldCrewSwitch({ sport }: { sport: SportId }) {
       <div className="fb-stack">
         <AppParagraph typographyRole="caption" className="fb-note">
           Sharing this field with {pin.crewName} ({pin.memberIds.length}{" "}
-          athletes, {pin.syntheticIds.length} fillers). Scores stay individual.
+          athletes). Scores stay individual.
         </AppParagraph>
         <button
           type="button"
