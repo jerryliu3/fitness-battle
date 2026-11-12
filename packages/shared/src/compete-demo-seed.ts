@@ -37,6 +37,77 @@ export function getDemoCompeteState(
 
   if (demo.email === "alice@example.com") {
     const today = dayKey(new Date());
+    const aliceCrewBoard = {
+      crewId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      crewName: "Weekday miles",
+      sport: "running" as SportId,
+      waveStart: waveStartIso,
+      weekEnd: weekEndIso,
+      capacity: 8,
+      memberIds: [
+        "11111111-1111-4111-8111-111111111111",
+        "22222222-2222-4222-8222-222222222222",
+        "33333333-3333-4333-8333-333333333333",
+        "55555555-5555-4555-8555-555555555555",
+      ],
+      syntheticIds: [] as string[],
+      members: [
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          name: "Alice Park",
+          elo: 1140,
+          distanceM: 35500,
+          movingSec: 11280,
+        },
+        {
+          id: "22222222-2222-4222-8222-222222222222",
+          name: "Bob Chen",
+          elo: 1060,
+          distanceM: 6000,
+          movingSec: 2100,
+        },
+        {
+          id: "33333333-3333-4333-8333-333333333333",
+          name: "Carla Diaz",
+          elo: 1190,
+          distanceM: 31500,
+          movingSec: 9300,
+        },
+        {
+          id: "55555555-5555-4555-8555-555555555555",
+          name: "Elena Rostova",
+          elo: 1110,
+          distanceM: 7500,
+          movingSec: 2400,
+        },
+      ],
+    };
+    const aliceOpenField = {
+      crewId: "solo",
+      crewName: "Open Field",
+      sport: "running" as SportId,
+      waveStart: waveStartIso,
+      weekEnd: weekEndIso,
+      capacity: 8,
+      memberIds: [
+        "11111111-1111-4111-8111-111111111111",
+        "22222222-2222-4222-8222-222222222222",
+        "33333333-3333-4333-8333-333333333333",
+        "55555555-5555-4555-8555-555555555555",
+        "66666666-6666-4666-8666-666666666666",
+      ],
+      syntheticIds: [] as string[],
+      members: [
+        ...aliceCrewBoard.members,
+        {
+          id: "66666666-6666-4666-8666-666666666666",
+          name: "Jordan Lee",
+          elo: 1090,
+          distanceM: 12000,
+          movingSec: 4000,
+        },
+      ],
+    };
     return {
       ...base,
       name: "Alice Park",
@@ -127,6 +198,8 @@ export function getDemoCompeteState(
           syntheticIds: [],
           autoEnrollNext: true,
           crewId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          fieldBoard: aliceOpenField,
+          awaitingField: false,
         },
         {
           sport: "cycling",
@@ -149,51 +222,7 @@ export function getDemoCompeteState(
           crewId: null,
         },
       ],
-      crewBoard: {
-        crewId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-        crewName: "Weekday miles",
-        sport: "running",
-        waveStart: waveStartIso,
-        weekEnd: weekEndIso,
-        capacity: 8,
-        memberIds: [
-          "11111111-1111-4111-8111-111111111111",
-          "22222222-2222-4222-8222-222222222222",
-          "33333333-3333-4333-8333-333333333333",
-          "55555555-5555-4555-8555-555555555555",
-        ],
-        syntheticIds: [],
-        members: [
-          {
-            id: "11111111-1111-4111-8111-111111111111",
-            name: "Alice Park",
-            elo: 1140,
-            distanceM: 35500,
-            movingSec: 11280,
-          },
-          {
-            id: "22222222-2222-4222-8222-222222222222",
-            name: "Bob Chen",
-            elo: 1060,
-            distanceM: 6000,
-            movingSec: 2100,
-          },
-          {
-            id: "33333333-3333-4333-8333-333333333333",
-            name: "Carla Diaz",
-            elo: 1190,
-            distanceM: 31500,
-            movingSec: 9300,
-          },
-          {
-            id: "55555555-5555-4555-8555-555555555555",
-            name: "Elena Rostova",
-            elo: 1110,
-            distanceM: 7500,
-            movingSec: 2400,
-          },
-        ],
-      },
+      crewBoard: aliceCrewBoard,
       activities: [
         {
           id: "strava-act-alice-w0-mon",
@@ -521,50 +550,24 @@ export function getDemoCompeteState(
           disposition: "counted",
         },
       ],
-      sleepNights: [
-        {
-          id: "slp-alice-d0",
-          metric: "sleep",
-          day: today,
-          score: 88,
-          durationMin: 465,
-          efficiency: 94,
-          deepMin: 85,
-          remMin: 105,
-          lightMin: 250,
-          awakeMin: 25,
-          source: "whoop",
+      sleepNights: Array.from({ length: 35 }, (_, index) => {
+        const durationMin = 430 + (index * 41 % 55);
+        const score = 78 + (index * 17 % 20);
+        return {
+          id: `slp-alice-d${index}`,
+          metric: "sleep" as const,
+          day: dayKey(shiftAppDay(new Date(), -index)),
+          score,
+          durationMin,
+          efficiency: 90 + (index % 6),
+          deepMin: 70 + (index % 25),
+          remMin: 90 + (index % 20),
+          lightMin: 235 + (index % 30),
+          awakeMin: 15 + (index % 20),
+          source: "whoop" as const,
           verified: true,
-        },
-        {
-          id: "slp-alice-d1",
-          metric: "sleep",
-          day: dayKey(shiftAppDay(new Date(), -1)),
-          score: 91,
-          durationMin: 480,
-          efficiency: 96,
-          deepMin: 95,
-          remMin: 110,
-          lightMin: 255,
-          awakeMin: 20,
-          source: "whoop",
-          verified: true,
-        },
-        {
-          id: "slp-alice-d2",
-          metric: "sleep",
-          day: dayKey(shiftAppDay(new Date(), -2)),
-          score: 82,
-          durationMin: 440,
-          efficiency: 91,
-          deepMin: 75,
-          remMin: 95,
-          lightMin: 240,
-          awakeMin: 30,
-          source: "whoop",
-          verified: true,
-        },
-      ],
+        };
+      }),
       readiness: [
         { id: "readiness-alice-d0", provider: "whoop", day: today, score: 86 },
         {
