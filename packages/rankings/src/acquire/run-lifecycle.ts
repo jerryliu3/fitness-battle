@@ -12,15 +12,18 @@ export type RunPatch = {
   status?: "succeeded" | "failed";
 };
 
-/** Preparation stays leased; terminal success happens only after optional SQL apply. */
-export function buildPreparedRunPatch(input: {
-  parserVersion: string;
-  artifactDir: string;
-  normalizedSha256: string;
-  rawSha256: string;
-  counts: Record<string, number>;
-  warnings: string[];
-}): RunPatch {
+/** Preparation artifact patch. Set `releaseLease` when import SQL is not applied yet. */
+export function buildPreparedRunPatch(
+  input: {
+    parserVersion: string;
+    artifactDir: string;
+    normalizedSha256: string;
+    rawSha256: string;
+    counts: Record<string, number>;
+    warnings: string[];
+  },
+  options?: { releaseLease?: boolean },
+): RunPatch {
   return {
     parser_version: input.parserVersion,
     artifact_dir: input.artifactDir,
@@ -29,19 +32,39 @@ export function buildPreparedRunPatch(input: {
     counts: input.counts,
     warnings: input.warnings,
     publication_outcome: "prepared",
+    ...(options?.releaseLease ? { status: "succeeded" as const } : {}),
   };
 }
 
-export function buildStagedRunPatch(input: {
-  stagedEditionId: number;
-  stagedRevision: number;
-}): RunPatch {
+/** Same field names as `readStagedEditionBinding()` in acquire.mjs. */
+export function buildStagedRunPatch(binding: { editionId: number; revision: number }): RunPatch {
   return {
     status: "succeeded",
     publication_outcome: "staged",
-    staged_edition_id: input.stagedEditionId,
-    staged_revision: input.stagedRevision,
+    staged_edition_id: binding.editionId,
+    staged_revision: binding.revision,
   };
+}
+
+export function buildStageApplySql(
+  runId: number,
+  owner: string,
+  mapping: { sourceSlug: string; externalEventId: string | null; editionYear: number },
+  importSql: string,
+): string {
+  const quote = (value: string) => `'${value.replaceAll("'", "''")}'`;
+  const externalEventId = mapping.externalEventId ?? "";
+  return `begin;
+${importSql.trim()}
+select public.acquisition_bind_staged_run(
+  ${runId},
+  ${quote(owner)},
+  ${quote(mapping.sourceSlug)},
+  ${quote(externalEventId)},
+  ${mapping.editionYear}
+);
+commit;
+`;
 }
 
 export function buildFailedRunPatch(message: string): RunPatch {

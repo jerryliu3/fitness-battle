@@ -12,7 +12,7 @@ const {
   assertPreviewAllowsApply,
   buildFailedRunPatch,
   buildPreparedRunPatch,
-  buildStagedRunPatch,
+  buildStageApplySql,
   fetchNyrrFinishers,
   buildAcquisitionPreview,
   editionImportSql,
@@ -112,25 +112,6 @@ function getEditionPublicationState(databaseUrl, sourceSlug, externalEventId, ed
   if (!row) return null;
   const [state, revision] = row.split("|");
   return { state, revision: Number(revision) || 1 };
-}
-
-function readStagedEditionBinding(databaseUrl, mapping) {
-  const eventCode = mapping.externalEventId ?? mapping.adapterConfig?.eventCode;
-  const row = psqlQuery(
-    databaseUrl,
-    `select ee.id::text, ee.revision::text
-     from public.event_editions ee
-     join public.events e on e.id = ee.event_id
-     join public.sources s on s.id = e.source_id
-     where s.slug = ${quote(mapping.sourceSlug)}
-       and e.external_event_id = ${quote(String(eventCode))}
-       and ee.edition_year = ${mapping.editionYear}
-       and ee.publication_state = 'staged'
-     limit 1;`,
-  );
-  if (!row) return null;
-  const [editionId, revision] = row.split("|");
-  return { editionId: Number(editionId), revision: Number(revision) };
 }
 
 async function claimRun(mappingId, owner) {
@@ -304,31 +285,34 @@ try {
   const sqlPath = join(artifacts.dir, "import.sql");
   await writeFile(sqlPath, importSql);
 
-  patchRun(
-    runId,
-    owner,
-    buildPreparedRunPatch({
-      parserVersion: PARSER_VERSION,
-      artifactDir: artifacts.dir,
-      normalizedSha256: artifacts.normalized.contentSha256,
-      rawSha256: artifacts.providerSnapshot.contentSha256,
-      counts: {
-        extracted: fetched.edition.results.length,
-        skippedYouth: fetched.edition.skippedYouth,
-        skippedUnparsed: fetched.edition.skippedUnparsed,
-        expectedTotal: fetched.totalItems,
-      },
-      warnings: artifacts.preview.warnings,
-    }),
-  );
+  const preparedPatchInput = {
+    parserVersion: PARSER_VERSION,
+    artifactDir: artifacts.dir,
+    normalizedSha256: artifacts.normalized.contentSha256,
+    rawSha256: artifacts.providerSnapshot.contentSha256,
+    counts: {
+      extracted: fetched.edition.results.length,
+      skippedYouth: fetched.edition.skippedYouth,
+      skippedUnparsed: fetched.edition.skippedUnparsed,
+      expectedTotal: fetched.totalItems,
+    },
+    warnings: artifacts.preview.warnings,
+  };
 
   let publication = "prepared";
   if (argv.includes("--apply")) {
-    await psqlFile(databaseUrl, sqlPath);
-    const binding = readStagedEditionBinding(databaseUrl, mapping);
-    if (!binding) throw new Error("Import applied but no staged edition binding was found.");
-    patchRun(runId, owner, buildStagedRunPatch(binding));
+    patchRun(runId, owner, buildPreparedRunPatch(preparedPatchInput));
+    const stageApplySql = buildStageApplySql(runId, owner, {
+      sourceSlug: mapping.sourceSlug,
+      externalEventId: eventCode,
+      editionYear: mapping.editionYear,
+    }, importSql);
+    const stageApplyPath = join(artifacts.dir, "stage-apply.sql");
+    await writeFile(stageApplyPath, stageApplySql);
+    await psqlFile(databaseUrl, stageApplyPath);
     publication = "staged";
+  } else {
+    patchRun(runId, owner, buildPreparedRunPatch(preparedPatchInput, { releaseLease: true }));
   }
 
   console.log(
@@ -339,6 +323,7 @@ try {
         artifactDir: artifacts.dir,
         preview: artifacts.preview,
         sqlPath,
+        stageApplySql: argv.includes("--apply") ? join(artifacts.dir, "stage-apply.sql") : null,
         apply: argv.includes("--apply") ? "applied" : "prepared-only",
         publication,
       },

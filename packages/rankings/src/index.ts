@@ -37,6 +37,7 @@ export { assertPreviewAllowsApply } from "./acquire/validate";
 export {
   buildFailedRunPatch,
   buildPreparedRunPatch,
+  buildStageApplySql,
   buildStagedRunPatch,
   type RunPatch,
 } from "./acquire/run-lifecycle";
