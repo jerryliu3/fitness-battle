@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   parseVitalsLabCanvasMessage,
+  vitalsLabMetricsFromCompeteState,
   vitalsLabMetricsFromModel,
   vitalsLabSystemToHealth,
 } from "./vitals-lab-body";
 import { buildAnalyticsLabModel } from "./analytics-lab";
+import { freshState } from "./compete/engine";
 
 describe("vitals-lab-body", () => {
   it("maps system pills to renderer health systems", () => {
@@ -40,10 +42,26 @@ describe("vitals-lab-body", () => {
       scanNonce: 3,
       scanEnabled: true,
       anchor3D: { x: 0, y: 0.5, z: 0 },
-      assetBaseUrl: "https://example.test/bodies/anny",
+      assetBaseUrl: "https://example.test",
     });
     expect(msg?.gender).toBe("male");
-    expect(msg?.assetBaseUrl).toContain("/bodies/anny");
+    expect(msg?.assetBaseUrl).toBe("https://example.test");
+  });
+
+  it("maps compete recordings to flank metrics without demo fallbacks", () => {
+    const now = new Date("2026-10-25T12:00:00-04:00");
+    const state = freshState(now);
+    state.dailyHealth = [
+      { provider: "oura", day: "2026-10-24", hrv: 64, restingHr: 52 },
+    ];
+    const empty = vitalsLabMetricsFromCompeteState(state, { now, signedOut: true });
+    expect(empty.every((m) => m.value === "")).toBe(true);
+
+    const metrics = vitalsLabMetricsFromCompeteState(state, { now });
+    expect(metrics.find((m) => m.id === "hrv")?.value).toBe("64");
+    expect(metrics.find((m) => m.id === "rhr")?.value).toBe("52");
+    expect(metrics.find((m) => m.id === "resp")?.value).toBe("");
+    expect(metrics.find((m) => m.id === "spo2")?.status).toBe("");
   });
 
   it("builds six flank metrics with physiological bounds from analytics model", () => {

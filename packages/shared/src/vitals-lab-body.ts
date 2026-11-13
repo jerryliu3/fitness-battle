@@ -1,4 +1,8 @@
 import type { AnalyticsLabModel, VitalId } from "./analytics-lab";
+import { competeNow } from "./compete/engine";
+import { formatSleepDuration } from "./compete/health";
+import type { CompeteState } from "./compete/sports";
+import { formatHealthNumber, recordedHealthSeries } from "./home-health";
 
 /** Six metrics flanking the interactive body scan (product Vitals Lab). */
 export type VitalsLabMetricId =
@@ -302,6 +306,30 @@ export interface VitalsLabCanvasMessage {
   assetBaseUrl: string;
 }
 
+/** Warm WebView + HTTP cache (page, Three.js chunk, ~1MB GLB meshes). */
+export function vitalsLabCanvasPrefetchMessage(
+  assetBaseUrl: string,
+  appearance: "light" | "dark" = "dark",
+): VitalsLabCanvasMessage {
+  return {
+    type: "vitals-lab-canvas",
+    appearance,
+    gender: "female",
+    viewMode: "lumen",
+    activeMetric: null,
+    activeSystem: "full",
+    zoom: 1,
+    panY: 0,
+    targetRotY: 0,
+    rotYStepNonce: 0,
+    autoOrbit: false,
+    scanNonce: 0,
+    scanEnabled: false,
+    anchor3D: null,
+    assetBaseUrl,
+  };
+}
+
 export function parseVitalsLabCanvasMessage(
   data: unknown,
 ): VitalsLabCanvasMessage | null {
@@ -332,8 +360,7 @@ export function parseVitalsLabCanvasMessage(
     typeof (o.anchor3D as VitalsLabAnchor3D).x === "number"
       ? (o.anchor3D as VitalsLabAnchor3D)
       : null;
-  const assetBaseUrl =
-    typeof o.assetBaseUrl === "string" ? o.assetBaseUrl : "/bodies/anny";
+  const assetBaseUrl = typeof o.assetBaseUrl === "string" ? o.assetBaseUrl : "";
   return {
     type: "vitals-lab-canvas",
     appearance,
@@ -351,6 +378,58 @@ export function parseVitalsLabCanvasMessage(
     anchor3D: anchor,
     assetBaseUrl,
   };
+}
+
+function emptyVitalsLabMetrics(): VitalsLabMetricDisplay[] {
+  return VITALS_LAB_METRICS.map((spec) => ({
+    ...spec,
+    value: "",
+    status: "",
+    delta: "",
+    sparkline: [],
+  }));
+}
+
+function lastRecorded(series: { value: number | null }[]): number | null {
+  for (let i = series.length - 1; i >= 0; i--) {
+    const value = series[i]?.value;
+    if (value != null && Number.isFinite(value)) return value;
+  }
+  return null;
+}
+
+/** Product Health Lab: recorded tracker readings only (no UX demo fallbacks). */
+export function vitalsLabMetricsFromCompeteState(
+  state: CompeteState | null | undefined,
+  options?: { now?: Date; signedOut?: boolean },
+): VitalsLabMetricDisplay[] {
+  if (!state || options?.signedOut) return emptyVitalsLabMetrics();
+
+  const now = options?.now ?? competeNow(state);
+  const days = 30;
+  const hrv = lastRecorded(recordedHealthSeries(state, "hrv", days, now));
+  const rhr = lastRecorded(recordedHealthSeries(state, "resting-hr", days, now));
+  const sleepMin = lastRecorded(recordedHealthSeries(state, "sleep", days, now));
+
+  const values: Partial<Record<VitalsLabMetricId, string>> = {};
+  if (hrv != null) values.hrv = formatHealthNumber(hrv);
+  if (rhr != null) values.rhr = formatHealthNumber(rhr);
+  if (sleepMin != null) values.sleep = formatSleepDuration(sleepMin);
+
+  return VITALS_LAB_METRICS.map((spec) => {
+    const value = values[spec.id] ?? "";
+    return {
+      ...spec,
+      value,
+      displayParts:
+        spec.id === "sleep" && value
+          ? parseDurationParts(value)
+          : undefined,
+      status: "",
+      delta: "",
+      sparkline: [],
+    };
+  });
 }
 
 export function vitalsLabMetricsFromModel(

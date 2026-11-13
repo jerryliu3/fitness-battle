@@ -1,19 +1,24 @@
 import { createThemedStyles, useThemedStyles } from "../../theme";
 import { useSceneActive } from "../../ui/use-scene-active";
 import type { VitalsLabCanvasMessage } from "@fitness-battle/shared";
-import { mobileEnv } from "../../lib/env";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import WebView, { type WebViewMessageEvent } from "react-native-webview";
 import { AppText } from "../../ui/section";
+import {
+  resolveVitalsLabHostSource,
+  type VitalsLabHostSource,
+} from "./vitals-lab-host-source";
 
 const SYNC_MS = 80;
 
 export function VitalsLabCanvas({
   model,
+  host,
   onUnavailable,
 }: {
   model: VitalsLabCanvasMessage;
+  host: VitalsLabHostSource | null;
   onUnavailable?: () => void;
 }) {
   const styles = useThemedStyles(styleThemes);
@@ -28,9 +33,6 @@ export function VitalsLabCanvas({
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fail = useRef(onUnavailable);
   fail.current = onUnavailable;
-
-  const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/vitals-lab-canvas`;
-  const origin = new URL(uri).origin;
 
   function inject(next: VitalsLabCanvasMessage) {
     if (!ready.current || !sceneActive.current) return;
@@ -52,21 +54,25 @@ export function VitalsLabCanvas({
   }, [model, active]);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active || !host) return;
     const t = setTimeout(() => {
       if (!ready.current) {
         setFailed(true);
         fail.current?.();
       }
-    }, 14_000);
+    }, host.mode === "bundled" ? 8_000 : 14_000);
     return () => clearTimeout(t);
-  }, [active]);
+  }, [active, host]);
+
+  if (!host) {
+    return <View style={styles.frame} />;
+  }
 
   if (failed) {
     return (
       <View style={styles.fallback}>
         <AppText role="caption" secondary>
-          3D body scan unavailable. Check that the web server is running.
+          3D body scan unavailable.
         </AppText>
       </View>
     );
@@ -76,15 +82,20 @@ export function VitalsLabCanvas({
     <View style={styles.frame}>
       <WebView
         ref={ref}
-        source={{ uri }}
-        originWhitelist={[origin]}
+        source={{ uri: host.uri }}
+        originWhitelist={
+          host.mode === "bundled"
+            ? ["file://", "about:blank"]
+            : [new URL(host.uri).origin]
+        }
+        allowingReadAccessToURL={host.readAccessUrl}
         javaScriptEnabled
+        cacheEnabled
+        domStorageEnabled
         scrollEnabled={false}
         bounces={false}
         style={styles.web}
-        onShouldStartLoadWithRequest={(r: { url: string }) =>
-          r.url === "about:blank" || r.url.startsWith(`${origin}/vitals-lab-canvas`)
-        }
+        onShouldStartLoadWithRequest={(r) => host.allowsRequest(r.url)}
         onLoadEnd={() => {
           if (ready.current) inject(latest.current);
         }}
@@ -115,6 +126,20 @@ export function VitalsLabCanvas({
       />
     </View>
   );
+}
+
+export function useVitalsLabHostSource() {
+  const [host, setHost] = useState<VitalsLabHostSource | null>(null);
+  useEffect(() => {
+    let alive = true;
+    resolveVitalsLabHostSource().then((next) => {
+      if (alive) setHost(next);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return host;
 }
 
 const styleThemes = createThemedStyles((theme) => ({

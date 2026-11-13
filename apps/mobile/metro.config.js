@@ -6,6 +6,7 @@ const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, "../..");
 
 const config = getDefaultConfig(projectRoot);
+config.resolver.assetExts.push("html", "glb");
 
 config.watchFolders = [workspaceRoot];
 config.resolver.nodeModulesPaths = [

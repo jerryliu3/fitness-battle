@@ -1,5 +1,7 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback } from "react";
+import { View } from "react-native";
+import { VitalsLabCanvasPrefetch } from "../../src/features/vitals-lab/vitals-lab-canvas-prefetch";
 import { ProgressScreen } from "../../src/features/progress-screen";
 
 export default function ProgressTab() {
@@ -30,5 +32,10 @@ export default function ProgressTab() {
       });
     }, [panel, tracker, provider, router]),
   );
-  return <ProgressScreen initialSpace={view as any} initialHorizon={horizon as any} />;
+  return (
+    <View style={{ flex: 1 }}>
+      <ProgressScreen initialSpace={view as any} initialHorizon={horizon as any} />
+      <VitalsLabCanvasPrefetch />
+    </View>
+  );
 }

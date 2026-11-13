@@ -109,7 +109,7 @@ export function HealthLabSpace({
 
   return (
     <View style={s.container}>
-      <VitalsLabBodyScan />
+      <VitalsLabBodyScan state={state} signedOut={signedOut} />
 
       <View style={s.summaryCardsRow}>
         {card("hrv", "Overnight HRV")}

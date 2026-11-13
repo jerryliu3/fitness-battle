@@ -1,1 +1,4 @@
-export { VitalsLabPanel as VitalsLabBodyScan } from "./vitals-lab/vitals-lab-panel";
+export {
+  VitalsLabPanel as VitalsLabBodyScan,
+  VitalsLabPanel,
+} from "./vitals-lab/vitals-lab-panel";
