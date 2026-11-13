@@ -48,10 +48,22 @@ export async function resolveBodyPipelinePython(): Promise<string> {
   return cachedPython;
 }
 
-export const BODY_PIPELINE_VENV_HINT = [
-  "python3 -m venv body-pipeline/.venv",
-  "body-pipeline/.venv/bin/pip install -r body-pipeline/requirements.txt",
-].join(" && ");
+export const BODY_PIPELINE_VENV_HINT = "bash scripts/ensure-body-pipeline-venv.sh";
+
+export async function assertBodyPipelinePythonReady(): Promise<string> {
+  const python = await resolveBodyPipelinePython();
+  try {
+    await execFileAsync(python, ["-c", "import matplotlib, anny"], {
+      cwd: REPO_ROOT,
+      timeout: 60_000,
+    });
+  } catch {
+    throw new Error(
+      `Python at ${python} is missing matplotlib or anny. From repo root run: ${BODY_PIPELINE_VENV_HINT}`,
+    );
+  }
+  return python;
+}
 
 export function vitalsPoseDevAllowed(request: Request): boolean {
   const url = new URL(request.url);
@@ -84,7 +96,7 @@ export async function runStandingPosePreview(): Promise<{ generatedAt: string }>
   }
 
   const run = async () => {
-    const python = await resolveBodyPipelinePython();
+    const python = await assertBodyPipelinePythonReady();
     await execFileAsync(python, [PREVIEW_SCRIPT], {
       cwd: REPO_ROOT,
       timeout: 180_000,

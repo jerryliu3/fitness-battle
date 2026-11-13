@@ -30,7 +30,8 @@
     "bodies:sync": "bash body-pipeline/scripts/sync_runtime_assets.sh anny",
     "bodies:sync:mpfb2": "bash body-pipeline/scripts/sync_runtime_assets.sh mpfb2",
     "bodies:verify-sync": "bash body-pipeline/scripts/verify_asset_sync.sh anny",
-    "bodies:bootstrap-variants": "bash body-pipeline/scripts/bootstrap_body_variants.sh"
+    "bodies:bootstrap-variants": "bash body-pipeline/scripts/bootstrap_body_variants.sh",
+    "bodies:venv": "bash scripts/ensure-body-pipeline-venv.sh"
   },
   "devDependencies": {
     "typescript": "^5.9.2"
