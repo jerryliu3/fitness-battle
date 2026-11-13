@@ -10,6 +10,7 @@ const VitalsLabExperience = dynamic(
   { ssr: false },
 );
 
+/** WebView / iframe host for the Vitals Lab product shell (UX-only). */
 export default function VitalsLabEmbedPage() {
   const params = useSearchParams();
   const initialAppearance =
