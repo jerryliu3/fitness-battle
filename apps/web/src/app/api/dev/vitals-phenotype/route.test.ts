@@ -1,5 +1,16 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { rm } from "node:fs/promises";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET, POST } from "./route";
+
+const PHENOTYPE_FILE = path.resolve(
+  process.cwd(),
+  "../../body-pipeline/local/phenotype.json",
+);
+
+beforeEach(async () => {
+  await rm(PHENOTYPE_FILE, { force: true });
+});
 
 afterEach(() => {
   vi.unstubAllEnvs();

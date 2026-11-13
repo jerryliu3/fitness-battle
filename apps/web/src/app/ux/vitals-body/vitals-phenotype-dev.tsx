@@ -2,7 +2,10 @@
 
 import { isLocalHost } from "@/lib/auth/design-access";
 import { useCallback, useEffect, useState } from "react";
-import type { VitalsPhenotypeFile, VitalsPhenotypeSliders } from "@/app/api/dev/vitals-phenotype/route";
+import type {
+  VitalsPhenotypeFile,
+  VitalsPhenotypeSliders,
+} from "@/lib/vitals-phenotype";
 
 type EditSex = keyof VitalsPhenotypeFile;
 
