@@ -144,6 +144,7 @@ export default function Home() {
       </View>
 
       <FocusSheet
+        fastOpen
         open={Boolean(sheet)}
         title={sheet?.title ?? "Your activity"}
         onClose={() => setSheet(null)}
