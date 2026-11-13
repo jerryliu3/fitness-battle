@@ -160,14 +160,13 @@ const s=useThemedStyles(sThemes);
                     );
                   }
                   const isOutOfCorridor = p.position === "under" || p.position === "over";
-                  const ptColor = colors.accent;
                   return (
                     <G key={p.index}>
                       <Circle
                         cx={p.x}
                         cy={p.y}
                         r={p.index === 6 ? 4.5 : 3.5}
-                        fill={isOutOfCorridor ? "none" : ptColor}
+                        fill={isOutOfCorridor ? "none" : colors.accent}
                         stroke={isOutOfCorridor ? colors.accent : colors.tile}
                         strokeWidth={isOutOfCorridor ? 2 : 1.5}
                       />
@@ -176,7 +175,7 @@ const s=useThemedStyles(sThemes);
                         x={p.index === 6 ? Math.min(316, p.x) : p.index === 0 ? Math.max(40, p.x) : p.x}
                         y={Math.max(12, p.y - 7)}
                         textAnchor={p.index === 6 ? "end" : p.index === 0 ? "start" : "middle"}
-                        fill={ptColor}
+                        fill={colors.accent}
                       >
                         {p.formatted}
                       </SvgText>
