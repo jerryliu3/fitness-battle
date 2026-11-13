@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Orthographic mesh previews for `standing_pose_rotvec_deg()` — required before pose tweaks.
 
-Anny bone rotvecs are in bone-local frames; numeric heuristics alone are unreliable. Run:
+Anny rotation vectors use native reference axes (local-ref); numeric heuristics alone are unreliable. Run:
 
   python3 body-pipeline/scripts/preview_standing_pose.py
 
@@ -24,6 +24,7 @@ import trimesh
 from anny import Anny
 
 from lib.mesh_common import normalize_standing, standing_pose_rotvec_deg
+from generate_humans import _phenotype
 
 OUT_DIR = ROOT / "body-pipeline" / "generated"
 
@@ -38,14 +39,7 @@ def mesh_for_gender(model: Anny, gender: float) -> trimesh.Trimesh:
     pose = roma.Rigid(roma.rotvec_to_rotmat(torch.deg2rad(rv)), torch.zeros((len(rv), 3)))[
         None
     ].to_homogeneous()
-    kwargs = {
-        "gender": gender,
-        "age": 0.58,
-        "muscle": 0.32 if gender > 0.5 else 0.32,
-        "weight": 0.48 if gender < 0.5 else 0.44,
-        "height": 0.54 if gender < 0.5 else 0.5,
-        "proportions": 0.5 if gender < 0.5 else 0.52,
-    }
+    kwargs = _phenotype("female" if gender > 0.5 else "male")
     verts = model(pose_parameters=pose, phenotype_kwargs=kwargs)["vertices"].squeeze(0)
     verts = verts.detach().cpu().numpy()
     return normalize_standing(
@@ -76,7 +70,7 @@ def save_preview(mesh: trimesh.Trimesh, out: Path, title: str) -> None:
 
 
 def main() -> None:
-    model = Anny(local_changes="default").to(dtype=torch.float32)
+    model = Anny(local_changes="default", rig="anny", pose_parameterization="local-ref", skinning_method="lbs").to(dtype=torch.float32)
     save_preview(mesh_for_gender(model, 1.0), OUT_DIR / "pose-preview-female.png", "female")
     save_preview(mesh_for_gender(model, 0.0), OUT_DIR / "pose-preview-male.png", "male")
 

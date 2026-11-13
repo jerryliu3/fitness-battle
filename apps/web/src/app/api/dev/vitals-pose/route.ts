@@ -12,7 +12,6 @@ export async function GET(request: Request) {
     {
       bones,
       path: "body-pipeline/local/pose.json",
-      livePreview: "POST /api/dev/vitals-pose/preview (auto in pose panel)",
       regen: "pnpm bodies:generate && pnpm bodies:sync",
     },
     { headers: { "Cache-Control": "no-store" } },
@@ -33,7 +32,6 @@ export async function POST(request: Request) {
   return Response.json({
     ok: true,
     bones: next,
-    livePreview: "POST /api/dev/vitals-pose/preview",
     regen: "pnpm bodies:generate && pnpm bodies:sync",
   });
 }

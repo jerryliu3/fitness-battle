@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Python env for accurate pose PNG preview + mesh generation (not needed for live stick rig).
+# Python env for live Anny mesh/rig export, pose previews and mesh generation.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VENV="$ROOT/body-pipeline/.venv"

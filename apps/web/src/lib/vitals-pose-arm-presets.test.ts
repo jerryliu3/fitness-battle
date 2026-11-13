@@ -3,8 +3,8 @@ import { VITALS_POSE_BONES } from "@/lib/vitals-pose";
 import { poseFromPreset, VITALS_ARM_AT_SIDE_PRESETS } from "@/lib/vitals-pose-arm-presets";
 
 describe("VITALS_ARM_AT_SIDE_PRESETS", () => {
-  it("exposes 10 click-through presets", () => {
-    expect(VITALS_ARM_AT_SIDE_PRESETS).toHaveLength(10);
+  it("includes the soldier preset", () => {
+    expect(VITALS_ARM_AT_SIDE_PRESETS.some((preset) => preset.id === "soldier")).toBe(true);
   });
 
   it("each preset merges to a full bone map", () => {

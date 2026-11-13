@@ -1,388 +1,170 @@
 "use client";
 
-import {
-  isTunableBone,
-  childAttachLocal,
-  POSE_RIG_BONES,
-  RIG_SIDE_COLORS,
-  RIG_SIDE_LABELS,
-  rigLimbSegment,
-  rigSide,
-  rotvecDegComponents,
-  segmentUnit,
-  type RigBoneAxis,
-  type RigSide,
-} from "@/lib/vitals-pose-rig-layout";
-import type { VitalsPoseBoneLabel, VitalsPoseRot } from "@/lib/vitals-pose";
-import { useEffect, useRef } from "react";
-import type { MeshStandardMaterial, Object3D, Quaternion } from "three";
+import { createPoseRig, rigSide, RIG_SIDE_COLORS, type AnnyPoseRig } from "@/lib/vitals-pose-rig-layout";
+import type { VitalsPoseFile } from "@/lib/vitals-pose";
+import type { ViewPreset, ZoomPreset } from "@fitness-battle/pursuit/vitals-body";
+import { useEffect, useRef, useState } from "react";
 
-type PoseState = Record<VitalsPoseBoneLabel, VitalsPoseRot>;
-
-const LEGEND: RigSide[] = ["torso", "left", "right"];
-
-function legendSwatch(color: number) {
-  const r = (color >> 16) & 255;
-  const g = (color >> 8) & 255;
-  const b = color & 255;
-  return `rgb(${r},${g},${b})`;
-}
-
-export function VitalsPoseLiveRig({
-  bones,
-  variant = "panel",
-}: {
-  bones: PoseState;
-  variant?: "panel" | "stage";
+export function VitalsPoseLiveRig({ bones, sex, selectedBone, revision, view, zoom }: {
+  bones: VitalsPoseFile;
+  selectedBone: string;
+  revision: number;
+  view: ViewPreset;
+  zoom: ZoomPreset;
+  sex: "male" | "female";
 }) {
-  const hostRef = useRef<HTMLDivElement | null>(null);
+  const cameraRef = useRef({ view, zoom });
+  cameraRef.current = { view, zoom };
+  const selectedRef = useRef(selectedBone);
+  selectedRef.current = selectedBone;
+  const hostRef = useRef<HTMLDivElement>(null);
   const bonesRef = useRef(bones);
   bonesRef.current = bones;
+  const [status, setStatus] = useState("Loading Anny mesh and skeleton…");
+  const [showMesh, setShowMesh] = useState(true);
+  const showMeshRef = useRef(showMesh);
+  showMeshRef.current = showMesh;
 
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
-
+    const abort = new AbortController();
     let disposed = false;
-    let animation = 0;
-    let cleanupResize: (() => void) | null = null;
-
-    const run = async () => {
-      const THREE = await import("three");
-      if (disposed || !hostRef.current) return;
-
-      const height = variant === "stage" ? host.clientHeight || 480 : 200;
-      const width = host.clientWidth || 240;
-
+    let teardown: (() => void) | undefined;
+    setStatus("Loading Anny mesh and skeleton…");
+    async function start() {
+      const [THREE, { OrbitControls }, response] = await Promise.all([
+        import("three"), import("three/examples/jsm/controls/OrbitControls.js"),
+        fetch(`/api/dev/vitals-pose/rig?sex=${sex}`, { signal: abort.signal }),
+      ]);
+      if (!response.ok) {
+        const body = await response.json();
+        throw new Error(body.error ?? "Could not load Anny rig");
+      }
+      const data = await response.json() as AnnyPoseRig;
+      if (disposed || !host) return;
+      const rig = createPoseRig(data);
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setSize(width, height);
       host.appendChild(renderer.domElement);
-
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(variant === "stage" ? 50 : 44, width / height, 0.04, 40);
-      camera.position.set(0, 0.88, variant === "stage" ? 3.6 : 2.15);
-      camera.lookAt(0, 0.88, 0);
-
-      scene.add(new THREE.AmbientLight(0xffffff, 0.62));
-      const key = new THREE.DirectionalLight(0xffffff, 0.85);
-      key.position.set(2, 3, 2);
+      const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 30);
+      // Native face is -Y; Z-up → Y-up maps it to +Z.
+      camera.position.set(0, 0.9, 3.1);
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 0.9, 0);
+      controls.enableDamping = true;
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x657080, 2));
+      const key = new THREE.DirectionalLight(0xffffff, 2);
+      key.position.set(-2, 3, 3);
       scene.add(key);
 
-      const materials = new Map<RigSide, MeshStandardMaterial>();
-      for (const side of LEGEND) {
-        materials.set(
-          side,
-          new THREE.MeshStandardMaterial({
-            color: RIG_SIDE_COLORS[side],
-            metalness: side === "torso" ? 0.05 : 0.12,
-            roughness: 0.38,
-            emissive: side === "torso" ? 0x000000 : RIG_SIDE_COLORS[side],
-            emissiveIntensity: side === "torso" ? 0 : 0.22,
-          }),
-        );
-      }
-
-      const rig = new THREE.Group();
-      rig.scale.setScalar(variant === "stage" ? 1.05 : 1);
-      rig.position.set(0, 0.02, 0);
-      scene.add(rig);
-
-      const bodyAxes = new THREE.AxesHelper(variant === "stage" ? 0.42 : 0.28);
-      bodyAxes.position.set(0, 0.92, 0);
-      rig.add(bodyAxes);
-
-      const bodyGrid = new THREE.GridHelper(1.35, 12, 0x2fd2be, 0x1a2e2a);
-      bodyGrid.position.y = 0.04;
-      rig.add(bodyGrid);
-
-      const segDir = (axis: RigBoneAxis) => {
-        const [x, y, z] = segmentUnit(axis);
-        return new THREE.Vector3(x, y, z);
-      };
-
-      const rotvecToQuat = (rot: VitalsPoseRot) => {
-        const [x, y, z] = rotvecDegComponents(rot);
-        const angleDeg = Math.hypot(x, y, z);
-        if (angleDeg < 1e-6) return new THREE.Quaternion();
-        const axis = new THREE.Vector3(x, y, z).multiplyScalar(1 / angleDeg);
-        return new THREE.Quaternion().setFromAxisAngle(axis, THREE.MathUtils.degToRad(angleDeg));
-      };
-
-      const nodes = new Map<string, Object3D>();
-      const defById = new Map(POSE_RIG_BONES.map((d) => [d.id, d]));
-      const boneUp = new THREE.Vector3(0, 1, 0);
-      const radiusHand = 0.014;
-
-      for (const def of POSE_RIG_BONES) {
-        const pivot = new THREE.Object3D();
-        pivot.name = def.id;
-
-        const visual = new THREE.Object3D();
-        visual.name = `${def.id}/visual`;
-        const dir = segDir(def.axis);
-        visual.quaternion.setFromUnitVectors(boneUp, dir);
-        pivot.add(visual);
-
-        const parentDef = def.parent ? defById.get(def.parent) : undefined;
-        if (parentDef) {
-          const [tx, ty, tz] = childAttachLocal(parentDef, def.offset);
-          pivot.position.set(tx, ty, tz);
-        }
-
-        if (def.length > 0) {
-          const mat = materials.get(rigSide(def.region))!;
-          const limb = rigLimbSegment(def.id);
-          const radius =
-            limb === "hand"
-              ? radiusHand
-              : limb === "forearm"
-                ? variant === "stage"
-                  ? 0.017
-                  : 0.019
-                : limb === "upperArm"
-                  ? variant === "stage"
-                    ? 0.026
-                    : 0.029
-                  : variant === "stage"
-                    ? 0.02
-                    : 0.024;
-          const cap = new THREE.CapsuleGeometry(radius, Math.max(def.length - 0.05, 0.05), 6, 12);
-          const seg = new THREE.Mesh(cap, mat);
-          seg.position.y = def.length * 0.5;
-          visual.add(seg);
-        }
-
-        if (def.id === "chest") {
-          const torsoMat = materials.get("torso")!;
-          const shoulderBar = new THREE.Mesh(
-            new THREE.CapsuleGeometry(0.016, 0.2, 4, 8),
-            torsoMat,
-          );
-          shoulderBar.rotation.z = Math.PI / 2;
-          shoulderBar.position.set(0, def.length, 0);
-          visual.add(shoulderBar);
-        }
-
-        const isElbow = def.id === "lowerarm01.L" || def.id === "lowerarm01.R";
-        const isHand = def.id === "hand.L" || def.id === "hand.R";
-        const jointMat = materials.get(rigSide(def.region))!;
-        const joint = isElbow
-          ? new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.013, 8, 20), jointMat)
-          : new THREE.Mesh(
-              new THREE.SphereGeometry(isHand ? 0.028 : 0.032, 12, 12),
-              jointMat,
-            );
-        if (isElbow) joint.rotation.x = Math.PI / 2;
-        visual.add(joint);
-
-        if (isHand && def.length > 0) {
-          const mat = materials.get(rigSide(def.region))!;
-          const palm = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.1, 0.032), mat);
-          palm.position.y = def.length * 0.55;
-          visual.add(palm);
-        }
-
-        const parent = def.parent ? nodes.get(def.parent) : null;
-        if (parent) parent.add(pivot);
-        else rig.add(pivot);
-        nodes.set(def.id, pivot);
-      }
-
-      const hips = nodes.get("hips");
-      if (hips) hips.position.set(0, 0.48, 0);
-
-      const applyPose = () => {
-        const identity = new THREE.Quaternion();
-        for (const def of POSE_RIG_BONES) {
-          const pivot = nodes.get(def.id);
-          if (!pivot) continue;
-          pivot.quaternion.copy(
-            isTunableBone(def.id) ? rotvecToQuat(bonesRef.current[def.id]) : identity,
-          );
-        }
-      };
-
-      const orbitTarget = new THREE.Vector3(0, 0.88, 0);
-      let orbitRadius = 3.4;
-      let orbitTheta = 0.2;
-      let orbitPhi = Math.PI * 0.44;
-      let userOrbit = false;
-      let dragging = false;
-      let lastX = 0;
-      let lastY = 0;
-
-      const updateCameraFromOrbit = () => {
-        if (variant !== "stage") return;
-        const sinPhi = Math.sin(orbitPhi);
-        camera.position.set(
-          orbitTarget.x + orbitRadius * sinPhi * Math.sin(orbitTheta),
-          orbitTarget.y + orbitRadius * Math.cos(orbitPhi),
-          orbitTarget.z + orbitRadius * sinPhi * Math.cos(orbitTheta),
-        );
-        camera.lookAt(orbitTarget);
-      };
-
-      const fitStageCamera = () => {
-        if (variant !== "stage") return;
-        const box = new THREE.Box3().setFromObject(rig);
-        if (box.isEmpty()) return;
-        const size = new THREE.Vector3();
-        box.getCenter(orbitTarget);
-        box.getSize(size);
-        const maxDim = Math.max(size.x, size.y, size.z, 0.35);
-        const vFov = (camera.fov * Math.PI) / 180;
-        if (!userOrbit) {
-          orbitRadius = (maxDim * 0.5) / Math.tan(vFov / 2) * 1.05;
-        }
-        updateCameraFromOrbit();
-      };
-
-      const render = () => {
-        if (disposed) return;
-        applyPose();
-        fitStageCamera();
-        if (variant !== "stage") {
-          camera.position.set(0, 0.88, 2.15);
-          camera.lookAt(0, 0.88, 0);
-        }
-        renderer.render(scene, camera);
-        animation = requestAnimationFrame(render);
-      };
-      render();
-
-      const onPointerDown = (e: PointerEvent) => {
-        if (variant !== "stage") return;
-        dragging = true;
-        userOrbit = true;
-        lastX = e.clientX;
-        lastY = e.clientY;
-        renderer.domElement.setPointerCapture(e.pointerId);
-      };
-      const onPointerMove = (e: PointerEvent) => {
-        if (!dragging || variant !== "stage") return;
-        const dx = e.clientX - lastX;
-        const dy = e.clientY - lastY;
-        lastX = e.clientX;
-        lastY = e.clientY;
-        orbitTheta -= dx * 0.008;
-        orbitPhi = Math.max(0.15, Math.min(Math.PI - 0.15, orbitPhi + dy * 0.008));
-        updateCameraFromOrbit();
-      };
-      const onPointerUp = (e: PointerEvent) => {
-        dragging = false;
-        try {
-          renderer.domElement.releasePointerCapture(e.pointerId);
-        } catch {
-          /* already released */
-        }
-      };
-
-      if (variant === "stage") {
-        renderer.domElement.addEventListener("pointerdown", onPointerDown);
-        renderer.domElement.addEventListener("pointermove", onPointerMove);
-        renderer.domElement.addEventListener("pointerup", onPointerUp);
-        renderer.domElement.addEventListener("pointercancel", onPointerUp);
-      }
-
-      const onResize = () => {
-        const w = host.clientWidth || 240;
-        const h = variant === "stage" ? host.clientHeight || 480 : 200;
-        renderer.setSize(w, h);
-        camera.aspect = w / h;
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.BufferAttribute(rig.positions, 3));
+      geometry.setIndex(data.faces.flat());
+      const material = new THREE.MeshStandardMaterial({
+        color: 0x91a8b5, transparent: true, opacity: 0.45, roughness: 0.8,
+        side: THREE.DoubleSide, depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+      const edges = data.parents.flatMap((parent, i) => parent < 0 ? [] : [[parent, i]]);
+      const lines = new Float32Array(edges.length * 6);
+      const colors = edges.flatMap(([, child]) => {
+        const c = new THREE.Color(RIG_SIDE_COLORS[rigSide(data.labels[child])]);
+        return [...c.toArray(), ...c.toArray()];
+      });
+      const stickGeometry = new THREE.BufferGeometry();
+      stickGeometry.setAttribute("position", new THREE.BufferAttribute(lines, 3));
+      stickGeometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+      const stickMaterial = new THREE.LineBasicMaterial({ vertexColors: true, depthTest: false, transparent: true });
+      const stick = new THREE.LineSegments(stickGeometry, stickMaterial);
+      stick.renderOrder = 2;
+      scene.add(stick);
+      const jointsGeometry = new THREE.BufferGeometry();
+      const joints = new Float32Array(data.labels.length * 3);
+      jointsGeometry.setAttribute("position", new THREE.BufferAttribute(joints, 3));
+      jointsGeometry.setAttribute("color", new THREE.Float32BufferAttribute(data.labels.flatMap((label) =>
+        new THREE.Color(RIG_SIDE_COLORS[rigSide(label)]).toArray()), 3));
+      const jointsMaterial = new THREE.PointsMaterial({ size: 0.014, vertexColors: true, depthTest: false, transparent: true });
+      const points = new THREE.Points(jointsGeometry, jointsMaterial);
+      points.renderOrder = 3;
+      scene.add(points);
+      const highlightGeometry = new THREE.SphereGeometry(0.018, 12, 12);
+      const highlightMaterial = new THREE.MeshBasicMaterial({ color: 0xffde59, depthTest: false, transparent: true });
+      const highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
+      highlight.renderOrder = 4;
+      scene.add(highlight);
+      const grid = new THREE.GridHelper(2, 20, 0x54726a, 0x263631);
+      scene.add(grid);
+      const resize = new ResizeObserver(() => {
+        const width = host.clientWidth || 300, height = host.clientHeight || 480;
+        renderer.setSize(width, height);
+        camera.aspect = width / height;
         camera.updateProjectionMatrix();
-      };
-      window.addEventListener("resize", onResize);
-      cleanupResize = () => window.removeEventListener("resize", onResize);
-
-      return () => {
-        if (variant === "stage") {
-          renderer.domElement.removeEventListener("pointerdown", onPointerDown);
-          renderer.domElement.removeEventListener("pointermove", onPointerMove);
-          renderer.domElement.removeEventListener("pointerup", onPointerUp);
-          renderer.domElement.removeEventListener("pointercancel", onPointerUp);
+      });
+      resize.observe(host);
+      let previous: VitalsPoseFile | undefined;
+      let frame = 0;
+      let previousView: string | undefined;
+      let previousZoom: string | undefined;
+      const render = () => {
+        if (previous !== bonesRef.current) {
+          rig.update(bonesRef.current);
+          edges.forEach(([parent, child], i) => {
+            rig.heads[parent].toArray(lines, i * 6);
+            rig.heads[child].toArray(lines, i * 6 + 3);
+          });
+          rig.heads.forEach((head, i) => head.toArray(joints, i * 3));
+          geometry.attributes.position.needsUpdate = true;
+          geometry.computeVertexNormals();
+          geometry.computeBoundingSphere();
+          stickGeometry.attributes.position.needsUpdate = true;
+          stickGeometry.computeBoundingSphere();
+          jointsGeometry.attributes.position.needsUpdate = true;
+          jointsGeometry.computeBoundingSphere();
+          previous = bonesRef.current;
         }
-        cancelAnimationFrame(animation);
-        renderer.dispose();
-        materials.forEach((m) => m.dispose());
-        if (renderer.domElement.parentElement === host) {
-          host.removeChild(renderer.domElement);
+        const selected = data.labels.indexOf(selectedRef.current);
+        highlight.visible = selected >= 0;
+        if (selected >= 0) highlight.position.copy(rig.heads[selected]);
+        mesh.visible = showMeshRef.current;
+        const { view, zoom } = cameraRef.current;
+        if (view !== previousView || zoom !== previousZoom) {
+          const y = zoom === "upper" ? 1.25 : zoom === "lower" ? 0.55 : 0.9;
+          const distance = zoom === "full" ? 3.1 : 2.1;
+          camera.position.set(view === "side" ? distance : view === "free" ? 0.4 : 0, y, view === "side" ? 0 : view === "back" ? -distance : distance);
+          controls.target.set(0, y, 0);
+          controls.autoRotate = view === "free";
+          previousView = view; previousZoom = zoom;
         }
+        controls.update();
+        renderer.render(scene, camera);
+        frame = requestAnimationFrame(render);
       };
-    };
-
-    let teardownScene: (() => void) | null = null;
-    void run().then((teardown) => {
-      teardownScene = teardown ?? null;
+      teardown = () => {
+        cancelAnimationFrame(frame);
+        resize.disconnect();
+        controls.dispose();
+        scene.traverse((object) => {
+          if (object instanceof THREE.Mesh || object instanceof THREE.LineSegments || object instanceof THREE.Points) object.geometry.dispose();
+        });
+        material.dispose(); stickMaterial.dispose(); jointsMaterial.dispose(); highlightMaterial.dispose();
+        (grid.material as import("three").Material).dispose();
+        renderer.dispose(); renderer.domElement.remove();
+      };
+      setStatus("");
+      render();
+    }
+    void start().catch((error) => {
+      if (!disposed) setStatus(`${error.message}. Run pnpm bodies:venv from the repository root.`);
     });
+    return () => { disposed = true; abort.abort(); teardown?.(); };
+  }, [sex, revision]);
 
-    return () => {
-      disposed = true;
-      cancelAnimationFrame(animation);
-      cleanupResize?.();
-      teardownScene?.();
-    };
-  }, [variant]);
-
-  const boxStyle =
-    variant === "stage"
-      ? { width: "100%", height: "100%", minHeight: 280 }
-      : {
-          width: "100%",
-          height: 280,
-          borderRadius: 8,
-          border: "1px solid rgba(47,210,190,0.35)",
-          background: "rgba(0,0,0,0.15)",
-        };
-
-  return (
-    <div className={`vitals-pose-live-rig vitals-pose-live-rig--${variant}`}>
-      {variant === "panel" ? (
-        <>
-          <p style={{ fontSize: 10, letterSpacing: "0.08em", margin: "0 0 6px", opacity: 0.75 }}>
-            LIVE STICK RIG — same rotvec as mesh (rotation on joints; capsule bind on child).
-          </p>
-          <p style={{ fontSize: 9, margin: "0 0 6px", opacity: 0.72, lineHeight: 1.35 }}>
-            Axes: red +X, green +Y, blue +Z. Mesh <strong>faces −Z</strong> (opposite the blue arrow). Thick =
-            upper arm · thin = forearm · ring = elbow · box = palm
-          </p>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "6px 10px",
-              fontSize: 9,
-              marginBottom: 6,
-              opacity: 0.85,
-            }}
-          >
-            {LEGEND.map((side) => (
-              <span key={side} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                <span
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: 2,
-                    background: legendSwatch(RIG_SIDE_COLORS[side]),
-                    boxShadow: side !== "torso" ? `0 0 6px ${legendSwatch(RIG_SIDE_COLORS[side])}` : undefined,
-                  }}
-                />
-                {RIG_SIDE_LABELS[side]}
-              </span>
-            ))}
-          </div>
-        </>
-      ) : (
-        <div className="vitals-pose-live-legend vitals-pose-live-legend--stage" aria-hidden>
-          {LEGEND.map((side) => (
-            <span key={side}>
-              <i style={{ background: legendSwatch(RIG_SIDE_COLORS[side]) }} />
-              {RIG_SIDE_LABELS[side]}
-            </span>
-          ))}
-        </div>
-      )}
-      <div ref={hostRef} style={boxStyle} />
-    </div>
-  );
+  return <div className="vitals-pose-live-rig">
+    <label style={{ fontSize: 12 }}><input type="checkbox" checked={showMesh} onChange={(event) => setShowMesh(event.target.checked)} /> Show live mesh · pink left · blue right</label>
+    {status && <p role="status">{status}</p>}
+    <div ref={hostRef} style={{ width: "100%", height: "100%", minHeight: 280, touchAction: "none" }} />
+  </div>;
 }

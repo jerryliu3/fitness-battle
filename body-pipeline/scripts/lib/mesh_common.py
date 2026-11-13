@@ -46,7 +46,7 @@ def bone_label_to_region(label: str) -> int:
 
 
 def _default_standing_pose() -> dict[str, tuple[float, float, float]]:
-    """Repo defaults (degrees, bone-local). Keep in sync with `DEFAULT_VITALS_POSE` (web)."""
+    """Repo defaults (degrees, Anny local-ref). Keep in sync with `DEFAULT_VITALS_POSE` (web)."""
     return {
         "clavicle.L": (0.0, 0.0, 5.0),
         "clavicle.R": (0.0, 0.0, -5.0),

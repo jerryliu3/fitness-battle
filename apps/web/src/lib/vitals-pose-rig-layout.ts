@@ -1,116 +1,81 @@
-import type { VitalsPoseBoneLabel, VitalsPoseRot } from "@/lib/vitals-pose";
+import { Matrix4, Quaternion, Vector3 } from "three";
+import type { VitalsPoseFile, VitalsPoseRot } from "@/lib/vitals-pose";
 
-export type RigRegion = "torso" | "armL" | "armR" | "legL" | "legR";
-
-export type RigBoneAxis = "up" | "down" | "outL" | "outR" | "fwd";
-
-export type RigBoneId = VitalsPoseBoneLabel | "hips" | "spine" | "chest" | "hand.L" | "hand.R";
-
-export type RigBoneDef = {
-  id: RigBoneId;
-  parent: RigBoneId | null;
-  length: number;
-  /** Parent-local offset from parent distal joint (along parent segment axis × length). */
-  offset: [number, number, number];
-  axis: RigBoneAxis;
-  region: RigRegion;
+/** Unmodified native Anny coordinates. JSON matrices are row-major. */
+export type AnnyPoseRig = {
+  poseParameterization: "local-ref";
+  sex: "male" | "female";
+  labels: string[];
+  parents: number[];
+  rest: number[][][];
+  localReference: number[][][];
+  referenceOrientations: number[][][];
+  vertices: number[][];
+  faces: number[][];
+  skinIndices: number[][];
+  skinWeights: number[][];
+  display: { scale: number; offset: number[] };
 };
 
-export type RigSide = "torso" | "left" | "right";
-
-/** High-contrast L/R (same hue on arm + leg each side). */
-export const RIG_SIDE_COLORS: Record<RigSide, number> = {
-  torso: 0xc4cdd6,
-  left: 0xff2d9a,
-  right: 0x19c3ff,
-};
-
-export const RIG_SIDE_LABELS: Record<RigSide, string> = {
-  torso: "Torso",
-  left: "LEFT (.L bones)",
-  right: "RIGHT (.R bones)",
-};
-
-export function rigSide(region: RigRegion): RigSide {
-  if (region === "torso") return "torso";
-  return region.endsWith("L") ? "left" : "right";
+export const RIG_SIDE_COLORS = { torso: 0xc4cdd6, left: 0xff2d9a, right: 0x19c3ff };
+export const RIG_SIDE_LABELS = { torso: "Torso", left: "Left (.L)", right: "Right (.R)" };
+export type RigSide = keyof typeof RIG_SIDE_COLORS;
+export function rigSide(label: string): RigSide {
+  return label.endsWith(".L") ? "left" : label.endsWith(".R") ? "right" : "torso";
 }
 
-const AXIS_UNIT: Record<RigBoneAxis, [number, number, number]> = {
-  up: [0, 1, 0],
-  down: [0, -1, 0],
-  outL: [1, 0, 0],
-  outR: [-1, 0, 0],
-  fwd: [0, 0, -1],
-};
-
-export function segmentUnit(axis: RigBoneAxis): [number, number, number] {
-  return AXIS_UNIT[axis];
+function matrix(rows: number[][]): Matrix4 {
+  return new Matrix4().set(...rows.flat() as Parameters<Matrix4["set"]>);
 }
 
-/** Parent-local position for a child joint at the parent segment tip. */
-export function childAttachLocal(
-  parent: RigBoneDef,
-  childOffset: [number, number, number] = [0, 0, 0],
-): [number, number, number] {
-  const [ux, uy, uz] = segmentUnit(parent.axis);
-  const [ox, oy, oz] = childOffset;
-  return [ox + ux * parent.length, oy + uy * parent.length, oz + uz * parent.length];
+export function rotvecQuaternion(rot?: VitalsPoseRot): Quaternion {
+  const axis = new Vector3(rot?.x ?? 0, rot?.y ?? 0, rot?.z ?? 0);
+  const degrees = axis.length();
+  return degrees === 0 ? new Quaternion() : new Quaternion().setFromAxisAngle(
+    axis.divideScalar(degrees), degrees * Math.PI / 180,
+  );
 }
 
-export type RigLimbSegment = "upperArm" | "forearm" | "hand" | "leg" | "torso" | "other";
-
-export function rigLimbSegment(id: RigBoneId): RigLimbSegment {
-  if (id === "upperarm01.L" || id === "upperarm01.R" || id === "upperarm02.L" || id === "upperarm02.R") {
-    return "upperArm";
-  }
-  if (id === "lowerarm01.L" || id === "lowerarm01.R") return "forearm";
-  if (id === "hand.L" || id === "hand.R") return "hand";
-  if (id.startsWith("upperleg")) return "leg";
-  if (id === "hips" || id === "spine" || id === "chest") return "torso";
-  return "other";
-}
-
-/**
- * Anny pose sliders are bone-local rotation vectors (deg): direction × angle, not Euler X/Y/Z.
- * Must match `roma.rotvec_to_rotmat(torch.deg2rad(...))` in the Python pipeline.
+/** Anny local-ref FK: Wc = Wp Kref (Uc^-1 D Uc). Skin = Wc Prest^-1.
+ * Use every original influence, including twist bones, fingers and all ancestors.
  */
-export function rotvecDegComponents(rot: VitalsPoseRot | undefined): [number, number, number] {
-  const r = rot ?? { x: 0, y: 0, z: 0 };
-  return [r.x, r.y, r.z];
-}
+export function createPoseRig(data: AnnyPoseRig) {
+  const restInverse = data.rest.map((rows) => matrix(rows).invert());
+  const reference = data.localReference.map(matrix);
+  const orientation = data.referenceOrientations.map((r) => matrix([
+    [...r[0], 0], [...r[1], 0], [...r[2], 0], [0, 0, 0, 1],
+  ]));
+  const inverseOrientation = orientation.map((m) => m.clone().invert());
+  const world = data.labels.map(() => new Matrix4());
+  const skin = data.labels.map(() => new Matrix4());
+  const positions = new Float32Array(data.vertices.length * 3);
+  const heads = data.labels.map(() => new Vector3());
+  const rotation = new Matrix4();
+  const point = new Vector3();
+  const offset = new Vector3(...data.display.offset as [number, number, number]);
+  const display = (v: Vector3) => v.set(v.x, v.z, -v.y).add(offset).multiplyScalar(data.display.scale);
 
-/** @deprecated Stick rig uses rotvec; kept for any legacy callers. */
-export function eulerRad(rot: VitalsPoseRot | undefined) {
-  const [x, y, z] = rotvecDegComponents(rot);
-  return [(x * Math.PI) / 180, (y * Math.PI) / 180, (z * Math.PI) / 180] as const;
-}
-
-export function isTunableBone(id: RigBoneId): id is VitalsPoseBoneLabel {
-  return id !== "hips" && id !== "spine" && id !== "chest" && id !== "hand.L" && id !== "hand.R";
-}
-
-/** Y-up stick figure; face −Z. Rest pose ≈ wide shoulders, arms hang, then Anny rotvec poses. */
-export const POSE_RIG_BONES: RigBoneDef[] = [
-  { id: "hips", parent: null, length: 0, offset: [0, 0, 0], axis: "up", region: "torso" },
-  { id: "spine", parent: "hips", length: 0.5, offset: [0, 0, 0], axis: "up", region: "torso" },
-  { id: "chest", parent: "spine", length: 0.34, offset: [0, 0, 0], axis: "up", region: "torso" },
-  { id: "clavicle.L", parent: "chest", length: 0.12, offset: [0.11, 0, 0], axis: "outL", region: "armL" },
-  { id: "shoulder01.L", parent: "clavicle.L", length: 0.05, offset: [0, 0, 0], axis: "outL", region: "armL" },
-  { id: "upperarm01.L", parent: "shoulder01.L", length: 0.3, offset: [0, 0, 0], axis: "down", region: "armL" },
-  { id: "upperarm02.L", parent: "upperarm01.L", length: 0.26, offset: [0, 0, 0], axis: "up", region: "armL" },
-  { id: "lowerarm01.L", parent: "upperarm02.L", length: 0.24, offset: [0, 0, 0], axis: "up", region: "armL" },
-  { id: "hand.L", parent: "lowerarm01.L", length: 0.1, offset: [0, 0, 0], axis: "up", region: "armL" },
-  { id: "clavicle.R", parent: "chest", length: 0.12, offset: [-0.11, 0, 0], axis: "outR", region: "armR" },
-  { id: "shoulder01.R", parent: "clavicle.R", length: 0.05, offset: [0, 0, 0], axis: "outR", region: "armR" },
-  { id: "upperarm01.R", parent: "shoulder01.R", length: 0.3, offset: [0, 0, 0], axis: "down", region: "armR" },
-  { id: "upperarm02.R", parent: "upperarm01.R", length: 0.26, offset: [0, 0, 0], axis: "up", region: "armR" },
-  { id: "lowerarm01.R", parent: "upperarm02.R", length: 0.24, offset: [0, 0, 0], axis: "up", region: "armR" },
-  { id: "hand.R", parent: "lowerarm01.R", length: 0.1, offset: [0, 0, 0], axis: "up", region: "armR" },
-  { id: "upperleg01.L", parent: "hips", length: 0.48, offset: [0.1, 0, 0], axis: "down", region: "legL" },
-  { id: "upperleg01.R", parent: "hips", length: 0.48, offset: [-0.1, 0, 0], axis: "down", region: "legR" },
-];
-
-export function parentBone(id: RigBoneId) {
-  return POSE_RIG_BONES.find((b) => b.id === id)?.parent ?? null;
+  function update(pose: VitalsPoseFile) {
+    // Anny exports parents before children; exporter and parity tests enforce this.
+    data.labels.forEach((label, i) => {
+      rotation.makeRotationFromQuaternion(rotvecQuaternion(pose[label as keyof VitalsPoseFile]));
+      world[i].copy(reference[i]).multiply(inverseOrientation[i]).multiply(rotation).multiply(orientation[i]);
+      const parent = data.parents[i];
+      if (parent >= 0) world[i].premultiply(world[parent]);
+      skin[i].multiplyMatrices(world[i], restInverse[i]);
+      display(heads[i].setFromMatrixPosition(world[i]));
+    });
+    data.vertices.forEach((vertex, i) => {
+      let x = 0, y = 0, z = 0;
+      data.skinWeights[i].forEach((weight, j) => {
+        if (!weight) return;
+        point.fromArray(vertex).applyMatrix4(skin[data.skinIndices[i][j]]);
+        x += weight * point.x;
+        y += weight * point.y;
+        z += weight * point.z;
+      });
+      display(point.set(x, y, z)).toArray(positions, i * 3);
+    });
+  }
+  return { update, positions, heads, world, skin };
 }

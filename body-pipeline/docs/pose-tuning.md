@@ -1,34 +1,39 @@
 # Standing pose tuning (Anny)
 
-## Why a bad pose shipped once
+Use `/ux/vitals-body` on localhost with Parametric selected. Run `pnpm bodies:venv`
+once to install Python dependencies. The stage loads the real Anny mesh, skeleton,
+reference frames and skin weights; both react to sliders immediately. The first
+load or a saved phenotype change exports a fresh model through the development API.
 
-`standing_pose_rotvec_deg()` stores **degrees in each bone’s local frame**, not world-space Euler angles. A large rotation on `upperarm01` **Y** does not mean “drop the arm”; on Anny it can fold the limb behind the head while automated width/height metrics still looked acceptable.
+Choose **Soldier · arms at sides** for straight arms close to the torso with palms
+inward. Existing pipeline defaults and zero reference rotations remain available.
+Pink is anatomical left and blue is right. Focus a slider to mark its pivot yellow.
+Upperarm01/02 and lowerarm01/02 subdivide their respective limbs; they are not
+separate full-length arms. The mesh can be hidden to inspect the skeleton.
 
-Before changing pose values or regenerating public `.vbody` assets:
+Values are axis-angle rotation-vector components in degrees using Anny's
+**local-ref** parameterization. Native coordinates are Z-up; X crosses the body
+and Y is front/back. Ancestors carry the reference axes. A vector's length is its
+rotation angle and direction its axis; these are not independent Euler angles.
+Mirror symmetry across X negates the Y/Z rotation-vector components, retaining X.
+Do not assume a slider axis means the same anatomical movement for every joint.
 
-1. Run `python3 body-pipeline/scripts/preview_standing_pose.py` and inspect the PNGs.
-2. Change **one bone, one axis, a few degrees** at a time; re-run the preview.
-3. Only then run the full `generate_humans.py` → `sync_runtime_assets.sh` chain.
+**Save pose.json** writes `body-pipeline/local/pose.json` (gitignored). For an
+independent Python front/side preview with the saved pose and phenotype, run:
 
-## Localhost sliders (`/ux/vitals-body`)
+```sh
+body-pipeline/.venv/bin/python3 body-pipeline/scripts/preview_standing_pose.py
+```
 
-With `pnpm dev` on localhost and mesh source **Anny**, use **LOCAL ANNY POSE** in the side panel:
+Inspect both male/female PNGs under `body-pipeline/generated/`, then bake:
 
-1. Adjust per-bone X/Y/Z sliders → **Save pose.json**
-2. `python3 body-pipeline/scripts/preview_standing_pose.py`
-3. `pnpm bodies:generate && pnpm bodies:sync` → hard-refresh the page
+```sh
+source body-pipeline/.venv/bin/activate
+pnpm bodies:generate && pnpm bodies:sync
+```
 
-Overrides live in `body-pipeline/local/pose.json` (gitignored). See `local/pose.json.example`.
-
-## Safe iteration pattern
-
-- Start from the checked-in defaults in `mesh_common.py` (or reset in the dev panel).
-- Prefer small adjustments on `upperarm01` **Z** (hang) and **X** (lateral plane).
-- **Anny `upperarm01`:** use the **same X on `.L` and `.R`**; flip **Z** sign only (e.g. L `(-18,0,-76)` / R `(-18,0,76)`). Mirroring X to `(+18,0,76)` on `.R` drops one arm lower than the other.
-- Other bones may still use `(-x, y, -z)` — verify in preview each time.
-- Fingers and `lowerarm02` inherit the chain; usually leave them at rest unless fixing wrist bend.
-
-## What we cannot do blindly
-
-- Grid-search rotvecs using torso-width heuristics without orthographic previews.
-- Assume symmetry fixes without checking **both** male and female phenotypes in the preview script.
+Hard-refresh to see updated point clouds. Live mesh tuning does not change baked
+assets or pipeline defaults until explicitly saved and regenerated. The Soldier
+preset is checked for the standard male/female phenotypes, not a collision solver
+for every custom body shape. See `docs/reviews/anny-pose-rig.md` for the mapping
+review and independent Python/browser parity tests.

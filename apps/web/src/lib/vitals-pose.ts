@@ -1,4 +1,4 @@
-/** Anny standing-pose bone overrides (degrees, bone-local). Anny mesh source only. */
+/** Anny standing-pose bone overrides (degrees, Anny local-ref). Anny mesh source only. */
 
 export type VitalsPoseRot = { x: number; y: number; z: number };
 

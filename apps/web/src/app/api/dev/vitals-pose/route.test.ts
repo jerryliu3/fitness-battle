@@ -1,12 +1,14 @@
-import { rm } from "node:fs/promises";
-import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { GET, POST } from "./route";
 
-const POSE_FILE = path.resolve(process.cwd(), "../../body-pipeline/local/pose.json");
-
-beforeEach(async () => {
-  await rm(POSE_FILE, { force: true });
+vi.mock("@/lib/vitals-pose-dev-server", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/lib/vitals-pose-dev-server")>();
+  const { mergePoseFile } = await import("@/lib/vitals-pose");
+  return {
+    ...original,
+    readMergedPoseFile: vi.fn(async () => mergePoseFile(undefined)),
+    writeMergedPoseFile: vi.fn(async (bones) => mergePoseFile(bones)),
+  };
 });
 
 afterEach(() => {

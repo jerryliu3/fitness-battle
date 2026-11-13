@@ -157,7 +157,7 @@ def main() -> None:
     args = parser.parse_args()
 
     print("Loading Anny full-body model (MakeHuman CC0 assets)…")
-    model = Anny(local_changes="default")
+    model = Anny(local_changes="default", rig="anny", pose_parameterization="local-ref", skinning_method="lbs")
     model = model.to(dtype=torch.float32)
 
     for sex in ("male", "female"):
