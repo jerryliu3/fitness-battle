@@ -45,6 +45,7 @@ export function FocusSheet({
   onClosed,
   children,
   fullScreen = false,
+  fastOpen = false,
 }: {
   open: boolean;
   title: string;
@@ -56,6 +57,8 @@ export function FocusSheet({
   /** Legacy callers may still pass this; all sheets now omit the close-button row. */
   minimal?: boolean;
   fullScreen?: boolean;
+  /** Shorter open animation for lightweight content (e.g. activity detail). */
+  fastOpen?: boolean;
 }) {
 const f=useThemedStyles(fThemes);
 
@@ -89,9 +92,10 @@ const f=useThemedStyles(fThemes);
       return;
     }
     if (!present) return;
+    const openDuration = fastOpen ? 190 : 300;
     const animation = Animated.timing(progress, {
       toValue: open ? 1 : 0,
-      duration: reduce ? 0 : open ? 300 : 220,
+      duration: reduce ? 0 : open ? openDuration : 220,
       easing: open ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
       useNativeDriver: true,
     });
@@ -102,7 +106,7 @@ const f=useThemedStyles(fThemes);
       }
     });
     return () => animation.stop();
-  }, [open, present, progress, reduce]);
+  }, [fastOpen, open, present, progress, reduce]);
 
   return (
     <Modal

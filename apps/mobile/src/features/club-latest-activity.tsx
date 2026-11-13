@@ -6,6 +6,7 @@ import { Pressable, View } from "react-native";
 import { APP_TIMEZONE, activityRoute, clubDuration, formatVolume, homeRecentActivities, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
+import { prefetchActivityReplay } from "../lib/prefetch-activity-replay";
 import { useCrewActivities } from "./use-crew-activities";
 import { FocusSheet } from "../ui/focus";
 import { SportActivityIcon } from "../ui/sport-activity-icon";
@@ -13,7 +14,7 @@ import { SportActivityIcon } from "../ui/sport-activity-icon";
 export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen: (activity: Activity) => void }) {
 const f=useFocusStyles();
 
-  const { user } = useAuth();
+  const { user, accessToken } = useAuth();
   const crew = useCrewActivities();
   const { blocks } = useAthleteBlocks();
   const rows = homeRecentActivities(state, user?.id, crew.activities).filter(row => !blocks.some(block => block.id === row.userId));
@@ -22,7 +23,9 @@ const f=useFocusStyles();
   return <>
     <Section title="Latest activity">
       {rows.length > 0 ? (
-        rows.map(row => { const route = activityRoute(row.ownActivity); return <Pressable key={`${row.userId}:${row.id}`} accessibilityRole="button" onPress={() => row.ownActivity ? onOpen(row.ownActivity) : setSelected({ account: user?.id, id: row.id })}
+        rows.map(row => { const route = activityRoute(row.ownActivity); return <Pressable key={`${row.userId}:${row.id}`} accessibilityRole="button"
+          onPressIn={() => row.ownActivity && prefetchActivityReplay(row.ownActivity, accessToken)}
+          onPress={() => row.ownActivity ? onOpen(row.ownActivity) : setSelected({ account: user?.id, id: row.id })}
           style={[f.row, { minHeight: 76, paddingVertical: 12, borderBottomWidth: 0 }]}>
           {route ? <RouteStaticPreview coordinates={route} width={128} height={128} padding={16} strokeWidth={3} showMarkers={false} showPlayBadge={false} style={{ width: 64, height: 64, borderRadius: 12 }} /> : <SportActivityIcon sport={row.sport} />}
           <View style={[f.grow, { gap: 4 }]}><AppText role="row" >{row.ownActivity ? sportById(row.sport).name : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</AppText>
