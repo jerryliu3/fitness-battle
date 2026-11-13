@@ -18,8 +18,10 @@ import {
 } from "@fitness-battle/pursuit/vitals-body";
 import { useState } from "react";
 import "./vitals-body.css";
+import type { VitalsPoseBoneLabel, VitalsPoseRot } from "@/lib/vitals-pose";
 import { VitalsPhenotypeDev } from "./vitals-phenotype-dev";
 import { VitalsPoseDev } from "./vitals-pose-dev";
+import { VitalsPoseLiveRig } from "./vitals-pose-live-rig";
 
 export function VitalsBodyDemo() {
   const [meshSource, setMeshSource] = useState<BodyMeshSource>("anny");
@@ -33,6 +35,10 @@ export function VitalsBodyDemo() {
   const [quality, setQuality] = useState<QualityPreset>("medium");
   const [tuning, setTuning] = useState<VitalsBodyTuning>(DEFAULT_TUNING);
   const [poseMeshPreview, setPoseMeshPreview] = useState<string | null>(null);
+  const [livePoseBones, setLivePoseBones] = useState<Record<
+    VitalsPoseBoneLabel,
+    VitalsPoseRot
+  > | null>(null);
 
   return (
     <main
@@ -50,10 +56,15 @@ export function VitalsBodyDemo() {
       </header>
       <div className="vitals-body-layout">
         <div className="vitals-body-stage">
-          {poseMeshPreview ? (
+          {meshSource === "anny" && livePoseBones ? (
+            <div className="vitals-body-pose-live-overlay" aria-hidden>
+              <VitalsPoseLiveRig bones={livePoseBones} variant="stage" />
+              <span>Live stick rig — point cloud unchanged until bake</span>
+            </div>
+          ) : poseMeshPreview ? (
             <div className="vitals-body-pose-preview-overlay" aria-hidden>
               <img src={poseMeshPreview} alt="" />
-              <span>Pose mesh preview — point cloud unchanged until bake</span>
+              <span>Accurate mesh PNG — point cloud unchanged until bake</span>
             </div>
           ) : null}
           <VitalsBodyRenderer
@@ -99,6 +110,7 @@ export function VitalsBodyDemo() {
             meshSource={meshSource}
             sex={sex}
             onMeshPreview={setPoseMeshPreview}
+            onPoseBones={setLivePoseBones}
           />
         </aside>
       </div>

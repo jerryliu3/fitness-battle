@@ -9,6 +9,7 @@ import {
 } from "@/lib/vitals-pose";
 import type { BodyMeshSource, BodySex } from "@fitness-battle/pursuit/vitals-body";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { VitalsPoseLiveRig } from "./vitals-pose-live-rig";
 
 type PoseState = Record<VitalsPoseBoneLabel, VitalsPoseRot>;
 
@@ -19,17 +20,19 @@ export function VitalsPoseDev({
   meshSource,
   sex,
   onMeshPreview,
+  onPoseBones,
 }: {
   meshSource: BodyMeshSource;
   sex: BodySex;
   onMeshPreview?: (url: string | null) => void;
+  onPoseBones?: (bones: PoseState) => void;
 }) {
   const [visible, setVisible] = useState(false);
   const [bones, setBones] = useState<PoseState | null>(null);
   const [openBone, setOpenBone] = useState<VitalsPoseBoneLabel | null>("upperarm01.L");
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [autoPreview, setAutoPreview] = useState(true);
+  const [autoPreview, setAutoPreview] = useState(false);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [previewMale, setPreviewMale] = useState<string | null>(null);
   const [previewFemale, setPreviewFemale] = useState<string | null>(null);
@@ -79,7 +82,11 @@ export function VitalsPoseDev({
         previewBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
     } catch {
-      if (seq === previewSeq.current) setStatus("Mesh preview request failed");
+      if (seq === previewSeq.current) {
+        setStatus(
+          "Accurate PNG preview failed (dev server or Python). Use the live stick rig above while sliding.",
+        );
+      }
     } finally {
       if (seq === previewSeq.current) setPreviewBusy(false);
     }
@@ -119,6 +126,10 @@ export function VitalsPoseDev({
     const url = sex === "female" ? previewFemale : previewMale;
     if (url) onMeshPreview?.(url);
   }, [sex, previewMale, previewFemale, onMeshPreview]);
+
+  useEffect(() => {
+    if (bones) onPoseBones?.(bones);
+  }, [bones, onPoseBones]);
 
   if (!visible || meshSource !== "anny" || !bones) return null;
 
@@ -180,10 +191,10 @@ export function VitalsPoseDev({
       <p style={{ fontSize: 11, letterSpacing: "0.12em", opacity: 0.65, margin: 0 }}>
         LOCAL ANNY POSE (bone rotvec °)
       </p>
-      <p style={{ fontSize: 11, opacity: 0.55, margin: "6px 0 8px", lineHeight: 1.4 }}>
-        The <strong>left point-cloud scan does not move</strong> until you bake assets.{" "}
-        <strong>Refresh mesh preview</strong> updates the silhouettes in this panel and the overlay on
-        the scan (~5–30s; needs local Python + <code style={{ fontSize: 10 }}>anny</code>).
+      <VitalsPoseLiveRig bones={bones} />
+      <p style={{ fontSize: 11, opacity: 0.55, margin: "10px 0 8px", lineHeight: 1.4 }}>
+        The <strong>point-cloud scan</strong> only updates after bake. The <strong>stick rig</strong> and
+        scan overlay react instantly. Optional <strong>PNG preview</strong> uses Python (~5–30s).
       </p>
       <div
         ref={previewBoxRef}
@@ -234,7 +245,7 @@ export function VitalsPoseDev({
             if (e.target.checked && bonesRef.current) schedulePreview(bonesRef.current);
           }}
         />
-        Auto mesh preview on slider change
+        Auto accurate PNG preview (slow; needs Python)
         {previewBusy ? <span style={{ opacity: 0.65 }}>— generating…</span> : null}
       </label>
       <p style={{ fontSize: 11, opacity: 0.5, margin: "0 0 12px", lineHeight: 1.4 }}>

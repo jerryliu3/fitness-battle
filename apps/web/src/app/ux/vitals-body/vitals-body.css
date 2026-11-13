@@ -53,6 +53,36 @@
   }
 }
 
+.vitals-body-pose-live-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px 12px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #0a1216 25%, transparent) 0%,
+    color-mix(in srgb, #0a1216 78%, transparent) 100%
+  );
+}
+
+.vitals-body-pose-live-overlay .vitals-pose-live-rig {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.vitals-body-pose-live-overlay span {
+  margin-top: 6px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-align: center;
+  opacity: 0.85;
+}
+
 .vitals-body-pose-preview-overlay {
   position: absolute;
   inset: 0;
