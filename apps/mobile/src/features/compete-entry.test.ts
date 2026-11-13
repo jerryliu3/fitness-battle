@@ -64,6 +64,8 @@ it("opens queued walking on its course with cancellation in the standings sheet"
   const cancel = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "Cancel registration");
   expect(cancel).toBeTruthy();
   await act(async () => cancel!.props.onPress());
+  const confirm = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "Yes, cancel registration");
+  await act(async () => confirm!.props.onPress());
   expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-out", sport: "walking" });
   expect(mock.close).not.toHaveBeenCalled();
 });
@@ -92,6 +94,8 @@ it("opens queued Recovery as a destination and cancels its health registration",
   expect(renderer.root.findAllByType("CompeteSheet" as never)).toHaveLength(0);
   const cancel = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "Cancel registration");
   await act(async () => cancel!.props.onPress());
+  const confirm = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "Yes, cancel registration");
+  await act(async () => confirm!.props.onPress());
   expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-out-health", metric: "sleep" });
   expect(mock.close).not.toHaveBeenCalled();
 });
