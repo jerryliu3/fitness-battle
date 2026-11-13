@@ -248,22 +248,8 @@ const styles=useThemedStyles(stylesThemes);
                 style={[styles.row, index === 0 && styles.rowFirst]}
               >
                 <View style={styles.grow}>
-                  <Text
-                    style={[
-                      styles.rowTitle,
-                      !prefs.enabled && styles.rowTitleMuted,
-                    ]}
-                  >
-                    {category.label}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.rowDetail,
-                      !prefs.enabled && styles.rowDetailMuted,
-                    ]}
-                  >
-                    {category.description}
-                  </Text>
+                  <Text style={styles.rowTitle}>{category.label}</Text>
+                  <Text style={styles.rowDetail}>{category.description}</Text>
                 </View>
                 <Switch
                   accessibilityLabel={category.label}
@@ -285,14 +271,7 @@ const styles=useThemedStyles(stylesThemes);
             disabled={!prefs.enabled || busy}
             onPress={() => void sendTest()}
           >
-            <Text
-              style={[
-                styles.lineText,
-                !prefs.enabled && styles.rowTitleMuted,
-              ]}
-            >
-              Send test notification
-            </Text>
+            <Text style={styles.lineText}>Send test notification</Text>
           </Pressable>
         </View>
         {note ? <Text style={styles.copy}>{note}</Text> : null}
@@ -356,6 +335,4 @@ const stylesThemes = createThemedStyles(themeColors=>{const colors=legacyColors(
   disabled: { opacity: 0.45 },
   categoryGroup: { gap: 12 },
   categoryGroupOff: { opacity: 0.42 },
-  rowTitleMuted: { color: colors.muted },
-  rowDetailMuted: { color: colors.muted },
 };});
