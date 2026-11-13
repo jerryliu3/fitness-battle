@@ -77,7 +77,7 @@ export function VitalsPoseLiveRig({
       }
 
       const rig = new THREE.Group();
-      rig.scale.setScalar(variant === "stage" ? 0.62 : 1);
+      rig.scale.setScalar(variant === "stage" ? 1.05 : 1);
       rig.position.set(0, 0.02, 0);
       scene.add(rig);
 
@@ -133,29 +133,87 @@ export function VitalsPoseLiveRig({
         }
       };
 
+      const orbitTarget = new THREE.Vector3(0, 0.88, 0);
+      let orbitRadius = 3.4;
+      let orbitTheta = 0.2;
+      let orbitPhi = Math.PI * 0.44;
+      let userOrbit = false;
+      let dragging = false;
+      let lastX = 0;
+      let lastY = 0;
+
+      const updateCameraFromOrbit = () => {
+        if (variant !== "stage") return;
+        const sinPhi = Math.sin(orbitPhi);
+        camera.position.set(
+          orbitTarget.x + orbitRadius * sinPhi * Math.sin(orbitTheta),
+          orbitTarget.y + orbitRadius * Math.cos(orbitPhi),
+          orbitTarget.z + orbitRadius * sinPhi * Math.cos(orbitTheta),
+        );
+        camera.lookAt(orbitTarget);
+      };
+
       const fitStageCamera = () => {
         if (variant !== "stage") return;
         const box = new THREE.Box3().setFromObject(rig);
         if (box.isEmpty()) return;
-        const center = new THREE.Vector3();
         const size = new THREE.Vector3();
-        box.getCenter(center);
+        box.getCenter(orbitTarget);
         box.getSize(size);
         const maxDim = Math.max(size.x, size.y, size.z, 0.35);
         const vFov = (camera.fov * Math.PI) / 180;
-        const dist = (maxDim * 0.55) / Math.tan(vFov / 2);
-        camera.position.set(center.x, center.y, center.z + dist * 1.25);
-        camera.lookAt(center.x, center.y, center.z);
+        if (!userOrbit) {
+          orbitRadius = (maxDim * 0.5) / Math.tan(vFov / 2) * 1.05;
+        }
+        updateCameraFromOrbit();
       };
 
       const render = () => {
         if (disposed) return;
         applyPose();
         fitStageCamera();
+        if (variant !== "stage") {
+          camera.position.set(0, 0.88, 2.15);
+          camera.lookAt(0, 0.88, 0);
+        }
         renderer.render(scene, camera);
         animation = requestAnimationFrame(render);
       };
       render();
+
+      const onPointerDown = (e: PointerEvent) => {
+        if (variant !== "stage") return;
+        dragging = true;
+        userOrbit = true;
+        lastX = e.clientX;
+        lastY = e.clientY;
+        renderer.domElement.setPointerCapture(e.pointerId);
+      };
+      const onPointerMove = (e: PointerEvent) => {
+        if (!dragging || variant !== "stage") return;
+        const dx = e.clientX - lastX;
+        const dy = e.clientY - lastY;
+        lastX = e.clientX;
+        lastY = e.clientY;
+        orbitTheta -= dx * 0.008;
+        orbitPhi = Math.max(0.15, Math.min(Math.PI - 0.15, orbitPhi + dy * 0.008));
+        updateCameraFromOrbit();
+      };
+      const onPointerUp = (e: PointerEvent) => {
+        dragging = false;
+        try {
+          renderer.domElement.releasePointerCapture(e.pointerId);
+        } catch {
+          /* already released */
+        }
+      };
+
+      if (variant === "stage") {
+        renderer.domElement.addEventListener("pointerdown", onPointerDown);
+        renderer.domElement.addEventListener("pointermove", onPointerMove);
+        renderer.domElement.addEventListener("pointerup", onPointerUp);
+        renderer.domElement.addEventListener("pointercancel", onPointerUp);
+      }
 
       const onResize = () => {
         const w = host.clientWidth || 240;
@@ -168,6 +226,12 @@ export function VitalsPoseLiveRig({
       cleanupResize = () => window.removeEventListener("resize", onResize);
 
       return () => {
+        if (variant === "stage") {
+          renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+          renderer.domElement.removeEventListener("pointermove", onPointerMove);
+          renderer.domElement.removeEventListener("pointerup", onPointerUp);
+          renderer.domElement.removeEventListener("pointercancel", onPointerUp);
+        }
         cancelAnimationFrame(animation);
         renderer.dispose();
         materials.forEach((m) => m.dispose());
@@ -195,7 +259,7 @@ export function VitalsPoseLiveRig({
       ? { width: "100%", height: "100%", minHeight: 280 }
       : {
           width: "100%",
-          height: 200,
+          height: 280,
           borderRadius: 8,
           border: "1px solid rgba(47,210,190,0.35)",
           background: "rgba(0,0,0,0.15)",

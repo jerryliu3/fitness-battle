@@ -57,9 +57,9 @@ export function VitalsBodyDemo() {
       <div className="vitals-body-layout vitals-body-layout--wide-panel">
         <div className="vitals-body-stage">
           {meshSource === "anny" && livePoseBones ? (
-            <div className="vitals-body-pose-live-overlay" aria-hidden>
+            <div className="vitals-body-pose-live-overlay vitals-body-pose-live-overlay--draggable" aria-hidden>
               <VitalsPoseLiveRig bones={livePoseBones} variant="stage" />
-              <span>Live stick rig — point cloud unchanged until bake</span>
+              <span>Live stick rig — drag to rotate · point cloud unchanged until bake</span>
             </div>
           ) : poseMeshPreview ? (
             <div className="vitals-body-pose-preview-overlay" aria-hidden>
