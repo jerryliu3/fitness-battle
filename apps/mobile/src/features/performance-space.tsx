@@ -35,9 +35,9 @@ import {
 } from "@fitness-battle/shared";
 
 const EFFORT_RANGES: readonly { value: EffortHistoryRange; label: string }[] = [
-  { value: "fourWeeks", label: "4W" },
-  { value: "twelveWeeks", label: "12W" },
-  { value: "twentyFourWeeks", label: "24W" },
+  { value: "fourWeeks", label: "1M" },
+  { value: "twelveWeeks", label: "3M" },
+  { value: "twentyFourWeeks", label: "6M" },
   { value: "year", label: "1Y" },
 ];
 
@@ -176,7 +176,7 @@ export function PerformanceSpace({
       {/* 1. Effort Score Hero Chart */}
       <View style={s.chartCard}>
         <View style={s.chartHeaderRow}>
-          <View style={{ gap: 2 }}>
+          <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
             <AppText role="caption" secondary>
               {track === "verified" ? "GPS Effort Score" : "Open Effort Score"}
             </AppText>
@@ -201,28 +201,30 @@ export function PerformanceSpace({
                   : "No prior score in this range")}
             </AppText>
           </View>
+          <View style={s.compactControls}>
+            <FocusSegments
+              label="Effort track"
+              value={track}
+              options={[
+                { value: "open", label: "Open" },
+                { value: "verified", label: "GPS" },
+              ]}
+              onChange={(nextTrack) => setLens({ scope, track: nextTrack })}
+            />
+            <FocusSegments
+              label="Effort time range"
+              value={effortRange}
+              options={EFFORT_RANGES}
+              onChange={(next) => { setEffortRange(next); setInspectedEffort(undefined); }}
+            />
+          </View>
         </View>
-
-        <FocusSegments
-          label="Effort track"
-          value={track}
-          options={[
-            { value: "open", label: "Open" },
-            { value: "verified", label: "GPS" },
-          ]}
-          onChange={(nextTrack) => setLens({ scope, track: nextTrack })}
-        />
-        <FocusSegments
-          label="Effort time range"
-          value={effortRange}
-          options={EFFORT_RANGES}
-          onChange={(next) => { setEffortRange(next); setInspectedEffort(undefined); }}
-        />
 
         <View style={s.chartBody}>
           <OpenLineChart
             showAxes={true}
             live
+            uniformAspect
             key={`${scope}:${track}:${effortRange}`}
             chart={effortChart}
             label={`${track === "verified" ? "GPS Tracked" : "Open"} effort score history`}
@@ -472,7 +474,7 @@ export function PerformanceSpace({
                           key={p.activityId}
                           cx={p.x}
                           cy={p.y}
-                          r={isInspected ? 8 : 7}
+                          r={isInspected ? 4.5 : 3.5}
                           fill={isInspected ? c.tennis : c.card}
                           stroke={c.tennis}
                           strokeWidth={2.5}
@@ -582,6 +584,12 @@ const sThemes = createThemedStyles((themeColors) => {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
+      gap: 12,
+    },
+    compactControls: {
+      width: 156,
+      gap: 8,
+      alignSelf: "flex-start",
     },
     valueRow: {
       flexDirection: "row",

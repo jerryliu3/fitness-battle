@@ -18,6 +18,30 @@ export interface AthleteCardModel {
 }
 
 /** Read-only presentation of existing authoritative scores and counted history. */
+export function athleteCardModelForPeer(input: {
+  name: string;
+  city?: string | null;
+  avatarUrl?: string | null;
+  score?: number | null;
+  sport?: string | null;
+}): AthleteCardModel {
+  const score = input.score ?? null;
+  return {
+    name: input.name,
+    city: input.city?.trim() || "—",
+    initials: initialsFromName(input.name),
+    avatarUrl: input.avatarUrl ?? null,
+    sport: input.sport?.trim() || "Athlete",
+    score,
+    rank: score === null ? null : rankForElo(score).name,
+    records: [],
+    overtakes: 0,
+    rounds: 0,
+    streak: 0,
+    streakActive: false,
+  };
+}
+
 export function athleteCardModel(state: CompeteState, now = competeNow(state)): AthleteCardModel {
   const score = state.ratings.find(r => r.sport === state.primary)?.openElo ?? null;
   const definitions = state.primary === "running" || state.primary === "cycling" ? RECORD_DISTANCES[state.primary] : [];

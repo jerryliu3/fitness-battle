@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import WebView, { type WebViewMessageEvent } from "react-native-webview";
 import type { AthleteCardModel } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { useSceneActive } from "../ui/use-scene-active";
-import { AppText } from "../ui/section";
 import { useAppTheme } from "../theme";
 import { AthleteProfileCard } from "./athlete-profile-card";
 
@@ -18,7 +17,6 @@ export function AthleteCrest({ model, onInteractionChange }: { model: AthleteCar
   latest.current = { type: "athlete-card", model, active, appearance: mode };
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [attempt, setAttempt] = useState(0);
   const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/athlete-card-scene`;
   const origin = new URL(uri).origin;
   function inject() {
@@ -31,9 +29,9 @@ export function AthleteCrest({ model, onInteractionChange }: { model: AthleteCar
     if (!active || loaded || failed) return;
     const timer = setTimeout(fail, 12000);
     return () => clearTimeout(timer);
-  }, [active, loaded, failed, attempt]);
-  return <View style={{ minHeight: failed ? undefined : 390, backgroundColor: c.paper }}>
-    {!failed && <WebView key={attempt} ref={web} source={{ uri }} originWhitelist={[origin]} javaScriptEnabled scrollEnabled={false} bounces={false}
+  }, [active, loaded, failed]);
+  return <View style={{ minHeight: 390, backgroundColor: c.paper }}>
+    {!failed && <WebView ref={web} source={{ uri }} originWhitelist={[origin]} javaScriptEnabled scrollEnabled={false} bounces={false}
       onTouchStart={() => onInteractionChange?.(true)} onTouchEnd={() => onInteractionChange?.(false)} onTouchCancel={() => onInteractionChange?.(false)}
       style={{ height: 390, backgroundColor: c.paper, opacity: loaded ? 1 : 0 }}
       onShouldStartLoadWithRequest={(request: { url: string }) => {
@@ -46,9 +44,8 @@ export function AthleteCrest({ model, onInteractionChange }: { model: AthleteCar
         if (message.type === "athlete-card-ready") { ready.current = true; inject(); }
         if (message.type === "athlete-card-rendered" && ready.current) setLoaded(true);
       } catch { /* Ignore malformed bridge messages. */ } }} />}
-    {!loaded && <View style={failed ? undefined : { position: "absolute", inset: 0 }}>
+    {!loaded && <View style={{ position: "absolute", inset: 0 }}>
       <AthleteProfileCard name={model.name} city={model.city} avatarUrl={model.avatarUrl} score={model.score} />
-      {failed && <Pressable accessibilityRole="button" onPress={() => { ready.current = false; unavailable.current = false; setFailed(false); setLoaded(false); setAttempt(n => n + 1); }} style={{ minHeight: 44, justifyContent: "center", alignItems: "center" }}><AppText role="label">Retry card</AppText></Pressable>}
     </View>}
   </View>;
 }

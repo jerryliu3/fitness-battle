@@ -168,7 +168,7 @@ const f=useFocusStyles();
         </ScrollView>
       </SafeAreaView>}
       {persistent && experience.immersive && !detailDestination && !pointsEvent && <View style={{ position: "absolute", top: insets.top + 54, right: 16, zIndex: 20 }}>{courseOptions}</View>}
-      {(!persistent || !detailDestination) && <ArenaSheet scrollable={!queued} persistent={persistent} expandRequest={expandRequest} active={focused && experience.immersive} overview={persistent && !queue?.queued && !queue?.awaitingField ? pointsEvent && selectedSport ? <PointsTimeline state={state} event={selectedSport} fraction={pointsFraction} onChange={setPointsFraction} /> : <CompetitionTimelineControls /> : undefined}>
+      {(!persistent || !detailDestination) && <ArenaSheet scrollable={!queued} persistent={persistent} expandRequest={expandRequest} defaultSheetIndex={queued ? 1 : 0} active={focused && experience.immersive} overview={persistent && !queue?.queued && !queue?.awaitingField ? pointsEvent && selectedSport ? <PointsTimeline state={state} event={selectedSport} fraction={pointsFraction} onChange={setPointsFraction} /> : <CompetitionTimelineControls /> : undefined}>
 <SectionStack divided={false}>
         {!persistent && <View style={{ gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><CompeteIcon name="wreath" size={34} gold /><AppText role="display" accessibilityRole="header">Compete</AppText></View></View><View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 }}><AppText role="body" secondary>{dateRange}</AppText><View style={{ backgroundColor: c.actionSoft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 }}><AppText role="label">{timeRemaining}</AppText></View></View></View>}
         {standingsStale ? (
@@ -208,7 +208,7 @@ const f=useFocusStyles();
   );
 }
 
-function ArenaSheet({ persistent, children, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean; overview?: React.ReactNode; scrollable?: boolean }) {
+function ArenaSheet({ persistent, children, defaultSheetIndex, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean; overview?: React.ReactNode; scrollable?: boolean; defaultSheetIndex?: 0 | 1 | 2 }) {
   const f = useFocusStyles();
-  return persistent ? <CompeteSheet {...props}>{children}</CompeteSheet> : <ScrollView contentContainerStyle={f.content}>{children}</ScrollView>;
+  return persistent ? <CompeteSheet {...props} defaultIndex={defaultSheetIndex}>{children}</CompeteSheet> : <ScrollView contentContainerStyle={f.content}>{children}</ScrollView>;
 }

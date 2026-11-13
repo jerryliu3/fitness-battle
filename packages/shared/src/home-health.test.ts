@@ -139,6 +139,9 @@ it("withholds the baseline without seven prior readings", () => {
   expect(chart.hasBaseline).toBe(false);
   expect(chart.points.every(p=>p.position === "unavailable")).toBe(true);
   expect(chart.hasUnder).toBe(false);
+  const withWeek = buildHealth7DayCorridorModel({...metric,history:[40,41,42,43,44,45,46]},now,{weekCorridorFallback:true});
+  expect(withWeek.hasBaseline).toBe(true);
+  expect(withWeek.points.some(p=>p.position==="in")).toBe(true);
   expect(getHealthMetricCorridor("hrv",[10,20,30])).toBeNull();
   expect(getHealthMetricCorridor("hrv",[20,21,22,23,24,25,26])?.high).toBe(26);
 });

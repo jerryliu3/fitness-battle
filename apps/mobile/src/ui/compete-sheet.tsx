@@ -8,7 +8,7 @@ const FlipLayer = createContext<(flipping: boolean) => void>(() => {});
 export const useCompeteFlipLayer = () => useContext(FlipLayer);
 
 /** Moving the sheet changes coverage without resizing the retained field. */
-export function CompeteSheet({ children, expandRequest, active, overview, scrollable = true }: { children: ReactNode; expandRequest: number; active: boolean; overview?: ReactNode; scrollable?: boolean }) {
+export function CompeteSheet({ children, expandRequest, active, overview, scrollable = true, defaultIndex = 0 }: { children: ReactNode; expandRequest: number; active: boolean; overview?: ReactNode; scrollable?: boolean; defaultIndex?: 0 | 1 | 2 }) {
   const [flipping, setFlipping] = useState(false);
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -33,7 +33,7 @@ export function CompeteSheet({ children, expandRequest, active, overview, scroll
   const snapRef = useRef(snap);
   snapRef.current = snap;
   useEffect(() => { offset.setValue(maximum - [minimum, middle, maximum][indexRef.current]); }, [maximum, offset, minimum, middle]);
-  useEffect(() => { if (active) snapRef.current(0); }, [active]);
+  useEffect(() => { if (active) snapRef.current(defaultIndex); }, [active, defaultIndex]);
   useEffect(() => { if (expandRequest) snapRef.current(2); }, [expandRequest]);
   useEffect(() => () => offset.stopAnimation(), [offset]);
   const pan = useMemo(() => PanResponder.create({
