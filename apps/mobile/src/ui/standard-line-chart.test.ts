@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-vi.mock("react-native", () => ({useColorScheme: () => "light",  useWindowDimensions: () => ({ fontScale: 1 }), Animated: { createAnimatedComponent: () => "AnimatedRect" } }));
+vi.mock("react-native", () => ({useColorScheme: () => "light", View: "View", useWindowDimensions: () => ({ fontScale: 1 }), Animated: { createAnimatedComponent: () => "AnimatedRect" } }));
 vi.mock("react-native-svg", () => ({ default: "Svg", Polyline: "Polyline", Path: "Path", Line: "Line", Text: "SvgText", Defs: "Defs", ClipPath: "ClipPath", Rect: "Rect", G: "G", Circle: "Circle" }));
 vi.mock("./section", () => ({ chartTextProps: () => ({ fontFamily: "Manrope_500Medium", fontSize: 12, fontWeight: "500" }) }));
 vi.mock("./chart-scrubber", () => ({ ChartScrubber: "Scrubber" }));
@@ -26,7 +26,7 @@ it("uses the same full-width transform and coordinates for the trace and selecte
  const svg=r.root.findByType("Svg" as never);
  const scrubber=r.root.findByType("Scrubber" as never);
  for(const width of [280,390,600]) {
-   await act(async()=>svg.props.onLayout({nativeEvent:{layout:{width,height:190}}}));
+   await act(async()=>r.root.findByType("View" as never).props.onLayout({nativeEvent:{layout:{width,height:190}}}));
    expect(svg.props.preserveAspectRatio).toBe("none");
    const vertex=r.root.findByType("Polyline" as never).props.points.split(" ")[1].split(",").map(Number);
    const selected=scrubber.props.points[1];
