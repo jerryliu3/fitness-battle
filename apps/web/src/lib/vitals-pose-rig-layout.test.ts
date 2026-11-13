@@ -6,7 +6,7 @@ describe("childAttachLocal", () => {
     const chest = POSE_RIG_BONES.find((b) => b.id === "chest")!;
     const clavicleL = POSE_RIG_BONES.find((b) => b.id === "clavicle.L")!;
     expect(childAttachLocal(chest, clavicleL.offset)).toEqual([
-      0.06,
+      0.11,
       chest.length,
       0,
     ]);

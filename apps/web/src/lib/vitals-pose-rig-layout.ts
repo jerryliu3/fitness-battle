@@ -95,22 +95,27 @@ export const POSE_RIG_BONES: RigBoneDef[] = [
   { id: "hips", parent: null, length: 0, offset: [0, 0, 0], axis: "up", region: "torso" },
   { id: "spine", parent: "hips", length: 0.5, offset: [0, 0, 0], axis: "up", region: "torso" },
   { id: "chest", parent: "spine", length: 0.34, offset: [0, 0, 0], axis: "up", region: "torso" },
-  { id: "clavicle.L", parent: "chest", length: 0.12, offset: [0.06, 0, 0], axis: "outL", region: "armL" },
+  { id: "clavicle.L", parent: "chest", length: 0.12, offset: [0.11, 0, 0], axis: "outL", region: "armL" },
   { id: "shoulder01.L", parent: "clavicle.L", length: 0.05, offset: [0, 0, 0], axis: "outL", region: "armL" },
-  { id: "upperarm01.L", parent: "shoulder01.L", length: 0.3, offset: [0, 0, 0], axis: "down", region: "armL" },
-  { id: "upperarm02.L", parent: "upperarm01.L", length: 0.26, offset: [0, 0, 0], axis: "down", region: "armL" },
-  { id: "lowerarm01.L", parent: "upperarm02.L", length: 0.24, offset: [0, 0, 0], axis: "down", region: "armL" },
-  { id: "hand.L", parent: "lowerarm01.L", length: 0.1, offset: [0, 0, 0], axis: "down", region: "armL" },
-  { id: "clavicle.R", parent: "chest", length: 0.12, offset: [-0.06, 0, 0], axis: "outR", region: "armR" },
+  /** First upper-arm bone: Anny bind hangs in shoulder “down”; stick visuals aim −Z (face). */
+  { id: "upperarm01.L", parent: "shoulder01.L", length: 0.3, offset: [0, 0, 0], axis: "fwd", region: "armL" },
+  { id: "upperarm02.L", parent: "upperarm01.L", length: 0.26, offset: [0, 0, 0], axis: "up", region: "armL" },
+  { id: "lowerarm01.L", parent: "upperarm02.L", length: 0.24, offset: [0, 0, 0], axis: "up", region: "armL" },
+  { id: "hand.L", parent: "lowerarm01.L", length: 0.1, offset: [0, 0, 0], axis: "up", region: "armL" },
+  { id: "clavicle.R", parent: "chest", length: 0.12, offset: [-0.11, 0, 0], axis: "outR", region: "armR" },
   { id: "shoulder01.R", parent: "clavicle.R", length: 0.05, offset: [0, 0, 0], axis: "outR", region: "armR" },
-  { id: "upperarm01.R", parent: "shoulder01.R", length: 0.3, offset: [0, 0, 0], axis: "down", region: "armR" },
-  { id: "upperarm02.R", parent: "upperarm01.R", length: 0.26, offset: [0, 0, 0], axis: "down", region: "armR" },
-  { id: "lowerarm01.R", parent: "upperarm02.R", length: 0.24, offset: [0, 0, 0], axis: "down", region: "armR" },
-  { id: "hand.R", parent: "lowerarm01.R", length: 0.1, offset: [0, 0, 0], axis: "down", region: "armR" },
+  { id: "upperarm01.R", parent: "shoulder01.R", length: 0.3, offset: [0, 0, 0], axis: "fwd", region: "armR" },
+  { id: "upperarm02.R", parent: "upperarm01.R", length: 0.26, offset: [0, 0, 0], axis: "up", region: "armR" },
+  { id: "lowerarm01.R", parent: "upperarm02.R", length: 0.24, offset: [0, 0, 0], axis: "up", region: "armR" },
+  { id: "hand.R", parent: "lowerarm01.R", length: 0.1, offset: [0, 0, 0], axis: "up", region: "armR" },
   { id: "upperleg01.L", parent: "hips", length: 0.48, offset: [0.1, 0, 0], axis: "down", region: "legL" },
   { id: "upperleg01.R", parent: "hips", length: 0.48, offset: [-0.1, 0, 0], axis: "down", region: "legR" },
 ];
 
 export function parentBone(id: RigBoneId) {
   return POSE_RIG_BONES.find((b) => b.id === id)?.parent ?? null;
+}
+
+export function isUpperArmHingeBone(id: RigBoneId): boolean {
+  return id === "upperarm01.L" || id === "upperarm01.R";
 }

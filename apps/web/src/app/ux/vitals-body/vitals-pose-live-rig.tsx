@@ -2,6 +2,7 @@
 
 import {
   isTunableBone,
+  isUpperArmHingeBone,
   childAttachLocal,
   POSE_RIG_BONES,
   RIG_SIDE_COLORS,
@@ -15,7 +16,7 @@ import {
 } from "@/lib/vitals-pose-rig-layout";
 import type { VitalsPoseBoneLabel, VitalsPoseRot } from "@/lib/vitals-pose";
 import { useEffect, useRef } from "react";
-import type { MeshStandardMaterial, Object3D } from "three";
+import type { MeshStandardMaterial, Object3D, Quaternion } from "three";
 
 type PoseState = Record<VitalsPoseBoneLabel, VitalsPoseRot>;
 
@@ -110,8 +111,13 @@ export function VitalsPoseLiveRig({
       };
 
       const nodes = new Map<string, Object3D>();
+      const visualBindQ = new Map<string, Quaternion>();
       const defById = new Map(POSE_RIG_BONES.map((d) => [d.id, d]));
       const boneUp = new THREE.Vector3(0, 1, 0);
+      const annyArmDownQ = new THREE.Quaternion().setFromUnitVectors(
+        boneUp,
+        new THREE.Vector3(0, -1, 0),
+      );
       const radiusHand = 0.014;
 
       for (const def of POSE_RIG_BONES) {
@@ -122,6 +128,7 @@ export function VitalsPoseLiveRig({
         visual.name = `${def.id}/visual`;
         const dir = segDir(def.axis);
         visual.quaternion.setFromUnitVectors(boneUp, dir);
+        visualBindQ.set(def.id, visual.quaternion.clone());
         pivot.add(visual);
 
         const parentDef = def.parent ? defById.get(def.parent) : undefined;
@@ -192,14 +199,21 @@ export function VitalsPoseLiveRig({
       const hips = nodes.get("hips");
       if (hips) hips.position.set(0, 0.48, 0);
 
+      const jointQuaternion = (defId: string, poseQ: Quaternion) => {
+        if (!isUpperArmHingeBone(defId)) return poseQ;
+        const visQ = visualBindQ.get(defId) ?? poseQ;
+        return annyArmDownQ.clone().multiply(poseQ).multiply(visQ.clone().invert());
+      };
+
       const applyPose = () => {
         const identity = new THREE.Quaternion();
         for (const def of POSE_RIG_BONES) {
           const pivot = nodes.get(def.id);
           if (!pivot) continue;
-          pivot.quaternion.copy(
-            isTunableBone(def.id) ? rotvecToQuat(bonesRef.current[def.id]) : identity,
-          );
+          const poseQ = isTunableBone(def.id)
+            ? rotvecToQuat(bonesRef.current[def.id])
+            : identity;
+          pivot.quaternion.copy(jointQuaternion(def.id, poseQ));
         }
       };
 
@@ -340,10 +354,11 @@ export function VitalsPoseLiveRig({
       {variant === "panel" ? (
         <>
           <p style={{ fontSize: 10, letterSpacing: "0.08em", margin: "0 0 6px", opacity: 0.75 }}>
-            LIVE STICK RIG — same rotvec as mesh (bind shape on capsules, rotation on joints). Mesh PNG = sign-off.
+            LIVE STICK RIG — same rotvec as mesh; joints use Anny bind on upperarm01 only.
           </p>
           <p style={{ fontSize: 9, margin: "0 0 6px", opacity: 0.72, lineHeight: 1.35 }}>
-            Thick = upper arm (2 bones) · thin = forearm · ring = elbow · box = palm
+            Axes: red +X, green +Y, blue +Z. Mesh <strong>faces −Z</strong> (opposite the blue arrow). Thick =
+            upper arm · thin = forearm · ring = elbow · box = palm
           </p>
           <div
             style={{
