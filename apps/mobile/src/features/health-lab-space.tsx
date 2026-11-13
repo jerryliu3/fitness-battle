@@ -14,6 +14,7 @@ import {
   type CompeteState,
 } from "@fitness-battle/shared";
 import { AthleteTelemetryMatrix } from "./athlete-telemetry-matrix";
+import { VitalsLabBodyScan } from "./vitals-lab-body-scan";
 
 type HealthMetricKey = "hrv" | "rhr" | "sleep";
 
@@ -108,6 +109,8 @@ export function HealthLabSpace({
 
   return (
     <View style={s.container}>
+      <VitalsLabBodyScan signedOut={signedOut} />
+
       <View style={s.summaryCardsRow}>
         {card("hrv", "Overnight HRV")}
         {card("sleep", "Sleep")}

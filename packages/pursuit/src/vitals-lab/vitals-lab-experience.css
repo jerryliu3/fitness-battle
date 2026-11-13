@@ -1,0 +1,329 @@
+.vitals-lab {
+  display: flex;
+  flex-direction: column;
+  --vl-bg: #0a161d;
+  --vl-card: rgba(17, 34, 44, 0.72);
+  --vl-teal: #6ce5e8;
+  --vl-gold: #f3c952;
+  --vl-ink: #f8fafc;
+  --vl-muted: rgba(248, 250, 252, 0.65);
+  --vl-line: rgba(255, 255, 255, 0.1);
+  position: relative;
+  width: 100%;
+  color: var(--vl-ink);
+  background: linear-gradient(180deg, #0c1821 0%, #0e1e28 45%, #0a141c 100%);
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid var(--vl-line);
+}
+
+.vitals-lab--light {
+  --vl-bg: #f3f6f7;
+  --vl-card: rgba(255, 255, 255, 0.85);
+  --vl-teal: #0e7c86;
+  --vl-gold: #d99b16;
+  --vl-ink: #0f172a;
+  --vl-muted: rgba(15, 23, 42, 0.65);
+  --vl-line: rgba(15, 23, 42, 0.12);
+  background: linear-gradient(180deg, #f8fafc 0%, #eff4f8 50%, #e8eef3 100%);
+}
+
+.vitals-lab--embedded {
+  border-radius: 20px;
+  min-height: 520px;
+}
+
+.vitals-lab__head {
+  padding: 14px 16px 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.vitals-lab__kicker {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--vl-muted);
+}
+
+.vitals-lab__title {
+  margin: 4px 0 0;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.vitals-lab__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.vitals-lab__icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--vl-line);
+  background: var(--vl-card);
+  color: var(--vl-ink);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.vitals-lab__meta {
+  padding: 0 16px 8px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--vl-muted);
+}
+
+.vitals-lab__meta button {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.vitals-lab__meta-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--vl-gold);
+}
+
+.vitals-lab__segbar {
+  margin: 0 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--vl-line);
+  border-bottom: 1px solid var(--vl-line);
+}
+
+.vitals-lab__segpair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.vitals-lab__segpair + .vitals-lab__segpair {
+  border-left: 1px solid var(--vl-line);
+}
+
+.vitals-lab__seg {
+  position: relative;
+  padding: 10px 0;
+  border: none;
+  background: none;
+  color: var(--vl-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
+.vitals-lab__seg--active {
+  color: var(--vl-ink);
+  font-weight: 600;
+}
+
+.vitals-lab__seg--active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--vl-gold);
+}
+
+.vitals-lab__stage {
+  position: relative;
+  min-height: 360px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.vitals-lab__renderer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.vitals-lab-chamber {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+}
+
+.vitals-lab__hud {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 10px;
+}
+
+.vitals-lab__col {
+  width: 108px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vitals-lab__metric {
+  pointer-events: auto;
+  border: 1px solid var(--vl-line);
+  background: var(--vl-card);
+  backdrop-filter: blur(10px);
+  border-radius: 14px;
+  padding: 8px 8px 7px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--vl-ink);
+}
+
+.vitals-lab__metric--active {
+  border-color: color-mix(in srgb, var(--vl-gold) 55%, var(--vl-line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--vl-gold) 35%, transparent);
+}
+
+.vitals-lab__metric-label {
+  font-size: 10px;
+  color: var(--vl-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.vitals-lab__metric-value {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.vitals-lab__metric-unit {
+  font-size: 11px;
+  color: var(--vl-muted);
+  margin-left: 2px;
+}
+
+.vitals-lab__metric-status {
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--vl-teal);
+}
+
+.vitals-lab__camera {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 18px 10px;
+  border-bottom: 1px solid var(--vl-line);
+}
+
+.vitals-lab__camera button {
+  border: none;
+  background: none;
+  color: var(--vl-muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 6px;
+}
+
+.vitals-lab__camera-views {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.vitals-lab__camera-views button.active {
+  color: var(--vl-ink);
+  font-weight: 600;
+}
+
+.vitals-lab__orbit {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--vl-line);
+}
+
+.vitals-lab__orbit--on {
+  border-color: color-mix(in srgb, var(--vl-gold) 60%, var(--vl-line));
+  color: var(--vl-gold);
+}
+
+.vitals-lab__drawer {
+  padding: 10px 16px 14px;
+  z-index: 5;
+}
+
+.vitals-lab__drawer-kicker {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--vl-teal);
+}
+
+.vitals-lab__drawer h2 {
+  margin: 4px 0 2px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.vitals-lab__drawer p {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--vl-muted);
+  line-height: 1.35;
+}
+
+.vitals-lab__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vitals-lab__pill {
+  border: 1px solid var(--vl-line);
+  background: var(--vl-card);
+  color: var(--vl-muted);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.vitals-lab__pill--active {
+  color: var(--vl-ink);
+  border-color: color-mix(in srgb, var(--vl-gold) 50%, var(--vl-line));
+}
+
+.vitals-lab__reset {
+  pointer-events: auto;
+  align-self: flex-start;
+  margin-top: 4px;
+  border: 1px solid var(--vl-line);
+  background: var(--vl-card);
+  color: var(--vl-muted);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}

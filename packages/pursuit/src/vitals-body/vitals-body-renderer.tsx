@@ -17,6 +17,7 @@ import type {
   HealthSystem,
   QualityPreset,
   ViewPreset,
+  VitalsBodyChoreography,
   VitalsBodyTuning,
   VizMode,
   ZoomPreset,
@@ -34,10 +35,13 @@ export interface VitalsBodyRendererProps {
   appearance?: AppearanceMode;
   faceStyle?: FaceStyle;
   tuning?: VitalsBodyTuning;
+  choreography?: VitalsBodyChoreography;
+  scanToken?: number;
   autoRotate?: boolean;
   className?: string;
   onLoadError?: (message: string) => void;
   onLoadSuccess?: () => void;
+  onScanComplete?: () => void;
 }
 
 function cameraFor(view: ViewPreset, zoom: ZoomPreset): {
@@ -83,10 +87,13 @@ export function VitalsBodyRenderer({
   appearance = "dark",
   faceStyle = "soft",
   tuning = defaultTuning,
+  choreography,
+  scanToken = 0,
   autoRotate = false,
   className,
   onLoadError,
   onLoadSuccess,
+  onScanComplete,
 }: VitalsBodyRendererProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const ctxRef = useRef<{
@@ -98,6 +105,7 @@ export function VitalsBodyRenderer({
     groundMat: THREE.MeshBasicMaterial | null;
     renderer: THREE.WebGLRenderer | null;
   } | null>(null);
+  const scanRef = useRef({ y: 1.85, active: false, token: scanToken });
   const stateRef = useRef({
     view,
     zoom,
@@ -107,6 +115,7 @@ export function VitalsBodyRenderer({
     faceStyle,
     tuning,
     autoRotate,
+    choreography,
   });
   stateRef.current = {
     view,
@@ -117,7 +126,14 @@ export function VitalsBodyRenderer({
     faceStyle,
     tuning,
     autoRotate,
+    choreography,
   };
+
+  useEffect(() => {
+    if (scanToken <= 0) return;
+    scanRef.current = { y: 1.85, active: true, token: scanToken };
+    ctxRef.current?.schedule();
+  }, [scanToken]);
 
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -137,7 +153,7 @@ export function VitalsBodyRenderer({
 
     const scene = new THREE.Scene();
     const fog = new THREE.FogExp2(
-      appearance === "dark" ? "#0a1418" : "#eef6f5",
+      appearance === "dark" ? "#0a161d" : "#f3f6f7",
       appearance === "dark" ? 0.14 : 0.06,
     );
     scene.fog = fog;
@@ -216,11 +232,27 @@ export function VitalsBodyRenderer({
         viewSnap = camKey;
         dampFrames = 45;
       }
-      const cam = cameraFor(s.view, s.zoom);
-      if (s.view !== "free") {
-        camera.position.lerp(cam.position, 0.18);
-        controls.target.lerp(cam.target, 0.18);
-        dampFrames = Math.max(dampFrames, 8);
+      const ch = s.choreography;
+      if (ch && (ch.distanceMul || ch.targetY != null || ch.azimuth != null)) {
+        const baseDist = 3.15 / Math.max(0.75, ch.distanceMul ?? 1);
+        const targetY = ch.targetY ?? 0.92;
+        const azimuth = ch.azimuth ?? 0;
+        const target = new THREE.Vector3(0, targetY, 0);
+        const desired = new THREE.Vector3(
+          Math.sin(azimuth) * baseDist,
+          targetY + 0.06,
+          Math.cos(azimuth) * baseDist,
+        );
+        camera.position.lerp(desired, 0.11);
+        controls.target.lerp(target, 0.11);
+        dampFrames = Math.max(dampFrames, 10);
+      } else {
+        const cam = cameraFor(s.view, s.zoom);
+        if (s.view !== "free") {
+          camera.position.lerp(cam.position, 0.18);
+          controls.target.lerp(cam.target, 0.18);
+          dampFrames = Math.max(dampFrames, 8);
+        }
       }
       controls.autoRotate =
         s.autoRotate && !reducedMotion && s.view === "free";
@@ -236,6 +268,20 @@ export function VitalsBodyRenderer({
         material.uniforms.uSize!.value = 0.62 * s.tuning.particleScale;
         applyHighlight(material, s.system, s.mode);
         applyFaceStyle(material, s.faceStyle);
+        const scan = scanRef.current;
+        if (scan.active) {
+          scan.y -= 0.017;
+          material.uniforms.uScanY!.value = scan.y;
+          material.uniforms.uScanStrength!.value = 1.0;
+          dampFrames = Math.max(dampFrames, 14);
+          if (scan.y < 0.12) {
+            scan.active = false;
+            material.uniforms.uScanStrength!.value = 0.0;
+            onScanComplete?.();
+          }
+        } else {
+          material.uniforms.uScanStrength!.value = 0.0;
+        }
       }
       renderer.render(scene, camera);
     };
@@ -246,7 +292,8 @@ export function VitalsBodyRenderer({
         draw();
         const s = stateRef.current;
         const spin = s.autoRotate && !reducedMotion && s.view === "free";
-        if (spin || dampFrames > 0) {
+        const scanning = scanRef.current.active;
+        if (spin || scanning || dampFrames > 0) {
           if (dampFrames > 0) dampFrames -= 1;
           schedule();
         }
@@ -308,7 +355,7 @@ export function VitalsBodyRenderer({
       return;
     }
     setAppearance(ctx.material, appearance, ctx.renderer);
-    ctx.fog.color.set(appearance === "dark" ? "#0a1418" : "#ddeae8");
+    ctx.fog.color.set(appearance === "dark" ? "#0a161d" : "#f3f6f7");
     ctx.fog.density = appearance === "dark" ? 0.11 : 0.035;
     ctx.groundMat.color.set(appearance === "dark" ? "#3fd6c5" : "#1f7f72");
     ctx.groundMat.opacity = appearance === "dark" ? 0.22 : 0.32;
@@ -371,7 +418,7 @@ export function VitalsBodyRenderer({
     const ctx = ctxRef.current;
     if (!ctx) return;
     ctx.schedule();
-  }, [view, zoom, system, mode, faceStyle, tuning]);
+  }, [view, zoom, system, mode, faceStyle, tuning, choreography, scanToken]);
 
   return (
     <div

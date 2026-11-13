@@ -25,8 +25,7 @@ const nextConfig: NextConfig = {
         destination: "/support#delete-account",
         permanent: false,
       },
-      { source: "/ux/vital-lab", destination: "/ux/vitals-body", permanent: false },
-      { source: "/ux/vitals-lab", destination: "/ux/vitals-body", permanent: false },
+      { source: "/ux/vital-lab", destination: "/ux/vitals-lab", permanent: false },
     ];
   },
 };
