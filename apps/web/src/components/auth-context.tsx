@@ -7,6 +7,7 @@ import { getSupabaseConfig } from "@/lib/supabase/config";
 import { accountDataOrigin, hashString, findDemoAccount } from "@fitness-battle/shared";
 import {
   DEMO_USER_COOKIE,
+  isLocalHost,
   parseDemoUserFromCookie,
   serializeDemoUserCookie,
 } from "@/lib/auth/design-access";
@@ -121,6 +122,25 @@ function writeDemoUser(user: AuthUser | null) {
   writeDemoCookie(user);
 }
 
+function isSupabaseUnreachableError(error: unknown): boolean {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error && "message" in error
+        ? String((error as { message: unknown }).message)
+        : "";
+  return /failed to fetch|networkerror|load failed|network request failed/i.test(message);
+}
+
+function localDemoSignIn(email: string, password: string): { error?: string } {
+  if (!email.trim() || password.length < 4) {
+    return { error: "Enter an email and a password (4+ characters)." };
+  }
+  const next = demoUserFromEmail(email.trim().toLowerCase());
+  writeDemoUser(next);
+  return {};
+}
+
 function demoUserFromEmail(email: string, displayName?: string): AuthUser {
   const normalized = email.trim().toLowerCase();
   const demo = findDemoAccount(normalized);
@@ -232,12 +252,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try { setLegacyBackup(archiveLegacyDemo()); }
       catch { return { error: "Your on-device backup could not be saved. Free device storage and try again; your existing data is intact." }; }
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) return { error: error.message };
-      return {};
+      try {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) {
+          const onLocal =
+            typeof window !== "undefined" && isLocalHost(window.location.hostname);
+          if (onLocal && isSupabaseUnreachableError(error)) {
+            const demo = localDemoSignIn(email, password);
+            if (!demo.error) {
+              setUser(demoUserFromEmail(email.trim().toLowerCase()));
+              return {};
+            }
+            return demo;
+          }
+          return { error: error.message };
+        }
+        return {};
+      } catch (err) {
+        const onLocal =
+          typeof window !== "undefined" && isLocalHost(window.location.hostname);
+        if (onLocal && isSupabaseUnreachableError(err)) {
+          const demo = localDemoSignIn(email, password);
+          if (!demo.error) {
+            setUser(demoUserFromEmail(email.trim().toLowerCase()));
+            return {};
+          }
+          return demo;
+        }
+        return {
+          error:
+            err instanceof Error
+              ? err.message
+              : "Could not sign in. Check apps/web/.env.local or use .env.demo for offline login.",
+        };
+      }
     },
     [offlineMode],
   );
