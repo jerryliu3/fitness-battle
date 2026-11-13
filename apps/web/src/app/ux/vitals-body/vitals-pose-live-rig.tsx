@@ -14,7 +14,7 @@ import {
 } from "@/lib/vitals-pose-rig-layout";
 import type { VitalsPoseBoneLabel, VitalsPoseRot } from "@/lib/vitals-pose";
 import { useEffect, useRef } from "react";
-import type { MeshStandardMaterial, Object3D } from "three";
+import type { MeshStandardMaterial, Object3D, Quaternion } from "three";
 
 type PoseState = Record<VitalsPoseBoneLabel, VitalsPoseRot>;
 
