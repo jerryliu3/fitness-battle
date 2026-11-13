@@ -16,7 +16,7 @@ vi.mock("../lib/supabase", () => ({ supabase: { from: () => ({
 vi.mock("../ui/focus", () => ((()=>{const mock={ FocusSheet: "FocusSheet", FocusButton: "FocusButton", f: { row: {}, section: {} } };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 vi.mock("../ui/section", () => ({ AppText: "AppText", SectionHeader: "SectionHeader" }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
-vi.mock("./athlete-profile-card", () => ({ AthleteProfileCard: "AthleteProfileCard" }));
+vi.mock("./athlete-crest", () => ({ AthleteCrest: "AthleteCrest" }));
 import { AthleteProfileSheet } from "./athlete-profile-sheet";
 
 const id = "11111111-1111-4111-8111-111111111111";
@@ -31,14 +31,16 @@ beforeEach(() => {
 });
 it("loads public identity and shows the selected standings context", async () => {
   await act(async () => { renderer = create(createElement(AthleteProfileSheet, { athlete: { id, name: "Peer", score: 1100, contextValue: "5.0 km", contextDetail: "Place 2" }, onClose: mocks.close })); });
-  expect(renderer.root.findByType("AthleteProfileCard" as never).props).toMatchObject({ name: "Peer", city: "Toronto", score: 1100, since: "Since 2025" });
+  expect(renderer.root.findByType("AthleteCrest" as never).props.model).toMatchObject({ name: "Peer", city: "Toronto", score: 1100 });
+  expect(JSON.stringify(renderer.toJSON())).toMatch(/Since.{0,4}2025/);
   expect(JSON.stringify(renderer.toJSON())).toContain("5.0 km");
   expect(JSON.stringify(renderer.toJSON())).toContain("Overtakes");
 });
 it("shows own details and navigates only after the sheet closes", async () => {
   await act(async () => { renderer = create(createElement(AthleteProfileSheet, { athlete: { id: "you", name: "Me", you: true }, onClose: mocks.close })); });
   expect(mocks.lookup).not.toHaveBeenCalled();
-  expect(renderer.root.findByType("AthleteProfileCard" as never).props).toMatchObject({ city: "Boston", since: "Since 2024" });
+  expect(renderer.root.findByType("AthleteCrest" as never).props.model).toMatchObject({ city: "Boston" });
+  expect(JSON.stringify(renderer.toJSON())).toMatch(/Since.{0,4}2024/);
   await act(async () => renderer.root.findByType("FocusButton" as never).props.onPress());
   expect(mocks.close).toHaveBeenCalled();
   expect(mocks.navigate).not.toHaveBeenCalled();

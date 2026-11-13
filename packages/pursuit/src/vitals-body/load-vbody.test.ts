@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseVbodyBuffer } from "./load-vbody";
+import { parseVbodyBuffer, vitalsAssetBase } from "./load-vbody";
 
 function packParticle(
   view: DataView,
@@ -19,6 +19,13 @@ function packParticle(
   view.setUint8(offset + 24, region);
   view.setUint8(offset + 25, klass);
 }
+
+describe("vitalsAssetBase", () => {
+  it("routes each mesh source to a public bundle", () => {
+    expect(vitalsAssetBase("anny")).toBe("/bodies/anny");
+    expect(vitalsAssetBase("mpfb2")).toBe("/bodies/mpfb2");
+  });
+});
 
 describe("parseVbodyBuffer", () => {
   it("parses a minimal VBD1 payload", () => {

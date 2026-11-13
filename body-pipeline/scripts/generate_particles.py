@@ -148,9 +148,32 @@ def interior_normals(mesh: trimesh.Trimesh, points: np.ndarray) -> np.ndarray:
     return (normals / lengths).astype(np.float32)
 
 
+def _sample_interior_shell(
+    mesh: trimesh.Trimesh, count: int, rng: np.random.Generator
+) -> np.ndarray:
+    """Approximate interior fill when contains() is unreliable (non-watertight MPFB exports)."""
+    oversample = max(count * 4, 8000)
+    pts, face_idx = trimesh.sample.sample_surface(mesh, oversample)
+    normals = mesh.face_normals[face_idx]
+    depth = rng.uniform(0.006, 0.14, size=len(pts))
+    inner = pts - normals * depth[:, None]
+    if len(inner) >= count:
+        pick = rng.choice(len(inner), size=count, replace=False)
+        return np.asarray(inner[pick], dtype=np.float32)
+    return np.asarray(inner, dtype=np.float32)
+
+
 def sample_interior(
     mesh: trimesh.Trimesh, count: int, rng: np.random.Generator
 ) -> np.ndarray:
+    if not mesh.is_watertight:
+        pts = _sample_interior_shell(mesh, count, rng)
+        print(
+            f"Using shell-interior fallback ({len(pts)} pts, watertight={mesh.is_watertight})",
+            file=sys.stderr,
+        )
+        return pts
+
     bounds = mesh.bounds
     pts: list[np.ndarray] = []
     batch = 8000

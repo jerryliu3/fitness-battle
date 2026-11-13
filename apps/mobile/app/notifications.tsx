@@ -6,7 +6,6 @@ import { IconButton } from "../src/ui/icon-button";
 import {
   isSupabaseConfigured,
   NOTIFICATION_CATEGORIES,
-  permissionLabel,
   type NotificationPreferences,
 } from "@fitness-battle/shared";
 import { useEffect, useState } from "react";
@@ -84,7 +83,6 @@ const styles=useThemedStyles(stylesThemes);
       if (!enabled) {
         const next = await disableNativePush(identity);
         setPrefs(next);
-        setNote("Push turned off on this device.");
         return;
       }
       const result = await enableNativePush(identity);
@@ -214,8 +212,7 @@ const styles=useThemedStyles(stylesThemes);
             <View style={styles.grow}>
               <Text style={styles.rowTitle}>Push notifications</Text>
               <Text style={styles.rowDetail}>
-                {permissionLabel(prefs.permissionStatus)}
-
+                {prefs.enabled ? "Enabled" : "Disabled"}
               </Text>
             </View>
             <Switch

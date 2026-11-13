@@ -78,7 +78,17 @@ const appearanceColors = useThemeColors();
   const lastFocus = useRef<{ course: RaceCourse; id: string; request: number; following: boolean; session?: string | number | boolean; metres?: number } | null>(null);
   useEffect(() => {
     if ((!active && initialized.current) || !ready || !scene.selected || replay) return;
-    if (restored.current) { const savedMetres = rememberedProgress.get(cameraKey); if (savedMetres !== undefined) controller.anchor(course, savedMetres, scene.selected.lateralMetres); initialized.current = true; lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey, metres: scene.selected.metres }; restored.current = undefined; controller.interrupt(false); onFollowChange?.(false); return; }
+    if (restored.current) {
+      const savedMetres = rememberedProgress.get(cameraKey);
+      const anchorMetres = followAthlete ? scene.selected.metres : (savedMetres ?? scene.selected.metres);
+      controller.anchor(course, anchorMetres, scene.selected.lateralMetres);
+      initialized.current = true;
+      lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey, metres: scene.selected.metres };
+      restored.current = undefined;
+      if (!followAthlete) controller.interrupt(false);
+      onFollowChange?.(false);
+      return;
+    }
     const previous = lastFocus.current;
     const explicit = !previous || previous.course !== course || previous.id !== selectedId || previous.request !== focusRequest || !previous.following || previous.session !== cardSessionKey;
     lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey, metres: scene.selected.metres };

@@ -74,7 +74,7 @@ const s=useThemedStyles(sThemes);
         })}
       </View>
       {selected && (() => {
-        const chart = buildHealth7DayCorridorModel(selected, competeNow(state));
+        const chart = buildHealth7DayCorridorModel(selected, competeNow(state), { weekCorridorFallback: true });
         return (
           <View style={s.detail} accessibilityLiveRegion="polite">
             <View style={s.detailHeader}>
@@ -159,24 +159,23 @@ const s=useThemedStyles(sThemes);
                       />
                     );
                   }
-                  const isUnder = p.position === "under";
-                  const ptColor = isUnder ? colors.comparison : colors.accent;
+                  const isOutOfCorridor = p.position === "under" || p.position === "over";
                   return (
                     <G key={p.index}>
                       <Circle
                         cx={p.x}
                         cy={p.y}
                         r={p.index === 6 ? 4.5 : 3.5}
-                        fill={ptColor}
-                        stroke={colors.tile}
-                        strokeWidth={1.5}
+                        fill={isOutOfCorridor ? "none" : colors.accent}
+                        stroke={isOutOfCorridor ? colors.accent : colors.tile}
+                        strokeWidth={isOutOfCorridor ? 2 : 1.5}
                       />
                       <SvgText
                         {...chartTextProps()}
                         x={p.index === 6 ? Math.min(316, p.x) : p.index === 0 ? Math.max(40, p.x) : p.x}
                         y={Math.max(12, p.y - 7)}
                         textAnchor={p.index === 6 ? "end" : p.index === 0 ? "start" : "middle"}
-                        fill={ptColor}
+                        fill={colors.accent}
                       >
                         {p.formatted}
                       </SvgText>

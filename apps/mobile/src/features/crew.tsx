@@ -132,7 +132,6 @@ const f=useFocusStyles();
     "add" | "invite" | "manage" | "leave" | "members" | null
   >(null);
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
-  const pendingMember = useRef<Member | null>(null);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [format, setFormat] = useState("volume");
@@ -144,7 +143,6 @@ const f=useFocusStyles();
   useEffect(() => {
     setSelected(crewId);
     setViewingMember(null);
-    pendingMember.current = null;
     setPanel(null);
     setNote("");
     setName("");
@@ -405,8 +403,8 @@ const f=useFocusStyles();
             <AppText role="body" secondary >{crew.name}</AppText>
             <SectionStack>
             {lineup.map(m => hiddenIds.includes(m.user_id) ? <View key={m.user_id} style={{ minHeight: 72 }} /> : <Pressable key={m.user_id} style={[f.section, f.row]} accessibilityRole="button" accessibilityLabel={`View ${m.display_name}'s profile`} onPress={() => {
-              if (membersOnly) setViewingMember(m);
-              else { pendingMember.current = m; setPanel(null); }
+              setViewingMember(m);
+              if (!membersOnly) setPanel(null);
             }}>
               <RankAvatar rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} size={64} />
               <View style={f.grow}><AppText role="row">{m.display_name}</AppText><AppText role="support" secondary >Active</AppText>
@@ -519,7 +517,7 @@ const f=useFocusStyles();
       <FocusSheet
         open={!!panel}
         minimal
-        onClosed={() => { if (derbyAfterClose.current) { derbyAfterClose.current = false; router.navigate({ pathname: "/arena", params: { event: crew.sport, ...(state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? {} : { crewId: crew.id }) } }); } if (pendingMember.current) { setViewingMember(pendingMember.current); pendingMember.current = null; } }}
+        onClosed={() => { if (derbyAfterClose.current) { derbyAfterClose.current = false; router.navigate({ pathname: "/arena", params: { event: crew.sport, ...(state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? {} : { crewId: crew.id }) } }); } }}
         fullScreen={panel === "members"}
         title={
           panel === "add"

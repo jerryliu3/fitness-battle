@@ -25,8 +25,11 @@
     "rankings:schedule": "node packages/rankings/scripts/schedule.mjs",
     "lint:ui": "node scripts/check-ui-contract.mjs",
     "bodies:generate": "python3 body-pipeline/scripts/generate_humans.py && python3 body-pipeline/scripts/process_meshes.py && python3 body-pipeline/scripts/generate_particles.py",
-    "bodies:sync": "bash body-pipeline/scripts/sync_runtime_assets.sh",
-    "bodies:verify-sync": "bash body-pipeline/scripts/verify_asset_sync.sh"
+    "bodies:generate:mpfb2": "blender --background --python body-pipeline/scripts/generate_humans_mpfb2.py && python3 body-pipeline/scripts/process_meshes.py --source-suffix=-mpfb2 && python3 body-pipeline/scripts/generate_particles.py",
+    "bodies:sync": "bash body-pipeline/scripts/sync_runtime_assets.sh anny",
+    "bodies:sync:mpfb2": "bash body-pipeline/scripts/sync_runtime_assets.sh mpfb2",
+    "bodies:verify-sync": "bash body-pipeline/scripts/verify_asset_sync.sh anny",
+    "bodies:bootstrap-variants": "bash body-pipeline/scripts/bootstrap_body_variants.sh"
   },
   "devDependencies": {
     "typescript": "^5.9.2"
