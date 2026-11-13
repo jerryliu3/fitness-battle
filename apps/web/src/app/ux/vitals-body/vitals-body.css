@@ -260,6 +260,14 @@
   border-color: color-mix(in srgb, #3fd6c5 45%, transparent);
 }
 
+.vitals-pose-bone-card--left {
+  border-left: 3px solid #ff2d9a;
+}
+
+.vitals-pose-bone-card--right {
+  border-left: 3px solid #19c3ff;
+}
+
 .vitals-pose-bone-card__head {
   width: 100%;
   text-align: left;

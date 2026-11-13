@@ -13,21 +13,25 @@ export type RigBoneDef = {
   region: RigRegion;
 };
 
-export const RIG_REGION_COLORS: Record<RigRegion, number> = {
-  torso: 0x9aa8b5,
-  armL: 0xffc857,
-  armR: 0xffa94d,
-  legL: 0x5eb3ff,
-  legR: 0x4a9ef0,
+export type RigSide = "torso" | "left" | "right";
+
+/** High-contrast L/R (same hue on arm + leg each side). */
+export const RIG_SIDE_COLORS: Record<RigSide, number> = {
+  torso: 0xc4cdd6,
+  left: 0xff2d9a,
+  right: 0x19c3ff,
 };
 
-export const RIG_REGION_LABELS: Record<RigRegion, string> = {
+export const RIG_SIDE_LABELS: Record<RigSide, string> = {
   torso: "Torso",
-  armL: "Left arm",
-  armR: "Right arm",
-  legL: "Left leg",
-  legR: "Right leg",
+  left: "LEFT (.L bones)",
+  right: "RIGHT (.R bones)",
 };
+
+export function rigSide(region: RigRegion): RigSide {
+  if (region === "torso") return "torso";
+  return region.endsWith("L") ? "left" : "right";
+}
 
 /** Y-up stick figure (~1.7m). Children attach at parent tip. */
 export const POSE_RIG_BONES: RigBoneDef[] = [

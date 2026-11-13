@@ -4,9 +4,10 @@ import {
   eulerRad,
   isTunableBone,
   POSE_RIG_BONES,
-  RIG_REGION_COLORS,
-  RIG_REGION_LABELS,
-  type RigRegion,
+  RIG_SIDE_COLORS,
+  RIG_SIDE_LABELS,
+  rigSide,
+  type RigSide,
 } from "@/lib/vitals-pose-rig-layout";
 import type { VitalsPoseBoneLabel, VitalsPoseRot } from "@/lib/vitals-pose";
 import { useEffect, useRef } from "react";
@@ -14,7 +15,7 @@ import type { MeshStandardMaterial, Object3D } from "three";
 
 type PoseState = Record<VitalsPoseBoneLabel, VitalsPoseRot>;
 
-const LEGEND: RigRegion[] = ["torso", "armL", "armR", "legL", "legR"];
+const LEGEND: RigSide[] = ["torso", "left", "right"];
 
 function legendSwatch(color: number) {
   const r = (color >> 16) & 255;
@@ -64,14 +65,16 @@ export function VitalsPoseLiveRig({
       key.position.set(2, 3, 2);
       scene.add(key);
 
-      const materials = new Map<RigRegion, MeshStandardMaterial>();
-      for (const region of LEGEND) {
+      const materials = new Map<RigSide, MeshStandardMaterial>();
+      for (const side of LEGEND) {
         materials.set(
-          region,
+          side,
           new THREE.MeshStandardMaterial({
-            color: RIG_REGION_COLORS[region],
-            metalness: 0.08,
-            roughness: 0.42,
+            color: RIG_SIDE_COLORS[side],
+            metalness: side === "torso" ? 0.05 : 0.12,
+            roughness: 0.38,
+            emissive: side === "torso" ? 0x000000 : RIG_SIDE_COLORS[side],
+            emissiveIntensity: side === "torso" ? 0 : 0.22,
           }),
         );
       }
@@ -97,7 +100,7 @@ export function VitalsPoseLiveRig({
         }
 
         if (def.length > 0) {
-          const mat = materials.get(def.region)!;
+          const mat = materials.get(rigSide(def.region))!;
           const radius = variant === "stage" ? 0.02 : 0.028;
           const cap = new THREE.CapsuleGeometry(radius, Math.max(def.length - 0.05, 0.06), 6, 12);
           const seg = new THREE.Mesh(cap, mat);
@@ -108,7 +111,7 @@ export function VitalsPoseLiveRig({
 
         const joint = new THREE.Mesh(
           new THREE.SphereGeometry(0.034, 12, 12),
-          materials.get(def.region)!,
+          materials.get(rigSide(def.region))!,
         );
         pivot.add(joint);
 
@@ -282,27 +285,28 @@ export function VitalsPoseLiveRig({
               opacity: 0.85,
             }}
           >
-            {LEGEND.map((region) => (
-              <span key={region} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+            {LEGEND.map((side) => (
+              <span key={side} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                 <span
                   style={{
-                    width: 8,
-                    height: 8,
+                    width: 10,
+                    height: 10,
                     borderRadius: 2,
-                    background: legendSwatch(RIG_REGION_COLORS[region]),
+                    background: legendSwatch(RIG_SIDE_COLORS[side]),
+                    boxShadow: side !== "torso" ? `0 0 6px ${legendSwatch(RIG_SIDE_COLORS[side])}` : undefined,
                   }}
                 />
-                {RIG_REGION_LABELS[region]}
+                {RIG_SIDE_LABELS[side]}
               </span>
             ))}
           </div>
         </>
       ) : (
         <div className="vitals-pose-live-legend vitals-pose-live-legend--stage" aria-hidden>
-          {LEGEND.map((region) => (
-            <span key={region}>
-              <i style={{ background: legendSwatch(RIG_REGION_COLORS[region]) }} />
-              {RIG_REGION_LABELS[region]}
+          {LEGEND.map((side) => (
+            <span key={side}>
+              <i style={{ background: legendSwatch(RIG_SIDE_COLORS[side]) }} />
+              {RIG_SIDE_LABELS[side]}
             </span>
           ))}
         </div>

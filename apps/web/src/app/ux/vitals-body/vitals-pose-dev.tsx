@@ -280,7 +280,11 @@ export function VitalsPoseDev({
           return (
             <div
               key={bone}
-              className={`vitals-pose-bone-card${isOpen ? " vitals-pose-bone-card--open" : ""}`}
+              className={`vitals-pose-bone-card${
+                isOpen ? " vitals-pose-bone-card--open" : ""
+              }${bone.endsWith(".L") ? " vitals-pose-bone-card--left" : ""}${
+                bone.endsWith(".R") ? " vitals-pose-bone-card--right" : ""
+              }`}
             >
               <button
                 type="button"
