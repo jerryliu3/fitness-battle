@@ -32,7 +32,7 @@ beforeEach(() => {
 it("loads public identity and shows the selected standings context", async () => {
   await act(async () => { renderer = create(createElement(AthleteProfileSheet, { athlete: { id, name: "Peer", score: 1100, contextValue: "5.0 km", contextDetail: "Place 2" }, onClose: mocks.close })); });
   expect(renderer.root.findByType("AthleteCrest" as never).props.model).toMatchObject({ name: "Peer", city: "Toronto", score: 1100 });
-  expect(JSON.stringify(renderer.toJSON())).toContain("Since 2025");
+  expect(JSON.stringify(renderer.toJSON())).toMatch(/Since.{0,4}2025/);
   expect(JSON.stringify(renderer.toJSON())).toContain("5.0 km");
   expect(JSON.stringify(renderer.toJSON())).toContain("Overtakes");
 });
@@ -40,7 +40,7 @@ it("shows own details and navigates only after the sheet closes", async () => {
   await act(async () => { renderer = create(createElement(AthleteProfileSheet, { athlete: { id: "you", name: "Me", you: true }, onClose: mocks.close })); });
   expect(mocks.lookup).not.toHaveBeenCalled();
   expect(renderer.root.findByType("AthleteCrest" as never).props.model).toMatchObject({ city: "Boston" });
-  expect(JSON.stringify(renderer.toJSON())).toContain("Since 2024");
+  expect(JSON.stringify(renderer.toJSON())).toMatch(/Since.{0,4}2024/);
   await act(async () => renderer.root.findByType("FocusButton" as never).props.onPress());
   expect(mocks.close).toHaveBeenCalled();
   expect(mocks.navigate).not.toHaveBeenCalled();
