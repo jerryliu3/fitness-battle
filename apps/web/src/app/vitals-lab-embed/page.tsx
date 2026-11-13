@@ -1,9 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { buildAnalyticsLabModel } from "@fitness-battle/shared";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 
 const VitalsLabExperience = dynamic(
   () =>
@@ -13,22 +12,36 @@ const VitalsLabExperience = dynamic(
 
 export default function VitalsLabEmbedPage() {
   const params = useSearchParams();
-  const appearance = params.get("appearance") === "light" ? "light" : "dark";
-  const model = useMemo(
-    () => buildAnalyticsLabModel("peak_build", "30d"),
-    [],
+  const initialAppearance =
+    params.get("appearance") === "light" ? "light" : "dark";
+  const [appearance, setAppearance] = useState<"dark" | "light">(
+    initialAppearance,
   );
+
+  useEffect(() => {
+    setAppearance(initialAppearance);
+  }, [initialAppearance]);
 
   return (
     <div
       style={{
         minHeight: "100dvh",
         margin: 0,
-        padding: 0,
+        padding: "12px 0 20px",
+        display: "grid",
+        placeItems: "start center",
+        boxSizing: "border-box",
         background: appearance === "dark" ? "#0a161d" : "#f3f6f7",
+        transition: "background 220ms ease",
       }}
     >
-      <VitalsLabExperience embedded analytics={model} appearance={appearance} />
+      <div style={{ width: "100%", maxWidth: 420 }}>
+        <VitalsLabExperience
+          embedded
+          appearance={appearance}
+          onAppearanceChange={setAppearance}
+        />
+      </div>
     </div>
   );
 }

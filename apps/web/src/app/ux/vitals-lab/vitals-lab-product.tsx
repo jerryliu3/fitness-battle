@@ -1,10 +1,8 @@
 "use client";
 
-import { buildAnalyticsLabModel } from "@fitness-battle/shared";
 import { VitalsLabExperience } from "@fitness-battle/pursuit/vitals-lab";
 
 export function VitalsLabProductPage() {
-  const model = buildAnalyticsLabModel("peak_build", "30d");
   return (
     <main
       style={{
@@ -15,8 +13,8 @@ export function VitalsLabProductPage() {
         background: "#0a161d",
       }}
     >
-      <div style={{ width: "100%", maxWidth: 430 }}>
-        <VitalsLabExperience analytics={model} />
+      <div style={{ width: "100%", maxWidth: 420 }}>
+        <VitalsLabExperience />
       </div>
     </main>
   );

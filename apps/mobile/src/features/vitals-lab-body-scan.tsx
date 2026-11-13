@@ -6,7 +6,7 @@ import WebView, { type WebViewMessageEvent } from "react-native-webview";
 import { mobileEnv } from "../lib/env";
 import { AppText } from "../ui/section";
 
-const EMBED_HEIGHT = 560;
+const EMBED_HEIGHT = 720;
 
 export function VitalsLabBodyScan({ signedOut = false }: { signedOut?: boolean }) {
   const { mode } = useAppTheme();

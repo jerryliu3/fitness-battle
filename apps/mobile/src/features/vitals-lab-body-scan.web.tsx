@@ -16,7 +16,7 @@ export function VitalsLabBodyScan({ signedOut = false }: { signedOut?: boolean }
   if (signedOut || !model) return null;
 
   return (
-    <View style={{ minHeight: 560 }}>
+    <View style={{ minHeight: 720 }}>
       <VitalsLabExperience embedded analytics={model} appearance={appearance} />
     </View>
   );

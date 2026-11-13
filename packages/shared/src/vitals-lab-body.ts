@@ -14,10 +14,21 @@ export type VitalsLabSystemId = "full" | "heart" | "breathing" | "movement";
 export interface VitalsLabCamera {
   /** Orbit distance multiplier (~1 = full body). */
   zoom: number;
-  /** Vertical focus offset (meters, + = higher on body). */
+  /** Vertical focus offset (centered body space, + = higher on body). */
   panY: number;
   /** Yaw offset radians from front. */
   targetRotY: number;
+}
+
+export interface VitalsLabAnchor3D {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface VitalsLabValuePart {
+  num: string;
+  unit: string;
 }
 
 export interface VitalsLabMetricSpec {
@@ -29,6 +40,9 @@ export interface VitalsLabMetricSpec {
   row: number;
   system: VitalsLabSystemId;
   camera: VitalsLabCamera;
+  anchor3D: VitalsLabAnchor3D;
+  subtitle: string;
+  description: string;
   /** Maps to analytics vital when available. */
   vitalId?: VitalId;
   colorDark: string;
@@ -37,6 +51,7 @@ export interface VitalsLabMetricSpec {
 
 export interface VitalsLabMetricDisplay extends VitalsLabMetricSpec {
   value: string;
+  displayParts?: VitalsLabValuePart[];
   status: string;
   delta: string;
   sparkline: number[];
@@ -61,9 +76,13 @@ export const VITALS_LAB_METRICS: readonly VitalsLabMetricSpec[] = [
     row: 0,
     system: "heart",
     vitalId: "hrv",
-    colorDark: "#6CE5E8",
-    colorLight: "#0E7C86",
+    colorDark: "#38BDF8",
+    colorLight: "#0284C7",
     camera: { zoom: 1.58, panY: 0.25, targetRotY: 0.22 },
+    anchor3D: { x: 0.0, y: 0.48, z: 0.035 },
+    subtitle: "Last night’s autonomic reading · Deep parasympathetic rebound",
+    description:
+      "Vagal tone signal between your cranial brainstem and sinoatrial node indicates high autonomic readiness for high-strain output today.",
   },
   {
     id: "resp",
@@ -77,6 +96,10 @@ export const VITALS_LAB_METRICS: readonly VitalsLabMetricSpec[] = [
     colorDark: "#2DD4BF",
     colorLight: "#0D9488",
     camera: { zoom: 1.65, panY: 0.16, targetRotY: -0.18 },
+    anchor3D: { x: -0.078, y: 0.34, z: 0.055 },
+    subtitle: "Sleeping pulmonary cadence · Unobstructed tidal volume",
+    description:
+      "Bilateral bronchial ventilation stayed remarkably steady across all 4 REM cycles, reflecting low metabolic stress and clean airway efficiency.",
   },
   {
     id: "sleep",
@@ -89,6 +112,10 @@ export const VITALS_LAB_METRICS: readonly VitalsLabMetricSpec[] = [
     colorDark: "#818CF8",
     colorLight: "#4F46E5",
     camera: { zoom: 1.52, panY: 0.34, targetRotY: 0.15 },
+    anchor3D: { x: 0.0, y: 0.72, z: 0.045 },
+    subtitle: "Cranial slow-wave synchronization · 94% sleep efficiency",
+    description:
+      "Strong delta-wave activity during the first 3 hours accelerated neuromuscular repair and endocrine restoration across your entire kinetic chain.",
   },
   {
     id: "rhr",
@@ -99,9 +126,13 @@ export const VITALS_LAB_METRICS: readonly VitalsLabMetricSpec[] = [
     row: 0,
     system: "heart",
     vitalId: "rhr",
-    colorDark: "#F3C952",
-    colorLight: "#D99B16",
+    colorDark: "#F3C65F",
+    colorLight: "#D97706",
     camera: { zoom: 1.72, panY: 0.18, targetRotY: 0.25 },
+    anchor3D: { x: 0.04, y: 0.33, z: 0.068 },
+    subtitle: "Last night’s nadir reading · High stroke volume efficiency",
+    description:
+      "Your myocardium reached its lowest resting cadence at 4:18 AM, signaling strong cardiac output and complete clearance of yesterday’s training load.",
   },
   {
     id: "spo2",
@@ -112,9 +143,13 @@ export const VITALS_LAB_METRICS: readonly VitalsLabMetricSpec[] = [
     row: 1,
     system: "breathing",
     vitalId: "spo2",
-    colorDark: "#6CE5E8",
+    colorDark: "#38BDF8",
     colorLight: "#0284C7",
     camera: { zoom: 1.62, panY: 0.16, targetRotY: 0.28 },
+    anchor3D: { x: 0.078, y: 0.33, z: 0.055 },
+    subtitle: "Alveolar-arterial oxygen diffusion · Peripheral perfusion",
+    description:
+      "Hemoglobin saturation remained at peak capacity through the night, supporting mitochondrial ATP synthesis in peripheral muscle tissue.",
   },
   {
     id: "active",
@@ -124,9 +159,13 @@ export const VITALS_LAB_METRICS: readonly VitalsLabMetricSpec[] = [
     column: "right",
     row: 2,
     system: "movement",
-    colorDark: "#F3C952",
-    colorLight: "#D99B16",
+    colorDark: "#F3C65F",
+    colorLight: "#D97706",
     camera: { zoom: 1.32, panY: -0.22, targetRotY: -0.32 },
+    anchor3D: { x: 0.102, y: -0.26, z: 0.048 },
+    subtitle: "Musculoskeletal output · Posterior & anterior chain activation",
+    description:
+      "64 minutes of sustained metabolically active movement engaged your quadriceps, glutes, and calves without triggering excessive eccentric fatigue.",
   },
 ] as const;
 
@@ -143,24 +182,24 @@ export const VITALS_LAB_SYSTEM_PILLS: readonly VitalsLabSystemPill[] = [
     id: "heart",
     label: "Heart",
     defaultMetric: "rhr",
-    headline: "Resting heart rate",
-    subline: "Cardiac recovery & stroke volume",
+    headline: "Resting heart rate · 52 bpm",
+    subline: "Last night’s reading · 3 bpm below your 30-day baseline",
     camera: { zoom: 1.68, panY: 0.18, targetRotY: 0.22 },
   },
   {
     id: "breathing",
     label: "Breathing",
     defaultMetric: "resp",
-    headline: "Respiration & SpO₂",
-    subline: "Pulmonary rhythm & oxygen diffusion",
+    headline: "Respiration · 14.2 /min",
+    subline: "98% SpO₂ saturation · Calm nocturnal pulmonary rhythm",
     camera: { zoom: 1.6, panY: 0.16, targetRotY: -0.18 },
   },
   {
     id: "movement",
     label: "Movement",
     defaultMetric: "active",
-    headline: "Active time",
-    subline: "Lower-body kinetic readiness",
+    headline: "Active time · 64 min",
+    subline: "Balanced kinetic strain · Lower-body & core readiness 92%",
     camera: { zoom: 1.28, panY: -0.18, targetRotY: -0.28 },
   },
 ] as const;
@@ -180,7 +219,7 @@ export function vitalsLabSystemToHealth(
   }
 }
 
-const DEMO_SPARK: Record<VitalsLabMetricId, number[]> = {
+const DEFAULT_SPARK: Record<VitalsLabMetricId, number[]> = {
   hrv: [58, 61, 59, 64, 62, 65, 68],
   resp: [14.6, 14.4, 14.3, 14.5, 14.1, 14.2, 14.2],
   sleep: [6.8, 7.1, 7.4, 6.9, 7.5, 7.3, 7.7],
@@ -189,17 +228,59 @@ const DEMO_SPARK: Record<VitalsLabMetricId, number[]> = {
   active: [45, 52, 60, 38, 72, 58, 64],
 };
 
-const DEMO_VALUES: Record<
+const DEFAULT_VALUES: Record<
   VitalsLabMetricId,
-  { value: string; status: string; delta: string }
+  {
+    value: string;
+    displayParts?: VitalsLabValuePart[];
+    status: string;
+    delta: string;
+  }
 > = {
-  hrv: { value: "68", status: "Optimal recovery", delta: "+6 ms vs. 30-day baseline" },
-  resp: { value: "14.2", status: "Stable baseline", delta: "Within 0.2 br/min of baseline" },
-  sleep: { value: "7h 42m", status: "94% efficiency", delta: "2h 18m Slow-Wave + REM" },
-  rhr: { value: "52", status: "Athletic tier", delta: "3 bpm below 30-day average" },
-  spo2: { value: "98", status: "Peak oxygenation", delta: "97–99% nocturnal range" },
-  active: { value: "64", status: "Balanced strain", delta: "Zone 2–4 aerobic load" },
+  hrv: {
+    value: "68",
+    status: "Optimal recovery",
+    delta: "+6 ms vs. 30-day baseline",
+  },
+  resp: {
+    value: "14.2",
+    status: "Stable baseline",
+    delta: "Within 0.2 br/min of baseline",
+  },
+  sleep: {
+    value: "7h 42m",
+    displayParts: [
+      { num: "7", unit: "h " },
+      { num: "42", unit: "m" },
+    ],
+    status: "94% efficiency",
+    delta: "2h 18m Slow-Wave + REM",
+  },
+  rhr: {
+    value: "52",
+    status: "Athletic tier",
+    delta: "3 bpm below 30-day average",
+  },
+  spo2: {
+    value: "98",
+    status: "Peak oxygenation",
+    delta: "97–99% continuous nocturnal range",
+  },
+  active: {
+    value: "64",
+    status: "Balanced strain",
+    delta: "Zone 2–4 aerobic & lower-limb load",
+  },
 };
+
+function parseDurationParts(value: string): VitalsLabValuePart[] | undefined {
+  const m = value.match(/^(\d+)h\s+(\d+)m$/i);
+  if (!m) return undefined;
+  return [
+    { num: m[1]!, unit: "h " },
+    { num: m[2]!, unit: "m" },
+  ];
+}
 
 export function vitalsLabMetricsFromModel(
   model?: AnalyticsLabModel | null,
@@ -208,24 +289,32 @@ export function vitalsLabMetricsFromModel(
     const vital = spec.vitalId
       ? model?.vitals.metrics.find((m) => m.id === spec.vitalId)
       : undefined;
-    const demo = DEMO_VALUES[spec.id];
+    const fallback = DEFAULT_VALUES[spec.id];
     const sparkline =
-      vital?.series.map((p) => p.value) ?? DEMO_SPARK[spec.id];
-    let value = demo.value;
+      vital?.series.map((p) => p.value) ?? DEFAULT_SPARK[spec.id];
+    let value = fallback.value;
     if (vital) {
       if (spec.id === "spo2") {
-        value = String(Math.round(vital.current));
+        value = String(Math.min(100, Math.max(70, Math.round(vital.current))));
+      } else if (spec.id === "rhr") {
+        value = String(Math.max(38, Math.round(vital.current)));
       } else if (spec.id === "resp") {
         value = vital.current.toFixed(1);
       } else {
-        value = vital.formattedCurrent.replace(/\s*(ms|bpm|brpm|%).*$/i, "").trim();
+        value = vital.formattedCurrent
+          .replace(/\s*(ms|bpm|brpm|%).*$/i, "")
+          .trim();
       }
     }
     return {
       ...spec,
       value,
-      status: vital?.statusLabel ?? demo.status,
-      delta: vital?.deltaLabel ?? demo.delta,
+      displayParts:
+        spec.id === "sleep"
+          ? parseDurationParts(value) ?? fallback.displayParts
+          : undefined,
+      status: vital?.statusLabel ?? fallback.status,
+      delta: vital?.deltaLabel ?? fallback.delta,
       sparkline,
     };
   });
