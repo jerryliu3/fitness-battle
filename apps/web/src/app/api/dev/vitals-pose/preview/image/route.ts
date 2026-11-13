@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
   try {
     const bytes = await readPreviewPng(gender);
-    return new Response(bytes, {
+    return new Response(new Uint8Array(bytes), {
       headers: {
         "Content-Type": "image/png",
         "Cache-Control": "no-store",
