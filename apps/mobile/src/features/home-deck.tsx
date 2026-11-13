@@ -182,13 +182,11 @@ function DeckCardContent({
 export function HomeDeck({
   accountKey,
   state,
-  initialIndex = 0,
   onOpenTodaySession,
   onOpenActivities,
 }: {
   accountKey: string;
   state: CompeteState;
-  initialIndex?: number;
   onOpenTodaySession: () => void;
   onOpenActivities: (activities: Activity[], title?: string) => void;
 }) {
@@ -204,22 +202,16 @@ export function HomeDeck({
   const [dismissedIds, setDismissedIds] = useState<HomeDeckCardId[]>(
     () => memoryDismissed.get(storageKey) ?? [],
   );
-  const [activeIndex, setActiveIndex] = useState(initialIndex ?? 0);
   const [dismissingId, setDismissingId] = useState<HomeDeckCardId | null>(null);
   const dismissalRevision = useRef(0);
   const swipingRef = useRef(false);
   const dismissalAnimation = useRef<Animated.CompositeAnimation | null>(null);
+  const stackLift = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     setDismissingId(null);
     swipingRef.current = false;
     return () => { dismissalAnimation.current?.stop(); swipingRef.current = false; };
   }, [storageKey]);
-
-  useEffect(() => {
-    if (typeof initialIndex === "number") {
-      setActiveIndex(initialIndex);
-    }
-  }, [initialIndex]);
 
   useEffect(() => {
     let alive = true;
@@ -251,22 +243,24 @@ export function HomeDeck({
     [allCards, dismissedIds],
   );
 
-  const safeIndex =
-    visibleCards.length > 0 ? activeIndex % visibleCards.length : 0;
-  const activeCard = visibleCards[safeIndex] ?? null;
-  // Each card owns its native animation values. Never reset an outgoing view.
-  const motion = useMemo(() => ({ x: new Animated.Value(0), opacity: new Animated.Value(1) }), [storageKey, activeCard?.id]);
+  const activeCard = visibleCards[0] ?? null;
+  const nextCard = visibleCards[1] ?? null;
+  const depth2Card = visibleCards[2] ?? null;
+  // Each top card owns its native animation values. Never reset an outgoing view.
+  const motion = useMemo(
+    () => ({ x: new Animated.Value(0), opacity: new Animated.Value(1) }),
+    [storageKey, activeCard?.id],
+  );
   const dragX = motion.x;
   const cardOpacity = motion.opacity;
-
-  const nextIndex =
-    visibleCards.length > 1 ? (safeIndex + 1) % visibleCards.length : null;
-  const nextCard = nextIndex !== null ? visibleCards[nextIndex] ?? null : null;
-
-  const depth2Index =
-    visibleCards.length > 2 ? (safeIndex + 2) % visibleCards.length : null;
-  const depth2Card =
-    depth2Index !== null ? visibleCards[depth2Index] ?? null : null;
+  const depth1Lift = stackLift.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -7],
+  });
+  const depth2Lift = stackLift.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -7],
+  });
 
   const persistDismissed = useCallback(
     (next: HomeDeckCardId[]) => {
@@ -293,12 +287,11 @@ export function HomeDeck({
       if (!targetCard) return;
       void playCue("light");
       const nextDismissed = [...new Set([...dismissedIds, cardId])];
-      const nextCount = Math.max(0, visibleCards.length - 1);
 
       if (reduceMotion) {
         dragX.setValue(0);
         cardOpacity.setValue(1);
-        setActiveIndex((curr) => (nextCount > 0 ? curr % nextCount : 0));
+        stackLift.setValue(0);
         persistDismissed(nextDismissed);
         return;
       }
@@ -306,8 +299,8 @@ export function HomeDeck({
       swipingRef.current = true;
       setDismissingId(cardId);
       dragX.setValue(currentDx);
+      stackLift.setValue(0);
 
-      // Animate smoothly off screen continuing from currentDx with zero snap-back
       const animation = Animated.parallel([
         Animated.timing(dragX, {
           toValue: direction === "left" ? -460 : 460,
@@ -321,11 +314,17 @@ export function HomeDeck({
           easing: Easing.in(Easing.quad),
           useNativeDriver: true,
         }),
+        Animated.timing(stackLift, {
+          toValue: 1,
+          duration: 280,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
       ]);
       dismissalAnimation.current = animation;
       animation.start(({ finished }) => {
         if (!finished) return;
-        setActiveIndex((curr) => (nextCount > 0 ? curr % nextCount : 0));
+        stackLift.setValue(0);
         persistDismissed(nextDismissed);
       });
     },
@@ -336,6 +335,7 @@ export function HomeDeck({
       dragX,
       persistDismissed,
       reduceMotion,
+      stackLift,
       visibleCards,
     ],
   );
@@ -351,11 +351,11 @@ export function HomeDeck({
     void playCue("selection");
     dragX.setValue(0);
     cardOpacity.setValue(1);
-    setActiveIndex(0);
+    stackLift.setValue(0);
     setDismissingId(null);
     swipingRef.current = false;
     persistDismissed([]);
-  }, [cardOpacity, dragX, persistDismissed]);
+  }, [cardOpacity, dragX, persistDismissed, stackLift]);
 
   const activeCardRef = useRef<HomeDeckCard | null>(activeCard);
   activeCardRef.current = activeCard;
@@ -450,6 +450,7 @@ export function HomeDeck({
             {/* Depth 2 Card (Underneath next card) */}
             {depth2Card && (
               <Animated.View
+                key={`depth2-${depth2Card.id}`}
                 pointerEvents="none"
                 accessible={false}
                 style={[
@@ -458,15 +459,8 @@ export function HomeDeck({
                   {
                     backgroundColor: paletteForDeckTone(depth2Card.tone, isDark).bg,
                     borderColor: paletteForDeckTone(depth2Card.tone, isDark).border,
-                    transform: [
-                      {
-                        translateY: dragX.interpolate({
-                          inputRange: [-240, 0, 240],
-                          outputRange: [7, 14, 7],
-                          extrapolate: "clamp",
-                        }),
-                      },
-                    ],
+                    opacity: 0.7,
+                    transform: [{ translateY: depth2Lift }],
                   },
                 ]}
               >
@@ -474,9 +468,9 @@ export function HomeDeck({
               </Animated.View>
             )}
 
-            {/* Depth 1 Card: FULLY RENDERED NEXT CARD (Same size directly beneath top card) */}
             {nextCard && (
               <Animated.View
+                key={`depth1-${nextCard.id}`}
                 pointerEvents="none"
                 accessible={false}
                 style={[
@@ -485,15 +479,8 @@ export function HomeDeck({
                   {
                     backgroundColor: paletteForDeckTone(nextCard.tone, isDark).bg,
                     borderColor: paletteForDeckTone(nextCard.tone, isDark).border,
-                    transform: [
-                      {
-                        translateY: dragX.interpolate({
-                          inputRange: [-240, 0, 240],
-                          outputRange: [0, 7, 0],
-                          extrapolate: "clamp",
-                        }),
-                      },
-                    ],
+                    opacity: dismissingId ? 1 : 0.95,
+                    transform: [{ translateY: depth1Lift }],
                   },
                 ]}
               >
@@ -597,14 +584,14 @@ const sThemes = createThemedStyles((c) => ({
     position: "absolute",
     left: 0,
     right: 0,
-    top: 0,
+    top: 7,
     zIndex: 2,
   },
   cardDepth2: {
     position: "absolute",
     left: 0,
     right: 0,
-    top: 0,
+    top: 14,
     zIndex: 1,
   },
   cardInner: {
