@@ -100,7 +100,16 @@ export function EventRegistration({ state, event, registered, error, onClaim, on
           <AppText role="label">Starts {detail.starts}</AppText>
         </>}
         <View style={{ borderTopWidth: 1, borderStyle: "dashed", borderColor: c.muted, paddingTop: 18, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}><View accessible={false} style={{ flexDirection: "row", flex: 1, gap: 2 }}>{barcode.map((width, i) => <View key={i} style={{ flex: width, height: 24, backgroundColor: c.ink }} />)}</View></View>
-        <FocusButton label={back ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →` : claiming ? "Claiming your spot…" : "Claim your spot"} disabled={claiming && !registered} onPress={back ? onView : () => { setClaiming(true); onClaim(); }} />
+        <FocusButton
+          label={back ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →` : claiming ? "Claiming your spot…" : "Claim your spot"}
+          disabled={claiming && !registered}
+          onPress={back ? onView : () => {
+            setClaiming(true);
+            requestAnimationFrame(() => {
+              onClaim();
+            });
+          }}
+        />
       </View>
     </Animated.View>;
 
