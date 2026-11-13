@@ -27,7 +27,7 @@ describe("vitals-pose dev route", () => {
     vi.stubEnv("NODE_ENV", "development");
     const res = await GET(new Request("http://localhost:3000/api/dev/vitals-pose"));
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { bones: { "upperarm01.L": { z: number } } };
+    const body = (await res.json()) as { bones: { "upperarm01.L": { x: number; y: number; z: number } } };
     expect(body.bones["upperarm01.L"].y).toBe(32.5);
   });
 
