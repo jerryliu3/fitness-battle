@@ -15,7 +15,7 @@
       1.74,
       3.4837466001813238
     ],
-    "path": "/Users/jerryliu/Documents/fitness-battle/fitness-battle/body-pipeline/generated/meshes/male.glb"
+    "path": "body-pipeline/generated/meshes/male.glb"
   },
   "female": {
     "vertices": 21833,
@@ -33,6 +33,6 @@
       1.66,
       3.030084124761651
     ],
-    "path": "/Users/jerryliu/Documents/fitness-battle/fitness-battle/body-pipeline/generated/meshes/female.glb"
+    "path": "body-pipeline/generated/meshes/female.glb"
   }
 }

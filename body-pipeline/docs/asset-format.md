@@ -22,9 +22,15 @@ Each particle record (28 bytes):
 
 Companion `.json` metadata sits beside each `.vbody` file.
 
-Quality variants per sex:
+Density presets per sex (UI label **Density**; not mesh LOD):
 
-- `outline-{high,medium,low}.vbody` — surface particles
-- `cloud-{high,medium,low}.vbody` — surface + interior volume
+| Preset | Typical surface | Typical interior (cloud only) |
+| --- | --- | --- |
+| `high` | ~6500 | ~8500 |
+| `medium` | ~3200 | ~4800 |
+| `low` | ~1400 | ~3000 |
+
+- `outline-{high,medium,low}.vbody` — surface shell
+- `cloud-{high,medium,low}.vbody` — surface + interior volume fill
 
 Public URL base: `/bodies/pointclouds/{male|female}/`.

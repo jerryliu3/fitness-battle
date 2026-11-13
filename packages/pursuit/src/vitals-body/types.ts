@@ -7,6 +7,7 @@ export type ViewPreset = "front" | "side" | "back" | "free";
 export type ZoomPreset = "full" | "upper" | "lower";
 export type HealthSystem = "full" | "cardiovascular" | "respiratory" | "movement";
 export type AppearanceMode = "light" | "dark";
+export type FaceStyle = "mannequin" | "soft" | "natural";
 
 export interface VitalsParticleAsset {
   count: number;
@@ -25,9 +26,9 @@ export interface VitalsBodyTuning {
 }
 
 export const DEFAULT_TUNING: VitalsBodyTuning = {
-  particleScale: 1,
-  opacity: 0.92,
-  brightness: 1,
-  glow: 1.15,
-  edgeLight: 0.85,
+  particleScale: 0.52,
+  opacity: 0.52,
+  brightness: 0.9,
+  glow: 0.48,
+  edgeLight: 0.68,
 };

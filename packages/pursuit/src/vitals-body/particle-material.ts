@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { AppearanceMode, HealthSystem, VizMode } from "./types";
+import type { AppearanceMode, FaceStyle, HealthSystem, VizMode } from "./types";
 
 const REGION_MAP: Record<HealthSystem, number> = {
   full: 0,
@@ -8,29 +8,33 @@ const REGION_MAP: Record<HealthSystem, number> = {
   movement: 3,
 };
 
+const FACE_MAP: Record<FaceStyle, number> = {
+  mannequin: 0,
+  soft: 1,
+  natural: 2,
+};
+
 export function createParticleMaterial(
   appearance: AppearanceMode,
   reducedMotion: boolean,
 ): THREE.ShaderMaterial {
-  const teal = appearance === "dark" ? "#5fe8d6" : "#2aa89a";
-  const gold = appearance === "dark" ? "#e8c468" : "#c49a3c";
-
-  return new THREE.ShaderMaterial({
+  const material = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
-    blending: THREE.AdditiveBlending,
     uniforms: {
       uTime: { value: 0 },
       uMode: { value: 0 },
       uHighlight: { value: 0 },
-      uOpacity: { value: 0.9 },
-      uBrightness: { value: 1 },
-      uGlow: { value: 1.1 },
-      uEdge: { value: 0.8 },
-      uSize: { value: 3.2 },
+      uFace: { value: 1 },
+      uOpacity: { value: 0.7 },
+      uBrightness: { value: 0.9 },
+      uGlow: { value: 0.65 },
+      uEdge: { value: 0.75 },
+      uSize: { value: 1.1 },
       uAnimate: { value: reducedMotion ? 0 : 1 },
-      uTeal: { value: new THREE.Color(teal) },
-      uGold: { value: new THREE.Color(gold) },
+      uTeal: { value: new THREE.Color() },
+      uGold: { value: new THREE.Color() },
+      uRimMix: { value: 0.35 },
     },
     vertexShader: /* glsl */ `
       attribute float aRegion;
@@ -38,17 +42,28 @@ export function createParticleMaterial(
       varying float vRegion;
       varying float vClass;
       varying float vRim;
+      varying vec3 vLocalPos;
       uniform float uSize;
       uniform float uEdge;
+      uniform float uMode;
       void main() {
+        vLocalPos = position;
         vRegion = aRegion;
         vClass = aClass;
+        if (uMode < 0.5 && aClass > 1.5) {
+          gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+          gl_PointSize = 0.0;
+          return;
+        }
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
         vec3 nView = normalize(normalMatrix * normal);
         vec3 viewDir = normalize(-mv.xyz);
         vRim = pow(1.0 - max(0.0, dot(nView, viewDir)), 2.0) * uEdge;
-        float classBoost = aClass < 1.5 ? 1.0 : 0.72;
-        gl_PointSize = uSize * classBoost * (280.0 / -mv.z);
+        float classBoost = aClass < 1.5 ? 1.0 : 0.78;
+        float cloudBoost = (uMode > 0.5 && aClass > 1.5) ? 1.08 : 1.0;
+        float dist = max(0.55, -mv.z);
+        gl_PointSize = uSize * classBoost * cloudBoost * (52.0 / dist);
+        gl_PointSize = min(gl_PointSize, 10.0);
         gl_Position = projectionMatrix * mv;
       }
     `,
@@ -56,38 +71,83 @@ export function createParticleMaterial(
       varying float vRegion;
       varying float vClass;
       varying float vRim;
+      varying vec3 vLocalPos;
       uniform float uTime;
       uniform float uMode;
       uniform float uHighlight;
+      uniform float uFace;
       uniform float uOpacity;
       uniform float uBrightness;
       uniform float uGlow;
       uniform float uAnimate;
+      uniform float uRimMix;
       uniform vec3 uTeal;
       uniform vec3 uGold;
       void main() {
+        if (uMode < 0.5 && vClass > 1.5) discard;
+
         vec2 c = gl_PointCoord - 0.5;
         float r = length(c);
         if (r > 0.5) discard;
-        float soft = smoothstep(0.5, 0.08, r);
+        float soft = smoothstep(0.5, 0.22, r);
         float pulse = uAnimate > 0.5
-          ? 0.92 + 0.08 * sin(uTime * 1.2 + vRegion * 3.0)
+          ? 0.94 + 0.06 * sin(uTime * 1.2 + vRegion * 3.0)
           : 1.0;
 
-        vec3 base = mix(uTeal, uGold, clamp(vRim * 0.35, 0.0, 1.0));
-        float interiorFade = (uMode > 0.5 && vClass > 1.5) ? 0.55 : 1.0;
-        float highlight = 1.0;
+        vec3 base = mix(uTeal, uGold, clamp(vRim * uRimMix, 0.0, 1.0));
+        float interiorFade = (uMode > 0.5 && vClass > 1.5) ? 0.52 : 1.0;
+        float regionMix = 0.0;
         if (uHighlight > 0.5) {
-          highlight = abs(vRegion - uHighlight) < 0.5 ? 1.55 : 0.35;
+          regionMix = 1.0 - smoothstep(0.0, 1.05, abs(vRegion - uHighlight));
         }
-        vec3 col = base * uBrightness * pulse * highlight * interiorFade;
-        col += vRim * uGold * uGlow * 0.4;
-        float alpha = soft * uOpacity * highlight * interiorFade;
-        if (uMode < 0.5 && vClass > 1.5) alpha *= 0.15;
+
+        float headT = clamp((vLocalPos.y - 1.36) / 0.36, 0.0, 1.0);
+        float faceMask = headT;
+        if (headT > 0.01) {
+          float front = smoothstep(-0.06, 0.12, -vLocalPos.z);
+          float mid = smoothstep(0.17, 0.05, abs(vLocalPos.x));
+          faceMask = headT * front * mid;
+        }
+        float faceDetail = faceMask * (0.55 + vRim * 0.85);
+
+        vec3 col = base * uBrightness * pulse * interiorFade;
+        col = mix(col, mix(col, uGold, 0.68) * 1.28, regionMix * 0.82);
+        float alpha = soft * uOpacity * interiorFade;
+
+        if (uFace < 0.5) {
+          col = mix(col, uTeal, faceDetail * 0.45);
+          alpha *= mix(1.0, 0.12, faceDetail);
+        } else if (uFace < 1.5) {
+          col = mix(col, uTeal, faceDetail * 0.18);
+          alpha *= mix(1.0, 0.5, faceDetail * vRim);
+        }
+
+        col += vRim * uGold * uGlow * (0.22 + regionMix * 0.35);
+        if (uMode < 0.5) {
+          alpha = pow(alpha, 1.25);
+        }
         gl_FragColor = vec4(col, alpha);
       }
     `,
   });
+
+  applyAppearanceMaterial(material, appearance);
+  return material;
+}
+
+export function applyAppearanceMaterial(
+  material: THREE.ShaderMaterial,
+  appearance: AppearanceMode,
+): void {
+  const dark = appearance === "dark";
+  material.blending = dark ? THREE.AdditiveBlending : THREE.NormalBlending;
+  material.depthWrite = !dark;
+
+  const teal = dark ? "#5fe8d6" : "#167a6d";
+  const gold = dark ? "#e8c468" : "#8a6b2a";
+  (material.uniforms.uTeal!.value as THREE.Color).set(teal);
+  (material.uniforms.uGold!.value as THREE.Color).set(gold);
+  material.uniforms.uRimMix!.value = dark ? 0.35 : 0.22;
 }
 
 export function setAppearance(
@@ -95,11 +155,8 @@ export function setAppearance(
   appearance: AppearanceMode,
   renderer: THREE.WebGLRenderer,
 ): void {
-  const teal = appearance === "dark" ? "#5fe8d6" : "#2aa89a";
-  const gold = appearance === "dark" ? "#e8c468" : "#c49a3c";
-  (material.uniforms.uTeal!.value as THREE.Color).set(teal);
-  (material.uniforms.uGold!.value as THREE.Color).set(gold);
-  renderer.toneMappingExposure = appearance === "dark" ? 1.15 : 1.05;
+  applyAppearanceMaterial(material, appearance);
+  renderer.toneMappingExposure = appearance === "dark" ? 1.05 : 0.95;
 }
 
 export function applyHighlight(
@@ -109,4 +166,11 @@ export function applyHighlight(
 ): void {
   material.uniforms.uMode!.value = mode === "cloud" ? 1 : 0;
   material.uniforms.uHighlight!.value = REGION_MAP[system];
+}
+
+export function applyFaceStyle(
+  material: THREE.ShaderMaterial,
+  style: FaceStyle,
+): void {
+  material.uniforms.uFace!.value = FACE_MAP[style];
 }

@@ -20,9 +20,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib.mesh_common import (  # noqa: E402
     BodySex,
+    REGION_NONE,
     assign_region,
     bone_label_to_region,
-    standing_arm_rotvec_deg,
+    standing_pose_rotvec_deg,
     validate_mesh,
     write_json,
 )
@@ -34,23 +35,50 @@ import torch
 import trimesh
 from anny import Anny
 
+PHENOTYPE_PATH = ROOT / "body-pipeline" / "local" / "phenotype.json"
 
-def _phenotype(sex: BodySex) -> dict[str, float]:
-    gender = 0.0 if sex == "male" else 1.0
-    return {
-        "gender": gender,
+DEFAULT_PHENOTYPE: dict[str, dict[str, float]] = {
+    "male": {
         "age": 0.58,
         "muscle": 0.32,
-        "weight": 0.48 if sex == "male" else 0.44,
-        "height": 0.54 if sex == "male" else 0.5,
+        "weight": 0.48,
+        "height": 0.54,
         "proportions": 0.5,
-    }
+    },
+    "female": {
+        "age": 0.58,
+        "muscle": 0.28,
+        "weight": 0.44,
+        "height": 0.5,
+        "proportions": 0.52,
+    },
+}
+
+
+def load_phenotype_file() -> dict[str, dict[str, float]]:
+    if not PHENOTYPE_PATH.exists():
+        return {}
+    import json
+
+    data = json.loads(PHENOTYPE_PATH.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"Invalid phenotype file: {PHENOTYPE_PATH}")
+    return data
+
+
+def _phenotype(sex: BodySex) -> dict[str, float]:
+    merged = {**DEFAULT_PHENOTYPE[sex]}
+    file_cfg = load_phenotype_file()
+    if sex in file_cfg and isinstance(file_cfg[sex], dict):
+        merged.update(file_cfg[sex])
+    merged["gender"] = 0.0 if sex == "male" else 1.0
+    return merged
 
 
 def _pose_rotvec(model: Anny) -> torch.Tensor:
     dtype = torch.float32
     bones_rotvec = torch.zeros((len(model.bone_labels), 3), dtype=dtype)
-    arm_map = standing_arm_rotvec_deg()
+    arm_map = standing_pose_rotvec_deg()
     for index, label in enumerate(model.bone_labels):
         if label in arm_map:
             bones_rotvec[index] = torch.tensor(arm_map[label], dtype=dtype)
@@ -72,14 +100,22 @@ def export_body(model: Anny, sex: BodySex, out_dir: Path) -> Path:
 
     mesh = trimesh.Trimesh(vertices=vertices, faces=faces, process=False)
 
-    weights = model.vertex_bone_weights.detach().cpu().numpy()
-    if weights.ndim == 3:
-        weights = weights[0]
-    bone_regions = np.array([bone_label_to_region(l) for l in model.bone_labels], dtype=np.uint8)
-    if weights.shape[0] == len(vertices):
-        vertex_regions = bone_regions[weights.argmax(axis=1)]
-    else:
-        vertex_regions = assign_region(vertices, np.array([vertices.min(0), vertices.max(0)]))
+    bone_regions = np.array(
+        [bone_label_to_region(l) for l in model.bone_labels], dtype=np.uint8
+    )
+    v_weights = model.vertex_bone_weights.detach().cpu().numpy()
+    v_indices = model.vertex_bone_indices.detach().cpu().numpy()
+    if v_weights.ndim == 3:
+        v_weights = v_weights[0]
+        v_indices = v_indices[0]
+    dominant = v_weights.argmax(axis=1)
+    bone_idx = v_indices[np.arange(len(vertices)), dominant]
+    vertex_regions = bone_regions[bone_idx]
+    # Torso / organs: spatial heuristic fills gaps where bone labels lack cardio splits.
+    spatial = assign_region(vertices, np.array([vertices.min(0), vertices.max(0)]))
+    fill = (vertex_regions == REGION_NONE) & (spatial > 0)
+    vertex_regions = vertex_regions.astype(np.uint8)
+    vertex_regions[fill] = spatial[fill]
     pre_merge_verts = vertices.copy()
 
     mesh.merge_vertices()

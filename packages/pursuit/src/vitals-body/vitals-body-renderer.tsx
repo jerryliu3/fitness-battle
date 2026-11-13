@@ -4,10 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { assetUrl, loadVbody, vitalsAssetBase } from "./load-vbody";
-import { applyHighlight, createParticleMaterial } from "./particle-material";
+import {
+  applyFaceStyle,
+  applyHighlight,
+  createParticleMaterial,
+  setAppearance,
+} from "./particle-material";
 import type {
   AppearanceMode,
   BodySex,
+  FaceStyle,
   HealthSystem,
   QualityPreset,
   ViewPreset,
@@ -26,6 +32,7 @@ export interface VitalsBodyRendererProps {
   zoom: ZoomPreset;
   system: HealthSystem;
   appearance?: AppearanceMode;
+  faceStyle?: FaceStyle;
   tuning?: VitalsBodyTuning;
   autoRotate?: boolean;
   className?: string;
@@ -74,6 +81,7 @@ export function VitalsBodyRenderer({
   zoom,
   system,
   appearance = "dark",
+  faceStyle = "soft",
   tuning = defaultTuning,
   autoRotate = false,
   className,
@@ -83,6 +91,7 @@ export function VitalsBodyRenderer({
   const hostRef = useRef<HTMLDivElement>(null);
   const ctxRef = useRef<{
     schedule: () => void;
+    resize: () => void;
     material: THREE.ShaderMaterial | null;
     scene: THREE.Scene | null;
     fog: THREE.FogExp2 | null;
@@ -95,10 +104,20 @@ export function VitalsBodyRenderer({
     system,
     mode,
     appearance,
+    faceStyle,
     tuning,
     autoRotate,
   });
-  stateRef.current = { view, zoom, system, mode, appearance, tuning, autoRotate };
+  stateRef.current = {
+    view,
+    zoom,
+    system,
+    mode,
+    appearance,
+    faceStyle,
+    tuning,
+    autoRotate,
+  };
 
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -124,13 +143,28 @@ export function VitalsBodyRenderer({
     scene.fog = fog;
 
     const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 40);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      // Static render-on-demand still needs a retained buffer (Safari / many browsers).
+      preserveDrawingBuffer: true,
+    });
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = appearance === "dark" ? 1.15 : 1.05;
-    host.appendChild(renderer.domElement);
+    const canvas = renderer.domElement;
+    Object.assign(canvas.style, {
+      display: "block",
+      width: "100%",
+      height: "100%",
+      position: "absolute",
+      inset: "0",
+    });
+    host.style.position = "absolute";
+    host.style.inset = "0";
+    host.appendChild(canvas);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -144,18 +178,6 @@ export function VitalsBodyRenderer({
     ).matches;
 
     material = createParticleMaterial(appearance, reducedMotion);
-
-    const resize = () => {
-      const w = host.clientWidth || 320;
-      const h = host.clientHeight || 480;
-      renderer.setSize(w, h, false);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      schedule();
-    };
-    resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(host);
 
     const groundMat = new THREE.MeshBasicMaterial({
       color: appearance === "dark" ? "#3fd6c5" : "#2aa89a",
@@ -211,8 +233,9 @@ export function VitalsBodyRenderer({
         material.uniforms.uBrightness!.value = s.tuning.brightness;
         material.uniforms.uGlow!.value = s.tuning.glow;
         material.uniforms.uEdge!.value = s.tuning.edgeLight;
-        material.uniforms.uSize!.value = 2.6 * s.tuning.particleScale;
+        material.uniforms.uSize!.value = 0.62 * s.tuning.particleScale;
         applyHighlight(material, s.system, s.mode);
+        applyFaceStyle(material, s.faceStyle);
       }
       renderer.render(scene, camera);
     };
@@ -230,6 +253,19 @@ export function VitalsBodyRenderer({
       });
     };
 
+    const resize = () => {
+      const box = host.getBoundingClientRect();
+      const w = Math.max(1, Math.round(box.width)) || 320;
+      const h = Math.max(1, Math.round(box.height)) || 480;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      schedule();
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(host);
+
     const bumpDamping = () => {
       dampFrames = 90;
       schedule();
@@ -238,6 +274,7 @@ export function VitalsBodyRenderer({
 
     ctxRef.current = {
       schedule,
+      resize,
       material,
       scene,
       fog,
@@ -261,7 +298,22 @@ export function VitalsBodyRenderer({
       renderer.dispose();
       host.removeChild(renderer.domElement);
     };
-  }, [appearance]);
+    // WebGL context is created once; theme is updated in the appearance effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only init
+  }, []);
+
+  useEffect(() => {
+    const ctx = ctxRef.current;
+    if (!ctxReady || !ctx?.material || !ctx.renderer || !ctx.fog || !ctx.groundMat) {
+      return;
+    }
+    setAppearance(ctx.material, appearance, ctx.renderer);
+    ctx.fog.color.set(appearance === "dark" ? "#0a1418" : "#ddeae8");
+    ctx.fog.density = appearance === "dark" ? 0.11 : 0.035;
+    ctx.groundMat.color.set(appearance === "dark" ? "#3fd6c5" : "#1f7f72");
+    ctx.groundMat.opacity = appearance === "dark" ? 0.22 : 0.32;
+    ctx.schedule();
+  }, [appearance, ctxReady]);
 
   useEffect(() => {
     if (!ctxReady) return;
@@ -293,6 +345,7 @@ export function VitalsBodyRenderer({
         scene.add(points);
         setLoadState("ready");
         onLoadSuccess?.();
+        ctx.resize();
         ctx.schedule();
       } catch (error) {
         if (cancelled) return;
@@ -315,8 +368,10 @@ export function VitalsBodyRenderer({
   }, [assetBase, sex, mode, quality, ctxReady, onLoadError, onLoadSuccess]);
 
   useEffect(() => {
-    ctxRef.current?.schedule();
-  }, [view, zoom, system, mode, tuning]);
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+    ctx.schedule();
+  }, [view, zoom, system, mode, faceStyle, tuning]);
 
   return (
     <div

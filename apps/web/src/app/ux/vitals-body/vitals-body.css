@@ -54,11 +54,21 @@
 }
 
 .vitals-body-stage {
+  position: relative;
+  height: min(72vh, 640px);
   min-height: min(72vh, 640px);
   border-radius: 24px;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
   background: color-mix(in srgb, currentColor 4%, transparent);
+}
+
+.vitals-body-page--dark .vitals-body-stage {
+  background: radial-gradient(ellipse at 50% 40%, #14252c 0%, #0a1216 70%);
+}
+
+.vitals-body-page--light .vitals-body-stage {
+  background: radial-gradient(ellipse at 50% 40%, #f8fcfb 0%, #dbe8e5 75%);
 }
 
 .vitals-body-panel {

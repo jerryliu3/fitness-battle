@@ -20,23 +20,52 @@ REGION_MOVEMENT = 3
 def bone_label_to_region(label: str) -> int:
     """Map Anny / MakeHuman bone label to vitals highlight region."""
     l = label.lower()
-    if any(k in l for k in ("thigh", "calf", "foot", "toe", "upperarm", "lowerarm", "hand", "finger", "clavicle")):
+    if any(
+        k in l
+        for k in (
+            "thigh",
+            "upperleg",
+            "lowerleg",
+            "calf",
+            "foot",
+            "toe",
+            "upperarm",
+            "lowerarm",
+            "hand",
+            "finger",
+            "clavicle",
+        )
+    ):
         return REGION_MOVEMENT
-    if any(k in l for k in ("chest", "heart", "sternum")):
+    if any(k in l for k in ("spine05", "spine04", "chest", "heart", "sternum")):
         return REGION_CARDIO
-    if any(k in l for k in ("spine", "ribs", "breath", "lung")):
+    if any(k in l for k in ("spine03", "spine02", "spine01", "spine", "ribs", "breath", "lung")):
         return REGION_RESPIRATORY
     return REGION_NONE
 
 
-def standing_arm_rotvec_deg() -> dict[str, tuple[float, float, float]]:
-    """Small arm abduction so hands clear the torso (degrees, bone-local axes)."""
+def standing_pose_rotvec_deg() -> dict[str, tuple[float, float, float]]:
+    """Relaxed A-pose: arms at sides, feet parallel (degrees, bone-local)."""
     return {
-        "upperarm01.L": (18.0, 8.0, 6.0),
-        "upperarm01.R": (-18.0, -8.0, -6.0),
+        "clavicle.L": (0.0, 0.0, 5.0),
+        "clavicle.R": (0.0, 0.0, -5.0),
+        "shoulder01.L": (0.0, 0.0, 7.0),
+        "shoulder01.R": (0.0, 0.0, -7.0),
+        "upperarm01.L": (18.0, 0.0, -72.0),
+        "upperarm01.R": (-18.0, 0.0, 72.0),
+        "upperarm02.L": (4.0, 0.0, 0.0),
+        "upperarm02.R": (-4.0, 0.0, 0.0),
         "lowerarm01.L": (6.0, 0.0, 0.0),
         "lowerarm01.R": (-6.0, 0.0, 0.0),
+        # Thigh roll (Z): slight inward without the Y abduction that splayed the feet.
+        "upperleg01.L": (0.0, 0.0, -7.0),
+        "upperleg01.R": (0.0, 0.0, 7.0),
     }
+
+
+def standing_arm_rotvec_deg() -> dict[str, tuple[float, float, float]]:
+    """Deprecated alias for standing_pose_rotvec_deg."""
+    return standing_pose_rotvec_deg()
 
 
 def normalize_standing(mesh: trimesh.Trimesh, target_height: float = 1.72) -> trimesh.Trimesh:
@@ -89,8 +118,8 @@ def assign_region(points: np.ndarray, bounds: np.ndarray) -> np.ndarray:
 
     regions = np.zeros(len(points), dtype=np.uint8)
     movement = (yn < 0.5) & ((lateral > 0.2) | (yn < 0.38))
-    cardio = (yn >= 0.58) & (yn <= 0.68) & (lateral < 0.16)
-    respiratory = (yn >= 0.5) & (yn <= 0.78) & (lateral < 0.26)
+    cardio = (yn >= 0.54) & (yn <= 0.72) & (lateral < 0.22)
+    respiratory = (yn >= 0.46) & (yn <= 0.82) & (lateral < 0.32) & ~cardio
     regions[movement] = REGION_MOVEMENT
     regions[cardio] = REGION_CARDIO
     regions[respiratory & ~cardio] = REGION_RESPIRATORY

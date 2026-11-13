@@ -9,6 +9,7 @@
 | Process | `scripts/process_meshes.py` | `generated/meshes/{male,female}.glb` |
 | Particles | `scripts/generate_particles.py` | `generated/pointclouds/` |
 | Validate | `scripts/validate_assets.py` | `validation-report.json` |
+| Pose preview | `scripts/preview_standing_pose.py` | `generated/pose-preview-*.png` |
 | Sync | `scripts/sync_runtime_assets.sh [anny\|mpfb2]` | `apps/web/public/bodies/<variant>/` |
 
 ## Dependencies
@@ -71,4 +72,14 @@ pnpm bodies:generate:mpfb2 && pnpm bodies:sync:mpfb2
 ```bash
 pnpm dev
 # Open /ux/vitals-body (design / UX access gate applies)
+```
+
+### Local body-shape tuning (not production)
+
+On `pnpm dev` at `localhost`, the demo shows **LOCAL ANNY PHENOTYPE** sliders. Saving writes
+`body-pipeline/local/phenotype.json` (gitignored; see `local/phenotype.json.example`).
+Regenerate to preview:
+
+```bash
+pnpm bodies:generate && pnpm bodies:sync
 ```

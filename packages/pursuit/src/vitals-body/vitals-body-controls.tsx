@@ -2,6 +2,7 @@ import type {
   AppearanceMode,
   BodyMeshSource,
   BodySex,
+  FaceStyle,
   HealthSystem,
   QualityPreset,
   ViewPreset,
@@ -25,6 +26,8 @@ export interface VitalsBodyControlProps {
   onSystem: (s: HealthSystem) => void;
   appearance: AppearanceMode;
   onAppearance: (a: AppearanceMode) => void;
+  faceStyle: FaceStyle;
+  onFaceStyle: (f: FaceStyle) => void;
   quality: QualityPreset;
   onQuality: (q: QualityPreset) => void;
   tuning: VitalsBodyTuning;
@@ -126,6 +129,11 @@ export function VitalsBodyControls(props: VitalsBodyControlProps) {
         { id: "upper", label: "Upper" },
         { id: "lower", label: "Lower" },
       ]} />
+      <Seg label="FACE" value={props.faceStyle} onChange={props.onFaceStyle} options={[
+        { id: "mannequin", label: "Mannequin" },
+        { id: "soft", label: "Soft" },
+        { id: "natural", label: "Natural" },
+      ]} />
       <Seg label="SYSTEM" value={props.system} onChange={props.onSystem} options={[
         { id: "full", label: "Full" },
         { id: "cardiovascular", label: "Heart" },
@@ -136,11 +144,16 @@ export function VitalsBodyControls(props: VitalsBodyControlProps) {
         { id: "dark", label: "Dark" },
         { id: "light", label: "Light" },
       ]} />
-      <Seg label="QUALITY" value={props.quality} onChange={props.onQuality} options={[
-        { id: "high", label: "High" },
-        { id: "medium", label: "Medium" },
-        { id: "low", label: "Low" },
-      ]} />
+      <Seg
+        label="DENSITY"
+        value={props.quality}
+        onChange={props.onQuality}
+        options={[
+          { id: "high", label: "High" },
+          { id: "medium", label: "Med" },
+          { id: "low", label: "Low" },
+        ]}
+      />
       {props.devTuning ? (
         <div
           style={{
@@ -151,11 +164,11 @@ export function VitalsBodyControls(props: VitalsBodyControlProps) {
           }}
         >
           <span style={{ fontSize: 11, opacity: 0.6 }}>DEV TUNING</span>
-          {slider("particleScale", "Particle size", 0.6, 1.8, 0.05)}
-          {slider("opacity", "Opacity", 0.35, 1, 0.02)}
-          {slider("brightness", "Brightness", 0.6, 1.6, 0.02)}
-          {slider("glow", "Glow", 0.5, 2, 0.05)}
-          {slider("edgeLight", "Edge light", 0, 1.5, 0.05)}
+          {slider("particleScale", "Particle size", 0.18, 0.85, 0.01)}
+          {slider("opacity", "Opacity", 0.25, 0.95, 0.02)}
+          {slider("brightness", "Brightness", 0.5, 1.35, 0.02)}
+          {slider("glow", "Glow", 0.2, 1.1, 0.02)}
+          {slider("edgeLight", "Edge light", 0, 1.2, 0.02)}
         </div>
       ) : null}
     </div>

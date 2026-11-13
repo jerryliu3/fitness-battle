@@ -2,7 +2,10 @@
   "sex": "male",
   "mode": "outline",
   "quality": "high",
+  "density": {
+    "surface": 6500,
+    "interior_target": 8500
+  },
   "seed": 42,
-  "count": 12000,
   "stride_bytes": 28
 }
