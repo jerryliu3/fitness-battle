@@ -9,6 +9,7 @@ import {
   vitalsLabMetricsFromModel,
 } from "@fitness-battle/shared";
 import {
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -45,60 +46,78 @@ function normalizeAngleDiff(a: number, b: number): number {
   return Math.abs(d);
 }
 
+function LabIcon({ size = 13, children }: { size?: number; children: ReactNode }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+
 function SunIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <LabIcon size={14}>
       <circle cx="12" cy="12" r="4" />
       <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-    </svg>
+    </LabIcon>
   );
 }
 
 function MoonIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <LabIcon size={14}>
       <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-    </svg>
+    </LabIcon>
   );
 }
 
 function ScanLineIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <LabIcon>
       <path d="M3 7V5a2 2 0 0 1 2-2h2" />
       <path d="M17 3h2a2 2 0 0 1 2 2v2" />
       <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
       <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
       <path d="M7 12h10" />
-    </svg>
+    </LabIcon>
   );
 }
 
 function RotateCcwIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <LabIcon>
       <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
       <path d="M3 3v5h5" />
-    </svg>
+    </LabIcon>
   );
 }
 
 function RotateCwIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <LabIcon>
       <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
       <path d="M21 3v5h-5" />
-    </svg>
+    </LabIcon>
   );
 }
 
 function InfoIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <LabIcon size={14}>
       <circle cx="12" cy="12" r="10" />
       <path d="M12 16v-4" />
       <path d="M12 8h.01" />
-    </svg>
+    </LabIcon>
   );
 }
 
@@ -226,6 +245,19 @@ export function VitalsLabExperience({
     cardDot.setAttribute("cy", endY.toFixed(1));
   }, []);
 
+  const applyCamera = (next: {
+    zoom?: number;
+    panY?: number;
+    targetRotY: number;
+  }) => {
+    setAutoOrbit(false);
+    if (next.zoom !== undefined) setZoom(next.zoom);
+    if (next.panY !== undefined) setPanY(next.panY);
+    setTargetRotY(next.targetRotY);
+    setLiveRotY(next.targetRotY);
+    setRotYStepNonce((n) => n + 1);
+  };
+
   const handleSelectMetric = (metric: VitalsLabMetricDisplay) => {
     if (activeMetricId === metric.id) {
       handleResetZoom();
@@ -233,12 +265,7 @@ export function VitalsLabExperience({
     }
     setActiveMetricId(metric.id);
     setActiveSystem(metric.system);
-    setAutoOrbit(false);
-    setZoom(metric.camera.zoom);
-    setPanY(metric.camera.panY);
-    setTargetRotY(metric.camera.targetRotY);
-    setLiveRotY(metric.camera.targetRotY);
-    setRotYStepNonce((n) => n + 1);
+    applyCamera(metric.camera);
   };
 
   const handleSelectSystem = (systemId: VitalsLabSystemId) => {
@@ -246,52 +273,26 @@ export function VitalsLabExperience({
       VITALS_LAB_SYSTEM_PILLS.find((p) => p.id === systemId) ??
       VITALS_LAB_SYSTEM_PILLS[0];
     setActiveSystem(pill.id);
-    setAutoOrbit(false);
-
-    if (pill.defaultMetric) {
-      const targetMetric =
-        metrics.find((m) => m.id === pill.defaultMetric) ?? null;
-      setActiveMetricId(targetMetric ? targetMetric.id : null);
-      const cam = targetMetric ? targetMetric.camera : pill.camera;
-      setZoom(cam.zoom);
-      setPanY(cam.panY);
-      setTargetRotY(cam.targetRotY);
-      setLiveRotY(cam.targetRotY);
-    } else {
-      setActiveMetricId(null);
-      setZoom(pill.camera.zoom);
-      setPanY(pill.camera.panY);
-      setTargetRotY(pill.camera.targetRotY);
-      setLiveRotY(pill.camera.targetRotY);
-    }
-    setRotYStepNonce((n) => n + 1);
+    const targetMetric = pill.defaultMetric
+      ? metrics.find((m) => m.id === pill.defaultMetric) ?? null
+      : null;
+    setActiveMetricId(targetMetric ? targetMetric.id : null);
+    applyCamera(targetMetric ? targetMetric.camera : pill.camera);
   };
 
   const handleResetZoom = () => {
     setActiveMetricId(null);
     setActiveSystem("full");
     setLabNoteOpen(false);
-    setAutoOrbit(false);
-    setZoom(1);
-    setPanY(0);
-    setTargetRotY(0);
-    setLiveRotY(0);
-    setRotYStepNonce((n) => n + 1);
+    applyCamera({ zoom: 1, panY: 0, targetRotY: 0 });
   };
 
   const handleStepRotate = (delta: number) => {
-    setAutoOrbit(false);
-    const next = liveRotY + delta;
-    setTargetRotY(next);
-    setLiveRotY(next);
-    setRotYStepNonce((n) => n + 1);
+    applyCamera({ targetRotY: liveRotY + delta });
   };
 
   const handleAnglePreset = (rad: number) => {
-    setAutoOrbit(false);
-    setTargetRotY(rad);
-    setLiveRotY(rad);
-    setRotYStepNonce((n) => n + 1);
+    applyCamera({ targetRotY: rad });
   };
 
   const handleTriggerScan = () => {
@@ -341,9 +342,6 @@ export function VitalsLabExperience({
           isActive ? "is-active" : "",
           isDimmed ? "is-dimmed" : "",
         ].join(" ")}
-        style={{
-          ["--card-accent" as string]: cardColor,
-        }}
       >
         <span className="vitals-lab__card-label">{m.label}</span>
         <span className="vitals-lab__card-value">

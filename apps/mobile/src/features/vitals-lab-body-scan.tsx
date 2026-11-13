@@ -1,9 +1,8 @@
-import { createThemedStyles, useAppTheme, useThemedStyles } from "../theme";
-import { useSceneActive } from "../ui/use-scene-active";
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { View } from "react-native";
-import WebView, { type WebViewMessageEvent } from "react-native-webview";
+import WebView from "react-native-webview";
 import { mobileEnv } from "../lib/env";
+import { createThemedStyles, useAppTheme, useThemedStyles } from "../theme";
 import { AppText } from "../ui/section";
 
 const EMBED_HEIGHT = 720;
@@ -11,9 +10,6 @@ const EMBED_HEIGHT = 720;
 export function VitalsLabBodyScan({ signedOut = false }: { signedOut?: boolean }) {
   const { mode } = useAppTheme();
   const styles = useThemedStyles(styleThemes);
-  const active = useSceneActive();
-  const ready = useRef(false);
-  const webRef = useRef<WebView<object>>(null);
 
   const uri = useMemo(() => {
     const base = mobileEnv.apiUrl.replace(/\/$/, "");
@@ -22,11 +18,6 @@ export function VitalsLabBodyScan({ signedOut = false }: { signedOut?: boolean }
   }, [mode]);
 
   const origin = useMemo(() => new URL(uri).origin, [uri]);
-
-  useEffect(() => {
-    if (!active || !ready.current) return;
-    webRef.current?.reload();
-  }, [mode, active]);
 
   if (signedOut) {
     return (
@@ -41,21 +32,12 @@ export function VitalsLabBodyScan({ signedOut = false }: { signedOut?: boolean }
   return (
     <View style={styles.frame} accessibilityLabel="Vitals Lab three-dimensional body scan">
       <WebView
-        ref={webRef}
         source={{ uri }}
         originWhitelist={[origin]}
         javaScriptEnabled
         scrollEnabled={false}
         bounces={false}
         style={styles.web}
-        onMessage={(event: WebViewMessageEvent) => {
-          try {
-            const msg = JSON.parse(event.nativeEvent.data);
-            if (msg.type === "vitals-lab-ready") ready.current = true;
-          } catch {
-            /* ignore */
-          }
-        }}
       />
     </View>
   );

@@ -35,8 +35,6 @@ export function createParticleMaterial(
       uTeal: { value: new THREE.Color() },
       uGold: { value: new THREE.Color() },
       uRimMix: { value: 0.35 },
-      uScanY: { value: 2.0 },
-      uScanStrength: { value: 0.0 },
     },
     vertexShader: /* glsl */ `
       attribute float aRegion;
@@ -83,8 +81,6 @@ export function createParticleMaterial(
       uniform float uGlow;
       uniform float uAnimate;
       uniform float uRimMix;
-      uniform float uScanY;
-      uniform float uScanStrength;
       uniform vec3 uTeal;
       uniform vec3 uGold;
       void main() {
@@ -127,11 +123,6 @@ export function createParticleMaterial(
         }
 
         col += vRim * uGold * uGlow * (0.22 + regionMix * 0.35);
-        if (uScanStrength > 0.01) {
-          float scanBand = 1.0 - smoothstep(0.05, 0.14, abs(vLocalPos.y - uScanY));
-          col *= 1.0 + scanBand * uScanStrength * 0.95;
-          alpha *= 1.0 + scanBand * uScanStrength * 0.4;
-        }
         if (uMode < 0.5) {
           alpha = pow(alpha, 1.25);
         }
@@ -152,8 +143,8 @@ export function applyAppearanceMaterial(
   material.blending = dark ? THREE.AdditiveBlending : THREE.NormalBlending;
   material.depthWrite = !dark;
 
-  const teal = dark ? "#6ce5e8" : "#0e7c86";
-  const gold = dark ? "#f3c952" : "#d99b16";
+  const teal = dark ? "#5fe8d6" : "#167a6d";
+  const gold = dark ? "#e8c468" : "#8a6b2a";
   (material.uniforms.uTeal!.value as THREE.Color).set(teal);
   (material.uniforms.uGold!.value as THREE.Color).set(gold);
   material.uniforms.uRimMix!.value = dark ? 0.35 : 0.22;

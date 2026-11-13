@@ -257,7 +257,10 @@ function loadMorphMeshes(baseUrl: string): Promise<ParsedMorphMesh> {
       normalsF,
       indices: new Uint32Array(filteredTris),
     };
-  })();
+  })().catch((err) => {
+    cachedMeshPromise.delete(cleanBase);
+    throw err;
+  });
 
   cachedMeshPromise.set(cleanBase, promise);
   return promise;
@@ -880,28 +883,40 @@ export function VitalsLabThreeViewport({
 
   const cameraGoalRef = useRef({ zoom, panY, rotY: targetRotY });
   const prevPresetRef = useRef({ zoom, panY, targetRotY, rotYStepNonce });
-  if (
-    prevPresetRef.current.zoom !== zoom ||
-    prevPresetRef.current.panY !== panY ||
-    prevPresetRef.current.targetRotY !== targetRotY ||
-    prevPresetRef.current.rotYStepNonce !== rotYStepNonce
-  ) {
-    cameraGoalRef.current = { zoom, panY, rotY: targetRotY };
-    prevPresetRef.current = { zoom, panY, targetRotY, rotYStepNonce };
-  }
+  useEffect(() => {
+    if (
+      prevPresetRef.current.zoom !== zoom ||
+      prevPresetRef.current.panY !== panY ||
+      prevPresetRef.current.targetRotY !== targetRotY ||
+      prevPresetRef.current.rotYStepNonce !== rotYStepNonce
+    ) {
+      cameraGoalRef.current = { zoom, panY, rotY: targetRotY };
+      prevPresetRef.current = { zoom, panY, targetRotY, rotYStepNonce };
+    }
+  }, [zoom, panY, targetRotY, rotYStepNonce]);
+
+  const prevAutoOrbitRef = useRef(autoOrbit);
+  useEffect(() => {
+    if (prevAutoOrbitRef.current && !autoOrbit) {
+      stateRef.current.onRotYChange?.(cameraGoalRef.current.rotY);
+    }
+    prevAutoOrbitRef.current = autoOrbit;
+  }, [autoOrbit]);
 
   const scanStateRef = useRef({
     lastNonce: scanNonce,
     active: false,
     progress: 0,
   });
-  if (scanNonce !== scanStateRef.current.lastNonce) {
-    scanStateRef.current.lastNonce = scanNonce;
-    if (scanNonce > 0) {
-      scanStateRef.current.active = true;
-      scanStateRef.current.progress = 0;
+  useEffect(() => {
+    if (scanNonce !== scanStateRef.current.lastNonce) {
+      scanStateRef.current.lastNonce = scanNonce;
+      if (scanNonce > 0) {
+        scanStateRef.current.active = true;
+        scanStateRef.current.progress = 0;
+      }
     }
-  }
+  }, [scanNonce]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -1189,6 +1204,7 @@ export function VitalsLabThreeViewport({
       dragState.active = true;
       dragState.pointerId = e.pointerId;
       dragState.lastX = e.clientX;
+      renderer.domElement.style.cursor = "grabbing";
       renderer.domElement.setPointerCapture(e.pointerId);
       stateRef.current.onDragStart?.();
     };
@@ -1198,15 +1214,16 @@ export function VitalsLabThreeViewport({
       const dx = e.clientX - dragState.lastX;
       dragState.lastX = e.clientX;
       cameraGoalRef.current.rotY += dx * 0.011;
-      stateRef.current.onRotYChange?.(cameraGoalRef.current.rotY);
     };
 
     const handlePointerUp = (e: PointerEvent) => {
       if (e.pointerId !== dragState.pointerId) return;
       dragState.active = false;
+      renderer.domElement.style.cursor = "grab";
       if (renderer.domElement.hasPointerCapture(e.pointerId)) {
         renderer.domElement.releasePointerCapture(e.pointerId);
       }
+      stateRef.current.onRotYChange?.(cameraGoalRef.current.rotY);
     };
 
     renderer.domElement.addEventListener("pointerdown", handlePointerDown);

@@ -33,10 +33,3 @@ export const DEFAULT_TUNING: VitalsBodyTuning = {
   glow: 0.74,
   edgeLight: 0.3,
 };
-
-/** Product camera choreography from Vitals Lab metric / system focus. */
-export interface VitalsBodyChoreography {
-  distanceMul?: number;
-  targetY?: number;
-  azimuth?: number;
-}

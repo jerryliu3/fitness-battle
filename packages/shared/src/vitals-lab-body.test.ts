@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  parseVitalsLabSceneMessage,
   vitalsLabMetricsFromModel,
   vitalsLabSystemToHealth,
 } from "./vitals-lab-body";
@@ -14,27 +13,23 @@ describe("vitals-lab-body", () => {
     expect(vitalsLabSystemToHealth("full")).toBe("full");
   });
 
-  it("builds six flank metrics from analytics model", () => {
+  it("provides overnight baseline metrics with split Sleep parts by default", () => {
+    const metrics = vitalsLabMetricsFromModel();
+    expect(metrics).toHaveLength(6);
+    const sleep = metrics.find((m) => m.id === "sleep");
+    expect(sleep?.displayParts).toEqual([
+      { num: "7", unit: "h " },
+      { num: "42", unit: "m" },
+    ]);
+  });
+
+  it("builds six flank metrics with physiological bounds from analytics model", () => {
     const model = buildAnalyticsLabModel("peak_build", "30d");
     const metrics = vitalsLabMetricsFromModel(model);
     expect(metrics).toHaveLength(6);
-    expect(metrics.some((m) => m.id === "hrv" && m.value.length > 0)).toBe(true);
-  });
-
-  it("parses vitals lab WebView bridge messages", () => {
-    const msg = parseVitalsLabSceneMessage({
-      type: "vitals-lab",
-      appearance: "dark",
-      sex: "female",
-      vizMode: "cloud",
-      system: "heart",
-      metricId: "hrv",
-      view: "side",
-      scanGeneration: 2,
-      autoOrbit: true,
-    });
-    expect(msg?.sex).toBe("female");
-    expect(msg?.metricId).toBe("hrv");
-    expect(msg?.autoOrbit).toBe(true);
+    const spo2 = Number(metrics.find((m) => m.id === "spo2")?.value);
+    const rhr = Number(metrics.find((m) => m.id === "rhr")?.value);
+    expect(spo2).toBeLessThanOrEqual(100);
+    expect(rhr).toBeGreaterThanOrEqual(38);
   });
 });
