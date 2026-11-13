@@ -1,9 +1,8 @@
 import { createElement, useEffect, useRef, useState } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import type { AthleteCardModel } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { useSceneActive } from "../ui/use-scene-active";
-import { AppText } from "../ui/section";
 import { AthleteProfileCard } from "./athlete-profile-card";
 import { useAppTheme } from "../theme";
 
@@ -15,7 +14,6 @@ export function AthleteCrest({ model }: { model: AthleteCardModel; onInteraction
   const [revision, setRevision] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [attempt, setAttempt] = useState(0);
   const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/athlete-card-scene`;
   const origin = new URL(uri).origin;
   useEffect(() => {
@@ -32,11 +30,11 @@ export function AthleteCrest({ model }: { model: AthleteCardModel; onInteraction
     if (!active || loaded || failed) return;
     const timer = setTimeout(() => setFailed(true), 12000);
     return () => clearTimeout(timer);
-  }, [active, loaded, failed, attempt]);
+  }, [active, loaded, failed]);
   return <View style={{ minHeight: failed ? undefined : 390 }}>
-    {!failed && createElement("iframe", { key: attempt, ref: frame, title: `${model.name} athlete card`, src: uri, onError: () => { setLoaded(false); setFailed(true); }, style: { width: "100%", height: 390, border: 0, opacity: loaded ? 1 : 0 } })}
-    {!loaded && <View style={failed ? undefined : { position: "absolute", inset: 0 }}><AthleteProfileCard name={model.name} city={model.city} avatarUrl={model.avatarUrl} score={model.score} />
-      {failed && <Pressable accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center", alignItems: "center" }} onPress={() => { setFailed(false); setLoaded(false); setRevision(0); setAttempt(n => n + 1); }}><AppText role="label">Retry card</AppText></Pressable>}
+    {!failed && createElement("iframe", { ref: frame, title: `${model.name} athlete card`, src: uri, onError: () => { setLoaded(false); setFailed(true); }, style: { width: "100%", height: 390, border: 0, opacity: loaded ? 1 : 0 } })}
+    {!loaded && <View style={{ position: "absolute", inset: 0 }}>
+      <AthleteProfileCard name={model.name} city={model.city} avatarUrl={model.avatarUrl} score={model.score} />
     </View>}
   </View>;
 }

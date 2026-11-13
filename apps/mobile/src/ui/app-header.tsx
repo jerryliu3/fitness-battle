@@ -55,7 +55,12 @@ const s=useThemedStyles(sThemes);
               onLoadEnd={imageSettled}
             />
           </Pressable>
-          <View style={s.effort}><EffortRail compact /></View>
+          <View style={s.identityMeta}>
+            <Text style={s.headerName} numberOfLines={1} accessibilityRole="text">
+              {state?.name ?? "Athlete"}
+            </Text>
+            <EffortRail compact />
+          </View>
           {streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.activeToday ? ", active today" : ", inactive today"}`} style={s.streak}>
             <View style={{ opacity: streak.activeToday ? 1 : .4 }}><AppIcon name={streak.activeToday ? "flameFilled" : "flame"} size={22} color={c.actionPressed} /></View>
             <Text style={s.debugBtnText}>{streak.count}</Text>
@@ -103,7 +108,8 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
     gap: 8,
   },
   identity: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 10 },
-  effort: { flex: 1, minWidth: 0, maxWidth: 190 },
+  identityMeta: { flex: 1, minWidth: 0, gap: 2, justifyContent: "center" },
+  headerName: { ...textStyle("label"), color: c.ink, flexShrink: 1 },
   streak: { flexDirection: "row", alignItems: "center", gap: 3, flexShrink: 0 },
   debugBtn: { flexShrink: 0, minHeight: 44, justifyContent: "center", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: c.line, backgroundColor: c.card },
   debugBtnActive: { borderColor: c.tennis, backgroundColor: themeColors.actionSoft },

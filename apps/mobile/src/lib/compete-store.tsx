@@ -277,12 +277,28 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             const existingIds = new Set(next.activities.map((a) => a.id));
             const missing = seed.activities.filter((a) => !existingIds.has(a.id));
             const needsCrew = !next.crewBoard || next.crewBoard.crewId === "solo";
-            if (missing.length > 0 || needsCrew) {
+            const seedJoined = seed.ratings.some(
+              (r) => r.sport === seed.primary && r.optedIn,
+            );
+            const cacheJoined = next.ratings.some(
+              (r) => r.sport === seed.primary && r.optedIn,
+            );
+            const needsDemoField = seedJoined && !cacheJoined;
+            if (missing.length > 0 || needsCrew || needsDemoField) {
               next = {
                 ...next,
                 activities: missing.length > 0 ? [...next.activities, ...missing] : next.activities,
                 crewBoard: needsCrew ? seed.crewBoard : next.crewBoard,
-                enrollments: next.enrollments.length > 0 ? next.enrollments : seed.enrollments,
+                enrollments: needsDemoField ? seed.enrollments : next.enrollments.length > 0 ? next.enrollments : seed.enrollments,
+                ...(needsDemoField
+                  ? {
+                      ratings: seed.ratings,
+                      healthRatings: seed.healthRatings,
+                      primary: seed.primary,
+                      calibrated: seed.calibrated,
+                      onboardingCompleted: seed.onboardingCompleted,
+                    }
+                  : null),
               };
               void AsyncStorage.setItem(keys.state, JSON.stringify(next));
             }
