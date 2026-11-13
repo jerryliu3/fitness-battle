@@ -200,6 +200,7 @@ const styles=useThemedStyles(stylesThemes);
     <ScreenHeader
       localBack={Boolean(panel)}
       hidden={!panel && editOpen}
+      nativeBar={!panel}
       title={panel ? titles[panel] : "Athlete"}
       onBack={() => {
         if (router.canGoBack()) {

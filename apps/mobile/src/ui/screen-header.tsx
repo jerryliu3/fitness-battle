@@ -10,7 +10,14 @@ import { IconButton } from "./icon-button";
 
 
 
-interface ScreenHeaderProps { title: string; onBack: () => void; localBack?: boolean; hidden?: boolean }
+interface ScreenHeaderProps {
+  title: string;
+  onBack: () => void;
+  localBack?: boolean;
+  hidden?: boolean;
+  /** When false, use the inline back row instead of the native glass toolbar (settings-style). */
+  nativeBar?: boolean;
+}
 function IOSScreenHeader({ title, onBack, localBack = false, hidden = false }: ScreenHeaderProps) {
 const c=useThemeColors();
 
@@ -30,12 +37,17 @@ const c=useThemeColors();
   </>;
 }
 /** iOS uses system toolbar items (Liquid Glass on iOS 26+), preserving local Back callbacks. */
-export function ScreenHeader(props: ScreenHeaderProps) {
+function InlineScreenHeader({ title, onBack }: Pick<ScreenHeaderProps, "title" | "onBack">) {
 const f=useFocusStyles();
 
-  if (Platform.OS === "ios") return <IOSScreenHeader {...props} />;
   return <View style={[f.row, { paddingHorizontal: 22, paddingVertical: 8 }]}>
-    <IconButton icon="back" label="Return to previous screen" onPress={props.onBack} />
-    <AppText role="heading" accessibilityRole="header" style={{ flex: 1, textAlign: "center" }}>{props.title}</AppText><View style={{ width: 44 }} />
+    <IconButton icon="back" label="Return to previous screen" onPress={onBack} />
+    <AppText role="heading" accessibilityRole="header" style={{ flex: 1, textAlign: "center" }}>{title}</AppText><View style={{ width: 44 }} />
   </View>;
+}
+
+export function ScreenHeader(props: ScreenHeaderProps) {
+  const nativeBar = props.nativeBar !== false;
+  if (Platform.OS === "ios" && nativeBar) return <IOSScreenHeader {...props} />;
+  return <InlineScreenHeader title={props.title} onBack={props.onBack} />;
 }
