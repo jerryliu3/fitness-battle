@@ -68,16 +68,35 @@ def standing_arm_rotvec_deg() -> dict[str, tuple[float, float, float]]:
     return standing_pose_rotvec_deg()
 
 
-def normalize_standing(mesh: trimesh.Trimesh, target_height: float = 1.72) -> trimesh.Trimesh:
-    """Center on Y axis, feet on Y=0, face -Z (MakeHuman / Blender convention)."""
+UpAxis = Literal["auto", "z_up", "y_up"]
+
+
+def detect_up_axis(mesh: trimesh.Trimesh) -> Literal["z_up", "y_up"]:
+    """Guess source rest orientation from bounding box extents."""
+    ext = mesh.bounds[1] - mesh.bounds[0]
+    if ext[2] > ext[1] * 1.12 and ext[2] >= ext[0]:
+        return "z_up"
+    return "y_up"
+
+
+def normalize_standing(
+    mesh: trimesh.Trimesh,
+    target_height: float = 1.72,
+    up_axis: UpAxis = "auto",
+) -> trimesh.Trimesh:
+    """Center on Y, feet on Y=0, Vitals Y-up body space (Z forward for camera front)."""
     work = mesh.copy()
     work.merge_vertices()
     work.update_faces(work.unique_faces())
     work.remove_unreferenced_vertices()
 
-    # MakeHuman rest orientation: Y up; front roughly +Y facing — rotate to face camera (-Z).
-    rot = trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0])
-    work.apply_transform(rot)
+    resolved: Literal["z_up", "y_up"] = (
+        detect_up_axis(work) if up_axis == "auto" else up_axis
+    )
+    if resolved == "z_up":
+        # Anny / legacy MakeHuman export: Z-up rest pose.
+        rot = trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0])
+        work.apply_transform(rot)
 
     bounds = work.bounds
     foot = bounds[0][1]
