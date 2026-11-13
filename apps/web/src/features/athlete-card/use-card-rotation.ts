@@ -41,7 +41,9 @@ export function useCardRotation(disabled: boolean) {
     event.preventDefault();
     // Hosts with their own swipe (folio page turn, etc.) must not also claim this.
     event.stopPropagation();
-    event.currentTarget.focus({ preventScroll: true });
+    if (event.pointerType === "mouse") {
+      event.currentTarget.focus({ preventScroll: true });
+    }
     pose.moveTo(pose.getCurrent(), true);
     event.currentTarget.setPointerCapture(event.pointerId);
     drag.current = { id: event.pointerId, element: event.currentTarget, x: event.clientX, y: event.clientY, start: pose.getCurrent(), moved: false };
