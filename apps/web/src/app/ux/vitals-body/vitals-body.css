@@ -214,6 +214,57 @@
   border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
 }
 
+.vitals-pose-presets {
+  margin-bottom: 14px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #2fd2be 35%, transparent);
+  background: color-mix(in srgb, #2fd2be 6%, transparent);
+}
+
+.vitals-pose-presets__title {
+  margin: 0 0 4px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  opacity: 0.85;
+  text-transform: uppercase;
+}
+
+.vitals-pose-presets__hint {
+  margin: 0 0 10px;
+  font-size: 10px;
+  line-height: 1.4;
+  opacity: 0.65;
+}
+
+.vitals-pose-presets__grid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@container vitals-shell (min-width: 480px) {
+  .vitals-pose-presets__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.vitals-pose-presets__btn {
+  padding: 8px 8px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  color: inherit;
+  font-size: 10px;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vitals-pose-presets__btn:hover {
+  border-color: color-mix(in srgb, #2fd2be 55%, transparent);
+}
+
 .vitals-pose-dev__toolbar {
   display: flex;
   flex-wrap: wrap;

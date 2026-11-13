@@ -7,6 +7,11 @@ import {
   type VitalsPoseBoneLabel,
   type VitalsPoseRot,
 } from "@/lib/vitals-pose";
+import {
+  poseFromPreset,
+  VITALS_ARM_AT_SIDE_PRESETS,
+  type VitalsPosePreset,
+} from "@/lib/vitals-pose-arm-presets";
 import type { BodyMeshSource, BodySex } from "@fitness-battle/pursuit/vitals-body";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { VitalsPoseLiveRig } from "./vitals-pose-live-rig";
@@ -157,6 +162,13 @@ export function VitalsPoseDev({
     setStatus(null);
   }
 
+  function applyPreset(preset: VitalsPosePreset) {
+    const next = poseFromPreset(preset);
+    setBones(next);
+    schedulePreview(next);
+    setStatus(`Preset: ${preset.label} — ${preset.hint} Refresh mesh preview to compare.`);
+  }
+
   async function save() {
     if (!bones) return;
     setBusy(true);
@@ -261,6 +273,26 @@ export function VitalsPoseDev({
         Auto accurate PNG preview (slow; needs Python)
         {previewBusy ? <span style={{ opacity: 0.65 }}>— generating…</span> : null}
       </label>
+      <div className="vitals-pose-presets">
+        <p className="vitals-pose-presets__title">Arms down · palms inward (presets)</p>
+        <p className="vitals-pose-presets__hint">
+          Sets all sliders — use stick rig for instant view, then <strong>Refresh mesh preview</strong>{" "}
+          to pick the closest silhouette.
+        </p>
+        <div className="vitals-pose-presets__grid">
+          {VITALS_ARM_AT_SIDE_PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              className="vitals-pose-presets__btn"
+              title={preset.hint}
+              onClick={() => applyPreset(preset)}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="vitals-pose-dev__toolbar">
         <button type="button" onClick={expandAllBones}>
           Expand all bones
