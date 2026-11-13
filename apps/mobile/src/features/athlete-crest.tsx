@@ -44,8 +44,10 @@ export function AthleteCrest({ model, onInteractionChange }: { model: AthleteCar
         if (message.type === "athlete-card-ready") { ready.current = true; inject(); }
         if (message.type === "athlete-card-rendered" && ready.current) setLoaded(true);
       } catch { /* Ignore malformed bridge messages. */ } }} />}
-    {!loaded && <View style={{ position: "absolute", inset: 0 }}>
-      <AthleteProfileCard name={model.name} city={model.city} avatarUrl={model.avatarUrl} score={model.score} />
-    </View>}
+    {failed && (
+      <View style={{ position: "absolute", inset: 0 }}>
+        <AthleteProfileCard name={model.name} city={model.city} avatarUrl={model.avatarUrl} score={model.score} />
+      </View>
+    )}
   </View>;
 }
