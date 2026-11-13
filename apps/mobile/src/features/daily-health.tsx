@@ -74,7 +74,7 @@ const s=useThemedStyles(sThemes);
         })}
       </View>
       {selected && (() => {
-        const chart = buildHealth7DayCorridorModel(selected, competeNow(state));
+        const chart = buildHealth7DayCorridorModel(selected, competeNow(state), { weekCorridorFallback: true });
         return (
           <View style={s.detail} accessibilityLiveRegion="polite">
             <View style={s.detailHeader}>

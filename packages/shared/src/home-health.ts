@@ -216,10 +216,13 @@ export interface Health7DayChartModel {
 export function buildHealth7DayCorridorModel(
   metric: HomeHealthMetric,
   now = new Date(),
+  options?: { weekCorridorFallback?: boolean },
 ): Health7DayChartModel {
   const personal =
     getHealthMetricCorridor(metric.id, metric.baselineHistory)
-    ?? getHealthMetricCorridor(metric.id, metric.history);
+    ?? (options?.weekCorridorFallback
+      ? getHealthMetricCorridor(metric.id, metric.history)
+      : null);
   const corridor = personal ?? { low: 0, high: 0, formattedRange: "Unavailable · insufficient prior readings", format: (value: number) => metric.id === "sleep" ? formatSleepDuration(value) : `${value} ${metric.unit}` };
   const width = 320;
   const height = 116;
