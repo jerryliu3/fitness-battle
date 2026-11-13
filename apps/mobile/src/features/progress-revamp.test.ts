@@ -131,6 +131,10 @@ vi.mock("../ui/award-shelf", () => ({
   AwardShelf: "AwardShelf",
 }));
 
+vi.mock("./vitals-lab-body-scan", () => ({
+  VitalsLabBodyScan: "VitalsLabBodyScan",
+}));
+
 vi.mock("../ui/focus", () => ({
   useFocusStyles: () => ({ safe: {}, content: {}, chip: {}, chipActive: {}, row: {} }),
   FocusSegments: ({ options, value, onChange }: any) =>
