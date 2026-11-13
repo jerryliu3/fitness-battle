@@ -7,7 +7,9 @@ load or a saved phenotype change exports a fresh model through the development A
 
 **Soldier · relaxed arms** is the shipped pipeline default (straight arms, palms
 inward). **Legacy pipeline (pre-Soldier)** and **zero reference** presets remain for
-comparison.
+comparison. `pnpm bodies:generate` always bakes Soldier; `local/pose.json` only
+affects dev previews and the live overlay after **Save pose.json**. Delete a stale
+`pose.json` and click **Reset defaults** if the live rig shows old arms.
 Pink is anatomical left and blue is right. Focus a slider to mark its pivot yellow.
 Upperarm01/02 and lowerarm01/02 subdivide their respective limbs; they are not
 separate full-length arms. The mesh can be hidden to inspect the skeleton.

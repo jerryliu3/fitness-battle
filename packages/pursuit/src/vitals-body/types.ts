@@ -26,8 +26,8 @@ export interface VitalsBodyTuning {
 }
 
 export const DEFAULT_TUNING: VitalsBodyTuning = {
-  particleScale: 0.52,
-  opacity: 0.52,
+  particleScale: 0.18,
+  opacity: 0.6,
   brightness: 0.9,
   glow: 0.48,
   edgeLight: 0.68,

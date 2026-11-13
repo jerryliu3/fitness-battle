@@ -82,8 +82,13 @@ def _load_pose_json_overrides() -> dict[str, tuple[float, float, float]]:
     return out
 
 
+def shipped_standing_pose_rotvec_deg() -> dict[str, tuple[float, float, float]]:
+    """Shipped runtime bake: Soldier defaults only (ignore dev pose.json)."""
+    return dict(_default_standing_pose())
+
+
 def standing_pose_rotvec_deg() -> dict[str, tuple[float, float, float]]:
-    """Standing neutral + optional `body-pipeline/local/pose.json` overrides (dev)."""
+    """Dev preview: Soldier defaults + optional `body-pipeline/local/pose.json`."""
     pose = _default_standing_pose()
     for label, rot in _load_pose_json_overrides().items():
         if label in pose:

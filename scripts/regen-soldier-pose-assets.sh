@@ -13,6 +13,10 @@ fi
 
 export PATH="$ROOT/body-pipeline/.venv/bin:$PATH"
 
+if [[ -f "$ROOT/body-pipeline/local/pose.json" ]]; then
+  echo "Note: body-pipeline/local/pose.json does not affect shipped bakes (Soldier default)." >&2
+fi
+
 "$VENV_PY" body-pipeline/scripts/generate_pose_rig_fixtures.py
 pnpm bodies:generate
 pnpm bodies:sync

@@ -34,7 +34,7 @@ export function VitalsBodyDemo() {
   const [faceStyle, setFaceStyle] = useState<FaceStyle>("soft");
   const [quality, setQuality] = useState<QualityPreset>("medium");
   const [tuning, setTuning] = useState<VitalsBodyTuning>(DEFAULT_TUNING);
-  const [showLivePose, setShowLivePose] = useState(true);
+  const [showLivePose, setShowLivePose] = useState(false);
   const [selectedBone, setSelectedBone] = useState<VitalsPoseBoneLabel>("upperarm01.L");
   const [rigRevision, setRigRevision] = useState(0);
   const [livePoseBones, setLivePoseBones] = useState<Record<

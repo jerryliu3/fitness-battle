@@ -9,6 +9,8 @@ if [[ ! -f apps/web/.env.local ]]; then
 fi
 echo "Sign in: alice@example.com / demo (any password 4+ chars)"
 echo "Open:    http://localhost:3000/ux/vitals-body"
+echo "Baked Soldier scan loads by default. Enable live pose only for slider tuning."
+echo "Stale arms? Remove body-pipeline/local/pose.json and rebake: bash scripts/regen-soldier-pose-assets.sh"
 if [[ ! -x "$ROOT/body-pipeline/.venv/bin/python3" && ! -x "$ROOT/body-pipeline/.venv/Scripts/python.exe" ]]; then
   echo ""
   echo "Note: Live Anny mesh + rig needs Python deps. One-time setup:"
