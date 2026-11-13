@@ -5,12 +5,12 @@
   "asset_license": "CC0-1.0 (MakeHuman core mesh data via Anny)",
   "runtime_license": "Apache-2.0 (Anny Python package only; not bundled in app)",
   "phenotype": {
-    "gender": 1.0,
     "age": 0.58,
-    "muscle": 0.32,
+    "muscle": 0.28,
     "weight": 0.44,
     "height": 0.5,
-    "proportions": 0.5
+    "proportions": 0.52,
+    "gender": 1.0
   },
   "validation": {
     "vertices": 13718,
@@ -19,14 +19,14 @@
     "euler_number": 8,
     "degenerate_faces": 0,
     "bounds_min": [
-      -0.2429456114768982,
-      -0.5491845607757568,
-      -0.8894715309143066
+      -0.20784062147140503,
+      -0.38497331738471985,
+      -0.888705313205719
     ],
     "bounds_max": [
-      0.3044855296611786,
-      0.11182913929224014,
-      0.7712979912757874
+      0.40265804529190063,
+      0.11208102107048035,
+      0.7716419100761414
     ]
   }
 }

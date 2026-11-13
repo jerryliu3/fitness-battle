@@ -96,11 +96,9 @@ export function createParticleMaterial(
 
         vec3 base = mix(uTeal, uGold, clamp(vRim * uRimMix, 0.0, 1.0));
         float interiorFade = (uMode > 0.5 && vClass > 1.5) ? 0.52 : 1.0;
-        float highlight = 1.0;
         float regionMix = 0.0;
         if (uHighlight > 0.5) {
           regionMix = 1.0 - smoothstep(0.0, 1.05, abs(vRegion - uHighlight));
-          highlight = mix(0.22, 1.65, regionMix);
         }
 
         float headT = clamp((vLocalPos.y - 1.36) / 0.36, 0.0, 1.0);
@@ -112,9 +110,9 @@ export function createParticleMaterial(
         }
         float faceDetail = faceMask * (0.55 + vRim * 0.85);
 
-        vec3 col = base * uBrightness * pulse * highlight * interiorFade;
-        col = mix(col, mix(col, uGold, 0.55) * 1.15, regionMix * 0.72);
-        float alpha = soft * uOpacity * highlight * interiorFade;
+        vec3 col = base * uBrightness * pulse * interiorFade;
+        col = mix(col, mix(col, uGold, 0.68) * 1.28, regionMix * 0.82);
+        float alpha = soft * uOpacity * interiorFade;
 
         if (uFace < 0.5) {
           col = mix(col, uTeal, faceDetail * 0.45);
