@@ -4,9 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3000",
-    "predev": "bash ../../body-pipeline/scripts/sync_runtime_assets.sh anny",
     "build": "next build",
-    "prebuild": "bash ../../body-pipeline/scripts/sync_runtime_assets.sh anny",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'no lint configured'",

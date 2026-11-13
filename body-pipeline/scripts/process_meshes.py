@@ -10,16 +10,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib.mesh_common import normalize_standing, validate_mesh, write_json  # noqa: E402
+from lib.mesh_common import UpAxis, normalize_standing, validate_mesh, write_json  # noqa: E402
 
 import trimesh
 
 
-def process_one(src: Path, dst_glb: Path, target_height: float) -> dict[str, object]:
+def process_one(
+    src: Path,
+    dst_glb: Path,
+    target_height: float,
+    *,
+    up_axis: UpAxis = "auto",
+) -> dict[str, object]:
     mesh = trimesh.load(src, force="mesh", process=False)
     if isinstance(mesh, trimesh.Scene):
         mesh = trimesh.util.concatenate(tuple(mesh.geometry.values()))
-    aligned = normalize_standing(mesh, target_height=target_height)
+    aligned = normalize_standing(mesh, target_height=target_height, up_axis=up_axis)  # type: ignore[arg-type]
     dst_glb.parent.mkdir(parents=True, exist_ok=True)
     aligned.export(dst_glb)
     report = validate_mesh(aligned)
@@ -46,7 +52,17 @@ def main() -> None:
         default="",
         help='Filename suffix before .obj (e.g. "-mpfb2" for MPFB exports).',
     )
+    parser.add_argument(
+        "--up-axis",
+        choices=("auto", "z_up", "y_up"),
+        default="auto",
+        help='Orientation fix: Anny uses z_up (auto-detect); MPFB2 uses y_up or auto.',
+    )
     args = parser.parse_args()
+
+    up_axis = args.up_axis
+    if up_axis == "auto" and args.source_suffix == "-mpfb2":
+        up_axis = "y_up"
 
     reports: dict[str, object] = {}
     for sex, height in (("male", args.height_male), ("female", args.height_female)):
@@ -55,7 +71,7 @@ def main() -> None:
             print(f"Missing {src}; run generate_humans.py first.", file=sys.stderr)
             raise SystemExit(1)
         dst = args.out_dir / f"{sex}.glb"
-        reports[sex] = process_one(src, dst, height)
+        reports[sex] = process_one(src, dst, height, up_axis=up_axis)
         print(f"Processed {sex} -> {dst}")
 
     write_json(args.out_dir / "processing-report.json", reports)
