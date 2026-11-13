@@ -38,7 +38,7 @@ const s=useThemedStyles(sThemes);
   const end = chart.points.at(-1);
   return <View style={{ gap: 12 }}>
     <ChartScrubber key={range} points={chart.points} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} label={label} onSelectionChange={point => { setSelected(!!point); onSelectionChange?.(point); }} hideSummary={hideSummary}
-      renderSummary={hideSummary ? undefined : point => <View style={[s.reading, !point && !showDateRange && { minHeight: 64 }]}>{(point || showDateRange || (live && !point)) && <AppText role="caption" secondary>{point?.label ?? (live && !point ? "Now" : chart.date)}</AppText>}<Text style={s.value}>{point?.value ?? chart.value}<Text style={s.unit}> {unit}</Text></Text></View>}>
+      renderSummary={hideSummary ? undefined : point => <View style={s.reading}>{(point || showDateRange || (live && !point)) && <AppText role="caption" secondary>{point?.label ?? (live && !point ? "Current" : chart.date)}</AppText>}<Text style={s.value}>{point?.value ?? chart.value}<Text style={s.unit}> {unit}</Text></Text></View>}>
       <View onLayout={event => setPlotWidth(event.nativeEvent.layout.width)} style={{ position: "relative" }}><ChartSvg width="100%" height={chart.height} viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio={uniformAspect ? "xMidYMid meet" : "none"} accessible={false}>
         {showAxes && <G>
 
