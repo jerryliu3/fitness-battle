@@ -65,7 +65,7 @@ it("opens queued walking on its course with cancellation in the standings sheet"
   expect(cancel).toBeTruthy();
   await act(async () => cancel!.props.onPress());
   expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-out", sport: "walking" });
-  expect(mock.close).toHaveBeenCalled();
+  expect(mock.close).not.toHaveBeenCalled();
 });
 it("opens an existing event from Explore without opening registration", async () => {
   mock.state = reduceCompete(mock.state!, { type: "opt-in", sport: "walking" });
@@ -93,7 +93,7 @@ it("opens queued Recovery as a destination and cancels its health registration",
   const cancel = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "Cancel registration");
   await act(async () => cancel!.props.onPress());
   expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-out-health", metric: "sleep" });
-  expect(mock.close).toHaveBeenCalled();
+  expect(mock.close).not.toHaveBeenCalled();
 });
 it("keeps the waiting-for-field destination open after the start without cancellation", async () => {
   mock.immersive = true;
