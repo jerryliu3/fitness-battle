@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { freshState, type Activity } from "./compete";
-import { athleteCardModel, parseAthleteCardMessage } from "./athlete-card";
+import { athleteCardModel, athleteCardModelForPeer, parseAthleteCardMessage } from "./athlete-card";
 
 const now = new Date("2026-11-08T12:00:00Z");
 function run(id: string, startedAt: string, seconds: number, distanceM = 5000): Activity {
@@ -30,6 +30,14 @@ it("keeps missing photos, ratings and records unavailable", () => {
   const model = athleteCardModel(state, now);
   expect(model.avatarUrl).toBeNull(); expect(model.score).toBeNull(); expect(model.rank).toBeNull(); expect(model.records).toEqual([]);
 });
+it("builds a minimal peer card model for foreign athlete profiles", () => {
+  const model = athleteCardModelForPeer({ name: "Jordan Lee", score: 1090, city: "Brooklyn" });
+  expect(model.name).toBe("Jordan Lee");
+  expect(model.score).toBe(1090);
+  expect(model.records).toEqual([]);
+  expect(parseAthleteCardMessage({ type: "athlete-card", model, active: true })).toEqual({ model, active: true, appearance: "light" });
+});
+
 it("validates the card bridge and rejects malformed nested values", () => {
   const model = athleteCardModel(freshState(now), now);
   expect(parseAthleteCardMessage({ type: "athlete-card", model, active: false, appearance: "dark" })).toEqual({ model, active: false, appearance: "dark" });

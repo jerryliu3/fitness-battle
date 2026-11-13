@@ -132,7 +132,6 @@ const f=useFocusStyles();
     "add" | "invite" | "manage" | "leave" | "members" | null
   >(null);
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
-  const pendingMember = useRef<Member | null>(null);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [format, setFormat] = useState("volume");
@@ -144,7 +143,6 @@ const f=useFocusStyles();
   useEffect(() => {
     setSelected(crewId);
     setViewingMember(null);
-    pendingMember.current = null;
     setPanel(null);
     setNote("");
     setName("");
@@ -519,7 +517,7 @@ const f=useFocusStyles();
       <FocusSheet
         open={!!panel}
         minimal
-        onClosed={() => { if (derbyAfterClose.current) { derbyAfterClose.current = false; router.navigate({ pathname: "/arena", params: { event: crew.sport, ...(state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? {} : { crewId: crew.id }) } }); } if (pendingMember.current) { setViewingMember(pendingMember.current); pendingMember.current = null; } }}
+        onClosed={() => { if (derbyAfterClose.current) { derbyAfterClose.current = false; router.navigate({ pathname: "/arena", params: { event: crew.sport, ...(state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? {} : { crewId: crew.id }) } }); } }}
         fullScreen={panel === "members"}
         title={
           panel === "add"
