@@ -54,7 +54,7 @@ export function VitalsBodyDemo() {
           Drag to orbit in Rotate view.
         </p>
       </header>
-      <div className="vitals-body-layout">
+      <div className="vitals-body-layout vitals-body-layout--wide-panel">
         <div className="vitals-body-stage">
           {meshSource === "anny" && livePoseBones ? (
             <div className="vitals-body-pose-live-overlay" aria-hidden>

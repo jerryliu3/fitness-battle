@@ -29,7 +29,9 @@ export function VitalsPoseDev({
 }) {
   const [visible, setVisible] = useState(false);
   const [bones, setBones] = useState<PoseState | null>(null);
-  const [openBone, setOpenBone] = useState<VitalsPoseBoneLabel | null>("upperarm01.L");
+  const [openBones, setOpenBones] = useState<Set<VitalsPoseBoneLabel>>(
+    () => new Set(["upperarm01.L", "upperarm01.R"]),
+  );
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [autoPreview, setAutoPreview] = useState(false);
@@ -180,14 +182,25 @@ export function VitalsPoseDev({
     }
   }
 
+  function toggleBone(bone: VitalsPoseBoneLabel) {
+    setOpenBones((prev) => {
+      const next = new Set(prev);
+      if (next.has(bone)) next.delete(bone);
+      else next.add(bone);
+      return next;
+    });
+  }
+
+  function expandAllBones() {
+    setOpenBones(new Set(VITALS_POSE_BONES));
+  }
+
+  function collapseAllBones() {
+    setOpenBones(new Set());
+  }
+
   return (
-    <section
-      style={{
-        marginTop: 16,
-        paddingTop: 14,
-        borderTop: "1px solid rgba(255,255,255,0.1)",
-      }}
-    >
+    <section className="vitals-pose-dev">
       <p style={{ fontSize: 11, letterSpacing: "0.12em", opacity: 0.65, margin: 0 }}>
         LOCAL ANNY POSE (bone rotvec °)
       </p>
@@ -248,117 +261,82 @@ export function VitalsPoseDev({
         Auto accurate PNG preview (slow; needs Python)
         {previewBusy ? <span style={{ opacity: 0.65 }}>— generating…</span> : null}
       </label>
+      <div className="vitals-pose-dev__toolbar">
+        <button type="button" onClick={expandAllBones}>
+          Expand all bones
+        </button>
+        <button type="button" onClick={collapseAllBones}>
+          Collapse all
+        </button>
+      </div>
       <p style={{ fontSize: 11, opacity: 0.5, margin: "0 0 12px", lineHeight: 1.4 }}>
         Arms: tune <strong>upperarm01</strong> Z (down) and matching X on L/R; avoid large{" "}
         <strong>upperarm01 Y</strong>.
       </p>
-      {VITALS_POSE_BONES.map((bone) => {
-        const rot = bones[bone];
-        const isOpen = openBone === bone;
-        return (
-          <div key={bone} style={{ marginBottom: 8 }}>
-            <button
-              type="button"
-              onClick={() => setOpenBone(isOpen ? null : bone)}
-              style={{
-                width: "100%",
-                textAlign: "left",
-                padding: "6px 8px",
-                borderRadius: 6,
-                border: "1px solid rgba(255,255,255,0.12)",
-                background: "rgba(255,255,255,0.04)",
-                color: "inherit",
-                fontSize: 11,
-                cursor: "pointer",
-              }}
+      <div className="vitals-pose-bone-grid">
+        {VITALS_POSE_BONES.map((bone) => {
+          const rot = bones[bone];
+          const isOpen = openBones.has(bone);
+          return (
+            <div
+              key={bone}
+              className={`vitals-pose-bone-card${isOpen ? " vitals-pose-bone-card--open" : ""}`}
             >
-              {bone}
-              {isOpen ? "" : ` — x${rot.x} y${rot.y} z${rot.z}`}
-            </button>
-            {isOpen ? (
-              <div style={{ padding: "8px 4px 4px" }}>
-                {AXIS.map((axis) => (
-                  <label
-                    key={axis}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 4,
-                      fontSize: 11,
-                      marginBottom: 8,
-                    }}
-                  >
-                    <span>
-                      {axis.toUpperCase()}{" "}
-                      <span style={{ opacity: 0.6 }}>{rot[axis].toFixed(0)}°</span>
-                    </span>
-                    <input
-                      type="range"
-                      min={-120}
-                      max={120}
-                      step={1}
-                      value={rot[axis]}
-                      onChange={(e) => setAxis(bone, axis, Number(e.target.value))}
-                    />
-                  </label>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        );
-      })}
-      <button
-        type="button"
-        disabled={previewBusy}
-        onClick={() => void runPreview(bones)}
-        style={{
-          marginTop: 4,
-          marginRight: 8,
-          padding: "8px 12px",
-          borderRadius: 8,
-          border: "1px solid rgba(255,255,255,0.15)",
-          background: "transparent",
-          color: "inherit",
-          fontSize: 11,
-          cursor: "pointer",
-        }}
-      >
-        {previewBusy ? "Preview…" : "Refresh mesh preview"}
-      </button>
-      <button
-        type="button"
-        onClick={() => resetDefaults()}
-        style={{
-          marginTop: 4,
-          marginRight: 8,
-          padding: "8px 12px",
-          borderRadius: 8,
-          border: "1px solid rgba(255,255,255,0.15)",
-          background: "transparent",
-          color: "inherit",
-          fontSize: 11,
-          cursor: "pointer",
-        }}
-      >
-        Reset defaults
-      </button>
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => void save()}
-        style={{
-          marginTop: 4,
-          padding: "8px 12px",
-          borderRadius: 8,
-          border: "1px solid #3fd6c5",
-          background: "rgba(47,210,190,0.12)",
-          color: "inherit",
-          fontSize: 12,
-          cursor: "pointer",
-        }}
-      >
-        {busy ? "Saving…" : "Save pose.json"}
-      </button>
+              <button
+                type="button"
+                className="vitals-pose-bone-card__head"
+                onClick={() => toggleBone(bone)}
+                aria-expanded={isOpen}
+              >
+                <strong>{bone}</strong>
+                {!isOpen ? (
+                  <span style={{ opacity: 0.65 }}>
+                    x{rot.x} y{rot.y} z{rot.z}
+                  </span>
+                ) : (
+                  <span style={{ opacity: 0.55 }}>click to collapse</span>
+                )}
+              </button>
+              {isOpen ? (
+                <div className="vitals-pose-bone-card__sliders">
+                  {AXIS.map((axis) => (
+                    <label key={axis}>
+                      <span>
+                        {axis.toUpperCase()}{" "}
+                        <span style={{ opacity: 0.6 }}>{rot[axis].toFixed(0)}°</span>
+                      </span>
+                      <input
+                        type="range"
+                        min={-120}
+                        max={120}
+                        step={1}
+                        value={rot[axis]}
+                        onChange={(e) => setAxis(bone, axis, Number(e.target.value))}
+                      />
+                    </label>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+      <div className="vitals-pose-dev__actions">
+        <button type="button" disabled={previewBusy} onClick={() => void runPreview(bones)}>
+          {previewBusy ? "Preview…" : "Refresh mesh preview"}
+        </button>
+        <button type="button" onClick={() => resetDefaults()}>
+          Reset defaults
+        </button>
+        <button
+          type="button"
+          className="vitals-pose-dev__save"
+          disabled={busy}
+          onClick={() => void save()}
+        >
+          {busy ? "Saving…" : "Save pose.json"}
+        </button>
+      </div>
       {status ? (
         <p style={{ fontSize: 11, marginTop: 10, lineHeight: 1.45, opacity: 0.85 }}>{status}</p>
       ) : null}

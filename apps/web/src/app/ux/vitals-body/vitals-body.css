@@ -51,6 +51,11 @@
     grid-template-columns: 1fr 280px;
     align-items: stretch;
   }
+
+  .vitals-body-layout--wide-panel {
+    grid-template-columns: minmax(0, 1fr) minmax(400px, 540px);
+    max-width: 1520px;
+  }
 }
 
 .vitals-body-pose-live-overlay {
@@ -191,6 +196,115 @@
   border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
   background: color-mix(in srgb, currentColor 5%, transparent);
   min-height: 0;
+  container-type: inline-size;
+}
+
+.vitals-pose-dev {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.vitals-pose-dev__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.vitals-pose-dev__toolbar button {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+  color: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.vitals-pose-bone-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr;
+}
+
+@container (min-width: 360px) {
+  .vitals-pose-bone-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 500px) {
+  .vitals-pose-bone-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.vitals-pose-bone-card {
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  background: color-mix(in srgb, currentColor 3%, transparent);
+  overflow: hidden;
+}
+
+.vitals-pose-bone-card--open {
+  border-color: color-mix(in srgb, #3fd6c5 45%, transparent);
+}
+
+.vitals-pose-bone-card__head {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  line-height: 1.35;
+}
+
+.vitals-pose-bone-card__head strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.vitals-pose-bone-card__sliders {
+  padding: 0 10px 10px;
+}
+
+.vitals-pose-bone-card__sliders label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+
+.vitals-pose-dev__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.vitals-pose-dev__actions button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  cursor: pointer;
+  color: inherit;
+}
+
+.vitals-pose-dev__actions button[type="button"]:not(.vitals-pose-dev__save) {
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  background: transparent;
+}
+
+.vitals-pose-dev__save {
+  border: 1px solid #3fd6c5;
+  background: rgba(47, 210, 190, 0.12);
+  font-size: 12px;
 }
 
 @media (min-width: 880px) {
