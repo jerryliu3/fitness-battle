@@ -21,8 +21,24 @@ export type VitalsPoseBoneLabel = (typeof VITALS_POSE_BONES)[number];
 
 export type VitalsPoseFile = Partial<Record<VitalsPoseBoneLabel, VitalsPoseRot>>;
 
-/** Checked-in defaults; must stay aligned with `mesh_common._default_standing_pose()`. */
+/** Shipped default: Soldier · relaxed arms (must match `mesh_common._default_standing_pose()`). */
 export const DEFAULT_VITALS_POSE: Record<VitalsPoseBoneLabel, VitalsPoseRot> = {
+  "clavicle.L": { x: 0, y: 0, z: 0 },
+  "clavicle.R": { x: 0, y: 0, z: 0 },
+  "shoulder01.L": { x: 0, y: 0, z: 0 },
+  "shoulder01.R": { x: 0, y: 0, z: 0 },
+  "upperarm01.L": { x: 1.2, y: 32.5, z: 0.1 },
+  "upperarm01.R": { x: 1.2, y: -32.5, z: -0.1 },
+  "upperarm02.L": { x: 0, y: 0, z: 0 },
+  "upperarm02.R": { x: 0, y: 0, z: 0 },
+  "lowerarm01.L": { x: 32, y: 3.7, z: 27.2 },
+  "lowerarm01.R": { x: 32, y: -3.7, z: -27.2 },
+  "upperleg01.L": { x: 0, y: 3.3, z: 0 },
+  "upperleg01.R": { x: 0, y: -3.3, z: 0 },
+};
+
+/** Pre–Soldier standing pose (arms forward); dev preset only. */
+export const LEGACY_PIPELINE_POSE: Record<VitalsPoseBoneLabel, VitalsPoseRot> = {
   "clavicle.L": { x: 0, y: 0, z: 5 },
   "clavicle.R": { x: 0, y: 0, z: -5 },
   "shoulder01.L": { x: 0, y: 0, z: 7 },

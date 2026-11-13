@@ -28,7 +28,7 @@ describe("vitals-pose dev route", () => {
     const res = await GET(new Request("http://localhost:3000/api/dev/vitals-pose"));
     expect(res.status).toBe(200);
     const body = (await res.json()) as { bones: { "upperarm01.L": { z: number } } };
-    expect(body.bones["upperarm01.L"].z).toBe(-76);
+    expect(body.bones["upperarm01.L"].y).toBe(32.5);
   });
 
   it("persists pose on localhost POST", async () => {

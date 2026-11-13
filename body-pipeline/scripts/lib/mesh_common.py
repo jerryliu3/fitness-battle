@@ -46,22 +46,20 @@ def bone_label_to_region(label: str) -> int:
 
 
 def _default_standing_pose() -> dict[str, tuple[float, float, float]]:
-    """Repo defaults (degrees, Anny local-ref). Keep in sync with `DEFAULT_VITALS_POSE` (web)."""
+    """Soldier · relaxed arms (degrees, Anny local-ref). Sync with `DEFAULT_VITALS_POSE` (web)."""
     return {
-        "clavicle.L": (0.0, 0.0, 5.0),
-        "clavicle.R": (0.0, 0.0, -5.0),
-        "shoulder01.L": (0.0, 0.0, 7.0),
-        "shoulder01.R": (0.0, 0.0, -7.0),
-        # Anny: upperarm01.R mirrors Z, not X (±X on both sides drops L/R to same height).
-        "upperarm01.L": (-18.0, 0.0, -76.0),
-        "upperarm01.R": (-18.0, 0.0, 76.0),
+        "clavicle.L": (0.0, 0.0, 0.0),
+        "clavicle.R": (0.0, 0.0, 0.0),
+        "shoulder01.L": (0.0, 0.0, 0.0),
+        "shoulder01.R": (0.0, 0.0, 0.0),
+        "upperarm01.L": (1.2, 32.5, 0.1),
+        "upperarm01.R": (1.2, -32.5, -0.1),
         "upperarm02.L": (0.0, 0.0, 0.0),
         "upperarm02.R": (0.0, 0.0, 0.0),
-        "lowerarm01.L": (0.0, 0.0, 0.0),
-        "lowerarm01.R": (0.0, 0.0, 0.0),
-        # Thigh roll (Z): slight inward without the Y abduction that splayed the feet.
-        "upperleg01.L": (0.0, 0.0, -7.0),
-        "upperleg01.R": (0.0, 0.0, 7.0),
+        "lowerarm01.L": (32.0, 3.7, 27.2),
+        "lowerarm01.R": (32.0, -3.7, -27.2),
+        "upperleg01.L": (0.0, 3.3, 0.0),
+        "upperleg01.R": (0.0, -3.3, 0.0),
     }
 
 

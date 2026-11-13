@@ -33,22 +33,28 @@ and now reads the same phenotype configuration as generation. The previous panel
 also reloaded pose.json when sex/auto-preview dependencies changed, losing edits.
 Pose loading now depends only on whether the Anny panel is active.
 
-Three presets replace the ten unverified guesses: existing pipeline defaults,
-identity reference deltas, and Soldier. Soldier was fitted using the actual
+Three presets replace the ten unverified guesses: **Soldier · relaxed arms**
+(now the shipped pipeline default), **legacy pipeline (pre-Soldier)**, and
+**zero reference** identity deltas. Soldier was fitted using the actual
 shoulder/elbow/wrist positions and palm plane, then inspected from front and side
 on male and female meshes. It resets all tunable bones, keeps straight arms close
-to the torso and palms inward; it does not change the shipped pipeline defaults.
-This is a pose preset, not collision-aware IK for arbitrary body shapes.
+to the torso and palms inward. This is a pose preset, not collision-aware IK for
+arbitrary body shapes.
 
 Parity tests use independently generated Anny/PyTorch expectations for both sexes:
-identity, pipeline defaults, every slider axis separately, and combined multi-axis
-rotations across ancestors. They compare every skeleton pivot and surface samples
-chosen from strongest bone influences, within 0.02 mm in display space. Separate
-soldier assertions check arm alignment and clearance. Regenerate fixtures with:
+identity, shipped defaults (`_default_standing_pose()`), every slider axis separately,
+and combined multi-axis rotations across ancestors. They compare every skeleton pivot
+and surface samples chosen from strongest bone influences, within 0.02 mm in display
+space. Separate soldier assertions check arm alignment and clearance. After changing
+defaults, regenerate fixtures and baked point clouds:
 
 ```sh
 body-pipeline/.venv/bin/python3 body-pipeline/scripts/generate_pose_rig_fixtures.py
+pnpm bodies:generate && pnpm bodies:sync
 ```
+
+(Older fixtures used legacy −76° arm defaults in the second pose slot; regen is
+required once Soldier becomes `_default_standing_pose()`.)
 
 Run locally from `/Users/jerryliu/.codex/worktrees/bca0/fitness-battle`:
 
@@ -58,8 +64,8 @@ pnpm bodies:venv
 pnpm dev:web
 ```
 
-Open http://localhost:3000/ux/vitals-body, choose Parametric, then
-**Soldier · arms at sides**. Drag the mesh to orbit; scroll to zoom. Tune a slider
+Open http://localhost:3000/ux/vitals-body, choose Parametric (Soldier is the default).
+Drag the mesh to orbit; scroll to zoom. Tune a slider
 and verify its yellow pivot and both displays. Toggle Show live mesh to inspect
 the skeleton alone. Save pose.json, activate `body-pipeline/.venv`, then run
 `pnpm bodies:generate && pnpm bodies:sync`
@@ -75,7 +81,9 @@ pnpm --filter @fitness-battle/web test src/lib/vitals-pose-rig-layout.test.ts sr
 Verification completed: 14 targeted tests passed, web TypeScript check passed,
 and the browser was exercised with slider changes, male/female switching and
 Front/Side views. The Soldier preview is in `anny-soldier-preview.jpg`.
-No production assets were regenerated and no full production build was run.
+Regenerate `anny-pose-rig.json` and run `pnpm bodies:generate && pnpm bodies:sync` on
+a machine with `pnpm bodies:venv` before merge so baked `.vbody` point clouds match
+Soldier defaults.
 
 Follow-up: corrected the directed palm-plane target (the original preset had the
 palms reversed). The relaxed Soldier preset now rotates the arm chain into the

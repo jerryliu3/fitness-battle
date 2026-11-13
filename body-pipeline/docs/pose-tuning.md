@@ -5,8 +5,9 @@ once to install Python dependencies. The stage loads the real Anny mesh, skeleto
 reference frames and skin weights; both react to sliders immediately. The first
 load or a saved phenotype change exports a fresh model through the development API.
 
-Choose **Soldier · arms at sides** for straight arms close to the torso with palms
-inward. Existing pipeline defaults and zero reference rotations remain available.
+**Soldier · relaxed arms** is the shipped pipeline default (straight arms, palms
+inward). **Legacy pipeline (pre-Soldier)** and **zero reference** presets remain for
+comparison.
 Pink is anatomical left and blue is right. Focus a slider to mark its pivot yellow.
 Upperarm01/02 and lowerarm01/02 subdivide their respective limbs; they are not
 separate full-length arms. The mesh can be hidden to inspect the skeleton.
@@ -32,8 +33,11 @@ source body-pipeline/.venv/bin/activate
 pnpm bodies:generate && pnpm bodies:sync
 ```
 
-Hard-refresh to see updated point clouds. Live mesh tuning does not change baked
-assets or pipeline defaults until explicitly saved and regenerated. The Soldier
-preset is checked for the standard male/female phenotypes, not a collision solver
-for every custom body shape. See `docs/reviews/anny-pose-rig.md` for the mapping
-review and independent Python/browser parity tests.
+Hard-refresh to see updated point clouds. After changing repo defaults, regenerate
+FK/LBS test fixtures:
+
+```sh
+body-pipeline/.venv/bin/python3 body-pipeline/scripts/generate_pose_rig_fixtures.py
+```
+
+See `docs/reviews/anny-pose-rig.md` for the stick-rig postmortem and parity tests.
