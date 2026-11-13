@@ -9,6 +9,7 @@ import { SectionHeader, SectionStack, textStyle, AppText } from "../src/ui/secti
 import { SportIcon } from "../src/ui/sport-icon";
 import { activityFromSample } from "@fitness-battle/shared";
 import { ScreenHeader } from "../src/ui/screen-header";
+import { IconButton } from "../src/ui/icon-button";
 import { IntegrationIcon } from "../src/ui/integration-icon";
 
 import { ChoicePicker } from "../src/ui/choice-picker";
@@ -753,6 +754,7 @@ const styles=useThemedStyles(stylesThemes);
 
         <View
           style={{
+            position: "relative",
             zIndex: cardDragging ? 200 : 50,
             elevation: cardDragging ? 200 : 50,
             overflow: "visible",
@@ -763,8 +765,14 @@ const styles=useThemedStyles(stylesThemes);
             model={athleteCardModel(state, now)}
             onInteractionChange={setCardDragging}
           />
+          <View style={{ position: "absolute", top: 4, right: 4, zIndex: 2 }}>
+            <IconButton
+              icon="edit"
+              label="Edit profile"
+              onPress={() => setEditOpen(true)}
+            />
+          </View>
         </View>
-        <FocusButton label="Edit profile" onPress={() => setEditOpen(true)} />
 
         {/* Achievements section under Athlete Crest */}
         <Achievements state={state} />
