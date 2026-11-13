@@ -47,15 +47,16 @@ def bone_label_to_region(label: str) -> int:
 def standing_pose_rotvec_deg() -> dict[str, tuple[float, float, float]]:
     """Standing neutral: arms at waist, feet parallel (degrees, bone-local).
 
-    Validated with `preview_standing_pose.py` — only `upperarm01` Z (no bone-local Y).
+    Validated with `preview_standing_pose.py` — `upperarm01` Z hang + mirrored X to
+    pull arms back to the lateral plane (no bone-local Y sweeps).
     """
     return {
         "clavicle.L": (0.0, 0.0, 5.0),
         "clavicle.R": (0.0, 0.0, -5.0),
         "shoulder01.L": (0.0, 0.0, 7.0),
         "shoulder01.R": (0.0, 0.0, -7.0),
-        "upperarm01.L": (0.0, 0.0, -76.0),
-        "upperarm01.R": (0.0, 0.0, 76.0),
+        "upperarm01.L": (-18.0, 0.0, -76.0),
+        "upperarm01.R": (18.0, 0.0, 76.0),
         "upperarm02.L": (0.0, 0.0, 0.0),
         "upperarm02.R": (0.0, 0.0, 0.0),
         "lowerarm01.L": (0.0, 0.0, 0.0),

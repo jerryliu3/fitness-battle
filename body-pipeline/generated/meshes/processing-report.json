@@ -6,14 +6,14 @@
     "euler_number": 8,
     "degenerate_faces": 0,
     "bounds_min": [
-      -0.27689494909517964,
+      -0.2775424020427011,
       0.0,
-      -0.2775746927652052
+      -0.3286525364392036
     ],
     "bounds_max": [
-      0.27689494909517964,
+      0.2775424020427011,
       1.74,
-      0.2775746927652052
+      0.3286525364392036
     ],
     "path": "/agent/repos/fitness-battle/body-pipeline/generated/meshes/male.glb"
   },
@@ -24,14 +24,14 @@
     "euler_number": 8,
     "degenerate_faces": 0,
     "bounds_min": [
-      -0.26362292834145856,
+      -0.2637442429662393,
       0.0,
-      -0.2759172317583065
+      -0.32263255537597724
     ],
     "bounds_max": [
-      0.26362292834145856,
+      0.2637442429662393,
       1.66,
-      0.27591723175830657
+      0.32263255537597724
     ],
     "path": "/agent/repos/fitness-battle/body-pipeline/generated/meshes/female.glb"
   }
