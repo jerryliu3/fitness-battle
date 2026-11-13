@@ -11,6 +11,7 @@ export function QueuedField({ state, event, now, onCancel, overlay = false }: { 
 const f=useFocusStyles();
 
   const [expanded, setExpanded] = useState(true);
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const queue = competitionQueue(state, event, now);
   if (!queue) return null;
   if (overlay && !expanded) return <View style={{ position: "absolute", bottom: 16, left: 12, right: 12 }}><FocusButton secondary label={`Wave details · ${queue.startsLabel}`} onPress={() => setExpanded(true)} /></View>;
@@ -22,6 +23,22 @@ const f=useFocusStyles();
       ? "Your matched field is revealed when the wave starts."
       : "Your shared field is loading. Your activity counts from the start time below."}</AppText>
     <View style={{ gap: 8 }}>{queue.queued && <><AppText role="caption" secondary>Starts in</AppText><WaveCountdown start={queue.start} now={now} prominent /></>}<AppText role="caption" secondary>Ends {queue.endsLabel}</AppText></View>
-    {queue.queued ? <FocusButton label="Cancel registration" secondary onPress={onCancel} /> : null}
+    {queue.queued ? (
+      confirmCancel ? (
+        <View style={{ gap: 8 }}>
+          <AppText role="body" secondary>Cancel your registration for this wave?</AppText>
+          <FocusButton
+            label="Yes, cancel registration"
+            onPress={() => {
+              setConfirmCancel(false);
+              onCancel();
+            }}
+          />
+          <FocusButton label="Keep registration" secondary onPress={() => setConfirmCancel(false)} />
+        </View>
+      ) : (
+        <FocusButton label="Cancel registration" secondary onPress={() => setConfirmCancel(true)} />
+      )
+    ) : null}
   </View>;
 }
