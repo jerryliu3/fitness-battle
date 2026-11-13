@@ -2,7 +2,7 @@ import { AppearanceControl } from "../src/ui/appearance-control";
 import { useFocusStyles } from "../src/ui/focus";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../src/theme";
 import { Toast } from "../src/ui/toast";
-import { playPattern } from "../src/lib/haptics";
+import { playCue, playPattern } from "../src/lib/haptics";
 import { HapticPreference } from "../src/ui/haptic-preference";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SectionHeader, SectionStack, textStyle, AppText } from "../src/ui/section";
@@ -756,7 +756,7 @@ const styles=useThemedStyles(stylesThemes);
     void copy
       .then(() => {
         setNote("Link copied.");
-        void playPattern("success");
+        void playCue("success");
       })
       .catch(() => setNote("Could not copy link."));
   };
