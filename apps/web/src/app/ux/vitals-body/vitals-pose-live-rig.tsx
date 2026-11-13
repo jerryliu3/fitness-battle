@@ -10,13 +10,12 @@ import {
   rigSide,
   rotvecDegComponents,
   segmentUnit,
-  STICK_RIG_CALIBRATION,
   type RigBoneAxis,
   type RigSide,
 } from "@/lib/vitals-pose-rig-layout";
 import type { VitalsPoseBoneLabel, VitalsPoseRot } from "@/lib/vitals-pose";
 import { useEffect, useRef } from "react";
-import type { MeshStandardMaterial, Object3D, Quaternion } from "three";
+import type { MeshStandardMaterial, Object3D } from "three";
 
 type PoseState = Record<VitalsPoseBoneLabel, VitalsPoseRot>;
 
@@ -111,7 +110,6 @@ export function VitalsPoseLiveRig({
       };
 
       const nodes = new Map<string, Object3D>();
-      const restQuats = new Map<string, Quaternion>();
       const defById = new Map(POSE_RIG_BONES.map((d) => [d.id, d]));
       const boneUp = new THREE.Vector3(0, 1, 0);
       const radiusHand = 0.014;
@@ -120,15 +118,17 @@ export function VitalsPoseLiveRig({
         const pivot = new THREE.Object3D();
         pivot.name = def.id;
 
+        const visual = new THREE.Object3D();
+        visual.name = `${def.id}/visual`;
+        const dir = segDir(def.axis);
+        visual.quaternion.setFromUnitVectors(boneUp, dir);
+        pivot.add(visual);
+
         const parentDef = def.parent ? defById.get(def.parent) : undefined;
         if (parentDef) {
           const [tx, ty, tz] = childAttachLocal(parentDef, def.offset);
           pivot.position.set(tx, ty, tz);
         }
-
-        const dir = segDir(def.axis);
-        const restQ = new THREE.Quaternion().setFromUnitVectors(boneUp, dir);
-        restQuats.set(def.id, restQ);
 
         if (def.length > 0) {
           const mat = materials.get(rigSide(def.region))!;
@@ -150,7 +150,7 @@ export function VitalsPoseLiveRig({
           const cap = new THREE.CapsuleGeometry(radius, Math.max(def.length - 0.05, 0.05), 6, 12);
           const seg = new THREE.Mesh(cap, mat);
           seg.position.y = def.length * 0.5;
-          pivot.add(seg);
+          visual.add(seg);
         }
 
         if (def.id === "chest") {
@@ -161,7 +161,7 @@ export function VitalsPoseLiveRig({
           );
           shoulderBar.rotation.z = Math.PI / 2;
           shoulderBar.position.set(0, def.length, 0);
-          pivot.add(shoulderBar);
+          visual.add(shoulderBar);
         }
 
         const isElbow = def.id === "lowerarm01.L" || def.id === "lowerarm01.R";
@@ -174,13 +174,13 @@ export function VitalsPoseLiveRig({
               jointMat,
             );
         if (isElbow) joint.rotation.x = Math.PI / 2;
-        pivot.add(joint);
+        visual.add(joint);
 
         if (isHand && def.length > 0) {
           const mat = materials.get(rigSide(def.region))!;
           const palm = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.1, 0.032), mat);
           palm.position.y = def.length * 0.55;
-          pivot.add(palm);
+          visual.add(palm);
         }
 
         const parent = def.parent ? nodes.get(def.parent) : null;
@@ -197,15 +197,9 @@ export function VitalsPoseLiveRig({
         for (const def of POSE_RIG_BONES) {
           const pivot = nodes.get(def.id);
           if (!pivot) continue;
-          const restQ = restQuats.get(def.id) ?? identity;
-          let poseQ = isTunableBone(def.id)
-            ? rotvecToQuat(bonesRef.current[def.id])
-            : identity;
-          const calib = isTunableBone(def.id) ? STICK_RIG_CALIBRATION[def.id] : undefined;
-          if (calib) {
-            poseQ = rotvecToQuat(calib).multiply(poseQ);
-          }
-          pivot.quaternion.copy(restQ).multiply(poseQ);
+          pivot.quaternion.copy(
+            isTunableBone(def.id) ? rotvecToQuat(bonesRef.current[def.id]) : identity,
+          );
         }
       };
 
@@ -346,7 +340,7 @@ export function VitalsPoseLiveRig({
       {variant === "panel" ? (
         <>
           <p style={{ fontSize: 10, letterSpacing: "0.08em", margin: "0 0 6px", opacity: 0.75 }}>
-            LIVE STICK RIG — slider deltas only; mesh PNG is ground truth at default pose.
+            LIVE STICK RIG — same rotvec as mesh (bind shape on capsules, rotation on joints). Mesh PNG = sign-off.
           </p>
           <p style={{ fontSize: 9, margin: "0 0 6px", opacity: 0.72, lineHeight: 1.35 }}>
             Thick = upper arm (2 bones) · thin = forearm · ring = elbow · box = palm

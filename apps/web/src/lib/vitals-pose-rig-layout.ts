@@ -10,7 +10,7 @@ export type RigBoneDef = {
   id: RigBoneId;
   parent: RigBoneId | null;
   length: number;
-  /** Parent-local offset from parent distal joint (always along parent +Y × length). */
+  /** Parent-local offset from parent distal joint (along parent segment axis × length). */
   offset: [number, number, number];
   axis: RigBoneAxis;
   region: RigRegion;
@@ -48,13 +48,14 @@ export function segmentUnit(axis: RigBoneAxis): [number, number, number] {
   return AXIS_UNIT[axis];
 }
 
-/** Parent-local position for a child pivot (segment tip is always parent +Y × length). */
+/** Parent-local position for a child joint at the parent segment tip. */
 export function childAttachLocal(
   parent: RigBoneDef,
   childOffset: [number, number, number] = [0, 0, 0],
 ): [number, number, number] {
+  const [ux, uy, uz] = segmentUnit(parent.axis);
   const [ox, oy, oz] = childOffset;
-  return [ox, parent.length + oy, oz];
+  return [ox + ux * parent.length, oy + uy * parent.length, oz + uz * parent.length];
 }
 
 export type RigLimbSegment = "upperArm" | "forearm" | "hand" | "leg" | "torso" | "other";
@@ -69,17 +70,6 @@ export function rigLimbSegment(id: RigBoneId): RigLimbSegment {
   if (id === "hips" || id === "spine" || id === "chest") return "torso";
   return "other";
 }
-
-/**
- * Stick-rig-only rotvec multiplier before slider values. Anny’s bind frames differ from this
- * skeleton; mesh preview stays authoritative. Tune here so default pose is in the same ballpark.
- */
-export const STICK_RIG_CALIBRATION: Partial<Record<VitalsPoseBoneLabel, VitalsPoseRot>> = {
-  "upperarm01.L": { x: 58, y: 12, z: 18 },
-  "upperarm01.R": { x: 58, y: -12, z: -18 },
-  "upperarm02.L": { x: 0, y: 0, z: 0 },
-  "upperarm02.R": { x: 0, y: 0, z: 0 },
-};
 
 /**
  * Anny pose sliders are bone-local rotation vectors (deg): direction × angle, not Euler X/Y/Z.
