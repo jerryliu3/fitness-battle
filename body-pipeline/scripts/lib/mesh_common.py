@@ -45,18 +45,21 @@ def bone_label_to_region(label: str) -> int:
 
 
 def standing_pose_rotvec_deg() -> dict[str, tuple[float, float, float]]:
-    """Relaxed A-pose: arms at sides, feet parallel (degrees, bone-local)."""
+    """Standing neutral: arms at waist, feet parallel (degrees, bone-local).
+
+    Validated with `preview_standing_pose.py` — only `upperarm01` Z (no bone-local Y).
+    """
     return {
         "clavicle.L": (0.0, 0.0, 5.0),
         "clavicle.R": (0.0, 0.0, -5.0),
         "shoulder01.L": (0.0, 0.0, 7.0),
         "shoulder01.R": (0.0, 0.0, -7.0),
-        "upperarm01.L": (18.0, 0.0, -72.0),
-        "upperarm01.R": (-18.0, 0.0, 72.0),
-        "upperarm02.L": (4.0, 0.0, 0.0),
-        "upperarm02.R": (-4.0, 0.0, 0.0),
-        "lowerarm01.L": (6.0, 0.0, 0.0),
-        "lowerarm01.R": (-6.0, 0.0, 0.0),
+        "upperarm01.L": (0.0, 0.0, -76.0),
+        "upperarm01.R": (0.0, 0.0, 76.0),
+        "upperarm02.L": (0.0, 0.0, 0.0),
+        "upperarm02.R": (0.0, 0.0, 0.0),
+        "lowerarm01.L": (0.0, 0.0, 0.0),
+        "lowerarm01.R": (0.0, 0.0, 0.0),
         # Thigh roll (Z): slight inward without the Y abduction that splayed the feet.
         "upperleg01.L": (0.0, 0.0, -7.0),
         "upperleg01.R": (0.0, 0.0, 7.0),
