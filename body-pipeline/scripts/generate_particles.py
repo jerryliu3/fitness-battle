@@ -53,6 +53,8 @@ def poisson_surface(
     count: int,
     rng: np.random.Generator,
     min_dist: float,
+    *,
+    boost_extremities: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Greedy Poisson-disk filter on uniform surface samples."""
     oversample = max(count * 5, 20000)
@@ -65,7 +67,7 @@ def poisson_surface(
     yn = (pts[:, 1] - bounds[0][1]) / max(height, 1e-6)
     lateral = np.abs(pts[:, 0]) / max((bounds[1][0] - bounds[0][0]) / 2, 1e-6)
     boost_mask = (yn < 0.08) | ((yn < 0.48) & (lateral > 0.62))
-    if boost_mask.any():
+    if boost_extremities and boost_mask.any():
         boost_pts, boost_idx = trimesh.sample.sample_surface(mesh, oversample // 3)
         # Keep only boosted extremity samples
         byn = (boost_pts[:, 1] - bounds[0][1]) / max(height, 1e-6)
@@ -148,19 +150,32 @@ def interior_normals(mesh: trimesh.Trimesh, points: np.ndarray) -> np.ndarray:
     return (normals / lengths).astype(np.float32)
 
 
+def _clip_near_surface(
+    mesh: trimesh.Trimesh, points: np.ndarray, max_dist: float
+) -> np.ndarray:
+    if len(points) == 0:
+        return points
+    _, distances, _ = trimesh.proximity.closest_point(mesh, points)
+    return points[distances <= max_dist]
+
+
 def _sample_interior_shell(
     mesh: trimesh.Trimesh, count: int, rng: np.random.Generator
 ) -> np.ndarray:
-    """Approximate interior fill when contains() is unreliable (non-watertight MPFB exports)."""
+    """Shallow in-surface fill for non-watertight MPFB exports (avoids skirt-like halos)."""
     oversample = max(count * 4, 8000)
     pts, face_idx = trimesh.sample.sample_surface(mesh, oversample)
     normals = mesh.face_normals[face_idx]
-    depth = rng.uniform(0.006, 0.14, size=len(pts))
+    depth = rng.uniform(0.006, 0.038, size=len(pts))
     inner = pts - normals * depth[:, None]
+    inner = _clip_near_surface(mesh, inner, max_dist=0.045)
     if len(inner) >= count:
         pick = rng.choice(len(inner), size=count, replace=False)
         return np.asarray(inner[pick], dtype=np.float32)
-    return np.asarray(inner, dtype=np.float32)
+    if len(inner) > 0 and len(inner) < count:
+        pad = rng.choice(len(inner), size=count - len(inner))
+        inner = np.vstack([inner, inner[pad]])
+    return np.asarray(inner[:count], dtype=np.float32)
 
 
 def sample_interior(
@@ -237,13 +252,20 @@ def build_for_mesh(glb: Path, out_dir: Path, seed: int) -> None:
     sex = glb.stem
     mesh_dir = glb.parent
     vertex_regions = load_vertex_regions(mesh, mesh_dir, sex)
+    watertight = bool(mesh.is_watertight)
 
     outline_dir = out_dir / sex
     outline_dir.mkdir(parents=True, exist_ok=True)
 
     for qi, (label, preset) in enumerate(PRESETS.items()):
         rng = np.random.default_rng(seed + qi)
-        surf_pos, surf_n = poisson_surface(mesh, preset.surface, rng, preset.poisson_min)
+        surf_pos, surf_n = poisson_surface(
+            mesh,
+            preset.surface,
+            rng,
+            preset.poisson_min,
+            boost_extremities=watertight,
+        )
         surf_regions = regions_for_points(mesh, surf_pos, vertex_regions)
         surf_class = np.full(len(surf_pos), CLASS_SURFACE, dtype=np.uint8)
 
