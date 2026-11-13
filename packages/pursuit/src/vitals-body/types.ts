@@ -1,4 +1,6 @@
 export type BodySex = "male" | "female";
+/** Offline pipeline that produced the synced runtime asset bundle. */
+export type BodyMeshSource = "anny" | "mpfb2";
 export type VizMode = "outline" | "cloud";
 export type QualityPreset = "high" | "medium" | "low";
 export type ViewPreset = "front" | "side" | "back" | "free";

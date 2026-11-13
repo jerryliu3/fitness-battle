@@ -1,5 +1,6 @@
 import type {
   AppearanceMode,
+  BodyMeshSource,
   BodySex,
   HealthSystem,
   QualityPreset,
@@ -10,6 +11,8 @@ import type {
 } from "./types";
 
 export interface VitalsBodyControlProps {
+  meshSource: BodyMeshSource;
+  onMeshSource: (s: BodyMeshSource) => void;
   sex: BodySex;
   onSex: (s: BodySex) => void;
   mode: VizMode;
@@ -95,6 +98,15 @@ export function VitalsBodyControls(props: VitalsBodyControlProps) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      <Seg
+        label="MESH"
+        value={props.meshSource}
+        onChange={props.onMeshSource}
+        options={[
+          { id: "anny", label: "Parametric" },
+          { id: "mpfb2", label: "MPFB" },
+        ]}
+      />
       <Seg label="BODY" value={props.sex} onChange={props.onSex} options={[
         { id: "male", label: "Male" },
         { id: "female", label: "Female" },

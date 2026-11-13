@@ -4,7 +4,9 @@ import {
   DEFAULT_TUNING,
   VitalsBodyControls,
   VitalsBodyRenderer,
+  vitalsAssetBase,
   type AppearanceMode,
+  type BodyMeshSource,
   type BodySex,
   type HealthSystem,
   type QualityPreset,
@@ -17,6 +19,7 @@ import { useState } from "react";
 import "./vitals-body.css";
 
 export function VitalsBodyDemo() {
+  const [meshSource, setMeshSource] = useState<BodyMeshSource>("anny");
   const [sex, setSex] = useState<BodySex>("male");
   const [mode, setMode] = useState<VizMode>("outline");
   const [view, setView] = useState<ViewPreset>("front");
@@ -42,6 +45,7 @@ export function VitalsBodyDemo() {
       <div className="vitals-body-layout">
         <div className="vitals-body-stage">
           <VitalsBodyRenderer
+            assetBase={vitalsAssetBase(meshSource)}
             sex={sex}
             mode={mode}
             view={view}
@@ -55,6 +59,8 @@ export function VitalsBodyDemo() {
         </div>
         <aside className="vitals-body-panel">
           <VitalsBodyControls
+            meshSource={meshSource}
+            onMeshSource={setMeshSource}
             sex={sex}
             onSex={setSex}
             mode={mode}

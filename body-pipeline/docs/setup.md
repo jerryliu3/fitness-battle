@@ -9,7 +9,7 @@
 | Process | `scripts/process_meshes.py` | `generated/meshes/{male,female}.glb` |
 | Particles | `scripts/generate_particles.py` | `generated/pointclouds/` |
 | Validate | `scripts/validate_assets.py` | `validation-report.json` |
-| Sync | `scripts/sync_runtime_assets.sh` | `apps/web/public/bodies/` |
+| Sync | `scripts/sync_runtime_assets.sh [anny\|mpfb2]` | `apps/web/public/bodies/<variant>/` |
 
 ## Dependencies
 
@@ -30,10 +30,10 @@ chmod +x body-pipeline/scripts/install_mpfb2.sh
 bash body-pipeline/scripts/install_mpfb2.sh
 
 blender --background --python body-pipeline/scripts/generate_humans_mpfb2.py
-python3 body-pipeline/scripts/process_meshes.py --source-suffix=-mpfb2
-python3 body-pipeline/scripts/generate_particles.py
-python3 body-pipeline/scripts/validate_assets.py
-pnpm bodies:sync
+body-pipeline/.venv/bin/python body-pipeline/scripts/process_meshes.py --source-suffix=-mpfb2
+body-pipeline/.venv/bin/python body-pipeline/scripts/generate_particles.py
+body-pipeline/.venv/bin/python body-pipeline/scripts/validate_assets.py
+pnpm bodies:sync:mpfb2
 ```
 
 Or `pnpm bodies:generate:mpfb2` after MPFB2 is installed.
@@ -49,7 +49,21 @@ python3 body-pipeline/scripts/generate_humans.py
 python3 body-pipeline/scripts/process_meshes.py
 python3 body-pipeline/scripts/generate_particles.py
 python3 body-pipeline/scripts/validate_assets.py
-bash body-pipeline/scripts/sync_runtime_assets.sh
+bash body-pipeline/scripts/sync_runtime_assets.sh anny
+pnpm bodies:verify-sync
+```
+
+`apps/web` runs `sync_runtime_assets.sh anny` automatically before `dev` and `build` (updates the Anny bundle only). Canonical output lives under `body-pipeline/generated/`.
+
+### Compare Anny vs MPFB in the demo
+
+The `/ux/vitals-body` control panel has a **MESH** toggle (`Parametric` = Anny, `MPFB` = Blender). Each option loads `/bodies/anny/` or `/bodies/mpfb2/`.
+
+Ship both folders once (or after regenerating a variant):
+
+```bash
+pnpm bodies:bootstrap-variants
+pnpm bodies:generate:mpfb2 && pnpm bodies:sync:mpfb2
 ```
 
 ## Interactive demo

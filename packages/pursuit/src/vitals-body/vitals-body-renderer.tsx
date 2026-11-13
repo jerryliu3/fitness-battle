@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { assetUrl, loadVbody } from "./load-vbody";
+import { assetUrl, loadVbody, vitalsAssetBase } from "./load-vbody";
 import { applyHighlight, createParticleMaterial } from "./particle-material";
 import type {
   AppearanceMode,
@@ -66,7 +66,7 @@ function buildGeometry(asset: Awaited<ReturnType<typeof loadVbody>>) {
 }
 
 export function VitalsBodyRenderer({
-  assetBase = "/bodies",
+  assetBase = vitalsAssetBase("anny"),
   sex,
   mode,
   quality = "medium",

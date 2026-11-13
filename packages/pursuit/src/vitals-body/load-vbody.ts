@@ -1,6 +1,10 @@
-import type { QualityPreset, VitalsParticleAsset, VizMode } from "./types";
+import type { BodyMeshSource, QualityPreset, VitalsParticleAsset, VizMode } from "./types";
 
 const MAGIC = 0x31444256; // 'VBD1' little-endian
+
+export function vitalsAssetBase(source: BodyMeshSource): string {
+  return `/bodies/${source}`;
+}
 const STRIDE = 28;
 
 export function assetUrl(
