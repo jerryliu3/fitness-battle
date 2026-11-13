@@ -31,11 +31,11 @@ export function cancelHaptics() {
 AppState.addEventListener("change", state => { if (state !== "active") cancelHaptics(); });
 subscribeHaptics(() => { if (!hapticsEnabled()) cancelHaptics(); });
 const patterns = {
-  pass: [[0, "light"]],
-  lead: [[0, "light"], [140, "medium"]],
-  combo: [[0, "light"], [140, "medium"]],
-  earned: [[0, "soft"], [140, "light"], [340, "medium"]],
-  confirm: [[0, "soft"], [120, "light"]],
+  pass: [[0, "soft"]],
+  lead: [[0, "soft"], [120, "light"]],
+  combo: [[0, "soft"], [130, "medium"]],
+  earned: [[0, "soft"], [160, "light"], [320, "medium"]],
+  confirm: [[0, "selection"], [100, "soft"]],
 } as const satisfies Record<string, readonly (readonly [number, HapticCue])[]>;
 
 /** Returns a handle that can cancel only this playback, never its successor. */
@@ -68,7 +68,7 @@ export async function playCue(
 async function dispatchCue(kind: HapticCue): Promise<void> {
   if (!hapticsEnabled() || AppState.currentState !== "active") return;
   const now = Date.now();
-  if (now - lastAt < HAPTIC_MIN_INTERVAL_MS && (kind === "selection" || kind === lastKind)) return;
+  if (now - lastAt < HAPTIC_MIN_INTERVAL_MS && kind === lastKind) return;
   lastAt = now;
   lastKind = kind;
   try {

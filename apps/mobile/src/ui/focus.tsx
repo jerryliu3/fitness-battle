@@ -80,7 +80,7 @@ const f=useThemedStyles(fThemes);
     ? "100%"
     : Math.max(200, Math.min(windowHeight * 0.85, windowHeight - Math.max(insets.top, 24) - 24));
   useEffect(() => {
-    if (open) void playCue("light");
+    if (open) void playCue("soft");
   }, [open]);
 
   useEffect(() => {
@@ -208,7 +208,7 @@ const f=useThemedStyles(fThemes);
   });
 
   useEffect(() => {
-    if (open) void playCue("light");
+    if (open) void playCue("soft");
   }, [open]);
 
   useEffect(() => {
@@ -373,7 +373,7 @@ const f=useThemedStyles(fThemes);
       accessibilityState={{ disabled }}
       onPress={() => {
         if (disabled) return;
-        void playCue("light");
+        void playCue(secondary ? "selection" : "soft");
         onPress();
       }}
       style={({ pressed }) => [
