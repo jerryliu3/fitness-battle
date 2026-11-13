@@ -10,7 +10,7 @@ export type RigBoneDef = {
   id: RigBoneId;
   parent: RigBoneId | null;
   length: number;
-  /** Extra offset from parent tip (meters, parent-local). */
+  /** Parent-local offset from parent distal joint (always along parent +Y × length). */
   offset: [number, number, number];
   axis: RigBoneAxis;
   region: RigRegion;
@@ -48,9 +48,13 @@ export function segmentUnit(axis: RigBoneAxis): [number, number, number] {
   return AXIS_UNIT[axis];
 }
 
-export function parentTip(def: RigBoneDef): [number, number, number] {
-  const [ux, uy, uz] = segmentUnit(def.axis);
-  return [def.offset[0] + ux * def.length, def.offset[1] + uy * def.length, def.offset[2] + uz * def.length];
+/** Parent-local position for a child pivot (segment tip is always parent +Y × length). */
+export function childAttachLocal(
+  parent: RigBoneDef,
+  childOffset: [number, number, number] = [0, 0, 0],
+): [number, number, number] {
+  const [ox, oy, oz] = childOffset;
+  return [ox, parent.length + oy, oz];
 }
 
 /**
@@ -76,14 +80,14 @@ export function isTunableBone(id: RigBoneId): id is VitalsPoseBoneLabel {
 export const POSE_RIG_BONES: RigBoneDef[] = [
   { id: "hips", parent: null, length: 0, offset: [0, 0, 0], axis: "up", region: "torso" },
   { id: "spine", parent: "hips", length: 0.5, offset: [0, 0, 0], axis: "up", region: "torso" },
-  { id: "chest", parent: "spine", length: 0.38, offset: [0, 0, 0], axis: "up", region: "torso" },
-  { id: "clavicle.L", parent: "chest", length: 0.14, offset: [0.04, 0.34, 0], axis: "outL", region: "armL" },
+  { id: "chest", parent: "spine", length: 0.34, offset: [0, 0, 0], axis: "up", region: "torso" },
+  { id: "clavicle.L", parent: "chest", length: 0.12, offset: [0.06, 0, 0], axis: "outL", region: "armL" },
   { id: "shoulder01.L", parent: "clavicle.L", length: 0.05, offset: [0, 0, 0], axis: "outL", region: "armL" },
   { id: "upperarm01.L", parent: "shoulder01.L", length: 0.3, offset: [0, 0, 0], axis: "down", region: "armL" },
   { id: "upperarm02.L", parent: "upperarm01.L", length: 0.26, offset: [0, 0, 0], axis: "down", region: "armL" },
   { id: "lowerarm01.L", parent: "upperarm02.L", length: 0.24, offset: [0, 0, 0], axis: "down", region: "armL" },
   { id: "hand.L", parent: "lowerarm01.L", length: 0.1, offset: [0, 0, 0], axis: "down", region: "armL" },
-  { id: "clavicle.R", parent: "chest", length: 0.14, offset: [-0.04, 0.34, 0], axis: "outR", region: "armR" },
+  { id: "clavicle.R", parent: "chest", length: 0.12, offset: [-0.06, 0, 0], axis: "outR", region: "armR" },
   { id: "shoulder01.R", parent: "clavicle.R", length: 0.05, offset: [0, 0, 0], axis: "outR", region: "armR" },
   { id: "upperarm01.R", parent: "shoulder01.R", length: 0.3, offset: [0, 0, 0], axis: "down", region: "armR" },
   { id: "upperarm02.R", parent: "upperarm01.R", length: 0.26, offset: [0, 0, 0], axis: "down", region: "armR" },

@@ -2,7 +2,7 @@
 
 import {
   isTunableBone,
-  parentTip,
+  childAttachLocal,
   POSE_RIG_BONES,
   RIG_SIDE_COLORS,
   RIG_SIDE_LABELS,
@@ -108,8 +108,8 @@ export function VitalsPoseLiveRig({
         return new THREE.Quaternion().setFromAxisAngle(axis, THREE.MathUtils.degToRad(angleDeg));
       };
 
-      const nodes = new Map<string, THREE.Object3D>();
-      const restQuats = new Map<string, THREE.Quaternion>();
+      const nodes = new Map<string, Object3D>();
+      const restQuats = new Map<string, Quaternion>();
       const defById = new Map(POSE_RIG_BONES.map((d) => [d.id, d]));
       const boneUp = new THREE.Vector3(0, 1, 0);
       const radiusHand = 0.014;
@@ -119,10 +119,9 @@ export function VitalsPoseLiveRig({
         pivot.name = def.id;
 
         const parentDef = def.parent ? defById.get(def.parent) : undefined;
-        const [ox, oy, oz] = def.offset;
         if (parentDef) {
-          const [tx, ty, tz] = parentTip(parentDef);
-          pivot.position.set(tx + ox, ty + oy, tz + oz);
+          const [tx, ty, tz] = childAttachLocal(parentDef, def.offset);
+          pivot.position.set(tx, ty, tz);
         }
 
         const dir = segDir(def.axis);
@@ -139,6 +138,17 @@ export function VitalsPoseLiveRig({
           pivot.add(seg);
         }
 
+        if (def.id === "chest") {
+          const torsoMat = materials.get("torso")!;
+          const shoulderBar = new THREE.Mesh(
+            new THREE.CapsuleGeometry(0.016, 0.2, 4, 8),
+            torsoMat,
+          );
+          shoulderBar.rotation.z = Math.PI / 2;
+          shoulderBar.position.set(0, def.length, 0);
+          pivot.add(shoulderBar);
+        }
+
         const isElbow = def.id === "upperarm02.L" || def.id === "upperarm02.R";
         const isHand = def.id === "hand.L" || def.id === "hand.R";
         const joint = new THREE.Mesh(
@@ -152,9 +162,6 @@ export function VitalsPoseLiveRig({
           const palm = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.1, 0.032), mat);
           palm.position.y = def.length * 0.55;
           pivot.add(palm);
-          const handAxes = new THREE.AxesHelper(0.08);
-          handAxes.position.copy(palm.position);
-          pivot.add(handAxes);
         }
 
         const parent = def.parent ? nodes.get(def.parent) : null;
@@ -316,7 +323,7 @@ export function VitalsPoseLiveRig({
       {variant === "panel" ? (
         <>
           <p style={{ fontSize: 10, letterSpacing: "0.08em", margin: "0 0 6px", opacity: 0.75 }}>
-            LIVE STICK RIG — Anny rotvec (same as mesh preview; RGB axes + grid move with body)
+            LIVE STICK RIG — one connected chain per color (grey torso, pink L, cyan R). Mesh PNG = truth.
           </p>
           <div
             style={{
