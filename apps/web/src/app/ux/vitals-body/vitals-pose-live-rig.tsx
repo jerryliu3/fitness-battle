@@ -55,8 +55,8 @@ export function VitalsPoseLiveRig({
       host.appendChild(renderer.domElement);
 
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(44, width / height, 0.04, 24);
-      camera.position.set(0.05, 0.92, 2.15);
+      const camera = new THREE.PerspectiveCamera(variant === "stage" ? 50 : 44, width / height, 0.04, 40);
+      camera.position.set(0, 0.88, variant === "stage" ? 3.6 : 2.15);
       camera.lookAt(0, 0.88, 0);
 
       scene.add(new THREE.AmbientLight(0xffffff, 0.62));
@@ -77,6 +77,7 @@ export function VitalsPoseLiveRig({
       }
 
       const rig = new THREE.Group();
+      rig.scale.setScalar(variant === "stage" ? 0.62 : 1);
       rig.position.set(0, 0.02, 0);
       scene.add(rig);
 
@@ -97,7 +98,8 @@ export function VitalsPoseLiveRig({
 
         if (def.length > 0) {
           const mat = materials.get(def.region)!;
-          const cap = new THREE.CapsuleGeometry(0.028, Math.max(def.length - 0.05, 0.06), 6, 12);
+          const radius = variant === "stage" ? 0.02 : 0.028;
+          const cap = new THREE.CapsuleGeometry(radius, Math.max(def.length - 0.05, 0.06), 6, 12);
           const seg = new THREE.Mesh(cap, mat);
           const mid = def.length * 0.5;
           seg.position.y = def.axis === "up" ? mid : -mid;
@@ -131,9 +133,25 @@ export function VitalsPoseLiveRig({
         }
       };
 
+      const fitStageCamera = () => {
+        if (variant !== "stage") return;
+        const box = new THREE.Box3().setFromObject(rig);
+        if (box.isEmpty()) return;
+        const center = new THREE.Vector3();
+        const size = new THREE.Vector3();
+        box.getCenter(center);
+        box.getSize(size);
+        const maxDim = Math.max(size.x, size.y, size.z, 0.35);
+        const vFov = (camera.fov * Math.PI) / 180;
+        const dist = (maxDim * 0.55) / Math.tan(vFov / 2);
+        camera.position.set(center.x, center.y, center.z + dist * 1.25);
+        camera.lookAt(center.x, center.y, center.z);
+      };
+
       const render = () => {
         if (disposed) return;
         applyPose();
+        fitStageCamera();
         renderer.render(scene, camera);
         animation = requestAnimationFrame(render);
       };
@@ -216,7 +234,7 @@ export function VitalsPoseLiveRig({
           </div>
         </>
       ) : (
-        <div className="vitals-pose-live-legend" aria-hidden>
+        <div className="vitals-pose-live-legend vitals-pose-live-legend--stage" aria-hidden>
           {LEGEND.map((region) => (
             <span key={region}>
               <i style={{ background: legendSwatch(RIG_REGION_COLORS[region]) }} />

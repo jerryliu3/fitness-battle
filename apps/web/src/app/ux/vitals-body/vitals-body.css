@@ -55,17 +55,20 @@
 
 .vitals-body-pose-live-overlay {
   position: absolute;
-  inset: 0;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
   z-index: 4;
+  height: min(34vh, 220px);
+  max-height: 220px;
   pointer-events: none;
   display: flex;
   flex-direction: column;
-  padding: 8px 12px 12px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, #0a1216 25%, transparent) 0%,
-    color-mix(in srgb, #0a1216 78%, transparent) 100%
-  );
+  padding: 8px 10px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(47, 210, 190, 0.35);
+  background: rgba(10, 18, 22, 0.72);
+  backdrop-filter: blur(4px);
 }
 
 .vitals-body-pose-live-overlay .vitals-pose-live-rig {
@@ -73,6 +76,13 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+.vitals-body-pose-live-overlay .vitals-pose-live-rig > div:last-child {
+  flex: 1;
+  min-height: 0 !important;
+  height: auto !important;
 }
 
 .vitals-body-pose-live-overlay span {
@@ -81,6 +91,15 @@
   letter-spacing: 0.06em;
   text-align: center;
   opacity: 0.85;
+}
+
+.vitals-pose-live-legend--stage {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  margin-bottom: 4px;
+  justify-content: flex-start;
 }
 
 .vitals-pose-live-legend {
