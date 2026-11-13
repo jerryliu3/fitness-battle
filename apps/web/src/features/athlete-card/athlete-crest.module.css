@@ -1,7 +1,11 @@
 .crest { --tone: #f7c948; --tone-ink: #142b3b; --depth: 8px; --edge: color-mix(in srgb,var(--tone) 40%,#87959e); --shine-tint: color-mix(in srgb,var(--tone) 12%,#fff); width: 100%; color: var(--tone-ink); font-family: var(--font-body),sans-serif; }
 .stage { position: relative; display: grid; place-items: center; perspective: 1200px; padding: 20px 20px 16px; }
 .object { position: relative; width: 100%; max-width: 300px; container-type: inline-size; transform-style: preserve-3d; transform: rotateX(var(--rx)) rotateY(var(--ry)); user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: grab; touch-action: none; }
+.object:focus { outline: none; }
 .object:focus-visible { outline: 2px solid var(--app-focus-ring); outline-offset: 9px; }
+@media (hover: none) and (pointer: coarse) {
+  .object:focus-visible { outline: none; }
+}
 .stage[data-dragging="true"] .object { cursor: grabbing; }
 .crest[data-still="true"] .object { touch-action: pan-y; cursor: default; }
 .body { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; }
