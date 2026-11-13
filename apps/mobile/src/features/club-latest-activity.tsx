@@ -1,6 +1,7 @@
 import { useFocusStyles } from "../ui/focus";
 import { RouteStaticPreview } from "../ui/route-static-preview";
-import { Section, AppText } from "../ui/section";
+import { Section, AppText, TextAction } from "../ui/section";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { APP_TIMEZONE, activityRoute, clubDuration, formatVolume, homeRecentActivities, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
@@ -16,11 +17,21 @@ const f=useFocusStyles();
   const { user } = useAuth();
   const crew = useCrewActivities();
   const { blocks } = useAthleteBlocks();
+  const router = useRouter();
   const rows = homeRecentActivities(state, user?.id, crew.activities).filter(row => !blocks.some(block => block.id === row.userId));
   const [selected, setSelected] = useState<{ account?: string; id: string } | null>(null);
   const detail = selected?.account === user?.id ? rows.find(row => row.id === selected?.id) : null;
   return <>
-    <Section title="Latest activity">
+    <Section
+      title="Latest activity"
+      action={
+        <TextAction
+          label="View all"
+          accessibilityLabel="View all activities"
+          onPress={() => router.push("/progress-history?tab=activities")}
+        />
+      }
+    >
       {rows.length > 0 ? (
         rows.map(row => { const route = activityRoute(row.ownActivity); return <Pressable key={`${row.userId}:${row.id}`} accessibilityRole="button" onPress={() => row.ownActivity ? onOpen(row.ownActivity) : setSelected({ account: user?.id, id: row.id })}
           style={[f.row, { minHeight: 76, paddingVertical: 12, borderBottomWidth: 0 }]}>
