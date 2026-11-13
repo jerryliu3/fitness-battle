@@ -22,7 +22,9 @@ vi.mock("react-native", () => ({useColorScheme: () => "light",  AppState: { curr
   Switch: "Switch",
   Text: "Text",
   View: "View",
+  Clipboard: { setString: vi.fn() },
 }));
+vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "https://example.test" } }));
 vi.mock("react-native-safe-area-context", () => ({
   SafeAreaView: "SafeAreaView",
 }));
@@ -71,6 +73,7 @@ vi.mock("../ui/toast", () => ({ Toast: (props: any) => props.message ? createEle
 vi.mock("../ui/screen-header", () => ({ ScreenHeader: "ScreenHeader" }));
 vi.mock("../ui/sport-icon", () => ({ SportIcon: "SportIcon" }));
 vi.mock("../ui/integration-icon", () => ({ IntegrationIcon: "IntegrationIcon" }));
+vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("../ui/choice-picker", () => ({ ChoicePicker: "ChoicePicker" }));
 vi.mock("../ui/settings-row", () => ({ SettingsRow: "SettingsRow" }));
 vi.mock("../ui/focus", () => ((()=>{const mock={
@@ -183,6 +186,18 @@ describe("athlete profile navigation and layout", () => {
     const rendered = JSON.stringify(renderer.toJSON());
     expect(rendered).toContain("Overtakes");
     expect(rendered).toContain("Since the first mile");
+  });
+
+  it("renders shareable profile link row with copy and edit profile", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    mock.params = {};
+    await act(async () => {
+      renderer = create(createElement(AthleteScreen));
+    });
+    const rendered = JSON.stringify(renderer.toJSON());
+    expect(rendered).toContain("https://example.test/app/athlete?id=alice");
+    expect(rendered).toContain("Copy");
+    expect(rendered).toContain("Edit profile");
   });
 
   it("renders signed out athlete page with updated copy and signedOut flag for metrics", async () => {

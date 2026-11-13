@@ -2,13 +2,14 @@ import { AppearanceControl } from "../src/ui/appearance-control";
 import { useFocusStyles } from "../src/ui/focus";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../src/theme";
 import { Toast } from "../src/ui/toast";
-import { playPattern } from "../src/lib/haptics";
+import { playCue, playPattern } from "../src/lib/haptics";
 import { HapticPreference } from "../src/ui/haptic-preference";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SectionHeader, SectionStack, textStyle, AppText } from "../src/ui/section";
 import { SportIcon } from "../src/ui/sport-icon";
 import { activityFromSample } from "@fitness-battle/shared";
 import { ScreenHeader } from "../src/ui/screen-header";
+import { AppIcon } from "../src/ui/app-icon";
 import { IntegrationIcon } from "../src/ui/integration-icon";
 
 import { ChoicePicker } from "../src/ui/choice-picker";
@@ -27,18 +28,20 @@ import {
   competitionTrack,
   effortPointProgress,
   type ProviderId,
+  webProductPath,
 } from "@fitness-battle/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
-import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Clipboard, Platform, Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AccountActions } from "../src/features/account-actions";
 import { LegalLinks } from "../src/features/legal-links";
 import { AthleteMetrics } from "../src/features/athlete-metrics";
 import { SettingsRow } from "../src/ui/settings-row";
 import { DataSyncActions } from "../src/features/data-sync-actions";
+import { mobileEnv } from "../src/lib/env";
 import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
 import {
@@ -739,6 +742,25 @@ const styles=useThemedStyles(stylesThemes);
   const primaryRating = state.ratings.find(r => r.sport === state.primary);
   const effortModel = effortPointProgress(state, state.primary, primaryTrack);
   const effortScore = effortModel?.score ?? (primaryRating ? (primaryTrack === "verified" ? primaryRating.verifiedElo : primaryRating.openElo) : 1000);
+  const profileShareUrl = useMemo(() => {
+    const origin = mobileEnv.apiUrl.replace(/\/$/, "");
+    const path = webProductPath("/athlete");
+    const query = user?.id ? `?id=${encodeURIComponent(user.id)}` : "";
+    return `${origin}${path}${query}`;
+  }, [user?.id]);
+
+  const copyProfileShareUrl = () => {
+    const copy =
+      Platform.OS === "web" && typeof navigator !== "undefined" && navigator.clipboard
+        ? navigator.clipboard.writeText(profileShareUrl)
+        : Promise.resolve(Clipboard.setString(profileShareUrl));
+    void copy
+      .then(() => {
+        setNote("Link copied.");
+        void playCue("success");
+      })
+      .catch(() => setNote("Could not copy link."));
+  };
 
   return (
     <View style={styles.safe}>
@@ -754,6 +776,7 @@ const styles=useThemedStyles(stylesThemes);
 
         <View
           style={{
+            position: "relative",
             zIndex: cardDragging ? 200 : 50,
             elevation: cardDragging ? 200 : 50,
             overflow: "visible",
@@ -765,7 +788,66 @@ const styles=useThemedStyles(stylesThemes);
             onInteractionChange={setCardDragging}
           />
         </View>
-        <FocusButton label="Edit profile" onPress={() => setEditOpen(true)} />
+
+        <View style={[f.row, { gap: 8, alignItems: "stretch" }]}>
+          <View
+            style={{
+              flex: 1,
+              minWidth: 0,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              minHeight: 48,
+              paddingLeft: 14,
+              paddingRight: 6,
+              paddingVertical: 6,
+              borderWidth: 1,
+              borderColor: SHELL_COLORS.line,
+              borderRadius: SHELL_RADIUS.pill,
+              backgroundColor: SHELL_COLORS.card,
+            }}
+          >
+            <AppText
+              role="caption"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={{ flex: 1, minWidth: 0 }}
+              accessibilityLabel={`Public profile link: ${profileShareUrl}`}
+            >
+              {profileShareUrl}
+            </AppText>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Copy link"
+              onPress={copyProfileShareUrl}
+              style={({ pressed }) => ({
+                paddingHorizontal: 10,
+                paddingVertical: 7,
+                borderRadius: SHELL_RADIUS.pill,
+                borderWidth: 1,
+                borderColor: SHELL_COLORS.line,
+                backgroundColor: appearanceColors.paper,
+                opacity: pressed ? 0.75 : 1,
+              })}
+            >
+              <AppText role="caption">Copy</AppText>
+            </Pressable>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Edit profile"
+            onPress={() => setEditOpen(true)}
+            style={({ pressed }) => [
+              f.button,
+              f.secondary,
+              { flexShrink: 0, paddingHorizontal: 14, gap: 6 },
+              pressed && { opacity: 0.78 },
+            ]}
+          >
+            <AppIcon name="edit" size={18} />
+            <Text style={[f.buttonText, { color: appearanceColors.ink }]}>Edit profile</Text>
+          </Pressable>
+        </View>
 
         {/* Achievements section under Athlete Crest */}
         <Achievements state={state} />
@@ -952,6 +1034,7 @@ const styles=useThemedStyles(stylesThemes);
         />
       </View>
     </FocusSidePanel>
+    {note ? <Toast message={note} onDismiss={() => setNote(null)} /> : null}
     </View>
   );
 }
