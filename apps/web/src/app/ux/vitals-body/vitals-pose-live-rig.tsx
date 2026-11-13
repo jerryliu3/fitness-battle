@@ -1,12 +1,15 @@
 "use client";
 
 import {
-  eulerRad,
   isTunableBone,
+  parentTip,
   POSE_RIG_BONES,
   RIG_SIDE_COLORS,
   RIG_SIDE_LABELS,
   rigSide,
+  rotvecDegComponents,
+  segmentUnit,
+  type RigBoneAxis,
   type RigSide,
 } from "@/lib/vitals-pose-rig-layout";
 import type { VitalsPoseBoneLabel, VitalsPoseRot } from "@/lib/vitals-pose";
@@ -84,36 +87,75 @@ export function VitalsPoseLiveRig({
       rig.position.set(0, 0.02, 0);
       scene.add(rig);
 
-      const nodes = new Map<string, Object3D>();
+      const bodyAxes = new THREE.AxesHelper(variant === "stage" ? 0.42 : 0.28);
+      bodyAxes.position.set(0, 0.92, 0);
+      rig.add(bodyAxes);
+
+      const bodyGrid = new THREE.GridHelper(1.35, 12, 0x2fd2be, 0x1a2e2a);
+      bodyGrid.position.y = 0.04;
+      rig.add(bodyGrid);
+
+      const segDir = (axis: RigBoneAxis) => {
+        const [x, y, z] = segmentUnit(axis);
+        return new THREE.Vector3(x, y, z);
+      };
+
+      const rotvecToQuat = (rot: VitalsPoseRot) => {
+        const [x, y, z] = rotvecDegComponents(rot);
+        const angleDeg = Math.hypot(x, y, z);
+        if (angleDeg < 1e-6) return new THREE.Quaternion();
+        const axis = new THREE.Vector3(x, y, z).multiplyScalar(1 / angleDeg);
+        return new THREE.Quaternion().setFromAxisAngle(axis, THREE.MathUtils.degToRad(angleDeg));
+      };
+
+      const nodes = new Map<string, THREE.Object3D>();
+      const restQuats = new Map<string, THREE.Quaternion>();
       const defById = new Map(POSE_RIG_BONES.map((d) => [d.id, d]));
+      const boneUp = new THREE.Vector3(0, 1, 0);
+      const radiusHand = 0.014;
 
       for (const def of POSE_RIG_BONES) {
         const pivot = new THREE.Object3D();
         pivot.name = def.id;
 
-        const parentId = def.parent;
-        const parentDef = parentId ? defById.get(parentId) : undefined;
+        const parentDef = def.parent ? defById.get(def.parent) : undefined;
         const [ox, oy, oz] = def.offset;
         if (parentDef) {
-          const tipY = parentDef.axis === "up" ? parentDef.length : -parentDef.length;
-          pivot.position.set(ox, tipY + oy, oz);
+          const [tx, ty, tz] = parentTip(parentDef);
+          pivot.position.set(tx + ox, ty + oy, tz + oz);
         }
+
+        const dir = segDir(def.axis);
+        const restQ = new THREE.Quaternion().setFromUnitVectors(boneUp, dir);
+        restQuats.set(def.id, restQ);
 
         if (def.length > 0) {
           const mat = materials.get(rigSide(def.region))!;
-          const radius = variant === "stage" ? 0.02 : 0.028;
-          const cap = new THREE.CapsuleGeometry(radius, Math.max(def.length - 0.05, 0.06), 6, 12);
+          const radius =
+            def.id.startsWith("hand.") ? radiusHand : variant === "stage" ? 0.02 : 0.026;
+          const cap = new THREE.CapsuleGeometry(radius, Math.max(def.length - 0.05, 0.05), 6, 12);
           const seg = new THREE.Mesh(cap, mat);
-          const mid = def.length * 0.5;
-          seg.position.y = def.axis === "up" ? mid : -mid;
+          seg.position.y = def.length * 0.5;
           pivot.add(seg);
         }
 
+        const isElbow = def.id === "upperarm02.L" || def.id === "upperarm02.R";
+        const isHand = def.id === "hand.L" || def.id === "hand.R";
         const joint = new THREE.Mesh(
-          new THREE.SphereGeometry(0.034, 12, 12),
+          new THREE.SphereGeometry(isElbow ? 0.046 : isHand ? 0.028 : 0.032, 12, 12),
           materials.get(rigSide(def.region))!,
         );
         pivot.add(joint);
+
+        if (isHand && def.length > 0) {
+          const mat = materials.get(rigSide(def.region))!;
+          const palm = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.1, 0.032), mat);
+          palm.position.y = def.length * 0.55;
+          pivot.add(palm);
+          const handAxes = new THREE.AxesHelper(0.08);
+          handAxes.position.copy(palm.position);
+          pivot.add(handAxes);
+        }
 
         const parent = def.parent ? nodes.get(def.parent) : null;
         if (parent) parent.add(pivot);
@@ -125,14 +167,15 @@ export function VitalsPoseLiveRig({
       if (hips) hips.position.set(0, 0.48, 0);
 
       const applyPose = () => {
+        const identity = new THREE.Quaternion();
         for (const def of POSE_RIG_BONES) {
           const pivot = nodes.get(def.id);
           if (!pivot) continue;
-          pivot.rotation.set(0, 0, 0);
-          if (isTunableBone(def.id)) {
-            const [rx, ry, rz] = eulerRad(bonesRef.current[def.id]);
-            pivot.rotation.set(rx, ry, rz, "XYZ");
-          }
+          const restQ = restQuats.get(def.id) ?? identity;
+          const poseQ = isTunableBone(def.id)
+            ? rotvecToQuat(bonesRef.current[def.id])
+            : identity;
+          pivot.quaternion.copy(restQ).multiply(poseQ);
         }
       };
 
@@ -273,7 +316,7 @@ export function VitalsPoseLiveRig({
       {variant === "panel" ? (
         <>
           <p style={{ fontSize: 10, letterSpacing: "0.08em", margin: "0 0 6px", opacity: 0.75 }}>
-            LIVE STICK RIG — instant feedback (approximate, not the scan)
+            LIVE STICK RIG — Anny rotvec (same as mesh preview; RGB axes + grid move with body)
           </p>
           <div
             style={{

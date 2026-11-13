@@ -270,8 +270,9 @@ export function VitalsPoseDev({
         </button>
       </div>
       <p style={{ fontSize: 11, opacity: 0.5, margin: "0 0 12px", lineHeight: 1.4 }}>
-        Arms: tune <strong>upperarm01</strong> Z (down) and matching X on L/R; avoid large{" "}
-        <strong>upperarm01 Y</strong>.
+        Sliders are <strong>rotvec degrees</strong> (Anny bone-local), not world Euler. Arms:{" "}
+        <strong>upperarm01</strong> — same X on L/R, flip Z sign; avoid large{" "}
+        <strong>upperarm01 Y</strong>. Trust mesh PNG over stick rig if they disagree.
       </p>
       <div className="vitals-pose-bone-grid">
         {VITALS_POSE_BONES.map((bone) => {
