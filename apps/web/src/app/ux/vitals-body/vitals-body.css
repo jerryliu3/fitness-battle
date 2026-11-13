@@ -53,6 +53,40 @@
   }
 }
 
+.vitals-body-pose-preview-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 12px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #0a1216 35%, transparent) 0%,
+    color-mix(in srgb, #0a1216 72%, transparent) 100%
+  );
+}
+
+.vitals-body-pose-preview-overlay img {
+  width: 100%;
+  max-height: 72%;
+  object-fit: contain;
+  border-radius: 12px;
+  border: 1px solid rgba(47, 210, 190, 0.45);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.vitals-body-pose-preview-overlay span {
+  margin-top: 8px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-align: center;
+  opacity: 0.85;
+}
+
 .vitals-body-stage {
   position: relative;
   height: min(72vh, 640px);

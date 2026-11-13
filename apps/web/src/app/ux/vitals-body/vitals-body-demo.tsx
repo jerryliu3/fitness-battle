@@ -32,6 +32,7 @@ export function VitalsBodyDemo() {
   const [faceStyle, setFaceStyle] = useState<FaceStyle>("soft");
   const [quality, setQuality] = useState<QualityPreset>("medium");
   const [tuning, setTuning] = useState<VitalsBodyTuning>(DEFAULT_TUNING);
+  const [poseMeshPreview, setPoseMeshPreview] = useState<string | null>(null);
 
   return (
     <main
@@ -49,6 +50,12 @@ export function VitalsBodyDemo() {
       </header>
       <div className="vitals-body-layout">
         <div className="vitals-body-stage">
+          {poseMeshPreview ? (
+            <div className="vitals-body-pose-preview-overlay" aria-hidden>
+              <img src={poseMeshPreview} alt="" />
+              <span>Pose mesh preview — point cloud unchanged until bake</span>
+            </div>
+          ) : null}
           <VitalsBodyRenderer
             assetBase={vitalsAssetBase(meshSource)}
             sex={sex}
@@ -88,7 +95,11 @@ export function VitalsBodyDemo() {
             devTuning
           />
           <VitalsPhenotypeDev sex={sex} />
-          <VitalsPoseDev meshSource={meshSource} />
+          <VitalsPoseDev
+            meshSource={meshSource}
+            sex={sex}
+            onMeshPreview={setPoseMeshPreview}
+          />
         </aside>
       </div>
     </main>

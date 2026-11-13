@@ -7,7 +7,7 @@ import {
   type VitalsPoseBoneLabel,
   type VitalsPoseRot,
 } from "@/lib/vitals-pose";
-import type { BodyMeshSource } from "@fitness-battle/pursuit/vitals-body";
+import type { BodyMeshSource, BodySex } from "@fitness-battle/pursuit/vitals-body";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type PoseState = Record<VitalsPoseBoneLabel, VitalsPoseRot>;
@@ -15,7 +15,15 @@ type PoseState = Record<VitalsPoseBoneLabel, VitalsPoseRot>;
 const AXIS: (keyof VitalsPoseRot)[] = ["x", "y", "z"];
 const PREVIEW_DEBOUNCE_MS = 900;
 
-export function VitalsPoseDev({ meshSource }: { meshSource: BodyMeshSource }) {
+export function VitalsPoseDev({
+  meshSource,
+  sex,
+  onMeshPreview,
+}: {
+  meshSource: BodyMeshSource;
+  sex: BodySex;
+  onMeshPreview?: (url: string | null) => void;
+}) {
   const [visible, setVisible] = useState(false);
   const [bones, setBones] = useState<PoseState | null>(null);
   const [openBone, setOpenBone] = useState<VitalsPoseBoneLabel | null>("upperarm01.L");
@@ -25,6 +33,8 @@ export function VitalsPoseDev({ meshSource }: { meshSource: BodyMeshSource }) {
   const [previewBusy, setPreviewBusy] = useState(false);
   const [previewMale, setPreviewMale] = useState<string | null>(null);
   const [previewFemale, setPreviewFemale] = useState<string | null>(null);
+  const [previewAt, setPreviewAt] = useState<string | null>(null);
+  const previewBoxRef = useRef<HTMLDivElement | null>(null);
   const bonesRef = useRef<PoseState | null>(null);
   const previewSeq = useRef(0);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,20 +64,26 @@ export function VitalsPoseDev({ meshSource }: { meshSource: BodyMeshSource }) {
       };
       if (seq !== previewSeq.current) return;
       if (!res.ok) {
-        setStatus(data.detail ?? data.error ?? "Mesh preview failed");
+        const msg = data.detail ?? data.error ?? "Mesh preview failed";
+        setStatus(msg);
+        onMeshPreview?.(null);
         return;
       }
       if (data.images) {
         setPreviewMale(data.images.male);
         setPreviewFemale(data.images.female);
-        setStatus(null);
+        const primary = sex === "female" ? data.images.female : data.images.male;
+        onMeshPreview?.(primary);
+        setPreviewAt(new Date().toLocaleTimeString());
+        setStatus("Preview updated — mesh silhouettes below and on the scan overlay.");
+        previewBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
     } catch {
       if (seq === previewSeq.current) setStatus("Mesh preview request failed");
     } finally {
       if (seq === previewSeq.current) setPreviewBusy(false);
     }
-  }, []);
+  }, [onMeshPreview, sex]);
 
   const schedulePreview = useCallback(
     (nextBones: PoseState) => {
@@ -99,7 +115,14 @@ export function VitalsPoseDev({ meshSource }: { meshSource: BodyMeshSource }) {
     };
   }, []);
 
+  useEffect(() => {
+    const url = sex === "female" ? previewFemale : previewMale;
+    if (url) onMeshPreview?.(url);
+  }, [sex, previewMale, previewFemale, onMeshPreview]);
+
   if (!visible || meshSource !== "anny" || !bones) return null;
+
+  const panelPreviewSrc = (sex === "female" ? previewFemale : previewMale) ?? previewMale;
 
   function setAxis(bone: VitalsPoseBoneLabel, axis: keyof VitalsPoseRot, value: number) {
     setBones((prev) => {
@@ -158,10 +181,41 @@ export function VitalsPoseDev({ meshSource }: { meshSource: BodyMeshSource }) {
         LOCAL ANNY POSE (bone rotvec °)
       </p>
       <p style={{ fontSize: 11, opacity: 0.55, margin: "6px 0 8px", lineHeight: 1.4 }}>
-        The main scan is still a baked point cloud. With <strong>auto mesh preview</strong>, sliders
-        refresh fast front/side silhouettes below (~10–30s). When satisfied, save and run{" "}
-        <code style={{ fontSize: 10 }}>pnpm bodies:generate &amp;&amp; pnpm bodies:sync</code>.
+        The <strong>left point-cloud scan does not move</strong> until you bake assets.{" "}
+        <strong>Refresh mesh preview</strong> updates the silhouettes in this panel and the overlay on
+        the scan (~5–30s; needs local Python + <code style={{ fontSize: 10 }}>anny</code>).
       </p>
+      <div
+        ref={previewBoxRef}
+        className="vitals-pose-preview-box"
+        style={{
+          marginBottom: 12,
+          padding: 10,
+          borderRadius: 10,
+          border: "1px solid rgba(47,210,190,0.45)",
+          background: "rgba(47,210,190,0.06)",
+        }}
+      >
+        <p style={{ fontSize: 10, letterSpacing: "0.08em", margin: "0 0 8px", opacity: 0.75 }}>
+          MESH PREVIEW (live pose — not the baked scan)
+          {previewAt ? ` · updated ${previewAt}` : ""}
+        </p>
+        {previewBusy ? (
+          <p style={{ fontSize: 11, margin: 0, opacity: 0.7 }}>Generating mesh preview…</p>
+        ) : panelPreviewSrc ? (
+          <img
+            key={panelPreviewSrc}
+            src={panelPreviewSrc}
+            alt="Pose mesh preview for selected sex"
+            style={{ width: "100%", borderRadius: 6, display: "block" }}
+          />
+        ) : (
+          <p style={{ fontSize: 11, margin: 0, opacity: 0.65, lineHeight: 1.4 }}>
+            No preview yet. Click <strong>Refresh mesh preview</strong> (or move a slider with auto
+            preview on).
+          </p>
+        )}
+      </div>
       <label
         style={{
           display: "flex",
@@ -183,24 +237,6 @@ export function VitalsPoseDev({ meshSource }: { meshSource: BodyMeshSource }) {
         Auto mesh preview on slider change
         {previewBusy ? <span style={{ opacity: 0.65 }}>— generating…</span> : null}
       </label>
-      {(previewMale || previewFemale) && (
-        <div style={{ marginBottom: 12 }}>
-          {previewMale ? (
-            <img
-              src={previewMale}
-              alt="Male pose mesh preview"
-              style={{ width: "100%", borderRadius: 8, marginBottom: 8, display: "block" }}
-            />
-          ) : null}
-          {previewFemale ? (
-            <img
-              src={previewFemale}
-              alt="Female pose mesh preview"
-              style={{ width: "100%", borderRadius: 8, display: "block" }}
-            />
-          ) : null}
-        </div>
-      )}
       <p style={{ fontSize: 11, opacity: 0.5, margin: "0 0 12px", lineHeight: 1.4 }}>
         Arms: tune <strong>upperarm01</strong> Z (down) and matching X on L/R; avoid large{" "}
         <strong>upperarm01 Y</strong>.
