@@ -272,7 +272,8 @@ export function VitalsPoseDev({
       <p style={{ fontSize: 11, opacity: 0.5, margin: "0 0 12px", lineHeight: 1.4 }}>
         Sliders are <strong>rotvec degrees</strong> (Anny bone-local), not world Euler. Arms:{" "}
         <strong>upperarm01</strong> — same X on L/R, flip Z sign; avoid large{" "}
-        <strong>upperarm01 Y</strong>. Trust mesh PNG over stick rig if they disagree.
+        <strong>upperarm01 Y</strong>. Stick rig matches slider <em>changes</em>; default pose may
+        differ from the mesh until bind frames align — use mesh PNG to sign off.
       </p>
       <div className="vitals-pose-bone-grid">
         {VITALS_POSE_BONES.map((bone) => {

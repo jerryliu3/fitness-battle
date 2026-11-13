@@ -57,6 +57,30 @@ export function childAttachLocal(
   return [ox, parent.length + oy, oz];
 }
 
+export type RigLimbSegment = "upperArm" | "forearm" | "hand" | "leg" | "torso" | "other";
+
+export function rigLimbSegment(id: RigBoneId): RigLimbSegment {
+  if (id === "upperarm01.L" || id === "upperarm01.R" || id === "upperarm02.L" || id === "upperarm02.R") {
+    return "upperArm";
+  }
+  if (id === "lowerarm01.L" || id === "lowerarm01.R") return "forearm";
+  if (id === "hand.L" || id === "hand.R") return "hand";
+  if (id.startsWith("upperleg")) return "leg";
+  if (id === "hips" || id === "spine" || id === "chest") return "torso";
+  return "other";
+}
+
+/**
+ * Stick-rig-only rotvec multiplier before slider values. Anny’s bind frames differ from this
+ * skeleton; mesh preview stays authoritative. Tune here so default pose is in the same ballpark.
+ */
+export const STICK_RIG_CALIBRATION: Partial<Record<VitalsPoseBoneLabel, VitalsPoseRot>> = {
+  "upperarm01.L": { x: 58, y: 12, z: 18 },
+  "upperarm01.R": { x: 58, y: -12, z: -18 },
+  "upperarm02.L": { x: 0, y: 0, z: 0 },
+  "upperarm02.R": { x: 0, y: 0, z: 0 },
+};
+
 /**
  * Anny pose sliders are bone-local rotation vectors (deg): direction × angle, not Euler X/Y/Z.
  * Must match `roma.rotvec_to_rotmat(torch.deg2rad(...))` in the Python pipeline.

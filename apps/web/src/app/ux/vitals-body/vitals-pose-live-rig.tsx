@@ -6,9 +6,11 @@ import {
   POSE_RIG_BONES,
   RIG_SIDE_COLORS,
   RIG_SIDE_LABELS,
+  rigLimbSegment,
   rigSide,
   rotvecDegComponents,
   segmentUnit,
+  STICK_RIG_CALIBRATION,
   type RigBoneAxis,
   type RigSide,
 } from "@/lib/vitals-pose-rig-layout";
@@ -130,8 +132,21 @@ export function VitalsPoseLiveRig({
 
         if (def.length > 0) {
           const mat = materials.get(rigSide(def.region))!;
+          const limb = rigLimbSegment(def.id);
           const radius =
-            def.id.startsWith("hand.") ? radiusHand : variant === "stage" ? 0.02 : 0.026;
+            limb === "hand"
+              ? radiusHand
+              : limb === "forearm"
+                ? variant === "stage"
+                  ? 0.017
+                  : 0.019
+                : limb === "upperArm"
+                  ? variant === "stage"
+                    ? 0.026
+                    : 0.029
+                  : variant === "stage"
+                    ? 0.02
+                    : 0.024;
           const cap = new THREE.CapsuleGeometry(radius, Math.max(def.length - 0.05, 0.05), 6, 12);
           const seg = new THREE.Mesh(cap, mat);
           seg.position.y = def.length * 0.5;
@@ -149,12 +164,16 @@ export function VitalsPoseLiveRig({
           pivot.add(shoulderBar);
         }
 
-        const isElbow = def.id === "upperarm02.L" || def.id === "upperarm02.R";
+        const isElbow = def.id === "lowerarm01.L" || def.id === "lowerarm01.R";
         const isHand = def.id === "hand.L" || def.id === "hand.R";
-        const joint = new THREE.Mesh(
-          new THREE.SphereGeometry(isElbow ? 0.046 : isHand ? 0.028 : 0.032, 12, 12),
-          materials.get(rigSide(def.region))!,
-        );
+        const jointMat = materials.get(rigSide(def.region))!;
+        const joint = isElbow
+          ? new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.013, 8, 20), jointMat)
+          : new THREE.Mesh(
+              new THREE.SphereGeometry(isHand ? 0.028 : 0.032, 12, 12),
+              jointMat,
+            );
+        if (isElbow) joint.rotation.x = Math.PI / 2;
         pivot.add(joint);
 
         if (isHand && def.length > 0) {
@@ -179,9 +198,13 @@ export function VitalsPoseLiveRig({
           const pivot = nodes.get(def.id);
           if (!pivot) continue;
           const restQ = restQuats.get(def.id) ?? identity;
-          const poseQ = isTunableBone(def.id)
+          let poseQ = isTunableBone(def.id)
             ? rotvecToQuat(bonesRef.current[def.id])
             : identity;
+          const calib = isTunableBone(def.id) ? STICK_RIG_CALIBRATION[def.id] : undefined;
+          if (calib) {
+            poseQ = rotvecToQuat(calib).multiply(poseQ);
+          }
           pivot.quaternion.copy(restQ).multiply(poseQ);
         }
       };
@@ -323,7 +346,10 @@ export function VitalsPoseLiveRig({
       {variant === "panel" ? (
         <>
           <p style={{ fontSize: 10, letterSpacing: "0.08em", margin: "0 0 6px", opacity: 0.75 }}>
-            LIVE STICK RIG — one connected chain per color (grey torso, pink L, cyan R). Mesh PNG = truth.
+            LIVE STICK RIG — slider deltas only; mesh PNG is ground truth at default pose.
+          </p>
+          <p style={{ fontSize: 9, margin: "0 0 6px", opacity: 0.72, lineHeight: 1.35 }}>
+            Thick = upper arm (2 bones) · thin = forearm · ring = elbow · box = palm
           </p>
           <div
             style={{
