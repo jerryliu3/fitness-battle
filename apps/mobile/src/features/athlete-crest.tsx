@@ -30,7 +30,7 @@ export function AthleteCrest({ model, onInteractionChange }: { model: AthleteCar
     const timer = setTimeout(fail, 12000);
     return () => clearTimeout(timer);
   }, [active, loaded, failed]);
-  return <View style={{ minHeight: 390, backgroundColor: c.paper }}>
+  return <View style={{ minHeight: 390, backgroundColor: c.paper, zIndex: 50, elevation: 50, overflow: "visible" }}>
     {!failed && <WebView ref={web} source={{ uri }} originWhitelist={[origin]} javaScriptEnabled scrollEnabled={false} bounces={false}
       onTouchStart={() => onInteractionChange?.(true)} onTouchEnd={() => onInteractionChange?.(false)} onTouchCancel={() => onInteractionChange?.(false)}
       style={{ height: 390, backgroundColor: c.paper, opacity: loaded ? 1 : 0 }}

@@ -751,7 +751,19 @@ const styles=useThemedStyles(stylesThemes);
       >
 <SectionStack divided={false}>
 
-        <AthleteCrest key={user?.id ?? "guest"} model={athleteCardModel(state, now)} onInteractionChange={setCardDragging} />
+        <View
+          style={{
+            zIndex: cardDragging ? 200 : 50,
+            elevation: cardDragging ? 200 : 50,
+            overflow: "visible",
+          }}
+        >
+          <AthleteCrest
+            key={user?.id ?? "guest"}
+            model={athleteCardModel(state, now)}
+            onInteractionChange={setCardDragging}
+          />
+        </View>
         <FocusButton label="Edit profile" onPress={() => setEditOpen(true)} />
 
         {/* Achievements section under Athlete Crest */}
