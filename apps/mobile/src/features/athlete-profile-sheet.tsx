@@ -93,7 +93,7 @@ const f=useFocusStyles();
   const joinedYear = joined && Number.isFinite(Date.parse(joined)) ? new Date(joined).getUTCFullYear() : null;
   const cardModel = useMemo(() => {
     if (!athlete) return null;
-    if (athlete.you && state) return athleteCardModel(state);
+    if (athlete.you && state?.ratings?.length) return athleteCardModel(state);
     return athleteCardModelForPeer({
       name: athlete.name,
       avatarUrl: athlete.avatarUrl,
