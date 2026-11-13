@@ -194,19 +194,18 @@ const styles=useThemedStyles(stylesThemes);
     );
   }
 
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace({ pathname: "/athlete", params: { edit: "1" } });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+      <ScreenHeader nativeBar={false} title="Notifications" onBack={goBack} />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <ScreenHeader
-          title="Notifications"
-          onBack={() => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace({ pathname: "/athlete", params: { edit: "1" } });
-            }
-          }}
-        />
         <View style={styles.card}>
           <View style={[styles.row, styles.rowFirst]}>
             <View style={styles.grow}>
@@ -282,7 +281,7 @@ const styles=useThemedStyles(stylesThemes);
 
 const stylesThemes = createThemedStyles(themeColors=>{const colors=legacyColors(themeColors);return {
   safe: { flex: 1, backgroundColor: colors.paper },
-  scroll: { padding: 20, gap: 12 },
+  scroll: { paddingHorizontal: 20, paddingBottom: 20, gap: 12 },
   back: {
     ...textStyle("body"),
     color: colors.muted,
