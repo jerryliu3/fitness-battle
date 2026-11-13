@@ -30,8 +30,10 @@ export interface VitalsLabThreeViewportProps {
   rotYStepNonce?: number;
   autoOrbit: boolean;
   scanNonce: number;
+  scanEnabled?: boolean;
   anchor3D: VitalsLabAnchor3D | null;
   assetBaseUrl?: string;
+  onReady?: () => void;
   onScanComplete?: () => void;
   onDragStart?: () => void;
   onRotYChange?: (rotY: number) => void;
@@ -842,8 +844,10 @@ export function VitalsLabThreeViewport({
   rotYStepNonce = 0,
   autoOrbit,
   scanNonce,
+  scanEnabled = true,
   anchor3D,
   assetBaseUrl = "",
+  onReady,
   onScanComplete,
   onDragStart,
   onRotYChange,
@@ -862,6 +866,7 @@ export function VitalsLabThreeViewport({
     activeSystem,
     autoOrbit,
     anchor3D,
+    onReady,
     onScanComplete,
     onDragStart,
     onRotYChange,
@@ -875,6 +880,7 @@ export function VitalsLabThreeViewport({
     activeSystem,
     autoOrbit,
     anchor3D,
+    onReady,
     onScanComplete,
     onDragStart,
     onRotYChange,
@@ -909,6 +915,11 @@ export function VitalsLabThreeViewport({
     progress: 0,
   });
   useEffect(() => {
+    if (!scanEnabled) {
+      scanStateRef.current.active = false;
+      scanStateRef.current.progress = 0;
+      return;
+    }
     if (scanNonce !== scanStateRef.current.lastNonce) {
       scanStateRef.current.lastNonce = scanNonce;
       if (scanNonce > 0) {
@@ -916,7 +927,7 @@ export function VitalsLabThreeViewport({
         scanStateRef.current.progress = 0;
       }
     }
-  }, [scanNonce]);
+  }, [scanNonce, scanEnabled]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -1174,6 +1185,7 @@ export function VitalsLabThreeViewport({
         bodyGroup.add(outlineMesh);
         bodyGroup.add(points);
         setLoadState("ready");
+        stateRef.current.onReady?.();
       })
       .catch(() => {
         if (!disposed) setLoadState("error");

@@ -142,12 +142,25 @@ export function VitalsLabExperience({
   const [rotYStepNonce, setRotYStepNonce] = useState(0);
   const [autoOrbit, setAutoOrbit] = useState(false);
 
+  const [autoScan, setAutoScan] = useState(true);
   const [scanNonce, setScanNonce] = useState(0);
   const [isScanning, setIsScanning] = useState(false);
+  const hasTriggeredInitialScanRef = useRef(false);
 
   useEffect(() => {
     setAppearance(appearanceProp);
   }, [appearanceProp]);
+
+  const triggerScan = useCallback(() => {
+    setIsScanning(true);
+    setScanNonce((n) => n + 1);
+  }, []);
+
+  useEffect(() => {
+    if (!autoScan) return;
+    const id = window.setInterval(triggerScan, 10_000);
+    return () => window.clearInterval(id);
+  }, [autoScan, triggerScan]);
 
   const metrics = useMemo(() => vitalsLabMetricsFromModel(analytics), [analytics]);
   const leftMetrics = useMemo(
@@ -295,10 +308,22 @@ export function VitalsLabExperience({
     applyCamera({ targetRotY: rad });
   };
 
-  const handleTriggerScan = () => {
-    setIsScanning(true);
-    setScanNonce((n) => n + 1);
+  const handleToggleAutoScan = () => {
+    if (autoScan) {
+      setAutoScan(false);
+      setIsScanning(false);
+    } else {
+      setAutoScan(true);
+      triggerScan();
+    }
   };
+
+  const handleViewportReady = useCallback(() => {
+    if (!hasTriggeredInitialScanRef.current && autoScan) {
+      hasTriggeredInitialScanRef.current = true;
+      triggerScan();
+    }
+  }, [autoScan, triggerScan]);
 
   const hasCustomFocus =
     activeMetricId !== null ||
@@ -442,11 +467,14 @@ export function VitalsLabExperience({
 
         <button
           type="button"
-          className={`vitals-lab__scan-btn ${isScanning ? "is-scanning" : ""}`}
-          onClick={handleTriggerScan}
+          aria-pressed={autoScan}
+          aria-label={autoScan ? "Turn off automatic scan" : "Turn on automatic scan"}
+          className={`vitals-lab__scan-btn ${autoScan ? "is-active" : ""} ${isScanning ? "is-scanning" : ""}`}
+          onClick={handleToggleAutoScan}
         >
           <ScanLineIcon />
-          <span>{isScanning ? "Scanning…" : "Scan"}</span>
+          <span>{isScanning ? "Scanning…" : autoScan ? "Auto scan" : "Scan"}</span>
+          <span className="vitals-lab__scan-dot" aria-hidden="true" />
         </button>
       </div>
 
@@ -467,8 +495,10 @@ export function VitalsLabExperience({
             rotYStepNonce={rotYStepNonce}
             autoOrbit={autoOrbit}
             scanNonce={scanNonce}
+            scanEnabled={autoScan}
             anchor3D={activeMetric ? activeMetric.anchor3D : null}
             assetBaseUrl={assetBaseUrl}
+            onReady={handleViewportReady}
             onScanComplete={() => setIsScanning(false)}
             onDragStart={() => setAutoOrbit(false)}
             onRotYChange={(r) => setLiveRotY(r)}
