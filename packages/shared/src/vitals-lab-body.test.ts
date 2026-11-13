@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  parseVitalsLabCanvasMessage,
   vitalsLabMetricsFromModel,
   vitalsLabSystemToHealth,
 } from "./vitals-lab-body";
@@ -21,6 +22,28 @@ describe("vitals-lab-body", () => {
       { num: "7", unit: "h " },
       { num: "42", unit: "m" },
     ]);
+  });
+
+  it("parses native canvas bridge messages", () => {
+    const msg = parseVitalsLabCanvasMessage({
+      type: "vitals-lab-canvas",
+      appearance: "dark",
+      gender: "male",
+      viewMode: "lumen",
+      activeMetric: "hrv",
+      activeSystem: "heart",
+      zoom: 1.5,
+      panY: 0.2,
+      targetRotY: 0.1,
+      rotYStepNonce: 2,
+      autoOrbit: false,
+      scanNonce: 3,
+      scanEnabled: true,
+      anchor3D: { x: 0, y: 0.5, z: 0 },
+      assetBaseUrl: "https://example.test/bodies/anny",
+    });
+    expect(msg?.gender).toBe("male");
+    expect(msg?.assetBaseUrl).toContain("/bodies/anny");
   });
 
   it("builds six flank metrics with physiological bounds from analytics model", () => {

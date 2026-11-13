@@ -282,6 +282,77 @@ function parseDurationParts(value: string): VitalsLabValuePart[] | undefined {
   ];
 }
 
+/** Native hybrid WebView bridge: 3D canvas only (no product chrome). */
+export interface VitalsLabCanvasMessage {
+  type: "vitals-lab-canvas";
+  appearance: "light" | "dark";
+  gender: "male" | "female";
+  viewMode: "lumen" | "outline";
+  activeMetric: VitalsLabMetricId | null;
+  activeSystem: VitalsLabSystemId;
+  zoom: number;
+  panY: number;
+  targetRotY: number;
+  rotYStepNonce: number;
+  autoOrbit: boolean;
+  scanNonce: number;
+  scanEnabled: boolean;
+  anchor3D: VitalsLabAnchor3D | null;
+  /** Absolute or root-relative base, e.g. https://host/bodies/anny */
+  assetBaseUrl: string;
+}
+
+export function parseVitalsLabCanvasMessage(
+  data: unknown,
+): VitalsLabCanvasMessage | null {
+  if (!data || typeof data !== "object") return null;
+  const o = data as Record<string, unknown>;
+  if (o.type !== "vitals-lab-canvas") return null;
+  const appearance = o.appearance === "light" ? "light" : "dark";
+  const gender = o.gender === "male" ? "male" : "female";
+  const viewMode = o.viewMode === "outline" ? "outline" : "lumen";
+  const activeSystem =
+    o.activeSystem === "heart" ||
+    o.activeSystem === "breathing" ||
+    o.activeSystem === "movement"
+      ? o.activeSystem
+      : "full";
+  const activeMetric =
+    typeof o.activeMetric === "string" &&
+    VITALS_LAB_METRICS.some((m) => m.id === o.activeMetric)
+      ? (o.activeMetric as VitalsLabMetricId)
+      : null;
+  const num = (key: string, fallback: number) =>
+    typeof o[key] === "number" && Number.isFinite(o[key])
+      ? (o[key] as number)
+      : fallback;
+  const anchor =
+    o.anchor3D &&
+    typeof o.anchor3D === "object" &&
+    typeof (o.anchor3D as VitalsLabAnchor3D).x === "number"
+      ? (o.anchor3D as VitalsLabAnchor3D)
+      : null;
+  const assetBaseUrl =
+    typeof o.assetBaseUrl === "string" ? o.assetBaseUrl : "/bodies/anny";
+  return {
+    type: "vitals-lab-canvas",
+    appearance,
+    gender,
+    viewMode,
+    activeMetric,
+    activeSystem,
+    zoom: num("zoom", 1),
+    panY: num("panY", 0),
+    targetRotY: num("targetRotY", 0),
+    rotYStepNonce: num("rotYStepNonce", 0),
+    autoOrbit: o.autoOrbit === true,
+    scanNonce: num("scanNonce", 0),
+    scanEnabled: o.scanEnabled !== false,
+    anchor3D: anchor,
+    assetBaseUrl,
+  };
+}
+
 export function vitalsLabMetricsFromModel(
   model?: AnalyticsLabModel | null,
 ): VitalsLabMetricDisplay[] {
