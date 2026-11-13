@@ -1,6 +1,6 @@
 import { useFocusStyles } from "../src/ui/focus";
 import { createThemedStyles, useThemedStyles, legacyColors, useLegacyColors } from "../src/theme";
-import { textStyle } from "../src/ui/section";
+import { SectionHeader, textStyle } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { IconButton } from "../src/ui/icon-button";
 import {
@@ -194,25 +194,26 @@ const styles=useThemedStyles(stylesThemes);
     );
   }
 
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace({ pathname: "/athlete", params: { edit: "1" } });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+      <ScreenHeader nativeBar={false} title="Notifications" onBack={goBack} />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <ScreenHeader
-          title="Notifications"
-          onBack={() => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace({ pathname: "/athlete", params: { edit: "1" } });
-            }
-          }}
-        />
         <View style={styles.card}>
           <View style={[styles.row, styles.rowFirst]}>
             <View style={styles.grow}>
               <Text style={styles.rowTitle}>Push notifications</Text>
               <Text style={styles.rowDetail}>
-                {prefs.enabled ? "Enabled" : "Disabled"}
+                {prefs.enabled
+                  ? "On — choose which alerts you receive below."
+                  : "Off — turn on to manage alerts and send a test."}
               </Text>
             </View>
             <Switch
@@ -225,35 +226,53 @@ const styles=useThemedStyles(stylesThemes);
               ios_backgroundColor={colors.line}
             />
           </View>
-
-          {NOTIFICATION_CATEGORIES.map((category) => (
-            <View key={category.id} style={styles.row}>
-              <View style={styles.grow}>
-                <Text style={styles.rowTitle}>{category.label}</Text>
-                <Text style={styles.rowDetail}>{category.description}</Text>
-              </View>
-              <Switch
-                accessibilityLabel={category.label}
-                value={prefs.categories[category.id]}
-                disabled={!prefs.enabled || busy}
-                onValueChange={(value) =>
-                  void toggleCategory(category.id, value)
-                }
-                trackColor={{ false: colors.line, true: colors.ink }}
-                thumbColor="#ffffff"
-                ios_backgroundColor={colors.line}
-              />
-            </View>
-          ))}
         </View>
 
-        <Pressable
-          style={[styles.line, (!prefs.enabled || busy) && styles.disabled]}
-          disabled={!prefs.enabled || busy}
-          onPress={() => void sendTest()}
+        <View
+          style={[styles.categoryGroup, !prefs.enabled && styles.categoryGroupOff]}
+          pointerEvents={prefs.enabled ? "auto" : "none"}
         >
-          <Text style={styles.lineText}>Send test notification</Text>
-        </Pressable>
+          <SectionHeader
+            title="Alert categories"
+            subtitle={
+              prefs.enabled
+                ? "Each type can be toggled independently."
+                : "Enable push notifications above to customize these."
+            }
+          />
+          <View style={styles.card}>
+            {NOTIFICATION_CATEGORIES.map((category, index) => (
+              <View
+                key={category.id}
+                style={[styles.row, index === 0 && styles.rowFirst]}
+              >
+                <View style={styles.grow}>
+                  <Text style={styles.rowTitle}>{category.label}</Text>
+                  <Text style={styles.rowDetail}>{category.description}</Text>
+                </View>
+                <Switch
+                  accessibilityLabel={category.label}
+                  value={prefs.categories[category.id]}
+                  disabled={!prefs.enabled || busy}
+                  onValueChange={(value) =>
+                    void toggleCategory(category.id, value)
+                  }
+                  trackColor={{ false: colors.line, true: colors.ink }}
+                  thumbColor="#ffffff"
+                  ios_backgroundColor={colors.line}
+                />
+              </View>
+            ))}
+          </View>
+
+          <Pressable
+            style={[styles.line, (!prefs.enabled || busy) && styles.disabled]}
+            disabled={!prefs.enabled || busy}
+            onPress={() => void sendTest()}
+          >
+            <Text style={styles.lineText}>Send test notification</Text>
+          </Pressable>
+        </View>
         {note ? <Text style={styles.copy}>{note}</Text> : null}
       </ScrollView>
     </SafeAreaView>
@@ -262,7 +281,7 @@ const styles=useThemedStyles(stylesThemes);
 
 const stylesThemes = createThemedStyles(themeColors=>{const colors=legacyColors(themeColors);return {
   safe: { flex: 1, backgroundColor: colors.paper },
-  scroll: { padding: 20, gap: 12 },
+  scroll: { paddingHorizontal: 20, paddingBottom: 20, gap: 12 },
   back: {
     ...textStyle("body"),
     color: colors.muted,
@@ -313,4 +332,6 @@ const stylesThemes = createThemedStyles(themeColors=>{const colors=legacyColors(
   },
   lineText: { ...textStyle("label"), color: colors.ink },
   disabled: { opacity: 0.45 },
+  categoryGroup: { gap: 12 },
+  categoryGroupOff: { opacity: 0.42 },
 };});
