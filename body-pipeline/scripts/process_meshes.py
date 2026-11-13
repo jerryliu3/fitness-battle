@@ -19,12 +19,13 @@ def process_one(
     src: Path,
     dst_glb: Path,
     target_height: float,
-    up_axis: UpAxis,
+    *,
+    up_axis: UpAxis = "auto",
 ) -> dict[str, object]:
     mesh = trimesh.load(src, force="mesh", process=False)
     if isinstance(mesh, trimesh.Scene):
         mesh = trimesh.util.concatenate(tuple(mesh.geometry.values()))
-    aligned = normalize_standing(mesh, target_height=target_height, up_axis=up_axis)
+    aligned = normalize_standing(mesh, target_height=target_height, up_axis=up_axis)  # type: ignore[arg-type]
     dst_glb.parent.mkdir(parents=True, exist_ok=True)
     aligned.export(dst_glb)
     report = validate_mesh(aligned)
@@ -55,11 +56,11 @@ def main() -> None:
         "--up-axis",
         choices=("auto", "z_up", "y_up"),
         default="auto",
-        help="Source mesh up axis (MPFB Blender exports are y_up; Anny is z_up).",
+        help='Orientation fix: Anny uses z_up (auto-detect); MPFB2 uses y_up or auto.',
     )
     args = parser.parse_args()
 
-    up_axis: UpAxis = args.up_axis
+    up_axis = args.up_axis
     if up_axis == "auto" and args.source_suffix == "-mpfb2":
         up_axis = "y_up"
 
@@ -70,7 +71,7 @@ def main() -> None:
             print(f"Missing {src}; run generate_humans.py first.", file=sys.stderr)
             raise SystemExit(1)
         dst = args.out_dir / f"{sex}.glb"
-        reports[sex] = process_one(src, dst, height, up_axis)
+        reports[sex] = process_one(src, dst, height, up_axis=up_axis)
         print(f"Processed {sex} -> {dst}")
 
     write_json(args.out_dir / "processing-report.json", reports)

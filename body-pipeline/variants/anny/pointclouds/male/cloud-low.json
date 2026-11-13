@@ -1,0 +1,11 @@
+{
+  "sex": "male",
+  "mode": "cloud",
+  "quality": "low",
+  "density": {
+    "surface": 1400,
+    "interior": 3000
+  },
+  "seed": 44,
+  "stride_bytes": 28
+}

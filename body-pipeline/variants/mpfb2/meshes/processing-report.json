@@ -1,0 +1,38 @@
+{
+  "male": {
+    "vertices": 21833,
+    "faces": 36972,
+    "watertight": false,
+    "euler_number": 386,
+    "degenerate_faces": 0,
+    "bounds_min": [
+      -0.5214027787154732,
+      0.0,
+      -0.21726608931906946
+    ],
+    "bounds_max": [
+      0.5214027787154732,
+      1.74,
+      0.21726608931906946
+    ],
+    "path": "body-pipeline/variants/mpfb2/meshes/male.glb"
+  },
+  "female": {
+    "vertices": 21833,
+    "faces": 36972,
+    "watertight": false,
+    "euler_number": 386,
+    "degenerate_faces": 0,
+    "bounds_min": [
+      -0.5215228980354728,
+      0.0,
+      -0.22735342374502207
+    ],
+    "bounds_max": [
+      0.5215228980354728,
+      1.6599999999999997,
+      0.22735342374502207
+    ],
+    "path": "body-pipeline/variants/mpfb2/meshes/female.glb"
+  }
+}

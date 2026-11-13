@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
-# Copy generated Vitals body assets into the web public folder (per mesh source).
+# Copy variant body assets into apps/web/public/bodies/<variant>/.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SRC="$ROOT/body-pipeline/generated"
 VARIANT="${1:-${BODY_VARIANT:-anny}}"
+SRC="$ROOT/body-pipeline/variants/$VARIANT"
 DST="$ROOT/apps/web/public/bodies/$VARIANT"
+if [[ ! -d "$SRC/meshes" ]]; then
+  echo "Missing $SRC/meshes — run the matching pnpm bodies:generate* pipeline first." >&2
+  exit 1
+fi
 mkdir -p "$DST/meshes"
 rm -rf "$DST/pointclouds"
 cp -a "$SRC/pointclouds" "$DST/"

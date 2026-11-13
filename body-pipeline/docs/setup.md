@@ -54,7 +54,7 @@ bash body-pipeline/scripts/sync_runtime_assets.sh anny
 pnpm bodies:verify-sync
 ```
 
-`apps/web` runs `sync_runtime_assets.sh anny` automatically before `dev` and `build` (updates the Anny bundle only). Canonical output lives under `body-pipeline/generated/`.
+Canonical assets live under `body-pipeline/variants/{anny,mpfb2}/`. Run `pnpm bodies:sync` or `pnpm bodies:sync:mpfb2` to copy into `apps/web/public/bodies/`. **`pnpm dev` does not auto-sync** (so MPFB regen cannot overwrite Anny).
 
 ### Compare Anny vs MPFB in the demo
 
