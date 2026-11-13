@@ -1,0 +1,38 @@
+{
+  "male": {
+    "vertices": 13718,
+    "faces": 27420,
+    "watertight": true,
+    "euler_number": 8,
+    "degenerate_faces": 0,
+    "bounds_min": [
+      -0.2544505884935142,
+      0.0,
+      -0.32795829280755756
+    ],
+    "bounds_max": [
+      0.2544505884935142,
+      1.74,
+      0.32795829280755756
+    ],
+    "path": "body-pipeline/variants/anny/meshes/male.glb"
+  },
+  "female": {
+    "vertices": 13718,
+    "faces": 27420,
+    "watertight": true,
+    "euler_number": 8,
+    "degenerate_faces": 0,
+    "bounds_min": [
+      -0.23947016168810176,
+      0.0,
+      -0.3226326087034033
+    ],
+    "bounds_max": [
+      0.23947016168810176,
+      1.66,
+      0.3226326087034033
+    ],
+    "path": "body-pipeline/variants/anny/meshes/female.glb"
+  }
+}
