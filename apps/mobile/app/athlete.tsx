@@ -457,11 +457,6 @@ const styles=useThemedStyles(stylesThemes);
           showsVerticalScrollIndicator={false}
         >
 <SectionStack divided={false}>
-          <FocusButton
-            label="Sign out"
-            secondary
-            onPress={() => setConfirmSignOut(true)}
-          />
         <SettingsRow
           title="Blocked athletes"
           detail="Manage who you have blocked"
@@ -469,6 +464,11 @@ const styles=useThemedStyles(stylesThemes);
             router.push("/blocked-athletes");
           }}
         />
+          <FocusButton
+            label="Sign out"
+            secondary
+            onPress={() => setConfirmSignOut(true)}
+          />
           <AccountActions />
           <LegalLinks />
           <FocusSheet open={confirmSignOut} title="Sign out?" onClose={() => setConfirmSignOut(false)}><AppText role="body" secondary>You can sign in again to return to your account.</AppText><FocusButton label="Sign out" onPress={() => { setConfirmSignOut(false); void signOut(); }} /><FocusButton label="Cancel" secondary onPress={() => setConfirmSignOut(false)} /></FocusSheet>
