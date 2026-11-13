@@ -93,9 +93,17 @@ export function VitalsPoseDev({ meshSource }: { meshSource: BodyMeshSource }) {
         LOCAL ANNY POSE (bone rotvec °)
       </p>
       <p style={{ fontSize: 11, opacity: 0.55, margin: "6px 0 12px", lineHeight: 1.4 }}>
-        Per-bone X/Y/Z in Anny bone-local space. Save writes{" "}
-        <code style={{ fontSize: 10 }}>body-pipeline/local/pose.json</code>, then regenerate assets.
-        Not in production.
+        The scan is a baked point cloud — <strong>moving sliders does not update the render</strong>.
+        Workflow: adjust → <strong>Save pose.json</strong> → in a terminal run{" "}
+        <code style={{ fontSize: 10 }}>pnpm bodies:generate &amp;&amp; pnpm bodies:sync</code> →
+        hard-refresh this page. Optional check:{" "}
+        <code style={{ fontSize: 10 }}>python3 body-pipeline/scripts/preview_standing_pose.py</code>.
+      </p>
+      <p style={{ fontSize: 11, opacity: 0.5, margin: "0 0 12px", lineHeight: 1.4 }}>
+        Arms down / away from torso: start with <strong>upperarm01</strong> — usually more negative{" "}
+        <strong>Z</strong> on <code style={{ fontSize: 10 }}>.L</code> (e.g. −76 → −84), matching{" "}
+        <strong>X</strong> on both sides, opposite <strong>Z</strong> on <code style={{ fontSize: 10 }}>.R</code>.
+        Small <strong>shoulder01 Z</strong> if needed. Avoid large <strong>upperarm01 Y</strong> (folds behind the head).
       </p>
       {VITALS_POSE_BONES.map((bone) => {
         const rot = bones[bone];
