@@ -15,7 +15,7 @@ import {
   type HomeRouteDayStop,
 } from "@fitness-battle/shared";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -253,14 +253,9 @@ export function HomeDeck({
   );
   const dragX = motion.x;
   const cardOpacity = motion.opacity;
-  const depth1Lift = stackLift.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -7],
-  });
-  const depth2Lift = stackLift.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -7],
-  });
+  const depthLift = dismissingId
+    ? stackLift.interpolate({ inputRange: [0, 1], outputRange: [0, -7] })
+    : 0;
 
   const persistDismissed = useCallback(
     (next: HomeDeckCardId[]) => {
@@ -292,6 +287,7 @@ export function HomeDeck({
         dragX.setValue(0);
         cardOpacity.setValue(1);
         stackLift.setValue(0);
+        setDismissingId(null);
         persistDismissed(nextDismissed);
         return;
       }
@@ -324,8 +320,10 @@ export function HomeDeck({
       dismissalAnimation.current = animation;
       animation.start(({ finished }) => {
         if (!finished) return;
-        stackLift.setValue(0);
         persistDismissed(nextDismissed);
+        stackLift.setValue(0);
+        setDismissingId(null);
+        swipingRef.current = false;
       });
     },
     [
@@ -339,13 +337,6 @@ export function HomeDeck({
       visibleCards,
     ],
   );
-
-  // Clear the gesture lock once the replacement card has committed.
-  useLayoutEffect(() => {
-    if (!dismissingId || activeCard?.id === dismissingId) return;
-    setDismissingId(null);
-    swipingRef.current = false;
-  }, [activeCard?.id, dismissingId]);
 
   const resetDeck = useCallback(() => {
     void playCue("selection");
@@ -460,7 +451,7 @@ export function HomeDeck({
                     backgroundColor: paletteForDeckTone(depth2Card.tone, isDark).bg,
                     borderColor: paletteForDeckTone(depth2Card.tone, isDark).border,
                     opacity: 0.7,
-                    transform: [{ translateY: depth2Lift }],
+                    transform: [{ translateY: depthLift }],
                   },
                 ]}
               >
@@ -480,7 +471,7 @@ export function HomeDeck({
                     backgroundColor: paletteForDeckTone(nextCard.tone, isDark).bg,
                     borderColor: paletteForDeckTone(nextCard.tone, isDark).border,
                     opacity: dismissingId ? 1 : 0.95,
-                    transform: [{ translateY: depth1Lift }],
+                    transform: [{ translateY: depthLift }],
                   },
                 ]}
               >
