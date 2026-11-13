@@ -1,5 +1,6 @@
 import type { VitalsPoseFile } from "@/lib/vitals-pose";
 import {
+  BODY_PIPELINE_VENV_HINT,
   runStandingPosePreview,
   vitalsPoseDevAllowed,
   writeMergedPoseFile,
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
       {
         error: "Preview script failed",
         detail: message,
-        hint: "Install body-pipeline deps (see body-pipeline/docs/setup.md) and ensure python3 can import anny.",
+        hint: `Use the body-pipeline venv (includes matplotlib + anny): ${BODY_PIPELINE_VENV_HINT} — then restart pnpm dev.`,
       },
       { status: 500 },
     );

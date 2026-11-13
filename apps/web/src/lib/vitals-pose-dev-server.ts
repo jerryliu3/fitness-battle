@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { isLocalHost } from "@/lib/auth/design-access";
@@ -23,6 +24,34 @@ const PREVIEW_FILES: Record<PosePreviewGender, string> = {
 };
 
 let previewInFlight: Promise<void> | null = null;
+let cachedPython: string | null = null;
+
+const VENV_PYTHON = [
+  "body-pipeline/.venv/bin/python3",
+  "body-pipeline/.venv/bin/python",
+  "body-pipeline/.venv/Scripts/python.exe",
+];
+
+export async function resolveBodyPipelinePython(): Promise<string> {
+  if (cachedPython) return cachedPython;
+  for (const rel of VENV_PYTHON) {
+    const abs = path.join(REPO_ROOT, rel);
+    try {
+      await access(abs, constants.X_OK);
+      cachedPython = abs;
+      return abs;
+    } catch {
+      /* try next */
+    }
+  }
+  cachedPython = "python3";
+  return cachedPython;
+}
+
+export const BODY_PIPELINE_VENV_HINT = [
+  "python3 -m venv body-pipeline/.venv",
+  "body-pipeline/.venv/bin/pip install -r body-pipeline/requirements.txt",
+].join(" && ");
 
 export function vitalsPoseDevAllowed(request: Request): boolean {
   const url = new URL(request.url);
@@ -55,7 +84,8 @@ export async function runStandingPosePreview(): Promise<{ generatedAt: string }>
   }
 
   const run = async () => {
-    await execFileAsync("python3", [PREVIEW_SCRIPT], {
+    const python = await resolveBodyPipelinePython();
+    await execFileAsync(python, [PREVIEW_SCRIPT], {
       cwd: REPO_ROOT,
       timeout: 180_000,
       maxBuffer: 4 * 1024 * 1024,
