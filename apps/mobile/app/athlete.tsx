@@ -28,18 +28,20 @@ import {
   competitionTrack,
   effortPointProgress,
   type ProviderId,
+  webProductPath,
 } from "@fitness-battle/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
-import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Clipboard, Platform, Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AccountActions } from "../src/features/account-actions";
 import { LegalLinks } from "../src/features/legal-links";
 import { AthleteMetrics } from "../src/features/athlete-metrics";
 import { SettingsRow } from "../src/ui/settings-row";
 import { DataSyncActions } from "../src/features/data-sync-actions";
+import { mobileEnv } from "../src/lib/env";
 import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
 import {
@@ -739,6 +741,25 @@ const styles=useThemedStyles(stylesThemes);
   const primaryRating = state.ratings.find(r => r.sport === state.primary);
   const effortModel = effortPointProgress(state, state.primary, primaryTrack);
   const effortScore = effortModel?.score ?? (primaryRating ? (primaryTrack === "verified" ? primaryRating.verifiedElo : primaryRating.openElo) : 1000);
+  const profileShareUrl = useMemo(() => {
+    const origin = mobileEnv.apiUrl.replace(/\/$/, "");
+    const path = webProductPath("/athlete");
+    const query = user?.id ? `?id=${encodeURIComponent(user.id)}` : "";
+    return `${origin}${path}${query}`;
+  }, [user?.id]);
+
+  const copyProfileShareUrl = () => {
+    const copy =
+      Platform.OS === "web" && typeof navigator !== "undefined" && navigator.clipboard
+        ? navigator.clipboard.writeText(profileShareUrl)
+        : Promise.resolve(Clipboard.setString(profileShareUrl));
+    void copy
+      .then(() => {
+        setNote("Link copied.");
+        void playPattern("success");
+      })
+      .catch(() => setNote("Could not copy link."));
+  };
 
   return (
     <View style={styles.safe}>
@@ -765,10 +786,47 @@ const styles=useThemedStyles(stylesThemes);
             model={athleteCardModel(state, now)}
             onInteractionChange={setCardDragging}
           />
-          <View style={{ position: "absolute", top: 4, right: 4, zIndex: 2 }}>
+        </View>
+
+        <View style={[f.row, { gap: 8, alignItems: "center" }]}>
+          <View
+            accessibilityLabel="Public profile link"
+            style={{
+              flex: 2,
+              minWidth: 0,
+              minHeight: 48,
+              justifyContent: "center",
+              paddingHorizontal: 14,
+              borderWidth: 1,
+              borderColor: SHELL_COLORS.line,
+              borderRadius: SHELL_RADIUS.pill,
+              backgroundColor: SHELL_COLORS.card,
+            }}
+          >
+            <AppText role="caption" numberOfLines={1} ellipsizeMode="middle">
+              {profileShareUrl}
+            </AppText>
+          </View>
+          <View style={[f.row, { flex: 1, gap: 8, alignItems: "center", minWidth: 0 }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Copy link"
+              onPress={copyProfileShareUrl}
+              style={({ pressed }) => [
+                f.button,
+                f.secondary,
+                { flex: 1, minWidth: 0, paddingHorizontal: 10 },
+                pressed && { opacity: 0.78 },
+              ]}
+            >
+              <Text style={[f.buttonText, { color: appearanceColors.ink }]} numberOfLines={1}>
+                Copy link
+              </Text>
+            </Pressable>
             <IconButton
               icon="edit"
               label="Edit profile"
+              primary={false}
               onPress={() => setEditOpen(true)}
             />
           </View>
@@ -959,6 +1017,7 @@ const styles=useThemedStyles(stylesThemes);
         />
       </View>
     </FocusSidePanel>
+    {note ? <Toast message={note} onDismiss={() => setNote(null)} /> : null}
     </View>
   );
 }
