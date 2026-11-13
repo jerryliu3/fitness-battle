@@ -19,6 +19,7 @@ import {
 import { useState } from "react";
 import "./vitals-body.css";
 import { VitalsPhenotypeDev } from "./vitals-phenotype-dev";
+import { VitalsPoseDev } from "./vitals-pose-dev";
 
 export function VitalsBodyDemo() {
   const [meshSource, setMeshSource] = useState<BodyMeshSource>("anny");
@@ -87,6 +88,7 @@ export function VitalsBodyDemo() {
             devTuning
           />
           <VitalsPhenotypeDev sex={sex} />
+          <VitalsPoseDev meshSource={meshSource} />
         </aside>
       </div>
     </main>

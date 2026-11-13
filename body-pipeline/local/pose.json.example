@@ -1,0 +1,8 @@
+{
+  "upperarm01.L": { "x": -18, "y": 0, "z": -76 },
+  "upperarm01.R": { "x": -18, "y": 0, "z": 76 },
+  "upperarm02.L": { "x": 0, "y": 0, "z": 0 },
+  "upperarm02.R": { "x": 0, "y": 0, "z": 0 },
+  "lowerarm01.L": { "x": 0, "y": 0, "z": 0 },
+  "lowerarm01.R": { "x": 0, "y": 0, "z": 0 }
+}

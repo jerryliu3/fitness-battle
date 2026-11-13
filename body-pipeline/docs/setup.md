@@ -83,3 +83,7 @@ Regenerate to preview:
 ```bash
 pnpm bodies:generate && pnpm bodies:sync
 ```
+
+**Pose (Anny only):** use **LOCAL ANNY POSE** sliders on `/ux/vitals-body`, or edit
+`body-pipeline/local/pose.json` (see `local/pose.json.example`). Preview with
+`preview_standing_pose.py` before syncing assets.
