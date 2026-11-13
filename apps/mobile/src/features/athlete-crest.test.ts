@@ -32,7 +32,7 @@ it("handshakes before sending data, pauses on blur and releases native scrolling
   expect(scene.inject).toHaveBeenLastCalledWith(expect.stringContaining('"active":false'));
   expect(interaction).toHaveBeenLastCalledWith(false);
 });
-it("keeps the fallback after process termination, ignores stale acknowledgements, and retries a fresh host", async () => {
+it("keeps the fallback after process termination and ignores stale acknowledgements", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   await act(async () => { renderer = create(createElement(AthleteCrest, { model })); });
   const web = renderer.root.findByType("WebView" as never);
@@ -42,6 +42,5 @@ it("keeps the fallback after process termination, ignores stale acknowledgements
   await act(async () => staleMessage({ nativeEvent: { data: '{"type":"athlete-card-rendered"}' } }));
   expect(renderer.root.findAllByType("Fallback" as never)).toHaveLength(1);
   expect(renderer.root.findAllByType("WebView" as never)).toHaveLength(0);
-  await act(async () => renderer.root.findByType("Pressable" as never).props.onPress());
-  expect(renderer.root.findAllByType("WebView" as never)).toHaveLength(1);
+  expect(renderer.root.findAllByType("Pressable" as never)).toHaveLength(0);
 });
