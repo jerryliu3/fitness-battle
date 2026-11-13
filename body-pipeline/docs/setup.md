@@ -9,6 +9,7 @@
 | Process | `scripts/process_meshes.py` | `generated/meshes/{male,female}.glb` |
 | Particles | `scripts/generate_particles.py` | `generated/pointclouds/` |
 | Validate | `scripts/validate_assets.py` | `validation-report.json` |
+| Pose preview | `scripts/preview_standing_pose.py` | `generated/pose-preview-*.png` |
 | Sync | `scripts/sync_runtime_assets.sh` | `apps/web/public/bodies/` |
 
 ## Dependencies

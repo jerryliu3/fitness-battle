@@ -6,3 +6,4 @@ scipy>=1.11
 trimesh>=4.0
 rtree>=1.2
 roma>=1.5
+matplotlib>=3.8
