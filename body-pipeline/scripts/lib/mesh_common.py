@@ -10,6 +10,7 @@ import numpy as np
 import trimesh
 
 BodySex = Literal["male", "female"]
+UpAxis = Literal["auto", "z_up", "y_up"]
 
 REGION_NONE = 0
 REGION_CARDIO = 1
@@ -68,16 +69,33 @@ def standing_arm_rotvec_deg() -> dict[str, tuple[float, float, float]]:
     return standing_pose_rotvec_deg()
 
 
-def normalize_standing(mesh: trimesh.Trimesh, target_height: float = 1.72) -> trimesh.Trimesh:
-    """Center on Y axis, feet on Y=0, face -Z (MakeHuman / Blender convention)."""
+def detect_up_axis(mesh: trimesh.Trimesh) -> UpAxis:
+    """Anny exports are Z-up; MPFB2 OBJ exports are already Y-up."""
+    ext = mesh.bounds[1] - mesh.bounds[0]
+    if ext[2] >= ext[1] and ext[2] >= ext[0]:
+        return "z_up"
+    if ext[1] >= ext[0] and ext[1] >= ext[2]:
+        return "y_up"
+    return "z_up"
+
+
+def normalize_standing(
+    mesh: trimesh.Trimesh,
+    target_height: float = 1.72,
+    *,
+    up_axis: UpAxis = "auto",
+) -> trimesh.Trimesh:
+    """Center on Y axis, feet on Y=0, face -Z (runtime / Three.js convention)."""
     work = mesh.copy()
     work.merge_vertices()
     work.update_faces(work.unique_faces())
     work.remove_unreferenced_vertices()
 
-    # MakeHuman rest orientation: Y up; front roughly +Y facing — rotate to face camera (-Z).
-    rot = trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0])
-    work.apply_transform(rot)
+    resolved = detect_up_axis(work) if up_axis == "auto" else up_axis
+    if resolved == "z_up":
+        # MakeHuman / Anny rest mesh: Z-up — rotate to Y-up for the renderer.
+        rot = trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0])
+        work.apply_transform(rot)
 
     bounds = work.bounds
     foot = bounds[0][1]
