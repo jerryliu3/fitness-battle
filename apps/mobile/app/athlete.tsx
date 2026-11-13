@@ -9,7 +9,7 @@ import { SectionHeader, SectionStack, textStyle, AppText } from "../src/ui/secti
 import { SportIcon } from "../src/ui/sport-icon";
 import { activityFromSample } from "@fitness-battle/shared";
 import { ScreenHeader } from "../src/ui/screen-header";
-import { IconButton } from "../src/ui/icon-button";
+import { AppIcon } from "../src/ui/app-icon";
 import { IntegrationIcon } from "../src/ui/integration-icon";
 
 import { ChoicePicker } from "../src/ui/choice-picker";
@@ -788,48 +788,64 @@ const styles=useThemedStyles(stylesThemes);
           />
         </View>
 
-        <View style={[f.row, { gap: 8, alignItems: "center" }]}>
+        <View style={[f.row, { gap: 8, alignItems: "stretch" }]}>
           <View
-            accessibilityLabel="Public profile link"
             style={{
-              flex: 2,
+              flex: 1,
               minWidth: 0,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
               minHeight: 48,
-              justifyContent: "center",
-              paddingHorizontal: 14,
+              paddingLeft: 14,
+              paddingRight: 6,
+              paddingVertical: 6,
               borderWidth: 1,
               borderColor: SHELL_COLORS.line,
               borderRadius: SHELL_RADIUS.pill,
               backgroundColor: SHELL_COLORS.card,
             }}
           >
-            <AppText role="caption" numberOfLines={1} ellipsizeMode="middle">
+            <AppText
+              role="caption"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={{ flex: 1, minWidth: 0 }}
+              accessibilityLabel={`Public profile link: ${profileShareUrl}`}
+            >
               {profileShareUrl}
             </AppText>
-          </View>
-          <View style={[f.row, { flex: 1, gap: 8, alignItems: "center", minWidth: 0 }]}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Copy link"
               onPress={copyProfileShareUrl}
-              style={({ pressed }) => [
-                f.button,
-                f.secondary,
-                { flex: 1, minWidth: 0, paddingHorizontal: 10 },
-                pressed && { opacity: 0.78 },
-              ]}
+              style={({ pressed }) => ({
+                paddingHorizontal: 10,
+                paddingVertical: 7,
+                borderRadius: SHELL_RADIUS.pill,
+                borderWidth: 1,
+                borderColor: SHELL_COLORS.line,
+                backgroundColor: appearanceColors.paper,
+                opacity: pressed ? 0.75 : 1,
+              })}
             >
-              <Text style={[f.buttonText, { color: appearanceColors.ink }]} numberOfLines={1}>
-                Copy link
-              </Text>
+              <AppText role="caption">Copy</AppText>
             </Pressable>
-            <IconButton
-              icon="edit"
-              label="Edit profile"
-              primary={false}
-              onPress={() => setEditOpen(true)}
-            />
           </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Edit profile"
+            onPress={() => setEditOpen(true)}
+            style={({ pressed }) => [
+              f.button,
+              f.secondary,
+              { flexShrink: 0, paddingHorizontal: 14, gap: 6 },
+              pressed && { opacity: 0.78 },
+            ]}
+          >
+            <AppIcon name="edit" size={18} />
+            <Text style={[f.buttonText, { color: appearanceColors.ink }]}>Edit profile</Text>
+          </Pressable>
         </View>
 
         {/* Achievements section under Athlete Crest */}
