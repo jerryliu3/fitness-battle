@@ -837,6 +837,8 @@ named horizontal reference. Keep references quiet and avoid dense grids. Native
 plot geometry and inspection overlays use the same full-width SVG transform;
 chart captions retain their typography size as the plot resizes. Advanced
 analytics, onboarding, training, record and recap charts follow this convention.
+Native chart text scaling must use the enclosing native viewport's measured size,
+not SVG artwork bounds. See the [native proportions review](reviews/chart-label-proportions/README.md).
 
 Home 1W shows every eligible positive-time activity at its recorded start time,
 with equal-width Eastern days, including DST transitions. Cumulative lines stay
