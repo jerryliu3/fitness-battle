@@ -466,18 +466,23 @@ const styles=useThemedStyles(stylesThemes);
             router.push("/blocked-athletes");
           }}
         />
-          <AccountActions showDeleteButton={false} footer={(openDelete) => (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 16 }}>
-              <LegalLinks />
-              <Pressable accessibilityRole="button" accessibilityLabel="Delete account" onPress={openDelete}>
-                <AppText role="label" style={{ color: "#b42318" }}>Delete account</AppText>
-              </Pressable>
-            </View>
-          )} />
-          <FocusButton
-            label="Sign out"
-            secondary
-            onPress={() => setConfirmSignOut(true)}
+          <AccountActions
+            showDeleteButton={false}
+            middle={
+              <FocusButton
+                label="Sign out"
+                secondary
+                onPress={() => setConfirmSignOut(true)}
+              />
+            }
+            footer={(openDelete) => (
+              <View style={{ gap: 14, paddingTop: 4 }}>
+                <LegalLinks />
+                <Pressable accessibilityRole="button" accessibilityLabel="Delete account" onPress={openDelete}>
+                  <AppText role="label" style={{ color: appearanceColors.statusError }}>Delete account</AppText>
+                </Pressable>
+              </View>
+            )}
           />
           <FocusSheet open={confirmSignOut} title="Sign out?" onClose={() => setConfirmSignOut(false)}><AppText role="body" secondary>You can sign in again to return to your account.</AppText><FocusButton label="Sign out" onPress={() => { setConfirmSignOut(false); void signOut(); }} /><FocusButton label="Cancel" secondary onPress={() => setConfirmSignOut(false)} /></FocusSheet>
         </SectionStack>
