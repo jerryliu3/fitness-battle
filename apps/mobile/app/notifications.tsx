@@ -1,5 +1,5 @@
 import { useFocusStyles } from "../src/ui/focus";
-import { createThemedStyles, useThemedStyles, legacyColors, useLegacyColors } from "../src/theme";
+import { createThemedStyles, useThemedStyles, legacyColors, useLegacyColors, useThemeColors } from "../src/theme";
 import { SectionHeader, textStyle } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { IconButton } from "../src/ui/icon-button";
@@ -32,7 +32,6 @@ import {
 import { mobileEnv } from "../src/lib/env";
 import { supabase } from "../src/lib/supabase";
 import { FocusButton } from "../src/ui/focus";
-import { useThemeColors } from "../src/theme";
 import { playCue } from "../src/lib/haptics";
 
 function NotificationInfoTip({
