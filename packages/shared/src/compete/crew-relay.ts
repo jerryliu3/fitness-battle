@@ -55,7 +55,10 @@ export type CrewRelayModel = ReturnType<typeof crewRelay>;
 export function crewMemberRelayColor(
   userId: string,
   memberIds: readonly string[],
+  relay?: CrewRelayModel,
 ): string {
+  const fromSegment = relay?.segments.find((segment) => segment.id === userId)?.color;
+  if (fromSegment) return fromSegment;
   const sorted = [...memberIds].sort((a, b) => a.localeCompare(b));
   const index = sorted.indexOf(userId);
   return RELAY_COLORS[

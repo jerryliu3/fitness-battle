@@ -36,7 +36,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
       return requestApi<CrewActivityPage>(mobileEnv.apiUrl, accessToken, `/api/crews/activities?${params}`);
     }, input.sport).then(rows => { if (active) setReplayEntries(rows); }).catch(() => { if (active) setReplayError("Replay unavailable"); });
     return () => { active = false; };
-  }, [crewId, accessToken, offlineMode]);
+  }, [crewId, accessToken, offlineMode, input.sport, input.now]);
   const full = crewOverview(input);
   const events = useMemo(() => crewReplayEvents(input, offlineMode ? input.entries : replayEntries ?? []), [replayEntries, input.entries, input.members, input.now, offlineMode]);
   const [frame, setFrame] = useState(1);
@@ -68,6 +68,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
   const [lineupWidth, setLineupWidth] = useState(320);
   const cardWidth = Math.max(64, (lineupWidth - 24) / 4);
   const selectFrame = (value: number) => { if (!events.length) return; setPlaying(false); setFrame(Math.max(0, Math.min(1, value))); };
+  const scrubTrack = (locationX: number) => selectFrame(locationX / Math.max(1, trackWidth));
   return <View style={{ gap: 28 }}>
     <View style={[f.card, { backgroundColor: c.actionSoft, borderColor: c.tennis, gap: 12, overflow: "hidden", padding: 20 }]}>
       <AppText role="label">This week · {input.sport}</AppText>
@@ -83,7 +84,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
         <Pressable accessibilityRole="button" disabled={!events.length} accessibilityLabel={playing ? "Pause replay" : "Replay this week"} accessibilityState={{ selected: playing }} onPress={() => { if (!playing && frame === 1) setFrame(0); setPlaying(!playing); }} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.surfaceInverse, opacity: events.length ? 1 : 0.4, alignItems: "center", justifyContent: "center" }}>
           <AppIcon name={playing ? "pause" : "play"} size={20} color={c.textOnInverse} />
         </Pressable>
-        <View accessible accessibilityRole="adjustable" accessibilityLabel="Weekly replay timeline" accessibilityValue={{ min: 0, max: 100, now: Math.round(frame * 100), text: view.replayLabel }} accessibilityActions={[{ name: "increment" }, { name: "decrement" }]} onAccessibilityAction={e => selectFrame(frame + (e.nativeEvent.actionName === "increment" ? 0.05 : -0.05))} onLayout={e => setTrackWidth(e.nativeEvent.layout.width)} onStartShouldSetResponder={() => true} onResponderGrant={e => selectFrame(e.nativeEvent.locationX / trackWidth)} onResponderMove={e => selectFrame(e.nativeEvent.locationX / trackWidth)} style={{ flex: 1, height: 44, justifyContent: "center" }}>
+        <View accessible accessibilityRole="adjustable" accessibilityLabel="Weekly replay timeline" accessibilityValue={{ min: 0, max: 100, now: Math.round(frame * 100), text: view.replayLabel }} accessibilityActions={[{ name: "increment" }, { name: "decrement" }]} onAccessibilityAction={e => selectFrame(frame + (e.nativeEvent.actionName === "increment" ? 0.05 : -0.05))} onLayout={e => setTrackWidth(e.nativeEvent.layout.width)} onStartShouldSetResponder={() => true} onResponderGrant={e => scrubTrack(e.nativeEvent.locationX)} onResponderMove={e => scrubTrack(e.nativeEvent.locationX)} style={{ flex: 1, height: 44, justifyContent: "center" }}>
           <View pointerEvents="none" style={{ height: 5, borderRadius: 4, backgroundColor: c.line }}>
             <View style={{ height: 5, width: `${frame * 100}%`, borderRadius: 4, backgroundColor: c.ink }} />
           </View>
@@ -100,9 +101,9 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
       </View>
       <ScrollView horizontal scrollEnabled={input.members.length > 4} showsHorizontalScrollIndicator={false} snapToInterval={cardWidth + 8} decelerationRate="fast" style={input.members.length > 4 ? { marginRight: -20 } : undefined} contentContainerStyle={{ gap: 8, paddingRight: input.members.length > 4 ? 20 : 0 }}>
         {full.lineup.map(m => hiddenIds.includes(m.user_id) ? <View key={m.user_id} style={{ width: cardWidth }} /> : <Pressable key={m.user_id} accessibilityRole="button" accessibilityLabel={`Compare ${m.display_name}'s contribution`} onPress={() => onSelectMember(m.user_id)} style={{ width: cardWidth, alignItems: "center", gap: 8, paddingVertical: 14, paddingHorizontal: 4, borderWidth: 1, borderColor: c.line, borderRadius: 16, backgroundColor: c.card }}>
-          <View style={{ borderWidth: 2, borderColor: crewMemberRelayColor(m.user_id, input.members.map(member => member.user_id)), borderRadius: 30, padding: 3 }}><UserAvatar src={m.avatar_url} name={m.display_name} size={40} /></View>
+          <View style={{ borderWidth: 2, borderColor: crewMemberRelayColor(m.user_id, input.members.map(member => member.user_id), view.relay.model), borderRadius: 30, padding: 3 }}><UserAvatar src={m.avatar_url} name={m.display_name} size={40} /></View>
           <AppText role="label" numberOfLines={1}>{m.display_name.split(" ")[0]}</AppText>
-          <AppText role="caption" secondary numberOfLines={1}>{full.volume(full.relay.model.segments.find(s => s.id === m.user_id)?.value ?? 0)}</AppText>
+          <AppText role="caption" secondary numberOfLines={1}>{view.volume(view.relay.model.segments.find(s => s.id === m.user_id)?.value ?? 0)}</AppText>
         </Pressable>)}
       </ScrollView>
     </View>
