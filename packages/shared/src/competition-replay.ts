@@ -4,6 +4,8 @@ import { countsOnTrack } from "./compete/ledger";
 import { competeNow } from "./compete/engine";
 import { sportById, type CompeteState, type ScoreTrack, type SportId, type UnitSystem } from "./compete/sports";
 import { findSynthetic, syntheticVolumeInWindow } from "./matching/synthetic-bank";
+import { fieldDefaultSpan } from "./field-course";
+import type { CourseReplayFrame } from "./race-course";
 
 export interface CompetitionReplaySelection {
   sport: SportId;
@@ -102,11 +104,11 @@ function atStep(series: AthleteSeries, step: number) {
 export function competitionReplayFrame(index: CompetitionReplayIndex, cursor: number) {
   const position = Math.max(0, Math.min(index.replay.events.length, Number.isFinite(cursor) ? cursor : 0));
   const step = Math.floor(position), fraction = position - step;
-  const next = index.replay.events[step];
+  const afterStep = Math.min(step + 1, index.replay.events.length);
   const rows = index.replay.athletes.map(athlete => {
     const s = index.series.get(athlete.id)!;
     const before = atStep(s, step);
-    const after = next?.athleteId === athlete.id ? atStep(s, step + 1) : before;
+    const after = atStep(s, afterStep);
     return { ...athlete, value: before.value + (after.value - before.value) * fraction, effort: before.effort + (after.effort - before.effort) * fraction };
   });
   // Match the 2D/portrait field: GPS distance, or effort points for strength.
@@ -188,6 +190,31 @@ export function competitionReplayCursorFromTimeMs(index: CompetitionReplayIndex,
     prevMs = curMs;
   }
   return count;
+}
+
+/** Camera framing for geographic replay/timeline scrubbing on the course map. */
+export function competitionCourseReplayFrame(
+  index: CompetitionReplayIndex,
+  cursor: number,
+  athleteId: string,
+): CourseReplayFrame {
+  const frame = competitionReplayFrame(index, cursor);
+  const focus =
+    frame.rows.find((row) => row.id === athleteId) ?? frame.rows.find((row) => row.you);
+  const focusValue = focus?.value ?? 0;
+  const nearest = frame.rows
+    .filter((row) => row.id !== focus?.id)
+    .sort(
+      (a, b) =>
+        Math.abs(a.value - focusValue) - Math.abs(b.value - focusValue),
+    )[0];
+  const gap = nearest ? Math.abs(nearest.value - focusValue) : 0;
+  const span = Math.max(fieldDefaultSpan(index.unit) * 0.35, gap + 0.001);
+  return {
+    nearestId: nearest?.id,
+    focus: Math.max(0, Math.min(1, 1 - gap / span)),
+    passEffects: [],
+  };
 }
 
 export function competitionReplayDimension(sport: SportId, requested: "2d" | "3d" | "4d" | "graph" = "4d"): "2d" | "3d" | "4d" | "graph" {
