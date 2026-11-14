@@ -85,8 +85,10 @@ const appearanceColors = useThemeColors();
       initialized.current = true;
       lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey, metres: scene.selected.metres };
       restored.current = undefined;
-      if (!followAthlete) controller.interrupt(false);
-      onFollowChange?.(false);
+      if (!followAthlete) {
+        controller.interrupt(false);
+        onFollowChange?.(false);
+      }
       return;
     }
     const previous = lastFocus.current;
@@ -111,7 +113,7 @@ const appearanceColors = useThemeColors();
     let current = pose.current;
     const tick = () => {
       const target = replayTarget.current;
-      if (!target) { raf = requestAnimationFrame(tick); return; }
+      if (!target) return;
       const now = Date.now();
       const blend = reduced ? 1 : 1 - Math.exp(-Math.min(64, Math.max(1, now - previous)) / 220);
       previous = now;

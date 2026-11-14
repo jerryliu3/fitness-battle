@@ -167,7 +167,7 @@ const s=useThemedStyles(sThemes);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [playing, speed, count, reduced, dimension, index]);
+  }, [playing, speed, count, reduced, index]);
   useEffect(() => { const subscription = AppState.addEventListener("change", next => { if (next !== "active") setPlaying(false); }); return () => subscription.remove(); }, []);
   const seek = (next: number) => { const bounded = Math.max(0, Math.min(count, next)); if (Math.ceil(bounded) !== Math.ceil(cursor)) void playCue("selection"); setPlaying(false); setCursor(bounded); };
   const frame = index ? competitionReplayFrame(index, cursor) : null;
@@ -198,9 +198,9 @@ const s=useThemedStyles(sThemes);
   const courseReplay = useMemo(
     () =>
       following && index && focus
-        ? competitionCourseReplayFrame(index, cursor, focus.id)
+        ? competitionCourseReplayFrame(index, cursor, focus.id, hiddenIds)
         : undefined,
-    [following, index, cursor, focus?.id],
+    [following, index, cursor, focus?.id, hiddenIds],
   );
   return <View style={embedded ? undefined : { flex: 1 }}>
     <View style={s.header}>

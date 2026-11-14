@@ -195,11 +195,11 @@ const f=useFocusStyles();
   );
 
   const courseReplay = useMemo(() => {
-    if (!timeline.index || timeline.cursor === null) return undefined;
+    if (!timeline.index || !timeline.frame) return undefined;
     const focusId = (expanded ? selectedId : null) ?? me?.id;
     if (!focusId) return undefined;
-    return competitionCourseReplayFrame(timeline.index, timeline.cursor, focusId);
-  }, [timeline.index, timeline.cursor, expanded, selectedId, me?.id]);
+    return competitionCourseReplayFrame(timeline.index, timeline.cursor, focusId, hiddenIds);
+  }, [timeline.index, timeline.frame, timeline.cursor, expanded, selectedId, me?.id, hiddenIds]);
 
   const view = {
     center: timeline.frame ? center ?? total : clampCourseCenter(center ?? total, viewSpan, arenaFieldHigh(fieldLanes), arena?.unit ?? "km", appearance.ground),

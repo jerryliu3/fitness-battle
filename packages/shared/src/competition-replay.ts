@@ -197,13 +197,14 @@ export function competitionCourseReplayFrame(
   index: CompetitionReplayIndex,
   cursor: number,
   athleteId: string,
+  excludeIds: readonly string[] = [],
 ): CourseReplayFrame {
   const frame = competitionReplayFrame(index, cursor);
   const focus =
     frame.rows.find((row) => row.id === athleteId) ?? frame.rows.find((row) => row.you);
   const focusValue = focus?.value ?? 0;
   const nearest = frame.rows
-    .filter((row) => row.id !== focus?.id)
+    .filter((row) => row.id !== focus?.id && !excludeIds.includes(row.id))
     .sort(
       (a, b) =>
         Math.abs(a.value - focusValue) - Math.abs(b.value - focusValue),
