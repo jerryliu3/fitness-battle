@@ -24,15 +24,34 @@ function scale(domain: [number, number], low: number, high: number) {
   return (value: number) => low + (value - domain[0]) / (domain[1] - domain[0] || 1) * (high - low);
 }
 
+export function useActivityContextAvailability(activity: Activity, state: CompeteState) {
+  const now = competeNow(state).getTime();
+  const history = useMemo(() => sessionHistory(activity, state.activities, new Date(now)), [activity, state.activities, now]);
+  const hasScatter = useMemo(() => {
+    if (!history.length) return false;
+    const points = constellation(activity, history, state.units);
+    return points.some((point) => point.activity.id === activity.id) && points.length >= 4;
+  }, [activity, history, state.units]);
+  return { history, hasScatter };
+}
+
+export function ActivityScatterChart({ activity, history, units }: { activity: Activity; history: Activity[]; units: UnitSystem }) {
+  return <Constellation current={activity} history={history} units={units} />;
+}
+
+export function ActivityTrajectoryChart({ activity, history, units }: { activity: Activity; history: Activity[]; units: UnitSystem }) {
+  return <Trajectory current={activity} history={history} units={units} />;
+}
+
+export function ActivityVolumeChart({ activity, history }: { activity: Activity; history: Activity[] }) {
+  return <Ripple current={activity} history={history} />;
+}
+
 export function ActivityContext({ activity, state }: { activity: Activity; state: CompeteState }) {
 const s=useThemedStyles(sThemes);
 
-  const now = competeNow(state).getTime();
-  const history = useMemo(() => sessionHistory(activity, state.activities, new Date(now)), [activity, state.activities, now]);
-
+  const { history, hasScatter } = useActivityContextAvailability(activity, state);
   if (!history.length) return null;
-  const points = constellation(activity, history, state.units);
-  const hasScatter = points.some(point => point.activity.id === activity.id) && points.length >= 4;
   return <View style={s.sections}>
     {hasScatter && sportById(activity.sport).gps ? <View style={s.surface}><Constellation current={activity} history={history} units={state.units} /></View> : null}
     <View style={s.surface}><Trajectory current={activity} history={history} units={state.units} /></View>
