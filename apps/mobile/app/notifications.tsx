@@ -1,6 +1,6 @@
 import { useFocusStyles } from "../src/ui/focus";
 import { createThemedStyles, useThemedStyles, legacyColors, useLegacyColors, useThemeColors } from "../src/theme";
-import { SectionHeader, textStyle } from "../src/ui/section";
+import { AppText, SectionHeader, textStyle } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { IconButton } from "../src/ui/icon-button";
 import {
@@ -63,16 +63,9 @@ function NotificationInfoTip({
         opacity: pressed ? 0.65 : 1,
       })}
     >
-      <Text
-        style={{
-          ...textStyle("caption"),
-          color: c.muted,
-          fontWeight: "600",
-          marginTop: -1,
-        }}
-      >
+      <AppText role="label" secondary style={{ marginTop: -1 }}>
         i
-      </Text>
+      </AppText>
     </Pressable>
   );
 }
