@@ -72,6 +72,7 @@ vi.mock("./data-sync-actions", () => ({ DataSyncActions: "DataSyncActions" }));
 vi.mock("../ui/toast", () => ({ Toast: (props: any) => props.message ? createElement("Toast", props, props.message) : null }));
 vi.mock("../ui/screen-header", () => ({ ScreenHeader: "ScreenHeader", GlassDismissButton: "GlassDismissButton" }));
 vi.mock("../ui/sport-icon", () => ({ SportIcon: "SportIcon" }));
+vi.mock("../ui/rank-symbol", () => ({ RankSymbol: "RankSymbol" }));
 vi.mock("../ui/integration-icon", () => ({ IntegrationIcon: "IntegrationIcon" }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("../ui/choice-picker", () => ({ ChoicePicker: "ChoicePicker" }));
