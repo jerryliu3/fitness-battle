@@ -18,8 +18,7 @@ const c=useThemeColors();
 const s=useThemedStyles(sThemes);
 
   const router = useRouter();
-  const timeLens: AnalyticsTimeLens = "7d";
-  const model = useMemo(() => buildAnalyticsLabModel(state, timeLens), [state, timeLens]);
+  const model = useMemo(() => buildAnalyticsLabModel(state, "7d"), [state]);
 
   const SHOW_ATHLETE_EQUITY = false;
 

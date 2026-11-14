@@ -35,31 +35,23 @@ const s=useThemedStyles(sThemes);
       return;
     }
     if (expanded) {
-      if (displayedId !== expanded) {
+      if (displayedIdRef.current !== expanded) {
         setDisplayedId(expanded);
-        return;
       }
-      const startOpen = () => {
-        detailAnim.stopAnimation();
-        Animated.timing(detailAnim, {
-          toValue: 1,
-          duration: 260,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: false,
-        }).start();
-      };
-      if (typeof requestAnimationFrame === "function") {
-        const frame = requestAnimationFrame(startOpen);
-        return () => cancelAnimationFrame(frame);
-      }
-      startOpen();
+      detailAnim.stopAnimation();
+      Animated.timing(detailAnim, {
+        toValue: 1,
+        duration: 240,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
       return;
     }
     if (displayedIdRef.current !== null) {
       detailAnim.stopAnimation();
       Animated.timing(detailAnim, {
         toValue: 0,
-        duration: 240,
+        duration: 220,
         easing: Easing.inOut(Easing.cubic),
         useNativeDriver: false,
       }).start(({ finished }) => {
@@ -68,7 +60,7 @@ const s=useThemedStyles(sThemes);
         }
       });
     }
-  }, [expanded, displayedId, reduceMotion, detailAnim]);
+  }, [expanded, reduceMotion, detailAnim]);
 
   return (
     <View style={s.panel}>
@@ -90,7 +82,9 @@ const s=useThemedStyles(sThemes);
               accessibilityHint="Show reading details"
               accessibilityState={{ expanded: metric.id === expanded }}
               onPress={() => {
-                setExpanded(expanded === metric.id ? null : metric.id);
+                const next = expanded === metric.id ? null : metric.id;
+                setExpanded(next);
+                if (next) setDisplayedId(next);
                 setScrubbedPoint(undefined);
               }}
               style={[
@@ -173,11 +167,11 @@ const s=useThemedStyles(sThemes);
               top: 0,
               left: 0,
               right: 0,
-              opacity: detailAnim.interpolate({ inputRange: [0, 0.14, 1], outputRange: [0, 1, 1] }),
+              opacity: detailAnim.interpolate({ inputRange: [0, 0.05, 1], outputRange: [0, 1, 1] }),
               transform: [
                 { translateX: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [originOffsetX, 0] }) },
-                { translateY: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [-detailHeight * 0.49, 0] }) },
-                { scale: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0.02, 1] }) },
+                { translateY: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [-detailHeight * 0.425, 0] }) },
+                { scale: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0.15, 1] }) },
               ],
             }
           : undefined;
