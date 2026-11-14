@@ -9,7 +9,7 @@ import { AppIcon } from "../ui/app-icon";
 import { UserAvatar } from "../ui/user-avatar";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { CrewRelay } from "./crew-relay";
-import { useCrewContractModal } from "./crew-passport";
+import { CrewPassportCard, useCrewContractModal } from "./crew-passport";
 import { CrewDerbyCard } from "./crew-derby";
 import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
@@ -129,6 +129,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
         </Pressable>)}
       </ScrollView>
     </View>
+    <CrewPassportCard passport={passport.data} crewName={input.crewName} now={input.now} onOpen={contractUi.openPassport} />
     {full.highlightItems.length > 0 && <View style={{ gap: 12 }}>
       <AppText accessibilityRole="header" role="heading">Crew highlights</AppText>
       <View style={{ borderRadius: 20, backgroundColor: c.card, overflow: "hidden" }}>

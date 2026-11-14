@@ -505,7 +505,7 @@ const f=useFocusStyles();
                 <Pressable accessibilityRole="button" accessibilityLabel="Crew settings" onPress={() => open("manage")} style={headerAction}><AppIcon name="settings" size={20} /></Pressable>
               </View>}
           </View>
-          <CrewOverview crewId={crew.id} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} hiddenIds={hiddenIds} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => open("members")} />
+          <CrewOverview crewId={crew.id} crewName={crew.name} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} hiddenIds={hiddenIds} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => open("members")} />
         </SectionStack>
       )}
       <AnchoredMenu

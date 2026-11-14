@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { crewContractTarget, crewContractValue, crewSeasonBounds, crewPassportError, crewStampLabel, crewSeasonProgress, crewContractMetrics } from "./crew-passport";
+import { crewContractTarget, crewContractValue, crewPassportCardModel, crewSeasonBounds, crewPassportError, crewStampLabel, crewSeasonProgress, crewContractMetrics } from "./crew-passport";
 
 describe("crew contracts and passport presentation", () => {
   it("converts displayed targets to canonical values without changing sport scores", () => {
@@ -30,5 +30,23 @@ describe("crew contracts and passport presentation", () => {
     expect(crewContractValue("moving_sec", 5400)).toBe("1.5 h");
     expect(crewContractValue("distance_m", 1000, "metric")).toContain("km");
     expect(crewPassportError("contract_changed")).toContain("teammate");
+  });
+  it("builds a 5-slot crew passport card model with earned, next-up, and locked states", () => {
+    const season = { id: "s1", crew_id: "c1", title: "Season 02", starts_at: "2026-11-02T05:00:00Z", ends_at: "2026-12-28T05:00:00Z", time_zone: "America/New_York" };
+    const model = crewPassportCardModel({
+      contract: null,
+      seasons: [season],
+      stamps: [{ id: "st1", crew_id: "c1", season_id: "s1", contract_id: "ct1", code: "contract_finish", earned_at: "2026-11-09T05:00:00Z", rule_version: 1 }],
+    }, "Weekday Miles", "2026-11-16T05:00:00Z");
+    expect(model.eyebrow).toBe("WEEKDAY MILES PASSPORT");
+    expect(model.seasonBadge).toBe("SEASON 02");
+    expect(model.footerNote).toBe("Week 3 of 8 · Earned together");
+    expect(model.slots.map(s => [s.kind, s.label])).toEqual([
+      ["earned", "Shared"],
+      ["next", "Next up"],
+      ["locked", "Locked"],
+      ["locked", "Locked"],
+      ["locked", "Locked"],
+    ]);
   });
 });

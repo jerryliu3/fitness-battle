@@ -7,6 +7,7 @@ import type { SportId, UnitSystem } from "./compete/sports";
 
 export type CrewOverviewInput = Omit<CrewWeekRelayInput, "entries"> & {
   entries: (CrewWeekRelayInput["entries"][number] & { started_at: string })[];
+  crewName?: string;
   units?: UnitSystem;
   now: string;
   replayEntries?: CrewOverviewInput["entries"];

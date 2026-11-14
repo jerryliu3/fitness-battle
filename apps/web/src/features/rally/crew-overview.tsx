@@ -5,7 +5,7 @@ import { APP_ICON_PATHS, crewContractValue, crewMemberRelayColor, crewOverview, 
 import { AppHeading, AppParagraph, AppText } from "@/ui/section";
 import { UserAvatar } from "@/ui/user-avatar";
 import { CrewRelay } from "./crew-relay";
-import { useCrewContractModal } from "./crew-passport";
+import { CrewPassportCard, useCrewContractModal } from "./crew-passport";
 import { CrewDerbyCard } from "./crew-derby";
 import "./crew-overview.css";
 import { useAuth } from "@/components/auth-context";
@@ -98,6 +98,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, ...input }
         <AppText role="caption" secondary>{view.volume(view.relay.model.segments.find(s => s.id === m.user_id)?.value ?? 0)}</AppText>
       </button>)}</div>
     </section>
+    <CrewPassportCard passport={passport.data} crewName={input.crewName} now={input.now} onOpen={contractUi.openPassport} />
     {full.highlightItems.length > 0 && <section>
       <AppHeading level={2} role="heading">Crew highlights</AppHeading>
       <ul className="crew-highlights">{full.highlightItems.map(item => <li key={item.id}>
