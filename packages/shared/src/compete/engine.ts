@@ -82,6 +82,7 @@ export interface Action {
     | "set-city"
     | "set-avatar"
     | "set-rank-symbol"
+    | "set-card-highlights"
     | "set-units"
     | "set-primary"
     | "set-focus"
@@ -117,6 +118,7 @@ export interface Action {
   city?: string;
   avatarUrl?: string | null;
   rankSymbol?: RankSymbolId | null;
+  cardHighlights?: string[];
   units?: UnitSystem;
   sport?: SportId;
   metric?: HealthMetricId;
@@ -315,6 +317,15 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
       ? (parsed as CompeteState).crewBoard
       : null,
     units: parseUnitSystem((parsed as CompeteState).units),
+    cardHighlights: Array.isArray((parsed as CompeteState).cardHighlights)
+      ? Array.from(
+          new Set(
+            (parsed as CompeteState).cardHighlights!
+              .map((id) => (typeof id === "string" ? id.trim() : ""))
+              .filter(Boolean),
+          ),
+        ).slice(0, 3)
+      : undefined,
     avatarUrl:
       typeof (parsed as CompeteState).avatarUrl === "string" &&
       (parsed as CompeteState).avatarUrl!.trim().length > 0
@@ -1062,6 +1073,21 @@ function reduceCompeteAction(
     }
     case "set-rank-symbol": {
       return { ...rolled, rankSymbol: action.rankSymbol ?? null };
+    }
+    case "set-card-highlights": {
+      if (!Array.isArray(action.cardHighlights)) {
+        const next = { ...rolled };
+        delete next.cardHighlights;
+        return next;
+      }
+      const next = Array.from(
+        new Set(
+          action.cardHighlights
+            .map((id) => (typeof id === "string" ? id.trim() : ""))
+            .filter(Boolean),
+        ),
+      ).slice(0, 3);
+      return { ...rolled, cardHighlights: next };
     }
     case "set-units": {
       if (action.units !== "us" && action.units !== "metric") return rolled;

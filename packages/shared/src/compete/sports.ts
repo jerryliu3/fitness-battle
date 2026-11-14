@@ -265,6 +265,8 @@ export interface CompeteState {
   avatarUrl?: string | null;
   /** Explicit preferred laurel rank symbol; falls back to current effort score band when omitted. */
   rankSymbol?: RankSymbolId | null;
+  /** Up to 3 customized Athlete Card Row-1 highlight ids (PBs, achievements, stats). Unset uses primary PBs. */
+  cardHighlights?: string[];
   /** Miles (us) or kilometres (metric). Chosen in onboarding; changeable later. */
   units: UnitSystem;
   primary: SportId;

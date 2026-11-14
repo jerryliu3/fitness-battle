@@ -390,6 +390,9 @@ export async function loadCompeteAccount(
         : { family: "sport", id: (asSport(focusId) ?? state.primary) },
     frozenPeriods: (freezeRows ?? []).map((row) => String(row.period_start)),
     units: prefs.units === "metric" ? "metric" : "us",
+    cardHighlights: Array.isArray((prefs as { card_highlights?: unknown }).card_highlights)
+      ? ((prefs as { card_highlights?: unknown }).card_highlights as string[]).slice(0, 3)
+      : undefined,
   };
 
   if (ratingRows && ratingRows.length > 0) {

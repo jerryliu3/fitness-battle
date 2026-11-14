@@ -57,7 +57,7 @@ import {
 } from "../src/lib/tracker-connect";
 import { SHELL_RADIUS } from "../src/theme";
 import { FocusButton, FocusSegments, FocusSheet, FocusSidePanel } from "../src/ui/focus";
-import { ProfilePhoto } from "../src/features/profile-photo";
+import { AthleteEditPanel } from "../src/features/athlete-edit-panel";
 import { AthleteCrest } from "../src/features/athlete-crest";
 import { Achievements } from "../src/features/club-achievements";
 import { AwardShelf } from "../src/ui/award-shelf";
@@ -116,7 +116,8 @@ const styles=useThemedStyles(stylesThemes);
   const [authBusy, setAuthBusy] = useState(false);
   const [authNote, setAuthNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
-  const [editOpen, setEditOpen] = useState(params.edit === "1");
+  const [settingsOpen, setSettingsOpen] = useState(params.edit === "1");
+  const [profileEditOpen, setProfileEditOpen] = useState(false);
   const [cardDragging, setCardDragging] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const panel = inlineConnections ? "connections" : params.panel ?? null;
@@ -133,7 +134,7 @@ const styles=useThemedStyles(stylesThemes);
   const appliedTracker = useRef<string | null>(null);
 
   useEffect(() => {
-    if (params.edit === "1") setEditOpen(true);
+    if (params.edit === "1") setSettingsOpen(true);
   }, [params.edit]);
 
   useEffect(() => {
@@ -202,7 +203,7 @@ const styles=useThemedStyles(stylesThemes);
   const pageHeader = (
     <ScreenHeader
       localBack={Boolean(panel)}
-      hidden={!panel && editOpen}
+      hidden={!panel && (settingsOpen || profileEditOpen)}
       nativeBar={!panel}
       title={panel ? titles[panel] : "Athlete"}
       onBack={() => {
@@ -789,11 +790,8 @@ const styles=useThemedStyles(stylesThemes);
           />
         </View>
 
-        <View style={[f.row, { gap: 8, alignItems: "stretch" }]}>
           <View
             style={{
-              flex: 1,
-              minWidth: 0,
               flexDirection: "row",
               alignItems: "center",
               gap: 8,
@@ -833,21 +831,36 @@ const styles=useThemedStyles(stylesThemes);
               <AppText role="caption">Copy</AppText>
             </Pressable>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Edit profile"
-            onPress={() => setEditOpen(true)}
-            style={({ pressed }) => [
-              f.button,
-              f.secondary,
-              { flexShrink: 0, paddingHorizontal: 14, gap: 6 },
-              pressed && { opacity: 0.78 },
-            ]}
-          >
-            <AppIcon name="edit" size={18} />
-            <Text style={[f.buttonText, { color: appearanceColors.ink }]}>Edit profile</Text>
-          </Pressable>
-        </View>
+          <View style={[f.row, { gap: 8 }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile"
+              onPress={() => setProfileEditOpen(true)}
+              style={({ pressed }) => [
+                f.button,
+                f.secondary,
+                { flex: 1, paddingHorizontal: 14, gap: 6 },
+                pressed && { opacity: 0.78 },
+              ]}
+            >
+              <AppIcon name="edit" size={18} />
+              <Text style={[f.buttonText, { color: appearanceColors.ink }]}>Edit profile</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Settings"
+              onPress={() => setSettingsOpen(true)}
+              style={({ pressed }) => [
+                f.button,
+                f.secondary,
+                { flex: 1, paddingHorizontal: 14, gap: 6 },
+                pressed && { opacity: 0.78 },
+              ]}
+            >
+              <AppIcon name="settings" size={18} />
+              <Text style={[f.buttonText, { color: appearanceColors.ink }]}>Settings</Text>
+            </Pressable>
+          </View>
 
         {/* Achievements section under Athlete Crest */}
         <Achievements state={state} />
@@ -931,71 +944,34 @@ const styles=useThemedStyles(stylesThemes);
     </ScrollView>
     </SafeAreaView>
 
-    {/* Side Panel for Edit Profile & Settings (not a bottom sheet) */}
+    <AthleteEditPanel
+      open={profileEditOpen}
+      state={state}
+      dispatch={dispatch}
+      onClose={() => setProfileEditOpen(false)}
+      onSaved={setNote}
+    />
+
+    {/* Side Panel for Settings */}
     <FocusSidePanel
-      open={editOpen}
-      title="Edit profile & Settings"
+      open={settingsOpen}
+      title="Settings"
       onClose={() => {
-        setEditOpen(false);
+        setSettingsOpen(false);
         if (params.edit) {
           router.setParams({ edit: undefined });
         }
       }}
     >
-      <View style={{ gap: 12 }}>
-        <SectionHeader title="Profile details" />
-        <View style={[f.row, { gap: 16, alignItems: "center" }]}>
-          <ProfilePhoto state={state} />
-          <View style={{ flex: 1, gap: 8 }}>
-            <Input
-              style={textStyle("body")}
-              value={draftName}
-              onChangeText={setName}
-              accessibilityLabel="Name"
-              maxLength={32}
-              placeholder="Name"
-            />
-            <Input
-              style={textStyle("body")}
-              value={draftCity}
-              onChangeText={setCity}
-              accessibilityLabel="City"
-              maxLength={40}
-              placeholder="City"
-            />
-          </View>
-        </View>
-        {dirty ? (
-          <FocusButton
-            label="Save profile"
-            onPress={() => {
-              const trimmed = draftName.trim();
-              if (!trimmed) {
-                setNote("Display name cannot be empty.");
-                return;
-              }
-              if (trimmed !== state.name) {
-                dispatch({ type: "rename", name: trimmed });
-              }
-              const cityTrimmed = draftCity.trim();
-              if (cityTrimmed && cityTrimmed !== state.city) {
-                dispatch({ type: "set-city", city: cityTrimmed });
-              }
-              setName(null);
-              setCity(null);
-              setNote("Profile saved.");
-            }}
-          />
-        ) : null}
-        {note ? (
-          <AppText role="body" secondary accessibilityLiveRegion="polite">
-            {note}
-          </AppText>
-        ) : null}
-      </View>
-
-      <View style={{ gap: 8, marginTop: 16 }}>
-        <SectionHeader title="Settings" />
+      <View style={{ gap: 8 }}>
+        <SettingsRow
+          title="Edit profile"
+          detail="Name, city, photo & card highlights"
+          onPress={() => {
+            setSettingsOpen(false);
+            setProfileEditOpen(true);
+          }}
+        />
         <SettingsRow
           title="Data Sync"
           detail="Trackers & history"
