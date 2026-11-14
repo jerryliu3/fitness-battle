@@ -85,7 +85,15 @@ describe("store binary config", () => {
     for (const profile of ["development", "preview", "production"] as const) {
       expect(eas.build[profile].ios.image).toBe("sdk-58");
       expect(eas.build[profile].android.image).toBe("sdk-58");
+      expect(eas.build[profile].channel).toBe(profile);
     }
     expect(eas.build.production.android.buildType).toBe("app-bundle");
+  });
+
+  it("pins OTA to the Overtaek EAS project and the store app version", () => {
+    expect(app.runtimeVersion).toEqual({ policy: "appVersion" });
+    expect(app.updates.url).toBe("https://u.expo.dev/30807072-a0b4-44cd-bd15-ec186e40ceed");
+    expect(app.updates.checkAutomatically).toBe("ON_LOAD");
+    expect(app.updates.fallbackToCacheTimeout).toBe(0);
   });
 });

@@ -134,3 +134,45 @@ Push capability is on the App ID. Product path:
 5. Simulators / demo mode still use stub tokens; outbox status is `stubbed` | `sent` | `failed`
 
 Optional: set `EXPO_ACCESS_TOKEN` on the web server (Expo → Access tokens) for higher Push API limits. Apple Push key / FCM credentials are managed by EAS when you enable push on the project.
+
+## Expo Update (OTA, no App Store for JS)
+
+**Expo Update** ships a new JavaScript bundle (screens, `@fitness-battle/shared` logic, assets) to binaries that are already installed. Native changes (HealthKit, Mapbox, new permissions, SDK bumps) still need **Expo Build** → store review.
+
+| Piece | Config |
+| --- | --- |
+| Client | `expo-updates` + `app.json` → `updates.url`, `runtimeVersion: { policy: "appVersion" }` |
+| Build channel | `eas.json` → `build.<profile>.channel` (`production` for TestFlight / App Store) |
+| Launch apply | `applyExpoUpdateOnLaunch()` in `app/_layout.tsx` — check, download, reload before product UI |
+| CI | [`.github/workflows/eas-ota-production.yml`](../.github/workflows/eas-ota-production.yml) on `main` when `apps/mobile`, `packages/shared`, or `packages/pursuit` change |
+
+**Runtime rule:** OTA bundles apply only when `app.json` `version` matches the installed binary. Bump `version` and run a **new store build** when you change native code or want a clean runtime fence.
+
+**One-time cutover:** TestFlight / App Store builds created *before* OTA was enabled do not participate. Run one new `eas build` (production) after merging OTA config, then submit as usual.
+
+### Manual publish
+
+```bash
+cd apps/mobile
+pnpm eas:update:production
+# or preview internal APK/IPA:
+pnpm eas:update:preview
+```
+
+### Billing (Expo Free vs Starter)
+
+On the **Free** plan ([expo.dev/pricing](https://expo.dev/pricing)):
+
+- **1,000 updated users / month** (unique installs that download ≥1 update in the billing month)
+- **100 GiB** update bandwidth
+- **No overage** — if you exceed MAUs, Expo does not bill you; updates stop until the next monthly reset or you upgrade
+
+**Starter ($19/mo)** raises that to **3,000 MAUs**, adds build credit, and priority queues. For early TestFlight-scale Overtaek, Free is usually enough; upgrade when you approach 1k updated installs/month or need more iOS build minutes.
+
+Only users who **download** an update count toward MAU; opening the app on an already-cached bundle does not.
+
+### What OTA does *not* replace
+
+- WebView hosts (`/arena-scene`, athlete card) still update with Vercel independently.
+- API + Supabase changes deploy without OTA.
+- Bundled `vitals-lab-host` assets in `apps/mobile/assets/` change only via OTA (or remote URL if you serve the host from web).

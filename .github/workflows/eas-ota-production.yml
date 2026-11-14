@@ -1,0 +1,59 @@
+# Publish a production Expo Update (JS bundle) without a new App Store binary.
+#
+# Requires EXPO_ACCESS_TOKEN (same as eas-ios-testflight.yml).
+# Only devices on a binary built with eas.json → build.production.channel "production"
+# and a matching runtimeVersion (app.json version) receive the update.
+
+name: EAS Update (production)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/**"
+      - "packages/shared/**"
+      - "packages/pursuit/**"
+      - "pnpm-lock.yaml"
+  workflow_dispatch:
+
+concurrency:
+  group: eas-ota-production
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Publish production OTA
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_ACCESS_TOKEN }}
+
+      - name: Install dependencies
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+
+      - name: Publish update
+        env:
+          EAS_BUILD_NO_EXPO_GO_WARNING: "true"
+        run: eas update --channel production --non-interactive --message "main ${{ github.sha }}"
