@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import { Modal, Pressable, View } from "react-native";
 import {
   APP_TIMEZONE, PROVIDERS, countsOnTrack, formatClockTime,
-  formatTrainingHours, formatVolume, isVerifiedActivity, sessionStageModel, sportById,
+  formatTrainingHours, formatVolume, isJournalActivity, isVerifiedActivity, sessionStageModel, sportById,
   type Activity, type CompeteState,
 } from "@fitness-battle/shared";
 import { ActivityRoute } from "../ui/activity-route";
@@ -66,7 +66,7 @@ const s=useThemedStyles(sThemes);
     <View style={s.overview}>
       <View style={s.sport}><SportIcon sport={activity.sport} size={22} /><AppText role="label">{sportById(activity.sport).name}</AppText></View>
       <AppText role="caption" secondary>{date} · {time}</AppText>
-      {!countsOnTrack(activity, "open") ? <AppText role="caption" secondary>Not counted in your totals</AppText> : null}
+      {isJournalActivity(activity) ? <AppText role="caption" secondary>Training log only</AppText> : !countsOnTrack(activity, "open") ? <AppText role="caption" secondary>Not counted in your totals</AppText> : null}
       <AppText role="hero" accessibilityRole="header">{primary}</AppText>
     </View>
     <ActivityRoute activity={activity} units={state.units} />
@@ -74,9 +74,11 @@ const s=useThemedStyles(sThemes);
     <ActivityContext activity={activity} state={state} />
     <View style={s.footer}>
       <AppText role="caption" secondary>{activity.source === "manual" ? "Manually logged" : activity.source === "history" ? "Imported history" : `From ${PROVIDERS.find(provider => provider.id === activity.source)?.name ?? activity.source}`} · {isVerifiedActivity(activity) ? "GPS tracked" : "Recorded activity"}</AppText>
+      {isJournalActivity(activity) ? null : (
       <Pressable accessibilityRole="button" accessibilityLabel="Delete session" style={s.disclosure} onPress={() => setConfirming(true)}>
         <AppText role="caption" secondary style={{ color: c.statusError }}>Delete session</AppText>
       </Pressable>
+      )}
       <Modal transparent animationType="fade" visible={confirming} onRequestClose={() => setConfirming(false)}>
         <Pressable style={s.modalBackdrop} onPress={() => setConfirming(false)}>
           <Pressable style={s.glassCard} onPress={e => e.stopPropagation()}>

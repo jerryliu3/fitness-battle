@@ -1,4 +1,5 @@
 import { dayKey } from "../period";
+import { isJournalActivity } from "./journal";
 import { sportById, type Activity, type SportId } from "./sports";
 
 /** How a session entered the product. Demo rows are never a live tracker pull. */
@@ -78,6 +79,7 @@ export function countsOnTrack(
 ): boolean {
   if (isSampleActivity(activity)) return false;
   if (dispositionOf(activity) !== "counted") return false;
+  if (isJournalActivity(activity)) return false;
   if (track === "verified") return isVerifiedActivity(activity);
   return true;
 }

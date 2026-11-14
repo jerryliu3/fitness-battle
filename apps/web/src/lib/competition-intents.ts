@@ -36,6 +36,8 @@ export function deriveCompetitionIntents(stored: CompeteState | null, incoming: 
   let next = applyCompetitionActivityIntents(stored ?? withAccountEloBaseline(freshState(now)), incoming, now);
   next = { ...next, requiresCanonicalFields: true, demoNow: null,
     name: incoming.name.trim().slice(0, 80) || next.name, city: incoming.city.trim().slice(0, 80),
+    gender: incoming.gender ?? next.gender,
+    countryCode: incoming.countryCode ?? next.countryCode,
     avatarUrl: incoming.avatarUrl, units: incoming.units, primary: incoming.primary, focus: incoming.focus,
     trainingGoal: incoming.trainingGoal, onboardingCompleted: next.onboardingCompleted || incoming.onboardingCompleted,
     lessonDoneOn: incoming.lessonDoneOn === dayKey(now) ? incoming.lessonDoneOn : next.lessonDoneOn,

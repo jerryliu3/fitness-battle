@@ -1,3 +1,5 @@
+import type { DailyHealthSample } from "../fitness/types";
+import { walkingStepsInPeriod } from "./journal";
 import { countsOnTrack } from "./ledger";
 import { clamp, sportById, type Activity, type ReadinessMark, type SportId } from "./sports";
 
@@ -40,7 +42,18 @@ export function periodEffort(
   periodStart: Date,
   periodEnd: Date,
   track: "verified" | "open",
+  opts?: { dailyHealth?: readonly DailyHealthSample[]; now?: Date },
 ): { effort: number; distanceM: number; movingSec: number } {
+  if (sport === "walking" && track === "open") {
+    const now = opts?.now ?? new Date();
+    const steps = walkingStepsInPeriod(
+      opts?.dailyHealth,
+      periodStart,
+      periodEnd,
+      now,
+    );
+    return { effort: steps, distanceM: 0, movingSec: 0 };
+  }
   let effort = 0;
   let distanceM = 0;
   let movingSec = 0;

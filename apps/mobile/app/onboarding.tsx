@@ -50,7 +50,7 @@ const f=useFocusStyles();
     setSleep(Boolean(draft?.sleep)); setLoadedKey(key); setReady(true);
   }).catch(() => { if (alive) setReady(true); }); return () => { alive = false; }; }, [key, preview, Boolean(state)]);
   useEffect(() => { if (ready && loadedKey === key && !preview) void AsyncStorage.setItem(key, JSON.stringify({step,name,city,sports,units,sleep})).catch(() => {}); }, [ready,loadedKey,preview,key,step,name,city,sports,units,sleep]);
-  if (!preview && state?.onboardingCompleted) return <Redirect href="/arena" />;
+  if (!preview && state?.onboardingCompleted) return <Redirect href="/today" />;
   if (!state || !ready) return <AppText>Loading setup…</AppText>;
   function advance(){if(step===2&&!sports.length&&!sleep){setSelectionError(true);return;}setSelectionError(false);setStep(step+1);}
   function finish() {
@@ -62,7 +62,7 @@ const f=useFocusStyles();
     for (const sport of sports) dispatch({ type: "opt-in", sport, accountId: user.id });
     if(sports[0]) dispatch({ type: "set-primary", sport: sports[0] });
     if (sleep) dispatch({ type: "opt-in-health", metric: "sleep" });
-    dispatch({ type: "complete-onboarding" }); void AsyncStorage.removeItem(key); router.replace("/arena");
+    dispatch({ type: "complete-onboarding" }); void AsyncStorage.removeItem(key); router.replace("/today");
   }
   return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "fade"}><SafeAreaProvider><SafeAreaView style={f.safe} edges={["top", "bottom"]}><ScrollView ref={scroll} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentContainerStyle={[f.content,{maxWidth:520,width:"100%",alignSelf:"center"}]}>
     <View style={{alignItems:"center",backgroundColor:appearanceColors.actionSoft,borderRadius:24,padding:12}}><AnimatedEmber size={140}/></View>

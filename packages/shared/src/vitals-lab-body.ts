@@ -1,7 +1,7 @@
 import type { AnalyticsLabModel, VitalId } from "./analytics-lab";
 import { competeNow } from "./compete/engine";
 import { formatSleepDuration } from "./compete/health";
-import type { CompeteState } from "./compete/sports";
+import type { CompeteState, ProfileGender } from "./compete/sports";
 import { formatHealthNumber, recordedHealthSeries } from "./home-health";
 
 /** Six metrics flanking the interactive body scan (product Vitals Lab). */
@@ -284,6 +284,11 @@ function parseDurationParts(value: string): VitalsLabValuePart[] | undefined {
     { num: m[1]!, unit: "h " },
     { num: m[2]!, unit: "m" },
   ];
+}
+
+/** Map stored profile gender to the Vitals 3D body mesh (nonbinary mesh pending). */
+export function vitalsBodyGender(gender: ProfileGender | null | undefined): "male" | "female" {
+  return gender === "female" ? "female" : "male";
 }
 
 /** Native hybrid WebView bridge: 3D canvas only (no product chrome). */

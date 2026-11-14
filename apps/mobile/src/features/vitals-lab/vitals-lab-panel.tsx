@@ -93,7 +93,7 @@ export function VitalsLabPanel({
   const host = useVitalsLabHostSource();
   const assetBase = host?.assetBaseUrl ?? "";
 
-  const lab = useVitalsLabController(metrics, appearance, assetBase);
+  const lab = useVitalsLabController(metrics, appearance, assetBase, state.gender);
 
   const selectMetric = (metric: VitalsLabMetricDisplay) => {
     lab.selectMetric(metric);

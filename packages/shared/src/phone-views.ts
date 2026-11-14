@@ -315,6 +315,7 @@ export function buildArenaModel(
     period.endsAt,
     track,
     now,
+    state.dailyHealth,
   );
   const board = optedIn ? weeklyBoard(state, sport, track, now) : [];
   const enrollment = state.enrollments.find(item => item.sport === sport);

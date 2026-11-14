@@ -75,7 +75,15 @@ it("shares the same place for equal distance even when weighted effort differs, 
   state.demoNow = null;
   state.enrollments[0]!.fieldBoard = { ...pin, members: [{ ...pin.members[0]!, distanceM: 6000, movingSec: 3600, elo: 1000 }] };
   state.ratings = state.ratings.map(rating => rating.sport === "running" ? { ...rating, openElo: 1000 } : rating);
-  const active = reduceCompete(state, { type: "log-manual", sport: "running", distanceM: 6000, movingSec: 1200, activityId: "you-run", startedAt: "2026-10-21T11:00:00.000Z", now });
+  const active = reduceCompete(state, {
+    type: "apply-sync",
+    provider: "strava",
+    activities: [{
+      id: "you-run", sport: "running", startedAt: "2026-10-21T11:00:00.000Z", distanceM: 6000, movingSec: 1200,
+      avgHr: 150, source: "strava", provenance: "recorded", verified: true, disposition: "counted",
+    }],
+    now,
+  });
   const board = weeklyBoard(active, "running", "open", new Date(now));
   expect(board.map(row => row.place)).toEqual([1, 1]);
   expect(board[0]!.effort).not.toEqual(board[1]!.effort);
@@ -88,7 +96,15 @@ it("shares the same place for equal distance even when weighted effort differs, 
 it("orders GPS standings by full distance, even when the rounded display or weighted efforts suggest otherwise", () => {
   const { state, pin } = fixture();
   state.enrollments[0]!.fieldBoard = { ...pin, members: [{ ...pin.members[0]!, distanceM: 6001, movingSec: 3600 }] };
-  const active = reduceCompete(state, { type: "log-manual", sport: "running", distanceM: 6000, movingSec: 1200, activityId: "you-run", startedAt: "2026-10-21T11:00:00.000Z", now });
+  const active = reduceCompete(state, {
+    type: "apply-sync",
+    provider: "strava",
+    activities: [{
+      id: "you-run", sport: "running", startedAt: "2026-10-21T11:00:00.000Z", distanceM: 6000, movingSec: 1200,
+      avgHr: 150, source: "strava", provenance: "recorded", verified: true, disposition: "counted",
+    }],
+    now,
+  });
   const board = weeklyBoard(active, "running", "open", new Date(now));
   expect(board.map(row => [row.id, row.place])).toEqual([["peer", 1], ["you", 2]]);
 });

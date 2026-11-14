@@ -1,5 +1,6 @@
 import { clubDuration, clubRivalCardSummary, clubWeekSummary, nextClubRival } from "./club-summary";
 import { competeNow, formatVolume, weeklyBoard } from "./compete/engine";
+import { countsForTraining } from "./compete/journal";
 import { countsOnTrack } from "./compete/ledger";
 import { competitionTrack, sportById, type Activity, type CompeteState } from "./compete/sports";
 import { suggestionForState } from "./compete/suggestion";
@@ -167,7 +168,7 @@ export function buildHomeRouteWeek(
 
   const eligible = state.activities.filter(
     (a) =>
-      countsOnTrack(a, "open") &&
+      countsForTraining(a) &&
       Number.isFinite(Date.parse(a.startedAt)) &&
       Date.parse(a.startedAt) <= now.getTime() &&
       Date.parse(a.startedAt) >= period.startsAt.getTime() &&

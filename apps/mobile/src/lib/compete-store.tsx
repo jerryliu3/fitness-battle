@@ -755,9 +755,6 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       setFieldNotice(notice);
       if (notice.personal && announcedNotice.current !== notice.title) {
         announcedNotice.current = notice.title;
-        if (canOpenCompeteNotice(pathname)) {
-          router.navigate("/arena");
-        }
       }
     });
     return () => {

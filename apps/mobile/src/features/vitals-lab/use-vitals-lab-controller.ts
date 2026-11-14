@@ -1,5 +1,7 @@
 import {
   VITALS_LAB_SYSTEM_PILLS,
+  vitalsBodyGender,
+  type ProfileGender,
   type VitalsLabCanvasMessage,
   type VitalsLabMetricDisplay,
   type VitalsLabMetricId,
@@ -14,8 +16,9 @@ export function useVitalsLabController(
   metrics: VitalsLabMetricDisplay[],
   appearance: "dark" | "light",
   assetBaseUrl: string,
+  profileGender?: ProfileGender | null,
 ) {
-  const [gender] = useState<VitalsLabGender>("female");
+  const gender: VitalsLabGender = vitalsBodyGender(profileGender);
   const [viewMode] = useState<VitalsLabViewMode>("lumen");
   const [activeMetricId, setActiveMetricId] = useState<VitalsLabMetricId | null>(
     null,
