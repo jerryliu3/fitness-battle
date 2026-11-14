@@ -1,11 +1,12 @@
 import { homeHealthColors } from "@fitness-battle/shared";
 import { createThemedStyles, useThemedStyles, useHomeHealthColors } from "../theme";
-import { useState } from "react";
-import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Easing, LayoutAnimation, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
 import { formatHealthNumber, buildHealth7DayCorridorModel, competeNow, dottedCircleDasharray, healthSignal, healthSignalRange, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
 import { ChartScrubber, type ChartDatum } from "../ui/chart-scrubber";
 import { AppText, chartTextProps } from "../ui/section";
+import { useReducedMotion } from "../ui/use-reduced-motion";
 
 export function DailyHealth({ state }: { state: CompeteState }) {
 const colors=useHomeHealthColors();
@@ -13,9 +14,51 @@ const s=useThemedStyles(sThemes);
 
   const metrics = homeHealthMetrics(state);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [displayedId, setDisplayedId] = useState<string | null>(null);
   const [scrubbedPoint, setScrubbedPoint] = useState<ChartDatum | undefined>(undefined);
   const { fontScale, width } = useWindowDimensions();
-  const selected = metrics.find((metric) => metric.id === expanded);
+  const reduceMotion = useReducedMotion();
+  const detailAnim = useRef(new Animated.Value(0)).current;
+  const selected = metrics.find((metric) => metric.id === displayedId);
+
+  useEffect(() => {
+    if (reduceMotion || typeof Animated?.timing !== "function") {
+      setDisplayedId(expanded);
+      detailAnim.setValue(expanded ? 1 : 0);
+      return;
+    }
+    if (expanded) {
+      const switching = displayedId !== null && displayedId !== expanded;
+      if (typeof LayoutAnimation?.configureNext === "function") {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      }
+      setDisplayedId(expanded);
+      detailAnim.stopAnimation();
+      if (switching) detailAnim.setValue(0.65);
+      else detailAnim.setValue(0);
+      Animated.timing(detailAnim, {
+        toValue: 1,
+        duration: switching ? 160 : 220,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+    } else if (displayedId !== null) {
+      detailAnim.stopAnimation();
+      Animated.timing(detailAnim, {
+        toValue: 0,
+        duration: 160,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          if (typeof LayoutAnimation?.configureNext === "function") {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          }
+          setDisplayedId(null);
+        }
+      });
+    }
+  }, [expanded, reduceMotion]);
 
   return (
     <View style={s.panel}>
@@ -96,17 +139,26 @@ const s=useThemedStyles(sThemes);
           scrubbedModelPt && (scrubbedModelPt.position === "under" || scrubbedModelPt.position === "over"),
         );
         const activeReading = scrubbedPoint ? scrubbedPoint.value : selected.value;
+        const detailMotionStyle = reduceMotion || typeof detailAnim?.interpolate !== "function"
+          ? undefined
+          : {
+              opacity: detailAnim,
+              transform: [
+                { translateY: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) },
+                { scale: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) },
+              ],
+            };
         return (
-          <View style={s.detail} accessibilityLiveRegion="polite">
+          <Animated.View style={[s.detail, detailMotionStyle]} accessibilityLiveRegion="polite">
             <View style={s.detailHeader}>
               <View style={s.detailTitleRow}>
                 <AppText role="label" style={{ color: colors.text }}>
                   {selected.name}
                 </AppText>
+                <AppText role="label" style={{ color: colors.accent, fontVariant: ["tabular-nums"] }}>
+                  {`${activeReading}${selected.unit && activeReading !== "—" ? ` ${selected.unit}` : ""}`}
+                </AppText>
               </View>
-              <AppText role="label" style={{ color: colors.accent, fontVariant: ["tabular-nums"] }}>
-                {`${activeReading}${selected.unit && activeReading !== "—" ? ` ${selected.unit}` : ""}`}
-              </AppText>
             </View>
             <View style={s.chartBox}>
               <ChartScrubber
@@ -198,7 +250,7 @@ const s=useThemedStyles(sThemes);
                 </Svg>
               </ChartScrubber>
             </View>
-          </View>
+          </Animated.View>
         );
       })()}
     </View>

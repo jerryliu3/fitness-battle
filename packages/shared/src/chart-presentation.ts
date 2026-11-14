@@ -131,7 +131,7 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
   const period = weeklyPeriodBounds(now), days = range === "week" ? 7 : 28;
   const start = shiftAppDay(period.startsAt, -(days - 7));
   const earliest = earliestDataDate(state, now, createdAt);
-  const clampedStart = createdAt && earliest && earliest.getTime() > start.getTime()
+  const clampedStart = earliest && earliest.getTime() > start.getTime() && (range === "fourWeeks" || Boolean(createdAt))
     ? startOfZonedDay(earliest)
     : start;
   const eligible = state.activities.filter(activity => countsOnTrack(activity, "open") && Date.parse(activity.startedAt) <= now.getTime());
@@ -270,11 +270,58 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
   const rows: { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean }[] = [];
   const rating = state.ratings.find(r => r.sport === state.primary);
   const current = (track === "verified" ? rating?.verifiedElo : rating?.openElo) ?? 500;
-  const initialValue = effortScoreAt(events, effectiveStart, current);
-  rows.push({ id: "baseline", date: effectiveStart.toISOString(), value: initialValue, inspectable: false });
-  for (const event of events.filter(event => Date.parse(event.occurredAt) >= effectiveStart.getTime())) {
-    if (!rows.length || rows.at(-1)!.value !== event.scoreBefore) rows.push({ id: `before:${event.id}`, date: new Date(Math.max(effectiveStart.getTime(), Date.parse(event.occurredAt) - 1)).toISOString(), value: event.scoreBefore, breakBefore: true, inspectable: false });
-    rows.push({ id: event.id, date: event.occurredAt, value: event.scoreAfter });
+  const eventsInWindow = events.filter(event => Date.parse(event.occurredAt) >= effectiveStart.getTime());
+  const eventDays = new Set(eventsInWindow.map(event => dayKey(new Date(event.occurredAt))));
+  const todayKey = dayKey(now);
+  const startDay = startOfZonedDay(effectiveStart);
+  const todayStart = startOfZonedDay(now);
+  type TimelineRow = { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean };
+  const dailyRows: TimelineRow[] = [];
+  for (let d = 0; ; d += 1) {
+    const day = shiftAppDay(startDay, d);
+    if (day.getTime() >= todayStart.getTime()) break;
+    const key = dayKey(day);
+    if (key === todayKey || eventDays.has(key)) continue;
+    const at = day.getTime() < effectiveStart.getTime() ? effectiveStart : day;
+    dailyRows.push({
+      id: `day:${key}`,
+      date: at.toISOString(),
+      value: effortScoreAt(events, at, current),
+    });
+  }
+  const timeline = [
+    ...dailyRows.map(row => ({ ...row, kind: "day" as const })),
+    ...eventsInWindow.map(event => ({
+      id: event.id,
+      date: event.occurredAt,
+      value: event.scoreAfter,
+      scoreBefore: event.scoreBefore,
+      kind: "event" as const,
+    })),
+  ].sort((a, b) => Date.parse(a.date) - Date.parse(b.date) || (a.kind === "day" ? -1 : 1));
+  if (!timeline.length || Date.parse(timeline[0]!.date) > effectiveStart.getTime()) {
+    rows.push({
+      id: "baseline",
+      date: effectiveStart.toISOString(),
+      value: effortScoreAt(events, effectiveStart, current),
+      inspectable: false,
+    });
+  }
+  for (const item of timeline) {
+    if (item.kind === "event") {
+      if (!rows.length || rows.at(-1)!.value !== item.scoreBefore) {
+        rows.push({
+          id: `before:${item.id}`,
+          date: new Date(Math.max(effectiveStart.getTime(), Date.parse(item.date) - 1)).toISOString(),
+          value: item.scoreBefore,
+          breakBefore: true,
+          inspectable: false,
+        });
+      }
+      rows.push({ id: item.id, date: item.date, value: item.value });
+    } else {
+      rows.push({ id: item.id, date: item.date, value: item.value });
+    }
   }
   rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: !!rows.length && rows.at(-1)!.value !== current });
   const chart = openLineModel(rows, value => String(Math.round(value)), 7, { start: timelineStart, end: timelineEnd, showTime: range === "week", step: false });

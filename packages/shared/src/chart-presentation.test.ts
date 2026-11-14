@@ -127,11 +127,21 @@ it("compares the current score to the recorded score at the start of the window"
   expect(comparison?.pct).toBe(10);
 });
 
-it("shows every recorded score change, filters sport/track/future, and never reconstructs milestone dates", () => {
+it("shows every recorded score change, filters sport/track/future, makes every date selectable, and never reconstructs milestone dates", () => {
   const now = new Date("2026-10-22T22:00:00Z"), state = freshState(now);
   state.ratings[0]!.openElo = 1002;
   state.effortMilestones = [{ sport: "running", track: "open", periodStart: "2026-10-19T04:00:00Z", periodEnd: "2026-10-26T04:00:00Z", step: 1609.344, earned: 2 }];
-  expect(effortScoreLine(state, "open", "week", now).points.map(p => p.id)).toEqual(["current"]);
+  const baselineOnly = effortScoreLine(state, "open", "week", now);
+  expect(baselineOnly.points.map(p => p.id)).toEqual([
+    "day:2026-10-16",
+    "day:2026-10-17",
+    "day:2026-10-18",
+    "day:2026-10-19",
+    "day:2026-10-20",
+    "day:2026-10-21",
+    "current",
+  ]);
+  expect(baselineOnly.points.every(p => p.value === "1002")).toBe(true);
   state.effortScoreEvents = [
     { id: "1", sport: "running", track: "open", occurredAt: "2026-10-22T12:00:00Z", scoreBefore: 1000, scoreAfter: 1001 },
     { id: "2", sport: "running", track: "open", occurredAt: "2026-10-22T20:00:00Z", scoreBefore: 1001, scoreAfter: 1002 },
@@ -143,6 +153,16 @@ it("shows every recorded score change, filters sport/track/future, and never rec
   expect(chart.points.map(p => p.id)).toEqual(["1", "2", "current"]);
   expect(chart.points.map(p => p.value)).toEqual(["1001", "1002", "1002"]);
   expect(chart.points[0]!.x).toBeLessThan(chart.points[1]!.x);
+  const withEarlierAccount = effortScoreLine(state, "open", "week", now, "2026-10-18T12:00:00Z");
+  expect(withEarlierAccount.points.map(p => p.id)).toEqual([
+    "day:2026-10-18",
+    "day:2026-10-19",
+    "day:2026-10-20",
+    "day:2026-10-21",
+    "1",
+    "2",
+    "current",
+  ]);
 });
 
 it("does not double count settlements already represented in durable score events", () => {
@@ -161,7 +181,7 @@ it("leaves gaps where old milestone award times are unknown", () => {
  state.ratings[0]!.openElo = 1062;
  const chart = effortScoreLine(state, "open", "week", now);
  expect(chart.segments).toHaveLength(3); // two known settlement changes and a standalone current reading
- expect(chart.points.map(p => p.value)).toEqual(["1030", "1060", "1062"]);
+ expect(chart.points.map(p => p.value)).toEqual(["1000", "1000", "1000", "1030", "1060", "1060", "1062"]);
 });
 
 it("grounds the Home week chart on Monday and includes non-competing activities despite mid-week enrollment", () => {

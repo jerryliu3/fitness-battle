@@ -3,7 +3,7 @@ import { competeNow } from "./compete/engine";
 import { collapseNights, formatSleepDuration, type SleepNight } from "./compete/health";
 import type { CompeteState } from "./compete/sports";
 import { INTEGRATIONS } from "./fitness/providers";
-import { APP_TIMEZONE, dayKey, formatAppCalendarDate, shiftAppDay } from "./period";
+import { APP_TIMEZONE, dayKey, formatAppCalendarDate, shiftAppDay, startOfZonedDay } from "./period";
 
 export interface HomeHealthMetric {
   id: "sleep" | "steps" | "resting-hr" | "hrv";
@@ -84,16 +84,18 @@ export type RecordedHealthMetric = "hrv" | "resting-hr" | "sleep";
 
 export type RecordedHealthPoint = { day: string; label: string; value: number | null };
 
-/** Recorded observations on the Eastern calendar window; missing days stay as gaps. */
+/** Recorded observations on the Eastern calendar window; left-aligns account creation / earliest data when window exceeds available history. */
 export function recordedHealthSeries(
   state: CompeteState,
   metric: RecordedHealthMetric,
   days: number,
   now = competeNow(state),
+  createdAt?: string | null,
 ): RecordedHealthPoint[] {
   const span = Math.max(1, days);
   const today = dayKey(now);
-  const start = dayKey(shiftAppDay(now, -(span - 1)));
+  const defaultStartDate = shiftAppDay(startOfZonedDay(now), -(span - 1));
+  const start = dayKey(defaultStartDate);
   const label = (day: string) => formatAppCalendarDate(day, { month: "short", day: "numeric" });
   const observed = new Map<string, number>();
   if (metric === "sleep") {
@@ -118,9 +120,17 @@ export function recordedHealthSeries(
     }
   }
   if (!observed.size) return [];
+  const createdMs = createdAt ? Date.parse(createdAt) : NaN;
+  const firstObservedDay = [...observed.keys()].sort()[0];
+  const anchorDate = Number.isFinite(createdMs) && createdMs <= now.getTime()
+    ? startOfZonedDay(new Date(createdMs))
+    : firstObservedDay
+      ? startOfZonedDay(new Date(`${firstObservedDay}T12:00:00Z`))
+      : null;
+  const seriesStart = anchorDate && dayKey(anchorDate) > start ? anchorDate : defaultStartDate;
   return Array.from({ length: span }, (_, index) => {
-    const day = dayKey(shiftAppDay(now, -(span - 1 - index)));
-    return { day, label: label(day), value: observed.get(day) ?? null };
+    const day = dayKey(shiftAppDay(seriesStart, index));
+    return { day, label: label(day), value: day <= today ? (observed.get(day) ?? null) : null };
   });
 }
 
@@ -259,9 +269,8 @@ export function buildHealth7DayCorridorModel(
 
   const points: Health7DayPoint[] = metric.history.map((val, i) => {
     const x = Number((left + (i / 6) * (right - left)).toFixed(1));
-    const isToday = i === 6;
     const targetDate = shiftAppDay(now, i - 6);
-    const dayLabel = isToday ? "Today" : new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "America/New_York" }).format(targetDate) ?? "";
+    const dayLabel = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "America/New_York" }).format(targetDate) ?? "";
     const dateLabel = formatAppCalendarDate(dayKey(targetDate), { month: "short", day: "numeric" });
 
     if (val == null || !Number.isFinite(val)) {

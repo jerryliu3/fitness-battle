@@ -55,7 +55,7 @@ describe("Home daily health", () => {
       { day: "2026-10-24", label: "Oct 24", value: 64 },
     );
   });
-  it("keeps recorded health on the Eastern calendar and leaves missing days as gaps", () => {
+  it("left-aligns earliest recorded health observation and leaves missing/future days as gaps", () => {
     const state = freshState(now);
     state.dailyHealth = [
       { provider: "oura", day: "2026-10-20", hrv: 58, restingHr: 51 },
@@ -63,9 +63,9 @@ describe("Home daily health", () => {
     ];
     const series = recordedHealthSeries(state, "hrv", 7, now);
     expect(series.map(row => row.day)).toEqual([
-      "2026-10-18", "2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24",
+      "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25", "2026-10-26",
     ]);
-    expect(series.map(row => row.value)).toEqual([null, null, 58, null, null, null, 64]);
+    expect(series.map(row => row.value)).toEqual([58, null, null, null, 64, null, null]);
   });
 });
 
@@ -122,7 +122,7 @@ it("builds 7-day health corridor chart model identifying points under, in, or ov
   expect(chart.baselineLow).toBe(62);
   expect(chart.baselineHigh).toBe(82);
   expect(chart.formattedRange).toBe("62 ms–82 ms");
-  expect(chart.points[6].dayLabel).toBe("Today");
+  expect(chart.points[6].dayLabel).toBe("Sat");
   expect(chart.points[6].position).toBe("under"); // 54 < 62
   expect(chart.points[2].position).toBe("under"); // 58 < 62
   expect(chart.points[0].position).toBe("in"); // 72 is in 62..82

@@ -10,7 +10,7 @@ import { useReducedMotion } from "./use-reduced-motion";
 import { ChartScrubber } from "./chart-scrubber";
 import { useSceneActive } from "./use-scene-active";
 
-export function OpenLineChart({ chart, label, unit, range, onRangeChange, includeYear = true, live = false, openHero = false, footerAction, showAxes = true, showDateRange = true, hideSummary = false, hideRangeToggle = false, uniformAspect = false, onSelectionChange }: {
+export function OpenLineChart({ chart, label, unit, range, onRangeChange, includeYear = true, live = false, openHero = false, footerAction, showAxes = true, showDateRange = false, hideSummary = false, hideRangeToggle = false, uniformAspect = false, onSelectionChange }: {
   chart: OpenLineModel; showAxes?: boolean; showDateRange?: boolean; label: string; unit: string; range: OpenLineRange | EffortHistoryRange;
   onRangeChange: (range: OpenLineRange) => void; includeYear?: boolean; live?: boolean; openHero?: boolean; footerAction?: ReactNode;
   hideSummary?: boolean; hideRangeToggle?: boolean; uniformAspect?: boolean; onSelectionChange?: (point: ChartDatum | undefined) => void;
@@ -71,10 +71,10 @@ const s=useThemedStyles(sThemes);
       hideSummary={hideSummary}
       renderSummary={hideSummary ? undefined : point => (
         <View style={s.headerRow}>
-          <View style={[s.reading, !(showDateRange || live) && { minHeight: undefined }]}>
-            {(showDateRange || (live && !point)) && (
+          <View style={[s.reading, !showDateRange && { minHeight: undefined }]}>
+            {showDateRange && (
               <AppText role="caption" secondary>
-                {point?.label ?? (live && !point ? "Current" : chart.date)}
+                {chart.date}
               </AppText>
             )}
             <Text style={s.value}>{point?.value ?? chart.value}<Text style={s.unit}> {unit}</Text></Text>

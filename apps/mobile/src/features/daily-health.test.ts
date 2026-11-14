@@ -6,6 +6,21 @@ vi.mock("react-native", () => ({useColorScheme: () => "light",
   View: "View",
   Text: "Text",
   Pressable: "Pressable",
+  Animated: {
+    View: "AnimatedView",
+    Value: class {
+      setValue() {}
+      stopAnimation() {}
+      interpolate() { return 0; }
+    },
+    timing: () => ({ start: (cb?: (r: { finished: boolean }) => void) => cb?.({ finished: true }) }),
+  },
+  Easing: { cubic: "cubic", in: (v: unknown) => v, out: (v: unknown) => v },
+  LayoutAnimation: { configureNext: vi.fn(), Presets: { easeInEaseOut: {} } },
+  AccessibilityInfo: {
+    isReduceMotionEnabled: () => Promise.resolve(true),
+    addEventListener: () => ({ remove() {} }),
+  },
   useWindowDimensions: () => ({ fontScale: 1.5, width: 320 }),
   StyleSheet: { create: (value: unknown) => value },
 }));

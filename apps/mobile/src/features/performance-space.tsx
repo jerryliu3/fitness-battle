@@ -210,10 +210,9 @@ export function PerformanceSpace({
                 </View>
               )}
             </View>
-            {(inspectedEffort?.label || scoreComparison) && (
+            {scoreComparison && !inspectedEffort && (
               <AppText role="caption" secondary>
-                {inspectedEffort?.label
-                  ?? `vs. start of ${EFFORT_RANGES.find(r => r.value === effortRange)?.label ?? "range"}`}
+                {`vs. start of ${EFFORT_RANGES.find(r => r.value === effortRange)?.label ?? "range"}`}
               </AppText>
             )}
           </View>
@@ -270,8 +269,7 @@ export function PerformanceSpace({
               </AppText>
             </View>
             <AppText role="caption" secondary>
-              {inspectedVolume?.label
-                ?? (volumeRange === "week" ? "this week" : volumeRange === "month" ? "this month" : "this year")}
+              {volumeRange === "week" ? "this week" : volumeRange === "month" ? "this month" : "this year"}
             </AppText>
           </View>
           <View style={s.compactRangeWrap}>
@@ -371,9 +369,6 @@ export function PerformanceSpace({
                   <AppText role="caption" secondary>{activePRPoint ? "Selected PR" : "Current PR"}</AppText>
                   <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
                     {activePRPoint?.value ?? formatClockTime(prSummary.latest.seconds)}
-                  </AppText>
-                  <AppText role="caption" secondary>
-                    {activePRPoint?.label ?? formatActivityDate(prSummary.latest.startedAt)}
                   </AppText>
                 </View>
 

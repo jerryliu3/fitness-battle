@@ -13,6 +13,7 @@ import {
   type AnalyticsTimeLens,
   type CompeteState,
 } from "@fitness-battle/shared";
+import { useAuth } from "../lib/auth";
 import { AthleteTelemetryMatrix } from "./athlete-telemetry-matrix";
 import { VitalsLabBodyScan } from "./vitals-lab-body-scan";
 
@@ -33,6 +34,7 @@ export function HealthLabSpace({
 }) {
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
+  const { user } = useAuth();
 
   const [timeLens, setTimeLens] = useState<AnalyticsTimeLens>("7d");
   const [selectedMetric, setSelectedMetric] = useState<HealthMetricKey>("hrv");
@@ -46,11 +48,11 @@ export function HealthLabSpace({
       return { hrv: [], rhr: [], sleep: [] };
     }
     return {
-      hrv: recordedHealthSeries(state, "hrv", days, now),
-      rhr: recordedHealthSeries(state, "resting-hr", days, now),
-      sleep: recordedHealthSeries(state, "sleep", days, now),
+      hrv: recordedHealthSeries(state, "hrv", days, now, user?.createdAt),
+      rhr: recordedHealthSeries(state, "resting-hr", days, now, user?.createdAt),
+      sleep: recordedHealthSeries(state, "sleep", days, now, user?.createdAt),
     };
-  }, [state, signedOut, days, now]);
+  }, [state, signedOut, days, now, user?.createdAt]);
 
   const activeRows = selectedMetric === "hrv" ? series.hrv : selectedMetric === "rhr" ? series.rhr : series.sleep;
   const lastRecorded = [...activeRows].reverse().find((row) => row.value != null);
@@ -97,9 +99,11 @@ export function HealthLabSpace({
                 {inspected?.value != null ? formatReading(selectedMetric, inspected.value) : "—"}
               </AppText>
             </View>
-            <AppText role="caption" secondary>
-              {inspected?.label ?? "No recorded observations"}
-            </AppText>
+            {!inspected && (
+              <AppText role="caption" secondary>
+                No recorded observations
+              </AppText>
+            )}
           </View>
           <View style={s.compactRangeWrap}>
             <FocusSegments
