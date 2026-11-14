@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { freshState } from "./compete/engine";
 import { findSynthetic, pickSynthetics, syntheticVolumeInWindow } from "./matching";
-import { addSimulatedReplay, competitionReplayCursorFromTimeMs, competitionReplayDate, competitionReplayFrame, competitionReplayTimeMs, indexCompetitionReplay, localCompetitionReplay, type CompetitionReplay, type CompetitionReplayEvent } from "./competition-replay";
+import { addSimulatedReplay, competitionCourseReplayFrame, competitionReplayCursorFromTimeMs, competitionReplayDate, competitionReplayFrame, competitionReplayTimeMs, indexCompetitionReplay, localCompetitionReplay, type CompetitionReplay, type CompetitionReplayEvent } from "./competition-replay";
 const selection = { sport: "running" as const, track: "verified" as const, periodStart: "2026-10-19T04:00:00Z", periodEnd: "2026-10-26T04:00:00Z" };
 const event = (id: string, athleteId: string, distanceM: number, at = "2026-10-20T12:00:00Z"): CompetitionReplayEvent => ({ id, athleteId, distanceM, movingSec: distanceM / 3, effort: distanceM / 1000, at });
 const ledger = (events: CompetitionReplayEvent[]): CompetitionReplay => ({ ...selection, through: "2026-10-25T14:00:00Z", athletes: [{ id: "you", name: "You", you: true }, { id: "peer", name: "Peer", you: false }], events, scope: "field" });
@@ -15,6 +15,19 @@ describe("competition replay presentation ledger", () => {
     expect(competitionReplayFrame(index, 2).rows[0]?.id).toBe("you");
     expect(competitionReplayFrame(index, 1).rows.find(r => r.you)?.value).toBe(0);
     expect(competitionReplayFrame(index, 0).rows.every(r => r.value === 0)).toBe(true);
+  });
+  it("frames geographic replay using the nearest visible rival", () => {
+    const events = [event("a", "peer", 1000), event("b", "rival", 500), event("c", "you", 200)];
+    const replay: CompetitionReplay = {
+      ...ledger(events),
+      athletes: [
+        { id: "you", name: "You", you: true },
+        { id: "peer", name: "Peer", you: false },
+        { id: "rival", name: "Rival", you: false },
+      ],
+    };
+    const index = indexCompetitionReplay(replay, "metric");
+    expect(competitionCourseReplayFrame(index, 3, "you", ["peer"]).nearestId).toBe("rival");
   });
   it("interpolates every athlete between timeline steps and converts units exactly", () => {
     const index = indexCompetitionReplay(ledger([event("a", "peer", 1609.344), event("b", "you", 3218.688)]), "us");

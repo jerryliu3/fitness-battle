@@ -85,8 +85,10 @@ const appearanceColors = useThemeColors();
       initialized.current = true;
       lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey, metres: scene.selected.metres };
       restored.current = undefined;
-      if (!followAthlete) controller.interrupt(false);
-      onFollowChange?.(false);
+      if (!followAthlete) {
+        controller.interrupt(false);
+        onFollowChange?.(false);
+      }
       return;
     }
     const previous = lastFocus.current;
@@ -123,6 +125,7 @@ const appearanceColors = useThemeColors();
         bearing: angle(current.bearing, target.bearing),
       };
       ref.current?.setCamera({ centerCoordinate: current.center, zoomLevel: current.zoom, pitch: current.pitch, heading: current.bearing, padding: { paddingTop: 160, paddingBottom: 0, paddingLeft: 0, paddingRight: 0 }, animationDuration: 0 });
+      pose.current = current;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -164,7 +167,7 @@ const appearanceColors = useThemeColors();
         }
       }}
       onMapLoadingError={event => setError(ready && event?.type !== "style" ? "Some map scenery could not load. Check your connection." : "The map could not load. Check your connection and Mapbox access.")}
-      onMapIdle={() => { if (ready && onSnapshot && mapRef.current && !snapshotTaken.current && !snapshotPending.current) { snapshotPending.current = true; void mapRef.current.takeSnap(true).then(uri => { if (uri) { snapshotTaken.current = true; onSnapshot(uri); } }).catch(() => {}).finally(() => { snapshotPending.current = false; }); } if (ready) setError(""); if (ready && (initialized.current || replay) && !reported.current) { reported.current = true; onReady?.(); } }}
+      onMapIdle={() => { if (ready && onSnapshot && mapRef.current && !snapshotTaken.current && !snapshotPending.current) { snapshotPending.current = true; void mapRef.current.takeSnap(true).then(uri => { if (uri) { snapshotTaken.current = true; onSnapshot(uri); } }).catch(() => {}).finally(() => { snapshotPending.current = false; }); } if (ready && (initialized.current || replay) && !reported.current) { reported.current = true; onReady?.(); } }}
     >
       <Camera minZoomLevel={0} maxZoomLevel={20} ref={ref} defaultSettings={{ centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing }} />
       <CameraGestureObserver onCameraChanged={({ nativeEvent }) => {
