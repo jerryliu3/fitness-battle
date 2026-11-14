@@ -73,7 +73,7 @@ export function HealthLabSpace({
     rhr: "Resting Heart Rate",
     sleep: "Sleep duration",
   };
-  const healthInsight = !lastRecorded
+  const healthInsight = !lastRecorded || lastRecorded.value == null
     ? "Connect a supported tracker to record HRV, resting heart rate, and sleep. Charts stay empty until observations exist."
     : `Latest ${titles[selectedMetric].toLowerCase()} ${formatReading(selectedMetric, lastRecorded.value)} on ${lastRecorded.label}.`;
 
