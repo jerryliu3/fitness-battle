@@ -2,7 +2,7 @@
 import { AppHeading } from "@/ui/section";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { APP_TIMEZONE, syncReviewMetrics, clubDuration, formatVolume, sportById, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment, type SyncReviewReceipt } from "@fitness-battle/shared";
+import { APP_TIMEZONE, syncReviewMetrics, clubDuration, formatAppDateTime, formatVolume, sportById, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { Sheet } from "@/ui/sheet";
 import { ActivityRoute } from "@/components/routes/activity-route";
 import { CompetitionMoment as Moment } from "./competition-moment";
@@ -62,7 +62,7 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
     <p className="fb-kicker">ACTIVITY DETAILS</p><AppHeading level={1} role="display">{sportById(activity.sport).name}</AppHeading>
     <ActivityRoute activity={activity} units={state.units}/>
     <div className="moment-result"><strong>{formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units)}</strong><span>{clubDuration(activity.movingSec)}</span></div>
-    <p className="fb-copy">{new Date(activity.startedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: APP_TIMEZONE })}</p>
+    <p className="fb-copy">{formatAppDateTime(activity.startedAt, { year: true })}</p>
     <ActivityMetricBars activity={activity} history={[...receipt.activities, ...state.activities]} units={state.units}/>
   </div>;
   return <div ref={step} className="sync-review-step">

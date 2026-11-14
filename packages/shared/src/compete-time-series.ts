@@ -15,7 +15,7 @@ import {
 } from "./compete/sports";
 import { initialsFromName, selfLaneLabel } from "./compete/track";
 import { findSynthetic, syntheticVolumeInWindow } from "./matching/synthetic-bank";
-import { APP_TIMEZONE, endOfZonedDay, shiftAppDay } from "./period";
+import { APP_TIMEZONE, endOfZonedDay, formatAppDateTime, shiftAppDay } from "./period";
 import { competePeriodWindow } from "./phone-views";
 
 export type FieldViewDimension = "2d" | "3d" | "4d" | "graph";
@@ -453,8 +453,8 @@ function finalizeTimeSeriesModel(input: {
     isScrubbing,
     historyAvailable,
     timeLabel,
-    cursorTimeLabel: cursorDate.toLocaleString("en-US", { timeZone: APP_TIMEZONE, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
-    latestTimeLabel: new Date(startMs + nowFraction * spanMs).toLocaleString("en-US", { timeZone: APP_TIMEZONE, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
+    cursorTimeLabel: formatAppDateTime(cursorDate),
+    latestTimeLabel: formatAppDateTime(new Date(startMs + nowFraction * spanMs)),
     athletes,
     selectedAthlete,
     overtakes,

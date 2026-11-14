@@ -1,4 +1,4 @@
-import { APP_TIMEZONE } from "./period";
+import { formatAppDateTime } from "./period";
 import { activityEffort } from "./compete/effort";
 import { countsOnTrack } from "./compete/ledger";
 import { competeNow } from "./compete/engine";
@@ -136,7 +136,7 @@ export function competitionReplayDate(index: CompetitionReplayIndex, cursor: num
   const step = Math.floor(position), fraction = position - step;
   const before = Date.parse(step ? index.replay.events[step - 1]!.at : index.replay.periodStart);
   const after = Date.parse(index.replay.events[step]?.at ?? index.replay.through);
-  return new Date(live ? Date.parse(index.replay.through) : before + (after - before) * fraction).toLocaleString("en-US", { timeZone: APP_TIMEZONE, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return formatAppDateTime(new Date(live ? Date.parse(index.replay.through) : before + (after - before) * fraction));
 }
 
 export function competitionReplayTimeMs(index: CompetitionReplayIndex, cursor: number): number {
@@ -154,14 +154,7 @@ export function formatCompetitionFeedTimestamp(at: string, referenceMs: number):
   const eventMs = Date.parse(at);
   const diffMs = referenceMs - eventMs;
   if (!Number.isFinite(diffMs) || diffMs < 0 || diffMs >= 86_400_000) {
-    return new Date(at).toLocaleString("en-US", {
-      timeZone: APP_TIMEZONE,
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      timeZoneName: "short",
-    });
+    return formatAppDateTime(at);
   }
   const totalMinutes = Math.floor(diffMs / 60_000);
   if (totalMinutes < 60) return `${Math.max(totalMinutes, 0)}m ago`;

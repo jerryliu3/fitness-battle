@@ -4,7 +4,7 @@ import { AppText, AppParagraph, SectionHeader, Section } from "@/ui/section";
 import { EffortBarsIcon } from "@/ui/effort-bars-icon";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { APP_TIMEZONE, activityRoute, clubDuration, formatVolume, homeRecentActivities, sessionEffortSummary, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
+import { APP_TIMEZONE, activityRoute, clubDuration, formatAppDateTime, formatVolume, homeRecentActivities, sessionEffortSummary, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCrewActivities } from "@/features/rally/use-crew-activities";
 import { Sheet } from "@/ui/sheet";
@@ -34,7 +34,7 @@ export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen:
     {crew.error && <AppParagraph typographyRole="caption" role="status" className="fb-note">{crew.error}</AppParagraph>}
     <Sheet open={Boolean(detail)} title={detail ? `${detail.name}'s activity` : "Activity"} body="" onClose={() => setSelected(null)}>
       {detail && <><SectionHeader title={sportById(detail.sport).name}/><AppParagraph typographyRole="body" className="fb-copy">{clubDuration(detail.movingSec)} · {formatVolume(detail.sport, detail.distanceM, detail.movingSec, state.units)}</AppParagraph>
-        <AppParagraph typographyRole="caption" className="fb-note">{new Date(detail.startedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE, timeZoneName: "short" })}</AppParagraph></>}
+        <AppParagraph typographyRole="caption" className="fb-note">{formatAppDateTime(detail.startedAt)}</AppParagraph></>}
     </Sheet>
   </>;
 }
