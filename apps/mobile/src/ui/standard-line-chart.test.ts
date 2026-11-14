@@ -38,13 +38,17 @@ it("uses the same full-width transform and coordinates for the trace and selecte
  expect(labels).not.toContain("HRV (ms)");expect(labels).not.toContain("Date");expect(labels).toContain("Oct 21");
  await act(async()=>r.unmount());vi.unstubAllGlobals();
 });
-it("hides default dots on line charts and renders corridor dots without a connecting line", async () => {
+it("shows only the latest endpoint dot on unselected line charts and renders corridor dots without a connecting line", async () => {
  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
  let r!:ReturnType<typeof create>;
  await act(async()=>{r=create(createElement(StandardLineChart,{values:[42]}));});
- expect(r.root.findAllByType("Circle" as never)).toHaveLength(0);
+ expect(r.root.findAllByType("Circle" as never)).toHaveLength(1);
  const labels=r.root.findAllByType("SvgText" as never).map(t=>t.props.children);
  expect(labels).toContain("1");
+ await act(async()=>{r.update(createElement(StandardLineChart,{values:[42,50,60]}));});
+ expect(r.root.findAllByType("Circle" as never)).toHaveLength(1);
+ await act(async()=>{r.update(createElement(StandardLineChart,{values:[42,50,60], selectedIdx: 1}));});
+ expect(r.root.findAllByType("Circle" as never)).toHaveLength(0);
  await act(async()=>{r.update(createElement(StandardLineChart,{values:[50,80], selectedIdx: 0, corridor:{low:[55,60], high:[70,85]}}));});
  const circles=r.root.findAllByType("Circle" as never);
  expect(circles).toHaveLength(2);

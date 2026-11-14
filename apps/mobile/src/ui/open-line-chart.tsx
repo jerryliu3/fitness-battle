@@ -79,7 +79,11 @@ const s=useThemedStyles(sThemes);
             )}
             <Text style={s.value}>{point?.value ?? chart.value}<Text style={s.unit}> {unit}</Text></Text>
           </View>
-          {showRangeInHeader && <OpenLineRangeToggle value={range} onChange={onRangeChange} includeYear={includeYear} />}
+          {showRangeInHeader && (
+            <View style={s.rangeWrap}>
+              <OpenLineRangeToggle value={range} onChange={onRangeChange} includeYear={includeYear} />
+            </View>
+          )}
         </View>
       )}
     >
@@ -111,7 +115,7 @@ const s=useThemedStyles(sThemes);
             <G clipPath={`url(#${clipId}-right)`} opacity={0.3}>{renderLines("r")}</G>
           </>
         ) : renderLines("all")}
-        {live && !selected && end && (
+        {!selected && end && (
           <Circle cx={end.x} cy={end.y} r={4} fill={c.tennis} stroke={dotBorderColor} strokeWidth={2} />
         )}
       </ChartSvg>
@@ -127,9 +131,10 @@ const s=useThemedStyles(sThemes);
   </View>;
 }
 const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
-  headerRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 8 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   rangeTopRight: { flexDirection: "row", justifyContent: "flex-end" },
-  reading: { minHeight: 58, gap: 4, flex: 1, minWidth: 115 },
+  rangeWrap: { flexShrink: 0 },
+  reading: { minHeight: 58, gap: 4, flex: 1, minWidth: 0 },
   value: { ...textStyle("hero"), color: c.ink, fontVariant: ["tabular-nums"] },
   unit: { ...textStyle("body"), color: c.muted },
   footer: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 12 },

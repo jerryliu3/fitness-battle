@@ -35,6 +35,7 @@ export function WeekChart({
           openHero
           showDateRange={false}
           showAxes={true}
+          live
           key={range}
           chart={chart}
           label="Cumulative training hours"

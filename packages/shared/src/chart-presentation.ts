@@ -188,7 +188,10 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
   if (cumRows.length === 1) {
     cumRows.unshift({ id: `start:${clampedStart.toISOString()}`, date: clampedStart.toISOString(), value: 0, inspectable: false });
   }
-  return openLineModel(cumRows, value => value.toFixed(1), windowDays, undefined, true);
+  const fourWeeksTimeline = clampedStart.getTime() > start.getTime()
+    ? { start: clampedStart, end: shiftAppDay(clampedStart, days), zeroMin: true }
+    : undefined;
+  return openLineModel(cumRows, value => value.toFixed(1), windowDays, fourWeeksTimeline, true);
 }
 
 /** Shared zero-based bars and average, excluding future buckets on both platforms. */
@@ -259,11 +262,14 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
   const start = shiftAppDay(now, -effortScoreLookbackDays(range));
   const end = shiftAppDay(now, 1);
   const earliest = earliestDataDate(state, now, createdAt);
-  const effectiveStart = earliest && earliest.getTime() > start.getTime() ? earliest : start;
+  const clampedToEarliest = Boolean(earliest && earliest.getTime() > start.getTime());
+  const effectiveStart = clampedToEarliest ? earliest! : start;
+  const timelineStart = clampedToEarliest ? startOfZonedDay(effectiveStart) : start;
+  const timelineEnd = clampedToEarliest ? shiftAppDay(timelineStart, effortScoreLookbackDays(range) + 1) : end;
   const events = effortScoreEvents(state, track, now);
   const rows: { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean }[] = [];
   const rating = state.ratings.find(r => r.sport === state.primary);
-  const current = (track === "open" ? rating?.openElo : rating?.verifiedElo) ?? 500;
+  const current = (track === "verified" ? rating?.verifiedElo : rating?.openElo) ?? 500;
   const initialValue = effortScoreAt(events, effectiveStart, current);
   rows.push({ id: "baseline", date: effectiveStart.toISOString(), value: initialValue, inspectable: false });
   for (const event of events.filter(event => Date.parse(event.occurredAt) >= effectiveStart.getTime())) {
@@ -271,7 +277,7 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
     rows.push({ id: event.id, date: event.occurredAt, value: event.scoreAfter });
   }
   rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: !!rows.length && rows.at(-1)!.value !== current });
-  const chart = openLineModel(rows, value => String(Math.round(value)), 7, { start, end, showTime: range === "week", step: false });
+  const chart = openLineModel(rows, value => String(Math.round(value)), 7, { start: timelineStart, end: timelineEnd, showTime: range === "week", step: false });
   // Unknown award times remain gaps in the data. Dashed bridges connect the
   // known readings visually without asserting an award time in that interval.
   return { ...chart, bridges: chart.segments.slice(1).map((line, index) =>

@@ -159,9 +159,14 @@ const stroke=suppliedstroke ?? c.tennis;
            </G>
          </>
        ) : (
-         geo.polylines.map((segment) => (
-           <Polyline key={segment} points={segment} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-         ))
+         <>
+           {geo.polylines.map((segment) => (
+             <Polyline key={segment} points={segment} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+           ))}
+           {geo.points.at(-1) ? (
+             <Circle cx={geo.points.at(-1)!.x} cy={geo.points.at(-1)!.y} r={4} fill={stroke} stroke={c.card} strokeWidth={1.5} />
+           ) : null}
+         </>
        )}
      </>
    )}

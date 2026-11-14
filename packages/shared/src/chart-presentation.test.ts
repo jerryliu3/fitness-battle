@@ -228,3 +228,15 @@ it("labels the Home week by weekday with whole-number, distinct hour references"
   expect(chart.yTicks.every(tick => /^\d+$/.test(tick.label))).toBe(true);
   expect(new Set(chart.yTicks.map(tick => tick.label)).size).toBe(chart.yTicks.length);
 });
+
+it("aligns account creation date at the left of effortScoreLine and extends into future dates", () => {
+  const now = new Date("2026-11-09T15:00:00Z");
+  const createdAt = "2026-11-05T15:00:00Z";
+  const state = freshState(now);
+  state.activities = [];
+  state.periodResults = [];
+  state.effortScoreEvents = [];
+  const chart = effortScoreLine(state, "open", "fourWeeks", now, createdAt);
+  expect(chart.xTicks[0]?.label).toBe("Nov 5");
+  expect(chart.xTicks.at(-1)?.label).toMatch(/^Dec [23]$/);
+});
