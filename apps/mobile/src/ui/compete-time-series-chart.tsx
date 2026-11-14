@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as RN from "react-native";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import * as SvgModule from "react-native-svg";
@@ -18,6 +18,7 @@ import { playCue } from "../lib/haptics";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { chartTextProps, textStyle } from "./section";
 import { AthletePennant } from "./athlete-pennant";
+import { useReducedMotion } from "./use-reduced-motion";
 
 function svgTag<K extends keyof typeof SvgModule>(
   key: K,
@@ -49,6 +50,7 @@ export function CompeteTimeSeriesChart({
   immersive = false,
   timelineFraction,
   onTimelineChange,
+  active = true,
 }: {
   state: CompeteState;
   sport?: SportId;
@@ -62,8 +64,10 @@ export function CompeteTimeSeriesChart({
   immersive?: boolean;
   timelineFraction?: number | null;
   onTimelineChange?: (value: number | null) => void;
+  active?: boolean;
 }) {
   const c = useThemeColors();
+  const reduceMotion = useReducedMotion();
   const { blocks } = useAthleteBlocks();
   const excludedIds = useMemo(() => [...new Set([...(hiddenIds ?? []), ...blocks.map(block => block.id)])], [hiddenIds, blocks]);
   const { height: screenHeight } = RN.useWindowDimensions();
@@ -76,6 +80,22 @@ export function CompeteTimeSeriesChart({
   const scrubFraction = timelineFraction !== undefined ? timelineFraction : internalFraction;
   const setScrubFraction = onTimelineChange ?? setInternalFraction;
   const plotWidthRef = useRef(300);
+  const [plotWidth, setPlotWidth] = useState(0);
+  const [foreground, setForeground] = useState(
+    () => !RN.AppState?.currentState || RN.AppState.currentState === "active",
+  );
+  useEffect(() => {
+    if (!RN.AppState?.addEventListener) return;
+    const subscription = RN.AppState.addEventListener("change", (status) => {
+      setForeground(status === "active");
+    });
+    return () => subscription?.remove?.();
+  }, []);
+  const pulseValueRef = useRef(
+    typeof RN.Animated?.Value === "function"
+      ? new RN.Animated.Value(0)
+      : null,
+  );
   const lastDayBucketRef = useRef<number | null>(null);
   const directionRef = useRef<"horizontal" | "vertical" | null>(null);
 
@@ -177,10 +197,30 @@ export function CompeteTimeSeriesChart({
     ? c.fieldTeal
     : c.podiumGold;
   const unselectedAthletes = model.athletes.filter((a) => !a.selected);
+  const showLivePulse = !compact && !model.isScrubbing && !reduceMotion && active && foreground;
+
+  useEffect(() => {
+    const pulse = pulseValueRef.current;
+    if (!pulse || typeof RN.Animated?.loop !== "function" || typeof RN.Animated?.timing !== "function") return;
+    pulse.setValue(0);
+    if (!showLivePulse) return;
+    // Animate a native overlay rather than SVG props so the shadow tree stays clean.
+    const animation = RN.Animated.loop(
+      RN.Animated.timing(pulse, {
+        toValue: 1,
+        duration: 1800,
+        easing: RN.Easing?.inOut ? RN.Easing.inOut(RN.Easing.ease) : undefined,
+        useNativeDriver: true,
+        isInteraction: false,
+      }),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [showLivePulse]);
 
   if (compact) {
     const preview = competeChartPreview(model);
-    return <View accessibilityLabel="Current race position over the past day" style={{ flex: 1, width: "100%", aspectRatio: 1 }}>
+    return <View accessibilityLabel="Current race position over the past day" style={{ flex: 1, width: "100%", aspectRatio: 1, backgroundColor: c.paper }}>
       <Svg width="100%" height="100%" viewBox={`0 0 ${preview.width} ${preview.height}`}>
         {preview.yTicks.map(tick => <G key={tick.y}><Line x1={preview.left} x2={preview.right} y1={tick.y} y2={tick.y} stroke={c.line} /><SvgText {...chartTextProps()} x={preview.left - 8} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</SvgText></G>)}
         {preview.xTicks.map((tick, i) => <SvgText {...chartTextProps()} key={tick.label} x={tick.x} y={282} textAnchor={i ? "end" : "start"} fill={c.muted}>{tick.label}</SvgText>)}
@@ -197,8 +237,7 @@ export function CompeteTimeSeriesChart({
       accessibilityLabel="Weekly competition time-series graph"
       style={[
         s.card,
-        { backgroundColor: "transparent", borderWidth: 0, paddingHorizontal: 0 },
-        immersive && { flex: 1, borderRadius: 0, paddingTop: 112 },
+        immersive && { flex: 1, borderRadius: 0, borderWidth: 0, backgroundColor: c.paper, paddingTop: 112 },
         reserveTopControls && { paddingTop: 64 },
       ]}
     >
@@ -255,7 +294,9 @@ export function CompeteTimeSeriesChart({
       <View
         {...panHandlers}
         onLayout={(event) => {
-          plotWidthRef.current = Math.max(1, event.nativeEvent.layout.width);
+          const nextWidth = Math.max(1, event.nativeEvent.layout.width);
+          plotWidthRef.current = nextWidth;
+          setPlotWidth(nextWidth);
         }}
         onTouchStart={(event) => {
           if (compact) return;
@@ -466,6 +507,51 @@ export function CompeteTimeSeriesChart({
             )}
           </G>
         </Svg>
+        {(() => {
+          const pulse = pulseValueRef.current;
+          const AnimatedView = RN.Animated?.View;
+          if (!showLivePulse || plotWidth <= 0 || !pulse || !AnimatedView) return null;
+          const scale = Math.min(plotWidth / model.width, 1);
+          const offsetX = (plotWidth - model.width * scale) / 2;
+          const offsetY = (model.height - model.height * scale) / 2;
+          const dotLeft = offsetX + model.selectedAthlete.cursorX * scale;
+          const dotTop = offsetY + model.selectedAthlete.cursorY * scale;
+          return (
+            <View
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                left: dotLeft - 14,
+                top: dotTop - 14,
+                width: 28,
+                height: 28,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <AnimatedView
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  backgroundColor: selectedStroke,
+                  opacity: pulse.interpolate({
+                    inputRange: [0, 0.65, 0.9, 1],
+                    outputRange: [0.55, 0.2, 0, 0],
+                  }),
+                  transform: [
+                    {
+                      scale: pulse.interpolate({
+                        inputRange: [0, 0.75, 1],
+                        outputRange: [4 / 14, 1, 1],
+                      }),
+                    },
+                  ],
+                }}
+              />
+            </View>
+          );
+        })()}
       </View>
 
       {/* Single-Select Athlete Quick-Focus Chips */}

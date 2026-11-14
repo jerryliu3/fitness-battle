@@ -49,12 +49,20 @@ afterEach(async () => {
 });
 it("opens honest reading details with accessible expanded state and 7-day corridor chart", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const now = new Date("2026-10-25T03:30:00Z");
+  const state = freshState(now);
+  state.demoNow = now.toISOString();
+  state.dailyHealth = [{ provider: "garmin", day: "2026-10-24", steps: 8420, restingHr: 52, hrv: 64 }];
   await act(async () => {
-    view = create(createElement(DailyHealth, { state: freshState(new Date()) }));
+    view = create(createElement(DailyHealth, { state }));
   });
   const tiles = () => view.root.findAll((node) => (node.type as unknown) === "Pressable");
   expect(tiles()).toHaveLength(4);
   expect(tiles()[0].props.style[1].width).toBe("100%");
+  const initialJson = JSON.stringify(view.toJSON());
+  expect(initialJson).not.toContain("7 day range");
+  expect(initialJson).toContain('"0"');
+  expect(initialJson).toContain('"8,420"');
   await act(async () => {
     tiles()[2].props.onPress();
   });

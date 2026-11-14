@@ -1,9 +1,9 @@
 import { homeHealthColors } from "@fitness-battle/shared";
 import { createThemedStyles, useThemedStyles, useHomeHealthColors } from "../theme";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, LayoutAnimation, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Animated, Easing, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
-import { formatHealthNumber, buildHealth7DayCorridorModel, competeNow, dottedCircleDasharray, healthSignal, healthSignalRange, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
+import { formatHealthNumber, buildHealth7DayCorridorModel, competeNow, dottedCircleDasharray, healthSignal, healthSignalBounds, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
 import { ChartScrubber, type ChartDatum } from "../ui/chart-scrubber";
 import { AppText, chartTextProps } from "../ui/section";
 import { useReducedMotion } from "../ui/use-reduced-motion";
@@ -15,11 +15,16 @@ const s=useThemedStyles(sThemes);
   const metrics = homeHealthMetrics(state);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [displayedId, setDisplayedId] = useState<string | null>(null);
+  const [detailHeight, setDetailHeight] = useState(218);
   const [scrubbedPoint, setScrubbedPoint] = useState<ChartDatum | undefined>(undefined);
   const { fontScale, width } = useWindowDimensions();
   const reduceMotion = useReducedMotion();
   const detailAnim = useRef(new Animated.Value(0)).current;
+  const displayedIdRef = useRef<string | null>(null);
+  displayedIdRef.current = displayedId;
   const selected = metrics.find((metric) => metric.id === displayedId);
+  const selectedIndex = metrics.findIndex((metric) => metric.id === displayedId);
+  const originRight = selectedIndex >= 0 && fontScale <= 1.2 && selectedIndex % 2 === 1;
 
   useEffect(() => {
     if (reduceMotion || typeof Animated?.timing !== "function") {
@@ -28,37 +33,28 @@ const s=useThemedStyles(sThemes);
       return;
     }
     if (expanded) {
-      const switching = displayedId !== null && displayedId !== expanded;
-      if (typeof LayoutAnimation?.configureNext === "function") {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      }
       setDisplayedId(expanded);
       detailAnim.stopAnimation();
-      if (switching) detailAnim.setValue(0.65);
-      else detailAnim.setValue(0);
       Animated.timing(detailAnim, {
         toValue: 1,
-        duration: switching ? 160 : 220,
+        duration: 240,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start();
-    } else if (displayedId !== null) {
+    } else if (displayedIdRef.current !== null) {
       detailAnim.stopAnimation();
       Animated.timing(detailAnim, {
         toValue: 0,
-        duration: 160,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: true,
+        duration: 220,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: false,
       }).start(({ finished }) => {
         if (finished) {
-          if (typeof LayoutAnimation?.configureNext === "function") {
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          }
           setDisplayedId(null);
         }
       });
     }
-  }, [expanded, reduceMotion]);
+  }, [expanded, reduceMotion, detailAnim]);
 
   return (
     <View style={s.panel}>
@@ -70,6 +66,7 @@ const s=useThemedStyles(sThemes);
       <View style={s.grid}>
         {metrics.map((metric) => {
           const signal = healthSignal(metric.history);
+          const bounds = healthSignalBounds(metric);
           return (
             <Pressable
               key={metric.id}
@@ -106,6 +103,16 @@ const s=useThemedStyles(sThemes);
                   {signal.fill && (
                     <Path d={signal.fill} fill="none" stroke={colors.accent} strokeWidth={7} strokeLinecap="round" />
                   )}
+                  {bounds && (
+                    <G>
+                      <SvgText {...chartTextProps()} x={34} y={135} textAnchor="middle" fill={colors.secondary}>
+                        {bounds.min}
+                      </SvgText>
+                      <SvgText {...chartTextProps()} x={110} y={135} textAnchor="middle" fill={colors.secondary}>
+                        {bounds.max}
+                      </SvgText>
+                    </G>
+                  )}
                 </Svg>
                 <View style={s.reading}>
                   <AppText role={fontScale > 1.2 || width >= 360 ? "value" : "body"} style={s.value}>
@@ -114,9 +121,6 @@ const s=useThemedStyles(sThemes);
                   {!!metric.unit && <AppText role="caption" style={s.secondary}>{metric.unit}</AppText>}
                 </View>
               </View>
-              <AppText role="caption" style={s.secondary}>
-                {healthSignalRange(metric)}
-              </AppText>
             </Pressable>
           );
         })}
@@ -139,17 +143,40 @@ const s=useThemedStyles(sThemes);
           scrubbedModelPt && (scrubbedModelPt.position === "under" || scrubbedModelPt.position === "over"),
         );
         const activeReading = scrubbedPoint ? scrubbedPoint.value : selected.value;
-        const detailMotionStyle = reduceMotion || typeof detailAnim?.interpolate !== "function"
-          ? undefined
-          : {
-              opacity: detailAnim,
+        const animateExpand = !reduceMotion && typeof detailAnim?.interpolate === "function";
+        const originOffsetX = fontScale > 1.2 ? 0 : (originRight ? 1 : -1) * Math.min(110, width * 0.22);
+        const outerMotionStyle = animateExpand
+          ? {
+              overflow: "hidden" as const,
+              height: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0, detailHeight] }),
+            }
+          : undefined;
+        const innerMotionStyle = animateExpand
+          ? {
+              position: "absolute" as const,
+              top: 0,
+              left: 0,
+              right: 0,
+              opacity: detailAnim.interpolate({ inputRange: [0, 0.14, 1], outputRange: [0, 1, 1] }),
               transform: [
-                { translateY: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) },
-                { scale: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) },
+                { translateX: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [originOffsetX, 0] }) },
+                { translateY: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [-detailHeight * 0.49, 0] }) },
+                { scale: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0.02, 1] }) },
               ],
-            };
+            }
+          : undefined;
         return (
-          <Animated.View style={[s.detail, detailMotionStyle]} accessibilityLiveRegion="polite">
+          <Animated.View style={outerMotionStyle}>
+          <Animated.View
+            style={[s.detail, innerMotionStyle]}
+            accessibilityLiveRegion="polite"
+            onLayout={(event) => {
+              const nextHeight = Math.ceil(event.nativeEvent.layout.height);
+              if (nextHeight > 0 && Math.abs(nextHeight - detailHeight) > 1) {
+                setDetailHeight(nextHeight);
+              }
+            }}
+          >
             <View style={s.detailHeader}>
               <View style={s.detailTitleRow}>
                 <AppText role="label" style={{ color: colors.text }}>
@@ -251,6 +278,7 @@ const s=useThemedStyles(sThemes);
               </ChartScrubber>
             </View>
           </Animated.View>
+          </Animated.View>
         );
       })()}
     </View>
@@ -263,7 +291,7 @@ const sThemes = createThemedStyles(themeColors=>{const colors=homeHealthColors(t
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   tile: {
     padding: 14,
-    minHeight: 200,
+    minHeight: 176,
     alignItems: "center",
     borderWidth: 1,
     borderColor: colors.border,

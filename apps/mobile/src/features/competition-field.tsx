@@ -272,6 +272,7 @@ const f=useFocusStyles();
           sport={sport}
           track={track}
           selectedId={selectedId ?? me?.id}
+          active={isFocused}
           onSelectAthlete={(id) => {
             if (!hold.current?.suppressSelection()) selectAthlete(id);
           }}

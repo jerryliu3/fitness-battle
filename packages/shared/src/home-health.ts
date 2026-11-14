@@ -170,12 +170,27 @@ export function healthSignal(history: readonly (number | null)[]) {
     ticks: [0, .25, .5, .75, 1].map(position => ({ outer: point(135 + position * 270, 65), inner: point(135 + position * 270, 61) })) };
 }
 
+function formatHealthMetricReading(id: HomeHealthMetric["id"], value: number): string {
+  return id === "sleep"
+    ? `${Math.floor(Math.round(value) / 60)}:${String(Math.round(value) % 60).padStart(2, "0")}`
+    : formatHealthNumber(value);
+}
+
 /** Observed min/max, separate from the filled dial’s zero-based scale. */
 export function healthSignalRange(metric: HomeHealthMetric): string {
   if (!healthSignal(metric.history).available) return "No reading available";
   const values = metric.history.filter((value): value is number => value != null && Number.isFinite(value) && value >= 0);
-  const format = metric.id === "sleep" ? (value: number) => `${Math.floor(Math.round(value) / 60)}:${String(Math.round(value) % 60).padStart(2, "0")}` : formatHealthNumber;
-  return `${format(Math.min(...values))}–${format(Math.max(...values))} (7 day range)`;
+  return `${formatHealthMetricReading(metric.id, Math.min(...values))}–${formatHealthMetricReading(metric.id, Math.max(...values))} (7 day range)`;
+}
+
+/** Zero-based gauge endpoint labels matching `healthSignal`’s left and right arc ends. */
+export function healthSignalBounds(metric: HomeHealthMetric): { min: string; max: string } | null {
+  const signal = healthSignal(metric.history);
+  if (!signal.available) return null;
+  return {
+    min: "0",
+    max: formatHealthMetricReading(metric.id, signal.maximum),
+  };
 }
 
 export interface HealthMetricCorridor {
