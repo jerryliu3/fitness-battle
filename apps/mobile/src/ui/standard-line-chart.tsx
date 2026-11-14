@@ -148,7 +148,7 @@ const stroke=suppliedstroke ?? c.tennis;
                strokeLinejoin="round"
              />
              {avgLabel && (
-               <SvgText x={avgLabel.x} y={avgLabel.y} textAnchor="middle" fill={c.secondary}>
+               <SvgText {...chartTextProps()} x={avgLabel.x} y={avgLabel.y} textAnchor="middle" fill={c.secondary}>
                  Avg
                </SvgText>
              )}

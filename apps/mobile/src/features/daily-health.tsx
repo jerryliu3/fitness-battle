@@ -20,6 +20,8 @@ const s=useThemedStyles(sThemes);
   const { fontScale, width } = useWindowDimensions();
   const reduceMotion = useReducedMotion();
   const detailAnim = useRef(new Animated.Value(0)).current;
+  const expandedRef = useRef<string | null>(expanded);
+  expandedRef.current = expanded;
   const displayedIdRef = useRef<string | null>(null);
   displayedIdRef.current = displayedId;
   const selected = metrics.find((metric) => metric.id === displayedId);
@@ -33,28 +35,40 @@ const s=useThemedStyles(sThemes);
       return;
     }
     if (expanded) {
-      setDisplayedId(expanded);
-      detailAnim.stopAnimation();
-      Animated.timing(detailAnim, {
-        toValue: 1,
-        duration: 240,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }).start();
-    } else if (displayedIdRef.current !== null) {
+      if (displayedId !== expanded) {
+        setDisplayedId(expanded);
+        return;
+      }
+      const startOpen = () => {
+        detailAnim.stopAnimation();
+        Animated.timing(detailAnim, {
+          toValue: 1,
+          duration: 260,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }).start();
+      };
+      if (typeof requestAnimationFrame === "function") {
+        const frame = requestAnimationFrame(startOpen);
+        return () => cancelAnimationFrame(frame);
+      }
+      startOpen();
+      return;
+    }
+    if (displayedIdRef.current !== null) {
       detailAnim.stopAnimation();
       Animated.timing(detailAnim, {
         toValue: 0,
-        duration: 220,
+        duration: 240,
         easing: Easing.inOut(Easing.cubic),
         useNativeDriver: false,
       }).start(({ finished }) => {
-        if (finished) {
+        if (finished && expandedRef.current === null) {
           setDisplayedId(null);
         }
       });
     }
-  }, [expanded, reduceMotion, detailAnim]);
+  }, [expanded, displayedId, reduceMotion, detailAnim]);
 
   return (
     <View style={s.panel}>
@@ -63,6 +77,7 @@ const s=useThemedStyles(sThemes);
           Today’s health
         </AppText>
       </View>
+      <View>
       <View style={s.grid}>
         {metrics.map((metric) => {
           const signal = healthSignal(metric.history);
@@ -149,8 +164,9 @@ const s=useThemedStyles(sThemes);
           ? {
               overflow: "hidden" as const,
               height: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0, detailHeight] }),
+              marginTop: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 16] }),
             }
-          : undefined;
+          : { marginTop: 16 };
         const innerMotionStyle = animateExpand
           ? {
               position: "absolute" as const,
@@ -281,6 +297,7 @@ const s=useThemedStyles(sThemes);
           </Animated.View>
         );
       })()}
+      </View>
     </View>
   );
 }
