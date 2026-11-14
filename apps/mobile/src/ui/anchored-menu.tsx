@@ -1,14 +1,18 @@
-import { createThemedStyles, useThemedStyles } from "../theme";
-import { type ComponentRef, useRef, useState, type ReactNode } from "react";
+import { createThemedStyles, useThemeColors, useThemedStyles } from "../theme";
+import { type ComponentRef, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Dimensions,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
+  Text,
   View,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
+import Svg, { Path } from "react-native-svg";
+import { textStyle } from "./section";
 
 export interface AnchoredMenuLayout {
   x: number;
@@ -75,9 +79,17 @@ export function AnchoredMenu({
   children?: ReactNode;
 }) {
 const s=useThemedStyles(sThemes);
+  const wasOpen = useRef(open);
+  useEffect(() => {
+    const closing = wasOpen.current && !open;
+    wasOpen.current = open;
+    if (!closing || Platform.OS === "ios" || !onDismiss) return;
+    const id = setTimeout(onDismiss, 0);
+    return () => clearTimeout(id);
+  }, [open, onDismiss]);
 
-  // Keep iOS Modal mounted through dismissal when a caller needs its completion.
-  if (!open && !onDismiss) return null;
+  // Keep iOS Modal mounted through dismissal when a caller needs its native completion.
+  if (!open && !(onDismiss && Platform.OS === "ios")) return null;
   return (
     <Modal
       visible={open}
@@ -114,6 +126,61 @@ const s=useThemedStyles(sThemes);
   );
 }
 
+export function AnchoredMenuItem({
+  label,
+  selected = false,
+  destructive = false,
+  disabled = false,
+  last = false,
+  left,
+  onPress,
+}: {
+  label: string;
+  selected?: boolean;
+  destructive?: boolean;
+  disabled?: boolean;
+  last?: boolean;
+  left?: ReactNode;
+  onPress: () => void;
+}) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected, disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        s.item,
+        selected && s.itemSelected,
+        pressed && s.itemPressed,
+        last && s.itemLast,
+        disabled && { opacity: 0.45 },
+      ]}
+    >
+      <View style={s.itemLeft}>
+        {left}
+        <Text
+          numberOfLines={1}
+          style={[
+            textStyle(selected ? "label" : "body"),
+            destructive ? { color: c.statusError } : null,
+          ]}
+        >
+          {label}
+        </Text>
+      </View>
+      {selected ? (
+        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+          <Path d="M5 13l4 4L19 7" stroke={c.ink} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      ) : null}
+    </Pressable>
+  );
+}
+
 const sThemes = createThemedStyles(themeColors=>{return {
   backdrop: {
     backgroundColor: "rgba(10, 15, 20, 0.2)",
@@ -130,5 +197,31 @@ const sThemes = createThemedStyles(themeColors=>{return {
     shadowRadius: 24,
     elevation: 12,
     zIndex: 9999,
+  },
+  item: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    minHeight: 44,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: themeColors.line,
+  },
+  itemSelected: {
+    backgroundColor: themeColors.actionSoft,
+  },
+  itemPressed: {
+    backgroundColor: themeColors.soft,
+  },
+  itemLast: {
+    borderBottomWidth: 0,
+  },
+  itemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
   },
 };});
