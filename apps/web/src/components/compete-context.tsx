@@ -348,7 +348,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           if (!isCurrent()) return;
           writeStorageItem(deviceOnlyKey(accountId), "1");
           setSaveError("This device updated. The account copy did not save.");
-        } finally {
+        }
+        finally {
           if (isCurrent()) setRetryingSave(false);
         }
       });

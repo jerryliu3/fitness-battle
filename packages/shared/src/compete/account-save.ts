@@ -78,12 +78,21 @@ export async function runAccountSaveSteps(
   let completedStepCount = 0;
   for (const step of steps) {
     const request = competeSaveRequest(step, accountId, revision);
-    response = await fetcher(request.url, {
-      method: request.method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(request.body),
-    });
-    body = (await response.json().catch(() => null)) as CompeteSaveResult | null;
+    try {
+      response = await fetcher(request.url, {
+        method: request.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request.body),
+      });
+      body = (await response.json().catch(() => null)) as CompeteSaveResult | null;
+    } catch {
+      return {
+        response: new Response(null, { status: 0, statusText: "network_error" }),
+        body: null,
+        revision,
+        completedStepCount,
+      };
+    }
     if (!response.ok) return { response, body, revision, completedStepCount };
     completedStepCount += 1;
     if (typeof body?.updatedAt === "string") revision = body.updatedAt;
