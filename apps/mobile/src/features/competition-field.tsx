@@ -114,7 +114,6 @@ const f=useFocusStyles();
   const [courseReplayOpen, setCourseReplayOpen] = useState(false);
   const [expanded, setExpanded] = useState(persistent);
   const [leadersHeight, setLeadersHeight] = useState(0);
-  const [intervalsCollapsed, setIntervalsCollapsed] = useState(false);
   const [spotlightCollapsed, setSpotlightCollapsed] = useState(false);
   const [overlaysHidden, setOverlaysHidden] = useState(false);
   const hold = useRef<ReturnType<typeof createFieldOverlayHold> | null>(null);
@@ -436,9 +435,10 @@ const f=useFocusStyles();
             {/* Broadcast HUD: Left Current Positions Tower */}
             <SlidingFieldPanel
               label="current leaders"
+              collapsible={false}
               onHeightChange={setLeadersHeight}
-              collapsed={intervalsCollapsed}
-              onToggle={() => setIntervalsCollapsed(value => !value)}
+              collapsed={false}
+              onToggle={() => {}}
               overlaysHidden={overlaysHidden}
               style={{
                 position: "absolute",

@@ -31,10 +31,11 @@ export function FieldOverlayGroup({ hidden, ...props }: GProps & { hidden: boole
   return <AnimatedGroup {...props} opacity={opacity} />;
 }
 
-export function SlidingFieldPanel({ label, collapsed, onToggle, overlaysHidden, style, surfaceStyle, onHeightChange, children }: {
+export function SlidingFieldPanel({ label, collapsed, onToggle, collapsible = true, overlaysHidden, style, surfaceStyle, onHeightChange, children }: {
   label: string;
   collapsed: boolean;
   onToggle: () => void;
+  collapsible?: boolean;
   overlaysHidden: boolean;
   style: ViewStyle;
   surfaceStyle: ViewStyle;
@@ -47,6 +48,7 @@ export function SlidingFieldPanel({ label, collapsed, onToggle, overlaysHidden, 
   const inset = typeof style.left === "number" ? style.left : 0;
   const translateX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, 44 - width - inset] });
   useEffect(() => {
+    if (!collapsible) return;
     const animation = Animated.timing(progress, {
       toValue: collapsed ? 1 : 0,
       duration: reduced ? 0 : 320,
@@ -55,26 +57,30 @@ export function SlidingFieldPanel({ label, collapsed, onToggle, overlaysHidden, 
     });
     animation.start();
     return () => animation.stop();
-  }, [collapsed, reduced, progress]);
+  }, [collapsed, collapsible, reduced, progress]);
+  const panelHidden = overlaysHidden || (collapsible && collapsed && width === 0);
+  const panelCollapsed = collapsible && collapsed;
   return (
     <FieldOverlayView
-      hidden={overlaysHidden || collapsed && width === 0}
+      hidden={panelHidden}
       pointerEvents="box-none"
       onLayout={event => { setWidth(event.nativeEvent.layout.width); onHeightChange?.(event.nativeEvent.layout.height); }}
-      style={[style, { transform: [{ translateX }] }]}
+      style={[style, collapsible ? { transform: [{ translateX }] } : null]}
     >
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${collapsed ? "Expand" : "Collapse"} ${label}`}
-        accessibilityState={{ expanded: !collapsed }}
-        onPress={() => { void playCue("selection"); onToggle(); }}
-        style={{ position: "absolute", right: 0, top: "50%", marginTop: -32, width: 44, height: 64, justifyContent: "center", zIndex: 1 }}
-      >
-        <View pointerEvents="none" style={{ width: 18, height: 52, borderTopRightRadius: 10, borderBottomRightRadius: 10, backgroundColor: "rgba(20,20,19,.78)", alignItems: "center", justifyContent: "center" }}>
-          <View style={{ width: 3, height: 22, borderRadius: 2, backgroundColor: "rgba(255,255,255,.7)" }} />
-        </View>
-      </Pressable>
-      <View pointerEvents={collapsed ? "none" : "auto"} accessibilityElementsHidden={collapsed} importantForAccessibility={collapsed ? "no-hide-descendants" : "auto"} style={[surfaceStyle, { marginRight: 44 }]}>{children}</View>
+      {collapsible ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${collapsed ? "Expand" : "Collapse"} ${label}`}
+          accessibilityState={{ expanded: !collapsed }}
+          onPress={() => { void playCue("selection"); onToggle(); }}
+          style={{ position: "absolute", right: 0, top: "50%", marginTop: -32, width: 44, height: 64, justifyContent: "center", zIndex: 1 }}
+        >
+          <View pointerEvents="none" style={{ width: 18, height: 52, borderTopRightRadius: 10, borderBottomRightRadius: 10, backgroundColor: "rgba(20,20,19,.78)", alignItems: "center", justifyContent: "center" }}>
+            <View style={{ width: 3, height: 22, borderRadius: 2, backgroundColor: "rgba(255,255,255,.7)" }} />
+          </View>
+        </Pressable>
+      ) : null}
+      <View pointerEvents={panelCollapsed ? "none" : "auto"} accessibilityElementsHidden={panelCollapsed} importantForAccessibility={panelCollapsed ? "no-hide-descendants" : "auto"} style={[surfaceStyle, collapsible ? { marginRight: 44 } : null]}>{children}</View>
     </FieldOverlayView>
   );
 }

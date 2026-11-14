@@ -92,14 +92,11 @@ it("cancels a pending hold for small drags and app backgrounding", async () => {
   await act(async () => mocks.appState?.("inactive"));
   expect(field().props.overlaysHidden).toBe(false);
 });
-it("collapses each panel independently and isolates timeline touches from scene holds", async () => {
-  await act(async () => button("Collapse current leaders").props.onPress());
-  expect(button("Expand current leaders").props.accessibilityState.expanded).toBe(false);
+it("collapses the athlete spotlight panel and isolates timeline touches from scene holds", async () => {
+  expect(button("Collapse current leaders")).toBeUndefined();
   expect(button("Collapse athlete panel").props.accessibilityState.expanded).toBe(true);
   await act(async () => button("Collapse athlete panel").props.onPress());
   expect(button("Expand athlete panel").props.accessibilityState.expanded).toBe(false);
-  await act(async () => button("Expand current leaders").props.onPress());
-  expect(button("Collapse current leaders").props.accessibilityState.expanded).toBe(true);
   expect(button("Zoom in")).toBeUndefined();
   const replay = renderer.root.findAllByType("View" as never).find(node => node.props.onTouchStart && !node.props.onTouchEnd)!;
   const stopPropagation = vi.fn();
@@ -129,7 +126,7 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and time
   await act(async () => map().props.onSelect(map().props.selectedId));
   expect(map().props.distanceTarget).toBeNull();
   expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(1);
-  expect(button("Collapse current leaders")).toBeDefined();
+  expect(button("Collapse current leaders")).toBeUndefined();
   await act(async () => button("Collapse athlete panel").props.onPress());
   expect(button("Expand athlete panel")).toBeDefined();
   expect(overview()).toBeDefined();
