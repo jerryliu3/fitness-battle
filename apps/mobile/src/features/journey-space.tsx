@@ -4,6 +4,8 @@ import { ActivityDetailSheet } from "./activity-detail-sheet";
 import { AppText } from "../ui/section";
 import { SportActivityIcon } from "../ui/sport-activity-icon";
 import { ResultCard } from "./result-card";
+import { useAuth } from "../lib/auth";
+import { prefetchActivityReplay } from "../lib/prefetch-activity-replay";
 import { CompetitionReplayButton } from "./competition-replay";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -45,6 +47,7 @@ export function JourneySpace({
   state: CompeteState;
   initialHorizon?: HorizonChoice;
 }) {
+  const { accessToken } = useAuth();
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
   const router = useRouter();
@@ -723,6 +726,7 @@ export function JourneySpace({
                   key={activity.id}
                   accessibilityRole="button"
                   accessibilityLabel={`${sportInfo.name}, ${formatClockTime(activity.movingSec)}, ${effort} effort`}
+                  onPressIn={() => prefetchActivityReplay(activity, accessToken)}
                   onPress={() => setInspectedActivity(activity)}
                   style={s.activityRow}
                 >
@@ -760,6 +764,7 @@ export function JourneySpace({
 
       <ActivityDetailSheet
         activity={inspectedActivity}
+        state={state}
         units={state.units}
         onClose={() => setInspectedActivity(null)}
       />
