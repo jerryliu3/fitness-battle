@@ -59,7 +59,7 @@ describe("native earned progress flows",()=>{
   const prior=[1,2,3].map((day,index)=>({...recorded(`prior-${day}`,1800+index*300),startedAt:new Date(now.getTime()-day*86400000).toISOString()}));
   const state={...mock.state!,activities:[current,...prior]};
   await act(async()=>{renderer=create(createElement(SessionStage,{state,activities:[current],onRemove:vi.fn()}));});
-  expect(text()).toContain("Compared with your usual");expect(text()).toContain("Your recent trajectory");
+  expect(text()).toContain("Compared with usual");expect(text()).toContain("Recent trajectory");
   expect(renderer.root.findAllByType("Ember" as never)).toHaveLength(0);
  });
  it("switches the chart between week, month and year without manufacturing future sessions",async()=>{
