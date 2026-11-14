@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
-import { crewContractMetrics, crewContractTarget, crewContractValue, type CrewContractMetric, type CrewPassportMutation, type CrewOverviewInput } from "@fitness-battle/shared";
+import { crewContractMetrics, crewContractTarget, crewContractValue, crewTargetSpec, type CrewContractMetric, type CrewPassportMutation, type CrewOverviewInput } from "@fitness-battle/shared";
 import { useCrewPassport } from "./use-crew-passport";
 import { Pressable, TextInput, View } from "react-native";
 import { useFocusStyles, FocusSheet, FocusButton } from "../ui/focus";
+import { NumberStepper } from "../ui/number-stepper";
 import { AppText } from "../ui/section";
 
 export function useCrewContractModal(crewId: string, input: CrewOverviewInput) {
@@ -19,10 +20,11 @@ export function useCrewContractModal(crewId: string, input: CrewOverviewInput) {
   const [expectedId, setExpectedId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [metric, setMetric] = useState<CrewContractMetric>(sport === "strength" ? "sessions" : "distance_m");
-  const [target, setTarget] = useState("");
+  const [target, setTarget] = useState<number>(40);
   function editContract() {
-    setExpectedId(contract?.id ?? null); setTitle(contract?.title ?? ""); setMetric(contract?.metric ?? (sport === "strength" ? "sessions" : "distance_m"));
-    setTarget(contract ? String(contract.target / (contract.metric === "distance_m" ? 1000 : contract.metric === "moving_sec" ? 3600 : 1)) : "");
+    const nextMetric = contract?.metric ?? (sport === "strength" ? "sessions" : "distance_m");
+    setExpectedId(contract?.id ?? null); setTitle(contract?.title ?? ""); setMetric(nextMetric);
+    setTarget(contract ? Math.max(1, Math.round(contract.target / (contract.metric === "distance_m" ? 1000 : contract.metric === "moving_sec" ? 3600 : 1))) : crewTargetSpec(nextMetric).defaultValue);
     setEditing(true);
   }
   function openSummary() { setOpen(true); setEditing(false); setError(""); }
@@ -36,14 +38,16 @@ export function useCrewContractModal(crewId: string, input: CrewOverviewInput) {
   }
   function submit() {
     try {
-      void save({ action: "contract", crewId, title, metric, target: crewContractTarget(metric, target), expectedId });
+      void save({ action: "contract", crewId, title, metric, target: crewContractTarget(metric, String(target)), expectedId });
     } catch (e) { setError((e as Error).message); }
   }
+  const targetSpec = crewTargetSpec(metric);
   const sheet = <FocusSheet open={open} minimal title="Weekly contract" onClose={() => { if (!busy) setOpen(false); }}>
     {!available ? <AppText role="body">{unavailable}</AppText> : !data ? <><AppText role="body">{loadError || "Loading your crew…"}</AppText><FocusButton secondary label="Refresh" onPress={() => void reload()} /></> : editing ? <View style={{ gap: 16 }}>
       <AppText role="caption">Name</AppText><TextInput accessibilityLabel="Name" maxLength={80} style={f.input} value={title} onChangeText={setTitle} editable={!busy} />
-      <View style={f.chipRow}>{crewContractMetrics(sport).map(m => <Pressable key={m.id} accessibilityRole="radio" accessibilityState={{ checked: m.id === metric }} disabled={busy} onPress={() => setMetric(m.id)} style={[f.chip, m.id === metric && f.chipActive]}><AppText role="label">{m.label}</AppText></Pressable>)}</View>
-      <AppText role="caption">Target</AppText><TextInput accessibilityLabel="Contract target" style={f.input} keyboardType="decimal-pad" value={target} onChangeText={setTarget} editable={!busy} />
+      <View style={f.chipRow}>{crewContractMetrics(sport).map(m => <Pressable key={m.id} accessibilityRole="radio" accessibilityState={{ checked: m.id === metric }} disabled={busy} onPress={() => { setMetric(m.id); setTarget(crewTargetSpec(m.id).defaultValue); }} style={[f.chip, m.id === metric && f.chipActive]}><AppText role="label">{m.label}</AppText></Pressable>)}</View>
+      <AppText role="caption">Target</AppText>
+      <NumberStepper label="Contract target" value={target} min={targetSpec.min} max={targetSpec.max} step={targetSpec.step} unit={targetSpec.unit} presets={targetSpec.presets} disabled={busy} onChange={setTarget} />
       <AppText role="caption" secondary>This week’s active members are included. Changing the contract replaces its objective; stamps settle at week close.</AppText>
       <FocusButton label={busy ? "Saving…" : "Save contract"} disabled={busy || !title.trim()} onPress={submit} />
     </View> : <View style={{ gap: 16 }}>

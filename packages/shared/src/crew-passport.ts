@@ -25,6 +25,38 @@ export const CREW_CONTRACT_METRICS: { id: CrewContractMetric; label: string }[] 
   { id: "distance_m", label: "Distance (km)" }, { id: "moving_sec", label: "Time (hours)" },
   { id: "sessions", label: "Sessions" }, { id: "contributors", label: "Teammates" },
 ];
+export interface CrewTargetSelectorSpec {
+  min: number;
+  max: number;
+  step: number;
+  defaultValue: number;
+  presets: readonly number[];
+  unit: string;
+}
+
+export function crewTargetSpec(kind: "shared_distance_km" | "session_targets" | CrewContractMetric): CrewTargetSelectorSpec {
+  switch (kind) {
+    case "shared_distance_km":
+    case "distance_m":
+      return { min: 1, max: 500, step: 5, defaultValue: 40, presets: [20, 40, 60, 100, 150], unit: "km" };
+    case "session_targets":
+      return { min: 1, max: 14, step: 1, defaultValue: 3, presets: [2, 3, 4, 5, 7], unit: "sessions" };
+    case "moving_sec":
+      return { min: 1, max: 200, step: 1, defaultValue: 10, presets: [5, 10, 20, 40], unit: "h" };
+    case "sessions":
+      return { min: 1, max: 50, step: 1, defaultValue: 10, presets: [5, 10, 15, 25], unit: "sessions" };
+    case "contributors":
+      return { min: 1, max: 50, step: 1, defaultValue: 3, presets: [2, 3, 5, 8], unit: "teammates" };
+  }
+}
+
+export function formatCrewTargetLabel(value: number, unit?: string): string {
+  if (!unit) return String(value);
+  if (value === 1 && unit === "sessions") return "1 session";
+  if (value === 1 && unit === "teammates") return "1 teammate";
+  return `${value} ${unit}`;
+}
+
 export function crewContractMetrics(sport: string) {
   return CREW_CONTRACT_METRICS.filter(metric => sport !== "strength" || metric.id !== "distance_m");
 }

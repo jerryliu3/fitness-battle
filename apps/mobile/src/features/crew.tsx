@@ -23,9 +23,11 @@ import {
   APP_TIMEZONE,
   crewMemberWeekValue,
   crewLineup,
+  crewTargetSpec,
   getDemoCompeteState,
 } from "@fitness-battle/shared";
 import { Chip, ChipRow } from "../ui/chip";
+import { NumberStepper } from "../ui/number-stepper";
 import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImageBackground, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
@@ -137,7 +139,7 @@ const f=useFocusStyles();
   const [code, setCode] = useState("");
   const [editSport, setEditSport] = useState<SportId>("running");
   const [editFormat, setEditFormat] = useState<"cooperative" | "personal_target">("cooperative");
-  const [editTarget, setEditTarget] = useState("40");
+  const [editTarget, setEditTarget] = useState<number>(40);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const flight = useRef(false);
@@ -283,7 +285,7 @@ const f=useFocusStyles();
       const isSessions = crew.format === "personal_target" || crew.sport === "strength";
       setEditSport((SPORTS.some((s) => s.id === crew.sport) ? crew.sport : "running") as SportId);
       setEditFormat(isSessions ? "personal_target" : "cooperative");
-      setEditTarget(String(isSessions ? crew.target_sessions : crew.journey_km));
+      setEditTarget(isSessions ? crew.target_sessions : crew.journey_km);
     }
     setPanel(next);
   }
@@ -710,7 +712,7 @@ const f=useFocusStyles();
                       setEditSport(sp.id);
                       if (sp.id === "strength") {
                         setEditFormat("personal_target");
-                        setEditTarget(String(crew.target_sessions || 3));
+                        setEditTarget(crew.target_sessions || 3);
                       }
                     }}
                   />
@@ -733,41 +735,41 @@ const f=useFocusStyles();
                       selected={editFormat === opt.id}
                       onPress={() => {
                         setEditFormat(opt.id);
-                        setEditTarget(String(opt.id === "personal_target" ? crew.target_sessions : crew.journey_km));
+                        setEditTarget(opt.id === "personal_target" ? crew.target_sessions : crew.journey_km);
                       }}
                     />
                   ))}
                 </ChipRow>
               </View>
             ) : null}
-            <View style={{ gap: 6 }}>
-              <AppText role="caption" secondary>
-                {editFormat === "personal_target" || editSport === "strength"
-                  ? "Default sessions per member"
-                  : "Default shared distance (km)"}
-              </AppText>
-              <TextInput
-                accessibilityLabel="Crew default target"
-                style={f.input}
-                keyboardType="decimal-pad"
-                value={editTarget}
-                onChangeText={setEditTarget}
-                editable={!busy}
-              />
-              <AppText role="caption" secondary>
-                Weekly contracts in Crew Passport can set a custom goal for any individual week.
-              </AppText>
-            </View>
+            {(() => {
+              const sessions = editFormat === "personal_target" || editSport === "strength";
+              const spec = crewTargetSpec(sessions ? "session_targets" : "shared_distance_km");
+              const label = sessions ? "Default sessions per member" : "Default shared distance (km)";
+              return (
+                <View style={{ gap: 8 }}>
+                  <AppText role="caption" secondary>{label}</AppText>
+                  <NumberStepper
+                    label={label}
+                    value={editTarget}
+                    min={spec.min}
+                    max={spec.max}
+                    step={spec.step}
+                    unit={spec.unit}
+                    presets={spec.presets}
+                    disabled={busy}
+                    onChange={setEditTarget}
+                  />
+                  <AppText role="caption" secondary>
+                    Weekly contracts in Crew Passport can set a custom goal for any individual week.
+                  </AppText>
+                </View>
+              );
+            })()}
             <FocusButton
               label={busy ? "Saving…" : "Save settings"}
-              disabled={
-                busy ||
-                !Number.isFinite(Number(editTarget)) ||
-                Number(editTarget) < 1 ||
-                ((editFormat === "personal_target" || editSport === "strength") && Number(editTarget) > 14)
-              }
+              disabled={busy}
               onPress={() => {
-                const parsed = Number(editTarget);
                 const sessions = editFormat === "personal_target" || editSport === "strength";
                 void write(
                   "",
@@ -776,8 +778,8 @@ const f=useFocusStyles();
                     sport: editSport,
                     format: sessions ? "personal_target" : "cooperative",
                     ...(sessions
-                      ? { targetSessions: Math.round(parsed), journeyKm: crew.journey_km }
-                      : { journeyKm: parsed, targetSessions: crew.target_sessions }),
+                      ? { targetSessions: Math.round(editTarget), journeyKm: crew.journey_km }
+                      : { journeyKm: editTarget, targetSessions: crew.target_sessions }),
                   },
                   "PATCH",
                 );

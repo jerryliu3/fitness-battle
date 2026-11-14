@@ -11,7 +11,8 @@ import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { CrewOverview } from "./crew-overview";
 import { Sheet } from "@/ui/sheet";
-import { SPORTS, rankSymbolForScore, APP_ICON_PATHS, competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, crewLineup, getDemoCompeteState } from "@fitness-battle/shared";
+import { SPORTS, rankSymbolForScore, APP_ICON_PATHS, competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, crewLineup, crewTargetSpec, getDemoCompeteState } from "@fitness-battle/shared";
+import { NumberStepper } from "@/ui/number-stepper";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 interface Crew {
@@ -96,7 +97,7 @@ export function CrewPanel() {
   const [code, setCode] = useState("");
   const [editSport, setEditSport] = useState<SportId>("running");
   const [editFormat, setEditFormat] = useState<"cooperative" | "personal_target">("cooperative");
-  const [editTarget, setEditTarget] = useState("40");
+  const [editTarget, setEditTarget] = useState<number>(40);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
   const [demoRest, setDemoRest] = useState<Record<string, string | null>>({});
@@ -335,7 +336,7 @@ export function CrewPanel() {
               const isSessions = crew.format === "personal_target" || crew.sport === "strength";
               setEditSport((SPORTS.some((s) => s.id === crew.sport) ? crew.sport : "running") as SportId);
               setEditFormat(isSessions ? "personal_target" : "cooperative");
-              setEditTarget(String(isSessions ? crew.target_sessions : crew.journey_km));
+              setEditTarget(isSessions ? crew.target_sessions : crew.journey_km);
               setPanel("manage");
             }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.settings} /></svg></button></div>
           </header>
@@ -587,7 +588,7 @@ export function CrewPanel() {
                   setEditSport(next);
                   if (next === "strength") {
                     setEditFormat("personal_target");
-                    setEditTarget(String(crew.target_sessions || 3));
+                    setEditTarget(crew.target_sessions || 3);
                   }
                 }}
               >
@@ -604,7 +605,7 @@ export function CrewPanel() {
                   onChange={(e) => {
                     const next = e.target.value as "cooperative" | "personal_target";
                     setEditFormat(next);
-                    setEditTarget(String(next === "personal_target" ? crew.target_sessions : crew.journey_km));
+                    setEditTarget(next === "personal_target" ? crew.target_sessions : crew.journey_km);
                   }}
                 >
                   <option value="cooperative">Shared distance</option>
@@ -612,32 +613,34 @@ export function CrewPanel() {
                 </select>
               </label>
             )}
-            <label className="fb-field">
-              {editFormat === "personal_target" || editSport === "strength"
-                ? "Default sessions per member"
-                : "Default shared distance (km)"}
-              <input
-                type="number"
-                min="1"
-                step="any"
-                value={editTarget}
-                onChange={(e) => setEditTarget(e.target.value)}
-                disabled={busy}
-              />
-            </label>
+            {(() => {
+              const sessions = editFormat === "personal_target" || editSport === "strength";
+              const spec = crewTargetSpec(sessions ? "session_targets" : "shared_distance_km");
+              const label = sessions ? "Default sessions per member" : "Default shared distance (km)";
+              return (
+                <div className="fb-field">
+                  <span>{label}</span>
+                  <NumberStepper
+                    label={label}
+                    value={editTarget}
+                    min={spec.min}
+                    max={spec.max}
+                    step={spec.step}
+                    unit={spec.unit}
+                    presets={spec.presets}
+                    disabled={busy}
+                    onChange={setEditTarget}
+                  />
+                </div>
+              );
+            })()}
             <AppParagraph typographyRole="caption" className="fb-note">
               Weekly contracts in Crew Passport can set a custom goal for any individual week.
             </AppParagraph>
             <button
               className="fb-btn"
-              disabled={
-                busy ||
-                !Number.isFinite(Number(editTarget)) ||
-                Number(editTarget) < 1 ||
-                ((editFormat === "personal_target" || editSport === "strength") && Number(editTarget) > 14)
-              }
+              disabled={busy}
               onClick={() => {
-                const parsed = Number(editTarget);
                 const sessions = editFormat === "personal_target" || editSport === "strength";
                 void write(
                   "",
@@ -646,8 +649,8 @@ export function CrewPanel() {
                     sport: editSport,
                     format: sessions ? "personal_target" : "cooperative",
                     ...(sessions
-                      ? { targetSessions: Math.round(parsed), journeyKm: crew.journey_km }
-                      : { journeyKm: parsed, targetSessions: crew.target_sessions }),
+                      ? { targetSessions: Math.round(editTarget), journeyKm: crew.journey_km }
+                      : { journeyKm: editTarget, targetSessions: crew.target_sessions }),
                   },
                   "PATCH",
                 );
