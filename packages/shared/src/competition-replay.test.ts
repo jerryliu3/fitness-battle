@@ -16,8 +16,11 @@ describe("competition replay presentation ledger", () => {
     expect(competitionReplayFrame(index, 1).rows.find(r => r.you)?.value).toBe(0);
     expect(competitionReplayFrame(index, 0).rows.every(r => r.value === 0)).toBe(true);
   });
-  it("interpolates only the changing athlete and converts units exactly", () => {
+  it("interpolates every athlete between timeline steps and converts units exactly", () => {
     const index = indexCompetitionReplay(ledger([event("a", "peer", 1609.344), event("b", "you", 3218.688)]), "us");
+    const midway = competitionReplayFrame(index, 0.5);
+    expect(midway.rows.find(r => r.id === "peer")?.value).toBeCloseTo(0.5);
+    expect(midway.rows.find(r => r.you)?.value).toBeCloseTo(0);
     const frame = competitionReplayFrame(index, 1.5);
     expect(frame.rows.find(r => r.you)?.value).toBeCloseTo(1);
     expect(frame.rows.find(r => !r.you)?.value).toBeCloseTo(1);
