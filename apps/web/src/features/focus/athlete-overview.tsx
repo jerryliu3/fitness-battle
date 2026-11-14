@@ -114,8 +114,8 @@ export function AthleteOverview({
                   setProfileError(null);
                   dispatch({ type: "rename", name: trimmedName });
                   dispatch({ type: "set-city", city: city.trim() });
-                  if (gender) dispatch({ type: "set-gender", gender });
-                  dispatch({ type: "set-country", countryCode });
+                  dispatch({ type: "set-gender", gender: gender || null });
+                  dispatch({ type: "set-country", countryCode: countryCode || null });
                   setEditing(false);
                 }}
               >

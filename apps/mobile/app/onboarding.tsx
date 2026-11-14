@@ -64,8 +64,8 @@ const f=useFocusStyles();
     finished.current = true;
     dispatch({ type: "rename", name: name.trim() || user.displayName });
     dispatch({ type: "set-city", city: city.trim() });
-    if (gender) dispatch({ type: "set-gender", gender });
-    if (countryCode) dispatch({ type: "set-country", countryCode });
+    dispatch({ type: "set-gender", gender: gender || null });
+    dispatch({ type: "set-country", countryCode: countryCode || null });
     dispatch({ type: "set-units", units });
     for (const sport of sports) dispatch({ type: "opt-in", sport, accountId: user.id });
     if(sports[0]) dispatch({ type: "set-primary", sport: sports[0] });
@@ -85,7 +85,17 @@ const f=useFocusStyles();
         <AppText role="label">City · optional</AppText>
         <TextInput accessibilityLabel="City" style={f.input} value={city} onChangeText={setCity} maxLength={80}/>
         <AppText role="label">Gender · optional</AppText>
-        <FocusSegments label="Gender" value={gender || "other"} options={[{ value: "female", label: "Female" }, { value: "male", label: "Male" }, { value: "other", label: "Other" }]} onChange={value => setGender(value as ProfileGender)}/>
+        <ChoicePicker
+          label="Gender"
+          value={gender || "unset"}
+          options={[
+            { value: "unset", label: "Prefer not to say" },
+            { value: "female", label: "Female" },
+            { value: "male", label: "Male" },
+            { value: "other", label: "Other" },
+          ]}
+          onChange={(value) => setGender(value === "unset" ? "" : (value as ProfileGender))}
+        />
         <SearchableCountryPicker label="Country" value={countryCode} onChange={setCountryCode}/>
       </>}
       {step===2 && <><AppText secondary>You can change this later under your profile.</AppText><AppText role="heading">Sports</AppText><View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{SPORTS.map(s=><Chip key={s.id} label={s.name} selected={sports.includes(s.id)} onPress={()=>setSports(current=>current.includes(s.id)?current.filter(id=>id!==s.id):[...current,s.id])}/>)}</View>{sports.length>1&&<><AppText role="label">Primary sport</AppText><ChoicePicker label="Primary sport" value={sports[0]!} options={sports.map(id=>({value:id,label:SPORTS.find(s=>s.id===id)!.name}))} onChange={id=>setSports([id,...sports.filter(s=>s!==id)])}/></>}{sports.some(s=>s!=="strength")&&<View style={{alignItems:"flex-start",gap:12}}><AppText role="label">Distance units</AppText><View style={{width:210}}><FocusSegments label="Distance units" options={[{value:"us",label:"Miles"},{value:"metric",label:"Kilometres"}]} value={units} onChange={setUnits}/></View></View>}<AppText role="heading">Sleep & recovery</AppText><View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}><Chip label="Sleep tracking" selected={sleep} onPress={()=>setSleep(!sleep)}/></View>{selectionError&&!sports.length&&!sleep&&<AppText accessibilityRole="alert">Choose at least one sport or sleep tracking to continue.</AppText>}</>}

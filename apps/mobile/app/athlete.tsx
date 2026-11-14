@@ -645,15 +645,18 @@ const styles=useThemedStyles(stylesThemes);
                 placeholder="City"
               />
               <AppText role="label">Gender</AppText>
-              <FocusSegments
+              <ChoicePicker
                 label="Gender"
-                value={(draftGender || "other") as ProfileGender}
+                value={draftGender || "unset"}
                 options={[
+                  { value: "unset", label: "Prefer not to say" },
                   { value: "female", label: "Female" },
                   { value: "male", label: "Male" },
                   { value: "other", label: "Other" },
                 ]}
-                onChange={(value) => setGenderDraft(value as ProfileGender)}
+                onChange={(value) =>
+                  setGenderDraft(value === "unset" ? "" : (value as ProfileGender))
+                }
               />
               <SearchableCountryPicker
                 label="Country"
@@ -676,11 +679,11 @@ const styles=useThemedStyles(stylesThemes);
                     if (cityTrimmed !== state.city) {
                       dispatch({ type: "set-city", city: cityTrimmed });
                     }
-                    if (draftGender && draftGender !== state.gender) {
-                      dispatch({ type: "set-gender", gender: draftGender as ProfileGender });
+                    if (draftGender !== (state.gender ?? "")) {
+                      dispatch({ type: "set-gender", gender: draftGender || null });
                     }
                     if (draftCountry !== (state.countryCode ?? "")) {
-                      dispatch({ type: "set-country", countryCode: draftCountry });
+                      dispatch({ type: "set-country", countryCode: draftCountry || null });
                     }
                     setName(null);
                     setCity(null);
@@ -991,16 +994,18 @@ const styles=useThemedStyles(stylesThemes);
             maxLength={40}
             placeholder="City"
           />
-          <AppText role="label">Gender</AppText>
-          <FocusSegments
+          <ChoicePicker
             label="Gender"
-            value={(draftGender || "other") as ProfileGender}
+            value={draftGender || "unset"}
             options={[
+              { value: "unset", label: "Prefer not to say" },
               { value: "female", label: "Female" },
               { value: "male", label: "Male" },
               { value: "other", label: "Other" },
             ]}
-            onChange={(value) => setGenderDraft(value as ProfileGender)}
+            onChange={(value) =>
+              setGenderDraft(value === "unset" ? "" : (value as ProfileGender))
+            }
           />
           <SearchableCountryPicker label="Country" value={draftCountry} onChange={(code) => setCountryDraft(code)} />
         </View>
@@ -1020,11 +1025,11 @@ const styles=useThemedStyles(stylesThemes);
               if (cityTrimmed !== state.city) {
                 dispatch({ type: "set-city", city: cityTrimmed });
               }
-              if (draftGender && draftGender !== state.gender) {
-                dispatch({ type: "set-gender", gender: draftGender as ProfileGender });
+              if (draftGender !== (state.gender ?? "")) {
+                dispatch({ type: "set-gender", gender: draftGender || null });
               }
               if (draftCountry !== (state.countryCode ?? "")) {
-                dispatch({ type: "set-country", countryCode: draftCountry });
+                dispatch({ type: "set-country", countryCode: draftCountry || null });
               }
               setName(null);
               setCity(null);

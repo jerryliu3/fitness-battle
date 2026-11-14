@@ -119,8 +119,8 @@ export interface Action {
   movingSec?: number;
   name?: string;
   city?: string;
-  gender?: import("./sports").ProfileGender;
-  countryCode?: string;
+  gender?: import("./sports").ProfileGender | null;
+  countryCode?: string | null;
   avatarUrl?: string | null;
   rankSymbol?: RankSymbolId | null;
   cardHighlights?: string[];

@@ -28,10 +28,17 @@ export function SearchableCountryPicker({
   return (
     <View>
       <Text style={textStyle("label")}>{label}</Text>
-      <View ref={anchorRef} collapsable={false}>
-        <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={toggle} style={f.input}>
-          <Text style={textStyle("label")}>{display}</Text>
-        </Pressable>
+      <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+        <View ref={anchorRef} collapsable={false} style={{ flex: 1 }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={toggle} style={f.input}>
+            <Text style={textStyle("label")}>{display}</Text>
+          </Pressable>
+        </View>
+        {value ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Clear country" onPress={() => onChange("")}>
+            <Text style={textStyle("caption")}>Clear</Text>
+          </Pressable>
+        ) : null}
       </View>
       <AnchoredMenu open={open} layout={menuLayout} onClose={close}>
         <View style={{ padding: 12, gap: 8, maxHeight: 320 }}>
