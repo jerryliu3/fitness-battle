@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { APP_ICON_PATHS, crewMemberRelayColor, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
 import { AppHeading, AppText } from "@/ui/section";
@@ -10,8 +10,8 @@ import { CrewDerbyCard } from "./crew-derby";
 import "./crew-overview.css";
 import { useAuth } from "@/components/auth-context";
 
-type Props = CrewOverviewInput & { crewId: string; onSelectMember: (id: string) => void; onViewMembers: () => void; children?: ReactNode };
-export function CrewOverview({ crewId, onSelectMember, onViewMembers, children, ...input }: Props) {
+type Props = CrewOverviewInput & { crewId: string; onSelectMember: (id: string) => void; onViewMembers: () => void };
+export function CrewOverview({ crewId, onSelectMember, onViewMembers, ...input }: Props) {
   const { user, offlineMode } = useAuth();
   const [replayEntries, setReplayEntries] = useState<CrewOverviewInput["entries"]>();
   const [replayError, setReplayError] = useState("");
@@ -77,7 +77,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, children, 
         <AppText role="caption" secondary>{view.volume(view.relay.model.segments.find(s => s.id === m.user_id)?.value ?? 0)}</AppText>
       </button>)}</div>
     </section>
-    <CrewPassportPanel crewId={crewId} input={input}>{children}</CrewPassportPanel>
+    <CrewPassportPanel crewId={crewId} input={input} />
     {full.highlights.length > 0 && <section>
       <AppHeading level={2} role="heading">Crew highlights</AppHeading>
       <ul className="crew-highlights">{full.highlights.map(h => <li key={h}><AppText role="body">{h}</AppText></li>)}</ul>
