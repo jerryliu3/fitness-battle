@@ -229,6 +229,7 @@ export { applyEffortMilestones, milestoneStep, type EffortMilestone } from "./mi
 export { RECORD_DISTANCES, recordAttemptsForActivity, personalRecordHistory, weeklyTraining, recordStepPath, type RecordAttempt, type TrainingWeek } from "./progress";
 export {
   crewRelay,
+  crewMemberRelayColor,
   crewWeekRelay,
   crewRelayIsEmpty,
   crewRelayRosterFootnote,

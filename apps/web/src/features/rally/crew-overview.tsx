@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
-import { APP_ICON_PATHS, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
+import { APP_ICON_PATHS, crewMemberRelayColor, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
 import { AppHeading, AppText } from "@/ui/section";
 import { UserAvatar } from "@/ui/user-avatar";
 import { CrewRelay } from "./crew-relay";
@@ -70,9 +70,9 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, children, 
       {replayError && <AppText role="caption" secondary>{replayError}</AppText>}
     </section>
     <section className="crew-lineup">
-      <div className="crew-lineup-header"><AppHeading level={2} role="heading">Teammate lineup</AppHeading>{input.members.length > 4 && <button type="button" className="fb-btn-ghost" onClick={onViewMembers}>View all</button>}</div>
+      <div className="crew-lineup-header"><AppHeading level={2} role="heading">Crew mates</AppHeading>{input.members.length > 4 && <button type="button" className="fb-btn-ghost" onClick={onViewMembers}>View all</button>}</div>
       <div className="crew-lineup-grid">{full.lineup.map(m => <button type="button" key={m.user_id} onClick={() => onSelectMember(m.user_id)}>
-        <span style={{ borderColor: full.relay.model.segments.find(s => s.id === m.user_id)?.color }}><UserAvatar src={m.avatar_url} name={m.display_name} size={42} /></span>
+        <span style={{ borderColor: crewMemberRelayColor(m.user_id, input.members.map(member => member.user_id)) }}><UserAvatar src={m.avatar_url} name={m.display_name} size={42} /></span>
         <AppText role="label">{m.display_name.split(" ")[0]}</AppText>
         <AppText role="caption" secondary>{full.volume(full.relay.model.segments.find(s => s.id === m.user_id)?.value ?? 0)}</AppText>
       </button>)}</div>
