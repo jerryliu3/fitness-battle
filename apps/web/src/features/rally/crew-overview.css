@@ -46,8 +46,15 @@
   padding:24px 20px;
   background:color-mix(in srgb,var(--action-primary) 32%,var(--card));
   border:1px solid color-mix(in srgb,var(--action-primary) 50%,var(--line));
-  overflow:hidden
+  overflow:hidden;
+  display:grid;
+  gap:12px
 }
+.crew-week-hero-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.crew-week-hero-title { display:inline-flex; align-items:center; gap:6px; }
+.crew-week-edit-btn { display:inline-flex; align-items:center; justify-content:center; min-width:32px; min-height:32px; padding:0; border:0; background:transparent; color:var(--ink); cursor:pointer; border-radius:8px; }
+.crew-week-edit-btn:hover { background:color-mix(in srgb,var(--ink) 8%,transparent); }
+.crew-week-hero-empty { display:grid; gap:10px; justify-items:start; }
 .crew-week-value {
   display:flex;
   align-items:baseline;
@@ -215,18 +222,6 @@
 .crew-editor { display: grid; gap: 18px; }
 .crew-editor section { display: grid; gap: 12px; }
 .crew-editor input, .crew-editor select { width: 100%; min-height: 44px; }
-.crew-contract-track {
-  height:5px;
-  border-radius:4px;
-  overflow:hidden;
-  background:var(--line);
-  margin-top:8px
-}
-.crew-contract-track span {
-  display:block;
-  height:100%;
-  background:var(--ink)
-}
 .crew-stamps {
   display:flex;
   gap:6px;

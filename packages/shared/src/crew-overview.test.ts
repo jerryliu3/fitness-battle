@@ -39,3 +39,16 @@ it("derives timestamped feed highlights for target completion and full-crew part
     expect.objectContaining({ id: "target-reached", icon: "trophy", title: "Shared target reached", at: "2026-11-10T09:00:00Z" }),
   ]);
 });
+it("drives the 3D relay reading, unit, and finish position from the active contract", () => {
+  const timeView = crewOverview({ ...input, contract: { metric: "moving_sec", target: 3600 } });
+  expect(timeView.reading).toBe("0.3");
+  expect(timeView.targetReading).toBe("1");
+  expect(timeView.unit).toBe("hours");
+  expect(timeView.relay.model.target).toBe(3600);
+  expect(timeView.relay.model.finish).toBeCloseTo(1 / 1.2, 4);
+  const sessionsView = crewOverview({ ...input, contract: { metric: "sessions", target: 2 } });
+  expect(sessionsView.reading).toBe("2");
+  expect(sessionsView.targetReading).toBe("2");
+  expect(sessionsView.unit).toBe("sessions");
+  expect(sessionsView.complete).toBe(true);
+});

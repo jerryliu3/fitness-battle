@@ -1,3 +1,5 @@
+import type { CrewContractMetric } from "../crew-passport";
+
 export const RELAY_COLORS = [
   "#f1c75b",
   "#819486",
@@ -81,10 +83,18 @@ export function crewRelayRosterFootnote(
 }
 
 export function crewEntryTotals(entries: CrewWeekRelayInput["entries"]) {
-  const byUser = new Map<string, { distance: number; sessions: number }>();
+  const byUser = new Map<
+    string,
+    { distance: number; movingSec: number; sessions: number }
+  >();
   for (const entry of entries) {
-    const row = byUser.get(entry.user_id) ?? { distance: 0, sessions: 0 };
+    const row = byUser.get(entry.user_id) ?? {
+      distance: 0,
+      movingSec: 0,
+      sessions: 0,
+    };
     row.distance += Number(entry.distance_m);
+    row.movingSec += Number(entry.moving_sec || 0);
     row.sessions += Number(entry.session_count ?? 1);
     byUser.set(entry.user_id, row);
   }
@@ -118,15 +128,29 @@ export function filterCrewMembersWithPeriodActivity<
 
 function crewMemberContributions(
   input: CrewWeekRelayInput,
-  sessions: boolean,
+  metric: CrewContractMetric,
 ) {
   const byUser = crewEntryTotals(input.entries);
   return input.members.map((m) => {
-    const totals = byUser.get(m.user_id) ?? { distance: 0, sessions: 0 };
+    const totals = byUser.get(m.user_id) ?? {
+      distance: 0,
+      movingSec: 0,
+      sessions: 0,
+    };
+    const value =
+      metric === "sessions"
+        ? totals.sessions
+        : metric === "moving_sec"
+          ? totals.movingSec
+          : metric === "contributors"
+            ? totals.sessions > 0
+              ? 1
+              : 0
+            : totals.distance;
     return {
       id: m.user_id,
       name: m.display_name,
-      value: sessions ? totals.sessions : totals.distance,
+      value,
       sessions: totals.sessions,
     };
   });
@@ -149,11 +173,25 @@ export interface CrewWeekRelayInput {
   targetSessions: number;
   targetDistanceM?: number | null;
   previousDistanceM?: number | null;
+  contract?: {
+    metric: CrewContractMetric;
+    target: number;
+  } | null;
 }
 /** An explicit distance goal and a previous-week comparison are distinct, labeled baselines. */
 export function crewWeekRelay(input: CrewWeekRelayInput) {
-  const sessions =
-    input.format === "personal_target" || input.sport === "strength";
+  const contractTarget =
+    input.contract &&
+    Number.isFinite(input.contract.target) &&
+    Number(input.contract.target) > 0
+      ? Number(input.contract.target)
+      : null;
+  const metric: CrewContractMetric =
+    input.contract?.metric ??
+    (input.format === "personal_target" || input.sport === "strength"
+      ? "sessions"
+      : "distance_m");
+  const sessions = metric === "sessions";
   const distanceTarget =
     Number.isFinite(input.targetDistanceM) && Number(input.targetDistanceM) > 0
       ? Number(input.targetDistanceM)
@@ -163,23 +201,31 @@ export function crewWeekRelay(input: CrewWeekRelayInput) {
     Number(input.previousDistanceM) > 0
       ? Number(input.previousDistanceM)
       : null;
-  const target = sessions
-    ? input.targetSessions * input.members.length
-    : (distanceTarget ?? baseline);
-  const kind = sessions
-    ? "sessions"
-    : distanceTarget
-      ? "distance"
-      : baseline
-        ? "baseline"
-        : "unknown";
-  const contributions = crewMemberContributions(input, sessions);
+  const target =
+    contractTarget ??
+    (sessions
+      ? input.targetSessions * input.members.length
+      : (distanceTarget ?? baseline));
+  const kind =
+    metric === "moving_sec"
+      ? "time"
+      : metric === "contributors"
+        ? "contributors"
+        : sessions
+          ? "sessions"
+          : distanceTarget || contractTarget != null
+            ? "distance"
+            : baseline
+              ? "baseline"
+              : "unknown";
+  const contributions = crewMemberContributions(input, metric);
   const active = contributions.filter((m) => m.value > 0);
   const model = crewRelay(active, target);
   const rosterSize = input.members.length;
   const inactiveCount = Math.max(0, rosterSize - active.length);
   return {
     model,
+    metric,
     sessions,
     kind,
     target: model.target,
@@ -187,14 +233,18 @@ export function crewWeekRelay(input: CrewWeekRelayInput) {
     activeCount: active.length,
     inactiveCount,
     label:
-      kind === "sessions"
-        ? "Shared session target"
-        : kind === "distance"
-          ? "Shared distance target"
-          : kind === "baseline"
-            ? "Last week’s distance"
-            : input.previousDistanceM === 0
-              ? "No distance recorded last week"
-              : "Last-week comparison unavailable",
+      kind === "time"
+        ? "Shared time target"
+        : kind === "contributors"
+          ? "Active teammates target"
+          : kind === "sessions"
+            ? "Shared session target"
+            : kind === "distance"
+              ? "Shared distance target"
+              : kind === "baseline"
+                ? "Last week’s distance"
+                : input.previousDistanceM === 0
+                  ? "No distance recorded last week"
+                  : "Last-week comparison unavailable",
   };
 }
