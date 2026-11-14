@@ -6,7 +6,9 @@ import { ScreenHeader } from "../src/ui/screen-header";
 import { WeeklyChapters } from "../src/features/weekly-chapters";
 import { AwardShelf } from "../src/ui/award-shelf";
 import { SportActivityIcon } from "../src/ui/sport-activity-icon";
+import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
+import { prefetchActivityReplay } from "../src/lib/prefetch-activity-replay";
 import { awardCards } from "@fitness-battle/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -38,6 +40,7 @@ export default function ProgressHistoryScreen() {
   const s = useThemedStyles(sThemes);
   const router = useRouter();
   const params = useLocalSearchParams<{ tab?: string }>();
+  const { accessToken } = useAuth();
   const { state } = useCompeteStore();
 
   const [activeTab, setActiveTab] = useState<HistoryTab>(
@@ -175,6 +178,7 @@ export default function ProgressHistoryScreen() {
                       key={activity.id}
                       accessibilityRole="button"
                       accessibilityLabel={`${sportInfo.name}, ${formatClockTime(activity.movingSec)}, ${effort} effort`}
+                      onPressIn={() => prefetchActivityReplay(activity, accessToken)}
                       onPress={() => setInspectedActivity(activity)}
                       style={s.activityRow}
                     >

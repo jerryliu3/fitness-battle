@@ -59,6 +59,7 @@ vi.mock("react-native-safe-area-context", () => ({
 
 vi.mock("react-native-svg", () => ({
   default: "Svg",
+  Ellipse: "Ellipse",
   G: "G",
   Path: "Path",
   Text: "SvgText",
