@@ -14,7 +14,9 @@ import {
   distanceUnitLabel,
   formatDistanceM,
   type CompeteState,
+  type ProfileGender,
 } from "@fitness-battle/shared";
+import { CountryCombobox } from "@/ui/country-combobox";
 import { useEffect, useState } from "react";
 
 export function AthleteOverview({
@@ -37,14 +39,18 @@ export function AthleteOverview({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(state.name);
   const [city, setCity] = useState(state.city);
+  const [gender, setGender] = useState<ProfileGender | "">(state.gender ?? "");
+  const [countryCode, setCountryCode] = useState(state.countryCode ?? "");
   const [profileError, setProfileError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!openProfileEdit) return;
     setName(state.name);
     setCity(state.city);
+    setGender(state.gender ?? "");
+    setCountryCode(state.countryCode ?? "");
     setEditing(true);
-  }, [openProfileEdit, state.name, state.city]);
+  }, [openProfileEdit, state.name, state.city, state.gender, state.countryCode]);
 
   const season = clubLifetimeTotals(state);
   const unit = distanceUnitLabel(state.units);
@@ -79,6 +85,16 @@ export function AthleteOverview({
                 maxLength={48}
               />
             </label>
+            <label className="fb-field" style={{ marginBottom: 12 }}>
+              <AppText role="field">Gender</AppText>
+              <select value={gender} onChange={(e) => setGender(e.target.value as ProfileGender | "")}>
+                <option value="">Prefer not to say</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+            <CountryCombobox value={countryCode} onChange={setCountryCode} />
             {profileError ? (
               <AppParagraph typographyRole="body" className="fb-error" role="alert" style={{ ...typographyStyle("body"), marginBottom: 8 }}>
                 {profileError}
@@ -98,6 +114,8 @@ export function AthleteOverview({
                   setProfileError(null);
                   dispatch({ type: "rename", name: trimmedName });
                   dispatch({ type: "set-city", city: city.trim() });
+                  if (gender) dispatch({ type: "set-gender", gender });
+                  dispatch({ type: "set-country", countryCode });
                   setEditing(false);
                 }}
               >
@@ -110,6 +128,8 @@ export function AthleteOverview({
                 onClick={() => {
                   setName(state.name);
                   setCity(state.city);
+                  setGender(state.gender ?? "");
+                  setCountryCode(state.countryCode ?? "");
                   setProfileError(null);
                   setEditing(false);
                 }}
@@ -124,7 +144,13 @@ export function AthleteOverview({
           <AthleteCrest key={email ?? "guest"} model={athleteCardModel(state)} />
           <button type="button" className="fb-btn-line" onClick={() => {
             if (onEditProfile) onEditProfile();
-            else { setName(state.name); setCity(state.city); setEditing(true); }
+            else {
+              setName(state.name);
+              setCity(state.city);
+              setGender(state.gender ?? "");
+              setCountryCode(state.countryCode ?? "");
+              setEditing(true);
+            }
           }}>Edit profile</button>
         </>
       ) : null}
