@@ -1,6 +1,6 @@
 import { useThemeColors } from "../theme";
 import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
-import { PanResponder, Platform, Pressable, View } from "react-native";
+import { Animated, Easing, PanResponder, Platform, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FullWindowOverlay } from "react-native-screens";
 import { AppText } from "./section";
@@ -36,9 +36,38 @@ const c=useThemeColors();
 /** Read insets in the React tree before iOS reparents the host into the window. */
 function ToastOverlay({ notice }: { notice: Notice }) {
   const insets = useSafeAreaInsets();
-  const overlay = <View pointerEvents="box-none" style={{ position: "absolute", top: 0, left: 0, right: 0, paddingTop: insets.top, paddingLeft: insets.left + 16, paddingRight: insets.right + 16, zIndex: 1000 }}>
-    <ToastNotice notice={notice} />
-  </View>;
+  const progress = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const animation = Animated.timing(progress, {
+      toValue: 1,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [notice.id, progress]);
+  const overlay = (
+    <Animated.View
+      pointerEvents="box-none"
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        paddingTop: insets.top,
+        paddingLeft: insets.left + 16,
+        paddingRight: insets.right + 16,
+        zIndex: 1000,
+        opacity: progress,
+        transform: [{
+          translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [-16, 0] }),
+        }],
+      }}
+    >
+      <ToastNotice notice={notice} />
+    </Animated.View>
+  );
   return Platform.OS === "ios" ? <FullWindowOverlay>{overlay}</FullWindowOverlay> : overlay;
 }
 
