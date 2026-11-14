@@ -1,6 +1,7 @@
 import { appleHealthExtra, androidHealthExtra, type DeviceHealthExtra } from "./device-health-metrics";
 import {
   activityFromSample,
+  journalSampleFromUnmapped,
   routeMetadata,
   mapSportToCategory,
   sameWorkout,
@@ -98,7 +99,7 @@ export function sampleFromWorkout(
   sportHint: string,
 ): ActivitySample | null {
   const sport: CategorySlug | null = mapSportToCategory(sportHint);
-  if (!sport || !raw.start) return null;
+  if (!raw.start) return null;
   const start = new Date(raw.start);
   const end = raw.end ? new Date(raw.end) : start;
   if (Number.isNaN(start.getTime())) return null;
@@ -110,6 +111,16 @@ export function sampleFromWorkout(
   );
   const distance = Math.max(0, raw.distance ?? 0);
   const externalId = String(raw.id ?? raw.activityId ?? start.toISOString());
+  if (!sport) {
+    return journalSampleFromUnmapped({
+      id: `${provider}-${externalId}`,
+      provider,
+      externalId,
+      startedAt: start.toISOString(),
+      movingSec,
+      rawName: sportHint || raw.activityName || "Workout",
+    });
+  }
   const gps = sport !== "strength";
   return {
     id: `${provider}-${externalId}`,

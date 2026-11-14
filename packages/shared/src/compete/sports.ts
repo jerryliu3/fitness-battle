@@ -176,6 +176,8 @@ export interface Activity {
   /** counted | pending | excluded. Missing means counted. */
   disposition?: "counted" | "pending" | "excluded";
   dispositionReason?: string;
+  /** Unsupported / unmapped tracker workouts scored as journal sessions only. */
+  journalOnly?: boolean;
 }
 
 export interface ReadinessMark {
