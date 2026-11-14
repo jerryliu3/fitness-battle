@@ -187,11 +187,13 @@ export function FocusSidePanel({
   open,
   title,
   onClose,
+  headerDivider = true,
   children,
 }: {
   open: boolean;
   title: string;
   onClose: () => void;
+  headerDivider?: boolean;
   children?: ReactNode;
 }) {
 const appearanceColors = useThemeColors();
@@ -312,7 +314,7 @@ const f=useThemedStyles(fThemes);
                 alignItems: "center",
                 paddingHorizontal: 16,
                 paddingVertical: 12,
-                borderBottomWidth: 1,
+                borderBottomWidth: headerDivider ? 1 : 0,
                 borderBottomColor: c.line,
                 gap: 8,
               }}

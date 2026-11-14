@@ -1,7 +1,7 @@
 import { useFocusStyles } from "../ui/focus";
 import { playCue } from "../lib/haptics";
 import { AppText } from "../ui/section";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -9,7 +9,13 @@ import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
 import { FocusButton, FocusSheet } from "../ui/focus";
 
-export function AccountActions() {
+export function AccountActions({
+  showDeleteButton = true,
+  footer,
+}: {
+  showDeleteButton?: boolean;
+  footer?: (openDelete: () => void) => ReactNode;
+}) {
 const f=useFocusStyles();
 
   const { user, offlineMode, accessToken, signOut } = useAuth();
@@ -89,16 +95,23 @@ const f=useFocusStyles();
           setPanel("report");
         }}
       />
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Delete account"
-        style={[f.button, f.secondary]}
-        onPress={() => {
-          setError("");
-          setConfirmation("");
-          setPanel("delete");
-        }}
-      ><Text style={[f.buttonText, { color: "#b42318" }]}>Delete account</Text></Pressable>
+      {showDeleteButton ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Delete account"
+          style={[f.button, f.secondary]}
+          onPress={() => {
+            setError("");
+            setConfirmation("");
+            setPanel("delete");
+          }}
+        ><Text style={[f.buttonText, { color: "#b42318" }]}>Delete account</Text></Pressable>
+      ) : null}
+      {footer ? footer(() => {
+        setError("");
+        setConfirmation("");
+        setPanel("delete");
+      }) : null}
       <FocusSheet
         open={!!panel}
         title={
