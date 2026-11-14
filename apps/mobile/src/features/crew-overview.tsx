@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AppState, Pressable, ScrollView, View } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
+import { crewMemberRelayColor, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { useFocusStyles } from "../ui/focus";
 import { AppText } from "../ui/section";
@@ -95,12 +95,12 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
     </View>
     <View style={{ gap: 12 }} onLayout={e => setLineupWidth(e.nativeEvent.layout.width)}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <AppText role="heading" accessibilityRole="header">Teammate lineup</AppText>
+        <AppText role="heading" accessibilityRole="header">Crew mates</AppText>
         {input.members.length > 4 && <Pressable accessibilityRole="button" onPress={onViewMembers} style={{ minHeight: 44, justifyContent: "center" }}><AppText role="label">View all</AppText></Pressable>}
       </View>
       <ScrollView horizontal scrollEnabled={input.members.length > 4} showsHorizontalScrollIndicator={false} snapToInterval={cardWidth + 8} decelerationRate="fast" style={input.members.length > 4 ? { marginRight: -20 } : undefined} contentContainerStyle={{ gap: 8, paddingRight: input.members.length > 4 ? 20 : 0 }}>
         {full.lineup.map(m => hiddenIds.includes(m.user_id) ? <View key={m.user_id} style={{ width: cardWidth }} /> : <Pressable key={m.user_id} accessibilityRole="button" accessibilityLabel={`Compare ${m.display_name}'s contribution`} onPress={() => onSelectMember(m.user_id)} style={{ width: cardWidth, alignItems: "center", gap: 8, paddingVertical: 14, paddingHorizontal: 4, borderWidth: 1, borderColor: c.line, borderRadius: 16, backgroundColor: c.card }}>
-          <View style={{ borderWidth: 2, borderColor: full.relay.model.segments.find(s => s.id === m.user_id)?.color, borderRadius: 30, padding: 3 }}><UserAvatar src={m.avatar_url} name={m.display_name} size={40} /></View>
+          <View style={{ borderWidth: 2, borderColor: crewMemberRelayColor(m.user_id, input.members.map(member => member.user_id)), borderRadius: 30, padding: 3 }}><UserAvatar src={m.avatar_url} name={m.display_name} size={40} /></View>
           <AppText role="label" numberOfLines={1}>{m.display_name.split(" ")[0]}</AppText>
           <AppText role="caption" secondary numberOfLines={1}>{full.volume(full.relay.model.segments.find(s => s.id === m.user_id)?.value ?? 0)}</AppText>
         </Pressable>)}
