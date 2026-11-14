@@ -1,7 +1,7 @@
 "use client";
 
 import { filterCountries, countryName } from "@fitness-battle/shared";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppText } from "./section";
 
 export function CountryCombobox({
@@ -13,27 +13,43 @@ export function CountryCombobox({
   onChange: (code: string) => void;
   label?: string;
 }) {
-  const [query, setQuery] = useState(countryName(value) ?? "");
+  const [query, setQuery] = useState("");
+  useEffect(() => {
+    setQuery(value ? (countryName(value) ?? value) : "");
+  }, [value]);
   const options = useMemo(() => filterCountries(query), [query]);
 
   return (
     <label className="fb-field">
       <AppText role="field">{label} · optional</AppText>
-      <input
-        list="country-options"
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          const match = filterCountries(e.target.value).find(
-            (row) =>
-              row.name.toLowerCase() === e.target.value.trim().toLowerCase() ||
-              row.code.toLowerCase() === e.target.value.trim().toLowerCase(),
-          );
-          if (match) onChange(match.code);
-        }}
-        placeholder="Search country"
-        autoComplete="off"
-      />
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <input
+          list="country-options"
+          value={query}
+          onChange={(e) => {
+            const text = e.target.value;
+            setQuery(text);
+            if (!text.trim()) {
+              onChange("");
+              return;
+            }
+            const match = filterCountries(text).find(
+              (row) =>
+                row.name.toLowerCase() === text.trim().toLowerCase() ||
+                row.code.toLowerCase() === text.trim().toLowerCase(),
+            );
+            if (match) onChange(match.code);
+          }}
+          placeholder="Search country"
+          autoComplete="off"
+          style={{ flex: 1 }}
+        />
+        {value ? (
+          <button type="button" className="fb-btn-line" onClick={() => onChange("")}>
+            Clear
+          </button>
+        ) : null}
+      </div>
       <datalist id="country-options">
         {options.map((row) => (
           <option key={row.code} value={row.name} />

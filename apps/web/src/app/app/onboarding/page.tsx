@@ -38,8 +38,8 @@ function Setup({preview}:{preview:boolean}) {
   function advance(){if(step===2&&!sports.length&&!sleep){setSelectionError(true);return;}setSelectionError(false);setStep(step+1);}
   function finish(){if(preview){router.replace("/app/arena");return;}if(!user||finished.current)return;finished.current=true;
     dispatch({type:"rename",name:name.trim()||user.displayName});dispatch({type:"set-city",city:city.trim()});
-    if(gender)dispatch({type:"set-gender",gender});
-    if(countryCode)dispatch({type:"set-country",countryCode});
+    dispatch({type:"set-gender",gender:gender||null});
+    dispatch({type:"set-country",countryCode:countryCode||null});
     dispatch({type:"set-units",units});
     for(const sport of sports)dispatch({type:"opt-in",sport,accountId:user.id});if(sports[0])dispatch({type:"set-primary",sport:sports[0]});if(sleep)dispatch({type:"opt-in-health",metric:"sleep"});dispatch({type:"complete-onboarding"});
     try{sessionStorage.removeItem(key);}catch{} router.replace(resolveSafePostLoginPath(params.get("next")));
