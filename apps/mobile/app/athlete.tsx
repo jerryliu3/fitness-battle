@@ -519,11 +519,13 @@ const styles=useThemedStyles(stylesThemes);
                   style={[styles.syncRow, showDivider && styles.syncRowDivider]}
                 >
                   {title}
-                  <FocusButton
-                    label={syncBusy ? "Syncing…" : "Sync"}
-                    disabled={rowBusy}
-                    onPress={() => void syncDevice(deviceId)}
-                  />
+                  <View style={{ flexShrink: 0 }}>
+                    <FocusButton
+                      label={syncBusy ? "Syncing…" : "Sync"}
+                      disabled={rowBusy}
+                      onPress={() => void syncDevice(deviceId)}
+                    />
+                  </View>
                 </View>
               );
             }
@@ -540,15 +542,17 @@ const styles=useThemedStyles(stylesThemes);
                   {connected ? (
                     <DataSyncActions provider={cloudId} />
                   ) : (
-                    <FocusButton
-                      label={
-                        busyProvider === provider.id
-                          ? "Authorizing…"
-                          : "Connect"
-                      }
-                      disabled={rowBusy}
-                      onPress={() => void connectCloud(cloudId)}
-                    />
+                    <View style={{ flexShrink: 0 }}>
+                      <FocusButton
+                        label={
+                          busyProvider === provider.id
+                            ? "Authorizing…"
+                            : "Connect"
+                        }
+                        disabled={rowBusy}
+                        onPress={() => void connectCloud(cloudId)}
+                      />
+                    </View>
                   )}
                 </View>
               );

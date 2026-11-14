@@ -96,44 +96,47 @@ const f=useFocusStyles();
     setNote("");
   }
   if (!state) return null;
+  if (provider) {
+    const link = state.links.find(
+      (l) => l.linked && l.provider === provider,
+    );
+    if (!link) return null;
+    return (
+      <Pressable
+        accessibilityRole="button"
+        style={{ minHeight: 44, justifyContent: "center" }}
+        accessibilityLabel={`Disconnect ${provider}`}
+        disabled={busy}
+        onPress={() =>
+          void run(async (isCurrent) => {
+            const id = user?.id;
+            if (live)
+              await requestApi(
+                mobileEnv.apiUrl,
+                accessToken,
+                "/api/fitness/disconnect",
+                { body: { provider: link.provider } },
+              );
+            if (isCurrent()) {
+              dispatch({
+                type: "unlink",
+                provider: link.provider,
+                accountId: id,
+              });
+              void playCue("success");
+              setNote("Tracker disconnected.");
+            }
+          })
+        }
+      >
+        <AppText role="label" style={{ color: "#b83a38" }}>
+          {busy ? "Disconnecting…" : "Disconnect"}
+        </AppText>
+      </Pressable>
+    );
+  }
   return (
     <View style={{ gap: 12 }}>
-      {(provider ? state.links : [])
-        .filter((l) => l.linked && l.provider === provider)
-        .map((l) => (
-          <View
-            key={l.provider}
-            style={[f.row, { flexWrap: "wrap", justifyContent: "flex-start" }]}
-          >
-            <Pressable
-              accessibilityRole="button"
-              style={{ minHeight: 44, justifyContent: "center" }}
-              accessibilityLabel={`Disconnect ${l.provider}`}
-              disabled={busy}
-              onPress={() =>
-                void run(async (isCurrent) => {
-                  const id = user?.id;
-                  if (live)
-                    await requestApi(
-                      mobileEnv.apiUrl,
-                      accessToken,
-                      "/api/fitness/disconnect",
-                      { body: { provider: l.provider } },
-                    );
-                  if (isCurrent()) {
-                    dispatch({
-                      type: "unlink",
-                      provider: l.provider,
-                      accountId: id,
-                    });
-                    void playCue("success");
-                    setNote("Tracker disconnected.");
-                  }
-                })
-              }
-            ><AppText role="label" style={{ color: "#b83a38" }}>{busy ? "Disconnecting…" : "Disconnect"}</AppText></Pressable>
-          </View>
-        ))}
       {!live && !provider && previewSyncReview ? (
         <FocusButton
           secondary
