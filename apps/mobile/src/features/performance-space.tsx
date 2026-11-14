@@ -8,9 +8,9 @@ import { ChartSvg, ChartText } from "../ui/chart-text";
 import { ChartScrubber } from "../ui/chart-scrubber";
 import { useScoreTrackLens } from "../lib/score-track-lens";
 import { useAuth } from "../lib/auth";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { G, Line, Path, Circle } from "react-native-svg";
+import { ClipPath, Defs, G, Line, Path, Polyline, Rect } from "react-native-svg";
 import {
   APP_TIMEZONE,
   RECORD_DISTANCES,
@@ -61,9 +61,11 @@ export function PerformanceSpace({
   const [volumeRange, setVolumeRange] = useState<TrainingRange>("week");
   const [selectedSport, setSelectedSport] = useState<SportId | "all">("all");
 
+  const prClipId = useId();
   // Selected PR distance and inspected PR attempt
   const [selectedPRKey, setSelectedPRKey] = useState<string>("running:5k");
   const [inspectedPRAttempt, setInspectedPRAttempt] = useState<RecordAttempt | null>(null);
+  const [scrubbedPRPoint, setScrubbedPRPoint] = useState<ChartDatum | undefined>();
   const [inspectedActivity, setInspectedActivity] = useState<Activity | null>(null);
   const [inspectedEffort, setInspectedEffort] = useState<ChartDatum | undefined>();
   const [inspectedVolume, setInspectedVolume] = useState<{ label: string; value: string } | undefined>();
@@ -75,8 +77,8 @@ export function PerformanceSpace({
 
   // Chart models
   const effortChart = useMemo(
-    () => effortScoreLine(state, track, effortRange),
-    [state, track, effortRange],
+    () => effortScoreLine(state, track, effortRange, now, user?.createdAt),
+    [state, track, effortRange, now, user?.createdAt],
   );
 
   const sportsFilter = useMemo<SportId[]>(() => {
@@ -142,6 +144,30 @@ export function PerformanceSpace({
   const prChartData = useMemo(() => {
     return personalRecordChart(activeDistanceRows, now, 320, 160);
   }, [activeDistanceRows, now]);
+
+  const prTrendPolyline = useMemo(() => {
+    if (!prChartData || prChartData.points.length < 2) return "";
+    const pts = prChartData.points;
+    const windowMs = 30 * 86400000;
+    return pts
+      .map((p, i) => {
+        const pMs = Date.parse(p.startedAt);
+        let sumY = 0;
+        let count = 0;
+        for (let j = i; j >= 0; j--) {
+          const jMs = Date.parse(pts[j]!.startedAt);
+          if (Number.isFinite(pMs) && Number.isFinite(jMs) ? pMs - jMs <= windowMs : i - j < 30) {
+            sumY += pts[j]!.y;
+            count += 1;
+          } else {
+            break;
+          }
+        }
+        const avgY = count > 0 ? sumY / count : p.y;
+        return `${p.x.toFixed(1)},${avgY.toFixed(1)}`;
+      })
+      .join(" ");
+  }, [prChartData]);
 
   const prSummary = useMemo(() => {
     if (!activeDistanceRows.length) return null;
@@ -241,7 +267,7 @@ export function PerformanceSpace({
       {/* 2. Training Volume Benchmark Chart */}
       <View style={s.chartCard}>
         <View style={s.chartHeaderRow}>
-          <View style={{ gap: 2 }}>
+          <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
             <AppText role="caption" secondary>Training Volume</AppText>
             <View style={s.valueRow}>
               <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
@@ -256,13 +282,15 @@ export function PerformanceSpace({
                 ?? (volumeRange === "week" ? "this week" : volumeRange === "month" ? "this month" : "this year")}
             </AppText>
           </View>
+          <View style={s.compactRangeWrap}>
+            <FocusSegments
+              label="Volume time range"
+              value={volumeRange}
+              options={VOLUME_RANGES}
+              onChange={(next) => { setVolumeRange(next); setInspectedVolume(undefined); }}
+            />
+          </View>
         </View>
-        <FocusSegments
-          label="Volume time range"
-          value={volumeRange}
-          options={VOLUME_RANGES}
-          onChange={(next) => { setVolumeRange(next); setInspectedVolume(undefined); }}
-        />
 
         {/* Sport selector chips */}
         <View style={s.sportChipRow}>
@@ -371,23 +399,30 @@ export function PerformanceSpace({
               </View>
 
               {/* Interactive PR Progression Chart */}
-              {prChartData && (
+              {prChartData && (() => {
+                const prScrubPoints: ChartDatum[] = prChartData.points.map((p) => ({
+                  id: p.activityId,
+                  x: p.x,
+                  y: p.y,
+                  label: formatActivityDate(p.startedAt),
+                  value: formatClockTime(p.seconds),
+                }));
+                const activePRPoint = scrubbedPRPoint
+                  ?? (inspectedPRAttempt ? prScrubPoints.find((p) => p.id === inspectedPRAttempt.activityId) : undefined);
+                return (
                 <View style={{ marginVertical: 8 }}>
                   <ChartScrubber
-                    points={prChartData.points.map((p) => ({
-                      id: p.activityId,
-                      x: p.x,
-                      y: p.y,
-                      label: formatActivityDate(p.startedAt),
-                      value: formatClockTime(p.seconds),
-                    }))}
+                    points={prScrubPoints}
                     width={prChartData.width}
                     height={prChartData.height}
                     plotTop={prChartData.top}
                     plotBottom={prChartData.bottom}
+                    dotColor={c.tennis}
+                    dotBorderColor={c.card}
                     label="Personal record progression"
                     selectedPointId={inspectedPRAttempt?.activityId}
                     hideSummary
+                    onSelectionChange={setScrubbedPRPoint}
                     onSelect={(id) => {
                       setInspectedPRAttempt(
                         activeDistanceRows.find((r) => r.activityId === id) ?? null,
@@ -400,6 +435,12 @@ export function PerformanceSpace({
                     viewBox={`0 0 ${prChartData.width} ${prChartData.height}`}
                     preserveAspectRatio="none"
                   >
+                    {activePRPoint && (
+                      <Defs>
+                        <ClipPath id={`${prClipId}-left`}><Rect x={0} y={0} width={activePRPoint.x} height={prChartData.height} /></ClipPath>
+                        <ClipPath id={`${prClipId}-right`}><Rect x={activePRPoint.x} y={0} width={Math.max(0, prChartData.width - activePRPoint.x)} height={prChartData.height} /></ClipPath>
+                      </Defs>
+                    )}
                     {/* X and Y axes lines */}
                     <Line
                       x1={prChartData.left}
@@ -454,41 +495,57 @@ export function PerformanceSpace({
                       </ChartText>
                     ))}
 
-                    {/* Step path (only rendered if path !== "") */}
-                    {prChartData.path ? (
-                      <Path
-                        d={prChartData.path}
+                    {/* Rolling 30-day average trendline */}
+                    {prTrendPolyline ? (
+                      <Polyline
+                        points={prTrendPolyline}
                         fill="none"
-                        stroke={c.tennis}
-                        strokeWidth={2.5}
+                        stroke={c.secondary}
+                        strokeWidth={1.75}
+                        strokeDasharray="3 3"
                         strokeLinecap="round"
+                        strokeLinejoin="round"
                       />
                     ) : null}
 
-                    {/* Interactive Points */}
-                    {prChartData.points.map((p) => {
-                      const isInspected =
-                        inspectedPRAttempt?.activityId === p.activityId;
-                      return (
-                        <Circle
-                          key={p.activityId}
-                          cx={p.x}
-                          cy={p.y}
-                          r={isInspected ? 4.5 : 3.5}
-                          fill={isInspected ? c.tennis : c.card}
+                    {/* Step path with right-side dimming when selected */}
+                    {prChartData.path ? (
+                      activePRPoint ? (
+                        <>
+                          <G clipPath={`url(#${prClipId}-left)`}>
+                            <Path
+                              d={prChartData.path}
+                              fill="none"
+                              stroke={c.tennis}
+                              strokeWidth={2.5}
+                              strokeLinecap="round"
+                            />
+                          </G>
+                          <G clipPath={`url(#${prClipId}-right)`} opacity={0.3}>
+                            <Path
+                              d={prChartData.path}
+                              fill="none"
+                              stroke={c.tennis}
+                              strokeWidth={2.5}
+                              strokeLinecap="round"
+                            />
+                          </G>
+                        </>
+                      ) : (
+                        <Path
+                          d={prChartData.path}
+                          fill="none"
                           stroke={c.tennis}
                           strokeWidth={2.5}
+                          strokeLinecap="round"
                         />
-                      );
-                    })}
+                      )
+                    ) : null}
                   </ChartSvg>
                   </ChartScrubber>
-
-                  <AppText role="caption" secondary style={{ textAlign: "center", marginTop: 4 }}>
-                    Tap any point along the progression curve to inspect that attempt
-                  </AppText>
                 </View>
-              )}
+                );
+              })()}
 
               {/* Inspected PR Detail Card */}
               {inspectedPRAttempt && (
@@ -567,7 +624,7 @@ const sThemes = createThemedStyles((themeColors) => {
     chartCard: {
       padding: 16,
       borderRadius: 20,
-      backgroundColor: c.soft,
+      backgroundColor: c.card,
       borderWidth: 1,
       borderColor: c.line,
       gap: 16,
@@ -575,7 +632,7 @@ const sThemes = createThemedStyles((themeColors) => {
     prCard: {
       padding: 16,
       borderRadius: 20,
-      backgroundColor: c.soft,
+      backgroundColor: c.card,
       borderWidth: 1,
       borderColor: c.line,
       gap: 12,
@@ -589,6 +646,10 @@ const sThemes = createThemedStyles((themeColors) => {
     compactControls: {
       width: 156,
       gap: 8,
+      alignSelf: "flex-start",
+    },
+    compactRangeWrap: {
+      width: 156,
       alignSelf: "flex-start",
     },
     valueRow: {
@@ -672,7 +733,7 @@ const sThemes = createThemedStyles((themeColors) => {
     insightCard: {
       padding: 16,
       borderRadius: 20,
-      backgroundColor: c.soft,
+      backgroundColor: c.card,
       borderWidth: 1,
       borderColor: c.line,
       flexDirection: "row",

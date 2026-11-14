@@ -59,12 +59,16 @@ const s=useThemedStyles(sThemes);
 
   return (
     <ScrollView contentContainerStyle={s.content}>
-      <FocusSegments
-        label="Time range"
-        value={timeLens}
-        options={TIME_LENSES}
-        onChange={setTimeLens}
-      />
+      <View style={s.rangeHeaderRow}>
+        <View style={s.rangePickerBox}>
+          <FocusSegments
+            label="Time range"
+            value={timeLens}
+            options={TIME_LENSES}
+            onChange={setTimeLens}
+          />
+        </View>
+      </View>
 
       {activeDomain === "market" && <MarketView model={model} />}
       {activeDomain === "vitals" && <VitalsView model={model} />}
@@ -162,7 +166,6 @@ const f=useFocusStyles();
           ]}
         />
         <StandardLineChart
-          yAxisLabel="NAV (pts)"
           values={series.map((p) => p.nav)}
           selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
@@ -263,7 +266,6 @@ const s=useThemedStyles(sThemes);
         </View>
 
         <StandardLineChart
-          yAxisLabel={`${vital.name} (${vital.unit})`}
           values={vital.series.map((p) => p.value)}
           selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
@@ -327,7 +329,6 @@ const s=useThemedStyles(sThemes);
           ]}
         />
         <StandardLineChart
-          yAxisLabel="Sleep score"
           values={nights.map((n) => n.score)}
           selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
@@ -392,7 +393,6 @@ const s=useThemedStyles(sThemes);
           ]}
         />
         <StandardLineChart
-          yAxisLabel="ACWR (ratio)"
           values={l.series.map((s) => Number(s.acwr.toFixed(2)))}
           selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
@@ -402,7 +402,7 @@ const s=useThemedStyles(sThemes);
               ? [l.series[0]!.label, l.series[Math.floor(l.series.length / 2)]!.label, l.series[l.series.length - 1]!.label]
               : undefined
           }
-          formatY={(v) => `${v.toFixed(1)}x`}
+          formatY={(v) => `${v.toFixed(1)}`}
           accessibilityLabel="Workload ratio acute to chronic load ratio trend"
         />
         <InspectionCallout
@@ -418,7 +418,6 @@ const s=useThemedStyles(sThemes);
       <View style={f.card}>
         <SectionHeader title="Period Volume Burn-Up" />
         <StandardLineChart
-          yAxisLabel="Training (hrs)"
           values={l.series.map((s) => s.cumCurrentHours)}
           selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
@@ -429,7 +428,7 @@ const s=useThemedStyles(sThemes);
               ? [l.series[0]!.label, l.series[Math.floor(l.series.length / 2)]!.label, l.series[l.series.length - 1]!.label]
               : undefined
           }
-          formatY={(v) => `${Math.round(v)}h`}
+          formatY={(v) => `${Math.round(v)}`}
           accessibilityLabel="Cumulative period volume burn-up"
         />
       </View>
@@ -464,7 +463,6 @@ const s=useThemedStyles(sThemes);
           ]}
         />
         <StandardLineChart
-          yAxisLabel="EF (m/min/bpm)"
           values={p.series.map((s) => Number(s.efficiencyFactor.toFixed(2)))}
           selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
@@ -535,7 +533,6 @@ const s=useThemedStyles(sThemes);
           ]}
         />
         <StandardLineChart
-          yAxisLabel="Readiness (%)"
           values={cmb.series.map((s) => s.nextDayReadiness)}
           selectedIdx={safeIdx}
           onSelectIdx={setSelectedIdx}
@@ -545,7 +542,7 @@ const s=useThemedStyles(sThemes);
               ? [cmb.series[0]!.label, cmb.series[Math.floor(cmb.series.length / 2)]!.label, cmb.series[cmb.series.length - 1]!.label]
               : undefined
           }
-          formatY={(v) => `${Math.round(v)}%`}
+          formatY={(v) => `${Math.round(v)}`}
           accessibilityLabel="Morning readiness score history"
         />
         <InspectionCallout
@@ -620,5 +617,14 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
     justifyContent: "space-between",
     flexWrap: "wrap",
     gap: 6,
+  },
+  rangeHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+  },
+  rangePickerBox: {
+    width: 216,
+    maxWidth: "100%",
   },
 };});

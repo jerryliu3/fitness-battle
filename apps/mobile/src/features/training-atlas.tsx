@@ -30,7 +30,7 @@ import { ChartRangeToggle } from "./chart-range-toggle";
 import { TrainingSportMenu } from "./training-sport-menu";
 
 
-export function TrainingAtlas({ state }: { state: CompeteState }) {
+export function TrainingAtlas({ state, createdAt }: { state: CompeteState; createdAt?: string | null }) {
 const s=useThemedStyles(sThemes);
 
 const f=useFocusStyles();
@@ -55,7 +55,7 @@ const colors = [
     cells.find((d) => d.day === selectedDay) ??
     cells.find((d) => d.day === dayKey(now)) ??
     cells.find((d) => d.inMonth && !d.future);
-  const earliest = useMemo(() => earliestDataDate(state, now), [state, now]);
+  const earliest = useMemo(() => earliestDataDate(state, now, createdAt), [state, now, createdAt]);
   const { prevAllowed, nextAllowed } = trainingRangeNavigation(
     anchor,
     earliest,
@@ -110,7 +110,7 @@ const colors = [
           </AppText>
         </Pressable>
       </View>
-      <BenchmarkChart key={`${range}:${anchor.toISOString()}:${sports.join(",")}`} buckets={buckets} now={now} dateLabel={range === "week" ? formatWeeklyCompetitionRange(anchor) : anchor.toLocaleDateString("en-US", { timeZone: APP_TIMEZONE, ...(range === "year" ? { year: "numeric" } : { month: "long", year: "numeric" }) })} />
+      <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
         <ChartRangeToggle
           value={range}
           onChange={(next) => {
@@ -120,6 +120,8 @@ const colors = [
             );
           }}
         />
+      </View>
+      <BenchmarkChart key={`${range}:${anchor.toISOString()}:${sports.join(",")}`} buckets={buckets} now={now} dateLabel={range === "week" ? formatWeeklyCompetitionRange(anchor) : anchor.toLocaleDateString("en-US", { timeZone: APP_TIMEZONE, ...(range === "year" ? { year: "numeric" } : { month: "long", year: "numeric" }) })} />
       <FocusDisclosure title="Daily activity">
         <Text style={f.kicker}>
           {anchor.toLocaleDateString("en-US", {
