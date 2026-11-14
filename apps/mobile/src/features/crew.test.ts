@@ -36,6 +36,9 @@ vi.mock("react-native-svg", () => ({
   Text: "SvgText",
 }));
 vi.mock("react-native", () => ({useColorScheme: () => "light",
+  Dimensions: { get: () => ({ width: 390, height: 844 }) },
+  Modal: "Modal",
+  Platform: { OS: "ios" },
   Pressable: "Pressable",
   Text: "Text",
   TextInput: "TextInput",

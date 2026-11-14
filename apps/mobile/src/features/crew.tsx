@@ -38,6 +38,7 @@ import { requestApi } from "../lib/api";
 import { useCachedApi } from "../lib/use-cached-api";
 import { playCue } from "../lib/haptics";
 import { FocusButton, FocusSheet } from "../ui/focus";
+import { AnchoredMenu, AnchoredMenuItem, useAnchoredMenu } from "../ui/anchored-menu";
 export interface PrivateCrew {
   id: string;
   name: string;
@@ -127,7 +128,7 @@ const f=useFocusStyles();
   const params = useGlobalSearchParams<{ invite?: string | string[] }>();
   const api = useCrewApi();
   const [selected, setSelected] = useState(crewId);
-  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const switcherMenu = useAnchoredMenu({ minWidth: 220, estimatedHeight: 240 });
   const createAfterSwitch = useRef(false);
   const derbyAfterClose = useRef(false);
   const [panel, setPanel] = useState<
@@ -494,10 +495,12 @@ const f=useFocusStyles();
       ) : (
         <SectionStack divided={false}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 4 }}>
-              <Pressable accessibilityRole="button" accessibilityLabel={`Switch crew, ${crew.name}`} onPress={() => setSwitcherOpen(true)} style={{ flex: 1, minWidth: 0, minHeight: 44, flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <AppText accessibilityRole="header" role="heading" numberOfLines={1} style={{ flexShrink: 1 }}>{crew.name}</AppText>
-                <View style={{ transform: [{ rotate: "90deg" }] }}><AppIcon name="chevron" size={16} /></View>
-              </Pressable>
+              <View ref={switcherMenu.anchorRef} collapsable={false} style={{ flex: 1, minWidth: 0 }}>
+                <Pressable accessibilityRole="button" accessibilityLabel={`Switch crew, ${crew.name}`} accessibilityState={{ expanded: switcherMenu.open }} onPress={switcherMenu.toggle} style={{ minHeight: 44, flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <AppText accessibilityRole="header" role="heading" numberOfLines={1} style={{ flexShrink: 1 }}>{crew.name}</AppText>
+                  <View style={{ transform: [{ rotate: switcherMenu.open ? "270deg" : "90deg" }] }}><AppIcon name="chevron" size={16} /></View>
+                </Pressable>
+              </View>
               {user && <View style={{ flexDirection: "row", gap: 8 }}>
                 <Pressable accessibilityRole="button" accessibilityLabel="Invite to crew" onPress={() => open("invite")} style={[headerAction, { width: undefined, minWidth: 68, paddingHorizontal: 14 }]}><AppText role="label">Invite</AppText></Pressable>
                 <Pressable accessibilityRole="button" accessibilityLabel="Crew settings" onPress={() => open("manage")} style={headerAction}><AppIcon name="settings" size={20} /></Pressable>
@@ -508,7 +511,41 @@ const f=useFocusStyles();
           </CrewOverview>
         </SectionStack>
       )}
-      <FocusSheet open={switcherOpen} minimal title="Your crews" onClosed={() => { if (createAfterSwitch.current) { createAfterSwitch.current = false; open("add"); } }} onClose={() => setSwitcherOpen(false)}>{crews.map(item => <FocusButton key={item.id} label={item.name} secondary={item.id !== crew.id} onPress={() => { setSelected(item.id); setSwitcherOpen(false); }} />)}<FocusButton label="New crew +" secondary onPress={() => { createAfterSwitch.current = true; setSwitcherOpen(false); }} /></FocusSheet>
+      <AnchoredMenu
+        open={switcherMenu.open}
+        onClose={() => {
+          createAfterSwitch.current = false;
+          switcherMenu.close();
+        }}
+        onDismiss={() => {
+          if (!createAfterSwitch.current) return;
+          createAfterSwitch.current = false;
+          open("add");
+        }}
+        menuLayout={switcherMenu.menuLayout}
+        accessibilityLabel="Close crew menu"
+      >
+        {crews.map((item) => (
+          <AnchoredMenuItem
+            key={item.id}
+            label={item.name}
+            selected={item.id === crew.id}
+            onPress={() => {
+              void playCue("selection");
+              setSelected(item.id);
+              switcherMenu.close();
+            }}
+          />
+        ))}
+        <AnchoredMenuItem
+          label="New crew +"
+          last
+          onPress={() => {
+            createAfterSwitch.current = true;
+            switcherMenu.close();
+          }}
+        />
+      </AnchoredMenu>
       {memberSheet}
       {!panel && (note || api.error) ? (
         <AppText role="body" secondary  accessibilityLiveRegion="polite">

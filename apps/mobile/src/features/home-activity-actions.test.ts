@@ -19,6 +19,17 @@ vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("../ui/form-picker", () => ({ NumberPicker: "NumberPicker", DateTimeField: "DateTimeField" }));
 vi.mock("../ui/choice-picker", () => ({ ChoicePicker: "ChoicePicker" }));
 vi.mock("../ui/focus", () => ((()=>{const mock={ f: {}, FocusButton: (props: any) => createElement("Button", props), FocusSheet: (props: any) => props.open ? createElement("Sheet", props) : null };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
+vi.mock("../ui/anchored-menu", async () => {
+ const { useState } = await import("react");
+ return {
+  useAnchoredMenu: () => {
+   const [open, setOpen] = useState(false);
+   return { open, toggle: () => setOpen((v) => !v), close: () => setOpen(false), anchorRef: { current: null }, menuLayout: null };
+  },
+  AnchoredMenu: ({ open, onDismiss, children }: any) => open ? createElement("AnchoredMenu", { onDismiss }, children) : null,
+  AnchoredMenuItem: ({ label, onPress }: any) => createElement("MenuItem", { label, onPress }),
+ };
+});
 import { HomeActivityActions } from "./home-activity-actions";
 let renderer: ReactTestRenderer;
 const button = (label: string) => renderer.root.findAllByType("Button" as any).find((node) => node.props.label === label)!;
@@ -32,8 +43,12 @@ afterEach(async () => { await act(async () => renderer.unmount()); vi.unstubAllG
 describe("native Home actions", () => {
  it("shows validation errors inside the open sheet, then saves picker values", async () => {
   await act(async () => button("Add activity").props.onPress());
-  expect(button("Save activity").props.disabled).toBe(true);
-  await act(async () => renderer.root.findByType("ChoicePicker" as any).props.onChange("running"));
+  const menu = renderer.root.findByType("AnchoredMenu" as any);
+  const onDismiss = menu.props.onDismiss;
+  const runningItem = renderer.root.findAllByType("MenuItem" as any).find((node) => node.props.label === "Running")!;
+  await act(async () => runningItem.props.onPress());
+  await act(async () => onDismiss());
+  expect(renderer.root.findByType("ChoicePicker" as any).props.value).toBe("running");
   const input = (name: string) => renderer.root.findAllByType("NumberPicker" as any).find((node) => node.props.label === name)!;
   await act(async () => input("Duration").props.onChange("30"));
   await act(async () => button("Save activity").props.onPress());
