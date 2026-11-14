@@ -33,10 +33,17 @@ export function resolveVitalsLabHostSource(): Promise<VitalsLabHostSource> {
     if (Platform.OS === "web") return remoteSource();
 
     try {
-      const html = Asset.fromModule(
+      const bundled = [
         require("../../../assets/vitals-lab-host/index.html"),
+        require("../../../assets/vitals-lab-host/bundle.js"),
+        require("../../../assets/vitals-lab-host/bundle.css"),
+        require("../../../assets/vitals-lab-host/bodies/anny/meshes/female.glb"),
+        require("../../../assets/vitals-lab-host/bodies/anny/meshes/male.glb"),
+      ];
+      const assets = await Promise.all(
+        bundled.map((mod) => Asset.fromModule(mod).downloadAsync()),
       );
-      await html.downloadAsync();
+      const html = assets[0]!;
       const localUri = html.localUri;
       if (!localUri) throw new Error("bundled vitals host missing");
       const root = `${localUri.replace(/\/[^/]+$/, "/")}`;
