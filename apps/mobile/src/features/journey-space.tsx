@@ -1,4 +1,5 @@
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
+import { useAuth } from "../lib/auth";
 import { FocusSegments } from "../ui/focus";
 import { ActivityDetailSheet } from "./activity-detail-sheet";
 import { AppText } from "../ui/section";
@@ -49,8 +50,9 @@ export function JourneySpace({
   const s = useThemedStyles(sThemes);
   const router = useRouter();
 
+  const { user } = useAuth();
   const now = useMemo(() => competeNow(state), [state]);
-  const earliest = useMemo(() => earliestDataDate(state, now), [state, now]);
+  const earliest = useMemo(() => earliestDataDate(state, now, user?.createdAt), [state, now, user?.createdAt]);
 
   const [horizon, setHorizon] = useState<HorizonChoice>(initialHorizon);
   const [dayOffset, setDayOffset] = useState(0);
@@ -120,6 +122,11 @@ export function JourneySpace({
     return { count: weekActs.length, hours, effort: formatEffort(effort) };
   }, [state.activities, calendarDays.monday]);
 
+  const { prevAllowed: weekPrevAllowed } = useMemo(
+    () => trainingRangeNavigation(calendarDays.monday, earliest, now, "week"),
+    [calendarDays.monday, earliest, now],
+  );
+
   // --- 2. Month Horizon (Training Atlas Heatmap) ---
   const monthAnchor = useMemo(
     () => shiftTrainingMonth(now, monthOffset),
@@ -166,14 +173,20 @@ export function JourneySpace({
   );
 
   const yearBuckets = useMemo(() => {
-    return trainingBuckets(
+    const all = trainingBuckets(
       state.activities,
       defaultTrainingSports(),
       "year",
       yearAnchor,
       now,
     );
-  }, [state.activities, yearAnchor, now]);
+    if (!earliest) return all;
+    const earliestDay = dayKey(earliest);
+    const anchorYear = dayKey(yearAnchor).slice(0, 4);
+    if (earliestDay.slice(0, 4) !== anchorYear) return all;
+    const earliestMonth = earliestDay.slice(0, 7);
+    return all.filter((b) => dayKey(new Date(b.start)).slice(0, 7) >= earliestMonth);
+  }, [state.activities, yearAnchor, earliest, now]);
 
   const maxMonthSec = useMemo(() => {
     return Math.max(3600, ...yearBuckets.map((b) => b.movingSec));
@@ -255,8 +268,9 @@ export function JourneySpace({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Previous week"
+              disabled={!weekPrevAllowed}
               onPress={() => { setDayOffset((prev) => prev - 1); setSelectedDayKey(null); }}
-              style={s.navBtn}
+              style={[s.navBtn, !weekPrevAllowed && { opacity: 0.3 }]}
             >
               <AppText role="body" style={{ color: c.ink }}>←</AppText>
             </Pressable>

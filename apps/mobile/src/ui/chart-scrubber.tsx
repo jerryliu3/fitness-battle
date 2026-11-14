@@ -3,7 +3,7 @@ import { AppText, textStyle } from "./section";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { PanResponder, Text, View } from "react-native";
 import Svg, { Circle, Line } from "react-native-svg";
-import { chartClientXToModel, nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
+import { chartClientXToModel, dottedCircleDasharray, nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
 import { playCue } from "../lib/haptics";
 
 
@@ -14,6 +14,7 @@ const DIRECTION_LOCK_PX = 4;
 /** One touch surface, shared by line and bar charts. Vertical drags yield to the page. */
 export function ChartScrubber({
   points, width, height, plotTop, plotBottom, children, onSelect, label, summaryOnSelection = false, hideSummary = false, renderSummary, onSelectionChange, selectedPointId,
+  dotColor, dotBorderColor, isSelectedHollow = false, hideSelectionDot = false, showTopLabel = true,
 }: {
   points: readonly ChartDatum[];
   width: number;
@@ -28,15 +29,22 @@ export function ChartScrubber({
   renderSummary?: (point: ChartDatum | undefined) => ReactNode;
   selectedPointId?: string;
   onSelectionChange?: (point: ChartDatum | undefined) => void;
+  dotColor?: string;
+  dotBorderColor?: string;
+  isSelectedHollow?: boolean;
+  hideSelectionDot?: boolean;
+  showTopLabel?: boolean;
 }) {
 const c=useThemeColors();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const measuredWidth = useRef(1);
+  const [layoutWidth, setLayoutWidth] = useState(0);
+  const [labelWidth, setLabelWidth] = useState(0);
   const lastId = useRef<string | null>(null);
   const touchStart = useRef<{ x: number; y: number; locationX: number } | null>(null);
   const direction = useRef<"horizontal" | "vertical" | null>(null);
-  const selected = points.find(point => point.id === (selectedPointId ?? selectedId));
+  const selected = points.find(point => point.id === (selectedId ?? selectedPointId));
   const latest = useRef({ points, width, onSelect, onSelectionChange });
   latest.current = { points, width, onSelect, onSelectionChange };
   const inspect = (locationX: number, feedback = true) => {
@@ -113,7 +121,11 @@ const c=useThemeColors();
         touchStart.current = null;
         clearSelection();
       }}
-      onLayout={event => { measuredWidth.current = Math.max(1, event.nativeEvent.layout.width); }}
+      onLayout={event => {
+        const w = Math.max(1, event.nativeEvent.layout.width);
+        measuredWidth.current = w;
+        setLayoutWidth(w);
+      }}
       accessible
       accessibilityRole="adjustable"
       accessibilityLabel={label}
@@ -123,10 +135,47 @@ const c=useThemeColors();
       onAccessibilityAction={event => move(event.nativeEvent.actionName === "increment" ? 1 : -1)}
     >
       <View pointerEvents="none">{children}</View>
-      {selected && <Svg pointerEvents="none" width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ position: "absolute", top: 0, left: 0 }}>
-        <Line x1={selected.x} x2={selected.x} y1={plotTop} y2={plotBottom} stroke={c.muted} strokeWidth={1} />
-        <Circle cx={selected.x} cy={selected.y} r={4} fill={c.tennis} />
-      </Svg>}
+      {selected && <>
+        {showTopLabel && !!selected.label && (() => {
+          const activeWidth = layoutWidth > 1 ? layoutWidth : measuredWidth.current;
+          const centerPx = activeWidth > 1 ? (selected.x / Math.max(1, width)) * activeWidth : 0;
+          const fallbackWidth = Math.min(activeWidth, Math.max(40, selected.label.length * 6.5));
+          const effectiveLabelWidth = labelWidth > 0 ? Math.min(labelWidth, activeWidth) : fallbackWidth;
+          const leftPx = activeWidth > 1
+            ? Math.max(0, Math.min(activeWidth - effectiveLabelWidth, centerPx - effectiveLabelWidth / 2))
+            : 0;
+          return (
+            <View
+              pointerEvents="none"
+              onLayout={event => {
+                const measured = event.nativeEvent.layout.width;
+                if (measured > 0 && Math.abs(measured - labelWidth) > 0.5) setLabelWidth(measured);
+              }}
+              style={{
+                position: "absolute",
+                top: Math.max(0, plotTop - 18),
+                left: leftPx,
+              }}
+            >
+              <AppText role="caption" secondary numberOfLines={1}>{selected.label}</AppText>
+            </View>
+          );
+        })()}
+        <Svg pointerEvents="none" width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ position: "absolute", top: 0, left: 0 }}>
+          <Line x1={selected.x} x2={selected.x} y1={plotTop} y2={plotBottom} stroke={c.muted} strokeWidth={1} />
+          {!hideSelectionDot && (
+            <Circle
+              cx={selected.x}
+              cy={selected.y}
+              r={isSelectedHollow ? 5 : 4.5}
+              fill={isSelectedHollow ? (dotBorderColor ?? c.card) : (dotColor ?? c.tennis)}
+              stroke={isSelectedHollow ? (dotColor ?? c.tennis) : (dotBorderColor ?? c.card)}
+              strokeWidth={2}
+              strokeDasharray={isSelectedHollow ? dottedCircleDasharray(5, 8) : undefined}
+            />
+          )}
+        </Svg>
+      </>}
     </View>
   </View>;
 }

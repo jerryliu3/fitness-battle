@@ -399,6 +399,7 @@ export function FocusSegments<T extends string>({
   onChange,
   accent = false,
   variant = "segments",
+  compact = false,
 }: {
   label: string;
   options: readonly { value: T; label: string; accessibilityLabel?: string }[];
@@ -406,6 +407,7 @@ export function FocusSegments<T extends string>({
   onChange: (value: T) => void;
   accent?: boolean;
   variant?: "segments" | "tabs";
+  compact?: boolean;
 }) {
 const c=useThemeColors();
 const f=useThemedStyles(fThemes);
@@ -414,8 +416,8 @@ const f=useThemedStyles(fThemes);
   const [width, setWidth] = useState(0);
   const position = useRef(new Animated.Value(0)).current;
   const selectedIndex = Math.max(0, options.findIndex(option => option.value === value));
-  const inset = variant === "tabs" ? 0 : 5;
-  const gap = 4;
+  const inset = variant === "tabs" ? 0 : compact ? 3 : 5;
+  const gap = compact ? 2 : 4;
   const segmentWidth = Math.max(0, (width - inset * 2 - gap * (options.length - 1)) / Math.max(1, options.length));
   const initialized = useRef(false);
   useEffect(() => {
@@ -429,17 +431,21 @@ const f=useThemedStyles(fThemes);
     initialized.current = true;
     animation.start();
     return () => animation.stop();
-  }, [selectedIndex, segmentWidth, width, reduce, position]);
+  }, [selectedIndex, segmentWidth, gap, width, reduce, position]);
   return (
     <View
       accessibilityRole="tablist"
       accessibilityLabel={label}
       onLayout={event => setWidth(event.nativeEvent.layout.width)}
-      style={[f.segments, variant === "tabs" && { backgroundColor: "transparent", borderWidth: 0, borderRadius: 0, padding: 0, borderBottomWidth: 1 }]}
+      style={[
+        f.segments,
+        compact && f.segmentsCompact,
+        variant === "tabs" && { backgroundColor: "transparent", borderWidth: 0, borderRadius: 0, padding: 0, borderBottomWidth: 1 },
+      ]}
     >
       {width > 0 && <Animated.View pointerEvents="none" style={{
         position: "absolute", left: inset, width: segmentWidth,
-        ...(variant === "tabs" ? { bottom: 0, height: 2 } : { top: 4, bottom: 4, borderRadius: 20 }),
+        ...(variant === "tabs" ? { bottom: 0, height: 2 } : compact ? { top: 3, bottom: 3, borderRadius: 9 } : { top: 4, bottom: 4, borderRadius: 20 }),
         backgroundColor: variant === "tabs" || !accent ? c.ink : c.tennis,
         transform: [{ translateX: position }],
       }} />}
@@ -456,13 +462,20 @@ const f=useThemedStyles(fThemes);
           }}
           style={({ pressed }) => [
             f.segment,
+            compact && f.segmentCompact,
             variant === "tabs" && { borderRadius: 0 },
             pressed && { opacity: 0.7 },
           ]}
         >
           <Text
             numberOfLines={1}
-            style={[f.segmentText, value === option.value && { color: variant === "tabs" ? c.ink : accent ? c.textOnAction : c.card }]}
+            adjustsFontSizeToFit={compact}
+            minimumFontScale={compact ? 0.8 : undefined}
+            style={[
+              f.segmentText,
+              compact && f.segmentTextCompact,
+              value === option.value && { color: variant === "tabs" ? c.ink : accent ? c.textOnAction : c.card },
+            ]}
           >
             {option.label}
           </Text>
@@ -639,6 +652,13 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
     borderWidth: 1,
     borderColor: c.line,
   },
+  segmentsCompact: {
+    padding: 3,
+    gap: 2,
+    borderRadius: 12,
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   segment: {
     flex: 1,
     minWidth: 0,
@@ -649,11 +669,21 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
     justifyContent: "center",
     alignItems: "center",
   },
+  segmentCompact: {
+    minWidth: 38,
+    minHeight: 28,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 9,
+  },
   segmentSelected: { backgroundColor: c.ink },
   segmentText: {
     ...textStyle("label"),
     color: c.muted,
     textAlign: "center",
+  },
+  segmentTextCompact: {
+    ...textStyle("caption"),
   },
   textButton: {
     minHeight: 44,

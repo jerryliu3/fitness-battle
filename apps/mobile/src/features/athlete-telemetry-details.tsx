@@ -59,12 +59,17 @@ const s=useThemedStyles(sThemes);
 
   return (
     <ScrollView contentContainerStyle={s.content}>
-      <FocusSegments
-        label="Time range"
-        value={timeLens}
-        options={TIME_LENSES}
-        onChange={setTimeLens}
-      />
+      <View style={s.rangeHeaderRow}>
+        <View style={s.rangePickerBox}>
+          <FocusSegments
+            compact
+            label="Time range"
+            value={timeLens}
+            options={TIME_LENSES}
+            onChange={setTimeLens}
+          />
+        </View>
+      </View>
 
       {activeDomain === "market" && <MarketView model={model} />}
       {activeDomain === "vitals" && <VitalsView model={model} />}
@@ -145,8 +150,8 @@ const f=useFocusStyles();
 
   const m = model.market;
   const series = m.equitySeries;
-  const [selectedIdx, setSelectedIdx] = useState(series.length - 1);
-  const safeIdx = Math.max(0, Math.min(selectedIdx, series.length - 1));
+  const [selectedIdx, setSelectedIdx] = useState<number | undefined>(undefined);
+  const safeIdx = selectedIdx === undefined ? series.length - 1 : Math.max(0, Math.min(selectedIdx, series.length - 1));
   const pt = series[safeIdx] ?? series[0]!;
 
   return (
@@ -162,16 +167,11 @@ const f=useFocusStyles();
           ]}
         />
         <StandardLineChart
-          yAxisLabel="NAV (pts)"
           values={series.map((p) => p.nav)}
-          selectedIdx={safeIdx}
+          pointLabels={series.map((p) => p.label)}
+          selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.tennis}
-          xLabels={
-            series.length >= 2
-              ? [series[0]!.label, series[Math.floor(series.length / 2)]!.label, series[series.length - 1]!.label]
-              : undefined
-          }
           formatY={(v) => `${Math.round(v)}`}
           accessibilityLabel="Equity curve portfolio net asset value history"
         />
@@ -219,9 +219,9 @@ const s=useThemedStyles(sThemes);
   const vitals = model.vitals.metrics;
   const [activeVitalId, setActiveVitalId] = useState<VitalId>("hrv");
   const vital = vitals.find((v) => v.id === activeVitalId) ?? vitals[0]!;
-  const [selectedIdx, setSelectedIdx] = useState(vital.series.length - 1);
+  const [selectedIdx, setSelectedIdx] = useState<number | undefined>(undefined);
 
-  const safeIdx = Math.max(0, Math.min(selectedIdx, vital.series.length - 1));
+  const safeIdx = selectedIdx === undefined ? vital.series.length - 1 : Math.max(0, Math.min(selectedIdx, vital.series.length - 1));
   const pt = vital.series[safeIdx] ?? vital.series[0]!;
   const inCorridor = pt.value >= pt.baselineLow && pt.value <= pt.baselineHigh;
 
@@ -263,20 +263,15 @@ const s=useThemedStyles(sThemes);
         </View>
 
         <StandardLineChart
-          yAxisLabel={`${vital.name} (${vital.unit})`}
           values={vital.series.map((p) => p.value)}
-          selectedIdx={safeIdx}
+          pointLabels={vital.series.map((p) => p.label)}
+          selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.fieldTeal}
           corridor={{
             high: vital.series.map((p) => p.baselineHigh),
             low: vital.series.map((p) => p.baselineLow),
           }}
-          xLabels={
-            vital.series.length >= 2
-              ? [vital.series[0]!.label, vital.series[Math.floor(vital.series.length / 2)]!.label, vital.series[vital.series.length - 1]!.label]
-              : undefined
-          }
           formatY={(v) => `${vital.id === "temp" ? v.toFixed(1) : Math.round(v)}`}
           accessibilityLabel={`${vital.name} autonomic baseline corridor and value history`}
         />
@@ -304,8 +299,8 @@ const s=useThemedStyles(sThemes);
 
   const sData = model.sleep;
   const nights = sData.nights;
-  const [selectedIdx, setSelectedIdx] = useState(nights.length - 1);
-  const safeIdx = Math.max(0, Math.min(selectedIdx, nights.length - 1));
+  const [selectedIdx, setSelectedIdx] = useState<number | undefined>(undefined);
+  const safeIdx = selectedIdx === undefined ? nights.length - 1 : Math.max(0, Math.min(selectedIdx, nights.length - 1));
   const night = nights[safeIdx] ?? sData.lastNight;
 
   const total = Math.max(1, night.durationMin);
@@ -327,16 +322,11 @@ const s=useThemedStyles(sThemes);
           ]}
         />
         <StandardLineChart
-          yAxisLabel="Sleep score"
           values={nights.map((n) => n.score)}
-          selectedIdx={safeIdx}
+          pointLabels={nights.map((n) => n.label)}
+          selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.fieldTeal}
-          xLabels={
-            nights.length >= 2
-              ? [nights[0]!.label, nights[Math.floor(nights.length / 2)]!.label, nights[nights.length - 1]!.label]
-              : undefined
-          }
           formatY={(v) => `${Math.round(v)}`}
           accessibilityLabel="Nightly sleep score history"
         />
@@ -372,11 +362,10 @@ const s=useThemedStyles(sThemes);
 function LoadView({ model }: { model: AnalyticsLabModel }) {
 const c=useThemeColors();
 const f=useFocusStyles();
-const s=useThemedStyles(sThemes);
 
   const l = model.load;
-  const [selectedIdx, setSelectedIdx] = useState(l.series.length - 1);
-  const safeIdx = Math.max(0, Math.min(selectedIdx, l.series.length - 1));
+  const [selectedIdx, setSelectedIdx] = useState<number | undefined>(undefined);
+  const safeIdx = selectedIdx === undefined ? l.series.length - 1 : Math.max(0, Math.min(selectedIdx, l.series.length - 1));
   const b = l.series[safeIdx] ?? l.series[0]!;
 
   return (
@@ -392,17 +381,12 @@ const s=useThemedStyles(sThemes);
           ]}
         />
         <StandardLineChart
-          yAxisLabel="ACWR (ratio)"
           values={l.series.map((s) => Number(s.acwr.toFixed(2)))}
-          selectedIdx={safeIdx}
+          pointLabels={l.series.map((s) => s.label)}
+          selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.statusSuccess}
-          xLabels={
-            l.series.length >= 2
-              ? [l.series[0]!.label, l.series[Math.floor(l.series.length / 2)]!.label, l.series[l.series.length - 1]!.label]
-              : undefined
-          }
-          formatY={(v) => `${v.toFixed(1)}x`}
+          formatY={(v) => `${v.toFixed(1)}`}
           accessibilityLabel="Workload ratio acute to chronic load ratio trend"
         />
         <InspectionCallout
@@ -418,18 +402,13 @@ const s=useThemedStyles(sThemes);
       <View style={f.card}>
         <SectionHeader title="Period Volume Burn-Up" />
         <StandardLineChart
-          yAxisLabel="Training (hrs)"
           values={l.series.map((s) => s.cumCurrentHours)}
-          selectedIdx={safeIdx}
+          pointLabels={l.series.map((s) => s.label)}
+          selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.fieldTeal}
           height={130}
-          xLabels={
-            l.series.length >= 2
-              ? [l.series[0]!.label, l.series[Math.floor(l.series.length / 2)]!.label, l.series[l.series.length - 1]!.label]
-              : undefined
-          }
-          formatY={(v) => `${Math.round(v)}h`}
+          formatY={(v) => `${Math.round(v)}`}
           accessibilityLabel="Cumulative period volume burn-up"
         />
       </View>
@@ -444,11 +423,10 @@ const s=useThemedStyles(sThemes);
 function PerformanceView({ model }: { model: AnalyticsLabModel }) {
 const c=useThemeColors();
 const f=useFocusStyles();
-const s=useThemedStyles(sThemes);
 
   const p = model.performance;
-  const [selectedIdx, setSelectedIdx] = useState(p.series.length - 1);
-  const safeIdx = Math.max(0, Math.min(selectedIdx, p.series.length - 1));
+  const [selectedIdx, setSelectedIdx] = useState<number | undefined>(undefined);
+  const safeIdx = selectedIdx === undefined ? p.series.length - 1 : Math.max(0, Math.min(selectedIdx, p.series.length - 1));
   const run = p.series[safeIdx] ?? p.series[0]!;
 
   return (
@@ -464,16 +442,11 @@ const s=useThemedStyles(sThemes);
           ]}
         />
         <StandardLineChart
-          yAxisLabel="EF (m/min/bpm)"
           values={p.series.map((s) => Number(s.efficiencyFactor.toFixed(2)))}
-          selectedIdx={safeIdx}
+          pointLabels={p.series.map((s) => s.label)}
+          selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.fieldTeal}
-          xLabels={
-            p.series.length >= 2
-              ? [p.series[0]!.label, p.series[Math.floor(p.series.length / 2)]!.label, p.series[p.series.length - 1]!.label]
-              : undefined
-          }
           formatY={(v) => v.toFixed(2)}
           accessibilityLabel="Aerobic efficiency factor history"
         />
@@ -515,11 +488,10 @@ const s=useThemedStyles(sThemes);
 function CombinedView({ model }: { model: AnalyticsLabModel }) {
 const c=useThemeColors();
 const f=useFocusStyles();
-const s=useThemedStyles(sThemes);
 
   const cmb = model.combined;
-  const [selectedIdx, setSelectedIdx] = useState(cmb.series.length - 1);
-  const safeIdx = Math.max(0, Math.min(selectedIdx, cmb.series.length - 1));
+  const [selectedIdx, setSelectedIdx] = useState<number | undefined>(undefined);
+  const safeIdx = selectedIdx === undefined ? cmb.series.length - 1 : Math.max(0, Math.min(selectedIdx, cmb.series.length - 1));
   const day = cmb.series[safeIdx] ?? cmb.series[0]!;
 
   return (
@@ -535,17 +507,12 @@ const s=useThemedStyles(sThemes);
           ]}
         />
         <StandardLineChart
-          yAxisLabel="Readiness (%)"
           values={cmb.series.map((s) => s.nextDayReadiness)}
-          selectedIdx={safeIdx}
+          pointLabels={cmb.series.map((s) => s.label)}
+          selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.statusSuccess}
-          xLabels={
-            cmb.series.length >= 2
-              ? [cmb.series[0]!.label, cmb.series[Math.floor(cmb.series.length / 2)]!.label, cmb.series[cmb.series.length - 1]!.label]
-              : undefined
-          }
-          formatY={(v) => `${Math.round(v)}%`}
+          formatY={(v) => `${Math.round(v)}`}
           accessibilityLabel="Morning readiness score history"
         />
         <InspectionCallout
@@ -620,5 +587,14 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
     justifyContent: "space-between",
     flexWrap: "wrap",
     gap: 6,
+  },
+  rangeHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+  },
+  rangePickerBox: {
+    alignSelf: "flex-end",
+    maxWidth: "100%",
   },
 };});

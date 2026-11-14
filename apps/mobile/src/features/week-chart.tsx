@@ -2,6 +2,7 @@ import { createThemedStyles, useThemedStyles } from "../theme";
 import { useState } from "react";
 import { homeTrainingLine, type CompeteState } from "@fitness-battle/shared";
 import { Pressable, View } from "react-native";
+import { useAuth } from "../lib/auth";
 import { AppText } from "../ui/section";
 import { OpenLineChart } from "../ui/open-line-chart";
 import { ChartFrame } from "../ui/chart-frame";
@@ -17,9 +18,10 @@ export function WeekChart({
   ready?: boolean;
 }) {
   const s = useThemedStyles(sThemes);
+  const { user } = useAuth();
 
   const [range, setRange] = useState<"week" | "fourWeeks">("week");
-  const chart = homeTrainingLine(state, range);
+  const chart = homeTrainingLine(state, range, undefined, user?.createdAt);
   return (
     <ChartFrame ready={ready}>
       <View style={s.card}>
@@ -30,7 +32,10 @@ export function WeekChart({
           <HomeActivityActions compact />
         </View>
         <OpenLineChart
-          showDateRange={false} showAxes={true}
+          openHero
+          showDateRange={false}
+          showAxes={true}
+          live
           key={range}
           chart={chart}
           label="Cumulative training hours"
@@ -40,7 +45,6 @@ export function WeekChart({
             if (next === "week" || next === "fourWeeks") setRange(next);
           }}
           includeYear={false}
-          live
           footerAction={
             onOpen ? (
               <Pressable
@@ -52,7 +56,6 @@ export function WeekChart({
               </Pressable>
             ) : undefined
           }
-          comparisonLabel={range === "week" ? "Last week" : "Prior 4 weeks"}
         />
       </View>
     </ChartFrame>

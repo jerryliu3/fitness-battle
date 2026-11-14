@@ -2,6 +2,7 @@ export interface StandardChartGeometry {
   points: Array<{ x: number; y: number; val: number; index: number }>;
   polyline: string;
   polylines: string[];
+  trendPolyline: string;
   areaPath: string;
   corridorPath?: string;
   corridorHighPolyline?: string;
@@ -9,12 +10,85 @@ export interface StandardChartGeometry {
   yMin: number;
   yMid: number;
   yMax: number;
+  yTicks: Array<{ value: number; y: number }>;
   xStart: number;
   xMid: number;
   xEnd: number;
   yTop: number;
   yBottom: number;
   yMidPos: number;
+}
+
+/** Crisp evenly-spaced dashes around a circle circumference for any radius. */
+export function dottedCircleDasharray(radius: number, count = 8): string {
+  const circumference = 2 * Math.PI * radius;
+  const period = circumference / Math.max(1, count);
+  const dash = Number((period * 0.5).toFixed(2));
+  const gap = Number((period - dash).toFixed(2));
+  return `${dash} ${gap}`;
+}
+
+/** Round-number Y-axis bounds and 3-5 horizontal gridline ticks encompassing [rawMin, rawMax]. */
+export function computeNiceAxisTicks(
+  rawMin: number,
+  rawMax: number,
+  clampMinZero = true,
+  paddingFraction = 0.08,
+): { yMin: number; yMax: number; ticks: number[] } {
+  let lo = rawMin;
+  let hi = rawMax;
+  if (lo === hi) {
+    const diff = Math.max(1, Math.abs(lo) * 0.2 || 10);
+    lo -= diff;
+    hi += diff;
+  } else {
+    const spread = hi - lo;
+    const pad = Math.max(spread * paddingFraction, 0.01);
+    lo -= pad;
+    hi += pad;
+  }
+  if (clampMinZero && rawMin >= 0 && lo < 0) lo = 0;
+
+  const span = Math.max(0.01, hi - lo);
+  const roughStep = span / 2.5;
+  const pow = Math.pow(10, Math.floor(Math.log10(roughStep)));
+  const niceBases = [1, 2, 5, 10, 20, 50];
+  let bestStep = roughStep;
+  let bestMin = lo;
+  let bestMax = hi;
+  let fallback: { step: number; min: number; max: number } | null = null;
+  for (const base of niceBases) {
+    const candidate = base * pow;
+    const cMin = clampMinZero && rawMin >= 0 ? Math.max(0, Math.floor(lo / candidate) * candidate) : Math.floor(lo / candidate) * candidate;
+    const cMax = Math.ceil(hi / candidate) * candidate;
+    const count = Math.round((cMax - cMin) / candidate) + 1;
+    bestStep = candidate;
+    bestMin = cMin;
+    bestMax = cMax;
+    if (count >= 3 && count <= 4) {
+      fallback = null;
+      break;
+    }
+    if (count <= 5 && !fallback) {
+      fallback = { step: candidate, min: cMin, max: cMax };
+    }
+  }
+  if (fallback && Math.round((bestMax - bestMin) / bestStep) + 1 > 4) {
+    bestStep = fallback.step;
+    bestMin = fallback.min;
+    bestMax = fallback.max;
+  }
+
+  const ticks: number[] = [];
+  const totalSteps = Math.max(1, Math.round((bestMax - bestMin) / bestStep));
+  for (let i = 0; i <= totalSteps; i++) {
+    ticks.push(Number((bestMin + i * bestStep).toPrecision(10)));
+  }
+  return {
+    yMin: ticks[0] ?? bestMin,
+    yMax: ticks[ticks.length - 1] ?? bestMax,
+    ticks,
+  };
 }
 
 /**
@@ -43,10 +117,12 @@ export function buildStandardChartGeometry(
       points: [],
       polyline: "",
       polylines: [],
+      trendPolyline: "",
       areaPath: "",
       yMin: 0,
       yMid: 0,
       yMax: 0,
+      yTicks: [],
       xStart,
       xMid,
       xEnd,
@@ -62,35 +138,17 @@ export function buildStandardChartGeometry(
   const rawMin = Math.min(...allNumbers);
   const rawMax = Math.max(...allNumbers);
 
-  let yMin: number;
-  let yMid: number;
-  let yMax: number;
-
-  if (rawMin === rawMax) {
-    yMid = rawMin;
-    const diff = Math.max(1, Math.abs(rawMin) * 0.2 || 10);
-    const decimals = diff < 2 ? 2 : diff < 20 ? 1 : 0;
-    const factor = Math.pow(10, decimals);
-    yMin = Math.round((yMid - diff) * factor) / factor;
-    yMax = Math.round((yMid + diff) * factor) / factor;
-    if (clampMinZero && rawMin >= 0 && yMin < 0) {
-      yMin = 0;
-    }
-  } else {
-    const spread = rawMax - rawMin;
-    const pad = Math.max(spread * yPaddingFraction, 0.01);
-    const decimals = spread < 2 ? 2 : spread < 20 ? 1 : 0;
-    const factor = Math.pow(10, decimals);
-    yMin = Math.floor((rawMin - pad) * factor) / factor;
-    yMax = Math.ceil((rawMax + pad) * factor) / factor;
-    if (clampMinZero && rawMin >= 0 && yMin < 0) {
-      yMin = 0;
-    }
-    yMid = Math.round(((yMin + yMax) / 2) * factor) / factor;
-  }
+  const axis = computeNiceAxisTicks(rawMin, rawMax, clampMinZero, yPaddingFraction);
+  const yMin = axis.yMin;
+  const yMax = axis.yMax;
+  const yMid = Number(((yMin + yMax) / 2).toPrecision(10));
 
   const ySpan = Math.max(0.001, yMax - yMin);
   yMidPos = yBottom - ((yMid - yMin) / ySpan) * (yBottom - yTop);
+  const yTicks = axis.ticks.map((value) => ({
+    value,
+    y: yBottom - ((value - yMin) / ySpan) * (yBottom - yTop),
+  }));
   const usableW = Math.max(1, xEnd - xStart);
   const usableH = Math.max(1, yBottom - yTop);
 
@@ -145,10 +203,32 @@ export function buildStandardChartGeometry(
     corridorLowPolyline = lowPts.join(" ");
   }
 
+  let trendPolyline = "";
+  if (!corridor && points.length >= 2) {
+    trendPolyline = points
+      .map((p) => {
+        const startIdx = Math.max(0, p.index - 29);
+        let sum = 0;
+        let count = 0;
+        for (let j = startIdx; j <= p.index; j++) {
+          const v = values[j];
+          if (typeof v === "number" && Number.isFinite(v)) {
+            sum += v;
+            count += 1;
+          }
+        }
+        const avg = count > 0 ? sum / count : p.val;
+        const ty = yBottom - ((avg - yMin) / ySpan) * usableH;
+        return `${p.x.toFixed(1)},${ty.toFixed(1)}`;
+      })
+      .join(" ");
+  }
+
   return {
     points,
     polyline,
     polylines,
+    trendPolyline,
     areaPath,
     corridorPath,
     corridorHighPolyline,
@@ -156,6 +236,7 @@ export function buildStandardChartGeometry(
     yMin,
     yMid,
     yMax,
+    yTicks,
     xStart,
     xMid,
     xEnd,
