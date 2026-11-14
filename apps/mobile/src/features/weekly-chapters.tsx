@@ -13,7 +13,7 @@ export function WeeklyChapters({ state }: { state: CompeteState }) {
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
 
-  const [sport, setSport] = useState<SportId | "all">(state.primary);
+  const [sport, setSport] = useState<SportId | "all">("all");
   const [selected, setSelected] = useState<string | null>(null);
   const sports = [...new Set(state.periodResults.map((r) => r.sport))].sort();
   const rows = state.periodResults
