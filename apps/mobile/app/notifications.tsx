@@ -32,7 +32,51 @@ import {
 import { mobileEnv } from "../src/lib/env";
 import { supabase } from "../src/lib/supabase";
 import { FocusButton } from "../src/ui/focus";
+import { useThemeColors } from "../src/theme";
+import { playCue } from "../src/lib/haptics";
 
+function NotificationInfoTip({
+  title,
+  message,
+}: {
+  title: string;
+  message: string;
+}) {
+  const c = useThemeColors();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`About ${title}`}
+      hitSlop={8}
+      onPress={() => {
+        void playCue("light");
+        Alert.alert(title, message);
+      }}
+      style={({ pressed }) => ({
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: c.line,
+        backgroundColor: c.card,
+        alignItems: "center",
+        justifyContent: "center",
+        opacity: pressed ? 0.65 : 1,
+      })}
+    >
+      <Text
+        style={{
+          ...textStyle("caption"),
+          color: c.muted,
+          fontWeight: "600",
+          marginTop: -1,
+        }}
+      >
+        i
+      </Text>
+    </Pressable>
+  );
+}
 
 export default function NotificationsScreen() {
 const f=useFocusStyles();
@@ -208,13 +252,12 @@ const styles=useThemedStyles(stylesThemes);
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.card}>
           <View style={[styles.row, styles.rowFirst]}>
-            <View style={styles.grow}>
+            <View style={styles.rowTitleRow}>
               <Text style={styles.rowTitle}>Push notifications</Text>
-              <Text style={styles.rowDetail}>
-                {prefs.enabled
-                  ? "On — choose which alerts you receive below."
-                  : "Off — turn on to manage alerts and send a test."}
-              </Text>
+              <NotificationInfoTip
+                title="Push notifications"
+                message="Turn this on to allow Overtaek alerts on your device. Individual notification types can be toggled below."
+              />
             </View>
             <Switch
               accessibilityLabel="Push notifications"
@@ -232,23 +275,19 @@ const styles=useThemedStyles(stylesThemes);
           style={[styles.categoryGroup, !prefs.enabled && styles.categoryGroupOff]}
           pointerEvents={prefs.enabled ? "auto" : "none"}
         >
-          <SectionHeader
-            title="Alert categories"
-            subtitle={
-              prefs.enabled
-                ? "Each type can be toggled independently."
-                : "Enable push notifications above to customize these."
-            }
-          />
+          <SectionHeader title="Notification types" />
           <View style={styles.card}>
             {NOTIFICATION_CATEGORIES.map((category, index) => (
               <View
                 key={category.id}
                 style={[styles.row, index === 0 && styles.rowFirst]}
               >
-                <View style={styles.grow}>
+                <View style={styles.rowTitleRow}>
                   <Text style={styles.rowTitle}>{category.label}</Text>
-                  <Text style={styles.rowDetail}>{category.description}</Text>
+                  <NotificationInfoTip
+                    title={category.label}
+                    message={category.description}
+                  />
                 </View>
                 <Switch
                   accessibilityLabel={category.label}
@@ -316,12 +355,14 @@ const stylesThemes = createThemedStyles(themeColors=>{const colors=legacyColors(
     borderTopColor: colors.line,
   },
   rowFirst: { borderTopWidth: 0 },
-  grow: { flex: 1, minWidth: 0, gap: 4 },
-  rowTitle: { ...textStyle("label"), color: colors.ink },
-  rowDetail: {
-    ...textStyle("body"),
-    color: colors.muted
-},
+  rowTitleRow: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  rowTitle: { ...textStyle("label"), color: colors.ink, flexShrink: 1 },
   line: {
     borderWidth: 1,
     borderColor: colors.line,
