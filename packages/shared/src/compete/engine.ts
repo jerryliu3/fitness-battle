@@ -1071,17 +1071,19 @@ function reduceCompeteAction(
       return { ...rolled, activities: [...rolled.activities, activity] };
     }
     case "set-city": {
-      const city = action.city?.trim().slice(0, 40);
-      return city ? { ...rolled, city } : rolled;
+      return { ...rolled, city: action.city?.trim().slice(0, 40) ?? "" };
     }
     case "set-gender": {
       const gender = action.gender;
+      if (gender == null || gender === "") return { ...rolled, gender: null };
       if (gender !== "male" && gender !== "female" && gender !== "other") return rolled;
       return { ...rolled, gender };
     }
     case "set-country": {
-      const code = action.countryCode?.trim().toUpperCase().slice(0, 2);
-      if (!code || !/^[A-Z]{2}$/.test(code)) return rolled;
+      const raw = action.countryCode?.trim() ?? "";
+      if (!raw) return { ...rolled, countryCode: null };
+      const code = raw.toUpperCase().slice(0, 2);
+      if (!/^[A-Z]{2}$/.test(code)) return rolled;
       return { ...rolled, countryCode: code };
     }
     case "set-avatar": {
