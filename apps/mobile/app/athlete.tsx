@@ -14,6 +14,7 @@ import { IntegrationIcon } from "../src/ui/integration-icon";
 
 import { ChoicePicker } from "../src/ui/choice-picker";
 import {
+  RANK_BANDS,
   SPORTS,
   primaryFreezePeriodStart,
   competeNow,
@@ -21,6 +22,7 @@ import {
   type ProviderId,
   webProductPath,
 } from "@fitness-battle/shared";
+import { RankSymbol } from "../src/ui/rank-symbol";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
@@ -588,6 +590,33 @@ const styles=useThemedStyles(stylesThemes);
             Logging activities and joining weekly fields boosts your score; showing up to events and closing
             the week in the field moves it fastest.
           </AppText>
+          <SectionHeader title="Levels" />
+          <View style={{ gap: 10 }}>
+            {RANK_BANDS.map((band) => (
+              <View
+                key={band.id}
+                style={[
+                  f.row,
+                  {
+                    gap: 14,
+                    padding: 12,
+                    borderRadius: SHELL_RADIUS.card,
+                    borderWidth: 1,
+                    borderColor: SHELL_COLORS.line,
+                    backgroundColor: SHELL_COLORS.card,
+                  },
+                ]}
+              >
+                <RankSymbol rank={band.id} size={48} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <AppText role="label">{band.name}</AppText>
+                  <AppText role="caption" secondary>
+                    {band.min}+ · {band.blurb}
+                  </AppText>
+                </View>
+              </View>
+            ))}
+          </View>
         </SectionStack>
 </ScrollView>
       </SafeAreaView>
