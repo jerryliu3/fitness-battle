@@ -80,8 +80,11 @@ export function crewRelayScene(model: Relay, width: number, prefix: string, comp
       const front = point(fraction), back = point(fraction, true);
       return `${front.x + (back.x - front.x) * depth} ${front.y + (back.y - front.y) * depth}`;
     };
-    const finishTile = (row: number, col: number, face = false) =>
-      (row + col) % 2 ? (face ? "#142b3b" : "#ffffff") : face ? "#ffffff" : "#142b3b";
+    const finishTile = (row: number, col: number, face = false) => {
+      const topRow = face ? 7 - row : row;
+      const light = (topRow + col) % 2 ? "#ffffff" : "#142b3b";
+      return face ? (light === "#ffffff" ? "#142b3b" : "#ffffff") : light;
+    };
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 2; col++) {
         const x0 = a + (b - a) * col / 2, x1 = a + (b - a) * (col + 1) / 2;
