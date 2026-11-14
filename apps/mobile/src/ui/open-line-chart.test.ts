@@ -49,3 +49,19 @@ it("omits header date caption when showDateRange and live are both false", async
   expect(JSON.stringify(renderSummary(chart.points[0]))).not.toContain("Oct 22, 4:00 PM");
   await act(async () => r.unmount()); vi.unstubAllGlobals();
 });
+it("centers the live halo on the final dot when uniformAspect letterboxes inside a wider container", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  state.active = true;
+  state.reduced = false;
+  const chart = { width: 340, height: 180, top: 20, bottom: 140, left: 30, right: 320, date: "Today", value: "4", points: [{ id: "1", x: 300, y: 70, value: "4", label: "Today" }], segments: ["30,100 300,70"], trendLine: "", xTicks: [], yTicks: [] };
+  let r!: ReturnType<typeof create>;
+  await act(async () => {
+    r = create(createElement(OpenLineChart, { chart: chart as never, label: "Effort", unit: "pts", range: "week" as never, live: true, uniformAspect: true, onRangeChange: vi.fn() }));
+  });
+  const layout = r.root.findAllByType("View" as never).find(n => n.props.onLayout)!;
+  await act(async () => layout.props.onLayout({ nativeEvent: { layout: { width: 380 } } }));
+  const haloParent = r.root.findByType("NativeHalo" as never).parent!;
+  expect(haloParent.props.style.left).toBe(308);
+  expect(haloParent.props.style.top).toBe(58);
+  await act(async () => r.unmount()); vi.unstubAllGlobals();
+});

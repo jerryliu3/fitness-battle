@@ -127,12 +127,38 @@ const s=useThemedStyles(sThemes);
           <Circle cx={end.x} cy={end.y} r={4} fill={c.tennis} stroke={dotBorderColor} strokeWidth={2} />
         )}
       </ChartSvg>
-      {live && !selected && !reduceMotion && active && end && plotWidth > 0 && <View pointerEvents="none" style={{ position: "absolute", left: end.x * plotWidth / chart.width - 12, top: end.y - 12, width: 24, height: 24, transform: [{ scaleX: plotWidth / chart.width }] }}>
-        <Animated.View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: c.tennis,
-          opacity: pulse.interpolate({ inputRange: [0, .65, .9, 1], outputRange: [.5, .18, 0, 0] }),
-          transform: [{ scale: pulse.interpolate({ inputRange: [0, .75, 1], outputRange: [3.5 / 12, 1, 1] }) }],
-        }} />
-      </View>}
+      {live && !selected && !reduceMotion && active && end && plotWidth > 0 && (() => {
+        const meetScale = uniformAspect ? Math.min(plotWidth / chart.width, 1) : 1;
+        const liveX = uniformAspect
+          ? (plotWidth - chart.width * meetScale) / 2 + end.x * meetScale
+          : (end.x * plotWidth) / chart.width;
+        const liveY = uniformAspect
+          ? (chart.height - chart.height * meetScale) / 2 + end.y * meetScale
+          : end.y;
+        return (
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              left: liveX - 12,
+              top: liveY - 12,
+              width: 24,
+              height: 24,
+            }}
+          >
+            <Animated.View
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: c.tennis,
+                opacity: pulse.interpolate({ inputRange: [0, 0.65, 0.9, 1], outputRange: [0.5, 0.18, 0, 0] }),
+                transform: [{ scale: pulse.interpolate({ inputRange: [0, 0.75, 1], outputRange: [3.5 / 12, 1, 1] }) }],
+              }}
+            />
+          </View>
+        );
+      })()}
       </View>
     </ChartScrubber>
     {!!footerAction && <View style={s.footer}>{footerAction}</View>}
