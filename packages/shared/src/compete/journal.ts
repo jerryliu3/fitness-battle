@@ -11,6 +11,7 @@ import type { Activity, SportId } from "./sports";
 /** Sessions stored for the athlete but never scored, shared on fields, or shown to rivals. */
 export function isJournalActivity(activity: Activity): boolean {
   if (isSampleActivity(activity)) return false;
+  if (activity.journalOnly) return true;
   if (provenanceOf(activity) === "manual") return true;
   if (activity.sport === "walking") {
     const p = provenanceOf(activity);

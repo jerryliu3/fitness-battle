@@ -45,6 +45,7 @@ describe("journal activities", () => {
     expect(isJournalActivity(manual)).toBe(true);
     expect(isJournalActivity(walkWorkout)).toBe(true);
     expect(isJournalActivity(run)).toBe(false);
+    expect(isJournalActivity({ ...run, journalOnly: true })).toBe(true);
   });
 
   it("includes journal rows in training helpers but not compete ledger", async () => {

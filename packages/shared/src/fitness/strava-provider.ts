@@ -1,4 +1,5 @@
 import { routeMetadata } from "./activity-files";
+import { journalSampleFromUnmapped } from "./journal-sample";
 import type { ActivitySample, CategorySlug, FitnessConnection } from "../types";
 import { mockFitnessProvider } from "./mock-provider";
 import { syncWindow } from "./sync-window";
@@ -113,8 +114,22 @@ export function mapSportToCategory(sportType: string): CategorySlug | null {
 export function mapStravaActivity(raw: StravaActivityRaw): ActivitySample | null {
   const sport = raw.sport_type ?? raw.type ?? "";
   const slug = mapSportToCategory(sport);
-  if (!slug) return null;
   const movingSec = Math.max(0, raw.moving_time ?? 0);
+  if (!slug) {
+    if (!raw.start_date) return null;
+    return journalSampleFromUnmapped({
+      id: `strava-${raw.id}`,
+      provider: "strava",
+      externalId: String(raw.id),
+      startedAt: raw.start_date,
+      movingSec,
+      rawName: raw.name || `${sport} activity`,
+      summaryPolyline: raw.map?.summary_polyline ?? null,
+      detailedPolyline: raw.map?.polyline ?? null,
+      elevationGainM: raw.total_elevation_gain ?? null,
+      avgHr: raw.average_heartrate ?? null,
+    });
+  }
   const metricValue = slug === "strength" ? movingSec : Math.max(0, raw.distance);
   return {
     id: `strava-${raw.id}`,
