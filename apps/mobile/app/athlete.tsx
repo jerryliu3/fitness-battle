@@ -8,15 +8,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SectionHeader, SectionStack, textStyle, AppText } from "../src/ui/section";
 import { SportIcon } from "../src/ui/sport-icon";
 import { activityFromSample } from "@fitness-battle/shared";
-import { ScreenHeader } from "../src/ui/screen-header";
+import { GlassDismissButton, ScreenHeader } from "../src/ui/screen-header";
 import { AppIcon } from "../src/ui/app-icon";
 import { IntegrationIcon } from "../src/ui/integration-icon";
 
 import { ChoicePicker } from "../src/ui/choice-picker";
-import { RankSymbol } from "../src/ui/rank-symbol";
 import {
   SPORTS,
-  RANK_BANDS,
   primaryFreezePeriodStart,
   competeNow,
   clubLifetimeTotals,
@@ -34,7 +32,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Clipboard, Platform, Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { Clipboard, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AccountActions } from "../src/features/account-actions";
 import { LegalLinks } from "../src/features/legal-links";
@@ -199,21 +197,30 @@ const styles=useThemedStyles(stylesThemes);
   const signedIn = Boolean(user);
 
   const titles = { profile: "Edit profile", connections: "Data Sync", preferences: "Preferences", scoring: "How scoring works", account: "Account" };
+  const exitAthletePanel = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else if (panel) {
+      router.replace({ pathname: "/athlete", params: { edit: "1" } });
+    } else {
+      router.replace("/today");
+    }
+  };
   const pageHeader = (
     <ScreenHeader
       localBack={Boolean(panel)}
       hidden={!panel && editOpen}
       nativeBar={!panel}
       title={panel ? titles[panel] : "Athlete"}
-      onBack={() => {
-        if (router.canGoBack()) {
-          router.back();
-        } else if (panel) {
-          router.replace({ pathname: "/athlete", params: { edit: "1" } });
-        } else {
-          router.replace("/today");
-        }
-      }}
+      onBack={exitAthletePanel}
+      trailing={
+        panel === "connections" && !inlineConnections ? (
+          <GlassDismissButton
+            label="Close Data Sync"
+            onPress={exitAthletePanel}
+          />
+        ) : undefined
+      }
     />
   );
 
@@ -468,13 +475,19 @@ const styles=useThemedStyles(stylesThemes);
             router.push("/blocked-athletes");
           }}
         />
+          <AccountActions showDeleteButton={false} footer={(openDelete) => (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 16 }}>
+              <LegalLinks />
+              <Pressable accessibilityRole="button" accessibilityLabel="Delete account" onPress={openDelete}>
+                <AppText role="label" style={{ color: "#b42318" }}>Delete account</AppText>
+              </Pressable>
+            </View>
+          )} />
           <FocusButton
             label="Sign out"
             secondary
             onPress={() => setConfirmSignOut(true)}
           />
-          <AccountActions />
-          <LegalLinks />
           <FocusSheet open={confirmSignOut} title="Sign out?" onClose={() => setConfirmSignOut(false)}><AppText role="body" secondary>You can sign in again to return to your account.</AppText><FocusButton label="Sign out" onPress={() => { setConfirmSignOut(false); void signOut(); }} /><FocusButton label="Cancel" secondary onPress={() => setConfirmSignOut(false)} /></FocusSheet>
         </SectionStack>
 </ScrollView>
@@ -483,81 +496,77 @@ const styles=useThemedStyles(stylesThemes);
   }
 
   if (panel === "connections") {
+    const providers = providersForDevice();
     const content = (<SectionStack divided={false}>
           {!inlineConnections && !state.onboardingCompleted && <FocusButton label="Continue setup →" onPress={() => router.push("/onboarding")}/>}
-          {providersForDevice().map((provider) => {
+          <View style={styles.syncList}>
+          {providers.map((provider, index) => {
             const link = state.links.find(
               (row) => row.provider === provider.id,
             );
-            const status =
-              link?.status === "connected"
-                ? "Connected"
-                : "Not connected";
-            const onPhone = isDeviceProvider(provider.id);
-            const cloud = isCloudOAuthProvider(provider.id);
-            const hint = onPhone
-              ? ` · ${syncBusy ? "Syncing…" : "Tap to sync"}`
-              : cloud
-                ? link?.linked
-                  ? ""
-                  : busyProvider === provider.id
-                    ? " · authorizing…"
-                    : " · tap to connect"
-                : "";
-            const copy = (
+            const showDivider = index < providers.length - 1;
+            const title = (
               <>
                 <IntegrationIcon provider={provider.id} />
-                <View style={{ flex: 1, gap: 3 }}>
-                <Text style={styles.rowTitle}>{provider.name}</Text>
-                <Text style={styles.copy}>
-                  {status}
-                  {hint}
-                </Text>
-                </View>
+                <Text style={[styles.rowTitle, { flex: 1 }]}>{provider.name}</Text>
               </>
             );
             if (isDeviceProvider(provider.id)) {
               const deviceId = provider.id;
               return (
-                <Pressable
+                <View
                   key={deviceId}
-                  accessibilityRole="button"
-                  disabled={rowBusy}
-                  onPress={() => void syncDevice(deviceId)}
-                  style={styles.row}
+                  style={[styles.syncRow, showDivider && styles.syncRowDivider]}
                 >
-                  {copy}
-                </Pressable>
+                  {title}
+                  <View style={{ flexShrink: 0 }}>
+                    <FocusButton
+                      label={syncBusy ? "Syncing…" : "Sync"}
+                      disabled={rowBusy}
+                      onPress={() => void syncDevice(deviceId)}
+                    />
+                  </View>
+                </View>
               );
             }
             if (isCloudOAuthProvider(provider.id)) {
               const cloudId = provider.id;
-              if (link?.linked && link.status !== "disconnected") {
-                return (
-                  <View key={cloudId} style={styles.row}>
-                    {copy}
-                    <DataSyncActions provider={cloudId} />
-                  </View>
-                );
-              }
+              const connected =
+                link?.linked && link.status !== "disconnected";
               return (
-                <Pressable
+                <View
                   key={cloudId}
-                  accessibilityRole="button"
-                  disabled={rowBusy}
-                  onPress={() => void connectCloud(cloudId)}
-                  style={styles.row}
+                  style={[styles.syncRow, showDivider && styles.syncRowDivider]}
                 >
-                  {copy}
-                </Pressable>
+                  {title}
+                  {connected ? (
+                    <DataSyncActions provider={cloudId} />
+                  ) : (
+                    <View style={{ flexShrink: 0 }}>
+                      <FocusButton
+                        label={
+                          busyProvider === provider.id
+                            ? "Authorizing…"
+                            : "Connect"
+                        }
+                        disabled={rowBusy}
+                        onPress={() => void connectCloud(cloudId)}
+                      />
+                    </View>
+                  )}
+                </View>
               );
             }
             return (
-              <View key={provider.id} style={styles.row}>
-                {copy}
+              <View
+                key={provider.id}
+                style={[styles.syncRow, showDivider && styles.syncRowDivider]}
+              >
+                {title}
               </View>
             );
           })}
+          </View>
           <Toast message={note ?? ""} onDismiss={() => setNote(null)} />
           <DataSyncActions includeCalibration={!inlineConnections}/>
         </SectionStack>);
@@ -582,32 +591,14 @@ const styles=useThemedStyles(stylesThemes);
         {pageHeader}
         <ScrollView contentContainerStyle={f.content}>
 <SectionStack divided={false}>
-          <AppText role="body" secondary >
-            Open includes your eligible sessions. GPS Tracked uses sessions recorded
-            by a GPS tracker.
+          <AppText role="body" secondary>
+            Effort score is calculated differently for each sport—distance sports weigh GPS-tracked volume,
+            strength uses training time and effort points, and sleep competitions use nightly sleep quality.
           </AppText>
-          <AppText role="body" secondary >
-            Each active sport has its own effort score. Rank-priced activity
-            milestones add points immediately. Weekly placement can raise or lower your score.
-            A week without counted activity decays toward the score floor.
-            Activity milestone points already earned are kept. Stopping after this week keeps the current
-            week open and turns off renewal.
+          <AppText role="body" secondary>
+            Logging activities and joining weekly fields boosts your score; showing up to events and closing
+            the week in the field moves it fastest.
           </AppText>
-          <AppText role="body" secondary >
-            A week freeze holds the weekly score adjustment and can be undone
-            before the week ends. Activity milestones can still grow your score.
-          </AppText>
-          {RANK_BANDS.map((band) => (
-            <View key={band.name} style={[f.card, { flexDirection: "row", alignItems: "center", gap: 14 }]}>
-              <RankSymbol rank={band.id} size={52} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <AppText role="heading">
-                  {band.name} · {band.min}+
-                </AppText>
-                <AppText role="body" secondary>{band.blurb}</AppText>
-              </View>
-            </View>
-          ))}
         </SectionStack>
 </ScrollView>
       </SafeAreaView>
@@ -934,7 +925,8 @@ const styles=useThemedStyles(stylesThemes);
     {/* Side Panel for Edit Profile & Settings (not a bottom sheet) */}
     <FocusSidePanel
       open={editOpen}
-      title="Edit profile & Settings"
+      title="Edit profile"
+      headerDivider={false}
       onClose={() => {
         setEditOpen(false);
         if (params.edit) {
@@ -942,28 +934,25 @@ const styles=useThemedStyles(stylesThemes);
         }
       }}
     >
-      <View style={{ gap: 12 }}>
-        <SectionHeader title="Profile details" />
-        <View style={[f.row, { gap: 16, alignItems: "center" }]}>
-          <ProfilePhoto state={state} />
-          <View style={{ flex: 1, gap: 8 }}>
-            <Input
-              style={textStyle("body")}
-              value={draftName}
-              onChangeText={setName}
-              accessibilityLabel="Name"
-              maxLength={32}
-              placeholder="Name"
-            />
-            <Input
-              style={textStyle("body")}
-              value={draftCity}
-              onChangeText={setCity}
-              accessibilityLabel="City"
-              maxLength={40}
-              placeholder="City"
-            />
-          </View>
+      <View style={{ gap: 16 }}>
+        <ProfilePhoto state={state} editSize={168} />
+        <View style={{ gap: 8 }}>
+          <Input
+            style={textStyle("body")}
+            value={draftName}
+            onChangeText={setName}
+            accessibilityLabel="Name"
+            maxLength={32}
+            placeholder="Name"
+          />
+          <Input
+            style={textStyle("body")}
+            value={draftCity}
+            onChangeText={setCity}
+            accessibilityLabel="City"
+            maxLength={40}
+            placeholder="City"
+          />
         </View>
         {dirty ? (
           <FocusButton
@@ -1067,6 +1056,25 @@ const stylesThemes = createThemedStyles(themeColors=>{const SHELL_COLORS=themeCo
     borderWidth: 1,
     borderColor: SHELL_COLORS.line,
     gap: 12,
+  },
+  syncList: {
+    borderRadius: SHELL_RADIUS.control,
+    borderWidth: 1,
+    borderColor: SHELL_COLORS.line,
+    backgroundColor: SHELL_COLORS.card,
+    overflow: "hidden",
+  },
+  syncRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    minHeight: 56,
+  },
+  syncRowDivider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: SHELL_COLORS.line,
   },
   rowTitle: {
     ...textStyle("label"),

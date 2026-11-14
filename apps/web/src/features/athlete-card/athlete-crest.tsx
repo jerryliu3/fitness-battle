@@ -17,7 +17,7 @@ const WREATH_FRAME = {
 };
 const POINTS = [[24, 0], [296, 0], [320, 28], [320, 244], [300, 298], [160, 368], [20, 298], [0, 244], [0, 28]];
 const CLIP = `polygon(${POINTS.map(([x, y]) => `${x / WIDTH * 100}% ${y / HEIGHT * 100}%`).join(",")})`;
-function Wordmark() { return <span className={styles.wordmark}>overtaek↗</span>; }
+function Wordmark() { return <span className={styles.wordmark}>overtaek</span>; }
 function Stat({ value, label, dim = false }: { value: string | number; label: string; dim?: boolean }) {
   return <div className={styles.stat} data-dim={dim}><strong>{value}</strong><span>{label}</span></div>;
 }

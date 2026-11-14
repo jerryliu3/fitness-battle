@@ -1,12 +1,10 @@
 import { useThemeColors } from "../theme";
 import { playCue } from "../lib/haptics";
-import { RankAvatar } from "../ui/rank-symbol";
 import { AppText } from "../ui/section";
 import {
   buildAvatarCleanupPathsForProfileChange,
   getCanonicalAvatarObjectPath,
   APP_ICON_PATHS,
-  effectiveRankSymbol,
   type CompeteState,
 } from "@fitness-battle/shared";
 import * as ImagePicker from "expo-image-picker";
@@ -20,16 +18,17 @@ async function photoLibraryDenied() {
   }
 }
 import { useEffect, useRef, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Image, Pressable, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { decodePhoto } from "../lib/profile-photo";
 import { supabase } from "../lib/supabase";
+import { AppIcon } from "../ui/app-icon";
 
 import { FocusButton, FocusSheet } from "../ui/focus";
 
-export function ProfilePhoto({ state }: { state: CompeteState }) {
+export function ProfilePhoto({ state, editSize = 144 }: { state: CompeteState; editSize?: number }) {
 const c=useThemeColors();
 
   const { user, offlineMode } = useAuth();
@@ -123,39 +122,64 @@ const c=useThemeColors();
     }
   }
   return (
-    <View style={{ alignItems: "center", gap: 8, maxWidth: 130 }}>
+    <View style={{ alignItems: "center", gap: 8, alignSelf: "center" }}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Profile photo options"
+        accessibilityLabel="Edit profile photo"
         disabled={!user || busy}
         onPress={() => {
           if (!user || busy) return;
           setMenuOpen(true);
         }}
         style={{
-          width: 144,
-          height: 144,
+          width: editSize,
+          height: editSize,
           alignItems: "center",
           justifyContent: "center",
-          overflow: "visible",
-          alignSelf: "center",
         }}
       >
-        <RankAvatar
-          rank={effectiveRankSymbol(state)}
-          src={state.avatarUrl}
-          name={state.name}
-          size={144}
-          fallback={<Svg width={48} height={48} viewBox="0 0 24 24">
-            <Path
-              d={APP_ICON_PATHS.person}
-              fill={c.muted} stroke="none"
-              strokeWidth={1.6}
-              strokeLinecap="round"
-              strokeLinejoin="round"
+        <View
+          style={{
+            width: editSize,
+            height: editSize,
+            borderRadius: editSize / 2,
+            overflow: "hidden",
+            backgroundColor: c.soft,
+            borderWidth: 1,
+            borderColor: c.line,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {state.avatarUrl ? (
+            <Image
+              source={{ uri: state.avatarUrl }}
+              style={{ width: "100%", height: "100%" }}
+              accessibilityIgnoresInvertColors
             />
-          </Svg>}
-        />
+          ) : (
+            <Svg width={editSize * 0.35} height={editSize * 0.35} viewBox="0 0 24 24">
+              <Path d={APP_ICON_PATHS.person} fill={c.muted} />
+            </Svg>
+          )}
+        </View>
+        <View
+          style={{
+            position: "absolute",
+            right: 4,
+            bottom: 4,
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: c.card,
+            borderWidth: 1,
+            borderColor: c.line,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <AppIcon name="edit" size={16} />
+        </View>
       </Pressable>
       <FocusSheet
         open={menuOpen}
@@ -174,7 +198,6 @@ const c=useThemeColors();
           disabled={busy}
           onPress={() => {
             if (!user || flight.current || pendingPickerOwner.current) return;
-            // UIKit must finish dismissing our sheet before presenting the picker.
             pendingPickerOwner.current = user.id;
             setMenuOpen(false);
           }}
@@ -190,7 +213,6 @@ const c=useThemeColors();
             }}
           />
         ) : null}
-        <FocusButton label="Cancel" secondary onPress={() => setMenuOpen(false)} />
       </FocusSheet>
       {error ? (
         <AppText role="caption" secondary  accessibilityLiveRegion="polite">

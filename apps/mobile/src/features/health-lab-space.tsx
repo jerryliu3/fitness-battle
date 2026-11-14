@@ -34,7 +34,7 @@ export function HealthLabSpace({
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
 
-  const [timeLens, setTimeLens] = useState<AnalyticsTimeLens>("30d");
+  const [timeLens, setTimeLens] = useState<AnalyticsTimeLens>("7d");
   const [selectedMetric, setSelectedMetric] = useState<HealthMetricKey>("hrv");
   const [selectedIdx, setSelectedIdx] = useState<number | undefined>(undefined);
 
@@ -68,54 +68,25 @@ export function HealthLabSpace({
       low: values.map(() => personal.low),
     };
   }, [activeRows, selectedMetric]);
-  const latest = (metric: HealthMetricKey) => {
-    const rows = metric === "hrv" ? series.hrv : metric === "rhr" ? series.rhr : series.sleep;
-    const last = [...rows].reverse().find((row) => row.value != null);
-    return last?.value != null ? { value: formatReading(metric, last.value), label: last.label } : null;
-  };
-
   const titles: Record<HealthMetricKey, string> = {
     hrv: "Overnight HRV",
     rhr: "Resting Heart Rate",
     sleep: "Sleep duration",
   };
-  const healthInsight = !latest("hrv") && !latest("rhr") && !latest("sleep")
+  const healthInsight = !lastRecorded || lastRecorded.value == null
     ? "Connect a supported tracker to record HRV, resting heart rate, and sleep. Charts stay empty until observations exist."
-    : [
-        latest("hrv") ? `Latest HRV ${latest("hrv")!.value} on ${latest("hrv")!.label}` : null,
-        latest("sleep") ? `Latest sleep ${latest("sleep")!.value} on ${latest("sleep")!.label}` : null,
-        latest("rhr") ? `Latest resting HR ${latest("rhr")!.value} on ${latest("rhr")!.label}` : null,
-      ].filter(Boolean).join(". ") + ".";
-
-  const card = (metric: HealthMetricKey, label: string) => {
-    const reading = latest(metric);
-    return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${label}: ${reading ? reading.value : "no data"}`}
-        onPress={() => { setSelectedMetric(metric); setSelectedIdx(undefined); }}
-        style={[s.summaryCard, selectedMetric === metric && s.summaryCardActive]}
-      >
-        <AppText role="caption" secondary numberOfLines={1}>{label}</AppText>
-        <AppText role="value" style={{ fontVariant: ["tabular-nums"] }}>
-          {reading?.value ?? "—"}
-        </AppText>
-        <AppText role="caption" secondary numberOfLines={1}>
-          {reading ? reading.label : "No data"}
-        </AppText>
-      </Pressable>
-    );
-  };
+    : `Latest ${titles[selectedMetric].toLowerCase()} ${formatReading(selectedMetric, lastRecorded.value)} on ${lastRecorded.label}.`;
 
   return (
     <View style={s.container}>
-      <VitalsLabBodyScan state={state} signedOut={signedOut} />
-
-      <View style={s.summaryCardsRow}>
-        {card("hrv", "Overnight HRV")}
-        {card("sleep", "Sleep")}
-        {card("rhr", "Resting HR")}
-      </View>
+      <VitalsLabBodyScan
+        state={state}
+        signedOut={signedOut}
+        onChartMetricChange={(metric) => {
+          setSelectedMetric(metric);
+          setSelectedIdx(undefined);
+        }}
+      />
 
       <View style={s.chartCard}>
         <View style={{ gap: 2 }}>
@@ -180,17 +151,6 @@ const sThemes = createThemedStyles((themeColors) => {
   const c = themeColors;
   return {
     container: { gap: 20 },
-    summaryCardsRow: { flexDirection: "row", gap: 8 },
-    summaryCard: {
-      flex: 1,
-      padding: 12,
-      borderRadius: 16,
-      backgroundColor: c.soft,
-      borderWidth: 1,
-      borderColor: c.line,
-      gap: 4,
-    },
-    summaryCardActive: { borderColor: c.tennis, borderWidth: 1.5 },
     chartCard: {
       padding: 16,
       borderRadius: 20,
