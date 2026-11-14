@@ -11,26 +11,13 @@ import {
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import {
   loadCompeteAccount,
-  loadEffortScoreEvents,
   persistCompeteAccount,
   settleAccountFields,
 } from "@/lib/compete-persist";
 import { applyCompeteIntents } from "@/lib/apply-compete-intents";
 import { competitionAuthorityDatabase } from "@/lib/competition-authority";
 import { createRequestClient } from "@/lib/supabase/request";
-
-async function committedScoreHistory(
-  db: Parameters<typeof loadEffortScoreEvents>[0],
-  userId: string,
-  state: CompeteState,
-): Promise<CompeteState> {
-  try {
-    return { ...state, effortScoreEvents: await loadEffortScoreEvents(db, userId) };
-  } catch (error) {
-    console.error("Committed score history reload failed:", error instanceof Error ? error.message : "unknown");
-    return state;
-  }
-}
+import { committedScoreHistory, competeAccountJsonState } from "@/lib/compete-save-route";
 
 function parseActions(raw: unknown): Action[] | null {
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > 24) return null;
@@ -108,14 +95,7 @@ export async function POST(request: Request): Promise<Response> {
         ok: true,
         persisted: true,
         updatedAt,
-        state: {
-          ...live,
-          requiresCanonicalFields: true,
-          enrollments: live.enrollments.map((e) => ({
-            ...e,
-            awaitingField: e.awaitingField ?? !e.fieldBoard,
-          })),
-        },
+        state: competeAccountJsonState(live),
       });
     } catch (error) {
       if (error instanceof Error && error.message.includes("account_changed_reload")) {

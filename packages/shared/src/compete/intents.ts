@@ -46,11 +46,15 @@ export const COMPETE_ACCOUNT_INTENT_TYPES = [
   ...PHASE_B_COMPETE_INTENT_TYPES,
 ] as const satisfies readonly Action["type"][];
 
-/** Still require full account documents — tracker batches and legacy debug paths. */
-export const COMPETE_DOCUMENT_SAVE_TYPES = [
+export const COMPETE_SYNC_ACTION_TYPES = [
   "apply-sync",
   "sync",
   "import-history",
+] as const satisfies readonly Action["type"][];
+
+/** Tracker batches plus actions that still need a full account document on save. */
+export const COMPETE_DOCUMENT_SAVE_TYPES = [
+  ...COMPETE_SYNC_ACTION_TYPES,
   "duel",
   "debug-close-week",
 ] as const satisfies readonly Action["type"][];

@@ -142,6 +142,7 @@ export {
   PHASE_A_COMPETE_INTENT_TYPES,
   PHASE_B_COMPETE_INTENT_TYPES,
   COMPETE_ACCOUNT_INTENT_TYPES,
+  COMPETE_SYNC_ACTION_TYPES,
   COMPETE_DOCUMENT_SAVE_TYPES,
   isPhaseACompeteIntentAction,
   isPhaseACompeteIntentType,
@@ -154,6 +155,18 @@ export {
   type PhaseACompeteIntentType,
   type CompeteAccountIntentType,
 } from "./intents";
+export {
+  isCompeteSyncAction,
+  normalizeCompeteSyncAction,
+  serializeCompeteSyncAction,
+} from "./sync-intents";
+export {
+  accountSavePlan,
+  competeSaveRequest,
+  runAccountSaveSteps,
+  type AccountSaveTarget,
+  type CompeteSaveResult,
+} from "./account-save";
 export {
   chooseCompeteState,
   applyRemoteSnapshot,

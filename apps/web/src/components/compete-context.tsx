@@ -28,6 +28,12 @@ import {
   seedArenaBaselinesFromState,
   seenFieldFromState,
   withAccountEloBaseline,
+  isCompeteAccountIntentAction,
+  isCompeteSyncAction,
+  accountSavePlan,
+  runAccountSaveSteps,
+  serializeCompeteIntent,
+  serializeCompeteSyncAction,
   type Action,
   type Activity,
   type CompeteState,
@@ -221,6 +227,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef<CompeteState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queue = useRef<Action[]>([]);
+  const pendingIntentsRef = useRef<Action[]>([]);
+  const pendingSyncRef = useRef<Action | null>(null);
   const dirtyRef = useRef(0);
   const unsavedRef = useRef(false);
   const unitsUnsavedRef = useRef(false);
@@ -251,6 +259,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     statusRef.current = "loading";
     stateRef.current = null;
     queue.current = [];
+    pendingIntentsRef.current = [];
+    pendingSyncRef.current = null;
     dirtyRef.current = 0;
     unsavedRef.current = false;
     unitsUnsavedRef.current = false;
@@ -277,12 +287,21 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           return;
         }
         try {
-          const response = await fetch("/api/compete", {
-            method: "PUT", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ state: next, accountId, updatedAt: revisionRef.current }),
-          });
-          if (!isCurrent()) return;
-          const body = await response.json().catch(() => null);
+          const syncAction = pendingSyncRef.current;
+          const intentBatch = [...pendingIntentsRef.current];
+          pendingSyncRef.current = null;
+          pendingIntentsRef.current = [];
+          const steps = accountSavePlan(syncAction, intentBatch, next);
+          const { response, body } = await runAccountSaveSteps(
+            accountId,
+            revisionRef.current,
+            steps,
+            (url, init) => fetch(url, init),
+          );
+          if (!response.ok) {
+            if (syncAction) pendingSyncRef.current = syncAction;
+            if (intentBatch.length) pendingIntentsRef.current = intentBatch;
+          }
           if (!isCurrent()) return;
           if (!response.ok) {
             writeStorageItem(deviceOnlyKey(accountId), "1");
@@ -307,7 +326,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
               writeLocal(accountId, body.state, body.updatedAt);
             }
             removeStorageItem(deviceOnlyKey(accountId));
-            unsavedRef.current = false; unitsUnsavedRef.current = false;
+            unsavedRef.current = false;
+            unitsUnsavedRef.current = false;
+            pendingIntentsRef.current = [];
+            pendingSyncRef.current = null;
           }
           setSaveError(null);
         } catch {
@@ -723,6 +745,11 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         const before = userIdRef.current && !offlineRef.current ? { ...stateRef.current, requiresCanonicalFields: true } : stateRef.current;
         const next = reduceCompete(before, withAccount);
         if (JSON.stringify(next) === JSON.stringify(before)) return;
+        if (isCompeteSyncAction(withAccount)) {
+          pendingSyncRef.current = serializeCompeteSyncAction(withAccount);
+        } else if (isCompeteAccountIntentAction(withAccount)) {
+          pendingIntentsRef.current.push(serializeCompeteIntent(withAccount));
+        }
         dirtyRef.current += 1;
         unsavedRef.current = true;
         if (withAccount.type === "set-units") unitsUnsavedRef.current = true;

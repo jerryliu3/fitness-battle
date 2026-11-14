@@ -117,7 +117,10 @@ function isAccountSaveCall(url: string, init?: RequestInit) {
   if (init.method === "PUT" && url.includes("/api/compete") && !url.includes("/intents")) {
     return true;
   }
-  return init.method === "POST" && url.includes("/api/compete/intents");
+  return (
+    init.method === "POST" &&
+    (url.includes("/api/compete/intents") || url.includes("/api/compete/sync"))
+  );
 }
 function accountSaveCalls() {
   return fetcher.mock.calls.filter(([url, init]) =>
