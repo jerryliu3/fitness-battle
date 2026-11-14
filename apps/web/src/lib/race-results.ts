@@ -8,11 +8,25 @@ export async function loadRaceResults(distance: string, query: ReturnType<typeof
   if (!client) throw new Error("Rankings are not configured");
   if (query.editionError) throw new Error(query.editionError);
   const bounds = raceDateBounds(query);
-  const { data, error } = await client.rpc("rankings_page_scoped", {
-    p_distance: distance, p_sex: query.sex, p_year: query.year,
-    p_edition_id: query.editionId, p_query: query.query, p_page: query.page, p_from: bounds.from, p_until: bounds.until,
-    p_percentile: query.percentile ?? "all",
+  const baseParams = {
+    p_distance: distance,
+    p_sex: query.sex,
+    p_year: query.year,
+    p_edition_id: query.editionId,
+    p_query: query.query,
+    p_page: query.page,
+    p_from: bounds.from,
+    p_until: bounds.until,
+  };
+  const percentile = query.percentile ?? "all";
+  let { data, error } = await client.rpc("rankings_page_scoped", {
+    ...baseParams,
+    p_percentile: percentile,
   });
+  // Fallback for Rankings DBs that have not yet applied 20261110060000_pace_percentiles.sql
+  if (error && percentile === "all" && (error.code === "PGRST202" || /p_percentile|schema cache/i.test(error.message))) {
+    ({ data, error } = await client.rpc("rankings_page_scoped", baseParams));
+  }
   if (error || !data) throw new Error("Rankings unavailable");
   return data as RaceResultsPage;
 }
