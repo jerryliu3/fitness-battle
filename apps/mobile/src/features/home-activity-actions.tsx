@@ -31,6 +31,8 @@ import {
   syncHealthConnect,
 } from "../lib/device-health";
 import { FocusButton, FocusSheet } from "../ui/focus";
+import { AnchoredMenu, AnchoredMenuItem, useAnchoredMenu } from "../ui/anchored-menu";
+import { SportIcon } from "../ui/sport-icon";
 
 export function HomeActivityActions({
   compact = false,
@@ -47,6 +49,7 @@ export function HomeActivityActions({
   const [open, setOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [note, setNote] = useState("");
+  const sportMenu = useAnchoredMenu({ minWidth: 196, estimatedHeight: SPORTS.length * 46 + 12 });
   const [formError, setFormError] = useState("");
   const [sport, setSport] = useState<SportId | "">("");
   const [time, setTime] = useState("");
@@ -54,6 +57,7 @@ export function HomeActivityActions({
     [minutes, setMinutes] = useState("");
   useEffect(() => setNote(""), [user?.id]);
   const flight = useRef(false);
+  const pendingSheetOpen = useRef(false);
   if (!state) return null;
   async function sync() {
     if (!user || !canWrite || flight.current) return;
@@ -168,7 +172,9 @@ export function HomeActivityActions({
   const actionRow = compact ? (
     <View style={{ flexDirection: "row", gap: 8 }}>
       <IconButton primary icon="sync" label={busy ? "Syncing activities" : "Sync activities"} disabled={!user || !canWrite || busy} onPress={() => void sync()} />
-      <IconButton icon="plus" label="Add activity" disabled={!user || !canWrite || busy} onPress={() => { setSport(""); setFormError(""); setOpen(true); }} />
+      <View ref={sportMenu.anchorRef} collapsable={false}>
+        <IconButton icon="plus" label="Add activity" disabled={!user || !canWrite || busy} onPress={sportMenu.toggle} />
+      </View>
     </View>
   ) : (
     <View style={{ flexDirection: "row", gap: 8 }}>
@@ -177,14 +183,11 @@ export function HomeActivityActions({
         disabled={!user || !canWrite || busy}
         onPress={() => void sync()}
       /></View>
-      <View style={{ flex: 1 }}><FocusButton
+      <View ref={sportMenu.anchorRef} collapsable={false} style={{ flex: 1 }}><FocusButton
         secondary
         label="Add activity"
         disabled={!user || !canWrite || busy}
-        onPress={() => {
-          setFormError("");
-          setOpen(true);
-        }}
+        onPress={sportMenu.toggle}
       /></View>
     </View>
   );
@@ -196,10 +199,41 @@ export function HomeActivityActions({
         <Link href="/athlete">Sign in to add or sync activities</Link>
       )}
       <Toast message={note} onDismiss={() => setNote("")} />
+      <AnchoredMenu
+        open={sportMenu.open}
+        onClose={() => {
+          pendingSheetOpen.current = false;
+          sportMenu.close();
+        }}
+        onDismiss={() => {
+          if (!pendingSheetOpen.current) return;
+          pendingSheetOpen.current = false;
+          setOpen(true);
+        }}
+        menuLayout={sportMenu.menuLayout}
+        accessibilityLabel="Close sport menu"
+      >
+        {SPORTS.map((item, idx) => (
+          <AnchoredMenuItem
+            key={item.id}
+            label={item.name}
+            left={<SportIcon sport={item.id} size={18} />}
+            last={idx === SPORTS.length - 1}
+            onPress={() => {
+              void playCue("selection");
+              setSport(item.id);
+              setMiles("");
+              setFormError("");
+              pendingSheetOpen.current = true;
+              sportMenu.close();
+            }}
+          />
+        ))}
+      </AnchoredMenu>
       <FocusSheet
         open={open}
         onClose={() => setOpen(false)}
-        title="Add manual activity"
+        title={sport ? `Add ${sportById(sport).name} activity` : "Add manual activity"}
         minimal
       >
         <ChoicePicker systemMenu label="Sport" placeholder="Choose a sport" value={sport} options={SPORTS.map(item => ({ value: item.id, label: item.name }))} onChange={value => { setSport(value); setMiles(""); }} />

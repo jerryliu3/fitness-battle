@@ -27,7 +27,7 @@ import { useCompeteStore } from "../lib/compete-store";
 import { decodePhoto } from "../lib/profile-photo";
 import { supabase } from "../lib/supabase";
 
-import { FocusButton, FocusSheet } from "../ui/focus";
+import { AnchoredMenu, AnchoredMenuItem, useAnchoredMenu } from "../ui/anchored-menu";
 
 export function ProfilePhoto({ state }: { state: CompeteState }) {
 const c=useThemeColors();
@@ -35,7 +35,6 @@ const c=useThemeColors();
   const { user, offlineMode } = useAuth();
   const { dispatch } = useCompeteStore();
   const [busy, setBusy] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const flight = useRef(false);
   const pendingPickerOwner = useRef<string | null>(null);
   const ownerRef = useRef(user?.id);
@@ -122,76 +121,82 @@ const c=useThemeColors();
       setBusy(false);
     }
   }
+  const photoMenu = useAnchoredMenu({ minWidth: 196, estimatedHeight: 112 });
   return (
     <View style={{ alignItems: "center", gap: 8, maxWidth: 130 }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Profile photo options"
-        disabled={!user || busy}
-        onPress={() => {
-          if (!user || busy) return;
-          setMenuOpen(true);
-        }}
-        style={{
-          width: 144,
-          height: 144,
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "visible",
-          alignSelf: "center",
-        }}
-      >
-        <RankAvatar
-          rank={effectiveRankSymbol(state)}
-          src={state.avatarUrl}
-          name={state.name}
-          size={144}
-          fallback={<Svg width={48} height={48} viewBox="0 0 24 24">
-            <Path
-              d={APP_ICON_PATHS.person}
-              fill={c.muted} stroke="none"
-              strokeWidth={1.6}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </Svg>}
-        />
-      </Pressable>
-      <FocusSheet
-        open={menuOpen}
-        title="Profile photo"
-        onClosed={() => {
+      <View ref={photoMenu.anchorRef} collapsable={false}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Profile photo options"
+          accessibilityState={{ expanded: photoMenu.open }}
+          disabled={!user || busy}
+          onPress={() => {
+            if (!user || busy) return;
+            photoMenu.toggle();
+          }}
+          style={{
+            width: 144,
+            height: 144,
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "visible",
+            alignSelf: "center",
+          }}
+        >
+          <RankAvatar
+            rank={effectiveRankSymbol(state)}
+            src={state.avatarUrl}
+            name={state.name}
+            size={144}
+            fallback={<Svg width={48} height={48} viewBox="0 0 24 24">
+              <Path
+                d={APP_ICON_PATHS.person}
+                fill={c.muted} stroke="none"
+                strokeWidth={1.6}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>}
+          />
+        </Pressable>
+      </View>
+      <AnchoredMenu
+        open={photoMenu.open}
+        menuLayout={photoMenu.menuLayout}
+        accessibilityLabel="Close profile photo menu"
+        onDismiss={() => {
           const id = pendingPickerOwner.current;
           pendingPickerOwner.current = null;
           if (id && mounted.current && ownerRef.current === id) void change();
         }}
         onClose={() => {
-          if (!busy) setMenuOpen(false);
+          if (!busy) photoMenu.close();
         }}
       >
-        <FocusButton
+        <AnchoredMenuItem
           label={busy ? "Updating…" : "Choose photo"}
           disabled={busy}
+          last={!state.avatarUrl}
           onPress={() => {
             if (!user || flight.current || pendingPickerOwner.current) return;
-            // UIKit must finish dismissing our sheet before presenting the picker.
+            // UIKit must finish dismissing our menu before presenting the picker.
             pendingPickerOwner.current = user.id;
-            setMenuOpen(false);
+            photoMenu.close();
           }}
         />
         {state.avatarUrl ? (
-          <FocusButton
+          <AnchoredMenuItem
             label="Delete photo"
-            secondary
+            destructive
             disabled={busy}
+            last
             onPress={() => {
-              setMenuOpen(false);
+              photoMenu.close();
               void change(true);
             }}
           />
         ) : null}
-        <FocusButton label="Cancel" secondary onPress={() => setMenuOpen(false)} />
-      </FocusSheet>
+      </AnchoredMenu>
       {error ? (
         <AppText role="caption" secondary  accessibilityLiveRegion="polite">
           {error}
