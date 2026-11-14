@@ -12,7 +12,7 @@ import { useSceneActive } from "./use-scene-active";
 
 export function OpenLineChart({ chart, label, unit, range, onRangeChange, includeYear = true, live = false, openHero = false, footerAction, showAxes = true, showDateRange = true, hideSummary = false, hideRangeToggle = false, uniformAspect = false, onSelectionChange }: {
   chart: OpenLineModel; showAxes?: boolean; showDateRange?: boolean; label: string; unit: string; range: OpenLineRange | EffortHistoryRange;
-  onRangeChange: (range: OpenLineRange) => void; includeYear?: boolean; comparisonLabel?: string; live?: boolean; openHero?: boolean; footerAction?: ReactNode;
+  onRangeChange: (range: OpenLineRange) => void; includeYear?: boolean; live?: boolean; openHero?: boolean; footerAction?: ReactNode;
   hideSummary?: boolean; hideRangeToggle?: boolean; uniformAspect?: boolean; onSelectionChange?: (point: ChartDatum | undefined) => void;
 }) {
 const c=useThemeColors();

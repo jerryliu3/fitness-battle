@@ -187,6 +187,26 @@ export function personalRecordChart(
           { x: points[0]!.x, label: dateFormatter.format(new Date(rows[0]!.startedAt)) },
           { x: points.at(-1)!.x, label: dateFormatter.format(new Date(rows.at(-1)!.startedAt)) },
         ];
+  const windowMs = 30 * 86400000;
+  const trendPolyline = points.length >= 2
+    ? points
+        .map((p, i) => {
+          const pMs = Date.parse(p.startedAt);
+          let sumY = 0;
+          let count = 0;
+          for (let j = i; j >= 0; j--) {
+            const jMs = Date.parse(points[j]!.startedAt);
+            if (Number.isFinite(pMs) && Number.isFinite(jMs) ? pMs - jMs <= windowMs : i - j < 30) {
+              sumY += points[j]!.y;
+              count += 1;
+            } else {
+              break;
+            }
+          }
+          return `${p.x.toFixed(1)},${(count > 0 ? sumY / count : p.y).toFixed(1)}`;
+        })
+        .join(" ")
+    : "";
   return {
     left,
     right,
@@ -195,6 +215,7 @@ export function personalRecordChart(
     width,
     height,
     path,
+    trendPolyline,
     points,
     ticks,
     xTicks,

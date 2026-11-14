@@ -172,7 +172,7 @@ const s=useThemedStyles(sThemes);
                     );
                   })()}
                   {chart.points.map((p) => {
-                    if (p.value == null || p.y == null) return null;
+                    if (p.value == null || p.y == null || scrubbedPoint?.id === String(p.index)) return null;
                     const isOutOfCorridor = p.position === "under" || p.position === "over";
                     return (
                       <Circle

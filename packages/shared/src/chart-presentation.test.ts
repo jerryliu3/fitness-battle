@@ -17,7 +17,7 @@ it("preserves this week's counted totals and stops the line at today", () => {
   expect(model.value).toBe(weeklyHoursComparison(state, now).currTotalHours.toFixed(1));
   expect(model.points.map(point => point.id)).toEqual([expect.stringContaining("start:"), "current", expect.stringContaining("end:")]);
   expect(model.points.at(-1)?.label).toContain("Oct 22");
-  expect(model.previous).toBe("");
+  expect(model.yTicks[0]?.label).toBe("0");
   expect(model.trendLine).not.toBe("");
   expect(model.points.at(-1)!.x).toBeLessThan(336);
   expect(model.line).not.toMatch(/NaN|Infinity/);
@@ -35,7 +35,7 @@ it("uses 28 Eastern calendar days across DST without a previous comparison line"
   expect(model.points).toHaveLength(25);
   expect(new Set(model.points.map(point => point.id)).size).toBe(25);
   expect(model.value).toBe("2.0");
-  expect(model.previous).toBe("");
+  expect(model.yTicks[0]?.label).toBe("0");
   expect(model.trendLine).not.toBe("");
   expect(model.points.at(-1)?.id).toBe("2026-11-05");
 });
@@ -93,7 +93,7 @@ it("keeps equal day spacing through DST and distinct repeated-hour events", () =
     { id: "first-1am", date: "2026-11-01T05:30:00Z", value: 2 },
     { id: "second-1am", date: "2026-11-01T06:30:00Z", value: 3 },
     { id: "mon", date: "2026-11-02T05:00:00Z", value: 4 },
-  ], String, [], 3, { start, end, showTime: true });
+  ], String, 3, { start, end, showTime: true });
   expect(chart.points[1]!.x - chart.points[0]!.x).toBeCloseTo(chart.points[4]!.x - chart.points[1]!.x);
   expect(chart.points[2]!.x).toBeLessThan(chart.points[3]!.x);
   expect(chart.points[2]!.label).toContain("EDT");
@@ -225,6 +225,6 @@ it("labels the Home week by weekday with whole-number, distinct hour references"
   const now = new Date("2026-11-09T15:00:00Z");
   const chart = homeTrainingLine(freshState(now), "week", now);
   expect(chart.xTicks.map(tick => tick.label)).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
-  expect(chart.yTicks.every(tick => /^-?\d+$/.test(tick.label))).toBe(true);
+  expect(chart.yTicks.every(tick => /^\d+$/.test(tick.label))).toBe(true);
   expect(new Set(chart.yTicks.map(tick => tick.label)).size).toBe(chart.yTicks.length);
 });

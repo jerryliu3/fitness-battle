@@ -42,7 +42,7 @@ const c=useThemeColors();
   const lastId = useRef<string | null>(null);
   const touchStart = useRef<{ x: number; y: number; locationX: number } | null>(null);
   const direction = useRef<"horizontal" | "vertical" | null>(null);
-  const selected = points.find(point => point.id === (selectedPointId ?? selectedId));
+  const selected = points.find(point => point.id === (selectedId ?? selectedPointId));
   const latest = useRef({ points, width, onSelect, onSelectionChange });
   latest.current = { points, width, onSelect, onSelectionChange };
   const inspect = (locationX: number, feedback = true) => {

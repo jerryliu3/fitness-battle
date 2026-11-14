@@ -145,29 +145,29 @@ export function PerformanceSpace({
     return personalRecordChart(activeDistanceRows, now, 320, 160);
   }, [activeDistanceRows, now]);
 
-  const prTrendPolyline = useMemo(() => {
-    if (!prChartData || prChartData.points.length < 2) return "";
-    const pts = prChartData.points;
-    const windowMs = 30 * 86400000;
-    return pts
-      .map((p, i) => {
-        const pMs = Date.parse(p.startedAt);
-        let sumY = 0;
-        let count = 0;
-        for (let j = i; j >= 0; j--) {
-          const jMs = Date.parse(pts[j]!.startedAt);
-          if (Number.isFinite(pMs) && Number.isFinite(jMs) ? pMs - jMs <= windowMs : i - j < 30) {
-            sumY += pts[j]!.y;
-            count += 1;
-          } else {
-            break;
-          }
-        }
-        const avgY = count > 0 ? sumY / count : p.y;
-        return `${p.x.toFixed(1)},${avgY.toFixed(1)}`;
-      })
-      .join(" ");
+  const formatActivityDate = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      timeZone: APP_TIMEZONE,
+    });
+  };
+
+  const prScrubPoints = useMemo<ChartDatum[]>(() => {
+    if (!prChartData) return [];
+    return prChartData.points.map((p) => ({
+      id: p.activityId,
+      x: p.x,
+      y: p.y,
+      label: formatActivityDate(p.startedAt),
+      value: formatClockTime(p.seconds),
+    }));
   }, [prChartData]);
+
+  const activePRPoint = scrubbedPRPoint
+    ?? (inspectedPRAttempt ? prScrubPoints.find((p) => p.id === inspectedPRAttempt.activityId) : undefined);
 
   const prSummary = useMemo(() => {
     if (!activeDistanceRows.length) return null;
@@ -182,16 +182,6 @@ export function PerformanceSpace({
       pct,
     };
   }, [activeDistanceRows]);
-
-  const formatActivityDate = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      timeZone: APP_TIMEZONE,
-    });
-  };
 
   const insightText = volumeComparison.percent == null
     ? null
@@ -352,6 +342,7 @@ export function PerformanceSpace({
                   onPress={() => {
                     setSelectedPRKey(d.key);
                     setInspectedPRAttempt(null);
+                    setScrubbedPRPoint(undefined);
                   }}
                   style={[s.chip, active && s.chipActive]}
                 >
@@ -374,12 +365,12 @@ export function PerformanceSpace({
             <View style={{ gap: 12 }}>
               <View style={s.prHeadlineRow}>
                 <View style={{ gap: 2 }}>
-                  <AppText role="caption" secondary>Current PR</AppText>
+                  <AppText role="caption" secondary>{activePRPoint ? "Selected PR" : "Current PR"}</AppText>
                   <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
-                    {formatClockTime(prSummary.latest.seconds)}
+                    {activePRPoint?.value ?? formatClockTime(prSummary.latest.seconds)}
                   </AppText>
                   <AppText role="caption" secondary>
-                    {formatActivityDate(prSummary.latest.startedAt)}
+                    {activePRPoint?.label ?? formatActivityDate(prSummary.latest.startedAt)}
                   </AppText>
                 </View>
 
@@ -399,17 +390,7 @@ export function PerformanceSpace({
               </View>
 
               {/* Interactive PR Progression Chart */}
-              {prChartData && (() => {
-                const prScrubPoints: ChartDatum[] = prChartData.points.map((p) => ({
-                  id: p.activityId,
-                  x: p.x,
-                  y: p.y,
-                  label: formatActivityDate(p.startedAt),
-                  value: formatClockTime(p.seconds),
-                }));
-                const activePRPoint = scrubbedPRPoint
-                  ?? (inspectedPRAttempt ? prScrubPoints.find((p) => p.id === inspectedPRAttempt.activityId) : undefined);
-                return (
+              {prChartData && (
                 <View style={{ marginVertical: 8 }}>
                   <ChartScrubber
                     points={prScrubPoints}
@@ -496,9 +477,9 @@ export function PerformanceSpace({
                     ))}
 
                     {/* Rolling 30-day average trendline */}
-                    {prTrendPolyline ? (
+                    {prChartData.trendPolyline ? (
                       <Polyline
-                        points={prTrendPolyline}
+                        points={prChartData.trendPolyline}
                         fill="none"
                         stroke={c.secondary}
                         strokeWidth={1.75}
@@ -544,8 +525,7 @@ export function PerformanceSpace({
                   </ChartSvg>
                   </ChartScrubber>
                 </View>
-                );
-              })()}
+              )}
 
               {/* Inspected PR Detail Card */}
               {inspectedPRAttempt && (

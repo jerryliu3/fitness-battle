@@ -26,7 +26,7 @@ export function RecordChart({
   onSelect,
 }: {
   rows: RecordAttempt[];
-  selected: string;
+  selected?: string | null;
   now: Date;
   onSelect: (id: string) => void;
 }) {
@@ -39,31 +39,12 @@ const clubColors=useThemeColors();
   const scrubPoints: ChartDatum[] = chart.points.map(point => ({
     id: point.activityId, x: point.x, y: point.y, label: date(point.startedAt), value: formatClockTime(point.seconds),
   }));
-  const activePoint = scrubbed ?? scrubPoints.find((p) => p.id === selected);
-  const trendPolyline = chart.points.length >= 2
-    ? chart.points
-        .map((p, i) => {
-          const pMs = Date.parse(p.startedAt);
-          let sumY = 0;
-          let count = 0;
-          for (let j = i; j >= 0; j--) {
-            const jMs = Date.parse(chart.points[j]!.startedAt);
-            if (Number.isFinite(pMs) && Number.isFinite(jMs) ? pMs - jMs <= 30 * 86400000 : i - j < 30) {
-              sumY += chart.points[j]!.y;
-              count += 1;
-            } else {
-              break;
-            }
-          }
-          return `${p.x.toFixed(1)},${(count > 0 ? sumY / count : p.y).toFixed(1)}`;
-        })
-        .join(" ")
-    : "";
+  const activePoint = scrubbed ?? (selected ? scrubPoints.find((p) => p.id === selected) : undefined);
   return (
     <View style={{ marginVertical: 16 }}>
       <ChartScrubber
         hideSummary
-        selectedPointId={selected}
+        selectedPointId={selected ?? undefined}
         label="Personal record timeline, lower time is faster"
         points={scrubPoints}
         width={chart.width}
@@ -107,9 +88,9 @@ const clubColors=useThemeColors();
             </ChartText>
           </G>
         ))}
-        {!!trendPolyline && (
+        {!!chart.trendPolyline && (
           <Polyline
-            points={trendPolyline}
+            points={chart.trendPolyline}
             fill="none"
             stroke={clubColors.secondary}
             strokeWidth={1.75}
