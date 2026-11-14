@@ -34,7 +34,15 @@ describe("daily Eastern competition waves", () => {
     expect(openEnrollmentRemoved(logged, left, new Date(at))).toBe(false);
     const starts = new Date(state.enrollments[0]!.waveStart);
     expect(weeklyBoard(logged, "running", "open", starts).every(row => row.distanceM === 0)).toBe(true);
-    const after = reduceCompete(logged, { type: "log-manual", sport: "running", distanceM: 5000, movingSec: 1800, activityId: "at-start", now: starts.toISOString() });
+    const after = reduceCompete(logged, {
+      type: "apply-sync",
+      provider: "strava",
+      activities: [{
+        id: "at-start", sport: "running", startedAt: starts.toISOString(), distanceM: 5000, movingSec: 1800,
+        avgHr: 140, source: "strava", provenance: "recorded", verified: true, disposition: "counted",
+      }],
+      now: starts.toISOString(),
+    });
     expect(weeklyBoard(after, "running", "open", new Date(starts.getTime() + 1)).find(row => row.you)?.distanceM).toBe(5000);
     expect(reduceCompete(after, { type: "opt-out", sport: "running", now: starts.toISOString() }).enrollments).toEqual(after.enrollments);
     expect(openEnrollmentRemoved(after, { ...after, enrollments: [] }, starts)).toBe(true);

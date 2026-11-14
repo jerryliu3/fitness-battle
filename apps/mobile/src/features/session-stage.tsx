@@ -4,6 +4,7 @@ import { Modal, Pressable, View } from "react-native";
 import {
   APP_TIMEZONE, EFFORT_TIER_LABELS, PROVIDERS, activityComparisons, activityEffort, activityRoute, competeNow, countsOnTrack,
   distanceUnitLabel, formatClockTime, formatDistanceM, formatEffort, formatTrainingHours,
+  isJournalActivity,
   isVerifiedActivity, sessionEffortSummary, sessionStageModel, sportById,
   type Activity, type CompeteState, type UnitSystem,
 } from "@fitness-battle/shared";
@@ -185,7 +186,11 @@ export function ActivityDetailView({
         </View>
         <AppText role="caption" secondary>
           {date} · {time}
-          {!countsOnTrack(activity, "open") ? " · Excluded from totals" : ""}
+          {isJournalActivity(activity)
+            ? " · Training log only"
+            : !countsOnTrack(activity, "open")
+              ? " · Excluded from totals"
+              : ""}
         </AppText>
       </View>
 
@@ -255,12 +260,12 @@ export function ActivityDetailView({
               : `From ${PROVIDERS.find(provider => provider.id === activity.source)?.name ?? activity.source}`}{" "}
           · {isVerifiedActivity(activity) ? "GPS tracked" : "Recorded activity"}
         </AppText>
-        {onRemove ? (
+        {onRemove && !isJournalActivity(activity) ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Delete session" style={s.disclosure} onPress={() => setConfirming(true)}>
             <AppText role="caption" secondary style={{ color: c.statusError }}>Delete session</AppText>
           </Pressable>
         ) : null}
-        {onRemove ? (
+        {onRemove && !isJournalActivity(activity) ? (
           <Modal transparent animationType="fade" visible={confirming} onRequestClose={() => setConfirming(false)}>
             <Pressable style={s.modalBackdrop} onPress={() => setConfirming(false)}>
               <Pressable style={s.glassCard} onPress={e => e.stopPropagation()}>

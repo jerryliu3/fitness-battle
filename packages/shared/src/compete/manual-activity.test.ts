@@ -1,15 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { freshState, reduceCompete } from "./engine";
+import { countsForTraining } from "./journal";
 import { countsOnTrack } from "./ledger";
 const now = "2026-10-19T15:00:00.000Z";
 const action = { type: "log-manual" as const, sport: "running" as const, movingSec: 1800, distanceM: 5000, activityId: "manual-1", now };
 describe("manual activities", () => {
-  it("records today and is eligible only in Open", () => {
+  it("records today for training history but never competes", () => {
     const state = reduceCompete(freshState(new Date(now)), action);
     const activity = state.activities.find((item) => item.id === action.activityId)!;
     expect(activity.startedAt).toBe(now);
     expect(activity.provenance).toBe("manual");
-    expect(countsOnTrack(activity, "open")).toBe(true);
+    expect(countsForTraining(activity)).toBe(true);
+    expect(countsOnTrack(activity, "open")).toBe(false);
     expect(countsOnTrack(activity, "verified")).toBe(false);
   });
   it("retains multiple sessions today and makes retries idempotent", () => {

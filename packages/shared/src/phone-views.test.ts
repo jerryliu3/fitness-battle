@@ -175,7 +175,7 @@ describe("arena lanes", () => {
     };
     expect(
       buildArenaModel(state, now, "open").lanes.find((l) => l.you)?.values[2],
-    ).toBe(7);
+    ).toBe(4);
     expect(
       buildArenaModel(state, now, "verified").lanes.find((l) => l.you)
         ?.values[2],

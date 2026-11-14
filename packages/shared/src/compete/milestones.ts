@@ -38,7 +38,9 @@ export function milestoneStep(sport: SportId, score: number): number {
       ? 5 * 1609.344
       : sport === "strength"
         ? 1800
-        : 1609.344) * multiplier
+        : sport === "walking"
+          ? 1000
+          : 1609.344) * multiplier
   );
 }
 
@@ -81,9 +83,14 @@ export function applyEffortMilestones(
         new Date(start),
         new Date(Math.min(Date.parse(enrollment.weekEnd), now.getTime() + 1)),
         track,
+        { dailyHealth: state.dailyHealth, now },
       );
       const volume =
-        rating.sport === "strength" ? totals.movingSec : totals.distanceM;
+        rating.sport === "strength"
+          ? totals.movingSec
+          : rating.sport === "walking"
+            ? totals.effort
+            : totals.distanceM;
       const earned = Math.max(
         previous?.earned ?? 0,
         Math.floor(Math.max(0, volume) / step),

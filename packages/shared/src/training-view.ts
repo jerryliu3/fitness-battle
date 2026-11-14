@@ -1,5 +1,6 @@
 import { APP_TIMEZONE, dailyPeriodBounds, dayKey, monthlyPeriodBounds, shiftAppDay, weeklyPeriodBounds } from "./period";
-import { countsOnTrack } from "./compete/ledger";
+import { countsForTraining } from "./compete/journal";
+import { isVerifiedActivity } from "./compete/ledger";
 import { periodEffort } from "./compete/effort";
 import { currentEffortMilestone } from "./compete/milestones";
 import { competeNow } from "./compete/engine";
@@ -84,7 +85,8 @@ function eligible(
   return activities.filter(
     (a) =>
       sportMatches(a.sport, sport) &&
-      countsOnTrack(a, track) &&
+      countsForTraining(a) &&
+      (track === "open" || isVerifiedActivity(a)) &&
       Number.isFinite(Date.parse(a.startedAt)) &&
       Date.parse(a.startedAt) <= now.getTime(),
   );
@@ -143,7 +145,7 @@ export function earliestDataDate(
   };
 
   for (const a of state.activities) {
-    if (countsOnTrack(a, "open")) consider(a.startedAt);
+    if (countsForTraining(a)) consider(a.startedAt);
   }
   for (const r of state.periodResults) consider(r.periodStart);
   for (const a of state.recordAttempts ?? []) consider(a.startedAt);
@@ -219,8 +221,8 @@ export function effortPointProgress(state: CompeteState, sport: SportId = state.
   const rating=state.ratings.find(r=>r.sport===sport), enrollment=state.enrollments.find(e=>e.sport===sport);
   const receipt=currentEffortMilestone(state,sport,track);
   if(!rating?.optedIn || !enrollment || !receipt || Date.parse(enrollment.waveStart)>now.getTime() || Date.parse(enrollment.weekEnd)<=now.getTime())return null;
-  const totals=periodEffort(state.activities,sport,new Date(enrollment.waveStart),new Date(Math.min(Date.parse(enrollment.weekEnd),now.getTime()+1)),track);
-  const volume=sport==="strength"?totals.movingSec:totals.distanceM;
+  const totals=periodEffort(state.activities,sport,new Date(enrollment.waveStart),new Date(Math.min(Date.parse(enrollment.weekEnd),now.getTime()+1)),track,{dailyHealth:state.dailyHealth,now});
+  const volume=sport==="strength"?totals.movingSec:sport==="walking"?totals.effort:totals.distanceM;
   const score=track==="open"?rating.openElo:rating.verifiedElo;
   const threshold=(receipt.earned+1)*receipt.step;
   return {sport,track,score,earned:receipt.earned,step:receipt.step,volume,remaining:Math.max(0,threshold-volume),retained:volume<receipt.earned*receipt.step,fraction:score>=ELO_CAP?1:Math.max(0,Math.min(1,(volume-receipt.earned*receipt.step)/receipt.step)),capped:score>=ELO_CAP};

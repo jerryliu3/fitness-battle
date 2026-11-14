@@ -5,6 +5,7 @@ import {
   athleteWeekMovingSec,
 } from "../compete/track";
 import { athleteWeekEffort, type FieldAthlete } from "../compete/field";
+import type { DailyHealthSample } from "../fitness/types";
 import { sportById, type Activity, type ScoreTrack, type SportId } from "../compete/sports";
 import type {
   LocalBoardRow,
@@ -20,6 +21,7 @@ export interface LocalBoardInput {
     name: string;
     elo: number;
     activities: Activity[];
+    dailyHealth?: readonly DailyHealthSample[];
     readiness?: { provider: string; day: string; score: number }[];
     primarySport?: SportId;
   };
@@ -73,7 +75,6 @@ function peerVolume(
       activities,
       enrollment.sport,
       waveStart,
-      // Clip exclusive end to asOf so live boards match the viewer clock.
       new Date(Math.min(asOf.getTime(), weekEnd.getTime())),
       track,
     );
@@ -133,6 +134,7 @@ export function buildLocalBoard(input: LocalBoardInput): LocalBoardRow[] {
     waveStart,
     through,
     input.track,
+    { dailyHealth: input.viewer.dailyHealth, now: asOf },
   );
 
   const rows: LocalBoardRow[] = [

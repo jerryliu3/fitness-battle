@@ -50,9 +50,8 @@ export const SPORTS: Sport[] = [
   {
     id: "walking",
     name: "Walking",
-    gps: true,
-    blurb: "Time on your feet, counted as distance.",
-    basePaceMinPerKm: 12.0,
+    gps: false,
+    blurb: "Daily steps from your connected tracker.",
   },
   {
     id: "strength",
@@ -241,6 +240,8 @@ export interface PeriodResult {
 /** Display preference for distance. Default US customary (miles). */
 export type UnitSystem = "us" | "metric";
 
+export type ProfileGender = "male" | "female" | "other";
+
 export interface EffortScoreEvent {
   id: string;
   sport: SportId;
@@ -262,6 +263,8 @@ export interface CompeteState {
   version: 1;
   name: string;
   city: string;
+  gender?: ProfileGender | null;
+  countryCode?: string | null;
   avatarUrl?: string | null;
   /** Explicit preferred laurel rank symbol; falls back to current effort score band when omitted. */
   rankSymbol?: RankSymbolId | null;

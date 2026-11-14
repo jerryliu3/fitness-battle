@@ -300,7 +300,7 @@ export async function loadCompeteAccount(
   ] = await Promise.all([
     db
       .from("profiles")
-      .select("display_name, city, primary_sport, avatar_url, lifetime_overtakes")
+      .select("display_name, city, primary_sport, avatar_url, lifetime_overtakes, gender, country_code")
       .eq("id", userId)
       .maybeSingle(),
     db.from("sport_ratings").select("*").eq("user_id", userId),
@@ -359,6 +359,14 @@ export async function loadCompeteAccount(
       ...state,
       name: String(profile.display_name ?? state.name).slice(0, 80) || state.name,
       city: String(profile.city ?? state.city).slice(0, 80),
+      gender:
+        profile.gender === "male" || profile.gender === "female" || profile.gender === "other"
+          ? profile.gender
+          : state.gender,
+      countryCode:
+        typeof profile.country_code === "string" && profile.country_code.length === 2
+          ? profile.country_code.toUpperCase()
+          : state.countryCode,
       primary: primary ?? state.primary,
       avatarUrl: profile.avatar_url ? String(profile.avatar_url) : null,
       lifetimeOvertakes: Math.max(

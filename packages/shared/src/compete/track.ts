@@ -1,3 +1,4 @@
+import type { DailyHealthSample } from "../fitness/types";
 import { APP_TIMEZONE, endOfZonedDay, shiftAppDay } from "../period";
 import { periodEffort } from "./effort";
 import { athleteWeekEffort, type FieldAthlete } from "./field";
@@ -88,8 +89,12 @@ export function volumeThrough(
   periodStart: Date,
   through: Date,
   track: ScoreTrack,
+  opts?: { dailyHealth?: readonly DailyHealthSample[]; now?: Date },
 ): { effort: number; distanceM: number; movingSec: number } {
-  return periodEffort(activities, sport, periodStart, through, track);
+  return periodEffort(activities, sport, periodStart, through, track, {
+    dailyHealth: opts?.dailyHealth,
+    now: opts?.now ?? through,
+  });
 }
 
 /** Build checkpoint series from real activities for the signed-in athlete. */
@@ -100,10 +105,14 @@ export function activityCheckpoints(
   periodEnd: Date,
   track: ScoreTrack,
   now: Date = new Date(),
+  dailyHealth?: readonly DailyHealthSample[],
 ): CheckpointSeries {
   const [early, mid, live] = checkpointInstants(periodStart, periodEnd, now);
   const volumes = [early, mid, live].map((through) =>
-    volumeThrough(activities, sport, periodStart, through, track),
+    volumeThrough(activities, sport, periodStart, through, track, {
+      dailyHealth,
+      now: through,
+    }),
   );
   return {
     effort: [volumes[0]!.effort, volumes[1]!.effort, volumes[2]!.effort],

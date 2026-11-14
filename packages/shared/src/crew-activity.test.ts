@@ -10,7 +10,7 @@ it("deduplicates a member across crews and excludes future/stale rows", () => {
 });
 it("prefers the local athlete's eligible activity over a stale API copy", () => {
   const state = freshState(now);
-  state.activities = [{ id: "own", sport: "strength", startedAt: "2026-10-23T15:00:00Z", distanceM: 0, movingSec: 1800, avgHr: null, source: "manual", provenance: "manual", verified: false, disposition: "counted" }];
+  state.activities = [{ id: "own", sport: "strength", startedAt: "2026-10-23T15:00:00Z", distanceM: 0, movingSec: 1800, avgHr: 140, source: "garmin", provenance: "recorded", verified: false, disposition: "counted" }];
   const rows = homeRecentActivities(state, "self", [row({ userId: "self" }), row()], now);
   expect(rows.map(a => a.id)).toEqual(["own", "peer-activity"]);
   expect(rows[0]?.ownActivity?.id).toBe("own");

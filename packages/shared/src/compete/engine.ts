@@ -16,6 +16,7 @@ import {
 } from "../matching";
 import { eloFromWeeklyEffort, periodEffort } from "./effort";
 import type { RankSymbolId } from "../rank-symbols";
+import { formatWalkingSteps } from "./journal";
 import { mergeActivities, normalizeSampleActivity, provenanceOf } from "./ledger";
 import { isTrainingGoal } from "./suggestion";
 import { settleElo } from "./elo";
@@ -80,6 +81,8 @@ export interface Action {
     | "rename"
     | "log-manual"
     | "set-city"
+    | "set-gender"
+    | "set-country"
     | "set-avatar"
     | "set-rank-symbol"
     | "set-card-highlights"
@@ -116,6 +119,8 @@ export interface Action {
   movingSec?: number;
   name?: string;
   city?: string;
+  gender?: import("./sports").ProfileGender;
+  countryCode?: string;
   avatarUrl?: string | null;
   rankSymbol?: RankSymbolId | null;
   cardHighlights?: string[];
@@ -572,6 +577,7 @@ function groupFor(
       name: state.name,
       elo: track === "verified" ? mine.verifiedElo : mine.openElo,
       activities: enrollment.scoringActivities ?? state.activities,
+      dailyHealth: state.dailyHealth,
       readiness: state.readiness,
       primarySport: state.primary,
     },
@@ -938,13 +944,17 @@ export function calibrateFromAcceptedHistory(state: CompeteState, now: Date): Co
     for (let back = 0; back < 90; back += 7) {
       const end = shiftAppDay(now, -back);
       const start = shiftAppDay(now, -back - 7);
-      const open = periodEffort(state.activities, sport, start, end, "open").effort;
+      const open = periodEffort(state.activities, sport, start, end, "open", {
+        dailyHealth: state.dailyHealth,
+        now,
+      }).effort;
       const verified = periodEffort(
         state.activities,
         sport,
         start,
         end,
         "verified",
+        { dailyHealth: state.dailyHealth, now },
       ).effort;
       if (open <= 0) continue;
       openSum += open;
@@ -1056,13 +1066,23 @@ function reduceCompeteAction(
       const activity: Activity = {
         id: action.activityId, sport: action.sport, startedAt: new Date(timestamp).toISOString(),
         distanceM, movingSec, avgHr: null, source: "manual", provenance: "manual",
-        verified: false, disposition: "counted", dispositionReason: "Manually logged · Open standings only.",
+        verified: false, disposition: "counted", dispositionReason: "Manually logged for your training history.",
       };
       return { ...rolled, activities: [...rolled.activities, activity] };
     }
     case "set-city": {
       const city = action.city?.trim().slice(0, 40);
       return city ? { ...rolled, city } : rolled;
+    }
+    case "set-gender": {
+      const gender = action.gender;
+      if (gender !== "male" && gender !== "female" && gender !== "other") return rolled;
+      return { ...rolled, gender };
+    }
+    case "set-country": {
+      const code = action.countryCode?.trim().toUpperCase().slice(0, 2);
+      if (!code || !/^[A-Z]{2}$/.test(code)) return rolled;
+      return { ...rolled, countryCode: code };
     }
     case "set-avatar": {
       const avatarUrl =
@@ -1534,7 +1554,11 @@ export function formatVolume(
   distanceM: number,
   movingSec: number,
   units: UnitSystem = "us",
+  effort = 0,
 ): string {
+  if (sport === "walking") {
+    return `${formatWalkingSteps(effort)} steps`;
+  }
   if (sportById(sport).gps) {
     if (units === "metric") {
       return `${(distanceM / 1000).toFixed(1)} km`;
