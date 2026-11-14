@@ -100,13 +100,13 @@ export function CompetitionReplayModal({ open, state, selection, dimension, onCl
 }) {
 const f=useFocusStyles();
 const { mode } = useAppTheme();
-
+  const { user } = useAuth();
   const reduced = useReducedMotion();
   return open ? <Modal visible animationType={reduced ? "none" : "fade"} presentationStyle="fullScreen" onRequestClose={onClose}>
     <SafeAreaProvider>
       <StatusBar style={mode === "dark" ? "light" : "dark"} />
       <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
-        <ReplayViewer key={`${selection.sport}:${selection.track}:${selection.periodStart}`} state={state} selection={selection} initialFlat={initialFlat} initialDimension={dimension} onClose={onClose} />
+        <ReplayViewer key={`${user?.id ?? "guest"}:${selection.sport}:${selection.track}:${selection.periodStart}:${selection.periodEnd}`} state={state} selection={selection} initialFlat={initialFlat} initialDimension={dimension} onClose={onClose} />
       </SafeAreaView>
     </SafeAreaProvider>
   </Modal> : null;
@@ -149,7 +149,7 @@ const s=useThemedStyles(sThemes);
     const query = `sport=${selection.sport}&track=${selection.track}&start=${encodeURIComponent(selection.periodStart)}&end=${encodeURIComponent(selection.periodEnd)}`;
     void requestApi<CompetitionReplay>(mobileEnv.apiUrl, accessToken, `/api/compete/replay?${query}`).then(next => { if (!cancelled) setData(next); }).catch(() => { if (!cancelled) setError("Could not load this competition’s replay. Try again."); });
     return () => { cancelled = true; };
-  }, [user?.id, offlineMode, debugActive, accessToken, selection.sport, selection.track, selection.periodStart, selection.periodEnd, attempt]);
+  }, [user?.id, offlineMode, debugActive, accessToken, selection.sport, selection.track, selection.periodStart, selection.periodEnd, attempt, state.activities, state.enrollments]);
   const index = useMemo(() => data ? indexCompetitionReplay(data, state.units) : null, [data, state.units]);
   const count = index?.replay.events.length ?? 0;
   useEffect(() => { if (embedded && index) setCursor(count); }, [index, count, embedded]);
