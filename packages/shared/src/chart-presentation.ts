@@ -57,7 +57,7 @@ export function openLineModel(
   timeline?: OpenLineTimeline,
   zeroMin = false,
 ): OpenLineModel {
-  const width = 340, height = 190, top = 28, bottom = 146, left = 44, right = 326;
+  const width = 340, height = 172, top = 28, bottom = 146, left = 44, right = 326;
   const values = rows.map(row => row.value);
   const low = values.length ? Math.min(...values) : 0, high = values.length ? Math.max(...values) : 1;
   const padding = Math.max(1, (high - low) * .12);

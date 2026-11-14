@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import { Pressable, View } from "react-native";
 import Svg, { Circle, Path, Polyline, G } from "react-native-svg";
-import { buildAnalyticsLabModel, buildSvgLineGeometry, type AnalyticsDomainId, type AnalyticsTimeLens, type CompeteState } from "@fitness-battle/shared";
+import { buildAnalyticsLabModel, buildSvgLineGeometry, type AnalyticsDomainId, type CompeteState } from "@fitness-battle/shared";
 import { ChartSvg } from "../ui/chart-text";
 import { AppText } from "../ui/section";
 

@@ -28,6 +28,25 @@ export function dottedCircleDasharray(radius: number, count = 8): string {
   return `${dash} ${gap}`;
 }
 
+/** Coordinates centered just above the final vertex of a trendline polyline. */
+export function trendLabelPosition(
+  polyline: string,
+  chartWidth: number,
+): { x: number; y: number } | null {
+  const trimmed = polyline.trim();
+  if (!trimmed) return null;
+  const last = trimmed.split(/\s+/).at(-1);
+  if (!last) return null;
+  const [xStr, yStr] = last.split(",");
+  const x = Number(xStr);
+  const y = Number(yStr);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return {
+    x: Number(Math.min(chartWidth - 14, Math.max(14, x)).toFixed(1)),
+    y: Number(Math.max(12, y - 6).toFixed(1)),
+  };
+}
+
 /** Round-number Y-axis bounds and 3-5 horizontal gridline ticks encompassing [rawMin, rawMax]. */
 export function computeNiceAxisTicks(
   rawMin: number,

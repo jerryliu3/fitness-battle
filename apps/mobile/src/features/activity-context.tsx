@@ -3,7 +3,7 @@ import { useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
 import Svg, { Circle, ClipPath, Defs, G, Line, Path, Rect, Text as SvgText } from "react-native-svg";
 import {
-  competeNow, computeNiceAxisTicks, sportById, type Activity, type CompeteState, type UnitSystem,
+  competeNow, computeNiceAxisTicks, sportById, trendLabelPosition, type Activity, type CompeteState, type UnitSystem,
   activityContextConstellation as constellation, activityContextDateLabel as dateLabel,
   activityContextFitHistory as fitHistory, activityContextFormatMetric as formatMetric,
   activityContextMetricValue as metricValue,
@@ -201,7 +201,18 @@ function Trajectory({ current, history, units }: { current: Activity; history: A
         ) : null}
         <AxesGrid yTicks={yTicks} yFormat={value => metric === "pace" ? formatMetric(value, metric, units).split("/")[0]! : `${Math.round(value)}`} xTicks={xTicks} />
         {metric === "efficiency" ? <Line x1={LEFT} x2={RIGHT} y1={y(100)} y2={y(100)} stroke={c.secondary} strokeDasharray="4 5" opacity={0.5} /> : null}
-        {trendPath ? <Path d={trendPath} stroke={c.secondary} fill="none" strokeWidth={1.75} strokeDasharray="3 3" strokeLinecap="round" strokeLinejoin="round" /> : null}
+        {trendPath ? (() => {
+          const lastAvg = averages.at(-1);
+          const avgLabel = lastAvg && lastAvg.average != null
+            ? trendLabelPosition(`${x(lastAvg.time)},${y(lastAvg.average)}`, W)
+            : null;
+          return (
+            <>
+              <Path d={trendPath} stroke={c.secondary} fill="none" strokeWidth={1.75} strokeDasharray="3 3" strokeLinecap="round" strokeLinejoin="round" />
+              {avgLabel ? <SvgText x={avgLabel.x} y={avgLabel.y} textAnchor="middle" fill={c.secondary} {...chartTextProps()}>Avg</SvgText> : null}
+            </>
+          );
+        })() : null}
         {rows.length > 1 ? (
           scrubbed ? <>
             <G clipPath={`url(#${clipId}-left)`}>

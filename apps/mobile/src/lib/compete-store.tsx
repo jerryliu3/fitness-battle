@@ -276,6 +276,13 @@ export function CompeteProvider({ children, navigationReady = true }: { children
           } else {
             const existingIds = new Set(next.activities.map((a) => a.id));
             const missing = seed.activities.filter((a) => !existingIds.has(a.id));
+            const existingSleepDays = new Set(next.sleepNights.map((s) => s.day));
+            const existingSleepIds = new Set(next.sleepNights.map((s) => s.id));
+            const missingSleep = seed.sleepNights
+              .filter((s) => !existingSleepDays.has(s.day))
+              .map((s) => (existingSleepIds.has(s.id) ? { ...s, id: `${s.id}:${s.day}` } : s));
+            const existingHealthKeys = new Set((next.dailyHealth ?? []).map((d) => `${d.provider}:${d.day}`));
+            const missingHealth = (seed.dailyHealth ?? []).filter((d) => !existingHealthKeys.has(`${d.provider}:${d.day}`));
             const needsCrew = !next.crewBoard || next.crewBoard.crewId === "solo";
             const seedJoined = seed.ratings.some(
               (r) => r.sport === seed.primary && r.optedIn,
@@ -284,10 +291,12 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               (r) => r.sport === seed.primary && r.optedIn,
             );
             const needsDemoField = seedJoined && !cacheJoined;
-            if (missing.length > 0 || needsCrew || needsDemoField) {
+            if (missing.length > 0 || missingSleep.length > 0 || missingHealth.length > 0 || needsCrew || needsDemoField) {
               next = {
                 ...next,
                 activities: missing.length > 0 ? [...next.activities, ...missing] : next.activities,
+                sleepNights: missingSleep.length > 0 ? [...next.sleepNights, ...missingSleep] : next.sleepNights,
+                dailyHealth: missingHealth.length > 0 ? [...(next.dailyHealth ?? []), ...missingHealth] : next.dailyHealth,
                 crewBoard: needsCrew ? seed.crewBoard : next.crewBoard,
                 enrollments: needsDemoField ? seed.enrollments : next.enrollments.length > 0 ? next.enrollments : seed.enrollments,
                 ...(needsDemoField

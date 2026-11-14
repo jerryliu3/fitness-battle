@@ -2,7 +2,7 @@ import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Animated, Easing, Text, View } from "react-native";
 import { Circle, ClipPath, Defs, G, Line, Polyline, Rect } from "react-native-svg";
-import { type ChartDatum, type EffortHistoryRange, type OpenLineModel, type OpenLineRange } from "@fitness-battle/shared";
+import { trendLabelPosition, type ChartDatum, type EffortHistoryRange, type OpenLineModel, type OpenLineRange } from "@fitness-battle/shared";
 import { OpenLineRangeToggle } from "../features/chart-range-toggle";
 import { ChartSvg, ChartText } from "./chart-text";
 import { AppText, textStyle } from "./section";
@@ -38,6 +38,7 @@ const s=useThemedStyles(sThemes);
     return () => animation.stop();
   }, [live, selected, pulse, reduceMotion, active]);
   const end = chart.points.at(-1);
+  const avgLabel = trendLabelPosition(chart.trendLine, chart.width);
   const showRangeInHeader = !hideRangeToggle && (range === "week" || range === "fourWeeks" || range === "year");
   const dotBorderColor = openHero ? c.paper : c.card;
 
@@ -96,18 +97,25 @@ const s=useThemedStyles(sThemes);
         )}
         {showAxes && <G>
           {chart.yTicks.map((tick, i) => <G key={`${tick.y}-${i}`}><Line x1={chart.left} x2={chart.right} y1={tick.y} y2={tick.y} stroke={c.line} strokeWidth={.5}/><ChartText x={chart.left - 6} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</ChartText></G>)}
-          {chart.xTicks.map((tick, i) => <ChartText key={i} x={tick.x} y={chart.height - 22} textAnchor={tick.anchor ?? (i === 0 ? "start" : i === chart.xTicks.length - 1 ? "end" : "middle")} fill={c.muted}>{tick.label}</ChartText>)}
+          {chart.xTicks.map((tick, i) => <ChartText key={i} x={tick.x} y={chart.bottom + 18} textAnchor={tick.anchor ?? (i === 0 ? "start" : i === chart.xTicks.length - 1 ? "end" : "middle")} fill={c.muted}>{tick.label}</ChartText>)}
         </G>}
         {!!chart.trendLine && (
-          <Polyline
-            points={chart.trendLine}
-            fill="none"
-            stroke={c.secondary}
-            strokeWidth={1.75}
-            strokeDasharray="3 3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          <>
+            <Polyline
+              points={chart.trendLine}
+              fill="none"
+              stroke={c.secondary}
+              strokeWidth={1.75}
+              strokeDasharray="3 3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {avgLabel && (
+              <ChartText x={avgLabel.x} y={avgLabel.y} textAnchor="middle" fill={c.secondary}>
+                Avg
+              </ChartText>
+            )}
+          </>
         )}
         {selectedPoint ? (
           <>

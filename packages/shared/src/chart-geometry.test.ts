@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildStandardChartGeometry, dottedCircleDasharray } from "./chart-geometry";
+import { buildStandardChartGeometry, dottedCircleDasharray, trendLabelPosition } from "./chart-geometry";
 
 describe("buildStandardChartGeometry", () => {
   it("handles empty arrays gracefully", () => {
@@ -83,4 +83,10 @@ it("produces 8 even dashes around any radius and 3-4 round-number yTicks", () =>
   expect(geo.yTicks[0]!.value).toBeLessThanOrEqual(47);
   expect(geo.yTicks.at(-1)!.value).toBeGreaterThanOrEqual(86);
   expect(geo.yTicks.every((t) => Number.isInteger(t.value))).toBe(true);
+});
+
+it("positions the Avg label centered above the final trendline point within chart width", () => {
+  expect(trendLabelPosition("", 340)).toBeNull();
+  expect(trendLabelPosition("44.0,90.0 326.0,60.0", 340)).toEqual({ x: 326, y: 54 });
+  expect(trendLabelPosition("44.0,10.0 338.0,14.0", 340)).toEqual({ x: 326, y: 12 });
 });

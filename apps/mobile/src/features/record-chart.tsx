@@ -7,6 +7,7 @@ import { Circle, ClipPath, Defs, G, Line, Path, Polyline, Rect } from "react-nat
 import {
   formatClockTime,
   personalRecordChart,
+  trendLabelPosition,
   APP_TIMEZONE,
   type ChartDatum,
   type RecordAttempt,
@@ -88,17 +89,27 @@ const clubColors=useThemeColors();
             </ChartText>
           </G>
         ))}
-        {!!chart.trendPolyline && (
-          <Polyline
-            points={chart.trendPolyline}
-            fill="none"
-            stroke={clubColors.secondary}
-            strokeWidth={1.75}
-            strokeDasharray="3 3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        )}
+        {!!chart.trendPolyline && (() => {
+          const avgLabel = trendLabelPosition(chart.trendPolyline, chart.width);
+          return (
+            <>
+              <Polyline
+                points={chart.trendPolyline}
+                fill="none"
+                stroke={clubColors.secondary}
+                strokeWidth={1.75}
+                strokeDasharray="3 3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {avgLabel && (
+                <ChartText x={avgLabel.x} y={avgLabel.y} textAnchor="middle" fill={clubColors.secondary}>
+                  Avg
+                </ChartText>
+              )}
+            </>
+          );
+        })()}
         {activePoint ? (
           <>
             <G clipPath={`url(#${clipId}-left)`}>

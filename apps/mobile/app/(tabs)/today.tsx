@@ -110,7 +110,7 @@ export default function Home() {
           ) : null}
 
           <SectionStack divided={false}>
-            <WeekChart state={state} onOpen={() => router.push("/week")} />
+            <WeekChart state={state} />
 
             <HomeDeck
               accountKey={accountKey}
