@@ -46,7 +46,11 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
 
   const { rows, loading, error } = useEventActivity(state, sport, active && !queued);
   const update = formatActivityAge(rows[0]?.at, competeNow(state));
-  const updateText = queued ? "Upcoming wave" : update !== "—" ? `Last update: ${update}` : !loading && !error ? "No updates yet" : null;
+  const liveUpdateText = queued ? "Upcoming wave" : update !== "—" ? `Last update: ${update}` : !loading && !error ? "No updates yet" : null;
+  const cachedUpdate = useRef<string | null>(null);
+  if (liveUpdateText) cachedUpdate.current = liveUpdateText;
+  const updateText = liveUpdateText ?? cachedUpdate.current;
+  const showLiveIndicator = !queued && Boolean(cachedUpdate.current);
   return <View style={{ width: cardWidth, padding: 12, gap: 12, borderRadius: 20, backgroundColor: c.card, borderWidth: 1, borderColor: c.line }}>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
       <View style={{ padding: 9, borderRadius: 12, backgroundColor: c.actionSoft }}><CompeteIcon name={sport} /></View>
@@ -54,14 +58,21 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
         <AppText role="label">{SPORTS.find(item => item.id === sport)?.name}</AppText>
         {updateText ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            {!queued && <LiveIndicator active={active} />}
+            {showLiveIndicator ? <LiveIndicator active={active && Boolean(liveUpdateText)} /> : null}
             <AppText role="support" secondary style={{ flexShrink: 1 }}>{updateText}</AppText>
           </View>
         ) : null}
       </View>
       {!queued && (
-        <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: c.soft, borderWidth: 1, borderColor: c.line }}>
-          <AppText role="caption" secondary>{`${ordinalPlace(place)} place`}</AppText>
+        <View style={{
+          paddingHorizontal: 8,
+          paddingVertical: 3,
+          borderRadius: 99,
+          backgroundColor: place === 1 ? c.podiumGold : place === 2 ? c.podiumSilver : place === 3 ? c.podiumBronze : c.card,
+          borderWidth: 1,
+          borderColor: place <= 3 ? "transparent" : c.line,
+        }}>
+          <AppText role="caption" style={{ color: place <= 3 ? c.ink : undefined }} secondary={place > 3}>{`${ordinalPlace(place)} place`}</AppText>
         </View>
       )}
     </View>
@@ -111,7 +122,7 @@ function SnapshotPreview({ cacheKey, course, lane, unit, queued, mysteryCount }:
   const [uri, setUri] = useState(() => snapshotCache.get(cacheKey) ?? "");
   const capture = (value: string) => { if (snapshotCache.size >= 32) snapshotCache.delete(snapshotCache.keys().next().value!); snapshotCache.set(cacheKey, value); setUri(value); };
   return <View pointerEvents="none" style={{ width: "100%", aspectRatio: 1, borderRadius: 12, overflow: "hidden", backgroundColor: c.paper }}>
-    {uri ? <Image source={{ uri }} resizeMode="cover" accessibilityLabel="3D snapshot of your current race position" style={{ width: "100%", height: "100%" }} /> : course && lane && (unit === "mi" || unit === "km") ? <GeographicCourse course={course} lanes={[{ id: lane.id, name: lane.name, initials: "", you: true, value: queued ? 0 : lane.values[2] }, ...(queued ? Array.from({ length: mysteryCount }, (_, i) => ({ id: `mystery-${i}`, name: `Athlete #${i + 1}`, initials: "?", you: false, mystery: true, value: 0 })) : [])]} unit={unit} selectedId={lane.id} focusRequest={0} onSelect={() => {}} onSnapshot={capture} optionsTop={null} /> : <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><AppText role="caption" secondary>{unit === "pts" ? "Points event" : "Preview unavailable"}</AppText></View>}
+    {uri ? <Image source={{ uri }} resizeMode="cover" accessibilityLabel="3D snapshot of your current race position" style={{ width: "100%", height: "100%" }} /> : course && lane && (unit === "mi" || unit === "km") ? <GeographicCourse course={course} lanes={[{ id: lane.id, name: lane.name, initials: "", you: true, value: queued ? 0 : lane.values[2] }, ...(queued ? Array.from({ length: mysteryCount }, (_, i) => ({ id: `mystery-${i}`, name: `Athlete #${i + 1}`, initials: "?", you: false, mystery: true, value: 0 })) : [])]} unit={unit} selectedId={lane.id} focusRequest={0} onSelect={() => {}} onSnapshot={capture} optionsTop={0} /> : <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><AppText role="caption" secondary>{unit === "pts" ? "Points event" : "Preview unavailable"}</AppText></View>}
   </View>;
 }
 

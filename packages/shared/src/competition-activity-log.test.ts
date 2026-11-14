@@ -17,7 +17,7 @@ describe("competition activity feed", () => {
     const rows = competitionActivityLog(indexCompetitionReplay(replay, "metric"));
     expect(rows.map(row => row.id)).toEqual(["third:3", "peer:2", "you:1"]);
     expect(rows[1]).toMatchObject({ title: "Riley logged +1 km", detail: "+1 km · Place 2 → 1", simulated: true });
-    expect(rows[2]?.title).toBe("You logged +1 km");
+    expect(rows[2]?.title).toBe("Alex logged +1 km");
   });
   it("hides blocked activity without changing the field's places", () => {
     const rows = competitionActivityLog(indexCompetitionReplay(replay, "metric"), ["peer"]);
@@ -30,7 +30,7 @@ describe("competition activity feed", () => {
     const index = indexCompetitionReplay({ ...replay, events: [...replay.events, replay.events[0]!, invalid] }, "us");
     const rows = competitionActivityLog(index);
     expect(rows).toHaveLength(3);
-    expect(rows[2]?.title).toBe("You logged +0.62 mi");
+    expect(rows[2]?.title).toBe("Alex logged +0.62 mi");
   });
   it("reveals completed events at the scrubber cursor", () => {
     const index = indexCompetitionReplay(replay, "metric");
@@ -43,11 +43,11 @@ describe("competition activity feed", () => {
       athletes: replay.athletes.map(athlete => ({ ...athlete, avatarUrl: "https://example.com/portrait.jpg" })),
       events: [replay.events[0]!, { ...replay.events[1]!, distanceM: 1500 }],
     }, "metric");
-    expect(competitionActivityLog(index)[0]).toMatchObject({ title: "Riley overtook you!", avatarUrl: "https://example.com/portrait.jpg", movement: true });
+    expect(competitionActivityLog(index)[0]).toMatchObject({ title: "Riley overtook Alex!", avatarUrl: "https://example.com/portrait.jpg", movement: true });
     expect(competitionActivityLog(index, ["you"])[0]?.title).toBe("Riley logged +1.5 km");
   });
   it("shows strength effort points, rather than inventing lift weights", () => {
     const index = indexCompetitionReplay({ ...replay, sport: "strength", track: "open", events: [{ ...replay.events[0]!, distanceM: 0, effort: 4, movingSec: 1800 }] }, "metric");
-    expect(competitionActivityLog(index)[0]?.title).toBe("You logged +4 pts");
+    expect(competitionActivityLog(index)[0]?.title).toBe("Alex logged +4 pts");
   });
 });

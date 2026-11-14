@@ -504,7 +504,7 @@ export function JourneySpace({
             </Pressable>
 
             <AppText role="heading">
-              {dayKey(yearAnchor).slice(0, 4)} Season Atlas
+              {dayKey(yearAnchor).slice(0, 4)}
             </AppText>
 
             <Pressable

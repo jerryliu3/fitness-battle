@@ -206,7 +206,6 @@ export function HomeDeck({
   const dismissalRevision = useRef(0);
   const swipingRef = useRef(false);
   const dismissalAnimation = useRef<Animated.CompositeAnimation | null>(null);
-  const stackLift = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     setDismissingId(null);
     swipingRef.current = false;
@@ -253,9 +252,6 @@ export function HomeDeck({
   );
   const dragX = motion.x;
   const cardOpacity = motion.opacity;
-  const depthLift = dismissingId
-    ? stackLift.interpolate({ inputRange: [0, 1], outputRange: [0, -7] })
-    : 0;
 
   const persistDismissed = useCallback(
     (next: HomeDeckCardId[]) => {
@@ -286,7 +282,6 @@ export function HomeDeck({
       if (reduceMotion) {
         dragX.setValue(0);
         cardOpacity.setValue(1);
-        stackLift.setValue(0);
         setDismissingId(null);
         persistDismissed(nextDismissed);
         return;
@@ -295,7 +290,6 @@ export function HomeDeck({
       swipingRef.current = true;
       setDismissingId(cardId);
       dragX.setValue(currentDx);
-      stackLift.setValue(0);
 
       const animation = Animated.parallel([
         Animated.timing(dragX, {
@@ -310,18 +304,11 @@ export function HomeDeck({
           easing: Easing.in(Easing.quad),
           useNativeDriver: true,
         }),
-        Animated.timing(stackLift, {
-          toValue: 1,
-          duration: 280,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
       ]);
       dismissalAnimation.current = animation;
       animation.start(({ finished }) => {
         if (!finished) return;
         persistDismissed(nextDismissed);
-        stackLift.setValue(0);
         setDismissingId(null);
         swipingRef.current = false;
       });
@@ -333,7 +320,6 @@ export function HomeDeck({
       dragX,
       persistDismissed,
       reduceMotion,
-      stackLift,
       visibleCards,
     ],
   );
@@ -342,11 +328,10 @@ export function HomeDeck({
     void playCue("selection");
     dragX.setValue(0);
     cardOpacity.setValue(1);
-    stackLift.setValue(0);
     setDismissingId(null);
     swipingRef.current = false;
     persistDismissed([]);
-  }, [cardOpacity, dragX, persistDismissed, stackLift]);
+  }, [cardOpacity, dragX, persistDismissed]);
 
   const activeCardRef = useRef<HomeDeckCard | null>(activeCard);
   activeCardRef.current = activeCard;
@@ -451,7 +436,7 @@ export function HomeDeck({
                     backgroundColor: paletteForDeckTone(depth2Card.tone, isDark).bg,
                     borderColor: paletteForDeckTone(depth2Card.tone, isDark).border,
                     opacity: 0.7,
-                    transform: [{ translateY: depthLift }],
+                    transform: [{ translateY: 14 }],
                   },
                 ]}
               >
@@ -470,8 +455,8 @@ export function HomeDeck({
                   {
                     backgroundColor: paletteForDeckTone(nextCard.tone, isDark).bg,
                     borderColor: paletteForDeckTone(nextCard.tone, isDark).border,
-                    opacity: dismissingId ? 1 : 0.95,
-                    transform: [{ translateY: depthLift }],
+                    opacity: 0.95,
+                    transform: [{ translateY: 7 }],
                   },
                 ]}
               >
@@ -575,14 +560,14 @@ const sThemes = createThemedStyles((c) => ({
     position: "absolute",
     left: 0,
     right: 0,
-    top: 7,
+    top: 0,
     zIndex: 2,
   },
   cardDepth2: {
     position: "absolute",
     left: 0,
     right: 0,
-    top: 14,
+    top: 0,
     zIndex: 1,
   },
   cardInner: {
