@@ -5,6 +5,7 @@ import { Pressable, View } from "react-native";
 import Svg, { Circle, Path, Polyline, G } from "react-native-svg";
 import { buildAnalyticsLabModel, buildSvgLineGeometry, type AnalyticsDomainId, type AnalyticsTimeLens, type CompeteState } from "@fitness-battle/shared";
 import { ChartSvg } from "../ui/chart-text";
+import { FocusSegments } from "../ui/focus";
 import { AppText } from "../ui/section";
 
 export function AthleteTelemetryMatrix({
@@ -113,25 +114,16 @@ const s=useThemedStyles(sThemes);
     <View style={s.container}>
       <View style={s.betweenRow}>
         <AppText role="heading">Advanced Analytics</AppText>
-        <View style={s.lensRow} role="group" accessibilityLabel="Time lens">
-          {(["7d", "30d"] as const).map((lens) => {
-            const active = timeLens === lens;
-            return (
-              <Pressable
-                key={lens}
-                accessibilityRole="button"
-                accessibilityLabel={`Time lens ${lens.toUpperCase()}`}
-                accessibilityState={{ selected: active }}
-                onPress={() => setTimeLens(lens)}
-                style={[s.lensPill, active && s.lensPillActive]}
-              >
-                <AppText role="caption" style={{ color: active ? c.ink : c.muted }}>
-                  {lens.toUpperCase()}
-                </AppText>
-              </Pressable>
-            );
-          })}
-        </View>
+        <FocusSegments
+          compact
+          label="Time lens"
+          value={timeLens}
+          options={[
+            { value: "7d", label: "7D", accessibilityLabel: "Time lens 7D" },
+            { value: "30d", label: "30D", accessibilityLabel: "Time lens 30D" },
+          ]}
+          onChange={setTimeLens}
+        />
       </View>
 
       <View style={s.bentoGrid}>
@@ -253,22 +245,6 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   container: {
     gap: 14,
     marginVertical: 4,
-  },
-  lensRow: {
-    flexDirection: "row",
-    gap: 6,
-  },
-  lensPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 99,
-    borderWidth: 1,
-    borderColor: c.line,
-    backgroundColor: "transparent",
-  },
-  lensPillActive: {
-    borderColor: c.ink,
-    backgroundColor: c.soft,
   },
   bentoGrid: {
     flexDirection: "row",

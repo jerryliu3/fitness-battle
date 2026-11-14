@@ -129,7 +129,10 @@ it("builds 7-day health corridor chart model identifying points under, in, or ov
   expect(chart.points[5].position).toBe("over"); // 85 > 82
   expect(chart.points[3].position).toBe("missing"); // null
   expect(chart.hasUnder).toBe(true);
-  expect(chart.corridorAreaPath).toContain("M 38,");
+  expect(chart.corridorAreaPath).toContain("M 44,");
+  expect(chart.yTicks.length).toBeGreaterThanOrEqual(3);
+  expect(chart.yTicks[0]!.value).toBeLessThanOrEqual(54);
+  expect(chart.yTicks.at(-1)!.value).toBeGreaterThanOrEqual(85);
   expect(chart.lineSegments.length).toBeGreaterThan(0);
 });
 

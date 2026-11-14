@@ -5,6 +5,7 @@ vi.mock("react-native", () => ({useColorScheme: () => "light", View: "View", use
 vi.mock("react-native-svg", () => ({ default: "Svg", Polyline: "Polyline", Path: "Path", Line: "Line", Text: "SvgText", Defs: "Defs", ClipPath: "ClipPath", Rect: "Rect", G: "G", Circle: "Circle" }));
 vi.mock("./section", () => ({ chartTextProps: () => ({ fontFamily: "Manrope_500Medium", fontSize: 12, fontWeight: "500" }) }));
 vi.mock("./chart-scrubber", () => ({ ChartScrubber: "Scrubber" }));
+import { dottedCircleDasharray } from "@fitness-battle/shared";
 import { StandardLineChart } from "./standard-line-chart";
 it("keeps axes outside the animated plot clipping region", async () => {
  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
@@ -12,8 +13,8 @@ it("keeps axes outside the animated plot clipping region", async () => {
  let r!:ReturnType<typeof create>;
  await act(async()=>{r=create(createElement(StandardLineChart,{showAxes:true,values:[1000,1040,1080],xLabels:["Week 1","Week 4","Week 7"],revealProgress:{interpolate} as never}));});
  expect(r.root.findByType("Svg" as never).props.preserveAspectRatio).toBe("none");
- expect(r.root.findAllByType("Line" as never)).toHaveLength(2);
- expect(r.root.findAllByType("SvgText" as never)).toHaveLength(6);
+ expect(r.root.findAllByType("Line" as never)).toHaveLength(6);
+ expect(r.root.findAllByType("SvgText" as never)).toHaveLength(7);
  expect(r.root.findByType("AnimatedRect" as never).props.width).toBe(123);
  expect(r.root.findAllByType("G" as never).find(n=>n.props.clipPath)!.findAllByType("SvgText" as never)).toHaveLength(0);
  expect(interpolate).toHaveBeenCalledWith({inputRange:[0,1],outputRange:[0,282]});
@@ -44,11 +45,13 @@ it("hides default dots on line charts and renders corridor dots without a connec
  expect(r.root.findAllByType("Circle" as never)).toHaveLength(0);
  const labels=r.root.findAllByType("SvgText" as never).map(t=>t.props.children);
  expect(labels).toContain("1");
- await act(async()=>{r.update(createElement(StandardLineChart,{values:[50,80], corridor:{low:[55,60], high:[70,85]}}));});
+ await act(async()=>{r.update(createElement(StandardLineChart,{values:[50,80], selectedIdx: 0, corridor:{low:[55,60], high:[70,85]}}));});
  const circles=r.root.findAllByType("Circle" as never);
  expect(circles).toHaveLength(2);
- expect(circles[0]!.props.strokeDasharray).toBe("2 2");
+ expect(circles[0]!.props.r).toBe(4);
+ expect(circles[0]!.props.strokeDasharray).toBe(dottedCircleDasharray(4, 8));
  expect(circles[1]!.props.strokeDasharray).toBeUndefined();
+ expect(r.root.findByType("Scrubber" as never).props.hideSelectionDot).toBe(true);
  expect(r.root.findAllByType("Polyline" as never)).toHaveLength(2);
  await act(async()=>r.unmount());vi.unstubAllGlobals();
 });

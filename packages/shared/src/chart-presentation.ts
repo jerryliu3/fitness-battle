@@ -72,7 +72,7 @@ export function openLineModel(
   const timeX = (at: string) => left + (calendarPosition(new Date(at)) - origin) / timeSpan * (right - left);
   const crossesYear = rows.length > 0 && dayKey(new Date(rows[0]!.date)).slice(0, 4) !== dayKey(new Date(rows[rows.length - 1]!.date)).slice(0, 4);
   const dateFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", ...(crossesYear ? { year: "numeric" } : {}), timeZone: APP_TIMEZONE });
-  const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE, timeZoneName: "short" });
+  const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE });
   const date = (value: string) => dateFormatter.format(new Date(value));
   const points = rows.map((row, i) => ({ id: row.id, x: timeline ? timeX(row.date) : x(i), y: y(row.value), label: timeline?.showTime ? `${date(row.date)}, ${timeFormatter.format(new Date(row.date))}` : date(row.date), value: format(row.value) }));
   const trace = (pts: readonly { x: number; y: number }[]) => pts.flatMap((point, i) => [

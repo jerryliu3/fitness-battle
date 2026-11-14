@@ -1,3 +1,4 @@
+import { computeNiceAxisTicks } from "./chart-geometry";
 import { competeNow } from "./compete/engine";
 import { collapseNights, formatSleepDuration, type SleepNight } from "./compete/health";
 import type { CompeteState } from "./compete/sports";
@@ -209,6 +210,7 @@ export interface Health7DayChartModel {
   plotRight: number;
   plotTop: number;
   plotBottom: number;
+  yTicks: Array<{ value: number; y: number; label: string }>;
   points: Health7DayPoint[];
   lineSegments: string[];
   corridorYTop: number;
@@ -230,23 +232,27 @@ export function buildHealth7DayCorridorModel(
       : null);
   const corridor = personal ?? { low: 0, high: 0, formattedRange: "Unavailable · insufficient prior readings", format: (value: number) => metric.id === "sleep" ? formatSleepDuration(value) : `${value} ${metric.unit}` };
   const width = 320;
-  const height = 148;
-  const left = 38;
-  const right = 304;
-  const plotTop = 18;
-  const plotBottom = 122;
+  const height = 160;
+  const left = 44;
+  const right = 306;
+  const plotTop = 22;
+  const plotBottom = 132;
 
   const validValues = metric.history.filter((v): v is number => v != null && Number.isFinite(v));
   const allNums = personal ? [...validValues, personal.low, personal.high] : validValues.length ? validValues : [0, 1];
   const minVal = Math.min(...allNums);
   const maxVal = Math.max(...allNums);
-  const spread = maxVal - minVal;
-  const pad = Math.max(spread * 0.12, metric.id === "sleep" ? 12 : 2);
-  const yMin = minVal - pad;
-  const yMax = maxVal + pad;
+  const axis = computeNiceAxisTicks(minVal, maxVal, true, 0.08);
+  const yMin = axis.yMin;
+  const yMax = axis.yMax;
   const span = Math.max(1, yMax - yMin);
 
   const toY = (v: number) => Number((plotBottom - ((v - yMin) / span) * (plotBottom - plotTop)).toFixed(1));
+  const yTicks = axis.ticks.map((value) => ({
+    value,
+    y: toY(value),
+    label: formatHealthNumber(value),
+  }));
   const corridorYTop = toY(corridor.high);
   const corridorYBottom = toY(corridor.low);
   const corridorAreaPath = `M ${left},${corridorYTop} L ${right},${corridorYTop} L ${right},${corridorYBottom} L ${left},${corridorYBottom} Z`;
@@ -317,6 +323,7 @@ export function buildHealth7DayCorridorModel(
     plotRight: right,
     plotTop,
     plotBottom,
+    yTicks,
     points,
     lineSegments,
     corridorYTop,

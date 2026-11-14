@@ -119,7 +119,7 @@ export function HealthLabSpace({
 
       <View style={s.chartCard}>
         <View style={s.chartHeaderRow}>
-          <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+          <View style={{ flex: 1, gap: 2, minWidth: 115 }}>
             <AppText role="caption" secondary>{titles[selectedMetric]}</AppText>
             <View style={s.valueRow}>
               <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
@@ -132,6 +132,7 @@ export function HealthLabSpace({
           </View>
           <View style={s.compactRangeWrap}>
             <FocusSegments
+              compact
               label="Health time lens"
               value={timeLens}
               options={TIME_LENSES}
@@ -205,13 +206,14 @@ const sThemes = createThemedStyles((themeColors) => {
     },
     chartHeaderRow: {
       flexDirection: "row",
+      flexWrap: "wrap",
       justifyContent: "space-between",
       alignItems: "flex-start",
       gap: 12,
     },
     compactRangeWrap: {
-      width: 144,
       alignSelf: "flex-start",
+      flexShrink: 0,
     },
     valueRow: {
       flexDirection: "row",

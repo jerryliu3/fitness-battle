@@ -40,3 +40,12 @@ it("uses native transforms for the live halo and stops on inactivity, selection 
   expect(r.root.findAllByType("NativeHalo" as never)).toHaveLength(0);
   await act(async () => r.unmount()); vi.unstubAllGlobals();
 });
+it("omits header date caption when showDateRange and live are both false", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const chart = { width: 340, height: 180, top: 20, bottom: 140, left: 30, right: 320, date: "Oct 20 – Oct 22", value: "2.5", trendLine: "", points: [{ id: "1", x: 300, y: 70, value: "2.5", label: "Oct 22, 4:00 PM" }], segments: ["30,100 300,70"], xTicks: [], yTicks: [] };
+  let r!: ReturnType<typeof create>;
+  await act(async () => { r = create(createElement(OpenLineChart, { chart: chart as never, label: "Effort", unit: "hrs", range: "week" as never, showDateRange: false, live: false, onRangeChange: vi.fn() })); });
+  const renderSummary = r.root.findByType("Scrubber" as never).props.renderSummary;
+  expect(JSON.stringify(renderSummary(chart.points[0]))).not.toContain("Oct 22, 4:00 PM");
+  await act(async () => r.unmount()); vi.unstubAllGlobals();
+});

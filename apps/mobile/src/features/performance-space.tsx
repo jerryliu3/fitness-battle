@@ -192,7 +192,7 @@ export function PerformanceSpace({
       {/* 1. Effort Score Hero Chart */}
       <View style={s.chartCard}>
         <View style={s.chartHeaderRow}>
-          <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+          <View style={{ flex: 1, gap: 2, minWidth: 115 }}>
             <AppText role="caption" secondary>
               {track === "verified" ? "GPS Effort Score" : "Open Effort Score"}
             </AppText>
@@ -219,6 +219,7 @@ export function PerformanceSpace({
           </View>
           <View style={s.compactControls}>
             <FocusSegments
+              compact
               label="Effort track"
               value={track}
               options={[
@@ -228,6 +229,7 @@ export function PerformanceSpace({
               onChange={(nextTrack) => setLens({ scope, track: nextTrack })}
             />
             <FocusSegments
+              compact
               label="Effort time range"
               value={effortRange}
               options={EFFORT_RANGES}
@@ -257,7 +259,7 @@ export function PerformanceSpace({
       {/* 2. Training Volume Benchmark Chart */}
       <View style={s.chartCard}>
         <View style={s.chartHeaderRow}>
-          <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+          <View style={{ flex: 1, gap: 2, minWidth: 115 }}>
             <AppText role="caption" secondary>Training Volume</AppText>
             <View style={s.valueRow}>
               <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
@@ -274,6 +276,7 @@ export function PerformanceSpace({
           </View>
           <View style={s.compactRangeWrap}>
             <FocusSegments
+              compact
               label="Volume time range"
               value={volumeRange}
               options={VOLUME_RANGES}
@@ -619,18 +622,20 @@ const sThemes = createThemedStyles((themeColors) => {
     },
     chartHeaderRow: {
       flexDirection: "row",
+      flexWrap: "wrap",
       justifyContent: "space-between",
       alignItems: "flex-start",
       gap: 12,
     },
     compactControls: {
-      width: 156,
-      gap: 8,
+      gap: 6,
+      alignItems: "flex-end",
       alignSelf: "flex-start",
+      flexShrink: 0,
     },
     compactRangeWrap: {
-      width: 156,
       alignSelf: "flex-start",
+      flexShrink: 0,
     },
     valueRow: {
       flexDirection: "row",
