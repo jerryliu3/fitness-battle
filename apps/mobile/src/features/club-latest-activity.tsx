@@ -4,14 +4,14 @@ import { Section, AppText, TextAction } from "../ui/section";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
-import { APP_TIMEZONE, SHELL_SECTION, activityRoute, clubDuration, formatVolume, homeRecentActivities, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
+import { APP_TIMEZONE, SHELL_SECTION, activityRoute, clubDuration, formatVolume, homeRecentActivities, sessionEffortSummary, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
 import { createThemedStyles, useThemedStyles } from "../theme";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
 import { prefetchActivityReplay } from "../lib/prefetch-activity-replay";
 import { useCrewActivities } from "./use-crew-activities";
 import { FocusSheet } from "../ui/focus";
-import { SportActivityIcon } from "../ui/sport-activity-icon";
+import { EffortBarsIcon } from "../ui/effort-bars-icon";
 
 export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen: (activity: Activity) => void }) {
 const f=useFocusStyles();
@@ -36,11 +36,14 @@ const s=useThemedStyles(sThemes);
       }
     >
       {rows.length > 0 ? (
-        rows.map((row, index) => { const route = activityRoute(row.ownActivity); return <Pressable key={`${row.userId}:${row.id}`} accessibilityRole="button"
+        rows.map((row, index) => {
+          const route = activityRoute(row.ownActivity);
+          const effort = route ? null : sessionEffortSummary(row.ownActivity ?? row, state.activities);
+          return <Pressable key={`${row.userId}:${row.id}`} accessibilityRole="button"
           onPressIn={() => row.ownActivity && prefetchActivityReplay(row.ownActivity, accessToken)}
           onPress={() => row.ownActivity ? onOpen(row.ownActivity) : setSelected({ account: user?.id, id: row.id })}
           style={[f.row, s.row, index < rows.length - 1 && s.rowDivider]}>
-          {route ? <RouteStaticPreview coordinates={route} width={128} height={128} padding={16} strokeWidth={3} showMarkers={false} showPlayBadge={false} style={{ width: 64, height: 64, borderRadius: 12 }} /> : <SportActivityIcon sport={row.sport} />}
+          {route ? <RouteStaticPreview coordinates={route} width={128} height={128} padding={16} strokeWidth={3} showMarkers={false} showPlayBadge={false} style={{ width: 64, height: 64, borderRadius: 12 }} /> : <EffortBarsIcon bars={effort!.bars} />}
           <View style={[f.grow, { gap: 4 }]}><AppText role="row" >{row.ownActivity ? sportById(row.sport).name : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</AppText>
             <AppText role="support" secondary >{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}</AppText></View>
           <AppText role="caption" secondary >View →</AppText>
