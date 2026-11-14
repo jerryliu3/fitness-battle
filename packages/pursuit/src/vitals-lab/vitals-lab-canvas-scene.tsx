@@ -1,3 +1,5 @@
+"use client";
+
 import { VitalsLabThreeViewport } from "./vitals-lab-three";
 import {
   parseVitalsLabCanvasMessage,
