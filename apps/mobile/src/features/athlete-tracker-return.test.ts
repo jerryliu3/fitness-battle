@@ -122,7 +122,8 @@ describe("tracker callback consumption", () => {
         tracker: undefined,
         provider: undefined,
       });
-      expect(JSON.stringify(renderer.toJSON())).toContain("strava connected.");
+      const toast = renderer.root.findByType("Toast" as never);
+      expect(String(toast.props.message)).toContain("strava connected.");
       mock.params = { panel: "connections" };
       await act(async () => renderer.unmount());
       await act(async () => {
