@@ -73,7 +73,7 @@ function Training({ state, result }: { state: CompeteState; result: PeriodResult
   return <View style={{ gap: 16 }}>
     <AppText style={s.light}>{Math.round(result.movingSec / 60)} minutes · {result.effort.toFixed(1)} effort</AppText>
     <AppText style={s.light}>Score {Math.round(result.eloBefore)} → {Math.round(result.eloAfter)} ({result.eloAfter >= result.eloBefore ? "+" : ""}{Math.round(result.eloAfter - result.eloBefore)})</AppText>
-    {series.available ? <View style={[s.readingSurface, { backgroundColor: colors.card }]}><StandardLineChart height={170} yAxisLabel="Training (min)" xAxisLabel="Date (ET)" showAxes showSummary values={series.values} pointLabels={series.labels}
+    {series.available ? <View style={[s.readingSurface, { backgroundColor: colors.card }]}><StandardLineChart height={170} showAxes showSummary values={series.values} pointLabels={series.labels}
       xLabels={[series.labels[0]!, series.labels[Math.floor((series.labels.length - 1) / 2)]!, series.labels.at(-1)!]} formatAxisY={v => `${Math.round(v)}`} formatY={v => `${Math.round(v)} min`} accessibilityLabel="Cumulative training minutes in the settled week" /></View>
       : <AppText style={s.light}>Detailed activity history is unavailable for this archived week.</AppText>}
     <AppText style={s.light}>{enrollment.startsAt

@@ -187,6 +187,7 @@ export function getHealthMetricCorridor(metricId: string, history: readonly (num
 export interface Health7DayPoint {
   index: number;
   dayLabel: string;
+  dateLabel: string;
   value: number | null;
   formatted: string;
   x: number;
@@ -204,6 +205,10 @@ export interface Health7DayChartModel {
   formattedRange: string;
   width: number;
   height: number;
+  plotLeft: number;
+  plotRight: number;
+  plotTop: number;
+  plotBottom: number;
   points: Health7DayPoint[];
   lineSegments: string[];
   corridorYTop: number;
@@ -225,18 +230,18 @@ export function buildHealth7DayCorridorModel(
       : null);
   const corridor = personal ?? { low: 0, high: 0, formattedRange: "Unavailable · insufficient prior readings", format: (value: number) => metric.id === "sleep" ? formatSleepDuration(value) : `${value} ${metric.unit}` };
   const width = 320;
-  const height = 116;
+  const height = 148;
   const left = 38;
   const right = 304;
   const plotTop = 18;
-  const plotBottom = 86;
+  const plotBottom = 122;
 
   const validValues = metric.history.filter((v): v is number => v != null && Number.isFinite(v));
   const allNums = personal ? [...validValues, personal.low, personal.high] : validValues.length ? validValues : [0, 1];
   const minVal = Math.min(...allNums);
   const maxVal = Math.max(...allNums);
   const spread = maxVal - minVal;
-  const pad = Math.max(spread * 0.18, metric.id === "sleep" ? 30 : 4);
+  const pad = Math.max(spread * 0.12, metric.id === "sleep" ? 12 : 2);
   const yMin = minVal - pad;
   const yMax = maxVal + pad;
   const span = Math.max(1, yMax - yMin);
@@ -251,11 +256,13 @@ export function buildHealth7DayCorridorModel(
     const isToday = i === 6;
     const targetDate = shiftAppDay(now, i - 6);
     const dayLabel = isToday ? "Today" : new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "America/New_York" }).format(targetDate) ?? "";
+    const dateLabel = formatAppCalendarDate(dayKey(targetDate), { month: "short", day: "numeric" });
 
     if (val == null || !Number.isFinite(val)) {
       return {
         index: i,
         dayLabel,
+        dateLabel,
         value: null,
         formatted: "—",
         x,
@@ -269,6 +276,7 @@ export function buildHealth7DayCorridorModel(
     return {
       index: i,
       dayLabel,
+      dateLabel,
       value: val,
       formatted: metric.id === "sleep"
         ? (i === 6 ? formatSleepDuration(val) : `${Math.floor(Math.round(val) / 60)}:${String(Math.round(val) % 60).padStart(2, "0")}`)
@@ -305,6 +313,10 @@ export function buildHealth7DayCorridorModel(
     formattedRange: corridor.formattedRange,
     width,
     height,
+    plotLeft: left,
+    plotRight: right,
+    plotTop,
+    plotBottom,
     points,
     lineSegments,
     corridorYTop,

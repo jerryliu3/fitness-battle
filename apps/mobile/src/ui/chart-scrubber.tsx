@@ -14,6 +14,7 @@ const DIRECTION_LOCK_PX = 4;
 /** One touch surface, shared by line and bar charts. Vertical drags yield to the page. */
 export function ChartScrubber({
   points, width, height, plotTop, plotBottom, children, onSelect, label, summaryOnSelection = false, hideSummary = false, renderSummary, onSelectionChange, selectedPointId,
+  dotColor, dotBorderColor, isSelectedHollow = false, showTopLabel = true,
 }: {
   points: readonly ChartDatum[];
   width: number;
@@ -28,11 +29,16 @@ export function ChartScrubber({
   renderSummary?: (point: ChartDatum | undefined) => ReactNode;
   selectedPointId?: string;
   onSelectionChange?: (point: ChartDatum | undefined) => void;
+  dotColor?: string;
+  dotBorderColor?: string;
+  isSelectedHollow?: boolean;
+  showTopLabel?: boolean;
 }) {
 const c=useThemeColors();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const measuredWidth = useRef(1);
+  const [layoutWidth, setLayoutWidth] = useState(0);
   const lastId = useRef<string | null>(null);
   const touchStart = useRef<{ x: number; y: number; locationX: number } | null>(null);
   const direction = useRef<"horizontal" | "vertical" | null>(null);
@@ -113,7 +119,11 @@ const c=useThemeColors();
         touchStart.current = null;
         clearSelection();
       }}
-      onLayout={event => { measuredWidth.current = Math.max(1, event.nativeEvent.layout.width); }}
+      onLayout={event => {
+        const w = Math.max(1, event.nativeEvent.layout.width);
+        measuredWidth.current = w;
+        setLayoutWidth(w);
+      }}
       accessible
       accessibilityRole="adjustable"
       accessibilityLabel={label}
@@ -123,10 +133,40 @@ const c=useThemeColors();
       onAccessibilityAction={event => move(event.nativeEvent.actionName === "increment" ? 1 : -1)}
     >
       <View pointerEvents="none">{children}</View>
-      {selected && <Svg pointerEvents="none" width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ position: "absolute", top: 0, left: 0 }}>
-        <Line x1={selected.x} x2={selected.x} y1={plotTop} y2={plotBottom} stroke={c.muted} strokeWidth={1} />
-        <Circle cx={selected.x} cy={selected.y} r={4} fill={c.tennis} />
-      </Svg>}
+      {selected && <>
+        {showTopLabel && !!selected.label && (() => {
+          const boxWidth = 140;
+          const activeWidth = layoutWidth > 1 ? layoutWidth : measuredWidth.current;
+          const centerPx = activeWidth > 1 ? (selected.x / Math.max(1, width)) * activeWidth : 0;
+          const leftPx = activeWidth > 1 ? Math.max(0, Math.min(activeWidth - boxWidth, centerPx - boxWidth / 2)) : 0;
+          return (
+            <View
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                top: Math.max(0, plotTop - 16),
+                left: leftPx,
+                width: activeWidth > 1 ? boxWidth : "100%",
+                alignItems: "center",
+              }}
+            >
+              <AppText role="caption" secondary numberOfLines={1}>{selected.label}</AppText>
+            </View>
+          );
+        })()}
+        <Svg pointerEvents="none" width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ position: "absolute", top: 0, left: 0 }}>
+          <Line x1={selected.x} x2={selected.x} y1={plotTop} y2={plotBottom} stroke={c.muted} strokeWidth={1} />
+          <Circle
+            cx={selected.x}
+            cy={selected.y}
+            r={isSelectedHollow ? 5 : 4.5}
+            fill={isSelectedHollow ? (dotBorderColor ?? c.card) : (dotColor ?? c.tennis)}
+            stroke={isSelectedHollow ? (dotColor ?? c.tennis) : (dotBorderColor ?? c.card)}
+            strokeWidth={2}
+            strokeDasharray={isSelectedHollow ? "2 2" : undefined}
+          />
+        </Svg>
+      </>}
     </View>
   </View>;
 }

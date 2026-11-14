@@ -8,7 +8,7 @@ vi.mock("react-native", () => ({useColorScheme: () => "light",
   Animated: { View: "NativeHalo", Value: class { setValue() {} interpolate() { return 1; } },
     timing: state.timing, loop: () => ({ start: state.start, stop: state.stop }) },
 }));
-vi.mock("react-native-svg", () => ({ Circle: "Circle", Polyline: "Polyline", Line: "Line", G: "G" }));
+vi.mock("react-native-svg", () => ({ Circle: "Circle", ClipPath: "ClipPath", Defs: "Defs", Polyline: "Polyline", Line: "Line", G: "G", Rect: "Rect" }));
 vi.mock("./use-scene-active", () => ({ useSceneActive: () => state.active }));
 vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => state.reduced }));
 vi.mock("./chart-text", () => ({ ChartSvg: "Svg", ChartText: "ChartText" }));
@@ -18,8 +18,8 @@ vi.mock("../features/chart-range-toggle", () => ({ OpenLineRangeToggle: "Toggle"
 import { OpenLineChart } from "./open-line-chart";
 it("uses native transforms for the live halo and stops on inactivity, selection and reduced motion", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  const chart = { width: 340, height: 180, top: 20, bottom: 140, left: 30, right: 320, date: "Today", value: "4", points: [{ x: 300, y: 70, value: "4", label: "Today" }], segments: ["30,100 300,70"], xTicks: [], yTicks: [] };
-  const props = { chart: chart as never, label: "Effort", unit: "pts", range: "1w" as never, live: true, onRangeChange: vi.fn() };
+  const chart = { width: 340, height: 180, top: 20, bottom: 140, left: 30, right: 320, date: "Today", value: "4", points: [{ id: "1", x: 300, y: 70, value: "4", label: "Today" }], segments: ["30,100 300,70"], trendLine: "30,100 300,80", xTicks: [], yTicks: [] };
+  const props = { chart: chart as never, label: "Effort", unit: "pts", range: "week" as never, live: true, onRangeChange: vi.fn() };
   let r!: ReturnType<typeof create>;
   await act(async () => { r = create(createElement(OpenLineChart, props)); });
   expect(state.timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ useNativeDriver: true, isInteraction: false }));

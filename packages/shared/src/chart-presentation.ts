@@ -3,13 +3,13 @@ import { competeNow } from "./compete/engine";
 import type { CompeteState } from "./compete/sports";
 import { APP_TIMEZONE, dayKey, shiftAppDay, startOfZonedDay, weeklyPeriodBounds } from "./period";
 import type { ChartDatum } from "./chart-scrubber";
-import type { TrainingBucket } from "./training-view";
+import { earliestDataDate, type TrainingBucket } from "./training-view";
 
 export type OpenLineRange = "week" | "fourWeeks" | "year";
 export type EffortHistoryRange = OpenLineRange | "twelveWeeks" | "twentyFourWeeks";
 export const OPEN_LINE_RANGES: readonly { value: OpenLineRange; label: string; ariaLabel: string }[] = [
   { value: "week", label: "1W", ariaLabel: "One week" },
-  { value: "fourWeeks", label: "4W", ariaLabel: "Four weeks" },
+  { value: "fourWeeks", label: "1M", ariaLabel: "One month" },
   { value: "year", label: "1Y", ariaLabel: "One year" },
 ];
 
@@ -26,6 +26,7 @@ export interface OpenLineModel {
   width: number; height: number; top: number; bottom: number;
   segments: string[];
   bridges?: string[];
+  trendLine: string;
   line: string; previous: string; points: ChartDatum[];
   value: string; date: string;
   left: number; right: number;
@@ -93,7 +94,32 @@ export function openLineModel(
     : [rows[0], rows[Math.floor((rows.length - 1) / 2)], rows.at(-1)].map(row => row ? new Date(row.date) : undefined);
   const xTicks = tickDates.flatMap((at, i) => at ? [{ x: timeline ? timeX(at.toISOString()) : x([0, Math.floor((rows.length - 1) / 2), rows.length - 1][i]!), label: date(at.toISOString()) }] : [])
     .filter((tick, i, ticks) => ticks.findIndex(other => other.x === tick.x && other.label === tick.label) === i);
-  return { width, height, top, bottom, left, right, points: points.filter((_, i) => rows[i]?.inspectable !== false), line, segments, xTicks,
+
+  // Rolling 30-day average trendline across observed rows.
+  const trendPts: string[] = [];
+  if (rows.length >= 2) {
+    const windowMs = 30 * 86400000;
+    for (let i = 0; i < rows.length; i++) {
+      const rowMs = Date.parse(rows[i]!.date);
+      let sum = 0;
+      let count = 0;
+      for (let j = i; j >= 0; j--) {
+        const jMs = Date.parse(rows[j]!.date);
+        const inWindow = Number.isFinite(rowMs) && Number.isFinite(jMs)
+          ? rowMs - jMs <= windowMs
+          : i - j < 30;
+        if (!inWindow) break;
+        sum += rows[j]!.value;
+        count += 1;
+      }
+      const avg = count > 0 ? sum / count : rows[i]!.value;
+      const px = points[i]!.x;
+      trendPts.push(`${px.toFixed(1)},${y(avg).toFixed(1)}`);
+    }
+  }
+  const trendLine = trendPts.join(" ");
+
+  return { width, height, top, bottom, left, right, points: points.filter((_, i) => rows[i]?.inspectable !== false), line, trendLine, segments, xTicks,
     yTicks: values.length ? [min, Math.min(max, min + Math.ceil((max - min) / 2)), max].filter((value, i, ticks) => ticks.indexOf(value) === i).map(value => ({ y: y(value), label: String(value) })) : [],
     previous: timeline?.previousRows ? trace(timeline.previousRows.map(row => ({ x: timeX(row.date, true), y: y(row.value) }))) : previous.map((value, i) => `${x(i).toFixed(1)},${y(value).toFixed(1)}`).join(" "),
     value: rows.length ? format(rows[rows.length - 1]!.value) : format(0),
@@ -102,10 +128,13 @@ export function openLineModel(
 }
 
 /** Current Eastern calendar training week (Monday–Monday), optionally preceded by three complete weeks. */
-export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks" = "week", now = competeNow(state)) {
+export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks" = "week", now = competeNow(state), createdAt?: string | null) {
   const period = weeklyPeriodBounds(now), days = range === "week" ? 7 : 28;
   const start = shiftAppDay(period.startsAt, -(days - 7));
-  const previousStart = shiftAppDay(start, -days);
+  const earliest = earliestDataDate(state, now, createdAt);
+  const clampedStart = createdAt && earliest && earliest.getTime() > start.getTime()
+    ? startOfZonedDay(earliest)
+    : start;
   const eligible = state.activities.filter(activity => countsOnTrack(activity, "open") && Date.parse(activity.startedAt) <= now.getTime());
   const byDay = new Map<string, number>();
   for (const activity of eligible) {
@@ -120,32 +149,40 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
       return { id, date: at.toISOString(), value: hours };
     });
   };
-  const elapsed = Array.from({ length: days }, (_, i) => shiftAppDay(start, i)).filter(at => dayKey(at) <= dayKey(now)).length;
+  const activeDays = Array.from({ length: days }, (_, i) => shiftAppDay(start, i))
+    .filter(at => dayKey(at) >= dayKey(clampedStart) && dayKey(at) <= dayKey(now));
+  const elapsed = activeDays.length;
   if (range === "week") {
     const events = (from: Date, until: Date) => {
       let hours = 0;
-      const exclusiveEnd = shiftAppDay(from, 7).getTime();
+      const exclusiveEnd = shiftAppDay(start, 7).getTime();
       const rows = [{ id: `start:${from.toISOString()}`, date: from.toISOString(), value: 0 }];
       for (const activity of eligible.filter(a => Date.parse(a.startedAt) >= from.getTime() && Date.parse(a.startedAt) <= until.getTime() && Date.parse(a.startedAt) < exclusiveEnd && a.movingSec > 0)
         .sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt) || a.id.localeCompare(b.id))) {
         hours += activity.movingSec / 3600;
         rows.push({ id: activity.id, date: activity.startedAt, value: hours });
       }
-      rows.push({ id: `end:${until.toISOString()}`, date: until.toISOString(), value: hours });
+      if (until.getTime() >= from.getTime()) {
+        rows.push({ id: `end:${until.toISOString()}`, date: until.toISOString(), value: hours });
+      }
       return rows;
     };
     const end = shiftAppDay(start, 7);
-    const chart = openLineModel(now < start ? [] : events(start, new Date(Math.min(now.getTime(), end.getTime()))), value => value.toFixed(1), [], 7, {
-      start, end, showTime: true,
-      previousRows: events(previousStart, start), previousStart,
-    });
+    const effectiveFrom = new Date(Math.max(start.getTime(), clampedStart.getTime()));
+    const chart = openLineModel(
+      now < effectiveFrom ? [] : events(effectiveFrom, new Date(Math.min(now.getTime(), end.getTime()))),
+      value => value.toFixed(1),
+      [],
+      7,
+      { start, end, showTime: true },
+    );
     return { ...chart, xTicks: Array.from({ length: 7 }, (_, i) => ({
       x: chart.left + (i + 0.5) / 7 * (chart.right - chart.left),
       label: shiftAppDay(start, i).toLocaleDateString("en-US", { weekday: "short", timeZone: APP_TIMEZONE }),
       anchor: "middle" as const,
     })) };
   }
-  return openLineModel(cumulative(start, elapsed), value => value.toFixed(1), cumulative(previousStart, days).map(row => row.value), days);
+  return openLineModel(cumulative(clampedStart, elapsed), value => value.toFixed(1), [], days);
 }
 
 /** Shared zero-based bars and average, excluding future buckets on both platforms. */
@@ -212,17 +249,19 @@ function effortScoreEvents(state: CompeteState, track: "open" | "verified", now:
 }
 
 /** Score events are committed changes, not estimates from activity distance. */
-export function effortScoreLine(state: CompeteState, track: "open" | "verified", range: EffortHistoryRange, now = competeNow(state)) {
+export function effortScoreLine(state: CompeteState, track: "open" | "verified", range: EffortHistoryRange, now = competeNow(state), createdAt?: string | null) {
   const start = shiftAppDay(now, -effortScoreLookbackDays(range));
   const end = shiftAppDay(now, 1);
+  const earliest = earliestDataDate(state, now, createdAt);
+  const effectiveStart = earliest && earliest.getTime() > start.getTime() ? earliest : start;
   const events = effortScoreEvents(state, track, now);
   const rows: { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean }[] = [];
   const rating = state.ratings.find(r => r.sport === state.primary);
   const current = (track === "open" ? rating?.openElo : rating?.verifiedElo) ?? 500;
-  const initialValue = effortScoreAt(events, start, current);
-  rows.push({ id: "baseline", date: start.toISOString(), value: initialValue, inspectable: false });
-  for (const event of events.filter(event => Date.parse(event.occurredAt) >= start.getTime())) {
-    if (!rows.length || rows.at(-1)!.value !== event.scoreBefore) rows.push({ id: `before:${event.id}`, date: new Date(Math.max(start.getTime(), Date.parse(event.occurredAt) - 1)).toISOString(), value: event.scoreBefore, breakBefore: true, inspectable: false });
+  const initialValue = effortScoreAt(events, effectiveStart, current);
+  rows.push({ id: "baseline", date: effectiveStart.toISOString(), value: initialValue, inspectable: false });
+  for (const event of events.filter(event => Date.parse(event.occurredAt) >= effectiveStart.getTime())) {
+    if (!rows.length || rows.at(-1)!.value !== event.scoreBefore) rows.push({ id: `before:${event.id}`, date: new Date(Math.max(effectiveStart.getTime(), Date.parse(event.occurredAt) - 1)).toISOString(), value: event.scoreBefore, breakBefore: true, inspectable: false });
     rows.push({ id: event.id, date: event.occurredAt, value: event.scoreAfter });
   }
   rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: !!rows.length && rows.at(-1)!.value !== current });

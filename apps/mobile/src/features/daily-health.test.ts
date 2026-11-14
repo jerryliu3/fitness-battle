@@ -23,6 +23,9 @@ vi.mock("../ui/section", () => ({
   textStyle: () => ({}),
   chartTextProps: () => ({}),
 }));
+vi.mock("../ui/chart-scrubber", () => ({
+  ChartScrubber: ({ children }: { children: unknown }) => children,
+}));
 import { DailyHealth } from "./daily-health";
 let view: ReactTestRenderer;
 afterEach(async () => {

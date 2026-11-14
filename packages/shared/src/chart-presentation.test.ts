@@ -17,12 +17,13 @@ it("preserves this week's counted totals and stops the line at today", () => {
   expect(model.value).toBe(weeklyHoursComparison(state, now).currTotalHours.toFixed(1));
   expect(model.points.map(point => point.id)).toEqual([expect.stringContaining("start:"), "current", expect.stringContaining("end:")]);
   expect(model.points.at(-1)?.label).toContain("Oct 22");
-  expect(model.previous.split(" ")).toHaveLength(3);
+  expect(model.previous).toBe("");
+  expect(model.trendLine).not.toBe("");
   expect(model.points.at(-1)!.x).toBeLessThan(336);
   expect(model.line).not.toMatch(/NaN|Infinity/);
 });
 
-it("uses 28 Eastern calendar days across DST and keeps comparison windows disjoint", () => {
+it("uses 28 Eastern calendar days across DST without a previous comparison line", () => {
   const now = new Date("2026-11-05T17:00:00Z"), state = freshState(now);
   state.activities = [
     { id: "prior-end", startedAt: "2026-10-12T03:59:59Z", movingSec: 7200 },
@@ -34,7 +35,8 @@ it("uses 28 Eastern calendar days across DST and keeps comparison windows disjoi
   expect(model.points).toHaveLength(25);
   expect(new Set(model.points.map(point => point.id)).size).toBe(25);
   expect(model.value).toBe("2.0");
-  expect(model.previous.split(" ")).toHaveLength(28);
+  expect(model.previous).toBe("");
+  expect(model.trendLine).not.toBe("");
   expect(model.points.at(-1)?.id).toBe("2026-11-05");
 });
 

@@ -118,36 +118,40 @@ export function HealthLabSpace({
       </View>
 
       <View style={s.chartCard}>
-        <View style={{ gap: 2 }}>
-          <AppText role="caption" secondary>{titles[selectedMetric]}</AppText>
-          <View style={s.valueRow}>
-            <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
-              {inspected?.value != null ? formatReading(selectedMetric, inspected.value) : "—"}
+        <View style={s.chartHeaderRow}>
+          <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+            <AppText role="caption" secondary>{titles[selectedMetric]}</AppText>
+            <View style={s.valueRow}>
+              <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
+                {inspected?.value != null ? formatReading(selectedMetric, inspected.value) : "—"}
+              </AppText>
+            </View>
+            <AppText role="caption" secondary>
+              {inspected?.label ?? "No recorded observations"}
             </AppText>
           </View>
-          <AppText role="caption" secondary>
-            {inspected?.label ?? "No recorded observations"}
-          </AppText>
+          <View style={s.compactRangeWrap}>
+            <FocusSegments
+              label="Health time lens"
+              value={timeLens}
+              options={TIME_LENSES}
+              onChange={(next) => { setTimeLens(next); setSelectedIdx(undefined); }}
+            />
+          </View>
         </View>
-        <FocusSegments
-          label="Health time lens"
-          value={timeLens}
-          options={TIME_LENSES}
-          onChange={(next) => { setTimeLens(next); setSelectedIdx(undefined); }}
-        />
         <View style={s.chartBody}>
           {lastRecorded ? (
             <StandardLineChart
               height={180}
               showAxes={true}
               showSummary={false}
-              xAxisLabel="Date"
               values={activeRows.map((row) => row.value)}
               pointLabels={activeRows.map((row) => row.label)}
               selectedIdx={selectedIdx}
               onSelectIdx={setSelectedIdx}
               stroke={c.tennis}
               corridor={corridorSeries}
+              formatAxisY={(v) => selectedMetric === "sleep" ? formatHealthNumber(v) : formatHealthNumber(v)}
               formatY={(v) => formatReading(selectedMetric, v)}
               accessibilityLabel={`${titles[selectedMetric]} recorded history`}
             />
@@ -185,7 +189,7 @@ const sThemes = createThemedStyles((themeColors) => {
       flex: 1,
       padding: 12,
       borderRadius: 16,
-      backgroundColor: c.soft,
+      backgroundColor: c.card,
       borderWidth: 1,
       borderColor: c.line,
       gap: 4,
@@ -194,10 +198,20 @@ const sThemes = createThemedStyles((themeColors) => {
     chartCard: {
       padding: 16,
       borderRadius: 20,
-      backgroundColor: c.soft,
+      backgroundColor: c.card,
       borderWidth: 1,
       borderColor: c.line,
       gap: 14,
+    },
+    chartHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: 12,
+    },
+    compactRangeWrap: {
+      width: 144,
+      alignSelf: "flex-start",
     },
     valueRow: {
       flexDirection: "row",
@@ -209,7 +223,7 @@ const sThemes = createThemedStyles((themeColors) => {
     insightCard: {
       padding: 16,
       borderRadius: 20,
-      backgroundColor: c.soft,
+      backgroundColor: c.card,
       borderWidth: 1,
       borderColor: c.line,
       flexDirection: "row",

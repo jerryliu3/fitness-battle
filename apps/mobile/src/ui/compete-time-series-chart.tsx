@@ -182,8 +182,6 @@ export function CompeteTimeSeriesChart({
     const preview = competeChartPreview(model);
     return <View accessibilityLabel="Current race position over the past day" style={{ flex: 1, width: "100%", aspectRatio: 1 }}>
       <Svg width="100%" height="100%" viewBox={`0 0 ${preview.width} ${preview.height}`}>
-        <Rect width={preview.width} height={preview.height} fill={c.accentSecondarySoft} />
-        <SvgText {...chartTextProps()} x={preview.left} y={16} fill={c.muted}>{model.unit}</SvgText>
         {preview.yTicks.map(tick => <G key={tick.y}><Line x1={preview.left} x2={preview.right} y1={tick.y} y2={tick.y} stroke={c.line} /><SvgText {...chartTextProps()} x={preview.left - 8} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</SvgText></G>)}
         {preview.xTicks.map((tick, i) => <SvgText {...chartTextProps()} key={tick.label} x={tick.x} y={282} textAnchor={i ? "end" : "start"} fill={c.muted}>{tick.label}</SvgText>)}
         {preview.athletes.map(athlete => <G key={athlete.id}>
@@ -199,7 +197,8 @@ export function CompeteTimeSeriesChart({
       accessibilityLabel="Weekly competition time-series graph"
       style={[
         s.card,
-        immersive && { flex: 1, borderWidth: 0, borderRadius: 0, paddingTop: 112, backgroundColor: c.accentSecondarySoft },
+        { backgroundColor: "transparent", borderWidth: 0, paddingHorizontal: 0 },
+        immersive && { flex: 1, borderRadius: 0, paddingTop: 112 },
         reserveTopControls && { paddingTop: 64 },
       ]}
     >
@@ -337,16 +336,29 @@ export function CompeteTimeSeriesChart({
 
           {/* Active time cursor line (visible when scrubbing) */}
           {model.isScrubbing && (
-            <Line
-              x1={model.cursorX}
-              x2={model.cursorX}
-              y1={model.top - 4}
-              y2={model.bottom}
-              stroke={c.ink}
-              strokeWidth={1}
-              strokeDasharray="2 3"
-              opacity={0.45}
-            />
+            <>
+              <Line
+                x1={model.cursorX}
+                x2={model.cursorX}
+                y1={model.top - 4}
+                y2={model.bottom}
+                stroke={c.ink}
+                strokeWidth={1}
+                strokeDasharray="2 3"
+                opacity={0.45}
+              />
+              {model.cursorTimeLabel ? (
+                <SvgText
+                  {...chartTextProps()}
+                  x={Math.max(model.left + 36, Math.min(model.right - 36, model.cursorX))}
+                  y={Math.max(12, model.top - 8)}
+                  textAnchor="middle"
+                  fill={c.muted}
+                >
+                  {model.cursorTimeLabel}
+                </SvgText>
+              ) : null}
+            </>
           )}
 
           {/* Unselected background competitor traces */}
@@ -412,7 +424,7 @@ export function CompeteTimeSeriesChart({
               cy={model.selectedAthlete.cursorY}
               r={4.5}
               fill={selectedStroke}
-              stroke="#ffffff"
+              stroke={c.paper}
               strokeWidth={1.8}
             />
             {/* Athlete Callout (Full pennant card in fullscreen aligned to right; clean pill in card preview) */}

@@ -2,6 +2,7 @@ export interface StandardChartGeometry {
   points: Array<{ x: number; y: number; val: number; index: number }>;
   polyline: string;
   polylines: string[];
+  trendPolyline: string;
   areaPath: string;
   corridorPath?: string;
   corridorHighPolyline?: string;
@@ -43,6 +44,7 @@ export function buildStandardChartGeometry(
       points: [],
       polyline: "",
       polylines: [],
+      trendPolyline: "",
       areaPath: "",
       yMin: 0,
       yMid: 0,
@@ -145,10 +147,32 @@ export function buildStandardChartGeometry(
     corridorLowPolyline = lowPts.join(" ");
   }
 
+  let trendPolyline = "";
+  if (!corridor && points.length >= 2) {
+    trendPolyline = points
+      .map((p) => {
+        const startIdx = Math.max(0, p.index - 29);
+        let sum = 0;
+        let count = 0;
+        for (let j = startIdx; j <= p.index; j++) {
+          const v = values[j];
+          if (typeof v === "number" && Number.isFinite(v)) {
+            sum += v;
+            count += 1;
+          }
+        }
+        const avg = count > 0 ? sum / count : p.val;
+        const ty = yBottom - ((avg - yMin) / ySpan) * usableH;
+        return `${p.x.toFixed(1)},${ty.toFixed(1)}`;
+      })
+      .join(" ");
+  }
+
   return {
     points,
     polyline,
     polylines,
+    trendPolyline,
     areaPath,
     corridorPath,
     corridorHighPolyline,

@@ -21,6 +21,7 @@ describe("buildStandardChartGeometry", () => {
     expect(geo.yMax).toBeGreaterThan(100);
     expect(geo.yMid).toBeCloseTo((geo.yMin + geo.yMax) / 2, 0.5);
     expect(geo.polyline).toContain("44.0");
+    expect(geo.trendPolyline).toContain("44.0");
     expect(geo.areaPath).toContain("Z");
   });
 
@@ -44,6 +45,7 @@ describe("buildStandardChartGeometry", () => {
     expect(geo.corridorLowPolyline).toBeDefined();
     expect(geo.corridorHighPolyline).toContain(",");
     expect(geo.corridorLowPolyline).toContain(",");
+    expect(geo.trendPolyline).toBe("");
   });
 
   it("clamps yMin to 0 for non-negative series by default", () => {
