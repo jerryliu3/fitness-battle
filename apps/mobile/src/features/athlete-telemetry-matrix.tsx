@@ -1,6 +1,6 @@
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Pressable, View } from "react-native";
 import Svg, { Circle, Path, Polyline, G } from "react-native-svg";
 import { buildAnalyticsLabModel, buildSvgLineGeometry, type AnalyticsDomainId, type AnalyticsTimeLens, type CompeteState } from "@fitness-battle/shared";
@@ -18,7 +18,7 @@ const c=useThemeColors();
 const s=useThemedStyles(sThemes);
 
   const router = useRouter();
-  const [timeLens, setTimeLens] = useState<AnalyticsTimeLens>("30d");
+  const timeLens: AnalyticsTimeLens = "7d";
   const model = useMemo(() => buildAnalyticsLabModel(state, timeLens), [state, timeLens]);
 
   const SHOW_ATHLETE_EQUITY = false;
@@ -111,28 +111,7 @@ const s=useThemedStyles(sThemes);
 
   return (
     <View style={s.container}>
-      <View style={s.betweenRow}>
-        <AppText role="heading">Advanced Analytics</AppText>
-        <View style={s.lensRow} role="group" accessibilityLabel="Time lens">
-          {(["7d", "30d"] as const).map((lens) => {
-            const active = timeLens === lens;
-            return (
-              <Pressable
-                key={lens}
-                accessibilityRole="button"
-                accessibilityLabel={`Time lens ${lens.toUpperCase()}`}
-                accessibilityState={{ selected: active }}
-                onPress={() => setTimeLens(lens)}
-                style={[s.lensPill, active && s.lensPillActive]}
-              >
-                <AppText role="caption" style={{ color: active ? c.ink : c.muted }}>
-                  {lens.toUpperCase()}
-                </AppText>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
+      <AppText role="heading">Advanced Analytics</AppText>
 
       <View style={s.bentoGrid}>
         {bentoTiles.map((t) => (
@@ -145,7 +124,6 @@ const s=useThemedStyles(sThemes);
                 pathname: "/telemetry",
                 params: {
                   domain: t.domain,
-                  ...(timeLens !== "30d" ? { lens: timeLens } : {}),
                   signedOut: signedOut ? "1" : undefined,
                 },
               } as never);
