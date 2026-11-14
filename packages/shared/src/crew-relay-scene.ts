@@ -80,11 +80,16 @@ export function crewRelayScene(model: Relay, width: number, prefix: string, comp
       const front = point(fraction), back = point(fraction, true);
       return `${front.x + (back.x - front.x) * depth} ${front.y + (back.y - front.y) * depth}`;
     };
+    const finishTile = (row: number, col: number, face = false) => {
+      const topRow = face ? 7 - row : row;
+      const light = (topRow + col) % 2 ? "#ffffff" : "#142b3b";
+      return face ? (light === "#ffffff" ? "#142b3b" : "#ffffff") : light;
+    };
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 2; col++) {
         const x0 = a + (b - a) * col / 2, x1 = a + (b - a) * (col + 1) / 2;
         const y0 = row / 8, y1 = (row + 1) / 8;
-        finish.push(path(`M${surface(x0, y0)} L${surface(x1, y0)} L${surface(x1, y1)} L${surface(x0, y1)}Z`, (row + col) % 2 ? "#ffffff" : "#142b3b"));
+        finish.push(path(`M${surface(x0, y0)} L${surface(x1, y0)} L${surface(x1, y1)} L${surface(x0, y1)}Z`, finishTile(row, col)));
       }
     }
     const faceSurface = (fraction: number, depth: number) => {
@@ -95,7 +100,7 @@ export function crewRelayScene(model: Relay, width: number, prefix: string, comp
       for (let col = 0; col < 2; col++) {
         const x0 = a + (b - a) * col / 2, x1 = a + (b - a) * (col + 1) / 2;
         const y0 = row / 4, y1 = (row + 1) / 4;
-        finish.push(path(`M${faceSurface(x0, y0)} L${faceSurface(x1, y0)} L${faceSurface(x1, y1)} L${faceSurface(x0, y1)}Z`, (row + col) % 2 ? "#ffffff" : "#142b3b"));
+        finish.push(path(`M${faceSurface(x0, y0)} L${faceSurface(x1, y0)} L${faceSurface(x1, y1)} L${faceSurface(x0, y1)}Z`, finishTile(row, col, true)));
       }
     }
   }
