@@ -62,3 +62,19 @@ it("keeps every finish check on the block (top plane and wrapping front face) wi
     expect(scene.finish.filter(node => node.tag === "line")).toHaveLength(0);
   }
 });
+
+it("renders athlete relay segments as one continuous shape without white divider seams", () => {
+  const model = crewRelay(
+    [{ id: "a", name: "A", value: 40, sessions: 1 }, { id: "b", name: "B", value: 60, sessions: 2 }],
+    100,
+  );
+  const scene = crewRelayScene(model, 320, "cont");
+  expect(scene.segments).toHaveLength(2);
+  for (const segment of scene.segments) {
+    expect(segment.nodes.some(node => node.attrs.stroke === "white")).toBe(false);
+    expect(segment.nodes.filter(node => node.tag === "path")).toHaveLength(2);
+  }
+  const firstFaceX = String(scene.segments[0]!.nodes[1]!.attrs.d).match(/M([\d.]+) [\d.]+ L([\d.]+)/)!;
+  const secondFaceX = String(scene.segments[1]!.nodes[1]!.attrs.d).match(/M([\d.]+) /)!;
+  expect(Number(secondFaceX[1])).toBeLessThanOrEqual(Number(firstFaceX[2]));
+});

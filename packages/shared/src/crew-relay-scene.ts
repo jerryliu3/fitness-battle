@@ -32,43 +32,44 @@ export function crewRelayScene(model: Relay, width: number, prefix: string, comp
     path(`M${p(1)} L${p(1, true)} L${p(1, true, true)} L${p(1, false, true)}Z`, "#a8bdb4"),
     path(`M${p(0)} L${p(1)}`, "none", { stroke: "#d3dfd9", strokeWidth: 2 }),
   ];
+  const seamOverlap = 0.5 / length;
   const segments = model.segments
     .filter((s) => s.fraction > 0)
-    .map((s, i) => ({
-      id: s.id,
-      nodes: [
-        {
-          tag: "defs",
-          attrs: {},
-          children: [
-            {
-              tag: "linearGradient",
-              attrs: {
-                id: `${prefix}-${i}`,
-                x1: "0",
-                y1: "0",
-                x2: "0",
-                y2: "1",
-              },
-              children: [
-                { tag: "stop", attrs: { offset: 0, stopColor: s.color } },
-                {
-                  tag: "stop",
-                  attrs: { offset: 1, stopColor: s.color, stopOpacity: 0.7 },
+    .map((s, i) => {
+      // Slightly overlap non-leading segments so consecutive polygons never expose an anti-aliased seam.
+      const start = i > 0 ? Math.max(0, s.start - seamOverlap) : s.start;
+      const end = s.start + s.fraction;
+      return {
+        id: s.id,
+        nodes: [
+          {
+            tag: "defs",
+            attrs: {},
+            children: [
+              {
+                tag: "linearGradient",
+                attrs: {
+                  id: `${prefix}-${i}`,
+                  x1: "0",
+                  y1: "0",
+                  x2: "0",
+                  y2: "1",
                 },
-              ],
-            },
-          ],
-        },
-        path(face(s.start, s.start + s.fraction), s.color),
-        path(top(s.start, s.start + s.fraction), `url(#${prefix}-${i})`),
-        path(`M${p(s.start)} L${p(s.start, true)}`, "none", {
-          stroke: "white",
-          strokeWidth: 1,
-          opacity: 0.7,
-        }),
-      ] as FieldNode[],
-    }));
+                children: [
+                  { tag: "stop", attrs: { offset: 0, stopColor: s.color } },
+                  {
+                    tag: "stop",
+                    attrs: { offset: 1, stopColor: s.color, stopOpacity: 0.7 },
+                  },
+                ],
+              },
+            ],
+          },
+          path(face(start, end), s.color),
+          path(top(start, end), `url(#${prefix}-${i})`),
+        ] as FieldNode[],
+      };
+    });
   const finish: FieldNode[] = [];
   if (model.finish !== null) {
     const f = model.finish;
