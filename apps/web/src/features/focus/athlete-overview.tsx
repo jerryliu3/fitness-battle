@@ -1,16 +1,15 @@
 "use client";
 import { AthleteCrest } from "@/features/athlete-card/athlete-crest";
-import { athleteCardModel } from "@fitness-battle/shared";
-
 import { EffortTrend } from "@/features/progress/effort-trend";
 import { AppParagraph, AppText, SectionHeader, typographyStyle } from "@/ui/section";
-
-import { clubLifetimeTotals } from "@fitness-battle/shared";
 import { ProfilePhoto } from "@/features/you/profile-photo";
-
 import { useCompete } from "@/components/compete-context";
-
 import {
+  athleteCardHighlightCatalog,
+  ATHLETE_CARD_HIGHLIGHT_LIMIT,
+  athleteCardModel,
+  clubLifetimeTotals,
+  defaultAthleteCardHighlightIds,
   distanceUnitLabel,
   formatDistanceM,
   type CompeteState,
@@ -37,17 +36,30 @@ export function AthleteOverview({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(state.name);
   const [city, setCity] = useState(state.city);
+  const [cardHighlights, setCardHighlights] = useState<string[] | undefined>(state.cardHighlights);
   const [profileError, setProfileError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!openProfileEdit) return;
     setName(state.name);
     setCity(state.city);
+    setCardHighlights(state.cardHighlights);
     setEditing(true);
-  }, [openProfileEdit, state.name, state.city]);
+  }, [openProfileEdit, state.name, state.city, state.cardHighlights]);
 
   const season = clubLifetimeTotals(state);
   const unit = distanceUnitLabel(state.units);
+  const highlightCatalog = athleteCardHighlightCatalog(state);
+  const activeHighlightIds = cardHighlights ?? defaultAthleteCardHighlightIds(state);
+
+  function toggleHighlight(id: string) {
+    setCardHighlights((prev) => {
+      const current = prev ?? activeHighlightIds;
+      if (current.includes(id)) return current.filter((item) => item !== id);
+      if (current.length >= ATHLETE_CARD_HIGHLIGHT_LIMIT) return current;
+      return [...current, id];
+    });
+  }
 
   const showProfile = sections === "profile";
   const showProgress = sections === "progress";
@@ -79,6 +91,37 @@ export function AthleteOverview({
                 maxLength={48}
               />
             </label>
+            <div style={{ marginBottom: 12 }}>
+              <div className="fb-row" style={{ justifyContent: "space-between", marginBottom: 6 }}>
+                <AppText role="field">Card highlights ({activeHighlightIds.length}/{ATHLETE_CARD_HIGHLIGHT_LIMIT})</AppText>
+                {cardHighlights !== undefined ? (
+                  <button
+                    type="button"
+                    className="fb-btn-line"
+                    style={{ padding: "2px 8px", fontSize: 12 }}
+                    onClick={() => setCardHighlights(undefined)}
+                  >
+                    Reset to PBs
+                  </button>
+                ) : null}
+              </div>
+              <div className="fb-row" style={{ flexWrap: "wrap", gap: 6 }}>
+                {highlightCatalog.map((item) => {
+                  const selected = activeHighlightIds.includes(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={selected ? "fb-btn" : "fb-btn-line"}
+                      style={{ ...typographyStyle("caption"), padding: "4px 10px" }}
+                      onClick={() => toggleHighlight(item.id)}
+                    >
+                      {item.label}: {item.value}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             {profileError ? (
               <AppParagraph typographyRole="body" className="fb-error" role="alert" style={{ ...typographyStyle("body"), marginBottom: 8 }}>
                 {profileError}
@@ -98,6 +141,7 @@ export function AthleteOverview({
                   setProfileError(null);
                   dispatch({ type: "rename", name: trimmedName });
                   dispatch({ type: "set-city", city: city.trim() });
+                  dispatch({ type: "set-card-highlights", cardHighlights });
                   setEditing(false);
                 }}
               >
@@ -110,6 +154,7 @@ export function AthleteOverview({
                 onClick={() => {
                   setName(state.name);
                   setCity(state.city);
+                  setCardHighlights(state.cardHighlights);
                   setProfileError(null);
                   setEditing(false);
                 }}
@@ -124,7 +169,7 @@ export function AthleteOverview({
           <AthleteCrest key={email ?? "guest"} model={athleteCardModel(state)} />
           <button type="button" className="fb-btn-line" onClick={() => {
             if (onEditProfile) onEditProfile();
-            else { setName(state.name); setCity(state.city); setEditing(true); }
+            else { setName(state.name); setCity(state.city); setCardHighlights(state.cardHighlights); setEditing(true); }
           }}>Edit profile</button>
         </>
       ) : null}

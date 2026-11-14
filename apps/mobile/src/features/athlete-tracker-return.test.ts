@@ -198,6 +198,7 @@ describe("athlete profile navigation and layout", () => {
     expect(rendered).toContain("https://example.test/app/athlete?id=alice");
     expect(rendered).toContain("Copy");
     expect(rendered).toContain("Edit profile");
+    expect(rendered).toContain("Settings");
   });
 
   it("renders signed out athlete page with updated copy and signedOut flag for metrics", async () => {

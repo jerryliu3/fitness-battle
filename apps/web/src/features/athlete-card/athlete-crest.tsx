@@ -50,14 +50,14 @@ export function AthleteCrest({ model, active = true }: { model: AthleteCardModel
           </div>
           <div className={styles.identity} data-long-name={model.name.length > 18}><h2 title={model.name}>{model.name}</h2></div>
           <div className={styles.stats}>
-            {model.records.length ? <div className={styles.records} style={{ gridTemplateColumns: `repeat(${Math.min(3, model.records.length)}, 1fr)` }}>{model.records.slice(0, 3).map(r => <Stat key={r.label} value={r.value} label={`${r.label} PB`} />)}</div> : <p className={styles.noRecords}>No personal bests yet</p>}
+            {model.records.length ? <div className={styles.records} style={{ gridTemplateColumns: `repeat(${Math.min(3, model.records.length)}, 1fr)` }}>{model.records.slice(0, 3).map(r => <Stat key={r.id ?? r.label} value={r.value} label={!r.kind || r.kind === "record" ? `${r.label} PB` : r.label} />)}</div> : <p className={styles.noRecords}>No highlights selected</p>}
             <div className={styles.totals}><Stat value={model.overtakes} label="Overtakes" /><Stat value={model.rounds} label="Rounds" /><Stat value={model.streak} label="Week streak" dim={!model.streakActive} /></div>
           </div>
           <div className={styles.brand}><Wordmark /></div>
         </div>
         <div className={`${styles.face} ${styles.back}`} aria-hidden={!details} inert={!details}>
           <div className={styles.reverse}><Wordmark /><h2 title={model.name}>{model.name}</h2><p>{model.sport} · Primary sport</p>
-            <h3>Personal bests</h3>{model.records.length ? <dl>{model.records.map(r => <div key={r.label}><dt>{r.label}<RecordDate date={r.date} /></dt><dd>{r.value}</dd></div>)}</dl> : <p>No personal bests yet</p>}
+            <h3>{model.records.some(r => r.kind && r.kind !== "record") ? "Highlights" : "Personal bests"}</h3>{model.records.length ? <dl>{model.records.map(r => <div key={r.id ?? r.label}><dt>{r.label}{r.date ? <RecordDate date={r.date} /> : null}</dt><dd>{r.value}</dd></div>)}</dl> : <p>No highlights selected</p>}
             <h3>On Overtaek</h3><div className={styles.totals}><Stat value={model.overtakes} label="Overtakes" /><Stat value={model.rounds} label="Rounds" /><Stat value={model.streak} label="Week streak" dim={!model.streakActive} /></div>
           </div>
         </div>
