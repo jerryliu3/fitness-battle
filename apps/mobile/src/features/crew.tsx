@@ -9,6 +9,7 @@ import { alpineTrail } from "../ui/club-art";
 import { CrewSessions } from "./crew-sessions";
 import { CrewOverview } from "./crew-overview";
 import {
+  SPORTS,
   type SportId,
   type CrewBoardPin,
   competitionTrack,
@@ -25,6 +26,7 @@ import {
   crewLineup,
   getDemoCompeteState,
 } from "@fitness-battle/shared";
+import { Chip, ChipRow } from "../ui/chip";
 import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImageBackground, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
@@ -80,10 +82,10 @@ export function useCrewApi() {
   const live = !!user && !offlineMode && !!accessToken;
   const { data, error, busy, reload } = useCachedApi<CrewData>("/api/crews");
   const request = useCallback(
-    async (path: string, body?: object) => {
+    async (path: string, body?: object, method?: string) => {
       if (!live) throw Error("Private crews need a live signed-in account.");
       return requestApi<{ crew?: PrivateCrew; pin?: CrewBoardPin; saved?: number }>(
-        mobileEnv.apiUrl, accessToken, `/api/crews${path}`, { body },
+        mobileEnv.apiUrl, accessToken, `/api/crews${path}`, { body, method },
       );
     },
     [live, accessToken],
@@ -134,7 +136,9 @@ const f=useFocusStyles();
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
-  const [format, setFormat] = useState("volume");
+  const [editSport, setEditSport] = useState<SportId>("running");
+  const [editFormat, setEditFormat] = useState<"cooperative" | "personal_target">("cooperative");
+  const [editTarget, setEditTarget] = useState("40");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const flight = useRef(false);
@@ -276,9 +280,15 @@ const f=useFocusStyles();
     setNote("");
     setName("");
     setCode("");
+    if (next === "manage") {
+      const isSessions = crew.format === "personal_target" || crew.sport === "strength";
+      setEditSport((SPORTS.some((s) => s.id === crew.sport) ? crew.sport : "running") as SportId);
+      setEditFormat(isSessions ? "personal_target" : "cooperative");
+      setEditTarget(String(isSessions ? crew.target_sessions : crew.journey_km));
+    }
     setPanel(next);
   }
-  async function write(path: string, body: object) {
+  async function write(path: string, body: object, method?: string) {
     if (flight.current) return;
     if (solo && path !== "" && path !== "/join") {
       open("add");
@@ -290,6 +300,19 @@ const f=useFocusStyles();
     const id = user?.id;
     try {
       if (!api.live) {
+        if (path === "" && method === "PATCH") {
+          const nextSport = (body as { sport?: SportId }).sport ?? (state?.primary ?? "running");
+          if (state?.crewBoard) {
+            dispatch({
+              type: "opt-in",
+              sport: nextSport,
+              crewBoard: { ...state.crewBoard, sport: nextSport },
+            });
+          }
+          setPanel(null);
+          setNote("Saved. Your crew settings are up to date.");
+          return;
+        }
         if (path === "") {
           const newName = (body as { name?: string }).name || "My Crew";
           const newSport = (body as { sport?: string }).sport || state?.primary || "running";
@@ -359,7 +382,7 @@ const f=useFocusStyles();
           return;
         }
       }
-      const result = await api.request(path, body);
+      const result = await api.request(path, body, method);
       if (owner.current !== id) return;
       void playCue("success");
       const reloaded = await api.reload();
@@ -567,6 +590,7 @@ const f=useFocusStyles();
             <Text style={f.kicker}>or start a new crew</Text>
             <TextInput
               accessibilityLabel="Crew name"
+              placeholder="e.g. Dawn Patrol"
               style={f.input}
               value={name}
               onChangeText={setName}
@@ -574,22 +598,9 @@ const f=useFocusStyles();
               autoFocus={false}
               editable={!busy}
             />
-            {[
-              { id: "volume", name: "Same-sport volume" },
-              { id: "personal_target", name: "Personal session targets" },
-              { id: "cooperative", name: "Shared distance" },
-            ].map((o) => (
-              <Pressable
-                key={o.id}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: format === o.id }}
-                disabled={busy}
-                style={[f.chip, format === o.id && f.chipActive]}
-                onPress={() => setFormat(o.id)}
-              >
-                <AppText role="label" >{o.name}</AppText>
-              </Pressable>
-            ))}
+            <AppText role="caption" secondary>
+              Defaults to your primary sport and weekly contract goals; adjust anytime in crew settings.
+            </AppText>
             <FocusButton
               label={
                 busy
@@ -607,7 +618,7 @@ const f=useFocusStyles();
                   : void write("", {
                       name: name.trim(),
                       sport: state?.primary ?? "running",
-                      format,
+                      format: "cooperative",
                     })
               }
             />
@@ -654,18 +665,105 @@ const f=useFocusStyles();
             />
           </>
         ) : (
-          <>
-            <AppText role="body" secondary >
-              {crew.sport} · {crew.format.replaceAll("_", " ")}
-            </AppText>
-            <FocusButton label={state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? "View sport event" : "Join Crew Derby"} disabled={busy} onPress={() => { derbyAfterClose.current = true; setPanel(null); }} />
+          <View style={{ gap: 14 }}>
+            <View style={{ gap: 8 }}>
+              <AppText role="label">Crew sport</AppText>
+              <ChipRow>
+                {SPORTS.map((sp) => (
+                  <Chip
+                    key={sp.id}
+                    label={sp.name}
+                    selected={editSport === sp.id}
+                    onPress={() => {
+                      setEditSport(sp.id);
+                      if (sp.id === "strength") {
+                        setEditFormat("personal_target");
+                        setEditTarget(String(crew.target_sessions || 3));
+                      }
+                    }}
+                  />
+                ))}
+              </ChipRow>
+            </View>
+            {editSport !== "strength" ? (
+              <View style={{ gap: 8 }}>
+                <AppText role="label">Default weekly measure</AppText>
+                <ChipRow>
+                  {(
+                    [
+                      { id: "cooperative", label: "Shared distance" },
+                      { id: "personal_target", label: "Session targets" },
+                    ] as const
+                  ).map((opt) => (
+                    <Chip
+                      key={opt.id}
+                      label={opt.label}
+                      selected={editFormat === opt.id}
+                      onPress={() => {
+                        setEditFormat(opt.id);
+                        setEditTarget(String(opt.id === "personal_target" ? crew.target_sessions : crew.journey_km));
+                      }}
+                    />
+                  ))}
+                </ChipRow>
+              </View>
+            ) : null}
+            <View style={{ gap: 6 }}>
+              <AppText role="caption" secondary>
+                {editFormat === "personal_target" || editSport === "strength"
+                  ? "Default sessions per member"
+                  : "Default shared distance (km)"}
+              </AppText>
+              <TextInput
+                accessibilityLabel="Crew default target"
+                style={f.input}
+                keyboardType="decimal-pad"
+                value={editTarget}
+                onChangeText={setEditTarget}
+                editable={!busy}
+              />
+              <AppText role="caption" secondary>
+                Weekly contracts in Crew Passport can set a custom goal for any individual week.
+              </AppText>
+            </View>
+            <FocusButton
+              label={busy ? "Saving…" : "Save settings"}
+              disabled={
+                busy ||
+                !Number.isFinite(Number(editTarget)) ||
+                Number(editTarget) < 1 ||
+                ((editFormat === "personal_target" || editSport === "strength") && Number(editTarget) > 14)
+              }
+              onPress={() => {
+                const parsed = Number(editTarget);
+                const sessions = editFormat === "personal_target" || editSport === "strength";
+                void write(
+                  "",
+                  {
+                    crewId: crew.id,
+                    sport: editSport,
+                    format: sessions ? "personal_target" : "cooperative",
+                    ...(sessions
+                      ? { targetSessions: Math.round(parsed), journeyKm: crew.journey_km }
+                      : { journeyKm: parsed, targetSessions: crew.target_sessions }),
+                  },
+                  "PATCH",
+                );
+              }}
+            />
+            <FocusButton
+              label={state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? "View sport event" : "Join Crew Derby"}
+              secondary
+              disabled={busy}
+              onPress={() => { derbyAfterClose.current = true; setPanel(null); }}
+            />
             <FocusButton
               label="Leave crew"
               secondary
               disabled={busy}
               onPress={() => open("leave")}
             />
-          </>
+          </View>
         )}
         {note ? (
           <AppText role="body" secondary  accessibilityLiveRegion="polite">
