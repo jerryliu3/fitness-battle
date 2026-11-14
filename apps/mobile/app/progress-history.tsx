@@ -5,22 +5,17 @@ import { ActivityDetailSheet } from "../src/features/activity-detail-sheet";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { WeeklyChapters } from "../src/features/weekly-chapters";
 import { AwardShelf } from "../src/ui/award-shelf";
-import { SportActivityIcon } from "../src/ui/sport-activity-icon";
+import { ActivityListRow } from "../src/ui/activity-list-row";
 import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
-import { prefetchActivityReplay } from "../src/lib/prefetch-activity-replay";
 import { awardCards } from "@fitness-battle/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  APP_TIMEZONE,
   activityEffort,
   countsOnTrack,
-  distanceUnitLabel,
-  formatClockTime,
-  formatDistanceM,
   formatEffort,
   sportById,
   type Activity,
@@ -76,16 +71,6 @@ export default function ProgressHistoryScreen() {
       effort,
     };
   }, [filteredActivities]);
-
-  const formatActivityDate = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      timeZone: APP_TIMEZONE,
-    });
-  };
 
   if (!state) return null;
 
@@ -170,46 +155,17 @@ export default function ProgressHistoryScreen() {
               </View>
             ) : (
               <View style={s.listContainer}>
-                {filteredActivities.map((activity) => {
-                  const sportInfo = sportById(activity.sport);
-                  const effort = formatEffort(activityEffort(activity));
-                  return (
-                    <Pressable
-                      key={activity.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={`${sportInfo.name}, ${formatClockTime(activity.movingSec)}, ${effort} effort`}
-                      onPressIn={() => prefetchActivityReplay(activity, accessToken)}
-                      onPress={() => setInspectedActivity(activity)}
-                      style={s.activityRow}
-                    >
-                      <View style={s.activityIconWrapper}>
-                        <SportActivityIcon sport={activity.sport} />
-                      </View>
-                      <View style={{ flex: 1, gap: 2 }}>
-                        <AppText role="row">
-                          {sportInfo.name}
-                        </AppText>
-                        <AppText role="caption" secondary>
-                          {formatActivityDate(activity.startedAt)}
-                          {activity.distanceM > 0
-                            ? ` · ${formatDistanceM(activity.distanceM, state.units)} ${distanceUnitLabel(state.units)}`
-                            : ""}
-                        </AppText>
-                      </View>
-                      <View style={{ alignItems: "flex-end", gap: 2 }}>
-                        <AppText role="value" style={{ fontVariant: ["tabular-nums"] }}>
-                          {formatClockTime(activity.movingSec)}
-                        </AppText>
-                        <AppText role="label" style={{ color: c.tennis }}>
-                          {effort} effort
-                        </AppText>
-                      </View>
-                      <AppText role="caption" secondary style={{ marginLeft: 6 }}>
-                        ›
-                      </AppText>
-                    </Pressable>
-                  );
-                })}
+                {filteredActivities.map((activity) => (
+                  <ActivityListRow
+                    key={activity.id}
+                    activity={activity}
+                    history={state.activities}
+                    units={state.units}
+                    accessToken={accessToken}
+                    surface="soft"
+                    onPress={setInspectedActivity}
+                  />
+                ))}
               </View>
             )}
           </View>
@@ -279,24 +235,6 @@ const sThemes = createThemedStyles((themeColors) => {
     },
     listContainer: {
       gap: 8,
-    },
-    activityRow: {
-      padding: 14,
-      borderRadius: 16,
-      backgroundColor: c.soft,
-      borderWidth: 1,
-      borderColor: c.line,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-    },
-    activityIconWrapper: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: `${c.tennis}22`,
-      alignItems: "center",
-      justifyContent: "center",
     },
   };
 });
