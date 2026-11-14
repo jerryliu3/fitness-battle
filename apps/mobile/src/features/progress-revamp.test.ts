@@ -290,7 +290,7 @@ describe("Revamped Progress Screen & Spaces", () => {
       renderer = create(createElement(JourneySpace, { state: mock.state!, initialHorizon: "year" }));
     });
     const json = JSON.stringify(renderer.toJSON());
-    expect(json).toContain("Season Atlas");
+    expect(json).toContain("2026");
     expect(json).not.toContain("Workouts");
   });
 
