@@ -7,7 +7,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Modal, ScrollView, TextInput, View, type ScrollViewInstance } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
-import { nextDailyWaveWindowAt, waveTimeLabel, PROVIDERS, SPORTS, type SportId, type UnitSystem } from "@fitness-battle/shared";
+import { nextDailyWaveWindowAt, waveTimeLabel, PROVIDERS, SPORTS, type ProfileGender, type SportId, type UnitSystem } from "@fitness-battle/shared";
+import { SearchableCountryPicker } from "../src/ui/searchable-country-picker";
 import { ChoicePicker } from "../src/ui/choice-picker";
 import { Chip } from "../src/ui/chip";
 import { AppText } from "../src/ui/section";
@@ -31,10 +32,12 @@ const f=useFocusStyles();
   const { state, canWrite, dispatch } = useCompeteStore();
   const { user } = useAuth(); const router = useRouter();
   const preview = useLocalSearchParams<{ preview?: string }>().preview === "1";
-  const key = `onboarding-draft:v3:${user?.id ?? "guest"}`;
+  const key = `onboarding-draft:v4:${user?.id ?? "guest"}`;
   const [ready, setReady] = useState(false);
   const [loadedKey, setLoadedKey] = useState("");
   const [step, setStep] = useState(0), [name, setName] = useState(""), [city, setCity] = useState("");
+  const [gender, setGender] = useState<ProfileGender | "">("");
+  const [countryCode, setCountryCode] = useState("");
   const [sports, setSports] = useState<SportId[]>(["running"]), [units, setUnits] = useState<UnitSystem>("us"), [sleep, setSleep] = useState(false);
 
   const finished = useRef(false), scroll=useRef<ScrollViewInstance>(null);
@@ -45,11 +48,13 @@ const f=useFocusStyles();
     if (!alive) return;
     let draft; try { draft = !preview && raw ? JSON.parse(raw) : null; } catch {}
     setStep(Math.max(0, Math.min(6, Number(draft?.step) || 0))); setName(draft?.name ?? state?.name ?? ""); setCity(draft?.city ?? state?.city ?? "");
+    setGender(draft?.gender ?? state?.gender ?? "");
+    setCountryCode(draft?.countryCode ?? state?.countryCode ?? "");
     setUnits(draft?.units === "metric" || draft?.units === "us" ? draft.units : state?.units ?? "us");
     setSports(Array.isArray(draft?.sports) ? draft.sports.filter((id: SportId) => SPORTS.some(s => s.id === id)) : [state?.primary ?? "running"]);
     setSleep(Boolean(draft?.sleep)); setLoadedKey(key); setReady(true);
   }).catch(() => { if (alive) setReady(true); }); return () => { alive = false; }; }, [key, preview, Boolean(state)]);
-  useEffect(() => { if (ready && loadedKey === key && !preview) void AsyncStorage.setItem(key, JSON.stringify({step,name,city,sports,units,sleep})).catch(() => {}); }, [ready,loadedKey,preview,key,step,name,city,sports,units,sleep]);
+  useEffect(() => { if (ready && loadedKey === key && !preview) void AsyncStorage.setItem(key, JSON.stringify({step,name,city,gender,countryCode,sports,units,sleep})).catch(() => {}); }, [ready,loadedKey,preview,key,step,name,city,gender,countryCode,sports,units,sleep]);
   if (!preview && state?.onboardingCompleted) return <Redirect href="/today" />;
   if (!state || !ready) return <AppText>Loading setup…</AppText>;
   function advance(){if(step===2&&!sports.length&&!sleep){setSelectionError(true);return;}setSelectionError(false);setStep(step+1);}
@@ -58,7 +63,10 @@ const f=useFocusStyles();
     if (!user || !canWrite || finished.current) return;
     finished.current = true;
     dispatch({ type: "rename", name: name.trim() || user.displayName });
-    dispatch({ type: "set-city", city: city.trim() }); dispatch({ type: "set-units", units });
+    dispatch({ type: "set-city", city: city.trim() });
+    if (gender) dispatch({ type: "set-gender", gender });
+    if (countryCode) dispatch({ type: "set-country", countryCode });
+    dispatch({ type: "set-units", units });
     for (const sport of sports) dispatch({ type: "opt-in", sport, accountId: user.id });
     if(sports[0]) dispatch({ type: "set-primary", sport: sports[0] });
     if (sleep) dispatch({ type: "opt-in-health", metric: "sleep" });
@@ -70,7 +78,16 @@ const f=useFocusStyles();
       <AppText role="caption" secondary>{preview ? "DEBUG PREVIEW · NO CHANGES SAVED" : `YOUR FIRST FIELD · ${step+1} / 7`}</AppText>
       <AppText role="display" accessibilityRole="header">{titles[step]}</AppText>
       {step===0 && <AppText secondary>Meet Ember, your tiny teammate. Let’s set up your sports, preferences, and trackers one little step at a time.</AppText>}
-      {step===1 && <>{!preview && <ProfilePhoto state={state}/>}<AppText role="label">Display name</AppText><TextInput accessibilityLabel="Display name" style={f.input} value={name} onChangeText={setName} maxLength={80}/><AppText role="label">City · optional</AppText><TextInput accessibilityLabel="City" style={f.input} value={city} onChangeText={setCity} maxLength={80}/></>}
+      {step===1 && <>
+        {!preview && <ProfilePhoto state={state}/>}
+        <AppText role="label">Display name</AppText>
+        <TextInput accessibilityLabel="Display name" style={f.input} value={name} onChangeText={setName} maxLength={80}/>
+        <AppText role="label">City · optional</AppText>
+        <TextInput accessibilityLabel="City" style={f.input} value={city} onChangeText={setCity} maxLength={80}/>
+        <AppText role="label">Gender · optional</AppText>
+        <FocusSegments label="Gender" value={gender || "other"} options={[{ value: "female", label: "Female" }, { value: "male", label: "Male" }, { value: "other", label: "Other" }]} onChange={value => setGender(value as ProfileGender)}/>
+        <SearchableCountryPicker label="Country" value={countryCode} onChange={setCountryCode}/>
+      </>}
       {step===2 && <><AppText secondary>You can change this later under your profile.</AppText><AppText role="heading">Sports</AppText><View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{SPORTS.map(s=><Chip key={s.id} label={s.name} selected={sports.includes(s.id)} onPress={()=>setSports(current=>current.includes(s.id)?current.filter(id=>id!==s.id):[...current,s.id])}/>)}</View>{sports.length>1&&<><AppText role="label">Primary sport</AppText><ChoicePicker label="Primary sport" value={sports[0]!} options={sports.map(id=>({value:id,label:SPORTS.find(s=>s.id===id)!.name}))} onChange={id=>setSports([id,...sports.filter(s=>s!==id)])}/></>}{sports.some(s=>s!=="strength")&&<View style={{alignItems:"flex-start",gap:12}}><AppText role="label">Distance units</AppText><View style={{width:210}}><FocusSegments label="Distance units" options={[{value:"us",label:"Miles"},{value:"metric",label:"Kilometres"}]} value={units} onChange={setUnits}/></View></View>}<AppText role="heading">Sleep & recovery</AppText><View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}><Chip label="Sleep tracking" selected={sleep} onPress={()=>setSleep(!sleep)}/></View>{selectionError&&!sports.length&&!sleep&&<AppText accessibilityRole="alert">Choose at least one sport or sleep tracking to continue.</AppText>}</>}
 
       {step===3 && <><AppText secondary>Connect a tracker now to authorize your real account. Strava, WHOOP, and Oura start syncing after connection. Garmin sends new activities after your device syncs with Garmin Connect; Starter access does not include past activity history. You can also connect later under your profile.</AppText>{preview ? PROVIDERS.map(p=><FocusButton key={p.id} secondary disabled label={`${p.name} · Connect (preview)`} onPress={()=>{}}/>) : <TrackerConnections/>}</>}

@@ -26,8 +26,10 @@ import {
   competitionTrack,
   effortPointProgress,
   type ProviderId,
+  type ProfileGender,
   webProductPath,
 } from "@fitness-battle/shared";
+import { SearchableCountryPicker } from "../src/ui/searchable-country-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
@@ -42,6 +44,7 @@ import { DataSyncActions } from "../src/features/data-sync-actions";
 import { mobileEnv } from "../src/lib/env";
 import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
+import { FocusSegments } from "../src/ui/focus";
 import {
   createAppleHealthDeps,
   createHealthConnectDeps,
@@ -104,6 +107,8 @@ const styles=useThemedStyles(stylesThemes);
   }>();
   const [name, setName] = useState<string | null>(null);
   const [city, setCity] = useState<string | null>(null);
+  const [genderDraft, setGenderDraft] = useState<ProfileGender | null>(null);
+  const [countryDraft, setCountryDraft] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [syncBusy, setSyncBusy] = useState(false);
   const [busyProvider, setBusyProvider] = useState<string | null>(null);
@@ -137,6 +142,8 @@ const styles=useThemedStyles(stylesThemes);
   useEffect(() => {
     setName(null);
     setCity(null);
+    setGenderDraft(null);
+    setCountryDraft(null);
     setNote(null);
     setConfirmFreeze(false);
   }, [user?.id]);
@@ -190,7 +197,13 @@ const styles=useThemedStyles(stylesThemes);
 
   const draftName = name ?? state.name;
   const draftCity = city ?? state.city;
-  const dirty = draftName !== state.name || draftCity !== state.city;
+  const draftGender = genderDraft ?? state.gender ?? "";
+  const draftCountry = countryDraft ?? state.countryCode ?? "";
+  const dirty =
+    draftName !== state.name ||
+    draftCity !== state.city ||
+    draftGender !== (state.gender ?? "") ||
+    draftCountry !== (state.countryCode ?? "");
   const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
 
   const rowBusy = syncBusy || Boolean(busyProvider);
@@ -632,6 +645,22 @@ const styles=useThemedStyles(stylesThemes);
                 maxLength={40}
                 placeholder="City"
               />
+              <AppText role="label">Gender</AppText>
+              <FocusSegments
+                label="Gender"
+                value={(draftGender || "other") as ProfileGender}
+                options={[
+                  { value: "female", label: "Female" },
+                  { value: "male", label: "Male" },
+                  { value: "other", label: "Other" },
+                ]}
+                onChange={(value) => setGenderDraft(value as ProfileGender)}
+              />
+              <SearchableCountryPicker
+                label="Country"
+                value={draftCountry}
+                onChange={(code) => setCountryDraft(code)}
+              />
               {dirty ? (
                 <FocusButton
                   label="Save profile"
@@ -645,11 +674,19 @@ const styles=useThemedStyles(stylesThemes);
                       dispatch({ type: "rename", name: trimmed });
                     }
                     const cityTrimmed = draftCity.trim();
-                    if (cityTrimmed && cityTrimmed !== state.city) {
+                    if (cityTrimmed !== state.city) {
                       dispatch({ type: "set-city", city: cityTrimmed });
+                    }
+                    if (draftGender && draftGender !== state.gender) {
+                      dispatch({ type: "set-gender", gender: draftGender as ProfileGender });
+                    }
+                    if (draftCountry !== (state.countryCode ?? "")) {
+                      dispatch({ type: "set-country", countryCode: draftCountry });
                     }
                     setName(null);
                     setCity(null);
+                    setGenderDraft(null);
+                    setCountryDraft(null);
                     setNote("Profile saved.");
                   }}
                 />
@@ -661,6 +698,8 @@ const styles=useThemedStyles(stylesThemes);
                   onPress={() => {
                     setName(null);
                     setCity(null);
+                    setGenderDraft(null);
+                    setCountryDraft(null);
                   }}
                 />
               ) : null}
@@ -953,6 +992,18 @@ const styles=useThemedStyles(stylesThemes);
             maxLength={40}
             placeholder="City"
           />
+          <AppText role="label">Gender</AppText>
+          <FocusSegments
+            label="Gender"
+            value={(draftGender || "other") as ProfileGender}
+            options={[
+              { value: "female", label: "Female" },
+              { value: "male", label: "Male" },
+              { value: "other", label: "Other" },
+            ]}
+            onChange={(value) => setGenderDraft(value as ProfileGender)}
+          />
+          <SearchableCountryPicker label="Country" value={draftCountry} onChange={(code) => setCountryDraft(code)} />
         </View>
         {dirty ? (
           <FocusButton
@@ -967,11 +1018,19 @@ const styles=useThemedStyles(stylesThemes);
                 dispatch({ type: "rename", name: trimmed });
               }
               const cityTrimmed = draftCity.trim();
-              if (cityTrimmed && cityTrimmed !== state.city) {
+              if (cityTrimmed !== state.city) {
                 dispatch({ type: "set-city", city: cityTrimmed });
+              }
+              if (draftGender && draftGender !== state.gender) {
+                dispatch({ type: "set-gender", gender: draftGender as ProfileGender });
+              }
+              if (draftCountry !== (state.countryCode ?? "")) {
+                dispatch({ type: "set-country", countryCode: draftCountry });
               }
               setName(null);
               setCity(null);
+              setGenderDraft(null);
+              setCountryDraft(null);
               setNote("Profile saved.");
             }}
           />

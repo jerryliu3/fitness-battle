@@ -9,10 +9,11 @@ import { RankAvatar } from "../ui/rank-symbol";
 import { AppText } from "../ui/section";
 
 /** Shared identity card for your Athlete page and another athlete's sheet. */
-export function AthleteProfileCard({ name, avatarUrl, city, score, since, action, children, largeName = false }: {
+export function AthleteProfileCard({ name, avatarUrl, city, location, score, since, action, children, largeName = false }: {
   name: string;
   avatarUrl?: string | null;
   city?: string | null;
+  location?: string | null;
   score?: number | null;
   since?: string | null;
   action?: ReactNode;
@@ -32,7 +33,7 @@ const f=useFocusStyles();
               <AppText role={largeName ? "display" : "heading"} style={{ color: c.textOnFeature, flex: 1 }}>{name}</AppText>
               {since ? <AppText role="caption" style={{ color: c.textOnFeatureMuted }}>{since}</AppText> : null}
             </View>
-            {city ? <AppText role="caption" style={{ color: c.textOnFeatureMuted }}>{city}</AppText> : null}
+            {location || city ? <AppText role="caption" style={{ color: c.textOnFeatureMuted }}>{location ?? city}</AppText> : null}
             <View style={[f.row, { justifyContent: "space-between", alignItems: "center", marginTop: 4 }]}>
               {score != null && Number.isFinite(score) ? <AppText role="caption" style={{ color: c.tennis }}>{score} · {rankForElo(score).name}</AppText> : <View />}
               {action}
