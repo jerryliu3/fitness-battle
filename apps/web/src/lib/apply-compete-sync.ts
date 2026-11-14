@@ -1,12 +1,12 @@
 import {
   competeNow,
-  normalizeCompeteSyncAction,
   reduceCompete,
   rollClock,
   withDerivedPendingReveals,
   type Action,
   type CompeteState,
 } from "@fitness-battle/shared";
+import { resolveServerSyncAction } from "./resolve-server-sync-action";
 
 export function applyCompeteSyncAction(
   stored: CompeteState,
@@ -14,7 +14,7 @@ export function applyCompeteSyncAction(
   userId: string,
   now: Date,
 ): CompeteState {
-  const action = normalizeCompeteSyncAction(raw, userId, now.toISOString());
+  const action = resolveServerSyncAction(stored, raw, userId, now);
   const next = reduceCompete(stored, action);
   return withDerivedPendingReveals(rollClock(next, competeNow(next, now)));
 }

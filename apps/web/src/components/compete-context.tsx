@@ -31,6 +31,7 @@ import {
   isCompeteAccountIntentAction,
   isCompeteSyncAction,
   accountSavePlan,
+  dequeueAccountSaveWork,
   runAccountSaveSteps,
   serializeCompeteIntent,
   serializeCompeteSyncAction,
@@ -228,7 +229,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queue = useRef<Action[]>([]);
   const pendingIntentsRef = useRef<Action[]>([]);
-  const pendingSyncRef = useRef<Action | null>(null);
+  const pendingSyncRef = useRef<Action[]>([]);
   const dirtyRef = useRef(0);
   const unsavedRef = useRef(false);
   const unitsUnsavedRef = useRef(false);
@@ -260,7 +261,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     stateRef.current = null;
     queue.current = [];
     pendingIntentsRef.current = [];
-    pendingSyncRef.current = null;
+    pendingSyncRef.current = [];
     dirtyRef.current = 0;
     unsavedRef.current = false;
     unitsUnsavedRef.current = false;
@@ -287,22 +288,33 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           return;
         }
         try {
-          const syncAction = pendingSyncRef.current;
+          const syncBatch = [...pendingSyncRef.current];
           const intentBatch = [...pendingIntentsRef.current];
-          pendingSyncRef.current = null;
-          pendingIntentsRef.current = [];
-          const steps = accountSavePlan(syncAction, intentBatch, next);
-          const { response, body } = await runAccountSaveSteps(
+          const steps = accountSavePlan(syncBatch, intentBatch, next);
+          const { response, body, revision, completedStepCount } = await runAccountSaveSteps(
             accountId,
             revisionRef.current,
             steps,
             (url, init) => fetch(url, init),
           );
-          if (!response.ok) {
-            if (syncAction) pendingSyncRef.current = syncAction;
-            if (intentBatch.length) pendingIntentsRef.current = intentBatch;
-          }
           if (!isCurrent()) return;
+          const acknowledged = dequeueAccountSaveWork(
+            steps,
+            response.ok ? steps.length : completedStepCount,
+            syncBatch,
+            intentBatch,
+          );
+          if (response.ok || completedStepCount > 0) {
+            pendingSyncRef.current = [
+              ...acknowledged.sync,
+              ...pendingSyncRef.current.slice(syncBatch.length),
+            ];
+            pendingIntentsRef.current = [
+              ...acknowledged.intents,
+              ...pendingIntentsRef.current.slice(intentBatch.length),
+            ];
+          }
+          if (typeof revision === "string") revisionRef.current = revision;
           if (!response.ok) {
             writeStorageItem(deviceOnlyKey(accountId), "1");
             if (body?.error === "account_changed_reload" || body?.error === "account_version_required") {
@@ -317,7 +329,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             return;
           }
           if (typeof body?.updatedAt !== "string") throw new Error("missing_revision");
-          revisionRef.current = body.updatedAt;
+          revisionRef.current = body.updatedAt ?? revisionRef.current;
           writeStorageItem(`${storageKey(accountId)}:revision`, body.updatedAt);
           if (dirtyRef.current === generation) {
             if (isCompeteState(body.state)) {
@@ -329,7 +341,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             unsavedRef.current = false;
             unitsUnsavedRef.current = false;
             pendingIntentsRef.current = [];
-            pendingSyncRef.current = null;
+            pendingSyncRef.current = [];
           }
           setSaveError(null);
         } catch {
@@ -746,7 +758,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         const next = reduceCompete(before, withAccount);
         if (JSON.stringify(next) === JSON.stringify(before)) return;
         if (isCompeteSyncAction(withAccount)) {
-          pendingSyncRef.current = serializeCompeteSyncAction(withAccount);
+          pendingSyncRef.current.push(serializeCompeteSyncAction(withAccount));
         } else if (isCompeteAccountIntentAction(withAccount)) {
           pendingIntentsRef.current.push(serializeCompeteIntent(withAccount));
         }

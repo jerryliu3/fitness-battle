@@ -14,16 +14,27 @@ export type CompeteSaveResult = {
   error?: string;
 };
 
-/** Ordered client save steps: sync, intents, then full document when nothing else queued. */
+export type AccountSaveRunResult = {
+  response: Response;
+  body: CompeteSaveResult | null;
+  revision: string | null;
+  completedStepCount: number;
+};
+
+/** Ordered client save steps: each sync action, then intent batch, then document fallback. */
 export function accountSavePlan(
-  pendingSync: Action | null,
+  pendingSync: Action[],
   pendingIntents: Action[],
   state: CompeteState,
 ): AccountSaveTarget[] {
-  const steps: AccountSaveTarget[] = [];
-  if (pendingSync) steps.push({ kind: "sync", action: pendingSync });
+  const steps: AccountSaveTarget[] = pendingSync.map((action) => ({
+    kind: "sync",
+    action,
+  }));
   if (pendingIntents.length) steps.push({ kind: "intents", actions: pendingIntents });
-  if (!pendingSync && !pendingIntents.length) steps.push({ kind: "document", state });
+  if (!pendingSync.length && !pendingIntents.length) {
+    steps.push({ kind: "document", state });
+  }
   return steps;
 }
 
@@ -59,11 +70,12 @@ export async function runAccountSaveSteps(
   updatedAt: string | null,
   steps: AccountSaveTarget[],
   fetcher: (url: string, init: RequestInit) => Promise<Response>,
-): Promise<{ response: Response; body: CompeteSaveResult | null }> {
+): Promise<AccountSaveRunResult> {
   if (!steps.length) throw new Error("nothing_to_save");
   let response!: Response;
   let body: CompeteSaveResult | null = null;
-  let revision = updatedAt;
+  let revision: string | null = updatedAt;
+  let completedStepCount = 0;
   for (const step of steps) {
     const request = competeSaveRequest(step, accountId, revision);
     response = await fetcher(request.url, {
@@ -72,8 +84,28 @@ export async function runAccountSaveSteps(
       body: JSON.stringify(request.body),
     });
     body = (await response.json().catch(() => null)) as CompeteSaveResult | null;
-    if (!response.ok) return { response, body };
+    if (!response.ok) return { response, body, revision, completedStepCount };
+    completedStepCount += 1;
     if (typeof body?.updatedAt === "string") revision = body.updatedAt;
   }
-  return { response, body };
+  return { response, body, revision, completedStepCount };
+}
+
+/** Drop acknowledged sync/intent work after a partial or full successful run. */
+export function dequeueAccountSaveWork(
+  steps: AccountSaveTarget[],
+  completedStepCount: number,
+  pendingSync: Action[],
+  pendingIntents: Action[],
+): { sync: Action[]; intents: Action[] } {
+  const completedSync = steps
+    .slice(0, completedStepCount)
+    .filter((step) => step.kind === "sync").length;
+  const intentsDone = steps
+    .slice(0, completedStepCount)
+    .some((step) => step.kind === "intents");
+  return {
+    sync: pendingSync.slice(completedSync),
+    intents: intentsDone ? [] : [...pendingIntents],
+  };
 }

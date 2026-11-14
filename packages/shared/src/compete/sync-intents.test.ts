@@ -10,28 +10,20 @@ describe("compete sync intents", () => {
     expect(isCompeteSyncAction({ type: "rename" })).toBe(false);
   });
 
-  it("sanitizes apply-sync activities", () => {
-    const action = normalizeCompeteSyncAction(
-      {
-        type: "apply-sync",
-        provider: "strava",
-        activities: [
-          {
-            id: "strava-1",
-            sport: "running",
-            startedAt: "2026-10-21T10:00:00.000Z",
-            distanceM: 5000,
-            movingSec: 1800,
-            avgHr: null,
-            verified: true,
-            source: "strava",
-            provenance: "recorded",
-          },
-        ],
-      },
-      "user",
-      now,
-    );
-    expect(action.activities).toHaveLength(1);
+  it("rejects oversized apply-sync batches", () => {
+    expect(() =>
+      normalizeCompeteSyncAction(
+        {
+          type: "apply-sync",
+          provider: "strava",
+          activities: Array.from({ length: 81 }, (_, index) => ({
+            id: `strava-${index}`,
+            source: "strava" as const,
+          })) as Parameters<typeof normalizeCompeteSyncAction>[0]["activities"],
+        },
+        "user",
+        now,
+      ),
+    ).toThrow(/sync_batch_too_large/);
   });
 });

@@ -157,13 +157,18 @@ export {
 } from "./intents";
 export {
   isCompeteSyncAction,
+  MAX_SYNC_ACTIVITIES,
+  MAX_SYNC_READINESS,
+  MAX_SYNC_SLEEP,
   normalizeCompeteSyncAction,
   serializeCompeteSyncAction,
 } from "./sync-intents";
 export {
   accountSavePlan,
   competeSaveRequest,
+  dequeueAccountSaveWork,
   runAccountSaveSteps,
+  type AccountSaveRunResult,
   type AccountSaveTarget,
   type CompeteSaveResult,
 } from "./account-save";

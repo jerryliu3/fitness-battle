@@ -62,7 +62,7 @@ export async function POST(request: Request): Promise<Response> {
       live = applyCompeteSyncAction(baseline, action, userId, now);
     } catch (error) {
       if (attempt === 0 && error instanceof Error && /competition_inputs_changed|competition_clock_changed/.test(error.message)) continue;
-      if (error instanceof Error && /^invalid_/.test(error.message)) {
+      if (error instanceof Error && /^invalid_|sync_batch_too_large/.test(error.message)) {
         return NextResponse.json({ error: error.message }, { status: 400 });
       }
       return NextResponse.json({ error: "account_unavailable" }, { status: 503 });
