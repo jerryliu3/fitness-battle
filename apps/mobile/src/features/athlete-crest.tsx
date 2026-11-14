@@ -30,10 +30,10 @@ export function AthleteCrest({ model, onInteractionChange }: { model: AthleteCar
     const timer = setTimeout(fail, 12000);
     return () => clearTimeout(timer);
   }, [active, loaded, failed]);
-  return <View style={{ minHeight: 390, backgroundColor: c.paper }}>
+  return <View style={{ minHeight: 430, backgroundColor: c.paper }}>
     {!failed && <WebView ref={web} source={{ uri }} originWhitelist={[origin]} javaScriptEnabled scrollEnabled={false} bounces={false}
       onTouchStart={() => onInteractionChange?.(true)} onTouchEnd={() => onInteractionChange?.(false)} onTouchCancel={() => onInteractionChange?.(false)}
-      style={{ height: 390, backgroundColor: c.paper, opacity: loaded ? 1 : 0 }}
+      style={{ height: 430, backgroundColor: c.paper, opacity: loaded ? 1 : 0 }}
       onShouldStartLoadWithRequest={(request: { url: string }) => {
         if (request.url === "about:blank") return true;
         try { const url = new URL(request.url); return url.origin === origin && url.pathname === "/athlete-card-scene"; } catch { return false; }

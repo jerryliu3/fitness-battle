@@ -141,8 +141,10 @@ describe("athlete profile navigation and layout", () => {
     await act(async () => {
       renderer = create(createElement(AthleteScreen));
     });
-    const sidePanel = renderer.root.findByType("SidePanel" as never);
-    expect(sidePanel.props.open).toBe(true);
+    const sidePanel = renderer.root
+      .findAllByType("SidePanel" as never)
+      .find((node) => node.props.title === "Settings");
+    expect(sidePanel?.props.open).toBe(true);
   });
 
   it("subpanel back button calls router.back() when canGoBack is true", async () => {
@@ -178,15 +180,17 @@ describe("athlete profile navigation and layout", () => {
     });
   });
 
-  it("renders lifetime overtakes in the athlete stats section", async () => {
+  it("renders read-only public profile summary without moved lifetime sections", async () => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     mock.params = {};
     await act(async () => {
       renderer = create(createElement(AthleteScreen));
     });
     const rendered = JSON.stringify(renderer.toJSON());
-    expect(rendered).toContain("Overtakes");
-    expect(rendered).toContain("Since the first mile");
+    expect(rendered).toContain("Public profile");
+    expect(rendered).toContain("Primary sport");
+    expect(rendered).not.toContain("Since the first mile");
+    expect(rendered).not.toContain("A few proud moments");
   });
 
   it("renders shareable profile link row with copy and edit profile", async () => {
@@ -199,6 +203,7 @@ describe("athlete profile navigation and layout", () => {
     expect(rendered).toContain("https://example.test/app/athlete?id=alice");
     expect(rendered).toContain("Copy");
     expect(rendered).toContain("Edit profile");
+    expect(rendered).toContain("Settings");
   });
 
   it("renders signed out athlete page with updated copy and signedOut flag for metrics", async () => {

@@ -7,7 +7,7 @@ import { cardOptics, REST_POSE } from "./card-optics";
 import { useCardRotation } from "./use-card-rotation";
 import styles from "./athlete-crest.module.css";
 
-const WIDTH = 320, HEIGHT = 368;
+const WIDTH = 320, HEIGHT = 408;
 const { size: WREATH, portrait: APERTURE } = RANK_SYMBOL_GEOMETRY;
 const WREATH_FRAME = {
   width: `${(WREATH / APERTURE.size) * 100}%`,
@@ -15,7 +15,7 @@ const WREATH_FRAME = {
   left: `${(-APERTURE.x / APERTURE.size) * 100}%`,
   top: `${(-APERTURE.y / APERTURE.size) * 100}%`,
 };
-const POINTS = [[24, 0], [296, 0], [320, 28], [320, 244], [300, 298], [160, 368], [20, 298], [0, 244], [0, 28]];
+const POINTS = [[24, 0], [296, 0], [320, 28], [320, 284], [300, 338], [160, 408], [20, 338], [0, 284], [0, 28]];
 const CLIP = `polygon(${POINTS.map(([x, y]) => `${x / WIDTH * 100}% ${y / HEIGHT * 100}%`).join(",")})`;
 function Wordmark() { return <span className={styles.wordmark}>overtaek</span>; }
 function Stat({ value, label, dim = false }: { value: string | number; label: string; dim?: boolean }) {
@@ -50,14 +50,14 @@ export function AthleteCrest({ model, active = true }: { model: AthleteCardModel
           </div>
           <div className={styles.identity} data-long-name={model.name.length > 18}><h2 title={model.name}>{model.name}</h2></div>
           <div className={styles.stats}>
-            {model.records.length ? <div className={styles.records} style={{ gridTemplateColumns: `repeat(${Math.min(3, model.records.length)}, 1fr)` }}>{model.records.slice(0, 3).map(r => <Stat key={r.label} value={r.value} label={`${r.label} PB`} />)}</div> : <p className={styles.noRecords}>No personal bests yet</p>}
+            {model.records.length ? <div className={styles.records} style={{ gridTemplateColumns: `repeat(${Math.min(3, model.records.length)}, 1fr)` }}>{model.records.slice(0, 3).map(r => <Stat key={r.id ?? r.label} value={r.value} label={!r.kind || r.kind === "record" ? `${r.label} PB` : r.label} />)}</div> : <p className={styles.noRecords}>No highlights selected</p>}
             <div className={styles.totals}><Stat value={model.overtakes} label="Overtakes" /><Stat value={model.rounds} label="Rounds" /><Stat value={model.streak} label="Week streak" dim={!model.streakActive} /></div>
           </div>
           <div className={styles.brand}><Wordmark /></div>
         </div>
         <div className={`${styles.face} ${styles.back}`} aria-hidden={!details} inert={!details}>
           <div className={styles.reverse}><Wordmark /><h2 title={model.name}>{model.name}</h2><p>{model.sport} · Primary sport</p>
-            <h3>Personal bests</h3>{model.records.length ? <dl>{model.records.map(r => <div key={r.label}><dt>{r.label}<RecordDate date={r.date} /></dt><dd>{r.value}</dd></div>)}</dl> : <p>No personal bests yet</p>}
+            <h3>{model.records.some(r => r.kind && r.kind !== "record") ? "Highlights" : "Personal bests"}</h3>{model.records.length ? <dl>{model.records.map(r => <div key={r.id ?? r.label}><dt>{r.label}{r.date ? <RecordDate date={r.date} /> : null}</dt><dd>{r.value}</dd></div>)}</dl> : <p>No highlights selected</p>}
             <h3>On Overtaek</h3><div className={styles.totals}><Stat value={model.overtakes} label="Overtakes" /><Stat value={model.rounds} label="Rounds" /><Stat value={model.streak} label="Week streak" dim={!model.streakActive} /></div>
           </div>
         </div>
