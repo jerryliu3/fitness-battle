@@ -7,6 +7,8 @@ import {
   applyDebugEvent,
   isSupabaseConfigured,
   applyRemoteSnapshot,
+  isPhaseACompeteIntentAction,
+  serializePhaseAIntent,
   arenaBaselineStorageKey,
   countedActivityIds,
   FIELD_REFRESH_MS,
@@ -199,6 +201,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   const unsavedRef = useRef(false);
   const unitsUnsavedRef = useRef(false);
   const revisionRef = useRef<string | null>(null);
+  const pendingIntentsRef = useRef<Action[]>([]);
+  const documentSaveRef = useRef(false);
   const conflictRef = useRef(false);
   const [saveConflict, setSaveConflict] = useState(false);
   const [noticeAttempt, setNoticeAttempt] = useState(0);
@@ -228,6 +232,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     preDebugStateRef.current = null;
     setDebugActive(false);
     revisionRef.current = null;
+    pendingIntentsRef.current = [];
+    documentSaveRef.current = false;
     conflictRef.current = false;
     setSaveConflict(false);
     markLoadReady(false);
@@ -805,19 +811,31 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             });
             if (!account || account.userId !== id || !isCurrent())
               return;
+            const intentBatch = pendingIntentsRef.current;
+            const useIntents = !documentSaveRef.current && intentBatch.length > 0;
             const response = await fetchWithTimeout(
-              `${mobileEnv.apiUrl}/api/compete`,
+              useIntents
+                ? `${mobileEnv.apiUrl}/api/compete/intents`
+                : `${mobileEnv.apiUrl}/api/compete`,
               {
-                method: "PUT",
+                method: useIntents ? "POST" : "PUT",
                 headers: {
                   "Content-Type": "application/json",
                   Authorization: `Bearer ${account.token}`,
                 },
-                body: JSON.stringify({
-                  state: next,
-                  accountId: id,
-                  updatedAt: revisionRef.current,
-                }),
+                body: JSON.stringify(
+                  useIntents
+                    ? {
+                        accountId: id,
+                        updatedAt: revisionRef.current,
+                        actions: intentBatch,
+                      }
+                    : {
+                        state: next,
+                        accountId: id,
+                        updatedAt: revisionRef.current,
+                      },
+                ),
               },
             );
             if (!isCurrent()) return;
@@ -853,6 +871,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               return;
             unsavedRef.current = false;
             unitsUnsavedRef.current = false;
+            pendingIntentsRef.current = [];
+            documentSaveRef.current = false;
             if (isCompeteState(body.state)) {
               stateRef.current = body.state;
               setState(body.state);
@@ -936,6 +956,11 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         accountId: action.accountId ?? id ?? undefined,
       });
       if (JSON.stringify(next) === JSON.stringify(before)) return;
+      if (isPhaseACompeteIntentAction(action)) {
+        pendingIntentsRef.current.push(serializePhaseAIntent(action));
+      } else {
+        documentSaveRef.current = true;
+      }
       dirtyRef.current += 1;
       if (["rename", "set-city", "set-gender", "set-country", "set-avatar", "opt-in", "opt-in-health", "opt-out", "opt-out-health", "log-manual", "complete-onboarding", "freeze", "unfreeze"].includes(action.type)) {
         if (!authRef.current.offlineMode && id) pendingFeedback.current = { account: id, generation: dirtyRef.current };

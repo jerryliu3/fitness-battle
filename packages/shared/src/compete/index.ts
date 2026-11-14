@@ -139,6 +139,14 @@ export {
   type BoardRow,
 } from "./engine";
 export {
+  PHASE_A_COMPETE_INTENT_TYPES,
+  isPhaseACompeteIntentAction,
+  isPhaseACompeteIntentType,
+  normalizeCompeteIntent,
+  serializePhaseAIntent,
+  type PhaseACompeteIntentType,
+} from "./intents";
+export {
   chooseCompeteState,
   applyRemoteSnapshot,
   isCompeteState,
