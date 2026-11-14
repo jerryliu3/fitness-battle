@@ -51,6 +51,21 @@ export function crewRelay(
 
 export type CrewRelayModel = ReturnType<typeof crewRelay>;
 
+/** Stable relay stripe color per member, matching segment order in `crewRelay`. */
+export function crewMemberRelayColor(
+  userId: string,
+  memberIds: readonly string[],
+  relay?: CrewRelayModel,
+): string {
+  const fromSegment = relay?.segments.find((segment) => segment.id === userId)?.color;
+  if (fromSegment) return fromSegment;
+  const sorted = [...memberIds].sort((a, b) => a.localeCompare(b));
+  const index = sorted.indexOf(userId);
+  return RELAY_COLORS[
+    (index < 0 ? 0 : index) % RELAY_COLORS.length
+  ]!;
+}
+
 export function crewRelayIsEmpty(model: CrewRelayModel): boolean {
   return model.segments.length === 0;
 }
