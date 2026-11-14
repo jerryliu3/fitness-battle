@@ -53,6 +53,7 @@ describe("journal activities", () => {
     expect(countsForTraining(manual)).toBe(true);
     expect(countsOnTrack(manual, "open")).toBe(false);
     expect(countsOnTrack(run, "open")).toBe(true);
+    expect(countsOnTrack({ ...run, journalOnly: true }, "open")).toBe(false);
   });
 });
 
