@@ -9,7 +9,6 @@ import { RankBadge } from "../progress/rank-badge";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
-import { CrewSessions } from "./crew-sessions";
 import { CrewOverview } from "./crew-overview";
 import { Sheet } from "@/ui/sheet";
 import { SPORTS, rankSymbolForScore, APP_ICON_PATHS, competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, crewLineup, getDemoCompeteState } from "@fitness-battle/shared";
@@ -340,9 +339,7 @@ export function CrewPanel() {
               setPanel("manage");
             }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.settings} /></svg></button></div>
           </header>
-          {!isSolo ? <CrewOverview crewId={crew.id} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => setPanel("members")}>
-            {user && <CrewSessions compact key={`${user.id}:${crew.id}`} crewId={crew.id} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} userId={user.id} userName={user.displayName} demo={offlineMode} sport={crew.sport} />}
-          </CrewOverview> : user ? <section className="focus-card"><AppHeading level={2} role="display">Make room for your people.</AppHeading><button type="button" className="fb-btn" onClick={() => setPanel("add")}>Create or join a crew</button></section> : null}
+          {!isSolo ? <CrewOverview crewId={crew.id} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => setPanel("members")} /> : user ? <section className="focus-card"><AppHeading level={2} role="display">Make room for your people.</AppHeading><button type="button" className="fb-btn" onClick={() => setPanel("add")}>Create or join a crew</button></section> : null}
         </>
       )}
       {!panel && note && (

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Pressable, ScrollView, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { crewMemberRelayColor, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
@@ -15,8 +15,8 @@ import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
 import { mobileEnv } from "../lib/env";
 
-type Props = CrewOverviewInput & { crewId: string; onSelectMember: (id: string) => void; onViewMembers: () => void; hiddenIds: readonly string[]; children?: ReactNode };
-export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds, children, ...input }: Props) {
+type Props = CrewOverviewInput & { crewId: string; onSelectMember: (id: string) => void; onViewMembers: () => void; hiddenIds: readonly string[] };
+export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds, ...input }: Props) {
   const c = useThemeColors();
   const f = useFocusStyles();
   const reduced = useReducedMotion();
@@ -107,7 +107,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
         </Pressable>)}
       </ScrollView>
     </View>
-    <CrewPassportPanel crewId={crewId} input={input}>{children}</CrewPassportPanel>
+    <CrewPassportPanel crewId={crewId} input={input} />
     {full.highlights.length > 0 && <View style={{ gap: 12 }}>
       <AppText accessibilityRole="header" role="heading">Crew highlights</AppText>
       {full.highlights.map(h => <View key={h} style={{ borderBottomWidth: 1, borderColor: c.line, paddingVertical: 14 }}><AppText role="body">{h}</AppText></View>)}
