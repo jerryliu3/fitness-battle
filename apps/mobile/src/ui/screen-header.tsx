@@ -1,12 +1,13 @@
 import { useFocusStyles } from "./focus";
 import { useThemeColors } from "../theme";
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { AppText, textStyle } from "./section";
-import { Platform, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 import { Stack } from "expo-router";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "./icon-button";
+import { playCue } from "../lib/haptics";
 
 
 
@@ -17,6 +18,40 @@ interface ScreenHeaderProps {
   hidden?: boolean;
   /** When false, use the inline back row instead of the native glass toolbar (settings-style). */
   nativeBar?: boolean;
+  trailing?: ReactNode;
+}
+
+export function GlassDismissButton({
+  label,
+  onPress,
+}: {
+  label: string;
+  onPress: () => void;
+}) {
+  const c = useThemeColors();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={() => {
+        void playCue("light");
+        onPress();
+      }}
+      style={({ pressed }) => ({
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        borderWidth: 1,
+        borderColor: c.line,
+        backgroundColor: "#ffffffdc",
+        alignItems: "center",
+        justifyContent: "center",
+        opacity: pressed ? 0.65 : 1,
+      })}
+    >
+      <AppText role="label">×</AppText>
+    </Pressable>
+  );
 }
 function IOSScreenHeader({ title, onBack, localBack = false, hidden = false }: ScreenHeaderProps) {
 const c=useThemeColors();
@@ -37,17 +72,28 @@ const c=useThemeColors();
   </>;
 }
 /** iOS uses system toolbar items (Liquid Glass on iOS 26+), preserving local Back callbacks. */
-function InlineScreenHeader({ title, onBack }: Pick<ScreenHeaderProps, "title" | "onBack">) {
+function InlineScreenHeader({
+  title,
+  onBack,
+  trailing,
+}: Pick<ScreenHeaderProps, "title" | "onBack" | "trailing">) {
 const f=useFocusStyles();
 
   return <View style={[f.row, { paddingHorizontal: 22, paddingVertical: 8 }]}>
     <IconButton icon="back" label="Return to previous screen" onPress={onBack} />
-    <AppText role="heading" accessibilityRole="header" style={{ flex: 1, textAlign: "center" }}>{title}</AppText><View style={{ width: 44 }} />
+    <AppText role="heading" accessibilityRole="header" style={{ flex: 1, textAlign: "center" }}>{title}</AppText>
+    {trailing ?? <View style={{ width: 44 }} />}
   </View>;
 }
 
 export function ScreenHeader(props: ScreenHeaderProps) {
   const nativeBar = props.nativeBar !== false;
   if (Platform.OS === "ios" && nativeBar) return <IOSScreenHeader {...props} />;
-  return <InlineScreenHeader title={props.title} onBack={props.onBack} />;
+  return (
+    <InlineScreenHeader
+      title={props.title}
+      onBack={props.onBack}
+      trailing={props.trailing}
+    />
+  );
 }

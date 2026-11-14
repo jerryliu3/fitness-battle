@@ -8,7 +8,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SectionHeader, SectionStack, textStyle, AppText } from "../src/ui/section";
 import { SportIcon } from "../src/ui/sport-icon";
 import { activityFromSample } from "@fitness-battle/shared";
-import { ScreenHeader } from "../src/ui/screen-header";
+import { GlassDismissButton, ScreenHeader } from "../src/ui/screen-header";
 import { AppIcon } from "../src/ui/app-icon";
 import { IntegrationIcon } from "../src/ui/integration-icon";
 
@@ -32,7 +32,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Clipboard, Platform, Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { Clipboard, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AccountActions } from "../src/features/account-actions";
 import { LegalLinks } from "../src/features/legal-links";
@@ -197,21 +197,30 @@ const styles=useThemedStyles(stylesThemes);
   const signedIn = Boolean(user);
 
   const titles = { profile: "Edit profile", connections: "Data Sync", preferences: "Preferences", scoring: "How scoring works", account: "Account" };
+  const exitAthletePanel = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else if (panel) {
+      router.replace({ pathname: "/athlete", params: { edit: "1" } });
+    } else {
+      router.replace("/today");
+    }
+  };
   const pageHeader = (
     <ScreenHeader
       localBack={Boolean(panel)}
       hidden={!panel && editOpen}
       nativeBar={!panel}
       title={panel ? titles[panel] : "Athlete"}
-      onBack={() => {
-        if (router.canGoBack()) {
-          router.back();
-        } else if (panel) {
-          router.replace({ pathname: "/athlete", params: { edit: "1" } });
-        } else {
-          router.replace("/today");
-        }
-      }}
+      onBack={exitAthletePanel}
+      trailing={
+        panel === "connections" && !inlineConnections ? (
+          <GlassDismissButton
+            label="Close Data Sync"
+            onPress={exitAthletePanel}
+          />
+        ) : undefined
+      }
     />
   );
 
@@ -487,81 +496,77 @@ const styles=useThemedStyles(stylesThemes);
   }
 
   if (panel === "connections") {
+    const providers = providersForDevice();
     const content = (<SectionStack divided={false}>
           {!inlineConnections && !state.onboardingCompleted && <FocusButton label="Continue setup →" onPress={() => router.push("/onboarding")}/>}
-          {providersForDevice().map((provider) => {
+          <View style={styles.syncList}>
+          {providers.map((provider, index) => {
             const link = state.links.find(
               (row) => row.provider === provider.id,
             );
-            const status =
-              link?.status === "connected"
-                ? "Connected"
-                : "Not connected";
-            const onPhone = isDeviceProvider(provider.id);
-            const cloud = isCloudOAuthProvider(provider.id);
-            const hint = onPhone
-              ? ` · ${syncBusy ? "Syncing…" : "Tap to sync"}`
-              : cloud
-                ? link?.linked
-                  ? ""
-                  : busyProvider === provider.id
-                    ? " · authorizing…"
-                    : " · tap to connect"
-                : "";
-            const copy = (
+            const showDivider = index < providers.length - 1;
+            const title = (
               <>
                 <IntegrationIcon provider={provider.id} />
-                <View style={{ flex: 1, gap: 3 }}>
-                <Text style={styles.rowTitle}>{provider.name}</Text>
-                <Text style={styles.copy}>
-                  {status}
-                  {hint}
-                </Text>
-                </View>
+                <Text style={[styles.rowTitle, { flex: 1 }]}>{provider.name}</Text>
               </>
             );
             if (isDeviceProvider(provider.id)) {
               const deviceId = provider.id;
               return (
-                <Pressable
+                <View
                   key={deviceId}
-                  accessibilityRole="button"
-                  disabled={rowBusy}
-                  onPress={() => void syncDevice(deviceId)}
-                  style={styles.row}
+                  style={[styles.syncRow, showDivider && styles.syncRowDivider]}
                 >
-                  {copy}
-                </Pressable>
+                  {title}
+                  <View style={{ flexShrink: 0 }}>
+                    <FocusButton
+                      label={syncBusy ? "Syncing…" : "Sync"}
+                      disabled={rowBusy}
+                      onPress={() => void syncDevice(deviceId)}
+                    />
+                  </View>
+                </View>
               );
             }
             if (isCloudOAuthProvider(provider.id)) {
               const cloudId = provider.id;
-              if (link?.linked && link.status !== "disconnected") {
-                return (
-                  <View key={cloudId} style={styles.row}>
-                    {copy}
-                    <DataSyncActions provider={cloudId} />
-                  </View>
-                );
-              }
+              const connected =
+                link?.linked && link.status !== "disconnected";
               return (
-                <Pressable
+                <View
                   key={cloudId}
-                  accessibilityRole="button"
-                  disabled={rowBusy}
-                  onPress={() => void connectCloud(cloudId)}
-                  style={styles.row}
+                  style={[styles.syncRow, showDivider && styles.syncRowDivider]}
                 >
-                  {copy}
-                </Pressable>
+                  {title}
+                  {connected ? (
+                    <DataSyncActions provider={cloudId} />
+                  ) : (
+                    <View style={{ flexShrink: 0 }}>
+                      <FocusButton
+                        label={
+                          busyProvider === provider.id
+                            ? "Authorizing…"
+                            : "Connect"
+                        }
+                        disabled={rowBusy}
+                        onPress={() => void connectCloud(cloudId)}
+                      />
+                    </View>
+                  )}
+                </View>
               );
             }
             return (
-              <View key={provider.id} style={styles.row}>
-                {copy}
+              <View
+                key={provider.id}
+                style={[styles.syncRow, showDivider && styles.syncRowDivider]}
+              >
+                {title}
               </View>
             );
           })}
+          </View>
           <Toast message={note ?? ""} onDismiss={() => setNote(null)} />
           <DataSyncActions includeCalibration={!inlineConnections}/>
         </SectionStack>);
@@ -1051,6 +1056,25 @@ const stylesThemes = createThemedStyles(themeColors=>{const SHELL_COLORS=themeCo
     borderWidth: 1,
     borderColor: SHELL_COLORS.line,
     gap: 12,
+  },
+  syncList: {
+    borderRadius: SHELL_RADIUS.control,
+    borderWidth: 1,
+    borderColor: SHELL_COLORS.line,
+    backgroundColor: SHELL_COLORS.card,
+    overflow: "hidden",
+  },
+  syncRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    minHeight: 56,
+  },
+  syncRowDivider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: SHELL_COLORS.line,
   },
   rowTitle: {
     ...textStyle("label"),
