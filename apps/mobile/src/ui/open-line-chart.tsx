@@ -2,15 +2,16 @@ import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Animated, Easing, Text, View } from "react-native";
 import { Circle, ClipPath, Defs, G, Line, Polyline, Rect } from "react-native-svg";
-import { trendLabelPosition, type ChartDatum, type EffortHistoryRange, type OpenLineModel, type OpenLineRange } from "@fitness-battle/shared";
+import { interpolateOpenLineModel, trendLabelPosition, type ChartDatum, type EffortHistoryRange, type OpenLineModel, type OpenLineRange } from "@fitness-battle/shared";
 import { OpenLineRangeToggle } from "../features/chart-range-toggle";
 import { ChartSvg, ChartText } from "./chart-text";
 import { AppText, textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
+import { useChartTween } from "./use-chart-tween";
 import { ChartScrubber } from "./chart-scrubber";
 import { useSceneActive } from "./use-scene-active";
 
-export function OpenLineChart({ chart, label, unit, range, onRangeChange, includeYear = true, live = false, openHero = false, footerAction, showAxes = true, showDateRange = false, hideSummary = false, hideRangeToggle = false, uniformAspect = false, onSelectionChange }: {
+export function OpenLineChart({ chart: targetChart, label, unit, range, onRangeChange, includeYear = true, live = false, openHero = false, footerAction, showAxes = true, showDateRange = false, hideSummary = false, hideRangeToggle = false, uniformAspect = false, onSelectionChange }: {
   chart: OpenLineModel; showAxes?: boolean; showDateRange?: boolean; label: string; unit: string; range: OpenLineRange | EffortHistoryRange;
   onRangeChange: (range: OpenLineRange) => void; includeYear?: boolean; live?: boolean; openHero?: boolean; footerAction?: ReactNode;
   hideSummary?: boolean; hideRangeToggle?: boolean; uniformAspect?: boolean; onSelectionChange?: (point: ChartDatum | undefined) => void;
@@ -20,7 +21,9 @@ const s=useThemedStyles(sThemes);
 
   const clipId = useId();
   const reduceMotion = useReducedMotion();
+  const chart = useChartTween(targetChart, String(range), interpolateOpenLineModel, reduceMotion);
   const [selectedPoint, setSelectedPoint] = useState<ChartDatum | undefined>(undefined);
+  useEffect(() => { setSelectedPoint(undefined); }, [range]);
   const selected = !!selectedPoint;
   const active = useSceneActive();
   const [plotWidth, setPlotWidth] = useState(0);
@@ -59,8 +62,7 @@ const s=useThemedStyles(sThemes);
       </View>
     )}
     <ChartScrubber
-      key={range}
-      points={chart.points}
+      points={targetChart.points}
       width={chart.width}
       height={chart.height}
       plotTop={chart.top}

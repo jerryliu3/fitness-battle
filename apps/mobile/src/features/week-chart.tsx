@@ -34,7 +34,6 @@ export function WeekChart({
           showDateRange={false}
           showAxes={true}
           live
-          key={range}
           chart={chart}
           label="Cumulative training hours"
           unit="hrs"

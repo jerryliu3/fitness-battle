@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { freshState } from "./compete/engine";
-import { benchmarkBars, homeTrainingLine, openLineModel, effortScoreLine, effortScoreComparison } from "./chart-presentation";
+import { benchmarkBars, homeTrainingLine, openLineModel, effortScoreLine, effortScoreComparison, interpolateBenchmarkBars, interpolateOpenLineModel } from "./chart-presentation";
 import { weeklyHoursComparison } from "./week-chart";
 import { effortHistory } from "./effort-history";
 import { trainingBuckets } from "./training-view";
@@ -259,4 +259,25 @@ it("aligns account creation date at the left of effortScoreLine and extends into
   const chart = effortScoreLine(state, "open", "fourWeeks", now, createdAt);
   expect(chart.xTicks[0]?.label).toBe("Nov 5");
   expect(chart.xTicks.at(-1)?.label).toMatch(/^Dec [23]$/);
+});
+
+it("interpolates line and benchmark bar models smoothly between ranges", () => {
+  const now = new Date("2026-11-05T17:00:00Z"), state = freshState(now);
+  state.activities = [
+    { id: "a1", startedAt: "2026-10-20T12:00:00Z", movingSec: 7200 },
+    { id: "a2", startedAt: "2026-11-05T12:00:00Z", movingSec: 3600 },
+  ].map(row => ({ sport: "running", source: "strava", provenance: "recorded", disposition: "counted", verified: true, distanceM: 1000, avgHr: null, ...row })) as typeof state.activities;
+  const weekLine = homeTrainingLine(state, "week", now);
+  const monthLine = homeTrainingLine(state, "fourWeeks", now);
+  const midLine = interpolateOpenLineModel(weekLine, monthLine, 0.5);
+  expect(Number(midLine.value)).toBeCloseTo(2.0, 1);
+  expect(midLine.segments[0]).not.toMatch(/NaN|Infinity/);
+  expect(interpolateOpenLineModel(weekLine, monthLine, 1)).toBe(monthLine);
+
+  const weekBars = benchmarkBars(trainingBuckets(state.activities, ["running"], "week", now, now), now);
+  const monthBars = benchmarkBars(trainingBuckets(state.activities, ["running"], "month", now, now), now);
+  const midBars = interpolateBenchmarkBars(weekBars, monthBars, 0.5);
+  expect(midBars.bars).toHaveLength(monthBars.bars.length);
+  expect(midBars.barWidth).toBeCloseTo((weekBars.barWidth + monthBars.barWidth) / 2, 4);
+  expect(interpolateBenchmarkBars(weekBars, monthBars, 1)).toBe(monthBars);
 });

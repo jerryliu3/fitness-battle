@@ -243,7 +243,7 @@ export function PerformanceSpace({
             showAxes={true}
             live
             uniformAspect
-            key={`${scope}:${track}:${effortRange}`}
+            key={`${scope}:${track}`}
             chart={effortChart}
             label={`${track === "verified" ? "GPS Tracked" : "Open"} effort score history`}
             unit="Effort score"
@@ -310,7 +310,7 @@ export function PerformanceSpace({
 
         <View style={s.chartBody}>
           <BenchmarkChart
-            key={`${volumeRange}:${sportsFilter.join(",")}`}
+            key={sportsFilter.join(",")}
             buckets={volumeBuckets}
             now={now}
             dateLabel={volumeRange}
