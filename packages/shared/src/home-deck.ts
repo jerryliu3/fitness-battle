@@ -119,6 +119,16 @@ export type HomeDeckCardAction =
   | { type: "open-today-session" }
   | { type: "navigate"; href: string };
 
+export interface HomeDeckCardVisual {
+  mode?: "progress" | "compare";
+  leftLabel?: string;
+  rightLabel?: string;
+  /** Progress fraction in [0, 1], or Your dot position in [0, 1] when mode === "compare". */
+  primaryFraction: number;
+  /** Rival dot position in [0, 1] when mode === "compare". */
+  markerFraction?: number;
+}
+
 export interface HomeDeckCard {
   id: HomeDeckCardId;
   tone: HomeDeckCardTone;
@@ -128,6 +138,7 @@ export interface HomeDeckCard {
   ctaLabel: string;
   action: HomeDeckCardAction;
   routeWeek?: HomeRouteWeekModel;
+  visual?: HomeDeckCardVisual;
 }
 
 const WEEKDAY_SHORT = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
@@ -165,14 +176,16 @@ export function buildHomeRouteWeek(
   const todayIndex = Math.min(6, Math.max(0, weekday === 0 ? 6 : weekday - 1));
   const weekNumber = easternWeekNumber(now);
 
-  const eligible = state.activities.filter(
-    (a) =>
-      countsOnTrack(a, "open") &&
-      Number.isFinite(Date.parse(a.startedAt)) &&
-      Date.parse(a.startedAt) <= now.getTime() &&
-      Date.parse(a.startedAt) >= period.startsAt.getTime() &&
-      Date.parse(a.startedAt) < period.endsAt.getTime(),
-  );
+  const eligible = state.activities.filter((a) => {
+    if (!countsOnTrack(a, "open")) return false;
+    const atMs = Date.parse(a.startedAt);
+    return (
+      Number.isFinite(atMs) &&
+      atMs <= now.getTime() &&
+      atMs >= period.startsAt.getTime() &&
+      atMs < period.endsAt.getTime()
+    );
+  });
 
   const byDay = new Map<string, Activity[]>();
   for (const activity of eligible) {
@@ -273,6 +286,29 @@ export function buildHomeDeck(
     ? "Counted toward your weekly training effort."
     : rawDetail ? `${rawDetail}.` : suggestion.detail;
 
+  const recentStartMs = now.getTime() - 30 * 86_400_000;
+  const primaryIsGps = sportById(state.primary).gps;
+  let peakRecentDistanceM = todayStop.distanceM;
+  let peakRecentMovingSec = todayStop.movingSec;
+  for (const a of state.activities) {
+    if (!countsOnTrack(a, "open")) continue;
+    const atMs = Date.parse(a.startedAt);
+    if (!Number.isFinite(atMs) || atMs < recentStartMs || atMs > now.getTime()) continue;
+    if (a.sport === state.primary) peakRecentDistanceM = Math.max(peakRecentDistanceM, a.distanceM || 0);
+    peakRecentMovingSec = Math.max(peakRecentMovingSec, a.movingSec || 0);
+  }
+  const refDistanceM = primaryIsGps ? peakRecentDistanceM : 0;
+  const refMovingSec = !primaryIsGps ? peakRecentMovingSec : 0;
+
+  const sessionVisual: HomeDeckCardVisual | undefined =
+    todayLogged && refDistanceM > 0
+      ? { mode: "progress", primaryFraction: Math.max(0, Math.min(1, todayStop.distanceM / refDistanceM)) }
+      : todayLogged && refMovingSec > 0
+        ? { mode: "progress", primaryFraction: Math.max(0, Math.min(1, todayStop.movingSec / refMovingSec)) }
+        : (!todayLogged && ((primaryIsGps && (suggestion.distanceKm ?? 0) > 0) || (!primaryIsGps && (suggestion.minutes ?? 0) > 0)))
+          ? { mode: "progress", primaryFraction: 0 }
+          : undefined;
+
   const sessionCard: HomeDeckCard = {
     id: "session",
     tone: "coral",
@@ -281,6 +317,7 @@ export function buildHomeDeck(
     subtitle: sessionSubtitle,
     ctaLabel: todayLogged ? "Review session" : "Explore session",
     action: { type: "open-today-session" },
+    ...(sessionVisual ? { visual: sessionVisual } : {}),
   };
 
   // Card 2: Competition / Rival Update
@@ -294,9 +331,29 @@ export function buildHomeDeck(
     state.units,
     state.enrollments.find((e) => e.sport === sport)?.syntheticIds,
   );
-  const nextRival = nextClubRival(board).rival;
+  const { you: boardYou, rival: nextRival } = nextClubRival(board);
   const rivalHidden = Boolean(nextRival && hiddenIds.has(nextRival.id));
   const competeHeadline = rivalHidden ? "Your field is moving." : rawSummary.headline;
+  const competeDistanceMode = Boolean(sport && sportById(sport).gps);
+  const competeVisual: HomeDeckCardVisual | undefined =
+    boardYou && sport && nextRival && !rivalHidden
+      ? (() => {
+          const youVal = competeDistanceMode ? boardYou.distanceM : boardYou.effort;
+          const rivalVal = competeDistanceMode ? nextRival.distanceM : nextRival.effort;
+          const scaleMax = Math.max(youVal, rivalVal, 1);
+          const rivalFirst = nextRival.name.trim().split(/\s+/)[0] || "Rival";
+          const youAhead = youVal > rivalVal;
+          const leaderPos = 0.9;
+          const trailingPos = Math.max(0.1, Math.min(leaderPos - 0.12, (Math.min(youVal, rivalVal) / scaleMax) * leaderPos));
+          return {
+            mode: "compare",
+            leftLabel: youAhead ? rivalFirst : "You",
+            rightLabel: youAhead ? "You" : rivalFirst,
+            primaryFraction: youVal === rivalVal ? 0.5 : youAhead ? leaderPos : trailingPos,
+            markerFraction: youVal === rivalVal ? 0.5 : youAhead ? trailingPos : leaderPos,
+          };
+        })()
+      : undefined;
 
   const competeCard: HomeDeckCard = {
     id: "compete",
@@ -310,6 +367,7 @@ export function buildHomeDeck(
     subtitle: "Closest rival in your active field.",
     ctaLabel: sport ? `Open ${sportById(sport).name} field` : "Open field",
     action: { type: "navigate", href: sport ? `/arena?event=${sport}` : "/arena" },
+    ...(competeVisual ? { visual: competeVisual } : {}),
   };
 
   // Card 3: Week Route Path
@@ -365,6 +423,9 @@ export function buildHomeDeck(
         ? `Today’s reading is outside your recent corridor.`
         : "Daily health signals are tracking within your usual range.";
 
+    const leadCorridor = bouncedBack ?? underOrOver ?? availableToday[0]!;
+    const inDays = leadCorridor.chart.points.filter((p) => p.position === "in").length;
+
     insightCard = {
       id: "insight",
       tone: "lavender",
@@ -377,6 +438,11 @@ export function buildHomeDeck(
       subtitle: insightSubtitle,
       ctaLabel: "Explore progress",
       action: { type: "navigate", href: "/you" },
+      visual: {
+        leftLabel: `${inDays}/7 days in range`,
+        rightLabel: leadCorridor.metric.name,
+        primaryFraction: inDays / 7,
+      },
     };
   } else {
     const week = clubWeekSummary(state, now);
@@ -401,6 +467,15 @@ export function buildHomeDeck(
       subtitle,
       ctaLabel: "Explore progress",
       action: { type: "navigate", href: "/you" },
+      ...(week.sessions > 0
+        ? {
+            visual: {
+              mode: "progress" as const,
+              rightLabel: `${week.activeDays}/7 active days`,
+              primaryFraction: Math.min(1, week.activeDays / 7),
+            },
+          }
+        : {}),
     };
   }
 

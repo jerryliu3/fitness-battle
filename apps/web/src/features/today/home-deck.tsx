@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type PointerEvent,
 } from "react";
 import {
@@ -22,6 +23,7 @@ import {
   type CompeteState,
   type HomeDeckCard,
   type HomeDeckCardId,
+  type HomeDeckCardVisual,
   type HomeRouteDayStop,
 } from "@fitness-battle/shared";
 import { playCue } from "@/lib/haptics";
@@ -32,14 +34,22 @@ const memoryDismissed = new Map<string, HomeDeckCardId[]>();
 
 function CompactRouteStrip({
   stops,
+  todayIndex,
   onSelectStop,
 }: {
   stops: HomeRouteDayStop[];
+  todayIndex: number;
   onSelectStop?: (stop: HomeRouteDayStop) => void;
 }) {
+  const trackPct = Math.round((Math.max(0, Math.min(6, todayIndex)) / 6) * 100);
   return (
     <div className="home-route-strip-wrap" aria-label="Weekly route progress">
-      <div className="home-route-track" />
+      <div className="home-route-track">
+        <span
+          className="home-route-track-fill"
+          style={{ "--track-pct": `${trackPct}%` } as CSSProperties}
+        />
+      </div>
       <div className="home-route-nodes">
         {stops.map((stop) => {
           const isToday =
@@ -54,6 +64,7 @@ function CompactRouteStrip({
               type="button"
               disabled={!interactive}
               onClick={() => onSelectStop?.(stop)}
+              style={{ "--stop-index": stop.index } as CSSProperties}
               className={`home-route-node-col${isToday ? " is-today" : ""}${
                 isLogged ? " is-logged" : ""
               }`}
@@ -66,7 +77,8 @@ function CompactRouteStrip({
               }`}
             >
               <span className="home-route-node-circle">
-                {isLogged ? "✓" : isToday ? "→" : "·"}
+                {!isLogged ? (isToday ? "→" : "·") : null}
+                {isLogged ? <span className="home-route-node-fill">✓</span> : null}
               </span>
               <span className="home-route-node-day">
                 {stop.weekdayShort.slice(0, 1)}
@@ -74,6 +86,74 @@ function CompactRouteStrip({
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function CompactVisualBar({ visual }: { visual: HomeDeckCardVisual }) {
+  const fillPct = Math.round(Math.max(0, Math.min(1, visual.primaryFraction)) * 100);
+  const isCompare = visual.mode === "compare" && visual.markerFraction != null;
+  const markerPct =
+    visual.markerFraction == null
+      ? null
+      : Math.round(Math.max(0.06, Math.min(0.94, visual.markerFraction)) * 100);
+  const startPct = isCompare && markerPct != null ? Math.min(fillPct, markerPct) : 0;
+  const spanWidthPct = isCompare && markerPct != null ? Math.abs(fillPct - markerPct) : fillPct;
+  const youLeads = markerPct != null && fillPct > markerPct;
+  const rivalLeads = markerPct != null && markerPct > fillPct;
+
+  return (
+    <div className="home-deck-visual">
+      {(visual.leftLabel || visual.rightLabel) && (
+        <div className={`home-deck-visual-meta${!visual.leftLabel ? " is-end" : ""}`}>
+          {visual.leftLabel ? (
+            <span className={isCompare && visual.leftLabel !== "You" ? "is-muted" : undefined}>
+              {visual.leftLabel}
+            </span>
+          ) : null}
+          {visual.rightLabel ? (
+            <span className={isCompare && visual.rightLabel === "You" ? undefined : "is-muted"}>
+              {visual.rightLabel}
+            </span>
+          ) : null}
+        </div>
+      )}
+      <div className="home-deck-visual-track">
+        {isCompare && markerPct != null ? (
+          <>
+            <span
+              className="home-deck-visual-span"
+              style={
+                {
+                  "--start-left": `${startPct}%`,
+                  "--span-width": `${spanWidthPct}%`,
+                } as CSSProperties
+              }
+            />
+            <span
+              className={`home-deck-visual-marker${rivalLeads ? " is-leader" : ""}`}
+              style={
+                rivalLeads
+                  ? ({ "--start-left": `${startPct}%`, "--end-left": `${markerPct}%` } as CSSProperties)
+                  : { left: `${markerPct}%` }
+              }
+            />
+            <span
+              className={`home-deck-visual-you${youLeads ? " is-leader" : ""}`}
+              style={
+                youLeads
+                  ? ({ "--start-left": `${startPct}%`, "--end-left": `${fillPct}%` } as CSSProperties)
+                  : { left: `${fillPct}%` }
+              }
+            />
+          </>
+        ) : (
+          <span
+            className="home-deck-visual-fill"
+            style={{ "--fill-pct": `${fillPct}%` } as CSSProperties}
+          />
+        )}
       </div>
     </div>
   );
@@ -112,12 +192,15 @@ function DeckCardContent({
           {card.title}
         </AppHeading>
         <p className="home-deck-subtitle">{card.subtitle}</p>
-        {card.routeWeek && (
+        {card.routeWeek ? (
           <CompactRouteStrip
             stops={card.routeWeek.stops}
+            todayIndex={card.routeWeek.todayIndex}
             onSelectStop={onSelectStop}
           />
-        )}
+        ) : card.visual ? (
+          <CompactVisualBar visual={card.visual} />
+        ) : null}
       </div>
 
       <div className="home-deck-card-footer">
@@ -396,7 +479,7 @@ export function HomeDeck({
             {activeCard && (
               <article
                 key={`top-${activeCard.id}`}
-                className={`home-deck-card depth-0 tone-${activeCard.tone}${
+                className={`home-deck-card depth-0 is-front tone-${activeCard.tone}${
                   dismissing?.id === activeCard.id
                     ? ` is-dismissing dismiss-${dismissing.direction}`
                     : ""
