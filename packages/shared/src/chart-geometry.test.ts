@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildStandardChartGeometry } from "./chart-geometry";
+import { buildStandardChartGeometry, dottedCircleDasharray } from "./chart-geometry";
 
 describe("buildStandardChartGeometry", () => {
   it("handles empty arrays gracefully", () => {
@@ -73,4 +73,13 @@ it("keeps calendar spacing and breaks the line across missing days", () => {
   expect(connected.points[1]!.x - connected.points[0]!.x).toBeGreaterThan(
     (connected.xEnd - connected.xStart) / 3,
   );
+});
+
+it("produces 8 even dashes around any radius and round-number yTicks", () => {
+  expect(dottedCircleDasharray(4, 8)).toBe("1.57 1.57");
+  const geo = buildStandardChartGeometry([47, 86], 340, 150);
+  expect(geo.yTicks.length).toBeGreaterThanOrEqual(3);
+  expect(geo.yTicks[0]!.value).toBeLessThanOrEqual(47);
+  expect(geo.yTicks.at(-1)!.value).toBeGreaterThanOrEqual(86);
+  expect(geo.yTicks.every((t) => Number.isInteger(t.value))).toBe(true);
 });

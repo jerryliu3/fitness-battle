@@ -1,5 +1,5 @@
 import { useThemeColors } from "../theme";
-import { buildStandardChartGeometry } from "@fitness-battle/shared";
+import { buildStandardChartGeometry, dottedCircleDasharray } from "@fitness-battle/shared";
 import { chartTextProps } from "./section";
 import { ChartScrubber, type ChartDatum } from "./chart-scrubber";
 import { useId, useState } from "react";
@@ -72,8 +72,10 @@ const stroke=suppliedstroke ?? c.tennis;
            { x: xAt(Math.floor((values.length - 1) / 2)), label: pointLabels?.[Math.floor((values.length - 1) / 2)] ?? String(Math.floor((values.length - 1) / 2) + 1), anchor: "middle" },
            { x: geo.xEnd, label: pointLabels?.at(-1) ?? String(values.length), anchor: "end" },
          ];
+ const corridorColor = c.tennis;
  return <ChartScrubber
    hideSummary={!showSummary}
+   hideSelectionDot={Boolean(corridor)}
    selectedPointId={safeSelectedIdx === undefined ? undefined : String(safeSelectedIdx)}
    points={points}
    width={340}
@@ -98,28 +100,34 @@ const stroke=suppliedstroke ?? c.tennis;
  {showAxes && <G>
    <Line x1={geo.xStart} x2={geo.xStart} y1={geo.yTop} y2={geo.yBottom} stroke={c.line}/>
    <Line x1={geo.xStart} x2={geo.xEnd} y1={geo.yBottom} y2={geo.yBottom} stroke={c.line}/>
-   {[{value:geo.yMax,y:geo.yTop},{value:geo.yMid,y:geo.yMidPos},{value:geo.yMin,y:geo.yBottom}].map((tick, i)=><SvgText key={`${tick.value}-${i}`} x={geo.xStart-6} y={tick.y+4} {...chartTextProps()} fill={c.muted} textAnchor="end">{stripAxisUnit((formatAxisY ?? formatY)(tick.value))}</SvgText>)}
+   {geo.yTicks.map((tick, i) => (
+     <G key={`${tick.value}-${i}`}>
+       <Line x1={geo.xStart} x2={geo.xEnd} y1={tick.y} y2={tick.y} stroke={c.secondary} strokeWidth={0.5} opacity={0.3} />
+       <SvgText x={geo.xStart - 6} y={tick.y + 4} {...chartTextProps()} fill={c.secondary} textAnchor="end">
+         {stripAxisUnit((formatAxisY ?? formatY)(tick.value))}
+       </SvgText>
+     </G>
+   ))}
    {xTicks.map((tick, i)=><SvgText key={i} x={tick.x} y={height-22} {...chartTextProps()} fill={c.muted} textAnchor={tick.anchor}>{tick.label}</SvgText>)}
  </G>}
  <G clipPath={revealProgress?`url(#${clipId})`:undefined}>
    {corridor ? (
      <>
-       {geo.corridorPath && <Path d={geo.corridorPath} fill={stroke} opacity={0.14}/>}
-       {geo.corridorHighPolyline && <Polyline points={geo.corridorHighPolyline} fill="none" stroke={stroke} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.65} />}
-       {geo.corridorLowPolyline && <Polyline points={geo.corridorLowPolyline} fill="none" stroke={stroke} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.65} />}
+       {geo.corridorPath && <Path d={geo.corridorPath} fill={corridorColor} opacity={0.14}/>}
+       {geo.corridorHighPolyline && <Polyline points={geo.corridorHighPolyline} fill="none" stroke={corridorColor} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.75} />}
+       {geo.corridorLowPolyline && <Polyline points={geo.corridorLowPolyline} fill="none" stroke={corridorColor} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.75} />}
        {geo.points.map((p) => {
-         if (activePoint?.id === String(p.index)) return null;
          const isOutOfBand = p.val < corridor.low[p.index]! || p.val > corridor.high[p.index]!;
          return (
            <Circle
              key={p.index}
              cx={p.x}
              cy={p.y}
-             r={3.5}
-             fill={isOutOfBand ? c.card : stroke}
-             stroke={isOutOfBand ? stroke : "none"}
-             strokeWidth={isOutOfBand ? 1.75 : 0}
-             strokeDasharray={isOutOfBand ? "2 2" : undefined}
+             r={4}
+             fill={isOutOfBand ? c.card : corridorColor}
+             stroke={isOutOfBand ? corridorColor : "none"}
+             strokeWidth={isOutOfBand ? 1.6 : 0}
+             strokeDasharray={isOutOfBand ? dottedCircleDasharray(4, 8) : undefined}
            />
          );
        })}

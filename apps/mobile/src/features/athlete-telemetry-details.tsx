@@ -62,6 +62,7 @@ const s=useThemedStyles(sThemes);
       <View style={s.rangeHeaderRow}>
         <View style={s.rangePickerBox}>
           <FocusSegments
+            compact
             label="Time range"
             value={timeLens}
             options={TIME_LENSES}
@@ -593,7 +594,7 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
     alignItems: "center",
   },
   rangePickerBox: {
-    width: 216,
+    alignSelf: "flex-end",
     maxWidth: "100%",
   },
 };});

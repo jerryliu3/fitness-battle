@@ -96,8 +96,8 @@ it("keeps equal day spacing through DST and distinct repeated-hour events", () =
   ], String, 3, { start, end, showTime: true });
   expect(chart.points[1]!.x - chart.points[0]!.x).toBeCloseTo(chart.points[4]!.x - chart.points[1]!.x);
   expect(chart.points[2]!.x).toBeLessThan(chart.points[3]!.x);
-  expect(chart.points[2]!.label).toContain("EDT");
-  expect(chart.points[3]!.label).toContain("EST");
+  expect(chart.points[2]!.label).toBe("Nov 1, 1:30 AM");
+  expect(chart.points[3]!.label).toBe("Nov 1, 1:30 AM");
 });
 
 it("uses 84 and 168 Eastern days for 12-week and 24-week effort histories", () => {

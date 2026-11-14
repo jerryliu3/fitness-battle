@@ -232,22 +232,6 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
     gap: 14,
     marginVertical: 4,
   },
-  lensRow: {
-    flexDirection: "row",
-    gap: 6,
-  },
-  lensPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 99,
-    borderWidth: 1,
-    borderColor: c.line,
-    backgroundColor: "transparent",
-  },
-  lensPillActive: {
-    borderColor: c.ink,
-    backgroundColor: c.soft,
-  },
   bentoGrid: {
     flexDirection: "row",
     flexWrap: "wrap",

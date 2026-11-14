@@ -71,8 +71,12 @@ const s=useThemedStyles(sThemes);
       hideSummary={hideSummary}
       renderSummary={hideSummary ? undefined : point => (
         <View style={s.headerRow}>
-          <View style={s.reading}>
-            {(point || showDateRange || (live && !point)) && <AppText role="caption" secondary>{point?.label ?? (live && !point ? "Current" : chart.date)}</AppText>}
+          <View style={[s.reading, !(showDateRange || live) && { minHeight: undefined }]}>
+            {(showDateRange || (live && !point)) && (
+              <AppText role="caption" secondary>
+                {point?.label ?? (live && !point ? "Current" : chart.date)}
+              </AppText>
+            )}
             <Text style={s.value}>{point?.value ?? chart.value}<Text style={s.unit}> {unit}</Text></Text>
           </View>
           {showRangeInHeader && <OpenLineRangeToggle value={range} onChange={onRangeChange} includeYear={includeYear} />}
@@ -123,9 +127,9 @@ const s=useThemedStyles(sThemes);
   </View>;
 }
 const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
-  headerRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 8 },
+  headerRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 8 },
   rangeTopRight: { flexDirection: "row", justifyContent: "flex-end" },
-  reading: { minHeight: 58, gap: 4, flexShrink: 1 },
+  reading: { minHeight: 58, gap: 4, flex: 1, minWidth: 115 },
   value: { ...textStyle("hero"), color: c.ink, fontVariant: ["tabular-nums"] },
   unit: { ...textStyle("body"), color: c.muted },
   footer: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 12 },
