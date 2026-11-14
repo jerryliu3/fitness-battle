@@ -147,6 +147,27 @@ export function competitionReplayTimeMs(index: CompetitionReplayIndex, cursor: n
   return before + (after - before) * fraction;
 }
 
+/** Timestamp label for feed rows relative to the timeline scrubber; falls back to absolute after 24h. */
+export function formatCompetitionFeedTimestamp(at: string, referenceMs: number): string {
+  const eventMs = Date.parse(at);
+  const diffMs = referenceMs - eventMs;
+  if (!Number.isFinite(diffMs) || diffMs < 0 || diffMs >= 86_400_000) {
+    return new Date(at).toLocaleString("en-US", {
+      timeZone: APP_TIMEZONE,
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+  }
+  const totalMinutes = Math.floor(diffMs / 60_000);
+  if (totalMinutes < 60) return `${Math.max(totalMinutes, 0)}m ago`;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes ? `${hours}h ${minutes}m ago` : `${hours}h ago`;
+}
+
 export function competitionReplayCursorFromTimeMs(index: CompetitionReplayIndex, targetTimeMs: number): number {
   const events = index.replay.events;
   const count = events.length;
