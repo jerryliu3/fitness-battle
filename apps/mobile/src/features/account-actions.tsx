@@ -11,9 +11,11 @@ import { FocusButton, FocusSheet } from "../ui/focus";
 
 export function AccountActions({
   showDeleteButton = true,
+  middle,
   footer,
 }: {
   showDeleteButton?: boolean;
+  middle?: ReactNode;
   footer?: (openDelete: () => void) => ReactNode;
 }) {
 const f=useFocusStyles();
@@ -95,6 +97,7 @@ const f=useFocusStyles();
           setPanel("report");
         }}
       />
+      {middle}
       {showDeleteButton ? (
         <Pressable
           accessibilityRole="button"
