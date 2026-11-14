@@ -1,11 +1,11 @@
-import { dayKey } from "../period";
+import { dayKey, shiftAppDay } from "../period";
 import type { DailyHealthSample } from "../fitness/types";
 import {
   dispositionOf,
   isSampleActivity,
   provenanceOf,
   type ActivityProvenance,
-} from "./ledger";
+} from "./activity-meta";
 import type { Activity, SportId } from "./sports";
 
 /** Sessions stored for the athlete but never scored, shared on fields, or shown to rivals. */
@@ -14,7 +14,7 @@ export function isJournalActivity(activity: Activity): boolean {
   if (provenanceOf(activity) === "manual") return true;
   if (activity.sport === "walking") {
     const p = provenanceOf(activity);
-  return p === "recorded" || p === "imported";
+    return p === "recorded" || p === "imported";
   }
   return false;
 }
@@ -61,9 +61,8 @@ export function walkingStepsInPeriod(
   let total = 0;
   let cursor = new Date(startMs);
   while (cursor.getTime() < cap) {
-    const key = dayKey(cursor);
-    total += maxStepsOnDay(dailyHealth, key);
-    cursor = new Date(cursor.getTime() + 86_400_000);
+    total += maxStepsOnDay(dailyHealth, dayKey(cursor));
+    cursor = shiftAppDay(cursor, 1);
   }
   return total;
 }

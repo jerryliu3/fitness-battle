@@ -1,14 +1,30 @@
 import { countsForTraining } from "./compete/journal";
 import type { Activity } from "./compete/sports";
+import type { DailyHealthSample } from "./fitness/types";
 import { dayKey, shiftAppDay, weeklyPeriodBounds } from "./period";
 
 /** Consecutive Eastern calendar weeks with counted activity in any sport.
  * The current week can still be completed: show the prior streak dimmed until active.
  * Freezes affect settlement only; they do not invent an active week.
  */
-export function weeklyActivityStreak(activities: readonly Activity[], now = new Date()) {
+export function weeklyActivityStreak(
+  activities: readonly Activity[],
+  now = new Date(),
+  dailyHealth?: readonly DailyHealthSample[],
+) {
   const weeks = new Set<string>();
   const windows: ReturnType<typeof weeklyPeriodBounds>[] = [];
+  for (const row of dailyHealth ?? []) {
+    if ((row.steps ?? 0) <= 0 || !row.day) continue;
+    const at = Date.parse(`${row.day}T12:00:00.000Z`);
+    if (!Number.isFinite(at) || at > now.getTime()) continue;
+    let week = windows.find((window) => at >= window.startsAt.getTime() && at < window.endsAt.getTime());
+    if (!week) {
+      week = weeklyPeriodBounds(new Date(at));
+      windows.push(week);
+    }
+    weeks.add(week.startsAt.toISOString());
+  }
   for (const activity of activities) {
     const at = Date.parse(activity.startedAt);
     if (!countsForTraining(activity) || !Number.isFinite(at) || at > now.getTime() || !(activity.movingSec > 0 || activity.distanceM > 0)) continue;

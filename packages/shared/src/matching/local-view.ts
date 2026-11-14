@@ -77,6 +77,7 @@ function peerVolume(
       waveStart,
       new Date(Math.min(asOf.getTime(), weekEnd.getTime())),
       track,
+      { now: asOf },
     );
   }
 

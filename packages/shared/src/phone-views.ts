@@ -354,6 +354,7 @@ export function buildArenaModel(
 
   const ghost = resolvePastSelfGhost({
     activities: state.activities,
+    dailyHealth: state.dailyHealth,
     sport,
     track,
     currentStart: period.startsAt,

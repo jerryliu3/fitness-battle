@@ -50,7 +50,7 @@ export function athleteCardModel(state: CompeteState, now = competeNow(state)): 
     const record = best.get(d.id);
     return record ? [{ label: d.label, value: formatClockTime(record.seconds), date: record.startedAt }] : [];
   });
-  const streak = weeklyActivityStreak(state.activities, now);
+  const streak = weeklyActivityStreak(state.activities, now, state.dailyHealth);
   return {
     name: state.name, city: state.city, initials: initialsFromName(state.name), avatarUrl: state.avatarUrl ?? null,
     sport: sportById(state.primary).name, score, rank: score === null ? null : rankForElo(score).name,
