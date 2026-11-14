@@ -147,9 +147,54 @@ export async function POST(request: Request) {
   const { data, error } = await supabase.rpc("create_crew", {
     p_name: body.name ?? "Crew",
     p_sport: body.sport ?? "running",
-    p_format: body.format ?? "volume",
+    p_format: body.format ?? "cooperative",
     p_target_sessions: body.targetSessions ?? 3,
     p_journey_km: body.journeyKm ?? 40,
+  });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  return NextResponse.json({ crew: data });
+}
+
+export async function PATCH(request: Request) {
+  const userId = await resolveRequestUserId(request);
+  if (!userId) {
+    return NextResponse.json({ error: "authentication_required" }, { status: 401 });
+  }
+  const supabase = await createRequestClient(request);
+  const body = (await request.json().catch(() => ({}))) as {
+    crewId?: string;
+    sport?: string;
+    format?: string;
+    targetSessions?: number;
+    journeyKm?: number;
+  };
+  if (!body.crewId) {
+    return NextResponse.json({ error: "crew_id_required" }, { status: 400 });
+  }
+  const sport = body.sport ?? "running";
+  const format = body.format ?? "cooperative";
+  const targetSessions = body.targetSessions ?? 3;
+  const journeyKm = body.journeyKm ?? 40;
+  if (!["running", "cycling", "walking", "strength"].includes(sport)) {
+    return NextResponse.json({ error: "invalid_sport" }, { status: 400 });
+  }
+  if (!["volume", "personal_target", "cooperative"].includes(format)) {
+    return NextResponse.json({ error: "invalid_format" }, { status: 400 });
+  }
+  if (!Number.isFinite(targetSessions) || targetSessions < 1 || targetSessions > 14) {
+    return NextResponse.json({ error: "invalid_target_sessions" }, { status: 400 });
+  }
+  if (!Number.isFinite(journeyKm) || journeyKm < 1) {
+    return NextResponse.json({ error: "invalid_journey_km" }, { status: 400 });
+  }
+  const { data, error } = await supabase.rpc("update_crew_settings", {
+    p_crew_id: body.crewId,
+    p_sport: sport,
+    p_format: format,
+    p_target_sessions: Math.round(targetSessions),
+    p_journey_km: journeyKm,
   });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
