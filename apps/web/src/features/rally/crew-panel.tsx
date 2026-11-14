@@ -655,9 +655,6 @@ export function CrewPanel() {
             >
               {busy ? "Saving…" : "Save settings"}
             </button>
-            <Link className="fb-btn-line" onClick={() => setPanel(null)} href={`/arena?event=${crew.sport}${state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? "" : `&crewId=${encodeURIComponent(crew.id)}`}`}>
-              {state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? "View sport event" : "Join Crew Derby"}
-            </Link>
             <button
               className="fb-btn-line"
               disabled={busy}

@@ -129,7 +129,6 @@ const f=useFocusStyles();
   const [selected, setSelected] = useState(crewId);
   const switcherMenu = useAnchoredMenu({ minWidth: 220, estimatedHeight: 240 });
   const createAfterSwitch = useRef(false);
-  const derbyAfterClose = useRef(false);
   const [panel, setPanel] = useState<
     "add" | "invite" | "manage" | "leave" | "members" | null
   >(null);
@@ -574,7 +573,6 @@ const f=useFocusStyles();
       <FocusSheet
         open={!!panel}
         minimal
-        onClosed={() => { if (derbyAfterClose.current) { derbyAfterClose.current = false; router.navigate({ pathname: "/arena", params: { event: crew.sport, ...(state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? {} : { crewId: crew.id }) } }); } }}
         fullScreen={panel === "members"}
         title={
           panel === "add"
@@ -784,12 +782,6 @@ const f=useFocusStyles();
                   "PATCH",
                 );
               }}
-            />
-            <FocusButton
-              label={state?.ratings.some(r => r.sport === crew.sport && r.optedIn) ? "View sport event" : "Join Crew Derby"}
-              secondary
-              disabled={busy}
-              onPress={() => { derbyAfterClose.current = true; setPanel(null); }}
             />
             <FocusButton
               label="Leave crew"
