@@ -140,11 +140,19 @@ export {
 } from "./engine";
 export {
   PHASE_A_COMPETE_INTENT_TYPES,
+  PHASE_B_COMPETE_INTENT_TYPES,
+  COMPETE_ACCOUNT_INTENT_TYPES,
+  COMPETE_DOCUMENT_SAVE_TYPES,
   isPhaseACompeteIntentAction,
   isPhaseACompeteIntentType,
+  isCompeteAccountIntentAction,
+  isCompeteAccountIntentType,
+  isCompeteDocumentSaveAction,
   normalizeCompeteIntent,
+  serializeCompeteIntent,
   serializePhaseAIntent,
   type PhaseACompeteIntentType,
+  type CompeteAccountIntentType,
 } from "./intents";
 export {
   chooseCompeteState,

@@ -55,6 +55,27 @@ describe("POST /api/compete/intents", () => {
     );
   });
 
+  it("accepts manual logging intents", async () => {
+    const response = await POST(
+      request({
+        actions: [
+          {
+            type: "log-manual",
+            sport: "running",
+            activityId: "manual-api",
+            movingSec: 1800,
+            distanceM: 5000,
+          },
+        ],
+      }),
+    );
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.state.activities.some((a: { id: string }) => a.id === "manual-api")).toBe(
+      true,
+    );
+  });
+
   it("rejects malformed disposition intents", async () => {
     const response = await POST(
       request({

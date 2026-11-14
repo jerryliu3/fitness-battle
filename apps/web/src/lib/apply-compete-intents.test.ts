@@ -25,4 +25,22 @@ describe("applyCompeteIntents", () => {
     );
     expect(next.enrollments.some((e) => e.sport === "running")).toBe(true);
   });
+
+  it("logs manual activity on the server baseline", () => {
+    const next = applyCompeteIntents(
+      freshState(now),
+      [
+        {
+          type: "log-manual",
+          sport: "running",
+          activityId: "manual-test",
+          movingSec: 2400,
+          distanceM: 8000,
+        },
+      ],
+      userId,
+      now,
+    );
+    expect(next.activities.some((a) => a.id === "manual-test")).toBe(true);
+  });
 });

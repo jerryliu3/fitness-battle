@@ -7,8 +7,9 @@ import {
   applyDebugEvent,
   isSupabaseConfigured,
   applyRemoteSnapshot,
-  isPhaseACompeteIntentAction,
-  serializePhaseAIntent,
+  isCompeteAccountIntentAction,
+  isCompeteDocumentSaveAction,
+  serializeCompeteIntent,
   arenaBaselineStorageKey,
   countedActivityIds,
   FIELD_REFRESH_MS,
@@ -956,8 +957,10 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         accountId: action.accountId ?? id ?? undefined,
       });
       if (JSON.stringify(next) === JSON.stringify(before)) return;
-      if (isPhaseACompeteIntentAction(action)) {
-        pendingIntentsRef.current.push(serializePhaseAIntent(action));
+      if (isCompeteDocumentSaveAction(action)) {
+        documentSaveRef.current = true;
+      } else if (isCompeteAccountIntentAction(action)) {
+        pendingIntentsRef.current.push(serializeCompeteIntent(action));
       } else {
         documentSaveRef.current = true;
       }

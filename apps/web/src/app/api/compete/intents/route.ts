@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   freshState,
-  isPhaseACompeteIntentType,
+  isCompeteAccountIntentType,
   migrateCompeteState,
   openEnrollmentRemoved,
   withAccountEloBaseline,
@@ -37,7 +37,7 @@ function parseActions(raw: unknown): Action[] | null {
   const actions: Action[] = [];
   for (const item of raw) {
     if (!item || typeof item !== "object" || typeof (item as Action).type !== "string") return null;
-    if (!isPhaseACompeteIntentType((item as Action).type)) return null;
+    if (!isCompeteAccountIntentType((item as Action).type)) return null;
     actions.push(item as Action);
   }
   return actions;

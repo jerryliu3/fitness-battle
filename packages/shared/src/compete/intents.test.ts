@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  isCompeteAccountIntentAction,
   isPhaseACompeteIntentAction,
   normalizeCompeteIntent,
-  serializePhaseAIntent,
+  serializeCompeteIntent,
 } from "./intents";
 import type { Action } from "./engine";
 
@@ -33,6 +34,24 @@ describe("compete intents phase A", () => {
       accountId: "local",
       now: "old",
     };
-    expect(serializePhaseAIntent(action)).toEqual({ type: "opt-in", sport: "running" });
+    expect(serializeCompeteIntent(action)).toEqual({ type: "opt-in", sport: "running" });
+  });
+
+  it("accepts phase B account intents", () => {
+    expect(isCompeteAccountIntentAction({ type: "log-manual" })).toBe(true);
+    expect(isCompeteAccountIntentAction({ type: "apply-sync" })).toBe(false);
+    expect(
+      normalizeCompeteIntent(
+        {
+          type: "log-manual",
+          sport: "running",
+          activityId: "manual-today",
+          movingSec: 3600,
+          distanceM: 5000,
+        },
+        "user-1",
+        now,
+      ).activityId,
+    ).toBe("manual-today");
   });
 });
