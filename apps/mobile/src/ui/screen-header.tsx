@@ -49,9 +49,7 @@ export function GlassDismissButton({
         opacity: pressed ? 0.65 : 1,
       })}
     >
-      <AppText role="label" style={{ fontSize: 20, lineHeight: 22 }}>
-        ×
-      </AppText>
+      <AppText role="label">×</AppText>
     </Pressable>
   );
 }
