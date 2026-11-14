@@ -350,7 +350,7 @@ describe("Revamped Progress Screen & Spaces", () => {
     const json = JSON.stringify(renderer.toJSON());
     expect(json).toContain("Overnight HRV");
     expect(json).toContain("Sleep");
-    expect(json).toContain("Resting HR");
+    expect(json).toContain("Resting Heart Rate");
     expect(json).toContain("No recorded observations");
     expect(json).toContain("Advanced Analytics");
   });
