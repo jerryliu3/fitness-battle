@@ -30,6 +30,7 @@ import {
   competeNow,
   competePeriodWindow,
   fieldDefaultSpan,
+  competitionCourseReplayFrame,
   buildArenaModel,
   initialsFromName,
   ordinalPlace,
@@ -193,6 +194,13 @@ const f=useFocusStyles();
     [arena?.lanes],
   );
 
+  const courseReplay = useMemo(() => {
+    if (!timeline.index || !timeline.frame) return undefined;
+    const focusId = (expanded ? selectedId : null) ?? me?.id;
+    if (!focusId) return undefined;
+    return competitionCourseReplayFrame(timeline.index, timeline.frame.position, focusId, hiddenIds);
+  }, [timeline.index, timeline.frame, expanded, selectedId, me?.id, hiddenIds]);
+
   const view = {
     center: timeline.frame ? center ?? total : clampCourseCenter(center ?? total, viewSpan, arenaFieldHigh(fieldLanes), arena?.unit ?? "km", appearance.ground),
     span: viewSpan,
@@ -273,7 +281,7 @@ const f=useFocusStyles();
       ) : null}
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <View pointerEvents={expanded ? "auto" : "none"} style={{ flex: 1 }}>
-          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onReplay={sharedTimeline ? timeline.toggle : backgroundMode ? () => setCourseReplayOpen(true) : timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
+          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={courseReplay ? false : true} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseReplay ? undefined : courseTarget} replay={courseReplay} onReplay={sharedTimeline ? timeline.toggle : backgroundMode ? () => setCourseReplayOpen(true) : timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
           <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>Tap to open full screen</Text></View>
@@ -518,7 +526,7 @@ const f=useFocusStyles();
               })}
             </SlidingFieldPanel>
 
-            {backgroundMode && <FieldOverlayView hidden={overlaysHidden || !leadersHeight} style={{ position: "absolute", left: 12, top: Math.max(insets.top, 0) + 62 + leadersHeight + 12 }}><CoursePositionRail markers={fieldLanes.filter(lane => !hiddenIds.includes(lane.id))} height={Math.max(44, Math.min(140, dimensions.height * .58 - Math.max(insets.top, 0) - 62 - leadersHeight - 68))} value={sceneDimension === "4d" ? courseTarget?.value ?? focusedLane?.values[2] ?? total : view.center} maximum={Math.max(0, ...fieldLanes.map(lane => lane.value))} unit={arena.unit} onChange={value => { if (sceneDimension === "4d") setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 })); else panTo(value); }} /></FieldOverlayView>}
+            {backgroundMode && <FieldOverlayView hidden={overlaysHidden || !leadersHeight} style={{ position: "absolute", left: 12, top: Math.max(insets.top, 0) + 62 + leadersHeight + 12 }}><CoursePositionRail markers={fieldLanes.filter(lane => !hiddenIds.includes(lane.id))} height={Math.max(44, Math.min(140, dimensions.height * .58 - Math.max(insets.top, 0) - 62 - leadersHeight - 68))} value={sceneDimension === "4d" ? courseTarget?.value ?? focusedLane?.values[2] ?? total : view.center} maximum={Math.max(0, ...fieldLanes.map(lane => lane.value))} unit={arena.unit} onChange={value => { if (courseReplay) return; if (sceneDimension === "4d") setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 })); else panTo(value); }} /></FieldOverlayView>}
             {/* Broadcast HUD: Bottom Focused Athlete Spotlight + Player Chips */}
             {focusedLane && !backgroundMode ? (
               <SlidingFieldPanel
@@ -699,7 +707,7 @@ const f=useFocusStyles();
                   rank={rankSymbolForScore(elo)}
                   src={lane.avatarUrl}
                   name={lane.name}
-                  size={52}
+                  size={56}
                 />
                 </Pressable>
                 <View style={[f.grow, { gap: 6 }]}>

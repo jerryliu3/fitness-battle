@@ -16,6 +16,7 @@ import {
   orderedArenaLanes,
   coursePositionLeaders, competitionReplayDimension, nextCompetitionReplaySpeed, competitionReplayFrame, competitionReplayCaption, competitionReplayDate,
   competitionReplayTimeMs, competitionReplayCursorFromTimeMs, REPLAY_MINUTES_PER_REAL_SECOND_1X,
+  competitionCourseReplayFrame,
   indexCompetitionReplay, localCompetitionReplay, initialsFromName, fieldDefaultSpan,
   clampCourseCenter, sportById, rankForElo, findSynthetic,
   type PeriodResult, type CompetitionReplay, type CompetitionReplaySelection, type CompeteState, type ArenaLane,
@@ -99,13 +100,13 @@ export function CompetitionReplayModal({ open, state, selection, dimension, onCl
 }) {
 const f=useFocusStyles();
 const { mode } = useAppTheme();
-
+  const { user } = useAuth();
   const reduced = useReducedMotion();
   return open ? <Modal visible animationType={reduced ? "none" : "fade"} presentationStyle="fullScreen" onRequestClose={onClose}>
     <SafeAreaProvider>
       <StatusBar style={mode === "dark" ? "light" : "dark"} />
       <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
-        <ReplayViewer key={`${selection.sport}:${selection.track}:${selection.periodStart}`} state={state} selection={selection} initialFlat={initialFlat} initialDimension={dimension} onClose={onClose} />
+        <ReplayViewer key={`${user?.id ?? "guest"}:${selection.sport}:${selection.track}:${selection.periodStart}:${selection.periodEnd}`} state={state} selection={selection} initialFlat={initialFlat} initialDimension={dimension} onClose={onClose} />
       </SafeAreaView>
     </SafeAreaProvider>
   </Modal> : null;
@@ -148,7 +149,7 @@ const s=useThemedStyles(sThemes);
     const query = `sport=${selection.sport}&track=${selection.track}&start=${encodeURIComponent(selection.periodStart)}&end=${encodeURIComponent(selection.periodEnd)}`;
     void requestApi<CompetitionReplay>(mobileEnv.apiUrl, accessToken, `/api/compete/replay?${query}`).then(next => { if (!cancelled) setData(next); }).catch(() => { if (!cancelled) setError("Could not load this competition’s replay. Try again."); });
     return () => { cancelled = true; };
-  }, [user?.id, offlineMode, debugActive, accessToken, selection.sport, selection.track, selection.periodStart, selection.periodEnd, attempt]);
+  }, [user?.id, offlineMode, debugActive, accessToken, selection.sport, selection.track, selection.periodStart, selection.periodEnd, attempt, state.activities, state.enrollments]);
   const index = useMemo(() => data ? indexCompetitionReplay(data, state.units) : null, [data, state.units]);
   const count = index?.replay.events.length ?? 0;
   useEffect(() => { if (embedded && index) setCursor(count); }, [index, count, embedded]);
@@ -166,7 +167,7 @@ const s=useThemedStyles(sThemes);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [playing, speed, count, reduced, dimension, index]);
+  }, [playing, speed, count, reduced, index]);
   useEffect(() => { const subscription = AppState.addEventListener("change", next => { if (next !== "active") setPlaying(false); }); return () => subscription.remove(); }, []);
   const seek = (next: number) => { const bounded = Math.max(0, Math.min(count, next)); if (Math.ceil(bounded) !== Math.ceil(cursor)) void playCue("selection"); setPlaying(false); setCursor(bounded); };
   const frame = index ? competitionReplayFrame(index, cursor) : null;
@@ -194,6 +195,13 @@ const s=useThemedStyles(sThemes);
     : [], [index, count, hiddenIds, state.avatarUrl, result?.eloAfter, selection.sport]);
   const closed = data && Date.parse(data.through) >= Date.parse(data.periodEnd);
   const caption = index ? (frame?.event && hiddenIds.includes(frame.event.athleteId) ? "An athlete recorded activity" : competitionReplayCaption(index, cursor)) : "";
+  const courseReplay = useMemo(
+    () =>
+      following && index && focus
+        ? competitionCourseReplayFrame(index, cursor, focus.id, hiddenIds)
+        : undefined,
+    [following, index, cursor, focus?.id, hiddenIds],
+  );
   return <View style={embedded ? undefined : { flex: 1 }}>
     <View style={s.header}>
       {!embedded&&<IconButton icon="back" label="Close competition replay" onPress={onClose} />}
@@ -206,7 +214,7 @@ const s=useThemedStyles(sThemes);
           <Pressable accessibilityRole="button" accessibilityState={{ selected: following }} accessibilityLabel={`Camera: ${following ? "Follow athlete" : "Fixed"}`} onPress={() => { setCenter(following ? view.center : null); setFollowing(value => !value); if (!following) setFocusRequest(value => value + 1); }} style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: "center", borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.78)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.2)" }}><Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>{following ? "Follow athlete" : "Fixed"}</Text></Pressable>
           <FieldViewSwitcher value={dimension} geographic={unit !== "pts"} onChange={setDimension} />
         </View>
-        {dimension === "graph" ? <CompeteTimeSeriesChart state={state} sport={selection.sport} track={selection.track} selectedId={focus?.id} onSelectAthlete={select} hiddenIds={hiddenIds} reserveTopControls /> : dimension === "4d" ? <GeographicCourse initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following} onFollowChange={next => { setCenter(next ? null : view.center); setFollowing(next); }} optionsTop={64} hiddenIds={hiddenIds} course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <LaneTrack clampView={following} hiddenIds={hiddenIds} onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField hiddenIds={hiddenIds} onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
+        {dimension === "graph" ? <CompeteTimeSeriesChart state={state} sport={selection.sport} track={selection.track} selectedId={focus?.id} onSelectAthlete={select} hiddenIds={hiddenIds} reserveTopControls /> : dimension === "4d" ? <GeographicCourse initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following && !courseReplay} onFollowChange={next => { setCenter(next ? null : view.center); setFollowing(next); }} optionsTop={64} hiddenIds={hiddenIds} course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={focus?.id ?? ""} focusRequest={focusRequest} replay={courseReplay} onSelect={select} /> : dimension === "2d" ? <LaneTrack clampView={following} hiddenIds={hiddenIds} onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField hiddenIds={hiddenIds} onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
 
       </View>
       <View style={s.controls}>
