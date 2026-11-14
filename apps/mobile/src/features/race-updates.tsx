@@ -17,7 +17,19 @@ export function RaceUpdates({ state, sport, active }: { state: CompeteState; spo
   const { blocks } = useAthleteBlocks();
   const fallback = useEventActivity(state, sport, active && !timeline);
   const completed = Math.floor(timeline?.cursor ?? 0);
-  const rows = useMemo(() => timeline?.index ? competitionActivityLog(timeline.index, blocks.map(block => block.id), completed) : timeline ? [] : fallback.rows, [timeline?.index, completed, blocks, fallback.rows]);
+  const rows = useMemo(
+    () =>
+      timeline?.index
+        ? competitionActivityLog(
+            timeline.index,
+            blocks.map((block) => block.id),
+            completed,
+          )
+        : timeline
+          ? []
+          : fallback.rows,
+    [timeline?.index, timeline?.cursor, completed, blocks, fallback.rows, sport],
+  );
   const loading = timeline ? !timeline.ready : fallback.loading;
   const error = timeline?.error ?? fallback.error;
   const retry = timeline?.retry ?? fallback.retry;
