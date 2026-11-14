@@ -313,24 +313,17 @@ describe("Revamped Progress Screen & Spaces", () => {
     expect(json).not.toContain("vs. prior 30d");
   });
 
-  it("JourneySpace renders calendar strip, activities, and past competition results", async () => {
+  it("JourneySpace renders calendar strip and recent activities", async () => {
     await act(async () => {
       renderer = create(createElement(JourneySpace, { state: mock.state! }));
     });
 
     const json = JSON.stringify(renderer.toJSON());
-    // Horizon options
     expect(json).toContain("Week");
     expect(json).toContain("Month");
     expect(json).toContain("Year");
-
-    // Sequence elements
     expect(json).toContain("Recent Activities");
-    expect(json).toContain("Past Competition Results");
-
-    // Competition result
-    expect(json).toContain("Took the field");
-    expect(json).toContain("+24 effort score");
+    expect(json).not.toContain("Past Competition Results");
   });
 
   it("labels the selected Journey day in Eastern without shifting through UTC", async () => {
@@ -356,8 +349,8 @@ describe("Revamped Progress Screen & Spaces", () => {
 
     const json = JSON.stringify(renderer.toJSON());
     expect(json).toContain("Overnight HRV");
-    expect(json).toContain("Sleep");
-    expect(json).toContain("Resting HR");
+    expect(json).toMatch(/sleep/i);
+    expect(json).toContain("resting heart rate");
     expect(json).toContain("No recorded observations");
     expect(json).toContain("Advanced Analytics");
   });

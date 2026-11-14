@@ -3,8 +3,6 @@ import { FocusSegments } from "../ui/focus";
 import { ActivityDetailSheet } from "./activity-detail-sheet";
 import { AppText } from "../ui/section";
 import { SportActivityIcon } from "../ui/sport-activity-icon";
-import { ResultCard } from "./result-card";
-import { CompetitionReplayButton } from "./competition-replay";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
@@ -21,7 +19,6 @@ import {
   formatClockTime,
   formatDistanceM,
   formatEffort,
-  formatEffortScoreDelta,
   formatTrainingHours,
   formatWeeklyCompetitionRange,
   shiftAppDay,
@@ -61,9 +58,6 @@ export function JourneySpace({
 
   // Activity modal inspection state
   const [inspectedActivity, setInspectedActivity] = useState<Activity | null>(null);
-
-  // Selected competition result for inline expansion
-  const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
 
   useEffect(() => {
     setHorizon(initialHorizon);
@@ -213,13 +207,6 @@ export function JourneySpace({
     }
     return list.sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
   }, [state.activities, selectedDayKey]);
-
-  // Past Competition Results (sorted newest first)
-  const pastResults = useMemo(() => {
-    return [...state.periodResults].sort((a, b) =>
-      b.periodStart.localeCompare(a.periodStart),
-    );
-  }, [state.periodResults]);
 
   const formatActivityDate = (iso: string) => {
     const d = new Date(iso);
@@ -577,103 +564,7 @@ export function JourneySpace({
         </View>
       )}
 
-      {/* 3. Past Competition Results Section (Moved ABOVE Recent Activities) */}
-      <View style={{ gap: 12 }}>
-        <View style={s.sectionHeaderRow}>
-          <AppText role="heading">Past Competition Results</AppText>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="View all past competition results"
-            onPress={() => router.push("/progress-history")}
-            style={s.textLink}
-          >
-            <AppText role="caption" secondary>View all →</AppText>
-          </Pressable>
-        </View>
-
-        {pastResults.length === 0 ? (
-          <View style={[s.card, { paddingVertical: 20 }]}>
-            <AppText role="body" secondary>
-              Your first closed-week competition results will appear here.
-            </AppText>
-          </View>
-        ) : (
-          <View style={{ gap: 8 }}>
-            {pastResults.slice(0, 3).map((res) => {
-              const isExpanded = expandedResultId === res.id;
-              const dateRangeStr = formatWeeklyCompetitionRange(new Date(res.periodStart));
-              const delta = res.eloAfter - res.eloBefore;
-              const deltaLabel = formatEffortScoreDelta(res.eloBefore, res.eloAfter);
-              return (
-                <View key={res.id} style={s.resultContainer}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Competition result: place ${res.place} of ${res.fieldSize}, ${sportById(res.sport).name}, ${deltaLabel} effort score`}
-                    onPress={() =>
-                      setExpandedResultId(isExpanded ? null : res.id)
-                    }
-                    style={s.resultHeaderRow}
-                  >
-                    <View
-                      style={[
-                        s.placeBadge,
-                        res.place === 1 && { backgroundColor: `${c.tennis}33` },
-                      ]}
-                    >
-                      <AppText role="value">
-                        #{res.place}
-                      </AppText>
-                    </View>
-
-                    <View style={{ flex: 1, gap: 2 }}>
-                      <AppText role="row">
-                        {res.place === 1 ? "Took the field" : "Weekly Battle"}
-                      </AppText>
-                      <AppText role="caption" secondary>
-                        {sportById(res.sport).name} · {dateRangeStr}
-                      </AppText>
-                    </View>
-
-                    <View style={{ alignItems: "flex-end", gap: 2 }}>
-                      <AppText role="value">
-                        {res.place} / {res.fieldSize}
-                      </AppText>
-                      <AppText
-                        role="label"
-                        style={{
-                          color: delta >= 0 ? c.tennis : c.muted,
-                        }}
-                      >
-                        {deltaLabel} effort score
-                      </AppText>
-                    </View>
-
-                    <AppText role="caption" secondary style={{ marginLeft: 6 }}>
-                      {isExpanded ? "▲" : "▼"}
-                    </AppText>
-                  </Pressable>
-
-                  {/* Expanded Result Detail & Replay Handoff */}
-                  {isExpanded && (
-                    <View style={s.expandedResultContent}>
-                      <ResultCard result={res} units={state.units} />
-                      <View style={{ marginTop: 8 }}>
-                        <CompetitionReplayButton
-                          state={state}
-                          selection={res}
-                          label="Replay this round"
-                        />
-                      </View>
-                    </View>
-                  )}
-                </View>
-              );
-            })}
-          </View>
-        )}
-      </View>
-
-      {/* 4. Recent Activities Section (Moved BELOW Past Competition Results) */}
+      {/* Recent Activities */}
       <View style={{ gap: 12 }}>
         <View style={s.sectionHeaderRow}>
           <AppText role="heading">

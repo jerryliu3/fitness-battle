@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 import {
+  crewMemberRelayColor,
   crewRelay,
   crewWeekRelay,
   filterCrewMembersWithPeriodActivity,
@@ -10,6 +11,20 @@ import {
 it("keeps member identity and ribbon colors stable when API row order changes",()=>{
  const a={id:"a",name:"A",value:10,sessions:1},b={id:"b",name:"B",value:20,sessions:2};
  expect(crewRelay([b,a],100)).toEqual(crewRelay([a,b],100));
+});
+it("maps roster relay colors by sorted member id, including inactive members", () => {
+  const ids = ["zeta", "alpha", "mu"];
+  const model = crewRelay(
+    [
+      { id: "alpha", name: "A", value: 1, sessions: 1 },
+      { id: "mu", name: "M", value: 2, sessions: 1 },
+    ],
+    10,
+  );
+  expect(crewMemberRelayColor("alpha", ids, model)).toBe(model.segments[0]!.color);
+  expect(crewMemberRelayColor("zeta", ids)).toBe(
+    crewMemberRelayColor("zeta", ids.slice().reverse()),
+  );
 });
 it("represents over-goal distance and zero contributors without overflow", () => {
   const relay = crewRelay(
