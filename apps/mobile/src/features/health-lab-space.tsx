@@ -151,7 +151,7 @@ export function HealthLabSpace({
               onSelectIdx={setSelectedIdx}
               stroke={c.tennis}
               corridor={corridorSeries}
-              formatAxisY={(v) => selectedMetric === "sleep" ? formatHealthNumber(v) : formatHealthNumber(v)}
+              formatAxisY={formatHealthNumber}
               formatY={(v) => formatReading(selectedMetric, v)}
               accessibilityLabel={`${titles[selectedMetric]} recorded history`}
             />

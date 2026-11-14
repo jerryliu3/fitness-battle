@@ -49,7 +49,7 @@ const stroke=suppliedstroke ?? c.tennis;
  const safeSelectedIdx = selectedIdx === undefined ? undefined : Math.max(0, Math.min(selectedIdx, values.length - 1));
  const xAt = (index: number) => geo.xStart + (index / Math.max(1, values.length - 1)) * (geo.xEnd - geo.xStart);
  const points = geo.points.map((point) => ({ id: String(point.index), x: point.x, y: point.y, label: pointLabels?.[point.index] ?? (point.index === 0 ? xLabels?.[0] ?? "Day 1" : point.index === values.length - 1 ? xLabels?.[2] ?? `Day ${point.index + 1}` : `Day ${point.index + 1}`), value: formatY(point.val) }));
- const activePoint = safeSelectedIdx !== undefined ? points.find((p) => p.id === String(safeSelectedIdx)) : scrubbedPoint;
+ const activePoint = scrubbedPoint ?? (safeSelectedIdx !== undefined ? points.find((p) => p.id === String(safeSelectedIdx)) : undefined);
  const activeGeoPoint = activePoint ? geo.points.find((p) => String(p.index) === activePoint.id) : undefined;
  const isActiveOutOfCorridor = Boolean(
    corridor && activeGeoPoint && (activeGeoPoint.val < corridor.low[activeGeoPoint.index]! || activeGeoPoint.val > corridor.high[activeGeoPoint.index]!),
@@ -108,6 +108,7 @@ const stroke=suppliedstroke ?? c.tennis;
        {geo.corridorHighPolyline && <Polyline points={geo.corridorHighPolyline} fill="none" stroke={stroke} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.65} />}
        {geo.corridorLowPolyline && <Polyline points={geo.corridorLowPolyline} fill="none" stroke={stroke} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.65} />}
        {geo.points.map((p) => {
+         if (activePoint?.id === String(p.index)) return null;
          const isOutOfBand = p.val < corridor.low[p.index]! || p.val > corridor.high[p.index]!;
          return (
            <Circle

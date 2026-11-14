@@ -27,7 +27,7 @@ export interface OpenLineModel {
   segments: string[];
   bridges?: string[];
   trendLine: string;
-  line: string; previous: string; points: ChartDatum[];
+  line: string; points: ChartDatum[];
   value: string; date: string;
   left: number; right: number;
   xTicks: { x: number; label: string; anchor?: "start" | "middle" | "end" }[];
@@ -46,32 +46,30 @@ export interface OpenLineTimeline {
   end: Date;
   showTime?: boolean;
   step?: boolean;
-  previousRows?: readonly { date: string; value: number }[];
-  previousStart?: Date;
+  zeroMin?: boolean;
 }
 
 /** Presentation only: no smoothing, interpolation of observations, or scoring writes. */
 export function openLineModel(
   rows: readonly { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean }[],
   format: (value: number) => string,
-  previous: readonly number[] = [],
-  slots = Math.max(rows.length, previous.length),
+  slots = rows.length,
   timeline?: OpenLineTimeline,
+  zeroMin = false,
 ): OpenLineModel {
   const width = 340, height = 190, top = 28, bottom = 146, left = 44, right = 326;
-  const values = [...rows.map(row => row.value), ...previous, ...(timeline?.previousRows?.map(row => row.value) ?? [])];
+  const values = rows.map(row => row.value);
   const low = values.length ? Math.min(...values) : 0, high = values.length ? Math.max(...values) : 1;
   const padding = Math.max(1, (high - low) * .12);
-  // Score histories use a local domain; cumulative hour comparisons retain zero.
-  const min = Math.floor(previous.length || timeline?.previousRows?.length ? Math.min(0, low) : low - padding);
+  // Score histories use a local domain; cumulative hour charts retain a zero floor.
+  const floorZero = Boolean(zeroMin || timeline?.zeroMin);
+  const min = Math.floor(floorZero ? Math.min(0, low) : low - padding);
   const max = Math.ceil(high + padding);
   const y = (value: number) => bottom - (value - min) / (max - min || 1) * (bottom - top);
   const x = (i: number) => left + i / Math.max(1, slots - 1) * (right - left);
   const origin = timeline ? calendarPosition(timeline.start) : 0;
   const timeSpan = timeline ? Math.max(.001, calendarPosition(timeline.end) - origin) : 1;
-  const previousOrigin = timeline?.previousStart ? calendarPosition(timeline.previousStart) : origin;
-  const timeX = (at: string, previous = false) => left +
-    (calendarPosition(new Date(at)) - (previous ? previousOrigin : origin)) / timeSpan * (right - left);
+  const timeX = (at: string) => left + (calendarPosition(new Date(at)) - origin) / timeSpan * (right - left);
   const crossesYear = rows.length > 0 && dayKey(new Date(rows[0]!.date)).slice(0, 4) !== dayKey(new Date(rows[rows.length - 1]!.date)).slice(0, 4);
   const dateFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", ...(crossesYear ? { year: "numeric" } : {}), timeZone: APP_TIMEZONE });
   const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE, timeZoneName: "short" });
@@ -95,33 +93,34 @@ export function openLineModel(
   const xTicks = tickDates.flatMap((at, i) => at ? [{ x: timeline ? timeX(at.toISOString()) : x([0, Math.floor((rows.length - 1) / 2), rows.length - 1][i]!), label: date(at.toISOString()) }] : [])
     .filter((tick, i, ticks) => ticks.findIndex(other => other.x === tick.x && other.label === tick.label) === i);
 
-  // Rolling 30-day average trendline across observed rows.
+  // Rolling 30-day average trendline across observed rows (excluding synthetic step-before points).
   const trendPts: string[] = [];
-  if (rows.length >= 2) {
+  const trendRows = rows
+    .map((row, idx) => ({ row, x: points[idx]!.x }))
+    .filter(({ row }) => !row.id.startsWith("before:"));
+  if (trendRows.length >= 2) {
     const windowMs = 30 * 86400000;
-    for (let i = 0; i < rows.length; i++) {
-      const rowMs = Date.parse(rows[i]!.date);
+    for (let i = 0; i < trendRows.length; i++) {
+      const rowMs = Date.parse(trendRows[i]!.row.date);
       let sum = 0;
       let count = 0;
       for (let j = i; j >= 0; j--) {
-        const jMs = Date.parse(rows[j]!.date);
+        const jMs = Date.parse(trendRows[j]!.row.date);
         const inWindow = Number.isFinite(rowMs) && Number.isFinite(jMs)
           ? rowMs - jMs <= windowMs
           : i - j < 30;
         if (!inWindow) break;
-        sum += rows[j]!.value;
+        sum += trendRows[j]!.row.value;
         count += 1;
       }
-      const avg = count > 0 ? sum / count : rows[i]!.value;
-      const px = points[i]!.x;
-      trendPts.push(`${px.toFixed(1)},${y(avg).toFixed(1)}`);
+      const avg = count > 0 ? sum / count : trendRows[i]!.row.value;
+      trendPts.push(`${trendRows[i]!.x.toFixed(1)},${y(avg).toFixed(1)}`);
     }
   }
   const trendLine = trendPts.join(" ");
 
   return { width, height, top, bottom, left, right, points: points.filter((_, i) => rows[i]?.inspectable !== false), line, trendLine, segments, xTicks,
     yTicks: values.length ? [min, Math.min(max, min + Math.ceil((max - min) / 2)), max].filter((value, i, ticks) => ticks.indexOf(value) === i).map(value => ({ y: y(value), label: String(value) })) : [],
-    previous: timeline?.previousRows ? trace(timeline.previousRows.map(row => ({ x: timeX(row.date, true), y: y(row.value) }))) : previous.map((value, i) => `${x(i).toFixed(1)},${y(value).toFixed(1)}`).join(" "),
     value: rows.length ? format(rows[rows.length - 1]!.value) : format(0),
     date: rows.length ? `${date(rows[0]!.date)} – ${date(rows[rows.length - 1]!.date)}` : "No data",
   };
@@ -172,9 +171,8 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
     const chart = openLineModel(
       now < effectiveFrom ? [] : events(effectiveFrom, new Date(Math.min(now.getTime(), end.getTime()))),
       value => value.toFixed(1),
-      [],
       7,
-      { start, end, showTime: true },
+      { start, end, showTime: true, zeroMin: true },
     );
     return { ...chart, xTicks: Array.from({ length: 7 }, (_, i) => ({
       x: chart.left + (i + 0.5) / 7 * (chart.right - chart.left),
@@ -182,7 +180,15 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
       anchor: "middle" as const,
     })) };
   }
-  return openLineModel(cumulative(clampedStart, elapsed), value => value.toFixed(1), [], days);
+  const windowDays = Math.max(
+    2,
+    Array.from({ length: days }, (_, i) => shiftAppDay(start, i)).filter(at => dayKey(at) >= dayKey(clampedStart)).length,
+  );
+  const cumRows: { id: string; date: string; value: number; inspectable?: boolean }[] = cumulative(clampedStart, elapsed);
+  if (cumRows.length === 1) {
+    cumRows.unshift({ id: `start:${clampedStart.toISOString()}`, date: clampedStart.toISOString(), value: 0, inspectable: false });
+  }
+  return openLineModel(cumRows, value => value.toFixed(1), windowDays, undefined, true);
 }
 
 /** Shared zero-based bars and average, excluding future buckets on both platforms. */
@@ -265,7 +271,7 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
     rows.push({ id: event.id, date: event.occurredAt, value: event.scoreAfter });
   }
   rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: !!rows.length && rows.at(-1)!.value !== current });
-  const chart = openLineModel(rows, value => String(Math.round(value)), [], 7, { start, end, showTime: range === "week", step: false });
+  const chart = openLineModel(rows, value => String(Math.round(value)), 7, { start, end, showTime: range === "week", step: false });
   // Unknown award times remain gaps in the data. Dashed bridges connect the
   // known readings visually without asserting an award time in that interval.
   return { ...chart, bridges: chart.segments.slice(1).map((line, index) =>

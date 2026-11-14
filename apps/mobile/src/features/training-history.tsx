@@ -77,7 +77,7 @@ const f=useFocusStyles();
               {inspected.verified ? " · GPS recorded" : ""}
             </StatusBadge>
           </View>
-          <RecordChart rows={rows} selected={inspected.activityId} now={now} onSelect={setReceipt} />
+          <RecordChart rows={rows} selected={receipt} now={now} onSelect={setReceipt} />
           <ActivityRoute units={state.units} key={inspected.activityId} activity={state.activities.find(a => a.id === inspected.activityId)} milestone />
         </Section>
       ) : null}
