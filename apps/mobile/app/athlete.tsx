@@ -44,7 +44,6 @@ import { DataSyncActions } from "../src/features/data-sync-actions";
 import { mobileEnv } from "../src/lib/env";
 import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
-import { FocusSegments } from "../src/ui/focus";
 import {
   createAppleHealthDeps,
   createHealthConnectDeps,
