@@ -95,7 +95,7 @@ export function crewRelayScene(model: Relay, width: number, prefix: string, comp
       for (let col = 0; col < 2; col++) {
         const x0 = a + (b - a) * col / 2, x1 = a + (b - a) * (col + 1) / 2;
         const y0 = row / 4, y1 = (row + 1) / 4;
-        finish.push(path(`M${faceSurface(x0, y0)} L${faceSurface(x1, y0)} L${faceSurface(x1, y1)} L${faceSurface(x0, y1)}Z`, (row + col) % 2 ? "#ffffff" : "#142b3b"));
+        finish.push(path(`M${faceSurface(x0, y0)} L${faceSurface(x1, y0)} L${faceSurface(x1, y1)} L${faceSurface(x0, y1)}Z`, (row + col) % 2 ? "#142b3b" : "#ffffff"));
       }
     }
   }
