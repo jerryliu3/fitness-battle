@@ -2,6 +2,7 @@ import {
   vitalsLabMetricsFromCompeteState,
   type CompeteState,
   type VitalsLabMetricDisplay,
+  type VitalsLabMetricId,
 } from "@fitness-battle/shared";
 import { createThemedStyles, useAppTheme, useThemedStyles } from "../../theme";
 import { AppText } from "../../ui/section";
@@ -64,12 +65,21 @@ const cardThemes = createThemedStyles((theme) => ({
   },
 }));
 
+export type HealthLabChartMetric = "hrv" | "rhr" | "sleep";
+
+function chartMetricFromVitals(id: VitalsLabMetricId): HealthLabChartMetric | null {
+  if (id === "hrv" || id === "rhr" || id === "sleep") return id;
+  return null;
+}
+
 export function VitalsLabPanel({
   state,
   signedOut = false,
+  onChartMetricChange,
 }: {
   state?: CompeteState | null;
   signedOut?: boolean;
+  onChartMetricChange?: (metric: HealthLabChartMetric) => void;
 }) {
   const { mode } = useAppTheme();
   const s = useThemedStyles(panelThemes);
@@ -85,6 +95,12 @@ export function VitalsLabPanel({
 
   const lab = useVitalsLabController(metrics, appearance, assetBase);
 
+  const selectMetric = (metric: VitalsLabMetricDisplay) => {
+    lab.selectMetric(metric);
+    const chart = chartMetricFromVitals(metric.id);
+    if (chart && metric.value) onChartMetricChange?.(chart);
+  };
+
   const renderMetricColumn = (items: VitalsLabMetricDisplay[]) => (
     <View style={s.metricCol}>
       {items.map((m) => (
@@ -92,7 +108,7 @@ export function VitalsLabPanel({
           key={m.id}
           metric={m}
           active={lab.activeMetricId === m.id}
-          onPress={() => lab.selectMetric(m)}
+          onPress={() => selectMetric(m)}
         />
       ))}
     </View>
