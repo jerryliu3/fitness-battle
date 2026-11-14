@@ -13,10 +13,8 @@ import { AppIcon } from "../src/ui/app-icon";
 import { IntegrationIcon } from "../src/ui/integration-icon";
 
 import { ChoicePicker } from "../src/ui/choice-picker";
-import { RankSymbol } from "../src/ui/rank-symbol";
 import {
   SPORTS,
-  RANK_BANDS,
   primaryFreezePeriodStart,
   competeNow,
   clubLifetimeTotals,
@@ -468,13 +466,19 @@ const styles=useThemedStyles(stylesThemes);
             router.push("/blocked-athletes");
           }}
         />
+          <AccountActions showDeleteButton={false} footer={(openDelete) => (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 16 }}>
+              <LegalLinks />
+              <Pressable accessibilityRole="button" accessibilityLabel="Delete account" onPress={openDelete}>
+                <AppText role="label" style={{ color: "#b42318" }}>Delete account</AppText>
+              </Pressable>
+            </View>
+          )} />
           <FocusButton
             label="Sign out"
             secondary
             onPress={() => setConfirmSignOut(true)}
           />
-          <AccountActions />
-          <LegalLinks />
           <FocusSheet open={confirmSignOut} title="Sign out?" onClose={() => setConfirmSignOut(false)}><AppText role="body" secondary>You can sign in again to return to your account.</AppText><FocusButton label="Sign out" onPress={() => { setConfirmSignOut(false); void signOut(); }} /><FocusButton label="Cancel" secondary onPress={() => setConfirmSignOut(false)} /></FocusSheet>
         </SectionStack>
 </ScrollView>
@@ -582,32 +586,14 @@ const styles=useThemedStyles(stylesThemes);
         {pageHeader}
         <ScrollView contentContainerStyle={f.content}>
 <SectionStack divided={false}>
-          <AppText role="body" secondary >
-            Open includes your eligible sessions. GPS Tracked uses sessions recorded
-            by a GPS tracker.
+          <AppText role="body" secondary>
+            Effort score is calculated differently for each sport—distance sports weigh GPS-tracked volume,
+            strength uses training time and effort points, and sleep competitions use nightly sleep quality.
           </AppText>
-          <AppText role="body" secondary >
-            Each active sport has its own effort score. Rank-priced activity
-            milestones add points immediately. Weekly placement can raise or lower your score.
-            A week without counted activity decays toward the score floor.
-            Activity milestone points already earned are kept. Stopping after this week keeps the current
-            week open and turns off renewal.
+          <AppText role="body" secondary>
+            Logging activities and joining weekly fields boosts your score; showing up to events and closing
+            the week in the field moves it fastest.
           </AppText>
-          <AppText role="body" secondary >
-            A week freeze holds the weekly score adjustment and can be undone
-            before the week ends. Activity milestones can still grow your score.
-          </AppText>
-          {RANK_BANDS.map((band) => (
-            <View key={band.name} style={[f.card, { flexDirection: "row", alignItems: "center", gap: 14 }]}>
-              <RankSymbol rank={band.id} size={52} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <AppText role="heading">
-                  {band.name} · {band.min}+
-                </AppText>
-                <AppText role="body" secondary>{band.blurb}</AppText>
-              </View>
-            </View>
-          ))}
         </SectionStack>
 </ScrollView>
       </SafeAreaView>
@@ -934,7 +920,8 @@ const styles=useThemedStyles(stylesThemes);
     {/* Side Panel for Edit Profile & Settings (not a bottom sheet) */}
     <FocusSidePanel
       open={editOpen}
-      title="Edit profile & Settings"
+      title="Edit profile"
+      headerDivider={false}
       onClose={() => {
         setEditOpen(false);
         if (params.edit) {
@@ -942,28 +929,25 @@ const styles=useThemedStyles(stylesThemes);
         }
       }}
     >
-      <View style={{ gap: 12 }}>
-        <SectionHeader title="Profile details" />
-        <View style={[f.row, { gap: 16, alignItems: "center" }]}>
-          <ProfilePhoto state={state} />
-          <View style={{ flex: 1, gap: 8 }}>
-            <Input
-              style={textStyle("body")}
-              value={draftName}
-              onChangeText={setName}
-              accessibilityLabel="Name"
-              maxLength={32}
-              placeholder="Name"
-            />
-            <Input
-              style={textStyle("body")}
-              value={draftCity}
-              onChangeText={setCity}
-              accessibilityLabel="City"
-              maxLength={40}
-              placeholder="City"
-            />
-          </View>
+      <View style={{ gap: 16 }}>
+        <ProfilePhoto state={state} editSize={168} />
+        <View style={{ gap: 8 }}>
+          <Input
+            style={textStyle("body")}
+            value={draftName}
+            onChangeText={setName}
+            accessibilityLabel="Name"
+            maxLength={32}
+            placeholder="Name"
+          />
+          <Input
+            style={textStyle("body")}
+            value={draftCity}
+            onChangeText={setCity}
+            accessibilityLabel="City"
+            maxLength={40}
+            placeholder="City"
+          />
         </View>
         {dirty ? (
           <FocusButton
