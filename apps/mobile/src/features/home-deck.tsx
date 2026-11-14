@@ -202,12 +202,10 @@ export function HomeDeck({
   const [dismissedIds, setDismissedIds] = useState<HomeDeckCardId[]>(
     () => memoryDismissed.get(storageKey) ?? [],
   );
-  const [dismissingId, setDismissingId] = useState<HomeDeckCardId | null>(null);
   const dismissalRevision = useRef(0);
   const swipingRef = useRef(false);
   const dismissalAnimation = useRef<Animated.CompositeAnimation | null>(null);
   useEffect(() => {
-    setDismissingId(null);
     swipingRef.current = false;
     return () => { dismissalAnimation.current?.stop(); swipingRef.current = false; };
   }, [storageKey]);
@@ -271,47 +269,51 @@ export function HomeDeck({
       cardId: HomeDeckCardId,
       direction: "left" | "right" = "left",
       currentDx = 0,
+      velocityX = 0,
     ) => {
       if (swipingRef.current) return;
       const targetCard =
         visibleCards.find((c) => c.id === cardId) ?? activeCard;
       if (!targetCard) return;
-      void playCue("light");
       const nextDismissed = [...new Set([...dismissedIds, cardId])];
 
       if (reduceMotion) {
         dragX.setValue(0);
         cardOpacity.setValue(1);
-        setDismissingId(null);
         persistDismissed(nextDismissed);
+        void playCue("light");
         return;
       }
 
+      // Start the native exit immediately without triggering an intermediate JS re-render
+      // so there is zero pause between finger release and the card sweeping away.
       swipingRef.current = true;
-      setDismissingId(cardId);
       dragX.setValue(currentDx);
+      const remaining = Math.max(80, 460 - Math.abs(currentDx));
+      const speed = Math.max(2.0, Math.abs(velocityX) * 1.8 + 2.4);
+      const duration = Math.max(100, Math.min(190, Math.round(remaining / speed)));
 
       const animation = Animated.parallel([
         Animated.timing(dragX, {
           toValue: direction === "left" ? -460 : 460,
-          duration: 280,
-          easing: Easing.out(Easing.cubic),
+          duration,
+          easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.timing(cardOpacity, {
           toValue: 0,
-          duration: 240,
-          easing: Easing.in(Easing.quad),
+          duration: Math.max(90, duration - 20),
+          easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
       ]);
       dismissalAnimation.current = animation;
       animation.start(({ finished }) => {
+        swipingRef.current = false;
         if (!finished) return;
         persistDismissed(nextDismissed);
-        setDismissingId(null);
-        swipingRef.current = false;
       });
+      void playCue("light");
     },
     [
       activeCard,
@@ -328,7 +330,6 @@ export function HomeDeck({
     void playCue("selection");
     dragX.setValue(0);
     cardOpacity.setValue(1);
-    setDismissingId(null);
     swipingRef.current = false;
     persistDismissed([]);
   }, [cardOpacity, dragX, persistDismissed]);
@@ -344,19 +345,24 @@ export function HomeDeck({
         onStartShouldSetPanResponder: () => false,
         onMoveShouldSetPanResponder: (_, gesture) =>
           !swipingRef.current &&
-          Math.abs(gesture.dx) > 10 &&
-          Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.25,
+          Math.abs(gesture.dx) > 8 &&
+          Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.2,
         onPanResponderMove: (_, gesture) => {
           dragX.setValue(gesture.dx);
         },
         onPanResponderTerminationRequest: () => false,
         onPanResponderRelease: (_, gesture) => {
-          const decision = shouldSwipeDismiss(gesture.dx, gesture.dy, 48);
+          const velocityDismiss =
+            Math.abs(gesture.vx) >= 0.45 && Math.abs(gesture.dx) >= 18
+              ? (gesture.vx < 0 ? "left" : "right")
+              : null;
+          const decision = shouldSwipeDismiss(gesture.dx, gesture.dy, 48) ?? velocityDismiss;
           if (decision && activeCardRef.current) {
             dismissCardRef.current(
               activeCardRef.current.id,
               decision,
               gesture.dx,
+              gesture.vx,
             );
           } else {
             Animated.spring(dragX, {
@@ -400,9 +406,30 @@ export function HomeDeck({
     }
   };
 
+  const depth1TranslateY = dragX.interpolate({
+    inputRange: [-180, 0, 180],
+    outputRange: [0, 7, 0],
+    extrapolate: "clamp",
+  });
+  const depth1Opacity = dragX.interpolate({
+    inputRange: [-180, 0, 180],
+    outputRange: [1, 0.95, 1],
+    extrapolate: "clamp",
+  });
+  const depth2TranslateY = dragX.interpolate({
+    inputRange: [-180, 0, 180],
+    outputRange: [7, 14, 7],
+    extrapolate: "clamp",
+  });
+  const depth2Opacity = dragX.interpolate({
+    inputRange: [-180, 0, 180],
+    outputRange: [0.95, 0.7, 0.95],
+    extrapolate: "clamp",
+  });
+
   return (
     <View style={s.section} accessibilityLabel="Updates">
-      {!activeCard && !dismissingId ? (
+      {!activeCard ? (
         <View style={s.caughtUpRow}>
           <AppText role="body" secondary>
             You’re all caught up.
@@ -423,7 +450,7 @@ export function HomeDeck({
       ) : (
         <View style={s.deckWrapper}>
           <View style={s.stackStage}>
-            {/* Depth 2 Card (Underneath next card) */}
+            {/* Depth 2 Card (Underneath next card — smoothly glides up to depth 1 as top card swipes) */}
             {depth2Card && (
               <Animated.View
                 key={`depth2-${depth2Card.id}`}
@@ -435,8 +462,8 @@ export function HomeDeck({
                   {
                     backgroundColor: paletteForDeckTone(depth2Card.tone, isDark).bg,
                     borderColor: paletteForDeckTone(depth2Card.tone, isDark).border,
-                    opacity: 0.7,
-                    transform: [{ translateY: 14 }],
+                    opacity: depth2Opacity,
+                    transform: [{ translateY: depth2TranslateY }],
                   },
                 ]}
               >
@@ -455,8 +482,8 @@ export function HomeDeck({
                   {
                     backgroundColor: paletteForDeckTone(nextCard.tone, isDark).bg,
                     borderColor: paletteForDeckTone(nextCard.tone, isDark).border,
-                    opacity: 0.95,
-                    transform: [{ translateY: 7 }],
+                    opacity: depth1Opacity,
+                    transform: [{ translateY: depth1TranslateY }],
                   },
                 ]}
               >
@@ -477,7 +504,7 @@ export function HomeDeck({
                 <Animated.View
                   key={`${storageKey}:${activeCard.id}`}
                   {...panResponder.panHandlers}
-                  pointerEvents={dismissingId ? "none" : "auto"}
+                  pointerEvents="auto"
                   style={[
                     s.deckCard,
                     s.cardTop,
