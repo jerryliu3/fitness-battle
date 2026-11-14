@@ -26,7 +26,7 @@ import { decodePhoto } from "../lib/profile-photo";
 import { supabase } from "../lib/supabase";
 import { AppIcon } from "../ui/app-icon";
 
-import { FocusButton, FocusSheet } from "../ui/focus";
+import { AnchoredMenu, AnchoredMenuItem, useAnchoredMenu } from "../ui/anchored-menu";
 
 export function ProfilePhoto({ state, editSize = 144 }: { state: CompeteState; editSize?: number }) {
 const c=useThemeColors();
@@ -34,7 +34,6 @@ const c=useThemeColors();
   const { user, offlineMode } = useAuth();
   const { dispatch } = useCompeteStore();
   const [busy, setBusy] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const flight = useRef(false);
   const pendingPickerOwner = useRef<string | null>(null);
   const ownerRef = useRef(user?.id);
@@ -121,99 +120,107 @@ const c=useThemeColors();
       setBusy(false);
     }
   }
+  const photoMenu = useAnchoredMenu({ minWidth: 196, estimatedHeight: 112 });
   return (
     <View style={{ alignItems: "center", gap: 8, alignSelf: "center" }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Edit profile photo"
-        disabled={!user || busy}
-        onPress={() => {
-          if (!user || busy) return;
-          setMenuOpen(true);
-        }}
-        style={{
-          width: editSize,
-          height: editSize,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <View
+      <View ref={photoMenu.anchorRef} collapsable={false}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Edit profile photo"
+          accessibilityState={{ expanded: photoMenu.open }}
+          disabled={!user || busy}
+          onPress={() => {
+            if (!user || busy) return;
+            photoMenu.toggle();
+          }}
           style={{
             width: editSize,
             height: editSize,
-            borderRadius: editSize / 2,
-            overflow: "hidden",
-            backgroundColor: c.soft,
-            borderWidth: 1,
-            borderColor: c.line,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          {state.avatarUrl ? (
-            <Image
-              source={{ uri: state.avatarUrl }}
-              style={{ width: "100%", height: "100%" }}
-              accessibilityIgnoresInvertColors
-            />
-          ) : (
-            <Svg width={editSize * 0.35} height={editSize * 0.35} viewBox="0 0 24 24">
-              <Path d={APP_ICON_PATHS.person} fill={c.muted} />
-            </Svg>
-          )}
-        </View>
-        <View
-          style={{
-            position: "absolute",
-            right: 4,
-            bottom: 4,
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: c.card,
-            borderWidth: 1,
-            borderColor: c.line,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <AppIcon name="edit" size={16} />
-        </View>
-      </Pressable>
-      <FocusSheet
-        open={menuOpen}
-        title="Profile photo"
-        onClosed={() => {
+          <View
+            style={{
+              width: editSize,
+              height: editSize,
+              borderRadius: editSize / 2,
+              overflow: "hidden",
+              backgroundColor: c.soft,
+              borderWidth: 1,
+              borderColor: c.line,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {state.avatarUrl ? (
+              <Image
+                source={{ uri: state.avatarUrl }}
+                style={{ width: "100%", height: "100%" }}
+                accessibilityIgnoresInvertColors
+              />
+            ) : (
+              <Svg width={editSize * 0.35} height={editSize * 0.35} viewBox="0 0 24 24">
+                <Path d={APP_ICON_PATHS.person} fill={c.muted} />
+              </Svg>
+            )}
+          </View>
+          <View
+            style={{
+              position: "absolute",
+              right: 4,
+              bottom: 4,
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: c.card,
+              borderWidth: 1,
+              borderColor: c.line,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <AppIcon name="edit" size={16} />
+          </View>
+        </Pressable>
+      </View>
+      <AnchoredMenu
+        open={photoMenu.open}
+        menuLayout={photoMenu.menuLayout}
+        accessibilityLabel="Close profile photo menu"
+        onDismiss={() => {
           const id = pendingPickerOwner.current;
           pendingPickerOwner.current = null;
           if (id && mounted.current && ownerRef.current === id) void change();
         }}
         onClose={() => {
-          if (!busy) setMenuOpen(false);
+          if (!busy) photoMenu.close();
         }}
       >
-        <FocusButton
+        <AnchoredMenuItem
           label={busy ? "Updating…" : "Choose photo"}
           disabled={busy}
+          last={!state.avatarUrl}
           onPress={() => {
             if (!user || flight.current || pendingPickerOwner.current) return;
+            // UIKit must finish dismissing our menu before presenting the picker.
             pendingPickerOwner.current = user.id;
-            setMenuOpen(false);
+            photoMenu.close();
           }}
         />
         {state.avatarUrl ? (
-          <FocusButton
+          <AnchoredMenuItem
             label="Delete photo"
-            secondary
+            destructive
             disabled={busy}
+            last
             onPress={() => {
-              setMenuOpen(false);
+              photoMenu.close();
               void change(true);
             }}
           />
         ) : null}
-      </FocusSheet>
+      </AnchoredMenu>
       {error ? (
         <AppText role="caption" secondary  accessibilityLiveRegion="polite">
           {error}

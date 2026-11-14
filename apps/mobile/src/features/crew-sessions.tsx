@@ -11,6 +11,7 @@ import {
   APP_TIMEZONE,
   crewSessionDraftId,
   crewSessionError,
+  formatAppDateTime,
   validateCrewSessionDraft,
   demoCrewSessionMutation,
   type CrewSessionMutation,
@@ -311,6 +312,6 @@ const f=useFocusStyles();
       </FocusSheet>
     </Section>
   );
-  return compact ? <><Pressable accessibilityRole="button" onPress={() => setDetailsOpen(true)} style={[f.card, { flex: 1, minHeight: 170, justifyContent: "space-between", backgroundColor: colors.soft }]}><AppText role="label">Start Line</AppText><AppText role="heading">{nextSession?.title ?? "Set the next start"}</AppText><AppText role="caption" secondary>{error ? "Sessions unavailable" : nextSession ? `${new Date(nextSession.starts_at).toLocaleDateString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: nextSession.time_zone })} · ${nextSession.participants.length} going` : "Schedule a session"}</AppText></Pressable><FocusSheet open={detailsOpen} minimal title="Start Line" onClosed={() => { const member = pendingProfile.current; pendingProfile.current = null; if (member) onSelectMember?.(member.id, member.name); }} onClose={() => { setDetailsOpen(false); setOpen(false); setCancelTarget(null); }}>{content}</FocusSheet></> : content;
+  return compact ? <><Pressable accessibilityRole="button" onPress={() => setDetailsOpen(true)} style={[f.card, { flex: 1, minHeight: 170, justifyContent: "space-between", backgroundColor: colors.soft }]}><AppText role="label">Start Line</AppText><AppText role="heading">{nextSession?.title ?? "Set the next start"}</AppText><AppText role="caption" secondary>{error ? "Sessions unavailable" : nextSession ? `${formatAppDateTime(nextSession.starts_at, { timeZone: nextSession.time_zone })} · ${nextSession.participants.length} going` : "Schedule a session"}</AppText></Pressable><FocusSheet open={detailsOpen} minimal title="Start Line" onClosed={() => { const member = pendingProfile.current; pendingProfile.current = null; if (member) onSelectMember?.(member.id, member.name); }} onClose={() => { setDetailsOpen(false); setOpen(false); setCancelTarget(null); }}>{content}</FocusSheet></> : content;
 
 }

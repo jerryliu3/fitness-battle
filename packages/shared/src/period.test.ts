@@ -7,6 +7,7 @@ import {
   monthlyPeriodBounds,
   startOfZonedDay,
   formatAppCalendarDate,
+  formatAppDateTime,
   formatWeeklyCompetitionRange,
   weeklyPeriodBounds,
 } from "./period";
@@ -112,5 +113,12 @@ describe("Eastern calendar offsets", () => {
     expect(new Date("2026-11-10").toLocaleDateString("en-US", {
       weekday: "short", month: "short", day: "numeric", timeZone: "America/New_York",
     })).toBe("Mon, Nov 9");
+  });
+
+  it("formats timestamps as 'MMM d, h:mm PM' without timezone suffixes or 'at'", () => {
+    const label = formatAppDateTime("2026-11-11T19:15:00Z");
+    expect(label).toBe("Nov 11, 2:15 PM");
+    expect(label).not.toContain(" at ");
+    expect(label).not.toMatch(/EST|EDT|ET/);
   });
 });

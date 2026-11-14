@@ -43,7 +43,7 @@ export function SeasonHistory({
   units?: UnitSystem;
   state?: CompeteState;
 }) {
-  const [sportFilter, setSportFilter] = useState<SportId | "all">(primary);
+  const [sportFilter, setSportFilter] = useState<SportId | "all">("all");
 
   const sports = useMemo(() => {
     const ids = [...new Set(results.map((row) => row.sport))];

@@ -27,14 +27,20 @@ const f=useFocusStyles();
       confirmCancel ? (
         <View style={{ gap: 8 }}>
           <AppText role="body" secondary>Cancel your registration for this wave?</AppText>
-          <FocusButton
-            label="Yes, cancel registration"
-            onPress={() => {
-              setConfirmCancel(false);
-              onCancel();
-            }}
-          />
-          <FocusButton label="Keep registration" secondary onPress={() => setConfirmCancel(false)} />
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <View style={{ flex: 1 }}>
+              <FocusButton label="Keep registration" secondary onPress={() => setConfirmCancel(false)} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <FocusButton
+                label="Yes, cancel registration"
+                onPress={() => {
+                  setConfirmCancel(false);
+                  onCancel();
+                }}
+              />
+            </View>
+          </View>
         </View>
       ) : (
         <FocusButton label="Cancel registration" secondary onPress={() => setConfirmCancel(true)} />

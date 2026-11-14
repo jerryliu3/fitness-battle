@@ -3,7 +3,21 @@ import { textStyle } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { ELO_UNRANKED, competitionTrack, competitionTrackLabel, effortPointProgress, formatEffortScore, formatVolume, rankForElo, sportById } from "@fitness-battle/shared";
+import {
+  ELO_CAP,
+  ELO_UNRANKED,
+  competeNow,
+  competitionTrack,
+  competitionTrackLabel,
+  effortPointProgress,
+  formatEffortScore,
+  formatVolume,
+  milestoneStep,
+  periodEffort,
+  rankForElo,
+  sportById,
+  weeklyPeriodBounds,
+} from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 
@@ -35,8 +49,18 @@ const s=useThemedStyles(sThemes);
     const track = competitionTrack(sport);
     const rating = state.ratings.find((r) => r.sport === sport);
     const score = rating ? (track === "verified" ? rating.verifiedElo : rating.openElo) : ELO_UNRANKED;
-    const joined = Boolean(rating?.optedIn);
     const guest = accountKey === "device";
+    const step = milestoneStep(sport, score);
+    const week = weeklyPeriodBounds(competeNow(state));
+    const totals = periodEffort(state.activities, sport, week.startsAt, week.endsAt, track);
+    const volume = sport === "strength" ? totals.movingSec : totals.distanceM;
+    const withinStep = Math.max(0, volume) % step;
+    const capped = score >= ELO_CAP;
+    const remaining = capped ? 0 : Math.max(0, step - withinStep);
+    const fraction = guest ? 0 : capped ? 1 : Math.max(0, Math.min(1, withinStep / step));
+    const remainingLabel = capped
+      ? "Maximum score"
+      : `${formatVolume(sport, sport === "strength" ? 0 : remaining, sport === "strength" ? remaining : 0, state.units)} left`;
     return (
       <Pressable
         style={[s.rail, s.railCompact]}
@@ -54,13 +78,11 @@ const s=useThemedStyles(sThemes);
           accessible
           accessibilityRole="progressbar"
           accessibilityLabel="Progress to next Effort Score point"
-          accessibilityValue={{ min: 0, max: 100, now: 0 }}
+          accessibilityValue={{ min: 0, max: 100, now: Math.round(fraction * 100) }}
           style={s.trackCompact}
         >
-          <View style={[s.fill, { width: "0%" }]} />
-          <Text style={s.remaining}>
-            {guest || !joined ? "Join a field" : "Log activity this week"}
-          </Text>
+          <View style={[s.fill, { width: `${Math.round(fraction * 100)}%` }]} />
+          {!guest ? <Text style={s.remaining}>{remainingLabel}</Text> : null}
         </View>
       </Pressable>
     );

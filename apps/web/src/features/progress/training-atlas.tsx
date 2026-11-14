@@ -93,7 +93,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           →
         </button>
       </div>
-      <BenchmarkChart key={`${range}:${anchor.toISOString()}:${sports.join(",")}`} buckets={buckets} now={now} dateLabel={dateLabel} />
+      <BenchmarkChart key={sports.join(",")} buckets={buckets} now={now} dateLabel={dateLabel} />
         <ChartRangeToggle
           value={range}
           onChange={(next) => {

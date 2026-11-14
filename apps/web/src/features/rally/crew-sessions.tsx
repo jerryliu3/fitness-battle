@@ -7,6 +7,7 @@ import {
   APP_TIMEZONE,
   crewSessionDraftId,
   crewSessionError,
+  formatAppDateTime,
   validateCrewSessionDraft,
   demoCrewSessionMutation,
   type CrewSessionMutation,
@@ -298,6 +299,6 @@ export function CrewSessions({
       </Sheet>
     </Section>
   );
-  return compact ? <><button type="button" className="crew-action-card" onClick={() => setDetailsOpen(true)}><span>Start Line </span><strong>{nextSession?.title ?? "Set the next start"}</strong><small>{error ? "Sessions unavailable" : nextSession ? `${new Date(nextSession.starts_at).toLocaleDateString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: nextSession.time_zone })} · ${nextSession.participants.length} going` : "Schedule a session"}</small></button><Sheet open={detailsOpen} title="Start Line" body="" minimal onClose={() => setDetailsOpen(false)}>{content}</Sheet></> : content;
+  return compact ? <><button type="button" className="crew-action-card" onClick={() => setDetailsOpen(true)}><span>Start Line </span><strong>{nextSession?.title ?? "Set the next start"}</strong><small>{error ? "Sessions unavailable" : nextSession ? `${formatAppDateTime(nextSession.starts_at, { timeZone: nextSession.time_zone })} · ${nextSession.participants.length} going` : "Schedule a session"}</small></button><Sheet open={detailsOpen} title="Start Line" body="" minimal onClose={() => setDetailsOpen(false)}>{content}</Sheet></> : content;
 
 }

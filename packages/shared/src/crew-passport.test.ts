@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { crewContractTarget, crewContractValue, crewSeasonBounds, crewPassportError, crewStampLabel, crewSeasonProgress, crewContractMetrics } from "./crew-passport";
+import { crewContractTarget, crewContractValue, crewSeasonBounds, crewPassportError, crewStampLabel, crewSeasonProgress, crewContractMetrics, crewTargetSpec, formatCrewTargetLabel } from "./crew-passport";
 
 describe("crew contracts and passport presentation", () => {
   it("converts displayed targets to canonical values without changing sport scores", () => {
@@ -30,5 +30,9 @@ describe("crew contracts and passport presentation", () => {
     expect(crewContractValue("moving_sec", 5400)).toBe("1.5 h");
     expect(crewContractValue("distance_m", 1000, "metric")).toContain("km");
     expect(crewPassportError("contract_changed")).toContain("teammate");
+    expect(crewTargetSpec("shared_distance_km")).toMatchObject({ min: 1, max: 500, step: 5, unit: "km" });
+    expect(crewTargetSpec("session_targets")).toMatchObject({ min: 1, max: 14, step: 1, unit: "sessions" });
+    expect(formatCrewTargetLabel(1, "sessions")).toBe("1 session");
+    expect(formatCrewTargetLabel(40, "km")).toBe("40 km");
   });
 });

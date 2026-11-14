@@ -43,6 +43,7 @@ export function CompetitionReplayButton({
   dimension = "4d",
   label = "Replay competition",
   variant = "button",
+  secondary = true,
 }: {
   state: CompeteState;
   selection: CompetitionReplaySelection;
@@ -50,6 +51,7 @@ export function CompetitionReplayButton({
   dimension?: "2d" | "3d" | "4d" | "graph";
   label?: string;
   variant?: "button" | "inline";
+  secondary?: boolean;
 }) {
 const appearanceColors = useThemeColors();
 
@@ -83,7 +85,7 @@ const appearanceColors = useThemeColors();
           </Text>
         </Pressable>
       ) : (
-        <FocusButton secondary label={label} onPress={() => { void playCue("light"); setOpen(true); }} />
+        <FocusButton secondary={secondary} label={label} onPress={() => { void playCue("light"); setOpen(true); }} />
       )}
       <CompetitionReplayModal open={open} state={state} selection={selection} initialFlat={initialFlat} dimension={dimension} onClose={() => setOpen(false)} />
     </>

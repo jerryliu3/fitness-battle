@@ -1,4 +1,4 @@
-import { APP_TIMEZONE } from "../period";
+import { formatAppDateTime } from "../period";
 import type { CompeteState, SportId } from "./sports";
 import { nextDailyWaveWindowAt, weekEndAfter } from "../matching/waves";
 import { DEFAULT_GROUP_CAPACITY } from "../matching/types";
@@ -7,7 +7,7 @@ import { DEFAULT_GROUP_CAPACITY } from "../matching/types";
 export const FIELD_REFRESH_MS = 60_000;
 
 export function waveTimeLabel(value: string | Date): string {
-  return `${new Date(value).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE })} ET`;
+  return formatAppDateTime(value, { weekday: true });
 }
 
 /** Queue status is derived from the benchmark; no competing status column or clock. */

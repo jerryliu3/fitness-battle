@@ -11,7 +11,7 @@ import {
 } from "@fitness-battle/shared";
 import * as DocumentPicker from "expo-document-picker";
 import { useEffect, useRef, useState } from "react";
-import { Platform, Pressable, View } from "react-native";
+import { Platform, View } from "react-native";
 import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
@@ -102,37 +102,35 @@ const f=useFocusStyles();
     );
     if (!link) return null;
     return (
-      <Pressable
-        accessibilityRole="button"
-        style={{ minHeight: 44, justifyContent: "center" }}
-        accessibilityLabel={`Disconnect ${provider}`}
-        disabled={busy}
-        onPress={() =>
-          void run(async (isCurrent) => {
-            const id = user?.id;
-            if (live)
-              await requestApi(
-                mobileEnv.apiUrl,
-                accessToken,
-                "/api/fitness/disconnect",
-                { body: { provider: link.provider } },
-              );
-            if (isCurrent()) {
-              dispatch({
-                type: "unlink",
-                provider: link.provider,
-                accountId: id,
-              });
-              void playCue("success");
-              setNote("Tracker disconnected.");
-            }
-          })
-        }
-      >
-        <AppText role="label" style={{ color: "#b83a38" }}>
-          {busy ? "Disconnecting…" : "Disconnect"}
-        </AppText>
-      </Pressable>
+      <View style={{ flexShrink: 0 }}>
+        <FocusButton
+          secondary
+          label={busy ? "Disconnecting…" : "Disconnect"}
+          accessibilityLabel={`Disconnect ${provider}`}
+          disabled={busy}
+          onPress={() =>
+            void run(async (isCurrent) => {
+              const id = user?.id;
+              if (live)
+                await requestApi(
+                  mobileEnv.apiUrl,
+                  accessToken,
+                  "/api/fitness/disconnect",
+                  { body: { provider: link.provider } },
+                );
+              if (isCurrent()) {
+                dispatch({
+                  type: "unlink",
+                  provider: link.provider,
+                  accountId: id,
+                });
+                void playCue("success");
+                setNote("Tracker disconnected.");
+              }
+            })
+          }
+        />
+      </View>
     );
   }
   return (
@@ -241,6 +239,7 @@ const f=useFocusStyles();
               : "Calibrate your starting effort score from your training history. Imported history stays excluded from competition."}
           </AppText>
           <FocusButton
+            secondary
             label={
               state.calibrated
                 ? "History calibrated"

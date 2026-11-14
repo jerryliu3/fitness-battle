@@ -28,3 +28,27 @@ it("orders the lineup by exact weekly distance, preserving zero contributors", (
   const members = [...input.members, { user_id: "c", display_name: "Carla" }];
   expect(crewLineup(members.reverse(), input.entries, "running").map(m => m.user_id)).toEqual(["a", "b", "c"]);
 });
+it("derives timestamped feed highlights for target completion and full-crew participation", () => {
+  const events = [
+    { user_id: "a", distance_m: 1000, moving_sec: 600, started_at: "2026-11-10T09:00:00Z" },
+    { user_id: "b", distance_m: 500, moving_sec: 300, started_at: "2026-11-10T14:30:00Z" },
+  ];
+  const { highlightItems } = crewOverview({ ...input, entries: events }, 1, events);
+  expect(highlightItems).toEqual([
+    expect.objectContaining({ id: "full-crew", icon: "crew", title: "Every teammate contributed", at: "2026-11-10T14:30:00Z" }),
+    expect.objectContaining({ id: "target-reached", icon: "trophy", title: "Shared target reached", at: "2026-11-10T09:00:00Z" }),
+  ]);
+});
+it("drives the 3D relay reading, unit, and finish position from the active contract", () => {
+  const timeView = crewOverview({ ...input, contract: { metric: "moving_sec", target: 3600 } });
+  expect(timeView.reading).toBe("0.3");
+  expect(timeView.targetReading).toBe("1");
+  expect(timeView.unit).toBe("hours");
+  expect(timeView.relay.model.target).toBe(3600);
+  expect(timeView.relay.model.finish).toBeCloseTo(1 / 1.2, 4);
+  const sessionsView = crewOverview({ ...input, contract: { metric: "sessions", target: 2 } });
+  expect(sessionsView.reading).toBe("2");
+  expect(sessionsView.targetReading).toBe("2");
+  expect(sessionsView.unit).toBe("sessions");
+  expect(sessionsView.complete).toBe(true);
+});

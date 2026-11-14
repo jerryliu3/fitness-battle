@@ -21,7 +21,7 @@ sql_paths = ["./seed.sql"]
 enabled = true
 port = 54623
 
-[inbucket]
+[local_smtp]
 enabled = true
 port = 54624
 

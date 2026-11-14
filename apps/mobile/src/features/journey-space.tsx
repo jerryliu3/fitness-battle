@@ -3,7 +3,7 @@ import { useAuth } from "../lib/auth";
 import { FocusSegments } from "../ui/focus";
 import { ActivityDetailSheet } from "./activity-detail-sheet";
 import { AppText } from "../ui/section";
-import { SportActivityIcon } from "../ui/sport-activity-icon";
+import { ActivityListRow } from "../ui/activity-list-row";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
@@ -14,17 +14,13 @@ import {
   countsOnTrack,
   dayKey,
   defaultTrainingSports,
-  distanceUnitLabel,
   earliestDataDate,
   formatAppCalendarDate,
-  formatClockTime,
-  formatDistanceM,
   formatEffort,
   formatTrainingHours,
   formatWeeklyCompetitionRange,
   shiftAppDay,
   shiftTrainingMonth,
-  sportById,
   trainingAtlas,
   trainingBuckets,
   trainingRangeNavigation,
@@ -43,6 +39,7 @@ export function JourneySpace({
   state: CompeteState;
   initialHorizon?: HorizonChoice;
 }) {
+  const { accessToken } = useAuth();
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
   const router = useRouter();
@@ -220,16 +217,6 @@ export function JourneySpace({
     }
     return list.sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
   }, [state.activities, selectedDayKey]);
-
-  const formatActivityDate = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      timeZone: APP_TIMEZONE,
-    });
-  };
 
   return (
     <View style={s.container}>
@@ -620,51 +607,23 @@ export function JourneySpace({
           </View>
         ) : (
           <View style={{ gap: 8 }}>
-            {recentActivities.slice(0, 5).map((activity) => {
-              const sportInfo = sportById(activity.sport);
-              const effort = formatEffort(activityEffort(activity));
-              return (
-                <Pressable
-                  key={activity.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${sportInfo.name}, ${formatClockTime(activity.movingSec)}, ${effort} effort`}
-                  onPress={() => setInspectedActivity(activity)}
-                  style={s.activityRow}
-                >
-                  <View style={s.activityIconWrapper}>
-                    <SportActivityIcon sport={activity.sport} />
-                  </View>
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <AppText role="row">
-                      {sportInfo.name}
-                    </AppText>
-                    <AppText role="caption" secondary>
-                      {formatActivityDate(activity.startedAt)}
-                      {activity.distanceM > 0
-                        ? ` · ${formatDistanceM(activity.distanceM, state.units)} ${distanceUnitLabel(state.units)}`
-                        : ""}
-                    </AppText>
-                  </View>
-                  <View style={{ alignItems: "flex-end", gap: 2 }}>
-                    <AppText role="value" style={{ fontVariant: ["tabular-nums"] }}>
-                      {formatClockTime(activity.movingSec)}
-                    </AppText>
-                    <AppText role="label" style={{ color: c.tennis }}>
-                      {effort} effort
-                    </AppText>
-                  </View>
-                  <AppText role="caption" secondary style={{ marginLeft: 6 }}>
-                    ›
-                  </AppText>
-                </Pressable>
-              );
-            })}
+            {recentActivities.slice(0, 5).map((activity) => (
+              <ActivityListRow
+                key={activity.id}
+                activity={activity}
+                history={state.activities}
+                units={state.units}
+                accessToken={accessToken}
+                onPress={setInspectedActivity}
+              />
+            ))}
           </View>
         )}
       </View>
 
       <ActivityDetailSheet
         activity={inspectedActivity}
+        state={state}
         units={state.units}
         onClose={() => setInspectedActivity(null)}
       />
@@ -797,24 +756,6 @@ const sThemes = createThemedStyles((themeColors) => {
     },
     textLink: {
       paddingVertical: 4,
-    },
-    activityRow: {
-      padding: 14,
-      borderRadius: 16,
-      backgroundColor: c.card,
-      borderWidth: 1,
-      borderColor: c.line,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-    },
-    activityIconWrapper: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: `${c.tennis}22`,
-      alignItems: "center",
-      justifyContent: "center",
     },
     resultContainer: {
       borderRadius: 16,

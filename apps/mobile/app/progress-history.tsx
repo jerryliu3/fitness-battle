@@ -5,7 +5,8 @@ import { ActivityDetailSheet } from "../src/features/activity-detail-sheet";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { WeeklyChapters } from "../src/features/weekly-chapters";
 import { AwardShelf } from "../src/ui/award-shelf";
-import { SportActivityIcon } from "../src/ui/sport-activity-icon";
+import { ActivityListRow } from "../src/ui/activity-list-row";
+import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { awardCards } from "@fitness-battle/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -13,34 +14,19 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  APP_TIMEZONE,
   activityEffort,
-  competeNow,
   countsOnTrack,
-  distanceUnitLabel,
-  formatClockTime,
-  formatDistanceM,
   formatEffort,
-  shiftAppDay,
   sportById,
   type Activity,
   type SportId,
 } from "@fitness-battle/shared";
 
 type HistoryTab = "competitions" | "activities";
-type ActivityRange = "all" | "month" | "threeMonths" | "sixMonths" | "year";
 
 const TAB_OPTIONS: readonly { value: HistoryTab; label: string }[] = [
   { value: "competitions", label: "Competitions" },
   { value: "activities", label: "Activities" },
-];
-
-const RANGE_OPTIONS: readonly { value: ActivityRange; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "month", label: "1M" },
-  { value: "threeMonths", label: "3M" },
-  { value: "sixMonths", label: "6M" },
-  { value: "year", label: "1Y" },
 ];
 
 export default function ProgressHistoryScreen() {
@@ -49,6 +35,7 @@ export default function ProgressHistoryScreen() {
   const s = useThemedStyles(sThemes);
   const router = useRouter();
   const params = useLocalSearchParams<{ tab?: string }>();
+  const { accessToken } = useAuth();
   const { state } = useCompeteStore();
 
   const [activeTab, setActiveTab] = useState<HistoryTab>(
@@ -57,24 +44,8 @@ export default function ProgressHistoryScreen() {
   useEffect(() => {
     setActiveTab(params.tab === "activities" ? "activities" : "competitions");
   }, [params.tab]);
-  const [range, setRange] = useState<ActivityRange>("all");
   const [selectedSport, setSelectedSport] = useState<SportId | "all">("all");
   const [inspectedActivity, setInspectedActivity] = useState<Activity | null>(null);
-
-  const now = useMemo(() => (state ? competeNow(state) : new Date()), [state]);
-
-  const cutoff = useMemo(() => {
-    if (range === "all") return 0;
-    const days =
-      range === "month"
-        ? 30
-        : range === "threeMonths"
-          ? 90
-          : range === "sixMonths"
-            ? 180
-            : 365;
-    return shiftAppDay(now, -days).getTime();
-  }, [range, now]);
 
   const filteredActivities = useMemo(() => {
     if (!state?.activities) return [];
@@ -82,11 +53,10 @@ export default function ProgressHistoryScreen() {
       .filter((a) => {
         if (!countsOnTrack(a, "open")) return false;
         if (selectedSport !== "all" && a.sport !== selectedSport) return false;
-        if (cutoff > 0 && Date.parse(a.startedAt) < cutoff) return false;
         return true;
       })
       .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
-  }, [state?.activities, selectedSport, cutoff]);
+  }, [state?.activities, selectedSport]);
 
   const summary = useMemo(() => {
     const count = filteredActivities.length;
@@ -101,16 +71,6 @@ export default function ProgressHistoryScreen() {
       effort,
     };
   }, [filteredActivities]);
-
-  const formatActivityDate = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      timeZone: APP_TIMEZONE,
-    });
-  };
 
   if (!state) return null;
 
@@ -139,14 +99,6 @@ export default function ProgressHistoryScreen() {
           </SectionStack>
         ) : (
           <View style={{ gap: 16 }}>
-            {/* Range Selector */}
-            <FocusSegments
-              label="Activity time range"
-              value={range}
-              options={RANGE_OPTIONS}
-              onChange={setRange}
-            />
-
             {/* Sport Filter Chips */}
             <View style={s.sportRow}>
               {(["all", "running", "cycling"] as const).map((sport) => {
@@ -198,50 +150,22 @@ export default function ProgressHistoryScreen() {
             {filteredActivities.length === 0 ? (
               <View style={s.emptyCard}>
                 <AppText role="body" secondary>
-                  No activities found for the selected time range and sport.
+                  No activities found for the selected sport.
                 </AppText>
               </View>
             ) : (
               <View style={s.listContainer}>
-                {filteredActivities.map((activity) => {
-                  const sportInfo = sportById(activity.sport);
-                  const effort = formatEffort(activityEffort(activity));
-                  return (
-                    <Pressable
-                      key={activity.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={`${sportInfo.name}, ${formatClockTime(activity.movingSec)}, ${effort} effort`}
-                      onPress={() => setInspectedActivity(activity)}
-                      style={s.activityRow}
-                    >
-                      <View style={s.activityIconWrapper}>
-                        <SportActivityIcon sport={activity.sport} />
-                      </View>
-                      <View style={{ flex: 1, gap: 2 }}>
-                        <AppText role="row">
-                          {sportInfo.name}
-                        </AppText>
-                        <AppText role="caption" secondary>
-                          {formatActivityDate(activity.startedAt)}
-                          {activity.distanceM > 0
-                            ? ` · ${formatDistanceM(activity.distanceM, state.units)} ${distanceUnitLabel(state.units)}`
-                            : ""}
-                        </AppText>
-                      </View>
-                      <View style={{ alignItems: "flex-end", gap: 2 }}>
-                        <AppText role="value" style={{ fontVariant: ["tabular-nums"] }}>
-                          {formatClockTime(activity.movingSec)}
-                        </AppText>
-                        <AppText role="label" style={{ color: c.tennis }}>
-                          {effort} effort
-                        </AppText>
-                      </View>
-                      <AppText role="caption" secondary style={{ marginLeft: 6 }}>
-                        ›
-                      </AppText>
-                    </Pressable>
-                  );
-                })}
+                {filteredActivities.map((activity) => (
+                  <ActivityListRow
+                    key={activity.id}
+                    activity={activity}
+                    history={state.activities}
+                    units={state.units}
+                    accessToken={accessToken}
+                    surface="soft"
+                    onPress={setInspectedActivity}
+                  />
+                ))}
               </View>
             )}
           </View>
@@ -311,24 +235,6 @@ const sThemes = createThemedStyles((themeColors) => {
     },
     listContainer: {
       gap: 8,
-    },
-    activityRow: {
-      padding: 14,
-      borderRadius: 16,
-      backgroundColor: c.soft,
-      borderWidth: 1,
-      borderColor: c.line,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-    },
-    activityIconWrapper: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: `${c.tennis}22`,
-      alignItems: "center",
-      justifyContent: "center",
     },
   };
 });

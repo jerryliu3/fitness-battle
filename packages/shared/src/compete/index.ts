@@ -91,8 +91,15 @@ export {
   activityEffort,
   periodEffort,
   eloFromWeeklyEffort,
+  sessionEffortSummary,
+  EFFORT_BAR_COLOR_ROLES,
+  EFFORT_BAR_HEIGHT_RATIOS,
+  EFFORT_TIER_LABELS,
   HR_WEIGHT,
   PACE_WEIGHT,
+  type EffortBarCount,
+  type EffortTier,
+  type SessionEffortSummary,
 } from "./effort";
 export { expectedScore, settleElo } from "./elo";
 export { lessonFor, type Lesson } from "./lessons";

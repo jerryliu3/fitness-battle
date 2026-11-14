@@ -146,4 +146,67 @@ describe("home-deck shared model", () => {
     expect(shouldSwipeDismiss(-30, 5)).toBeNull();
     expect(shouldSwipeDismiss(-80, 90)).toBeNull();
   });
+
+  it("keeps today's mileage bar free of typical/axes labels and positions You vs rival dots by lead", () => {
+    const now = new Date("2026-10-22T14:00:00.000Z");
+    let state = reduceCompete(freshState(now), { type: "opt-in", sport: "running" });
+    state = {
+      ...state,
+      units: "metric",
+      activities: [
+        {
+          id: "prior-1",
+          sport: "running",
+          startedAt: "2026-10-10T12:00:00.000Z",
+          distanceM: 10000,
+          movingSec: 3000,
+          avgHr: 145,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "today-1",
+          sport: "running",
+          startedAt: "2026-10-22T11:30:00.000Z",
+          distanceM: 5000,
+          movingSec: 1500,
+          avgHr: 145,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+      ],
+    };
+
+    const cards = buildHomeDeck(state, { now });
+    const sessionVisual = cards[0]?.visual;
+    expect(sessionVisual?.mode).toBe("progress");
+    expect(sessionVisual?.leftLabel).toBeUndefined();
+    expect(sessionVisual?.rightLabel).toBeUndefined();
+    expect(sessionVisual?.primaryFraction).toBeCloseTo(0.5, 4);
+
+    // Give a synthetic rival on the seeded field to verify compare ordering
+    const aheadState = {
+      ...state,
+      enrollments: state.enrollments.map((e) => ({
+        ...e,
+        syntheticIds: e.syntheticIds,
+      })),
+    };
+    const aheadCards = buildHomeDeck(aheadState, { now });
+    const competeVisual = aheadCards[1]?.visual;
+    if (competeVisual) {
+      expect(competeVisual.mode).toBe("compare");
+      const youPos = competeVisual.primaryFraction;
+      const rivalPos = competeVisual.markerFraction!;
+      if (competeVisual.rightLabel === "You") {
+        expect(youPos).toBeGreaterThan(rivalPos);
+      } else {
+        expect(youPos).toBeLessThan(rivalPos);
+      }
+    }
+  });
 });

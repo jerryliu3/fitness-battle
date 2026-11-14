@@ -98,3 +98,25 @@ export function formatAppCalendarDate(
 ): string {
   return new Date(`${day}T12:00:00Z`).toLocaleDateString("en-US", { timeZone, ...options });
 }
+
+/** Format an instant as "MMM d, h:mm PM" without timezone suffixes or "at". */
+export function formatAppDateTime(
+  value: string | Date,
+  options: { weekday?: boolean; year?: boolean; timeZone?: string } = {},
+): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  const timeZone = options.timeZone ?? APP_TIMEZONE;
+  const dateLabel = date.toLocaleDateString("en-US", {
+    ...(options.weekday ? { weekday: "short" } : {}),
+    month: "short",
+    day: "numeric",
+    ...(options.year ? { year: "numeric" } : {}),
+    timeZone,
+  });
+  const timeLabel = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone,
+  });
+  return `${dateLabel}, ${timeLabel}`;
+}

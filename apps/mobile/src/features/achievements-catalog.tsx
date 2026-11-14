@@ -1,13 +1,20 @@
 import { useThemedStyles } from "../theme";
 import { useFocusStyles } from "../ui/focus";
 import { createThemedStyles, useThemeColors } from "../theme";
-import { SectionStack, StatusBadge, AppText } from "../ui/section";
+import { SectionHeader, SectionStack, StatusBadge, AppText } from "../ui/section";
 import { useState } from "react";
 import { Platform, Pressable, ScrollView, View } from "react-native";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import {
   achievementAccessibilityLabel,
   clubAchievements,
+  clubLifetimeTotals,
+  competeNow,
+  distanceUnitLabel,
+  formatClockTime,
+  formatDistanceM,
+  personalRecordHistory,
+  RECORD_DISTANCES,
   sportById,
   type ClubAchievement,
   type CompeteState,
@@ -45,9 +52,14 @@ export function AchievementsCatalog({
   state: CompeteState;
   initialId?: string;
 }) {
-const f=useFocusStyles();
+  const c = useThemeColors();
+  const f = useFocusStyles();
 
   const rows = clubAchievements(state);
+  const now = competeNow(state);
+  const season = clubLifetimeTotals(state);
+  const unit = distanceUnitLabel(state.units);
+  const topRecord = personalRecordHistory(state, now)[0];
   const [selected, setSelected] = useState(
     initialId && rows.some((row) => row.id === initialId)
       ? initialId
@@ -99,6 +111,45 @@ const f=useFocusStyles();
           <StatusBadge tone={row.earned ? "success" : "neutral"}>{row.earned ? "Earned" : "Up next"}</StatusBadge>
         </Pressable>
       ))}
+      <View style={f.section}>
+        <SectionHeader title="Since the first mile" subtitle="Counted training · 2026" />
+        <View style={[f.row, { paddingVertical: 12, justifyContent: "space-around" }]}>
+          <View style={{ alignItems: "center", gap: 4, flex: 1 }}>
+            <AppText role="display">{formatDistanceM(season.meters, state.units)}</AppText>
+            <AppText role="caption" secondary>{unit} total</AppText>
+          </View>
+          <View style={{ alignItems: "center", gap: 4, flex: 1 }}>
+            <AppText role="display">{season.sessions}</AppText>
+            <AppText role="caption" secondary>Sessions</AppText>
+          </View>
+          <View style={{ alignItems: "center", gap: 4, flex: 1 }}>
+            <AppText role="display">{season.weeks}</AppText>
+            <AppText role="caption" secondary>Active weeks</AppText>
+          </View>
+          <View style={{ alignItems: "center", gap: 4, flex: 1 }}>
+            <AppText role="display">{state.lifetimeOvertakes ?? 0}</AppText>
+            <AppText role="caption" secondary>Overtakes</AppText>
+          </View>
+        </View>
+      </View>
+
+      <View style={f.section}>
+        <SectionHeader title="A few proud moments" subtitle="Milestones earned by showing up" />
+        <View style={[f.row, { gap: 12 }]}>
+          <View style={[f.card, { flex: 1, padding: 14, backgroundColor: c.card, gap: 4 }]}>
+            <AppText role="label">Four weeks strong</AppText>
+            <AppText role="caption" secondary>4 active weeks in a row</AppText>
+          </View>
+          {topRecord ? (
+            <View style={[f.card, { flex: 1, padding: 14, backgroundColor: c.card, gap: 4 }]}>
+              <AppText role="label">A new best</AppText>
+              <AppText role="caption" secondary>
+                {formatClockTime(topRecord.seconds)} · Fastest {RECORD_DISTANCES[topRecord.sport]?.find((d) => d.id === topRecord.distanceId)?.label ?? topRecord.distanceId}
+              </AppText>
+            </View>
+          ) : null}
+        </View>
+      </View>
     </SectionStack>
 </ScrollView>
   );

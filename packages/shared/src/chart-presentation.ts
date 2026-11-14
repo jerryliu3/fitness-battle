@@ -331,3 +331,136 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
     `${chart.segments[index]!.split(" ").at(-1)} ${line.split(" ")[0]}`) };
 
 }
+
+export type BenchmarkBarsModel = ReturnType<typeof benchmarkBars>;
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+function parsePolyline(raw: string): { x: number; y: number }[] {
+  if (!raw.trim()) return [];
+  const points: { x: number; y: number }[] = [];
+  for (const token of raw.trim().split(/\s+/)) {
+    const [xs, ys] = token.split(",");
+    const x = Number(xs);
+    const y = Number(ys);
+    if (Number.isFinite(x) && Number.isFinite(y)) points.push({ x, y });
+  }
+  return points;
+}
+
+function sampleXY(pts: readonly { x: number; y: number }[], u: number): { x: number; y: number } {
+  if (pts.length === 1) return pts[0]!;
+  const pos = Math.max(0, Math.min(1, u)) * (pts.length - 1);
+  const lo = Math.floor(pos);
+  const hi = Math.min(pts.length - 1, Math.ceil(pos));
+  const frac = pos - lo;
+  return { x: lerp(pts[lo]!.x, pts[hi]!.x, frac), y: lerp(pts[lo]!.y, pts[hi]!.y, frac) };
+}
+
+function morphPolyline(fromRaw: string, toRaw: string, t: number): string {
+  const fromPts = parsePolyline(fromRaw);
+  const toPts = parsePolyline(toRaw);
+  if (!fromPts.length && !toPts.length) return "";
+  if (!fromPts.length || !toPts.length) return t >= 0.5 ? toRaw : fromRaw;
+  const count = fromPts.length === 2 && toPts.length === 2 ? 2 : Math.max(24, fromPts.length, toPts.length);
+  const out: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const u = count === 1 ? 0 : i / (count - 1);
+    const a = sampleXY(fromPts, u);
+    const b = sampleXY(toPts, u);
+    out.push(`${lerp(a.x, b.x, t).toFixed(1)},${lerp(a.y, b.y, t).toFixed(1)}`);
+  }
+  return out.join(" ");
+}
+
+function morphFormattedNumber(fromVal: string, toVal: string, t: number): string {
+  const a = Number(fromVal.replace(/,/g, ""));
+  const b = Number(toVal.replace(/,/g, ""));
+  if (!Number.isFinite(a) || !Number.isFinite(b) || !fromVal.trim() || !toVal.trim()) {
+    return t >= 0.5 ? toVal : fromVal;
+  }
+  const decimals = toVal.includes(".") ? toVal.split(".")[1]!.length : 0;
+  const val = lerp(a, b, t);
+  if (toVal.includes(",")) {
+    return val.toLocaleString("en-US", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+  }
+  return decimals > 0 ? val.toFixed(decimals) : String(Math.round(val));
+}
+
+/** Smoothly morph line-chart geometry and headline reading when switching ranges. */
+export function interpolateOpenLineModel(
+  from: OpenLineModel,
+  to: OpenLineModel,
+  t: number,
+): OpenLineModel {
+  const u = Math.max(0, Math.min(1, t));
+  if (u <= 0) return from;
+  if (u >= 1) return to;
+  const fromFallback = from.segments.at(-1) ?? from.line;
+  const segments = to.segments.map((seg, i) =>
+    morphPolyline(from.segments[i] ?? fromFallback, seg, u),
+  );
+  const bridges = to.bridges?.map((bridge, i) =>
+    morphPolyline(from.bridges?.[i] ?? from.bridges?.at(-1) ?? bridge, bridge, u),
+  );
+  const fromEnd = from.points.at(-1);
+  const toEnd = to.points.at(-1);
+  const points =
+    fromEnd && toEnd && to.points.length > 0
+      ? [
+          ...to.points.slice(0, -1),
+          { ...toEnd, x: lerp(fromEnd.x, toEnd.x, u), y: lerp(fromEnd.y, toEnd.y, u) },
+        ]
+      : to.points;
+  return {
+    ...to,
+    segments,
+    ...(bridges ? { bridges } : {}),
+    line: morphPolyline(from.line, to.line, u),
+    trendLine: morphPolyline(from.trendLine, to.trendLine, u),
+    value: morphFormattedNumber(from.value, to.value, u),
+    points,
+    xTicks: u < 0.35 ? from.xTicks : to.xTicks,
+    yTicks: to.yTicks.map((tick, i) => ({
+      ...tick,
+      y: lerp(from.yTicks[i]?.y ?? tick.y, tick.y, u),
+    })),
+  };
+}
+
+/** Smoothly morph benchmark bar heights, widths, average line, and axis ticks between ranges. */
+export function interpolateBenchmarkBars(
+  from: BenchmarkBarsModel,
+  to: BenchmarkBarsModel,
+  t: number,
+): BenchmarkBarsModel {
+  const u = Math.max(0, Math.min(1, t));
+  if (u <= 0) return from;
+  if (u >= 1) return to;
+  const bars = to.bars.map((bar, i) => {
+    if (!from.bars.length) return bar;
+    const norm = to.bars.length > 1 ? i / (to.bars.length - 1) : 0.5;
+    const sampled = sampleXY(from.bars, norm);
+    return {
+      ...bar,
+      x: lerp(sampled.x, bar.x, u),
+      y: lerp(sampled.y, bar.y, u),
+    };
+  });
+  return {
+    ...to,
+    bars,
+    barWidth: lerp(from.barWidth, to.barWidth, u),
+    average: lerp(from.average, to.average, u),
+    averageY: lerp(from.averageY, to.averageY, u),
+    ticks: to.ticks.map((tick, i) => ({
+      ...tick,
+      y: lerp(from.ticks[i]?.y ?? tick.y, tick.y, u),
+    })),
+  };
+}

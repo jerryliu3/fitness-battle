@@ -19,7 +19,7 @@ import {
   type ScrollViewInstance,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { APP_TIMEZONE, syncReviewMetrics, clubDuration, formatVolume, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
+import { APP_TIMEZONE, syncReviewMetrics, clubDuration, formatAppDateTime, formatVolume, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { FocusButton } from "../ui/focus";
 import { ActivityRoute } from "../ui/activity-route";
 import { RouteStaticPreview } from "../ui/route-static-preview";
@@ -122,7 +122,7 @@ const c=useThemeColors();
     <Text style={f.kicker}>ACTIVITY DETAILS</Text><Text accessibilityRole="header" style={[textStyle("display"), { color: c.ink }]}>{sportById(activity.sport).name}</Text>
     <ActivityRoute activity={activity} units={state.units}/>
     <Text style={[textStyle("heading"), { color: c.ink }]}>{formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units)} · {clubDuration(activity.movingSec)}</Text>
-    <Text style={[textStyle("body"), { color: c.ink }]}>{new Date(activity.startedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: APP_TIMEZONE })}</Text>
+    <Text style={[textStyle("body"), { color: c.ink }]}>{formatAppDateTime(activity.startedAt, { year: true })}</Text>
     <ActivityMetricBars activity={activity} history={[...receipt.activities, ...state.activities]} units={state.units}/>
   </View>;
   return <View style={{ gap: 20, flex: 1 }}>

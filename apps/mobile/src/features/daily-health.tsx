@@ -1,22 +1,216 @@
 import { homeHealthColors } from "@fitness-battle/shared";
 import { createThemedStyles, useThemedStyles, useHomeHealthColors } from "../theme";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
-import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
+import { Circle, G, Line, Path } from "react-native-svg";
 import { formatHealthNumber, buildHealth7DayCorridorModel, competeNow, dottedCircleDasharray, healthSignal, healthSignalBounds, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
 import { ChartScrubber, type ChartDatum } from "../ui/chart-scrubber";
-import { AppText, chartTextProps } from "../ui/section";
+import { ChartSvg, ChartText } from "../ui/chart-text";
+import { AppText } from "../ui/section";
 import { useReducedMotion } from "../ui/use-reduced-motion";
+
+type HealthMetricItem = ReturnType<typeof homeHealthMetrics>[number];
+
+const HealthCorridorDetail = memo(function HealthCorridorDetail({
+  selected,
+  now,
+  colors,
+  detailAnim,
+  detailHeight,
+  onMeasureHeight,
+  originOffsetX,
+  reduceMotion,
+  styles: s,
+}: {
+  selected: HealthMetricItem;
+  now: Date;
+  colors: ReturnType<typeof useHomeHealthColors>;
+  detailAnim: Animated.Value;
+  detailHeight: number;
+  onMeasureHeight: (height: number) => void;
+  originOffsetX: number;
+  reduceMotion: boolean;
+  styles: typeof sThemes[keyof typeof sThemes];
+}) {
+  const [scrubbedPoint, setScrubbedPoint] = useState<ChartDatum | undefined>(undefined);
+  useEffect(() => {
+    setScrubbedPoint(undefined);
+  }, [selected.id]);
+
+  const chart = useMemo(
+    () => buildHealth7DayCorridorModel(selected, now, { weekCorridorFallback: true }),
+    [selected, now],
+  );
+  const scrubPoints = useMemo<ChartDatum[]>(
+    () =>
+      chart.points
+        .filter((p) => p.value != null && p.y != null)
+        .map((p) => ({
+          id: String(p.index),
+          x: p.x,
+          y: p.y!,
+          label: p.dateLabel,
+          value: selected.id === "sleep" ? p.formatted : formatHealthNumber(p.value!),
+        })),
+    [chart.points, selected.id],
+  );
+
+  // Memoize the static SVG scene so scrubbing only updates the reading header and scrubber hairline.
+  const chartSvg = useMemo(
+    () => (
+      <ChartSvg
+        width="100%"
+        height={chart.height}
+        viewBox={`0 0 ${chart.width} ${chart.height}`}
+        preserveAspectRatio="none"
+        accessible={false}
+      >
+        {chart.yTicks.map((tick, i) => (
+          <G key={`y-${tick.value}-${i}`}>
+            <Line
+              x1={chart.plotLeft}
+              x2={chart.plotRight}
+              y1={tick.y}
+              y2={tick.y}
+              stroke={colors.secondary}
+              strokeWidth={0.5}
+              opacity={0.3}
+            />
+            <ChartText x={chart.plotLeft - 6} y={tick.y + 4} textAnchor="end" fill={colors.secondary}>
+              {tick.label}
+            </ChartText>
+          </G>
+        ))}
+        {chart.hasBaseline && (
+          <G>
+            <Path d={chart.corridorAreaPath} fill={colors.accent} opacity={0.14} />
+            <Line
+              x1={chart.plotLeft}
+              x2={chart.plotRight}
+              y1={chart.corridorYTop}
+              y2={chart.corridorYTop}
+              stroke={colors.accent}
+              strokeDasharray="3 3"
+              opacity={0.75}
+            />
+            <Line
+              x1={chart.plotLeft}
+              x2={chart.plotRight}
+              y1={chart.corridorYBottom}
+              y2={chart.corridorYBottom}
+              stroke={colors.accent}
+              strokeDasharray="3 3"
+              opacity={0.75}
+            />
+          </G>
+        )}
+        {chart.points.map((p) => {
+          if (p.value == null || p.y == null) return null;
+          const isOutOfCorridor = p.position === "under" || p.position === "over";
+          return (
+            <Circle
+              key={p.index}
+              cx={p.x}
+              cy={p.y}
+              r={4}
+              fill={isOutOfCorridor ? colors.tile : colors.accent}
+              stroke={isOutOfCorridor ? colors.accent : "none"}
+              strokeWidth={isOutOfCorridor ? 1.6 : 0}
+              strokeDasharray={isOutOfCorridor ? dottedCircleDasharray(4, 8) : undefined}
+            />
+          );
+        })}
+        {chart.points.map((p) => (
+          <ChartText
+            key={`l-${p.index}`}
+            x={p.x}
+            y={chart.height - 4}
+            textAnchor="middle"
+            fill={p.index === 6 ? colors.text : colors.secondary}
+          >
+            {p.dayLabel}
+          </ChartText>
+        ))}
+      </ChartSvg>
+    ),
+    [chart, colors],
+  );
+
+  const activeReading = scrubbedPoint ? scrubbedPoint.value : selected.value;
+  const animateExpand = !reduceMotion && typeof detailAnim?.interpolate === "function";
+  const outerMotionStyle = animateExpand
+    ? {
+        overflow: "hidden" as const,
+        height: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0, detailHeight] }),
+        marginTop: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 16] }),
+      }
+    : { marginTop: 16 };
+  const innerMotionStyle = animateExpand
+    ? {
+        position: "absolute" as const,
+        top: 0,
+        left: 0,
+        right: 0,
+        opacity: detailAnim.interpolate({ inputRange: [0, 0.05, 1], outputRange: [0, 1, 1] }),
+        transform: [
+          { translateX: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [originOffsetX, 0] }) },
+          { translateY: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [-detailHeight * 0.425, 0] }) },
+          { scale: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0.15, 1] }) },
+        ],
+      }
+    : undefined;
+
+  return (
+    <Animated.View style={outerMotionStyle}>
+      <Animated.View
+        style={[s.detail, innerMotionStyle]}
+        onLayout={(event) => {
+          const nextHeight = Math.ceil(event.nativeEvent.layout.height);
+          if (nextHeight > 0 && Math.abs(nextHeight - detailHeight) > 1) {
+            onMeasureHeight(nextHeight);
+          }
+        }}
+      >
+        <View style={s.detailHeader} accessibilityLiveRegion="polite">
+          <View style={s.detailTitleRow}>
+            <AppText role="label" style={{ color: colors.text }}>
+              {selected.name}
+            </AppText>
+            <AppText role="label" numberOfLines={1} style={{ color: colors.accent, fontVariant: ["tabular-nums"] }}>
+              {`${activeReading}${selected.unit && activeReading !== "—" ? ` ${selected.unit}` : ""}`}
+            </AppText>
+          </View>
+        </View>
+        <View style={s.chartBox}>
+          <ChartScrubber
+            key={selected.id}
+            hideSummary
+            hideSelectionDot
+            points={scrubPoints}
+            width={chart.width}
+            height={chart.height}
+            plotTop={chart.plotTop}
+            plotBottom={chart.plotBottom}
+            onSelectionChange={setScrubbedPoint}
+            label={`${selected.name} 7-day trend`}
+          >
+            {chartSvg}
+          </ChartScrubber>
+        </View>
+      </Animated.View>
+    </Animated.View>
+  );
+});
 
 export function DailyHealth({ state }: { state: CompeteState }) {
 const colors=useHomeHealthColors();
 const s=useThemedStyles(sThemes);
 
-  const metrics = homeHealthMetrics(state);
+  const metrics = useMemo(() => homeHealthMetrics(state), [state]);
+  const now = useMemo(() => competeNow(state), [state]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [displayedId, setDisplayedId] = useState<string | null>(null);
   const [detailHeight, setDetailHeight] = useState(218);
-  const [scrubbedPoint, setScrubbedPoint] = useState<ChartDatum | undefined>(undefined);
   const { fontScale, width } = useWindowDimensions();
   const reduceMotion = useReducedMotion();
   const detailAnim = useRef(new Animated.Value(0)).current;
@@ -85,7 +279,6 @@ const s=useThemedStyles(sThemes);
                 const next = expanded === metric.id ? null : metric.id;
                 setExpanded(next);
                 if (next) setDisplayedId(next);
-                setScrubbedPoint(undefined);
               }}
               style={[
                 s.tile,
@@ -97,7 +290,7 @@ const s=useThemedStyles(sThemes);
                 {metric.name}
               </AppText>
               <View style={[s.signal, { maxWidth: 160 * fontScale }]}>
-                <Svg width="100%" height="100%" viewBox="0 0 144 144" accessible={false} style={StyleSheet.absoluteFill}>
+                <ChartSvg width="100%" height="100%" viewBox="0 0 144 144" accessible={false} style={StyleSheet.absoluteFill}>
                   <Path d={signal.track} fill="none" stroke={colors.border} strokeWidth={7} strokeLinecap="round" />
                   {signal.ticks.map((tick, i) => (
                     <Line
@@ -114,15 +307,15 @@ const s=useThemedStyles(sThemes);
                   )}
                   {bounds && (
                     <G>
-                      <SvgText {...chartTextProps()} x={34} y={135} textAnchor="middle" fill={colors.secondary}>
+                      <ChartText x={34} y={135} textAnchor="middle" fill={colors.secondary}>
                         {bounds.min}
-                      </SvgText>
-                      <SvgText {...chartTextProps()} x={110} y={135} textAnchor="middle" fill={colors.secondary}>
+                      </ChartText>
+                      <ChartText x={110} y={135} textAnchor="middle" fill={colors.secondary}>
                         {bounds.max}
-                      </SvgText>
+                      </ChartText>
                     </G>
                   )}
-                </Svg>
+                </ChartSvg>
                 <View style={s.reading}>
                   <AppText role={fontScale > 1.2 || width >= 360 ? "value" : "body"} style={s.value}>
                     {metric.value}
@@ -134,163 +327,19 @@ const s=useThemedStyles(sThemes);
           );
         })}
       </View>
-      {selected && (() => {
-        const chart = buildHealth7DayCorridorModel(selected, competeNow(state), { weekCorridorFallback: true });
-        const scrubPoints: ChartDatum[] = chart.points
-          .filter((p) => p.value != null && p.y != null)
-          .map((p) => ({
-            id: String(p.index),
-            x: p.x,
-            y: p.y!,
-            label: p.dateLabel,
-            value: selected.id === "sleep" ? p.formatted : formatHealthNumber(p.value!),
-          }));
-        const scrubbedModelPt = scrubbedPoint
-          ? chart.points.find((p) => String(p.index) === scrubbedPoint.id)
-          : undefined;
-        const isScrubbedOutOfCorridor = Boolean(
-          scrubbedModelPt && (scrubbedModelPt.position === "under" || scrubbedModelPt.position === "over"),
-        );
-        const activeReading = scrubbedPoint ? scrubbedPoint.value : selected.value;
-        const animateExpand = !reduceMotion && typeof detailAnim?.interpolate === "function";
-        const originOffsetX = fontScale > 1.2 ? 0 : (originRight ? 1 : -1) * Math.min(110, width * 0.22);
-        const outerMotionStyle = animateExpand
-          ? {
-              overflow: "hidden" as const,
-              height: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0, detailHeight] }),
-              marginTop: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 16] }),
-            }
-          : { marginTop: 16 };
-        const innerMotionStyle = animateExpand
-          ? {
-              position: "absolute" as const,
-              top: 0,
-              left: 0,
-              right: 0,
-              opacity: detailAnim.interpolate({ inputRange: [0, 0.05, 1], outputRange: [0, 1, 1] }),
-              transform: [
-                { translateX: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [originOffsetX, 0] }) },
-                { translateY: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [-detailHeight * 0.425, 0] }) },
-                { scale: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0.15, 1] }) },
-              ],
-            }
-          : undefined;
-        return (
-          <Animated.View style={outerMotionStyle}>
-          <Animated.View
-            style={[s.detail, innerMotionStyle]}
-            accessibilityLiveRegion="polite"
-            onLayout={(event) => {
-              const nextHeight = Math.ceil(event.nativeEvent.layout.height);
-              if (nextHeight > 0 && Math.abs(nextHeight - detailHeight) > 1) {
-                setDetailHeight(nextHeight);
-              }
-            }}
-          >
-            <View style={s.detailHeader}>
-              <View style={s.detailTitleRow}>
-                <AppText role="label" style={{ color: colors.text }}>
-                  {selected.name}
-                </AppText>
-                <AppText role="label" style={{ color: colors.accent, fontVariant: ["tabular-nums"] }}>
-                  {`${activeReading}${selected.unit && activeReading !== "—" ? ` ${selected.unit}` : ""}`}
-                </AppText>
-              </View>
-            </View>
-            <View style={s.chartBox}>
-              <ChartScrubber
-                key={selected.id}
-                hideSummary
-                hideSelectionDot
-                points={scrubPoints}
-                width={chart.width}
-                height={chart.height}
-                plotTop={chart.plotTop}
-                plotBottom={chart.plotBottom}
-                onSelectionChange={setScrubbedPoint}
-                label={`${selected.name} 7-day trend`}
-              >
-                <Svg width="100%" height={chart.height} viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" accessible={false}>
-                  {chart.yTicks.map((tick, i) => (
-                    <G key={`y-${tick.value}-${i}`}>
-                      <Line
-                        x1={chart.plotLeft}
-                        x2={chart.plotRight}
-                        y1={tick.y}
-                        y2={tick.y}
-                        stroke={colors.secondary}
-                        strokeWidth={0.5}
-                        opacity={0.3}
-                      />
-                      <SvgText
-                        {...chartTextProps()}
-                        x={chart.plotLeft - 6}
-                        y={tick.y + 4}
-                        textAnchor="end"
-                        fill={colors.secondary}
-                      >
-                        {tick.label}
-                      </SvgText>
-                    </G>
-                  ))}
-                  {chart.hasBaseline && (
-                    <G>
-                      <Path d={chart.corridorAreaPath} fill={colors.accent} opacity={0.14} />
-                      <Line
-                        x1={chart.plotLeft}
-                        x2={chart.plotRight}
-                        y1={chart.corridorYTop}
-                        y2={chart.corridorYTop}
-                        stroke={colors.accent}
-                        strokeDasharray="3 3"
-                        opacity={0.75}
-                      />
-                      <Line
-                        x1={chart.plotLeft}
-                        x2={chart.plotRight}
-                        y1={chart.corridorYBottom}
-                        y2={chart.corridorYBottom}
-                        stroke={colors.accent}
-                        strokeDasharray="3 3"
-                        opacity={0.75}
-                      />
-                    </G>
-                  )}
-                  {chart.points.map((p) => {
-                    if (p.value == null || p.y == null) return null;
-                    const isOutOfCorridor = p.position === "under" || p.position === "over";
-                    return (
-                      <Circle
-                        key={p.index}
-                        cx={p.x}
-                        cy={p.y}
-                        r={4}
-                        fill={isOutOfCorridor ? colors.tile : colors.accent}
-                        stroke={isOutOfCorridor ? colors.accent : "none"}
-                        strokeWidth={isOutOfCorridor ? 1.6 : 0}
-                        strokeDasharray={isOutOfCorridor ? dottedCircleDasharray(4, 8) : undefined}
-                      />
-                    );
-                  })}
-                  {chart.points.map((p) => (
-                    <SvgText
-                      {...chartTextProps()}
-                      key={`l-${p.index}`}
-                      x={p.x}
-                      y={chart.height - 4}
-                      textAnchor="middle"
-                      fill={p.index === 6 ? colors.text : colors.secondary}
-                    >
-                      {p.dayLabel}
-                    </SvgText>
-                  ))}
-                </Svg>
-              </ChartScrubber>
-            </View>
-          </Animated.View>
-          </Animated.View>
-        );
-      })()}
+      {selected ? (
+        <HealthCorridorDetail
+          selected={selected}
+          now={now}
+          colors={colors}
+          detailAnim={detailAnim}
+          detailHeight={detailHeight}
+          onMeasureHeight={setDetailHeight}
+          originOffsetX={fontScale > 1.2 ? 0 : (originRight ? 1 : -1) * Math.min(110, width * 0.22)}
+          reduceMotion={reduceMotion}
+          styles={s}
+        />
+      ) : null}
       </View>
     </View>
   );

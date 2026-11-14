@@ -7,7 +7,7 @@ import { AppParagraph, typographyStyle } from "@/ui/section";
 import { StandardLineChart } from "@/ui/standard-line-chart";
 import { Ember } from "@/components/mascot/ember";
 import { CompetitionReplayButton } from "@/features/replay/competition-replay";
-import { APP_TIMEZONE, WEEK_RECAP_COLORS, roundEnrollment, sportById, weekRecapPages, weekRecapTraining, type CompeteState, type PeriodResult } from "@fitness-battle/shared";
+import { WEEK_RECAP_COLORS, formatAppDateTime, roundEnrollment, sportById, weekRecapPages, weekRecapTraining, type CompeteState, type PeriodResult } from "@fitness-battle/shared";
 import { colors } from "@/theme/app-colors";
 import { ResultCard } from "./result-card";
 import { WeeklySocialActions } from "./weekly-social";
@@ -87,7 +87,7 @@ function Training({ state, result }: { state: CompeteState; result: PeriodResult
       xLabels={[series.labels[0]!, series.labels[Math.floor((series.labels.length - 1) / 2)]!, series.labels.at(-1)!]} formatAxisY={v => `${Math.round(v)}`} formatY={v => `${Math.round(v)} min`} ariaLabel="Cumulative training minutes in the settled week" />
       : <AppParagraph>Detailed activity history is unavailable for this archived week.</AppParagraph>}
     <AppParagraph>{enrollment.startsAt
-      ? `Your current round ${enrollment.status === "upcoming" ? "starts" : "started"} ${enrollment.startsAt.toLocaleString("en-US", { timeZone: APP_TIMEZONE, timeZoneName: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}. ${enrollment.renews ? "Renews after this round." : "Stops after this round."}`
+      ? `Your current round ${enrollment.status === "upcoming" ? "starts" : "started"} ${formatAppDateTime(enrollment.startsAt)}. ${enrollment.renews ? "Renews after this round." : "Stops after this round."}`
       : "You’re not registered for another round. Update sport settings to join again."}</AppParagraph>
   </section>;
 }

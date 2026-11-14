@@ -3,7 +3,7 @@ import { Modal, StyleSheet, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView, initialWindowMetrics } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import { APP_TIMEZONE, WEEK_RECAP_COLORS, roundEnrollment, sportById, weekRecapPages, weekRecapTraining, type CompeteState, type PeriodResult } from "@fitness-battle/shared";
+import { WEEK_RECAP_COLORS, formatAppDateTime, roundEnrollment, sportById, weekRecapPages, weekRecapTraining, type CompeteState, type PeriodResult } from "@fitness-battle/shared";
 import { AppText } from "../ui/section";
 import { FocusButton, FocusSheet } from "../ui/focus";
 import { useReducedMotion } from "../ui/use-reduced-motion";
@@ -77,7 +77,7 @@ function Training({ state, result }: { state: CompeteState; result: PeriodResult
       xLabels={[series.labels[0]!, series.labels[Math.floor((series.labels.length - 1) / 2)]!, series.labels.at(-1)!]} formatAxisY={v => `${Math.round(v)}`} formatY={v => `${Math.round(v)} min`} accessibilityLabel="Cumulative training minutes in the settled week" /></View>
       : <AppText style={s.light}>Detailed activity history is unavailable for this archived week.</AppText>}
     <AppText style={s.light}>{enrollment.startsAt
-      ? `Your current round ${enrollment.status === "upcoming" ? "starts" : "started"} ${enrollment.startsAt.toLocaleString("en-US", { timeZone: APP_TIMEZONE, timeZoneName: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}. ${enrollment.renews ? "Renews after this round." : "Stops after this round."}`
+      ? `Your current round ${enrollment.status === "upcoming" ? "starts" : "started"} ${formatAppDateTime(enrollment.startsAt)}. ${enrollment.renews ? "Renews after this round." : "Stops after this round."}`
       : "You’re not registered for another round. Update sport settings to join again."}</AppText>
   </View>;
 }

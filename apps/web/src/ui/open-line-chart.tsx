@@ -1,22 +1,27 @@
 "use client";
 import { colors as c } from "@/theme/app-colors";
 
-import { useState, type ReactNode } from "react";
-import { trendLabelPosition, type OpenLineModel, type OpenLineRange } from "@fitness-battle/shared";
+import { useEffect, useState, type ReactNode } from "react";
+import { useReducedMotion } from "motion/react";
+import { interpolateOpenLineModel, trendLabelPosition, type OpenLineModel, type OpenLineRange } from "@fitness-battle/shared";
 import { OpenLineRangeToggle } from "@/features/progress/chart-range-toggle";
 import { ChartScrubber } from "./chart-scrubber";
 import "./open-line-chart.css";
 import { ChartSvg, ChartText } from "./chart-text";
+import { useChartTween } from "./use-chart-tween";
 
-export function OpenLineChart({ chart, label, unit, range, onRangeChange, includeYear = true, live = false, footerAction, showAxes = true, showDateRange = true }: {
+export function OpenLineChart({ chart: targetChart, label, unit, range, onRangeChange, includeYear = true, live = false, footerAction, showAxes = true, showDateRange = true }: {
   chart: OpenLineModel; showAxes?: boolean; showDateRange?: boolean; label: string; unit: string; range: OpenLineRange;
   onRangeChange: (range: OpenLineRange) => void; includeYear?: boolean; live?: boolean; footerAction?: ReactNode;
 }) {
+  const reduced = Boolean(useReducedMotion());
+  const chart = useChartTween(targetChart, String(range), interpolateOpenLineModel, reduced);
   const [selected, setSelected] = useState(false);
+  useEffect(() => { setSelected(false); }, [range]);
   const end = chart.points.at(-1);
   const avgLabel = trendLabelPosition(chart.trendLine, chart.width);
   return <div className="open-line-chart">
-    <ChartScrubber key={range} points={chart.points} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} label={label} onSelectionChange={point => setSelected(!!point)}
+    <ChartScrubber points={targetChart.points} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} label={label} onSelectionChange={point => setSelected(!!point)}
       renderSummary={point => <div className="open-line-reading" style={{ minHeight: point || showDateRange ? 92 : 64 }}>{(point || showDateRange) && <span>{point?.label ?? chart.date}</span>}<strong>{point?.value ?? chart.value}<small> {unit}</small></strong></div>}>
       <ChartSvg viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" aria-hidden="true">
         {showAxes && <g>

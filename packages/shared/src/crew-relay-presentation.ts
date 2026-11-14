@@ -1,3 +1,4 @@
+import type { CrewContractMetric } from "./crew-passport";
 import { crewRelayScene } from "./crew-relay-scene";
 import {
   crewRelayIsEmpty,
@@ -19,7 +20,10 @@ export function formatCrewRelayVolume(
   sport: SportId,
   value: number,
   units?: UnitSystem,
+  metric?: CrewContractMetric,
 ): string {
+  if (metric === "moving_sec") return `${Number((value / 3600).toFixed(1))} h`;
+  if (metric === "contributors") return `${Math.floor(value + 1e-9)} active`;
   return sessions
     ? `${value} sessions`
     : formatVolume(sport, value, 0, units);
@@ -56,12 +60,13 @@ export function buildCrewRelayViewState(
     compact?: boolean;
   },
 ) {
-  const { model, sessions, kind, target, label, inactiveCount, rosterSize } =
+  const { model, sessions, metric, kind, target, label, inactiveCount, rosterSize } =
     relay;
   const width = options.compact ? Math.max(220, options.containerWidth, model.segments.length * 44 + 52) : crewRelayTrackWidth(options.containerWidth, model);
   return {
     model,
     sessions,
+    metric,
     kind,
     target,
     label,
@@ -80,6 +85,6 @@ export function buildCrewRelayViewState(
       options.userId,
     ),
     volume: (value: number) =>
-      formatCrewRelayVolume(sessions, options.sport, value, options.units),
+      formatCrewRelayVolume(sessions, options.sport, value, options.units, metric),
   };
 }
