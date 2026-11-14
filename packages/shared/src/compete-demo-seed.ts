@@ -82,32 +82,53 @@ export function getDemoCompeteState(
         },
       ],
     };
-    const aliceOpenField = {
-      crewId: "solo",
-      crewName: "Open Field",
-      sport: "running" as SportId,
-      waveStart: waveStartIso,
-      weekEnd: weekEndIso,
-      capacity: 8,
-      memberIds: [
-        "11111111-1111-4111-8111-111111111111",
-        "22222222-2222-4222-8222-222222222222",
-        "33333333-3333-4333-8333-333333333333",
-        "55555555-5555-4555-8555-555555555555",
-        "66666666-6666-4666-8666-666666666666",
-      ],
-      syntheticIds: [] as string[],
-      members: [
-        ...aliceCrewBoard.members,
+    const makeHouseBoard = (
+      sport: SportId,
+      aliceDistanceM: number,
+      aliceMovingSec: number,
+      aliceElo: number,
+    ) => {
+      const base = [
+        { id: "c0ffee00-0000-4000-8000-000000000001", name: "Noah Brooks", elo: 970, distanceM: sport === "strength" ? 0 : 6200, movingSec: sport === "strength" ? 2080 : 1980 },
+        { id: "c0ffee00-0000-4000-8000-000000000002", name: "Priya Shah", elo: 1040, distanceM: sport === "cycling" ? 18200 : sport === "strength" ? 0 : 6800, movingSec: sport === "strength" ? 2160 : 2100 },
+        { id: "c0ffee00-0000-4000-8000-000000000003", name: "Hana Ito", elo: 1110, distanceM: sport === "cycling" ? 22400 : sport === "strength" ? 0 : 7400, movingSec: sport === "strength" ? 2240 : 2260 },
+        { id: "c0ffee00-0000-4000-8000-000000000004", name: "Owen Blake", elo: 1180, distanceM: sport === "cycling" ? 26100 : sport === "strength" ? 0 : 8100, movingSec: sport === "strength" ? 2320 : 2380 },
+        { id: "c0ffee00-0000-4000-8000-000000000005", name: "Sofia Rossi", elo: 1250, distanceM: sport === "cycling" ? 15600 : sport === "strength" ? 0 : 5900, movingSec: sport === "strength" ? 2400 : 1940 },
+        { id: "c0ffee00-0000-4000-8000-000000000006", name: "Jonah Adeyemi", elo: 1320, distanceM: sport === "cycling" ? 19800 : sport === "strength" ? 0 : 6500, movingSec: sport === "strength" ? 2480 : 2040 },
+        { id: "c0ffee00-0000-4000-8000-000000000007", name: "Mina Cho", elo: 1390, distanceM: sport === "cycling" ? 21000 : sport === "strength" ? 0 : 7000, movingSec: sport === "strength" ? 2560 : 2120 },
+      ];
+      const members = [
         {
-          id: "66666666-6666-4666-8666-666666666666",
-          name: "Jordan Lee",
-          elo: 1090,
-          distanceM: 12000,
-          movingSec: 4000,
+          id: "11111111-1111-4111-8111-111111111111",
+          name: "Alice Park",
+          elo: aliceElo,
+          verifiedElo: aliceElo,
+          distanceM: aliceDistanceM,
+          movingSec: aliceMovingSec,
+          verifiedDistanceM: sport === "strength" ? 0 : aliceDistanceM,
+          verifiedMovingSec: sport === "strength" ? 0 : aliceMovingSec,
         },
-      ],
+        ...base.map((peer) => ({
+          ...peer,
+          verifiedElo: peer.elo,
+          verifiedDistanceM: sport === "strength" ? 0 : peer.distanceM,
+          verifiedMovingSec: sport === "strength" ? 0 : peer.movingSec,
+        })),
+      ];
+      return {
+        crewId: "solo",
+        crewName: "Open Field",
+        sport,
+        waveStart: waveStartIso,
+        weekEnd: weekEndIso,
+        capacity: 8,
+        memberIds: members.map((member) => member.id),
+        syntheticIds: [] as string[],
+        members,
+      };
     };
+    const cyclingFieldBoard = makeHouseBoard("cycling", 24000, 3900, 1055);
+    const strengthFieldBoard = makeHouseBoard("strength", 0, 16200, 1035);
     return {
       ...base,
       name: "Alice Park",
@@ -189,16 +210,13 @@ export function getDemoCompeteState(
           waveStart: waveStartIso,
           weekEnd: weekEndIso,
           capacity: 8,
-          peerIds: [
-            "22222222-2222-4222-8222-222222222222",
-            "33333333-3333-4333-8333-333333333333",
-            "55555555-5555-4555-8555-555555555555",
-            "66666666-6666-4666-8666-666666666666",
-          ],
+          peerIds: aliceCrewBoard.memberIds.filter(
+            (id) => id !== "11111111-1111-4111-8111-111111111111",
+          ),
           syntheticIds: [],
           autoEnrollNext: true,
           crewId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-          fieldBoard: aliceOpenField,
+          fieldBoard: aliceCrewBoard,
           awaitingField: false,
         },
         {
@@ -206,20 +224,28 @@ export function getDemoCompeteState(
           waveStart: waveStartIso,
           weekEnd: weekEndIso,
           capacity: 8,
-          peerIds: ["22222222-2222-4222-8222-222222222222"],
+          peerIds: cyclingFieldBoard.memberIds.filter(
+            (id) => id !== "11111111-1111-4111-8111-111111111111",
+          ),
           syntheticIds: [],
           autoEnrollNext: true,
           crewId: null,
+          fieldBoard: cyclingFieldBoard,
+          awaitingField: false,
         },
         {
           sport: "strength",
           waveStart: waveStartIso,
           weekEnd: weekEndIso,
           capacity: 8,
-          peerIds: ["33333333-3333-4333-8333-333333333333"],
+          peerIds: strengthFieldBoard.memberIds.filter(
+            (id) => id !== "11111111-1111-4111-8111-111111111111",
+          ),
           syntheticIds: [],
           autoEnrollNext: true,
           crewId: null,
+          fieldBoard: strengthFieldBoard,
+          awaitingField: false,
         },
       ],
       crewBoard: aliceCrewBoard,
