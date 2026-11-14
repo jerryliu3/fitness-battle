@@ -1,3 +1,4 @@
+import { athleteLocationLine } from "./countries";
 import { clubAchievements, clubDuration, clubLifetimeTotals, clubWeekSummary } from "./club-summary";
 import {
   competeNow,
@@ -37,6 +38,8 @@ export interface AthleteCardHighlightOption extends AthleteCardHighlightItem {
 export interface AthleteCardModel {
   name: string;
   city: string;
+  location: string;
+  countryCode: string | null;
   initials: string;
   avatarUrl: string | null;
   sport: string;
@@ -236,9 +239,12 @@ export function athleteCardModelForPeer(input: {
   sport?: string | null;
 }): AthleteCardModel {
   const score = input.score ?? null;
+  const countryCode = null;
   return {
     name: input.name,
     city: input.city?.trim() || "—",
+    location: athleteLocationLine(input.city, countryCode),
+    countryCode,
     initials: initialsFromName(input.name),
     avatarUrl: input.avatarUrl ?? null,
     sport: input.sport?.trim() || "Athlete",
@@ -266,8 +272,14 @@ export function athleteCardModel(state: CompeteState, now = competeNow(state)): 
       })()
     : defaultAthleteCardHighlights(state, now);
   const streak = weeklyActivityStreak(state.activities, now, state.dailyHealth);
+  const countryCode = state.countryCode ?? null;
   return {
-    name: state.name, city: state.city, initials: initialsFromName(state.name), avatarUrl: state.avatarUrl ?? null,
+    name: state.name,
+    city: state.city,
+    location: athleteLocationLine(state.city, countryCode),
+    countryCode,
+    initials: initialsFromName(state.name),
+    avatarUrl: state.avatarUrl ?? null,
     sport: sportById(state.primary).name, score, rank: score === null ? null : rankForElo(score).name,
     records, overtakes: state.lifetimeOvertakes, rounds: clubLifetimeTotals(state, now).weeks,
     streak: streak.count, streakActive: streak.active,
@@ -281,6 +293,8 @@ export function parseAthleteCardMessage(value: unknown): { model: AthleteCardMod
   if (message.type !== "athlete-card" || typeof message.active !== "boolean" || !m ||
     !(message.appearance === undefined || message.appearance === "light" || message.appearance === "dark") ||
     ![m.name, m.city, m.initials, m.sport].every(s => typeof s === "string") ||
+    !(m.location === undefined || typeof m.location === "string") ||
+    !(m.countryCode === undefined || m.countryCode === null || typeof m.countryCode === "string") ||
     !(m.avatarUrl === null || typeof m.avatarUrl === "string") ||
     !(m.score === null || (typeof m.score === "number" && Number.isFinite(m.score))) ||
     !(m.rank === null || typeof m.rank === "string") || typeof m.streakActive !== "boolean" ||
