@@ -656,7 +656,8 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
     padding: 3,
     gap: 2,
     borderRadius: 12,
-    alignSelf: "flex-end",
+    flexGrow: 0,
+    flexShrink: 0,
   },
   segment: {
     flex: 1,

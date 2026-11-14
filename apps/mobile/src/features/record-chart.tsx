@@ -3,7 +3,7 @@ import { ChartSvg, ChartText } from "../ui/chart-text";
 
 import { useId, useState } from "react";
 import { View } from "react-native";
-import { ClipPath, Defs, G, Line, Path, Polyline, Rect } from "react-native-svg";
+import { Circle, ClipPath, Defs, G, Line, Path, Polyline, Rect } from "react-native-svg";
 import {
   formatClockTime,
   personalRecordChart,
@@ -111,6 +111,18 @@ const clubColors=useThemeColors();
         ) : (
           <Path d={chart.path} fill="none" stroke={clubColors.chartSeries} strokeWidth={2} />
         )}
+        {chart.points.map((pt) => (
+          <Circle
+            key={pt.activityId}
+            cx={pt.x}
+            cy={pt.y}
+            r={4}
+            fill={clubColors.chartSeries}
+            stroke={clubColors.surfaceCard}
+            strokeWidth={1.5}
+            opacity={activePoint && pt.x > activePoint.x ? 0.3 : 1}
+          />
+        ))}
         <ChartText
           x={chart.points.length===1?(chart.left+chart.right)/2:chart.left}
           textAnchor={chart.points.length===1?"middle":"start"}

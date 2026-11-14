@@ -10,7 +10,7 @@ import { useScoreTrackLens } from "../lib/score-track-lens";
 import { useAuth } from "../lib/auth";
 import { useId, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { ClipPath, Defs, G, Line, Path, Polyline, Rect } from "react-native-svg";
+import { ClipPath, Defs, G, Line, Path, Polyline, Rect, Circle } from "react-native-svg";
 import {
   APP_TIMEZONE,
   RECORD_DISTANCES,
@@ -42,9 +42,9 @@ const EFFORT_RANGES: readonly { value: EffortHistoryRange; label: string }[] = [
 ];
 
 const VOLUME_RANGES: readonly { value: TrainingRange; label: string }[] = [
-  { value: "week", label: "Week" },
-  { value: "month", label: "Month" },
-  { value: "year", label: "Year" },
+  { value: "week", label: "1W" },
+  { value: "month", label: "1M" },
+  { value: "year", label: "1Y" },
 ];
 
 export function PerformanceSpace({
@@ -210,12 +210,12 @@ export function PerformanceSpace({
                 </View>
               )}
             </View>
-            <AppText role="caption" secondary>
-              {inspectedEffort?.label
-                ?? (scoreComparison
-                  ? `vs. start of ${EFFORT_RANGES.find(r => r.value === effortRange)?.label ?? "range"}`
-                  : "No prior score in this range")}
-            </AppText>
+            {(inspectedEffort?.label || scoreComparison) && (
+              <AppText role="caption" secondary>
+                {inspectedEffort?.label
+                  ?? `vs. start of ${EFFORT_RANGES.find(r => r.value === effortRange)?.label ?? "range"}`}
+              </AppText>
+            )}
           </View>
           <View style={s.compactControls}>
             <FocusSegments
@@ -525,6 +525,19 @@ export function PerformanceSpace({
                         />
                       )
                     ) : null}
+                    {/* PR milestone dots visible by default; points to the right dim while scrubbing */}
+                    {prChartData.points.map((pt) => (
+                      <Circle
+                        key={pt.activityId}
+                        cx={pt.x}
+                        cy={pt.y}
+                        r={4}
+                        fill={c.tennis}
+                        stroke={c.card}
+                        strokeWidth={1.5}
+                        opacity={activePRPoint && pt.x > activePRPoint.x ? 0.3 : 1}
+                      />
+                    ))}
                   </ChartSvg>
                   </ChartScrubber>
                 </View>

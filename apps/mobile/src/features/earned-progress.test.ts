@@ -9,7 +9,7 @@ vi.mock("react-native",()=>({useColorScheme: () => "light",
  Animated:{View:"AnimatedView",Value:class{constructor(public value:number){}setValue(value:number){this.value=value;}interpolate(){return 0;}},timing:()=>({start(){},stop(){}})},
 }));
 vi.mock("../ui/chart-scrubber",()=>({ChartScrubber:({children}:{children:unknown})=>children}));
-vi.mock("react-native-svg",()=>({default:"Svg",G:"G",Path:"Path",Text:"SvgText",Circle:"Circle",Line:"Line",Rect:"Rect"}));
+vi.mock("react-native-svg",()=>({default:"Svg",G:"G",Path:"Path",Text:"SvgText",Circle:"Circle",Line:"Line",Rect:"Rect",Defs:"Defs",ClipPath:"ClipPath"}));
 vi.mock("expo-router",()=>({useRouter:()=>({navigate:mock.navigate})}));
 vi.mock("../lib/compete-store",()=>({useCompeteStore:()=>({state:mock.state,accountKey:mock.account,canWrite:true,saveError:null})}));
 vi.mock("../ui/focus",()=>((()=>{const mock={FocusButton:"FocusButton",FocusDisclosure:"Disclosure",FocusSegments:({label,options,value,onChange}:{label:string;options:readonly{value:string;label:string;accessibilityLabel?:string}[];value:string;onChange:(v:string)=>void})=>createElement("View",{accessibilityRole:"tablist",accessibilityLabel:label},options.map(o=>createElement("Pressable",{key:o.value,accessibilityRole:"tab",accessibilityLabel:o.accessibilityLabel??o.label,accessibilityState:{selected:value===o.value},onPress:()=>onChange(o.value)},o.label))),FocusSheet:"FocusSheet",f:{chip:{},chipActive:{},row:{}}};return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));

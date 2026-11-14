@@ -50,12 +50,13 @@ export function computeNiceAxisTicks(
   if (clampMinZero && rawMin >= 0 && lo < 0) lo = 0;
 
   const span = Math.max(0.01, hi - lo);
-  const roughStep = span / 3;
+  const roughStep = span / 2.5;
   const pow = Math.pow(10, Math.floor(Math.log10(roughStep)));
   const niceBases = [1, 2, 5, 10, 20, 50];
   let bestStep = roughStep;
   let bestMin = lo;
   let bestMax = hi;
+  let fallback: { step: number; min: number; max: number } | null = null;
   for (const base of niceBases) {
     const candidate = base * pow;
     const cMin = clampMinZero && rawMin >= 0 ? Math.max(0, Math.floor(lo / candidate) * candidate) : Math.floor(lo / candidate) * candidate;
@@ -64,7 +65,18 @@ export function computeNiceAxisTicks(
     bestStep = candidate;
     bestMin = cMin;
     bestMax = cMax;
-    if (count <= 5) break;
+    if (count >= 3 && count <= 4) {
+      fallback = null;
+      break;
+    }
+    if (count <= 5 && !fallback) {
+      fallback = { step: candidate, min: cMin, max: cMax };
+    }
+  }
+  if (fallback && Math.round((bestMax - bestMin) / bestStep) + 1 > 4) {
+    bestStep = fallback.step;
+    bestMin = fallback.min;
+    bestMax = fallback.max;
   }
 
   const ticks: number[] = [];

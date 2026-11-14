@@ -234,6 +234,14 @@ function MiniSparkline({
             strokeLinecap="round"
             strokeLinejoin="round"
           />
+          {points.at(-1) && (
+            <Circle
+              cx={points.at(-1)!.x}
+              cy={points.at(-1)!.y}
+              r={2}
+              fill={stroke}
+            />
+          )}
         </>
       )}
       </G>
