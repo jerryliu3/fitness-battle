@@ -3,7 +3,7 @@ import { healthColors as colors } from "@/theme/app-colors";
 
 
 import { Fragment, useState, type CSSProperties } from "react";
-import { formatHealthNumber, buildHealth7DayCorridorModel, competeNow, healthSignal, healthSignalRange, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
+import { formatHealthNumber, buildHealth7DayCorridorModel, competeNow, healthSignal, healthSignalBounds, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
 import { AppHeading } from "@/ui/section";
 import "./daily-health.css";
 
@@ -26,6 +26,7 @@ export function DailyHealth({ state }: { state: CompeteState }) {
       <div className="home-health-grid">
         {metrics.map((metric, index) => {
           const signal = healthSignal(metric.history);
+          const bounds = healthSignalBounds(metric);
           const isRowEnd = index % 2 === 1 || index === metrics.length - 1;
           const rowStart = index - (index % 2);
           const isSelectedInRow =
@@ -58,13 +59,18 @@ export function DailyHealth({ state }: { state: CompeteState }) {
                     {signal.fill && (
                       <path d={signal.fill} fill="none" stroke={colors.accent} strokeWidth="7" strokeLinecap="round" />
                     )}
+                    {bounds && (
+                      <>
+                        <text x="34" y="135" textAnchor="middle" className="home-health-range-end">{bounds.min}</text>
+                        <text x="110" y="135" textAnchor="middle" className="home-health-range-end">{bounds.max}</text>
+                      </>
+                    )}
                   </svg>
                   <span className="home-health-reading">
                     <strong>{metric.value}</strong>
                     {metric.unit && <span>{metric.unit}</span>}
                   </span>
                 </div>
-                <span className="home-health-context">{healthSignalRange(metric)}</span>
               </button>
 
               {isRowEnd && isSelectedInRow && selected && (() => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { freshState } from "./compete/engine";
 import type { SleepNight } from "./compete/health";
-import { buildHealth7DayCorridorModel, getHealthMetricCorridor, healthSignal, healthSignalRange, healthSparkline, homeHealthMetrics, isSampleSleepNight, recordedHealthSeries } from "./home-health";
+import { buildHealth7DayCorridorModel, getHealthMetricCorridor, healthSignal, healthSignalBounds, healthSignalRange, healthSparkline, homeHealthMetrics, isSampleSleepNight, recordedHealthSeries } from "./home-health";
 const now = new Date("2026-10-25T03:30:00Z"); // Oct 24 Eastern
 const night = (overrides: Partial<SleepNight> = {}): SleepNight => ({ id: "sleep", metric: "sleep", day: "2026-10-24", durationMin: 462, score: 80, efficiency: null, deepMin: null, remMin: null, lightMin: null, awakeMin: null, source: "oura", verified: true, ...overrides });
 describe("Home daily health", () => {
@@ -55,7 +55,7 @@ describe("Home daily health", () => {
       { day: "2026-10-24", label: "Oct 24", value: 64 },
     );
   });
-  it("keeps recorded health on the Eastern calendar and leaves missing days as gaps", () => {
+  it("left-aligns earliest recorded health observation and leaves missing/future days as gaps", () => {
     const state = freshState(now);
     state.dailyHealth = [
       { provider: "oura", day: "2026-10-20", hrv: 58, restingHr: 51 },
@@ -63,9 +63,9 @@ describe("Home daily health", () => {
     ];
     const series = recordedHealthSeries(state, "hrv", 7, now);
     expect(series.map(row => row.day)).toEqual([
-      "2026-10-18", "2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24",
+      "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25", "2026-10-26",
     ]);
-    expect(series.map(row => row.value)).toEqual([null, null, 58, null, null, null, 64]);
+    expect(series.map(row => row.value)).toEqual([58, null, null, null, 64, null, null]);
   });
 });
 
@@ -88,6 +88,10 @@ it("labels the observed range with sleep units and ignores missing days", () => 
   expect(healthSignalRange({ ...metric, history: [414, null, 480, 462] })).toBe("6:54–8:00 (7 day range)");
   expect(healthSignalRange({ ...metric, id: "resting-hr", history: [49, null, 54, 52] })).toBe("49–54 (7 day range)");
   expect(healthSignalRange({ ...metric, history: [414, null] })).toBe("No reading available");
+  expect(healthSignalBounds({ ...metric, history: [414, null, 480, 462] })).toEqual({ min: "0", max: "8:00" });
+  expect(healthSignalBounds({ ...metric, id: "steps", history: [9500, 12485] })).toEqual({ min: "0", max: "12,485" });
+  expect(healthSignalBounds({ ...metric, id: "resting-hr", history: [49, null, 54, 52] })).toEqual({ min: "0", max: "54" });
+  expect(healthSignalBounds({ ...metric, history: [414, null] })).toBeNull();
 });
 
  it("recognizes sample and stub sleep readings consistently", () => {
@@ -122,14 +126,17 @@ it("builds 7-day health corridor chart model identifying points under, in, or ov
   expect(chart.baselineLow).toBe(62);
   expect(chart.baselineHigh).toBe(82);
   expect(chart.formattedRange).toBe("62 ms–82 ms");
-  expect(chart.points[6].dayLabel).toBe("Today");
+  expect(chart.points[6].dayLabel).toBe("Sat");
   expect(chart.points[6].position).toBe("under"); // 54 < 62
   expect(chart.points[2].position).toBe("under"); // 58 < 62
   expect(chart.points[0].position).toBe("in"); // 72 is in 62..82
   expect(chart.points[5].position).toBe("over"); // 85 > 82
   expect(chart.points[3].position).toBe("missing"); // null
   expect(chart.hasUnder).toBe(true);
-  expect(chart.corridorAreaPath).toContain("M 38,");
+  expect(chart.corridorAreaPath).toContain("M 44,");
+  expect(chart.yTicks.length).toBeGreaterThanOrEqual(3);
+  expect(chart.yTicks[0]!.value).toBeLessThanOrEqual(54);
+  expect(chart.yTicks.at(-1)!.value).toBeGreaterThanOrEqual(85);
   expect(chart.lineSegments.length).toBeGreaterThan(0);
 });
 

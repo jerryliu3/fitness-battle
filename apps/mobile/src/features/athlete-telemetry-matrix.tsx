@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import { Pressable, View } from "react-native";
 import Svg, { Circle, Path, Polyline, G } from "react-native-svg";
-import { buildAnalyticsLabModel, buildSvgLineGeometry, type AnalyticsDomainId, type AnalyticsTimeLens, type CompeteState } from "@fitness-battle/shared";
+import { buildAnalyticsLabModel, buildSvgLineGeometry, type AnalyticsDomainId, type CompeteState } from "@fitness-battle/shared";
 import { ChartSvg } from "../ui/chart-text";
 import { AppText } from "../ui/section";
 
@@ -18,8 +18,7 @@ const c=useThemeColors();
 const s=useThemedStyles(sThemes);
 
   const router = useRouter();
-  const timeLens: AnalyticsTimeLens = "7d";
-  const model = useMemo(() => buildAnalyticsLabModel(state, timeLens), [state, timeLens]);
+  const model = useMemo(() => buildAnalyticsLabModel(state, "7d"), [state]);
 
   const SHOW_ATHLETE_EQUITY = false;
 
@@ -159,29 +158,77 @@ function MiniSparkline({
   stroke: string;
   corridor?: { high: number[]; low: number[] };
 }) {
+  const c = useThemeColors();
   if (values.length < 2) return null;
   const all = corridor ? [...values, ...corridor.high, ...corridor.low] : values;
   const low = Math.min(...all), high = Math.max(...all);
   const geometry = buildSvgLineGeometry(values, 78, 28, 2, { min: low, max: high });
   const polyline = geometry.polyline;
   const points = geometry.points.map((point, i) => ({ ...point, val: values[i]! }));
+  const yAt = (v: number) => 26 - ((v - low) / (high - low || 1)) * 24;
+  const xAt = (i: number) => 2 + (i / (values.length - 1)) * 74;
+  const trendPolyline = !corridor
+    ? points
+        .map((_, i) => {
+          const startIdx = Math.max(0, i - 29);
+          const slice = values.slice(startIdx, i + 1);
+          const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
+          return `${xAt(i).toFixed(1)},${yAt(avg).toFixed(1)}`;
+        })
+        .join(" ")
+    : "";
   return (
     <ChartSvg width="100%" height={40} viewBox="0 0 82 32">
       <G transform="translate(2 2)">
-      {corridor && <Path d={`M ${corridor.high.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" L ")} L ${corridor.low.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).reverse().join(" L ")} Z`} fill={stroke} opacity={.16}/>}
-      {corridor && <Polyline points={corridor.high.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" ")} fill="none" stroke={stroke} strokeDasharray={[2, 2]} opacity={.65}/>}
-      {corridor && <Polyline points={corridor.low.map((v,i)=>`${2+i/(values.length-1)*74},${26-(v-low)/(high-low||1)*24}`).join(" ")} fill="none" stroke={stroke} strokeDasharray={[2, 2]} opacity={.65}/>}
-      <Path
-        d={`M ${polyline}`}
-        fill="none"
-        stroke={stroke}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {points.map((p, i) => (
-        <Circle key={i} cx={p.x} cy={p.y} r={1.5} fill={stroke} />
-      ))}
+      {corridor && <Path d={`M ${corridor.high.map((v,i)=>`${xAt(i)},${yAt(v)}`).join(" L ")} L ${corridor.low.map((v,i)=>`${xAt(i)},${yAt(v)}`).reverse().join(" L ")} Z`} fill={stroke} opacity={.16}/>}
+      {corridor && <Polyline points={corridor.high.map((v,i)=>`${xAt(i)},${yAt(v)}`).join(" ")} fill="none" stroke={stroke} strokeDasharray={[2, 2]} opacity={.65}/>}
+      {corridor && <Polyline points={corridor.low.map((v,i)=>`${xAt(i)},${yAt(v)}`).join(" ")} fill="none" stroke={stroke} strokeDasharray={[2, 2]} opacity={.65}/>}
+      {corridor ? (
+        points.map((p, i) => {
+          const out = p.val < (corridor.low[i] ?? p.val) || p.val > (corridor.high[i] ?? p.val);
+          return (
+            <Circle
+              key={i}
+              cx={p.x}
+              cy={p.y}
+              r={1.75}
+              fill={out ? c.card : stroke}
+              stroke={out ? stroke : "none"}
+              strokeWidth={out ? 1.2 : 0}
+              strokeDasharray={out ? "1.5 1.5" : undefined}
+            />
+          );
+        })
+      ) : (
+        <>
+          {!!trendPolyline && (
+            <Polyline
+              points={trendPolyline}
+              fill="none"
+              stroke={c.secondary}
+              strokeWidth={1.25}
+              strokeDasharray="2 2"
+              strokeLinecap="round"
+            />
+          )}
+          <Path
+            d={`M ${polyline}`}
+            fill="none"
+            stroke={stroke}
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {points.at(-1) && (
+            <Circle
+              cx={points.at(-1)!.x}
+              cy={points.at(-1)!.y}
+              r={2}
+              fill={stroke}
+            />
+          )}
+        </>
+      )}
       </G>
     </ChartSvg>
   );
@@ -191,22 +238,6 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   container: {
     gap: 14,
     marginVertical: 4,
-  },
-  lensRow: {
-    flexDirection: "row",
-    gap: 6,
-  },
-  lensPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 99,
-    borderWidth: 1,
-    borderColor: c.line,
-    backgroundColor: "transparent",
-  },
-  lensPillActive: {
-    borderColor: c.ink,
-    backgroundColor: c.soft,
   },
   bentoGrid: {
     flexDirection: "row",

@@ -1,8 +1,9 @@
+import { computeNiceAxisTicks } from "./chart-geometry";
 import { competeNow } from "./compete/engine";
 import { collapseNights, formatSleepDuration, type SleepNight } from "./compete/health";
 import type { CompeteState } from "./compete/sports";
 import { INTEGRATIONS } from "./fitness/providers";
-import { APP_TIMEZONE, dayKey, formatAppCalendarDate, shiftAppDay } from "./period";
+import { APP_TIMEZONE, dayKey, formatAppCalendarDate, shiftAppDay, startOfZonedDay } from "./period";
 
 export interface HomeHealthMetric {
   id: "sleep" | "steps" | "resting-hr" | "hrv";
@@ -83,16 +84,18 @@ export type RecordedHealthMetric = "hrv" | "resting-hr" | "sleep";
 
 export type RecordedHealthPoint = { day: string; label: string; value: number | null };
 
-/** Recorded observations on the Eastern calendar window; missing days stay as gaps. */
+/** Recorded observations on the Eastern calendar window; left-aligns account creation / earliest data when window exceeds available history. */
 export function recordedHealthSeries(
   state: CompeteState,
   metric: RecordedHealthMetric,
   days: number,
   now = competeNow(state),
+  createdAt?: string | null,
 ): RecordedHealthPoint[] {
   const span = Math.max(1, days);
   const today = dayKey(now);
-  const start = dayKey(shiftAppDay(now, -(span - 1)));
+  const defaultStartDate = shiftAppDay(startOfZonedDay(now), -(span - 1));
+  const start = dayKey(defaultStartDate);
   const label = (day: string) => formatAppCalendarDate(day, { month: "short", day: "numeric" });
   const observed = new Map<string, number>();
   if (metric === "sleep") {
@@ -117,9 +120,17 @@ export function recordedHealthSeries(
     }
   }
   if (!observed.size) return [];
+  const createdMs = createdAt ? Date.parse(createdAt) : NaN;
+  const firstObservedDay = [...observed.keys()].sort()[0];
+  const anchorDate = Number.isFinite(createdMs) && createdMs <= now.getTime()
+    ? startOfZonedDay(new Date(createdMs))
+    : firstObservedDay
+      ? startOfZonedDay(new Date(`${firstObservedDay}T12:00:00Z`))
+      : null;
+  const seriesStart = anchorDate && dayKey(anchorDate) > start ? anchorDate : defaultStartDate;
   return Array.from({ length: span }, (_, index) => {
-    const day = dayKey(shiftAppDay(now, -(span - 1 - index)));
-    return { day, label: label(day), value: observed.get(day) ?? null };
+    const day = dayKey(shiftAppDay(seriesStart, index));
+    return { day, label: label(day), value: day <= today ? (observed.get(day) ?? null) : null };
   });
 }
 
@@ -159,12 +170,27 @@ export function healthSignal(history: readonly (number | null)[]) {
     ticks: [0, .25, .5, .75, 1].map(position => ({ outer: point(135 + position * 270, 65), inner: point(135 + position * 270, 61) })) };
 }
 
+function formatHealthMetricReading(id: HomeHealthMetric["id"], value: number): string {
+  return id === "sleep"
+    ? `${Math.floor(Math.round(value) / 60)}:${String(Math.round(value) % 60).padStart(2, "0")}`
+    : formatHealthNumber(value);
+}
+
 /** Observed min/max, separate from the filled dial’s zero-based scale. */
 export function healthSignalRange(metric: HomeHealthMetric): string {
   if (!healthSignal(metric.history).available) return "No reading available";
   const values = metric.history.filter((value): value is number => value != null && Number.isFinite(value) && value >= 0);
-  const format = metric.id === "sleep" ? (value: number) => `${Math.floor(Math.round(value) / 60)}:${String(Math.round(value) % 60).padStart(2, "0")}` : formatHealthNumber;
-  return `${format(Math.min(...values))}–${format(Math.max(...values))} (7 day range)`;
+  return `${formatHealthMetricReading(metric.id, Math.min(...values))}–${formatHealthMetricReading(metric.id, Math.max(...values))} (7 day range)`;
+}
+
+/** Zero-based gauge endpoint labels matching `healthSignal`’s left and right arc ends. */
+export function healthSignalBounds(metric: HomeHealthMetric): { min: string; max: string } | null {
+  const signal = healthSignal(metric.history);
+  if (!signal.available) return null;
+  return {
+    min: "0",
+    max: formatHealthMetricReading(metric.id, signal.maximum),
+  };
 }
 
 export interface HealthMetricCorridor {
@@ -187,6 +213,7 @@ export function getHealthMetricCorridor(metricId: string, history: readonly (num
 export interface Health7DayPoint {
   index: number;
   dayLabel: string;
+  dateLabel: string;
   value: number | null;
   formatted: string;
   x: number;
@@ -204,6 +231,11 @@ export interface Health7DayChartModel {
   formattedRange: string;
   width: number;
   height: number;
+  plotLeft: number;
+  plotRight: number;
+  plotTop: number;
+  plotBottom: number;
+  yTicks: Array<{ value: number; y: number; label: string }>;
   points: Health7DayPoint[];
   lineSegments: string[];
   corridorYTop: number;
@@ -225,37 +257,42 @@ export function buildHealth7DayCorridorModel(
       : null);
   const corridor = personal ?? { low: 0, high: 0, formattedRange: "Unavailable · insufficient prior readings", format: (value: number) => metric.id === "sleep" ? formatSleepDuration(value) : `${value} ${metric.unit}` };
   const width = 320;
-  const height = 116;
-  const left = 38;
-  const right = 304;
-  const plotTop = 18;
-  const plotBottom = 86;
+  const height = 160;
+  const left = 44;
+  const right = 306;
+  const plotTop = 22;
+  const plotBottom = 132;
 
   const validValues = metric.history.filter((v): v is number => v != null && Number.isFinite(v));
   const allNums = personal ? [...validValues, personal.low, personal.high] : validValues.length ? validValues : [0, 1];
   const minVal = Math.min(...allNums);
   const maxVal = Math.max(...allNums);
-  const spread = maxVal - minVal;
-  const pad = Math.max(spread * 0.18, metric.id === "sleep" ? 30 : 4);
-  const yMin = minVal - pad;
-  const yMax = maxVal + pad;
+  const axis = computeNiceAxisTicks(minVal, maxVal, true, 0.08);
+  const yMin = axis.yMin;
+  const yMax = axis.yMax;
   const span = Math.max(1, yMax - yMin);
 
   const toY = (v: number) => Number((plotBottom - ((v - yMin) / span) * (plotBottom - plotTop)).toFixed(1));
+  const yTicks = axis.ticks.map((value) => ({
+    value,
+    y: toY(value),
+    label: formatHealthNumber(value),
+  }));
   const corridorYTop = toY(corridor.high);
   const corridorYBottom = toY(corridor.low);
   const corridorAreaPath = `M ${left},${corridorYTop} L ${right},${corridorYTop} L ${right},${corridorYBottom} L ${left},${corridorYBottom} Z`;
 
   const points: Health7DayPoint[] = metric.history.map((val, i) => {
     const x = Number((left + (i / 6) * (right - left)).toFixed(1));
-    const isToday = i === 6;
     const targetDate = shiftAppDay(now, i - 6);
-    const dayLabel = isToday ? "Today" : new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "America/New_York" }).format(targetDate) ?? "";
+    const dayLabel = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "America/New_York" }).format(targetDate) ?? "";
+    const dateLabel = formatAppCalendarDate(dayKey(targetDate), { month: "short", day: "numeric" });
 
     if (val == null || !Number.isFinite(val)) {
       return {
         index: i,
         dayLabel,
+        dateLabel,
         value: null,
         formatted: "—",
         x,
@@ -269,6 +306,7 @@ export function buildHealth7DayCorridorModel(
     return {
       index: i,
       dayLabel,
+      dateLabel,
       value: val,
       formatted: metric.id === "sleep"
         ? (i === 6 ? formatSleepDuration(val) : `${Math.floor(Math.round(val) / 60)}:${String(Math.round(val) % 60).padStart(2, "0")}`)
@@ -305,6 +343,11 @@ export function buildHealth7DayCorridorModel(
     formattedRange: corridor.formattedRange,
     width,
     height,
+    plotLeft: left,
+    plotRight: right,
+    plotTop,
+    plotBottom,
+    yTicks,
     points,
     lineSegments,
     corridorYTop,

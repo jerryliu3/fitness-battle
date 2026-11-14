@@ -1,25 +1,25 @@
-import { createThemedStyles, useThemedStyles } from "../theme";
 import { useState } from "react";
 import { homeTrainingLine, type CompeteState } from "@fitness-battle/shared";
-import { Pressable, View } from "react-native";
-import { AppText } from "../ui/section";
-import { OpenLineChart } from "../ui/open-line-chart";
+import { View } from "react-native";
+import { useAuth } from "../lib/auth";
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { ChartFrame } from "../ui/chart-frame";
+import { OpenLineChart } from "../ui/open-line-chart";
+import { AppText } from "../ui/section";
 import { HomeActivityActions } from "./home-activity-actions";
 
 export function WeekChart({
   state,
-  onOpen,
   ready = true,
 }: {
   state: CompeteState;
-  onOpen?: () => void;
   ready?: boolean;
 }) {
   const s = useThemedStyles(sThemes);
+  const { user } = useAuth();
 
   const [range, setRange] = useState<"week" | "fourWeeks">("week");
-  const chart = homeTrainingLine(state, range);
+  const chart = homeTrainingLine(state, range, undefined, user?.createdAt);
   return (
     <ChartFrame ready={ready}>
       <View style={s.card}>
@@ -30,7 +30,10 @@ export function WeekChart({
           <HomeActivityActions compact />
         </View>
         <OpenLineChart
-          showDateRange={false} showAxes={true}
+          openHero
+          showDateRange={false}
+          showAxes={true}
+          live
           key={range}
           chart={chart}
           label="Cumulative training hours"
@@ -40,19 +43,6 @@ export function WeekChart({
             if (next === "week" || next === "fourWeeks") setRange(next);
           }}
           includeYear={false}
-          live
-          footerAction={
-            onOpen ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={onOpen}
-                style={s.open}
-              >
-                <AppText role="label">View week →</AppText>
-              </Pressable>
-            ) : undefined
-          }
-          comparisonLabel={range === "week" ? "Last week" : "Prior 4 weeks"}
         />
       </View>
     </ChartFrame>
@@ -60,7 +50,7 @@ export function WeekChart({
 }
 
 const sThemes = createThemedStyles(() => ({
-  card: { paddingTop: 12, paddingBottom: 2, gap: 12 },
+  card: { paddingTop: 12, paddingBottom: 0, gap: 8 },
   header: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -68,5 +58,4 @@ const sThemes = createThemedStyles(() => ({
     alignItems: "center",
     gap: 12,
   },
-  open: { minHeight: 44, justifyContent: "center", alignSelf: "flex-end" },
 }));

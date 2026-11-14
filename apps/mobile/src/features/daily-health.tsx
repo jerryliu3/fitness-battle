@@ -1,10 +1,12 @@
 import { homeHealthColors } from "@fitness-battle/shared";
 import { createThemedStyles, useThemedStyles, useHomeHealthColors } from "../theme";
-import { useState } from "react";
-import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Easing, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
-import { formatHealthNumber, buildHealth7DayCorridorModel, competeNow, healthSignal, healthSignalRange, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
+import { formatHealthNumber, buildHealth7DayCorridorModel, competeNow, dottedCircleDasharray, healthSignal, healthSignalBounds, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
+import { ChartScrubber, type ChartDatum } from "../ui/chart-scrubber";
 import { AppText, chartTextProps } from "../ui/section";
+import { useReducedMotion } from "../ui/use-reduced-motion";
 
 export function DailyHealth({ state }: { state: CompeteState }) {
 const colors=useHomeHealthColors();
@@ -12,8 +14,53 @@ const s=useThemedStyles(sThemes);
 
   const metrics = homeHealthMetrics(state);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [displayedId, setDisplayedId] = useState<string | null>(null);
+  const [detailHeight, setDetailHeight] = useState(218);
+  const [scrubbedPoint, setScrubbedPoint] = useState<ChartDatum | undefined>(undefined);
   const { fontScale, width } = useWindowDimensions();
-  const selected = metrics.find((metric) => metric.id === expanded);
+  const reduceMotion = useReducedMotion();
+  const detailAnim = useRef(new Animated.Value(0)).current;
+  const expandedRef = useRef<string | null>(expanded);
+  expandedRef.current = expanded;
+  const displayedIdRef = useRef<string | null>(null);
+  displayedIdRef.current = displayedId;
+  const selected = metrics.find((metric) => metric.id === displayedId);
+  const selectedIndex = metrics.findIndex((metric) => metric.id === displayedId);
+  const originRight = selectedIndex >= 0 && fontScale <= 1.2 && selectedIndex % 2 === 1;
+
+  useEffect(() => {
+    if (reduceMotion || typeof Animated?.timing !== "function") {
+      setDisplayedId(expanded);
+      detailAnim.setValue(expanded ? 1 : 0);
+      return;
+    }
+    if (expanded) {
+      if (displayedIdRef.current !== expanded) {
+        setDisplayedId(expanded);
+      }
+      detailAnim.stopAnimation();
+      Animated.timing(detailAnim, {
+        toValue: 1,
+        duration: 240,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+      return;
+    }
+    if (displayedIdRef.current !== null) {
+      detailAnim.stopAnimation();
+      Animated.timing(detailAnim, {
+        toValue: 0,
+        duration: 220,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: false,
+      }).start(({ finished }) => {
+        if (finished && expandedRef.current === null) {
+          setDisplayedId(null);
+        }
+      });
+    }
+  }, [expanded, reduceMotion, detailAnim]);
 
   return (
     <View style={s.panel}>
@@ -22,9 +69,11 @@ const s=useThemedStyles(sThemes);
           Today’s health
         </AppText>
       </View>
+      <View>
       <View style={s.grid}>
         {metrics.map((metric) => {
           const signal = healthSignal(metric.history);
+          const bounds = healthSignalBounds(metric);
           return (
             <Pressable
               key={metric.id}
@@ -32,7 +81,12 @@ const s=useThemedStyles(sThemes);
               accessibilityLabel={`${metric.name}, ${metric.value}${metric.unit ? ` ${metric.unit}` : ""}, ${metric.context}`}
               accessibilityHint="Show reading details"
               accessibilityState={{ expanded: metric.id === expanded }}
-              onPress={() => setExpanded(expanded === metric.id ? null : metric.id)}
+              onPress={() => {
+                const next = expanded === metric.id ? null : metric.id;
+                setExpanded(next);
+                if (next) setDisplayedId(next);
+                setScrubbedPoint(undefined);
+              }}
               style={[
                 s.tile,
                 { width: fontScale > 1.2 ? "100%" : "47%", flexGrow: 1, padding: width < 360 ? 8 : 14 },
@@ -58,6 +112,16 @@ const s=useThemedStyles(sThemes);
                   {signal.fill && (
                     <Path d={signal.fill} fill="none" stroke={colors.accent} strokeWidth={7} strokeLinecap="round" />
                   )}
+                  {bounds && (
+                    <G>
+                      <SvgText {...chartTextProps()} x={34} y={135} textAnchor="middle" fill={colors.secondary}>
+                        {bounds.min}
+                      </SvgText>
+                      <SvgText {...chartTextProps()} x={110} y={135} textAnchor="middle" fill={colors.secondary}>
+                        {bounds.max}
+                      </SvgText>
+                    </G>
+                  )}
                 </Svg>
                 <View style={s.reading}>
                   <AppText role={fontScale > 1.2 || width >= 360 ? "value" : "body"} style={s.value}>
@@ -66,139 +130,168 @@ const s=useThemedStyles(sThemes);
                   {!!metric.unit && <AppText role="caption" style={s.secondary}>{metric.unit}</AppText>}
                 </View>
               </View>
-              <AppText role="caption" style={s.secondary}>
-                {healthSignalRange(metric)}
-              </AppText>
             </Pressable>
           );
         })}
       </View>
       {selected && (() => {
         const chart = buildHealth7DayCorridorModel(selected, competeNow(state), { weekCorridorFallback: true });
+        const scrubPoints: ChartDatum[] = chart.points
+          .filter((p) => p.value != null && p.y != null)
+          .map((p) => ({
+            id: String(p.index),
+            x: p.x,
+            y: p.y!,
+            label: p.dateLabel,
+            value: selected.id === "sleep" ? p.formatted : formatHealthNumber(p.value!),
+          }));
+        const scrubbedModelPt = scrubbedPoint
+          ? chart.points.find((p) => String(p.index) === scrubbedPoint.id)
+          : undefined;
+        const isScrubbedOutOfCorridor = Boolean(
+          scrubbedModelPt && (scrubbedModelPt.position === "under" || scrubbedModelPt.position === "over"),
+        );
+        const activeReading = scrubbedPoint ? scrubbedPoint.value : selected.value;
+        const animateExpand = !reduceMotion && typeof detailAnim?.interpolate === "function";
+        const originOffsetX = fontScale > 1.2 ? 0 : (originRight ? 1 : -1) * Math.min(110, width * 0.22);
+        const outerMotionStyle = animateExpand
+          ? {
+              overflow: "hidden" as const,
+              height: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0, detailHeight] }),
+              marginTop: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 16] }),
+            }
+          : { marginTop: 16 };
+        const innerMotionStyle = animateExpand
+          ? {
+              position: "absolute" as const,
+              top: 0,
+              left: 0,
+              right: 0,
+              opacity: detailAnim.interpolate({ inputRange: [0, 0.05, 1], outputRange: [0, 1, 1] }),
+              transform: [
+                { translateX: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [originOffsetX, 0] }) },
+                { translateY: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [-detailHeight * 0.425, 0] }) },
+                { scale: detailAnim.interpolate({ inputRange: [0, 1], outputRange: [0.15, 1] }) },
+              ],
+            }
+          : undefined;
         return (
-          <View style={s.detail} accessibilityLiveRegion="polite">
+          <Animated.View style={outerMotionStyle}>
+          <Animated.View
+            style={[s.detail, innerMotionStyle]}
+            accessibilityLiveRegion="polite"
+            onLayout={(event) => {
+              const nextHeight = Math.ceil(event.nativeEvent.layout.height);
+              if (nextHeight > 0 && Math.abs(nextHeight - detailHeight) > 1) {
+                setDetailHeight(nextHeight);
+              }
+            }}
+          >
             <View style={s.detailHeader}>
               <View style={s.detailTitleRow}>
                 <AppText role="label" style={{ color: colors.text }}>
                   {selected.name}
                 </AppText>
+                <AppText role="label" style={{ color: colors.accent, fontVariant: ["tabular-nums"] }}>
+                  {`${activeReading}${selected.unit && activeReading !== "—" ? ` ${selected.unit}` : ""}`}
+                </AppText>
               </View>
-
             </View>
             <View style={s.chartBox}>
-              <Svg width="100%" height={chart.height} viewBox={`0 0 ${chart.width} ${chart.height}`} accessible={false}>
-                {chart.hasBaseline && (() => {
-                  const yDiff = chart.corridorYBottom - chart.corridorYTop;
-                  const minGap = 13;
-                  const topLabelY = yDiff < minGap ? chart.corridorYTop - (minGap - yDiff) / 2 + 3 : chart.corridorYTop + 3;
-                  const bottomLabelY = yDiff < minGap ? chart.corridorYBottom + (minGap - yDiff) / 2 + 3 : chart.corridorYBottom + 3;
-                  return (
-                    <G>
-                      <Path d={chart.corridorAreaPath} fill={colors.accent} opacity={0.12} />
+              <ChartScrubber
+                key={selected.id}
+                hideSummary
+                hideSelectionDot
+                points={scrubPoints}
+                width={chart.width}
+                height={chart.height}
+                plotTop={chart.plotTop}
+                plotBottom={chart.plotBottom}
+                onSelectionChange={setScrubbedPoint}
+                label={`${selected.name} 7-day trend`}
+              >
+                <Svg width="100%" height={chart.height} viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" accessible={false}>
+                  {chart.yTicks.map((tick, i) => (
+                    <G key={`y-${tick.value}-${i}`}>
                       <Line
-                        x1={38}
-                        x2={304}
+                        x1={chart.plotLeft}
+                        x2={chart.plotRight}
+                        y1={tick.y}
+                        y2={tick.y}
+                        stroke={colors.secondary}
+                        strokeWidth={0.5}
+                        opacity={0.3}
+                      />
+                      <SvgText
+                        {...chartTextProps()}
+                        x={chart.plotLeft - 6}
+                        y={tick.y + 4}
+                        textAnchor="end"
+                        fill={colors.secondary}
+                      >
+                        {tick.label}
+                      </SvgText>
+                    </G>
+                  ))}
+                  {chart.hasBaseline && (
+                    <G>
+                      <Path d={chart.corridorAreaPath} fill={colors.accent} opacity={0.14} />
+                      <Line
+                        x1={chart.plotLeft}
+                        x2={chart.plotRight}
                         y1={chart.corridorYTop}
                         y2={chart.corridorYTop}
                         stroke={colors.accent}
                         strokeDasharray="3 3"
-                        opacity={0.65}
+                        opacity={0.75}
                       />
                       <Line
-                        x1={38}
-                        x2={304}
+                        x1={chart.plotLeft}
+                        x2={chart.plotRight}
                         y1={chart.corridorYBottom}
                         y2={chart.corridorYBottom}
                         stroke={colors.accent}
                         strokeDasharray="3 3"
-                        opacity={0.65}
+                        opacity={0.75}
                       />
-                      <SvgText
-                        {...chartTextProps()}
-                        x={34}
-                        y={topLabelY}
-                        textAnchor="end"
-                        fill={colors.secondary}
-                      >
-                        {formatHealthNumber(chart.baselineHigh)}
-                      </SvgText>
-                      <SvgText
-                        {...chartTextProps()}
-                        x={34}
-                        y={bottomLabelY}
-                        textAnchor="end"
-                        fill={colors.secondary}
-                      >
-                        {formatHealthNumber(chart.baselineLow)}
-                      </SvgText>
                     </G>
-                  );
-                })()}
-{chart.lineSegments.map((d, i) => (
-                  <Path
-                    key={i}
-                    d={d}
-                    fill="none"
-                    stroke={colors.accent}
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                ))}
-                {chart.points.map((p) => {
-                  if (p.value == null || p.y == null) {
+                  )}
+                  {chart.points.map((p) => {
+                    if (p.value == null || p.y == null) return null;
+                    const isOutOfCorridor = p.position === "under" || p.position === "over";
                     return (
                       <Circle
                         key={p.index}
                         cx={p.x}
-                        cy={60}
-                        r={3}
-                        fill="none"
-                        stroke={colors.border}
-                        strokeDasharray="2 2"
+                        cy={p.y}
+                        r={4}
+                        fill={isOutOfCorridor ? colors.tile : colors.accent}
+                        stroke={isOutOfCorridor ? colors.accent : "none"}
+                        strokeWidth={isOutOfCorridor ? 1.6 : 0}
+                        strokeDasharray={isOutOfCorridor ? dottedCircleDasharray(4, 8) : undefined}
                       />
                     );
-                  }
-                  const isOutOfCorridor = p.position === "under" || p.position === "over";
-                  return (
-                    <G key={p.index}>
-                      <Circle
-                        cx={p.x}
-                        cy={p.y}
-                        r={p.index === 6 ? 4.5 : 3.5}
-                        fill={isOutOfCorridor ? "none" : colors.accent}
-                        stroke={isOutOfCorridor ? colors.accent : colors.tile}
-                        strokeWidth={isOutOfCorridor ? 2 : 1.5}
-                      />
-                      <SvgText
-                        {...chartTextProps()}
-                        x={p.index === 6 ? Math.min(316, p.x) : p.index === 0 ? Math.max(40, p.x) : p.x}
-                        y={Math.max(12, p.y - 7)}
-                        textAnchor={p.index === 6 ? "end" : p.index === 0 ? "start" : "middle"}
-                        fill={colors.accent}
-                      >
-                        {p.formatted}
-                      </SvgText>
-                    </G>
-                  );
-                })}
-                {chart.points.map((p) => (
-                  <SvgText
-                    {...chartTextProps()}
-                    key={`l-${p.index}`}
-                    x={p.x}
-                    y={chart.height - 4}
-                    textAnchor="middle"
-                    fill={p.index === 6 ? colors.text : colors.secondary}
-                  >
-                    {p.dayLabel}
-                  </SvgText>
-                ))}
-              </Svg>
+                  })}
+                  {chart.points.map((p) => (
+                    <SvgText
+                      {...chartTextProps()}
+                      key={`l-${p.index}`}
+                      x={p.x}
+                      y={chart.height - 4}
+                      textAnchor="middle"
+                      fill={p.index === 6 ? colors.text : colors.secondary}
+                    >
+                      {p.dayLabel}
+                    </SvgText>
+                  ))}
+                </Svg>
+              </ChartScrubber>
             </View>
-          </View>
+          </Animated.View>
+          </Animated.View>
         );
       })()}
+      </View>
     </View>
   );
 }
@@ -209,7 +302,7 @@ const sThemes = createThemedStyles(themeColors=>{const colors=homeHealthColors(t
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   tile: {
     padding: 14,
-    minHeight: 200,
+    minHeight: 176,
     alignItems: "center",
     borderWidth: 1,
     borderColor: colors.border,

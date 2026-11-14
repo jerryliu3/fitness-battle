@@ -121,32 +121,35 @@ export function trainingAtlas(activities: Activity[], sport: TrainingSportFilter
 export function formatTrainingHours(seconds:number):string { return (Math.max(0,seconds)/3600).toLocaleString("en-US",{maximumFractionDigits:2}); }
 
 /**
- * Earliest recorded activity, settled period result, or durable personal record attempt.
- * When no historical data is recorded, returns `null`.
+ * Earliest chart date: prefers account creation date when provided and valid,
+ * otherwise earliest recorded activity, period result, record attempt, effort event, or health reading.
  */
-export function earliestDataDate(state: CompeteState, now = competeNow(state)): Date | null {
+export function earliestDataDate(
+  state: CompeteState,
+  now = competeNow(state),
+  createdAt?: string | null,
+): Date | null {
+  if (createdAt) {
+    const createdMs = Date.parse(createdAt);
+    if (Number.isFinite(createdMs) && createdMs <= now.getTime()) {
+      return new Date(createdMs);
+    }
+  }
   let min: number | undefined;
+  const consider = (raw: string | undefined) => {
+    if (!raw) return;
+    const t = Date.parse(raw);
+    if (Number.isFinite(t) && t <= now.getTime() && (min === undefined || t < min)) min = t;
+  };
 
   for (const a of state.activities) {
-    if (countsOnTrack(a, "open")) {
-      const t = Date.parse(a.startedAt);
-      if (Number.isFinite(t) && t <= now.getTime()) {
-        if (min === undefined || t < min) min = t;
-      }
-    }
+    if (countsOnTrack(a, "open")) consider(a.startedAt);
   }
-  for (const r of state.periodResults) {
-    const t = Date.parse(r.periodStart);
-    if (Number.isFinite(t) && t <= now.getTime()) {
-      if (min === undefined || t < min) min = t;
-    }
-  }
-  for (const a of state.recordAttempts ?? []) {
-    const t = Date.parse(a.startedAt);
-    if (Number.isFinite(t) && t <= now.getTime()) {
-      if (min === undefined || t < min) min = t;
-    }
-  }
+  for (const r of state.periodResults) consider(r.periodStart);
+  for (const a of state.recordAttempts ?? []) consider(a.startedAt);
+  for (const e of state.effortScoreEvents ?? []) consider(e.occurredAt);
+  for (const h of state.dailyHealth ?? []) consider(`${h.day}T12:00:00Z`);
+  for (const s of state.sleepNights ?? []) consider(`${s.day}T12:00:00Z`);
 
   return min !== undefined ? new Date(min) : null;
 }

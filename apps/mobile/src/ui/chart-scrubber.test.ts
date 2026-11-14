@@ -110,3 +110,23 @@ it("clears selection when touch releases, falling back to summary and live state
   expect(selectionChange).toHaveBeenLastCalledWith(undefined);
   expect(renderer.root.findAllByType("Line" as never)).toHaveLength(0);
 });
+
+it("keeps floating top label coupled to right-edge vertical line and omits dot when hideSelectionDot is set", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const edgePoints = [
+    { id: "a", x: 10, y: 80, label: "Oct 1", value: "10" },
+    { id: "b", x: 98, y: 20, label: "Oct 28", value: "90" },
+  ];
+  await act(async () => {
+    renderer = create(createElement(ChartScrubber, {
+      points: edgePoints, width: 100, height: 120, plotTop: 28, plotBottom: 100, label: "Corridor", hideSelectionDot: true, selectedPointId: "b", children: null,
+    }));
+  });
+  const surface = () => renderer.root.findAllByType("View" as never).find(node => node.props.accessibilityRole === "adjustable")!;
+  await act(async () => surface().props.onLayout({ nativeEvent: { layout: { width: 300 } } }));
+  const labelWrap = renderer.root.findAllByType("View" as never).find(node => node.props.onLayout && node.props.pointerEvents === "none")!;
+  await act(async () => labelWrap.props.onLayout({ nativeEvent: { layout: { width: 50 } } }));
+  expect(labelWrap.props.style.left).toBe(250);
+  expect(renderer.root.findAllByType("Line" as never)).toHaveLength(1);
+  expect(renderer.root.findAllByType("Circle" as never)).toHaveLength(0);
+});

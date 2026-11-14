@@ -13,6 +13,7 @@ import {
   type AnalyticsTimeLens,
   type CompeteState,
 } from "@fitness-battle/shared";
+import { useAuth } from "../lib/auth";
 import { AthleteTelemetryMatrix } from "./athlete-telemetry-matrix";
 import { VitalsLabBodyScan } from "./vitals-lab-body-scan";
 
@@ -33,6 +34,7 @@ export function HealthLabSpace({
 }) {
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
+  const { user } = useAuth();
 
   const [timeLens, setTimeLens] = useState<AnalyticsTimeLens>("7d");
   const [selectedMetric, setSelectedMetric] = useState<HealthMetricKey>("hrv");
@@ -46,11 +48,11 @@ export function HealthLabSpace({
       return { hrv: [], rhr: [], sleep: [] };
     }
     return {
-      hrv: recordedHealthSeries(state, "hrv", days, now),
-      rhr: recordedHealthSeries(state, "resting-hr", days, now),
-      sleep: recordedHealthSeries(state, "sleep", days, now),
+      hrv: recordedHealthSeries(state, "hrv", days, now, user?.createdAt),
+      rhr: recordedHealthSeries(state, "resting-hr", days, now, user?.createdAt),
+      sleep: recordedHealthSeries(state, "sleep", days, now, user?.createdAt),
     };
-  }, [state, signedOut, days, now]);
+  }, [state, signedOut, days, now, user?.createdAt]);
 
   const activeRows = selectedMetric === "hrv" ? series.hrv : selectedMetric === "rhr" ? series.rhr : series.sleep;
   const lastRecorded = [...activeRows].reverse().find((row) => row.value != null);
@@ -89,36 +91,43 @@ export function HealthLabSpace({
       />
 
       <View style={s.chartCard}>
-        <View style={{ gap: 2 }}>
-          <AppText role="caption" secondary>{titles[selectedMetric]}</AppText>
-          <View style={s.valueRow}>
-            <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
-              {inspected?.value != null ? formatReading(selectedMetric, inspected.value) : "—"}
-            </AppText>
+        <View style={s.chartHeaderRow}>
+          <View style={{ flex: 1, gap: 2, minWidth: 115 }}>
+            <AppText role="caption" secondary>{titles[selectedMetric]}</AppText>
+            <View style={s.valueRow}>
+              <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
+                {inspected?.value != null ? formatReading(selectedMetric, inspected.value) : "—"}
+              </AppText>
+            </View>
+            {!inspected && (
+              <AppText role="caption" secondary>
+                No recorded observations
+              </AppText>
+            )}
           </View>
-          <AppText role="caption" secondary>
-            {inspected?.label ?? "No recorded observations"}
-          </AppText>
+          <View style={s.compactRangeWrap}>
+            <FocusSegments
+              compact
+              label="Health time lens"
+              value={timeLens}
+              options={TIME_LENSES}
+              onChange={(next) => { setTimeLens(next); setSelectedIdx(undefined); }}
+            />
+          </View>
         </View>
-        <FocusSegments
-          label="Health time lens"
-          value={timeLens}
-          options={TIME_LENSES}
-          onChange={(next) => { setTimeLens(next); setSelectedIdx(undefined); }}
-        />
         <View style={s.chartBody}>
           {lastRecorded ? (
             <StandardLineChart
               height={180}
               showAxes={true}
               showSummary={false}
-              xAxisLabel="Date"
               values={activeRows.map((row) => row.value)}
               pointLabels={activeRows.map((row) => row.label)}
               selectedIdx={selectedIdx}
               onSelectIdx={setSelectedIdx}
               stroke={c.tennis}
               corridor={corridorSeries}
+              formatAxisY={formatHealthNumber}
               formatY={(v) => formatReading(selectedMetric, v)}
               accessibilityLabel={`${titles[selectedMetric]} recorded history`}
             />
@@ -154,10 +163,21 @@ const sThemes = createThemedStyles((themeColors) => {
     chartCard: {
       padding: 16,
       borderRadius: 20,
-      backgroundColor: c.soft,
+      backgroundColor: c.card,
       borderWidth: 1,
       borderColor: c.line,
       gap: 14,
+    },
+    chartHeaderRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: 12,
+    },
+    compactRangeWrap: {
+      alignSelf: "flex-start",
+      flexShrink: 0,
     },
     valueRow: {
       flexDirection: "row",
@@ -169,7 +189,7 @@ const sThemes = createThemedStyles((themeColors) => {
     insightCard: {
       padding: 16,
       borderRadius: 20,
-      backgroundColor: c.soft,
+      backgroundColor: c.card,
       borderWidth: 1,
       borderColor: c.line,
       flexDirection: "row",
