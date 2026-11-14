@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
-import { APP_ICON_PATHS, crewMemberRelayColor, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
+import { APP_ICON_PATHS, crewMemberRelayColor, crewOverview, crewReplayEvents, formatCompetitionFeedTimestamp, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
 import { AppHeading, AppText } from "@/ui/section";
 import { UserAvatar } from "@/ui/user-avatar";
 import { CrewRelay } from "./crew-relay";
@@ -31,8 +31,8 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, ...input }
     }, input.sport).then(rows => { if (!controller.signal.aborted) setReplayEntries(rows); }).catch(() => { if (!controller.signal.aborted) setReplayError("Replay unavailable"); });
     return () => controller.abort();
   }, [crewId, user?.id, offlineMode, input.sport, input.now]);
-  const full = crewOverview(input);
   const events = useMemo(() => crewReplayEvents(input, offlineMode ? input.entries : replayEntries ?? []), [replayEntries, input.entries, input.members, input.now, offlineMode]);
+  const full = crewOverview(input, 1, events);
   const [frame, setFrame] = useState(1);
   const frameRef = useRef(frame);
   frameRef.current = frame;
@@ -78,9 +78,13 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, ...input }
       </button>)}</div>
     </section>
     <CrewPassportPanel crewId={crewId} input={input} />
-    {full.highlights.length > 0 && <section>
+    {full.highlightItems.length > 0 && <section>
       <AppHeading level={2} role="heading">Crew highlights</AppHeading>
-      <ul className="crew-highlights">{full.highlights.map(h => <li key={h}><AppText role="body">{h}</AppText></li>)}</ul>
+      <ul className="crew-highlights">{full.highlightItems.map(item => <li key={item.id}>
+        <span className="crew-highlight-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS[item.icon]} /></svg></span>
+        <span className="crew-highlight-copy"><AppText role="label">{item.title}</AppText><AppText role="caption" secondary>{item.detail}</AppText></span>
+        <AppText as="span" role="caption" secondary className="crew-highlight-time"><time dateTime={item.at}>{formatCompetitionFeedTimestamp(item.at, Date.parse(input.now))}</time></AppText>
+      </li>)}</ul>
     </section>}
 
     <CrewDerbyCard crewId={crewId} units={input.units} />
