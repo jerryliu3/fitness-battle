@@ -74,3 +74,97 @@ export function readinessBonus(
 export function eloFromWeeklyEffort(weeklyEffort: number): number {
   return clamp(500, 2200, Math.round(900 + weeklyEffort * 12));
 }
+
+export type EffortBarCount = 1 | 2 | 3 | 4 | 5;
+export type EffortTier = "easy" | "moderate" | "hard" | "all-out";
+export interface SessionEffortSummary {
+  bars: EffortBarCount;
+  tier: EffortTier;
+  ratio: number;
+  basis: "effort" | "duration";
+  hasBaseline: boolean;
+}
+
+export const EFFORT_BAR_HEIGHT_RATIOS = [0.28, 0.44, 0.62, 0.81, 1] as const;
+
+export const EFFORT_TIER_LABELS: Record<EffortTier, string> = {
+  easy: "Easy",
+  moderate: "Moderate",
+  hard: "Hard",
+  "all-out": "All out",
+};
+
+/** Three layered podium colors across the 5 ascending effort bars: bronze -> silver -> gold. */
+export const EFFORT_BAR_COLOR_ROLES = [
+  "podiumBronze",
+  "podiumBronze",
+  "podiumSilver",
+  "podiumSilver",
+  "podiumGold",
+] as const;
+
+const THIRTY_DAYS_MS = 30 * 86_400_000;
+
+function median(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+}
+
+/**
+ * Rate a session from 1..5 bars against a trailing 30-day baseline, preferring
+ * same-sport effort points and falling back to moving duration when cross-sport
+ * or effort history is unavailable.
+ */
+export function sessionEffortSummary(
+  target: {
+    id?: string;
+    sport: SportId;
+    distanceM: number;
+    movingSec: number;
+    startedAt: string;
+    avgHr?: number | null;
+  },
+  history: readonly Activity[],
+): SessionEffortSummary {
+  const parsedEnd = Date.parse(target.startedAt);
+  const endMs = Number.isFinite(parsedEnd) ? parsedEnd : Date.now();
+  const startMs = endMs - THIRTY_DAYS_MS;
+  const recent = history.filter((a) => {
+    if (target.id && a.id === target.id) return false;
+    if (!countsOnTrack(a, "open")) return false;
+    const at = Date.parse(a.startedAt);
+    return Number.isFinite(at) && at >= startMs && at <= endMs;
+  });
+  const sameSport = recent.filter((a) => a.sport === target.sport);
+  const useSameSportPool = sameSport.length >= 2;
+  const pool = useSameSportPool ? sameSport : recent;
+
+  const targetEffort = activityEffort({
+    id: target.id ?? "",
+    sport: target.sport,
+    startedAt: target.startedAt,
+    distanceM: target.distanceM,
+    movingSec: target.movingSec,
+    avgHr: target.avgHr ?? undefined,
+    verified: false,
+    source: "manual",
+  });
+  // Effort points scale per sport; only compare effort against same-sport sessions.
+  const baselineEfforts = useSameSportPool ? pool.map(activityEffort).filter((v) => v > 0) : [];
+  const useEffort = targetEffort > 0 && baselineEfforts.length > 0;
+  const targetValue = useEffort ? targetEffort : Math.max(0, target.movingSec);
+  const baselineValues = useEffort
+    ? baselineEfforts
+    : pool.map((a) => a.movingSec).filter((v) => v > 0);
+  const baseline = median(baselineValues);
+  const hasBaseline = baseline > 0;
+  const ratio = hasBaseline ? targetValue / baseline : 1;
+
+  const bars: EffortBarCount =
+    ratio < 0.65 ? 1 : ratio < 0.9 ? 2 : ratio < 1.15 ? 3 : ratio < 1.45 ? 4 : 5;
+  const tier: EffortTier =
+    bars <= 2 ? "easy" : bars === 3 ? "moderate" : bars === 4 ? "hard" : "all-out";
+  return { bars, tier, ratio, basis: useEffort ? "effort" : "duration", hasBaseline };
+}
