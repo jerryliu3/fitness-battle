@@ -30,7 +30,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, children, 
       return response.json() as Promise<CrewActivityPage>;
     }, input.sport).then(rows => { if (!controller.signal.aborted) setReplayEntries(rows); }).catch(() => { if (!controller.signal.aborted) setReplayError("Replay unavailable"); });
     return () => controller.abort();
-  }, [crewId, user?.id, offlineMode]);
+  }, [crewId, user?.id, offlineMode, input.sport, input.now]);
   const full = crewOverview(input);
   const events = useMemo(() => crewReplayEvents(input, offlineMode ? input.entries : replayEntries ?? []), [replayEntries, input.entries, input.members, input.now, offlineMode]);
   const [frame, setFrame] = useState(1);
@@ -72,9 +72,9 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, children, 
     <section className="crew-lineup">
       <div className="crew-lineup-header"><AppHeading level={2} role="heading">Crew mates</AppHeading>{input.members.length > 4 && <button type="button" className="fb-btn-ghost" onClick={onViewMembers}>View all</button>}</div>
       <div className="crew-lineup-grid">{full.lineup.map(m => <button type="button" key={m.user_id} onClick={() => onSelectMember(m.user_id)}>
-        <span style={{ borderColor: crewMemberRelayColor(m.user_id, input.members.map(member => member.user_id)) }}><UserAvatar src={m.avatar_url} name={m.display_name} size={42} /></span>
+        <span style={{ borderColor: crewMemberRelayColor(m.user_id, input.members.map(member => member.user_id), view.relay.model) }}><UserAvatar src={m.avatar_url} name={m.display_name} size={42} /></span>
         <AppText role="label">{m.display_name.split(" ")[0]}</AppText>
-        <AppText role="caption" secondary>{full.volume(full.relay.model.segments.find(s => s.id === m.user_id)?.value ?? 0)}</AppText>
+        <AppText role="caption" secondary>{view.volume(view.relay.model.segments.find(s => s.id === m.user_id)?.value ?? 0)}</AppText>
       </button>)}</div>
     </section>
     <CrewPassportPanel crewId={crewId} input={input}>{children}</CrewPassportPanel>
