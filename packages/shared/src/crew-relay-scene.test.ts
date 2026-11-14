@@ -45,7 +45,11 @@ it("keeps every finish check on the block (top plane and wrapping front face) wi
     }
     const faceChecks = checks.slice(16);
     expect(faceChecks).toHaveLength(8);
-    for (const check of faceChecks) {
+    for (let i = 0; i < faceChecks.length; i++) {
+      const check = faceChecks[i]!;
+      const col = i % 2;
+      const topCorner = topChecks[14 + col]!;
+      expect(check.attrs.fill).not.toBe(topCorner.attrs.fill);
       const coords = String(check.attrs.d).match(/-?\d+(?:\.\d+)?/g)!.map(Number);
       for (let i = 0; i < coords.length; i += 2) {
         const x = coords[i]!, y = coords[i + 1]!;
