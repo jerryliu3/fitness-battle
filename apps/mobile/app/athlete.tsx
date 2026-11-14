@@ -8,7 +8,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SectionHeader, SectionStack, textStyle, AppText } from "../src/ui/section";
 import { SportIcon } from "../src/ui/sport-icon";
 import { activityFromSample } from "@fitness-battle/shared";
-import { GlassDismissButton, ScreenHeader } from "../src/ui/screen-header";
+import { ScreenHeader } from "../src/ui/screen-header";
 import { AppIcon } from "../src/ui/app-icon";
 import { IntegrationIcon } from "../src/ui/integration-icon";
 
@@ -204,14 +204,6 @@ const styles=useThemedStyles(stylesThemes);
       nativeBar={!panel}
       title={panel ? titles[panel] : editingProfile ? "Edit profile" : "Athlete"}
       onBack={editingProfile && !panel ? () => { setEditingProfile(false); setEditDraft(null); } : exitAthletePanel}
-      trailing={
-        panel === "connections" && !inlineConnections ? (
-          <GlassDismissButton
-            label="Close Data Sync"
-            onPress={exitAthletePanel}
-          />
-        ) : undefined
-      }
     />
   );
 
@@ -507,58 +499,34 @@ const styles=useThemedStyles(stylesThemes);
                 <Text style={[styles.rowTitle, { flex: 1 }]}>{provider.name}</Text>
               </>
             );
-            if (isDeviceProvider(provider.id)) {
-              const deviceId = provider.id;
-              return (
-                <View
-                  key={deviceId}
-                  style={[styles.syncRow, showDivider && styles.syncRowDivider]}
-                >
-                  {title}
-                  <View style={{ flexShrink: 0 }}>
-                    <FocusButton
-                      label={syncBusy ? "Syncing…" : "Sync"}
-                      disabled={rowBusy}
-                      onPress={() => void syncDevice(deviceId)}
-                    />
-                  </View>
-                </View>
-              );
-            }
-            if (isCloudOAuthProvider(provider.id)) {
-              const cloudId = provider.id;
-              const connected =
-                link?.linked && link.status !== "disconnected";
-              return (
-                <View
-                  key={cloudId}
-                  style={[styles.syncRow, showDivider && styles.syncRowDivider]}
-                >
-                  {title}
-                  {connected ? (
-                    <DataSyncActions provider={cloudId} />
-                  ) : (
-                    <View style={{ flexShrink: 0 }}>
-                      <FocusButton
-                        label={
-                          busyProvider === provider.id
-                            ? "Authorizing…"
-                            : "Connect"
-                        }
-                        disabled={rowBusy}
-                        onPress={() => void connectCloud(cloudId)}
-                      />
-                    </View>
-                  )}
-                </View>
-              );
-            }
+            const isDevice = isDeviceProvider(provider.id);
+            const isCloud = isCloudOAuthProvider(provider.id);
+            const connected = Boolean(link?.linked && link.status !== "disconnected");
+            const connecting = isDevice ? syncBusy : busyProvider === provider.id;
             return (
               <View
                 key={provider.id}
                 style={[styles.syncRow, showDivider && styles.syncRowDivider]}
               >
                 {title}
+                {isDevice || isCloud ? (
+                  connected ? (
+                    <DataSyncActions provider={provider.id} />
+                  ) : (
+                    <View style={{ flexShrink: 0 }}>
+                      <FocusButton
+                        secondary
+                        label={connecting ? "Connecting…" : "Connect"}
+                        disabled={rowBusy}
+                        onPress={() =>
+                          isDevice
+                            ? void syncDevice(provider.id as "apple_health" | "google_health")
+                            : void connectCloud(provider.id)
+                        }
+                      />
+                    </View>
+                  )
+                ) : null}
               </View>
             );
           })}
