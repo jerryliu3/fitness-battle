@@ -15,32 +15,21 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   APP_TIMEZONE,
   activityEffort,
-  competeNow,
   countsOnTrack,
   distanceUnitLabel,
   formatClockTime,
   formatDistanceM,
   formatEffort,
-  shiftAppDay,
   sportById,
   type Activity,
   type SportId,
 } from "@fitness-battle/shared";
 
 type HistoryTab = "competitions" | "activities";
-type ActivityRange = "all" | "month" | "threeMonths" | "sixMonths" | "year";
 
 const TAB_OPTIONS: readonly { value: HistoryTab; label: string }[] = [
   { value: "competitions", label: "Competitions" },
   { value: "activities", label: "Activities" },
-];
-
-const RANGE_OPTIONS: readonly { value: ActivityRange; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "month", label: "1M" },
-  { value: "threeMonths", label: "3M" },
-  { value: "sixMonths", label: "6M" },
-  { value: "year", label: "1Y" },
 ];
 
 export default function ProgressHistoryScreen() {
@@ -57,24 +46,8 @@ export default function ProgressHistoryScreen() {
   useEffect(() => {
     setActiveTab(params.tab === "activities" ? "activities" : "competitions");
   }, [params.tab]);
-  const [range, setRange] = useState<ActivityRange>("all");
   const [selectedSport, setSelectedSport] = useState<SportId | "all">("all");
   const [inspectedActivity, setInspectedActivity] = useState<Activity | null>(null);
-
-  const now = useMemo(() => (state ? competeNow(state) : new Date()), [state]);
-
-  const cutoff = useMemo(() => {
-    if (range === "all") return 0;
-    const days =
-      range === "month"
-        ? 30
-        : range === "threeMonths"
-          ? 90
-          : range === "sixMonths"
-            ? 180
-            : 365;
-    return shiftAppDay(now, -days).getTime();
-  }, [range, now]);
 
   const filteredActivities = useMemo(() => {
     if (!state?.activities) return [];
@@ -82,11 +55,10 @@ export default function ProgressHistoryScreen() {
       .filter((a) => {
         if (!countsOnTrack(a, "open")) return false;
         if (selectedSport !== "all" && a.sport !== selectedSport) return false;
-        if (cutoff > 0 && Date.parse(a.startedAt) < cutoff) return false;
         return true;
       })
       .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
-  }, [state?.activities, selectedSport, cutoff]);
+  }, [state?.activities, selectedSport]);
 
   const summary = useMemo(() => {
     const count = filteredActivities.length;
@@ -139,14 +111,6 @@ export default function ProgressHistoryScreen() {
           </SectionStack>
         ) : (
           <View style={{ gap: 16 }}>
-            {/* Range Selector */}
-            <FocusSegments
-              label="Activity time range"
-              value={range}
-              options={RANGE_OPTIONS}
-              onChange={setRange}
-            />
-
             {/* Sport Filter Chips */}
             <View style={s.sportRow}>
               {(["all", "running", "cycling"] as const).map((sport) => {
@@ -198,7 +162,7 @@ export default function ProgressHistoryScreen() {
             {filteredActivities.length === 0 ? (
               <View style={s.emptyCard}>
                 <AppText role="body" secondary>
-                  No activities found for the selected time range and sport.
+                  No activities found for the selected sport.
                 </AppText>
               </View>
             ) : (
