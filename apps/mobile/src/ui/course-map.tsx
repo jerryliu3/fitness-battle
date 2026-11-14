@@ -123,6 +123,7 @@ const appearanceColors = useThemeColors();
         bearing: angle(current.bearing, target.bearing),
       };
       ref.current?.setCamera({ centerCoordinate: current.center, zoomLevel: current.zoom, pitch: current.pitch, heading: current.bearing, padding: { paddingTop: 160, paddingBottom: 0, paddingLeft: 0, paddingRight: 0 }, animationDuration: 0 });
+      pose.current = current;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
