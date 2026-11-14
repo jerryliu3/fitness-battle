@@ -46,8 +46,15 @@
   padding:24px 20px;
   background:color-mix(in srgb,var(--action-primary) 32%,var(--card));
   border:1px solid color-mix(in srgb,var(--action-primary) 50%,var(--line));
-  overflow:hidden
+  overflow:hidden;
+  display:grid;
+  gap:12px
 }
+.crew-week-hero-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.crew-week-hero-empty { display:grid; gap:10px; justify-items:start; }
+.crew-week-contract-progress { display:grid; gap:6px; }
+.crew-week-contract-meta { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.crew-week-contract-progress .crew-contract-track { margin-top:0; }
 .crew-week-value {
   display:flex;
   align-items:baseline;

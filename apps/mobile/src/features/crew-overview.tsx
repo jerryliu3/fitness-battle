@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Pressable, ScrollView, View } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { crewMemberRelayColor, crewOverview, crewReplayEvents, formatCompetitionFeedTimestamp, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
+import { crewContractValue, crewMemberRelayColor, crewOverview, crewReplayEvents, formatCompetitionFeedTimestamp, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
-import { useFocusStyles } from "../ui/focus";
-import { AppText } from "../ui/section";
+import { FocusButton, useFocusStyles } from "../ui/focus";
+import { AppText, TextAction } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 import { UserAvatar } from "../ui/user-avatar";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { CrewRelay } from "./crew-relay";
-import { CrewPassportPanel } from "./crew-passport";
+import { useCrewContractModal } from "./crew-passport";
 import { CrewDerbyCard } from "./crew-derby";
 import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
@@ -69,30 +69,52 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
   const cardWidth = Math.max(64, (lineupWidth - 24) / 4);
   const selectFrame = (value: number) => { if (!events.length) return; setPlaying(false); setFrame(Math.max(0, Math.min(1, value))); };
   const scrubTrack = (locationX: number) => selectFrame(locationX / Math.max(1, trackWidth));
-  return <View style={{ gap: 28 }}>
+  const contractUi = useCrewContractModal(crewId, input);
+  const { passport, contract } = contractUi;
+  const contractProgress = contract ? Math.min(100, contract.value / contract.target * 100) : 0;
+  return <><View style={{ gap: 28 }}>
     <View style={[f.card, { backgroundColor: c.actionSoft, borderColor: c.tennis, gap: 12, overflow: "hidden", padding: 20 }]}>
-      <AppText role="label">This week · {input.sport}</AppText>
-      <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
-        <AppText role="hero">{view.reading}</AppText><AppText role="body">{view.targetReading != null ? `/ ${view.targetReading} ` : ""}{view.unit}</AppText></View>
-      {input.previousDistanceM != null && !view.relay.sessions && <View style={{ padding: 10, borderWidth: 1, borderColor: c.line, borderRadius: 10 }}>
-        <AppText role="caption">Crew Ghost · {view.volume(input.previousDistanceM)} last week</AppText>
-      </View>}
-      <View>
-        <CrewRelay {...input} entries={view.entries} model={view.relay.model} compact hiddenIds={hiddenIds} onSelectMember={onSelectMember} />
-      </View>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderColor: c.line, paddingTop: 10 }}>
-        <Pressable accessibilityRole="button" disabled={!events.length} accessibilityLabel={playing ? "Pause replay" : "Replay this week"} accessibilityState={{ selected: playing }} onPress={() => { if (!playing && frame === 1) setFrame(0); setPlaying(!playing); }} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.surfaceInverse, opacity: events.length ? 1 : 0.4, alignItems: "center", justifyContent: "center" }}>
-          <AppIcon name={playing ? "pause" : "play"} size={20} color={c.textOnInverse} />
-        </Pressable>
-        <View accessible accessibilityRole="adjustable" accessibilityLabel="Weekly replay timeline" accessibilityValue={{ min: 0, max: 100, now: Math.round(frame * 100), text: view.replayLabel }} accessibilityActions={[{ name: "increment" }, { name: "decrement" }]} onAccessibilityAction={e => selectFrame(frame + (e.nativeEvent.actionName === "increment" ? 0.05 : -0.05))} onLayout={e => setTrackWidth(e.nativeEvent.layout.width)} onStartShouldSetResponder={() => true} onResponderGrant={e => scrubTrack(e.nativeEvent.locationX)} onResponderMove={e => scrubTrack(e.nativeEvent.locationX)} style={{ flex: 1, height: 44, justifyContent: "center" }}>
-          <View pointerEvents="none" style={{ height: 5, borderRadius: 4, backgroundColor: c.line }}>
-            <View style={{ height: 5, width: `${frame * 100}%`, borderRadius: 4, backgroundColor: c.ink }} />
-          </View>
-          <View pointerEvents="none" style={{ position: "absolute", left: `${frame * 100}%`, marginLeft: -6, width: 12, height: 12, borderRadius: 6, backgroundColor: c.ink }} />
+      {contract ? <>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <AppText role="label">Weekly contract · {input.sport}</AppText>
+          <TextAction label="Change contract" accessibilityLabel="Change weekly contract" onPress={contractUi.openSummary} />
         </View>
-        <AppText role="caption">{view.replayLabel}</AppText>
-      </View>
-      {replayError && <AppText role="caption" secondary>{replayError}</AppText>}
+        <AppText role="heading">{contract.title}</AppText>
+        <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
+          <AppText role="hero">{view.reading}</AppText><AppText role="body">{view.targetReading != null ? `/ ${view.targetReading} ` : ""}{view.unit}</AppText>
+        </View>
+        <View style={{ gap: 6 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
+            <AppText role="caption">{crewContractValue(contract.metric, contract.value, input.units)} / {crewContractValue(contract.metric, contract.target, input.units)}{contractProgress >= 100 ? " · Reached" : ""}</AppText>
+            <AppText role="caption" secondary>{contract.contributors}/{contract.roster_size} active</AppText>
+          </View>
+          <View style={{ height: 6, backgroundColor: c.line, borderRadius: 4, overflow: "hidden" }}><View style={{ height: 6, width: `${contractProgress}%`, backgroundColor: c.ink }} /></View>
+        </View>
+        {input.previousDistanceM != null && !view.relay.sessions && <View style={{ padding: 10, borderWidth: 1, borderColor: c.line, borderRadius: 10 }}>
+          <AppText role="caption">Crew Ghost · {view.volume(input.previousDistanceM)} last week</AppText>
+        </View>}
+        <View>
+          <CrewRelay {...input} entries={view.entries} model={view.relay.model} compact hiddenIds={hiddenIds} onSelectMember={onSelectMember} />
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderColor: c.line, paddingTop: 10 }}>
+          <Pressable accessibilityRole="button" disabled={!events.length} accessibilityLabel={playing ? "Pause replay" : "Replay this week"} accessibilityState={{ selected: playing }} onPress={() => { if (!playing && frame === 1) setFrame(0); setPlaying(!playing); }} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.surfaceInverse, opacity: events.length ? 1 : 0.4, alignItems: "center", justifyContent: "center" }}>
+            <AppIcon name={playing ? "pause" : "play"} size={20} color={c.textOnInverse} />
+          </Pressable>
+          <View accessible accessibilityRole="adjustable" accessibilityLabel="Weekly replay timeline" accessibilityValue={{ min: 0, max: 100, now: Math.round(frame * 100), text: view.replayLabel }} accessibilityActions={[{ name: "increment" }, { name: "decrement" }]} onAccessibilityAction={e => selectFrame(frame + (e.nativeEvent.actionName === "increment" ? 0.05 : -0.05))} onLayout={e => setTrackWidth(e.nativeEvent.layout.width)} onStartShouldSetResponder={() => true} onResponderGrant={e => scrubTrack(e.nativeEvent.locationX)} onResponderMove={e => scrubTrack(e.nativeEvent.locationX)} style={{ flex: 1, height: 44, justifyContent: "center" }}>
+            <View pointerEvents="none" style={{ height: 5, borderRadius: 4, backgroundColor: c.line }}>
+              <View style={{ height: 5, width: `${frame * 100}%`, borderRadius: 4, backgroundColor: c.ink }} />
+            </View>
+            <View pointerEvents="none" style={{ position: "absolute", left: `${frame * 100}%`, marginLeft: -6, width: 12, height: 12, borderRadius: 6, backgroundColor: c.ink }} />
+          </View>
+          <AppText role="caption">{view.replayLabel}</AppText>
+        </View>
+        {replayError && <AppText role="caption" secondary>{replayError}</AppText>}
+      </> : <>
+        <AppText role="label">Weekly contract · {input.sport}</AppText>
+        <AppText role="heading">{!passport.available ? "Contracts unavailable" : !passport.data ? (passport.error ? "Could not load contract" : "Loading weekly contract…") : "Set this week’s contract"}</AppText>
+        <AppText role="caption" secondary>{!passport.available ? passport.unavailable : passport.data ? "Set one shared distance, time, or check-in goal for your crew this week." : (passport.error || "Checking your crew’s weekly objective.")}</AppText>
+        {passport.error && !passport.data ? <FocusButton secondary label="Refresh" onPress={() => void passport.reload()} /> : <FocusButton label="Set weekly contract" disabled={!passport.available || !passport.data} onPress={contractUi.openEditor} />}
+      </>}
     </View>
     <View style={{ gap: 12 }} onLayout={e => setLineupWidth(e.nativeEvent.layout.width)}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -107,7 +129,6 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
         </Pressable>)}
       </ScrollView>
     </View>
-    <CrewPassportPanel crewId={crewId} input={input} />
     {full.highlightItems.length > 0 && <View style={{ gap: 12 }}>
       <AppText accessibilityRole="header" role="heading">Crew highlights</AppText>
       <View style={{ borderRadius: 20, backgroundColor: c.card, overflow: "hidden" }}>
@@ -127,5 +148,5 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
     </View>}
 
     <CrewDerbyCard crewId={crewId} units={input.units} />
-  </View>;
+  </View>{contractUi.sheet}</>;
 }

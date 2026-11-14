@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
-import { APP_ICON_PATHS, crewMemberRelayColor, crewOverview, crewReplayEvents, formatCompetitionFeedTimestamp, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
-import { AppHeading, AppText } from "@/ui/section";
+import { APP_ICON_PATHS, crewContractValue, crewMemberRelayColor, crewOverview, crewReplayEvents, formatCompetitionFeedTimestamp, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
+import { AppHeading, AppParagraph, AppText } from "@/ui/section";
 import { UserAvatar } from "@/ui/user-avatar";
 import { CrewRelay } from "./crew-relay";
-import { CrewPassportPanel } from "./crew-passport";
+import { useCrewContractModal } from "./crew-passport";
 import { CrewDerbyCard } from "./crew-derby";
 import "./crew-overview.css";
 import { useAuth } from "@/components/auth-context";
@@ -55,19 +55,40 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, ...input }
     animation = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animation);
   }, [playing, reduced, events.length]);
-  return <div className="crew-overview">
+  const contractUi = useCrewContractModal(crewId, input);
+  const { passport, contract } = contractUi;
+  const contractProgress = contract ? Math.min(100, contract.value / contract.target * 100) : 0;
+  return <><div className="crew-overview">
     <section className="crew-week-hero" aria-label="Shared weekly progress">
-      <AppText role="label">This week · {input.sport}</AppText>
-      <div className="crew-week-value">
-        <AppText role="hero">{view.reading}</AppText><AppText role="body">{view.targetReading != null ? `/ ${view.targetReading} ` : ""}{view.unit}</AppText></div>
-      {input.previousDistanceM != null && !view.relay.sessions && <AppText role="caption" className="crew-ghost">Crew Ghost · {view.volume(input.previousDistanceM)} last week</AppText>}
-      <CrewRelay {...input} entries={view.entries} model={view.relay.model} compact onSelectMember={onSelectMember} />
-      <div className="crew-replay">
-        <button type="button" className="crew-play" disabled={!events.length} aria-label={playing ? "Pause replay" : "Replay this week"} aria-pressed={playing} onClick={() => { if (!playing && frame === 1) setFrame(0); setPlaying(!playing); }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS[playing ? "pause" : "play"]} /></svg></button>
-        <input aria-label="Weekly replay timeline" type="range" disabled={!events.length} min={0} max={1} step={0.001} value={frame} onChange={e => { setPlaying(false); setFrame(Number(e.target.value)); }} />
-        <AppText role="caption">{view.replayLabel}</AppText>
-      </div>
-      {replayError && <AppText role="caption" secondary>{replayError}</AppText>}
+      {contract ? <>
+        <div className="crew-week-hero-head">
+          <AppText role="label">Weekly contract · {input.sport}</AppText>
+          <button type="button" className="fb-btn-ghost" onClick={contractUi.openSummary}>Change contract</button>
+        </div>
+        <AppHeading level={2} role="heading">{contract.title}</AppHeading>
+        <div className="crew-week-value">
+          <AppText role="hero">{view.reading}</AppText><AppText role="body">{view.targetReading != null ? `/ ${view.targetReading} ` : ""}{view.unit}</AppText></div>
+        <div className="crew-week-contract-progress">
+          <div className="crew-week-contract-meta">
+            <AppText role="caption">{crewContractValue(contract.metric, contract.value, input.units)} / {crewContractValue(contract.metric, contract.target, input.units)}{contractProgress >= 100 ? " · Reached" : ""}</AppText>
+            <AppText role="caption" secondary>{contract.contributors}/{contract.roster_size} active</AppText>
+          </div>
+          <div className="crew-contract-track"><span style={{ width: `${contractProgress}%` }} /></div>
+        </div>
+        {input.previousDistanceM != null && !view.relay.sessions && <AppText role="caption" className="crew-ghost">Crew Ghost · {view.volume(input.previousDistanceM)} last week</AppText>}
+        <CrewRelay {...input} entries={view.entries} model={view.relay.model} compact onSelectMember={onSelectMember} />
+        <div className="crew-replay">
+          <button type="button" className="crew-play" disabled={!events.length} aria-label={playing ? "Pause replay" : "Replay this week"} aria-pressed={playing} onClick={() => { if (!playing && frame === 1) setFrame(0); setPlaying(!playing); }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS[playing ? "pause" : "play"]} /></svg></button>
+          <input aria-label="Weekly replay timeline" type="range" disabled={!events.length} min={0} max={1} step={0.001} value={frame} onChange={e => { setPlaying(false); setFrame(Number(e.target.value)); }} />
+          <AppText role="caption">{view.replayLabel}</AppText>
+        </div>
+        {replayError && <AppText role="caption" secondary>{replayError}</AppText>}
+      </> : <div className="crew-week-hero-empty">
+        <AppText role="label">Weekly contract · {input.sport}</AppText>
+        <AppHeading level={2} role="heading">{!passport.available ? "Contracts unavailable" : !passport.data ? (passport.error ? "Could not load contract" : "Loading weekly contract…") : "Set this week’s contract"}</AppHeading>
+        <AppParagraph typographyRole="caption">{!passport.available ? passport.unavailable : passport.data ? "Set one shared distance, time, or check-in goal for your crew this week." : (passport.error || "Checking your crew’s weekly objective.")}</AppParagraph>
+        {passport.error && !passport.data ? <button type="button" className="fb-btn-line" onClick={() => void passport.reload()}>Refresh</button> : <button type="button" className="fb-btn" disabled={!passport.available || !passport.data} onClick={contractUi.openEditor}>Set weekly contract</button>}
+      </div>}
     </section>
     <section className="crew-lineup">
       <div className="crew-lineup-header"><AppHeading level={2} role="heading">Crew mates</AppHeading>{input.members.length > 4 && <button type="button" className="fb-btn-ghost" onClick={onViewMembers}>View all</button>}</div>
@@ -77,7 +98,6 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, ...input }
         <AppText role="caption" secondary>{view.volume(view.relay.model.segments.find(s => s.id === m.user_id)?.value ?? 0)}</AppText>
       </button>)}</div>
     </section>
-    <CrewPassportPanel crewId={crewId} input={input} />
     {full.highlightItems.length > 0 && <section>
       <AppHeading level={2} role="heading">Crew highlights</AppHeading>
       <ul className="crew-highlights">{full.highlightItems.map(item => <li key={item.id}>
@@ -88,5 +108,5 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, ...input }
     </section>}
 
     <CrewDerbyCard crewId={crewId} units={input.units} />
-  </div>;
+  </div>{contractUi.sheet}</>;
 }
