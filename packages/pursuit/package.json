@@ -11,7 +11,8 @@
     "./avatar": "./src/avatar.ts",
     "./live-pursuit": "./src/live-pursuit.tsx",
     "./live-pursuit.css": "./src/live-pursuit.css",
-    "./vitals-body": "./src/vitals-body/index.ts"
+    "./vitals-body": "./src/vitals-body/index.ts",
+    "./vitals-lab": "./src/vitals-lab/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -39,6 +39,9 @@ vi.mock("../lib/compete-store", () => ({
 vi.mock("../features/progress-screen", () => ({
   ProgressScreen: "ProgressScreen",
 }));
+vi.mock("../features/vitals-lab/vitals-lab-canvas-prefetch", () => ({
+  VitalsLabCanvasPrefetch: "VitalsLabCanvasPrefetch",
+}));
 vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path", Circle: "Circle", Defs: "Defs", RadialGradient: "RadialGradient", Stop: "Stop" }));
 vi.mock("../features/effort-rail",()=>({EffortRail:"EffortRail"}));
 import ProgressTab from "../../app/(tabs)/you";

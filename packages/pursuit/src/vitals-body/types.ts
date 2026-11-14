@@ -25,10 +25,11 @@ export interface VitalsBodyTuning {
   edgeLight: number;
 }
 
+/** Vitals lab defaults (cloud, medium density, soft face). */
 export const DEFAULT_TUNING: VitalsBodyTuning = {
-  particleScale: 0.52,
-  opacity: 0.52,
-  brightness: 0.9,
-  glow: 0.48,
-  edgeLight: 0.68,
+  particleScale: 0.18,
+  opacity: 0.8,
+  brightness: 1.0,
+  glow: 0.74,
+  edgeLight: 0.3,
 };

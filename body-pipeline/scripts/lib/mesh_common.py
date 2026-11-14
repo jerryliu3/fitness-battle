@@ -45,23 +45,55 @@ def bone_label_to_region(label: str) -> int:
     return REGION_NONE
 
 
-def standing_pose_rotvec_deg() -> dict[str, tuple[float, float, float]]:
-    """Relaxed A-pose: arms at sides, feet parallel (degrees, bone-local)."""
+def _default_standing_pose() -> dict[str, tuple[float, float, float]]:
+    """Soldier · relaxed arms (degrees, Anny local-ref). Sync with `DEFAULT_VITALS_POSE` (web)."""
     return {
-        "clavicle.L": (0.0, 0.0, 5.0),
-        "clavicle.R": (0.0, 0.0, -5.0),
-        "shoulder01.L": (0.0, 0.0, 7.0),
-        "shoulder01.R": (0.0, 0.0, -7.0),
-        "upperarm01.L": (18.0, 0.0, -72.0),
-        "upperarm01.R": (-18.0, 0.0, 72.0),
-        "upperarm02.L": (4.0, 0.0, 0.0),
-        "upperarm02.R": (-4.0, 0.0, 0.0),
-        "lowerarm01.L": (6.0, 0.0, 0.0),
-        "lowerarm01.R": (-6.0, 0.0, 0.0),
-        # Thigh roll (Z): slight inward without the Y abduction that splayed the feet.
-        "upperleg01.L": (0.0, 0.0, -7.0),
-        "upperleg01.R": (0.0, 0.0, 7.0),
+        "clavicle.L": (0.0, 0.0, 0.0),
+        "clavicle.R": (0.0, 0.0, 0.0),
+        "shoulder01.L": (0.0, 0.0, 0.0),
+        "shoulder01.R": (0.0, 0.0, 0.0),
+        "upperarm01.L": (1.2, 32.5, 0.1),
+        "upperarm01.R": (1.2, -32.5, -0.1),
+        "upperarm02.L": (0.0, 0.0, 0.0),
+        "upperarm02.R": (0.0, 0.0, 0.0),
+        "lowerarm01.L": (32.0, 3.7, 27.2),
+        "lowerarm01.R": (32.0, -3.7, -27.2),
+        "upperleg01.L": (0.0, 3.3, 0.0),
+        "upperleg01.R": (0.0, -3.3, 0.0),
     }
+
+
+def _load_pose_json_overrides() -> dict[str, tuple[float, float, float]]:
+    path = Path(__file__).resolve().parents[2] / "local" / "pose.json"
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"Invalid pose file: {path}")
+    out: dict[str, tuple[float, float, float]] = {}
+    for label, rot in data.items():
+        if not isinstance(rot, dict):
+            continue
+        out[str(label)] = (
+            float(rot.get("x", 0.0)),
+            float(rot.get("y", 0.0)),
+            float(rot.get("z", 0.0)),
+        )
+    return out
+
+
+def shipped_standing_pose_rotvec_deg() -> dict[str, tuple[float, float, float]]:
+    """Shipped runtime bake: Soldier defaults only (ignore dev pose.json)."""
+    return dict(_default_standing_pose())
+
+
+def standing_pose_rotvec_deg() -> dict[str, tuple[float, float, float]]:
+    """Dev preview: Soldier defaults + optional `body-pipeline/local/pose.json`."""
+    pose = _default_standing_pose()
+    for label, rot in _load_pose_json_overrides().items():
+        if label in pose:
+            pose[label] = rot
+    return pose
 
 
 def standing_arm_rotvec_deg() -> dict[str, tuple[float, float, float]]:

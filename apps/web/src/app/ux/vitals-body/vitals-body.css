@@ -51,6 +51,57 @@
     grid-template-columns: 1fr 280px;
     align-items: stretch;
   }
+
+  .vitals-body-layout--wide-panel {
+    grid-template-columns: minmax(0, 1fr) minmax(400px, 540px);
+    max-width: 1520px;
+  }
+}
+
+.vitals-body-pose-live-overlay {
+  color: #e8f6f4;
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(47, 210, 190, 0.45);
+  background: #0a1216;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.vitals-body-pose-live-overlay--draggable canvas {
+  cursor: grab;
+}
+
+.vitals-body-pose-live-overlay--draggable canvas:active {
+  cursor: grabbing;
+}
+
+.vitals-body-pose-live-overlay .vitals-pose-live-rig {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.vitals-body-pose-live-overlay .vitals-pose-live-rig > div:last-child {
+  flex: 1;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+.vitals-body-pose-live-overlay span {
+  margin-top: 6px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-align: center;
+  opacity: 0.85;
 }
 
 .vitals-body-stage {
@@ -76,4 +127,182 @@
   border-radius: 20px;
   border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
   background: color-mix(in srgb, currentColor 5%, transparent);
+  min-height: 0;
+  container-type: inline-size;
+}
+
+.vitals-pose-dev {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.vitals-pose-presets {
+  margin-bottom: 14px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #2fd2be 35%, transparent);
+  background: color-mix(in srgb, #2fd2be 6%, transparent);
+}
+
+.vitals-pose-presets__title {
+  margin: 0 0 4px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  opacity: 0.85;
+  text-transform: uppercase;
+}
+
+.vitals-pose-presets__grid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@container (min-width: 480px) {
+  .vitals-pose-presets__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.vitals-pose-presets__btn {
+  padding: 8px 8px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  color: inherit;
+  font-size: 10px;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vitals-pose-presets__btn:hover {
+  border-color: color-mix(in srgb, #2fd2be 55%, transparent);
+}
+
+.vitals-pose-dev__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.vitals-pose-dev__toolbar button {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+  color: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.vitals-pose-bone-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr;
+}
+
+@container (min-width: 360px) {
+  .vitals-pose-bone-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 500px) {
+  .vitals-pose-bone-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.vitals-pose-bone-card {
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  background: color-mix(in srgb, currentColor 3%, transparent);
+  overflow: hidden;
+}
+
+.vitals-pose-bone-card--left {
+  border-left: 3px solid #ff2d9a;
+}
+
+.vitals-pose-bone-card--right {
+  border-left: 3px solid #19c3ff;
+}
+
+.vitals-pose-bone-card__head {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  line-height: 1.35;
+}
+
+.vitals-pose-bone-card__head strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.vitals-pose-bone-card__sliders {
+  padding: 0 10px 10px;
+}
+
+.vitals-pose-bone-card__sliders label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+
+.vitals-pose-dev__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.vitals-pose-dev__actions button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  cursor: pointer;
+  color: inherit;
+}
+
+.vitals-pose-dev__actions button[type="button"]:not(.vitals-pose-dev__save) {
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  background: transparent;
+}
+
+.vitals-pose-dev__save {
+  border: 1px solid #3fd6c5;
+  background: rgba(47, 210, 190, 0.12);
+  font-size: 12px;
+}
+
+@media (min-width: 880px) {
+  .vitals-body-panel {
+    height: min(72vh, 640px);
+    max-height: min(72vh, 640px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 879px) {
+  .vitals-body-panel {
+    max-height: min(60vh, 480px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+  }
 }

@@ -1,4 +1,5 @@
 scripts/**/__pycache__/
 **/*.pyc
-.venv/
+.venv
 local/phenotype.json
+local/pose.json

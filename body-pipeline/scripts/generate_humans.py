@@ -23,7 +23,7 @@ from lib.mesh_common import (  # noqa: E402
     REGION_NONE,
     assign_region,
     bone_label_to_region,
-    standing_pose_rotvec_deg,
+    shipped_standing_pose_rotvec_deg,
     validate_mesh,
     write_json,
 )
@@ -78,7 +78,7 @@ def _phenotype(sex: BodySex) -> dict[str, float]:
 def _pose_rotvec(model: Anny) -> torch.Tensor:
     dtype = torch.float32
     bones_rotvec = torch.zeros((len(model.bone_labels), 3), dtype=dtype)
-    arm_map = standing_pose_rotvec_deg()
+    arm_map = shipped_standing_pose_rotvec_deg()
     for index, label in enumerate(model.bone_labels):
         if label in arm_map:
             bones_rotvec[index] = torch.tensor(arm_map[label], dtype=dtype)
@@ -157,7 +157,7 @@ def main() -> None:
     args = parser.parse_args()
 
     print("Loading Anny full-body model (MakeHuman CC0 assets)…")
-    model = Anny(local_changes="default")
+    model = Anny(local_changes="default", rig="anny", pose_parameterization="local-ref", skinning_method="lbs")
     model = model.to(dtype=torch.float32)
 
     for sex in ("male", "female"):

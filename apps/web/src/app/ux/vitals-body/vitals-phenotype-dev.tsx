@@ -17,7 +17,7 @@ const SLIDER_KEYS: { key: keyof VitalsPhenotypeSliders; label: string }[] = [
   { key: "proportions", label: "Proportions" },
 ];
 
-export function VitalsPhenotypeDev({ sex }: { sex: EditSex }) {
+export function VitalsPhenotypeDev({ sex, onSaved }: { sex: EditSex; onSaved?: () => void }) {
   const [visible, setVisible] = useState(false);
   const [config, setConfig] = useState<VitalsPhenotypeFile | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -70,6 +70,7 @@ export function VitalsPhenotypeDev({ sex }: { sex: EditSex }) {
         setStatus("Save failed");
         return;
       }
+      onSaved?.();
       setStatus(
         data.regen
           ? `Saved to body-pipeline/local/phenotype.json — run: ${data.regen}`
