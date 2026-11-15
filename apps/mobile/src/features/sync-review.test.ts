@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 import { encodePolyline, freshState, type SyncReviewReceipt } from "@fitness-battle/shared";
+vi.mock("../ui/sync-energy-core", () => ({ SyncEnergyCore: "SyncEnergyCore" }));
 vi.mock("../ui/activity-route", () => ({ ActivityRoute: "ActivityRoute" }));
 vi.mock("../ui/route-static-preview", () => ({ RouteStaticPreview: "RouteStaticPreview" }));
 vi.mock("./competition-moment", () => ({ CompetitionMoment: "CompetitionMoment" }));
@@ -81,7 +82,7 @@ it("a native full-screen swipe confirms the selected activities once without nav
     );
   });
   const map = renderer!.root.findByType("RouteStaticPreview" as never);
-  expect(map.props.width).toBe(Math.round(390 * .82));
+  expect(map.props.width).toBe(342);
   expect(map.props.height).toBe(180);
   const slider = renderer!.root
     .findAllByType("View" as never)
@@ -91,12 +92,14 @@ it("a native full-screen swipe confirms the selected activities once without nav
     slider.props.onResponderRelease({ nativeEvent: { pageX: 20 } });
   });
   expect(done).not.toHaveBeenCalled();
+  expect(renderer!.root.findByType("SyncEnergyCore" as never).props.draining).toBe(false);
   await act(async () => {
     slider.props.onResponderGrant({ nativeEvent: { pageX: 0 } });
     slider.props.onResponderMove({ nativeEvent: { pageX: 220 } });
     slider.props.onResponderRelease({ nativeEvent: { pageX: 220 } });
     slider.props.onResponderRelease({ nativeEvent: { pageX: 220 } });
   });
+  expect(renderer!.root.findByType("SyncEnergyCore" as never).props.draining).toBe(true);
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 1000)); });
   expect(done).toHaveBeenCalledTimes(1);
   expect(done).toHaveBeenCalledWith(["a"]);
@@ -185,6 +188,8 @@ it("supports Select all and Deselect all, and omits the saved safely message", a
   expect(deselectAllBtn).toBeDefined();
   expect(selectAllBtn).toBeDefined();
 
+  expect(renderer!.root.findByType("SyncEnergyCore" as never).props.totalSeconds).toBe(3600);
+
   // Initially all 2 activities are selected, so Select all is disabled
   expect(selectAllBtn!.props.accessibilityState?.disabled).toBe(true);
   expect(deselectAllBtn!.props.accessibilityState?.disabled).toBe(false);
@@ -193,6 +198,8 @@ it("supports Select all and Deselect all, and omits the saved safely message", a
   await act(async () => {
     deselectAllBtn!.props.onPress();
   });
+
+  expect(renderer!.root.findByType("SyncEnergyCore" as never).props.activities).toEqual([]);
 
   // Now 0 are selected
   expect(deselectAllBtn!.props.accessibilityState?.disabled).toBe(true);
