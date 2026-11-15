@@ -21,7 +21,10 @@ describe("GPS replay seeking", () => {
     // Mapbox makes the specified trim interval transparent: hide only what remains.
     expect(map.setPaintProperty).toHaveBeenLastCalledWith("route-active", "line-trim-offset", [0.4, 1]);
     expect(source.setData).toHaveBeenCalled();
-    expect(map.jumpTo).toHaveBeenLastCalledWith(expect.objectContaining({ pitch: 0, bearing: 0 }));
+    expect(map.jumpTo).toHaveBeenLastCalledWith(expect.objectContaining({ pitch: 0, bearing: expect.any(Number) }));
+    const lastCamera = vi.mocked(map.jumpTo).mock.calls.at(-1)?.[0] as { bearing: number; zoom?: number };
+    expect(lastCamera.bearing).not.toBe(0);
+    expect(lastCamera.zoom).toBeUndefined();
     await act(async () => controls!.seek(1));
     expect(map.fitBounds).toHaveBeenCalled();
     expect(controls!.isFinished).toBe(true);

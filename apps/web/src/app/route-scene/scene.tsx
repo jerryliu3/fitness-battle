@@ -2,12 +2,12 @@
 import { colors as appearanceColors } from "@/theme/app-colors";
 
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { normalizeRouteReplay, type RouteReplaySample, type LngLat } from "@fitness-battle/shared";
 import { webEnv } from "@/lib/env";
-import type { RouteTimelapseMapProps } from "@/components/routes";
+import type { RouteTimelapseController, RouteTimelapseMapProps, RouteTimelapseState } from "@/components/routes";
 
 const RouteTimelapseMap = dynamic<RouteTimelapseMapProps>(
   () => import("@/components/routes").then((m) => m.RouteTimelapseMap),
@@ -15,9 +15,11 @@ const RouteTimelapseMap = dynamic<RouteTimelapseMapProps>(
 );
 
 export interface RouteSceneMessage {
-  type: "set-route" | "play" | "pause" | "seek" | "toggle-mode";
+  type: "set-route" | "play" | "pause" | "replay" | "seek" | "export-video" | "set-mode" | "toggle-mode";
   coordinates?: LngLat[] | string;
   routeReplay?: unknown;
+  hudInsets?: { top: number; bottom: number };
+  hideControls?: boolean;
   mode?: "3d-flyover" | "2d-overview";
   accentColor?: string;
   durationMs?: number;
@@ -36,13 +38,22 @@ export function RouteScene() {
   const [coordinates, setCoordinates] = useState<LngLat[] | string>(
     paramPolyline || "",
   );
+  const paramHudTop = Number(searchParams.get("hudTop"));
+  const paramHudBottom = Number(searchParams.get("hudBottom"));
+  const [hudInsets, setHudInsets] = useState<{ top: number; bottom: number } | undefined>(() =>
+    Number.isFinite(paramHudTop) && Number.isFinite(paramHudBottom) && searchParams.has("hudBottom")
+      ? { top: paramHudTop, bottom: paramHudBottom }
+      : undefined,
+  );
+  const [hideControls, setHideControls] = useState(searchParams.get("controls") === "none");
   const [routeReplay, setRouteReplay] = useState<RouteReplaySample[]>([]);
   const [mode, setMode] = useState<"3d-flyover" | "2d-overview">(paramMode);
   const [accentColor, setAccentColor] = useState<string>(paramAccent);
   const [durationMs, setDurationMs] = useState(Math.max(1000, Math.min(120000, Number(searchParams.get("duration")) || 12000)));
   const gotMessage = useRef(false);
+  const controlRef = useRef<RouteTimelapseController | null>(null);
 
-  function send(data: object) {
+  const send = useCallback((data: object) => {
     const native = (
       window as unknown as {
         ReactNativeWebView?: { postMessage: (s: string) => void };
@@ -50,7 +61,11 @@ export function RouteScene() {
     ).ReactNativeWebView;
     if (native) native.postMessage(JSON.stringify(data));
     if (window.parent !== window) window.parent.postMessage(data, "*");
-  }
+  }, []);
+
+  const handleStateChange = useCallback((state: RouteTimelapseState) => {
+    send({ type: "route-state", ...state });
+  }, [send]);
 
   useEffect(() => {
     function receive(event: MessageEvent) {
@@ -68,11 +83,33 @@ export function RouteScene() {
       if (msg.type === "set-route") {
         if (msg.coordinates) setCoordinates(msg.coordinates);
         setRouteReplay(normalizeRouteReplay(msg.routeReplay));
-        if (msg.mode) setMode(msg.mode);
+        setHudInsets(msg.hudInsets);
+        if (typeof msg.hideControls === "boolean") setHideControls(msg.hideControls);
+        if (msg.mode) {
+          setMode(msg.mode);
+          controlRef.current?.setMode(msg.mode);
+        }
         if (msg.accentColor) setAccentColor(msg.accentColor);
         if (Number.isFinite(msg.durationMs)) setDurationMs(Math.max(1000, Math.min(120000, msg.durationMs!)));
+      } else if (msg.type === "play") {
+        controlRef.current?.play();
+      } else if (msg.type === "pause") {
+        controlRef.current?.pause();
+      } else if (msg.type === "replay") {
+        controlRef.current?.replay();
+      } else if (msg.type === "seek" && typeof msg.progress === "number") {
+        controlRef.current?.seek(msg.progress);
+      } else if (msg.type === "export-video") {
+        controlRef.current?.exportVideo();
+      } else if (msg.type === "set-mode" && msg.mode) {
+        setMode(msg.mode);
+        controlRef.current?.setMode(msg.mode);
       } else if (msg.type === "toggle-mode") {
-        setMode((prev) => (prev === "3d-flyover" ? "2d-overview" : "3d-flyover"));
+        setMode((prev) => {
+          const next = prev === "3d-flyover" ? "2d-overview" : "3d-flyover";
+          controlRef.current?.setMode(next);
+          return next;
+        });
       }
     }
 
@@ -103,7 +140,10 @@ export function RouteScene() {
         <RouteTimelapseMap
           coordinates={coordinates}
           routeReplay={routeReplay}
-          key={`${typeof coordinates === "string" ? coordinates : JSON.stringify(coordinates)}:${mode}`}
+          hudInsets={hudInsets}
+          hideControls={hideControls}
+          controlRef={controlRef}
+          onStateChange={handleStateChange}
           mode={mode}
           autoPlay={false}
           durationMs={durationMs}
