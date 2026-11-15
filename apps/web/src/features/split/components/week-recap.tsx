@@ -10,11 +10,12 @@ import { StandardLineChart } from "@/ui/standard-line-chart";
 import { UserAvatar } from "@/ui/user-avatar";
 import { Ember } from "@/components/mascot/ember";
 import { CompetitionReplayButton } from "@/features/replay/competition-replay";
+import { AthletePreferencesFields } from "@/features/you/athlete-preferences";
 import {
   APP_ICON_PATHS, WEEK_RECAP_COLORS, formatEffort, formatPeriodDateRange,
   sportById, weekRecapBreakdown, weekRecapCopy, weekRecapHeartRateRanges, weekRecapHighlights,
   weekRecapPages, weekRecapPodium, weekRecapTraining,
-  type CompeteState, type CompetitionReplay, type PeriodResult, type SportId, type WeekRecapTarget,
+  type Action, type CompeteState, type CompetitionReplay, type PeriodResult, type SportId, type WeekRecapTarget,
 } from "@fitness-battle/shared";
 import { colors } from "@/theme/app-colors";
 import { ResultCard } from "./result-card";
@@ -64,23 +65,15 @@ function RecapIcon({ name, size = 16 }: { name: keyof typeof APP_ICON_PATHS; siz
   );
 }
 
-const RESUME_INDEX_KEY = "overtaek:recap_resume_index";
-
-export function WeekRecap({ state, results, nonRaceWeek, social, onDismiss, loadReplay, hiddenIds = [] }: {
+export function WeekRecap({ state, results, nonRaceWeek, social, dispatch, onDismiss, loadReplay, hiddenIds = [] }: {
   state: CompeteState; results: PeriodResult[];
   nonRaceWeek?: { sport: SportId; periodStart: string; periodEnd: string } | null;
-  social: boolean; onDismiss: () => void;
+  social: boolean; dispatch?: (action: Action) => void; onDismiss: () => void;
   loadReplay?: (result: PeriodResult) => Promise<CompetitionReplay | null>; hiddenIds?: readonly string[];
 }) {
   const pages = weekRecapPages(results, nonRaceWeek);
-  const [index, setIndex] = useState(() => {
-    if (typeof window === "undefined") return 0;
-    const saved = window.sessionStorage.getItem(RESUME_INDEX_KEY);
-    if (saved == null) return 0;
-    window.sessionStorage.removeItem(RESUME_INDEX_KEY);
-    const parsed = Number.parseInt(saved, 10);
-    return Number.isFinite(parsed) ? Math.max(0, Math.min(parsed, pages.length - 1)) : 0;
-  });
+  const [index, setIndex] = useState(0);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [replays, setReplays] = useState<Record<string, CompetitionReplay | null>>({});
   const { current, page, last, title, label } = weekRecapCopy(pages, index);
   const reduced = useReducedMotion();
@@ -171,25 +164,33 @@ export function WeekRecap({ state, results, nonRaceWeek, social, onDismiss, load
               </>
             ) : (
               <div className="week-recap-footer-row">
-                <Link
-                  href="/app/athlete?panel=preferences"
-                  className="week-recap-secondary-btn"
-                  onClick={() => {
-                    if (typeof window !== "undefined") window.sessionStorage.setItem(RESUME_INDEX_KEY, String(current));
-                  }}
-                >
-                  <AppText role="label">Update settings</AppText>
-                </Link>
+                {dispatch ? (
+                  <Dialog.Root open={preferencesOpen} onOpenChange={setPreferencesOpen}>
+                    <Dialog.Trigger asChild>
+                      <button type="button" className="week-recap-secondary-btn">
+                        <AppText role="label">Update settings</AppText>
+                      </button>
+                    </Dialog.Trigger>
+                    <Dialog.Portal>
+                      <Dialog.Overlay className="week-recap-choices-overlay" />
+                      <Dialog.Content className="week-recap-choices" aria-describedby={undefined}>
+                        <Dialog.Title style={typographyStyle("heading")}>Preferences</Dialog.Title>
+                        {preferencesOpen ? <AthletePreferencesFields state={state} dispatch={dispatch} /> : null}
+                        <Dialog.Close className="fb-btn-line">Back to recap</Dialog.Close>
+                      </Dialog.Content>
+                    </Dialog.Portal>
+                  </Dialog.Root>
+                ) : (
+                  <Link href="/app/athlete?panel=preferences" className="week-recap-secondary-btn">
+                    <AppText role="label">Update settings</AppText>
+                  </Link>
+                )}
                 <button
                   type="button"
                   className="fb-btn"
                   onClick={() => {
-                    if (last) {
-                      if (typeof window !== "undefined") window.sessionStorage.removeItem(RESUME_INDEX_KEY);
-                      onDismiss();
-                    } else {
-                      setIndex(current + 1);
-                    }
+                    if (last) onDismiss();
+                    else setIndex(current + 1);
                   }}
                 >
                   {label}
@@ -322,7 +323,7 @@ function Training({ state, target }: { state: CompeteState; target: WeekRecapTar
           )}
         </div>
         {series.available ? (
-          <StandardLineChart height={140} showArea onSelectionChange={setScrubbed}
+          <StandardLineChart height={140} showArea animateReveal followRevealDot onSelectionChange={setScrubbed}
             stroke={WEEK_RECAP_COLORS.progress} axisColor="rgba(255, 255, 255, 0.18)" labelColor="rgba(249, 247, 236, 0.72)"
             yAxisLabel={activeMode === "time" ? "Training (min)" : "Effort (pts)"} xAxisLabel="Date (ET)"
             values={activeMode === "time" ? series.values : series.effortValues} pointLabels={series.labels}

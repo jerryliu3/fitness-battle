@@ -7,6 +7,7 @@ import { Animated } from "react-native";
 import { Polyline, Line, Defs, ClipPath, LinearGradient, Stop, Rect, G, Path, Circle } from "react-native-svg";
 import { ChartSvg as Svg, ChartText as SvgText } from "./chart-text";
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 /** Strips unit suffixes (ms, bpm, %, x, h, etc.) from Y-axis ticks while keeping numbers and clock times. */
 function stripAxisUnit(label: string): string {
@@ -17,6 +18,7 @@ function stripAxisUnit(label: string): string {
 
 export interface StandardLineChartProps {
   revealProgress?: Animated.Value;
+  followRevealDot?: boolean;
   showAxes?: boolean;
   xAxisLabel?: string;
   yAxisLabel?: string;
@@ -43,7 +45,7 @@ export interface StandardLineChartProps {
   ariaLabel?: string;
 }
 
-export function StandardLineChart({ revealProgress, showAxes = true, showSummary = false, showArea = false, showTrend = true, onSelectionChange, pointLabels, values, xLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, selectedIdx, height = 190, stroke: suppliedstroke, axisColor, labelColor, corridor, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
+export function StandardLineChart({ revealProgress, followRevealDot = false, showAxes = true, showSummary = false, showArea = false, showTrend = true, onSelectionChange, pointLabels, values, xLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, selectedIdx, height = 190, stroke: suppliedstroke, axisColor, labelColor, corridor, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
 const c=useThemeColors();
 const stroke=suppliedstroke ?? c.tennis;
 
@@ -185,13 +187,42 @@ const stroke=suppliedstroke ?? c.tennis;
            {geo.polylines.map((segment) => (
              <Polyline key={segment} points={segment} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
            ))}
-           {geo.points.at(-1) ? (
+           {!(revealProgress && followRevealDot) && geo.points.at(-1) ? (
              <Circle cx={geo.points.at(-1)!.x} cy={geo.points.at(-1)!.y} r={4} fill={stroke} stroke={c.card} strokeWidth={1.5} />
            ) : null}
          </>
        )}
      </>
    )}
- </G></Svg>
+ </G>
+ {revealProgress && followRevealDot && !corridor && !activePoint && geo.points.length > 0 && (() => {
+   const span = Math.max(1, geo.xEnd - geo.xStart);
+   const inputRange: number[] = [];
+   const xs: number[] = [];
+   const ys: number[] = [];
+   for (const pt of geo.points) {
+     const t = Math.max(0, Math.min(1, (pt.x - geo.xStart) / span));
+     if (inputRange.length === 0 && t > 0) {
+       inputRange.push(0);
+       xs.push(pt.x);
+       ys.push(pt.y);
+     }
+     if (inputRange.length === 0 || t > inputRange[inputRange.length - 1]! + 1e-4) {
+       inputRange.push(t);
+       xs.push(pt.x);
+       ys.push(pt.y);
+     }
+   }
+   const last = geo.points.at(-1)!;
+   if (inputRange[inputRange.length - 1]! < 1) {
+     inputRange.push(1);
+     xs.push(last.x);
+     ys.push(last.y);
+   }
+   const dotX = inputRange.length >= 2 ? revealProgress.interpolate({ inputRange, outputRange: xs }) : last.x;
+   const dotY = inputRange.length >= 2 ? revealProgress.interpolate({ inputRange, outputRange: ys }) : last.y;
+   return <AnimatedCircle cx={dotX} cy={dotY} r={4.2} fill={stroke} stroke={c.card} strokeWidth={1.6} />;
+ })()}
+ </Svg>
  </ChartScrubber>;
 }

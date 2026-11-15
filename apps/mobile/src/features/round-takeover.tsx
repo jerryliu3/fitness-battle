@@ -28,7 +28,6 @@ export function RoundTakeover({
   const { blocks } = useAthleteBlocks();
   const hiddenIds = useMemo(() => blocks.map((block) => block.id), [blocks]);
   const [dismissed, setDismissed] = useState(false);
-  const [resumeIndex, setResumeIndex] = useState(0);
   const [dismissedBreakdown, setDismissedBreakdown] = useState<string | null>(null);
   const path = usePathname();
   const router = useRouter();
@@ -36,7 +35,7 @@ export function RoundTakeover({
   const replay = params.results === "latest";
   const breakdownRequested = params.breakdown === "latest";
 
-  useEffect(() => { setDismissed(false); setResumeIndex(0); }, [replay, breakdownRequested, user?.id]);
+  useEffect(() => { setDismissed(false); }, [replay, breakdownRequested, user?.id]);
   useEffect(() => {
     void AsyncStorage.getItem(DISMISSED_BREAKDOWN_KEY).then((val) => {
       if (val) setDismissedBreakdown(val);
@@ -73,16 +72,11 @@ export function RoundTakeover({
         state={state}
         results={reveal.results}
         social={canLoadReplay}
+        dispatch={dispatch}
         hiddenIds={hiddenIds}
-        initialIndex={resumeIndex}
         loadReplay={canLoadReplay ? loadReplay : undefined}
-        onOpenSettings={(pageIndex) => {
-          setResumeIndex(pageIndex);
-          router.push("/athlete-settings?panel=preferences");
-        }}
         onClose={() => {
           setDismissed(true);
-          setResumeIndex(0);
           dispatch({ type: "acknowledge-reveal", revealIds: reveal.ids });
           if (debugActive) resetDebugState?.();
           router.replace("/arena");
@@ -98,15 +92,10 @@ export function RoundTakeover({
       results={[]}
       nonRaceWeek={breakdownTarget}
       social={false}
+      dispatch={dispatch}
       hiddenIds={hiddenIds}
-      initialIndex={resumeIndex}
-      onOpenSettings={(pageIndex) => {
-        setResumeIndex(pageIndex);
-        router.push("/athlete-settings?panel=preferences");
-      }}
       onClose={() => {
         setDismissed(true);
-        setResumeIndex(0);
         setDismissedBreakdown(breakdownTarget.periodStart);
         void AsyncStorage.setItem(DISMISSED_BREAKDOWN_KEY, breakdownTarget.periodStart).catch(() => {});
         if (breakdownRequested) router.replace("/arena");

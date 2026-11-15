@@ -105,6 +105,7 @@ describe("web week recap screens", () => {
       ],
     };
     const onDismiss = vi.fn();
+    const dispatch = vi.fn();
 
     await act(async () => {
       view = create(
@@ -112,6 +113,7 @@ describe("web week recap screens", () => {
           state,
           results: [result],
           social: false,
+          dispatch,
           loadReplay: async () => replay,
           onDismiss,
         }),
@@ -149,6 +151,7 @@ describe("web week recap screens", () => {
     expect(breakdownJson).toContain("Training time");
     expect(breakdownJson).toContain("Next round");
     expect(breakdownJson).toContain("Update settings");
+    expect(breakdownJson).toContain("Preferences");
 
     // Toggle Time -> Effort inside chart card
     const effortTab = view!.root.find((el) => el.type === "button" && el.props.role === "tab" && el.props.children === "Effort");

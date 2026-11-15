@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView, initialWindowMetrics } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
@@ -8,7 +8,7 @@ import {
   WEEK_RECAP_COLORS, formatEffort, formatPeriodDateRange, sportById,
   weekRecapBreakdown, weekRecapCopy, weekRecapHeartRateRanges, weekRecapHighlights,
   weekRecapPages, weekRecapPodium, weekRecapTraining,
-  type CompeteState, type CompetitionReplay, type PeriodResult, type SportId, type WeekRecapTarget,
+  type Action, type CompeteState, type CompetitionReplay, type PeriodResult, type SportId, type WeekRecapTarget,
 } from "@fitness-battle/shared";
 import { AppText } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
@@ -19,6 +19,7 @@ import { StandardLineChart } from "../ui/standard-line-chart";
 import type { ChartDatum } from "../ui/chart-scrubber";
 import { UserAvatar } from "../ui/user-avatar";
 import { playCue, playPattern } from "../lib/haptics";
+import { AthletePreferencesFields } from "./athlete-preferences";
 import { CompetitionReplayButton } from "./competition-replay";
 import { ResultCard } from "./result-card";
 import { WeeklySocialActions } from "./weekly-social";
@@ -54,17 +55,18 @@ const PODIUM_STEP = {
   },
 } as const;
 
-export function WeekRecap({ state, results, nonRaceWeek, social, onClose, onOpenSettings, loadReplay, hiddenIds = [], initialIndex = 0 }: {
+export function WeekRecap({ state, results, nonRaceWeek, social, dispatch, onClose, loadReplay, hiddenIds = [] }: {
   state: CompeteState; results: PeriodResult[];
   nonRaceWeek?: { sport: SportId; periodStart: string; periodEnd: string } | null;
-  social: boolean; onClose: () => void;
-  onOpenSettings?: (pageIndex: number) => void;
+  social: boolean;
+  dispatch?: (action: Action) => void;
+  onClose: () => void;
   loadReplay?: (result: PeriodResult) => Promise<CompetitionReplay | null>; hiddenIds?: readonly string[];
-  initialIndex?: number;
 }) {
   const pages = weekRecapPages(results, nonRaceWeek);
-  const [index, setIndex] = useState(() => Math.max(0, Math.min(initialIndex, pages.length - 1)));
+  const [index, setIndex] = useState(0);
   const [choices, setChoices] = useState(false);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [replays, setReplays] = useState<Record<string, CompetitionReplay | null>>({});
   const { current, page, last, title, label } = weekRecapCopy(pages, index);
   const celebrated = useRef(false);
@@ -137,7 +139,7 @@ export function WeekRecap({ state, results, nonRaceWeek, social, onClose, onOpen
                 </View>
               ) : page.kind === "results" ? (
                 <ResultsView state={state} result={page.result} replay={replays[page.result.id] ?? null} hiddenIds={hiddenIds} reduced={reduced} />
-              ) : <Training state={state} target={{ sport: page.sport, periodStart: page.periodStart, periodEnd: page.periodEnd, result: page.result }} />}
+              ) : <Training state={state} target={{ sport: page.sport, periodStart: page.periodStart, periodEnd: page.periodEnd, result: page.result }} reduced={reduced} />}
             </WeekRecapFit>
 
             <View style={s.footer}>
@@ -166,7 +168,7 @@ export function WeekRecap({ state, results, nonRaceWeek, social, onClose, onOpen
                 <View style={s.footerRow}>
                   <View style={s.footerCol}>
                     <Pressable accessibilityRole="button" accessibilityLabel="Update settings"
-                      onPress={() => { void playCue("light"); if (onOpenSettings) onOpenSettings(current); else router.push("/athlete-settings?panel=preferences"); }}
+                      onPress={() => { void playCue("light"); if (dispatch) setPreferencesOpen(true); else router.push("/athlete-settings?panel=preferences"); }}
                       style={({ pressed }) => [s.secondaryBtn, pressed && s.pressed]}>
                       <AppText role="label" style={s.light} numberOfLines={1}>Update settings</AppText>
                     </Pressable>
@@ -178,10 +180,15 @@ export function WeekRecap({ state, results, nonRaceWeek, social, onClose, onOpen
               )}
             </View>
 
-            <FocusSheet open={choices && page.kind === "results"} title="Field choices" onClose={() => setChoices(false)}>
+            <FocusSheet modal={false} open={choices && page.kind === "results"} title="Field choices" onClose={() => setChoices(false)}>
               <AppText>Choices appear when eligible athletes are available.</AppText>
               {page.kind === "results" && <WeeklySocialActions result={page.result} units={state.units} />}
             </FocusSheet>
+            {dispatch && (
+              <FocusSheet modal={false} open={preferencesOpen} title="Preferences" onClose={() => setPreferencesOpen(false)}>
+                {preferencesOpen ? <View style={{ gap: 18 }}><AthletePreferencesFields state={state} dispatch={dispatch} /></View> : null}
+              </FocusSheet>
+            )}
           </SafeAreaView>
         </View>
       </SafeAreaProvider>
@@ -295,13 +302,30 @@ function PodiumHero({ replay, state, result, hiddenIds, reduced }: {
   );
 }
 
-function Training({ state, target }: { state: CompeteState; target: WeekRecapTarget }) {
+function Training({ state, target, reduced }: { state: CompeteState; target: WeekRecapTarget; reduced: boolean }) {
   const series = weekRecapTraining(state, target);
   const { stats, nextRound } = weekRecapBreakdown(state, target);
   const hr = weekRecapHeartRateRanges(state, target);
   const [chartMode, setChartMode] = useState<"time" | "effort">("time");
   const [scrubbed, setScrubbed] = useState<ChartDatum | undefined>(undefined);
   const activeMode = chartMode === "effort" && series.hasEffort ? "effort" : "time";
+  const draw = useRef(new Animated.Value(reduced ? 1 : 0)).current;
+
+  useEffect(() => {
+    if (reduced) {
+      draw.setValue(1);
+      return;
+    }
+    draw.setValue(0);
+    const anim = Animated.timing(draw, {
+      toValue: 1,
+      duration: 900,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    });
+    anim.start();
+    return () => anim.stop();
+  }, [reduced, activeMode, series.values, draw]);
 
   return (
     <View style={s.trainingWrap}>
@@ -341,7 +365,7 @@ function Training({ state, target }: { state: CompeteState; target: WeekRecapTar
           )}
         </View>
         {series.available ? (
-          <StandardLineChart height={138} showAxes showArea showTrend={false} onSelectionChange={setScrubbed}
+          <StandardLineChart height={138} showAxes showArea showTrend={false} revealProgress={draw} followRevealDot onSelectionChange={setScrubbed}
             stroke={WEEK_RECAP_COLORS.progress} axisColor={GLASS_BORDER} labelColor={MUTED_LIGHT}
             values={activeMode === "time" ? series.values : series.effortValues} pointLabels={series.labels}
             xLabels={[series.labels[0]!, series.labels[Math.floor((series.labels.length - 1) / 2)]!, series.labels.at(-1)!]}

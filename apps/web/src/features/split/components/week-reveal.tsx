@@ -23,7 +23,7 @@ export function WeekReveal({
   onDismiss: (revealIds: string[]) => void;
 }) {
   const { user, offlineMode } = useAuth();
-  const { debugActive, lastDebugEvent, resetDebugState } = useCompete();
+  const { dispatch, debugActive, lastDebugEvent, resetDebugState } = useCompete();
   const [dismissed, setDismissed] = useState(false);
   const [dismissedBreakdown, setDismissedBreakdown] = useState<string | null>(() =>
     typeof window !== "undefined" ? window.localStorage.getItem(DISMISSED_BREAKDOWN_KEY) : null,
@@ -73,6 +73,7 @@ export function WeekReveal({
         key={`${user?.id ?? "guest"}:${reveal.key}:${openingDebug ? lastDebugEvent?.nonce : "saved"}`}
         state={state}
         social={live}
+        dispatch={dispatch}
         results={reveal.results}
         loadReplay={loadReplay}
         onDismiss={() => {
@@ -90,6 +91,7 @@ export function WeekReveal({
       key={`${user?.id ?? "guest"}:breakdown:${breakdownTarget.periodStart}`}
       state={state}
       social={false}
+      dispatch={dispatch}
       results={[]}
       nonRaceWeek={breakdownTarget}
       onDismiss={() => {

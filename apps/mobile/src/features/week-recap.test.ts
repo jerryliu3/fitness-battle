@@ -9,9 +9,10 @@ vi.mock("react-native", () => ({
   Animated: {
     Value: class { constructor(public v: number) {} setValue(v: number) { this.v = v; } interpolate() { return 0; } },
     stagger: () => ({ start: () => {}, stop: () => {} }),
-    timing: () => ({}),
+    timing: () => ({ start: () => {}, stop: () => {} }),
     View: "AnimatedView",
   },
+  Easing: { out: () => () => 0, cubic: () => 0 },
   View: "View",
   Pressable: "Pressable",
   ScrollView: "ScrollView",
@@ -43,6 +44,7 @@ vi.mock("../ui/mascot/animated-ember", () => ({ AnimatedEmber: "Mascot" }));
 vi.mock("../ui/standard-line-chart", () => ({ StandardLineChart: "Chart" }));
 vi.mock("../ui/user-avatar", () => ({ UserAvatar: "UserAvatar" }));
 vi.mock("../lib/haptics", () => ({ playPattern: mock.earned, playCue: mock.cue }));
+vi.mock("./athlete-preferences", () => ({ AthletePreferencesFields: "AthletePreferencesFields" }));
 vi.mock("./competition-replay", () => ({ CompetitionReplayButton: "Replay" }));
 vi.mock("./result-card", () => ({ ResultCard: "ResultCard", formatPeriodDateRange: () => "Nov 2 – Nov 8" }));
 vi.mock("./weekly-social", () => ({ WeeklySocialActions: "Social" }));
@@ -88,20 +90,26 @@ describe("native week recap navigation", () => {
     expect(close).toHaveBeenCalledTimes(1);
     expect(mock.earned).toHaveBeenCalledTimes(1);
   });
-  it("opens Update settings without closing or acknowledging recap", () => {
+  it("opens Preferences sheet directly on top without leaving or resetting the breakdown page", () => {
     const state = { ...freshState(), periodResults: [running] };
     const close = vi.fn();
-    const openSettings = vi.fn();
+    const dispatch = vi.fn();
     act(() => {
       view = create(createElement(WeekRecap, {
-        state, results: [running], social: false, onClose: close, onOpenSettings: openSettings,
+        state, results: [running], social: false, dispatch, onClose: close,
       }));
     });
     press("Reveal my finish →");
     press("See breakdown");
+    expect(step()).toBe(3);
     press("Update settings");
-    expect(openSettings).toHaveBeenCalledWith(2);
+    const sheet = view!.root.find((el) => el.type === ("Sheet" as never) && el.props.title === "Preferences");
+    expect(sheet.props.open).toBe(true);
+    expect(sheet.props.modal).toBe(false);
     expect(close).not.toHaveBeenCalled();
+    expect(mock.push).not.toHaveBeenCalled();
+    act(() => sheet.props.onClose());
+    expect(step()).toBe(3);
   });
   it("does not celebrate already acknowledged results when reopening their recap", () => {
     const state = { ...freshState(), periodResults: [{ ...running, acknowledgedAt: "2026-11-09T08:00:00Z" }] };

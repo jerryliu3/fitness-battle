@@ -60,3 +60,11 @@ it("shows only the latest endpoint dot on unselected line charts and renders cor
  expect(r.root.findAllByType("Polyline" as never)).toHaveLength(2);
  await act(async()=>r.unmount());vi.unstubAllGlobals();
 });
+it("interpolates the trailing dot position when followRevealDot is enabled", async () => {
+ vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
+ const interpolate=vi.fn(({outputRange}:{outputRange:number[]})=>outputRange.at(-1));
+ let r!:ReturnType<typeof create>;
+ await act(async()=>{r=create(createElement(StandardLineChart,{values:[10,20,30],revealProgress:{interpolate} as never,followRevealDot:true}));});
+ expect(interpolate).toHaveBeenCalledWith(expect.objectContaining({inputRange:[0,0.5,1]}));
+ await act(async()=>r.unmount());vi.unstubAllGlobals();
+});
