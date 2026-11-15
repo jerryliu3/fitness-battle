@@ -20,6 +20,8 @@ export interface StandardLineChartProps {
   onSelectIdx?: (index: number) => void;
   onSelectionChange?: (point: ChartDatum | undefined) => void;
   stroke?: string;
+  axisColor?: string;
+  labelColor?: string;
   height?: number;
   showArea?: boolean;
   corridor?: {
@@ -30,7 +32,7 @@ export interface StandardLineChartProps {
   accessibilityLabel?: string;
 }
 
-export function StandardLineChart({ values, xLabels, pointLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, onSelectionChange, selectedIdx, height = 190, showAxes = true, showArea = false, yAxisLabel = "Value", xAxisLabel, stroke = c.tennis, corridor, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
+export function StandardLineChart({ values, xLabels, pointLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, onSelectionChange, selectedIdx, height = 190, showAxes = true, showArea = false, yAxisLabel = "Value", xAxisLabel, stroke = c.tennis, axisColor, labelColor, corridor, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
  const areaId = useId();
  const geo = buildStandardChartGeometry(values, 340, height, corridor);
  if (!values.length || !geo.points.length) return null;
@@ -66,12 +68,12 @@ export function StandardLineChart({ values, xLabels, pointLabels, formatY = (v) 
   </defs>
  )}
  {showAxes && <g>
- <ChartText x={geo.xStart} y={14} fill={c.muted}>{yAxisLabel}</ChartText>
- <ChartText x={geo.xMid} y={height-2} textAnchor="middle" fill={c.muted}>{xAxisLabel ?? (xLabels ? "Date" : "Observation")}</ChartText>
- <line x1={geo.xStart} x2={geo.xStart} y1={geo.yTop} y2={geo.yBottom} stroke={c.line}/>
- <line x1={geo.xStart} x2={geo.xEnd} y1={geo.yBottom} y2={geo.yBottom} stroke={c.line}/>
- {[{value:geo.yMax,y:geo.yTop},{value:geo.yMid,y:geo.yMidPos},{value:geo.yMin,y:geo.yBottom}].map((tick, i)=><ChartText key={`${tick.value}-${i}`} x={geo.xStart-6} y={tick.y+4} fill={c.muted} textAnchor="end">{(formatAxisY ?? formatY)(tick.value)}</ChartText>)}
- {xTicks.map((tick, i)=><ChartText key={i} x={tick.x} y={height-22} fill={c.muted} textAnchor={tick.anchor}>{tick.label}</ChartText>)}
+ <ChartText x={geo.xStart} y={14} fill={labelColor ?? c.muted}>{yAxisLabel}</ChartText>
+ <ChartText x={geo.xMid} y={height-2} textAnchor="middle" fill={labelColor ?? c.muted}>{xAxisLabel ?? (xLabels ? "Date" : "Observation")}</ChartText>
+ <line x1={geo.xStart} x2={geo.xStart} y1={geo.yTop} y2={geo.yBottom} stroke={axisColor ?? c.line}/>
+ <line x1={geo.xStart} x2={geo.xEnd} y1={geo.yBottom} y2={geo.yBottom} stroke={axisColor ?? c.line}/>
+ {[{value:geo.yMax,y:geo.yTop},{value:geo.yMid,y:geo.yMidPos},{value:geo.yMin,y:geo.yBottom}].map((tick, i)=><ChartText key={`${tick.value}-${i}`} x={geo.xStart-6} y={tick.y+4} fill={labelColor ?? c.muted} textAnchor="end">{(formatAxisY ?? formatY)(tick.value)}</ChartText>)}
+ {xTicks.map((tick, i)=><ChartText key={i} x={tick.x} y={height-22} fill={labelColor ?? c.muted} textAnchor={tick.anchor}>{tick.label}</ChartText>)}
  </g>}
  {showArea && geo.areaPath && <path d={geo.areaPath} fill={`url(#${areaId})`} />}
  {geo.corridorPath && <path d={geo.corridorPath} fill={stroke} opacity={0.16}/>}

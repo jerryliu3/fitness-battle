@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { freshState } from "./compete/engine";
 import type { Activity, PeriodResult } from "./compete/sports";
 import type { CompetitionReplay } from "./competition-replay";
-import { weekRecapNextRound, weekRecapPages, weekRecapPodium, weekRecapTraining } from "./week-recap";
+import {
+  nonRaceWeekBreakdownTarget, weekRecapBreakdown, weekRecapHeartRateRanges, weekRecapHighlights,
+  weekRecapNextRound, weekRecapPages, weekRecapPodium, weekRecapTraining,
+} from "./week-recap";
 
 const result: PeriodResult = {
   id: "running-open", sport: "running", track: "open",
@@ -10,9 +13,10 @@ const result: PeriodResult = {
   place: 2, fieldSize: 8, effort: 10, distanceM: 5000, movingSec: 1800,
   eloBefore: 1100, eloAfter: 1105, frozen: false, settledAt: "2026-11-02T05:00:00Z",
 };
-const activity = (startedAt: string, movingSec = 600): Activity => ({
-  id: startedAt, sport: "running", startedAt, movingSec, distanceM: 1000,
+const activity = (startedAt: string, movingSecOrOverrides: number | Partial<Activity> = 600): Activity => ({
+  id: startedAt, sport: "running", startedAt, movingSec: typeof movingSecOrOverrides === "number" ? movingSecOrOverrides : 600, distanceM: 1000,
   avgHr: null, verified: false, source: "manual", disposition: "counted",
+  ...(typeof movingSecOrOverrides === "number" ? {} : movingSecOrOverrides),
 });
 const stateWith = (activities: Activity[]) => ({ ...freshState(new Date("2026-11-02T12:00:00Z")), activities });
 
@@ -20,7 +24,7 @@ describe("week recap pages", () => {
   it("pairs result and training pages per sport in product sport order", () => {
     const cycling = { ...result, id: "cycling", sport: "cycling" as const };
     const input = [cycling, result];
-    expect(weekRecapPages(input).map(p => p.kind === "arrival" ? p.kind : `${p.result.sport}:${p.kind}`))
+    expect(weekRecapPages(input).map(p => p.kind === "arrival" ? p.kind : `${p.kind === "results" ? p.result.sport : p.sport}:${p.kind}`))
       .toEqual(["arrival", "running:results", "running:effort", "cycling:results", "cycling:effort"]);
     expect(input).toEqual([cycling, result]);
   });
@@ -128,12 +132,67 @@ describe("week recap podium", () => {
     expect(slots.map(s => `${s.step}:${s.entry?.name}:${s.entry?.metricLabel}`))
       .toEqual(["2:Bob Chen:5.0 mi", "1:Alice Park:6.0 mi", "3:Carla Diaz:3.0 mi"]);
     const filtered = weekRecapPodium(replay, { ...stateWith([]), name: "Alice Park", units: "us" }, result, ["b"]);
-    expect(filtered.map(s => `${s.step}:${s.entry?.name}`)).toEqual(["2:Carla Diaz", "1:Alice Park"]);
+    expect(filtered.map(s => `${s.step}:${s.entry?.name ?? "empty"}`)).toEqual(["2:Carla Diaz", "1:Alice Park", "3:empty"]);
   });
-  it("renders a single centered podium when fieldSize is 1", () => {
+  it("always renders all 3 podium slots even when fieldSize is 1", () => {
     const solo = weekRecapPodium(null, { ...stateWith([]), name: "Alice Park", units: "us" }, { ...result, place: 1, fieldSize: 1 });
-    expect(solo).toHaveLength(1);
-    expect(solo[0]?.step).toBe(1);
-    expect(solo[0]?.entry?.you).toBe(true);
+    expect(solo.map(s => s.step)).toEqual([2, 1, 3]);
+    expect(solo[0]?.entry).toBeNull();
+    expect(solo[1]?.entry?.you).toBe(true);
+    expect(solo[2]?.entry).toBeNull();
+  });
+});
+
+describe("week recap highlights, breakdown, hr ranges & non-race fallback", () => {
+  it("computes deterministic field highlights and week breakdown metrics without score/effort", () => {
+    const state = {
+      ...stateWith([
+        activity("2026-10-27T12:00:00Z", { id: "a1", distanceM: 5000, movingSec: 1800, avgHr: 152 }),
+        activity("2026-10-29T12:00:00Z", { id: "a2", distanceM: 8047, movingSec: 2700, avgHr: 168 }),
+      ]),
+      units: "us" as const,
+      name: "Alice Park",
+    };
+    const highlights = weekRecapHighlights(null, state, { ...result, distanceM: 13047, movingSec: 4500 });
+    expect(highlights.length).toBeGreaterThanOrEqual(2);
+    expect(highlights[0]?.title).toContain("athletes in field");
+
+    const breakdown = weekRecapBreakdown(state, { sport: "running", periodStart: result.periodStart, periodEnd: result.periodEnd, result });
+    expect(breakdown.stats.map(s => `${s.label}:${s.value}`)).toEqual([
+      "Total time:75 min",
+      "Sessions:2",
+      "Best session:5.0 mi",
+    ]);
+
+    const hr = weekRecapHeartRateRanges(state, { sport: "running", periodStart: result.periodStart, periodEnd: result.periodEnd, result });
+    expect(hr.totalMinutes).toBe(75);
+    expect(hr.ranges.map(r => `${r.id}:${r.minutes}m`)).toEqual(["160-180:45m", "140-160:30m"]);
+  });
+
+  it("buckets granular routeReplay heart rate samples when available", () => {
+    const state = stateWith([{
+      ...activity("2026-10-27T12:00:00Z", { id: "g1", movingSec: 240, avgHr: null }),
+      routeReplay: [
+        { progress: 0, elapsedSec: 0, heartRate: 130 },
+        { progress: 0.5, elapsedSec: 120, heartRate: 145 },
+        { progress: 1, elapsedSec: 240, heartRate: 170 },
+      ],
+    }]);
+    const hr = weekRecapHeartRateRanges(state, { sport: "running", periodStart: result.periodStart, periodEnd: result.periodEnd, result });
+    expect(hr.hasGranular).toBe(true);
+    expect(hr.ranges.map(r => r.id)).toEqual(["160-180", "140-160"]);
+  });
+
+  it("detects non-race closed week activities for Week breakdown auto-open", () => {
+    const base = freshState(new Date("2026-11-02T15:00:00Z"));
+    const withWorkouts = {
+      ...base,
+      demoNow: "2026-11-02T15:00:00Z",
+      activities: [activity("2026-10-28T15:00:00Z", { id: "w1", sport: "cycling", movingSec: 2400 })],
+    };
+    expect(nonRaceWeekBreakdownTarget(withWorkouts)?.sport).toBe("cycling");
+    const pages = weekRecapPages([], nonRaceWeekBreakdownTarget(withWorkouts));
+    expect(pages).toHaveLength(1);
+    expect(pages[0]?.kind).toBe("effort");
   });
 });

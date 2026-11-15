@@ -5,7 +5,18 @@ import { freshState, type PeriodResult } from "@fitness-battle/shared";
 
 const mock = vi.hoisted(() => ({ earned: vi.fn(), cue: vi.fn(), push: vi.fn() }));
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-vi.mock("react-native", () => ({ View: "View", Pressable: "Pressable", Modal: "Modal", StyleSheet: { create: (s: unknown) => s } }));
+vi.mock("react-native", () => ({
+  Animated: {
+    Value: class { constructor(public v: number) {} setValue(v: number) { this.v = v; } interpolate() { return 0; } },
+    stagger: () => ({ start: () => {}, stop: () => {} }),
+    timing: () => ({}),
+    View: "AnimatedView",
+  },
+  View: "View",
+  Pressable: "Pressable",
+  Modal: "Modal",
+  StyleSheet: { create: (s: unknown) => s },
+}));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaProvider: "Provider", SafeAreaView: "SafeArea", initialWindowMetrics: null }));
 vi.mock("react-native-svg", () => ({ default: "Svg", Circle: "Circle", Path: "Path" }));
 vi.mock("../theme", async () => {
