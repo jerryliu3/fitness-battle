@@ -48,7 +48,7 @@ it("starts with live totals, seeks forward and backward, and explicitly returns 
 it("pauses on manual seeking and backgrounding, and finishes at live totals", async () => {
   await mount();
   await act(async () => timeline().toggle());
-  await act(async () => { vi.advanceTimersByTime(2667); });
+  await act(async () => { vi.advanceTimersByTime(6400); });
   expect(timeline().cursor).toBeGreaterThan(.48); expect(timeline().cursor).toBeLessThan(.52);
   await act(async () => timeline().seek(1));
   await act(async () => { vi.advanceTimersByTime(1000); });
@@ -57,7 +57,7 @@ it("pauses on manual seeking and backgrounding, and finishes at live totals", as
   await act(async () => mocks.pause!());
   expect(timeline().playing).toBe(false);
   await act(async () => timeline().toggle());
-  await act(async () => { vi.advanceTimersByTime(4200); });
+  await act(async () => { vi.advanceTimersByTime(10100); });
   expect(timeline().frame).toBeNull(); expect(timeline().playing).toBe(false);
 });
 it("retains history when changing units and pauses when its tab becomes inactive", async () => {
@@ -93,7 +93,7 @@ it("starts from the beginning, autoplays, and holds the final frame in round rep
   expect(timeline().cursor).toBe(0);
   expect(timeline().playing).toBe(true);
   expect(timeline().frame).not.toBeNull();
-  await act(async () => { vi.advanceTimersByTime(10000); });
+  await act(async () => { vi.advanceTimersByTime(24000); });
   expect(timeline().playing).toBe(false);
   expect(timeline().cursor).toBe(2);
   expect(timeline().frame).not.toBeNull();
