@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { Animated, Modal, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView, initialWindowMetrics } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import Svg, { Circle, Path } from "react-native-svg";
+import Svg, { Path } from "react-native-svg";
 import {
   LAUREL_WREATH_PATHS, WEEK_RECAP_COLORS, formatEffort, formatPeriodDateRange, sportById,
-  weekRecapBreakdown, weekRecapCopy, weekRecapPages, weekRecapPodium, weekRecapTraining,
-  type CompeteState, type CompetitionReplay, type PeriodResult,
+  weekRecapBreakdown, weekRecapCopy, weekRecapHeartRateRanges, weekRecapHighlights,
+  weekRecapPages, weekRecapPodium, weekRecapTraining,
+  type CompeteState, type CompetitionReplay, type PeriodResult, type SportId, type WeekRecapTarget,
 } from "@fitness-battle/shared";
 import { AppText } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
@@ -23,24 +24,28 @@ import { ResultCard } from "./result-card";
 import { WeeklySocialActions } from "./weekly-social";
 import { WeekRecapBackground } from "./week-recap-background";
 import { WeekRecapFit } from "./week-recap-fit";
-import { useThemeColors } from "../theme";
 
 const MUTED_LIGHT = "rgba(249, 247, 236, 0.72)";
 const GLASS_BG = "rgba(255, 255, 255, 0.08)";
 const GLASS_BORDER = "rgba(255, 255, 255, 0.15)";
 const SUCCESS_LIGHT = "#8ccdab";
+const HIGH_HR = "#f08575";
+const COOL_HR = "#7cc6e8";
 const STAT_COLOR = { muted: MUTED_LIGHT, gold: WEEK_RECAP_COLORS.progress, success: SUCCESS_LIGHT } as const;
+const HR_BAR_COLOR = { high: HIGH_HR, warm: WEEK_RECAP_COLORS.progress, good: SUCCESS_LIGHT, cool: COOL_HR } as const;
 const PODIUM_STEP = {
   1: { height: 60, avatar: 54, pedestal: { backgroundColor: "rgba(247, 201, 72, 0.24)", borderColor: "rgba(247, 201, 72, 0.52)" }, badge: "#f7c948", ink: "#142b3b" },
   2: { height: 44, avatar: 44, pedestal: { backgroundColor: "rgba(255, 255, 255, 0.13)", borderColor: "rgba(255, 255, 255, 0.26)" }, badge: "rgba(255, 255, 255, 0.24)", ink: WEEK_RECAP_COLORS.text },
   3: { height: 34, avatar: 44, pedestal: { backgroundColor: "rgba(184, 121, 69, 0.22)", borderColor: "rgba(184, 121, 69, 0.44)" }, badge: "rgba(184, 121, 69, 0.55)", ink: WEEK_RECAP_COLORS.text },
 } as const;
 
-export function WeekRecap({ state, results, social, onClose, loadReplay, hiddenIds = [] }: {
-  state: CompeteState; results: PeriodResult[]; social: boolean; onClose: () => void;
+export function WeekRecap({ state, results, nonRaceWeek, social, onClose, loadReplay, hiddenIds = [] }: {
+  state: CompeteState; results: PeriodResult[];
+  nonRaceWeek?: { sport: SportId; periodStart: string; periodEnd: string } | null;
+  social: boolean; onClose: () => void;
   loadReplay?: (result: PeriodResult) => Promise<CompetitionReplay | null>; hiddenIds?: readonly string[];
 }) {
-  const pages = weekRecapPages(results);
+  const pages = weekRecapPages(results, nonRaceWeek);
   const [index, setIndex] = useState(0);
   const [choices, setChoices] = useState(false);
   const [replays, setReplays] = useState<Record<string, CompetitionReplay | null>>({});
@@ -49,7 +54,7 @@ export function WeekRecap({ state, results, social, onClose, loadReplay, hiddenI
   const reduced = useReducedMotion();
   const router = useRouter();
 
-  const currentResult = page.kind === "arrival" ? null : page.result;
+  const currentResult = page.kind === "results" || page.kind === "effort" ? page.result : undefined;
   useEffect(() => {
     if (!loadReplay || !currentResult || currentResult.id in replays) return;
     let cancelled = false;
@@ -91,11 +96,15 @@ export function WeekRecap({ state, results, social, onClose, loadReplay, hiddenI
                       <AppIcon name="back" size={16} color={WEEK_RECAP_COLORS.text} />
                     </Pressable>
                   )}
-                  <AppIcon name={page.result.sport} size={18} color={WEEK_RECAP_COLORS.text} />
-                  <AppText role="label" style={s.light}>{sportById(page.result.sport).name}</AppText>
-                  <View style={s.trackBadge}><AppText role="caption" style={s.trackText}>{page.result.track === "verified" ? "GPS" : "Open"}</AppText></View>
+                  <AppIcon name={page.kind === "results" ? page.result.sport : page.sport} size={18} color={WEEK_RECAP_COLORS.text} />
+                  <AppText role="label" style={s.light}>{sportById(page.kind === "results" ? page.result.sport : page.sport).name}</AppText>
+                  {page.kind === "results" && (
+                    <View style={s.trackBadge}><AppText role="caption" style={s.mutedLight}>{page.result.track === "verified" ? "GPS" : "Open"}</AppText></View>
+                  )}
                 </View>
-                <AppText role="caption" style={s.mutedLight}>{formatPeriodDateRange(page.result.periodStart, page.result.periodEnd)}</AppText>
+                <AppText role="caption" style={s.mutedLight}>
+                  {formatPeriodDateRange(page.kind === "results" ? page.result.periodStart : page.periodStart, page.kind === "results" ? page.result.periodEnd : page.periodEnd)}
+                </AppText>
               </View>
             )}
 
@@ -111,11 +120,8 @@ export function WeekRecap({ state, results, social, onClose, loadReplay, hiddenI
                   <AppText style={s.light}>Your effort added up. Let’s see where it took you.</AppText>
                 </View>
               ) : page.kind === "results" ? (
-                <View style={s.resultsWrap}>
-                  <PodiumHero replay={replays[page.result.id] ?? null} state={state} result={page.result} hiddenIds={hiddenIds} />
-                  <ResultCard result={page.result} units={state.units} variant="recap" />
-                </View>
-              ) : <Training state={state} result={page.result} />}
+                <ResultsView state={state} result={page.result} replay={replays[page.result.id] ?? null} hiddenIds={hiddenIds} reduced={reduced} />
+              ) : <Training state={state} target={{ sport: page.sport, periodStart: page.periodStart, periodEnd: page.periodEnd, result: page.result }} />}
             </WeekRecapFit>
 
             <View style={s.footer}>
@@ -141,7 +147,7 @@ export function WeekRecap({ state, results, social, onClose, loadReplay, hiddenI
 
             <FocusSheet open={choices && page.kind === "results"} title="Field choices" onClose={() => setChoices(false)}>
               <AppText>Choices appear when eligible athletes are available.</AppText>
-              {page.kind !== "arrival" && <WeeklySocialActions result={page.result} units={state.units} />}
+              {page.kind === "results" && <WeeklySocialActions result={page.result} units={state.units} />}
             </FocusSheet>
           </SafeAreaView>
         </View>
@@ -150,16 +156,68 @@ export function WeekRecap({ state, results, social, onClose, loadReplay, hiddenI
   );
 }
 
-function PodiumHero({ replay, state, result, hiddenIds }: {
-  replay: CompetitionReplay | null; state: CompeteState; result: PeriodResult; hiddenIds: readonly string[];
+function ResultsView({ state, result, replay, hiddenIds, reduced }: {
+  state: CompeteState; result: PeriodResult; replay: CompetitionReplay | null; hiddenIds: readonly string[]; reduced: boolean;
+}) {
+  const highlights = useMemo(() => weekRecapHighlights(replay, state, result, hiddenIds), [replay, state, result, hiddenIds]);
+  return (
+    <View style={s.resultsWrap}>
+      <PodiumHero replay={replay} state={state} result={result} hiddenIds={hiddenIds} reduced={reduced} />
+      <View style={s.highlightsList}>
+        {highlights.map((item) => (
+          <View key={item.title} style={[s.glassCard, s.highlightRow]}>
+            <View style={[s.highlightIcon, { backgroundColor: `${STAT_COLOR[item.tone]}22` }]}>
+              <AppIcon name={item.icon} size={18} color={STAT_COLOR[item.tone]} />
+            </View>
+            <View style={s.highlightText}>
+              <AppText role="label" style={s.light} numberOfLines={1}>{item.title}</AppText>
+              <AppText role="caption" style={s.mutedLight} numberOfLines={2}>{item.detail}</AppText>
+            </View>
+          </View>
+        ))}
+      </View>
+      <ResultCard result={result} units={state.units} variant="recap" />
+    </View>
+  );
+}
+
+function PodiumHero({ replay, state, result, hiddenIds, reduced }: {
+  replay: CompetitionReplay | null; state: CompeteState; result: PeriodResult; hiddenIds: readonly string[]; reduced: boolean;
 }) {
   const slots = useMemo(() => weekRecapPodium(replay, state, result, hiddenIds), [replay, state, result, hiddenIds]);
+  const anims = useRef<Record<1 | 2 | 3, Animated.Value>>({
+    1: new Animated.Value(reduced ? 1 : 0),
+    2: new Animated.Value(reduced ? 1 : 0),
+    3: new Animated.Value(reduced ? 1 : 0),
+  }).current;
+
+  useEffect(() => {
+    if (reduced) {
+      anims[1].setValue(1);
+      anims[2].setValue(1);
+      anims[3].setValue(1);
+      return;
+    }
+    anims[1].setValue(0);
+    anims[2].setValue(0);
+    anims[3].setValue(0);
+    const sequence = Animated.stagger(180, [
+      Animated.timing(anims[3], { toValue: 1, duration: 320, useNativeDriver: true }),
+      Animated.timing(anims[2], { toValue: 1, duration: 320, useNativeDriver: true }),
+      Animated.timing(anims[1], { toValue: 1, duration: 360, useNativeDriver: true }),
+    ]);
+    sequence.start();
+    return () => sequence.stop();
+  }, [result.id, reduced, anims]);
+
   return (
     <View style={s.podiumRow}>
       {slots.map(({ step, entry }) => {
         const meta = PODIUM_STEP[step];
+        const progress = anims[step];
+        const translateY = progress.interpolate({ inputRange: [0, 1], outputRange: [20, 0] });
         return (
-          <View key={step} style={[s.podiumCol, slots.length === 1 && s.podiumSingleCol]}>
+          <Animated.View key={step} style={[s.podiumCol, { opacity: progress, transform: [{ translateY }] }]}>
             <View style={s.podiumAthlete}>
               <View style={[s.avatarFrame, step === 1 && s.firstFrame]}>
                 {step === 1 && (
@@ -187,68 +245,50 @@ function PodiumHero({ replay, state, result, hiddenIds }: {
                 <AppText role="label" style={[s.tabular, { color: meta.ink }]}>{step}</AppText>
               </View>
             </View>
-          </View>
+          </Animated.View>
         );
       })}
     </View>
   );
 }
 
-function Training({ state, result }: { state: CompeteState; result: PeriodResult }) {
-  const colors = useThemeColors();
-  const series = weekRecapTraining(state, result);
-  const { negative, scoreLine, stats, nextRound } = weekRecapBreakdown(state, result);
+function Training({ state, target }: { state: CompeteState; target: WeekRecapTarget }) {
+  const series = weekRecapTraining(state, target);
+  const { stats, nextRound } = weekRecapBreakdown(state, target);
+  const hr = weekRecapHeartRateRanges(state, target);
   const [chartMode, setChartMode] = useState<"time" | "effort">("time");
   const [scrubbed, setScrubbed] = useState<ChartDatum | undefined>(undefined);
   const activeMode = chartMode === "effort" && series.hasEffort ? "effort" : "time";
 
   return (
     <View style={s.trainingWrap}>
-      <View style={[s.scoreBanner, negative && s.scoreBannerNeg]}>
-        <View style={s.scoreLeft}>
-          <Svg width={20} height={20} viewBox="0 0 24 24" accessible={false}>
-            <Circle cx="12" cy="12" r="10" fill={negative ? "#f09c98" : "#4ea77c"} />
-            <Path d="M8.5 12.2l2.3 2.3 4.8-5" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-          <AppText role="label" style={[s.light, s.tabular]}>{scoreLine}</AppText>
-        </View>
-        {!negative && !result.frozen && (
-          <Svg width={18} height={18} viewBox="0 0 24 24" accessible={false}>
-            <Path d="M6 12h6M8 7l5 2M8 17l5-2" fill="none" stroke={SUCCESS_LIGHT} strokeWidth="2" strokeLinecap="round" />
-          </Svg>
-        )}
-      </View>
-
-      <View style={[s.glassCard, s.statStrip]}>
-        {stats.map((item, idx) => (
-          <View key={item.label} style={s.statGroup}>
-            {idx > 0 && <View style={s.statDivider} />}
-            <View style={s.statCell}>
-              <AppIcon name={item.icon} size={16} color={STAT_COLOR[item.tone]} />
-              <AppText role="value" style={[s.light, s.tabular]} numberOfLines={1}>{item.value}</AppText>
-              <AppText role="caption" style={s.mutedLight}>{item.label}</AppText>
-            </View>
+      <View style={s.statCardsRow}>
+        {stats.map((item) => (
+          <View key={item.label} style={[s.glassCard, s.statCard]}>
+            <AppIcon name={item.icon} size={16} color={STAT_COLOR[item.tone]} />
+            <AppText role="value" style={[s.light, s.tabular, s.center]} numberOfLines={1}>{item.value}</AppText>
+            <AppText role="caption" style={[s.mutedLight, s.center]} numberOfLines={1}>{item.label}</AppText>
           </View>
         ))}
       </View>
 
-      <View style={[s.chartCard, { backgroundColor: colors.card, borderColor: colors.line }]}>
+      <View style={[s.glassCard, s.chartCard]}>
         <View style={s.chartHeader}>
           <View style={s.chartTitleRow}>
-            <AppIcon name="scoring" size={16} color={colors.ink} />
-            <AppText role="label" numberOfLines={1}>
+            <AppIcon name="scoring" size={16} color={SUCCESS_LIGHT} />
+            <AppText role="label" style={s.light} numberOfLines={1}>
               {scrubbed ? `${scrubbed.label} · ${scrubbed.value}` : activeMode === "time" ? "Training time" : "Effort"}
             </AppText>
           </View>
           {series.available && series.hasEffort && (
-            <View style={[s.modeToggle, { backgroundColor: colors.paper, borderColor: colors.line }]} accessibilityRole="tablist">
+            <View style={s.modeToggle} accessibilityRole="tablist">
               {(["time", "effort"] as const).map((mode) => {
                 const selected = activeMode === mode;
                 return (
                   <Pressable key={mode} accessibilityRole="tab" accessibilityState={{ selected }}
                     onPress={() => { if (activeMode !== mode) { void playCue("selection"); setScrubbed(undefined); setChartMode(mode); } }}
-                    style={[s.modePill, selected && { backgroundColor: colors.actionSoft }]}>
-                    <AppText role={selected ? "label" : "caption"} style={{ color: selected ? colors.ink : colors.muted }}>
+                    style={[s.modePill, selected && s.modePillActive]}>
+                    <AppText role={selected ? "label" : "caption"} style={{ color: selected ? "#142b3b" : MUTED_LIGHT }}>
                       {mode === "time" ? "Time" : "Effort"}
                     </AppText>
                   </Pressable>
@@ -258,13 +298,41 @@ function Training({ state, result }: { state: CompeteState; result: PeriodResult
           )}
         </View>
         {series.available ? (
-          <StandardLineChart height={150} showAxes showArea showTrend={false} onSelectionChange={setScrubbed}
+          <StandardLineChart height={138} showAxes showArea showTrend={false} onSelectionChange={setScrubbed}
+            stroke={WEEK_RECAP_COLORS.progress} axisColor={GLASS_BORDER} labelColor={MUTED_LIGHT}
             values={activeMode === "time" ? series.values : series.effortValues} pointLabels={series.labels}
             xLabels={[series.labels[0]!, series.labels[Math.floor((series.labels.length - 1) / 2)]!, series.labels.at(-1)!]}
             formatAxisY={(v) => (activeMode === "time" ? `${Math.round(v)}` : `${Number(v.toFixed(1))}`)}
             formatY={(v) => (activeMode === "time" ? `${Math.round(v)} min` : `${formatEffort(v)} pts`)}
             accessibilityLabel={activeMode === "time" ? "Cumulative training minutes in the settled week" : "Cumulative effort points in the settled week"} />
-        ) : <AppText role="support" secondary>Detailed activity history is unavailable for this archived week.</AppText>}
+        ) : <AppText role="support" style={s.mutedLight}>Detailed activity history is unavailable for this archived week.</AppText>}
+      </View>
+
+      <View style={[s.glassCard, s.hrCard]}>
+        <View style={s.nextHeader}>
+          <View style={s.rowGap6}>
+            <AppIcon name="heart" size={16} color={WEEK_RECAP_COLORS.progress} />
+            <AppText role="label" style={s.light}>Heart-rate zones</AppText>
+          </View>
+          {hr.totalMinutes > 0 && <AppText role="caption" style={[s.mutedLight, s.tabular]}>Total {hr.totalMinutes} min</AppText>}
+        </View>
+        {hr.ranges.length > 0 ? (
+          <View style={s.hrList}>
+            {hr.ranges.map((row) => (
+              <View key={row.id} style={s.hrRow}>
+                <AppText role="caption" style={[s.light, s.hrLabel]} numberOfLines={1}>{row.label}</AppText>
+                <AppText role="caption" style={[s.mutedLight, s.tabular, s.hrStat]} numberOfLines={1}>
+                  {row.pct}% ({row.minutes}m)
+                </AppText>
+                <View style={s.hrTrack}>
+                  <View style={[s.hrFill, { width: `${Math.max(8, row.pct)}%`, backgroundColor: HR_BAR_COLOR[row.tone] }]} />
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <AppText role="caption" style={s.mutedLight}>No heart-rate samples recorded this week.</AppText>
+        )}
       </View>
 
       <View style={[s.glassCard, s.nextCard]}>
@@ -300,13 +368,11 @@ const s = StyleSheet.create({
   eyebrowRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   backBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: GLASS_BG, borderWidth: 1, borderColor: GLASS_BORDER, alignItems: "center", justifyContent: "center" },
   trackBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: GLASS_BG, borderWidth: 1, borderColor: GLASS_BORDER },
-  trackText: { color: MUTED_LIGHT },
   heading: { gap: 4 },
   arrival: { alignItems: "center", gap: 24, paddingTop: 16 },
-  resultsWrap: { gap: 16 },
+  resultsWrap: { gap: 12 },
   podiumRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 10, paddingTop: 4 },
   podiumCol: { flex: 1, alignItems: "center", gap: 8 },
-  podiumSingleCol: { maxWidth: 160 },
   podiumAthlete: { alignItems: "center", gap: 2, width: "100%" },
   avatarFrame: { alignItems: "center", justifyContent: "center", position: "relative" },
   firstFrame: { width: 76, height: 64 },
@@ -317,21 +383,28 @@ const s = StyleSheet.create({
   emptyAvatar: { backgroundColor: GLASS_BG, borderWidth: 1, borderColor: GLASS_BORDER, alignItems: "center", justifyContent: "center" },
   pedestal: { width: "100%", borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: 8, borderBottomRightRadius: 8, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   pedestalBadge: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center" },
-  trainingWrap: { gap: 12 },
+  highlightsList: { gap: 8 },
+  highlightRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 11 },
+  highlightIcon: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  highlightText: { flex: 1, gap: 1 },
+  trainingWrap: { gap: 10 },
   glassCard: { backgroundColor: GLASS_BG, borderRadius: 18, borderWidth: 1, borderColor: GLASS_BORDER },
-  scoreBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, paddingHorizontal: 14, paddingVertical: 11, borderRadius: 14, backgroundColor: "rgba(140, 205, 171, 0.15)", borderWidth: 1, borderColor: "rgba(140, 205, 171, 0.28)" },
-  scoreBannerNeg: { backgroundColor: "rgba(240, 156, 152, 0.14)", borderColor: "rgba(240, 156, 152, 0.28)" },
-  scoreLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
-  statStrip: { flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 8 },
-  statGroup: { flex: 1, flexDirection: "row", alignItems: "center" },
-  statCell: { flex: 1, alignItems: "center", gap: 3 },
-  statDivider: { width: 1, height: 34, backgroundColor: GLASS_BORDER },
-  chartCard: { borderRadius: 20, borderWidth: 1, padding: 14, gap: 8 },
+  statCardsRow: { flexDirection: "row", gap: 8 },
+  statCard: { flex: 1, paddingVertical: 10, paddingHorizontal: 8, alignItems: "center", gap: 3 },
+  chartCard: { padding: 12, gap: 6 },
   chartHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   chartTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1 },
-  modeToggle: { flexDirection: "row", borderRadius: 999, borderWidth: 1, padding: 2, gap: 2 },
+  modeToggle: { flexDirection: "row", borderRadius: 999, borderWidth: 1, borderColor: GLASS_BORDER, backgroundColor: "rgba(255,255,255,0.06)", padding: 2, gap: 2 },
   modePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
-  nextCard: { padding: 14, gap: 4 },
+  modePillActive: { backgroundColor: WEEK_RECAP_COLORS.progress },
+  hrCard: { padding: 12, gap: 8 },
+  hrList: { gap: 6 },
+  hrRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  hrLabel: { width: 92 },
+  hrStat: { width: 68 },
+  hrTrack: { flex: 1, height: 8, borderRadius: 4, backgroundColor: "rgba(255, 255, 255, 0.12)", overflow: "hidden" },
+  hrFill: { height: 8, borderRadius: 4 },
+  nextCard: { padding: 12, gap: 4 },
   nextHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 2 },
   nextPill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
   nextPillActive: { backgroundColor: "rgba(140, 205, 171, 0.18)" },

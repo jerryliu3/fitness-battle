@@ -51,9 +51,9 @@ export function ResultBreakdownContent({
       <View style={plainMetrics ? s.metricsRowPlain : s.metricsRow}>
         {metrics.map((metric, idx) => (
           <View key={metric.key} style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
-            {idx > 0 && <View style={plainMetrics ? s.metricDividerTall : s.metricDivider} />}
+            {idx > 0 && <View style={plainMetrics ? s.metricDividerGlass : s.metricDivider} />}
             <View style={s.metricCell}>
-              <AppText role="caption" secondary style={plainMetrics ? s.metricUpper : undefined}>
+              <AppText role="caption" secondary>
                 {plainMetrics ? metric.key.toUpperCase() : metric.key}
               </AppText>
               <AppText role={plainMetrics ? "value" : "label"} style={s.tabular} numberOfLines={1}>
@@ -111,28 +111,43 @@ export function ResultCard({
     : { bg: c.soft, text: c.ink };
 
   if (variant === "recap") {
+    const metrics = weekRecapMetrics(result, units);
+    const showDelta = !result.frozen && delta !== 0;
+    const placePositive = !result.frozen && result.place <= 3;
     return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${receipt ? "Hide" : "View"} ${sport.name} result receipt. ${range}. ${result.track === "verified" ? "GPS" : "Open"}. ${ordinalPlace(result.place)} of ${result.fieldSize}. ${formatVolume(result.sport, result.distanceM, result.movingSec, units, result.effort)}. ${result.eloBefore} to ${result.eloAfter} effort score, ${deltaText}.`}
-        accessibilityState={{ expanded: receipt }}
-        onPress={() => setReceipt((v) => !v)}
-        style={({ pressed }) => [s.card, s.recapCard, pressed && { opacity: 0.94 }]}
-      >
+      <View style={[s.recapGlassCard, s.recapCard]}>
         <View style={s.recapHeader}>
-          <View style={s.sportRow}>
-            <SportIcon sport={result.sport} size={20} />
-            <AppText role="row">Your result</AppText>
-          </View>
-          <View style={[s.placePill, { backgroundColor: placeBadgeTone.bg }]}>
-            <AppText role="label" style={[s.tabular, { color: placeBadgeTone.text }]}>
+          <AppText role="caption" style={s.recapMuted}>YOUR RESULT</AppText>
+          <View style={[s.placePill, { backgroundColor: placePositive ? "rgba(140, 205, 171, 0.18)" : "rgba(255, 255, 255, 0.12)" }]}>
+            <AppText role="label" style={[s.tabular, { color: placePositive ? "#8ccdab" : "#f9f7ec" }]}>
               {ordinalPlace(result.place)} of {result.fieldSize}{result.frozen ? " · Frozen" : ""}
             </AppText>
           </View>
         </View>
-        <View style={s.recapDivider} />
-        <ResultBreakdownContent result={result} units={units} deltaText={deltaText} showReceipt={receipt} plainMetrics />
-      </Pressable>
+        <View style={s.recapDividerDark} />
+        <View style={s.metricsRowPlain}>
+          {metrics.map((metric, idx) => (
+            <View key={metric.key} style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+              {idx > 0 && <View style={s.metricDividerGlass} />}
+              <View style={s.metricCell}>
+                <AppText role="caption" style={s.recapMuted}>
+                  {metric.key.toUpperCase()}
+                </AppText>
+                <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
+                  <AppText role="value" style={[s.tabular, s.recapLight]} numberOfLines={1}>
+                    {metric.value}
+                  </AppText>
+                  {metric.key === "Rating" && showDelta && (
+                    <AppText role="label" style={[s.tabular, { color: delta > 0 ? "#8ccdab" : "#f09c98" }]}>
+                      ({deltaText})
+                    </AppText>
+                  )}
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
     );
   }
 
@@ -376,6 +391,18 @@ const sThemes = createThemedStyles((c) => ({
   tabular: {
     fontVariant: ["tabular-nums"],
   },
+  recapGlassCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+  },
+  recapLight: {
+    color: "#f9f7ec",
+  },
+  recapMuted: {
+    color: "rgba(249, 247, 236, 0.68)",
+  },
   recapCard: {
     padding: 18,
     gap: 14,
@@ -391,19 +418,18 @@ const sThemes = createThemedStyles((c) => ({
     paddingVertical: 4,
     borderRadius: 999,
   },
-  recapDivider: {
+  recapDividerDark: {
     height: 1,
-    backgroundColor: c.line,
+    backgroundColor: "rgba(255, 255, 255, 0.14)",
   },
   metricsRowPlain: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 2,
   },
-  metricUpper: {},
-  metricDividerTall: {
+  metricDividerGlass: {
     width: 1,
     height: 32,
-    backgroundColor: c.line,
+    backgroundColor: "rgba(255, 255, 255, 0.14)",
   },
 }));

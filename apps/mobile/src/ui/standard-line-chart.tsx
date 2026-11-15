@@ -29,6 +29,8 @@ export interface StandardLineChartProps {
   selectedIdx?: number;
   onSelectIdx?: (index: number) => void;
   stroke?: string;
+  axisColor?: string;
+  labelColor?: string;
   height?: number;
   showArea?: boolean;
   showTrend?: boolean;
@@ -41,7 +43,7 @@ export interface StandardLineChartProps {
   ariaLabel?: string;
 }
 
-export function StandardLineChart({ revealProgress, showAxes = true, showSummary = false, showArea = false, showTrend = true, onSelectionChange, pointLabels, values, xLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, selectedIdx, height = 190, stroke: suppliedstroke, corridor, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
+export function StandardLineChart({ revealProgress, showAxes = true, showSummary = false, showArea = false, showTrend = true, onSelectionChange, pointLabels, values, xLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, selectedIdx, height = 190, stroke: suppliedstroke, axisColor, labelColor, corridor, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
 const c=useThemeColors();
 const stroke=suppliedstroke ?? c.tennis;
 
@@ -107,17 +109,17 @@ const stroke=suppliedstroke ?? c.tennis;
    </>}
  </Defs>
  {showAxes && <G>
-   <Line x1={geo.xStart} x2={geo.xStart} y1={geo.yTop} y2={geo.yBottom} stroke={c.line}/>
-   <Line x1={geo.xStart} x2={geo.xEnd} y1={geo.yBottom} y2={geo.yBottom} stroke={c.line}/>
+   <Line x1={geo.xStart} x2={geo.xStart} y1={geo.yTop} y2={geo.yBottom} stroke={axisColor ?? c.line}/>
+   <Line x1={geo.xStart} x2={geo.xEnd} y1={geo.yBottom} y2={geo.yBottom} stroke={axisColor ?? c.line}/>
    {geo.yTicks.map((tick, i) => (
      <G key={`${tick.value}-${i}`}>
-       <Line x1={geo.xStart} x2={geo.xEnd} y1={tick.y} y2={tick.y} stroke={c.secondary} strokeWidth={0.5} opacity={0.3} />
-       <SvgText x={geo.xStart - 6} y={tick.y + 4} {...chartTextProps()} fill={c.secondary} textAnchor="end">
+       <Line x1={geo.xStart} x2={geo.xEnd} y1={tick.y} y2={tick.y} stroke={axisColor ?? c.secondary} strokeWidth={0.5} opacity={0.3} />
+       <SvgText x={geo.xStart - 6} y={tick.y + 4} {...chartTextProps()} fill={labelColor ?? c.secondary} textAnchor="end">
          {stripAxisUnit((formatAxisY ?? formatY)(tick.value))}
        </SvgText>
      </G>
    ))}
-   {xTicks.map((tick, i)=><SvgText key={i} x={tick.x} y={height-22} {...chartTextProps()} fill={c.muted} textAnchor={tick.anchor}>{tick.label}</SvgText>)}
+   {xTicks.map((tick, i)=><SvgText key={i} x={tick.x} y={height-22} {...chartTextProps()} fill={labelColor ?? c.muted} textAnchor={tick.anchor}>{tick.label}</SvgText>)}
  </G>}
  <G clipPath={revealProgress?`url(#${clipId})`:undefined}>
    {corridor ? (

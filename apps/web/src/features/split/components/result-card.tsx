@@ -30,40 +30,32 @@ export function ResultCard({
   const range = formatPeriodDateRange(result.periodStart, result.periodEnd);
 
   if (variant === "recap") {
-    const sport = sportById(result.sport);
+    const delta = result.eloAfter - result.eloBefore;
     const deltaText = formatEloDelta(result.eloBefore, result.eloAfter);
+    const showDelta = !result.frozen && delta !== 0;
     const podiumWin = !result.frozen && result.place <= 3;
     return (
-      <button
-        type="button"
-        className={`week-recap-result-card${receipt ? " is-expanded" : ""}`}
-        aria-label={`${receipt ? "Hide" : "View"} ${sport.name} result receipt`}
-        aria-expanded={receipt}
-        onClick={() => setReceipt(!receipt)}
-      >
+      <section className="week-recap-result-card" aria-label="Your result">
         <div className="week-recap-result-top">
-          <span className="week-recap-result-title">
-            <SportActivityIcon sport={result.sport} size={18} />
-            <strong>Your result</strong>
-          </span>
+          <span className="week-recap-result-title">YOUR RESULT</span>
           <span className={`week-recap-place-pill${podiumWin ? " is-podium" : ""}`}>
             {ordinalPlace(result.place)} of {result.fieldSize}{result.frozen ? " · Frozen" : ""}
           </span>
         </div>
         <div className="week-recap-result-metrics">
           {weekRecapMetrics(result, units).map((metric) => (
-            <div key={metric.key}><span>{metric.key.toUpperCase()}</span><strong>{metric.value}</strong></div>
+            <div key={metric.key}>
+              <span>{metric.key.toUpperCase()}</span>
+              <strong>
+                {metric.value}
+                {metric.key === "Rating" && showDelta && (
+                  <em className={`week-recap-rating-delta${delta > 0 ? " is-pos" : " is-neg"}`}> ({deltaText})</em>
+                )}
+              </strong>
+            </div>
           ))}
         </div>
-        {receipt && (
-          <div className="week-recap-result-receipt">
-            <div><span>Starting score</span><b>{result.eloBefore}</b></div>
-            <div><span>Round adjustment</span><b>{deltaText}{result.frozen ? " (frozen)" : ""}</b></div>
-            <div><span>Final rating</span><b>{result.eloAfter}</b></div>
-            <div><span>Window</span><b>Eastern time · Mon–Mon</b></div>
-          </div>
-        )}
-      </button>
+      </section>
     );
   }
 

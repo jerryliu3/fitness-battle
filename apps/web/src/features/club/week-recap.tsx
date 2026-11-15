@@ -7,12 +7,14 @@ import {
   clubDuration,
   clubWeekSummary,
   latestClubRecap,
+  settledWeekBreakdownTarget,
   sportById,
   type CompeteState,
 } from "@fitness-battle/shared";
 export function WeekRecap({ state }: { state: CompeteState }) {
   const week = clubWeekSummary(state),
-    recap = latestClubRecap(state);
+    recap = latestClubRecap(state),
+    breakdown = recap ? null : settledWeekBreakdownTarget(state);
   const difference = week.movingSec - week.previousSec;
   return (
     <Section className="club-week-recap" title="Your week, in perspective">
@@ -39,6 +41,20 @@ export function WeekRecap({ state }: { state: CompeteState }) {
           {difference >= 0 ? "+" : "−"}
           {clubDuration(Math.abs(difference))} {week.daysPassed >= 7 ? "compared with all of last week." : "compared with this point last week."}
         </AppParagraph>
+      ) : breakdown ? (
+        <Link className="club-recap-link" href="/arena?breakdown=latest">
+          <span>
+            <b>Your last week in motion.</b>
+            <AppText as="small" role="caption" secondary>
+              {new Date(breakdown.periodStart).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                timeZone: APP_TIMEZONE,
+              })} · View week breakdown
+            </AppText>
+          </span>
+          <span aria-hidden="true">→</span>
+        </Link>
       ) : null}
       {recap ? (
         <Link className="club-recap-link" href="/arena?results=latest">
@@ -59,6 +75,20 @@ export function WeekRecap({ state }: { state: CompeteState }) {
             <AppText as="small" role="caption" secondary>
               {recap.eloAfter - recap.eloBefore >= 0 ? "+" : ""}
               {recap.eloAfter - recap.eloBefore} Effort Score · View recap
+            </AppText>
+          </span>
+          <span aria-hidden="true">→</span>
+        </Link>
+      ) : breakdown ? (
+        <Link className="club-recap-link" href="/arena?breakdown=latest">
+          <span>
+            <b>Your last week in motion.</b>
+            <AppText as="small" role="caption" secondary>
+              {new Date(breakdown.periodStart).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                timeZone: APP_TIMEZONE,
+              })} · View week breakdown
             </AppText>
           </span>
           <span aria-hidden="true">→</span>

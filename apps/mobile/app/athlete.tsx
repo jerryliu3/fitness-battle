@@ -637,12 +637,14 @@ const styles=useThemedStyles(stylesThemes);
                 <ChoicePicker systemMenu label="Primary sport" value={state.primary} options={SPORTS.map(s => ({ value: s.id, label: s.name }))}
                   onChange={sport => dispatch({ type: "set-primary", sport })} />
               </View>
-              <View style={[f.row, { minHeight: 48, alignItems: "center" }]}>
-                <View style={f.grow}><AppText role="label" >Freeze this week</AppText><AppText role="body" secondary >{state.freezesLeft} remaining</AppText></View>
-                <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }} thumbColor="#ffffff" ios_backgroundColor={SHELL_COLORS.line} accessibilityLabel="Freeze this week" value={frozen} disabled={!frozen && state.freezesLeft <= 0}
-                  onValueChange={enabled => enabled ? setConfirmFreeze(true) : dispatch({ type: "unfreeze" })} />
-              </View>
-              <SectionHeader title="Active Sports"/><AppText role="caption" secondary>Turning off a queued sport cancels registration. Started waves finish Sunday; turning off stops renewal.</AppText>
+              {false && (
+                <View style={[f.row, { minHeight: 48, alignItems: "center" }]}>
+                  <View style={f.grow}><AppText role="label" >Freeze this week</AppText><AppText role="body" secondary >{state?.freezesLeft ?? 0} remaining</AppText></View>
+                  <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }} thumbColor="#ffffff" ios_backgroundColor={SHELL_COLORS.line} accessibilityLabel="Freeze this week" value={frozen} disabled={!frozen && (state?.freezesLeft ?? 0) <= 0}
+                    onValueChange={enabled => enabled ? setConfirmFreeze(true) : dispatch({ type: "unfreeze" })} />
+                </View>
+              )}
+              <SectionHeader title="Active Sports (auto-registration)"/><AppText role="caption" secondary>Turn on to auto-register for the event every week. Turning off will not remove you from any active events.</AppText>
               {SPORTS.map(sport => <View key={sport.id} style={[f.row, { minHeight: 64, alignItems: "center", borderBottomWidth: 1, borderBottomColor: SHELL_COLORS.line }]}>
                 <View style={[f.row, f.grow, { justifyContent: "flex-start", gap: 10 }]}><SportIcon sport={sport.id} /><AppText role="label" >{sport.name}</AppText></View>
                 <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }} thumbColor="#ffffff" ios_backgroundColor={SHELL_COLORS.line} accessibilityLabel={`Toggle ${sport.name} active status`}
@@ -653,6 +655,19 @@ const styles=useThemedStyles(stylesThemes);
                     dispatch(enabled ? enrollment ? { type: "resume-renewal", sport: sport.id } : { type: "opt-in", sport: sport.id, crewBoard: null } : { type: queued ? "opt-out" : "schedule-leave", sport: sport.id });
                   }} />
               </View>)}
+              {(() => {
+                const sleepRating = state.healthRatings.find(r => r.metric === "sleep");
+                const sleepQueued = Boolean(sleepRating && Date.parse(sleepRating.lockPeriod) > competeNow(state).getTime());
+                const sleepActive = Boolean(sleepRating?.optedIn) && (sleepQueued || sleepRating?.autoEnrollNext !== false);
+                return (
+                  <View style={[f.row, { minHeight: 64, alignItems: "center", borderBottomWidth: 1, borderBottomColor: SHELL_COLORS.line }]}>
+                    <View style={[f.row, f.grow, { justifyContent: "flex-start", gap: 10 }]}><AppIcon name="sleep" size={20} color={SHELL_COLORS.ink} /><AppText role="label">Recovery / Sleep</AppText></View>
+                    <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }} thumbColor="#ffffff" ios_backgroundColor={SHELL_COLORS.line} accessibilityLabel="Toggle Recovery / Sleep active status"
+                      value={sleepActive}
+                      onValueChange={enabled => dispatch(enabled ? (sleepRating?.optedIn ? { type: "resume-renewal", metric: "sleep" } : { type: "opt-in-health", metric: "sleep" }) : { type: sleepQueued ? "opt-out-health" : "schedule-leave", metric: "sleep" })} />
+                  </View>
+                );
+              })()}
               <FocusSheet
                 open={confirmFreeze}
                 title="Freeze this week?"
@@ -667,6 +682,8 @@ const styles=useThemedStyles(stylesThemes);
                   }}
                 />
               </FocusSheet>
+            </>
+          )}
         </SectionStack>
 </ScrollView>
       </SafeAreaView>
@@ -956,7 +973,7 @@ const styles=useThemedStyles(stylesThemes);
         />
         <SettingsRow
           title="Preferences"
-          detail="Units, sports & freezes"
+          detail="Units & sports"
           onPress={() => {
             setPanel("preferences");
           }}

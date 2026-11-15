@@ -1,29 +1,66 @@
-import { formatAppDateTime } from "./period";
+import { formatAppDateTime, weeklyPeriodBounds } from "./period";
 import { APP_TIMEZONE, dayKey } from "./timezone";
 import { activityEffort } from "./compete/effort";
 import { competeNow, formatEffort, formatVolume } from "./compete/engine";
-import { formatEloDelta } from "./compete/history";
 import { countsOnTrack } from "./compete/ledger";
 import { roundEnrollment } from "./compete/round-reveal";
-import { SPORT_IDS, sportById, type CompeteState, type PeriodResult, type UnitSystem } from "./compete/sports";
+import { SPORT_IDS, sportById, type CompeteState, type PeriodResult, type SportId, type UnitSystem } from "./compete/sports";
 import { competitionReplayFrame, indexCompetitionReplay, type CompetitionReplay } from "./competition-replay";
 
-export type WeekRecapPage = { kind: "arrival" } | { kind: "results" | "effort"; result: PeriodResult };
+export type WeekRecapPage =
+  | { kind: "arrival" }
+  | { kind: "results"; result: PeriodResult }
+  | { kind: "effort"; sport: SportId; periodStart: string; periodEnd: string; result?: PeriodResult };
+
 export interface WeekRecapPodiumEntry { id: string; name: string; place: number; you: boolean; avatarUrl?: string | null; metricLabel: string }
 export interface WeekRecapPodiumSlot { step: 1 | 2 | 3; entry: WeekRecapPodiumEntry | null }
 export interface WeekRecapNextRound { pill: string; detail: string; subtext: string; active: boolean }
+export interface WeekRecapHighlight { icon: "trophy" | "bolt" | "progress"; tone: "gold" | "success" | "muted"; title: string; detail: string }
+export interface WeekRecapHrRange { id: string; label: string; minutes: number; pct: number; tone: "high" | "warm" | "good" | "cool" }
+export interface WeekRecapTarget { sport: SportId; periodStart: string; periodEnd: string; result?: PeriodResult }
 
 export function formatPeriodDateRange(periodStart: string, periodEnd: string): string {
   const fmt = (ms: number) => new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE });
   return `${fmt(Date.parse(periodStart))} – ${fmt(Date.parse(periodEnd) - 1)}`;
 }
 
+/** Returns the previous closed Mon-Mon week window when the athlete logged activities (used for non-racers + revisit link). */
+export function settledWeekBreakdownTarget(state: CompeteState): { sport: SportId; periodStart: string; periodEnd: string } | null {
+  const now = competeNow(state);
+  const current = weeklyPeriodBounds(now, APP_TIMEZONE);
+  const prev = weeklyPeriodBounds(new Date(current.startsAt.getTime() - 1000), APP_TIMEZONE);
+  const startMs = prev.startsAt.getTime(), endMs = prev.endsAt.getTime();
+  const inWindow = state.activities.filter(a => {
+    const ms = Date.parse(a.startedAt);
+    return ms >= startMs && ms < endMs && a.disposition !== "excluded";
+  });
+  if (!inWindow.length) return null;
+  const bySport = new Map<SportId, number>();
+  for (const a of inWindow) bySport.set(a.sport, (bySport.get(a.sport) ?? 0) + a.movingSec);
+  const sport = [...bySport.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? state.primary;
+  return { sport, periodStart: prev.startsAt.toISOString(), periodEnd: prev.endsAt.toISOString() };
+}
+
+/** Auto-trigger target for users who logged workouts last week without entering any settled race. */
+export function nonRaceWeekBreakdownTarget(state: CompeteState): { sport: SportId; periodStart: string; periodEnd: string } | null {
+  const target = settledWeekBreakdownTarget(state);
+  if (!target) return null;
+  const hasRace = state.periodResults.some(r => Date.parse(r.periodStart) === Date.parse(target.periodStart) && Date.parse(r.periodEnd) === Date.parse(target.periodEnd));
+  return hasRace ? null : target;
+}
+
 /** roundReveal already chooses the display track; keep both pages of a sport together. */
-export function weekRecapPages(results: readonly PeriodResult[]): WeekRecapPage[] {
+export function weekRecapPages(
+  results: readonly PeriodResult[],
+  nonRaceWeek?: { sport: SportId; periodStart: string; periodEnd: string } | null,
+): WeekRecapPage[] {
+  if (!results.length && nonRaceWeek) {
+    return [{ kind: "effort", sport: nonRaceWeek.sport, periodStart: nonRaceWeek.periodStart, periodEnd: nonRaceWeek.periodEnd }];
+  }
   const ordered = [...results].sort((a, b) => SPORT_IDS.indexOf(a.sport) - SPORT_IDS.indexOf(b.sport));
   return [{ kind: "arrival" }, ...ordered.flatMap(result => [
     { kind: "results" as const, result },
-    { kind: "effort" as const, result },
+    { kind: "effort" as const, sport: result.sport, periodStart: result.periodStart, periodEnd: result.periodEnd, result },
   ])];
 }
 
@@ -39,38 +76,181 @@ export function weekRecapCopy(pages: readonly WeekRecapPage[], index: number) {
     title: page.kind === "arrival" ? "Small days. Quite a week." : page.kind === "results" ? "Race complete!" : "Week breakdown",
     description: page.kind === "arrival" ? "Your effort, your progress." : page.kind === "results" ? "Your week, settled." : "Your week in motion.",
     label: last ? "Done" : page.kind === "arrival" ? "Reveal my finish →" : page.kind === "results" ? "See week breakdown →"
-      : `${next && next.kind !== "arrival" ? sportById(next.result.sport).name : "Next sport"} results →`,
+      : `${next && next.kind !== "arrival" ? sportById(next.kind === "results" ? next.result.sport : next.sport).name : "Next sport"} results →`,
   };
 }
 
-export function weekRecapBreakdown(state: CompeteState, result: PeriodResult) {
-  const before = Math.round(result.eloBefore), after = Math.round(result.eloAfter);
-  const negative = after - before < 0 && !result.frozen;
+function breakdownActivities(state: CompeteState, target: WeekRecapTarget) {
+  const start = Date.parse(target.periodStart), end = Date.parse(target.periodEnd);
+  return state.activities.filter(a => {
+    const ms = Date.parse(a.startedAt);
+    if (!(ms >= start && ms < end)) return false;
+    return target.result ? a.sport === target.result.sport && countsOnTrack(a, target.result.track) : a.disposition !== "excluded";
+  });
+}
+
+export function weekRecapBreakdown(state: CompeteState, target: WeekRecapTarget) {
+  const activities = breakdownActivities(state, target);
+  const totalSec = target.result && activities.length === 0
+    ? target.result.movingSec
+    : activities.reduce((sum, a) => sum + a.movingSec, 0);
+  const best = [...activities].sort((a, b) => {
+    const aScore = sportById(a.sport).gps ? a.distanceM : a.movingSec;
+    const bScore = sportById(b.sport).gps ? b.distanceM : b.movingSec;
+    return bScore - aScore || b.movingSec - a.movingSec;
+  })[0];
+  const fallbackBest = !best && target.result && (target.result.distanceM > 0 || target.result.movingSec > 0)
+    ? formatVolume(target.result.sport, target.result.distanceM, target.result.movingSec, state.units, target.result.effort)
+    : "—";
+  const bestValue = best ? formatVolume(best.sport, best.distanceM, best.movingSec, state.units) : fallbackBest;
   return {
-    negative,
-    scoreLine: `Score ${before} → ${after} (${formatEloDelta(before, after)})${result.frozen ? " · Frozen" : ""}`,
     stats: [
-      { icon: "time" as const, tone: "muted" as const, value: `${Math.round(result.movingSec / 60)} min`, label: "Total time" },
-      { icon: "bolt" as const, tone: "gold" as const, value: formatEffort(result.effort), label: "Effort pts" },
-      { icon: "scoring" as const, tone: "success" as const, value: `${after}`, label: "Rating" },
+      { icon: "time" as const, tone: "success" as const, value: `${Math.round(totalSec / 60)} min`, label: "Total time" },
+      { icon: "progress" as const, tone: "gold" as const, value: String(activities.length), label: "Sessions" },
+      { icon: "trophy" as const, tone: "muted" as const, value: bestValue, label: "Best session" },
     ],
-    nextRound: weekRecapNextRound(state, result),
+    nextRound: weekRecapNextRound(state, target),
   };
+}
+
+const HR_RANGES = [
+  { id: "200+", label: "200+ bpm", min: 200, max: Infinity, tone: "high" as const },
+  { id: "180-200", label: "180–200 bpm", min: 180, max: 200, tone: "high" as const },
+  { id: "160-180", label: "160–180 bpm", min: 160, max: 180, tone: "warm" as const },
+  { id: "140-160", label: "140–160 bpm", min: 140, max: 160, tone: "good" as const },
+  { id: "120-140", label: "120–140 bpm", min: 120, max: 140, tone: "cool" as const },
+  { id: "<120", label: "<120 bpm", min: 0, max: 120, tone: "cool" as const },
+] as const;
+
+export function weekRecapHeartRateRanges(state: CompeteState, target: WeekRecapTarget) {
+  const activities = breakdownActivities(state, target);
+  const secondsByBucket = new Map<string, number>();
+  let hasGranular = false;
+  for (const activity of activities) {
+    const samples = activity.routeReplay?.filter(s => typeof s.heartRate === "number" && Number.isFinite(s.heartRate));
+    if (samples && samples.length >= 2) {
+      hasGranular = true;
+      for (let i = 1; i < samples.length; i++) {
+        const dt = Math.min(120, Math.max(0, samples[i]!.elapsedSec - samples[i - 1]!.elapsedSec));
+        const hr = samples[i]!.heartRate!;
+        const bucket = HR_RANGES.find(r => hr >= r.min && hr < r.max);
+        if (bucket && dt > 0) secondsByBucket.set(bucket.id, (secondsByBucket.get(bucket.id) ?? 0) + dt);
+      }
+    } else if (activity.avgHr != null && Number.isFinite(activity.avgHr) && activity.avgHr > 0 && activity.movingSec > 0) {
+      const bucket = HR_RANGES.find(r => activity.avgHr! >= r.min && activity.avgHr! < r.max);
+      if (bucket) secondsByBucket.set(bucket.id, (secondsByBucket.get(bucket.id) ?? 0) + activity.movingSec);
+    }
+  }
+  const totalSeconds = [...secondsByBucket.values()].reduce((a, b) => a + b, 0);
+  const ranges: WeekRecapHrRange[] = HR_RANGES.flatMap(r => {
+    const secs = secondsByBucket.get(r.id) ?? 0;
+    if (secs <= 0 || totalSeconds <= 0) return [];
+    return [{
+      id: r.id,
+      label: r.label,
+      minutes: Math.max(1, Math.round(secs / 60)),
+      pct: Math.round((secs / totalSeconds) * 100),
+      tone: r.tone,
+    }];
+  });
+  return { totalMinutes: Math.round(totalSeconds / 60), hasGranular, ranges };
 }
 
 export function weekRecapMetrics(result: PeriodResult, units: UnitSystem) {
   return [
-    { key: "Volume", value: formatVolume(result.sport, result.distanceM, result.movingSec, units, result.effort) },
+    { key: sportById(result.sport).gps ? "Distance" : "Volume", value: formatVolume(result.sport, result.distanceM, result.movingSec, units, result.effort) },
     { key: "Effort", value: `${formatEffort(result.effort)} pts` },
-    { key: "Rating", value: `${result.eloAfter}` },
+    { key: "Rating", value: `${Math.round(result.eloAfter)}` },
   ] as const;
 }
 
+export function weekRecapHighlights(
+  replay: CompetitionReplay | null,
+  state: CompeteState,
+  result: PeriodResult,
+  hiddenIds: readonly string[] = [],
+): WeekRecapHighlight[] {
+  const sport = sportById(result.sport);
+  const distUnit = state.units === "metric" ? "km" : "mi";
+  const divisor = state.units === "metric" ? 1000 : 1609.344;
+
+  if (replay && replay.events.length > 0) {
+    const index = indexCompetitionReplay(replay, state.units);
+    const events = index.replay.events.filter(e => !hiddenIds.includes(e.athleteId));
+    if (events.length > 0) {
+      const totalDistM = events.reduce((s, e) => s + e.distanceM, 0);
+      const totalMin = Math.round(events.reduce((s, e) => s + e.movingSec, 0) / 60);
+      const activeIds = new Set(events.map(e => e.athleteId));
+      let overtakes = 0, leadChanges = 0, prevLeader: string | null = null;
+      const prevPlace = new Map<string, number>();
+      for (let step = 1; step <= index.replay.events.length; step++) {
+        const rows = competitionReplayFrame(index, step).rows.filter(r => !hiddenIds.includes(r.id) && r.value > 0);
+        if (!rows.length) continue;
+        if (prevLeader && rows[0]!.id !== prevLeader) leadChanges++;
+        prevLeader = rows[0]!.id;
+        for (const r of rows) {
+          const prev = prevPlace.get(r.id);
+          if (prev != null && r.place < prev) overtakes += prev - r.place;
+          prevPlace.set(r.id, r.place);
+        }
+      }
+      const fieldTotalText = sport.gps
+        ? `${(totalDistM / divisor).toFixed(1)} ${distUnit}`
+        : `${totalMin} min`;
+      const finalRows = competitionReplayFrame(index, index.replay.events.length).rows.filter(r => !hiddenIds.includes(r.id));
+      const topRow = finalRows[0];
+      return [
+        {
+          icon: "bolt",
+          tone: "gold",
+          title: `Field covered ${fieldTotalText}`,
+          detail: `${events.length} workout${events.length === 1 ? "" : "s"} across ${activeIds.size} competitor${activeIds.size === 1 ? "" : "s"}.`,
+        },
+        {
+          icon: "progress",
+          tone: "success",
+          title: overtakes > 0 ? `${overtakes} overtake${overtakes === 1 ? "" : "s"}` : "Steady standings",
+          detail: leadChanges > 0
+            ? `${leadChanges} lead change${leadChanges === 1 ? "" : "s"} across the week.`
+            : "Positions held firm through the finish.",
+        },
+        ...(topRow ? [{
+          icon: "trophy" as const,
+          tone: "gold" as const,
+          title: topRow.you ? "Held the winning pace" : `${topRow.name} led the field`,
+          detail: sport.gps ? `Winning mark: ${topRow.value.toFixed(1)} ${distUnit}.` : `Winning mark: ${formatEffort(topRow.effort)} pts.`,
+        }] : []),
+      ];
+    }
+  }
+
+  const yourVolume = formatVolume(result.sport, result.distanceM, result.movingSec, state.units, result.effort);
+  const acts = breakdownActivities(state, { sport: result.sport, periodStart: result.periodStart, periodEnd: result.periodEnd, result });
+  return [
+    {
+      icon: "bolt",
+      tone: "gold",
+      title: `${result.fieldSize} athlete${result.fieldSize === 1 ? "" : "s"} in field`,
+      detail: `Your mark: ${yourVolume} across ${acts.length || 1} session${acts.length === 1 ? "" : "s"}.`,
+    },
+    {
+      icon: "trophy",
+      tone: "success",
+      title: `Placed ${result.place} of ${result.fieldSize}`,
+      detail: `${formatEffort(result.effort)} effort points scored in ${sport.name}.`,
+    },
+  ];
+}
+
 /** Calendar-date buckets preserve Eastern dates across DST and timestamp encodings. */
-export function weekRecapTraining(state: CompeteState, result: PeriodResult) {
-  const start = Date.parse(result.periodStart), end = Date.parse(result.periodEnd);
-  const activities = state.activities.filter(a => a.sport === result.sport && countsOnTrack(a, result.track)
-    && Date.parse(a.startedAt) >= start && Date.parse(a.startedAt) < end);
+export function weekRecapTraining(state: CompeteState, target: WeekRecapTarget & { track?: PeriodResult["track"] }) {
+  const start = Date.parse(target.periodStart), end = Date.parse(target.periodEnd);
+  const track = target.result?.track ?? target.track;
+  const activities = state.activities.filter(a => {
+    const ms = Date.parse(a.startedAt);
+    if (!(ms >= start && ms < end)) return false;
+    return track ? a.sport === target.sport && countsOnTrack(a, track) : a.disposition !== "excluded";
+  });
   const dates: string[] = [];
   if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
     const last = dayKey(new Date(end - 1), APP_TIMEZONE);
@@ -89,8 +269,8 @@ export function weekRecapTraining(state: CompeteState, result: PeriodResult) {
   };
 }
 
-export function weekRecapNextRound(state: CompeteState, result: PeriodResult): WeekRecapNextRound {
-  const enrollment = roundEnrollment(state, result);
+export function weekRecapNextRound(state: CompeteState, target: { sport: SportId; periodStart: string; periodEnd: string }): WeekRecapNextRound {
+  const enrollment = roundEnrollment(state, target as PeriodResult);
   if (!enrollment.startsAt) {
     return {
       pill: "Not joined",
@@ -121,11 +301,7 @@ export function weekRecapNextRound(state: CompeteState, result: PeriodResult): W
   };
 }
 
-const PODIUM_ORDER = {
-  1: [1],
-  2: [2, 1],
-  3: [2, 1, 3],
-} as const;
+const PODIUM_SLOTS = [2, 1, 3] as const;
 
 export function weekRecapPodium(
   replay: CompetitionReplay | null,
@@ -154,8 +330,7 @@ export function weekRecapPodium(
         avatarUrl: row.you ? state.avatarUrl : row.avatarUrl,
         metricLabel: formatReplayMetric(row.value, row.effort),
       }));
-      const count = entries.length <= 1 ? 1 : entries.length === 2 ? 2 : 3;
-      return PODIUM_ORDER[count].map(step => ({ step, entry: entries[step - 1]! }));
+      return PODIUM_SLOTS.map(step => ({ step, entry: entries[step - 1] ?? null }));
     }
   }
 
@@ -167,8 +342,7 @@ export function weekRecapPodium(
     avatarUrl: state.avatarUrl,
     metricLabel: youMetric,
   };
-  const fallbackCount = result.fieldSize <= 1 ? 1 : result.fieldSize === 2 ? 2 : 3;
-  return PODIUM_ORDER[fallbackCount].map(step => ({
+  return PODIUM_SLOTS.map(step => ({
     step,
     entry: result.place === step ? youEntry : null,
   }));

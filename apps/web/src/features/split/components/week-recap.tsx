@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { AppParagraph, typographyStyle } from "@/ui/section";
+import { AppParagraph, AppText, typographyStyle } from "@/ui/section";
 import type { ChartDatum } from "@/ui/chart-scrubber";
 import { SportActivityIcon } from "@/ui/sport-activity-icon";
 import { StandardLineChart } from "@/ui/standard-line-chart";
@@ -12,8 +12,9 @@ import { Ember } from "@/components/mascot/ember";
 import { CompetitionReplayButton } from "@/features/replay/competition-replay";
 import {
   APP_ICON_PATHS, LAUREL_WREATH_PATHS, WEEK_RECAP_COLORS, formatEffort, formatPeriodDateRange,
-  sportById, weekRecapBreakdown, weekRecapCopy, weekRecapPages, weekRecapPodium, weekRecapTraining,
-  type CompeteState, type CompetitionReplay, type PeriodResult,
+  sportById, weekRecapBreakdown, weekRecapCopy, weekRecapHeartRateRanges, weekRecapHighlights,
+  weekRecapPages, weekRecapPodium, weekRecapTraining,
+  type CompeteState, type CompetitionReplay, type PeriodResult, type SportId, type WeekRecapTarget,
 } from "@fitness-battle/shared";
 import { colors } from "@/theme/app-colors";
 import { ResultCard } from "./result-card";
@@ -36,6 +37,7 @@ const atmosphere = {
 } as CSSProperties;
 
 const STEP_CLASS = { 1: "is-first", 2: "is-second", 3: "is-third" } as const;
+const STEP_DELAY = { 3: 0.05, 2: 0.22, 1: 0.40 } as const;
 
 function RecapIcon({ name, size = 16 }: { name: keyof typeof APP_ICON_PATHS; size?: number }) {
   return (
@@ -45,11 +47,13 @@ function RecapIcon({ name, size = 16 }: { name: keyof typeof APP_ICON_PATHS; siz
   );
 }
 
-export function WeekRecap({ state, results, social, onDismiss, loadReplay, hiddenIds = [] }: {
-  state: CompeteState; results: PeriodResult[]; social: boolean; onDismiss: () => void;
+export function WeekRecap({ state, results, nonRaceWeek, social, onDismiss, loadReplay, hiddenIds = [] }: {
+  state: CompeteState; results: PeriodResult[];
+  nonRaceWeek?: { sport: SportId; periodStart: string; periodEnd: string } | null;
+  social: boolean; onDismiss: () => void;
   loadReplay?: (result: PeriodResult) => Promise<CompetitionReplay | null>; hiddenIds?: readonly string[];
 }) {
-  const pages = weekRecapPages(results);
+  const pages = weekRecapPages(results, nonRaceWeek);
   const [index, setIndex] = useState(0);
   const [replays, setReplays] = useState<Record<string, CompetitionReplay | null>>({});
   const { current, page, last, title, description, label } = weekRecapCopy(pages, index);
@@ -57,7 +61,7 @@ export function WeekRecap({ state, results, social, onDismiss, loadReplay, hidde
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { heading.current?.focus({ preventScroll: true }); }, [current]);
 
-  const currentResult = page.kind === "arrival" ? null : page.result;
+  const currentResult = page.kind === "results" || page.kind === "effort" ? page.result : undefined;
   useEffect(() => {
     if (!loadReplay || !currentResult || currentResult.id in replays) return;
     let cancelled = false;
@@ -88,11 +92,15 @@ export function WeekRecap({ state, results, social, onDismiss, loadReplay, hidde
                       <RecapIcon name="back" size={16} />
                     </button>
                   )}
-                  <SportActivityIcon sport={page.result.sport} size={18} />
-                  <span className="week-recap-sport-name">{sportById(page.result.sport).name}</span>
-                  <span className="week-recap-track-badge">{page.result.track === "verified" ? "GPS" : "Open"}</span>
+                  <SportActivityIcon sport={page.kind === "results" ? page.result.sport : page.sport} size={18} />
+                  <AppText role="label" className="week-recap-sport-name">{sportById(page.kind === "results" ? page.result.sport : page.sport).name}</AppText>
+                  {page.kind === "results" && (
+                    <AppText role="caption" className="week-recap-track-badge">{page.result.track === "verified" ? "GPS" : "Open"}</AppText>
+                  )}
                 </div>
-                <span className="week-recap-date-range">{formatPeriodDateRange(page.result.periodStart, page.result.periodEnd)}</span>
+                <AppText role="caption" className="week-recap-date-range">
+                  {formatPeriodDateRange(page.kind === "results" ? page.result.periodStart : page.periodStart, page.kind === "results" ? page.result.periodEnd : page.periodEnd)}
+                </AppText>
               </div>
             )}
             <Dialog.Title ref={heading} tabIndex={-1}>{title}</Dialog.Title>
@@ -106,11 +114,8 @@ export function WeekRecap({ state, results, social, onDismiss, loadReplay, hidde
                 <AppParagraph>Your effort added up. Let’s see where it took you.</AppParagraph>
               </div>
             ) : page.kind === "results" ? (
-              <div className="week-recap-results-wrap">
-                <PodiumHero replay={replays[page.result.id] ?? null} state={state} result={page.result} hiddenIds={hiddenIds} />
-                <ResultCard key={page.result.id} result={page.result} units={state.units} variant="recap" />
-              </div>
-            ) : <Training state={state} result={page.result} />}
+              <ResultsView state={state} result={page.result} replay={replays[page.result.id] ?? null} hiddenIds={hiddenIds} reduced={Boolean(reduced)} />
+            ) : <Training state={state} target={{ sport: page.sport, periodStart: page.periodStart, periodEnd: page.periodEnd, result: page.result }} />}
           </WeekRecapFit>
 
           <footer className="week-recap-footer">
@@ -146,18 +151,49 @@ export function WeekRecap({ state, results, social, onDismiss, loadReplay, hidde
   );
 }
 
-function PodiumHero({ replay, state, result, hiddenIds }: {
-  replay: CompetitionReplay | null; state: CompeteState; result: PeriodResult; hiddenIds: readonly string[];
+function ResultsView({ state, result, replay, hiddenIds, reduced }: {
+  state: CompeteState; result: PeriodResult; replay: CompetitionReplay | null; hiddenIds: readonly string[]; reduced: boolean;
+}) {
+  const highlights = useMemo(() => weekRecapHighlights(replay, state, result, hiddenIds), [replay, state, result, hiddenIds]);
+  return (
+    <div className="week-recap-results-wrap">
+      <PodiumHero replay={replay} state={state} result={result} hiddenIds={hiddenIds} reduced={reduced} />
+      <div className="week-recap-highlights">
+        {highlights.map((item) => (
+          <div key={item.title} className="week-recap-glass week-recap-highlight-row">
+            <span className={`week-recap-highlight-icon is-${item.tone}`}>
+              <RecapIcon name={item.icon} size={18} />
+            </span>
+            <div className="week-recap-highlight-text">
+              <AppText role="label">{item.title}</AppText>
+              <AppText role="caption" className="week-recap-muted-text">{item.detail}</AppText>
+            </div>
+          </div>
+        ))}
+      </div>
+      <ResultCard key={result.id} result={result} units={state.units} variant="recap" />
+    </div>
+  );
+}
+
+function PodiumHero({ replay, state, result, hiddenIds, reduced }: {
+  replay: CompetitionReplay | null; state: CompeteState; result: PeriodResult; hiddenIds: readonly string[]; reduced: boolean;
 }) {
   const slots = useMemo(() => weekRecapPodium(replay, state, result, hiddenIds), [replay, state, result, hiddenIds]);
   return (
-    <div className={`week-recap-podium${slots.length === 1 ? " is-single" : ""}`}>
+    <div className="week-recap-podium">
       {slots.map(({ step, entry }) => {
         const isFirst = step === 1;
         const avatarSize = isFirst ? 54 : 44;
         const stepClass = STEP_CLASS[step];
         return (
-          <div key={step} className="week-recap-podium-col">
+          <motion.div
+            key={`${result.id}-${step}`}
+            className="week-recap-podium-col"
+            initial={reduced ? false : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: reduced ? 0 : 0.34, delay: reduced ? 0 : STEP_DELAY[step], ease: "easeOut" }}
+          >
             <div className="week-recap-podium-athlete">
               <div className={`week-recap-avatar-frame ${stepClass}`}>
                 {isFirst && (
@@ -171,61 +207,44 @@ function PodiumHero({ replay, state, result, hiddenIds }: {
                   </span>
                 ) : <span className="week-recap-empty-avatar" style={{ width: avatarSize, height: avatarSize }}>—</span>}
               </div>
-              <strong className={`week-recap-podium-name${entry?.you ? " is-you" : ""}`}>{entry?.name ?? "—"}</strong>
-              {entry && <span className="week-recap-podium-metric">{entry.metricLabel}</span>}
+              <AppText role="label" className={`week-recap-podium-name${entry?.you ? " is-you" : ""}`}>{entry?.name ?? "—"}</AppText>
+              {entry && <AppText role="caption" className="week-recap-podium-metric">{entry.metricLabel}</AppText>}
             </div>
             <div className={`week-recap-pedestal ${stepClass}`}>
-              <span className={`week-recap-pedestal-badge ${stepClass}`}>{step}</span>
+              <AppText role="label" className={`week-recap-pedestal-badge ${stepClass}`}>{step}</AppText>
             </div>
-          </div>
+          </motion.div>
         );
       })}
     </div>
   );
 }
 
-function Training({ state, result }: { state: CompeteState; result: PeriodResult }) {
-  const series = weekRecapTraining(state, result);
-  const { negative, scoreLine, stats, nextRound } = weekRecapBreakdown(state, result);
+function Training({ state, target }: { state: CompeteState; target: WeekRecapTarget }) {
+  const series = weekRecapTraining(state, target);
+  const { stats, nextRound } = weekRecapBreakdown(state, target);
+  const hr = weekRecapHeartRateRanges(state, target);
   const [chartMode, setChartMode] = useState<"time" | "effort">("time");
   const [scrubbed, setScrubbed] = useState<ChartDatum | undefined>(undefined);
   const activeMode = chartMode === "effort" && series.hasEffort ? "effort" : "time";
 
   return (
     <section className="week-recap-training">
-      <div className={`week-recap-score-banner${negative ? " is-negative" : ""}`}>
-        <div className="week-recap-score-left">
-          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" fill={negative ? "#f09c98" : "#4ea77c"} />
-            <path d="M8.5 12.2l2.3 2.3 4.8-5" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span>{scoreLine}</span>
-        </div>
-        {!negative && !result.frozen && (
-          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24">
-            <path d="M6 12h6M8 7l5 2M8 17l5-2" fill="none" stroke="var(--recap-success)" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        )}
-      </div>
-
-      <div className="week-recap-glass week-recap-stat-strip">
-        {stats.map((item, idx) => (
-          <div key={item.label} className="week-recap-stat-group">
-            {idx > 0 && <span className="week-recap-stat-divider" aria-hidden="true" />}
-            <div className="week-recap-stat-cell">
-              <span className={`week-recap-stat-icon is-${item.tone}`}><RecapIcon name={item.icon} size={16} /></span>
-              <strong>{item.value}</strong>
-              <span>{item.label}</span>
-            </div>
+      <div className="week-recap-stat-cards">
+        {stats.map((item) => (
+          <div key={item.label} className="week-recap-glass week-recap-stat-cell">
+            <span className={`week-recap-stat-icon is-${item.tone}`}><RecapIcon name={item.icon} size={16} /></span>
+            <AppText role="metric">{item.value}</AppText>
+            <AppText role="caption" className="week-recap-muted-text">{item.label}</AppText>
           </div>
         ))}
       </div>
 
-      <div className="week-recap-chart-card">
+      <div className="week-recap-glass week-recap-chart-card">
         <div className="week-recap-chart-header">
           <div className="week-recap-chart-title">
             <RecapIcon name="scoring" size={16} />
-            <strong>{scrubbed ? `${scrubbed.label} · ${scrubbed.value}` : activeMode === "time" ? "Training time" : "Effort"}</strong>
+            <AppText role="label">{scrubbed ? `${scrubbed.label} · ${scrubbed.value}` : activeMode === "time" ? "Training time" : "Effort"}</AppText>
           </div>
           {series.available && series.hasEffort && (
             <div className="week-recap-mode-toggle" role="tablist" aria-label="Chart metric">
@@ -240,7 +259,8 @@ function Training({ state, result }: { state: CompeteState; result: PeriodResult
           )}
         </div>
         {series.available ? (
-          <StandardLineChart height={156} showArea onSelectionChange={setScrubbed}
+          <StandardLineChart height={140} showArea onSelectionChange={setScrubbed}
+            stroke={WEEK_RECAP_COLORS.progress} axisColor="rgba(255, 255, 255, 0.18)" labelColor="rgba(249, 247, 236, 0.72)"
             yAxisLabel={activeMode === "time" ? "Training (min)" : "Effort (pts)"} xAxisLabel="Date (ET)"
             values={activeMode === "time" ? series.values : series.effortValues} pointLabels={series.labels}
             xLabels={[series.labels[0]!, series.labels[Math.floor((series.labels.length - 1) / 2)]!, series.labels.at(-1)!]}
@@ -250,13 +270,33 @@ function Training({ state, result }: { state: CompeteState; result: PeriodResult
         ) : <AppParagraph>Detailed activity history is unavailable for this archived week.</AppParagraph>}
       </div>
 
+      <div className="week-recap-glass week-recap-hr-card">
+        <div className="week-recap-next-header">
+          <span className="week-recap-next-title"><RecapIcon name="heart" size={16} /><AppText role="label">Heart-rate zones</AppText></span>
+          {hr.totalMinutes > 0 && <AppText role="caption" className="week-recap-muted-text">Total {hr.totalMinutes} min</AppText>}
+        </div>
+        {hr.ranges.length > 0 ? (
+          <div className="week-recap-hr-list">
+            {hr.ranges.map((row) => (
+              <div key={row.id} className="week-recap-hr-row">
+                <AppText role="caption" className="week-recap-hr-label">{row.label}</AppText>
+                <AppText role="caption" className="week-recap-hr-stat week-recap-muted-text">{row.pct}% ({row.minutes}m)</AppText>
+                <div className="week-recap-hr-track">
+                  <div className={`week-recap-hr-fill is-${row.tone}`} style={{ width: `${Math.max(8, row.pct)}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : <AppText role="caption" className="week-recap-muted-text">No heart-rate samples recorded this week.</AppText>}
+      </div>
+
       <div className="week-recap-glass week-recap-next-card">
         <div className="week-recap-next-header">
-          <span className="week-recap-next-title"><RecapIcon name="calendar" size={16} /><strong>Next round</strong></span>
-          <span className={`week-recap-next-pill${nextRound.active ? " is-active" : ""}`}>{nextRound.pill}</span>
+          <span className="week-recap-next-title"><RecapIcon name="calendar" size={16} /><AppText role="label">Next round</AppText></span>
+          <AppText role="caption" className={`week-recap-next-pill${nextRound.active ? " is-active" : ""}`}>{nextRound.pill}</AppText>
         </div>
-        <p className="week-recap-next-detail">{nextRound.detail}</p>
-        <p className="week-recap-next-subtext">{nextRound.subtext}</p>
+        <AppText role="row" className="week-recap-next-detail">{nextRound.detail}</AppText>
+        <AppText role="caption" className="week-recap-next-subtext">{nextRound.subtext}</AppText>
       </div>
     </section>
   );

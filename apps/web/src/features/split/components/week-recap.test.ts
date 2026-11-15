@@ -128,14 +128,18 @@ describe("web week recap screens", () => {
     expect(resultsJson).toContain("Bob Chen");
     expect(resultsJson).toContain("Alice Park");
     expect(resultsJson).toContain("Carla Diaz");
-    expect(resultsJson).toContain("Your result");
+    expect(resultsJson).toContain("Field covered");
+    expect(resultsJson).toContain("YOUR RESULT");
     expect(resultsJson).toContain("See week breakdown →");
 
     clickButton("See week breakdown →");
     const breakdownJson = textContent(view!.toJSON());
     expect(breakdownJson).toContain("Week breakdown");
     expect(breakdownJson).toContain("Total time");
-    expect(breakdownJson).toContain("Effort pts");
+    expect(breakdownJson).toContain("Sessions");
+    expect(breakdownJson).toContain("Best session");
+    expect(breakdownJson).not.toContain("Score 1000 →");
+    expect(breakdownJson).toContain("Heart-rate zones");
     expect(breakdownJson).toContain("Training time");
     expect(breakdownJson).toContain("Next round");
     expect(breakdownJson).toContain("Update sport settings");
