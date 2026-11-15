@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { APP_TIMEZONE, competeNow, dayKey, type CompeteState } from "@fitness-battle/shared";
+import { accountTimeZone, competeNow, dayKey, type CompeteState } from "@fitness-battle/shared";
 
-/** Dismissal follows the account and Eastern date, independent of suggestion changes. */
+/** Dismissal follows the account and account-local date, independent of suggestion changes. */
 export function useDailySuggestion(account: string, state: CompeteState | null) {
   const [, tick] = useState(0);
-  const day = state ? dayKey(competeNow(state), APP_TIMEZONE) : "";
+  const day = state ? dayKey(competeNow(state), accountTimeZone(state)) : "";
   const key = `fb:daily-suggestion:${account}`;
   const scope = `${key}:${day}`;
   const memory = useRef(new Set<string>());

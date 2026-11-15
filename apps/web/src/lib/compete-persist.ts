@@ -300,7 +300,7 @@ export async function loadCompeteAccount(
   ] = await Promise.all([
     db
       .from("profiles")
-      .select("display_name, city, primary_sport, avatar_url, lifetime_overtakes, gender, country_code")
+      .select("display_name, city, primary_sport, avatar_url, lifetime_overtakes, gender, country_code, timezone")
       .eq("id", userId)
       .maybeSingle(),
     db.from("sport_ratings").select("*").eq("user_id", userId),
@@ -373,6 +373,10 @@ export async function loadCompeteAccount(
         0,
         Number(profile.lifetime_overtakes ?? 0) || 0,
       ),
+      timezone:
+        typeof profile.timezone === "string" && profile.timezone.trim().length > 0
+          ? String(profile.timezone).trim()
+          : state.timezone,
     };
   }
 

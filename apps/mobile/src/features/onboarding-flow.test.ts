@@ -28,7 +28,10 @@ import Onboarding from "../../app/onboarding";
 async function completeIdentityStep(r: ReactTestRenderer) {
   await act(async () => {
     r.root.findAllByType("TextInput" as never).find((n) => n.props.accessibilityLabel === "Display name")!.props.onChangeText("Jamie");
-    r.root.findByType("ChoicePicker" as never).props.onChange("female");
+    r.root
+      .findAllByType("ChoicePicker" as never)
+      .find((n) => n.props.label === "Gender")!
+      .props.onChange("female");
     r.root.findByType("SearchableCountryPicker" as never).props.onChange("US");
   });
 }
@@ -100,9 +103,15 @@ it("uses the top safe area and a primary dropdown only for multiple sports", asy
  expect(r.root.findAllByType("ChoicePicker" as never)).toHaveLength(0);
  await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Running")!.props.onPress());
  await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Cycling")!.props.onPress());
- const picker=r.root.findByType("ChoicePicker" as never);
- expect(picker.props.options.map((o:{value:string})=>o.value)).toEqual(["running","cycling"]);
- await act(async()=>picker.props.onChange("cycling"));
- expect(r.root.findByType("ChoicePicker" as never).props.value).toBe("cycling");
+  const picker = r.root
+    .findAllByType("ChoicePicker" as never)
+    .find((n) => n.props.label === "Primary sport")!;
+  expect(picker.props.options.map((o:{value:string})=>o.value)).toEqual(["running","cycling"]);
+  await act(async()=>picker.props.onChange("cycling"));
+  expect(
+    r.root
+      .findAllByType("ChoicePicker" as never)
+      .find((n) => n.props.label === "Primary sport")!.props.value,
+  ).toBe("cycling");
  await act(async()=>r.unmount());
 });

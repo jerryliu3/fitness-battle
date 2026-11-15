@@ -102,7 +102,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, ...input }
       <ul className="crew-highlights">{full.highlightItems.map(item => <li key={item.id}>
         <span className="crew-highlight-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS[item.icon]} /></svg></span>
         <span className="crew-highlight-copy"><AppText role="label">{item.title}</AppText><AppText role="caption" secondary>{item.detail}</AppText></span>
-        <AppText as="span" role="caption" secondary className="crew-highlight-time"><time dateTime={item.at}>{formatCompetitionFeedTimestamp(item.at, Date.parse(input.now))}</time></AppText>
+        <AppText as="span" role="caption" secondary className="crew-highlight-time"><time dateTime={item.at}>{formatCompetitionFeedTimestamp(item.at, Date.parse(input.now), input.displayTimeZone)}</time></AppText>
       </li>)}</ul>
     </section>}
 

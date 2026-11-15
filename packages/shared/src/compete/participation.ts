@@ -1,4 +1,4 @@
-import { formatAppDateTime } from "../period";
+import { accountTimeZone, APP_TIMEZONE, formatAccountDateTime, formatAppDateTime } from "../period";
 import type { CompeteState, SportId } from "./sports";
 import { nextDailyWaveWindowAt, weekEndAfter } from "../matching/waves";
 import { DEFAULT_GROUP_CAPACITY } from "../matching/types";
@@ -6,8 +6,19 @@ import { DEFAULT_GROUP_CAPACITY } from "../matching/types";
 /** How often an open Compete field asks the server for shared scores. */
 export const FIELD_REFRESH_MS = 60_000;
 
-export function waveTimeLabel(value: string | Date): string {
-  return formatAppDateTime(value, { weekday: true });
+/** Wave times in a specific zone (default Eastern for registration stamp math). */
+export function waveTimeLabel(
+  value: string | Date,
+  timeZone: string = APP_TIMEZONE,
+): string {
+  return formatAppDateTime(value, { weekday: true, timeZone });
+}
+
+export function waveTimeLabelForState(
+  state: CompeteState,
+  value: string | Date,
+): string {
+  return formatAccountDateTime(state, value, { weekday: true });
 }
 
 /** Queue status is derived from the benchmark; no competing status column or clock. */
@@ -20,7 +31,8 @@ export function competitionQueue(state: CompeteState, event: SportId | "sleep", 
   const queued = Date.parse(start) > now.getTime();
   return { queued, awaitingField: Boolean(enrollment?.awaitingField), start, end,
     mysteryCount: (enrollment?.capacity ?? 8) - 1,
-    startsLabel: waveTimeLabel(start), endsLabel: waveTimeLabel(new Date(Date.parse(end) - 60_000)) };
+    startsLabel: waveTimeLabelForState(state, start),
+    endsLabel: waveTimeLabelForState(state, new Date(Date.parse(end) - 60_000)) };
 }
 
 /** The server rebases unsaved new registrations when a device crosses a daily cutoff. */
@@ -72,7 +84,8 @@ export function sportRenewal(state: CompeteState, sport: SportId): RenewalView {
       detail: "You're not in this week's field.",
     };
   }
-  const close = waveTimeLabel(new Date(Date.parse(enrollment.weekEnd) - 60_000));
+  const tz = accountTimeZone(state);
+  const close = waveTimeLabel(new Date(Date.parse(enrollment.weekEnd) - 60_000), tz);
   if (enrollment.autoEnrollNext) {
     return {
       enrolled: true,
@@ -100,7 +113,8 @@ export function sleepRenewal(state: CompeteState): RenewalView {
     };
   }
   const weekEnd = weekEndAfter(new Date(rating.lockPeriod)).toISOString();
-  const close = waveTimeLabel(new Date(Date.parse(weekEnd) - 60_000));
+  const tz = accountTimeZone(state);
+  const close = waveTimeLabel(new Date(Date.parse(weekEnd) - 60_000), tz);
   if (rating.autoEnrollNext) {
     return {
       enrolled: true,

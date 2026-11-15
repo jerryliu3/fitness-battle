@@ -12,7 +12,7 @@ import { useId, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { ClipPath, Defs, G, Line, Path, Polyline, Rect, Circle } from "react-native-svg";
 import {
-  APP_TIMEZONE,
+  accountTimeZone,
   RECORD_DISTANCES,
   competeNow,
   defaultTrainingSports,
@@ -72,6 +72,7 @@ export function PerformanceSpace({
   const [inspectedVolume, setInspectedVolume] = useState<{ label: string; value: string } | undefined>();
 
   const now = useMemo(() => competeNow(state), [state]);
+  const displayTz = accountTimeZone(state);
   const scope = `${user?.id}:${state.primary}`;
   const [lens, setLens] = useState<{ scope: string; track: ScoreTrack } | null>(null);
   const track = lens?.scope === scope ? lens.track : defaultTrack;
@@ -88,8 +89,8 @@ export function PerformanceSpace({
   }, [selectedSport]);
 
   const volumeBuckets = useMemo(
-    () => trainingBuckets(state.activities, sportsFilter, volumeRange, now, now),
-    [state.activities, sportsFilter, volumeRange, now],
+    () => trainingBuckets(state.activities, sportsFilter, volumeRange, now, now, "open", displayTz),
+    [state.activities, sportsFilter, volumeRange, now, displayTz],
   );
 
   const scoreComparison = useMemo(
@@ -97,8 +98,8 @@ export function PerformanceSpace({
     [state, track, effortRange, now],
   );
   const volumeComparison = useMemo(
-    () => trainingComparison(state.activities, sportsFilter, volumeRange, now, now),
-    [state.activities, sportsFilter, volumeRange, now],
+    () => trainingComparison(state.activities, sportsFilter, volumeRange, now, now, displayTz),
+    [state.activities, sportsFilter, volumeRange, now, displayTz],
   );
 
   // PR Records & Distances
@@ -152,7 +153,7 @@ export function PerformanceSpace({
       weekday: "short",
       month: "short",
       day: "numeric",
-      timeZone: APP_TIMEZONE,
+      timeZone: displayTz,
     });
   };
 
@@ -165,7 +166,7 @@ export function PerformanceSpace({
       label: formatActivityDate(p.startedAt),
       value: formatClockTime(p.seconds),
     }));
-  }, [prChartData]);
+  }, [prChartData, displayTz]);
 
   const activePRPoint = scrubbedPRPoint
     ?? (inspectedPRAttempt ? prScrubPoints.find((p) => p.id === inspectedPRAttempt.activityId) : undefined);
@@ -313,6 +314,7 @@ export function PerformanceSpace({
             key={sportsFilter.join(",")}
             buckets={volumeBuckets}
             now={now}
+            displayTimeZone={displayTz}
             dateLabel={volumeRange}
             hideSummary={true}
             onSelectionChange={setInspectedVolume}

@@ -1,4 +1,4 @@
-import { formatAppDateTime } from "./period";
+import { accountTimeZone, formatAppDateTime } from "./period";
 import { activityEffort } from "./compete/effort";
 import { countsOnTrack } from "./compete/ledger";
 import { competeNow, fieldBoardForEnrollment } from "./compete/engine";
@@ -143,12 +143,26 @@ export function competitionReplayCaption(index: CompetitionReplayIndex, cursor: 
   const delta = after.value - before.value;
   return `${athlete.name} +${delta.toLocaleString("en-US", { maximumFractionDigits: 2 })} ${index.unit} · ${before.place === after.place ? `#${after.place}` : `#${before.place} → #${after.place}`}`;
 }
-export function competitionReplayDate(index: CompetitionReplayIndex, cursor: number, live = false): string {
+export function competitionReplayDateForState(
+  state: CompeteState,
+  index: CompetitionReplayIndex,
+  cursor: number,
+  live = false,
+): string {
+  return competitionReplayDate(index, cursor, live, accountTimeZone(state));
+}
+
+export function competitionReplayDate(
+  index: CompetitionReplayIndex,
+  cursor: number,
+  live = false,
+  timeZone?: string,
+): string {
   const position = Math.max(0, Math.min(index.replay.events.length, Number.isFinite(cursor) ? cursor : 0));
   const step = Math.floor(position), fraction = position - step;
   const before = Date.parse(step ? index.replay.events[step - 1]!.at : index.replay.periodStart);
   const after = Date.parse(index.replay.events[step]?.at ?? index.replay.through);
-  return formatAppDateTime(new Date(live ? Date.parse(index.replay.through) : before + (after - before) * fraction));
+  return formatAppDateTime(new Date(live ? Date.parse(index.replay.through) : before + (after - before) * fraction), { timeZone });
 }
 
 export function competitionReplayTimeMs(index: CompetitionReplayIndex, cursor: number): number {
@@ -161,12 +175,20 @@ export function competitionReplayTimeMs(index: CompetitionReplayIndex, cursor: n
   return before + (after - before) * fraction;
 }
 
+export function formatCompetitionFeedTimestampForState(
+  state: CompeteState,
+  at: string,
+  referenceMs: number,
+): string {
+  return formatCompetitionFeedTimestamp(at, referenceMs, accountTimeZone(state));
+}
+
 /** Timestamp label for feed rows relative to the timeline scrubber; falls back to absolute after 24h. */
-export function formatCompetitionFeedTimestamp(at: string, referenceMs: number): string {
+export function formatCompetitionFeedTimestamp(at: string, referenceMs: number, timeZone?: string): string {
   const eventMs = Date.parse(at);
   const diffMs = referenceMs - eventMs;
   if (!Number.isFinite(diffMs) || diffMs < 0 || diffMs >= 86_400_000) {
-    return formatAppDateTime(at);
+    return formatAppDateTime(at, { timeZone });
   }
   const totalMinutes = Math.floor(diffMs / 60_000);
   if (totalMinutes < 60) return `${Math.max(totalMinutes, 0)}m ago`;

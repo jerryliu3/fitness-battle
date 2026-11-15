@@ -4,33 +4,36 @@ import { AppParagraph, AppText, SectionHeader } from "@/ui/section";
 
 import {
   APP_TIMEZONE,
+  accountTimeZone,
   activityEffort,
   formatEffort,
   formatVolume,
   type Activity,
+  type CompeteState,
   type SportId,
   type UnitSystem,
 } from "@fitness-battle/shared";
 import { useState } from "react";
 
-function dayLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    timeZone: APP_TIMEZONE,
-  });
-}
-
 export function ActivitySplits({
   activities,
   sport,
   units = "us",
+  state,
 }: {
   activities: Activity[];
   sport: SportId;
   units?: UnitSystem;
+  state?: CompeteState | null;
 }) {
+  const displayTz = state ? accountTimeZone(state) : APP_TIMEZONE;
+  const dayLabel = (iso: string): string =>
+    new Date(iso).toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      timeZone: displayTz,
+    });
   const [openId, setOpenId] = useState<string | null>(null);
   const total = activities.reduce((sum, item) => sum + activityEffort(item), 0);
 

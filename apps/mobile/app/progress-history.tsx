@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  accountTimeZone,
   activityEffort,
   countsOnTrack,
   formatEffort,
@@ -163,6 +164,7 @@ export default function ProgressHistoryScreen() {
                     units={state.units}
                     accessToken={accessToken}
                     surface="soft"
+                    timeZone={accountTimeZone(state)}
                     onPress={setInspectedActivity}
                   />
                 ))}

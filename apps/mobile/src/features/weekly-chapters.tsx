@@ -4,9 +4,9 @@ import { Chip, ChipRow } from "../ui/chip";
 import { SectionHeader, AppText } from "../ui/section";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { competitionTrack, APP_TIMEZONE, formatEloDelta, sportById, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { accountTimeZone, competitionTrack, formatAccountPeriodDateRange, formatEloDelta, sportById, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { CompetitionReplayButton } from "./competition-replay";
-import { ResultBreakdownContent, eloDeltaPalette, formatPeriodDateRange, podiumMedalColor } from "./result-card";
+import { ResultBreakdownContent, eloDeltaPalette, podiumMedalColor } from "./result-card";
 
 export function WeeklyChapters({ state }: { state: CompeteState }) {
   const f = useFocusStyles();
@@ -20,11 +20,12 @@ export function WeeklyChapters({ state }: { state: CompeteState }) {
     .filter((r) => (sport === "all" || r.sport === sport) && r.track === competitionTrack(r.sport))
     .sort((a, b) => b.periodStart.localeCompare(a.periodStart));
 
+  const displayTz = accountTimeZone(state);
   const month = (end: string) =>
     new Date(Date.parse(end) - 1).toLocaleDateString("en-US", {
       month: "long",
       year: "numeric",
-      timeZone: APP_TIMEZONE,
+      timeZone: displayTz,
     });
 
   const podiums = rows.filter((r) => r.place <= 3).length;
@@ -85,7 +86,7 @@ export function WeeklyChapters({ state }: { state: CompeteState }) {
               const delta = r.eloAfter - r.eloBefore;
               const medalColor = podiumMedalColor(c, r.place);
               const { bg: deltaBg, text: deltaTextColor } = eloDeltaPalette(c, Boolean(r.frozen), delta);
-              const rangeLabel = formatPeriodDateRange(r.periodStart, r.periodEnd);
+              const rangeLabel = formatAccountPeriodDateRange(state, r.periodStart, r.periodEnd);
               const deltaText = formatEloDelta(r.eloBefore, r.eloAfter);
 
               return (

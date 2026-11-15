@@ -3,7 +3,7 @@ import { AppParagraph, AppText, Section } from "@/ui/section";
 
 import Link from "next/link";
 import {
-  APP_TIMEZONE,
+  accountTimeZone,
   clubDuration,
   clubWeekSummary,
   latestClubRecap,
@@ -12,6 +12,7 @@ import {
   type CompeteState,
 } from "@fitness-battle/shared";
 export function WeekRecap({ state }: { state: CompeteState }) {
+  const displayTz = accountTimeZone(state);
   const week = clubWeekSummary(state),
     recap = latestClubRecap(state),
     breakdown = recap ? null : settledWeekBreakdownTarget(state);
@@ -49,7 +50,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
               {new Date(breakdown.periodStart).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
-                timeZone: APP_TIMEZONE,
+                timeZone: displayTz,
               })} · View week breakdown
             </AppText>
           </span>
@@ -68,7 +69,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
               {new Date(recap.periodStart).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
-                timeZone: APP_TIMEZONE,
+                timeZone: displayTz,
               })}{" "}
               · Place {recap.place} of {recap.fieldSize}
             </AppText>
@@ -87,7 +88,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
               {new Date(breakdown.periodStart).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
-                timeZone: APP_TIMEZONE,
+                timeZone: displayTz,
               })} · View week breakdown
             </AppText>
           </span>

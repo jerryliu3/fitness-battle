@@ -3,7 +3,7 @@ import { createThemedStyles, useThemedStyles, useHomeHealthColors } from "../the
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Circle, G, Line, Path } from "react-native-svg";
-import { formatHealthNumber, buildHealth7DayCorridorModel, competeNow, dottedCircleDasharray, healthSignal, healthSignalBounds, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
+import { accountTimeZone, formatHealthNumber, buildHealth7DayCorridorModel, competeNow, dottedCircleDasharray, healthSignal, healthSignalBounds, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
 import { ChartScrubber, type ChartDatum } from "../ui/chart-scrubber";
 import { ChartSvg, ChartText } from "../ui/chart-text";
 import { AppText } from "../ui/section";
@@ -20,10 +20,12 @@ const HealthCorridorDetail = memo(function HealthCorridorDetail({
   onMeasureHeight,
   originOffsetX,
   reduceMotion,
+  timeZone,
   styles: s,
 }: {
   selected: HealthMetricItem;
   now: Date;
+  timeZone: string;
   colors: ReturnType<typeof useHomeHealthColors>;
   detailAnim: Animated.Value;
   detailHeight: number;
@@ -38,8 +40,8 @@ const HealthCorridorDetail = memo(function HealthCorridorDetail({
   }, [selected.id]);
 
   const chart = useMemo(
-    () => buildHealth7DayCorridorModel(selected, now, { weekCorridorFallback: true }),
-    [selected, now],
+    () => buildHealth7DayCorridorModel(selected, now, { weekCorridorFallback: true, timeZone }),
+    [selected, now, timeZone],
   );
   const scrubPoints = useMemo<ChartDatum[]>(
     () =>
@@ -208,6 +210,7 @@ const s=useThemedStyles(sThemes);
 
   const metrics = useMemo(() => homeHealthMetrics(state), [state]);
   const now = useMemo(() => competeNow(state), [state]);
+  const timeZone = accountTimeZone(state);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [displayedId, setDisplayedId] = useState<string | null>(null);
   const [detailHeight, setDetailHeight] = useState(218);
@@ -337,6 +340,7 @@ const s=useThemedStyles(sThemes);
           onMeasureHeight={setDetailHeight}
           originOffsetX={fontScale > 1.2 ? 0 : (originRight ? 1 : -1) * Math.min(110, width * 0.22)}
           reduceMotion={reduceMotion}
+          timeZone={timeZone}
           styles={s}
         />
       ) : null}

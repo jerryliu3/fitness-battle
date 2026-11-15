@@ -5,7 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import Svg, { Defs, LinearGradient, Path, Polygon, Rect, Stop } from "react-native-svg";
 import {
-  WEEK_RECAP_COLORS, formatEffort, formatPeriodDateRange, sportById,
+  WEEK_RECAP_COLORS, formatEffort, formatAccountPeriodDateRange, sportById,
   weekRecapBreakdown, weekRecapCopy, weekRecapHeartRateRanges, weekRecapHighlights,
   weekRecapPages, weekRecapPodium, weekRecapTraining,
   type Action, type CompeteState, type CompetitionReplay, type PeriodResult, type SportId, type WeekRecapTarget,
@@ -122,7 +122,7 @@ export function WeekRecap({ state, results, nonRaceWeek, social, dispatch, onClo
                   )}
                 </View>
                 <AppText role="caption" style={s.mutedLight}>
-                  {formatPeriodDateRange(page.kind === "results" ? page.result.periodStart : page.periodStart, page.kind === "results" ? page.result.periodEnd : page.periodEnd)}
+                  {formatAccountPeriodDateRange(state, page.kind === "results" ? page.result.periodStart : page.periodStart, page.kind === "results" ? page.result.periodEnd : page.periodEnd)}
                 </AppText>
               </View>
             )}
@@ -216,7 +216,7 @@ function ResultsView({ state, result, replay, hiddenIds, reduced }: {
           </View>
         ))}
       </View>
-      <ResultCard result={result} units={state.units} variant="recap" replay={replay} hiddenIds={hiddenIds} />
+      <ResultCard result={result} units={state.units} variant="recap" replay={replay} hiddenIds={hiddenIds} account={state} />
     </View>
   );
 }

@@ -4,7 +4,7 @@ import { Section, AppText, TextAction } from "../ui/section";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
-import { APP_TIMEZONE, SHELL_SECTION, clubDuration, formatAppDateTime, formatVolume, homeRecentActivities, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
+import { accountTimeZone, SHELL_SECTION, clubDuration, formatAccountDateTime, formatVolume, homeRecentActivities, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
 import { createThemedStyles, useThemedStyles } from "../theme";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
@@ -13,6 +13,7 @@ import { useCrewActivities } from "./use-crew-activities";
 import { FocusSheet } from "../ui/focus";
 
 export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen: (activity: Activity) => void }) {
+  const displayTz = accountTimeZone(state);
 const f=useFocusStyles();
 const s=useThemedStyles(sThemes);
 
@@ -47,7 +48,7 @@ const s=useThemedStyles(sThemes);
             size={64}
           />
           <View style={[f.grow, { gap: 4 }]}><AppText role="row" >{row.ownActivity ? sportById(row.sport).name : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</AppText>
-            <AppText role="support" secondary >{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}</AppText></View>
+            <AppText role="support" secondary >{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: displayTz })}</AppText></View>
           <AppText role="caption" secondary >View →</AppText>
         </Pressable>))
       ) : (
@@ -59,7 +60,7 @@ const s=useThemedStyles(sThemes);
     {crew.error && <AppText role="caption" secondary  accessibilityLiveRegion="polite">{crew.error}</AppText>}
     <FocusSheet open={Boolean(detail)} title={detail ? `${detail.name}'s activity` : "Activity"} onClose={() => setSelected(null)}>
       {detail && <><AppText role="heading">{sportById(detail.sport).name}</AppText><AppText role="support" secondary >{clubDuration(detail.movingSec)} · {formatVolume(detail.sport, detail.distanceM, detail.movingSec, state.units)}</AppText>
-        <AppText role="caption" secondary >{formatAppDateTime(detail.startedAt)}</AppText></>}
+        <AppText role="caption" secondary >{formatAccountDateTime(state, detail.startedAt)}</AppText></>}
     </FocusSheet>
   </>;
 }

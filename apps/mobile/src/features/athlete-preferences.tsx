@@ -4,6 +4,7 @@ import { useThemeColors } from "../theme";
 import { AppIcon } from "../ui/app-icon";
 import { AppearanceControl } from "../ui/appearance-control";
 import { ChoicePicker } from "../ui/choice-picker";
+import { TimezonePicker } from "../ui/timezone-picker";
 import { FocusSegments, useFocusStyles } from "../ui/focus";
 import { HapticPreference } from "../ui/haptic-preference";
 import { AppText, SectionHeader } from "../ui/section";
@@ -35,6 +36,11 @@ export function AthletePreferencesFields({
           />
         </View>
       </View>
+      <TimezonePicker
+        label="Time zone"
+        value={state.timezone}
+        onChange={(timezone) => dispatch({ type: "set-timezone", timezone })}
+      />
       <View style={[f.row, { minHeight: 48, alignItems: "center", justifyContent: "space-between" }]}>
         <AppText role="label">Primary sport</AppText>
         <ChoicePicker

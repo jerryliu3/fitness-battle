@@ -13,6 +13,7 @@ import {
   sportById,
   type CompeteState,
 } from "./compete";
+import { accountTimeZone } from "./timezone";
 import { weeklyPeriodBounds } from "./period";
 import { weeklyActivityStreak } from "./weekly-streak";
 
@@ -40,6 +41,8 @@ export interface AthleteCardModel {
   city: string;
   location: string;
   countryCode: string | null;
+  /** IANA zone for formatting record dates on the card (from profile). */
+  displayTimeZone?: string;
   initials: string;
   avatarUrl: string | null;
   sport: string;
@@ -283,6 +286,7 @@ export function athleteCardModel(state: CompeteState, now = competeNow(state)): 
     sport: sportById(state.primary).name, score, rank: score === null ? null : rankForElo(score).name,
     records, overtakes: state.lifetimeOvertakes, rounds: clubLifetimeTotals(state, now).weeks,
     streak: streak.count, streakActive: streak.active,
+    displayTimeZone: accountTimeZone(state),
   };
 }
 

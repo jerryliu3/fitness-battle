@@ -88,7 +88,7 @@ export function SleepPanel({
         <>
           <div className="sl-hero">
             <AppParagraph typographyRole="caption" className="fb-note">
-              Wake date {night.day}. Weekly standings count nights in the current competition week.
+              Wake date {night.day}.
             </AppParagraph>
             <div>
               <p className="sl-score">

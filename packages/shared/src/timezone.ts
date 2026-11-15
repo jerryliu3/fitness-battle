@@ -1,5 +1,96 @@
 export const APP_TIMEZONE = "America/New_York";
 
+/** Profile / device display timezone; competition calendar stays {@link APP_TIMEZONE}. */
+export function accountTimeZone(
+  state: { timezone?: string | null },
+): string {
+  const tz = state.timezone?.trim();
+  if (tz && isValidIanaTimeZone(tz)) return tz;
+  return APP_TIMEZONE;
+}
+
+export function isValidIanaTimeZone(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > 64) return false;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: trimmed }).format(new Date());
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Best-effort device zone for onboarding default. */
+export function detectDeviceTimeZone(): string {
+  try {
+    const tz = new Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz && isValidIanaTimeZone(tz)) return tz;
+  } catch {
+    /* ignore */
+  }
+  return APP_TIMEZONE;
+}
+
+export function formatTimeZoneLabel(
+  timeZone: string,
+  reference = new Date(),
+): string {
+  if (!isValidIanaTimeZone(timeZone)) return timeZone;
+  const city = timeZone.split("/").pop()?.replace(/_/g, " ") ?? timeZone;
+  let offset = "";
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      timeZoneName: "shortOffset",
+    }).formatToParts(reference);
+    offset = parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+  } catch {
+    /* ignore */
+  }
+  return offset ? `${city} (${offset})` : city;
+}
+
+const FALLBACK_TIME_ZONES = [
+  "Pacific/Honolulu",
+  "America/Anchorage",
+  "America/Los_Angeles",
+  "America/Denver",
+  "America/Chicago",
+  "America/New_York",
+  "America/Sao_Paulo",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Africa/Johannesburg",
+  "Asia/Dubai",
+  "Asia/Kolkata",
+  "Asia/Singapore",
+  "Asia/Tokyo",
+  "Australia/Sydney",
+  "Pacific/Auckland",
+] as const;
+
+export function listTimeZoneOptions(): { value: string; label: string }[] {
+  let zones: string[] = [...FALLBACK_TIME_ZONES];
+  try {
+    const supported = (
+      Intl as typeof Intl & { supportedValuesOf?: (key: string) => string[] }
+    ).supportedValuesOf?.("timeZone");
+    if (supported?.length) zones = supported;
+  } catch {
+    /* fallback list */
+  }
+  const reference = new Date();
+  const labels = new Map<string, string>();
+  for (const tz of zones) {
+    if (!isValidIanaTimeZone(tz)) continue;
+    labels.set(tz, formatTimeZoneLabel(tz, reference));
+  }
+  return [...labels.entries()]
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label, "en"));
+}
+
 /**
  * Returns YYYY-MM-DD for an instant in the specified time zone (default: America/New_York).
  */
@@ -84,10 +175,22 @@ export function endOfZonedDay(
   return startOfZonedDay(nextDayAnchor, timeZone);
 }
 
+/** Offset by calendar days in a timezone rather than fixed 24-hour durations. */
+export function shiftZonedDay(
+  date: Date,
+  offset: number,
+  timeZone: string = APP_TIMEZONE,
+): Date {
+  const [year, month, day] = dayKey(date, timeZone).split("-").map(Number);
+  return startOfZonedDay(
+    new Date(Date.UTC(year!, month! - 1, day! + offset, 12)),
+    timeZone,
+  );
+}
+
 /** Midnight Eastern, offset by calendar days rather than fixed 24-hour durations. */
 export function shiftAppDay(date: Date, offset: number): Date {
-  const [year, month, day] = dayKey(date).split("-").map(Number);
-  return startOfZonedDay(new Date(Date.UTC(year!, month! - 1, day! + offset, 12)));
+  return shiftZonedDay(date, offset, APP_TIMEZONE);
 }
 
 /** Format a YYYY-MM-DD app calendar day without shifting it through local UTC midnight. */
@@ -119,4 +222,37 @@ export function formatAppDateTime(
     timeZone,
   });
   return `${dateLabel}, ${timeLabel}`;
+}
+
+export type AppDateTimeFormatOptions = {
+  weekday?: boolean;
+  year?: boolean;
+};
+
+/** Eastern competition instant labels; prefer over omitting `timeZone` on personal surfaces by mistake. */
+export function formatCompetitionDateTime(
+  value: string | Date,
+  options: AppDateTimeFormatOptions = {},
+): string {
+  return formatAppDateTime(value, { ...options, timeZone: APP_TIMEZONE });
+}
+
+/** Profile timezone display for activities, health, replay scrubbers, and personal history. */
+export function formatAccountDateTime(
+  state: { timezone?: string | null },
+  value: string | Date,
+  options: AppDateTimeFormatOptions = {},
+): string {
+  return formatAppDateTime(value, {
+    ...options,
+    timeZone: accountTimeZone(state),
+  });
+}
+
+export function formatAccountCalendarDate(
+  state: { timezone?: string | null },
+  day: string,
+  options: Intl.DateTimeFormatOptions,
+): string {
+  return formatAppCalendarDate(day, options, accountTimeZone(state));
 }

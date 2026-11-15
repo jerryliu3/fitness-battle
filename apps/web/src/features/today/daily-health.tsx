@@ -3,7 +3,7 @@ import { healthColors as colors } from "@/theme/app-colors";
 
 
 import { Fragment, useState, type CSSProperties } from "react";
-import { formatHealthNumber, buildHealth7DayCorridorModel, competeNow, healthSignal, healthSignalBounds, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
+import { accountTimeZone, formatHealthNumber, buildHealth7DayCorridorModel, competeNow, healthSignal, healthSignalBounds, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
 import { AppHeading } from "@/ui/section";
 import "./daily-health.css";
 
@@ -74,7 +74,7 @@ export function DailyHealth({ state }: { state: CompeteState }) {
               </button>
 
               {isRowEnd && isSelectedInRow && selected && (() => {
-                const chart = buildHealth7DayCorridorModel(selected, competeNow(state));
+                const chart = buildHealth7DayCorridorModel(selected, competeNow(state), { timeZone: accountTimeZone(state) });
                 return (
                   <div
                     id="home-health-detail"

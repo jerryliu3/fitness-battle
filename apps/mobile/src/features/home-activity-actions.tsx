@@ -6,6 +6,7 @@ import { NumberPicker, DateTimeField } from "../ui/form-picker";
 import { ChoicePicker } from "../ui/choice-picker";
 
 import {
+  accountTimeZone,
   activityFromSample,
   parseManualActivity,
   manualActivityInstant,
@@ -242,8 +243,8 @@ export function HomeActivityActions({
           <NumberPicker label="Duration" unit="min" value={minutes} onChange={setMinutes} />
           {sportById(sport).gps && <><AppText role="label" >Distance ({state.units === "metric" ? "km" : "mi"})</AppText>
             <NumberPicker label="Distance" unit={state.units === "metric" ? "km" : "mi"} max={1000} step={0.1} value={miles} onChange={setMiles} /></>}
-          <AppText role="label" >Time of day (optional · Eastern)</AppText>
-          <DateTimeField label="Time of day · Eastern" mode="time" value={time} onChange={setTime} clearLabel="Use current time" />
+          <AppText role="label" >Time of day (optional)</AppText>
+          <DateTimeField label="Time of day" mode="time" value={time} onChange={setTime} clearLabel="Use current time" />
         </>}
         {formError ? (
           <AppText role="body" secondary  accessibilityRole="alert">
@@ -261,7 +262,7 @@ export function HomeActivityActions({
               setFormError(parsed.error);
               return;
             }
-            const when = manualActivityInstant(time, competeNow(state));
+            const when = manualActivityInstant(time, competeNow(state), accountTimeZone(state));
             if (when.error !== null) { setFormError(when.error); return; }
             const { movingSec, distanceM } = parsed;
             dispatch({

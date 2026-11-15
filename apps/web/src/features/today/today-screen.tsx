@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
-  APP_TIMEZONE,
+  accountTimeZone,
   buildTodayRoute,
   competeNow,
   countsOnTrack,
@@ -96,10 +96,11 @@ export function TodayScreen() {
   }
 
   const route = buildTodayRoute(state);
+  const displayTz = accountTimeZone(state);
   const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
-  const todayKey = dayKey(now, APP_TIMEZONE);
+  const todayKey = dayKey(now, displayTz);
   const todayActivities = counted.filter(
-    (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === todayKey,
+    (a) => dayKey(new Date(a.startedAt), displayTz) === todayKey,
   );
   const accountKey = user?.id ?? state.name ?? "guest";
   const ready = loadStatus === "ready" || loadStatus === "local";

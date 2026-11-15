@@ -3,7 +3,8 @@ import { useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
 import Svg, { Circle, ClipPath, Defs, G, Line, Path, Rect, Text as SvgText } from "react-native-svg";
 import {
-  competeNow, computeNiceAxisTicks, sportById, trendLabelPosition, type Activity, type CompeteState, type UnitSystem,
+  APP_TIMEZONE,
+  accountTimeZone, competeNow, computeNiceAxisTicks, sportById, trendLabelPosition, type Activity, type CompeteState, type UnitSystem,
   activityContextConstellation as constellation, activityContextDateLabel as dateLabel,
   activityContextFitHistory as fitHistory, activityContextFormatMetric as formatMetric,
   activityContextMetricValue as metricValue,
@@ -46,28 +47,57 @@ export function useActivityContextAvailability(activity: Activity, state: Compet
   return { history, hasScatter };
 }
 
-export function ActivityScatterChart({ activity, history, units }: { activity: Activity; history: Activity[]; units: UnitSystem }) {
-  return <Constellation current={activity} history={history} units={units} />;
+export function ActivityScatterChart({
+  activity,
+  history,
+  units,
+  timeZone = APP_TIMEZONE,
+}: {
+  activity: Activity;
+  history: Activity[];
+  units: UnitSystem;
+  timeZone?: string;
+}) {
+  return <Constellation current={activity} history={history} units={units} timeZone={timeZone} />;
 }
 
-export function ActivityTrajectoryChart({ activity, history, units }: { activity: Activity; history: Activity[]; units: UnitSystem }) {
-  return <Trajectory current={activity} history={history} units={units} />;
+export function ActivityTrajectoryChart({
+  activity,
+  history,
+  units,
+  timeZone = APP_TIMEZONE,
+}: {
+  activity: Activity;
+  history: Activity[];
+  units: UnitSystem;
+  timeZone?: string;
+}) {
+  return <Trajectory current={activity} history={history} units={units} timeZone={timeZone} />;
 }
 
-export function ActivityVolumeChart({ activity, history }: { activity: Activity; history: Activity[] }) {
-  return <Ripple current={activity} history={history} />;
+export function ActivityVolumeChart({
+  activity,
+  history,
+  timeZone = APP_TIMEZONE,
+}: {
+  activity: Activity;
+  history: Activity[];
+  timeZone?: string;
+}) {
+  return <Ripple current={activity} history={history} timeZone={timeZone} />;
 }
 
 export function ActivityContext({ activity, state }: { activity: Activity; state: CompeteState }) {
   const s = useThemedStyles(sThemes);
 
   const { history, hasScatter } = useActivityContextAvailability(activity, state);
+  const timeZone = accountTimeZone(state);
   if (!history.length) return null;
   return <View style={s.sections}>
-    {hasScatter && sportById(activity.sport).gps ? <View style={s.surface}><Constellation current={activity} history={history} units={state.units} /></View> : null}
-    <View style={s.surface}><Trajectory current={activity} history={history} units={state.units} /></View>
-    {hasScatter && !sportById(activity.sport).gps ? <View style={s.surface}><Constellation current={activity} history={history} units={state.units} /></View> : null}
-    <View style={s.surface}><Ripple current={activity} history={history} /></View>
+    {hasScatter && sportById(activity.sport).gps ? <View style={s.surface}><Constellation current={activity} history={history} units={state.units} timeZone={timeZone} /></View> : null}
+    <View style={s.surface}><Trajectory current={activity} history={history} units={state.units} timeZone={timeZone} /></View>
+    {hasScatter && !sportById(activity.sport).gps ? <View style={s.surface}><Constellation current={activity} history={history} units={state.units} timeZone={timeZone} /></View> : null}
+    <View style={s.surface}><Ripple current={activity} history={history} timeZone={timeZone} /></View>
   </View>;
 }
 
@@ -124,7 +154,7 @@ function Readout({ title, value, detail }: { title?: string; value: string; deta
   return <View style={s.readout} accessibilityLiveRegion="polite">{title ? <AppText role="label">{title}</AppText> : null}<AppText role="metric">{value}</AppText>{detail ? <AppText role="caption" secondary>{detail}</AppText> : null}</View>;
 }
 
-function Constellation({ current, history, units }: { current: Activity; history: Activity[]; units: UnitSystem }) {
+function Constellation({ current, history, units, timeZone }: { current: Activity; history: Activity[]; units: UnitSystem; timeZone: string }) {
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
 
@@ -148,8 +178,8 @@ function Constellation({ current, history, units }: { current: Activity; history
   const xTicks = xTickValues.map(value => ({ x: x(value), label: `${Math.round(value)}` }));
   return <View style={s.concept} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
     <AppText role="heading" accessibilityRole="header">{metric === "pace" ? "Compared to similar sessions" : "Duration × heart rate"}</AppText>
-    <Readout title={chosen.activity.id === current.id ? "This session" : dateLabel(chosen.activity.startedAt)} value={formatMetric(chosen.y, metric, units)} detail={`${chosen.x} bpm average · ${Math.round(chosen.activity.movingSec / 60)} min`} />
-    <ScatterPlot width={width} points={points.map(p => ({ id: p.activity.id, x: x(p.x), y: y(p.y) }))} selected={chosen.activity.id} onSelect={setSelected} label={`Session scatterplot. ${formatMetric(chosen.y, metric, units)} at ${chosen.x} bpm. ${chosen.activity.id === current.id ? "Current session." : dateLabel(chosen.activity.startedAt)}`}>
+    <Readout title={chosen.activity.id === current.id ? "This session" : dateLabel(chosen.activity.startedAt, timeZone)} value={formatMetric(chosen.y, metric, units)} detail={`${chosen.x} bpm average · ${Math.round(chosen.activity.movingSec / 60)} min`} />
+    <ScatterPlot width={width} points={points.map(p => ({ id: p.activity.id, x: x(p.x), y: y(p.y) }))} selected={chosen.activity.id} onSelect={setSelected} label={`Session scatterplot. ${formatMetric(chosen.y, metric, units)} at ${chosen.x} bpm. ${chosen.activity.id === current.id ? "Current session." : dateLabel(chosen.activity.startedAt, timeZone)}`}>
       <AxesGrid yTicks={yTicks} yFormat={value => metric === "pace" ? formatMetric(value, metric, units).split("/")[0]! : `${Math.round(value)}`} xTicks={xTicks} />
       {showFit && fit ? <Line x1={x(fit.min)} x2={x(fit.max)} y1={y(fit.intercept + fit.slope * fit.min)} y2={y(fit.intercept + fit.slope * fit.max)} stroke={c.secondary} strokeWidth={1.75} strokeDasharray="3 3" /> : null}
       <Line x1={x(chosen.x)} x2={x(chosen.x)} y1={TOP} y2={BOTTOM} stroke={c.muted} strokeWidth={1} opacity={0.75} />
@@ -161,7 +191,7 @@ function Constellation({ current, history, units }: { current: Activity; history
   </View>;
 }
 
-function Trajectory({ current, history, units }: { current: Activity; history: Activity[]; units: UnitSystem }) {
+function Trajectory({ current, history, units, timeZone }: { current: Activity; history: Activity[]; units: UnitSystem; timeZone: string }) {
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
   const clipId = useId();
@@ -188,13 +218,13 @@ function Trajectory({ current, history, units }: { current: Activity; history: A
     id: row.activity.id,
     x: x(row.time),
     y: y(row.value),
-    label: dateLabel(row.activity.startedAt),
+    label: dateLabel(row.activity.startedAt, timeZone),
     value: formatMetric(row.value, metric, units),
   }));
   const seriesPath = path(rows.map(row => ({ x: x(row.time), y: y(row.value) })));
   const trendPath = averages.length > 1 ? path(averages.map(row => ({ x: x(row.time), y: y(row.average!) }))) : "";
   const latestPoint = scrubPoints.at(-1);
-  const xTicks = rows.filter((_, index) => index === 0 || index === Math.floor(rows.length / 2) || index === rows.length - 1).map(row => ({ x: x(row.time), label: dateLabel(row.activity.startedAt) }));
+  const xTicks = rows.filter((_, index) => index === 0 || index === Math.floor(rows.length / 2) || index === rows.length - 1).map(row => ({ x: x(row.time), label: dateLabel(row.activity.startedAt, timeZone) }));
   return <View style={s.concept}>
     <AppText role="heading" accessibilityRole="header">Your recent trajectory</AppText>
     <Choices items={metricItems} value={metric} onChange={next => { setMetric(next); setScrubbed(undefined); }} />
@@ -250,13 +280,13 @@ function Trajectory({ current, history, units }: { current: Activity; history: A
   </View>;
 }
 
-function Ripple({ current, history }: { current: Activity; history: Activity[] }) {
+function Ripple({ current, history, timeZone }: { current: Activity; history: Activity[]; timeZone: string }) {
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
   const clipId = useId();
 
   const [scrubbed, setScrubbed] = useState<ChartDatum | undefined>(undefined);
-  const days = volumeHistory(current, history), latest = days.at(-1)!, chosen = (scrubbed ? days.find(day => day.key === scrubbed.id) : undefined) ?? latest;
+  const days = volumeHistory(current, history, timeZone), latest = days.at(-1)!, chosen = (scrubbed ? days.find(day => day.key === scrubbed.id) : undefined) ?? latest;
   const maxRaw = Math.max(...days.map(day => day.minutes), 10);
   const yNice = computeNiceAxisTicks(0, maxRaw, true);
   const yd: [number, number] = [yNice.yMin, yNice.yMax];
@@ -268,7 +298,7 @@ function Ripple({ current, history }: { current: Activity; history: Activity[] }
     id: day.key,
     x: x(index),
     y: y(day.minutes),
-    label: dateLabel(day.date),
+    label: dateLabel(day.date, timeZone),
     value: `${Math.round(day.minutes)} min`,
   }));
   const avgPath = path(days.map((day, index) => ({ x: x(index), y: y(day.average) })));
@@ -288,7 +318,7 @@ function Ripple({ current, history }: { current: Activity; history: Activity[] }
       height={H}
       plotTop={TOP}
       plotBottom={BOTTOM}
-      label={`Logged volume. ${dateLabel(chosen.date)}: ${Math.round(chosen.minutes)} minutes. ${chosen.average.toFixed(1)} minutes per day rolling average on this day.`}
+      label={`Logged volume. ${dateLabel(chosen.date, timeZone)}: ${Math.round(chosen.minutes)} minutes. ${chosen.average.toFixed(1)} minutes per day rolling average on this day.`}
       onSelectionChange={setScrubbed}
     >
       <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
@@ -298,7 +328,7 @@ function Ripple({ current, history }: { current: Activity; history: Activity[] }
             <ClipPath id={`${clipId}-right`}><Rect x={scrubbed.x} y={0} width={Math.max(0, W - scrubbed.x)} height={H} /></ClipPath>
           </Defs>
         ) : null}
-        <AxesGrid yTicks={yTicks} yFormat={value => `${Math.round(value)}`} xTicks={[0, 13, 27].map(index => ({ x: x(index), label: dateLabel(days[index]!.date) }))} />
+        <AxesGrid yTicks={yTicks} yFormat={value => `${Math.round(value)}`} xTicks={[0, 13, 27].map(index => ({ x: x(index), label: dateLabel(days[index]!.date, timeZone) }))} />
         {scrubbed ? <>
           <G clipPath={`url(#${clipId}-left)`}>{barsAndLine}</G>
           <G clipPath={`url(#${clipId}-right)`} opacity={0.3}>{barsAndLine}</G>

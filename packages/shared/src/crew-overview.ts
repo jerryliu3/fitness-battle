@@ -11,6 +11,8 @@ export type CrewOverviewInput = Omit<CrewWeekRelayInput, "entries"> & {
   units?: UnitSystem;
   now: string;
   replayEntries?: CrewOverviewInput["entries"];
+  /** Account calendar for feed / replay labels (defaults to Eastern). */
+  displayTimeZone?: string;
 };
 
 export type CrewHighlight = {
@@ -97,7 +99,8 @@ export function crewOverview(input: CrewOverviewInput, progress = 1, events: Cre
   const fullCrew = input.members.length > 0 && contributors === input.members.length;
   const lineup = crewLineup(input.members, input.entries, input.sport, full.metric);
   const event = events[Math.min(events.length - 1, step)];
-  const replayLabel = progress >= 1 ? "Now" : progress <= 0 ? "Start" : event ? new Date(event.started_at).toLocaleDateString("en-US", { weekday: "short", timeZone: APP_TIMEZONE }) : "Start";
+  const displayTz = input.displayTimeZone ?? APP_TIMEZONE;
+  const replayLabel = progress >= 1 ? "Now" : progress <= 0 ? "Start" : event ? new Date(event.started_at).toLocaleDateString("en-US", { weekday: "short", timeZone: displayTz }) : "Start";
   const reading = crewMetricReading(relay.metric, relay.model.total, input.units);
   const targetReading = relay.target == null ? null : crewMetricReading(relay.metric, relay.target, input.units);
   const unit = crewMetricUnit(relay.metric, input.units);

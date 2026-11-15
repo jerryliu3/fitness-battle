@@ -1,4 +1,4 @@
-import { dayKey } from "../timezone";
+import { APP_TIMEZONE, dayKey, isValidIanaTimeZone } from "../timezone";
 import { crewSessionInstant } from "./crew-sessions";
 import { sportById, type SportId } from "./sports";
 
@@ -19,14 +19,19 @@ export function parseManualActivity(sport: SportId, mileage: string, duration: s
   return { distanceM, movingSec, error: null };
 }
 
-/** Optional Eastern wall time, restricted to today and never in the future. */
-export function manualActivityInstant(time: string, now: Date): { startedAt: string; error: null } | { error: string } {
+/** Optional local wall time in the account zone; restricted to today and never in the future. */
+export function manualActivityInstant(
+  time: string,
+  now: Date,
+  timeZone: string = APP_TIMEZONE,
+): { startedAt: string; error: null } | { error: string } {
+  const zone = isValidIanaTimeZone(timeZone) ? timeZone : APP_TIMEZONE;
   if (!time.trim()) return { startedAt: now.toISOString(), error: null };
   try {
-    const startedAt = crewSessionInstant(dayKey(now), time.trim());
+    const startedAt = crewSessionInstant(dayKey(now, zone), time.trim(), zone);
     if (Date.parse(startedAt) > now.getTime()) return { error: "Choose a time earlier today." };
     return { startedAt, error: null };
   } catch {
-    return { error: "Enter a valid time today as HH:MM (Eastern)." };
+    return { error: "Enter a valid time today as HH:MM." };
   }
 }

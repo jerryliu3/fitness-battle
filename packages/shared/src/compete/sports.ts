@@ -274,6 +274,8 @@ export interface CompeteState {
   cardHighlights?: string[];
   /** Miles (us) or kilometres (metric). Chosen in onboarding; changeable later. */
   units: UnitSystem;
+  /** IANA zone for display and personal training calendar; competition authority stays Eastern. */
+  timezone: string;
   primary: SportId;
   /** Which category My track and the field are showing. */
   focus: CategoryFocus;
