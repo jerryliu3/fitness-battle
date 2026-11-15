@@ -35,7 +35,7 @@ export function resolveVitalsLabHostSource(): Promise<VitalsLabHostSource> {
     try {
       const bundled = [
         require("../../../assets/vitals-lab-host/index.html"),
-        require("../../../assets/vitals-lab-host/bundle.js"),
+        require("../../../assets/vitals-lab-host/host.iife"),
         require("../../../assets/vitals-lab-host/bundle.css"),
         require("../../../assets/vitals-lab-host/bodies/anny/meshes/female.glb"),
         require("../../../assets/vitals-lab-host/bodies/anny/meshes/male.glb"),

@@ -6,7 +6,8 @@ const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, "../..");
 
 const config = getDefaultConfig(projectRoot);
-config.resolver.assetExts.push("html", "glb");
+// Vitals Lab WebView host: .iife is browser JS — never parse as RN modules (.js runs `document` at load).
+config.resolver.assetExts.push("html", "glb", "css", "iife");
 
 config.watchFolders = [workspaceRoot];
 config.resolver.nodeModulesPaths = [
