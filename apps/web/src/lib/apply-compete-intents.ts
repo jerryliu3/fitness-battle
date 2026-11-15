@@ -2,8 +2,8 @@ import {
   applyCompeteEdit,
   coalesceSaveActions,
   isCompeteSyncAction,
+  isEnrollmentActionAfterSettlement,
   normalizeCompeteIntent,
-  partitionEnrollmentSaveActions,
   type Action,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -11,19 +11,28 @@ import { resolveServerSyncAction } from "./resolve-server-sync-action";
 
 const MAX_ACTIONS = 32;
 
+export function applyAccountAction(
+  stored: CompeteState,
+  raw: Action,
+  userId: string,
+  now: Date,
+): CompeteState {
+  const nowIso = now.toISOString();
+  const action = isCompeteSyncAction(raw)
+    ? resolveServerSyncAction(stored, raw, userId, now)
+    : normalizeCompeteIntent(raw, userId, nowIso);
+  return applyCompeteEdit(stored, action);
+}
+
 function applyActionList(
   stored: CompeteState,
   rawActions: Action[],
   userId: string,
   now: Date,
 ): CompeteState {
-  const nowIso = now.toISOString();
   let next = stored;
   for (const raw of rawActions) {
-    const action = isCompeteSyncAction(raw)
-      ? resolveServerSyncAction(next, raw, userId, now)
-      : normalizeCompeteIntent(raw, userId, nowIso);
-    next = applyCompeteEdit(next, action);
+    next = applyAccountAction(next, raw, userId, now);
   }
   return next;
 }
@@ -41,30 +50,27 @@ export function applyOrderedAccountActions(
   return applyActionList(stored, actions, userId, now);
 }
 
-/** Profile, tracker, and disposition edits before settlement; enrollments after. */
-export function applyAccountSaveBeforeSettlement(
+/** Preserve request order; settle once before the first enrollment action. */
+export async function applyAccountSaveInOrder(
   stored: CompeteState,
   rawActions: Action[],
   userId: string,
   now: Date,
-): CompeteState {
+  settle: (state: CompeteState) => Promise<CompeteState>,
+): Promise<CompeteState> {
   const actions = coalesceSaveActions(rawActions);
   if (!actions.length) throw new Error("invalid_intent");
   if (actions.length > MAX_ACTIONS) throw new Error("invalid_intent");
-  const { edits } = partitionEnrollmentSaveActions(actions);
-  return applyActionList(stored, edits, userId, now);
-}
-
-export function applyAccountSaveAfterSettlement(
-  stored: CompeteState,
-  rawActions: Action[],
-  userId: string,
-  now: Date,
-): CompeteState {
-  const actions = coalesceSaveActions(rawActions);
-  const { enrollments } = partitionEnrollmentSaveActions(actions);
-  if (!enrollments.length) return stored;
-  return applyActionList(stored, enrollments, userId, now);
+  let next = stored;
+  let settledBeforeEnrollment = false;
+  for (const raw of actions) {
+    if (isEnrollmentActionAfterSettlement(raw.type) && !settledBeforeEnrollment) {
+      next = await settle(next);
+      settledBeforeEnrollment = true;
+    }
+    next = applyAccountAction(next, raw, userId, now);
+  }
+  return settle(next);
 }
 
 export const applyCompeteIntents = applyOrderedAccountActions;

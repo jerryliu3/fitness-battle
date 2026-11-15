@@ -7,16 +7,29 @@ import {
   settleCompetition,
   withAccountEloBaseline,
 } from "@fitness-battle/shared";
-import {
-  applyAccountSaveAfterSettlement,
-  applyAccountSaveBeforeSettlement,
-  applyOrderedAccountActions,
-} from "./apply-compete-intents";
+import { applyAccountSaveInOrder, applyOrderedAccountActions } from "./apply-compete-intents";
 
 const now = new Date("2026-10-28T15:00:00Z");
 const userId = "athlete";
 
-it("rejoins after a stopped wave closes", () => {
+it("keeps focus changes after enrollment when they follow an opt-in", async () => {
+  const start = new Date("2026-10-20T12:00:00Z");
+  const stored = reduceCompete(withAccountEloBaseline(freshState(start)), {
+    type: "opt-in",
+    sport: "running",
+    now: start.toISOString(),
+  });
+  const actions = [
+    { type: "opt-in", sport: "running" as const },
+    { type: "set-focus", focus: { family: "health", id: "sleep" } as const },
+  ];
+  const applied = await applyAccountSaveInOrder(stored, actions, userId, now, async (state) =>
+    settleCompetition(state, now),
+  );
+  expect(applied.focus).toEqual({ family: "health", id: "sleep" });
+});
+
+it("rejoins after a stopped wave closes", async () => {
   const start = new Date("2026-10-20T12:00:00Z");
   let stored = reduceCompete(withAccountEloBaseline(freshState(start)), {
     type: "opt-in",
@@ -37,9 +50,9 @@ it("rejoins after a stopped wave closes", () => {
     ),
   };
   const actions = [{ type: "opt-in", sport: "running" as const }];
-  let applied = applyAccountSaveBeforeSettlement(stored, actions, userId, now);
-  applied = settleCompetition(applied, now);
-  applied = applyAccountSaveAfterSettlement(applied, actions, userId, now);
+  const applied = await applyAccountSaveInOrder(stored, actions, userId, now, async (state) =>
+    settleCompetition(state, now),
+  );
   expect(applied.ratings.find((row) => row.sport === "running")?.optedIn).toBe(true);
   expect(applied.enrollments.some((enrollment) => enrollment.sport === "running")).toBe(true);
 });

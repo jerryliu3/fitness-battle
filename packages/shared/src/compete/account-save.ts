@@ -1,6 +1,6 @@
 import type { Action } from "./engine";
 import type { CompeteState } from "./sports";
-import { MAX_SYNC_ACTIVITIES } from "./sync-intents";
+import { MAX_SYNC_ACTIVITIES, MAX_SYNC_READINESS, MAX_SYNC_SLEEP } from "./sync-intents";
 
 export const MAX_SAVE_ACTIONS = 32;
 
@@ -18,45 +18,72 @@ const ENROLLMENT_ACTIONS_AFTER_SETTLEMENT = new Set<Action["type"]>([
   "unfreeze",
 ]);
 
-export function partitionEnrollmentSaveActions(actions: Action[]): {
-  edits: Action[];
-  enrollments: Action[];
-} {
-  const edits: Action[] = [];
-  const enrollments: Action[] = [];
-  for (const action of actions) {
-    if (ENROLLMENT_ACTIONS_AFTER_SETTLEMENT.has(action.type)) enrollments.push(action);
-    else edits.push(action);
-  }
-  return { edits, enrollments };
+export function isEnrollmentActionAfterSettlement(type: Action["type"]): boolean {
+  return ENROLLMENT_ACTIONS_AFTER_SETTLEMENT.has(type);
 }
 
-/** Drop disposition intents superseded by a later activity choice in the same batch. */
+export function saveActionsNeedEnrollmentSettlement(actions: Action[]): boolean {
+  return actions.some((action) => isEnrollmentActionAfterSettlement(action.type));
+}
+
+/** Drop disposition intents that only repeat the same later sync choice. */
 export function coalesceSaveActions(actions: Action[]): Action[] {
-  const lastChoiceIndex = new Map<string, number>();
-  actions.forEach((action, index) => {
-    if (action.type === "set-disposition" && action.activityId) {
-      lastChoiceIndex.set(action.activityId, index);
-    }
-    if (action.type === "apply-sync") {
-      for (const row of action.activities ?? []) lastChoiceIndex.set(row.id, index);
-    }
-  });
   return actions.filter((action, index) => {
-    if (action.type !== "set-disposition" || !action.activityId) return true;
-    return lastChoiceIndex.get(action.activityId) === index;
+    if (action.type !== "set-disposition" || !action.activityId || !action.disposition) return true;
+    for (let later = index + 1; later < actions.length; later += 1) {
+      const candidate = actions[later]!;
+      if (candidate.type === "set-disposition" && candidate.activityId === action.activityId) {
+        return false;
+      }
+      if (candidate.type !== "apply-sync") continue;
+      const row = (candidate.activities ?? []).find((activity) => activity.id === action.activityId);
+      if (!row) continue;
+      if (row.disposition === action.disposition) return false;
+      return true;
+    }
+    return true;
   });
+}
+
+function syncPartCount(length: number, max: number): number {
+  return length > 0 ? Math.ceil(length / max) : 0;
 }
 
 export function splitApplySyncAction(action: Action): Action[] {
   if (action.type !== "apply-sync") return [action];
   const activities = action.activities ?? [];
-  if (activities.length <= MAX_SYNC_ACTIVITIES) return [action];
-  const parts: Action[] = [];
-  for (let index = 0; index < activities.length; index += MAX_SYNC_ACTIVITIES) {
-    parts.push({ ...action, activities: activities.slice(index, index + MAX_SYNC_ACTIVITIES) });
+  const sleepNights = action.sleepNights ?? [];
+  const readiness = action.readiness ?? [];
+  const parts = Math.max(
+    syncPartCount(activities.length, MAX_SYNC_ACTIVITIES),
+    syncPartCount(sleepNights.length, MAX_SYNC_SLEEP),
+    syncPartCount(readiness.length, MAX_SYNC_READINESS),
+    1,
+  );
+  if (
+    parts === 1 &&
+    activities.length <= MAX_SYNC_ACTIVITIES &&
+    sleepNights.length <= MAX_SYNC_SLEEP &&
+    readiness.length <= MAX_SYNC_READINESS
+  ) {
+    return [action];
   }
-  return parts;
+  const chunks: Action[] = [];
+  for (let index = 0; index < parts; index += 1) {
+    chunks.push({
+      ...action,
+      activities: activities.slice(
+        index * MAX_SYNC_ACTIVITIES,
+        (index + 1) * MAX_SYNC_ACTIVITIES,
+      ),
+      sleepNights: sleepNights.slice(index * MAX_SYNC_SLEEP, (index + 1) * MAX_SYNC_SLEEP),
+      readiness: readiness.slice(
+        index * MAX_SYNC_READINESS,
+        (index + 1) * MAX_SYNC_READINESS,
+      ),
+    });
+  }
+  return chunks;
 }
 
 export function expandSaveActions(pending: Action[]): Action[] {

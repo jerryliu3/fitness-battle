@@ -14,10 +14,7 @@ import {
   persistCompeteAccount,
   settleAccountFields,
 } from "@/lib/compete-persist";
-import {
-  applyAccountSaveAfterSettlement,
-  applyAccountSaveBeforeSettlement,
-} from "@/lib/apply-compete-intents";
+import { applyAccountSaveInOrder } from "@/lib/apply-compete-intents";
 import { competitionAuthorityDatabase } from "@/lib/competition-authority";
 import { createRequestClient } from "@/lib/supabase/request";
 import { committedScoreHistory, competeAccountJsonState } from "@/lib/compete-save-route";
@@ -67,18 +64,12 @@ export async function POST(request: Request): Promise<Response> {
       const stored = existing
         ? migrateCompeteState(existing.state)
         : withAccountEloBaseline(freshState(now));
-      const editsApplied = applyAccountSaveBeforeSettlement(stored, actions, userId, now);
-      const settledOnce = await settleAccountFields(supabase, userId, editsApplied, now, true);
-      const enrollmentApplied = applyAccountSaveAfterSettlement(
-        settledOnce,
-        actions,
-        userId,
-        now,
+      live = await applyAccountSaveInOrder(stored, actions, userId, now, (state) =>
+        settleAccountFields(supabase, userId, state, now, true),
       );
-      live = await settleAccountFields(supabase, userId, enrollmentApplied, now, true);
       if (
         existing &&
-        openEnrollmentRemoved(migrateCompeteState(existing.state), enrollmentApplied, now)
+        openEnrollmentRemoved(migrateCompeteState(existing.state), live, now)
       ) {
         return NextResponse.json({ error: "week_still_open", persisted: false }, { status: 409 });
       }
@@ -87,7 +78,10 @@ export async function POST(request: Request): Promise<Response> {
       if (error instanceof Error && error.message === "week_still_open") {
         return NextResponse.json({ error: "week_still_open", persisted: false }, { status: 409 });
       }
-      if (error instanceof Error && /^invalid_/.test(error.message)) {
+      if (
+        error instanceof Error &&
+        (/^invalid_/.test(error.message) || error.message === "sync_batch_too_large")
+      ) {
         return NextResponse.json({ error: error.message }, { status: 400 });
       }
       return NextResponse.json({ error: "account_unavailable" }, { status: 503 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Action } from "./engine";
 import { freshState, withAccountEloBaseline } from "./sports";
-import { MAX_SYNC_ACTIVITIES } from "./sync-intents";
+import { MAX_SYNC_ACTIVITIES, MAX_SYNC_SLEEP } from "./sync-intents";
 import {
   accountSavePlan,
   coalesceSaveActions,
@@ -40,6 +40,18 @@ describe("coalesceSaveActions", () => {
     ]);
   });
 
+  it("keeps an earlier exclusion before apply-sync marks the session counted", () => {
+    const actions = coalesceSaveActions([
+      { type: "set-disposition", activityId: "a-1", disposition: "excluded" } as Action,
+      {
+        type: "apply-sync",
+        provider: "strava",
+        activities: [{ id: "a-1", disposition: "counted" }],
+      } as Action,
+    ]);
+    expect(actions).toHaveLength(2);
+  });
+
   it("keeps a later exclusion after an apply-sync", () => {
     const actions = coalesceSaveActions([
       {
@@ -55,6 +67,19 @@ describe("coalesceSaveActions", () => {
 });
 
 describe("planSaveActionBatches", () => {
+  it("splits oversized sleep-night payloads", () => {
+    const sleepNights = Array.from({ length: MAX_SYNC_SLEEP + 1 }, (_, index) => ({
+      id: `sleep-${index}`,
+      source: "oura",
+    }));
+    const batches = planSaveActionBatches([
+      { type: "apply-sync", provider: "oura", sleepNights } as Action,
+    ]);
+    expect(batches).toHaveLength(2);
+    expect(batches[0]![0]!.sleepNights).toHaveLength(MAX_SYNC_SLEEP);
+    expect(batches[1]![0]!.sleepNights).toHaveLength(1);
+  });
+
   it("splits large apply-sync payloads and oversized queues", () => {
     const activities = Array.from({ length: MAX_SYNC_ACTIVITIES + 1 }, (_, index) => ({
       id: `run-${index}`,

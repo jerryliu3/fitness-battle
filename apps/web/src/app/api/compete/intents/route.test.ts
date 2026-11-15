@@ -46,7 +46,7 @@ describe("POST /api/compete/intents", () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.state.name).toBe("Pat");
-    expect(settleAccountFields).toHaveBeenCalledTimes(2);
+    expect(settleAccountFields).toHaveBeenCalledTimes(1);
     expect(persistCompeteAccount).toHaveBeenCalledWith(
       expect.anything(),
       "athlete",
