@@ -21,6 +21,7 @@ vi.mock("react-native", () => ({useColorScheme: () => "light",  AppState: { curr
   ScrollView: "ScrollView",
   Switch: "Switch",
   Text: "Text",
+  TextInput: "TextInput",
   View: "View",
   Clipboard: { setString: vi.fn() },
 }));
@@ -144,7 +145,7 @@ describe("athlete profile navigation and layout", () => {
     });
     const sidePanel = renderer.root
       .findAllByType("SidePanel" as never)
-      .find((node) => node.props.title === "Settings");
+      .find((node) => node.props.title === "Edit profile");
     expect(sidePanel?.props.open).toBe(true);
   });
 
@@ -189,9 +190,8 @@ describe("athlete profile navigation and layout", () => {
     });
     const rendered = JSON.stringify(renderer.toJSON());
     expect(rendered).toContain("Public profile");
-    expect(rendered).toContain("Primary sport");
-    expect(rendered).not.toContain("Since the first mile");
-    expect(rendered).not.toContain("A few proud moments");
+    expect(rendered).toContain("Achievements");
+    expect(rendered).not.toContain("Primary sport");
   });
 
   it("renders shareable profile link row with copy and edit profile", async () => {
