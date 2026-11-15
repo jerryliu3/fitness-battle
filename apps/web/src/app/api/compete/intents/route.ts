@@ -64,8 +64,8 @@ export async function POST(request: Request): Promise<Response> {
       const stored = existing
         ? migrateCompeteState(existing.state)
         : withAccountEloBaseline(freshState(now));
-      live = await applyAccountSaveInOrder(stored, actions, userId, now, (state) =>
-        settleAccountFields(supabase, userId, state, now, true),
+      live = await applyAccountSaveInOrder(stored, actions, userId, now, (state, scoreOpenPeriod) =>
+        settleAccountFields(supabase, userId, state, now, true, scoreOpenPeriod),
       );
       if (
         existing &&

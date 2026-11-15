@@ -56,7 +56,7 @@ export async function applyAccountSaveInOrder(
   rawActions: Action[],
   userId: string,
   now: Date,
-  settle: (state: CompeteState) => Promise<CompeteState>,
+  settle: (state: CompeteState, scoreOpenPeriod: boolean) => Promise<CompeteState>,
 ): Promise<CompeteState> {
   const actions = coalesceSaveActions(rawActions);
   if (!actions.length) throw new Error("invalid_intent");
@@ -65,12 +65,12 @@ export async function applyAccountSaveInOrder(
   let settledBeforeEnrollment = false;
   for (const raw of actions) {
     if (isEnrollmentActionAfterSettlement(raw.type) && !settledBeforeEnrollment) {
-      next = await settle(next);
+      next = await settle(next, false);
       settledBeforeEnrollment = true;
     }
     next = applyAccountAction(next, raw, userId, now);
   }
-  return settle(next);
+  return settle(next, true);
 }
 
 export const applyCompeteIntents = applyOrderedAccountActions;

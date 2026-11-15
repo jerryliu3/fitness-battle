@@ -23,10 +23,33 @@ it("keeps focus changes after enrollment when they follow an opt-in", async () =
     { type: "opt-in", sport: "running" as const },
     { type: "set-focus", focus: { family: "health", id: "sleep" } as const },
   ];
-  const applied = await applyAccountSaveInOrder(stored, actions, userId, now, async (state) =>
-    settleCompetition(state, now),
+  const applied = await applyAccountSaveInOrder(stored, actions, userId, now, async (state, scoreOpen) =>
+    scoreOpen ? settleCompetition(state, now) : state,
   );
   expect(applied.focus).toEqual({ family: "health", id: "sleep" });
+});
+
+it("scores the open period only after all ordered edits", async () => {
+  const stored = reduceCompete(withAccountEloBaseline(freshState(now)), {
+    type: "opt-in",
+    sport: "running",
+    now: now.toISOString(),
+  });
+  const scores: boolean[] = [];
+  await applyAccountSaveInOrder(
+    stored,
+    [
+      { type: "schedule-leave", sport: "running" as const },
+      { type: "set-disposition", activityId: "any", disposition: "excluded" as const },
+    ],
+    userId,
+    now,
+    async (state, scoreOpen) => {
+      scores.push(scoreOpen);
+      return state;
+    },
+  );
+  expect(scores).toEqual([false, true]);
 });
 
 it("rejoins after a stopped wave closes", async () => {
@@ -50,9 +73,24 @@ it("rejoins after a stopped wave closes", async () => {
     ),
   };
   const actions = [{ type: "opt-in", sport: "running" as const }];
-  const applied = await applyAccountSaveInOrder(stored, actions, userId, now, async (state) =>
-    settleCompetition(state, now),
-  );
+  const applied = await applyAccountSaveInOrder(stored, actions, userId, now, async (state, scoreOpen) => {
+    if (!scoreOpen) {
+      return {
+        ...state,
+        enrollments: state.enrollments.filter(
+          (enrollment) =>
+            !(
+              enrollment.sport === "running" &&
+              Date.parse(enrollment.weekEnd) <= now.getTime()
+            ),
+        ),
+        ratings: state.ratings.map((row) =>
+          row.sport === "running" ? { ...row, optedIn: false } : row,
+        ),
+      };
+    }
+    return settleCompetition(state, now);
+  });
   expect(applied.ratings.find((row) => row.sport === "running")?.optedIn).toBe(true);
   expect(applied.enrollments.some((enrollment) => enrollment.sport === "running")).toBe(true);
 });
