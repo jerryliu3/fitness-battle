@@ -322,10 +322,13 @@ describe("mobile account lifecycle", () => {
     await save();
     const writes = accountSaveCalls();
     expect(writes).toHaveLength(1);
-    expect(JSON.parse(writes[0]![1]!.body as string).state).toMatchObject({
-      city: "Toronto",
-      units: "metric",
-    });
+    expect(JSON.parse(writes[0]![1]!.body as string).actions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "set-city", city: "Toronto" }),
+        expect.objectContaining({ type: "set-units", units: "metric" }),
+      ]),
+    );
+    expect(api.state).toMatchObject({ city: "Toronto", units: "metric" });
   });
   it("surfaces open-week conflicts, preserves the draft, and retries", async () => {
     login("Alice");
