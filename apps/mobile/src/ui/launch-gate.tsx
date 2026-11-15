@@ -1,5 +1,6 @@
 import { createContext, useCallback, useEffect, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
+import { BootOpenedContext } from "./boot-readiness";
 import { BootSplash } from "./boot-splash";
 
 // Providers and screens mount only after the moving part of startup finishes.
@@ -20,12 +21,14 @@ export function LaunchGate({ children }: { children: ReactNode }) {
     });
     return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
   }, [animationDone]);
-  return <LaunchReadyContext.Provider value={reveal}>
-    <View style={{ flex: 1 }}>
-      {mountApp ? children : null}
-      {!ready && <View style={StyleSheet.absoluteFill}>
-        <BootSplash waiting={animationDone} onAnimationComplete={() => setAnimationDone(true)} />
-      </View>}
-    </View>
-  </LaunchReadyContext.Provider>;
+  return <BootOpenedContext.Provider value={ready}>
+    <LaunchReadyContext.Provider value={reveal}>
+      <View style={{ flex: 1 }}>
+        {mountApp ? children : null}
+        {!ready && <View style={StyleSheet.absoluteFill}>
+          <BootSplash waiting={animationDone} onAnimationComplete={() => setAnimationDone(true)} />
+        </View>}
+      </View>
+    </LaunchReadyContext.Provider>
+  </BootOpenedContext.Provider>;
 }

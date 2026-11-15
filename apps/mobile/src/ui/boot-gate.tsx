@@ -4,7 +4,7 @@ import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { View, StyleSheet } from "react-native";
-import { BootLoadingContext, useBootRequests } from "./boot-readiness";
+import { BootLoadingContext, BootOpenedContext, useBootOpened, useBootRequests } from "./boot-readiness";
 import { BootSplash } from "./boot-splash";
 import { LaunchReadyContext } from "./launch-gate";
 
@@ -16,6 +16,7 @@ let bootAnimationCompleted = false;
  */
 export function BootGate({ children }: { children: ReactNode }) {
   const revealLaunch = useContext(LaunchReadyContext);
+  const parentBootOpened = useBootOpened();
   const { loading: authLoading } = useAuth();
   const { state, loadStatus } = useCompeteStore();
   const { ready: privacyReady, error: privacyError } = useAthleteBlocks();
@@ -47,19 +48,21 @@ export function BootGate({ children }: { children: ReactNode }) {
     return () => clearTimeout(timer);
   }, [revealLaunch]);
   return <BootLoadingContext.Provider value={report}>
-    <View style={{ flex: 1 }}>
-      <View style={{ flex: 1 }} onLayout={() => setLaidOut(true)}
-        pointerEvents={opened ? "auto" : "none"}
-        accessibilityElementsHidden={!opened}
-        importantForAccessibility={opened ? "auto" : "no-hide-descendants"}>
-        {children}
+    <BootOpenedContext.Provider value={revealLaunch ? parentBootOpened && opened : opened}>
+      <View style={{ flex: 1 }}>
+        <View style={{ flex: 1 }} onLayout={() => setLaidOut(true)}
+          pointerEvents={opened ? "auto" : "none"}
+          accessibilityElementsHidden={!opened}
+          importantForAccessibility={opened ? "auto" : "no-hide-descendants"}>
+          {children}
+        </View>
+        {!opened && !revealLaunch && <View style={StyleSheet.absoluteFill}>
+          <BootSplash
+            waiting={animationDone}
+            onAnimationComplete={() => { bootAnimationCompleted = true; setAnimationDone(true); }}
+          />
+        </View>}
       </View>
-      {!opened && !revealLaunch && <View style={StyleSheet.absoluteFill}>
-        <BootSplash
-          waiting={animationDone}
-          onAnimationComplete={() => { bootAnimationCompleted = true; setAnimationDone(true); }}
-        />
-      </View>}
-    </View>
+    </BootOpenedContext.Provider>
   </BootLoadingContext.Provider>;
 }

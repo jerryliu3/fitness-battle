@@ -17,7 +17,7 @@ vi.mock("./boot-splash", () => ({ BootSplash: ({ onAnimationComplete }: { onAnim
 } }));
 import { BootGate } from "./boot-gate";
 import { LaunchGate } from "./launch-gate";
-import { useBootImage, useBootLoading } from "./boot-readiness";
+import { useBootImage, useBootLoading, useBootOpened } from "./boot-readiness";
 let renderer: ReactTestRenderer;
 let mounts: number;
 function Screen({ loading = false }: { loading?: boolean }) {
@@ -189,4 +189,33 @@ it("keeps privacy loading behind the launch animation and exposes failures for r
   await act(async () => renderer.update(tree()));
   await frames();
   expect(covered()).toBe(false);
+});
+
+it("keeps BootOpenedContext false outside and inside BootGate until the launch cover unmounts", async () => {
+  mock.state = null;
+  let outerOpened: boolean | null = null;
+  let innerOpened: boolean | null = null;
+  function OuterProvider() {
+    outerOpened = useBootOpened();
+    return createElement(BootGate, null, createElement(InnerChild));
+  }
+  function InnerChild() {
+    innerOpened = useBootOpened();
+    return createElement(Screen);
+  }
+  const launch = () => createElement(LaunchGate, null, createElement(OuterProvider));
+  await act(async () => { renderer = create(launch()); });
+  await act(async () => { mock.complete?.(); });
+  await frames();
+  expect(outerOpened).toBe(false);
+  expect(innerOpened).toBe(false);
+  await act(async () => {
+    renderer.root.findAll(node => (node.type as unknown) === "View" && Boolean(node.props.onLayout))[0].props.onLayout();
+  });
+  mock.state = {};
+  await act(async () => renderer.update(launch()));
+  await frames();
+  expect(covered()).toBe(false);
+  expect(outerOpened).toBe(true);
+  expect(innerOpened).toBe(true);
 });

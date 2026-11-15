@@ -2,6 +2,7 @@
 
 import { AccountSaveToast } from "@/ui/account-save-toast";
 import { AppParagraph } from "@/ui/section";
+import { BootCoverContext, useBootRequests } from "@/shell/boot-readiness";
 
 
 import { useCompetitionExperience } from "@/lib/use-competition-experience";
@@ -172,6 +173,7 @@ function writeLocal(userId: string | null, state: CompeteState, savedAt: string)
 }
 
 export function CompeteProvider({ children }: { children: ReactNode }) {
+  const { pending: bootCovering, report: reportBootCover } = useBootRequests();
   const { user, loading, offlineMode } = useAuth();
   const userId = user?.id ?? null;
   const [state, setState] = useState<CompeteState | null>(null);
@@ -804,6 +806,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   );
   holdRemoteRef.current = syncReview.holdRemote;
   return (
+    <BootCoverContext.Provider value={reportBootCover}>
     <CompeteContext.Provider value={{
         ...api,
         dispatch: syncReview.dispatch,
@@ -813,7 +816,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       }}>
     <AccountSaveToast key={`${userId ?? "guest"}:${noticeAttempt}`} message={saveError} conflict={saveConflict} saving={retryingSave} onRetry={retryLoad}/>
     {children}
-      {(syncReview.receipt || experience.moment) && state ? (
+      {!bootCovering && (syncReview.receipt || experience.moment) && state ? (
         <Suspense fallback={<AppParagraph typographyRole="body" role="status">Opening today’s recap…</AppParagraph>}>
           <SyncReview
             key={userId ?? "guest"}
@@ -828,6 +831,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         </Suspense>
       ) : null}
   </CompeteContext.Provider>
+    </BootCoverContext.Provider>
   );
 }
 

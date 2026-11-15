@@ -10,6 +10,7 @@ import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
+import { useBootOpened } from "../ui/boot-readiness";
 import { WeekRecap } from "./week-recap";
 
 const DISMISSED_BREAKDOWN_KEY = "@overtaek/dismissed_week_breakdown";
@@ -24,6 +25,7 @@ export function RoundTakeover({
   dispatch: (action: Action) => void;
 }) {
   const { user, accessToken, offlineMode } = useAuth();
+  const bootOpened = useBootOpened();
   const { debugActive, resetDebugState } = useCompeteStore();
   const { blocks } = useAthleteBlocks();
   const hiddenIds = useMemo(() => blocks.map((block) => block.id), [blocks]);
@@ -64,7 +66,7 @@ export function RoundTakeover({
   const manualBreakdown = breakdownRequested ? settledWeekBreakdownTarget(state) : null;
   const breakdownTarget = manualBreakdown ?? (autoBreakdown && autoBreakdown.periodStart !== dismissedBreakdown ? autoBreakdown : null);
 
-  if (dismissed || !ready || path !== "/arena") return null;
+  if (dismissed || !ready || !bootOpened || path !== "/arena") return null;
   if (replay && reveal) {
     return (
       <WeekRecap

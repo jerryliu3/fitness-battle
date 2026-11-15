@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
+import { useBootOpened } from "@/shell/boot-readiness";
 import {
   nonRaceWeekBreakdownTarget, roundReveal, settledWeekBreakdownTarget, stripWebProductPrefix,
   type CompeteState, type CompetitionReplay, type PeriodResult,
@@ -23,6 +24,7 @@ export function WeekReveal({
   onDismiss: (revealIds: string[]) => void;
 }) {
   const { user, offlineMode } = useAuth();
+  const bootOpened = useBootOpened();
   const { dispatch, debugActive, lastDebugEvent, resetDebugState } = useCompete();
   const [dismissed, setDismissed] = useState(false);
   const [dismissedBreakdown, setDismissedBreakdown] = useState<string | null>(() =>
@@ -66,7 +68,7 @@ export function WeekReveal({
   const manualBreakdown = breakdownRequested ? settledWeekBreakdownTarget(state) : null;
   const breakdownTarget = manualBreakdown ?? (autoBreakdown && autoBreakdown.periodStart !== dismissedBreakdown ? autoBreakdown : null);
 
-  if (dismissed || !ready || (!preview && !onArena)) return null;
+  if (dismissed || !ready || !bootOpened || (!preview && !onArena)) return null;
   if ((preview || replay || openingDebug) && reveal) {
     return (
       <WeekRecap

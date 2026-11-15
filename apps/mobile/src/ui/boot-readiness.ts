@@ -3,6 +3,11 @@ import { createContext, useCallback, useContext, useLayoutEffect, useRef, useSta
 // Screen requests register while the app mounts underneath the launch cover.
 // Once opened, the gate stays open: later refreshes never replay startup.
 export const BootLoadingContext = createContext<((id: symbol, loading: boolean) => void) | null>(null);
+export const BootOpenedContext = createContext(true);
+
+export function useBootOpened() {
+  return useContext(BootOpenedContext);
+}
 
 export function useBootLoading(loading: boolean) {
   const report = useContext(BootLoadingContext);
