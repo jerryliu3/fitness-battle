@@ -126,3 +126,53 @@ begin
  if exists(select 1 from public.week_fields where id=field) then raise exception 'future field leaked through RLS'; end if;
  perform set_config('role','postgres',true);
 end; $$;
+
+do $$
+declare
+ crew_owner uuid:=gen_random_uuid();
+ open_solo uuid:=gen_random_uuid();
+ walk_solo uuid:=gen_random_uuid();
+ crew uuid:=gen_random_uuid();
+ s timestamptz:=(date_trunc('week', (statement_timestamp() - interval '6 hours') at time zone 'America/New_York') + interval '6 hours') at time zone 'America/New_York';
+ e timestamptz:=private.wave_week_end(s);
+ open_field public.week_fields;
+ walk_field public.week_fields;
+begin
+ insert into auth.users(id,email) values
+  (crew_owner,crew_owner||'@test.invalid'),
+  (open_solo,open_solo||'@test.invalid'),
+  (walk_solo,walk_solo||'@test.invalid');
+ insert into public.profiles(id,display_name) values
+  (crew_owner,'Crew Owner'),
+  (open_solo,'Open Solo'),
+  (walk_solo,'Walk Solo')
+ on conflict do nothing;
+ insert into public.crews(id,name,sport,created_by,invite_code) values(crew,'Existing Crew','running',crew_owner,substr(crew::text,1,8));
+ insert into public.crew_members(crew_id,user_id,display_name,status) values(crew,crew_owner,'Crew Owner','active');
+ insert into public.sport_ratings(user_id,sport,opted_in,lock_period) values
+  (crew_owner,'running',true,s),
+  (open_solo,'running',true,s),
+  (walk_solo,'walking',true,s);
+ insert into public.wave_enrollments(user_id,sport,wave_start,week_end,crew_id,registered_at) values
+  (crew_owner,'running',s,e,crew,s-interval '1 hour');
+ perform set_config('request.jwt.claim.sub',crew_owner::text,true);
+ perform public.resolve_week_field('running',s,e);
+
+ insert into public.wave_enrollments(user_id,sport,wave_start,week_end,crew_id,registered_at) values
+  (open_solo,'running',s,e,null,s-interval '30 minutes'),
+  (walk_solo,'walking',s,e,null,s-interval '30 minutes');
+ perform set_config('request.jwt.claim.sub',open_solo::text,true);
+ select * into open_field from public.resolve_week_field('running',s,e);
+ if open_field.crew_id is not null or not (open_solo=any(open_field.member_ids)) or cardinality(open_field.member_ids)<>open_field.capacity then
+  raise exception 'open field not seated when crew field already existed';
+ end if;
+
+ perform set_config('request.jwt.claim.sub',walk_solo::text,true);
+ select * into walk_field from public.resolve_week_field('walking',s,e);
+ if cardinality(walk_field.member_ids)<>walk_field.capacity then
+  raise exception 'walking open field missing house competitors';
+ end if;
+ if exists(select 1 from public.week_field_roster(walk_field.id) r where r.user_id<>walk_solo and coalesce(r.distance_m,0)<=0) then
+  raise exception 'walking house competitors have zero steps';
+ end if;
+end; $$;

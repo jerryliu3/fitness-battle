@@ -10,7 +10,6 @@ import { useSyncReviewGate } from "@/lib/use-sync-review";
 import { accountName } from "@/lib/account-name";
 
 import { useAuth } from "@/components/auth-context";
-import { getDemoCompeteState } from "@/lib/compete-demo-seed";
 import {
   applyDebugEvent,
   applyRemoteSnapshot,
@@ -155,43 +154,7 @@ function removeStorageItem(key: string): void {
 
 function readLocal(userId: string | null): { savedAt: string; state: CompeteState; cached: boolean } {
   const existing = parseStored(readStorageItem(storageKey(userId)));
-  const demoSeed = getDemoCompeteState(userId);
-  if (demoSeed && (!existing || existing.state.activities.length === 0)) {
-    return {
-      cached: false,
-      savedAt: new Date(0).toISOString(),
-      state: rollClock(demoSeed),
-    };
-  }
-  if (existing) {
-    if (demoSeed) {
-      const existingIds = new Set(existing.state.activities.map((a) => a.id));
-      const missing = demoSeed.activities.filter((a) => !existingIds.has(a.id));
-      const needsCrew = !existing.state.crewBoard || existing.state.crewBoard.crewId === "solo";
-      if (missing.length > 0 || needsCrew) {
-        const nextState = {
-          ...existing.state,
-          activities: missing.length > 0 ? [...existing.state.activities, ...missing] : existing.state.activities,
-          crewBoard: needsCrew ? demoSeed.crewBoard : existing.state.crewBoard,
-          enrollments: existing.state.enrollments.length > 0 ? existing.state.enrollments : demoSeed.enrollments,
-        };
-        writeLocal(userId, nextState, existing.savedAt);
-        return {
-          cached: true,
-          savedAt: existing.savedAt,
-          state: nextState,
-        };
-      }
-    }
-    return { ...existing, cached: true };
-  }
-  if (demoSeed) {
-    return {
-      cached: false,
-      savedAt: new Date(0).toISOString(),
-      state: rollClock(demoSeed),
-    };
-  }
+  if (existing) return { ...existing, cached: true };
   return {
     cached: false,
     savedAt: new Date(0).toISOString(),

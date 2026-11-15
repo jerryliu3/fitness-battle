@@ -187,7 +187,7 @@ it("opens crew settings with leave crew button and minimal sheet", async () => {
   ).toBe(true);
 });
 
-it("hydrates demo crew for Alice when running offline with synthetic account", async () => {
+it("does not inject a fake demo crew when running offline", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   mock.live = false;
   mock.user = { id: "alice", email: "alice@fitness-battle.dev" };
@@ -196,6 +196,6 @@ it("hydrates demo crew for Alice when running offline with synthetic account", a
     renderer = create(createElement(CrewHub));
   });
   const content = JSON.stringify(renderer.toJSON());
-  expect(content).toContain("Weekday miles");
-  expect(content).not.toContain("Make room for your people");
+  expect(content).not.toContain("Weekday miles");
+  expect(content).toContain("Make room for your people");
 });

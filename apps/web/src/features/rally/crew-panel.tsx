@@ -11,7 +11,7 @@ import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { CrewOverview } from "./crew-overview";
 import { Sheet } from "@/ui/sheet";
-import { SPORTS, rankSymbolForScore, APP_ICON_PATHS, competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, crewLineup, crewTargetSpec, getDemoCompeteState } from "@fitness-battle/shared";
+import { SPORTS, rankSymbolForScore, APP_ICON_PATHS, competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, crewLineup, crewTargetSpec } from "@fitness-battle/shared";
 import { NumberStepper } from "@/ui/number-stepper";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -196,8 +196,7 @@ export function CrewPanel() {
     }
   }
   const rawCrews = (data?.crews ?? []).flatMap((r) => (r.crews ? [r.crews] : []));
-  const demoSeed = (!user || offlineMode) && user ? getDemoCompeteState(user.id) ?? getDemoCompeteState(user.email) : null;
-  const crewBoard = state?.crewBoard ?? demoSeed?.crewBoard;
+  const crewBoard = state?.crewBoard;
   const hasDemoCrew = Boolean(
     crewBoard &&
       crewBoard.crewId &&

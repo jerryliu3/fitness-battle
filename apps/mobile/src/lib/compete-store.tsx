@@ -21,7 +21,6 @@ import {
   fieldChangeNotice,
   fieldSeenStorageKey,
   freshState,
-  getDemoCompeteState,
   isCompeteState,
   migrateCompeteState,
   newCountedIds,
@@ -274,56 +273,6 @@ export function CompeteProvider({ children, navigationReady = true }: { children
           }
         } catch {
           /* A corrupt local copy starts clean. */
-        }
-      }
-      if (
-        authRef.current.offlineMode && authRef.current.user?.dataOrigin === "synthetic" &&
-        authRef.current.user
-      ) {
-        const emailHandle = authRef.current.user.email ? authRef.current.user.email.split("@")[0] : null;
-        const seed = (emailHandle ? getDemoCompeteState(emailHandle) : null) || getDemoCompeteState(authRef.current.user.id);
-        if (seed) {
-          if (!raw) {
-            next = seed;
-          } else {
-            const existingIds = new Set(next.activities.map((a) => a.id));
-            const missing = seed.activities.filter((a) => !existingIds.has(a.id));
-            const existingSleepDays = new Set(next.sleepNights.map((s) => s.day));
-            const existingSleepIds = new Set(next.sleepNights.map((s) => s.id));
-            const missingSleep = seed.sleepNights
-              .filter((s) => !existingSleepDays.has(s.day))
-              .map((s) => (existingSleepIds.has(s.id) ? { ...s, id: `${s.id}:${s.day}` } : s));
-            const existingHealthKeys = new Set((next.dailyHealth ?? []).map((d) => `${d.provider}:${d.day}`));
-            const missingHealth = (seed.dailyHealth ?? []).filter((d) => !existingHealthKeys.has(`${d.provider}:${d.day}`));
-            const needsCrew = !next.crewBoard || next.crewBoard.crewId === "solo";
-            const seedJoined = seed.ratings.some(
-              (r) => r.sport === seed.primary && r.optedIn,
-            );
-            const cacheJoined = next.ratings.some(
-              (r) => r.sport === seed.primary && r.optedIn,
-            );
-            const needsDemoField = seedJoined && !cacheJoined;
-            if (missing.length > 0 || missingSleep.length > 0 || missingHealth.length > 0 || needsCrew || needsDemoField) {
-              next = {
-                ...next,
-                activities: missing.length > 0 ? [...next.activities, ...missing] : next.activities,
-                sleepNights: missingSleep.length > 0 ? [...next.sleepNights, ...missingSleep] : next.sleepNights,
-                dailyHealth: missingHealth.length > 0 ? [...(next.dailyHealth ?? []), ...missingHealth] : next.dailyHealth,
-                crewBoard: needsCrew ? seed.crewBoard : next.crewBoard,
-                enrollments: needsDemoField ? seed.enrollments : next.enrollments.length > 0 ? next.enrollments : seed.enrollments,
-                ...(needsDemoField
-                  ? {
-                      ratings: seed.ratings,
-                      healthRatings: seed.healthRatings,
-                      primary: seed.primary,
-                      calibrated: seed.calibrated,
-                      onboardingCompleted: seed.onboardingCompleted,
-                    }
-                  : null),
-              };
-              void AsyncStorage.setItem(keys.state, JSON.stringify(next));
-            }
-          }
         }
       }
       if (process.env.NODE_ENV === "development" && authRef.current.offlineMode && authRef.current.user?.dataOrigin === "synthetic") {
