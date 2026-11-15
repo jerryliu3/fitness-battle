@@ -44,6 +44,7 @@ export function FocusSheet({
   onClose,
   onClosed,
   children,
+  hideTitle = false,
   fullScreen = false,
   fastOpen = false,
   modal = true,
@@ -57,6 +58,7 @@ export function FocusSheet({
   children?: ReactNode;
   /** Legacy callers may still pass this; all sheets now omit the close-button row. */
   minimal?: boolean;
+  hideTitle?: boolean;
   fullScreen?: boolean;
   /** Shorter open animation for lightweight content (e.g. activity detail). */
   fastOpen?: boolean;
@@ -67,8 +69,8 @@ const f=useThemedStyles(fThemes);
 
   // Keep the last open content during exit; callers often clear their selection
   // in onClose, which must not flash a different panel while the sheet slides away.
-  const content = useRef({ title, body, children });
-  if (open) content.current = { title, body, children };
+  const content = useRef({ title, body, children, hideTitle });
+  if (open) content.current = { title, body, children, hideTitle };
   const closedCallback = useRef(onClosed);
   closedCallback.current = onClosed;
   const reduce = useReducedMotion();
@@ -175,7 +177,7 @@ const f=useThemedStyles(fThemes);
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={f.sheetBody}
           >
-            {!fullScreen && <AppText role="display" accessibilityRole="header">
+            {!fullScreen && !content.current.hideTitle && <AppText role="display" accessibilityRole="header">
               {content.current.title}
             </AppText>}
             {Boolean(content.current.body) && (
