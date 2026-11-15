@@ -684,8 +684,6 @@ const styles=useThemedStyles(stylesThemes);
                   />
                 </FocusSheet>
               )}
-            </>
-          )}
         </SectionStack>
 </ScrollView>
       </SafeAreaView>
