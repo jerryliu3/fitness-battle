@@ -1,13 +1,16 @@
 import { createThemedStyles, useThemedStyles } from "../theme";
 import { useReducedMotion } from "./use-reduced-motion";
 import { AppText, textStyle } from "./section";
-import { useEffect, useMemo, useState } from "react";
-import { Modal, SafeAreaView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { Modal, Platform, Pressable, SafeAreaView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { activityRoute, normalizeRouteReplay, type RouteReplaySample, type Activity } from "@fitness-battle/shared";
+import { AnchoredMenu, useAnchoredMenu } from "./anchored-menu";
+import { AppIcon } from "./app-icon";
 import { FocusSegments } from "./focus";
 import { IconButton } from "./icon-button";
 import { RouteStaticPreview } from "./route-static-preview";
-import { RouteTimelapse } from "./route-timelapse";
+import { RouteTimelapse, type RoutePlaybackController, type RoutePlaybackState } from "./route-timelapse";
+import { SettingsToggleRow } from "./settings-toggle-row";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../lib/auth";
@@ -19,12 +22,18 @@ export function ActivityRoute({
   activity,
   milestone = false,
   immersive = false,
+  hideControls = false,
   units = "metric",
+  onPlaybackState,
+  controllerRef,
 }: {
   activity?: Activity;
   milestone?: boolean;
   immersive?: boolean;
+  hideControls?: boolean;
   units?: "us" | "metric";
+  onPlaybackState?: (state: RoutePlaybackState) => void;
+  controllerRef?: MutableRefObject<RoutePlaybackController | null>;
 }) {
 const s=useThemedStyles(sThemes);
 
@@ -39,8 +48,16 @@ const s=useThemedStyles(sThemes);
     [activity?.summaryPolyline, activity?.detailedPolyline, fetchedLine],
   );
   const [mode, setMode] = useState<"2d-overview" | "3d-flyover">("2d-overview");
+  const initialMode = useRef(mode).current;
   const [fullScreen, setFullScreen] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
+  const { open: layerMenuOpen, close: closeLayerMenu, toggle: toggleLayerMenu, anchorRef: layerAnchorRef, menuLayout: layerMenuLayout } = useAnchoredMenu({ minWidth: 200, estimatedHeight: 60 });
+  const pendingMode = useRef<(() => void) | null>(null);
+  const finishPendingMode = () => {
+    const fn = pendingMode.current;
+    pendingMode.current = null;
+    fn?.();
+  };
 
   // Prefetch detailed route samples immediately in background so replay is ready
   useEffect(() => {
@@ -77,6 +94,17 @@ const s=useThemedStyles(sThemes);
 
   if (!coordinates || !activity) return null;
 
+  const switchImmersiveMode = () => {
+    const next = mode === "3d-flyover" ? "2d-overview" : "3d-flyover";
+    const apply = () => {
+      setMode(next);
+      controllerRef?.current?.setMode(next);
+    };
+    if (Platform.OS === "ios") pendingMode.current = apply;
+    else apply();
+    closeLayerMenu();
+  };
+
   const player = unavailable ? (
     <View style={[s.unavailableBox, immersive && { flex: 1, padding: 0 }]}>
       <RouteStaticPreview coordinates={coordinates} width={immersive ? window.width : undefined} height={immersive ? window.height : 260} strokeColor="176c75" showPlayBadge={false} />
@@ -86,12 +114,15 @@ const s=useThemedStyles(sThemes);
     </View>
   ) : (
     <RouteTimelapse
-      key={`${activity.id}:${mode}:${fullScreen ? "full" : "inline"}`}
+      key={immersive ? activity.id : `${activity.id}:${mode}:${fullScreen ? "full" : "inline"}`}
       coordinates={coordinates}
       routeReplay={routeReplay ?? undefined}
       units={units}
-      mode={mode}
-      hudInsets={immersive ? { top: insets.top + 64, bottom: window.height * .42 + 12 } : undefined}
+      mode={immersive ? initialMode : mode}
+      hideControls={hideControls}
+      hudInsets={immersive ? { top: insets.top + 64, bottom: 124 + insets.bottom } : undefined}
+      onStateChange={onPlaybackState}
+      controllerRef={controllerRef}
       onUnavailable={() => setUnavailable(true)}
       style={immersive ? [s.fullPlayer, { borderRadius: 0 }] : fullScreen ? s.fullPlayer : s.inlinePlayer}
     />
@@ -99,9 +130,32 @@ const s=useThemedStyles(sThemes);
 
   if (immersive) return <View style={StyleSheet.absoluteFill}>
     {player}
-    <View style={{ position: "absolute", top: insets.top + 8, right: 16, width: 160 }}>
-      <FocusSegments label="Replay mode" value={mode} options={[{ value: "2d-overview", label: "2D" }, { value: "3d-flyover", label: "3D" }]} onChange={value => setMode(value as typeof mode)}/>
-    </View>
+    {!unavailable && (
+      <View ref={layerAnchorRef} collapsable={false} style={{ position: "absolute", top: insets.top + 8, right: 16, zIndex: 40 }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Map layers"
+          accessibilityState={{ expanded: layerMenuOpen }}
+          hitSlop={8}
+          onPress={toggleLayerMenu}
+          style={({ pressed }) => [{
+            minHeight: 44,
+            minWidth: 44,
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: 999,
+            backgroundColor: "rgba(20, 20, 19, 0.72)",
+            borderWidth: 1,
+            borderColor: "rgba(255, 255, 255, 0.2)",
+          }, pressed && { opacity: 0.75 }]}
+        >
+          <AppIcon name="layers" size={22} color="#ffffff" />
+        </Pressable>
+        <AnchoredMenu open={layerMenuOpen} onClose={closeLayerMenu} onDismiss={finishPendingMode} menuLayout={layerMenuLayout} style={{ width: layerMenuLayout?.width ?? 200 }} accessibilityLabel="Close map layers">
+          <SettingsToggleRow label="3D view" value={mode === "3d-flyover"} onChange={switchImmersiveMode} />
+        </AnchoredMenu>
+      </View>
+    )}
   </View>;
 
   return (

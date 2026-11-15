@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { RouteControlsHud } from "./route-controls-hud";
 const noop = () => {};
-const props = { isPlaying: false, isFinished: false, progress: .5, currentDistanceKm: 1, totalDistanceKm: 2, mode: "2d-overview" as const, isRecordingVideo: false, onTogglePlay: noop, onReplay: noop, onSeek: noop, onToggleMode: noop, onExportVideo: noop, onSnapImage: noop };
+const props = { isPlaying: false, isFinished: false, progress: .5, currentDistanceKm: 1, totalDistanceKm: 2, isRecordingVideo: false, onTogglePlay: noop, onReplay: noop, onSeek: noop, onExportVideo: noop };
 it("displays recorded measurements with athlete units, including zero speed", () => {
   const metric = renderToStaticMarkup(createElement(RouteControlsHud, { ...props, hasReplaySamples: true, replaySample: { progress: .5, elapsedSec: 119.9, speedMps: 0, heartRate: 140, cadence: 172, cadenceUnit: "spm" } }));
   expect(metric).toContain("0.0 km/h"); expect(metric).toContain("140 bpm"); expect(metric).toContain("172 spm"); expect(metric).toContain("1:59");

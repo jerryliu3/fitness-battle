@@ -2,8 +2,10 @@ import { useThemeColors } from "../theme";
 import { createThemedStyles, useThemedStyles, legacyColors, useLegacyColors } from "../theme";
 import { textStyle } from "./section";
 import { useBootImage } from "./boot-readiness";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View, Text, Image, TouchableOpacity, ActivityIndicator, type StyleProp, type ViewStyle } from "react-native";
+
+const loadedPreviewUrls = new Set<string>();
 import Svg, { Polyline, Circle } from "react-native-svg";
 import {
   buildMapboxStaticImageUrl,
@@ -56,9 +58,6 @@ export function RouteStaticPreview({
 const colors=useLegacyColors();
 const styles=useThemedStyles(stylesThemes);
 
-  const [loading, setLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-
   // Active token (explicit prop override takes priority)
   const token =
     mapboxToken !== undefined
@@ -106,7 +105,16 @@ const styles=useThemedStyles(stylesThemes);
     token,
   ]);
 
+  const [loading, setLoading] = useState(() => !(imageUrl && loadedPreviewUrls.has(imageUrl)));
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+    setLoading(!(imageUrl && loadedPreviewUrls.has(imageUrl)));
+  }, [imageUrl]);
+
   const imageSettled = useBootImage(hasError ? null : imageUrl);
+  const showSpinner = loading && !(imageUrl && loadedPreviewUrls.has(imageUrl));
 
   const content = (
     <View style={[styles.container, { aspectRatio: width / height }, style]}>
@@ -117,14 +125,26 @@ const styles=useThemedStyles(stylesThemes);
             source={{ uri: imageUrl }}
             style={styles.image}
             resizeMode="cover"
-            onLoadStart={() => setLoading(true)}
-            onLoadEnd={() => { setLoading(false); imageSettled(); }}
+            fadeDuration={0}
+            onLoadStart={() => {
+              if (imageUrl && !loadedPreviewUrls.has(imageUrl)) setLoading(true);
+            }}
+            onLoad={() => {
+              if (imageUrl) loadedPreviewUrls.add(imageUrl);
+              setLoading(false);
+              imageSettled();
+            }}
+            onLoadEnd={() => {
+              if (imageUrl) loadedPreviewUrls.add(imageUrl);
+              setLoading(false);
+              imageSettled();
+            }}
             onError={() => {
               setLoading(false);
               setHasError(true);
             }}
           />
-          {loading && (
+          {showSpinner && (
             <View style={styles.loadingOverlay}>
               <ActivityIndicator color={colors.lime} size="small" />
             </View>

@@ -9,9 +9,7 @@ describe("RouteControlsHud", () => {
     const onTogglePlay = vi.fn();
     const onReplay = vi.fn();
     const onSeek = vi.fn();
-    const onToggleMode = vi.fn();
     const onExportVideo = vi.fn();
-    const onSnapImage = vi.fn();
 
     let renderer: ReactTestRenderer;
     await act(async () => {
@@ -22,14 +20,11 @@ describe("RouteControlsHud", () => {
           progress: 0.45,
           currentDistanceKm: 3.8,
           totalDistanceKm: 8.4,
-          mode: "3d-flyover",
           isRecordingVideo: false,
           onTogglePlay,
           onReplay,
           onSeek,
-          onToggleMode,
           onExportVideo,
-          onSnapImage,
         }),
       );
     });
@@ -49,24 +44,10 @@ describe("RouteControlsHud", () => {
     });
     expect(onTogglePlay).toHaveBeenCalledTimes(1);
 
-    // 3. Check 2D / 3D mode switch
-    const mode2dBtn = renderer!.root.findByProps({ children: "2D" });
+    // 3. Check export video button
+    const exportBtn = renderer!.root.findByProps({ "aria-label": "Export Video" });
     await act(async () => {
-      mode2dBtn.props.onClick();
-    });
-    expect(onToggleMode).toHaveBeenCalledTimes(1);
-
-    // 4. Check snap image button
-    const snapBtn = renderer!.root.findByProps({ title: "Capture Instant HD Snapshot" });
-    await act(async () => {
-      snapBtn.props.onClick();
-    });
-    expect(onSnapImage).toHaveBeenCalledTimes(1);
-
-    // 5. Check export video button
-    const exportBtn = renderer!.root.findByProps({ children: "Export Video" });
-    await act(async () => {
-      exportBtn.parent?.props.onClick();
+      exportBtn.props.onClick();
     });
     expect(onExportVideo).toHaveBeenCalledTimes(1);
   });
@@ -81,15 +62,12 @@ describe("RouteControlsHud", () => {
           progress: 1.0,
           currentDistanceKm: 8.4,
           totalDistanceKm: 8.4,
-          mode: "3d-flyover",
           isRecordingVideo: true,
           recordingProgress: 0.65,
           onTogglePlay: vi.fn(),
           onReplay: vi.fn(),
           onSeek: vi.fn(),
-          onToggleMode: vi.fn(),
           onExportVideo: vi.fn(),
-          onSnapImage: vi.fn(),
         }),
       );
     });

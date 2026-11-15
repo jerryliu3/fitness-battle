@@ -18,16 +18,36 @@ import { RouteStaticPreview } from "./route-static-preview";
 import { RouteControlsHud } from "./route-controls-hud";
 import { useRouteAnimation } from "./use-route-animation";
 import {
-  captureMapSnapshot,
   saveOrShareRecordedVideo,
   startCanvasVideoRecording,
 } from "./video-export";
+
+export interface RouteTimelapseState {
+  isPlaying: boolean;
+  isFinished: boolean;
+  progress: number;
+  currentDistanceKm: number;
+  totalDistanceKm: number;
+  isRecordingVideo: boolean;
+  recordingProgress?: number;
+}
+
+export interface RouteTimelapseController {
+  play: () => void;
+  pause: () => void;
+  replay: () => void;
+  seek: (progress: number) => void;
+  exportVideo: () => void;
+  setMode: (mode: "3d-flyover" | "2d-overview") => void;
+}
 
 export interface RouteTimelapseMapProps {
   /** Array of [lng, lat] coordinates or an encoded polyline string */
   coordinates: LngLat[] | string;
   routeReplay?: RouteReplaySample[];
   hudInsets?: { top: number; bottom: number };
+  /** Hide the built-in web HUD when an external native control bar drives playback. */
+  hideControls?: boolean;
   /** Camera mode: '3d-flyover' or '2d-overview'. Default: '3d-flyover' */
   mode?: "3d-flyover" | "2d-overview";
   /** Animation duration in milliseconds. Default: 12000 (12s) */
@@ -46,12 +66,15 @@ export interface RouteTimelapseMapProps {
   units?: "us" | "metric";
   onFinish?: () => void;
   onUnavailable?: () => void;
+  onStateChange?: (state: RouteTimelapseState) => void;
+  controlRef?: React.MutableRefObject<RouteTimelapseController | null>;
 }
 
 export function RouteTimelapseMap({
   coordinates,
   routeReplay,
   hudInsets,
+  hideControls = false,
   mode: initialMode = "3d-flyover",
   durationMs = 12000,
   accentColor = "#f7c948",
@@ -62,10 +85,13 @@ export function RouteTimelapseMap({
   onFinish,
   units = "metric",
   onUnavailable,
+  onStateChange,
+  controlRef,
 }: RouteTimelapseMapProps) {
   const replaySamples = useMemo(() => normalizeRouteReplay(routeReplay), [routeReplay]);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const leaderMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mode, setMode] = useState<"3d-flyover" | "2d-overview">(initialMode);
   const [isRecordingVideo, setIsRecordingVideo] = useState(false);
@@ -109,6 +135,8 @@ export function RouteTimelapseMap({
     durationMs,
     autoPlay,
     mode,
+    leaderMarker: mapLoaded ? leaderMarkerRef.current : null,
+    hudInsets,
     onFinish,
   });
 
@@ -133,11 +161,14 @@ export function RouteTimelapseMap({
         style: mapStyle,
         center: startCoord,
         zoom: 14.5,
-        pitch: mode === "3d-flyover" ? 58 : 0,
+        pitch: mode === "3d-flyover" ? 52 : 0,
         bearing: initialBearing,
+        // Avoid continuous 300ms label fade churn as dense city tiles rotate/stream.
+        fadeDuration: 0,
+        renderWorldCopies: false,
         // CRITICAL for captureStream() video recording and toBlob() HD snapshots:
         preserveDrawingBuffer: true,
-        antialias: true,
+        antialias: false,
         ...mapboxAttributionOptions,
       });
 
@@ -156,16 +187,7 @@ export function RouteTimelapseMap({
 
     map.on("load", () => {
       window.clearTimeout(timeout);
-      // 1. Add 3D Terrain DEM source
-      map.addSource("mapbox-dem", {
-        type: "raster-dem",
-        url: "mapbox://mapbox.mapbox-terrain-dem-v1",
-        tileSize: 512,
-        maxzoom: 14,
-      });
-
       if (mode === "3d-flyover") {
-        map.setTerrain({ source: "mapbox-dem", exaggeration: 1.4 });
         map.addLayer({
           id: "sky",
           type: "sky",
@@ -237,11 +259,12 @@ export function RouteTimelapseMap({
         },
       });
 
-      // Outer glow circle
+      // Outer glow circle (used during canvas video export; hidden when synchronous DOM marker is active)
       map.addLayer({
         id: "leader-glow",
         type: "circle",
         source: "leader-source",
+        layout: { visibility: "none" },
         paint: {
           "circle-radius": 13,
           "circle-color": accentColor,
@@ -250,11 +273,12 @@ export function RouteTimelapseMap({
         },
       });
 
-      // Inner crisp circle dot
+      // Inner crisp circle dot (used during canvas video export)
       map.addLayer({
         id: "leader-dot",
         type: "circle",
         source: "leader-source",
+        layout: { visibility: "none" },
         paint: {
           "circle-radius": 6,
           "circle-color": "#ffffff",
@@ -262,6 +286,41 @@ export function RouteTimelapseMap({
           "circle-stroke-width": 3,
         },
       });
+
+      // Synchronous DOM marker projected in the exact same frame as jumpTo()
+      const markerEl = document.createElement("div");
+      markerEl.style.width = "26px";
+      markerEl.style.height = "26px";
+      markerEl.style.position = "relative";
+      markerEl.style.pointerEvents = "none";
+
+      const halo = document.createElement("div");
+      halo.style.position = "absolute";
+      halo.style.inset = "0";
+      halo.style.borderRadius = "9999px";
+      halo.style.background = accentColor;
+      halo.style.opacity = "0.4";
+      halo.style.filter = "blur(3px)";
+
+      const dot = document.createElement("div");
+      dot.style.position = "absolute";
+      dot.style.left = "50%";
+      dot.style.top = "50%";
+      dot.style.width = "12px";
+      dot.style.height = "12px";
+      dot.style.transform = "translate(-50%, -50%)";
+      dot.style.borderRadius = "9999px";
+      dot.style.background = "#ffffff";
+      dot.style.border = `3px solid ${accentColor}`;
+      dot.style.boxSizing = "content-box";
+
+      markerEl.appendChild(halo);
+      markerEl.appendChild(dot);
+
+      const marker = new mapboxgl.Marker({ element: markerEl, anchor: "center" })
+        .setLngLat(startCoord)
+        .addTo(map);
+      leaderMarkerRef.current = marker;
 
       setMapLoaded(true);
     });
@@ -275,6 +334,8 @@ export function RouteTimelapseMap({
       window.clearTimeout(timeout);
       resize.disconnect();
       setMapLoaded(false);
+      leaderMarkerRef.current?.remove();
+      leaderMarkerRef.current = null;
       map.remove();
       mapRef.current = null;
     };
@@ -309,26 +370,30 @@ export function RouteTimelapseMap({
       });
     }
 
-    const bounds = calculateRouteBounds(rawCoords);
-    map.fitBounds(
-      [
-        [bounds[0], bounds[1]],
-        [bounds[2], bounds[3]],
-      ],
-      { padding: { top: 60, bottom: 160, left: 40, right: 40 }, duration: 0 },
-    );
-  }, [mapLoaded, rawCoords]);
+    leaderMarkerRef.current?.setLngLat(rawCoords[0]);
 
-  // Handle dynamic switching between 3D terrain and 2D overview
-  const toggleMode = useCallback(() => {
-    const nextMode = mode === "3d-flyover" ? "2d-overview" : "3d-flyover";
+    if (!autoPlay) {
+      const bounds = calculateRouteBounds(rawCoords);
+      map.fitBounds(
+        [
+          [bounds[0], bounds[1]],
+          [bounds[2], bounds[3]],
+        ],
+        {
+          padding: hudInsets
+            ? { top: hudInsets.top + 16, bottom: hudInsets.bottom + 20, left: 40, right: 40 }
+            : { top: 60, bottom: 160, left: 40, right: 40 },
+          duration: 0,
+        },
+      );
+    }
+  }, [mapLoaded, rawCoords, autoPlay, hudInsets?.top, hudInsets?.bottom]);
+
+  const applyMode = useCallback((nextMode: "3d-flyover" | "2d-overview") => {
     setMode(nextMode);
-
     const map = mapRef.current;
     if (!map || !mapLoaded) return;
-
     if (nextMode === "3d-flyover") {
-      map.setTerrain({ source: "mapbox-dem", exaggeration: 1.4 });
       if (!map.getLayer("sky")) {
         map.addLayer({
           id: "sky",
@@ -340,15 +405,12 @@ export function RouteTimelapseMap({
           },
         });
       }
-      map.easeTo({ pitch: 58, duration: 800 });
+      if (!isPlaying) map.easeTo({ pitch: 52, duration: 800 });
     } else {
-      map.setTerrain(null);
-      if (map.getLayer("sky")) {
-        map.removeLayer("sky");
-      }
-      map.easeTo({ pitch: 0, bearing: 0, duration: 800 });
+      if (map.getLayer("sky")) map.removeLayer("sky");
+      if (!isPlaying) map.easeTo({ pitch: 0, duration: 800 });
     }
-  }, [mode, mapLoaded]);
+  }, [mapLoaded, isPlaying]);
 
   // Video Recording Flow
   const handleExportVideo = useCallback(async () => {
@@ -359,6 +421,10 @@ export function RouteTimelapseMap({
       setIsRecordingVideo(true);
       pause();
 
+      if (leaderMarkerRef.current) leaderMarkerRef.current.getElement().style.display = "none";
+      if (map.getLayer("leader-glow")) map.setLayoutProperty("leader-glow", "visibility", "visible");
+      if (map.getLayer("leader-dot")) map.setLayoutProperty("leader-dot", "visibility", "visible");
+
       const canvas = map.getCanvas();
       const session = startCanvasVideoRecording(canvas);
 
@@ -368,12 +434,12 @@ export function RouteTimelapseMap({
 
       // Play through route with deterministic frame pacing for export
       const totalSteps = 120; // 120 frames
-      const stepDuration = Math.max( durationMs / totalSteps, 30);
+      const stepDuration = Math.max(durationMs / totalSteps, 30);
 
       for (let i = 0; i <= totalSteps; i++) {
         if (!isMountedRef.current) break;
         const t = i / totalSteps;
-        applyFrame(t, false);
+        applyFrame(t, false, stepDuration / 1000, true);
         setRecordingProgress(t);
         // Small delay to let WebGL composite each frame into the stream
         await new Promise((r) => setTimeout(r, stepDuration));
@@ -396,6 +462,9 @@ export function RouteTimelapseMap({
     } catch (err) {
       console.error("Video export encountered an error:", err);
     } finally {
+      if (leaderMarkerRef.current) leaderMarkerRef.current.getElement().style.display = "";
+      if (map.getLayer("leader-glow")) map.setLayoutProperty("leader-glow", "visibility", "none");
+      if (map.getLayer("leader-dot")) map.setLayoutProperty("leader-dot", "visibility", "none");
       setIsRecordingVideo(false);
       setRecordingProgress(undefined);
     }
@@ -408,19 +477,34 @@ export function RouteTimelapseMap({
     durationMs,
   ]);
 
-  // Instant HD Snapshot Flow
-  const handleSnapImage = useCallback(async () => {
-    const map = mapRef.current;
-    if (!map) return;
-    try {
-      const canvas = map.getCanvas();
-      await captureMapSnapshot(canvas, `route-snapshot-${Date.now()}.png`);
-    } catch (err) {
-      console.error("Failed to capture snapshot:", err);
-    }
-  }, []);
-
   const activeSample = routeReplayAt(replaySamples, progress);
+
+  useEffect(() => {
+    if (!controlRef) return;
+    controlRef.current = {
+      play,
+      pause,
+      replay,
+      seek,
+      exportVideo: handleExportVideo,
+      setMode: applyMode,
+    };
+    return () => {
+      controlRef.current = null;
+    };
+  }, [controlRef, play, pause, replay, seek, handleExportVideo, applyMode]);
+
+  useEffect(() => {
+    onStateChange?.({
+      isPlaying,
+      isFinished,
+      progress,
+      currentDistanceKm,
+      totalDistanceKm,
+      isRecordingVideo,
+      recordingProgress,
+    });
+  }, [onStateChange, isPlaying, isFinished, progress, currentDistanceKm, totalDistanceKm, isRecordingVideo, recordingProgress]);
 
   return (
     <div
@@ -448,7 +532,7 @@ export function RouteTimelapseMap({
       ) : null}
 
       {/* Floating Mobile Control HUD */}
-      {mapLoaded && (
+      {mapLoaded && !hideControls && (
         <div className="absolute bottom-3 left-3 right-3 sm:left-4 sm:right-4 z-10" style={hudInsets ? { bottom: hudInsets.bottom } : undefined}>
           <RouteControlsHud
             isPlaying={isPlaying}
@@ -458,16 +542,13 @@ export function RouteTimelapseMap({
             hasReplaySamples={false}
             currentDistanceKm={currentDistanceKm}
             totalDistanceKm={totalDistanceKm}
-            mode={mode}
             units={units}
             isRecordingVideo={isRecordingVideo}
             recordingProgress={recordingProgress}
             onTogglePlay={isPlaying ? pause : play}
             onReplay={replay}
             onSeek={seek}
-            onToggleMode={toggleMode}
             onExportVideo={handleExportVideo}
-            onSnapImage={handleSnapImage}
           />
         </div>
       )}

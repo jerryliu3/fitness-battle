@@ -4,7 +4,7 @@ import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 import { encodePolyline, freshState, type SyncReviewReceipt } from "@fitness-battle/shared";
 vi.mock("../ui/sync-energy-core", () => ({ SyncEnergyCore: "SyncEnergyCore" }));
-vi.mock("../ui/material-back", () => ({ MaterialBack: "MaterialBack" }));
+vi.mock("../ui/material-back", () => ({ MaterialBack: "MaterialBack", MaterialClose: "MaterialClose" }));
 vi.mock("../ui/compete-sheet", () => ({ CompeteSheet: "CompeteSheet" }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("../ui/activity-route", () => ({ ActivityRoute: "ActivityRoute" }));
@@ -87,6 +87,9 @@ it("a native full-screen swipe confirms the selected activities once without nav
   const map = renderer!.root.findByType("RouteStaticPreview" as never);
   expect(map.props.width).toBe(342);
   expect(map.props.height).toBe(135);
+  const carousel = renderer!.root.findAllByType("ScrollView" as never).find(node => node.props.horizontal)!;
+  expect(carousel.props.scrollEnabled).toBe(false);
+  expect(carousel.props.contentContainerStyle).toEqual(expect.objectContaining({ justifyContent: "center" }));
   const summary = renderer!.root.findAllByType("ScrollView" as never).find(node => !node.props.horizontal)!;
   expect(summary.props.scrollEnabled).toBe(false);
   const details = renderer!.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "View Running activity details")!;
@@ -94,7 +97,9 @@ it("a native full-screen swipe confirms the selected activities once without nav
   expect(renderer!.root.findByType("ActivityRoute" as never).props.immersive).toBe(true);
   expect(renderer!.root.findByType("MaterialBack" as never).props.label).toBe("Back to activities");
   await act(async () => renderer!.root.findByType("MaterialBack" as never).props.onPress());
-  expect(renderer!.root.findAllByType("ActivityRoute" as never)).toHaveLength(0);
+  const cachedRoute = renderer!.root.findByType("ActivityRoute" as never);
+  expect(cachedRoute.parent?.props.pointerEvents).toBe("none");
+  expect(cachedRoute.parent?.props.accessibilityElementsHidden).toBe(true);
   const slider = renderer!.root
     .findAllByType("View" as never)
     .find((n) => n.props.onResponderRelease)!;
