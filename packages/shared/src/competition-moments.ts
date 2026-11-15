@@ -17,7 +17,8 @@ export interface CompetitionMoment {
 }
 
 /** Separate from the browsable field: visiting a tab must never consume an event. */
-export const momentStorageKey = (arenaKey: string) => `moment:v1:${arenaKey}`;
+/** v2: lane baselines use hrs/steps volumes instead of legacy effort points. */
+export const momentStorageKey = (arenaKey: string) => `moment:v2:${arenaKey}`;
 
 export function competitionMomentSnapshots(state: CompeteState, account: string) {
   const now = competeNow(state);

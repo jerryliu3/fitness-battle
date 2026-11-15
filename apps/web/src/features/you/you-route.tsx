@@ -152,7 +152,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
           localStorage.removeItem(`fb-compete-v1:${user.id}:recovery`);
           localStorage.removeItem(`fb:field-seen:v1:${user.id}`);
           for (const key of Object.keys(localStorage)) {
-            if (key.startsWith(`moment:v1:fb-arena-baseline:${user.id}:`)) localStorage.removeItem(key);
+            if (/^moment:v[12]:fb-arena-baseline:/.test(key)) localStorage.removeItem(key);
           }
         } catch {
           // ignore
