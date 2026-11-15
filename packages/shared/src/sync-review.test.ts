@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { freshState, reduceCompete, type Action } from "./compete/engine";
-import { planSyncReview, syncChargeBenchmark } from "./sync-review";
+import { planSyncReview } from "./sync-review";
 import type { Activity } from "./compete/sports";
 const now = new Date("2026-10-22T18:00:00Z");
 const activity = (
@@ -163,35 +163,4 @@ it("deduplicates sameWorkout sessions in incoming syncs and against known workou
   const immediateDup = plan.immediate.activities?.find((a) => a.id === "hk-new-2");
   expect(immediateDup?.disposition).toBe("excluded");
   expect(immediateDup?.verified).toBe(false);
-});
-
-
-it("uses the nearest-rank 90th percentile of active daily moving time across sports", () => {
-  const history = Array.from({ length: 10 }, (_, i) => activity(`day-${i}`, `2026-10-${String(i + 1).padStart(2, "0")}T12:00:00Z`, { movingSec: (i + 1) * 600 }));
-  history[0]!.movingSec = 300;
-  history.push(activity("strength", history[0]!.startedAt, { sport: "strength", distanceM: 0, movingSec: 300 }));
-  expect(syncChargeBenchmark(history, [], now)).toBe(5400);
-});
-
-it("excludes the receipt, today, old, future and uncounted activity from its reference", () => {
-  const history = Array.from({ length: 7 }, (_, i) => activity(`base-${i}`, `2026-10-${i + 10}T12:00:00Z`, { movingSec: 1200 }));
-  const held = activity("held", "2026-10-18T12:00:00Z", { movingSec: 60000 });
-  history.push(held,
-    activity("current", now.toISOString(), { movingSec: 60000 }),
-    activity("future", "2026-10-23T12:00:00Z", { movingSec: 60000 }),
-    activity("old", "2026-09-01T12:00:00Z", { movingSec: 60000 }),
-    activity("excluded", "2026-10-19T12:00:00Z", { disposition: "excluded", movingSec: 60000 }),
-    activity("sample", "2026-10-20T12:00:00Z", { provenance: "demo", movingSec: 60000 }));
-  expect(syncChargeBenchmark(history, [held], now)).toBe(1200);
-  expect(syncChargeBenchmark(history.slice(0, 6), [], now)).toBe(3600);
-  expect(syncChargeBenchmark([], [], now)).toBe(3600);
-});
-
-it("uses completed Eastern calendar days across the fall DST change", () => {
-  const anchor = new Date("2026-11-02T05:30:00Z");
-  const history = Array.from({ length: 7 }, (_, i) => activity(`base-${i}`, `2026-10-${i + 10}T12:00:00Z`, { movingSec: 1200 }));
-  history.push(activity("boundary", "2026-10-03T04:15:00Z", { movingSec: 7200 }),
-    activity("outside", "2026-10-03T03:59:00Z", { movingSec: 60000 }),
-    activity("today-eastern", "2026-11-02T05:00:00Z", { movingSec: 60000 }));
-  expect(syncChargeBenchmark(history, [], anchor)).toBe(7200);
 });

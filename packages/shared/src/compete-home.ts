@@ -15,7 +15,7 @@ export const COMPETE_ICONS = {
   special: APP_ICON_PATHS.special,
   wreath: "M10 21C3 18 2 10 6 4m8 17c7-3 8-11 4-17M5 8C1 8 2 4 3 3c3 0 4 2 2 5Zm-1 5c-4-1-4-4-3-5 3 1 4 2 3 5Zm2 5c-4 0-5-3-5-4 3 0 5 1 5 4Zm13-10c4 0 3-4 2-5-3 0-4 2-2 5Zm1 5c4-1 4-4 3-5-3 1-4 2-3 5Zm-2 5c4 0 5-3 5-4-3 0-5 1-5 4Z",
   sleep: APP_ICON_PATHS.sleep,
-  other: APP_ICON_PATHS.pulse,
+  other: APP_ICON_PATHS.steps,
   trophy: APP_ICON_PATHS.trophy,
   crown: APP_ICON_PATHS.crown,
   crew: APP_ICON_PATHS.crew,
