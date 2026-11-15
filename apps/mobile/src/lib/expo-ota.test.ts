@@ -30,11 +30,11 @@ describe("applyExpoUpdateOnLaunch", () => {
     expect(updates.checkForUpdateAsync).not.toHaveBeenCalled();
   });
 
-  it("downloads and reloads when an update is available", async () => {
+  it("downloads updates for the next launch without reloading", async () => {
     updates.checkForUpdateAsync.mockResolvedValue({ isAvailable: true });
     await applyExpoUpdateOnLaunch();
     expect(updates.fetchUpdateAsync).toHaveBeenCalled();
-    expect(updates.reloadAsync).toHaveBeenCalled();
+    expect(updates.reloadAsync).not.toHaveBeenCalled();
   });
 
   it("does nothing when the bundle is current", async () => {

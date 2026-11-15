@@ -143,7 +143,7 @@ Optional: set `EXPO_ACCESS_TOKEN` on the web server (Expo → Access tokens) for
 | --- | --- |
 | Client | `expo-updates` + `app.json` → `updates.url`, `runtimeVersion: { policy: "appVersion" }` |
 | Build channel | `eas.json` → `build.<profile>.channel` (`production` for TestFlight / App Store) |
-| Launch apply | `applyExpoUpdateOnLaunch()` in `app/_layout.tsx` — check, download, reload before product UI |
+| Launch apply | `applyExpoUpdateOnLaunch()` in `app/_layout.tsx` — check, download in background; bundle applies on next cold launch |
 | CI | [`.github/workflows/eas-ota-production.yml`](../.github/workflows/eas-ota-production.yml) on `main` when `apps/mobile`, `packages/shared`, or `packages/pursuit` change |
 
 **Runtime rule:** OTA bundles apply only when `app.json` `version` matches the installed binary. Bump `version` and run a **new store build** when you change native code or want a clean runtime fence.
