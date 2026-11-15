@@ -1,109 +1,99 @@
-vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: vi.fn() }) }));
-import { createElement } from "react";
+import { createElement, type ReactNode } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { applyDebugEvent, defaultFieldAppearance, freshState, localCompetitionReplay, DEMO_RACE_COURSE, type CompetitionReplaySelection } from "@fitness-battle/shared";
-const mock = vi.hoisted(() => ({ debug: true, request: vi.fn(), open: undefined as undefined | ((value: boolean) => void) }));
-vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "signed-in-athlete" }, accessToken: "test-token", offlineMode: false }) }));
-vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ debugActive: mock.debug }) }));
-vi.mock("../lib/api", () => ({ requestApi: mock.request }));
-vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "https://example.test" } }));
+import { applyDebugEvent, freshState, type CompetitionReplaySelection } from "@fitness-battle/shared";
+
+const mock = vi.hoisted(() => ({ open: false }));
+
+vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "signed-in-athlete" } }) }));
+vi.mock("../lib/haptics", () => ({ playCue() {} }));
+vi.mock("../theme", () => ({
+  useAppTheme: () => ({ mode: "light" }),
+  useThemeColors: () => ({ white: "#ffffff" }),
+}));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
-vi.mock("../ui/lane-track", () => ({ LaneTrack: "LaneTrack" }));
-vi.mock("../ui/portrait-field", () => ({ PortraitField: "PortraitField" }));
-vi.mock("../ui/field-course", () => ({ useFieldAppearance: () => [defaultFieldAppearance] }));
 vi.mock("../ui/section", () => ({ AppText: "AppText", textStyle: () => ({}) }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
-vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
-vi.mock("../ui/focus", () => ((()=>{const mock={ FocusButton: "FocusButton", FocusSegments: "FocusSegments", f: {} };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
+vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton", useFocusStyles: () => ({ safe: {} }) }));
+vi.mock("../ui/compete-sheet", () => ({
+  CompeteSheet: ({ overview, children, ...props }: { overview: ReactNode; children: ReactNode }) =>
+    createElement("CompeteSheet", props, overview, children),
+}));
 vi.mock("expo-status-bar", () => ({ StatusBar: "StatusBar" }));
-vi.mock("react-native-safe-area-context", () => ({ SafeAreaProvider: "SafeAreaProvider", SafeAreaView: "SafeAreaView" }));
-vi.mock("react-native", () => ({useColorScheme: () => "light",  Modal: "Modal", View: "View", Text: "Text", Pressable: "Pressable", StyleSheet: { create: (value: unknown) => value }, PanResponder: { create: () => ({ panHandlers: {} }) }, AppState: { addEventListener: () => ({ remove() {} }) } }));
-vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
-vi.mock("./use-competition-course", () => ({ useCompetitionCourse: () => ({ course: DEMO_RACE_COURSE, error: "", retry() {} }) }));
-vi.mock("../ui/field-view-switcher", () => ({ FieldViewSwitcher: "FieldViewSwitcher" }));
+vi.mock("react-native-safe-area-context", () => ({
+  SafeAreaProvider: "SafeAreaProvider",
+  SafeAreaView: "SafeAreaView",
+  useSafeAreaInsets: () => ({ top: 44, bottom: 34 }),
+}));
+vi.mock("react-native", () => ({
+  Modal: ({ visible, children }: { visible: boolean; children: ReactNode }) =>
+    visible ? createElement("Modal", null, children) : null,
+  Pressable: "Pressable",
+  Text: "Text",
+  View: "View",
+}));
+vi.mock("./competition-timeline-context", () => ({
+  CompetitionTimelineProvider: ({ children, ...props }: { children: ReactNode }) =>
+    createElement("CompetitionTimelineProvider", props, children),
+  CompetitionTimelineControls: () => createElement("CompetitionTimelineControls"),
+}));
+vi.mock("./competition-field", () => ({ CompetitionField: "CompetitionField" }));
+vi.mock("./competition-panel", () => ({
+  CompetitionPanel: ({ standings, activity, ...props }: { standings: ReactNode; activity: (visible: boolean) => ReactNode }) =>
+    createElement("CompetitionPanel", props, standings, activity(true)),
+}));
+vi.mock("./race-updates", () => ({ RaceUpdates: "RaceUpdates" }));
+
 import { CompetitionReplayButton } from "./competition-replay";
+
 const state = applyDebugEvent(freshState(new Date("2026-10-25T18:00:00Z")), "overtake-combo", "signed-in-athlete").state;
-const selection: CompetitionReplaySelection = { sport: "running", track: "verified", periodStart: "2026-10-19T04:00:00.000Z", periodEnd: "2026-10-26T04:00:00.000Z" };
+const selection: CompetitionReplaySelection = {
+  sport: "running",
+  track: "verified",
+  periodStart: "2026-10-19T04:00:00.000Z",
+  periodEnd: "2026-10-26T04:00:00.000Z",
+};
+
 let renderer: ReactTestRenderer;
+
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  mock.debug = true;
-  mock.request.mockReset();
+  mock.open = false;
 });
+
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
   vi.unstubAllGlobals();
 });
-async function open() {
-  await act(async () => { renderer = create(createElement(CompetitionReplayButton, { state, selection, dimension: "2d" })); });
-  await act(async () => renderer.root.findByType("FocusButton" as never).props.onPress());
-}
-it("uses the local practice ledger when signed in with Debug active and reloads from the server after reset", async () => {
-  await open();
-  expect(renderer.root.findByType("StatusBar" as never).props.style).toBe("dark");
-  expect(mock.request).not.toHaveBeenCalled();
-  const field = () => renderer.root.findByType("LaneTrack" as never);
-  expect(field().props.lanes.map((lane: { id: string }) => lane.id).sort()).toEqual(localCompetitionReplay(state, selection).athletes.map(a => a.id).sort());
-  mock.debug = false;
-  mock.request.mockResolvedValue(localCompetitionReplay(state, selection));
-  await act(async () => renderer.update(createElement(CompetitionReplayButton, { state, selection, dimension: "2d" })));
-  expect(mock.request).toHaveBeenCalledTimes(1);
-  expect(mock.request.mock.calls[0][2]).toContain("/api/compete/replay?");
-});
-it("keeps a real authenticated field lookup failure visible instead of substituting a local preview", async () => {
-  mock.debug = false;
-  mock.request.mockRejectedValue(new Error("field_not_found"));
-  await open();
-  expect(mock.request).toHaveBeenCalledTimes(1);
-  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(0);
-  expect(renderer.root.findAllByType("FocusButton" as never).some(button => button.props.label === "Retry")).toBe(true);
-});
 
-it("uses replay totals in 4D, seeks backward and retains the course across modes", async () => {
-  mock.debug = false;
-  const replay = { ...localCompetitionReplay(state, selection), athletes: [{ id: "you", name: "You", you: true }], events: [{ id: "run", athleteId: "you", at: "2026-10-24T12:00:00Z", distanceM: 1000, movingSec: 300, effort: 1, simulated: false }] };
-  mock.request.mockResolvedValue(replay);
-  await open();
-  const modes = () => renderer.root.findByType("FieldViewSwitcher" as never);
-  await act(async () => modes().props.onChange("4d"));
-  const map = () => renderer.root.findByType("GeographicCourse" as never);
-  const course = DEMO_RACE_COURSE;
-  expect(map().props.onCourseChange).toBeUndefined();
-  expect(map().props.course).toBe(course);
-  expect(map().props.lanes.every((lane: { value: number }) => lane.value === 0)).toBe(true);
-  const timeline = () => renderer.root.findByProps({ accessibilityLabel: "Competition replay timeline" });
-  const latest = timeline().props.accessibilityValue.max;
-  await act(async () => timeline().props.onAccessibilityAction({ nativeEvent: { actionName: "increment" } }));
-  expect(latest).toBeGreaterThan(0);
-  expect(map().props.lanes.some((lane: { value: number }) => lane.value > 0)).toBe(true);
-  await act(async () => timeline().props.onAccessibilityAction({ nativeEvent: { actionName: "decrement" } }));
-  expect(map().props.lanes.every((lane: { value: number }) => lane.value === 0)).toBe(true);
-  await act(async () => modes().props.onChange("3d"));
-  expect(renderer.root.findAllByType("GeographicCourse" as never)).toHaveLength(0);
-  await act(async () => modes().props.onChange("4d"));
-  expect(map().props.course).toBe(course);
-});
-
-it("follows the moving opponent and holds Fixed through subsequent events", async () => {
-  mock.debug = false;
-  mock.request.mockResolvedValue({ ...localCompetitionReplay(state, selection),
-    athletes: [{ id: "you", name: "You", you: true }, { id: "peer", name: "Peer", you: false }],
-    events: [
-      { id: "peer-run", athleteId: "peer", at: "2026-10-24T10:00:00Z", distanceM: 1000, movingSec: 300, effort: 1 },
-      { id: "your-run", athleteId: "you", at: "2026-10-24T11:00:00Z", distanceM: 2000, movingSec: 600, effort: 2 },
-    ],
+it("opens full-screen Compete UI starting replay from the beginning with timeline sheet, standings, feed, and exit", async () => {
+  await act(async () => {
+    renderer = create(createElement(CompetitionReplayButton, { state, selection, label: "Replay this round", variant: "link" }));
   });
-  await open();
-  const field = () => renderer.root.findByType("LaneTrack" as never);
-  const timeline = () => renderer.root.findByProps({ accessibilityLabel: "Competition replay timeline" });
-  await act(async () => timeline().props.onAccessibilityAction({ nativeEvent: { actionName: "increment" } }));
-  expect(field().props.selectedId).toBe("peer");
-  const toggle = renderer.root.findByProps({ accessibilityLabel: "Camera: Follow athlete" });
-  await act(async () => toggle.props.onPress());
-  const held = field().props.view.center;
-  await act(async () => timeline().props.onAccessibilityAction({ nativeEvent: { actionName: "increment" } }));
-  expect(field().props.view.center).toBe(held);
-  await act(async () => renderer.root.findByProps({ accessibilityLabel: "Camera: Fixed" }).props.onPress());
-  expect(field().props.selectedId).toBe("you");
+  expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(0);
+
+  await act(async () => renderer.root.findByType("Pressable" as never).props.onPress());
+
+  const provider = renderer.root.findByType("CompetitionTimelineProvider" as never);
+  expect(provider.props.selection).toEqual(selection);
+  expect(provider.props.replay).toBe(true);
+  expect(provider.props.enabled).toBe(true);
+
+  const fields = renderer.root.findAllByType("CompetitionField" as never);
+  expect(fields).toHaveLength(2);
+  expect(fields[0].props.persistent).toBe(true);
+  expect(fields[0].props.backgroundMode).toBe(true);
+  expect(fields[0].props.focusedOverride).toBe(true);
+  expect(fields[0].props.periodOverride.startsAt.toISOString()).toBe(selection.periodStart);
+  expect(fields[1].props.standingsOnly).toBe(true);
+
+  expect(renderer.root.findByType("CompeteSheet" as never).props.scrollable).toBe(true);
+  expect(renderer.root.findAllByType("CompetitionTimelineControls" as never)).toHaveLength(1);
+  expect(renderer.root.findByType("RaceUpdates" as never).props.sport).toBe("running");
+
+  await act(async () => fields[1].props.onFocusAthlete("peer-1"));
+  expect(renderer.root.findAllByType("CompetitionField" as never)[0].props.externalAthleteFocus?.id).toBe("peer-1");
+
+  await act(async () => renderer.root.findAllByType("CompetitionField" as never)[0].props.onExit());
+  expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(0);
 });

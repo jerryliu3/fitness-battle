@@ -17,6 +17,7 @@ import {
   competitionMomentScene,
   competitionTrack,
   competePeriodWindow,
+  nextCompetitionReplaySpeed,
   weeklyBoard,
   type ArenaLane,
   type RaceCourse,
@@ -98,6 +99,7 @@ export function CompetitionMoment({
 
   const [progress, setProgress] = useState(reduced ? 1 : 0);
   const [playing, setPlaying] = useState(autoStart);
+  const [speed, setSpeed] = useState(1);
   const [replayGeneration, setReplayGeneration] = useState(0);
   const previousCount = useRef(0);
   const confirmed = useRef(false);
@@ -118,9 +120,9 @@ export function CompetitionMoment({
     }
     if (!playing || progressRef.current >= 1 || (viewDimension === "4d" && !sceneReady)) return;
     const from = progressRef.current;
-    const duration = (6500 + count * 2200) * (embedded ? 1.5 : 1);
+    const duration = ((6500 + count * 2200) * (embedded ? 1.5 : 1)) / speed;
     return startActivePlayback(duration * (1 - from), (next) => setProgress(from + (1 - from) * next));
-  }, [moment.id, reduced, count, playing, embedded, viewDimension, sceneReady, replayGeneration]);
+  }, [moment.id, reduced, count, playing, speed, embedded, viewDimension, sceneReady, replayGeneration]);
 
   const stopHaptics = useRef<() => void>(() => {});
   useEffect(() => () => stopHaptics.current(), [moment.id]);
@@ -191,7 +193,7 @@ export function CompetitionMoment({
   );
 
   const actionRow = (
-    <View style={{ flexDirection: "row", gap: 12 }}>
+    <View style={{ flexDirection: "row", gap: 10 }}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={playbackLabel}
@@ -204,6 +206,21 @@ export function CompetitionMoment({
         ]}
       >
         <AppIcon name={playbackIcon} size={20} color={c.ink} />
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Playback speed ${speed} times`}
+        onPress={() => setSpeed(nextCompetitionReplaySpeed)}
+        style={({ pressed }) => [
+          f.button,
+          f.secondary,
+          styles.speedButton,
+          pressed && { opacity: 0.78 },
+        ]}
+      >
+        <Text style={{ ...textStyle("label"), color: c.ink, fontVariant: ["tabular-nums"] }}>
+          {speed}×
+        </Text>
       </Pressable>
       <View style={{ flex: 1 }}>
         <FocusButton label={continueLabel} onPress={confirm} />
@@ -408,6 +425,10 @@ const stylesThemes = createThemedStyles((themeColors) => {
     },
     playbackButton: {
       width: 52,
+      paddingHorizontal: 0,
+    },
+    speedButton: {
+      width: 56,
       paddingHorizontal: 0,
     },
   };

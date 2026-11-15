@@ -47,7 +47,8 @@ it("reduced motion shows the final result in either direction and confirms at mo
     });
     const buttons = renderer.root.findAllByType("button");
     expect(buttons[0].props["aria-label"]).toBe("Replay");
-    expect(buttons[1].props.children).toBe("Continue");
+    expect(buttons[1].props["aria-label"]).toBe("Playback speed 1 times");
+    expect(buttons[2].props.children).toBe("Continue");
     const field = renderer.root.findByType("ArenaLanes" as never);
     expect(field.props.immersive).toBe(true);
     expect(field.props.lanes).toHaveLength(moment.lanes.length);
@@ -57,7 +58,7 @@ it("reduced motion shows the final result in either direction and confirms at mo
     expect(standings.props.ranked.length).toBeGreaterThanOrEqual(4);
     expect(renderer.root.findByType("RaceUpdates" as never).props.moment).toBe(moment);
     expect(renderer.root.findByType("FieldViewSwitcher" as never).props.compact).toBe(true);
-    await act(async () => { buttons[1].props.onClick(); buttons[1].props.onClick(); });
+    await act(async () => { buttons[2].props.onClick(); buttons[2].props.onClick(); });
     expect(done).toHaveBeenCalledTimes(1);
     await act(async () => renderer.unmount());
   }
@@ -80,8 +81,12 @@ it("autoplays immediately, supports Replay and 2D switching, and lets Continue c
     });
     const map = () => renderer.root.findByType("GeographicCourse" as never);
     const playback = () => renderer.root.findAllByType("button")[0];
+    const speed = () => renderer.root.findAllByType("button")[1];
     expect(playback().props["aria-label"]).toBe("Pause replay");
-    expect(renderer.root.findAllByType("button")[1].props.children).toBe("Continue (1 more)");
+    expect(speed().props["aria-label"]).toBe("Playback speed 1 times");
+    await act(async () => speed().props.onClick());
+    expect(speed().props["aria-label"]).toBe("Playback speed 2 times");
+    expect(renderer.root.findAllByType("button")[2].props.children).toBe("Continue (1 more)");
     await act(async () => map().props.onReady());
     await act(async () => playback().props.onClick());
     expect(playback().props["aria-label"]).toBe("Play replay");

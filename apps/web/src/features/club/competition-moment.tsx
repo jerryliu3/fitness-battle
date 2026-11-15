@@ -22,6 +22,7 @@ import {
   competitionMomentScene,
   competitionTrack,
   competePeriodWindow,
+  nextCompetitionReplaySpeed,
   rankSymbolForScore,
   weeklyBoard,
   type RaceCourse,
@@ -70,6 +71,7 @@ export function CompetitionMoment({
   const [sceneReady, setSceneReady] = useState(false);
   useEffect(() => setSceneReady(false), [viewDimension]);
   const [playing, setPlaying] = useState(autoStart);
+  const [speed, setSpeed] = useState(1);
   const [replayGeneration, setReplayGeneration] = useState(0);
   const [progress, setProgress] = useState(reduced ? 1 : 0);
   const [profileAthlete, setProfileAthlete] = useState<{
@@ -100,7 +102,7 @@ export function CompetitionMoment({
     let raf = 0;
     const from = progressRef.current;
     const start = performance.now();
-    const duration = (4200 + count * 1150) * (embedded ? 1.5 : 1) * (1 - from);
+    const duration = ((4200 + count * 1150) * (embedded ? 1.5 : 1) * (1 - from)) / speed;
     const tick = (now: number) => {
       const p = from + (1 - from) * Math.min(1, (now - start) / Math.max(duration, 1));
       setProgress(p);
@@ -108,7 +110,7 @@ export function CompetitionMoment({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [moment.id, reduced, count, playing, embedded, viewDimension, sceneReady, replayGeneration]);
+  }, [moment.id, reduced, count, playing, speed, embedded, viewDimension, sceneReady, replayGeneration]);
 
   const frame = competitionMomentScene(moment, progress);
   const summary = competitionMomentProgressSummary(moment, frame);
@@ -165,6 +167,14 @@ export function CompetitionMoment({
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d={APP_ICON_PATHS[playbackIcon]} />
           </svg>
+        </button>
+        <button
+          type="button"
+          className="fb-btn-line moment-replay-speed-btn"
+          aria-label={`Playback speed ${speed} times`}
+          onClick={() => setSpeed(nextCompetitionReplaySpeed)}
+        >
+          {speed}×
         </button>
         <button type="button" className="fb-btn" onClick={confirm}>
           {continueLabel}

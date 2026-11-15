@@ -13,7 +13,6 @@ import { GeographicCourse } from "./geographic-course";
 import { useCompetitionCourse } from "./use-competition-course";
 import { useFieldTimeline } from "./use-field-timeline";
 import { FieldTimeline } from "./field-timeline";
-import { CompetitionReplayModal } from "./competition-replay";
 import { StandingsList } from "./standings-list";
 import { AppText, textStyle } from "../ui/section";
 import { useFieldFlight } from "../ui/use-field-flight";
@@ -63,6 +62,8 @@ export function CompetitionField({
   onExit,
   onDetails,
   presentationActive,
+  periodOverride,
+  focusedOverride,
   externalAthleteFocus,
   onFocusAthlete,
   externalCourseTarget,
@@ -76,6 +77,8 @@ export function CompetitionField({
   onExit?: () => void;
   onDetails?: () => void;
   presentationActive?: boolean;
+  periodOverride?: { startsAt: Date; endsAt: Date };
+  focusedOverride?: boolean;
   onOptionsChange?: (options: ReactNode | null) => void;
   externalAthleteFocus?: { id: string; request: number } | null;
   onFocusAthlete?: (id: string) => void;
@@ -90,12 +93,12 @@ const f=useFocusStyles();
   const { blocks } = useAthleteBlocks();
   const hiddenIds = useMemo(() => blocks.map(block => block.id), [blocks]);
   const now = state ? competeNow(state) : new Date();
-  const queue = state ? competitionQueue(state, sport, now) : null;
+  const queue = !periodOverride && state ? competitionQueue(state, sport, now) : null;
   const queued = Boolean(queue && (queue.queued || queue.awaitingField));
   const queueOverlay = queued && state && !backgroundMode ? <QueuedField overlay state={state} event={sport} now={now} onCancel={() => dispatch({ type: "opt-out", sport })} /> : null;
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
-  const isFocused = (presentationActive ?? true) && shellTabFromPath(pathname)?.id === "arena";
+  const isFocused = focusedOverride ?? ((presentationActive ?? true) && shellTabFromPath(pathname)?.id === "arena");
   const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d" | "graph">(() => (state && buildArenaModel(state, undefined, track, sport)?.unit === "pts") ? "graph" : "4d");
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
 
@@ -110,7 +113,6 @@ const f=useFocusStyles();
     return () => onOptionsChange(null);
   }, [onOptionsChange, sceneDimension, queued, sport]);
   const [courseFlat, setCourseFlat] = useState(false);
-  const [courseReplayOpen, setCourseReplayOpen] = useState(false);
   const [expanded, setExpanded] = useState(persistent);
   const [leadersHeight, setLeadersHeight] = useState(0);
   const [spotlightCollapsed, setSpotlightCollapsed] = useState(false);
@@ -153,7 +155,7 @@ const f=useFocusStyles();
     () => (state ? buildArenaModel(state, undefined, track, sport) : null),
     [state, track, sport],
   );
-  const period = state ? competePeriodWindow(state, competeNow(state), sport) : null;
+  const period = periodOverride ?? (state ? competePeriodWindow(state, competeNow(state), sport) : null);
   const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(sport, period?.startsAt.toISOString() ?? "", period?.endsAt.toISOString() ?? "", debugActive, !standingsOnly && sceneDimension === "4d" && (persistent || isFocused));
   useEffect(() => setCourseTarget(null), [accountKey, sport, period?.startsAt.getTime(), liveArena?.unit]);
   const sharedTimeline = useCompetitionTimeline();
@@ -171,7 +173,7 @@ const f=useFocusStyles();
   useEffect(() => { if (externalAthleteFocus && !hiddenIds.includes(externalAthleteFocus.id)) { setSelectedId(externalAthleteFocus.id); const lane = arena?.lanes.find(item => item.id === externalAthleteFocus.id); if (lane) setCenter(lane.values[2]); setCourseTarget(null); setFocusRequest(value => value + 1); } }, [externalAthleteFocus, hiddenIds]);
   const defaultSpan = fieldDefaultSpan(arena?.unit ?? "km");
   const viewSpan = span ?? defaultSpan;
-  useEffect(() => { if (!isFocused) { setCourseReplayOpen(false); if (!persistent) setExpanded(false); } }, [isFocused, persistent]);
+  useEffect(() => { if (!isFocused && !persistent) setExpanded(false); }, [isFocused, persistent]);
   const me = arena?.lanes.find((l) => l.you);
   const total = me?.values[2] ?? 0;
 
@@ -280,7 +282,7 @@ const f=useFocusStyles();
       ) : null}
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <View pointerEvents={expanded ? "auto" : "none"} style={{ flex: 1 }}>
-          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={courseReplay ? false : true} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseReplay ? undefined : courseTarget} replay={courseReplay} onReplay={sharedTimeline ? timeline.toggle : backgroundMode ? () => setCourseReplayOpen(true) : timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
+          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={courseReplay ? false : true} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseReplay ? undefined : courseTarget} replay={courseReplay} onReplay={timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
           <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>Tap to open full screen</Text></View>
@@ -404,7 +406,6 @@ const f=useFocusStyles();
           <View onTouchStartCapture={() => hold.current?.reset()} style={[f.safe, { backgroundColor: "#0b242c", position: "relative" }]}>
             {fieldContent}
             {queueOverlay}
-            {backgroundMode && <CompetitionReplayModal open={courseReplayOpen} state={state} selection={{ sport, track, periodStart: period.startsAt.toISOString(), periodEnd: period.endsAt.toISOString() }} initialFlat={courseFlat} dimension={sceneDimension} onClose={() => setCourseReplayOpen(false)} />}
             {/* Top Bar HUD */}
             <FieldOverlayView
               hidden={overlaysHidden}

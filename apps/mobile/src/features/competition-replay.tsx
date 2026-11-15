@@ -1,65 +1,43 @@
-import { useAppTheme, useThemeColors } from "../theme";
 import { StatusBar } from "expo-status-bar";
-import { useFocusStyles } from "../ui/focus";
-import { createThemedStyles, useThemedStyles } from "../theme";
-import { ReplayTimeline } from "./replay-timeline";
-import { ResultCard } from "./result-card";
-import { playCue } from "../lib/haptics";
-import { GeographicCourse } from "./geographic-course";
-import { useCompetitionCourse } from "./use-competition-course";
-import { FieldViewSwitcher } from "../ui/field-view-switcher";
-import { CompeteTimeSeriesChart } from "../ui/compete-time-series-chart";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AppState, Modal, Pressable, Text, View } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import {
-  WEEK_RECAP_COLORS,
-  orderedArenaLanes,
-  coursePositionLeaders, competitionReplayDimension, nextCompetitionReplaySpeed, competitionReplayFrame, competitionReplayCaption, competitionReplayDate,
-  competitionReplayTimeMs, competitionReplayCursorFromTimeMs, REPLAY_MINUTES_PER_REAL_SECOND_1X,
-  competitionCourseReplayFrame,
-  indexCompetitionReplay, localCompetitionReplay, initialsFromName, fieldDefaultSpan,
-  clampCourseCenter, sportById, rankForElo, findSynthetic,
-  type PeriodResult, type CompetitionReplay, type CompetitionReplaySelection, type CompeteState, type ArenaLane,
-} from "@fitness-battle/shared";
-import { useCompeteStore } from "../lib/compete-store";
-import { useAthleteBlocks } from "../lib/athlete-blocks";
+import { useState, type ReactNode } from "react";
+import { Modal, Pressable, View } from "react-native";
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { WEEK_RECAP_COLORS, type CompeteState, type CompetitionReplaySelection } from "@fitness-battle/shared";
+import { useAppTheme, useThemeColors } from "../theme";
 import { useAuth } from "../lib/auth";
-import { mobileEnv } from "../lib/env";
-import { requestApi } from "../lib/api";
-import { AppText, textStyle } from "../ui/section";
+import { playCue } from "../lib/haptics";
 import { AppIcon } from "../ui/app-icon";
-import { FocusButton } from "../ui/focus";
-import { IconButton } from "../ui/icon-button";
-import { LaneTrack } from "../ui/lane-track";
-import { PortraitField } from "../ui/portrait-field";
-import { useFieldAppearance } from "../ui/field-course";
+import { CompeteSheet } from "../ui/compete-sheet";
+import { FocusButton, useFocusStyles } from "../ui/focus";
+import { AppText } from "../ui/section";
 import { useReducedMotion } from "../ui/use-reduced-motion";
-
+import { CompetitionField } from "./competition-field";
+import { CompetitionPanel } from "./competition-panel";
+import { CompetitionTimelineControls, CompetitionTimelineProvider } from "./competition-timeline-context";
+import { RaceUpdates } from "./race-updates";
 
 export function CompetitionReplayButton({
   state,
   selection,
-  initialFlat = false,
-  dimension = "4d",
   label = "Replay competition",
   variant = "button",
   secondary = true,
 }: {
   state: CompeteState;
   selection: CompetitionReplaySelection;
-  initialFlat?: boolean;
-  dimension?: "2d" | "3d" | "4d" | "graph";
   label?: string;
   variant?: "button" | "inline" | "link" | "recap";
   secondary?: boolean;
 }) {
-const appearanceColors = useThemeColors();
-
+  const appearanceColors = useThemeColors();
   const [open, setOpen] = useState(false);
-  const openReplay = () => { void playCue("light"); setOpen(true); };
+  const openReplay = () => {
+    void playCue("light");
+    setOpen(true);
+  };
   const compactVariant = variant !== "button";
   const textLabel = label || (variant === "link" || variant === "recap" ? "Replay round" : "View replay");
+
   return (
     <>
       {compactVariant ? (
@@ -79,170 +57,113 @@ const appearanceColors = useThemeColors();
           {variant !== "recap" && (
             <AppIcon name="replay" size={variant === "link" ? 16 : 14} color={variant === "link" ? WEEK_RECAP_COLORS.text : appearanceColors.white} />
           )}
-          <AppText role={variant === "link" || variant === "recap" ? "label" : "caption"} style={{ color: variant === "link" || variant === "recap" ? WEEK_RECAP_COLORS.text : appearanceColors.white, opacity: variant === "link" ? 0.9 : 1 }}>
+          <AppText
+            role={variant === "link" || variant === "recap" ? "label" : "caption"}
+            style={{ color: variant === "link" || variant === "recap" ? WEEK_RECAP_COLORS.text : appearanceColors.white, opacity: variant === "link" ? 0.9 : 1 }}
+          >
             {textLabel}
           </AppText>
         </Pressable>
       ) : (
         <FocusButton secondary={secondary} label={label} onPress={openReplay} />
       )}
-      <CompetitionReplayModal open={open} state={state} selection={selection} initialFlat={initialFlat} dimension={dimension} onClose={() => setOpen(false)} />
+      <CompetitionReplayModal open={open} state={state} selection={selection} onClose={() => setOpen(false)} />
     </>
   );
 }
 
-export function CompetitionReplayModal({ open, state, selection, dimension, onClose, initialFlat = false }: {
+export function CompetitionReplayModal({
+  open,
+  state,
+  selection,
+  onClose,
+}: {
   open: boolean;
   state: CompeteState;
   selection: CompetitionReplaySelection;
-  initialFlat?: boolean;
-  dimension: "2d" | "3d" | "4d" | "graph";
   onClose(): void;
 }) {
-const f=useFocusStyles();
-const { mode } = useAppTheme();
+  const { mode } = useAppTheme();
   const { user } = useAuth();
   const reduced = useReducedMotion();
-  return open ? <Modal visible animationType={reduced ? "none" : "fade"} presentationStyle="fullScreen" onRequestClose={onClose}>
-    <SafeAreaProvider>
-      <StatusBar style={mode === "dark" ? "light" : "dark"} />
-      <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
-        <ReplayViewer key={`${user?.id ?? "guest"}:${selection.sport}:${selection.track}:${selection.periodStart}:${selection.periodEnd}`} state={state} selection={selection} initialFlat={initialFlat} initialDimension={dimension} onClose={onClose} />
-      </SafeAreaView>
-    </SafeAreaProvider>
-  </Modal> : null;
-}
 
-function ReplayAction({ label, text, disabled, onPress, primary = false }: { label: string; text: string; disabled?: boolean; onPress: () => void; primary?: boolean }) {
-const s=useThemedStyles(sThemes);
-
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: Boolean(disabled) }} disabled={disabled} onPress={() => { if (!disabled) { void playCue("selection"); onPress(); } }} style={[s.action, primary && s.primary, disabled && { opacity: .4 }]}><AppText role="label">{text}</AppText></Pressable>;
-}
-export function ReplayViewer({ state, selection, initialDimension, onClose, embedded=false, initialFlat = false, result }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d" | "graph"; initialFlat?: boolean; onClose: () => void; embedded?: boolean; result?: PeriodResult }) {
-const appearanceColors = useThemeColors();
-
-const s=useThemedStyles(sThemes);
-  const { user, accessToken, offlineMode } = useAuth();
-  const { debugActive } = useCompeteStore();
-  const { blocks } = useAthleteBlocks();
-  const hiddenIds = useMemo(() => blocks.map(block => block.id), [blocks]);
-  const reduced = useReducedMotion();
-  const [data, setData] = useState<CompetitionReplay | null>(null), [error, setError] = useState("");
-  const [attempt, setAttempt] = useState(0);
-  const [cursor, setCursor] = useState(0), [playing, setPlaying] = useState(false), [speed, setSpeed] = useState(1);
-  const [dimension, setDimension] = useState(() => competitionReplayDimension(selection.sport, initialDimension));
-  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(selection.sport, selection.periodStart, selection.periodEnd, debugActive, dimension === "4d");
-  const [center, setCenter] = useState<number | null>(null), [span, setSpan] = useState<number | null>(null);
-  const [following, setFollowing] = useState(true);
-  const [courseFlat, setCourseFlat] = useState(initialFlat);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [focusRequest, setFocusRequest] = useState(0);
-  useEffect(() => { if (selected && hiddenIds.includes(selected)) setSelected(null); }, [selected, hiddenIds]);
-  const [height, setHeight] = useState(250);
-  const [appearance] = useFieldAppearance(user?.id ?? "guest", selection.sport);
-  const localState = useRef(state);
-  localState.current = state;
-  const portraitAnchor = useRef(0);
-  useEffect(() => {
-    let cancelled = false;
-    setData(null); setError(""); setCursor(0); setPlaying(false); setCenter(null);
-    if (!user || offlineMode || debugActive) { setData(localCompetitionReplay(localState.current, selection)); return () => { cancelled = true; }; }
-    const query = `sport=${selection.sport}&track=${selection.track}&start=${encodeURIComponent(selection.periodStart)}&end=${encodeURIComponent(selection.periodEnd)}`;
-    void requestApi<CompetitionReplay>(mobileEnv.apiUrl, accessToken, `/api/compete/replay?${query}`).then(next => { if (!cancelled) setData(next); }).catch(() => { if (!cancelled) setError("Could not load this competition’s replay. Try again."); });
-    return () => { cancelled = true; };
-  }, [user?.id, offlineMode, debugActive, accessToken, selection.sport, selection.track, selection.periodStart, selection.periodEnd, attempt, state.activities, state.enrollments]);
-  const index = useMemo(() => data ? indexCompetitionReplay(data, state.units) : null, [data, state.units]);
-  const count = index?.replay.events.length ?? 0;
-  useEffect(() => { if (embedded && index) setCursor(count); }, [index, count, embedded]);
-  const cursorRef = useRef(cursor); cursorRef.current = cursor;
-  useEffect(() => {
-    if (!playing || !count || !index) return;
-    let raf = 0; const from = cursorRef.current, start = Date.now();
-    const fromTimeMs = competitionReplayTimeMs(index, from);
-    const tick = () => {
-      const now = Date.now();
-      const targetTimeMs = fromTimeMs + (now - start) * (REPLAY_MINUTES_PER_REAL_SECOND_1X * 60) * speed;
-      const progress = competitionReplayCursorFromTimeMs(index, targetTimeMs);
-      setCursor(Math.min(count, reduced ? Math.floor(progress) : progress));
-      if (progress < count) raf = requestAnimationFrame(tick); else setPlaying(false);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [playing, speed, count, reduced, index]);
-  useEffect(() => { const subscription = AppState.addEventListener("change", next => { if (next !== "active") setPlaying(false); }); return () => subscription.remove(); }, []);
-  const seek = (next: number) => { const bounded = Math.max(0, Math.min(count, next)); if (Math.ceil(bounded) !== Math.ceil(cursor)) void playCue("selection"); setPlaying(false); setCursor(bounded); };
-  const frame = index ? competitionReplayFrame(index, cursor) : null;
-  const me = frame?.rows.find(a => a.you);
-  // An explicit tap can inspect a racer; the next event resumes automatic focus.
-  useEffect(() => { if (following) setSelected(null); }, [frame?.event?.id, following]);
-  const moving = frame?.rows.find(a => a.id === frame.event?.athleteId && !hiddenIds.includes(a.id));
-  const focus = frame?.rows.find(a => a.id === selected && !hiddenIds.includes(a.id)) ?? (following ? moving : null) ?? me;
-  const unit = index?.unit ?? "km", viewSpan = span ?? fieldDefaultSpan(unit);
-  const lanes = useMemo(() => (frame?.rows ?? []).map(row => ({ ...row, initials: initialsFromName(row.name) })), [index, cursor]);
-  const nativeLanes = useMemo<ArenaLane[]>(() => lanes.map(l => ({ ...l, ghost: false, values: [l.value, l.value, l.value] })), [lanes]);
-  const view = { center: !following && center !== null ? center : clampCourseCenter(focus?.value ?? 0, viewSpan, Math.max(0, ...lanes.map(l => l.value)), unit, appearance.ground), span: viewSpan };
-  const applyView = (next: typeof view) => { setFollowing(false); setCenter(next.center); setSpan(next.span); };
-  const panTo = (center: number) => applyView({ ...view, center });
-  const zoomTo = (span: number) => applyView({ ...view, span });
-  const select = (id: string) => { if (hiddenIds.includes(id)) return; const lane = lanes.find(l => l.id === id); if (lane) { const ordered = orderedArenaLanes(lanes); if (following) portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you)); setSelected(id); setFocusRequest(value => value + 1); if (following) setCenter(null); } };
-  const podiumAthletes = useMemo(() => index
-    ? competitionReplayFrame(index, count).rows
-      .filter(row => row.place <= 3 && !hiddenIds.includes(row.id))
-      .map(row => ({
-        ...row,
-        avatarUrl: row.you ? state.avatarUrl : row.avatarUrl,
-        rank: rankForElo(row.you ? result?.eloAfter ?? 0 : findSynthetic(selection.sport, row.id)?.elo ?? 0).name,
-      }))
-    : [], [index, count, hiddenIds, state.avatarUrl, result?.eloAfter, selection.sport]);
-  const closed = data && Date.parse(data.through) >= Date.parse(data.periodEnd);
-  const caption = index ? (frame?.event && hiddenIds.includes(frame.event.athleteId) ? "An athlete recorded activity" : competitionReplayCaption(index, cursor)) : "";
-  const courseReplay = useMemo(
-    () =>
-      following && index && focus
-        ? competitionCourseReplayFrame(index, cursor, focus.id, hiddenIds)
-        : undefined,
-    [following, index, cursor, focus?.id, hiddenIds],
+  if (!open) return null;
+  return (
+    <Modal visible animationType={reduced ? "none" : "fade"} presentationStyle="fullScreen" onRequestClose={onClose}>
+      <SafeAreaProvider>
+        <StatusBar style={mode === "dark" ? "light" : "dark"} />
+        <RoundReplayBody
+          key={`${user?.id ?? "guest"}:${selection.sport}:${selection.track}:${selection.periodStart}:${selection.periodEnd}`}
+          state={state}
+          selection={selection}
+          onClose={onClose}
+        />
+      </SafeAreaProvider>
+    </Modal>
   );
-  return <View style={embedded ? undefined : { flex: 1 }}>
-    <View style={s.header}>
-      {!embedded&&<IconButton icon="back" label="Close competition replay" onPress={onClose} />}
-      <View style={{ flex: 1 }}><AppText role="heading" accessibilityRole="header">{sportById(selection.sport).name} replay</AppText><AppText role="caption" secondary>{selection.track === "verified" ? "GPS Tracked" : "Open"} · {closed ? "Completed round" : "Competition so far"}</AppText></View>
-    </View>
-
-    {!index ? <View style={s.message}><AppText role="body" accessibilityLiveRegion="polite">{error || "Loading the competition timeline…"}</AppText>{error && <FocusButton label="Retry" onPress={() => setAttempt(a => a + 1)} />}</View> : <>
-      <View style={[s.scene, embedded && { flex: 0, height: 360 }]} onLayout={event => setHeight(Math.max(100, event.nativeEvent.layout.height))}>
-        <View style={{ position: "absolute", top: 12, right: 12, zIndex: 10, flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Pressable accessibilityRole="button" accessibilityState={{ selected: following }} accessibilityLabel={`Camera: ${following ? "Follow athlete" : "Fixed"}`} onPress={() => { setCenter(following ? view.center : null); setFollowing(value => !value); if (!following) setFocusRequest(value => value + 1); }} style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: "center", borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.78)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.2)" }}><Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>{following ? "Follow athlete" : "Fixed"}</Text></Pressable>
-          <FieldViewSwitcher value={dimension} geographic={unit !== "pts"} onChange={setDimension} />
-        </View>
-        {dimension === "graph" ? <CompeteTimeSeriesChart state={state} sport={selection.sport} track={selection.track} selectedId={focus?.id} onSelectAthlete={select} hiddenIds={hiddenIds} reserveTopControls /> : dimension === "4d" ? <GeographicCourse initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following && !courseReplay} onFollowChange={next => { setCenter(next ? null : view.center); setFollowing(next); }} optionsTop={64} hiddenIds={hiddenIds} course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={focus?.id ?? ""} focusRequest={focusRequest} replay={courseReplay} onSelect={select} /> : dimension === "2d" ? <LaneTrack clampView={following} hiddenIds={hiddenIds} onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField hiddenIds={hiddenIds} onGestureStart={() => { setCenter(view.center); setFollowing(false); }} onViewChange={applyView} focusRequest={focusRequest} focusSelection={following} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
-
-      </View>
-      <View style={s.controls}>
-        <AppText role="row" numberOfLines={2}>{caption}</AppText>
-        <AppText role="caption" secondary>{competitionReplayDate(index, cursor)}</AppText>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }} accessibilityLabel="Current positions">{coursePositionLeaders(frame?.rows ?? []).filter(row => !hiddenIds.includes(row.id)).map(row => <Pressable key={row.id} accessibilityRole="button" accessibilityLabel={`Focus ${row.name}`} accessibilityState={{ selected: row.id === focus?.id }} onPress={() => select(row.id)} style={[s.action, { flexDirection: "row", gap: 4 }]}><AppText role="caption">#{row.place} {row.name.split(" ")[0]} · {row.value.toFixed(1)} {unit}</AppText></Pressable>)}</View>
-        <ReplayTimeline cursor={cursor} count={count} caption={caption} onSeek={seek} />
-        {embedded && <ReplayAction disabled={!count} label="Replay this round" text="Replay this round" onPress={() => { seek(0); setPlaying(true); }} />}
-        <View style={s.actions}>
-          <ReplayAction label="Jump to competition start" text="|‹" disabled={!count || cursor === 0} onPress={() => seek(0)} />
-          <ReplayAction label="Previous competition event" text="‹" disabled={!count || cursor === 0} onPress={() => seek(Math.ceil(cursor) - 1)} />
-          <ReplayAction primary label={playing ? "Pause replay" : "Play replay"} text={playing ? "Pause" : "Play"} disabled={!count} onPress={() => { if (!playing && cursor >= count) setCursor(0); setPlaying(p => !p); }} />
-          <ReplayAction label="Next competition event" text="›" disabled={!count || cursor >= count} onPress={() => seek(Math.floor(cursor) + 1)} />
-          <ReplayAction label={`Playback speed ${speed} times`} text={`${speed}×`} onPress={() => setSpeed(nextCompetitionReplaySpeed)} />
-        </View>
-      </View>
-    </>}
-    {embedded && result && <ResultCard result={result} units={state.units} podiumAthletes={podiumAthletes} />}
-
-  </View>;
 }
-const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
-  header: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10 },
-  message: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, padding: 24 },
-  scene: { flex: 1, minHeight: 100, overflow: "hidden" },
-  controls: { gap: 4, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 8, borderTopWidth: 1, borderColor: c.line, backgroundColor: c.paper },
-  actions: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 3, marginBottom: 4 },
-  action: { minWidth: 44, minHeight: 44, paddingHorizontal: 8, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: themeColors.card, borderWidth: 1, borderColor: c.line },
-  primary: { backgroundColor: c.soft, minWidth: 66 },
-};});
+
+function RoundReplayBody({
+  state,
+  selection,
+  onClose,
+}: {
+  state: CompeteState;
+  selection: CompetitionReplaySelection;
+  onClose(): void;
+}) {
+  const f = useFocusStyles();
+  const insets = useSafeAreaInsets();
+  const [courseOptions, setCourseOptions] = useState<ReactNode>(null);
+  const [athleteFocus, setAthleteFocus] = useState<{ id: string; request: number } | null>(null);
+  const periodOverride = {
+    startsAt: new Date(selection.periodStart),
+    endsAt: new Date(selection.periodEnd),
+  };
+
+  return (
+    <CompetitionTimelineProvider state={state} selection={selection} enabled active replay>
+      <SafeAreaView pointerEvents="box-none" style={[f.safe, { backgroundColor: "transparent" }]} edges={[]}>
+        <CompetitionField
+          sport={selection.sport}
+          track={selection.track}
+          periodOverride={periodOverride}
+          focusedOverride
+          persistent
+          backgroundMode
+          externalAthleteFocus={athleteFocus}
+          onOptionsChange={setCourseOptions}
+          presentationActive
+          onExit={onClose}
+        />
+        <View style={{ position: "absolute", top: insets.top + 54, right: 16, zIndex: 20 }}>
+          {courseOptions}
+        </View>
+        <CompeteSheet
+          scrollable
+          active
+          expandRequest={0}
+          defaultIndex={0}
+          overview={<CompetitionTimelineControls />}
+        >
+          <CompetitionPanel
+            active
+            standings={
+              <CompetitionField
+                sport={selection.sport}
+                track={selection.track}
+                periodOverride={periodOverride}
+                focusedOverride
+                standingsOnly
+                onFocusAthlete={(id) => {
+                  setAthleteFocus((previous) => ({ id, request: (previous?.request ?? 0) + 1 }));
+                }}
+              />
+            }
+            activity={(visible) => <RaceUpdates state={state} sport={selection.sport} active={visible} />}
+          />
+        </CompeteSheet>
+      </SafeAreaView>
+    </CompetitionTimelineProvider>
+  );
+}

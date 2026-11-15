@@ -17,8 +17,8 @@ const ledger: CompetitionReplay = { ...selection, scope: "field", through: "2026
   { id: "two", athleteId: "peer", at: "2026-10-21T12:00:00Z", distanceM: 2000, movingSec: 600, effort: 2 },
 ] };
 let renderer: ReactTestRenderer;
-function Harness({ active = true, selected = selection, current = state }) {
-  return createElement("timeline", { value: useFieldTimeline(current, selected, active) });
+function Harness({ active = true, selected = selection, current = state, replay = false }) {
+  return createElement("timeline", { value: useFieldTimeline(current, selected, active, replay) });
 }
 const timeline = () => renderer.root.findByType("timeline" as never).props.value as ReturnType<typeof useFieldTimeline>;
 beforeEach(() => {
@@ -87,4 +87,14 @@ it("uses Debug's local history and keeps authenticated failures explicit after D
   mocks.request.mockResolvedValue(ledger);
   await act(async () => timeline().retry());
   expect(timeline().ready).toBe(true); expect(timeline().count).toBe(2);
+});
+it("starts from the beginning, autoplays, and holds the final frame in round replay mode", async () => {
+  await act(async () => { renderer = create(createElement(Harness, { replay: true })); await Promise.resolve(); });
+  expect(timeline().cursor).toBe(0);
+  expect(timeline().playing).toBe(true);
+  expect(timeline().frame).not.toBeNull();
+  await act(async () => { vi.advanceTimersByTime(10000); });
+  expect(timeline().playing).toBe(false);
+  expect(timeline().cursor).toBe(2);
+  expect(timeline().frame).not.toBeNull();
 });

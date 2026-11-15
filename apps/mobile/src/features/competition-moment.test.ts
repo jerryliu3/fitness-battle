@@ -45,7 +45,7 @@ it("reduced motion offers Replay icon, Continue, centered progress chip with ove
   const done = vi.fn();
   const sample = moment();
   await act(async () => { renderer = create(createElement(CompetitionMoment, { moment: sample, remaining: 1, onConfirm: done })); });
-  const playback = renderer.root.findByType("Pressable" as never);
+  const playback = renderer.root.findAllByType("Pressable" as never)[0];
   expect(playback.props.accessibilityLabel).toBe("Replay");
   expect(playback.findByType("AppIcon" as never).props.name).toBe("replay");
   const buttons = renderer.root.findAllByType("FocusButton" as never);
@@ -74,10 +74,14 @@ it("autoplays after map readiness, toggles pause/play/replay icon, allows immedi
   try {
     await act(async () => { renderer = create(createElement(CompetitionMoment, { moment: moment(), remaining: 1, onConfirm: done })); });
     const map = () => renderer.root.findByType("GeographicCourse" as never);
-    const playback = () => renderer.root.findByType("Pressable" as never);
+    const playback = () => renderer.root.findAllByType("Pressable" as never)[0];
+    const speed = () => renderer.root.findAllByType("Pressable" as never)[1];
     expect(frame).toBeUndefined();
     expect(playback().props.accessibilityLabel).toBe("Pause replay");
     expect(playback().findByType("AppIcon" as never).props.name).toBe("pause");
+    expect(speed().props.accessibilityLabel).toBe("Playback speed 1 times");
+    await act(async () => speed().props.onPress());
+    expect(speed().props.accessibilityLabel).toBe("Playback speed 2 times");
     expect(renderer.root.findAllByType("FocusButton" as never).map(button => button.props.label)).toEqual(["Continue"]);
     expect(renderer.root.findByType("FieldViewSwitcher" as never).props.compact).toBe(true);
     await act(async () => map().props.onReady());

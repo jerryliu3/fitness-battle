@@ -5,8 +5,8 @@ import { useFieldTimeline, type FieldTimelineState } from "@/features/replay/use
 import { FieldTimeline } from "@/features/replay/field-timeline";
 const Context = createContext<FieldTimelineState | undefined>(undefined);
 export const useCompetitionTimeline = () => useContext(Context);
-export function CompetitionTimelineProvider({ state, selection, active, children }: { state: CompeteState; selection: CompetitionReplaySelection; active: boolean; children: ReactNode }) {
-  const timeline = useFieldTimeline(state, selection, active);
+export function CompetitionTimelineProvider({ state, selection, active, replay = false, children }: { state: CompeteState; selection: CompetitionReplaySelection; active: boolean; replay?: boolean; children: ReactNode }) {
+  const timeline = useFieldTimeline(state, selection, active, replay);
   return <Context.Provider value={timeline}>{children}</Context.Provider>;
 }
 export function CompetitionTimelineControls() {
