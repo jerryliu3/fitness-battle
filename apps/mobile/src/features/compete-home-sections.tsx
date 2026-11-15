@@ -48,7 +48,7 @@ export function ExploreEvents({ onChoose, state }: { onChoose(event: CompeteEven
     <AppText role="heading" accessibilityRole="header">Event registration</AppText>
     {categories.map(category => <View key={category.id} style={{ gap: 10 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <CompeteIcon name={category.id === "recovery" ? "recovery" : category.id} size={22} />
+        <CompeteIcon name={category.id} size={22} />
         <AppText role="label">{category.title}</AppText>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 20 }}>

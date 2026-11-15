@@ -89,7 +89,7 @@ export const DEMO_CATEGORIES: Category[] = [
   {
     id: "cat-walking",
     slug: "walking",
-    name: "Steps",
+    name: "Walking",
     unit: "meters",
     description: "Daily step totals from connected health data — not GPS distance.",
   },

@@ -49,9 +49,9 @@ export const SPORTS: Sport[] = [
   },
   {
     id: "walking",
-    name: "Steps",
+    name: "Walking",
     gps: false,
-    blurb: "Weekly step totals from your connected tracker — not GPS distance.",
+    blurb: "Weekly step totals from your connected tracker — not GPS walk distance.",
   },
   {
     id: "strength",
