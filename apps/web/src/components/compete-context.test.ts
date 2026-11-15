@@ -137,7 +137,7 @@ it("persists the dirty marker before a debounced save and retries saving without
   expect(api.saveError).toBeTruthy();
   fail = false;
   await act(async () => { api.retryLoad(); await flush(); });
-  expect(accountSaveCalls()).toHaveLength(2);
+  expect(accountSaveCalls()).toHaveLength(3);
   expect(fetcher.mock.calls.filter(([url, init]) => !isAccountSaveCall(String(url), init))).toHaveLength(1);
   expect(values.has("fb-compete-v1:athlete:device-only")).toBe(false);
   expect(api.saveError).toBeNull();
@@ -198,7 +198,7 @@ it("keeps edits and server retry working when browser storage is unavailable", a
     fail = false;
     await act(async () => { api.retryLoad(); await flush(); });
     const writes = accountSaveCalls();
-    expect(writes).toHaveLength(2);
+    expect(writes).toHaveLength(3);
     expect(
       writes.every(([, init]) => {
         const body = JSON.parse(init!.body as string);
