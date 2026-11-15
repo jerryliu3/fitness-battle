@@ -50,7 +50,7 @@ export function formatTimeZoneLabel(
   return offset ? `${city} (${offset})` : city;
 }
 
-const FALLBACK_TIME_ZONES = [
+export const COMPACT_TIME_ZONES = [
   "Pacific/Honolulu",
   "America/Anchorage",
   "America/Los_Angeles",
@@ -70,8 +70,17 @@ const FALLBACK_TIME_ZONES = [
   "Pacific/Auckland",
 ] as const;
 
+/** Short curated list for native pickers; full search stays on web. */
+export function compactTimeZoneOptions(): { value: string; label: string }[] {
+  const reference = new Date();
+  return COMPACT_TIME_ZONES.map((value) => ({
+    value,
+    label: formatTimeZoneLabel(value, reference),
+  }));
+}
+
 export function listTimeZoneOptions(): { value: string; label: string }[] {
-  let zones: string[] = [...FALLBACK_TIME_ZONES];
+  let zones: string[] = [...COMPACT_TIME_ZONES];
   try {
     const supported = (
       Intl as typeof Intl & { supportedValuesOf?: (key: string) => string[] }

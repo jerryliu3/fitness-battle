@@ -1,4 +1,4 @@
-import { listTimeZoneOptions } from "@fitness-battle/shared";
+import { compactTimeZoneOptions } from "@fitness-battle/shared";
 import { useMemo } from "react";
 import { ChoicePicker } from "./choice-picker";
 
@@ -11,14 +11,7 @@ export function TimezonePicker({
   value: string;
   onChange: (timeZone: string) => void;
 }) {
-  const options = useMemo(
-    () =>
-      listTimeZoneOptions().map((row) => ({
-        value: row.value,
-        label: row.label,
-      })),
-    [],
-  );
+  const options = useMemo(() => compactTimeZoneOptions(), []);
   return (
     <ChoicePicker
       label={label}
