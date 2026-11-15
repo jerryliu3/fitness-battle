@@ -139,7 +139,7 @@ it("applies log-manual before set-disposition when actions arrive in that order"
   expect(row?.disposition).toBe("excluded");
 });
 
-it("matches client disposition edits after canonical settlement", () => {
+it("matches client disposition edits after canonical settlement", async () => {
   const enrolled = reduceCompete(
     withAccountEloBaseline(freshState(now)),
     { type: "opt-in", sport: "running", now: "2026-10-28T09:00:00Z" },
@@ -172,11 +172,12 @@ it("matches client disposition edits after canonical settlement", () => {
     now,
   );
   const viaServer = rollClock(
-    applyOrderedAccountActions(
+    await applyAccountSaveInOrder(
       stored,
       [{ type: "set-disposition", activityId: "strava-counted", disposition: "excluded" }],
       userId,
       now,
+      async (state, scoreOpen) => (scoreOpen ? settleCompetition(state, now) : state),
     ),
     now,
   );
