@@ -83,7 +83,7 @@ export function fixtureWeek(scenario: VisitScenario): { state: CompeteState; pre
   const base = reduceCompete({ ...freshState(now), demoNow: FIXTURE_NOW }, { type: "opt-in", sport: "running", now: freshState(now).clock.periodStart });
   const activity = (id: string, day: string, km: number, minutes: number): Activity => ({
     id, sport: "running", startedAt: `2026-10-${day}T07:30:00.000Z`, distanceM: km * 1000,
-    movingSec: minutes * 60, avgHr: 132, verified: false, source: "manual", provenance: "manual", disposition: "counted",
+    movingSec: minutes * 60, avgHr: 132, verified: false, source: "strava", provenance: "recorded", disposition: "counted",
   });
   const before: CompeteState = { ...base, name: "Jamie", city: "New York", onboardingCompleted: true,
     activities: [activity("home-mon", "12", 4.2, 29), activity("home-tue", "13", 3.6, 25)],

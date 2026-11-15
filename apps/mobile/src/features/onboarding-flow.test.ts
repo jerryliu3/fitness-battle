@@ -16,6 +16,7 @@ vi.mock("../ui/section",()=>({AppText:"AppText",chartTextProps:()=>({})}));
 vi.mock("../ui/motion-step",()=>({MotionStep:"MotionStep"}));
 vi.mock("../ui/mascot/animated-ember",()=>({AnimatedEmber:"AnimatedEmber"}));
 vi.mock("../ui/choice-picker",()=>({ChoicePicker:"ChoicePicker"}));
+vi.mock("../ui/searchable-country-picker",()=>({SearchableCountryPicker:"SearchableCountryPicker"}));
 vi.mock("../ui/chip",()=>({Chip:"Chip"}));
 vi.mock("../ui/focus",()=>((()=>{const mock={FocusButton:"FocusButton",FocusSegments:"FocusSegments",f:{}};return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 vi.mock("./onboarding-visuals",()=>({OnboardingFade:"OnboardingFade",OnboardingOutlook:"OnboardingOutlook",OnboardingSummary:"OnboardingSummary"}));

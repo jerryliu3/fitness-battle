@@ -30,14 +30,14 @@ describe("admin field reads", () => {
   tables.week_fields = tables.week_fields.map(row => ({ ...(row as object), sport: "strength" }));
   tables.activities = tables.activities.map(row => ({ ...(row as object), sport: "strength", avg_hr: 180 }));
   const [pin] = await readAdminSettlementFields(db as never, "athlete", state);
-  expect(pin!.members.find(member => member.id === "peer")!.effort).toBeCloseTo(13.44);
+  expect(pin!.members.find(member => member.id === "peer")!.effort).toBeCloseTo(8.96);
  });
  it("reads existing target membership without seating or invoking athlete RPCs and excludes samples", async () => {
   const { state, db, filters } = fixture();
   const [pin] = await readAdminSettlementFields(db as never, "athlete", state);
   expect(db.rpc).not.toHaveBeenCalled();
   expect(filters).toContainEqual(["week_fields", "contains", "member_ids", ["athlete"]]);
-  expect(pin!.members.find((member) => member.id === "peer")?.distanceM).toBe(15000);
+  expect(pin!.members.find((member) => member.id === "peer")?.distanceM).toBe(10000);
   expect(pin!.members.find((member) => member.id === "peer")).toMatchObject({ verifiedDistanceM: 10000, verifiedMovingSec: 3600, verifiedElo: 900, elo: 1100 });
  });
  it("refuses settlement if roster data is incomplete", async () => {

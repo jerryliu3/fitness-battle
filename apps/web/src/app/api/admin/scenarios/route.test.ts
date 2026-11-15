@@ -38,7 +38,7 @@ describe("admin scenario API", () => {
   const chain = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), contains: vi.fn().mockReturnThis(), lte: vi.fn().mockReturnThis(), gt: vi.fn().mockResolvedValue({ data: [field], error: null }) };
   const rpc = vi.fn().mockResolvedValue({ data: "next", error: null });
   vi.mocked(adminDatabase).mockReturnValue({ from: () => chain, rpc } as never);
-  vi.mocked(loadCompeteAccount).mockImplementation(async (_db, id) => ({ state: id === target ? { ...state, activities: [{ id: "leader", sport: "running", startedAt: new Date(now.getTime()-60000).toISOString(), distanceM: 1000, movingSec: 600, avgHr: null, source: "manual", verified: false, provenance: "manual" }] } : state, updatedAt: id === target ? "v1" : "opponent-v1" }));
+  vi.mocked(loadCompeteAccount).mockImplementation(async (_db, id) => ({ state: id === target ? { ...state, activities: [{ id: "leader", sport: "running", startedAt: new Date(now.getTime()-60000).toISOString(), distanceM: 1000, movingSec: 600, avgHr: null, source: "strava", verified: false, provenance: "recorded" }] } : state, updatedAt: id === target ? "v1" : "opponent-v1" }));
   expect((await POST(request({ action: "overtake", opponent, direction: "be-passed" }))).status).toBe(200);
   expect(rpc).toHaveBeenCalledWith("admin_apply_compete_scenario", expect.objectContaining({ p_target_id: opponent, p_expected_updated_at: "opponent-v1", p_payload: expect.objectContaining({ peerId: target, peerUpdatedAt: "v1", fieldId: actionId }) }));
  });
