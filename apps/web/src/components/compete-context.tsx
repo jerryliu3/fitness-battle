@@ -230,6 +230,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const queue = useRef<Action[]>([]);
   const pendingIntentsRef = useRef<Action[]>([]);
   const pendingSyncRef = useRef<Action[]>([]);
+  const pendingDocumentRef = useRef(false);
   const dirtyRef = useRef(0);
   const unsavedRef = useRef(false);
   const unitsUnsavedRef = useRef(false);
@@ -262,6 +263,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     queue.current = [];
     pendingIntentsRef.current = [];
     pendingSyncRef.current = [];
+    pendingDocumentRef.current = false;
     dirtyRef.current = 0;
     unsavedRef.current = false;
     unitsUnsavedRef.current = false;
@@ -290,21 +292,29 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         try {
           const syncBatch = [...pendingSyncRef.current];
           const intentBatch = [...pendingIntentsRef.current];
-          const steps = accountSavePlan(syncBatch, intentBatch, next);
-          const { response, body, revision, completedStepCount } = await runAccountSaveSteps(
+          const steps = accountSavePlan(
+            syncBatch,
+            intentBatch,
+            next,
+            pendingDocumentRef.current,
+          );
+          const { response, body, revision, completedStepCount, transportError } =
+            await runAccountSaveSteps(
             accountId,
             revisionRef.current,
             steps,
             (url, init) => fetch(url, init),
           );
           if (!isCurrent()) return;
+          const saveFailed = transportError || !response?.ok;
           const acknowledged = dequeueAccountSaveWork(
             steps,
-            response.ok ? steps.length : completedStepCount,
+            saveFailed ? completedStepCount : steps.length,
             syncBatch,
             intentBatch,
+            pendingDocumentRef.current,
           );
-          if (response.ok || completedStepCount > 0) {
+          if (!saveFailed || completedStepCount > 0) {
             pendingSyncRef.current = [
               ...acknowledged.sync,
               ...pendingSyncRef.current.slice(syncBatch.length),
@@ -313,9 +323,11 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
               ...acknowledged.intents,
               ...pendingIntentsRef.current.slice(intentBatch.length),
             ];
+            pendingDocumentRef.current = acknowledged.document;
           }
           if (typeof revision === "string") revisionRef.current = revision;
-          if (!response.ok) {
+          if (saveFailed) {
+            pendingDocumentRef.current = true;
             writeStorageItem(deviceOnlyKey(accountId), "1");
             if (body?.error === "account_changed_reload" || body?.error === "account_version_required") {
               conflictRef.current = true; setSaveConflict(true);
@@ -332,20 +344,29 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           revisionRef.current = body.updatedAt ?? revisionRef.current;
           writeStorageItem(`${storageKey(accountId)}:revision`, body.updatedAt);
           if (dirtyRef.current === generation) {
-            if (isCompeteState(body.state)) {
+            const keepLocalDraft = pendingDocumentRef.current;
+            if (isCompeteState(body.state) && !keepLocalDraft) {
               stateRef.current = body.state;
               setState(body.state);
               writeLocal(accountId, body.state, body.updatedAt);
+            } else if (typeof body?.updatedAt === "string") {
+              writeStorageItem(`${storageKey(accountId)}:revision`, body.updatedAt);
             }
-            removeStorageItem(deviceOnlyKey(accountId));
-            unsavedRef.current = false;
-            unitsUnsavedRef.current = false;
-            pendingIntentsRef.current = [];
-            pendingSyncRef.current = [];
+            if (!keepLocalDraft) {
+              removeStorageItem(deviceOnlyKey(accountId));
+              unsavedRef.current = false;
+              unitsUnsavedRef.current = false;
+              pendingIntentsRef.current = [];
+              pendingSyncRef.current = [];
+            } else {
+              unsavedRef.current = true;
+              writeStorageItem(deviceOnlyKey(accountId), "1");
+            }
           }
           setSaveError(null);
         } catch {
           if (!isCurrent()) return;
+          pendingDocumentRef.current = true;
           writeStorageItem(deviceOnlyKey(accountId), "1");
           setSaveError("This device updated. The account copy did not save.");
         }
@@ -455,6 +476,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         // A marker cannot turn a missing/corrupt cache into an uploadable draft.
         const staleDeviceDraft = local.cached && readStorageItem(deviceOnlyKey(accountId)) === "1";
         if (!local.cached) removeStorageItem(deviceOnlyKey(accountId));
+        pendingDocumentRef.current = staleDeviceDraft;
         unsavedRef.current = staleDeviceDraft || queue.current.length > 0;
         unitsUnsavedRef.current ||= staleDeviceDraft;
         const cachedRevision = readStorageItem(`${storageKey(accountId)}:revision`);

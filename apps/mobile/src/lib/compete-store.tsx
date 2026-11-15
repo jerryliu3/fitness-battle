@@ -208,6 +208,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   const revisionRef = useRef<string | null>(null);
   const pendingIntentsRef = useRef<Action[]>([]);
   const pendingSyncRef = useRef<Action[]>([]);
+  const pendingDocumentRef = useRef(false);
   const conflictRef = useRef(false);
   const [saveConflict, setSaveConflict] = useState(false);
   const [noticeAttempt, setNoticeAttempt] = useState(0);
@@ -239,6 +240,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     revisionRef.current = null;
     pendingIntentsRef.current = [];
     pendingSyncRef.current = [];
+    pendingDocumentRef.current = false;
     conflictRef.current = false;
     setSaveConflict(false);
     markLoadReady(false);
@@ -427,6 +429,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       if (!alive || accountRef.current !== owner) return;
       unsavedRef.current = dirty;
       unitsUnsavedRef.current = dirty;
+      pendingDocumentRef.current = dirty;
       seedArenaBaselinesFromState(
         next,
         owner ?? "guest",
@@ -822,9 +825,15 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               "Content-Type": "application/json",
               Authorization: `Bearer ${account.token}`,
             };
-            const steps = accountSavePlan(syncBatch, intentBatch, next);
+            const steps = accountSavePlan(
+              syncBatch,
+              intentBatch,
+              next,
+              pendingDocumentRef.current,
+            );
             if (!steps.length) return;
-            const { response, body, revision, completedStepCount } = await runAccountSaveSteps(
+            const { response, body, revision, completedStepCount, transportError } =
+              await runAccountSaveSteps(
               id,
               revisionRef.current,
               steps,
@@ -835,13 +844,15 @@ export function CompeteProvider({ children, navigationReady = true }: { children
                 }),
             );
             if (!isCurrent()) return;
+            const saveFailed = transportError || !response?.ok;
             const acknowledged = dequeueAccountSaveWork(
               steps,
-              response.ok ? steps.length : completedStepCount,
+              saveFailed ? completedStepCount : steps.length,
               syncBatch,
               intentBatch,
+              pendingDocumentRef.current,
             );
-            if (response.ok || completedStepCount > 0) {
+            if (!saveFailed || completedStepCount > 0) {
               pendingSyncRef.current = [
                 ...acknowledged.sync,
                 ...pendingSyncRef.current.slice(syncBatch.length),
@@ -850,9 +861,12 @@ export function CompeteProvider({ children, navigationReady = true }: { children
                 ...acknowledged.intents,
                 ...pendingIntentsRef.current.slice(intentBatch.length),
               ];
+              pendingDocumentRef.current = acknowledged.document;
             }
             if (typeof revision === "string") revisionRef.current = revision;
-            if (!response.ok) {
+            if (saveFailed) {
+              pendingDocumentRef.current = true;
+              await AsyncStorage.setItem(scoped.dirty, "1");
               if (
                 body?.error === "account_changed_reload" ||
                 body?.error === "account_version_required"
@@ -879,11 +893,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             );
             if (!isCurrent() || generation !== dirtyRef.current)
               return;
-            unsavedRef.current = false;
-            unitsUnsavedRef.current = false;
-            pendingIntentsRef.current = [];
-            pendingSyncRef.current = [];
-            if (isCompeteState(body.state)) {
+            const keepLocalDraft = pendingDocumentRef.current;
+            if (isCompeteState(body.state) && !keepLocalDraft) {
               stateRef.current = body.state;
               setState(body.state);
               await AsyncStorage.setItem(
@@ -891,15 +902,26 @@ export function CompeteProvider({ children, navigationReady = true }: { children
                 JSON.stringify(body.state),
               );
             }
+            if (!keepLocalDraft) {
+              unsavedRef.current = false;
+              unitsUnsavedRef.current = false;
+              pendingIntentsRef.current = [];
+              pendingSyncRef.current = [];
+              await AsyncStorage.removeItem(scoped.dirty);
+            } else {
+              unsavedRef.current = true;
+              await AsyncStorage.setItem(scoped.dirty, "1");
+            }
             invalidateApiReads(apiReadScope(mobileEnv.apiUrl, account.token));
             setSaveError(null);
             if (pendingFeedback.current?.account === id && pendingFeedback.current.generation <= generation) {
               pendingFeedback.current = null;
               playPattern("confirm");
             }
-            await AsyncStorage.removeItem(scoped.dirty);
           } catch {
             if (isCurrent()) {
+              pendingDocumentRef.current = true;
+              await AsyncStorage.setItem(scoped.dirty, "1").catch(() => {});
               if (pendingFeedback.current?.account === id) void playCue("error");
               const message = saveFailure();
               if (message) setSaveError(message);

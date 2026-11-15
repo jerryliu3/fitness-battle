@@ -56,10 +56,11 @@ export async function POST(request: Request): Promise<Response> {
       if (revision.error) throw new Error("revision_unavailable");
       receipts = Number(revision.data);
       const existing = await loadCompeteAccount(supabase, userId);
-      const baseline = existing
-        ? await settleAccountFields(supabase, userId, migrateCompeteState(existing.state), now, true)
+      const stored = existing
+        ? migrateCompeteState(existing.state)
         : withAccountEloBaseline(freshState(now));
-      live = applyCompeteSyncAction(baseline, action, userId, now);
+      const synced = applyCompeteSyncAction(stored, action, userId, now);
+      live = await settleAccountFields(supabase, userId, synced, now, true);
     } catch (error) {
       if (attempt === 0 && error instanceof Error && /competition_inputs_changed|competition_clock_changed/.test(error.message)) continue;
       if (error instanceof Error && /^invalid_|sync_batch_too_large/.test(error.message)) {

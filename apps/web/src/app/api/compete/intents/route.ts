@@ -61,13 +61,14 @@ export async function POST(request: Request): Promise<Response> {
       if (revision.error) throw new Error("revision_unavailable");
       receipts = Number(revision.data);
       const existing = await loadCompeteAccount(supabase, userId);
-      const baseline = existing
-        ? await settleAccountFields(supabase, userId, migrateCompeteState(existing.state), now, true)
+      const stored = existing
+        ? migrateCompeteState(existing.state)
         : withAccountEloBaseline(freshState(now));
-      live = applyCompeteIntents(baseline, actions, userId, now);
+      const intentApplied = applyCompeteIntents(stored, actions, userId, now);
+      live = await settleAccountFields(supabase, userId, intentApplied, now, true);
       if (
         existing &&
-        openEnrollmentRemoved(migrateCompeteState(existing.state), live, now)
+        openEnrollmentRemoved(migrateCompeteState(existing.state), intentApplied, now)
       ) {
         return NextResponse.json({ error: "week_still_open", persisted: false }, { status: 409 });
       }

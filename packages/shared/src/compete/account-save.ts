@@ -15,24 +15,26 @@ export type CompeteSaveResult = {
 };
 
 export type AccountSaveRunResult = {
-  response: Response;
+  response: Response | null;
   body: CompeteSaveResult | null;
   revision: string | null;
   completedStepCount: number;
+  transportError: boolean;
 };
 
-/** Ordered client save steps: each sync action, then intent batch, then document fallback. */
+/** Ordered client save steps: sync actions, intent batch, then document when required. */
 export function accountSavePlan(
   pendingSync: Action[],
   pendingIntents: Action[],
   state: CompeteState,
+  pendingDocument = false,
 ): AccountSaveTarget[] {
   const steps: AccountSaveTarget[] = pendingSync.map((action) => ({
     kind: "sync",
     action,
   }));
   if (pendingIntents.length) steps.push({ kind: "intents", actions: pendingIntents });
-  if (!pendingSync.length && !pendingIntents.length) {
+  if (pendingDocument || (!pendingSync.length && !pendingIntents.length)) {
     steps.push({ kind: "document", state });
   }
   return steps;
@@ -72,7 +74,7 @@ export async function runAccountSaveSteps(
   fetcher: (url: string, init: RequestInit) => Promise<Response>,
 ): Promise<AccountSaveRunResult> {
   if (!steps.length) throw new Error("nothing_to_save");
-  let response!: Response;
+  let response: Response | null = null;
   let body: CompeteSaveResult | null = null;
   let revision: string | null = updatedAt;
   let completedStepCount = 0;
@@ -87,34 +89,37 @@ export async function runAccountSaveSteps(
       body = (await response.json().catch(() => null)) as CompeteSaveResult | null;
     } catch {
       return {
-        response: new Response(null, { status: 0, statusText: "network_error" }),
+        response: null,
         body: null,
         revision,
         completedStepCount,
+        transportError: true,
       };
     }
-    if (!response.ok) return { response, body, revision, completedStepCount };
+    if (!response.ok) {
+      return { response, body, revision, completedStepCount, transportError: false };
+    }
     completedStepCount += 1;
     if (typeof body?.updatedAt === "string") revision = body.updatedAt;
   }
-  return { response, body, revision, completedStepCount };
+  return { response, body, revision, completedStepCount, transportError: false };
 }
 
-/** Drop acknowledged sync/intent work after a partial or full successful run. */
+/** Drop acknowledged sync/intent/document work after a partial or full successful run. */
 export function dequeueAccountSaveWork(
   steps: AccountSaveTarget[],
   completedStepCount: number,
   pendingSync: Action[],
   pendingIntents: Action[],
-): { sync: Action[]; intents: Action[] } {
-  const completedSync = steps
-    .slice(0, completedStepCount)
-    .filter((step) => step.kind === "sync").length;
-  const intentsDone = steps
-    .slice(0, completedStepCount)
-    .some((step) => step.kind === "intents");
+  pendingDocument: boolean,
+): { sync: Action[]; intents: Action[]; document: boolean } {
+  const completed = steps.slice(0, completedStepCount);
+  const completedSync = completed.filter((step) => step.kind === "sync").length;
+  const intentsDone = completed.some((step) => step.kind === "intents");
+  const documentDone = completed.some((step) => step.kind === "document");
   return {
     sync: pendingSync.slice(completedSync),
     intents: intentsDone ? [] : [...pendingIntents],
+    document: pendingDocument && !documentDone,
   };
 }
