@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Action } from "./engine";
-import { freshState, withAccountEloBaseline } from "./sports";
+import { freshState, withAccountEloBaseline } from "./engine";
 import { MAX_SYNC_ACTIVITIES, MAX_SYNC_SLEEP } from "./sync-intents";
 import {
   accountSavePlan,
