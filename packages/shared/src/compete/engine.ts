@@ -585,6 +585,7 @@ function groupFor(
       }] as const];
     })) : undefined,
     track,
+    units: state.units,
     asOf,
   });
   return rows.map((row) => ({
