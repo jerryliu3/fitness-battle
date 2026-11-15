@@ -7,6 +7,7 @@ import {
   settleCompetition,
   withAccountEloBaseline,
 } from "@fitness-battle/shared";
+import type { Action } from "@fitness-battle/shared";
 import { applyAccountSaveInOrder, applyOrderedAccountActions } from "./apply-compete-intents";
 
 const now = new Date("2026-10-28T15:00:00Z");
@@ -20,9 +21,9 @@ it("keeps focus changes after enrollment when they follow an opt-in", async () =
     now: start.toISOString(),
   });
   const actions = [
-    { type: "opt-in", sport: "running" as const },
-    { type: "set-focus", focus: { family: "health", id: "sleep" } as const },
-  ];
+    { type: "opt-in", sport: "running" },
+    { type: "set-focus", focus: { family: "health", id: "sleep" } },
+  ] satisfies Action[];
   const applied = await applyAccountSaveInOrder(stored, actions, userId, now, async (state, scoreOpen) =>
     scoreOpen ? settleCompetition(state, now) : state,
   );
@@ -72,7 +73,7 @@ it("rejoins after a stopped wave closes", async () => {
         : enrollment,
     ),
   };
-  const actions = [{ type: "opt-in", sport: "running" as const }];
+  const actions = [{ type: "opt-in", sport: "running" }] satisfies Action[];
   const applied = await applyAccountSaveInOrder(stored, actions, userId, now, async (state, scoreOpen) => {
     if (!scoreOpen) {
       return {
@@ -103,7 +104,7 @@ it("does not advance competition time while applying account edits", () => {
     userId,
     now,
   );
-  expect(applied.periodStart).toBe(stored.periodStart);
+  expect(applied.clock.periodStart).toBe(stored.clock.periodStart);
   expect(applied.sleepNights).toEqual(stored.sleepNights);
 });
 
@@ -186,6 +187,7 @@ it("matches client disposition edits after canonical settlement", () => {
     viaServer.activities.find((row) => row.id === "strava-counted")?.disposition,
   ).toBe("excluded");
   expect(
-    applyCompeteEdit(stored, { type: "rename", name: "Ada", now: now.toISOString() }).periodStart,
-  ).toBe(stored.periodStart);
+    applyCompeteEdit(stored, { type: "rename", name: "Ada", now: now.toISOString() }).clock
+      .periodStart,
+  ).toBe(stored.clock.periodStart);
 });

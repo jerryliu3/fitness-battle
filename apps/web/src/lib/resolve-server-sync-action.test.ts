@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { freshState, withAccountEloBaseline } from "@fitness-battle/shared";
+import { freshState, withAccountEloBaseline, type Action } from "@fitness-battle/shared";
 import { resolveServerSyncAction } from "./resolve-server-sync-action";
 
 const now = new Date("2026-10-28T15:00:00Z");
@@ -32,6 +32,7 @@ it("keeps stored tracker facts and only applies disposition from the client", ()
           startedAt: now.toISOString(),
           distanceM: 500_000,
           movingSec: 1,
+          avgHr: null,
           verified: false,
           provenance: "demo",
           disposition: "excluded",
@@ -58,7 +59,9 @@ it("rejects forged tracker rows that are not already on the account", () => {
       {
         type: "apply-sync",
         provider: "strava",
-        activities: [{ id: "forged", disposition: "counted", source: "strava" }],
+        activities: [
+          { id: "forged", disposition: "counted", source: "strava" },
+        ] as NonNullable<Action["activities"]>,
       },
       "athlete",
       now,
