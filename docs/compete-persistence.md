@@ -28,7 +28,8 @@ Account compete state is **tables only**. `/api/compete` never reads or writes a
 ## API
 
 - **GET:** load registrations → resolve authorized fields before each due settlement → hydrate current fields; persist if settlement changed the durable document. Queued fields make no roster requests. A field failure returns 503 rather than settling estimated opponents.
-- **PUT:** `persistCompeteAccount` only (tables). Queued registrations can be removed; dropping a started sport or sleep enrollment is `409 week_still_open`. New unsaved registrations are rebased to the next 06:00 server benchmark if the cutoff passed during the save. `autoEnrollNext: false` is the stop-after-this-week path. Failure otherwise → 500.
+- **POST `/api/compete/intents`:** ordered batch of user intentions plus tracker batches (`apply-sync`, `sync`, `import-history`). Server loads account → apply edits → `settleAccountFields` → persist once.
+- **PUT `/api/compete`:** document recovery and legacy full-document save (`persistCompeteAccount` only). Response includes `Deprecation: true`. Ordinary saves use the intents batch; PUT remains for orphan local drafts. Queued registrations can be removed; dropping a started sport or sleep enrollment is `409 week_still_open`. New unsaved registrations are rebased to the next 06:00 server benchmark if the cutoff passed during the save. `autoEnrollNext: false` is the stop-after-this-week path. Failure otherwise → 500.
 - **Refresh:** signed-in web and Expo refetch on foreground and about every 60s while Arena or Field is visible. An idle client adopts the server copy so crew scores are not hidden by `athlete_prefs.updated_at`.
 
 ## Write rules

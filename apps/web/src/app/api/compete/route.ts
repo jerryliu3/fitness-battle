@@ -12,22 +12,12 @@ import {
   settleAccountFields,
   overtakeSnapshotChanged,
   loadCompeteAccount,
-  loadEffortScoreEvents,
   persistCompeteAccount,
 } from "@/lib/compete-persist";
 import { applyCompetitionActivityIntents, deriveCompetitionIntents } from "@/lib/competition-intents";
 import { competitionAuthorityDatabase } from "@/lib/competition-authority";
 import { createRequestClient } from "@/lib/supabase/request";
-
-/** History reload failure must not turn an already committed save into a failure. */
-async function committedScoreHistory(db: Parameters<typeof loadEffortScoreEvents>[0], userId: string, state: CompeteState): Promise<CompeteState> {
-  try {
-    return { ...state, effortScoreEvents: await loadEffortScoreEvents(db, userId) };
-  } catch (error) {
-    console.error("Committed score history reload failed:", error instanceof Error ? error.message : "unknown");
-    return state; // Keep the acknowledged score; the next account refresh retries history.
-  }
-}
+import { committedScoreHistory, competeAccountJsonState } from "@/lib/compete-save-route";
 
 function sameLiveDocument(left: CompeteState, right: CompeteState): boolean {
   return (
@@ -156,12 +146,10 @@ export async function PUT(request: Request): Promise<Response> {
     try {
       const updatedAt = await persistCompeteAccount(supabase, userId, live, body.updatedAt as string | null, { db: competitionAuthorityDatabase(), receipts, computedAt: now });
       live = await committedScoreHistory(supabase, userId, live);
-      return NextResponse.json({
-        ok: true,
-        persisted: true,
-        updatedAt,
-        state: { ...live, requiresCanonicalFields: true, enrollments: live.enrollments.map(e => ({ ...e, awaitingField: e.awaitingField ?? !e.fieldBoard })) },
-      });
+      return NextResponse.json(
+        { ok: true, persisted: true, updatedAt, state: competeAccountJsonState(live) },
+        { headers: { Deprecation: "true" } },
+      );
     } catch (error) {
       if (error instanceof Error && error.message.includes("account_changed_reload")) {
         return NextResponse.json({ error: "account_changed_reload", persisted: false }, { status: 409 });

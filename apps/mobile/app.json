@@ -4,6 +4,14 @@
     "slug": "overtaek",
     "scheme": "overtaek",
     "version": "0.1.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/30807072-a0b4-44cd-bd15-ec186e40ceed",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "plugins": [

@@ -20,9 +20,30 @@ vi.mock("@/lib/compete-demo-seed", () => ({ getDemoCompeteState: () => null }));
 import { CompeteProvider, useCompete } from "./compete-context";
 let renderer: ReactTestRenderer;
 let api: ReturnType<typeof useCompete>;
+let fetcher: ReturnType<typeof vi.fn>;
 const values = new Map<string,string>();
 function Probe() { api = useCompete(); return null; }
 async function flush() { for (let i=0;i<30;i++) await Promise.resolve(); }
+function isAccountSaveCall(url: string, init?: RequestInit) {
+  if (!init?.method) return false;
+  const path = String(url);
+  if (init.method === "PUT" && path.includes("/api/compete") && !path.includes("/intents")) return true;
+  return init.method === "POST" && path.includes("/api/compete/intents");
+}
+function accountSaveCalls() {
+  return fetcher.mock.calls.filter(([url, init]) => isAccountSaveCall(String(url), init));
+}
+function savedAccountStateFromBody(
+  body: { state?: ReturnType<typeof freshState>; actions?: Array<{ type: string; city?: string; units?: "metric" | "us" }> },
+) {
+  if (body.state) return body.state;
+  const state = freshState();
+  for (const action of body.actions ?? []) {
+    if (action.type === "set-city" && action.city) state.city = action.city;
+    if (action.type === "set-units" && action.units) state.units = action.units;
+  }
+  return state;
+}
 beforeEach(() => {
  vi.useFakeTimers();
  vi.setSystemTime(new Date("2026-10-22T16:00:00Z"));
@@ -36,18 +57,21 @@ afterEach(async () => { if (renderer) await act(async () => renderer.unmount());
 describe("web account revision handling", () => {
  it("loads and saves authenticated synthetic accounts regardless of the legacy mode label", async () => {
   auth.user.mode = "demo"; auth.user.dataOrigin = "synthetic";
-  const fetcher = vi.fn(async (_url: string, init?: RequestInit) => init?.method === "PUT" ? Response.json({ updatedAt: "revision-2" }) : Response.json({ state: freshState(), updatedAt: "revision-1" }));
+  fetcher = vi.fn(async (url: string, init?: RequestInit) =>
+    isAccountSaveCall(url, init)
+      ? Response.json({ updatedAt: "revision-2", state: savedAccountStateFromBody(JSON.parse(String(init?.body))) })
+      : Response.json({ state: freshState(), updatedAt: "revision-1" }));
   vi.stubGlobal("fetch", fetcher);
   await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
   expect(api.loadStatus).toBe("ready");
   await act(async () => api.dispatch({ type: "set-city", city: "Boston" }));
   await act(async () => { vi.advanceTimersByTime(500); await flush(); });
-  expect(fetcher.mock.calls.some(([, init]) => init?.method === "PUT")).toBe(true);
+  expect(accountSaveCalls().length).toBeGreaterThan(0);
  });
  it("does not rebase dirty competition state onto a newer server revision, and offers explicit recovery", async () => {
   let reads=0;
-  const fetcher = vi.fn(async (_url: string, init?: RequestInit) => {
-   if (init?.method === "PUT") return Response.json({ error: "account_changed_reload" }, { status: 409 });
+  fetcher = vi.fn(async (url: string, init?: RequestInit) => {
+   if (isAccountSaveCall(url, init)) return Response.json({ error: "account_changed_reload" }, { status: 409 });
    reads++;
    return Response.json({ state: { ...freshState(), city: reads===1 ? "Original" : "Server city" }, updatedAt: reads===1 ? "revision-1" : "revision-2" });
   });
@@ -56,7 +80,7 @@ describe("web account revision handling", () => {
   await act(async () => api.dispatch({ type: "set-city", city: "Local draft" }));
   await act(async () => { await api.refresh(); });
   await act(async () => { vi.advanceTimersByTime(500); await flush(); });
-  const writes=()=>fetcher.mock.calls.filter(([,init])=>init?.method==="PUT");
+  const writes=()=>accountSaveCalls();
   expect(JSON.parse(writes()[0]![1]!.body as string).updatedAt).toBe("revision-1");
   expect(renderer.root.findByProps({ role: "alert" })).toBeTruthy();
   await act(async () => api.dispatch({ type: "set-city", city: "Another draft" }));
@@ -96,9 +120,15 @@ it("runs web debug sync through the real receipt and combo coordinator without u
 
 it("persists the dirty marker before a debounced save and retries saving without reloading", async () => {
   let fail = true;
-  const fetcher = vi.fn(async (_url: string, init?: RequestInit) => init?.method === "PUT"
-    ? fail ? Response.json({ error: "unavailable" }, { status: 503 }) : Response.json({ updatedAt: "revision-2" })
-    : Response.json({ state: freshState(), updatedAt: "revision-1" }));
+  fetcher = vi.fn(async (url: string, init?: RequestInit) =>
+    isAccountSaveCall(url, init)
+      ? fail
+        ? Response.json({ error: "unavailable" }, { status: 503 })
+        : Response.json({
+            updatedAt: "revision-2",
+            state: savedAccountStateFromBody(JSON.parse(String(init?.body))),
+          })
+      : Response.json({ state: freshState(), updatedAt: "revision-1" }));
   vi.stubGlobal("fetch", fetcher);
   await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
   await act(async () => api.dispatch({ type: "set-city", city: "Pending city" }));
@@ -107,8 +137,8 @@ it("persists the dirty marker before a debounced save and retries saving without
   expect(api.saveError).toBeTruthy();
   fail = false;
   await act(async () => { api.retryLoad(); await flush(); });
-  expect(fetcher.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(2);
-  expect(fetcher.mock.calls.filter(([, init]) => init?.method !== "PUT")).toHaveLength(1);
+  expect(accountSaveCalls()).toHaveLength(2);
+  expect(fetcher.mock.calls.filter(([url, init]) => !isAccountSaveCall(String(url), init))).toHaveLength(1);
   expect(values.has("fb-compete-v1:athlete:device-only")).toBe(false);
   expect(api.saveError).toBeNull();
 });
@@ -130,24 +160,31 @@ it.each([null, "not-json", JSON.stringify({ state: { broken: true } })])(
     values.set("fb-compete-v1:athlete:device-only", "1");
     values.set("fb-compete-v1:athlete:revision", "revision-1");
     const remote = { ...freshState(), city: "Real server city", name: "Saved athlete" };
-    const fetcher = vi.fn(async (_url: string, init?: RequestInit) => init?.method === "PUT"
-      ? Response.json({ updatedAt: "revision-2" })
-      : Response.json({ state: remote, updatedAt: "revision-1" }));
+    fetcher = vi.fn(async (url: string, init?: RequestInit) =>
+      isAccountSaveCall(url, init)
+        ? Response.json({ updatedAt: "revision-2", state: remote })
+        : Response.json({ state: remote, updatedAt: "revision-1" }));
     vi.stubGlobal("fetch", fetcher);
     await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
     await act(async () => { vi.advanceTimersByTime(500); await flush(); });
     expect(api.state?.city).toBe(remote.city);
     expect(api.state?.name).toBe(remote.name);
     expect(values.has("fb-compete-v1:athlete:device-only")).toBe(false);
-    expect(fetcher.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(0);
+    expect(accountSaveCalls()).toHaveLength(0);
   },
 );
 
 it("keeps edits and server retry working when browser storage is unavailable", async () => {
   let fail = true;
-  const fetcher = vi.fn(async (_url: string, init?: RequestInit) => init?.method === "PUT"
-    ? fail ? Response.json({ error: "unavailable" }, { status: 503 }) : Response.json({ updatedAt: "revision-2" })
-    : Response.json({ state: freshState(), updatedAt: "revision-1" }));
+  fetcher = vi.fn(async (url: string, init?: RequestInit) =>
+    isAccountSaveCall(url, init)
+      ? fail
+        ? Response.json({ error: "unavailable" }, { status: 503 })
+        : Response.json({
+            updatedAt: "revision-2",
+            state: savedAccountStateFromBody(JSON.parse(String(init?.body))),
+          })
+      : Response.json({ state: freshState(), updatedAt: "revision-1" }));
   vi.stubGlobal("fetch", fetcher);
   await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
   const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -160,9 +197,20 @@ it("keeps edits and server retry working when browser storage is unavailable", a
     expect(api.saveError).toBeTruthy();
     fail = false;
     await act(async () => { api.retryLoad(); await flush(); });
-    const writes = fetcher.mock.calls.filter(([, init]) => init?.method === "PUT");
+    const writes = accountSaveCalls();
     expect(writes).toHaveLength(2);
-    expect(writes.every(([, init]) => JSON.parse(init!.body as string).state.city === "New city")).toBe(true);
+    expect(
+      writes.every(([, init]) => {
+        const body = JSON.parse(init!.body as string);
+        return (
+          body.state?.city === "New city" ||
+          body.actions?.some(
+            (action: { type: string; city?: string }) =>
+              action.type === "set-city" && action.city === "New city",
+          )
+        );
+      }),
+    ).toBe(true);
     expect(api.saveError).toBeNull();
   } finally { warn.mockRestore(); }
 });
@@ -171,18 +219,23 @@ it("preserves restored draft units through refresh and automatic retry", async (
   values.set("fb-compete-v1:athlete", JSON.stringify({ state: { ...freshState(), units: "metric" }, savedAt: "2026-10-22T15:00:00Z" }));
   values.set("fb-compete-v1:athlete:device-only", "1");
   values.set("fb-compete-v1:athlete:revision", "revision-1");
-  const fetcher = vi.fn(async (_url: string, init?: RequestInit) => init?.method === "PUT"
-    ? Response.json({ updatedAt: "revision-2" })
-    : Response.json({ state: { ...freshState(), units: "us" }, updatedAt: "revision-1" }));
+  fetcher = vi.fn(async (url: string, init?: RequestInit) =>
+    isAccountSaveCall(url, init)
+      ? Response.json({
+          updatedAt: "revision-2",
+          state: savedAccountStateFromBody(JSON.parse(String(init?.body))),
+        })
+      : Response.json({ state: { ...freshState(), units: "us" }, updatedAt: "revision-1" }));
   vi.stubGlobal("fetch", fetcher);
   await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
   expect(api.state?.units).toBe("metric");
   await act(async () => { await api.refresh(); });
   expect(api.state?.units).toBe("metric");
   await act(async () => { vi.advanceTimersByTime(500); await flush(); });
-  const writes = fetcher.mock.calls.filter(([, init]) => init?.method === "PUT");
+  const writes = accountSaveCalls();
   expect(writes).toHaveLength(1);
-  expect(JSON.parse(writes[0]![1]!.body as string).state.units).toBe("metric");
+  const body = JSON.parse(writes[0]![1]!.body as string);
+  expect(body.state?.units ?? body.actions?.[0]?.units).toBe("metric");
   expect(values.has("fb-compete-v1:athlete:device-only")).toBe(false);
   expect(api.saveError).toBeNull();
 });

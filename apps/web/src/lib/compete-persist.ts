@@ -677,7 +677,14 @@ export async function hydrateFieldBoard(
 }
 
 /** Resolve each closing field before scoring; never settle an invented sparse-pool roster. */
-export async function settleAccountFields(db: Db, userId: string, state: CompeteState, now = new Date(), acceptedFacts = false): Promise<CompeteState> {
+export async function settleAccountFields(
+  db: Db,
+  userId: string,
+  state: CompeteState,
+  now = new Date(),
+  acceptedFacts = false,
+  scoreOpenPeriod = true,
+): Promise<CompeteState> {
   const { settleSportRound, rollClock, weeklyWaveWindowAt, settleSleepWeeks, weekEndAfter } = await import("@fitness-battle/shared");
   let next = state;
   if (acceptedFacts) {
@@ -716,7 +723,7 @@ export async function settleAccountFields(db: Db, userId: string, state: Compete
       next = { ...next, enrollments };
     }
     const due = next.enrollments.find(row => Date.parse(row.weekEnd) <= now.getTime());
-    if (!due) return rollClock(next, now);
+    if (!due) return scoreOpenPeriod ? rollClock(next, now) : next;
     next = settleSportRound(next, due.sport, now);
   }
   // Retain the engine's bounded catch-up policy after a long absence. Skipped
@@ -729,7 +736,8 @@ export async function settleAccountFields(db: Db, userId: string, state: Compete
       ? { ...e, waveStart: window.waveStart.toISOString(), weekEnd: window.weekEnd.toISOString(), peerIds: [], syntheticIds: [], fieldId: null, fieldBoard: undefined, awaitingField: true } : e),
     ratings: next.ratings.map(r => stopped.has(r.sport) ? { ...r, optedIn: false } : overdue.has(r.sport) ? { ...r, lockOpen: r.openElo, lockVerified: r.verifiedElo, lockPeriod: window.waveStart.toISOString() } : r),
   };
-  return rollClock(await hydrateFieldBoard(db, userId, next, now), now);
+  const hydrated = await hydrateFieldBoard(db, userId, next, now);
+  return scoreOpenPeriod ? rollClock(hydrated, now) : hydrated;
 }
 
 /** A device may cross Sunday close using an old peer snapshot. Recompute those

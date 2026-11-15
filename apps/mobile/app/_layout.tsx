@@ -41,6 +41,7 @@ import { BootGate } from "../src/ui/boot-gate";
 import { LaunchGate } from "../src/ui/launch-gate";
 import { useReducedMotion } from "../src/ui/use-reduced-motion";
 import { NavigationWarmup } from "../src/lib/navigation-warmup";
+import { applyExpoUpdateOnLaunch } from "../src/lib/expo-ota";
 
 function BlockPrivacyGate({ children }: { children: ReactNode }) {
 const SHELL_COLORS=useThemeColors();
@@ -118,6 +119,10 @@ const SHELL_COLORS=useThemeColors();
   const fontsLoaded = manropeLoaded && dmLoaded && nunitoLoaded;
   const [fontLoadTimedOut, setFontLoadTimedOut] = useState(false);
   const fontError = manropeError ?? dmError ?? nunitoError;
+
+  useEffect(() => {
+    void applyExpoUpdateOnLaunch();
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded || fontError) return;

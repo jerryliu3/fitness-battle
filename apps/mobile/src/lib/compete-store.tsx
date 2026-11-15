@@ -7,6 +7,14 @@ import {
   applyDebugEvent,
   isSupabaseConfigured,
   applyRemoteSnapshot,
+  isCompeteAccountIntentAction,
+  isCompeteSyncAction,
+  accountSavePlan,
+  dequeueAccountSaveWork,
+  isUnsaveableBatchError,
+  runAccountSaveSteps,
+  serializeCompeteIntent,
+  serializeCompeteSyncAction,
   arenaBaselineStorageKey,
   countedActivityIds,
   FIELD_REFRESH_MS,
@@ -199,6 +207,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   const unsavedRef = useRef(false);
   const unitsUnsavedRef = useRef(false);
   const revisionRef = useRef<string | null>(null);
+  const pendingActionsRef = useRef<Action[]>([]);
+  const pendingDocumentRef = useRef(false);
   const conflictRef = useRef(false);
   const [saveConflict, setSaveConflict] = useState(false);
   const [noticeAttempt, setNoticeAttempt] = useState(0);
@@ -228,6 +238,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     preDebugStateRef.current = null;
     setDebugActive(false);
     revisionRef.current = null;
+    pendingActionsRef.current = [];
+    pendingDocumentRef.current = false;
     conflictRef.current = false;
     setSaveConflict(false);
     markLoadReady(false);
@@ -416,6 +428,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       if (!alive || accountRef.current !== owner) return;
       unsavedRef.current = dirty;
       unitsUnsavedRef.current = dirty;
+      pendingDocumentRef.current = dirty;
       seedArenaBaselinesFromState(
         next,
         owner ?? "guest",
@@ -805,25 +818,51 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             });
             if (!account || account.userId !== id || !isCurrent())
               return;
-            const response = await fetchWithTimeout(
-              `${mobileEnv.apiUrl}/api/compete`,
-              {
-                method: "PUT",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${account.token}`,
-                },
-                body: JSON.stringify({
-                  state: next,
-                  accountId: id,
-                  updatedAt: revisionRef.current,
+            const actionBatch = [...pendingActionsRef.current];
+            const headers = {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${account.token}`,
+            };
+            const steps = accountSavePlan(actionBatch, next, pendingDocumentRef.current);
+            if (!steps.length) return;
+            const { response, body, revision, completedStepCount, transportError } =
+              await runAccountSaveSteps(
+              id,
+              revisionRef.current,
+              steps,
+              (url, init) =>
+                fetchWithTimeout(`${mobileEnv.apiUrl}${url}`, {
+                  ...init,
+                  headers: { ...headers, ...(init.headers as Record<string, string>) },
                 }),
-              },
             );
             if (!isCurrent()) return;
-            if (!response.ok) {
-              const body = await response.json().catch(() => null);
-              if (!isCurrent()) return;
+            const saveFailed = transportError || !response?.ok;
+            const acknowledged = dequeueAccountSaveWork(
+              steps,
+              saveFailed ? completedStepCount : steps.length,
+              actionBatch,
+              pendingDocumentRef.current,
+            );
+            if (!saveFailed || completedStepCount > 0) {
+              pendingActionsRef.current = [
+                ...acknowledged.actions,
+                ...pendingActionsRef.current.slice(actionBatch.length),
+              ];
+              pendingDocumentRef.current = acknowledged.document;
+            }
+            if (typeof revision === "string") {
+              revisionRef.current = revision;
+              if (saveFailed || completedStepCount > 0) {
+                await AsyncStorage.setItem(`${scoped.state}:revision`, revision);
+              }
+            }
+            if (saveFailed) {
+              if (isUnsaveableBatchError(body?.error)) {
+                pendingActionsRef.current = [];
+              }
+              pendingDocumentRef.current = true;
+              await AsyncStorage.setItem(scoped.dirty, "1");
               if (
                 body?.error === "account_changed_reload" ||
                 body?.error === "account_version_required"
@@ -840,9 +879,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               if (pendingFeedback.current?.account === id) void playCue("error");
               return;
             }
-            const body = await response.json();
             if (!isCurrent()) return;
-            if (typeof body.updatedAt !== "string")
+            if (typeof body?.updatedAt !== "string")
               throw new Error("missing_revision");
             revisionRef.current = body.updatedAt;
             await AsyncStorage.setItem(
@@ -851,9 +889,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             );
             if (!isCurrent() || generation !== dirtyRef.current)
               return;
-            unsavedRef.current = false;
-            unitsUnsavedRef.current = false;
-            if (isCompeteState(body.state)) {
+            const keepLocalDraft = pendingDocumentRef.current;
+            if (isCompeteState(body.state) && !keepLocalDraft) {
               stateRef.current = body.state;
               setState(body.state);
               await AsyncStorage.setItem(
@@ -861,15 +898,25 @@ export function CompeteProvider({ children, navigationReady = true }: { children
                 JSON.stringify(body.state),
               );
             }
+            if (!keepLocalDraft) {
+              unsavedRef.current = false;
+              unitsUnsavedRef.current = false;
+              pendingActionsRef.current = [];
+              await AsyncStorage.removeItem(scoped.dirty);
+            } else {
+              unsavedRef.current = true;
+              await AsyncStorage.setItem(scoped.dirty, "1");
+            }
             invalidateApiReads(apiReadScope(mobileEnv.apiUrl, account.token));
             setSaveError(null);
             if (pendingFeedback.current?.account === id && pendingFeedback.current.generation <= generation) {
               pendingFeedback.current = null;
               playPattern("confirm");
             }
-            await AsyncStorage.removeItem(scoped.dirty);
           } catch {
             if (isCurrent()) {
+              pendingDocumentRef.current = true;
+              await AsyncStorage.setItem(scoped.dirty, "1").catch(() => {});
               if (pendingFeedback.current?.account === id) void playCue("error");
               const message = saveFailure();
               if (message) setSaveError(message);
@@ -936,6 +983,11 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         accountId: action.accountId ?? id ?? undefined,
       });
       if (JSON.stringify(next) === JSON.stringify(before)) return;
+      if (isCompeteSyncAction(action)) {
+        pendingActionsRef.current.push(serializeCompeteSyncAction(action));
+      } else if (isCompeteAccountIntentAction(action)) {
+        pendingActionsRef.current.push(serializeCompeteIntent(action));
+      }
       dirtyRef.current += 1;
       if (["rename", "set-city", "set-gender", "set-country", "set-avatar", "opt-in", "opt-in-health", "opt-out", "opt-out-health", "log-manual", "complete-onboarding", "freeze", "unfreeze"].includes(action.type)) {
         if (!authRef.current.offlineMode && id) pendingFeedback.current = { account: id, generation: dirtyRef.current };

@@ -28,6 +28,14 @@ import {
   seedArenaBaselinesFromState,
   seenFieldFromState,
   withAccountEloBaseline,
+  isCompeteAccountIntentAction,
+  isCompeteSyncAction,
+  accountSavePlan,
+  dequeueAccountSaveWork,
+  isUnsaveableBatchError,
+  runAccountSaveSteps,
+  serializeCompeteIntent,
+  serializeCompeteSyncAction,
   type Action,
   type Activity,
   type CompeteState,
@@ -221,6 +229,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef<CompeteState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queue = useRef<Action[]>([]);
+  const pendingActionsRef = useRef<Action[]>([]);
+  const pendingDocumentRef = useRef(false);
   const dirtyRef = useRef(0);
   const unsavedRef = useRef(false);
   const unitsUnsavedRef = useRef(false);
@@ -251,6 +261,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     statusRef.current = "loading";
     stateRef.current = null;
     queue.current = [];
+    pendingActionsRef.current = [];
+    pendingDocumentRef.current = false;
     dirtyRef.current = 0;
     unsavedRef.current = false;
     unitsUnsavedRef.current = false;
@@ -277,14 +289,41 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           return;
         }
         try {
-          const response = await fetch("/api/compete", {
-            method: "PUT", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ state: next, accountId, updatedAt: revisionRef.current }),
-          });
+          const actionBatch = [...pendingActionsRef.current];
+          const steps = accountSavePlan(actionBatch, next, pendingDocumentRef.current);
+          const { response, body, revision, completedStepCount, transportError } =
+            await runAccountSaveSteps(
+            accountId,
+            revisionRef.current,
+            steps,
+            (url, init) => fetch(url, init),
+          );
           if (!isCurrent()) return;
-          const body = await response.json().catch(() => null);
-          if (!isCurrent()) return;
-          if (!response.ok) {
+          const saveFailed = transportError || !response?.ok;
+          const acknowledged = dequeueAccountSaveWork(
+            steps,
+            saveFailed ? completedStepCount : steps.length,
+            actionBatch,
+            pendingDocumentRef.current,
+          );
+          if (!saveFailed || completedStepCount > 0) {
+            pendingActionsRef.current = [
+              ...acknowledged.actions,
+              ...pendingActionsRef.current.slice(actionBatch.length),
+            ];
+            pendingDocumentRef.current = acknowledged.document;
+          }
+          if (typeof revision === "string") {
+            revisionRef.current = revision;
+            if (saveFailed || completedStepCount > 0) {
+              writeStorageItem(`${storageKey(accountId)}:revision`, revision);
+            }
+          }
+          if (saveFailed) {
+            if (isUnsaveableBatchError(body?.error)) {
+              pendingActionsRef.current = [];
+            }
+            pendingDocumentRef.current = true;
             writeStorageItem(deviceOnlyKey(accountId), "1");
             if (body?.error === "account_changed_reload" || body?.error === "account_version_required") {
               conflictRef.current = true; setSaveConflict(true);
@@ -298,23 +337,35 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             return;
           }
           if (typeof body?.updatedAt !== "string") throw new Error("missing_revision");
-          revisionRef.current = body.updatedAt;
+          revisionRef.current = body.updatedAt ?? revisionRef.current;
           writeStorageItem(`${storageKey(accountId)}:revision`, body.updatedAt);
           if (dirtyRef.current === generation) {
-            if (isCompeteState(body.state)) {
+            const keepLocalDraft = pendingDocumentRef.current;
+            if (isCompeteState(body.state) && !keepLocalDraft) {
               stateRef.current = body.state;
               setState(body.state);
               writeLocal(accountId, body.state, body.updatedAt);
+            } else if (typeof body?.updatedAt === "string") {
+              writeStorageItem(`${storageKey(accountId)}:revision`, body.updatedAt);
             }
-            removeStorageItem(deviceOnlyKey(accountId));
-            unsavedRef.current = false; unitsUnsavedRef.current = false;
+            if (!keepLocalDraft) {
+              removeStorageItem(deviceOnlyKey(accountId));
+              unsavedRef.current = false;
+              unitsUnsavedRef.current = false;
+              pendingActionsRef.current = [];
+            } else {
+              unsavedRef.current = true;
+              writeStorageItem(deviceOnlyKey(accountId), "1");
+            }
           }
           setSaveError(null);
         } catch {
           if (!isCurrent()) return;
+          pendingDocumentRef.current = true;
           writeStorageItem(deviceOnlyKey(accountId), "1");
           setSaveError("This device updated. The account copy did not save.");
-        } finally {
+        }
+        finally {
           if (isCurrent()) setRetryingSave(false);
         }
       });
@@ -420,6 +471,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         // A marker cannot turn a missing/corrupt cache into an uploadable draft.
         const staleDeviceDraft = local.cached && readStorageItem(deviceOnlyKey(accountId)) === "1";
         if (!local.cached) removeStorageItem(deviceOnlyKey(accountId));
+        pendingDocumentRef.current = staleDeviceDraft;
         unsavedRef.current = staleDeviceDraft || queue.current.length > 0;
         unitsUnsavedRef.current ||= staleDeviceDraft;
         const cachedRevision = readStorageItem(`${storageKey(accountId)}:revision`);
@@ -500,6 +552,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     if (conflictRef.current && accountId) {
       localStorage.setItem(`${storageKey(accountId)}:recovery`, JSON.stringify(stateRef.current));
       localStorage.removeItem(deviceOnlyKey(accountId));
+      pendingActionsRef.current = [];
+      pendingDocumentRef.current = false;
       conflictRef.current = false; setSaveConflict(false);
       unsavedRef.current = false; unitsUnsavedRef.current = false;
       dirtyRef.current += 1;
@@ -723,6 +777,11 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         const before = userIdRef.current && !offlineRef.current ? { ...stateRef.current, requiresCanonicalFields: true } : stateRef.current;
         const next = reduceCompete(before, withAccount);
         if (JSON.stringify(next) === JSON.stringify(before)) return;
+        if (isCompeteSyncAction(withAccount)) {
+          pendingActionsRef.current.push(serializeCompeteSyncAction(withAccount));
+        } else if (isCompeteAccountIntentAction(withAccount)) {
+          pendingActionsRef.current.push(serializeCompeteIntent(withAccount));
+        }
         dirtyRef.current += 1;
         unsavedRef.current = true;
         if (withAccount.type === "set-units") unitsUnsavedRef.current = true;
