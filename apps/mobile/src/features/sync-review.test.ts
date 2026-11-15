@@ -199,7 +199,7 @@ it("supports Select all and Deselect all, and omits the saved safely message", a
   expect(deselectAllBtn).toBeDefined();
   expect(selectAllBtn).toBeDefined();
 
-  expect(renderer!.root.findByType("SyncEnergyCore" as never).props.totalSeconds).toBe(3600);
+  expect(renderer!.root.findByType("SyncEnergyCore" as never).props.benchmarkSeconds).toBe(3600);
 
   // Initially all 2 activities are selected, so Select all is disabled
   expect(selectAllBtn!.props.accessibilityState?.disabled).toBe(true);

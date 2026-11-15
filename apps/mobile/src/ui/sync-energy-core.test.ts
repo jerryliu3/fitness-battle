@@ -31,13 +31,13 @@ it("shows four selected totals around a bolt-only core", async () => {
   let renderer: ReturnType<typeof create>;
   await act(async () => {
     renderer = create(createElement(SyncEnergyCore, {
-      activities: [activity, { ...activity, id: "ride", elevationGainM: null }], totalSeconds: 7200, units: "metric", draining: false, effortDelta: 3,
+      activities: [activity, { ...activity, id: "ride", elevationGainM: null }], benchmarkSeconds: 7200, units: "metric", draining: false,
     }));
   });
   const text = renderer!.root.findAllByType("Text" as never).map(node => [node.props.children].flat().join("")).join(" ");
   expect(text).toContain("10.0 km");
-  expect(text).toContain("+3");
-  expect(text).toContain("Effort score");
+  expect(text).toContain("+10.1");
+  expect(text).toContain("Effort");
   expect(text).toContain("Activities");
   expect(text).not.toContain("synced moving time selected");
   expect(text).not.toContain("Elevation");
@@ -45,14 +45,14 @@ it("shows four selected totals around a bolt-only core", async () => {
   await act(async () => renderer!.unmount());
 });
 
-it("handles empty selection and unavailable score without an invented award", async () => {
+it("handles empty selection without an invalid charge or effort", async () => {
   let renderer: ReturnType<typeof create>;
   await act(async () => {
-    renderer = create(createElement(SyncEnergyCore, { activities: [], totalSeconds: 0, units: "us", draining: true, effortDelta: null }));
+    renderer = create(createElement(SyncEnergyCore, { activities: [], benchmarkSeconds: 0, units: "us", draining: true }));
   });
   const text = renderer!.root.findAllByType("Text" as never).map(node => [node.props.children].flat().join("")).join(" ");
   expect(text).toContain("0.0 mi");
-  expect(text).toContain("—");
+  expect(text).toContain("+0");
   expect(text).not.toContain("NaN");
   expect(withTiming).toHaveBeenCalledWith(0, expect.objectContaining({ duration: 780 }));
   await act(async () => renderer!.unmount());

@@ -2,7 +2,7 @@ import { useEffect, useId } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, ClipPath, Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import Animated, { cancelAnimation, Easing, ReduceMotion, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from "react-native-reanimated";
-import { clubDuration, formatVolume, type CompeteState, type SyncReviewReceipt } from "@fitness-battle/shared";
+import { activityEffort, clubDuration, formatVolume, type CompeteState, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { AppIcon, type AppIconName } from "./app-icon";
 import { textStyle } from "./section";
@@ -12,14 +12,14 @@ const Water = Animated.createAnimatedComponent(Path);
 const Ring = Animated.createAnimatedComponent(Circle);
 const circumference = 2 * Math.PI * 94;
 
-export function SyncEnergyCore({ activities, totalSeconds, units, draining, size = 176, active = true, effortDelta }: {
-  activities: SyncReviewReceipt["activities"]; totalSeconds: number; units: CompeteState["units"]; draining: boolean; size?: number; active?: boolean; effortDelta: number | null;
+export function SyncEnergyCore({ activities, benchmarkSeconds, units, draining, size = 176, active = true }: {
+  activities: SyncReviewReceipt["activities"]; benchmarkSeconds: number; units: CompeteState["units"]; draining: boolean; size?: number; active?: boolean;
 }) {
   const c = useThemeColors();
   const reduced = useReducedMotion();
   const id = useId().replace(/:/g, "");
   const seconds = activities.reduce((sum, a) => sum + a.movingSec, 0);
-  const fraction = totalSeconds > 0 ? Math.min(1, seconds / totalSeconds) : 0;
+  const fraction = benchmarkSeconds > 0 ? Math.min(1, seconds / benchmarkSeconds) : 0;
   const charge = useSharedValue(0), phase = useSharedValue(0), vibration = useSharedValue(0);
   useEffect(() => {
     charge.value = withTiming(draining ? 0 : fraction, { duration: draining ? 780 : 1100, easing: Easing.inOut(Easing.cubic), reduceMotion: ReduceMotion.System });
@@ -41,6 +41,7 @@ export function SyncEnergyCore({ activities, totalSeconds, units, draining, size
   const ringProps = useAnimatedProps(() => ({ strokeDashoffset: circumference * (1 - charge.value), strokeOpacity: charge.value > 0 ? 1 : 0 }));
   const boltStyle = useAnimatedStyle(() => ({ opacity: .4 + charge.value * .6, transform: [{ translateX: vibration.value * charge.value * 2 }, { rotate: `${vibration.value * charge.value * 4}deg` }, { scale: 1 + charge.value * .1 }] }));
   const sparksStyle = useAnimatedStyle(() => ({ opacity: reduced ? 0 : Math.abs(vibration.value) * charge.value, transform: [{ rotate: `${phase.value * 540 / Math.PI}deg` }] }));
+  const effort = activities.reduce((sum, a) => sum + activityEffort(a), 0);
   const distance = activities.reduce((sum, a) => sum + a.distanceM, 0);
   const metric = (icon: AppIconName, label: string, value: string) => <View accessible accessibilityLabel={`${label}: ${value}`} style={{ alignItems: "center", gap: 3 }}>
     <AppIcon name={icon} size={20} color={c.fieldTeal}/><Text style={[textStyle("label"), { color: c.ink, textAlign: "center" }]}>{value}</Text><Text style={[textStyle("caption"), { color: c.muted }]}>{label}</Text>
@@ -63,6 +64,6 @@ export function SyncEnergyCore({ activities, totalSeconds, units, draining, size
       </Animated.View>
       <Animated.View style={boltStyle}><Svg width={size * .29} height={size * .38} viewBox="0 0 32 36"><Path d="M19 2L5 21h10l-2 13 15-21H18z" fill={c.tennis} stroke="#dca21c" strokeWidth=".5"/></Svg></Animated.View>
     </View>
-    <View style={{ flex: 1, gap: 20 }}>{metric("layers", "Activities", `${activities.length}`)}{metric("scoring", "Effort score", effortDelta === null ? "—" : `${effortDelta >= 0 ? "+" : ""}${effortDelta.toLocaleString("en-US", { maximumFractionDigits: 1 })}`)}</View>
+    <View style={{ flex: 1, gap: 20 }}>{metric("layers", "Activities", `${activities.length}`)}{metric("scoring", "Effort", `+${effort.toLocaleString("en-US", { maximumFractionDigits: 1 })}`)}</View>
   </View>;
 }
