@@ -15,6 +15,8 @@ import {
 import { initialsFromName, selfLaneLabel } from "./compete/track";
 import { findSynthetic, syntheticVolumeInWindow } from "./matching/synthetic-bank";
 import { APP_TIMEZONE, accountTimeZone, endOfZonedDay, formatAppDateTime, shiftAppDay } from "./period";
+import { competeChartLiveValue, competeChartUnit } from "./compete-field-view";
+import { walkingStepsInPeriod } from "./compete/journal";
 import { competePeriodWindow } from "./phone-views";
 
 export type FieldViewDimension = "2d" | "3d" | "4d" | "graph";
@@ -162,6 +164,9 @@ function formatMetricValue(value: number, unit: string): string {
   const safe = Number.isFinite(value) ? Math.max(0, value) : 0;
   if (unit === "km" || unit === "mi" || unit === "hrs") {
     return safe.toFixed(1);
+  }
+  if (unit === "steps") {
+    return Math.round(safe).toLocaleString("en-US");
   }
   return Math.round(safe).toLocaleString("en-US");
 }
@@ -557,6 +562,33 @@ export function evaluateCompeteTimeSeriesModel(
   };
 }
 
+function buildYouDailyMetricVertices(
+  periodStart: Date,
+  periodEnd: Date,
+  clampedNowMs: number,
+  nowFraction: number,
+  liveValue: number,
+  metric: (through: Date) => number,
+): CompeteTimeSeriesVertex[] {
+  const startMs = periodStart.getTime();
+  const spanMs = Math.max(1, periodEnd.getTime() - startMs);
+  const vertices: CompeteTimeSeriesVertex[] = [{ t: 0, value: 0 }];
+  let cursor = new Date(periodStart);
+  while (cursor.getTime() < clampedNowMs) {
+    const dayEnd = endOfZonedDay(cursor);
+    const cutoffMs = Math.min(clampedNowMs, dayEnd.getTime());
+    const t = clamp(0, nowFraction, (cutoffMs - startMs) / spanMs);
+    vertices.push({ t, value: metric(new Date(cutoffMs)) });
+    cursor = shiftAppDay(dayEnd, 1);
+  }
+  if (nowFraction > 0) {
+    const last = vertices[vertices.length - 1]!;
+    if (Math.abs(nowFraction - last.t) <= 1e-5) last.value = liveValue;
+    else vertices.push({ t: nowFraction, value: liveValue });
+  }
+  return vertices;
+}
+
 function buildYouVertices(
   state: CompeteState,
   sport: SportId,
@@ -567,6 +599,17 @@ function buildYouVertices(
   nowFraction: number,
   liveValue: number,
 ): CompeteTimeSeriesVertex[] {
+  if (sport === "walking") {
+    return buildYouDailyMetricVertices(
+      periodStart,
+      periodEnd,
+      clampedNowMs,
+      nowFraction,
+      liveValue,
+      (through) =>
+        walkingStepsInPeriod(state.dailyHealth, periodStart, periodEnd, through),
+    );
+  }
   const spec = sportById(sport);
   const divisor = state.units === "metric" ? 1000 : 1609.344;
   const startMs = periodStart.getTime();
@@ -620,6 +663,18 @@ function buildYouRampVertices(
   nowFraction: number,
   liveValue: number,
 ): CompeteTimeSeriesVertex[] {
+  if (sport === "walking") {
+    return buildYouVertices(
+      state,
+      sport,
+      track,
+      periodStart,
+      periodEnd,
+      clampedNowMs,
+      nowFraction,
+      liveValue,
+    );
+  }
   const spec = sportById(sport);
   const divisor = state.units === "metric" ? 1000 : 1609.344;
   const startMs = periodStart.getTime();
@@ -709,7 +764,14 @@ function buildCompetitorVertices(
     const cutoffMs = Math.min(clampedNowMs, dayEnd.getTime());
     const t = clamp(0, nowFraction, (cutoffMs - startMs) / spanMs);
     const vol = syntheticVolumeInWindow(synthetic, sport, periodStart, periodEnd, track, new Date(cutoffMs), spec.gps);
-    rawPoints.push({ t, value: spec.gps ? vol.distanceM / divisor : vol.movingSec / 3600 });
+    rawPoints.push({
+      t,
+      value: spec.gps
+        ? vol.distanceM / divisor
+        : sport === "walking"
+          ? vol.effort
+          : vol.movingSec / 3600,
+    });
     cursor = dayEnd;
   }
 
@@ -737,8 +799,7 @@ export function prepareCompeteTimeSeriesBase(
   now: Date = competeNow(state),
   options?: Pick<CompeteTimeSeriesOptions, "hiddenIds" | "view">,
 ): CompeteTimeSeriesPreparedBase {
-  const spec = sportById(sport);
-  const unit = spec.gps ? (state.units === "metric" ? "km" : "mi") : "hrs";
+  const unit = competeChartUnit(sport, state.units);
   const period = competePeriodWindow(state, now, sport);
   const startMs = period.startsAt.getTime();
   const endMs = period.endsAt.getTime();
@@ -770,7 +831,7 @@ export function prepareCompeteTimeSeriesBase(
         ];
 
   const rawAthletes = rows.map((row) => {
-    const liveValue = spec.gps ? row.distanceM / divisor : row.movingSec / 3600;
+    const liveValue = competeChartLiveValue(sport, row, state.units);
     const historyAvailable = row.you || Boolean(findSynthetic(sport, row.id));
     const vertices = row.you
       ? buildYouVertices(

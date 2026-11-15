@@ -1,5 +1,5 @@
 import type { FieldViewDimension } from "./compete-time-series";
-import { sportById, type SportId } from "./compete/sports";
+import { sportById, type CompeteState, type SportId } from "./compete/sports";
 
 export type CompeteArenaEvent = SportId | "sleep";
 
@@ -31,6 +31,28 @@ export function competeFieldViewLabel(view: FieldViewDimension): string {
   if (view === "graph") return "Chart";
   if (view === "2d") return "2D";
   return "2D";
+}
+
+export function competeChartUnit(
+  sport: SportId,
+  units: CompeteState["units"],
+): string {
+  if (sportById(sport).gps) return units === "metric" ? "km" : "mi";
+  if (sport === "walking") return "steps";
+  if (sport === "strength") return "hrs";
+  return "hrs";
+}
+
+export function competeChartLiveValue(
+  sport: SportId,
+  row: { distanceM: number; movingSec: number; effort: number },
+  units: CompeteState["units"],
+): number {
+  const spec = sportById(sport);
+  const divisor = units === "metric" ? 1000 : 1609.344;
+  if (spec.gps) return row.distanceM / divisor;
+  if (sport === "walking") return row.effort;
+  return row.movingSec / 3600;
 }
 
 export function normalizeCompeteFieldView(

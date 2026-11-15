@@ -1,7 +1,7 @@
 "use client";
 import { typographyStyle } from "@/ui/section";
 import { useState } from "react";
-import { coursePreviewLanes, initialsFromName, type ArenaSceneLane, buildArenaModel, competitionTrack, competePeriodWindow, competeNow, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { coursePreviewLanes, initialsFromName, type ArenaSceneLane, buildArenaModel, competitionTrack, competePeriodWindow, competeNow, isMetricCompete, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { useCompetitionCourse } from "@/features/course/use-competition-course";
 import { GeographicCourse } from "@/features/course/geographic-course";
 import { useAuth } from "@/components/auth-context";
@@ -15,7 +15,7 @@ export function CoursePreview({ sport, queued, state }: { sport: SportId; queued
   const { course } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, true);
   const model = buildArenaModel(state, undefined, competitionTrack(sport), sport), lane = model?.lanes.find(lane => lane.you);
 
-  if (!queued && model?.unit === "pts") {
+  if (!queued && isMetricCompete(sport)) {
     return (
       <div
         className="compete-event-preview"
@@ -44,6 +44,6 @@ function Snapshot({ cacheKey, course, lanes, unit }: { cacheKey: string; course:
   const [uri, setUri] = useState(() => snapshotCache.get(cacheKey) ?? "");
   const capture = (value: string) => { if (snapshotCache.size >= 32) snapshotCache.delete(snapshotCache.keys().next().value!); snapshotCache.set(cacheKey, value); setUri(value); };
   return <div className="compete-event-preview" style={{ position: "relative", pointerEvents: "none" }}>
-    {uri ? <img src={uri} alt="3D snapshot of your current race position" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} /> : course && lanes.length > 0 && (unit === "mi" || unit === "km") ? <GeographicCourse course={course} lanes={lanes} unit={unit} selectedId={lanes.find(lane => lane.you)?.id ?? ""} focusRequest={0} onSelect={() => {}} onSnapshot={capture} /> : <small>{unit === "pts" ? "Points event" : "Preview unavailable"}</small>}
+    {uri ? <img src={uri} alt="3D snapshot of your current race position" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} /> : course && lanes.length > 0 && (unit === "mi" || unit === "km") ? <GeographicCourse course={course} lanes={lanes} unit={unit} selectedId={lanes.find(lane => lane.you)?.id ?? ""} focusRequest={0} onSelect={() => {}} onSnapshot={capture} /> : <small>{unit === "hrs" || unit === "steps" ? "Chart preview" : "Preview unavailable"}</small>}
   </div>;
 }

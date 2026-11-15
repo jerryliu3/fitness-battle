@@ -7,7 +7,6 @@ import { StandingsList } from "./standings-list";
 import { CompeteTimeSeriesChart } from "./compete-time-series-chart";
 import { GeographicCourse } from "@/features/course/geographic-course";
 import { useCompetitionCourse } from "@/features/course/use-competition-course";
-import { PortraitField } from "@/features/club/portrait-field";
 import { PolishedRacer } from "@/features/brand/polished-racer";
 import { RankAvatar } from "@/ui/rank-symbol";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -28,6 +27,10 @@ import {
   type ArenaSceneLane,
   type ArenaViewWindow,
   type BoardRow,
+  defaultCompeteFieldView,
+  isGeographicCompete,
+  normalizeCompeteFieldView,
+  type CompeteArenaEvent,
 } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
@@ -60,6 +63,7 @@ export function FieldStage({
   tabActive = true,
   replayState,
   queueOverlay,
+  competeEvent,
 }: {
   queueOverlay?: import("react").ReactNode;
   model: FieldModel;
@@ -77,7 +81,11 @@ export function FieldStage({
   sportTitle?: string;
   tabActive?: boolean;
   replayState?: CompeteState;
+  competeEvent?: CompeteArenaEvent;
 }) {
+  const presentationEvent: CompeteArenaEvent = competeEvent ?? model.sport;
+  const geographic = isGeographicCompete(presentationEvent);
+  const chartSleepMode = presentationEvent === "sleep";
   const { user } = useAuth();
   const { debugActive } = useCompete();
   const pathname = usePathname();
@@ -123,7 +131,8 @@ export function FieldStage({
       }
     : null;
 
-  const [viewDimension, setViewDimension] = useState<"2d" | "3d" | "4d" | "graph">(unit === "pts" ? "graph" : "4d");
+  const [viewDimension, setViewDimension] = useState<"2d" | "3d" | "4d" | "graph">(() => defaultCompeteFieldView(presentationEvent));
+  useEffect(() => { setViewDimension(defaultCompeteFieldView(presentationEvent)); }, [presentationEvent, model.sport, accountKey]);
   const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(model.sport, model.periodStart, model.periodEnd, debugActive, !standingsOnly && viewDimension === "4d" && (persistent || tabActive));
   const [courseFlat, setCourseFlat] = useState(false);
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
@@ -132,7 +141,7 @@ export function FieldStage({
     void playCue("selection");
     cancelCenterTween();
     setStandingsOpen(false);
-    setViewDimension(value);
+    setViewDimension(normalizeCompeteFieldView(presentationEvent, value));
   };
   const [standingsOpen, setStandingsOpen] = useState(standingsOnly);
   const [lanesImmersive, setLanesImmersive] = useState(persistent);
@@ -353,7 +362,7 @@ export function FieldStage({
     onOptionsChange(
       <FieldArenaChromeStack
         slots={{
-          view: <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={value => chooseViewRef.current(value)} />,
+          view: <FieldViewSwitcher value={viewDimension} geographic={geographic} onChange={value => chooseViewRef.current(value)} />,
         }}
       />,
     );
@@ -378,7 +387,7 @@ export function FieldStage({
           {sportTitle ?? model.sport}{queueOverlay ? " · Upcoming wave" : ` · ${displayPlace} / ${runners.length}`}
         </div>}
         {!onOptionsChange && (
-          <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
+          <FieldViewSwitcher value={viewDimension} geographic={geographic} onChange={chooseView}
             onStandings={queueOverlay ? undefined : () => { if (backgroundMode) onDetails?.(); else { setLanesImmersive(false); setStandingsOpen(true); } }}
           />
         )}
@@ -544,7 +553,7 @@ export function FieldStage({
     >
       <Sheet open={Boolean(profileLane)} title={profileLane?.name ?? "Athlete"} body="" onClose={() => setProfileLane(null)}>{profileLane ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "16px 0" }}><RankAvatar rank={rankSymbolForScore(scoreMap[profileLane.id])} src={profileLane.avatarUrl} name={profileLane.name} size={112} /><p>{profileLane.value.toFixed(2)} {unit} this event</p><p>{scoreMap[profileLane.id] ?? "—"} effort score</p></div> : null}</Sheet>
       {!standingsOnly && !lanesImmersive ? <div style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
-        <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
+        <FieldViewSwitcher value={viewDimension} geographic={geographic} onChange={chooseView}
           standings={standingsOpen} onStandings={queueOverlay ? undefined : () => { cancelCenterTween(); setStandingsOpen(true); }} />
       </div> : null}
       {!standingsOnly && <div style={{ display: standingsOpen ? "none" : "flow-root" }}>
@@ -558,49 +567,21 @@ export function FieldStage({
           {viewDimension === "graph" && (persistent || tabActive) ? (
             <CompeteTimeSeriesChart
               state={replayState}
-              sport={model.sport}
+              sport={chartSleepMode ? undefined : model.sport}
+              mode={chartSleepMode ? "sleep" : "sport"}
               track={model.track}
               selectedId={tappedId}
               onSelectAthlete={toggleSelect}
               reserveTopControls={!lanesImmersive}
+              immersive={backgroundMode && lanesImmersive}
             />
           ) : null}
           {viewDimension === "4d" && (persistent || tabActive) ? <div className="focus-geographic-host" style={{ position: "relative", height: persistent || lanesImmersive ? "100%" : 460 }}>
             <GeographicCourse cardSessionKey={lanesImmersive} initialFlat={courseFlat} onFlatChange={setCourseFlat} lanes={fieldLanes} unit={unit} selectedId={lanesImmersive ? tappedId : ""} focusRequest={lanesImmersive ? focusRequest : 0} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={lanesImmersive ? courseTarget : null} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? (spotlightCollapsed ? 136 : 236) + (replayState && !backgroundMode ? 128 : 0) : 8} />
             {!lanesImmersive ? <button type="button" className="focus-portal-pill is-accent" style={{ position: "absolute", top: 12, right: 12 }} aria-label="Expand 3D course to full screen" onClick={() => setLanesImmersive(true)}>Full Arena ⤢</button> : null}
           </div> : null}
-          {viewDimension === "3d" && (persistent || tabActive) ? (
-            <PortraitField
-              lanes={sceneLanes.map((l) => ({
-                ...l,
-                value: l.value,
-              }))}
-              view={view}
-              unit={unit}
-              focusRequest={focusRequest}
-              onGestureStart={cancelCenterTween}
-              onViewChange={next => { cancelCenterTween(); setSpan(next.span); setCenter(clampViewCenter(next.center, next.span)); }}
-              selectedId={trackSelected || (you?.id ?? "")}
-              immersive={lanesImmersive}
-              controlsTop={lanesImmersive ? 12 : 66}
-              onExpand={() => {
-                void playCue("light");
-                setLanesImmersive(true);
-              }}
-              onZoom={(value) => {
-                cancelCenterTween();
-                setSpan(value);
-              }}
-              onPan={(value) => {
-                cancelCenterTween();
-                setSpan(view.span);
-                setCenter(clampViewCenter(value, view.span));
-              }}
-              onSelect={toggleSelect}
-            />
-          ) : null}
-
-          <div hidden={viewDimension !== "2d"}>
+          {viewDimension === "2d" ? (
+          <div>
             <div className="focus-track-frame focus-portal-frame">
               {!lanesImmersive ? (
                 <div className="focus-portal-actions">
@@ -670,6 +651,7 @@ export function FieldStage({
               </div> : null}
             </div>
           </div>
+          ) : null}
           {queueOverlay}
         </ExpandingField>
       </div>}
