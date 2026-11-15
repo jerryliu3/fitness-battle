@@ -8,8 +8,11 @@ import {
   normalizeCompeteFieldView,
   fieldZoomLimits,
   arenaValueDecimals,
+  arenaLaneValues,
+  competeVolumeFromTotals,
   isGeographicArenaUnit,
 } from "./compete-field-view";
+import type { CheckpointSeries } from "./compete/track";
 
 describe("competeFieldView", () => {
   it("treats GPS sports as geographic with map default", () => {
@@ -31,6 +34,20 @@ describe("competeFieldView", () => {
     expect(competeFieldSwitcherOptions("sleep")).toEqual([{ value: "graph", label: "Timeline" }]);
     expect(normalizeCompeteFieldView("sleep", "2d")).toBe("graph");
     expect(normalizeCompeteFieldView("sleep", "3d")).toBe("graph");
+  });
+
+  it("maps checkpoint series to hrs, steps, or distance lanes", () => {
+    const series: CheckpointSeries = {
+      effort: [100, 200, 400],
+      distanceM: [0, 0, 0],
+      movingSec: [1800, 3600, 7200],
+      labels: ["Early", "Mid", "Now"],
+      liveAt: new Date("2026-10-26T18:00:00Z"),
+    };
+    expect(competeVolumeFromTotals("strength", { effort: 4, distanceM: 0, movingSec: 3600 }, "metric")).toBe(1);
+    expect(competeVolumeFromTotals("walking", { effort: 500, distanceM: 0, movingSec: 0 }, "metric")).toBe(500);
+    expect(arenaLaneValues("strength", series, "metric")).toEqual([0.5, 1, 2]);
+    expect(arenaLaneValues("walking", series, "metric")).toEqual([100, 200, 400]);
   });
 
   it("exposes arena unit helpers for lane zoom and formatting", () => {

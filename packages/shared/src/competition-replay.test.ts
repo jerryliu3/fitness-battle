@@ -67,7 +67,7 @@ describe("competition replay presentation ledger", () => {
     const replay = { ...ledger([{ ...event("s", "you", 0), effort: 4, movingSec: 1800 }]), sport: "strength" as const, track: "open" as const };
     const index = indexCompetitionReplay(replay, "us");
     expect(index.unit).toBe("hrs");
-    expect(competitionReplayFrame(index, 1).rows.find(r => r.you)?.value).toBe(4);
+    expect(competitionReplayFrame(index, 1).rows.find(r => r.you)?.value).toBeCloseTo(0.5);
   });
   it("keeps a local preview to the signed-in athlete when no other account is seated", () => {
     const state = freshState(new Date("2026-10-25T14:00:00Z"));

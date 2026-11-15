@@ -1,4 +1,5 @@
 import type { FieldViewDimension } from "./compete-time-series";
+import type { CheckpointSeries } from "./compete/track";
 import { sportById, type CompeteState, type SportId } from "./compete/sports";
 
 export type CompeteArenaEvent = SportId | "sleep";
@@ -40,16 +41,43 @@ export function competeChartUnit(
   return "hrs";
 }
 
+export function competeVolumeFromTotals(
+  sport: SportId,
+  totals: { distanceM: number; movingSec: number; effort: number },
+  units: CompeteState["units"],
+): number {
+  const spec = sportById(sport);
+  const divisor = units === "metric" ? 1000 : 1609.344;
+  if (spec.gps) return totals.distanceM / divisor;
+  if (sport === "walking") return totals.effort;
+  return totals.movingSec / 3600;
+}
+
 export function competeChartLiveValue(
   sport: SportId,
   row: { distanceM: number; movingSec: number; effort: number },
   units: CompeteState["units"],
 ): number {
-  const spec = sportById(sport);
-  const divisor = units === "metric" ? 1000 : 1609.344;
-  if (spec.gps) return row.distanceM / divisor;
-  if (sport === "walking") return row.effort;
-  return row.movingSec / 3600;
+  return competeVolumeFromTotals(sport, row, units);
+}
+
+export function arenaLaneValues(
+  sport: SportId,
+  series: CheckpointSeries,
+  units: CompeteState["units"],
+): [number, number, number] {
+  const indices = [0, 1, 2] as const;
+  return indices.map((index) =>
+    competeVolumeFromTotals(
+      sport,
+      {
+        distanceM: series.distanceM[index] ?? 0,
+        movingSec: series.movingSec[index] ?? 0,
+        effort: series.effort[index] ?? 0,
+      },
+      units,
+    ),
+  ) as [number, number, number];
 }
 
 export function normalizeCompeteFieldView(

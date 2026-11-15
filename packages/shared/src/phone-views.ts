@@ -28,6 +28,7 @@ import {
   serializeArenaBaseline,
 } from "./arena-view";
 import { APP_TIMEZONE, accountTimeZone, currentPeriodBounds } from "./period";
+import { arenaLaneValues } from "./compete-field-view";
 
 export const CHECKPOINT_FRAME = { width: 320, height: 570 } as const;
 
@@ -286,19 +287,10 @@ export function buildTodayRoute(
 
 function seriesValues(
   series: CheckpointSeries,
-  gps: boolean,
+  sport: SportId,
   units: CompeteState["units"],
 ): [number, number, number] {
-  if (!gps) {
-    return [
-      series.effort[0] ?? 0,
-      series.effort[1] ?? 0,
-      series.effort[2] ?? 0,
-    ];
-  }
-  const divisor = units === "metric" ? 1000 : 1609.344;
-  const source = series.distanceM.map((meters) => meters / divisor);
-  return [source[0] ?? 0, source[1] ?? 0, source[2] ?? 0];
+  return arenaLaneValues(sport, series, units);
 }
 
 export function buildArenaModel(
@@ -359,7 +351,7 @@ export function buildArenaModel(
             now,
           )
         : undefined,
-      values: seriesValues(series, spec.gps, state.units),
+      values: seriesValues(series, sport, state.units),
     };
   });
 
@@ -379,7 +371,7 @@ export function buildArenaModel(
       name: ghost.name,
       you: false,
       ghost: true,
-      values: seriesValues(ghost.series, spec.gps, state.units),
+      values: seriesValues(ghost.series, sport, state.units),
     });
   }
 

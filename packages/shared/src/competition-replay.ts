@@ -7,6 +7,7 @@ import { findSynthetic, syntheticVolumeInWindow } from "./matching/synthetic-ban
 import { normalizeCompeteFieldView } from "./compete-field-view";
 import { fieldDefaultSpan } from "./field-course";
 import type { CourseReplayFrame } from "./race-course";
+import { competeVolumeFromTotals } from "./compete-field-view";
 import { competeArenaUnit, type ArenaDistanceUnit } from "./phone-views";
 
 export interface CompetitionReplaySelection {
@@ -97,19 +98,18 @@ export function indexCompetitionReplay(input: CompetitionReplay, units: UnitSyst
     seen.add(key);
     return e.distanceM > 0 || e.movingSec > 0 || e.effort > 0;
   }).sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || a.athleteId.localeCompare(b.athleteId) || a.id.localeCompare(b.id));
-  const gps = sportById(input.sport).gps;
-  const divisor = units === "metric" ? 1000 : 1609.344;
   const series = new Map<string, AthleteSeries>(input.athletes.map(a => [a.id, { steps: [0], values: [0], efforts: [0] }]));
   events.forEach((event, i) => {
     const s = series.get(event.athleteId)!;
+    const delta = competeVolumeFromTotals(input.sport, event, units);
     s.steps.push(i + 1);
-    s.values.push(s.values[s.values.length - 1]! + (gps ? event.distanceM / divisor : event.effort));
+    s.values.push(s.values[s.values.length - 1]! + delta);
     s.efforts.push(s.efforts[s.efforts.length - 1]! + event.effort);
   });
   return {
     replay: { ...input, events },
     series,
-    unit: gps ? (units === "metric" ? "km" : "mi") : competeArenaUnit(input.sport, units),
+    unit: competeArenaUnit(input.sport, units),
   };
 }
 
@@ -129,7 +129,7 @@ export function competitionReplayFrame(index: CompetitionReplayIndex, cursor: nu
     const after = atStep(s, afterStep);
     return { ...athlete, value: before.value + (after.value - before.value) * fraction, effort: before.effort + (after.effort - before.effort) * fraction };
   });
-  // Match the 2D/portrait field: GPS distance, or effort points for strength.
+  // Match the 2D/portrait field: distance, hours, or steps depending on sport.
   // Equal values share a place, including everyone at the starting line.
   rows.sort((a, b) => b.value - a.value || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
   let place = 1;
