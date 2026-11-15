@@ -176,7 +176,7 @@ export const PROTOTYPE_SPORTS = [
   },
   {
     id: "walking",
-    name: "Walking",
+    name: "Steps",
     family: "GPS",
     unit: "km",
     available: true,
@@ -254,7 +254,7 @@ export function prototypeContest(sport: string) {
       score: "GPS Tracked",
     },
     walking: {
-      label: "Walking",
+      label: "Steps",
       unit: "km",
       total: 18.6,
       previous: 15.2,

@@ -1,7 +1,7 @@
 import { useId } from "react";
 import { Platform, ScrollView, Pressable, View, useWindowDimensions } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect, Path } from "react-native-svg";
-import { SPORTS, type SportId, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, APP_ICON_PATHS, competeHomeResult, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
+import { SPORTS, sportById, type SportId, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, APP_ICON_PATHS, competeHomeResult, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
@@ -56,7 +56,7 @@ export function ExploreEvents({ onChoose, state }: { onChoose(event: CompeteEven
           <EventTint event={event} />
           <EventArt event={event} />
           <View style={{ alignSelf: "flex-start" }}><CompeteIcon name={event} size={28} /></View>
-          <AppText role="label">{event[0].toUpperCase() + event.slice(1)}</AppText>
+          <AppText role="label">{event === "sleep" ? "Sleep" : sportById(event).name}</AppText>
         </Pressable>)}
       </ScrollView>
     </View>)}

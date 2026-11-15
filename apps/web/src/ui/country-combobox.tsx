@@ -1,6 +1,6 @@
 "use client";
 
-import { filterCountries, countryName } from "@fitness-battle/shared";
+import { countryFlagEmoji, countryName, filterCountries } from "@fitness-battle/shared";
 import { useEffect, useMemo, useState } from "react";
 import { AppText } from "./section";
 
@@ -14,47 +14,81 @@ export function CountryCombobox({
   label?: string;
 }) {
   const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+
   useEffect(() => {
-    setQuery(value ? (countryName(value) ?? value) : "");
+    setQuery(value ? (countryName(value) ?? "") : "");
   }, [value]);
+
   const options = useMemo(() => filterCountries(query), [query]);
 
   return (
     <label className="fb-field">
-      <AppText role="field">{label} · optional</AppText>
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <input
-          list="country-options"
-          value={query}
-          onChange={(e) => {
-            const text = e.target.value;
-            setQuery(text);
-            if (!text.trim()) {
-              onChange("");
-              return;
-            }
-            const match = filterCountries(text).find(
-              (row) =>
-                row.name.toLowerCase() === text.trim().toLowerCase() ||
-                row.code.toLowerCase() === text.trim().toLowerCase(),
-            );
-            if (match) onChange(match.code);
+      <AppText role="field">{label}</AppText>
+      <input
+        value={query}
+        onChange={(e) => {
+          const text = e.target.value;
+          setQuery(text);
+          setOpen(true);
+          if (!text.trim()) {
+            onChange("");
+            return;
+          }
+          const match = filterCountries(text).find(
+            (row) =>
+              row.name.toLowerCase() === text.trim().toLowerCase() ||
+              row.code.toLowerCase() === text.trim().toLowerCase(),
+          );
+          if (match) onChange(match.code);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder="Search country"
+        autoComplete="off"
+      />
+      {open && options.length > 0 ? (
+        <ul
+          className="fb-stack"
+          role="listbox"
+          style={{
+            marginTop: 8,
+            maxHeight: 220,
+            overflowY: "auto",
+            border: "1px solid var(--line, #e3e9e7)",
+            borderRadius: 12,
+            background: "var(--card, #fff)",
+            padding: 0,
+            listStyle: "none",
           }}
-          placeholder="Search country"
-          autoComplete="off"
-          style={{ flex: 1 }}
-        />
-        {value ? (
-          <button type="button" className="fb-btn-line" onClick={() => onChange("")}>
-            Clear
-          </button>
-        ) : null}
-      </div>
-      <datalist id="country-options">
-        {options.map((row) => (
-          <option key={row.code} value={row.name} />
-        ))}
-      </datalist>
+        >
+          {options.map((row) => (
+            <li key={row.code}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={row.code === value}
+                className="fb-btn-line"
+                style={{
+                  width: "100%",
+                  justifyContent: "flex-start",
+                  borderRadius: 0,
+                  border: "none",
+                  borderBottom: "1px solid var(--line, #e3e9e7)",
+                }}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onChange(row.code);
+                  setQuery(row.name);
+                  setOpen(false);
+                }}
+              >
+                {countryFlagEmoji(row.code)} {row.name}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </label>
   );
 }

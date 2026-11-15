@@ -38,7 +38,7 @@ const f=useFocusStyles();
   const [step, setStep] = useState(0), [name, setName] = useState(""), [city, setCity] = useState("");
   const [gender, setGender] = useState<ProfileGender | "">("");
   const [countryCode, setCountryCode] = useState("");
-  const [sports, setSports] = useState<SportId[]>(["running"]), [units, setUnits] = useState<UnitSystem>("us"), [sleep, setSleep] = useState(false);
+  const [sports, setSports] = useState<SportId[]>([]), [units, setUnits] = useState<UnitSystem>("us"), [sleep, setSleep] = useState(false);
 
   const finished = useRef(false), scroll=useRef<ScrollViewInstance>(null);
   useEffect(()=>{scroll.current?.scrollTo({y:0,animated:false});},[step]);
@@ -47,25 +47,37 @@ const f=useFocusStyles();
   useEffect(() => { let alive = true; setReady(false); void AsyncStorage.getItem(key).then(raw => {
     if (!alive) return;
     let draft; try { draft = !preview && raw ? JSON.parse(raw) : null; } catch {}
-    setStep(Math.max(0, Math.min(6, Number(draft?.step) || 0))); setName(draft?.name ?? state?.name ?? ""); setCity(draft?.city ?? state?.city ?? "");
-    setGender(draft?.gender ?? state?.gender ?? "");
-    setCountryCode(draft?.countryCode ?? state?.countryCode ?? "");
+    setStep(Math.max(0, Math.min(6, Number(draft?.step) || 0)));
+    setName(typeof draft?.name === "string" ? draft.name : "");
+    setCity(typeof draft?.city === "string" ? draft.city : "");
+    setGender(draft?.gender === "male" || draft?.gender === "female" || draft?.gender === "other" ? draft.gender : "");
+    setCountryCode(typeof draft?.countryCode === "string" ? draft.countryCode : "");
     setUnits(draft?.units === "metric" || draft?.units === "us" ? draft.units : state?.units ?? "us");
-    setSports(Array.isArray(draft?.sports) ? draft.sports.filter((id: SportId) => SPORTS.some(s => s.id === id)) : [state?.primary ?? "running"]);
+    setSports(Array.isArray(draft?.sports) ? draft.sports.filter((id: SportId) => SPORTS.some(s => s.id === id)) : []);
     setSleep(Boolean(draft?.sleep)); setLoadedKey(key); setReady(true);
   }).catch(() => { if (alive) setReady(true); }); return () => { alive = false; }; }, [key, preview, Boolean(state)]);
   useEffect(() => { if (ready && loadedKey === key && !preview) void AsyncStorage.setItem(key, JSON.stringify({step,name,city,gender,countryCode,sports,units,sleep})).catch(() => {}); }, [ready,loadedKey,preview,key,step,name,city,gender,countryCode,sports,units,sleep]);
   if (!preview && state?.onboardingCompleted) return <Redirect href="/today" />;
   if (!state || !ready) return <AppText>Loading setup…</AppText>;
-  function advance(){if(step===2&&!sports.length&&!sleep){setSelectionError(true);return;}setSelectionError(false);setStep(step+1);}
+  const identityReady = name.trim().length > 0 && (gender === "male" || gender === "female" || gender === "other") && countryCode.length === 2;
+  const selectionReady = sports.length > 0 || sleep;
+  function advance() {
+    if (step === 1 && !identityReady && !preview) return;
+    if (step === 2 && !selectionReady && !preview) {
+      setSelectionError(true);
+      return;
+    }
+    setSelectionError(false);
+    setStep(step + 1);
+  }
   function finish() {
     if (preview) { router.replace("/arena"); return; }
-    if (!user || !canWrite || finished.current) return;
+    if (!user || !canWrite || finished.current || !identityReady) return;
     finished.current = true;
     dispatch({ type: "rename", name: name.trim() || user.displayName });
     dispatch({ type: "set-city", city: city.trim() });
-    dispatch({ type: "set-gender", gender: gender || null });
-    dispatch({ type: "set-country", countryCode: countryCode || null });
+    dispatch({ type: "set-gender", gender });
+    dispatch({ type: "set-country", countryCode });
     dispatch({ type: "set-units", units });
     for (const sport of sports) dispatch({ type: "opt-in", sport, accountId: user.id });
     if(sports[0]) dispatch({ type: "set-primary", sport: sports[0] });
@@ -82,29 +94,28 @@ const f=useFocusStyles();
         {!preview && <ProfilePhoto state={state}/>}
         <AppText role="label">Display name</AppText>
         <TextInput accessibilityLabel="Display name" style={f.input} value={name} onChangeText={setName} maxLength={80}/>
-        <AppText role="label">City · optional</AppText>
+        <AppText role="label">City</AppText>
         <TextInput accessibilityLabel="City" style={f.input} value={city} onChangeText={setCity} maxLength={80}/>
-        <AppText role="label">Gender · optional</AppText>
         <ChoicePicker
           label="Gender"
-          value={gender || "unset"}
+          value={gender}
+          placeholder="Select gender"
           options={[
-            { value: "unset", label: "Prefer not to say" },
             { value: "female", label: "Female" },
             { value: "male", label: "Male" },
             { value: "other", label: "Other" },
           ]}
-          onChange={(value) => setGender(value === "unset" ? "" : (value as ProfileGender))}
+          onChange={(value) => setGender(value as ProfileGender)}
         />
         <SearchableCountryPicker label="Country" value={countryCode} onChange={setCountryCode}/>
       </>}
       {step===2 && <><AppText secondary>You can change this later under your profile.</AppText><AppText role="heading">Sports</AppText><View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{SPORTS.map(s=><Chip key={s.id} label={s.name} selected={sports.includes(s.id)} onPress={()=>setSports(current=>current.includes(s.id)?current.filter(id=>id!==s.id):[...current,s.id])}/>)}</View>{sports.length>1&&<><AppText role="label">Primary sport</AppText><ChoicePicker label="Primary sport" value={sports[0]!} options={sports.map(id=>({value:id,label:SPORTS.find(s=>s.id===id)!.name}))} onChange={id=>setSports([id,...sports.filter(s=>s!==id)])}/></>}{sports.some(s=>s!=="strength")&&<View style={{alignItems:"flex-start",gap:12}}><AppText role="label">Distance units</AppText><View style={{width:210}}><FocusSegments label="Distance units" options={[{value:"us",label:"Miles"},{value:"metric",label:"Kilometres"}]} value={units} onChange={setUnits}/></View></View>}<AppText role="heading">Sleep & recovery</AppText><View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}><Chip label="Sleep tracking" selected={sleep} onPress={()=>setSleep(!sleep)}/></View>{selectionError&&!sports.length&&!sleep&&<AppText accessibilityRole="alert">Choose at least one sport or sleep tracking to continue.</AppText>}</>}
 
-      {step===3 && <><AppText secondary>Connect a tracker now to authorize your real account. Strava, WHOOP, and Oura start syncing after connection. Garmin sends new activities after your device syncs with Garmin Connect; Starter access does not include past activity history. You can also connect later under your profile.</AppText>{preview ? PROVIDERS.map(p=><FocusButton key={p.id} secondary disabled label={`${p.name} · Connect (preview)`} onPress={()=>{}}/>) : <TrackerConnections/>}</>}
+      {step===3 && <><AppText secondary>Connect a tracker now to authorize your real account.</AppText>{preview ? PROVIDERS.map(p=><FocusButton key={p.id} secondary disabled label={`${p.name} · Connect (preview)`} onPress={()=>{}}/>) : <TrackerConnections/>}</>}
       {step===4 && <><AppText secondary>The moment your effort takes you ahead of another athlete. Don’t get overtaken!</AppText><OnboardingOvertake/></>}
       {step===5&&<OnboardingOutlook name={name}/>}
       {step===6&&<><OnboardingSummary sports={sports} units={units} sleep={sleep}/><OnboardingFade delay={(sports.length+Number(sleep))*300+400}><AppText role="label">Your next wave starts at {waveTimeLabel(nextDailyWaveWindowAt(new Date(now)).waveStart)}.</AppText></OnboardingFade></>}
-      <View style={{flexDirection:"row",gap:12,alignItems:"stretch"}}>{step>0&&<View style={{flex:1}}><FocusButton secondary label="Back" onPress={()=>setStep(step-1)}/></View>}<View style={{flex:1}}><FocusButton label={step===6?preview?"Finish preview":user?"Finish":"Sign in to finish setup":step===3?(state.links.some(link=>link.status==="connected")?"Continue":"Skip for now"):"Continue"} disabled={!preview && step===6 && Boolean(user) && !canWrite} onPress={()=>step<6?advance():!preview&&!user?router.replace("/athlete"):finish()}/></View></View>
+      <View style={{flexDirection:"row",gap:12,alignItems:"stretch"}}>{step>0&&<View style={{flex:1}}><FocusButton secondary label="Back" onPress={()=>setStep(step-1)}/></View>}<View style={{flex:1}}><FocusButton label={step===6?preview?"Finish preview":user?"Finish":"Sign in to finish setup":step===3?(state.links.some(link=>link.status==="connected")?"Continue":"Skip for now"):"Continue"} disabled={(step===1 && !identityReady && !preview) || (step===2 && !selectionReady && !preview) || (step===6 && Boolean(user) && !canWrite && !preview)} onPress={()=>step<6?advance():!preview&&!user?router.replace("/athlete"):finish()}/></View></View>
     </MotionStep>
   </ScrollView></SafeAreaView></SafeAreaProvider></Modal>;
 }
