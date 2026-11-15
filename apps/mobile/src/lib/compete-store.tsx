@@ -863,7 +863,12 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               ];
               pendingDocumentRef.current = acknowledged.document;
             }
-            if (typeof revision === "string") revisionRef.current = revision;
+            if (typeof revision === "string") {
+              revisionRef.current = revision;
+              if (saveFailed || completedStepCount > 0) {
+                await AsyncStorage.setItem(`${scoped.state}:revision`, revision);
+              }
+            }
             if (saveFailed) {
               pendingDocumentRef.current = true;
               await AsyncStorage.setItem(scoped.dirty, "1");

@@ -20,7 +20,11 @@ describe("accountSavePlan", () => {
 
 describe("runAccountSaveSteps", () => {
   it("returns partial progress on transport failure without invalid Response status", async () => {
-    const steps = accountSavePlan([{ type: "import-history", level: "steady" } as Action], [], state);
+    const steps = accountSavePlan(
+      [{ type: "import-history", level: "steady" } as Action],
+      [{ type: "rename", name: "Ada" } as Action],
+      state,
+    );
     let calls = 0;
     const result = await runAccountSaveSteps("athlete", "rev-a", steps, async () => {
       calls += 1;

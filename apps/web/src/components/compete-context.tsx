@@ -325,7 +325,12 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             ];
             pendingDocumentRef.current = acknowledged.document;
           }
-          if (typeof revision === "string") revisionRef.current = revision;
+          if (typeof revision === "string") {
+            revisionRef.current = revision;
+            if (saveFailed || completedStepCount > 0) {
+              writeStorageItem(`${storageKey(accountId)}:revision`, revision);
+            }
+          }
           if (saveFailed) {
             pendingDocumentRef.current = true;
             writeStorageItem(deviceOnlyKey(accountId), "1");
