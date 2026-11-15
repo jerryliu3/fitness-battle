@@ -46,12 +46,13 @@
 .compete-carousel-dots span[data-active="true"]{background:var(--app-podium-gold)}
 .compete-home-header .compete-section-heading{flex-wrap:nowrap}
 .compete-home-header .fb-btn-ghost{width:auto;min-height:44px;flex:none;padding:8px 0}
-.sheet-content:has(.event-registration){padding-top:14px}
+.sheet-content:has(.event-registration){padding-top:12px;padding-bottom:20px}
 .sheet-content:has(.event-registration)>.club-sheet-heading,
 .sheet-content:has(.event-registration)>.club-sheet-heading+p{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%)}
 .event-registration{display:grid;gap:16px}
 .event-registration>p{margin:0}
-.registration-step{display:grid;gap:16px;align-self:start;width:100%}
+.registration-stage{display:grid}
+.registration-step{grid-area:1/1;display:flex;flex-direction:column;gap:16px;width:100%;min-width:0}
 .registration-detail-icon{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:11px;background:var(--soft);color:var(--ink)}
 .registration-barcode{display:flex;width:100%;height:32px;gap:2px}
 .registration-barcode>i{display:block;background:var(--ink);height:100%;border-radius:1px}
@@ -85,8 +86,8 @@
 .registration-hero-meta{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .registration-hero-meta h2,.registration-hero-meta h3,.registration-hero>p{margin:0}
 .registration-field-box{display:grid;gap:10px;padding-top:4px}
-.registration-mysteries{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap}
-.registration-mysteries>span{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:color-mix(in srgb,var(--card) 82%,transparent);border:1px solid color-mix(in srgb,var(--ink) 12%,transparent);color:var(--ink);animation:registration-person-in 220ms ease-out both}
+.registration-mysteries{display:flex;justify-content:space-between;gap:6px;flex-wrap:nowrap}
+.registration-mysteries>span{display:grid;place-items:center;width:clamp(28px,8vw,34px);aspect-ratio:1;border-radius:50%;background:color-mix(in srgb,var(--card) 82%,transparent);border:1px solid color-mix(in srgb,var(--ink) 12%,transparent);color:var(--ink);animation:registration-person-in 220ms ease-out both}
 .registration-mysteries>span.is-you{background:var(--card);border:1.5px solid var(--ink)}
 
 .registration-rules{display:grid;gap:10px}
@@ -107,7 +108,7 @@
 .registration-rule-footnote{color:var(--muted)}
 
 /* Entry stays on one ticket: claim, flip, then the event/week stamp lands. */
-.registration-ticket-scene{perspective:1200px}
+.registration-ticket-scene{perspective:1200px;justify-content:center}
 .registration-ticket{display:grid;transform-style:preserve-3d;transition:transform 560ms cubic-bezier(.2,.7,.2,1)}
 .registration-ticket[data-claimed="true"]{transform:rotateY(180deg)}
 .registration-face{grid-area:1/1;backface-visibility:hidden;border-radius:24px;overflow:hidden;background:color-mix(in srgb,var(--registration-color) 18%,var(--card));border:1px solid color-mix(in srgb,var(--registration-color) 25%,var(--line));min-width:0}
@@ -132,7 +133,7 @@
 .registration-ticket[data-claimed="true"] .registration-entry-stamp{animation:registration-stamp 320ms 720ms both}
 .registration-ticket-stub{display:grid;gap:10px;border-top:1px dashed var(--muted);padding-top:16px}
 .registration-stub-meta{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.registration-step-actions{display:flex;justify-content:space-between;gap:12px}
+.registration-step-actions{display:flex;justify-content:space-between;gap:12px;margin-top:auto}
 .registration-step-actions>button{flex:1}
 
 @keyframes registration-stamp{0%{opacity:0;transform:rotate(-5deg) scale(1.8)}65%{opacity:1;transform:rotate(-5deg) scale(1)}100%{opacity:1;transform:rotate(-5deg) scale(1)}}

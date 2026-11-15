@@ -158,10 +158,11 @@ export function EventRegistration({
   const [cardHeight, setCardHeight] = useState(72);
   const [claiming, setClaiming] = useState(false);
   const [ticketHeight, setTicketHeight] = useState(0);
+  const [stageHeight, setStageHeight] = useState(0);
   const rotation = useRef(new Animated.Value(registered ? 180 : 0)).current;
   const stamp = useRef(new Animated.Value(registered ? 1 : 0)).current;
   const entry = useRef(new Animated.Value(0)).current;
-  const stepMotion = useRef(new Animated.Value(1)).current;
+  const stepProgress = useRef(new Animated.Value(registered ? 1 : 0)).current;
   const claimed = registered;
   const claimPending = !claimed && claiming;
 
@@ -176,22 +177,17 @@ export function EventRegistration({
     return () => entry.stopAnimation();
   }, [entry, reduced]);
 
-  const transitioning = useRef(false);
   const goToStep = (target: number) => {
-    if (transitioning.current || target === step) return;
-    transitioning.current = true;
-    Animated.timing(stepMotion, { toValue: 0, duration: reduced ? 0 : 110, useNativeDriver: true }).start(({ finished }) => {
-      if (!finished) {
-        transitioning.current = false;
-        return;
-      }
-      setStep(target);
-      Animated.timing(stepMotion, { toValue: 1, duration: reduced ? 0 : 190, useNativeDriver: true }).start(() => {
-        transitioning.current = false;
-      });
-    });
+    if (target === step) return;
+    setStep(target);
+    Animated.timing(stepProgress, {
+      toValue: target,
+      duration: reduced ? 0 : 200,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
   };
-  useEffect(() => () => { stepMotion.stopAnimation(); transitioning.current = false; }, [stepMotion]);
+  useEffect(() => () => stepProgress.stopAnimation(), [stepProgress]);
 
   const now = competeNow(state);
   const detail = eventRegistration(state, event, now);
@@ -361,17 +357,31 @@ export function EventRegistration({
     </Animated.View>
   );
 
+  const sharedHeight = Math.max(stageHeight, ticketHeight);
+
   return (
     <View style={{ gap: 16 }}>
-      <Animated.View
-        style={{
-          gap: 16,
-          opacity: stepMotion,
-          transform: [{ translateX: stepMotion.interpolate({ inputRange: [0, 1], outputRange: [-16, 0] }) }],
-        }}
-      >
-        {step === 0 ? (
-          <>
+      <View style={{ minHeight: sharedHeight || undefined }}>
+        <Animated.View
+          pointerEvents={step === 0 ? "auto" : "none"}
+          accessibilityElementsHidden={step !== 0}
+          importantForAccessibility={step === 0 ? "yes" : "no-hide-descendants"}
+          style={{
+            position: step === 0 ? "relative" : "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            opacity: stepProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+            transform: [{ translateX: stepProgress.interpolate({ inputRange: [0, 1], outputRange: [0, -16] }) }],
+          }}
+        >
+          <View
+            onLayout={e => {
+              const height = e.nativeEvent.layout.height;
+              setStageHeight(prev => (height > prev ? height : prev));
+            }}
+            style={{ gap: 16 }}
+          >
             <View style={{ borderRadius: 24, backgroundColor: c.card, overflow: "hidden" }}>
               <View style={{ padding: 20, gap: 14, backgroundColor: tint, overflow: "hidden" }}>
                 <EventArt event={event} feature />
@@ -386,7 +396,7 @@ export function EventRegistration({
                   <View
                     accessible
                     accessibilityLabel="You and seven mystery athletes"
-                    style={{ flexDirection: "row", justifyContent: "space-between", gap: 6, flexWrap: "wrap" }}
+                    style={{ flexDirection: "row", justifyContent: "space-between", gap: 5 }}
                   >
                     {Array.from({ length: 8 }, (_, i) => {
                       const isYou = i === 0;
@@ -399,8 +409,9 @@ export function EventRegistration({
                               { translateY: entry.interpolate({ inputRange: [i / 10, (i + 2) / 10], outputRange: [6, 0], extrapolate: "clamp" }) },
                               { scale: entry.interpolate({ inputRange: [i / 10, (i + 2) / 10], outputRange: [0.9, 1], extrapolate: "clamp" }) },
                             ],
-                            width: 34,
-                            height: 34,
+                            flex: 1,
+                            maxWidth: 34,
+                            aspectRatio: 1,
                             borderRadius: 17,
                             backgroundColor: c.card,
                             borderWidth: isYou ? 1.5 : 1,
@@ -438,16 +449,32 @@ export function EventRegistration({
                 ))}
               </View>
             </View>
-          </>
-        ) : (
+            <FocusButton label="Continue →" onPress={() => goToStep(1)} />
+          </View>
+        </Animated.View>
+
+        <Animated.View
+          pointerEvents={step === 1 ? "auto" : "none"}
+          accessibilityElementsHidden={step !== 1}
+          importantForAccessibility={step === 1 ? "yes" : "no-hide-descendants"}
+          style={{
+            position: step === 1 ? "relative" : "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            minHeight: sharedHeight || undefined,
+            justifyContent: "center",
+            opacity: stepProgress,
+            transform: [{ translateX: stepProgress.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }],
+          }}
+        >
           <View style={{ minHeight: ticketHeight || undefined }}>
             {face(false)}
             {face(true)}
           </View>
-        )}
-      </Animated.View>
+        </Animated.View>
+      </View>
 
-      {step === 0 && <FocusButton label="Continue →" onPress={() => goToStep(1)} />}
       {error && <AppText role="caption" accessibilityLiveRegion="polite">{error}</AppText>}
     </View>
   );

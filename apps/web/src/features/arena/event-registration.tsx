@@ -2,7 +2,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { COMPETE_ART_COLORS, competeNow, eventRegistration, entryBarcode, registrationDetailCards, registrationTicketRows, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
 import { AppHeading, AppParagraph, AppText } from "@/ui/section";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { WaveCountdown } from "@/ui/wave-countdown";
 import { CompeteIcon, EventArt } from "./event-home";
 
@@ -73,16 +73,16 @@ export function EventRegistration({
 
   return (
     <div className="event-registration" style={{ "--registration-color": COMPETE_ART_COLORS[event] } as CSSProperties}>
-      <AnimatePresence mode="wait" initial={false}>
-        {step === 0 && (
-          <motion.div
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -12 }}
-            transition={transition}
-            className="registration-step"
-            key="overview"
-          >
+      <div className="registration-stage">
+        <motion.div
+          initial={false}
+          animate={{ opacity: step === 0 ? 1 : 0, x: step === 0 ? 0 : -12 }}
+          transition={transition}
+          className="registration-step"
+          inert={step !== 0}
+          aria-hidden={step !== 0}
+          style={{ pointerEvents: step === 0 ? "auto" : "none" }}
+        >
             <div className="registration-hero">
               <EventArt event={event} />
               <div className="registration-hero-meta">
@@ -145,18 +145,20 @@ export function EventRegistration({
                 })}
               </div>
             </div>
-          </motion.div>
-        )}
+            <div className="registration-step-actions">
+              <button type="button" className="fb-btn" onClick={() => setStep(1)}>Continue →</button>
+            </div>
+        </motion.div>
 
-        {step === 1 && (
-          <motion.div
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -12 }}
-            transition={transition}
-            className="registration-ticket-scene registration-step"
-            key="ticket"
-          >
+        <motion.div
+          initial={false}
+          animate={{ opacity: step === 1 ? 1 : 0, x: step === 1 ? 0 : 12 }}
+          transition={transition}
+          className="registration-ticket-scene registration-step"
+          inert={step !== 1}
+          aria-hidden={step !== 1}
+          style={{ pointerEvents: step === 1 ? "auto" : "none" }}
+        >
             <div className="registration-ticket" data-claimed={claimed}>
               <div className="registration-face registration-front" inert={claimed} aria-hidden={claimed}>
                 <TicketHeader
@@ -209,15 +211,8 @@ export function EventRegistration({
                 </div>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {step === 0 && (
-        <div className="registration-step-actions">
-          <button type="button" className="fb-btn" onClick={() => setStep(1)}>Continue →</button>
-        </div>
-      )}
+        </motion.div>
+      </div>
 
       <span className="sr-only" role="status">{registered ? "You’re on the start list." : ""}</span>
       {error && <AppParagraph typographyRole="caption" role="alert">{error}</AppParagraph>}
