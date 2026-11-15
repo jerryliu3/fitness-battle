@@ -1,10 +1,42 @@
 import { describe, expect, it } from "vitest";
 import type { Action } from "./engine";
 import { freshState, withAccountEloBaseline } from "./sports";
-import { accountSavePlan, dequeueAccountSaveWork, runAccountSaveSteps } from "./account-save";
+import {
+  accountSavePlan,
+  coalesceSaveActions,
+  dequeueAccountSaveWork,
+  runAccountSaveSteps,
+} from "./account-save";
 
 const now = new Date("2026-10-28T15:00:00Z");
 const state = withAccountEloBaseline(freshState(now));
+
+describe("coalesceSaveActions", () => {
+  it("drops redundant disposition intents covered by apply-sync", () => {
+    const actions = coalesceSaveActions([
+      { type: "set-disposition", activityId: "a-1", disposition: "excluded" } as Action,
+      { type: "set-disposition", activityId: "a-2", disposition: "excluded" } as Action,
+      {
+        type: "apply-sync",
+        provider: "strava",
+        activities: [
+          { id: "a-1", disposition: "excluded" },
+          { id: "a-2", disposition: "counted" },
+        ],
+      } as Action,
+    ]);
+    expect(actions).toEqual([
+      {
+        type: "apply-sync",
+        provider: "strava",
+        activities: [
+          { id: "a-1", disposition: "excluded" },
+          { id: "a-2", disposition: "counted" },
+        ],
+      },
+    ]);
+  });
+});
 
 describe("accountSavePlan", () => {
   it("sends one intent batch plus document when a recovered draft still needs full persist", () => {

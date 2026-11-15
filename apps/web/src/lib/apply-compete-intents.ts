@@ -1,7 +1,9 @@
 import {
   applyCompeteEdit,
+  coalesceSaveActions,
   isCompeteSyncAction,
   normalizeCompeteIntent,
+  prepareAccountForUserEdits,
   type Action,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -16,11 +18,12 @@ export function applyOrderedAccountActions(
   userId: string,
   now: Date,
 ): CompeteState {
-  if (!rawActions.length) throw new Error("invalid_intent");
-  if (rawActions.length > MAX_ACTIONS) throw new Error("invalid_intent");
+  const actions = coalesceSaveActions(rawActions);
+  if (!actions.length) throw new Error("invalid_intent");
+  if (actions.length > MAX_ACTIONS) throw new Error("invalid_intent");
   const nowIso = now.toISOString();
-  let next = stored;
-  for (const raw of rawActions) {
+  let next = prepareAccountForUserEdits(stored, now);
+  for (const raw of actions) {
     const action = isCompeteSyncAction(raw)
       ? resolveServerSyncAction(next, raw, userId, now)
       : normalizeCompeteIntent(raw, userId, nowIso);

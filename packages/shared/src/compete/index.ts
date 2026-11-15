@@ -136,6 +136,7 @@ export {
   setRealPlayerPool,
   getRealPlayerPool,
   applyCompeteEdit,
+  prepareAccountForUserEdits,
   type Action,
   type BoardRow,
 } from "./engine";
@@ -168,6 +169,7 @@ export {
 } from "./sync-intents";
 export {
   accountSavePlan,
+  coalesceSaveActions,
   competeSaveRequest,
   dequeueAccountSaveWork,
   runAccountSaveSteps,

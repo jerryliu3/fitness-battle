@@ -119,7 +119,7 @@ function isAccountSaveCall(url: string, init?: RequestInit) {
   }
   return (
     init.method === "POST" &&
-    (url.includes("/api/compete/intents") || url.includes("/api/compete/sync"))
+    url.includes("/api/compete/intents")
   );
 }
 function accountSaveCalls() {

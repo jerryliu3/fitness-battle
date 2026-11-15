@@ -11,6 +11,36 @@ import { applyOrderedAccountActions } from "./apply-compete-intents";
 const now = new Date("2026-10-28T15:00:00Z");
 const userId = "athlete";
 
+it("rejoins after a stopped wave closes", () => {
+  const start = new Date("2026-10-20T12:00:00Z");
+  let stored = reduceCompete(withAccountEloBaseline(freshState(start)), {
+    type: "opt-in",
+    sport: "running",
+    now: start.toISOString(),
+  });
+  stored = reduceCompete(stored, {
+    type: "schedule-leave",
+    sport: "running",
+    now: start.toISOString(),
+  });
+  stored = {
+    ...stored,
+    enrollments: stored.enrollments.map((enrollment) =>
+      enrollment.sport === "running"
+        ? { ...enrollment, weekEnd: "2026-10-27T04:00:00.000Z", autoEnrollNext: false }
+        : enrollment,
+    ),
+  };
+  const applied = applyOrderedAccountActions(
+    stored,
+    [{ type: "opt-in", sport: "running" }],
+    userId,
+    now,
+  );
+  expect(applied.ratings.find((row) => row.sport === "running")?.optedIn).toBe(true);
+  expect(applied.enrollments.some((enrollment) => enrollment.sport === "running")).toBe(true);
+});
+
 it("does not advance competition time while applying account edits", () => {
   const stored = withAccountEloBaseline(freshState(now));
   const applied = applyOrderedAccountActions(
