@@ -12,6 +12,7 @@ vi.mock("../ui/focus", () => ({ useFocusStyles: () => ({}), FocusSheet: "FocusSh
 vi.mock("../ui/section", () => ({ SectionStack: "SectionStack", AppText: "AppText" }));
 vi.mock("../ui/field-course", () => ({ FieldOverview: "FieldOverview" }));
 vi.mock("../ui/material-back", () => ({ MaterialBack: "MaterialBack" }));
+vi.mock("../ui/course-options", () => ({ GraphOptions: "GraphOptions" }));
 vi.mock("./competition-panel", () => ({ CompetitionPanel: "CompetitionPanel" }));
 vi.mock("./race-updates", () => ({ RaceUpdates: "RaceUpdates" }));
 vi.mock("../ui/compete-sheet", () => ({ CompeteSheet: "CompeteSheet" }));
