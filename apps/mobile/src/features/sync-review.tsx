@@ -24,6 +24,7 @@ import { FocusButton } from "../ui/focus";
 import { ActivityRoute } from "../ui/activity-route";
 import { RouteStaticPreview } from "../ui/route-static-preview";
 
+import { SyncEnergyCore } from "../ui/sync-energy-core";
 import { ScreenFade } from "../ui/screen-fade";
 import { CompetitionMoment } from "./competition-moment";
 import { useReducedMotion } from "../ui/use-reduced-motion";
@@ -54,7 +55,7 @@ const f=useFocusStyles();
 const c=useThemeColors();
 
   const windowDimensions = useWindowDimensions();
-  const cardWidth = Math.max(260, Math.min(360, Math.round((windowDimensions.width || 375) * 0.82)));
+  const cardWidth = Math.max(260, Math.min(360, Math.round((windowDimensions.width || 375) - 48)));
   const cardGap = 12;
   const cardScroll = useRef<ScrollViewInstance | null>(null);
   const reduced = useReducedMotion();
@@ -126,10 +127,12 @@ const c=useThemeColors();
     <ActivityMetricBars activity={activity} history={[...receipt.activities, ...state.activities]} units={state.units}/>
   </View>;
   return <View style={{ gap: 20, flex: 1 }}>
-    <Text accessibilityRole="header" style={[textStyle("display"), { color: c.ink }]}>Sync completed</Text>
-    <Text style={f.massive}>{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</Text>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.tennis, alignItems: "center", justifyContent: "center" }}><Text style={[textStyle("heading"), { color: c.ink }]}>✓</Text></View>
+      <Text accessibilityRole="header" style={[textStyle("heading"), { color: c.ink }]}>Activities synced</Text>
+    </View>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-      <Text style={[textStyle("body"), { color: c.ink }]}>{selected.length} of {activities.length} activities selected.</Text>
+      <Text style={[textStyle("caption"), { color: c.muted }]}>{selected.length} of {activities.length} selected</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Pressable
           accessibilityRole="button"
@@ -140,7 +143,7 @@ const c=useThemeColors();
           hitSlop={8}
           style={({ pressed }) => [{ opacity: saving || selected.length === activities.length ? 0.35 : pressed ? 0.6 : 1 }]}
         >
-          <Text style={{ ...textStyle("label"), color: c.ink, textDecorationLine: "underline" }}>Select all</Text>
+          <Text style={{ ...textStyle("label"), color: c.ink, textDecorationLine: "none" }}>Select all</Text>
         </Pressable>
         <Text style={{ ...textStyle("caption"), color: c.muted }}>·</Text>
         <Pressable
@@ -152,7 +155,7 @@ const c=useThemeColors();
           hitSlop={8}
           style={({ pressed }) => [{ opacity: saving || selected.length === 0 ? 0.35 : pressed ? 0.6 : 1 }]}
         >
-          <Text style={{ ...textStyle("label"), color: c.ink, textDecorationLine: "underline" }}>Deselect all</Text>
+          <Text style={{ ...textStyle("label"), color: c.ink, textDecorationLine: "none" }}>Deselect all</Text>
         </Pressable>
       </View>
     </View>
@@ -292,6 +295,7 @@ const c=useThemeColors();
         }}
       />
     </View>
+    <SyncEnergyCore activities={selected} totalSeconds={activities.reduce((sum, a) => sum + a.movingSec, 0)} units={state.units} draining={saving}/>
     {!receipt.preview && excluded.length > 0 && <Text style={[textStyle("caption"), { color: c.ink }]}>Deselected activities stay saved, excluded from competition.</Text>}
     <View style={{ marginTop: "auto", paddingTop: 16, gap: 12 }}>
       <View onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ height: 66, borderRadius: 36, backgroundColor: c.surfaceInverse, justifyContent: "center", position: "relative", overflow: "hidden" }}>
@@ -306,7 +310,7 @@ const c=useThemeColors();
           onResponderMove={e => { if (saving) return; dragDistance.current = Math.max(0, e.nativeEvent.pageX - dragStart.current); updateSwipe(dragDistance.current); }}
           onResponderRelease={e => { if (saving) return; const distance = Math.max(0, e.nativeEvent.pageX - dragStart.current); dragging.current = false; if (distance / travel >= .85) finish(); else setProgress(0); }}
           onResponderTerminate={() => { dragging.current = false; if (!saving) setProgress(0); }}>
-          <View pointerEvents="none" style={{ position: "absolute", top: 5, left: 4, width: 56, height: 56, borderRadius: 28, backgroundColor: c.soft, justifyContent: "center", alignItems: "center", transform: [{ translateX: progress * travel }] }}>{saving ? <ActivityIndicator color={c.ink} /> : <Text style={{ ...textStyle("heading"), color: c.ink }}>→</Text>}</View>
+          <View pointerEvents="none" style={{ position: "absolute", top: 5, left: 4, width: 56, height: 56, borderRadius: 28, backgroundColor: c.tennis, justifyContent: "center", alignItems: "center", transform: [{ translateX: progress * travel }] }}>{saving ? <ActivityIndicator color={c.ink} /> : <Text style={{ ...textStyle("heading"), color: c.ink }}>→</Text>}</View>
         </View>
       </View>
     </View>
@@ -467,10 +471,8 @@ const c=useThemeColors();
   return <View style={{ gap: 10 }}>
     <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16, paddingVertical: 6 }}>
     {syncReviewMetrics(activity, history, units).map(metric => <View key={metric.id} accessible accessibilityLabel={`${metric.label}: ${metric.valueLabel}. ${metric.comparisonLabel}`} style={{ width: "47%", gap: 6 }}>
-      <Text style={{ ...textStyle("label"), color: c.ink }}>{metric.label}: {metric.valueLabel}</Text>
-      <View style={{ height: 4, backgroundColor: c.line, overflow: "hidden" }}>
-        <View style={{ height: 4, width: `${(metric.fraction ?? 0) * 100}%`, backgroundColor: c.fieldTeal }}/>
-      </View>
+      <Text style={{ ...textStyle("caption"), color: c.muted }}>{metric.label}</Text>
+      <Text style={{ ...textStyle("label"), color: c.ink }}>{metric.valueLabel}</Text>
     </View>)}
     </View>
   </View>;
