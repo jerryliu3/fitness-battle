@@ -196,7 +196,7 @@ const f=useFocusStyles();
         pendingEntry.current = null;
         if (event) experience.enter(accountKey, event);
       }}>
-        {sport ? <EventRegistration key={`${accountKey}:${sport}`} state={state} event={sport} crew={Boolean(registrationCrew)} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} error={joinError || saveError || undefined} onClaim={() => void claimEntry()} onClose={() => { joinFlight.current = null; setRegister(false); }} onView={() => { pendingEntry.current = sport; setRegister(false); }} /> : <View style={{ gap: 10 }}>
+        {sport ? <EventRegistration key={`${accountKey}:${sport}`} state={state} event={sport} crew={Boolean(registrationCrew)} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} error={joinError || saveError || undefined} onClaim={() => void claimEntry()} onView={() => { pendingEntry.current = sport; setRegister(false); }} /> : <View style={{ gap: 10 }}>
           {[...SPORTS.map(item => ({ id: item.id, name: item.name })), { id: "sleep" as const, name: "Sleep & recovery" }].filter(item => item.id === "sleep" ? !sleepOptedIn : !active.some(r => r.sport === item.id)).map(item => {
             const registered = item.id === "sleep" ? sleepOptedIn : active.some(r => r.sport === item.id);
             return <Pressable key={item.id} accessibilityRole="button" disabled={registered} accessibilityLabel={`${item.name}, ${registered ? "already registered" : "view event details"}`} onPress={() => setSport(item.id)} style={[f.chip, { opacity: registered ? 0.5 : 1 }]}><AppText role="label">{item.name}</AppText><AppText role="caption" secondary>{registered ? "Already registered" : "View event details →"}</AppText></Pressable>;

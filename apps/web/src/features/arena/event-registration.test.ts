@@ -9,12 +9,13 @@ import { EventRegistration } from "./event-registration";
 
 it("renders the 2-step flow with field inside hero, flippable rule cards, and claim retry", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  const props = { state: freshState(), event: "strength" as const, registered: false, busy: false, error: "", onClaim: vi.fn(), onView: vi.fn(), onClose: vi.fn() };
+  const props = { state: freshState(), event: "strength" as const, registered: false, busy: false, error: "", onClaim: vi.fn(), onView: vi.fn() };
   let tree!: ReturnType<typeof create>;
   await act(async () => { tree = create(createElement(EventRegistration, props)); });
   try {
-    expect(tree.root.findByProps({ className: "registration-step-label" }).props.children).toEqual(["Step ", 1, " of 2"]);
+    expect(tree.root.findAllByProps({ className: "registration-topbar" })).toHaveLength(0);
     const hero = tree.root.findByProps({ className: "registration-hero" });
+    expect(hero.findByType("h2").props.children).toBe("Strength");
     expect(hero.findByProps({ className: "registration-mysteries" }).findAllByType("span")).toHaveLength(8);
 
     const ruleCards = tree.root.findAllByProps({ className: "registration-rule-card" });
@@ -24,7 +25,7 @@ it("renders the 2-step flow with field inside hero, flippable rule cards, and cl
     expect(tree.root.findAllByProps({ className: "registration-rule-card" })[0]!.props["data-flipped"]).toBe(true);
 
     await act(async () => tree.root.findAllByType("button").find(node => node.children.includes("Continue →"))!.props.onClick());
-    expect(tree.root.findByProps({ className: "registration-step-label" }).props.children).toEqual(["Step ", 2, " of 2"]);
+    expect(tree.root.findByProps({ className: "registration-ticket" }).findAllByType("h2")[0]!.children.join("")).toBe("Your spot is ready.");
 
     await act(async () => tree.root.findAllByType("button").find(node => node.children.includes("Claim your spot"))!.props.onClick());
     expect(props.onClaim).toHaveBeenCalledOnce();
@@ -35,6 +36,5 @@ it("renders the 2-step flow with field inside hero, flippable rule cards, and cl
 
     await act(async () => tree.update(createElement(EventRegistration, { ...props, registered: true })));
     expect(tree.root.findByProps({ className: "registration-ticket" }).props["data-claimed"]).toBe(true);
-    expect(tree.root.findByProps({ className: "registration-close" }).props.disabled).toBe(false);
   } finally { await act(async () => tree.unmount()); vi.unstubAllGlobals(); }
 });
