@@ -234,16 +234,17 @@ function effortScoreAt(
   return next ? next.scoreBefore : fallback;
 }
 
-/** Current score versus the score at the start of the selected Eastern window. */
+/** Current score versus the score at the start of the selected account-calendar window. */
 export function effortScoreComparison(
   state: CompeteState,
   track: "open" | "verified",
   range: EffortHistoryRange,
   now = competeNow(state),
 ): { current: number; prior: number; pct: number } | null {
+  const displayTz = accountTimeZone(state);
   const chartEvents = effortScoreEvents(state, track, now);
   if (!chartEvents.length) return null;
-  const start = shiftAppDay(now, -effortScoreLookbackDays(range));
+  const start = shiftZonedDay(now, -effortScoreLookbackDays(range), displayTz);
   const inWindow = chartEvents.some(event => Date.parse(event.occurredAt) >= start.getTime());
   if (!inWindow) return null;
   const rating = state.ratings.find(r => r.sport === state.primary);

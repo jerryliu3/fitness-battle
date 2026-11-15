@@ -1,6 +1,6 @@
 import { accountTimeZone, APP_TIMEZONE, formatAccountDateTime, formatAppDateTime } from "../period";
 import type { CompeteState, SportId } from "./sports";
-import { nextDailyWaveWindowAt, weekEndAfter } from "../matching/waves";
+import { nextDailyWaveWindowAt, weekEndAfter, weeklyWaveWindowAt } from "../matching/waves";
 import { DEFAULT_GROUP_CAPACITY } from "../matching/types";
 
 /** How often an open Compete field asks the server for shared scores. */
@@ -91,7 +91,7 @@ export function sportRenewal(state: CompeteState, sport: SportId): RenewalView {
       enrolled: true,
       renews: true,
       weekEnd: enrollment.weekEnd,
-      detail: `This wave ends ${close}. Your next wave starts Monday at 6:00 AM ET.`,
+      detail: `This wave ends ${close}. Your next wave starts ${waveTimeLabelForState(state, weeklyWaveWindowAt(new Date(Date.parse(enrollment.weekEnd))).waveStart)}.`,
     };
   }
   return {
@@ -120,7 +120,7 @@ export function sleepRenewal(state: CompeteState): RenewalView {
       enrolled: true,
       renews: true,
       weekEnd,
-      detail: `This sleep wave ends ${close}. Your next wave starts Monday at 6:00 AM ET.`,
+      detail: `This sleep wave ends ${close}. Your next wave starts ${waveTimeLabelForState(state, weeklyWaveWindowAt(new Date(Date.parse(weekEnd))).waveStart)}.`,
     };
   }
   return {
