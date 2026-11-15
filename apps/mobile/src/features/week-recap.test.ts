@@ -73,20 +73,35 @@ describe("native week recap navigation", () => {
     press("Reveal my finish →");
     expect(view!.root.findByType("ResultCard" as never).props.result.id).toBe("running");
     expect(view!.root.findByType("ResultCard" as never).props.variant).toBe("recap");
-    press("See week breakdown →");
+    press("See breakdown");
     expect(step()).toBe(3);
     press("Back");
     expect(step()).toBe(2);
     expect(close).not.toHaveBeenCalled();
-    press("See week breakdown →");
+    press("See breakdown");
     press("Cycling results →");
     expect(view!.root.findByType("ResultCard" as never).props.result.id).toBe("cycling");
-    press("See week breakdown →");
+    press("See breakdown");
     expect(step()).toBe(5);
     expect(close).not.toHaveBeenCalled();
     press("Done");
     expect(close).toHaveBeenCalledTimes(1);
     expect(mock.earned).toHaveBeenCalledTimes(1);
+  });
+  it("opens Update settings without closing or acknowledging recap", () => {
+    const state = { ...freshState(), periodResults: [running] };
+    const close = vi.fn();
+    const openSettings = vi.fn();
+    act(() => {
+      view = create(createElement(WeekRecap, {
+        state, results: [running], social: false, onClose: close, onOpenSettings: openSettings,
+      }));
+    });
+    press("Reveal my finish →");
+    press("See breakdown");
+    press("Update settings");
+    expect(openSettings).toHaveBeenCalledWith(2);
+    expect(close).not.toHaveBeenCalled();
   });
   it("does not celebrate already acknowledged results when reopening their recap", () => {
     const state = { ...freshState(), periodResults: [{ ...running, acknowledgedAt: "2026-11-09T08:00:00Z" }] };

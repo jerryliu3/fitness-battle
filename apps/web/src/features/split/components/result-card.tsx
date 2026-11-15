@@ -37,26 +37,26 @@ export function ResultCard({
   if (variant === "recap") {
     const delta = result.eloAfter - result.eloBefore;
     const deltaText = formatEloDelta(result.eloBefore, result.eloAfter);
-    const showDelta = !result.frozen && delta !== 0;
+    const showDelta = !result.frozen;
     const podiumWin = !result.frozen && result.place <= 3;
     return (
       <section className="week-recap-result-card" aria-label="Your result">
         <div className="week-recap-result-top">
-          <span className="week-recap-result-title">YOUR RESULT</span>
-          <span className={`week-recap-place-pill${podiumWin ? " is-podium" : ""}`}>
-            {ordinalPlace(result.place)} of {result.fieldSize}{result.frozen ? " · Frozen" : ""}
-          </span>
+          <AppText role="caption" className="week-recap-result-title">Your result</AppText>
+          <AppText role="label" className={`week-recap-place-pill${podiumWin ? " is-podium" : ""}`}>
+            {ordinalPlace(result.place)} place{result.frozen ? " · Frozen" : ""}
+          </AppText>
         </div>
         <div className="week-recap-result-metrics">
           {weekRecapMetrics(result, units, replay, hiddenIds).map((metric) => (
             <div key={metric.key}>
-              <span>{metric.key.toUpperCase()}</span>
-              <strong>
+              <AppText role="caption">{metric.key}</AppText>
+              <AppText role="value" className="week-recap-result-value">
                 {metric.value}
                 {metric.key === "Effort" && showDelta && (
-                  <em className={`week-recap-rating-delta${delta > 0 ? " is-pos" : " is-neg"}`}> ({deltaText})</em>
+                  <AppText role="label" className={`week-recap-rating-delta${delta > 0 ? " is-pos" : delta < 0 ? " is-neg" : ""}`}> ({deltaText})</AppText>
                 )}
-              </strong>
+              </AppText>
             </div>
           ))}
         </div>

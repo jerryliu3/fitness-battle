@@ -11,7 +11,7 @@ import { UserAvatar } from "@/ui/user-avatar";
 import { Ember } from "@/components/mascot/ember";
 import { CompetitionReplayButton } from "@/features/replay/competition-replay";
 import {
-  APP_ICON_PATHS, LAUREL_WREATH_PATHS, LAUREL_WREATH_STEMS, WEEK_RECAP_COLORS, formatEffort, formatPeriodDateRange,
+  APP_ICON_PATHS, WEEK_RECAP_COLORS, formatEffort, formatPeriodDateRange,
   sportById, weekRecapBreakdown, weekRecapCopy, weekRecapHeartRateRanges, weekRecapHighlights,
   weekRecapPages, weekRecapPodium, weekRecapTraining,
   type CompeteState, type CompetitionReplay, type PeriodResult, type SportId, type WeekRecapTarget,
@@ -64,6 +64,8 @@ function RecapIcon({ name, size = 16 }: { name: keyof typeof APP_ICON_PATHS; siz
   );
 }
 
+const RESUME_INDEX_KEY = "overtaek:recap_resume_index";
+
 export function WeekRecap({ state, results, nonRaceWeek, social, onDismiss, loadReplay, hiddenIds = [] }: {
   state: CompeteState; results: PeriodResult[];
   nonRaceWeek?: { sport: SportId; periodStart: string; periodEnd: string } | null;
@@ -71,7 +73,14 @@ export function WeekRecap({ state, results, nonRaceWeek, social, onDismiss, load
   loadReplay?: (result: PeriodResult) => Promise<CompetitionReplay | null>; hiddenIds?: readonly string[];
 }) {
   const pages = weekRecapPages(results, nonRaceWeek);
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    const saved = window.sessionStorage.getItem(RESUME_INDEX_KEY);
+    if (saved == null) return 0;
+    window.sessionStorage.removeItem(RESUME_INDEX_KEY);
+    const parsed = Number.parseInt(saved, 10);
+    return Number.isFinite(parsed) ? Math.max(0, Math.min(parsed, pages.length - 1)) : 0;
+  });
   const [replays, setReplays] = useState<Record<string, CompetitionReplay | null>>({});
   const { current, page, last, title, label } = weekRecapCopy(pages, index);
   const reduced = useReducedMotion();
@@ -135,29 +144,56 @@ export function WeekRecap({ state, results, nonRaceWeek, social, onDismiss, load
           </WeekRecapFit>
 
           <footer className="week-recap-footer">
-            <button type="button" className="fb-btn" onClick={() => (last ? onDismiss() : setIndex(current + 1))}>{label}</button>
-            {page.kind === "results" && (
-              <div className="week-recap-link-row">
-                <CompetitionReplayButton state={state} selection={page.result} label="Replay this round" variant="link" />
+            {page.kind === "arrival" ? (
+              <button type="button" className="fb-btn" onClick={() => setIndex(current + 1)}>{label}</button>
+            ) : page.kind === "results" ? (
+              <>
+                <div className="week-recap-footer-row">
+                  <CompetitionReplayButton state={state} selection={page.result} label="Replay round" variant="recap" />
+                  <button type="button" className="fb-btn" onClick={() => setIndex(current + 1)}>{label}</button>
+                </div>
                 {social && (
-                  <Dialog.Root>
-                    <Dialog.Trigger asChild><button type="button" className="week-recap-link-btn">Field choices</button></Dialog.Trigger>
-                    <Dialog.Portal>
-                      <Dialog.Overlay className="week-recap-choices-overlay" />
-                      <Dialog.Content className="week-recap-choices" aria-describedby={undefined}>
-                        <Dialog.Title style={typographyStyle("heading")}>Field choices</Dialog.Title>
-                        <AppParagraph>Choices appear when eligible athletes are available.</AppParagraph>
-                        <WeeklySocialActions result={page.result} units={state.units} />
-                        <Dialog.Close className="fb-btn-line">Back to recap</Dialog.Close>
-                      </Dialog.Content>
-                    </Dialog.Portal>
-                  </Dialog.Root>
+                  <div className="week-recap-link-row">
+                    <Dialog.Root>
+                      <Dialog.Trigger asChild><button type="button" className="week-recap-link-btn">Field choices</button></Dialog.Trigger>
+                      <Dialog.Portal>
+                        <Dialog.Overlay className="week-recap-choices-overlay" />
+                        <Dialog.Content className="week-recap-choices" aria-describedby={undefined}>
+                          <Dialog.Title style={typographyStyle("heading")}>Field choices</Dialog.Title>
+                          <AppParagraph>Choices appear when eligible athletes are available.</AppParagraph>
+                          <WeeklySocialActions result={page.result} units={state.units} />
+                          <Dialog.Close className="fb-btn-line">Back to recap</Dialog.Close>
+                        </Dialog.Content>
+                      </Dialog.Portal>
+                    </Dialog.Root>
+                  </div>
                 )}
-              </div>
-            )}
-            {last && page.kind === "effort" && (
-              <div className="week-recap-link-row">
-                <Link href="/app/athlete?panel=preferences" className="week-recap-link-btn" onClick={onDismiss}>Update sport settings</Link>
+              </>
+            ) : (
+              <div className="week-recap-footer-row">
+                <Link
+                  href="/app/athlete?panel=preferences"
+                  className="week-recap-secondary-btn"
+                  onClick={() => {
+                    if (typeof window !== "undefined") window.sessionStorage.setItem(RESUME_INDEX_KEY, String(current));
+                  }}
+                >
+                  <AppText role="label">Update settings</AppText>
+                </Link>
+                <button
+                  type="button"
+                  className="fb-btn"
+                  onClick={() => {
+                    if (last) {
+                      if (typeof window !== "undefined") window.sessionStorage.removeItem(RESUME_INDEX_KEY);
+                      onDismiss();
+                    } else {
+                      setIndex(current + 1);
+                    }
+                  }}
+                >
+                  {label}
+                </button>
               </div>
             )}
           </footer>
@@ -212,13 +248,7 @@ function PodiumHero({ replay, state, result, hiddenIds, reduced }: {
             transition={{ duration: reduced ? 0 : 0.34, delay: reduced ? 0 : STEP_DELAY[step], ease: "easeOut" }}
           >
             <div className="week-recap-podium-athlete">
-              <div className={`week-recap-avatar-frame ${stepClass}`}>
-                {isFirst && (
-                  <svg className="week-recap-laurel" width="96" height="66" viewBox="0 0 100 68" aria-hidden="true">
-                    {LAUREL_WREATH_STEMS.map((d) => <path key={d} d={d} fill="none" stroke="#f7c948" strokeWidth="1.6" strokeLinecap="round" />)}
-                    {LAUREL_WREATH_PATHS.map((d) => <path key={d} d={d} fill="#f7c948" />)}
-                  </svg>
-                )}
+              <div className="week-recap-avatar-frame">
                 {entry ? (
                   <UserAvatar src={entry.avatarUrl} name={entry.name} size={avatarSize} decorative />
                 ) : <span className="week-recap-empty-avatar" style={{ width: avatarSize, height: avatarSize }}>—</span>}
@@ -306,17 +336,16 @@ function Training({ state, target }: { state: CompeteState; target: WeekRecapTar
       <div className="week-recap-glass week-recap-hr-card">
         <div className="week-recap-next-header">
           <span className="week-recap-next-title"><RecapIcon name="heart" size={16} /><AppText role="label">Heart-rate zones</AppText></span>
-          {hr.totalMinutes > 0 && <AppText role="caption" className="week-recap-muted-text">Total {hr.totalMinutes} min</AppText>}
         </div>
         {hr.ranges.length > 0 ? (
           <div className="week-recap-hr-list">
             {hr.ranges.map((row) => (
               <div key={row.id} className="week-recap-hr-row">
                 <AppText role="caption" className="week-recap-hr-label">{row.label}</AppText>
-                <AppText role="caption" className="week-recap-hr-stat week-recap-muted-text">{row.pct}% ({row.minutes}m)</AppText>
                 <div className="week-recap-hr-track">
                   <div className={`week-recap-hr-fill is-${row.tone}`} style={{ width: `${Math.max(8, row.pct)}%` }} />
                 </div>
+                <AppText role="caption" className="week-recap-hr-pct week-recap-muted-text">{row.pct}%</AppText>
               </div>
             ))}
           </div>
@@ -329,7 +358,6 @@ function Training({ state, target }: { state: CompeteState; target: WeekRecapTar
           <AppText role="caption" className={`week-recap-next-pill${nextRound.active ? " is-active" : ""}`}>{nextRound.pill}</AppText>
         </div>
         <AppText role="row" className="week-recap-next-detail">{nextRound.detail}</AppText>
-        <AppText role="caption" className="week-recap-next-subtext">{nextRound.subtext}</AppText>
       </div>
     </section>
   );

@@ -14,7 +14,7 @@ export type WeekRecapPage =
 
 export interface WeekRecapPodiumEntry { id: string; name: string; place: number; you: boolean; avatarUrl?: string | null; metricLabel: string }
 export interface WeekRecapPodiumSlot { step: 1 | 2 | 3; entry: WeekRecapPodiumEntry | null }
-export interface WeekRecapNextRound { pill: string; detail: string; subtext: string; active: boolean }
+export interface WeekRecapNextRound { pill: string; detail: string; active: boolean }
 export interface WeekRecapHighlight { icon: "trophy" | "bolt" | "progress"; tone: "gold" | "success" | "muted"; title: string; detail: string }
 export interface WeekRecapHrRange { id: string; label: string; minutes: number; pct: number; tone: "high" | "warm" | "good" | "cool" }
 export interface WeekRecapTarget { sport: SportId; periodStart: string; periodEnd: string; result?: PeriodResult }
@@ -74,7 +74,7 @@ export function weekRecapCopy(pages: readonly WeekRecapPage[], index: number) {
     page,
     last,
     title: page.kind === "arrival" ? "Small days. Quite a week." : page.kind === "results" ? "Race complete!" : "Week breakdown",
-    label: last ? "Done" : page.kind === "arrival" ? "Reveal my finish →" : page.kind === "results" ? "See week breakdown →"
+    label: last ? "Done" : page.kind === "arrival" ? "Reveal my finish →" : page.kind === "results" ? "See breakdown"
       : `${next && next.kind !== "arrival" ? sportById(next.kind === "results" ? next.result.sport : next.sport).name : "Next sport"} results →`,
   };
 }
@@ -106,7 +106,7 @@ export function weekRecapBreakdown(state: CompeteState, target: WeekRecapTarget)
     stats: [
       { icon: "time" as const, tone: "success" as const, value: `${Math.round(totalSec / 60)} min`, label: "Total time" },
       { icon: "progress" as const, tone: "gold" as const, value: String(activities.length), label: "Sessions" },
-      { icon: "trophy" as const, tone: "muted" as const, value: bestValue, label: "Best session" },
+      { icon: "trophy" as const, tone: "muted" as const, value: bestValue, label: "Longest session" },
     ],
     nextRound: weekRecapNextRound(state, target),
   };
@@ -307,28 +307,26 @@ export function weekRecapNextRound(state: CompeteState, target: { sport: SportId
     return {
       pill: "Not joined",
       detail: "No upcoming round scheduled",
-      subtext: "Update sport settings to join again.",
       active: false,
     };
   }
   const nowMs = competeNow(state).getTime();
   const startsMs = enrollment.startsAt.getTime();
   const diffMs = Math.max(0, startsMs - nowMs);
-  let pill = "Active now";
+  let countdown = "Active now";
   if (enrollment.status === "upcoming") {
     if (diffMs < 3_600_000) {
-      pill = `Starts in ${Math.max(1, Math.ceil(diffMs / 60_000))}m`;
+      countdown = `Starts in ${Math.max(1, Math.ceil(diffMs / 60_000))}m`;
     } else {
       const hours = Math.ceil(diffMs / 3_600_000);
-      pill = hours < 48 ? `Starts in ${hours}h` : `Starts in ${Math.round(hours / 24)}d`;
+      countdown = hours < 48 ? `Starts in ${hours}h` : `Starts in ${Math.round(hours / 24)}d`;
     }
   }
   return {
-    pill,
-    detail: enrollment.status === "upcoming"
+    pill: enrollment.status === "upcoming"
       ? formatAppDateTime(enrollment.startsAt)
       : `Started ${formatAppDateTime(enrollment.startsAt)}`,
-    subtext: enrollment.renews ? "Renews after this round." : "Stops after this round.",
+    detail: countdown,
     active: true,
   };
 }
