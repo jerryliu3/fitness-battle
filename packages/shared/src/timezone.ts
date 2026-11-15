@@ -74,7 +74,7 @@ export function listTimeZoneOptions(): { value: string; label: string }[] {
   let zones: string[] = [...FALLBACK_TIME_ZONES];
   try {
     const supported = (
-      Intl as Intl & { supportedValuesOf?: (key: string) => string[] }
+      Intl as typeof Intl & { supportedValuesOf?: (key: string) => string[] }
     ).supportedValuesOf?.("timeZone");
     if (supported?.length) zones = supported;
   } catch {
