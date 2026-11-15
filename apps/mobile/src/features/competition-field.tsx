@@ -37,6 +37,8 @@ import {
   initialsFromName,
   isGeographicCompete,
   normalizeCompeteFieldView,
+  arenaValueDecimals,
+  formatArenaVolume,
   ordinalPlace,
   shellTabFromPath,
   weeklyBoard,
@@ -290,11 +292,16 @@ const f=useFocusStyles();
   const place = (value: number) =>
     1 + ranked.filter((lane) => lane.values[2] > value).length;
   const scores = weeklyBoard(state, sport, track);
+  const volumeDecimals = arenaValueDecimals(arena.unit);
   const openProfile = (lane: (typeof ranked)[number]) => {
+    const row = scores.find((entry) => entry.id === lane.id);
     setProfileAthlete({
       id: lane.id, name: lane.name, avatarUrl: lane.avatarUrl, you: lane.you,
-      score: scores.find((row) => row.id === lane.id)?.elo,
-      contextLabel: "This week", contextValue: `${lane.values[2].toFixed(arena.unit === "steps" ? 0 : arena.unit === "hrs" ? 1 : 2)} ${arena.unit}`,
+      score: row?.elo,
+      contextLabel: "This week",
+      contextValue: row
+        ? formatArenaVolume(sport, row, state.units)
+        : `${lane.values[2].toFixed(volumeDecimals)} ${arena.unit}`,
       contextDetail: `Place ${place(lane.values[2])} · ${sport}`,
     });
   };
@@ -614,7 +621,7 @@ const f=useFocusStyles();
                   </View>
                   <View style={{ alignItems: "flex-end", gap: 2 }}>
                     <Text style={{ ...textStyle("heading"), color: c.tennis }}>
-                      {focusedLane.values[2].toFixed(1)} {arena.unit}
+                      {focusedLane.values[2].toFixed(volumeDecimals)} {arena.unit}
                     </Text>
                     <Text
                       style={{
@@ -625,8 +632,8 @@ const f=useFocusStyles();
                       {focusedLane.you
                         ? focusedRank === 1
                           ? "Leading the field"
-                          : `${Math.abs(focusedDeltaToLeader).toFixed(1)} ${arena.unit} to 1st`
-                        : `${focusedDeltaToYou > 0 ? "+" : ""}${focusedDeltaToYou.toFixed(1)} ${arena.unit} vs you`}
+                          : `${Math.abs(focusedDeltaToLeader).toFixed(volumeDecimals)} ${arena.unit} to 1st`
+                        : `${focusedDeltaToYou > 0 ? "+" : ""}${focusedDeltaToYou.toFixed(volumeDecimals)} ${arena.unit} vs you`}
                     </Text>
                   </View>
                 </View>
@@ -720,7 +727,7 @@ const f=useFocusStyles();
         <StandingsList
           ranked={ranked.map((lane) => ({
             ...lane,
-            value: arena.unit === "hrs" ? (scores.find((s) => s.id === lane.id)?.movingSec ?? 0) / 3600 : lane.values[2],
+            value: lane.values[2],
           }))}
           hiddenIds={hiddenIds}
           unit={arena.unit}
