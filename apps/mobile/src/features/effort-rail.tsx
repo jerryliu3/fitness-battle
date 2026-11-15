@@ -56,11 +56,7 @@ const s=useThemedStyles(sThemes);
     const volume = sport === "strength" ? totals.movingSec : totals.distanceM;
     const withinStep = Math.max(0, volume) % step;
     const capped = score >= ELO_CAP;
-    const remaining = capped ? 0 : Math.max(0, step - withinStep);
     const fraction = guest ? 0 : capped ? 1 : Math.max(0, Math.min(1, withinStep / step));
-    const remainingLabel = capped
-      ? "Maximum score"
-      : `${formatVolume(sport, sport === "strength" ? 0 : remaining, sport === "strength" ? remaining : 0, state.units)} left`;
     return (
       <Pressable
         style={[s.rail, s.railCompact]}
@@ -82,16 +78,18 @@ const s=useThemedStyles(sThemes);
           style={s.trackCompact}
         >
           <View style={[s.fill, { width: `${Math.round(fraction * 100)}%` }]} />
-          {!guest ? <Text style={s.remaining}>{remainingLabel}</Text> : null}
         </View>
       </Pressable>
     );
   }
   if (!model) return null;
   const remaining=formatVolume(model.sport,model.sport==="strength"?0:model.remaining,model.sport==="strength"?model.remaining:0,state.units);
-  return <Pressable style={[s.rail, compact && s.railCompact]} accessibilityRole="button" accessibilityLabel={`${sportById(model.sport).name} ${competitionTrackLabel(model.sport)} Effort Score ${model.score}. ${remaining} to next point. Open Progress`} onPress={()=>router.navigate("/you?view=effort")}>
+  const buttonLabel = compact
+    ? `${sportById(model.sport).name} Effort Score ${model.score}. Open Progress`
+    : `${sportById(model.sport).name} ${competitionTrackLabel(model.sport)} Effort Score ${model.score}. ${remaining} to next point. Open Progress`;
+  return <Pressable style={[s.rail, compact && s.railCompact]} accessibilityRole="button" accessibilityLabel={buttonLabel} onPress={()=>router.navigate("/you?view=effort")}>
     <View style={s.row}>{!compact && <Text style={s.caption}>{sportById(model.sport).name} · {rankForElo(model.score).name}</Text>}{compact ? <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4, flexShrink: 1 }}><Text style={[s.score, { flexShrink: 0 }]}>{formatEffortScore(model.score)}</Text><Text style={[s.caption, { flexShrink: 1 }]} numberOfLines={1}>Effort Score</Text></View> : <Text style={s.score} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{formatEffortScore(model.score)} <Text style={s.caption}>Effort Score</Text></Text>}</View>
-    <View accessible accessibilityRole="progressbar" accessibilityLabel="Progress to next Effort Score point" accessibilityValue={{min:0,max:100,now:Math.round(model.fraction*100)}} style={compact ? s.trackCompact : s.track}><Animated.View style={[s.fill,{width:fill.interpolate({inputRange:[0,1],outputRange:["0%","100%"]})}]}/><Text style={s.remaining}>{model.capped?"Maximum score":`${remaining} left`}</Text></View>
+    <View accessible accessibilityRole="progressbar" accessibilityLabel="Progress to next Effort Score point" accessibilityValue={{min:0,max:100,now:Math.round(model.fraction*100)}} style={compact ? s.trackCompact : s.track}><Animated.View style={[s.fill,{width:fill.interpolate({inputRange:[0,1],outputRange:["0%","100%"]})}]}/>{!compact && <Text style={s.remaining}>{model.capped?"Maximum score":`${remaining} left`}</Text>}</View>
     {!compact && <View style={s.row}><Text style={s.caption}>{model.earned?`${competitionTrackLabel(model.sport)} · +${model.earned} this week`:competitionTrackLabel(model.sport)}</Text></View>}
     {gain>0?<Animated.View accessibilityLiveRegion="polite" style={[s.gain,{opacity:reduced?1:burst.interpolate({inputRange:[0,.2,.8,1],outputRange:[0,1,1,0]}),transform:[{translateY:reduced?0:burst.interpolate({inputRange:[0,1],outputRange:[4,-18]})}]}]}><Text style={s.gainText}>+{gain}{reduced?"":"  ✦ ✧ ✦"}</Text></Animated.View>:null}
   </Pressable>;

@@ -47,7 +47,7 @@ export function useCompetitionCourse(sport: string, periodStart: string, periodE
         if (course) { const cached = courseCache.get(cacheKey); if (cached && JSON.stringify(cached) === JSON.stringify(course)) course = cached; courseCache.set(cacheKey, course); }
         if (!cancelled) setResult({ key, course, error: "" });
       })
-      .catch(() => { if (!cancelled) setResult({ key, course: null, error: "" }); });
+      .catch(() => { if (!cancelled) setResult({ key, course: null, error: "Course unavailable." }); });
     return () => { cancelled = true; };
   }, [key, sport, periodStart, periodEnd, demo, geographic, enabled, user?.id, accessToken, offlineMode]);
   if (!enabled || !geographic || !periodStart || !periodEnd) return { course: null, error: "", retry: () => setAttempt(value => value + 1) };
