@@ -1,5 +1,5 @@
-import { APP_TIMEZONE, weeklyCompetitionLastDay } from "./period";
-import { nextDailyWaveWindowAt } from "./matching/waves";
+import { APP_TIMEZONE, accountTimeZone, weeklyCompetitionLastDay } from "./period";
+import { nextDailyWaveWindowAt, weeklyWaveWindowAt } from "./matching/waves";
 import { competitionQueue, waveTimeLabelForState } from "./compete/participation";
 import { rankForElo } from "./compete/ranks";
 import { ELO_UNRANKED, competitionTrack, competitionTrackLabel, sportById, type CompeteState } from "./compete/sports";
@@ -20,9 +20,10 @@ export function eventRegistration(state: CompeteState, event: CompeteEvent, now:
   const verified = !sleep && competitionTrack(event) === "verified";
   const sportRating = state.ratings.find(r => r.sport === event);
   const rating = sleep ? state.healthRatings.find(r => r.metric === "sleep")?.elo : verified ? sportRating?.verifiedElo : sportRating?.openElo;
-  const dates: Intl.DateTimeFormatOptions = { timeZone: APP_TIMEZONE, month: "short", day: "numeric" };
+  const displayTz = accountTimeZone(state);
+  const dates: Intl.DateTimeFormatOptions = { timeZone: displayTz, month: "short", day: "numeric" };
   const firstDay = window.waveStart.toLocaleDateString("en-US", dates);
-  const lastDay = weeklyCompetitionLastDay(window.weekEnd).toLocaleDateString("en-US", dates);
+  const lastDay = weeklyCompetitionLastDay(window.weekEnd, APP_TIMEZONE).toLocaleDateString("en-US", dates);
   const dateRange = firstDay === lastDay ? firstDay : `${firstDay} – ${lastDay}`;
   return {
     name, title: `Weekly ${name}`, dateRange,
@@ -38,7 +39,7 @@ export function eventRegistration(state: CompeteState, event: CompeteEvent, now:
       { title: "Your entry tier", summary: rankForElo(rating ?? ELO_UNRANKED).name, detail: "Matches you with competitors at a similar effort level based on your current Effort Score." },
       { title: "What counts", summary: sleep ? "Sleep & recovery" : event === "walking" ? "Daily step totals" : competitionTrackLabel(event), detail: sleep ? "Eligible sleep records from connected health trackers or manual sleep entries. Only eligible records contribute competition credit." : event === "walking" ? "Steps synced from Apple Health, Health Connect, Garmin, WHOOP, or Oura. Walk workouts stay in your training log but do not add steps here unless your tracker reports them as daily step counts." : verified ? "Only eligible recorded, GPS-verified activity counts on this track. Pending, excluded and future activities do not count." : "Eligible recorded or manual activities count on the Open track. Pending, excluded and future activities do not count." },
     ],
-    renewal: "Starts on the next 6 AM ET morning wave and renews weekly on Monday. Cancel before your wave starts, or turn off renewal during the week.",
+    renewal: `Starts on the next morning wave (${waveTimeLabelForState(state, nextDailyWaveWindowAt(now).waveStart)}) and renews weekly (${waveTimeLabelForState(state, weeklyWaveWindowAt(now).waveStart)}). Cancel before your wave starts, or turn off renewal during the week.`,
   };
 }
 

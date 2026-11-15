@@ -34,10 +34,11 @@ export interface OpenLineModel {
   yTicks: { y: number; label: string }[];
 }
 
-/** Equal-width Eastern days, including the 23/25-hour DST days. */
-function calendarPosition(at: Date) {
-  const start = startOfZonedDay(at), end = shiftAppDay(start, 1);
-  return Date.parse(`${dayKey(at)}T00:00:00Z`) / 86400000
+/** Equal-width calendar days in `timeZone`, including 23/25-hour DST days. */
+function calendarPosition(at: Date, timeZone: string = APP_TIMEZONE) {
+  const start = startOfZonedDay(at, timeZone);
+  const end = shiftZonedDay(start, 1, timeZone);
+  return Date.parse(`${dayKey(at, timeZone)}T00:00:00Z`) / 86400000
     + (at.getTime() - start.getTime()) / (end.getTime() - start.getTime());
 }
 
@@ -68,10 +69,11 @@ export function openLineModel(
   const max = Math.ceil(high + padding);
   const y = (value: number) => bottom - (value - min) / (max - min || 1) * (bottom - top);
   const x = (i: number) => left + i / Math.max(1, slots - 1) * (right - left);
-  const origin = timeline ? calendarPosition(timeline.start) : 0;
-  const timeSpan = timeline ? Math.max(.001, calendarPosition(timeline.end) - origin) : 1;
-  const timeX = (at: string) => left + (calendarPosition(new Date(at)) - origin) / timeSpan * (right - left);
   const displayTz = timeline?.timeZone ?? APP_TIMEZONE;
+  const pos = (at: Date) => calendarPosition(at, displayTz);
+  const origin = timeline ? pos(timeline.start) : 0;
+  const timeSpan = timeline ? Math.max(.001, pos(timeline.end) - origin) : 1;
+  const timeX = (at: string) => left + (pos(new Date(at)) - origin) / timeSpan * (right - left);
   const crossesYear = rows.length > 0 && dayKey(new Date(rows[0]!.date), displayTz).slice(0, 4) !== dayKey(new Date(rows[rows.length - 1]!.date), displayTz).slice(0, 4);
   const dateFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", ...(crossesYear ? { year: "numeric" } : {}), timeZone: displayTz });
   const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: displayTz });
@@ -90,7 +92,7 @@ export function openLineModel(
   });
   if (segment.length) segments.push(trace(segment));
   const tickDates = timeline
-    ? [timeline.start, shiftAppDay(timeline.start, Math.floor((calendarPosition(timeline.end) - calendarPosition(timeline.start)) / 2)), new Date(timeline.end.getTime() - 1)]
+    ? [timeline.start, shiftZonedDay(timeline.start, Math.floor((pos(timeline.end) - pos(timeline.start)) / 2), displayTz), new Date(timeline.end.getTime() - 1)]
     : [rows[0], rows[Math.floor((rows.length - 1) / 2)], rows.at(-1)].map(row => row ? new Date(row.date) : undefined);
   const xTicks = tickDates.flatMap((at, i) => at ? [{ x: timeline ? timeX(at.toISOString()) : x([0, Math.floor((rows.length - 1) / 2), rows.length - 1][i]!), label: date(at.toISOString()) }] : [])
     .filter((tick, i, ticks) => ticks.findIndex(other => other.x === tick.x && other.label === tick.label) === i);
@@ -232,16 +234,17 @@ function effortScoreAt(
   return next ? next.scoreBefore : fallback;
 }
 
-/** Current score versus the score at the start of the selected Eastern window. */
+/** Current score versus the score at the start of the selected account-calendar window. */
 export function effortScoreComparison(
   state: CompeteState,
   track: "open" | "verified",
   range: EffortHistoryRange,
   now = competeNow(state),
 ): { current: number; prior: number; pct: number } | null {
+  const displayTz = accountTimeZone(state);
   const chartEvents = effortScoreEvents(state, track, now);
   if (!chartEvents.length) return null;
-  const start = shiftAppDay(now, -effortScoreLookbackDays(range));
+  const start = shiftZonedDay(now, -effortScoreLookbackDays(range), displayTz);
   const inWindow = chartEvents.some(event => Date.parse(event.occurredAt) >= start.getTime());
   if (!inWindow) return null;
   const rating = state.ratings.find(r => r.sport === state.primary);
@@ -267,13 +270,15 @@ function effortScoreEvents(state: CompeteState, track: "open" | "verified", now:
 /** Score events are committed changes, not estimates from activity distance. */
 export function effortScoreLine(state: CompeteState, track: "open" | "verified", range: EffortHistoryRange, now = competeNow(state), createdAt?: string | null) {
   const displayTz = accountTimeZone(state);
-  const start = shiftAppDay(now, -effortScoreLookbackDays(range));
-  const end = shiftAppDay(now, 1);
+  const start = shiftZonedDay(now, -effortScoreLookbackDays(range), displayTz);
+  const end = shiftZonedDay(startOfZonedDay(now, displayTz), 1, displayTz);
   const earliest = earliestDataDate(state, now, createdAt);
   const clampedToEarliest = Boolean(earliest && earliest.getTime() > start.getTime());
   const effectiveStart = clampedToEarliest ? earliest! : start;
-  const timelineStart = clampedToEarliest ? startOfZonedDay(effectiveStart) : start;
-  const timelineEnd = clampedToEarliest ? shiftAppDay(timelineStart, effortScoreLookbackDays(range) + 1) : end;
+  const timelineStart = clampedToEarliest ? startOfZonedDay(effectiveStart, displayTz) : start;
+  const timelineEnd = clampedToEarliest
+    ? shiftZonedDay(timelineStart, effortScoreLookbackDays(range) + 1, displayTz)
+    : end;
   const events = effortScoreEvents(state, track, now);
   const rows: { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean }[] = [];
   const rating = state.ratings.find(r => r.sport === state.primary);
@@ -281,12 +286,12 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
   const eventsInWindow = events.filter(event => Date.parse(event.occurredAt) >= effectiveStart.getTime());
   const eventDays = new Set(eventsInWindow.map(event => dayKey(new Date(event.occurredAt), displayTz)));
   const todayKey = dayKey(now, displayTz);
-  const startDay = startOfZonedDay(effectiveStart);
-  const todayStart = startOfZonedDay(now);
+  const startDay = startOfZonedDay(effectiveStart, displayTz);
+  const todayStart = startOfZonedDay(now, displayTz);
   type TimelineRow = { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean };
   const dailyRows: TimelineRow[] = [];
   for (let d = 0; ; d += 1) {
-    const day = shiftAppDay(startDay, d);
+    const day = shiftZonedDay(startDay, d, displayTz);
     if (day.getTime() >= todayStart.getTime()) break;
     const key = dayKey(day, displayTz);
     if (key === todayKey || eventDays.has(key)) continue;
