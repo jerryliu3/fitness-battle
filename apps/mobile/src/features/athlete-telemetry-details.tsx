@@ -10,9 +10,9 @@ import { StandardLineChart } from "../ui/standard-line-chart";
 export { getDomainTitle };
 
 const TIME_LENSES: readonly { value: AnalyticsTimeLens; label: string }[] = [
-  { value: "7d", label: "7D" },
-  { value: "30d", label: "30D" },
-  { value: "90d", label: "90D" },
+  { value: "7d", label: "1W" },
+  { value: "30d", label: "1M" },
+  { value: "90d", label: "3M" },
   { value: "all", label: "All" },
 ];
 

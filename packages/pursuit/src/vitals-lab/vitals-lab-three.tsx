@@ -946,7 +946,7 @@ export function VitalsLabThreeViewport({
     renderer.domElement.style.width = "100%";
     renderer.domElement.style.height = "100%";
     renderer.domElement.style.display = "block";
-    renderer.domElement.style.touchAction = "pan-y";
+    renderer.domElement.style.touchAction = "none";
     container.innerHTML = "";
     container.appendChild(renderer.domElement);
 
@@ -1205,23 +1205,56 @@ export function VitalsLabThreeViewport({
     const ro = new ResizeObserver(updateSize);
     ro.observe(container);
 
-    // Drag-to-rotate pointer handling
+    const clampZoom = (value: number) => Math.min(2.25, Math.max(0.72, value));
+
+    // Drag-to-rotate + pinch-to-zoom pointer handling
     const dragState = {
       active: false,
       pointerId: -1,
       lastX: 0,
     };
+    const pointers = new Map<number, { x: number; y: number }>();
+    let pinchState: { distance: number; zoom: number } | null = null;
+
+    const pointerDistance = () => {
+      const pts = [...pointers.values()];
+      if (pts.length < 2) return 0;
+      const dx = pts[0].x - pts[1].x;
+      const dy = pts[0].y - pts[1].y;
+      return Math.hypot(dx, dy);
+    };
 
     const handlePointerDown = (e: PointerEvent) => {
-      dragState.active = true;
-      dragState.pointerId = e.pointerId;
-      dragState.lastX = e.clientX;
-      renderer.domElement.style.cursor = "grabbing";
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       renderer.domElement.setPointerCapture(e.pointerId);
-      stateRef.current.onDragStart?.();
+
+      if (pointers.size === 1) {
+        dragState.active = true;
+        dragState.pointerId = e.pointerId;
+        dragState.lastX = e.clientX;
+        renderer.domElement.style.cursor = "grabbing";
+        stateRef.current.onDragStart?.();
+      } else if (pointers.size === 2) {
+        dragState.active = false;
+        pinchState = {
+          distance: pointerDistance(),
+          zoom: cameraGoalRef.current.zoom,
+        };
+      }
     };
 
     const handlePointerMove = (e: PointerEvent) => {
+      if (!pointers.has(e.pointerId)) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (pointers.size >= 2 && pinchState && pinchState.distance > 0) {
+        const nextDistance = pointerDistance();
+        cameraGoalRef.current.zoom = clampZoom(
+          pinchState.zoom * (nextDistance / pinchState.distance),
+        );
+        return;
+      }
+
       if (!dragState.active || e.pointerId !== dragState.pointerId) return;
       const dx = e.clientX - dragState.lastX;
       dragState.lastX = e.clientX;
@@ -1229,13 +1262,19 @@ export function VitalsLabThreeViewport({
     };
 
     const handlePointerUp = (e: PointerEvent) => {
-      if (e.pointerId !== dragState.pointerId) return;
-      dragState.active = false;
-      renderer.domElement.style.cursor = "grab";
+      pointers.delete(e.pointerId);
+      if (pointers.size < 2) pinchState = null;
+      if (pointers.size === 0) {
+        dragState.active = false;
+        renderer.domElement.style.cursor = "grab";
+      }
+      if (e.pointerId === dragState.pointerId) {
+        dragState.active = false;
+        stateRef.current.onRotYChange?.(cameraGoalRef.current.rotY);
+      }
       if (renderer.domElement.hasPointerCapture(e.pointerId)) {
         renderer.domElement.releasePointerCapture(e.pointerId);
       }
-      stateRef.current.onRotYChange?.(cameraGoalRef.current.rotY);
     };
 
     renderer.domElement.addEventListener("pointerdown", handlePointerDown);

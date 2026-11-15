@@ -206,7 +206,7 @@ describe("AthleteTelemetryMatrix mobile features", () => {
     expect(allText()).not.toContain("Daily Synthesis Log");
   });
 
-  it("renders time lens pills (7D, 30D, 90D, All) and persists selected date when switching vitals", async () => {
+  it("renders time lens pills (1W, 1M, 3M, All) and persists selected date when switching vitals", async () => {
     await act(async () => {
       renderer = create(createElement(AthleteTelemetryDetailView, { domain: "vitals" }));
     });
@@ -218,9 +218,9 @@ describe("AthleteTelemetryMatrix mobile features", () => {
         .join(" ");
 
     // Verify time lens pills
-    expect(allText()).toContain("7D");
-    expect(allText()).toContain("30D");
-    expect(allText()).toContain("90D");
+    expect(allText()).toContain("1W");
+    expect(allText()).toContain("1M");
+    expect(allText()).toContain("3M");
     expect(allText()).toContain("All");
 
     // Switching lenses updates view
@@ -230,7 +230,7 @@ describe("AthleteTelemetryMatrix mobile features", () => {
     expect(lensPills.length).toBe(4);
 
     await act(async () => {
-      lensPills[0]!.props.onPress(); // 7D
+      lensPills[0]!.props.onPress(); // 1W
     });
 
     // Verify switching active vital keeps selected date intact

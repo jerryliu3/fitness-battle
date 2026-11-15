@@ -2,8 +2,9 @@ import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { FocusSegments } from "../ui/focus";
 import { AppText } from "../ui/section";
 import { StandardLineChart } from "../ui/standard-line-chart";
+import { CompeteSheet } from "../ui/compete-sheet";
 import { useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import {
   competeNow,
   formatHealthNumber,
@@ -20,9 +21,9 @@ import { VitalsLabBodyScan } from "./vitals-lab-body-scan";
 type HealthMetricKey = "hrv" | "rhr" | "sleep";
 
 const TIME_LENSES: readonly { value: AnalyticsTimeLens; label: string; days: number }[] = [
-  { value: "7d", label: "7D", days: 7 },
-  { value: "30d", label: "30D", days: 30 },
-  { value: "90d", label: "90D", days: 90 },
+  { value: "7d", label: "1W", days: 7 },
+  { value: "30d", label: "1M", days: 30 },
+  { value: "90d", label: "3M", days: 90 },
 ];
 
 export function HealthLabSpace({
@@ -79,17 +80,8 @@ export function HealthLabSpace({
     ? "Connect a supported tracker to record HRV, resting heart rate, and sleep. Charts stay empty until observations exist."
     : `Latest ${titles[selectedMetric].toLowerCase()} ${formatReading(selectedMetric, lastRecorded.value)} on ${lastRecorded.label}.`;
 
-  return (
-    <View style={s.container}>
-      <VitalsLabBodyScan
-        state={state}
-        signedOut={signedOut}
-        onChartMetricChange={(metric) => {
-          setSelectedMetric(metric);
-          setSelectedIdx(undefined);
-        }}
-      />
-
+  const sheetContent = (
+    <View style={s.sheetStack}>
       <View style={s.chartCard}>
         <View style={s.chartHeaderRow}>
           <View style={{ flex: 1, gap: 2, minWidth: 115 }}>
@@ -154,12 +146,30 @@ export function HealthLabSpace({
       </View>
     </View>
   );
+
+  return (
+    <View style={s.root}>
+      <VitalsLabBodyScan
+        immersive
+        state={state}
+        signedOut={signedOut}
+        onChartMetricChange={(metric) => {
+          setSelectedMetric(metric);
+          setSelectedIdx(undefined);
+        }}
+      />
+      <CompeteSheet active expandRequest={0} defaultIndex={0} scrollable>
+        {sheetContent}
+      </CompeteSheet>
+    </View>
+  );
 }
 
 const sThemes = createThemedStyles((themeColors) => {
   const c = themeColors;
   return {
-    container: { gap: 20 },
+    root: { flex: 1 },
+    sheetStack: { gap: 20 },
     chartCard: {
       padding: 16,
       borderRadius: 20,

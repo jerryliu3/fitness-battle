@@ -4,6 +4,7 @@ import {
   isCompeteSyncAction,
   isEnrollmentActionAfterSettlement,
   normalizeCompeteIntent,
+  reduceCompete,
   type Action,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -21,6 +22,9 @@ export function applyAccountAction(
   const action = isCompeteSyncAction(raw)
     ? resolveServerSyncAction(stored, raw, userId, now)
     : normalizeCompeteIntent(raw, userId, nowIso);
+  if (action.type === "set-disposition") {
+    return reduceCompete(stored, action);
+  }
   return applyCompeteEdit(stored, action);
 }
 
