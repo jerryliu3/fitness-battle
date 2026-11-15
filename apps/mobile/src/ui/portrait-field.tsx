@@ -32,6 +32,8 @@ import {
   portraitFieldGap,
   competeAthleteTrailColors,
   fieldFlightDuration, fieldFlightEase, fieldZoomSpan, pinchFieldView,
+  arenaValueDecimals,
+  fieldZoomLimits,
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
@@ -95,6 +97,8 @@ const appearanceColors = useThemeColors();
   const prefix = useId().replace(/:/g, "");
   if (laneAnchor) laneAnchor.current = laneOffset;
   const scene = useMemo(() => portraitField(lanes, view, undefined, laneOffset, prefix), [lanes, view.center, view.span, laneOffset, prefix]);
+  const zoomLimits = useMemo(() => fieldZoomLimits(unit), [unit]);
+  const valueDecimals = useMemo(() => arenaValueDecimals(unit), [unit]);
   const [width, setWidth] = useState(340);
   const [exploring, setExploring] = useState(false);
   const latest = useRef({ scene, view, onPan, onZoom, onViewChange, onGestureStart, width, height, exploring: exploring || fullscreen, unit });
@@ -313,7 +317,7 @@ const appearanceColors = useThemeColors();
                         selected={isSelected}
                         expanded={!overlaysHidden && isExpanded}
                         gold={isGold}
-                        detail={`${ordinalPlace(rank)} · ${m.value.toFixed(unit === "pts" ? 0 : 1)} ${unit}`}
+                        detail={`${ordinalPlace(rank)} · ${m.value.toFixed(valueDecimals)} ${unit}`}
                         subdetail={subdetail}
                       />
                     </G>
@@ -418,9 +422,9 @@ const appearanceColors = useThemeColors();
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onPress={() => shift(1)}><Text style={s.white}>→</Text></Pressable>
         </View>
         {!fullscreen ? <View style={s.controlRow}>
-          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onPress={() => zoomTo(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}><Text style={s.white}>−</Text></Pressable>
-          <Text style={[s.white, textStyle("caption")]}>{Math.max(0, scene.min).toFixed(unit === "pts" ? 0 : 2)}–{scene.max.toFixed(unit === "pts" ? 0 : 2)} {unit}</Text>
-          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onPress={() => zoomTo(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}><Text style={s.white}>＋</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom out" disabled={view.span >= zoomLimits.max} onPress={() => zoomTo(Math.min(zoomLimits.max, view.span * 1.5))}><Text style={s.white}>−</Text></Pressable>
+          <Text style={[s.white, textStyle("caption")]}>{Math.max(0, scene.min).toFixed(valueDecimals)}–{scene.max.toFixed(valueDecimals)} {unit}</Text>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom in" disabled={view.span <= zoomLimits.min} onPress={() => zoomTo(Math.max(zoomLimits.min, view.span / 1.5))}><Text style={s.white}>＋</Text></Pressable>
         </View> : null}
       </FieldOverlayView>
     </View>

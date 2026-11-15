@@ -16,6 +16,8 @@ import {
   portraitFieldGap,
   competeAthleteTrailColors,
   fieldFlightDuration, fieldFlightEase, pinchFieldView,
+  arenaValueDecimals,
+  fieldZoomLimits,
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
@@ -65,6 +67,8 @@ export function PortraitField({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   useEffect(() => { setExpandedId(null); }, [focusRequest]);
   const scene = useMemo(() => portraitField(lanes, view, undefined, laneOffset, prefix), [lanes, view.center, view.span, laneOffset, prefix]);
+  const zoomLimits = useMemo(() => fieldZoomLimits(unit), [unit]);
+  const valueDecimals = useMemo(() => arenaValueDecimals(unit), [unit]);
   const prevSelectedRef = useRef(focusOnMount ? "" : `${selectedId}:${focusRequest}`);
   const [exploreEnabled, setExploring] = useState(false);
   const exploring = immersive || exploreEnabled;
@@ -291,7 +295,7 @@ export function PortraitField({
                     selected={isSelected}
                     expanded={isExpanded}
                     gold={isGold}
-                    detail={`${ordinalPlace(rank)} · ${m.value.toFixed(unit === "pts" ? 0 : 1)} ${unit}`}
+                    detail={`${ordinalPlace(rank)} · ${m.value.toFixed(valueDecimals)} ${unit}`}
                     subdetail={subdetail}
                   />
                 </g>
@@ -321,9 +325,9 @@ export function PortraitField({
           <button type="button" aria-label="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onClick={() => shift(1)}>→</button>
         </div>
         {!immersive ? <div className="club-board-zoom">
-          <button type="button" aria-label="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onClick={() => zoomTo(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}>−</button>
-          <span aria-live="off">{Math.max(0, scene.min).toFixed(unit === "pts" ? 0 : 2)}–{scene.max.toFixed(unit === "pts" ? 0 : 2)} {unit}</span>
-          <button type="button" aria-label="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onClick={() => zoomTo(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}>＋</button>
+          <button type="button" aria-label="Zoom out" disabled={view.span >= zoomLimits.max} onClick={() => zoomTo(Math.min(zoomLimits.max, view.span * 1.5))}>−</button>
+          <span aria-live="off">{Math.max(0, scene.min).toFixed(valueDecimals)}–{scene.max.toFixed(valueDecimals)} {unit}</span>
+          <button type="button" aria-label="Zoom in" disabled={view.span <= zoomLimits.min} onClick={() => zoomTo(Math.max(zoomLimits.min, view.span / 1.5))}>＋</button>
         </div> : null}
       </div>
     </div>

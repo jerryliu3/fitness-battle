@@ -18,7 +18,7 @@ import {
   orderedArenaLanes,
   polishedLaneScale,
   fieldLaneMarkerScale,
-  fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, arenaStandingsQuantityLabel, type FieldAppearance,
+  arenaValueDecimals, fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, arenaStandingsQuantityLabel, type FieldAppearance,
   type ArenaOvertakeFrame,
   type ArenaOvertakePlan,
   type ArenaSceneLane,
@@ -78,6 +78,7 @@ export function ArenaLanes({
   const reduced = useReducedMotion();
   const standings = presentation === "standings";
   const prefix = useId();
+  const valueDecimals = arenaValueDecimals(unit);
   const [measured, setMeasured] = useState(false);
   const [size, setSize] = useState({ width: 360, height: 540 });
   const previousGeometry = useRef<{ width: number; laneWidth: number; count: number; left: number; oval: boolean } | null>(null);
@@ -118,7 +119,7 @@ export function ArenaLanes({
   const laneWidth = course.laneWidth, plotHeight = course.length;
 
   const yourValue = liveLanes.find((lane) => lane.you)?.value ?? 0;
-  const relativeDistance = (value: number) => `${value - yourValue > 0 ? "+" : ""}${(value - yourValue).toFixed(1)} ${unit}`;
+  const relativeDistance = (value: number) => `${value - yourValue > 0 ? "+" : ""}${(value - yourValue).toFixed(valueDecimals)} ${unit}`;
 
   const sortedByValue = [...ordered].sort((a, b) => b.value - a.value);
   const Marker = playback ? "g" : motion.g;
@@ -215,7 +216,7 @@ export function ArenaLanes({
         height={height}
         style={{ width, height, touchAction: immersive ? "none" : "pan-y" }}
         role="group"
-        aria-label={standings ? `Athlete standings, ranked by weekly ${arenaStandingsQuantityLabel(unit)}` : `Vertical athlete lanes, ${bounds.min.toFixed(1)} to ${bounds.max.toFixed(1)} ${unit}. Drag to explore.`}
+        aria-label={standings ? `Athlete standings, ranked by weekly ${arenaStandingsQuantityLabel(unit)}` : `Vertical athlete lanes, ${bounds.min.toFixed(valueDecimals)} to ${bounds.max.toFixed(valueDecimals)} ${unit}. Drag to explore.`}
         tabIndex={0}
         onKeyDown={(e) => {
           if (!standings && e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
@@ -276,7 +277,7 @@ export function ArenaLanes({
             : l.you
               ? rank === 1
                 ? "Leading the field"
-                : `${(l.value - (sortedByValue[0]?.value ?? 0)).toFixed(1)} ${unit} vs #1`
+                : `${(l.value - (sortedByValue[0]?.value ?? 0)).toFixed(valueDecimals)} ${unit} vs #1`
               : relativeDistance(l.value);
           return (
             <Marker
@@ -291,7 +292,7 @@ export function ArenaLanes({
               role="button"
               aria-pressed={selected === l.id}
               tabIndex={0}
-              aria-label={`${course.oval && !standings ? `${fieldLap(l.value, unit).laps} completed laps, ` : ""}${l.name}, ${standings ? `place ${rank}, ${scores[l.id] != null ? `${effortRankBadge(scores[l.id]).name} level, ` : ""}` : ""}${formatLastUpdated(l)}, ${!standings && edge ? `${position.distanceOutside.toFixed(1)} ${unit} ${position.edge} of visible range` : `${relativeDistance(l.value)} relative to you`}`}
+              aria-label={`${course.oval && !standings ? `${fieldLap(l.value, unit).laps} completed laps, ` : ""}${l.name}, ${standings ? `place ${rank}, ${scores[l.id] != null ? `${effortRankBadge(scores[l.id]).name} level, ` : ""}` : ""}${formatLastUpdated(l)}, ${!standings && edge ? `${position.distanceOutside.toFixed(valueDecimals)} ${unit} ${position.edge} of visible range` : `${relativeDistance(l.value)} relative to you`}`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -361,7 +362,7 @@ export function ArenaLanes({
                     selected={isSelected}
                     expanded={isExpanded}
                     gold={rank === 1}
-                    detail={`${liveLanes.some(peer => peer.mystery) ? "Starts at zero" : ordinalPlace(rank)} · ${l.value.toFixed(1)} ${unit}`}
+                    detail={`${liveLanes.some(peer => peer.mystery) ? "Starts at zero" : ordinalPlace(rank)} · ${l.value.toFixed(valueDecimals)} ${unit}`}
                     subdetail={subdetail}
                   />
                 </g>
@@ -373,7 +374,7 @@ export function ArenaLanes({
                 <text style={typographyStyle("caption")} x={40} y={4} fill={appearanceColors.textSecondary} >{rank}</text>
                 <text style={typographyStyle("row")} x={64} y={-5} fill={appearanceColors.textSecondary}  >{l.name}{scores[l.id] != null ? ` ${effortRankBadge(scores[l.id]).symbol}` : ""}</text>
                 <text style={typographyStyle("caption")} x={64} y={15} fill="#a67c00" >{scores[l.id] ?? "—"} effort score</text>
-                <text style={typographyStyle("value")} x={width - 58} y={5} textAnchor="end" fill={appearanceColors.textSecondary}  >{l.value.toFixed(1)} {unit}</text>
+                <text style={typographyStyle("value")} x={width - 58} y={5} textAnchor="end" fill={appearanceColors.textSecondary}  >{l.value.toFixed(valueDecimals)} {unit}</text>
               </motion.g>
               </g>
             </Marker>
@@ -389,7 +390,7 @@ export function ArenaLanes({
                 role="button"
                 tabIndex={0}
                 data-athlete={ghost.id}
-                aria-label={`Past you, ${ghost.value.toFixed(1)} ${unit}, not ranked`}
+                aria-label={`Past you, ${ghost.value.toFixed(valueDecimals)} ${unit}, not ranked`}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") onSelect(ghost.id);
                 }}

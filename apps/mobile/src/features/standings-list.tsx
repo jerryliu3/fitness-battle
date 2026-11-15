@@ -1,6 +1,6 @@
 import Animated, { LinearTransition } from "react-native-reanimated";
 import { Pressable, Text, View } from "react-native";
-import { standingsBar, rankSymbolForScore } from "@fitness-battle/shared";
+import { arenaValueDecimals, standingsBar, rankSymbolForScore } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { useFocusStyles } from "../ui/focus";
 import { RankAvatar } from "../ui/rank-symbol";
@@ -36,7 +36,7 @@ export function StandingsList<T extends StandingsRowItem>({
   const reduceMotion = useReducedMotion();
   const leaderValue = Math.max(ranked[0]?.value ?? 0, 0.0001);
   const place = (value: number) => 1 + ranked.filter((lane) => lane.value > value).length;
-  const decimals = unit === "steps" ? 0 : unit === "hrs" || unit === "pts" ? 1 : 2;
+  const decimals = arenaValueDecimals(unit);
 
   return (
     <View style={{ gap: 10 }}>
