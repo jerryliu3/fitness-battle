@@ -19,6 +19,7 @@ import { APP_TIMEZONE, endOfZonedDay, formatAppDateTime, shiftAppDay } from "./p
 import { competePeriodWindow } from "./phone-views";
 
 export type FieldViewDimension = "2d" | "3d" | "4d" | "graph";
+export type CompeteTimeSeriesView = "trajectory" | "event";
 
 export interface CompeteTimeSeriesVertex {
   t: number;
@@ -70,6 +71,7 @@ export interface CompeteTimeSeriesYTick {
 export const REPLAY_MINUTES_PER_REAL_SECOND_1X = 360;
 
 export interface CompeteTimeSeriesModel {
+  view: CompeteTimeSeriesView;
   width: number;
   height: number;
   left: number;
@@ -107,6 +109,7 @@ export interface CompeteTimeSeriesModel {
 }
 
 export interface CompeteTimeSeriesOptions {
+  view?: CompeteTimeSeriesView;
   height?: number;
   hiddenIds?: readonly string[];
   selectedAthleteId?: string | null;
@@ -254,6 +257,22 @@ function computeSelectedOvertakes(
   return raw;
 }
 
+function toStepVertices(
+  vertices: readonly CompeteTimeSeriesVertex[],
+): CompeteTimeSeriesVertex[] {
+  if (vertices.length === 0) return [];
+  const out: CompeteTimeSeriesVertex[] = [{ ...vertices[0]! }];
+  for (let i = 1; i < vertices.length; i += 1) {
+    const v = vertices[i]!;
+    const prev = out[out.length - 1]!;
+    if (v.t > prev.t + 1e-9 && Math.abs(v.value - prev.value) > 1e-9) {
+      out.push({ t: v.t, value: prev.value });
+    }
+    out.push({ t: v.t, value: v.value });
+  }
+  return out;
+}
+
 function finalizeTimeSeriesModel(input: {
   periodStart: Date;
   periodEnd: Date;
@@ -270,6 +289,15 @@ function finalizeTimeSeriesModel(input: {
   }[];
   options?: CompeteTimeSeriesOptions;
 }): CompeteTimeSeriesModel {
+  const view: CompeteTimeSeriesView =
+    input.options?.view === "event" ? "event" : "trajectory";
+  const resolvedAthletes =
+    view === "event"
+      ? input.rawAthletes.map((a) => ({
+          ...a,
+          vertices: toStepVertices(a.vertices),
+        }))
+      : input.rawAthletes;
   const chartHeight = Number.isFinite(input.options?.height) ? Math.max(CHART_HEIGHT, input.options!.height!) : CHART_HEIGHT;
   const plotBottom = chartHeight - 38;
   const startMs = input.periodStart.getTime();
@@ -277,7 +305,7 @@ function finalizeTimeSeriesModel(input: {
   const spanMs = Math.max(1, endMs - startMs);
   const clampedNowMs = clamp(startMs, endMs, input.now.getTime());
   const nowFraction = clamp(0, 1, (clampedNowMs - startMs) / spanMs);
-  const historyAvailable = input.rawAthletes.every(athlete => athlete.historyAvailable !== false);
+  const historyAvailable = resolvedAthletes.every(athlete => athlete.historyAvailable !== false);
   const isScrubbing = historyAvailable &&
     input.options?.scrubFraction != null &&
     Number.isFinite(input.options.scrubFraction);
@@ -287,7 +315,7 @@ function finalizeTimeSeriesModel(input: {
 
   const peak = Math.max(
     0,
-    ...input.rawAthletes.flatMap((a) => [
+    ...resolvedAthletes.flatMap((a) => [
       a.currentValue,
       ...a.vertices.map((v) => v.value),
     ]),
@@ -302,19 +330,19 @@ function finalizeTimeSeriesModel(input: {
   const nowX = xForT(nowFraction);
   const cursorX = xForT(cursorFraction);
 
-  const valuesAtCursor = input.rawAthletes.map((a) =>
+  const valuesAtCursor = resolvedAthletes.map((a) =>
     interpolateTimeSeriesAt(a.vertices, cursorFraction),
   );
 
   const requestedId = input.options?.selectedAthleteId;
   const fallbackYou =
-    input.rawAthletes.find((a) => a.you) ?? input.rawAthletes[0]!;
+    resolvedAthletes.find((a) => a.you) ?? resolvedAthletes[0]!;
   const resolvedSelectedId =
-    requestedId && input.rawAthletes.some((a) => a.id === requestedId)
+    requestedId && resolvedAthletes.some((a) => a.id === requestedId)
       ? requestedId
       : fallbackYou.id;
 
-  const athletes: CompeteTimeSeriesAthlete[] = input.rawAthletes
+  const athletes: CompeteTimeSeriesAthlete[] = resolvedAthletes
     .map((a, idx) => {
       const valueAtCursor = valuesAtCursor[idx]!;
       const placeAtCursor = competitionPlace(valuesAtCursor, valueAtCursor);
@@ -352,13 +380,16 @@ function finalizeTimeSeriesModel(input: {
     athletes.find((a) => a.you) ??
     athletes[0]!;
 
-  const overtakes = historyAvailable ? computeSelectedOvertakes(
-    selectedAthlete,
-    athletes.filter((a) => a.id !== selectedAthlete.id),
-    cursorFraction,
-    xForT,
-    yForValue,
-  ) : [];
+  const overtakes =
+    view === "event" && historyAvailable
+      ? computeSelectedOvertakes(
+          selectedAthlete,
+          athletes.filter((a) => a.id !== selectedAthlete.id),
+          cursorFraction,
+          xForT,
+          yForValue,
+        )
+      : [];
   const overtakeCount = overtakes.length;
 
   const youAthlete = athletes.find((a) => a.you) ?? selectedAthlete;
@@ -435,6 +466,7 @@ function finalizeTimeSeriesModel(input: {
   );
 
   return {
+    view,
     width: CHART_WIDTH,
     height: chartHeight,
     left: PLOT_LEFT,
