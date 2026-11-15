@@ -57,6 +57,13 @@ const appearanceColors = useThemeColors();
   const fallbackCenter = scene.selected?.coordinate ?? course.coordinates[0];
   const pose = useRef<CourseCameraPose>(restored.current ?? { center: fallbackCenter, zoom: 16, pitch: initialFlat ? 0 : 60, bearing: 0 });
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(restored.current ? restored.current.pitch === 0 : initialFlat);
+  const flatRef = useRef(flat);
+  flatRef.current = flat;
+  const overviewHold = useRef(false);
+  useEffect(() => {
+    overviewHold.current = false;
+    if (replayActive) setFlat(initialFlat);
+  }, [course, cardSessionKey]);
   const routeFrame = useRef(0);
   const controller = useMemo(() => createCourseCamera({
     read: () => pose.current,
@@ -112,6 +119,7 @@ const appearanceColors = useThemeColors();
     let raf = 0, previous = Date.now();
     let current = pose.current;
     const tick = () => {
+      if (overviewHold.current) { raf = requestAnimationFrame(tick); return; }
       const target = replayTarget.current;
       if (!target) { raf = requestAnimationFrame(tick); return; }
       const now = Date.now();
@@ -121,7 +129,7 @@ const appearanceColors = useThemeColors();
       current = {
         center: [angle(current.center[0], target.center[0]), current.center[1] + (target.center[1] - current.center[1]) * blend],
         zoom: current.zoom + (target.zoom - current.zoom) * blend,
-        pitch: target.pitch,
+        pitch: flatRef.current ? 0 : target.pitch,
         bearing: angle(current.bearing, target.bearing),
       };
       ref.current?.setCamera({ centerCoordinate: current.center, zoomLevel: current.zoom, pitch: current.pitch, heading: current.bearing, padding: { paddingTop: 160, paddingBottom: 0, paddingLeft: 0, paddingRight: 0 }, animationDuration: 0 });
@@ -139,9 +147,9 @@ const appearanceColors = useThemeColors();
   }, [active, ready, course, unit, distanceTarget?.value, distanceTarget?.request, clampedTarget, controller]);
   const optionsHandlers = useRef({ onReplay, onChoose2D, toggleDimension: () => {}, toggleSpacing: () => {}, overview: () => {} });
   optionsHandlers.current = { onReplay, onChoose2D,
-    toggleDimension: () => { controller.dimension(flat ? "3d" : "2d", !(followAthlete && controller.following && scene.selected)); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && controller.following) focus(); },
+    toggleDimension: () => { overviewHold.current = false; controller.dimension(flat ? "3d" : "2d", !(followAthlete && controller.following && scene.selected)); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && controller.following) focus(); },
     toggleSpacing: () => setSpaced(value => !value),
-    overview: () => { onFollowChange?.(false); controller.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); onFlatChange?.(true); },
+    overview: () => { overviewHold.current = Boolean(replay); onFollowChange?.(false); controller.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); onFlatChange?.(true); },
   };
   useEffect(() => {
     if (!onOptionsChange) return;
@@ -156,7 +164,7 @@ const appearanceColors = useThemeColors();
   return <View style={{ flex: 1, minHeight: 0 }}>
     <MapView ref={mapRef} accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled={!onSnapshot} attributionEnabled={false}
       logoPosition={{ top: 8, right: 34 }} attributionPosition={{ top: 8, right: 8 }}
-      scaleBarEnabled={optionsTop == null}
+      scaleBarEnabled={optionsTop == null && !replay}
       scaleBarPosition={{ bottom: controlsBottom + 100, left: 8 }}
       onDidFinishLoadingMap={() => {
         setReady(true);

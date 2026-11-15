@@ -72,6 +72,7 @@ interface CompeteApi {
   endSyncReviewBatch?: (accountId?: string) => void;
   /** True when the last account save failed. */
   saveError: string | null;
+  saving?: boolean;
   loadStatus: LoadStatus;
   /** Real crew or personal movement since this browser last acknowledged the field. */
   fieldNotice: FieldNotice | null;
@@ -177,6 +178,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const syncReviewBlocked = useRef(false);
   const holdRemoteRef = useRef<(next: CompeteState) => CompeteState>(next => next);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [retryingSave, setRetryingSave] = useState(false);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
   const [attempt, setAttempt] = useState(0);
@@ -220,6 +222,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     setState(null);
     setLoadStatus("loading");
     setSaveError(null);
+    setSaving(false);
     setRetryingSave(false);
     statusRef.current = "loading";
     stateRef.current = null;
@@ -248,9 +251,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       const isCurrent = () => accountId === userIdRef.current && epoch === lifecycle.current;
       saveChain.current = saveChain.current.catch(() => {}).then(async () => {
         if (!isCurrent() || generation !== dirtyRef.current || conflictRef.current) {
-          if (isCurrent()) setRetryingSave(false);
+          if (isCurrent()) { setSaving(false); setRetryingSave(false); }
           return;
         }
+        if (isCurrent()) setSaving(true);
         try {
           const actionBatch = [...pendingActionsRef.current];
           const steps = accountSavePlan(actionBatch, next, pendingDocumentRef.current);
@@ -327,9 +331,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           pendingDocumentRef.current = true;
           writeStorageItem(deviceOnlyKey(accountId), "1");
           setSaveError("This device updated. The account copy did not save.");
-        }
-        finally {
-          if (isCurrent()) setRetryingSave(false);
+        } finally {
+          if (isCurrent()) { setSaving(false); setRetryingSave(false); }
         }
       });
     }, [],
@@ -699,6 +702,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     () => ({
       state,
       saveError,
+      saving,
       loadStatus,
       fieldNotice,
       standingsStale,
@@ -762,7 +766,11 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         stateRef.current = next;
         setState(next);
         writeLocal(userIdRef.current, next, savedAt);
-        const immediate = withAccount.type === "set-units" || withAccount.type === "set-avatar";
+        const immediate =
+          withAccount.type === "set-units" ||
+          withAccount.type === "set-avatar" ||
+          withAccount.type === "apply-sync" ||
+          withAccount.type === "log-manual";
         const forceSave = withAccount.type === "set-avatar" && statusRef.current === "failed";
         if (statusRef.current === "ready" || forceSave) {
           scheduleSave(userIdRef.current, next, immediate, forceSave);
@@ -779,6 +787,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       resetDebugState,
       retryLoad,
       saveError,
+      saving,
       scheduleSave,
       standingsStale,
       state,

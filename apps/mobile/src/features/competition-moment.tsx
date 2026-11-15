@@ -2,59 +2,133 @@ import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { startActivePlayback } from "../ui/active-playback";
 import { useCompetitionCourse } from "./use-competition-course";
 import { GeographicCourse } from "./geographic-course";
-import { useEffect, useRef, useState } from "react";
-import { StyleSheet, Switch, Text, View } from "react-native";
+import { CompetitionPanel } from "./competition-panel";
+import { RaceUpdates } from "./race-updates";
+import { StandingsList } from "./standings-list";
+import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
+import { CompeteSheet } from "../ui/compete-sheet";
+import { FieldViewSwitcher } from "../ui/field-view-switcher";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { DEMO_RACE_COURSE, competitionMomentScene, competePeriodWindow, sportById, type ArenaLane, type RaceCourse, type CompetitionMoment as Moment } from "@fitness-battle/shared";
+import {
+  DEMO_RACE_COURSE,
+  competitionMomentProgressSummary,
+  competitionMomentScene,
+  competitionTrack,
+  competePeriodWindow,
+  weeklyBoard,
+  type ArenaLane,
+  type RaceCourse,
+  type CompetitionMoment as Moment,
+} from "@fitness-battle/shared";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useCompeteStore } from "../lib/compete-store";
 import { useFieldAppearance } from "../ui/field-course";
 import { LaneTrack } from "../ui/lane-track";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { AppText, textStyle } from "../ui/section";
-import { FocusButton } from "../ui/focus";
-
+import { AppIcon } from "../ui/app-icon";
+import { FocusButton, useFocusStyles } from "../ui/focus";
 import { playCue, playPattern } from "../lib/haptics";
+
 const ignore = () => {};
 
-export function CompetitionMoment({ moment, remaining, onConfirm, debug = false, embedded = false, dimension = moment.unit === "pts" ? "2d" : "4d", course = null, autoStart = true }: { moment: Moment; remaining: number; onConfirm: () => void; debug?: boolean; embedded?: boolean; dimension?: "2d" | "4d"; course?: RaceCourse | null; autoStart?: boolean }) {
-const c=useThemeColors();
-const styles=useThemedStyles(stylesThemes);
-
+export function CompetitionMoment({
+  moment,
+  remaining,
+  onConfirm,
+  debug = false,
+  embedded = false,
+  dimension = moment.unit === "pts" ? "2d" : "4d",
+  course = null,
+  autoStart = true,
+}: {
+  moment: Moment;
+  remaining: number;
+  onConfirm: () => void;
+  debug?: boolean;
+  embedded?: boolean;
+  dimension?: "2d" | "4d";
+  course?: RaceCourse | null;
+  autoStart?: boolean;
+}) {
+  const c = useThemeColors();
+  const f = useFocusStyles();
+  const styles = useThemedStyles(stylesThemes);
   const { accountKey, state } = useCompeteStore();
   const period = state ? competePeriodWindow(state, undefined, moment.sport) : null;
   const { blocks } = useAthleteBlocks();
-  const hiddenIds = blocks.map(block => block.id);
+  const hiddenIds = useMemo(() => blocks.map((block) => block.id), [blocks]);
   const [appearance] = useFieldAppearance(accountKey, moment.sport);
   const insets = useSafeAreaInsets();
   const [height, setHeight] = useState(0);
   const reduced = useReducedMotion();
-  const [viewDimension,setViewDimension]=useState(dimension);
-  useEffect(()=>setViewDimension(dimension),[dimension]);
-  const assigned = useCompetitionCourse(moment.sport, moment.periodStart ?? period?.startsAt.toISOString() ?? "", moment.periodEnd ?? period?.endsAt.toISOString() ?? "", debug, !course && viewDimension !== "2d");
+  const [viewDimension, setViewDimension] = useState(dimension);
+  useEffect(() => setViewDimension(dimension), [dimension]);
+  const [courseOptions, setCourseOptions] = useState<ReactNode>(null);
+  const [profileAthlete, setProfileAthlete] = useState<AthleteProfileSelection | null>(null);
+  const assigned = useCompetitionCourse(
+    moment.sport,
+    moment.periodStart ?? period?.startsAt.toISOString() ?? "",
+    moment.periodEnd ?? period?.endsAt.toISOString() ?? "",
+    debug,
+    !course && viewDimension !== "2d",
+  );
   const [sceneReady, setSceneReady] = useState(false);
   useEffect(() => setSceneReady(false), [viewDimension]);
-  const [progress, setProgress] = useState(0);
-  const [playback, setPlayback] = useState(0);
-  const previousCount = useRef(0), confirmed = useRef(false);
-  const progressRef = useRef(0), lastReduced = useRef(reduced);
+  useEffect(() => {
+    if (embedded || viewDimension !== "2d") return;
+    if (moment.unit === "pts") {
+      setCourseOptions(null);
+      return;
+    }
+    setCourseOptions(
+      <FieldViewSwitcher
+        compact
+        value="2d"
+        geographic
+        onChange={(next) => {
+          if (next === "2d" || next === "4d") setViewDimension(next);
+        }}
+      />,
+    );
+    return () => setCourseOptions(null);
+  }, [embedded, viewDimension, moment.unit]);
+
+  const [progress, setProgress] = useState(reduced ? 1 : 0);
+  const [playing, setPlaying] = useState(autoStart);
+  const [replayGeneration, setReplayGeneration] = useState(0);
+  const previousCount = useRef(0);
+  const confirmed = useRef(false);
+  const progressRef = useRef(reduced ? 1 : 0);
+  const lastReduced = useRef(reduced);
   progressRef.current = progress;
   const passedBy = !moment.plan.hasOvertake && Boolean(moment.plan.passedByIds?.length);
   const count = passedBy ? moment.plan.passedByIds?.length ?? 0 : moment.plan.overtakenIds.length;
   useEffect(() => {
-    if (lastReduced.current !== reduced) { lastReduced.current = reduced; progressRef.current = 0; setProgress(0); }
-    if (reduced) { setProgress(1); return; }
-    if (!autoStart || progressRef.current >= 1 || (viewDimension === "4d" && !sceneReady)) return;
+    if (lastReduced.current !== reduced) {
+      lastReduced.current = reduced;
+      progressRef.current = 0;
+      setProgress(0);
+    }
+    if (reduced) {
+      setProgress(1);
+      return;
+    }
+    if (!playing || progressRef.current >= 1 || (viewDimension === "4d" && !sceneReady)) return;
     const from = progressRef.current;
     const duration = (6500 + count * 2200) * (embedded ? 1.5 : 1);
-    return startActivePlayback(duration * (1 - from), progress => setProgress(from + (1 - from) * progress));
-  }, [moment.id, reduced, count, autoStart, embedded, viewDimension, sceneReady, playback]);
+    return startActivePlayback(duration * (1 - from), (next) => setProgress(from + (1 - from) * next));
+  }, [moment.id, reduced, count, playing, embedded, viewDimension, sceneReady, replayGeneration]);
+
   const stopHaptics = useRef<() => void>(() => {});
   useEffect(() => () => stopHaptics.current(), [moment.id]);
   const frame = competitionMomentScene(moment, progress);
+  const summary = competitionMomentProgressSummary(moment, frame);
   useEffect(() => {
     if (frame.count > previousCount.current && !passedBy) {
-      const soleLead = frame.rank === 1 && frame.lanes.every(lane => lane.you || lane.value < frame.youValue);
+      const soleLead = frame.rank === 1 && frame.lanes.every((lane) => lane.you || lane.value < frame.youValue);
       if (reduced) stopHaptics.current = playPattern("confirm");
       else if (soleLead) stopHaptics.current = playPattern("lead");
       else if (count > 1 && frame.count === count) stopHaptics.current = playPattern("combo");
@@ -62,33 +136,309 @@ const styles=useThemedStyles(stylesThemes);
     }
     previousCount.current = frame.count;
   }, [frame.count, frame.rank, count, passedBy, reduced]);
-  const lanes: ArenaLane[] = frame.lanes.map(lane => ({ ...lane, you: Boolean(lane.you), ghost: false, values: [lane.value, lane.value, lane.value] }));
-  return <View style={embedded ? {height:600} : { flex: 1 }}>
-    <View onLayout={e => setHeight(e.nativeEvent.layout.height)} style={[StyleSheet.absoluteFill,{top:0,bottom:0}]} pointerEvents="box-none">
-      {viewDimension === "4d" ? <GeographicCourse course={course ?? assigned.course ?? (debug?DEMO_RACE_COURSE:null)} error={assigned.error} onRetry={assigned.retry} hiddenIds={hiddenIds} onReady={() => setSceneReady(true)} replay={frame} optionsTop={null} overlaysHidden lanes={frame.lanes} unit={moment.unit} selectedId={moment.plan.youId} focusRequest={0} onSelect={ignore}/> : height > 0 && <LaneTrack replayFocusIds={frame.replayFocusIds} hiddenIds={hiddenIds} fullscreen focusOnMount followSelected animateSelection={false} appearance={appearance} height={height} lanes={lanes} unit={moment.unit} showGhost={false} selectedId={moment.plan.youId} index={2} onSelect={ignore} view={frame.view}/>}
-    </View>
-    <View pointerEvents="box-none" style={{ position: "absolute", top: (embedded ? 0 : insets.top) + 12, left: 16, right: 16, gap: 10 }}>
-      {!embedded && <View style={styles.panel}><AppText role="label">{sportById(moment.sport).name} · REPLAY</AppText></View>}
-      <View pointerEvents="box-none" style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: 10 }}>
-      <View pointerEvents="box-none" style={{ gap: 10 }}>
-      {debug&&!embedded&&<View style={{flexDirection:"row",alignItems:"center",gap:8}}><AppText role="label">3D course</AppText><Switch accessibilityLabel="3D course" value={viewDimension==="4d"} onValueChange={value=>setViewDimension(value?"4d":"2d")}/></View>}
-      {moment.plan.hasOvertake && <View pointerEvents="none" accessibilityLiveRegion="polite" style={[styles.panel, { alignSelf: "flex-start" }]}><AppText role="label">{frame.count} overtake{frame.count === 1 ? "" : "s"}</AppText></View>}
-      {!moment.plan.hasOvertake && !passedBy && <View style={styles.panel}><AppText role="label">+{(moment.plan.youAfter - moment.plan.youBefore).toFixed(moment.unit === "pts" ? 0 : 1)} {moment.unit}</AppText></View>}
-      </View>
-      {!embedded && <View style={[styles.panel, { flex: 1, minWidth: 160 }]} accessibilityLabel="Live replay standings">{frame.standings.filter(lane => !hiddenIds.includes(lane.id)).map(lane => <View key={lane.id} style={{ flexDirection: "row", gap: 10, alignItems: "center", paddingVertical: 5 }}><AppText role="label">#{lane.place}</AppText><AppText numberOfLines={1} role={lane.you ? "label" : "caption"} style={{ flex: 1, maxWidth: 140 }}>{lane.name}</AppText><AppText role="caption">{lane.value.toFixed(1)} {moment.unit}</AppText></View>)}</View>}
-      </View>
-    </View>
-    {!reduced && frame.passEffects.length > 0 && <View pointerEvents="none" style={{ position:"absolute", top:"45%", alignSelf:"center", opacity:Math.max(...frame.passEffects.map(pass => pass.strength)) }}><Text style={{...textStyle("hero"),color:c.tennis}}>+1</Text></View>}
-    <View pointerEvents="box-none" style={{ position: "absolute", bottom: (embedded ? 0 : insets.bottom) + 16, left: 16, right: 16, alignItems: "center" }}>
-      <View style={{ width: "100%", maxWidth: 420, gap: 12 }}>
-      {viewDimension === "4d" && !sceneReady && !reduced && <FocusButton secondary label="Use 2D replay" onPress={() => setViewDimension("2d")}/>}
-      {frame.done && <View style={{ flexDirection: "row", gap: 12 }}>
-        <View style={{ flex: 1 }}><FocusButton secondary label="Replay" onPress={() => { previousCount.current = 0; stopHaptics.current(); setProgress(0); setPlayback(value => value + 1); }}/></View>
-        <View style={{ flex: 1 }}><FocusButton label={remaining > 1 ? `Continue (${remaining - 1} more)` : "Continue"} onPress={() => { if (!confirmed.current) { confirmed.current = true; onConfirm(); } }}/></View>
-      </View>}
 
+  const lanes: ArenaLane[] = frame.lanes.map((lane) => ({
+    ...lane,
+    you: Boolean(lane.you),
+    ghost: false,
+    values: [lane.value, lane.value, lane.value],
+  }));
+  const scores = useMemo(
+    () => (state ? weeklyBoard(state, moment.sport, competitionTrack(moment.sport)) : []),
+    [state, moment.sport],
+  );
+  const continueLabel = remaining > 1 ? `Continue (${remaining - 1} more)` : "Continue";
+  const confirm = () => {
+    if (!confirmed.current) {
+      confirmed.current = true;
+      onConfirm();
+    }
+  };
+  const ended = progress >= 1;
+  const playbackIcon = ended ? "replay" : playing ? "pause" : "play";
+  const playbackLabel = ended ? "Replay" : playing ? "Pause replay" : "Play replay";
+  const togglePlayback = () => {
+    if (ended) {
+      previousCount.current = 0;
+      progressRef.current = 0;
+      stopHaptics.current();
+      setProgress(0);
+      setPlaying(true);
+      setReplayGeneration((value) => value + 1);
+      return;
+    }
+    if (playing) stopHaptics.current();
+    setPlaying((value) => !value);
+  };
+
+  const badgeTone = {
+    gain: { backgroundColor: c.actionSoft, borderColor: c.actionPrimary, textColor: c.ink },
+    passed: { backgroundColor: c.statusErrorSoft, borderColor: c.statusError, textColor: c.statusError },
+    steady: { backgroundColor: c.soft, borderColor: c.line, textColor: c.ink },
+  }[summary.tone];
+
+  const progressChip = (
+    <View
+      pointerEvents="none"
+      style={[
+        styles.progressChip,
+        summary.tone === "gain" && { borderColor: c.actionPrimary },
+      ]}
+    >
+      <View
+        style={[
+          styles.rankBadge,
+          { backgroundColor: badgeTone.backgroundColor, borderColor: badgeTone.borderColor },
+        ]}
+      >
+        <Text style={{ ...textStyle("caption"), color: badgeTone.textColor }}>{summary.badge}</Text>
+      </View>
+      <View style={{ flexShrink: 1, gap: 1 }}>
+        <Text numberOfLines={1} style={{ ...textStyle("label"), color: c.ink }}>
+          {summary.headline}
+        </Text>
+        <Text
+          numberOfLines={1}
+          style={{ ...textStyle("caption"), color: summary.tone === "gain" ? c.ink : c.muted }}
+        >
+          {summary.detail}
+        </Text>
+      </View>
+      {summary.overtakeLabel ? (
+        <View style={[styles.overtakeBadge, { backgroundColor: c.actionSoft }]}>
+          <Text style={{ ...textStyle("caption"), color: c.ink }}>{summary.overtakeLabel}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+
+  const actionRow = (
+    <View style={{ flexDirection: "row", gap: 12 }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={playbackLabel}
+        onPress={togglePlayback}
+        style={({ pressed }) => [
+          f.button,
+          f.secondary,
+          styles.playbackButton,
+          pressed && { opacity: 0.78 },
+        ]}
+      >
+        <AppIcon name={playbackIcon} size={20} color={c.ink} />
+      </Pressable>
+      <View style={{ flex: 1 }}>
+        <FocusButton label={continueLabel} onPress={confirm} />
       </View>
     </View>
-  </View>;
+  );
+
+  const overlayControls =
+    courseOptions ?? (
+      <FieldViewSwitcher
+        compact
+        value={viewDimension}
+        geographic
+        onChange={(next) => {
+          if (next === "2d" || next === "4d") setViewDimension(next);
+        }}
+      />
+    );
+
+  return (
+    <View style={embedded ? { height: 600 } : { flex: 1 }}>
+      <View
+        onLayout={(e) => setHeight(e.nativeEvent.layout.height)}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="box-none"
+      >
+        {viewDimension === "4d" ? (
+          <GeographicCourse
+            cardSessionKey={replayGeneration}
+            course={course ?? assigned.course ?? (debug ? DEMO_RACE_COURSE : null)}
+            error={assigned.error}
+            onRetry={assigned.retry}
+            hiddenIds={hiddenIds}
+            onReady={() => setSceneReady(true)}
+            replay={frame}
+            optionsTop={null}
+            onOptionsChange={embedded ? undefined : setCourseOptions}
+            onChoose2D={embedded ? undefined : () => setViewDimension("2d")}
+            overlaysHidden
+            lanes={frame.lanes}
+            unit={moment.unit}
+            selectedId={moment.plan.youId}
+            focusRequest={0}
+            onSelect={ignore}
+          />
+        ) : (
+          height > 0 && (
+            <LaneTrack
+              replayFocusIds={frame.replayFocusIds}
+              hiddenIds={hiddenIds}
+              fullscreen
+              focusOnMount
+              followSelected
+              animateSelection={false}
+              appearance={appearance}
+              height={height}
+              lanes={lanes}
+              unit={moment.unit}
+              showGhost={false}
+              selectedId={moment.plan.youId}
+              index={2}
+              onSelect={ignore}
+              view={frame.view}
+            />
+          )
+        )}
+      </View>
+
+      {!embedded && moment.unit !== "pts" && overlayControls ? (
+        <View style={{ position: "absolute", top: insets.top + 54, right: 16, zIndex: 20 }}>
+          {overlayControls}
+        </View>
+      ) : null}
+
+      <View
+        pointerEvents="box-none"
+        style={{
+          position: "absolute",
+          top: embedded ? 12 : insets.top + 8,
+          left: 16,
+          right: 16,
+          alignItems: "center",
+          gap: 6,
+          zIndex: 10,
+        }}
+      >
+        {!embedded && (
+          <View style={styles.topLabelWrap}>
+            <View style={styles.sportPill}>
+              <AppIcon name={moment.sport} size={14} color={c.ink} />
+              <AppText role="caption">{summary.sportLabel}</AppText>
+            </View>
+          </View>
+        )}
+        {progressChip}
+      </View>
+
+      {!reduced && frame.passEffects.length > 0 && (
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: "45%",
+            alignSelf: "center",
+            opacity: Math.max(...frame.passEffects.map((pass) => pass.strength)),
+          }}
+        >
+          <Text style={{ ...textStyle("hero"), color: c.tennis }}>+1</Text>
+        </View>
+      )}
+
+      {embedded ? (
+        <View
+          pointerEvents="box-none"
+          style={{ position: "absolute", bottom: 16, left: 16, right: 16, alignItems: "center" }}
+        >
+          <View style={{ width: "100%", maxWidth: 420 }}>
+            {actionRow}
+          </View>
+        </View>
+      ) : (
+        <CompeteSheet
+          active
+          expandRequest={0}
+          defaultIndex={0}
+          overview={actionRow}
+        >
+          <CompetitionPanel
+            active
+            standings={
+              <StandingsList
+                ranked={frame.ranked}
+                hiddenIds={hiddenIds}
+                unit={moment.unit}
+                scores={scores}
+                onOpenProfile={(lane, rank) =>
+                  setProfileAthlete({
+                    id: lane.id,
+                    name: lane.name,
+                    avatarUrl: lane.avatarUrl,
+                    you: lane.you,
+                    score: scores.find((row) => row.id === lane.id)?.elo,
+                    contextLabel: "This round",
+                    contextValue: `${lane.value.toFixed(moment.unit === "pts" ? 1 : 2)} ${moment.unit}`,
+                    contextDetail: `Place ${rank} · ${moment.sport}`,
+                  })
+                }
+              />
+            }
+            activity={(visible) =>
+              state ? <RaceUpdates state={state} sport={moment.sport} active={visible} moment={moment} /> : null
+            }
+          />
+        </CompeteSheet>
+      )}
+      {!embedded && (
+        <AthleteProfileSheet athlete={profileAthlete} onClose={() => setProfileAthlete(null)} />
+      )}
+    </View>
+  );
 }
-const stylesThemes = createThemedStyles(themeColors=>{const c=themeColors;return { panel: { backgroundColor: "rgba(248,249,246,0.94)", borderRadius: 20, padding: 14, gap: 6, borderWidth: 1, borderColor: c.line } };});
+
+const stylesThemes = createThemedStyles((themeColors) => {
+  const c = themeColors;
+  return {
+    topLabelWrap: {
+      minHeight: 34,
+      paddingHorizontal: 56,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    sportPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 5,
+      borderRadius: 999,
+      backgroundColor: c.card,
+      borderWidth: 1,
+      borderColor: c.line,
+    },
+    progressChip: {
+      alignSelf: "center",
+      maxWidth: 288,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 9,
+      backgroundColor: c.card,
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderWidth: 1,
+      borderColor: c.line,
+    },
+    overtakeBadge: {
+      flexShrink: 0,
+      borderRadius: 999,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    playbackButton: {
+      width: 52,
+      paddingHorizontal: 0,
+    },
+    rankBadge: {
+      minWidth: 32,
+      height: 32,
+      paddingHorizontal: 6,
+      borderRadius: 16,
+      borderWidth: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+  };
+});

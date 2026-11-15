@@ -5,31 +5,31 @@ import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { RankAvatar } from "../ui/rank-symbol";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { Pressable, View } from "react-native";
-import { competitionActivityLog, competitionReplayTimeMs, formatCompetitionFeedTimestamp, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { competeNow, competitionActivityLog, competitionMomentFeedEntry, competitionReplayTimeMs, formatCompetitionFeedTimestamp, type CompeteState, type CompetitionMoment, type SportId } from "@fitness-battle/shared";
 import { AppText } from "../ui/section";
 import { useThemeColors } from "../theme";
 import { AppIcon } from "../ui/app-icon";
 import { useEventActivity } from "./use-event-activity";
 
-export function RaceUpdates({ state, sport, active }: { state: CompeteState; sport: SportId; active: boolean }) {
+export function RaceUpdates({ state, sport, active, moment }: { state: CompeteState; sport: SportId; active: boolean; moment?: CompetitionMoment }) {
   const c = useThemeColors();
   const timeline = useCompetitionTimeline();
   const { blocks } = useAthleteBlocks();
   const fallback = useEventActivity(state, sport, active && !timeline);
   const completed = Math.floor(timeline?.cursor ?? 0);
-  const rows = useMemo(
-    () =>
-      timeline?.index
-        ? competitionActivityLog(
-            timeline.index,
-            blocks.map((block) => block.id),
-            completed,
-          )
-        : timeline
-          ? []
-          : fallback.rows,
-    [timeline?.index, timeline?.cursor, completed, blocks, fallback.rows, sport],
-  );
+  const hiddenIds = useMemo(() => blocks.map((block) => block.id), [blocks]);
+  const rows = useMemo(() => {
+    if (timeline?.index) return competitionActivityLog(timeline.index, hiddenIds, completed);
+    if (timeline) return [];
+    if (!moment || fallback.scope !== "local") return fallback.rows;
+    const passedBy = !moment.plan.hasOvertake && Boolean(moment.plan.passedByIds?.length);
+    const youIndex = passedBy ? -1 : fallback.rows.findIndex((row) => row.actorId === "you");
+    const entry = competitionMomentFeedEntry(moment, state.name, state.avatarUrl, fallback.rows[youIndex]?.at ?? fallback.rows[0]?.at ?? competeNow(state).toISOString());
+    if (hiddenIds.includes(entry.actorId)) return fallback.rows;
+    return youIndex >= 0
+      ? fallback.rows.map((row, index) => (index === youIndex ? entry : row))
+      : [entry, ...fallback.rows];
+  }, [timeline?.index, timeline?.cursor, completed, hiddenIds, fallback.rows, fallback.scope, moment, state]);
   const loading = timeline ? !timeline.ready : fallback.loading;
   const cursor = timeline?.cursor ?? rows.length;
   const feedReferenceMs = timeline?.index

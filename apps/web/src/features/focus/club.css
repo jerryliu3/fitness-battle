@@ -2195,26 +2195,27 @@
 .club-fullscreen-sheet:has(.moment-replay) > .club-sheet-heading,
 .club-fullscreen-sheet:has(.moment-replay) > .club-sheet-heading + p { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); }
 .moment-replay { position: absolute; inset: 0; color: var(--club-ink, var(--app-text-primary)); }
-.moment-replay-field { position: absolute; inset: 0 0 80px; }
+.moment-replay-field { position: absolute; inset: 0; }
 .moment-replay-field .focus-lane-surface, .moment-replay-field .focus-lane-scroll { height: 100%; }
 .moment-replay-field .focus-lane-scroll { scrollbar-width: none; }
-.moment-replay-top { position: absolute; inset: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) auto max(16px, env(safe-area-inset-left)); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; pointer-events: none; }
-.moment-replay-label, .moment-replay-standings, .moment-replay-feedback { background: color-mix(in srgb, var(--app-surface-canvas) 92.94%, transparent); border: 1px solid var(--club-border, var(--app-border-subtle)); border-radius: 20px; padding: 14px 16px; box-shadow: 0 4px 24px color-mix(in srgb, var(--app-text-primary) 4.71%, transparent); backdrop-filter: blur(16px); }
-.moment-replay-label { display: grid; gap: 6px; }
-.moment-replay-label small { font: var(--type-caption); color: var(--app-text-secondary); }
-.moment-replay-standings { width: min(280px, 48vw); }
-.moment-replay-standings > div { display: flex; align-items: baseline; gap: 10px; padding: 5px 0; font: var(--type-caption); }
-.moment-replay-standings span { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.moment-replay-standings .is-you { font: var(--type-field); }
-.moment-replay-standings small { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.moment-replay-bottom { position: absolute; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(420px, calc(100% - 32px)); display: grid; gap: 12px; }
-.moment-replay-feedback { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; }
-.moment-replay-feedback > strong { font: var(--type-display); font-variant-numeric: tabular-nums; }
-.moment-replay-feedback > strong span { font: var(--type-label); }
-.moment-replay-feedback > b { background: var(--app-soft); padding: 6px 10px; border-radius: 12px; font: var(--type-label); }
-.moment-replay-feedback > small { font: var(--type-caption); flex-basis: 100%; color: var(--app-text-secondary); }
-.moment-replay-bottom > button { width: 100%; min-height: 48px; }
-@media (max-width: 540px) { .moment-replay-top { flex-direction: column; } .moment-replay-label { padding: 10px 14px; } .moment-replay-standings { align-self: flex-end; width: 220px; } }
+.moment-replay-top { position: absolute; inset: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) auto max(16px, env(safe-area-inset-left)); display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; z-index: 20; }
+.moment-replay-sport-pill { min-height: 32px; margin-inline: 56px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: var(--card, var(--app-surface-card)); border: 1px solid var(--line, var(--app-border-subtle)); color: var(--ink, var(--app-text-primary)); }
+.moment-replay-chip { width: fit-content; max-width: min(304px, calc(100% - 112px)); display: flex; align-items: center; gap: 9px; padding: 6px 12px 6px 7px; border-radius: 999px; background: var(--card, var(--app-surface-card)); border: 1px solid var(--line, var(--app-border-subtle)); color: var(--ink, var(--app-text-primary)); box-shadow: 0 4px 24px color-mix(in srgb, var(--app-text-primary) 4.71%, transparent); }
+.moment-replay-chip[data-tone="gain"] { border-color: var(--action-primary, var(--app-action-primary)); }
+.moment-replay-rank-badge { flex: none; min-width: 32px; height: 32px; padding: 0 6px; border-radius: 16px; border: 1px solid var(--line, var(--app-border-subtle)); background: var(--app-soft); color: var(--ink, var(--app-text-primary)); display: inline-flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+.moment-replay-chip[data-tone="gain"] .moment-replay-rank-badge { background: var(--action-soft, var(--app-action-soft)); border-color: var(--action-primary, var(--app-action-primary)); }
+.moment-replay-chip[data-tone="passed"] .moment-replay-rank-badge { background: var(--app-status-error-soft); border-color: var(--app-status-error); color: var(--app-status-error); }
+.moment-replay-overtake-badge { flex: none; padding: 4px 8px; border-radius: 999px; background: var(--action-soft, var(--app-action-soft)); color: var(--ink, var(--app-text-primary)); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.moment-replay-chip-copy { min-width: 0; flex: 1; display: grid; gap: 1px; }
+.moment-replay-chip-copy > strong,
+.moment-replay-chip-copy > small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.moment-replay-chip-copy > small { color: var(--app-text-secondary); }
+.moment-replay-chip[data-tone="gain"] .moment-replay-chip-copy > small { color: var(--ink, var(--app-text-primary)); }
+.moment-replay-overview { display: grid; gap: 10px; }
+.moment-replay-overview-actions { display: grid; grid-template-columns: auto 1fr; gap: 12px; }
+.moment-replay-overview-actions > button { min-height: 48px; }
+.moment-replay-playback-btn { width: 52px; padding: 0; justify-content: center; }
+.moment-replay-embedded-footer { position: absolute; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(420px, calc(100% - 32px)); z-index: 20; }
 
 /* Stable panel bounds allow interrupted slides to reverse without reflow. */
 .focus-broadcast-tower,

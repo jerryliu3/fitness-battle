@@ -33,7 +33,13 @@ const c=useThemeColors();
 
   if (unit !== "mi" && unit !== "km") return null;
   return <View style={{ flex: 1, minHeight: 0 }}>
-    {!mobileEnv.mapboxAccessToken ? <Text style={{ ...textStyle("body"), padding: 16 }}>Mapbox access is not configured for this build.</Text> : !course ?
+    {!mobileEnv.mapboxAccessToken ? (
+      <View style={{ flex: 1, minHeight: 0, justifyContent: "center", alignItems: "center", padding: 24 }}>
+        <Text style={[textStyle("body"), { color: c.ink, textAlign: "center" }]}>
+          Mapbox access is not configured for this build.
+        </Text>
+      </View>
+    ) : !course ?
       <View style={{ flex: 1, minHeight: 0, justifyContent: "center", alignItems: "center", padding: 16, gap: 12, backgroundColor: "#0b242c" }}>
         <ActivityIndicator size="large" color={c.tennis} />
         <Text style={[textStyle("body"), { color: appearanceColors.white }]}>
