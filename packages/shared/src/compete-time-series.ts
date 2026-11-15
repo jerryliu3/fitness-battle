@@ -20,6 +20,46 @@ import { competePeriodWindow } from "./phone-views";
 export type FieldViewDimension = "2d" | "3d" | "4d" | "graph";
 export type CompeteTimeSeriesView = "trajectory" | "event";
 
+const weekdayShortFormatter = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  timeZone: APP_TIMEZONE,
+});
+
+const cursorDateFormatter = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  timeZone: APP_TIMEZONE,
+});
+
+export interface RawAthleteTimeSeries {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
+  you: boolean;
+  currentValue: number;
+  vertices: CompeteTimeSeriesVertex[];
+  historyAvailable?: boolean;
+}
+
+export interface CompeteTimeSeriesPreparedBase {
+  periodStart: Date;
+  periodEnd: Date;
+  startMs: number;
+  endMs: number;
+  spanMs: number;
+  now: Date;
+  nowFraction: number;
+  daysShown: number;
+  xSpanFraction: number;
+  unit: string;
+  view: CompeteTimeSeriesView;
+  historyAvailable: boolean;
+  resolvedAthletes: RawAthleteTimeSeries[];
+  yMax: number;
+  dayTickLabels: string[];
+}
+
 export interface CompeteTimeSeriesVertex {
   t: number;
   value: number;
@@ -269,24 +309,15 @@ function toStepVertices(
   return out;
 }
 
-function finalizeTimeSeriesModel(input: {
+function prepareTimeSeriesBase(input: {
   periodStart: Date;
   periodEnd: Date;
   now: Date;
   unit: string;
-  rawAthletes: {
-    id: string;
-    name: string;
-    avatarUrl?: string | null;
-    you: boolean;
-    currentValue: number;
-    vertices: CompeteTimeSeriesVertex[];
-    historyAvailable?: boolean;
-  }[];
-  options?: CompeteTimeSeriesOptions;
-}): CompeteTimeSeriesModel {
-  const view: CompeteTimeSeriesView =
-    input.options?.view === "event" ? "event" : "trajectory";
+  rawAthletes: RawAthleteTimeSeries[];
+  view?: CompeteTimeSeriesView;
+}): CompeteTimeSeriesPreparedBase {
+  const view: CompeteTimeSeriesView = input.view === "event" ? "event" : "trajectory";
   const resolvedAthletes =
     view === "event"
       ? input.rawAthletes.map((a) => ({
@@ -294,21 +325,14 @@ function finalizeTimeSeriesModel(input: {
           vertices: toStepVertices(a.vertices),
         }))
       : input.rawAthletes;
-  const chartHeight = Number.isFinite(input.options?.height) ? Math.max(CHART_HEIGHT, input.options!.height!) : CHART_HEIGHT;
-  const plotBottom = chartHeight - 38;
   const startMs = input.periodStart.getTime();
   const endMs = input.periodEnd.getTime();
   const spanMs = Math.max(1, endMs - startMs);
   const clampedNowMs = clamp(startMs, endMs, input.now.getTime());
   const nowFraction = clamp(0, 1, (clampedNowMs - startMs) / spanMs);
-  const historyAvailable = resolvedAthletes.every(athlete => athlete.historyAvailable !== false);
-  const isScrubbing = historyAvailable &&
-    input.options?.scrubFraction != null &&
-    Number.isFinite(input.options.scrubFraction);
-  const cursorFraction = isScrubbing
-    ? clamp(0, nowFraction, input.options!.scrubFraction!)
-    : nowFraction;
-
+  const historyAvailable = resolvedAthletes.every(
+    (athlete) => athlete.historyAvailable !== false,
+  );
   const peak = Math.max(
     0,
     ...resolvedAthletes.flatMap((a) => [
@@ -317,10 +341,59 @@ function finalizeTimeSeriesModel(input: {
     ]),
   );
   const yMax = niceAxisCeiling(peak, input.unit);
-
   const nowDayIndex = Math.min(6, Math.floor(nowFraction * 6.999));
   const daysShown = nowDayIndex + 1;
   const xSpanFraction = daysShown / 7;
+  const dayTickLabels = Array.from({ length: daysShown }, (_, i) =>
+    weekdayShortFormatter.format(shiftAppDay(input.periodStart, i)),
+  );
+  return {
+    periodStart: input.periodStart,
+    periodEnd: input.periodEnd,
+    startMs,
+    endMs,
+    spanMs,
+    now: input.now,
+    nowFraction,
+    daysShown,
+    xSpanFraction,
+    unit: input.unit,
+    view,
+    historyAvailable,
+    resolvedAthletes,
+    yMax,
+    dayTickLabels,
+  };
+}
+
+export function evaluateCompeteTimeSeriesModel(
+  base: CompeteTimeSeriesPreparedBase,
+  options?: Pick<CompeteTimeSeriesOptions, "height" | "selectedAthleteId" | "scrubFraction">,
+): CompeteTimeSeriesModel {
+  const {
+    startMs,
+    spanMs,
+    nowFraction,
+    daysShown,
+    xSpanFraction,
+    unit,
+    view,
+    historyAvailable,
+    resolvedAthletes,
+    yMax,
+    dayTickLabels,
+  } = base;
+  const chartHeight = Number.isFinite(options?.height)
+    ? Math.max(CHART_HEIGHT, options!.height!)
+    : CHART_HEIGHT;
+  const plotBottom = chartHeight - 38;
+  const isScrubbing =
+    historyAvailable &&
+    options?.scrubFraction != null &&
+    Number.isFinite(options.scrubFraction);
+  const cursorFraction = isScrubbing
+    ? clamp(0, nowFraction, options!.scrubFraction!)
+    : nowFraction;
 
   const xForT = (t: number) =>
     PLOT_LEFT + clamp(0, 1, t / xSpanFraction) * (PLOT_RIGHT - PLOT_LEFT);
@@ -334,7 +407,7 @@ function finalizeTimeSeriesModel(input: {
     interpolateTimeSeriesAt(a.vertices, cursorFraction),
   );
 
-  const requestedId = input.options?.selectedAthleteId;
+  const requestedId = options?.selectedAthleteId;
   const fallbackYou =
     resolvedAthletes.find((a) => a.you) ?? resolvedAthletes[0]!;
   const resolvedSelectedId =
@@ -362,7 +435,7 @@ function finalizeTimeSeriesModel(input: {
         polyline,
         currentValue: a.currentValue,
         valueAtCursor,
-        formattedValueAtCursor: formatMetricValue(valueAtCursor, input.unit),
+        formattedValueAtCursor: formatMetricValue(valueAtCursor, unit),
         placeAtCursor,
         cursorX,
         cursorY: yForValue(valueAtCursor),
@@ -403,7 +476,7 @@ function finalizeTimeSeriesModel(input: {
       gapLabel = "Leading the field";
     } else {
       const gap = closestAhead.valueAtCursor - selectedAthlete.valueAtCursor;
-      gapLabel = `${formatMetricValue(gap, input.unit)} ${input.unit} to #${closestAhead.placeAtCursor} ${closestAhead.firstName}`;
+      gapLabel = `${formatMetricValue(gap, unit)} ${unit} to #${closestAhead.placeAtCursor} ${closestAhead.firstName}`;
     }
   } else {
     const delta = selectedAthlete.valueAtCursor - youAthlete.valueAtCursor;
@@ -411,7 +484,7 @@ function finalizeTimeSeriesModel(input: {
       gapLabel = `Tied with ${youAthlete.firstName}`;
     } else {
       const sign = delta > 0 ? "+" : "−";
-      gapLabel = `${sign}${formatMetricValue(Math.abs(delta), input.unit)} ${input.unit} vs ${youAthlete.firstName}`;
+      gapLabel = `${sign}${formatMetricValue(Math.abs(delta), unit)} ${unit} vs ${youAthlete.firstName}`;
     }
   }
 
@@ -419,34 +492,22 @@ function finalizeTimeSeriesModel(input: {
   const placeLabel = `${ordinalPlace(selectedAthlete.placeAtCursor)} place`;
 
   const cursorDate = new Date(startMs + cursorFraction * spanMs);
-  const datePart = cursorDate.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    timeZone: APP_TIMEZONE,
-  });
+  const datePart = cursorDateFormatter.format(cursorDate);
   const subjectPart = `${selectedAthlete.firstName}’s trajectory`;
   const timeLabel = `${datePart} · ${isScrubbing ? "Inspected" : "Live"} · ${subjectPart}`;
 
   const activeDayIndex = Math.min(6, Math.floor(cursorFraction * 6.999));
-  const dayTicks: CompeteTimeSeriesDayTick[] = Array.from({ length: daysShown }, (_, i) => {
-    const dayDate = shiftAppDay(input.periodStart, i);
-    const label = dayDate.toLocaleDateString("en-US", {
-      weekday: "short",
-      timeZone: APP_TIMEZONE,
-    });
-    return {
-      index: i,
-      label,
-      x: daysShown === 1 ? PLOT_LEFT + (PLOT_RIGHT - PLOT_LEFT) / 2 : PLOT_LEFT + (i / (daysShown - 1)) * (PLOT_RIGHT - PLOT_LEFT),
-      future: false,
-      active: i === activeDayIndex,
-    };
-  });
+  const dayTicks: CompeteTimeSeriesDayTick[] = dayTickLabels.map((label, i) => ({
+    index: i,
+    label,
+    x: daysShown === 1 ? PLOT_LEFT + (PLOT_RIGHT - PLOT_LEFT) / 2 : PLOT_LEFT + (i / (daysShown - 1)) * (PLOT_RIGHT - PLOT_LEFT),
+    future: false,
+    active: i === activeDayIndex,
+  }));
 
   const yTicks: CompeteTimeSeriesYTick[] = [0, yMax / 2, yMax].map((val) => ({
     value: val,
-    label: formatMetricValue(val, input.unit),
+    label: formatMetricValue(val, unit),
     y: yForValue(val),
   }));
 
@@ -472,7 +533,7 @@ function finalizeTimeSeriesModel(input: {
     right: PLOT_RIGHT,
     top: PLOT_TOP,
     bottom: plotBottom,
-    unit: input.unit,
+    unit,
     yMax,
     yTicks,
     dayTicks,
@@ -613,13 +674,13 @@ function buildCompetitorVertices(
   ];
 }
 
-export function buildCompeteTimeSeriesModel(
+export function prepareCompeteTimeSeriesBase(
   state: CompeteState,
   sport: SportId = state.primary,
   track: ScoreTrack = "open",
   now: Date = competeNow(state),
-  options?: CompeteTimeSeriesOptions,
-): CompeteTimeSeriesModel {
+  options?: Pick<CompeteTimeSeriesOptions, "hiddenIds" | "view">,
+): CompeteTimeSeriesPreparedBase {
   const spec = sportById(sport);
   const unit = spec.gps ? (state.units === "metric" ? "km" : "mi") : "hrs";
   const period = competePeriodWindow(state, now, sport);
@@ -690,21 +751,34 @@ export function buildCompeteTimeSeriesModel(
     };
   });
 
-  return finalizeTimeSeriesModel({
+  return prepareTimeSeriesBase({
     periodStart: period.startsAt,
     periodEnd: period.endsAt,
     now,
     unit,
     rawAthletes,
-    options,
+    view: options?.view,
   });
 }
 
-export function buildSleepTimeSeriesModel(
+export function buildCompeteTimeSeriesModel(
   state: CompeteState,
+  sport: SportId = state.primary,
+  track: ScoreTrack = "open",
   now: Date = competeNow(state),
   options?: CompeteTimeSeriesOptions,
 ): CompeteTimeSeriesModel {
+  return evaluateCompeteTimeSeriesModel(
+    prepareCompeteTimeSeriesBase(state, sport, track, now, options),
+    options,
+  );
+}
+
+export function prepareSleepTimeSeriesBase(
+  state: CompeteState,
+  now: Date = competeNow(state),
+  options?: Pick<CompeteTimeSeriesOptions, "hiddenIds" | "view">,
+): CompeteTimeSeriesPreparedBase {
   const rating =
     state.healthRatings.find((r) => r.metric === "sleep") ?? {
       metric: "sleep" as const,
@@ -790,14 +864,25 @@ export function buildSleepTimeSeriesModel(
     };
   });
 
-  return finalizeTimeSeriesModel({
+  return prepareTimeSeriesBase({
     periodStart: view.periodStart,
     periodEnd: view.periodEnd,
     now,
     unit: "score",
     rawAthletes,
-    options,
+    view: options?.view,
   });
+}
+
+export function buildSleepTimeSeriesModel(
+  state: CompeteState,
+  now: Date = competeNow(state),
+  options?: CompeteTimeSeriesOptions,
+): CompeteTimeSeriesModel {
+  return evaluateCompeteTimeSeriesModel(
+    prepareSleepTimeSeriesBase(state, now, options),
+    options,
+  );
 }
 
 /** Fit the last day and every current position inside a labeled plot. */

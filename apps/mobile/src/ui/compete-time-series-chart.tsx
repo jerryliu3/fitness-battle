@@ -5,8 +5,9 @@ import * as SvgModule from "react-native-svg";
 import {
   APP_COLORS,
   competeChartPreview,
-  buildCompeteTimeSeriesModel,
-  buildSleepTimeSeriesModel,
+  evaluateCompeteTimeSeriesModel,
+  prepareCompeteTimeSeriesBase,
+  prepareSleepTimeSeriesBase,
   clamp,
   competeNow,
   sportById,
@@ -123,31 +124,36 @@ export function CompeteTimeSeriesChart({
     selectedId !== undefined ? selectedId : internalSelectedId;
 
   const now = competeNow(state);
-  const model: CompeteTimeSeriesModel = useMemo(() => {
+  const nowMs = now.getTime();
+  const baseModel = useMemo(() => {
     const viewOption = compact ? undefined : activeView;
     if (mode === "sleep") {
-      return buildSleepTimeSeriesModel(state, now, {
-        height: plotHeight,
+      return prepareSleepTimeSeriesBase(state, now, {
         hiddenIds: excludedIds,
-        selectedAthleteId: activeSelectedId,
-        scrubFraction,
         view: viewOption,
       });
     }
-    return buildCompeteTimeSeriesModel(
+    return prepareCompeteTimeSeriesBase(
       state,
       sport ?? state.primary,
       track,
       now,
       {
-        height: plotHeight,
         hiddenIds: excludedIds,
-        selectedAthleteId: activeSelectedId,
-        scrubFraction,
         view: viewOption,
       },
     );
-  }, [state, sport, track, mode, excludedIds, activeSelectedId, scrubFraction, plotHeight, activeView, compact, now.getTime()]);
+  }, [state, sport, track, mode, excludedIds, activeView, compact, nowMs]);
+
+  const model: CompeteTimeSeriesModel = useMemo(
+    () =>
+      evaluateCompeteTimeSeriesModel(baseModel, {
+        height: plotHeight,
+        selectedAthleteId: activeSelectedId,
+        scrubFraction,
+      }),
+    [baseModel, plotHeight, activeSelectedId, scrubFraction],
+  );
 
   const handleSelectAthlete = (id: string) => {
     void playCue("selection");
@@ -157,7 +163,11 @@ export function CompeteTimeSeriesChart({
     onSelectAthlete?.(id);
   };
 
-  const updateScrubFromLocationX = (locationX: number) => {
+  const scrubRafRef = useRef<number | null>(null);
+  const pendingLocationXRef = useRef<number | null>(null);
+  const lastCommittedFractionRef = useRef<number | null>(null);
+
+  const commitScrubFromLocationX = (locationX: number) => {
     if (!model.historyAvailable) return;
     const width = Math.max(1, plotWidthRef.current);
     const svgX = (locationX / width) * model.width;
@@ -165,6 +175,13 @@ export function CompeteTimeSeriesChart({
       ((svgX - model.left) / Math.max(1, model.right - model.left)) *
       model.xSpanFraction;
     const clamped = clamp(0, model.nowFraction, rawFraction);
+    if (
+      lastCommittedFractionRef.current !== null &&
+      Math.abs(clamped - lastCommittedFractionRef.current) < 1e-4
+    ) {
+      return;
+    }
+    lastCommittedFractionRef.current = clamped;
     const dayBucket = Math.floor(clamped * 14);
     if (lastDayBucketRef.current !== dayBucket) {
       lastDayBucketRef.current = dayBucket;
@@ -173,8 +190,36 @@ export function CompeteTimeSeriesChart({
     setScrubFraction(clamped);
   };
 
-  const updateScrubRef = useRef(updateScrubFromLocationX);
-  updateScrubRef.current = updateScrubFromLocationX;
+  const commitScrubRef = useRef(commitScrubFromLocationX);
+  commitScrubRef.current = commitScrubFromLocationX;
+
+  const scheduleScrubFromLocationX = (locationX: number) => {
+    pendingLocationXRef.current = locationX;
+    if (typeof requestAnimationFrame !== "function") {
+      commitScrubRef.current(locationX);
+      return;
+    }
+    if (scrubRafRef.current !== null) return;
+    scrubRafRef.current = requestAnimationFrame(() => {
+      scrubRafRef.current = null;
+      const x = pendingLocationXRef.current;
+      if (x !== null) commitScrubRef.current(x);
+    });
+  };
+
+  const clearScheduledScrub = () => {
+    pendingLocationXRef.current = null;
+    lastCommittedFractionRef.current = null;
+    if (scrubRafRef.current !== null && typeof cancelAnimationFrame === "function") {
+      cancelAnimationFrame(scrubRafRef.current);
+      scrubRafRef.current = null;
+    }
+  };
+
+  useEffect(() => clearScheduledScrub, []);
+
+  const updateScrubRef = useRef(scheduleScrubFromLocationX);
+  updateScrubRef.current = scheduleScrubFromLocationX;
 
   const panHandlers = useMemo(() => {
     if (compact) return {};
@@ -207,11 +252,13 @@ export function CompeteTimeSeriesChart({
       onPanResponderRelease: () => {
         directionRef.current = null;
         lastDayBucketRef.current = null;
+        clearScheduledScrub();
         setScrubFraction(null);
       },
       onPanResponderTerminate: () => {
         directionRef.current = null;
         lastDayBucketRef.current = null;
+        clearScheduledScrub();
         setScrubFraction(null);
       },
     }).panHandlers;
@@ -367,23 +414,25 @@ export function CompeteTimeSeriesChart({
         onTouchStart={(event) => {
           if (compact) return;
           if (event.nativeEvent.locationX != null) {
-            updateScrubFromLocationX(event.nativeEvent.locationX);
+            scheduleScrubFromLocationX(event.nativeEvent.locationX);
           }
         }}
         onTouchMove={(event) => {
           if (compact) return;
           if (event.nativeEvent.locationX != null) {
-            updateScrubFromLocationX(event.nativeEvent.locationX);
+            scheduleScrubFromLocationX(event.nativeEvent.locationX);
           }
         }}
         onTouchEnd={() => {
           if (compact) return;
           lastDayBucketRef.current = null;
+          clearScheduledScrub();
           setScrubFraction(null);
         }}
         onTouchCancel={() => {
           if (compact) return;
           lastDayBucketRef.current = null;
+          clearScheduledScrub();
           setScrubFraction(null);
         }}
         accessible
