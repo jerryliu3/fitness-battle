@@ -36,7 +36,7 @@
 .week-recap-back-btn::after { content: ""; position: absolute; inset: -5px; }
 .week-recap-sport-name { }
 .week-recap-track-badge { padding: 2px 8px; border-radius: 999px; border: 1px solid var(--recap-glass-line); background: var(--recap-glass); color: var(--recap-muted); }
-.week-recap-date-range, .week-recap-podium-metric, .week-recap-result-metrics strong, .week-recap-place-pill, .week-recap-stat-cell strong, .week-recap-pedestal-badge, .week-recap-hr-stat { font-variant-numeric: tabular-nums; }
+.week-recap-date-range, .week-recap-podium-metric, .week-recap-result-value, .week-recap-place-pill, .week-recap-stat-cell strong, .week-recap-pedestal-badge, .week-recap-hr-pct { font-variant-numeric: tabular-nums; }
 .week-recap-date-range, .week-recap-muted-text { color: var(--recap-muted); white-space: nowrap; }
 
 .week-recap-fit { flex: 1; min-height: 0; position: relative; overflow: hidden; }
@@ -53,8 +53,6 @@
 .week-recap-podium-col.is-first { z-index: 2; }
 .week-recap-podium-athlete { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; padding-inline: 4px; }
 .week-recap-avatar-frame { position: relative; display: inline-flex; align-items: center; justify-content: center; }
-.week-recap-avatar-frame.is-first { width: 96px; height: 66px; }
-.week-recap-laurel { position: absolute; top: 0; left: 50%; transform: translateX(-50%); pointer-events: none; }
 .week-recap-empty-avatar { border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: var(--recap-muted); display: inline-flex; align-items: center; justify-content: center; }
 .week-recap-podium-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
 .week-recap-podium-name.is-you { color: var(--recap-progress); }
@@ -86,8 +84,8 @@
 .week-recap-result-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--recap-glass-line); padding-top: 12px; text-align: center; }
 .week-recap-result-metrics > div { display: grid; gap: 4px; padding-inline: 6px; }
 .week-recap-result-metrics > div + div { border-left: 1px solid var(--recap-glass-line); }
-.week-recap-result-metrics span { color: var(--recap-muted); }
-.week-recap-rating-delta { font-style: normal; }
+.week-recap-result-value { display: block; white-space: nowrap; }
+.week-recap-rating-delta { font-style: normal; color: var(--recap-muted); }
 .week-recap-rating-delta.is-pos { color: var(--recap-success); }
 .week-recap-rating-delta.is-neg { color: #f09c98; }
 
@@ -112,7 +110,8 @@
 
 .week-recap-hr-card { padding: 12px 14px; display: grid; gap: 8px; flex-shrink: 0; }
 .week-recap-hr-list { display: grid; gap: 6px; max-height: 112px; overflow-y: auto; overscroll-behavior: contain; }
-.week-recap-hr-row { display: grid; grid-template-columns: 92px 68px minmax(0, 1fr); align-items: center; gap: 8px; }
+.week-recap-hr-row { display: grid; grid-template-columns: 88px minmax(0, 1fr) 40px; align-items: center; gap: 8px; }
+.week-recap-hr-pct { text-align: right; }
 .week-recap-hr-track { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
 .week-recap-hr-fill { height: 8px; border-radius: 999px; }
 .week-recap-hr-fill.is-high { background: #f08575; }
@@ -120,16 +119,18 @@
 .week-recap-hr-fill.is-good { background: var(--recap-success); }
 .week-recap-hr-fill.is-cool { background: #7cc6e8; }
 
-.week-recap-next-card { padding: 12px 14px; display: grid; gap: 4px; }
+.week-recap-next-card { padding: 12px 14px; display: grid; gap: 4px; flex-shrink: 0; }
 .week-recap-next-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
 .week-recap-next-title { display: inline-flex; align-items: center; gap: 6px; }
 .week-recap-next-pill { padding: 3px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); color: var(--recap-muted); }
 .week-recap-next-pill.is-active { background: rgba(140, 205, 171, 0.18); color: var(--recap-success); }
 .week-recap-next-detail { }
-.week-recap-next-subtext { color: var(--recap-muted); }
 
 .week-recap-footer { display: grid; gap: 4px; flex-shrink: 0; }
 .week-recap-footer > .fb-btn { width: 100%; }
+.week-recap-footer-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.week-recap-secondary-btn { min-height: 48px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.22); background: rgba(255, 255, 255, 0.09); color: var(--recap-text); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; cursor: pointer; white-space: nowrap; }
+.week-recap-secondary-btn:active { background: rgba(255, 255, 255, 0.15); }
 .week-recap-link-row { display: flex; align-items: center; justify-content: center; gap: 18px; }
 .week-recap-link-btn { min-height: 44px; padding: 0 10px; border: 0; background: transparent; color: var(--recap-text); opacity: 0.9; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; cursor: pointer; }
 .week-recap-afterglow .fb-btn-line { background: var(--card, #fff); color: var(--ink, #142b3b); }

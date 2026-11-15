@@ -130,23 +130,25 @@ describe("web week recap screens", () => {
     expect(resultsJson).toContain("Alice Park");
     expect(resultsJson).toContain("Carla Diaz");
     expect(resultsJson).toContain("Field covered");
-    expect(resultsJson).toContain("YOUR RESULT");
-    expect(resultsJson).toContain("OVERTAKES");
-    expect(resultsJson).toContain("EFFORT");
-    expect(resultsJson).toContain("See week breakdown →");
+    expect(resultsJson).toContain("Your result");
+    expect(resultsJson).toContain("1st place");
+    expect(resultsJson).toContain("Overtakes");
+    expect(resultsJson).toContain("Effort");
+    expect(resultsJson).toContain("Replay round");
+    expect(resultsJson).toContain("See breakdown");
 
-    clickButton("See week breakdown →");
+    clickButton("See breakdown");
     const breakdownJson = textContent(view!.toJSON());
     expect(breakdownJson).toContain("Week breakdown");
     expect(breakdownJson).not.toContain("Your week in motion.");
     expect(breakdownJson).toContain("Total time");
     expect(breakdownJson).toContain("Sessions");
-    expect(breakdownJson).toContain("Best session");
+    expect(breakdownJson).toContain("Longest session");
     expect(breakdownJson).not.toContain("Score 1000 →");
     expect(breakdownJson).toContain("Heart-rate zones");
     expect(breakdownJson).toContain("Training time");
     expect(breakdownJson).toContain("Next round");
-    expect(breakdownJson).toContain("Update sport settings");
+    expect(breakdownJson).toContain("Update settings");
 
     // Toggle Time -> Effort inside chart card
     const effortTab = view!.root.find((el) => el.type === "button" && el.props.role === "tab" && el.props.children === "Effort");

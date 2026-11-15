@@ -55,7 +55,7 @@ export function ResultBreakdownContent({
             {idx > 0 && <View style={plainMetrics ? s.metricDividerGlass : s.metricDivider} />}
             <View style={s.metricCell}>
               <AppText role="caption" secondary>
-                {plainMetrics ? metric.key.toUpperCase() : metric.key}
+                {metric.key}
               </AppText>
               <AppText role={plainMetrics ? "value" : "label"} style={s.tabular} numberOfLines={1}>
                 {metric.value}
@@ -117,15 +117,15 @@ export function ResultCard({
 
   if (variant === "recap") {
     const metrics = weekRecapMetrics(result, units, replay, hiddenIds);
-    const showDelta = !result.frozen && delta !== 0;
+    const showDelta = !result.frozen;
     const placePositive = !result.frozen && result.place <= 3;
     return (
       <View style={[s.recapGlassCard, s.recapCard]}>
         <View style={s.recapHeader}>
-          <AppText role="caption" style={s.recapMuted}>YOUR RESULT</AppText>
+          <AppText role="caption" style={s.recapMuted}>Your result</AppText>
           <View style={[s.placePill, { backgroundColor: placePositive ? "rgba(140, 205, 171, 0.18)" : "rgba(255, 255, 255, 0.12)" }]}>
             <AppText role="label" style={[s.tabular, { color: placePositive ? "#8ccdab" : "#f9f7ec" }]}>
-              {ordinalPlace(result.place)} of {result.fieldSize}{result.frozen ? " · Frozen" : ""}
+              {ordinalPlace(result.place)} place{result.frozen ? " · Frozen" : ""}
             </AppText>
           </View>
         </View>
@@ -136,14 +136,14 @@ export function ResultCard({
               {idx > 0 && <View style={s.metricDividerGlass} />}
               <View style={s.metricCell}>
                 <AppText role="caption" style={s.recapMuted}>
-                  {metric.key.toUpperCase()}
+                  {metric.key}
                 </AppText>
                 <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
                   <AppText role="value" style={[s.tabular, s.recapLight]} numberOfLines={1}>
                     {metric.value}
                   </AppText>
                   {metric.key === "Effort" && showDelta && (
-                    <AppText role="label" style={[s.tabular, { color: delta > 0 ? "#8ccdab" : "#f09c98" }]}>
+                    <AppText role="label" style={[s.tabular, { color: delta > 0 ? "#8ccdab" : delta < 0 ? "#f09c98" : "rgba(249, 247, 236, 0.72)" }]}>
                       ({deltaText})
                     </AppText>
                   )}

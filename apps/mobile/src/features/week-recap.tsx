@@ -5,7 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import Svg, { Defs, LinearGradient, Path, Polygon, Rect, Stop } from "react-native-svg";
 import {
-  LAUREL_WREATH_PATHS, LAUREL_WREATH_STEMS, WEEK_RECAP_COLORS, formatEffort, formatPeriodDateRange, sportById,
+  WEEK_RECAP_COLORS, formatEffort, formatPeriodDateRange, sportById,
   weekRecapBreakdown, weekRecapCopy, weekRecapHeartRateRanges, weekRecapHighlights,
   weekRecapPages, weekRecapPodium, weekRecapTraining,
   type CompeteState, type CompetitionReplay, type PeriodResult, type SportId, type WeekRecapTarget,
@@ -54,14 +54,16 @@ const PODIUM_STEP = {
   },
 } as const;
 
-export function WeekRecap({ state, results, nonRaceWeek, social, onClose, loadReplay, hiddenIds = [] }: {
+export function WeekRecap({ state, results, nonRaceWeek, social, onClose, onOpenSettings, loadReplay, hiddenIds = [], initialIndex = 0 }: {
   state: CompeteState; results: PeriodResult[];
   nonRaceWeek?: { sport: SportId; periodStart: string; periodEnd: string } | null;
   social: boolean; onClose: () => void;
+  onOpenSettings?: (pageIndex: number) => void;
   loadReplay?: (result: PeriodResult) => Promise<CompetitionReplay | null>; hiddenIds?: readonly string[];
+  initialIndex?: number;
 }) {
   const pages = weekRecapPages(results, nonRaceWeek);
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(() => Math.max(0, Math.min(initialIndex, pages.length - 1)));
   const [choices, setChoices] = useState(false);
   const [replays, setReplays] = useState<Record<string, CompetitionReplay | null>>({});
   const { current, page, last, title, label } = weekRecapCopy(pages, index);
@@ -139,23 +141,40 @@ export function WeekRecap({ state, results, nonRaceWeek, social, onClose, loadRe
             </WeekRecapFit>
 
             <View style={s.footer}>
-              <FocusButton label={label} onPress={advance} />
-              {page.kind === "results" && (
-                <View style={s.linkRow}>
-                  <CompetitionReplayButton state={state} selection={page.result} label="Replay this round" variant="link" />
+              {page.kind === "arrival" ? (
+                <FocusButton label={label} onPress={advance} />
+              ) : page.kind === "results" ? (
+                <>
+                  <View style={s.footerRow}>
+                    <View style={s.footerCol}>
+                      <CompetitionReplayButton state={state} selection={page.result} label="Replay round" variant="recap" />
+                    </View>
+                    <View style={s.footerCol}>
+                      <FocusButton label={label} onPress={advance} />
+                    </View>
+                  </View>
                   {social && (
-                    <Pressable accessibilityRole="button" accessibilityLabel="Field choices" onPress={() => { void playCue("light"); setChoices(true); }}
-                      style={({ pressed }) => [s.textLink, pressed && s.pressed]}>
-                      <AppText role="label" style={s.textLinkLabel}>Field choices</AppText>
-                    </Pressable>
+                    <View style={s.linkRow}>
+                      <Pressable accessibilityRole="button" accessibilityLabel="Field choices" onPress={() => { void playCue("light"); setChoices(true); }}
+                        style={({ pressed }) => [s.textLink, pressed && s.pressed]}>
+                        <AppText role="label" style={s.textLinkLabel}>Field choices</AppText>
+                      </Pressable>
+                    </View>
                   )}
+                </>
+              ) : (
+                <View style={s.footerRow}>
+                  <View style={s.footerCol}>
+                    <Pressable accessibilityRole="button" accessibilityLabel="Update settings"
+                      onPress={() => { void playCue("light"); if (onOpenSettings) onOpenSettings(current); else router.push("/athlete-settings?panel=preferences"); }}
+                      style={({ pressed }) => [s.secondaryBtn, pressed && s.pressed]}>
+                      <AppText role="label" style={s.light} numberOfLines={1}>Update settings</AppText>
+                    </Pressable>
+                  </View>
+                  <View style={s.footerCol}>
+                    <FocusButton label={label} onPress={advance} />
+                  </View>
                 </View>
-              )}
-              {last && page.kind === "effort" && (
-                <Pressable accessibilityRole="button" accessibilityLabel="Update sport settings" onPress={() => { onClose(); router.push("/athlete-settings?panel=preferences"); }}
-                  style={({ pressed }) => [s.textLink, pressed && s.pressed]}>
-                  <AppText role="label" style={s.textLinkLabel}>Update sport settings</AppText>
-                </Pressable>
               )}
             </View>
 
@@ -233,13 +252,7 @@ function PodiumHero({ replay, state, result, hiddenIds, reduced }: {
         return (
           <Animated.View key={step} style={[s.podiumCol, step === 1 && s.podiumColFirst, { opacity: progress, transform: [{ translateY }] }]}>
             <View style={s.podiumAthlete}>
-              <View style={[s.avatarFrame, step === 1 && s.firstFrame]}>
-                {step === 1 && (
-                  <Svg width={96} height={66} viewBox="0 0 100 68" style={s.laurel} accessible={false}>
-                    {LAUREL_WREATH_STEMS.map((d) => <Path key={d} d={d} fill="none" stroke="#f7c948" strokeWidth="1.6" strokeLinecap="round" />)}
-                    {LAUREL_WREATH_PATHS.map((d) => <Path key={d} d={d} fill="#f7c948" />)}
-                  </Svg>
-                )}
+              <View style={s.avatarFrame}>
                 {entry ? (
                   <UserAvatar src={entry.avatarUrl} name={entry.name} size={meta.avatar} />
                 ) : (
@@ -344,19 +357,18 @@ function Training({ state, target }: { state: CompeteState; target: WeekRecapTar
             <AppIcon name="heart" size={16} color={WEEK_RECAP_COLORS.progress} />
             <AppText role="label" style={s.light}>Heart-rate zones</AppText>
           </View>
-          {hr.totalMinutes > 0 && <AppText role="caption" style={[s.mutedLight, s.tabular]}>Total {hr.totalMinutes} min</AppText>}
         </View>
         {hr.ranges.length > 0 ? (
           <ScrollView style={s.hrScroll} contentContainerStyle={s.hrList} nestedScrollEnabled showsVerticalScrollIndicator>
             {hr.ranges.map((row) => (
               <View key={row.id} style={s.hrRow}>
                 <AppText role="caption" style={[s.light, s.hrLabel]} numberOfLines={1}>{row.label}</AppText>
-                <AppText role="caption" style={[s.mutedLight, s.tabular, s.hrStat]} numberOfLines={1}>
-                  {row.pct}% ({row.minutes}m)
-                </AppText>
                 <View style={s.hrTrack}>
                   <View style={[s.hrFill, { width: `${Math.max(8, row.pct)}%`, backgroundColor: HR_BAR_COLOR[row.tone] }]} />
                 </View>
+                <AppText role="caption" style={[s.mutedLight, s.tabular, s.hrPct]} numberOfLines={1}>
+                  {row.pct}%
+                </AppText>
               </View>
             ))}
           </ScrollView>
@@ -372,11 +384,10 @@ function Training({ state, target }: { state: CompeteState; target: WeekRecapTar
             <AppText role="label" style={s.light}>Next round</AppText>
           </View>
           <View style={[s.nextPill, nextRound.active ? s.nextPillActive : s.nextPillInactive]}>
-            <AppText role="label" style={{ color: nextRound.active ? SUCCESS_LIGHT : MUTED_LIGHT }}>{nextRound.pill}</AppText>
+            <AppText role="caption" style={{ color: nextRound.active ? SUCCESS_LIGHT : MUTED_LIGHT }}>{nextRound.pill}</AppText>
           </View>
         </View>
         <AppText role="row" style={s.light}>{nextRound.detail}</AppText>
-        <AppText role="caption" style={s.mutedLight}>{nextRound.subtext}</AppText>
       </View>
     </View>
   );
@@ -405,9 +416,7 @@ const s = StyleSheet.create({
   podiumCol: { flex: 1, alignItems: "center", gap: 8 },
   podiumColFirst: { zIndex: 2 },
   podiumAthlete: { alignItems: "center", gap: 2, width: "100%", paddingHorizontal: 4 },
-  avatarFrame: { alignItems: "center", justifyContent: "center", position: "relative" },
-  firstFrame: { width: 96, height: 66 },
-  laurel: { position: "absolute", top: 0 },
+  avatarFrame: { alignItems: "center", justifyContent: "center" },
   emptyAvatar: { backgroundColor: "rgba(255, 255, 255, 0.08)", alignItems: "center", justifyContent: "center" },
   pedestal: { width: "100%", overflow: "hidden", alignItems: "center", justifyContent: "flex-start" },
   pedestalBadge: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.2, alignItems: "center", justifyContent: "center" },
@@ -429,8 +438,8 @@ const s = StyleSheet.create({
   hrScroll: { maxHeight: 112 },
   hrList: { gap: 6 },
   hrRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  hrLabel: { width: 92 },
-  hrStat: { width: 68 },
+  hrLabel: { width: 88 },
+  hrPct: { width: 40, textAlign: "right" },
   hrTrack: { flex: 1, height: 8, borderRadius: 4, backgroundColor: "rgba(255, 255, 255, 0.12)", overflow: "hidden" },
   hrFill: { height: 8, borderRadius: 4 },
   nextCard: { padding: 12, gap: 4, flexShrink: 0 },
@@ -439,6 +448,9 @@ const s = StyleSheet.create({
   nextPillActive: { backgroundColor: "rgba(140, 205, 171, 0.18)" },
   nextPillInactive: { backgroundColor: "rgba(255, 255, 255, 0.12)" },
   footer: { gap: 4 },
+  footerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  footerCol: { flex: 1 },
+  secondaryBtn: { minHeight: 48, borderRadius: 999, paddingHorizontal: 16, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255, 255, 255, 0.09)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.22)" },
   linkRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16 },
   textLink: { minHeight: 44, alignItems: "center", justifyContent: "center", paddingHorizontal: 12 },
   textLinkLabel: { color: WEEK_RECAP_COLORS.text, opacity: 0.9 },

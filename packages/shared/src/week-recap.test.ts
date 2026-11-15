@@ -99,8 +99,8 @@ describe("week recap next round", () => {
     };
     const next = weekRecapNextRound(state, result);
     expect(next.active).toBe(true);
-    expect(next.pill).toBe("Starts in 18h");
-    expect(next.subtext).toBe("Renews after this round.");
+    expect(next.detail).toBe("Starts in 18h");
+    expect(next.pill).toContain("Nov");
   });
   it("handles missing enrollment honestly", () => {
     const next = weekRecapNextRound(stateWith([]), result);
@@ -188,7 +188,7 @@ describe("week recap highlights, breakdown, hr ranges & non-race fallback", () =
     expect(breakdown.stats.map(s => `${s.label}:${s.value}`)).toEqual([
       "Total time:75 min",
       "Sessions:2",
-      "Best session:5.0 mi",
+      "Longest session:5.0 mi",
     ]);
 
     const hr = weekRecapHeartRateRanges(state, { sport: "running", periodStart: result.periodStart, periodEnd: result.periodEnd, result });

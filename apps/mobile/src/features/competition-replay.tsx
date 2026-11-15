@@ -51,7 +51,7 @@ export function CompetitionReplayButton({
   initialFlat?: boolean;
   dimension?: "2d" | "3d" | "4d" | "graph";
   label?: string;
-  variant?: "button" | "inline" | "link";
+  variant?: "button" | "inline" | "link" | "recap";
   secondary?: boolean;
 }) {
 const appearanceColors = useThemeColors();
@@ -59,7 +59,7 @@ const appearanceColors = useThemeColors();
   const [open, setOpen] = useState(false);
   const openReplay = () => { void playCue("light"); setOpen(true); };
   const compactVariant = variant !== "button";
-  const textLabel = label || (variant === "link" ? "Replay this round" : "View replay");
+  const textLabel = label || (variant === "link" || variant === "recap" ? "Replay round" : "View replay");
   return (
     <>
       {compactVariant ? (
@@ -70,14 +70,18 @@ const appearanceColors = useThemeColors();
           style={({ pressed }) => [
             variant === "link"
               ? { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, minHeight: 44, paddingHorizontal: 14 }
-              : { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 34, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.78)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.2)" },
+              : variant === "recap"
+                ? { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, minHeight: 48, borderRadius: 999, paddingHorizontal: 16, backgroundColor: "rgba(255, 255, 255, 0.09)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.22)" }
+                : { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 34, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.78)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.2)" },
             pressed && { opacity: 0.75 },
           ]}
         >
-          <AppIcon name="replay" size={variant === "link" ? 16 : 14} color={variant === "link" ? WEEK_RECAP_COLORS.text : appearanceColors.white} />
-          <Text style={[textStyle(variant === "link" ? "label" : "caption"), { color: variant === "link" ? WEEK_RECAP_COLORS.text : appearanceColors.white, opacity: variant === "link" ? 0.9 : 1 }]}>
+          {variant !== "recap" && (
+            <AppIcon name="replay" size={variant === "link" ? 16 : 14} color={variant === "link" ? WEEK_RECAP_COLORS.text : appearanceColors.white} />
+          )}
+          <AppText role={variant === "link" || variant === "recap" ? "label" : "caption"} style={{ color: variant === "link" || variant === "recap" ? WEEK_RECAP_COLORS.text : appearanceColors.white, opacity: variant === "link" ? 0.9 : 1 }}>
             {textLabel}
-          </Text>
+          </AppText>
         </Pressable>
       ) : (
         <FocusButton secondary={secondary} label={label} onPress={openReplay} />

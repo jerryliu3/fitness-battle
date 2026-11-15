@@ -5,6 +5,7 @@ import { FieldViewSwitcher } from "../field/components/field-view-switcher";
 import { CompeteTimeSeriesChart } from "../field/components/compete-time-series-chart";
 
 import * as Dialog from "@radix-ui/react-dialog";
+import { AppText } from "@/ui/section";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { useCompete } from "@/components/compete-context";
@@ -22,14 +23,14 @@ import {
 } from "@fitness-battle/shared";
 
 export function CompetitionReplayButton({ state, selection, dimension = "4d", initialFlat = false, label = "Replay competition", variant = "button" }: {
-  state: CompeteState; selection: CompetitionReplaySelection; dimension?: "2d" | "3d" | "4d" | "graph"; initialFlat?: boolean; label?: string; variant?: "button" | "link";
+  state: CompeteState; selection: CompetitionReplaySelection; dimension?: "2d" | "3d" | "4d" | "graph"; initialFlat?: boolean; label?: string; variant?: "button" | "link" | "recap";
 }) {
   const [open, setOpen] = useState(false);
   return <Dialog.Root open={open} onOpenChange={setOpen}>
     <Dialog.Trigger asChild>
-      <button type="button" className={variant === "link" ? "week-recap-link-btn" : "fb-btn-line competition-replay-trigger"}>
+      <button type="button" className={variant === "link" ? "week-recap-link-btn" : variant === "recap" ? "week-recap-secondary-btn" : "fb-btn-line competition-replay-trigger"}>
         {variant === "link" && <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.replay} /></svg>}
-        <span>{label}</span>
+        <AppText role={variant === "recap" ? "label" : undefined}>{label}</AppText>
       </button>
     </Dialog.Trigger>
     {open && <Dialog.Portal><Dialog.Overlay className="competition-replay-overlay" /><Dialog.Content className="competition-replay-dialog" aria-describedby={undefined}>
