@@ -657,7 +657,7 @@ function SheetReplayBar({ state, units, controller }: {
         <View pointerEvents="none" style={{ position: "absolute", left: Math.max(0, Math.min(trackWidth - 16, state.progress * trackWidth - 8)), width: 16, height: 16, borderRadius: 8, backgroundColor: c.tennis, borderWidth: 2, borderColor: c.surfaceCard }} />
       </View>
       <Text style={{ ...textStyle("caption"), color: c.muted, fontVariant: ["tabular-nums"] }}>
-        <Text style={{ color: c.ink, fontWeight: "600" }}>{(state.currentDistanceKm * factor).toFixed(1)}</Text>
+        <Text style={{ ...textStyle("field"), color: c.ink }}>{(state.currentDistanceKm * factor).toFixed(1)}</Text>
         {` / ${(state.totalDistanceKm * factor).toFixed(1)} ${distanceUnit}`}
       </Text>
       <Pressable
@@ -675,7 +675,7 @@ function SheetReplayBar({ state, units, controller }: {
           opacity: state.isRecordingVideo ? 0.6 : pressed ? 0.75 : 1,
         })}
       >
-        <Text style={{ ...textStyle("caption"), color: c.ink, fontWeight: "600" }}>
+        <Text style={{ ...textStyle("field"), color: c.ink }}>
           {state.isRecordingVideo ? `${Math.round((state.recordingProgress ?? 0) * 100)}%` : "Export"}
         </Text>
       </Pressable>

@@ -140,8 +140,8 @@ export function SyncEnergyCore({ activities, benchmarkSeconds, units = "metric",
       </Svg>
       <View style={{ width: Math.round(size * 0.72), alignItems: "center", justifyContent: "center", gap: 1 }}>
         <Animated.View style={boltStyle}><Svg width={Math.round(size * .16)} height={Math.round(size * .2)} viewBox="0 0 32 36"><Path d="M19 2L5 21h10l-2 13 15-21H18z" fill={c.tennis} stroke="#dca21c" strokeWidth=".5"/></Svg></Animated.View>
-        <Text numberOfLines={1} style={{ color: c.ink, fontSize: Math.round(size * .16), lineHeight: Math.round(size * .19), fontWeight: "700", fontVariant: ["tabular-nums"], textAlign: "center" }}>{effortLabel}</Text>
-        <Text style={{ color: c.muted, fontSize: Math.round(size * .085), lineHeight: Math.round(size * .11), fontWeight: "500" }}>effort</Text>
+        <Text numberOfLines={1} style={[textStyle("metric"), { color: c.ink, fontVariant: ["tabular-nums"], textAlign: "center" }]}>{effortLabel}</Text>
+        <Text style={[textStyle("caption"), { color: c.muted }]}>effort</Text>
       </View>
     </View>
     <View style={{ flexDirection: "row", alignItems: "center", width: "100%" }}>

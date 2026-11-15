@@ -36,7 +36,7 @@ export function MaterialClose({ onPress, disabled = false, label = "Close" }: { 
         opacity: disabled ? 0.4 : pressed ? 0.65 : 1,
       })}
     >
-      <Text style={{ ...textStyle("heading"), color: c.ink, lineHeight: 22 }}>✕</Text>
+      <Text style={{ ...textStyle("heading"), color: c.ink }}>✕</Text>
     </Pressable>
   );
 }
