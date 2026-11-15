@@ -1,6 +1,7 @@
 import { accountTimeZone, formatAccountDateTime, weeklyPeriodBounds } from "./period";
 import { APP_TIMEZONE, dayKey } from "./timezone";
 import { activityEffort } from "./compete/effort";
+import { arenaValueDecimals, competeChartUnit } from "./compete-field-view";
 import { competeNow, formatEffort, formatVolume } from "./compete/engine";
 import { countsOnTrack } from "./compete/ledger";
 import { roundEnrollment } from "./compete/round-reveal";
@@ -354,11 +355,12 @@ export function weekRecapPodium(
 ): WeekRecapPodiumSlot[] {
   const gps = sportById(result.sport).gps;
   const distUnit = state.units === "metric" ? "km" : "mi";
-  const formatReplayMetric = (value: number, effort: number) =>
-    gps ? `${value.toFixed(1)} ${distUnit}` : `${formatEffort(effort)} pts`;
-  const youMetric = gps
-    ? formatVolume(result.sport, result.distanceM, result.movingSec, state.units, result.effort)
-    : `${formatEffort(result.effort)} pts`;
+  const formatReplayMetric = (value: number) => {
+    if (gps) return `${value.toFixed(1)} ${distUnit}`;
+    const unit = competeChartUnit(result.sport, state.units);
+    return `${value.toLocaleString("en-US", { maximumFractionDigits: arenaValueDecimals(unit) })} ${unit}`;
+  };
+  const youMetric = formatVolume(result.sport, result.distanceM, result.movingSec, state.units, result.effort);
 
   if (replay) {
     const index = indexCompetitionReplay(replay, state.units);
@@ -371,7 +373,7 @@ export function weekRecapPodium(
         place: row.place,
         you: row.you,
         avatarUrl: row.you ? state.avatarUrl : row.avatarUrl,
-        metricLabel: formatReplayMetric(row.value, row.effort),
+        metricLabel: formatReplayMetric(row.value),
       }));
       return PODIUM_SLOTS.map(step => ({ step, entry: entries[step - 1] ?? null }));
     }
