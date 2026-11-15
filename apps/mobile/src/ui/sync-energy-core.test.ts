@@ -5,6 +5,7 @@ import type { SyncReviewReceipt } from "@fitness-battle/shared";
 
 vi.mock("react-native", () => ({ View: "View", Text: "Text", StyleSheet: { absoluteFill: {} } }));
 vi.mock("../theme", () => ({ useThemeColors: () => ({ ink: "white", textOnAction: "navy", tennis: "gold", card: "black", line: "gray", muted: "gray", fieldTeal: "teal" }) }));
+vi.mock("./app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("./section", () => ({ textStyle: () => ({}) }));
 vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => true }));
 vi.mock("react-native-reanimated", () => ({
@@ -25,29 +26,32 @@ const activity: SyncReviewReceipt["activities"][number] = {
   movingSec: 1800, elevationGainM: 100, avgHr: null, source: "strava", verified: true,
 };
 
-it("shows selected totals and leaves an incomplete elevation aggregate unavailable", async () => {
+it("shows four selected totals around a bolt-only core", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   let renderer: ReturnType<typeof create>;
   await act(async () => {
     renderer = create(createElement(SyncEnergyCore, {
-      activities: [activity, { ...activity, id: "ride", elevationGainM: null }], totalSeconds: 7200, units: "metric", draining: false,
+      activities: [activity, { ...activity, id: "ride", elevationGainM: null }], totalSeconds: 7200, units: "metric", draining: false, effortDelta: 3,
     }));
   });
   const text = renderer!.root.findAllByType("Text" as never).map(node => [node.props.children].flat().join("")).join(" ");
   expect(text).toContain("10.0 km");
-  expect(text).toContain("50% of synced moving time selected");
-  expect(text).toContain("—");
+  expect(text).toContain("+3");
+  expect(text).toContain("Effort score");
+  expect(text).toContain("Activities");
+  expect(text).not.toContain("synced moving time selected");
+  expect(text).not.toContain("Elevation");
   expect(withTiming).toHaveBeenCalledWith(.5, expect.objectContaining({ reduceMotion: "system" }));
   await act(async () => renderer!.unmount());
 });
 
-it("handles an empty selection without a percentage division or invented elevation", async () => {
+it("handles empty selection and unavailable score without an invented award", async () => {
   let renderer: ReturnType<typeof create>;
   await act(async () => {
-    renderer = create(createElement(SyncEnergyCore, { activities: [], totalSeconds: 0, units: "us", draining: true }));
+    renderer = create(createElement(SyncEnergyCore, { activities: [], totalSeconds: 0, units: "us", draining: true, effortDelta: null }));
   });
   const text = renderer!.root.findAllByType("Text" as never).map(node => [node.props.children].flat().join("")).join(" ");
-  expect(text).toContain("0% of synced moving time selected");
+  expect(text).toContain("0.0 mi");
   expect(text).toContain("—");
   expect(text).not.toContain("NaN");
   expect(withTiming).toHaveBeenCalledWith(0, expect.objectContaining({ duration: 780 }));

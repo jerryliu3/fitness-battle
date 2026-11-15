@@ -1135,3 +1135,17 @@ participation. Contracts and configurable season passports use the shared progra
 or isolated device storage for offline accounts. See [crew programs](crew-programs.md).
 Derby shows aggregate scores from normal sport-event fields in the same wave
 and opens team standings. Registration remains in the ordinary event flow.
+
+### Sync review — November 15
+
+Sync review uses a compact activity carousel with three icon metrics (distance,
+time, heart rate), four selected totals flanking an energy core, and a single
+“Swipe to save” action. The core contains a yellow bolt, a gently waving gold to
+pale fill, and nearby sparks during charge pulses; Reduced Motion stays still.
+The score total previews the existing confirmation reducer's actual Effort Score
+change across the selected sports' competition tracks, without dispatching or
+writing. Charge still represents selected synced moving time pending a personal
+volume benchmark decision. Compact screens and large accessibility text retain
+scrolling as a fallback. Activity details opens an edge-to-edge route with the
+shared material back button and Compete sheet; returning preserves selection
+and the carousel position. Hosted map controls reserve space for native overlays.
