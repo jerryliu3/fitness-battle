@@ -60,10 +60,31 @@ export function normalizeCompeteFieldView(
   if (allowedCompeteFieldViews(event).includes(view)) return view;
   return defaultCompeteFieldView(event);
 }
+
+/** Lane and replay presentation units (not compete field view dimensions). */
+export function isGeographicArenaUnit(unit: string): boolean {
+  return unit === "km" || unit === "mi";
+}
+
+export function isMetricArenaUnit(unit: string): boolean {
+  return !isGeographicArenaUnit(unit);
+}
+
+/** Legacy persisted baselines may still read `pts`; treat like hours lanes. */
+export function isHoursLikeArenaUnit(unit: string): boolean {
+  return unit === "hrs" || unit === "pts";
+}
+
 export function fieldZoomLimits(unit: string): { min: number; max: number } {
   if (unit === "steps") return { min: 500, max: 40_000 };
   if (unit === "hrs" || unit === "pts") return { min: 2, max: 100 };
   return { min: 0.5, max: 40 };
+}
+
+export function arenaValueDecimals(unit: string): number {
+  if (unit === "steps") return 0;
+  if (unit === "hrs" || unit === "pts") return 1;
+  return 2;
 }
 
 export function arenaStandingsQuantityLabel(unit: string): "distance" | "volume" {

@@ -1,3 +1,4 @@
+import { arenaValueDecimals, isGeographicArenaUnit } from "./compete-field-view";
 import { fieldDefaultSpan } from "./field-course";
 import { arenaBaselineStorageKey, ordinalPlace, readArenaBaseline, reconcileArenaOvertake, serializeArenaBaseline, type ArenaOvertakePlan, type ArenaSceneLane } from "./arena-view";
 import { buildArenaModel, competePeriodWindow, type ArenaDistanceUnit } from "./phone-views";
@@ -138,7 +139,7 @@ export function competitionMomentProgressSummary(
 ): CompetitionMomentSummary {
   const sportName = sportById(moment.sport).name;
   const sportLabel = `${sportName} · Replay`;
-  const decimals = moment.unit === "pts" ? 0 : 1;
+  const decimals = arenaValueDecimals(moment.unit);
   const delta = Math.max(0, moment.plan.youAfter - moment.plan.youBefore);
   const deltaText = `+${delta.toFixed(decimals)} ${moment.unit} added`;
   const passedBy = !moment.plan.hasOvertake && Boolean(moment.plan.passedByIds?.length);
@@ -184,7 +185,7 @@ export function competitionMomentFeedEntries(
   fallbackAt: string = new Date().toISOString(),
   revealCount?: number,
 ) {
-  const decimals = moment.unit === "pts" ? 0 : 1;
+  const decimals = arenaValueDecimals(moment.unit);
   const delta = Math.max(0, moment.plan.youAfter - moment.plan.youBefore).toLocaleString("en-US", { maximumFractionDigits: decimals });
   const laneById = new Map(moment.lanes.map(lane => [lane.id, lane]));
   const youLane = laneById.get(moment.plan.youId);
@@ -252,7 +253,7 @@ export function competitionMomentFeedEntries(
 /** Receipt computation always uses metric baselines; presentation honors units. */
 export function overtakeMomentForUnits(moment: CompetitionMoment, units: CompeteState["units"]): CompetitionMoment {
   const unit = units === "us" ? "mi" : "km";
-  if (moment.unit === "pts" || moment.unit === unit) return moment;
+  if (!isGeographicArenaUnit(moment.unit) || moment.unit === unit) return moment;
   const scale = unit === "mi" ? 1 / 1.609344 : 1.609344;
   return { ...moment, unit, lanes: moment.lanes.map(lane => ({ ...lane, value: lane.value * scale })), plan: {
     ...moment.plan, youBefore: moment.plan.youBefore * scale, youAfter: moment.plan.youAfter * scale,

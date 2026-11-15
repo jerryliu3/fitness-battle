@@ -6,6 +6,9 @@ import {
   isGeographicCompete,
   isMetricCompete,
   normalizeCompeteFieldView,
+  fieldZoomLimits,
+  arenaValueDecimals,
+  isGeographicArenaUnit,
 } from "./compete-field-view";
 
 describe("competeFieldView", () => {
@@ -28,6 +31,14 @@ describe("competeFieldView", () => {
     expect(competeFieldSwitcherOptions("sleep")).toEqual([{ value: "graph", label: "Timeline" }]);
     expect(normalizeCompeteFieldView("sleep", "2d")).toBe("graph");
     expect(normalizeCompeteFieldView("sleep", "3d")).toBe("graph");
+  });
+
+  it("exposes arena unit helpers for lane zoom and formatting", () => {
+    expect(isGeographicArenaUnit("km")).toBe(true);
+    expect(isGeographicArenaUnit("hrs")).toBe(false);
+    expect(fieldZoomLimits("steps")).toEqual({ min: 500, max: 40_000 });
+    expect(arenaValueDecimals("steps")).toBe(0);
+    expect(arenaValueDecimals("hrs")).toBe(1);
   });
 
   it("normalizes illegal views for the presentation kind", () => {

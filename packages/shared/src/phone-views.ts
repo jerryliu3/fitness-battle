@@ -104,8 +104,7 @@ export function competeArenaUnit(
   const spec = sportById(sport);
   if (spec.gps) return units === "metric" ? "km" : "mi";
   if (sport === "walking") return "steps";
-  if (sport === "strength") return "hrs";
-  return "pts";
+  return "hrs";
 }
 
 export interface ArenaModel {

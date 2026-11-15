@@ -7,6 +7,7 @@ import { findSynthetic, syntheticVolumeInWindow } from "./matching/synthetic-ban
 import { normalizeCompeteFieldView } from "./compete-field-view";
 import { fieldDefaultSpan } from "./field-course";
 import type { CourseReplayFrame } from "./race-course";
+import { competeArenaUnit, type ArenaDistanceUnit } from "./phone-views";
 
 export interface CompetitionReplaySelection {
   sport: SportId;
@@ -83,7 +84,7 @@ export function localCompetitionReplay(state: CompeteState, selection: Competiti
 interface AthleteSeries { steps: number[]; values: number[]; efforts: number[] }
 export interface CompetitionReplayIndex {
   replay: CompetitionReplay;
-  unit: "km" | "mi" | "pts";
+  unit: ArenaDistanceUnit;
   series: Map<string, AthleteSeries>;
 }
 /** O(events + athletes) memory; no full leaderboard snapshot for every event. */
@@ -105,7 +106,11 @@ export function indexCompetitionReplay(input: CompetitionReplay, units: UnitSyst
     s.values.push(s.values[s.values.length - 1]! + (gps ? event.distanceM / divisor : event.effort));
     s.efforts.push(s.efforts[s.efforts.length - 1]! + event.effort);
   });
-  return { replay: { ...input, events }, series, unit: gps ? units === "metric" ? "km" : "mi" : "pts" };
+  return {
+    replay: { ...input, events },
+    series,
+    unit: gps ? (units === "metric" ? "km" : "mi") : competeArenaUnit(input.sport, units),
+  };
 }
 
 function atStep(series: AthleteSeries, step: number) {

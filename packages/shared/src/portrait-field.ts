@@ -186,7 +186,7 @@ export function portraitField(
 export function portraitFieldGap(gap: number | null, unit: string) {
   return gap === null
     ? "You’re leading the field"
-    : `${gap.toLocaleString("en-US", { maximumFractionDigits: unit === "pts" ? 0 : 2 })} ${unit} to next rival`;
+    : `${gap.toLocaleString("en-US", { maximumFractionDigits: unit === "steps" || unit === "pts" ? 0 : unit === "hrs" ? 1 : 2 })} ${unit} to next rival`;
 }
 
 /** Camera-space scale; shared by projection and lateral gesture anchoring. */

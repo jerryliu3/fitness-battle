@@ -1,6 +1,7 @@
 import {
   competeNow,
   buildArenaModel,
+  competeArenaUnit,
   competitionQueue,
   fieldBoardForEnrollment,
   latestCountedActivityAt,
@@ -80,11 +81,7 @@ export function buildFieldModel(
   const enrollment = state.enrollments.find(item => item.sport === sport);
   const fieldBoard = enrollment ? fieldBoardForEnrollment(state, enrollment) : null;
   const gps = sportById(sport).gps;
-  const unit: ArenaDistanceUnit = gps
-    ? state.units === "metric"
-      ? "km"
-      : "mi"
-    : "pts";
+  const unit: ArenaDistanceUnit = competeArenaUnit(sport, state.units);
 
   const runners: FieldRunner[] = board.rows.map((row) => {
     const series = row.you

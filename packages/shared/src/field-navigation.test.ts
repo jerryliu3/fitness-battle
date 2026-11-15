@@ -23,7 +23,8 @@ describe("field navigation", () => {
   it("uses the same zoom limits for touch and controls", () => {
     expect(fieldZoomSpan(.01, "mi")).toBe(.5);
     expect(fieldZoomSpan(1000, "km")).toBe(40);
-    expect(fieldZoomSpan(.01, "pts")).toBe(2);
-    expect(fieldZoomSpan(1000, "pts")).toBe(100);
+    expect(fieldZoomSpan(.01, "hrs")).toBe(2);
+    expect(fieldZoomSpan(1000, "hrs")).toBe(100);
+    expect(fieldZoomSpan(100_000, "steps")).toBe(40_000);
   });
 });

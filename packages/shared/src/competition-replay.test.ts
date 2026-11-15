@@ -66,7 +66,7 @@ describe("competition replay presentation ledger", () => {
   it("uses existing effort points for non-GPS fields", () => {
     const replay = { ...ledger([{ ...event("s", "you", 0), effort: 4, movingSec: 1800 }]), sport: "strength" as const, track: "open" as const };
     const index = indexCompetitionReplay(replay, "us");
-    expect(index.unit).toBe("pts");
+    expect(index.unit).toBe("hrs");
     expect(competitionReplayFrame(index, 1).rows.find(r => r.you)?.value).toBe(4);
   });
   it("keeps a local preview to the signed-in athlete when no other account is seated", () => {

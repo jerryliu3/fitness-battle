@@ -36,7 +36,7 @@ export function StandingsList<T extends StandingsRowItem>({
   const reduceMotion = useReducedMotion();
   const leaderValue = Math.max(ranked[0]?.value ?? 0, 0.0001);
   const place = (value: number) => 1 + ranked.filter((lane) => lane.value > value).length;
-  const decimals = unit === "pts" || unit === "hrs" ? 1 : 2;
+  const decimals = unit === "steps" ? 0 : unit === "hrs" || unit === "pts" ? 1 : 2;
 
   return (
     <View style={{ gap: 10 }}>

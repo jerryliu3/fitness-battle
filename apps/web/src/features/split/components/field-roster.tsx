@@ -19,7 +19,7 @@ export function FieldRoster({
   onSelect,
   selectedId,
   detail = "rating",
-  unit = "pts",
+  unit = "hrs",
   ghost = null,
 }: {
   rows: BoardRow[];

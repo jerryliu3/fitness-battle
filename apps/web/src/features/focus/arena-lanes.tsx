@@ -18,7 +18,7 @@ import {
   orderedArenaLanes,
   polishedLaneScale,
   fieldLaneMarkerScale,
-  fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
+  fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, arenaStandingsQuantityLabel, type FieldAppearance,
   type ArenaOvertakeFrame,
   type ArenaOvertakePlan,
   type ArenaSceneLane,
@@ -215,7 +215,7 @@ export function ArenaLanes({
         height={height}
         style={{ width, height, touchAction: immersive ? "none" : "pan-y" }}
         role="group"
-        aria-label={standings ? `Athlete standings, ranked by weekly ${unit === "pts" ? "effort" : "distance"}` : `Vertical athlete lanes, ${bounds.min.toFixed(1)} to ${bounds.max.toFixed(1)} ${unit}. Drag to explore.`}
+        aria-label={standings ? `Athlete standings, ranked by weekly ${arenaStandingsQuantityLabel(unit)}` : `Vertical athlete lanes, ${bounds.min.toFixed(1)} to ${bounds.max.toFixed(1)} ${unit}. Drag to explore.`}
         tabIndex={0}
         onKeyDown={(e) => {
           if (!standings && e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {

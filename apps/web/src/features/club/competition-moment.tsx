@@ -22,6 +22,9 @@ import {
   competitionMomentScene,
   competitionTrack,
   competePeriodWindow,
+  isGeographicCompete,
+  isGeographicArenaUnit,
+  arenaValueDecimals,
   nextCompetitionReplaySpeed,
   rankSymbolForScore,
   weeklyBoard,
@@ -41,7 +44,7 @@ export function CompetitionMoment({
   onConfirm,
   debug = false,
   embedded = false,
-  dimension = moment.unit === "pts" ? "2d" : "4d",
+  dimension = isGeographicCompete(moment.sport) ? "4d" : "2d",
   course = null,
   autoStart = true,
 }: {
@@ -226,7 +229,7 @@ export function CompetitionMoment({
         )}
       </div>
 
-      {!embedded && moment.unit !== "pts" ? (
+      {!embedded && isGeographicArenaUnit(moment.unit) ? (
         <div className="compete-field-options">
           <FieldViewSwitcher
             value={viewDimension}
@@ -323,7 +326,7 @@ export function CompetitionMoment({
                 size={112}
               />
               <p>
-                {profileAthlete.lane.value.toFixed(moment.unit === "pts" ? 1 : 2)} {moment.unit}{" "}
+                {profileAthlete.lane.value.toFixed(arenaValueDecimals(moment.unit))} {moment.unit}{" "}
                 this round
               </p>
               <p>{profileAthlete.elo ?? "—"} effort score</p>

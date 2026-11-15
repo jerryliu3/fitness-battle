@@ -35,7 +35,6 @@ vi.mock("../ui/rank-symbol", () => ({ RankAvatar: "RankAvatar", RankSymbol: "Ran
 vi.mock("../ui/section", () => ({ AppText: "AppText", textStyle: () => ({}) }));
 vi.mock("../ui/rank-badge", () => ({ RankBadge: "RankBadge" }));
 vi.mock("../ui/use-field-flight", () => ({ useFieldFlight: () => ({ cancel() {}, fly: mocks.fly }) }));
-vi.mock("../ui/portrait-field", () => ({ PortraitField: "PortraitField" }));
 vi.mock("../ui/lane-track", () => ({ LaneTrack: "LaneTrack" }));
 vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("../ui/polished-racer", () => ({ PolishedRacer: "PolishedRacer" }));

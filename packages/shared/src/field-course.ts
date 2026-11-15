@@ -1,4 +1,5 @@
 import { arenaPosition, arenaWindow, clampArenaLaneCenterToField, type ArenaSceneLane, type ArenaViewWindow } from "./arena-view";
+import { isGeographicArenaUnit, isHoursLikeArenaUnit } from "./compete-field-view";
 import { fieldGrounds, type FieldAppearance } from "./field-appearance";
 
 /** Small SVG scene contract, painted by DOM SVG and react-native-svg adapters. */
@@ -20,10 +21,10 @@ const MAX_VIEWPORT_TO_FIELD_RATIO = 3.9;
 
 /** A local chase window; the existing overview retains the whole accumulated course. */
 function fieldVolumeSpanCap(unit: string) {
-  return unit === "pts" || unit === "hrs" ? 20 : unit === "steps" ? 40_000 : 8;
+  return isHoursLikeArenaUnit(unit) ? 20 : unit === "steps" ? 40_000 : 8;
 }
 export function fieldDefaultSpan(unit: string) {
-  if (unit === "pts" || unit === "hrs") return 20;
+  if (isHoursLikeArenaUnit(unit)) return 20;
   if (unit === "steps") return 8_000;
   return unit === "mi" ? 1200 / 1609.344 : 1.2;
 }
@@ -31,7 +32,7 @@ export function clampCourseCenter(value: number, span: number, high: number, uni
   return ground === "oval" ? Math.max(0, Math.min(high, value)) : clampArenaLaneCenterToField(value, span, high, fieldVolumeSpanCap(unit));
 }
 export function fieldLoopLength(unit: string) {
-  if (unit === "pts" || unit === "hrs") return 20;
+  if (isHoursLikeArenaUnit(unit)) return 20;
   if (unit === "steps") return 10_000;
   return 1;
 }
@@ -53,7 +54,7 @@ function ovalPoint(f: number, r: number) {
 }
 
 export function fieldCourse(viewportWidth: number, height: number, count: number, view: ArenaViewWindow, unit: string, appearance: FieldAppearance, replayFocus?: readonly number[]) {
-  const zoom = (appearance.ground === "oval" ? (unit === "pts" ? 20 : unit === "mi" ? 4 : 6) : fieldDefaultSpan(unit)) / arenaWindow(view.center, view.span).span;
+  const zoom = (appearance.ground === "oval" ? (isHoursLikeArenaUnit(unit) ? 20 : unit === "mi" ? 4 : isGeographicArenaUnit(unit) ? 6 : 20) : fieldDefaultSpan(unit)) / arenaWindow(view.center, view.span).span;
   const oval = appearance.ground === "oval";
   const baseFieldWidth = Math.max(viewportWidth - 60, count * (viewportWidth - 60) / 5);
   // Measure the field between the outermost lane centers, excluding half-lane
@@ -88,7 +89,7 @@ export function fieldCourse(viewportWidth: number, height: number, count: number
   }
   const focusScroll = !oval && actors?.length ? Math.max(0,Math.min(width-viewportWidth,left+((Math.min(...actors)+Math.max(...actors))/2+.5)*laneWidth-viewportWidth/2)) : undefined;
   return { focusScroll, width, height, left, fieldWidth, top, bottom, length, laneWidth, bounds, zoom, horizontalZoom, oval, ovalScale, outerRadius, midX, midY, along, drift, point, curve,
-    markerScale: unit === "pts" ? (oval ? Math.min(1.5, ovalScale * 1.3) : zoom)
+    markerScale: isHoursLikeArenaUnit(unit) ? (oval ? Math.min(1.5, ovalScale * 1.3) : zoom)
       : (oval ? (540 + 2 * Math.PI * (140 + Math.floor(count / 2) * 18 + 9)) * ovalScale : length / bounds.span) * .3 / 58 };
 }
 export type FieldCourse = ReturnType<typeof fieldCourse>;

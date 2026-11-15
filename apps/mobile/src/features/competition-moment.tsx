@@ -17,6 +17,9 @@ import {
   competitionMomentScene,
   competitionTrack,
   competePeriodWindow,
+  isGeographicArenaUnit,
+  isGeographicCompete,
+  arenaValueDecimals,
   nextCompetitionReplaySpeed,
   weeklyBoard,
   type ArenaLane,
@@ -41,7 +44,7 @@ export function CompetitionMoment({
   onConfirm,
   debug = false,
   embedded = false,
-  dimension = moment.unit === "km" || moment.unit === "mi" ? "4d" : "2d",
+  dimension = isGeographicCompete(moment.sport) ? "4d" : "2d",
   course = null,
   autoStart = true,
 }: {
@@ -80,7 +83,7 @@ export function CompetitionMoment({
   useEffect(() => setSceneReady(false), [viewDimension]);
   useEffect(() => {
     if (embedded || viewDimension !== "2d") return;
-    if (moment.unit === "pts") {
+    if (!isGeographicArenaUnit(moment.unit)) {
       setCourseOptions(null);
       return;
     }
@@ -287,7 +290,7 @@ export function CompetitionMoment({
         )}
       </View>
 
-      {!embedded && moment.unit !== "pts" && overlayControls ? (
+      {!embedded && isGeographicArenaUnit(moment.unit) && overlayControls ? (
         <View style={{ position: "absolute", top: insets.top + 54, right: 16, zIndex: 20 }}>
           {overlayControls}
         </View>
@@ -362,7 +365,7 @@ export function CompetitionMoment({
                     you: lane.you,
                     score: scores.find((row) => row.id === lane.id)?.elo,
                     contextLabel: "This round",
-                    contextValue: `${lane.value.toFixed(moment.unit === "pts" ? 1 : 2)} ${moment.unit}`,
+                    contextValue: `${lane.value.toFixed(arenaValueDecimals(moment.unit))} ${moment.unit}`,
                     contextDetail: `Place ${rank} · ${moment.sport}`,
                   })
                 }
