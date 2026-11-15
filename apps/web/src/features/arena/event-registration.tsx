@@ -45,7 +45,6 @@ export function EventRegistration({
   crew = false,
   onClaim,
   onView,
-  onClose,
 }: {
   state: CompeteState;
   event: CompeteEvent;
@@ -55,7 +54,6 @@ export function EventRegistration({
   crew?: boolean;
   onClaim(): void;
   onView(): void;
-  onClose?: () => void;
 }) {
   const reduced = useReducedMotion();
   const transition = { duration: reduced ? 0 : 0.18 };
@@ -75,32 +73,6 @@ export function EventRegistration({
 
   return (
     <div className="event-registration" style={{ "--registration-color": COMPETE_ART_COLORS[event] } as CSSProperties}>
-      <div className="registration-topbar">
-        <button
-          type="button"
-          className="registration-close"
-          aria-label="Close registration"
-          disabled={claimPending}
-          onClick={onClose}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-            <path d="M18 6 6 18M6 6l12 12" />
-          </svg>
-        </button>
-        <div className="registration-dots" role="group" aria-label={`Step ${step + 1} of 2`}>
-          <button
-            type="button"
-            className="registration-dot"
-            data-active={step === 0}
-            aria-label="Step 1: Event details"
-            disabled={step === 0 || claimed}
-            onClick={() => { if (step === 1 && !claimed) setStep(0); }}
-          />
-          <span className="registration-dot" data-active={step === 1} aria-hidden="true" />
-        </div>
-        <AppText role="caption" secondary className="registration-step-label">Step {step + 1} of 2</AppText>
-      </div>
-
       <AnimatePresence mode="wait" initial={false}>
         {step === 0 && (
           <motion.div
@@ -114,18 +86,12 @@ export function EventRegistration({
             <div className="registration-hero">
               <EventArt event={event} />
               <div className="registration-hero-meta">
-                <span className="registration-sport-pill">
-                  <CompeteIcon name={event} size={14} />
-                  <AppText role="caption">{detail.name}</AppText>
-                </span>
+                <AppHeading role="display">{detail.name}</AppHeading>
                 <AppText role="caption" secondary>{eventTag}</AppText>
               </div>
-              <div className="registration-hero-copy">
-                <AppHeading role="display">{detail.name} Meet</AppHeading>
-                <AppParagraph>{detail.description}</AppParagraph>
-              </div>
+              <AppParagraph>{detail.description}</AppParagraph>
               <div className="registration-field-box">
-                <AppText role="field" className="registration-eyebrow">YOUR FIELD</AppText>
+                <AppText role="caption" secondary>Meet your competitors when you join.</AppText>
                 <div className="registration-mysteries" aria-label="You and seven mystery athletes">
                   {Array.from({ length: 8 }, (_, i) => (
                     <AppText as="span" role={i === 0 ? "field" : "caption"} key={i} className={i === 0 ? "is-you" : undefined} style={{ animationDelay: `${800 + i * 65}ms` }}>
@@ -133,7 +99,6 @@ export function EventRegistration({
                     </AppText>
                   ))}
                 </div>
-                <AppText role="caption" secondary>Meet your competitors when you join.</AppText>
               </div>
             </div>
 
@@ -199,7 +164,7 @@ export function EventRegistration({
                   subtitle="One last step to join your field."
                 />
                 <div className="registration-ticket-body">
-                  <AppHeading>{detail.name} Meet</AppHeading>
+                  <AppHeading>{detail.name}</AppHeading>
                   <div className="registration-ticket-rows">
                     {ticketRows.map(row => (
                       <div key={row.label}><AppText role="caption" secondary>{row.label}</AppText><AppText role="label">{row.value}</AppText></div>

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Pressable, View } from "react-native";
-import Svg, { Path } from "react-native-svg";
 import {
   COMPETE_ART_COLORS,
   competeNow,
@@ -137,7 +136,6 @@ export function EventRegistration({
   error,
   onClaim,
   onView,
-  onClose,
 }: {
   state: CompeteState;
   event: CompeteEvent;
@@ -146,15 +144,13 @@ export function EventRegistration({
   error?: string;
   onClaim(): void;
   onView(): void;
-  onClose?: () => void;
 }) {
   const c = useThemeColors();
   const tint = `${COMPETE_ART_COLORS[event]}33`;
-  const pillTint = `${COMPETE_ART_COLORS[event]}4d`;
   const reduced = useReducedMotion();
   const [step, setStep] = useState(registered ? 1 : 0);
   const [flipped, setFlipped] = useState<Record<number, boolean>>({});
-  const [rowHeights, setRowHeights] = useState<Record<number, number>>({});
+  const [cardHeight, setCardHeight] = useState(124);
   const [claiming, setClaiming] = useState(false);
   const [ticketHeight, setTicketHeight] = useState(0);
   const rotation = useRef(new Animated.Value(registered ? 180 : 0)).current;
@@ -321,7 +317,7 @@ export function EventRegistration({
             </>
           ) : (
             <>
-              <AppText role="heading" accessibilityRole="header">{detail.name} Meet</AppText>
+              <AppText role="heading" accessibilityRole="header">{detail.name}</AppText>
               <View style={{ gap: 10 }}>
                 {ticketRows.map(row => (
                   <View key={row.label} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 16 }}>
@@ -360,48 +356,6 @@ export function EventRegistration({
 
   return (
     <View style={{ gap: 16 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <View style={{ flex: 1, alignItems: "flex-start" }}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close registration"
-            disabled={claimPending}
-            onPress={onClose}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: c.line,
-              backgroundColor: c.card,
-              alignItems: "center",
-              justifyContent: "center",
-              opacity: claimPending ? 0.45 : 1,
-            }}
-          >
-            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={c.ink} strokeWidth={2.2} strokeLinecap="round">
-              <Path d="M18 6 6 18M6 6l12 12" />
-            </Svg>
-          </Pressable>
-        </View>
-
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Step 1: Event details"
-            disabled={step === 0 || claimed}
-            onPress={() => { if (step === 1 && !claimed) goToStep(0); }}
-            hitSlop={8}
-            style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: step === 0 ? c.ink : c.line }}
-          />
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: step === 1 ? c.ink : c.line }} />
-        </View>
-
-        <View style={{ flex: 1, alignItems: "flex-end" }}>
-          <AppText role="caption" secondary>Step {step + 1} of 2</AppText>
-        </View>
-      </View>
-
       <Animated.View
         style={{
           gap: 16,
@@ -414,21 +368,14 @@ export function EventRegistration({
             <View style={{ borderRadius: 24, backgroundColor: c.card, overflow: "hidden" }}>
               <View style={{ padding: 20, gap: 14, backgroundColor: tint, overflow: "hidden" }}>
                 <EventArt event={event} feature />
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 11, paddingVertical: 5, borderRadius: 99, backgroundColor: pillTint }}>
-                    <CompeteIcon name={event} size={14} />
-                    <AppText role="caption">{detail.name}</AppText>
-                  </View>
+                <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                  <AppText role="display" accessibilityRole="header">{detail.name}</AppText>
                   <AppText role="caption" secondary>{eventTag}</AppText>
                 </View>
-
-                <View style={{ gap: 6 }}>
-                  <AppText role="display" accessibilityRole="header">{detail.name} Meet</AppText>
-                  <AppText secondary>{detail.description}</AppText>
-                </View>
+                <AppText secondary>{detail.description}</AppText>
 
                 <View style={{ gap: 10, paddingTop: 4 }}>
-                  <AppText role="field">YOUR FIELD</AppText>
+                  <AppText role="caption" secondary>Meet your competitors when you join.</AppText>
                   <View
                     accessible
                     accessibilityLabel="You and seven mystery athletes"
@@ -460,7 +407,6 @@ export function EventRegistration({
                       );
                     })}
                   </View>
-                  <AppText role="caption" secondary>Meet your competitors when you join.</AppText>
                 </View>
               </View>
             </View>
@@ -484,8 +430,8 @@ export function EventRegistration({
                             tint={tint}
                             flipped={Boolean(flipped[index])}
                             reduced={reduced}
-                            rowHeight={rowHeights[rowIndex] ?? 124}
-                            onMeasure={measured => setRowHeights(prev => (measured > (prev[rowIndex] ?? 124) ? { ...prev, [rowIndex]: measured } : prev))}
+                            rowHeight={cardHeight}
+                            onMeasure={measured => setCardHeight(prev => (measured > prev ? measured : prev))}
                             onToggle={() => setFlipped(prev => ({ ...prev, [index]: !prev[index] }))}
                           />
                         );

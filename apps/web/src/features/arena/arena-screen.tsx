@@ -234,7 +234,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         if (event) enterEvent(event);
       }}>
         {sport ? <>
-          <EventRegistration key={`${account}:${sport}`} state={state} event={sport} crew={Boolean(registrationCrew)} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} busy={joinBusy} error={joinError || saveError || ""} onClaim={() => void claimEntry()} onClose={() => { if (!joinBusy) setRegister(false); }} onView={() => { pendingEntry.current = sport; setRegister(false); }} />
+          <EventRegistration key={`${account}:${sport}`} state={state} event={sport} crew={Boolean(registrationCrew)} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} busy={joinBusy} error={joinError || saveError || ""} onClaim={() => void claimEntry()} onView={() => { pendingEntry.current = sport; setRegister(false); }} />
         </> : <div className="focus-sport-options" aria-label="Sport or category">
           {[...SPORTS.map(item => ({ id: item.id, name: item.name })), { id: "sleep" as const, name: "Sleep & recovery" }].filter(item => item.id === "sleep" ? !sleepOptedIn : !active.some(r => r.sport === item.id)).map(item => {
             const registered = item.id === "sleep" ? sleepOptedIn : active.some(r => r.sport === item.id);
