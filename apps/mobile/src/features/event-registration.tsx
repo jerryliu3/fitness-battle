@@ -389,7 +389,7 @@ export function EventRegistration({
                   <AppText role="display" accessibilityRole="header">{detail.name}</AppText>
                   <AppText role="caption" secondary>{eventTag}</AppText>
                 </View>
-                <AppText secondary>{detail.description}</AppText>
+                <AppText role="support" secondary>{detail.description}</AppText>
 
                 <View style={{ gap: 10, paddingTop: 4 }}>
                   <AppText role="caption" secondary>Meet your competitors when you join.</AppText>

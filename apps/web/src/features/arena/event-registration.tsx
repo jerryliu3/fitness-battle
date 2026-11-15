@@ -89,7 +89,7 @@ export function EventRegistration({
                 <AppHeading role="display">{detail.name}</AppHeading>
                 <AppText role="caption" secondary>{eventTag}</AppText>
               </div>
-              <AppParagraph>{detail.description}</AppParagraph>
+              <AppParagraph typographyRole="support" className="ui-text-secondary">{detail.description}</AppParagraph>
               <div className="registration-field-box">
                 <AppText role="caption" secondary>Meet your competitors when you join.</AppText>
                 <div className="registration-mysteries" aria-label="You and seven mystery athletes">
