@@ -137,7 +137,7 @@ describe("tracker callback consumption", () => {
 });
 
 describe("athlete profile navigation and layout", () => {
-  it("opens edit profile side panel when edit=1 param is set", async () => {
+  it("opens settings side panel when edit=1 param is set", async () => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     mock.params = { edit: "1" };
     await act(async () => {
@@ -145,7 +145,7 @@ describe("athlete profile navigation and layout", () => {
     });
     const sidePanel = renderer.root
       .findAllByType("SidePanel" as never)
-      .find((node) => node.props.title === "Edit profile");
+      .find((node) => node.props.title === "Settings");
     expect(sidePanel?.props.open).toBe(true);
   });
 
@@ -182,7 +182,7 @@ describe("athlete profile navigation and layout", () => {
     });
   });
 
-  it("renders read-only public profile summary without moved lifetime sections", async () => {
+  it("renders read-only public profile summary with achievements below", async () => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     mock.params = {};
     await act(async () => {
@@ -190,8 +190,8 @@ describe("athlete profile navigation and layout", () => {
     });
     const rendered = JSON.stringify(renderer.toJSON());
     expect(rendered).toContain("Public profile");
+    expect(rendered).toContain("Primary sport");
     expect(rendered).toContain("Achievements");
-    expect(rendered).not.toContain("Primary sport");
   });
 
   it("renders shareable profile link row with copy and edit profile", async () => {

@@ -6,13 +6,16 @@ import {
   type AthleteCardHighlightKind,
   type AthleteCardHighlightOption,
   type CompeteState,
+  type ProfileGender,
 } from "@fitness-battle/shared";
 import { Input } from "heroui-native/input";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import { SHELL_RADIUS, useThemeColors } from "../theme";
+import { ChoicePicker } from "../ui/choice-picker";
 import { FocusButton, FocusSegments, useFocusStyles } from "../ui/focus";
 import { AppText, SectionHeader, textStyle } from "../ui/section";
+import { SearchableCountryPicker } from "../ui/searchable-country-picker";
 import { ProfilePhoto } from "./profile-photo";
 
 type FilterKind = "all" | AthleteCardHighlightKind;
@@ -21,6 +24,8 @@ export type AthleteProfileDraft = {
   name: string;
   city: string;
   cardHighlights?: string[];
+  gender?: ProfileGender | null;
+  countryCode?: string | null;
 };
 
 const KIND_FILTERS: { value: FilterKind; label: string }[] = [
@@ -63,6 +68,8 @@ export function AthleteProfileEditor({
   const f = useFocusStyles();
   const [name, setName] = useState(state.name);
   const [city, setCity] = useState(state.city);
+  const [gender, setGender] = useState<ProfileGender | null>(state.gender ?? null);
+  const [countryCode, setCountryCode] = useState(state.countryCode ?? "");
   const [highlights, setHighlights] = useState<string[] | undefined>(state.cardHighlights);
   const [filter, setFilter] = useState<FilterKind>("all");
   const [error, setError] = useState<string | null>(null);
@@ -73,8 +80,10 @@ export function AthleteProfileEditor({
       name: name.trim() || state.name,
       city: city.trim(),
       cardHighlights: highlights,
+      gender,
+      countryCode: countryCode || null,
     });
-  }, [name, city, highlights, state.name, onDraftChange]);
+  }, [name, city, gender, countryCode, highlights, state.name, onDraftChange]);
 
   const catalog = useMemo(() => athleteCardHighlightCatalog(state), [state]);
   const activeIds = useMemo(
@@ -90,6 +99,8 @@ export function AthleteProfileEditor({
   const dirty =
     name.trim() !== state.name ||
     city.trim() !== state.city ||
+    gender !== (state.gender ?? null) ||
+    (countryCode || null) !== (state.countryCode ?? null) ||
     JSON.stringify(highlights ?? null) !== JSON.stringify(state.cardHighlights ?? null);
 
   function toggleHighlight(id: string) {
@@ -120,6 +131,12 @@ export function AthleteProfileEditor({
     if (trimmedCity !== state.city) {
       dispatch({ type: "set-city", city: trimmedCity });
     }
+    if (gender !== (state.gender ?? null)) {
+      dispatch({ type: "set-gender", gender });
+    }
+    if ((countryCode || null) !== (state.countryCode ?? null)) {
+      dispatch({ type: "set-country", countryCode: countryCode || null });
+    }
     if (JSON.stringify(highlights ?? null) !== JSON.stringify(state.cardHighlights ?? null)) {
       dispatch({ type: "set-card-highlights", cardHighlights: highlights });
     }
@@ -148,6 +165,24 @@ export function AthleteProfileEditor({
               accessibilityLabel="City"
               maxLength={40}
               placeholder="City"
+            />
+            <ChoicePicker
+              label="Gender"
+              value={gender ?? "unset"}
+              options={[
+                { value: "unset", label: "Prefer not to say" },
+                { value: "female", label: "Female" },
+                { value: "male", label: "Male" },
+                { value: "other", label: "Other" },
+              ]}
+              onChange={(value) =>
+                setGender(value === "unset" ? null : (value as ProfileGender))
+              }
+            />
+            <SearchableCountryPicker
+              label="Country"
+              value={countryCode}
+              onChange={setCountryCode}
             />
           </View>
         </View>

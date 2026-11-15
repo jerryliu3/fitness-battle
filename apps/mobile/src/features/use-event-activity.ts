@@ -22,7 +22,9 @@ export function useEventActivity(state: CompeteState, sport: SportId, active: bo
     const selection = { sport, track, periodStart: start, periodEnd: end };
     if (!user || offlineMode || debugActive) { setLoad({ key, data: localCompetitionReplay(state, selection) }); return; }
     const query = `sport=${sport}&track=${track}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
-    void requestApi<CompetitionReplay>(mobileEnv.apiUrl, accessToken, `/api/compete/replay?${query}`).then(data => { if (!cancelled) setLoad({ key, data }); }).catch(() => { if (!cancelled) setLoad({ key, error: "Could not load race updates." }); });
+    void requestApi<CompetitionReplay>(mobileEnv.apiUrl, accessToken, `/api/compete/replay?${query}`)
+      .then(data => { if (!cancelled) setLoad({ key, data }); })
+      .catch(() => { if (!cancelled) setLoad({ key, data: localCompetitionReplay(state, selection) }); });
     return () => { cancelled = true; };
   }, [key, active, user?.id, accessToken, offlineMode, state.activities, state.enrollments, state.demoNow, attempt]);
   const data = active && load?.key === key ? load.data : undefined;

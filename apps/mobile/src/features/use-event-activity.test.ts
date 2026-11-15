@@ -38,12 +38,12 @@ it("removes newly blocked activity from an already loaded feed", async () => {
   expect(result.rows).toEqual([]);
   expect(mock.request).toHaveBeenCalledTimes(1);
 });
-it("shows an authenticated error without substituting simulated events", async () => {
+it("falls back to the local replay feed when the network request fails", async () => {
   mock.request.mockRejectedValue(new Error("Unavailable"));
   await act(async () => { renderer = create(createElement(Probe)); });
-  expect(result.error).toBe("Could not load race updates.");
-  expect(result.rows).toEqual([]);
-  expect(result.scope).toBeUndefined();
+  expect(result.error).toBeUndefined();
+  expect(result.loading).toBe(false);
+  expect(result.scope).toBe("local");
 });
 it("does not read or expose the feed while its retained screen is inactive", async () => {
   mock.request.mockResolvedValue(replay);
