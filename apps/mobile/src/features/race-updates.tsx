@@ -31,8 +31,6 @@ export function RaceUpdates({ state, sport, active }: { state: CompeteState; spo
     [timeline?.index, timeline?.cursor, completed, blocks, fallback.rows, sport],
   );
   const loading = timeline ? !timeline.ready : fallback.loading;
-  const error = timeline?.error ?? fallback.error;
-  const retry = timeline?.retry ?? fallback.retry;
   const cursor = timeline?.cursor ?? rows.length;
   const feedReferenceMs = timeline?.index
     ? cursor >= timeline.count
@@ -45,7 +43,7 @@ export function RaceUpdates({ state, sport, active }: { state: CompeteState; spo
   useLayoutEffect(() => { previous.current = { cursor, ready: timeline ? timeline.ready : !fallback.loading, ids: new Set(rows.map(row => row.id)) }; }, [rows, cursor, timeline?.ready, fallback.loading]);
   if (!active) return null;
   return <View style={{ gap: 14 }}>
-    {error ? <View style={{ gap: 8 }}><AppText role="caption" accessibilityLiveRegion="polite">{error}</AppText><Pressable accessibilityRole="button" onPress={() => retry()} style={{ minHeight: 44, justifyContent: "center" }}><AppText role="label">Retry</AppText></Pressable></View> : loading ? <AppText role="caption" secondary>Loading race updates…</AppText> : <>
+    {loading ? <AppText role="caption" secondary>Loading race updates…</AppText> : <>
       {!rows.length && <AppText secondary>No activity at this point in the race.</AppText>}
       <View style={{ borderRadius: 20, backgroundColor: c.card, overflow: "hidden" }}>{rows.map((row, i) => <Animated.View key={row.id} entering={!reduced && forward && !previous.current?.ids.has(row.id) ? FadeInUp.duration(240) : undefined} layout={reduced ? undefined : LinearTransition.duration(240)} style={{ padding: 16, flexDirection: "row", gap: 12, alignItems: "flex-start", borderTopWidth: i ? 1 : 0, borderColor: c.line }}>
         {!row.movement ? <RankAvatar rank="beginner" src={row.avatarUrl} name={row.actorName} size={56} /> : <View style={{ width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: c.actionSoft }}><AppIcon name="progress" size={24} /></View>}
