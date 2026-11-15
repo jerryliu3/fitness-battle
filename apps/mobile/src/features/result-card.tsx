@@ -14,6 +14,7 @@ import {
   rankSymbolForRankName,
   weekRecapMetrics,
   type AppColors,
+  type CompetitionReplay,
   type PeriodResult,
   type UnitSystem,
 } from "@fitness-battle/shared";
@@ -89,12 +90,16 @@ export function ResultCard({
   podiumAthletes = [],
   compact = false,
   variant = "default",
+  replay,
+  hiddenIds = [],
 }: {
   result: PeriodResult;
   units: UnitSystem;
   podiumAthletes?: { id: string; name: string; place: number; you: boolean; avatarUrl?: string | null; rank?: string | null }[];
   compact?: boolean;
   variant?: "default" | "recap";
+  replay?: CompetitionReplay | null;
+  hiddenIds?: readonly string[];
 }) {
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
@@ -111,7 +116,7 @@ export function ResultCard({
     : { bg: c.soft, text: c.ink };
 
   if (variant === "recap") {
-    const metrics = weekRecapMetrics(result, units);
+    const metrics = weekRecapMetrics(result, units, replay, hiddenIds);
     const showDelta = !result.frozen && delta !== 0;
     const placePositive = !result.frozen && result.place <= 3;
     return (
@@ -137,7 +142,7 @@ export function ResultCard({
                   <AppText role="value" style={[s.tabular, s.recapLight]} numberOfLines={1}>
                     {metric.value}
                   </AppText>
-                  {metric.key === "Rating" && showDelta && (
+                  {metric.key === "Effort" && showDelta && (
                     <AppText role="label" style={[s.tabular, { color: delta > 0 ? "#8ccdab" : "#f09c98" }]}>
                       ({deltaText})
                     </AppText>

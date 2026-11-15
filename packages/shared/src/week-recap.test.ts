@@ -4,7 +4,8 @@ import type { Activity, PeriodResult } from "./compete/sports";
 import type { CompetitionReplay } from "./competition-replay";
 import {
   nonRaceWeekBreakdownTarget, weekRecapBreakdown, weekRecapHeartRateRanges, weekRecapHighlights,
-  weekRecapNextRound, weekRecapPages, weekRecapPodium, weekRecapTraining,
+  weekRecapMetrics, weekRecapNextRound, weekRecapPages, weekRecapPodium, weekRecapTraining,
+  weekRecapYourOvertakes,
 } from "./week-recap";
 
 const result: PeriodResult = {
@@ -156,6 +157,32 @@ describe("week recap highlights, breakdown, hr ranges & non-race fallback", () =
     const highlights = weekRecapHighlights(null, state, { ...result, distanceM: 13047, movingSec: 4500 });
     expect(highlights.length).toBeGreaterThanOrEqual(2);
     expect(highlights[0]?.title).toContain("athletes in field");
+    expect(highlights.map(h => `${h.title} ${h.detail}`).join(" ")).not.toMatch(/effort points|Placed \d+ of/);
+
+    const replayForOvertakes: CompetitionReplay = {
+      sport: "running",
+      track: "open",
+      periodStart: result.periodStart,
+      periodEnd: result.periodEnd,
+      through: result.periodEnd,
+      scope: "field",
+      athletes: [
+        { id: "a", name: "Alice Park", you: true },
+        { id: "b", name: "Bob Chen", you: false },
+        { id: "c", name: "Carla Diaz", you: false },
+      ],
+      events: [
+        { id: "e1", athleteId: "b", at: "2026-10-27T10:00:00Z", distanceM: 3000, movingSec: 1200, effort: 4 },
+        { id: "e2", athleteId: "c", at: "2026-10-28T10:00:00Z", distanceM: 4000, movingSec: 1500, effort: 5 },
+        { id: "e3", athleteId: "a", at: "2026-10-29T10:00:00Z", distanceM: 6000, movingSec: 2100, effort: 8 },
+      ],
+    };
+    expect(weekRecapYourOvertakes(replayForOvertakes, "us")).toBe(2);
+    expect(weekRecapMetrics(result, "us", replayForOvertakes)).toEqual([
+      { key: "Distance", value: "3.1 mi" },
+      { key: "Overtakes", value: "2" },
+      { key: "Effort", value: "1105" },
+    ]);
 
     const breakdown = weekRecapBreakdown(state, { sport: "running", periodStart: result.periodStart, periodEnd: result.periodEnd, result });
     expect(breakdown.stats.map(s => `${s.label}:${s.value}`)).toEqual([

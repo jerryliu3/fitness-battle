@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Modal, Pressable, StyleSheet, View } from "react-native";
+import { Animated, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView, initialWindowMetrics } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Defs, LinearGradient, Path, Polygon, Rect, Stop } from "react-native-svg";
 import {
-  LAUREL_WREATH_PATHS, WEEK_RECAP_COLORS, formatEffort, formatPeriodDateRange, sportById,
+  LAUREL_WREATH_PATHS, LAUREL_WREATH_STEMS, WEEK_RECAP_COLORS, formatEffort, formatPeriodDateRange, sportById,
   weekRecapBreakdown, weekRecapCopy, weekRecapHeartRateRanges, weekRecapHighlights,
   weekRecapPages, weekRecapPodium, weekRecapTraining,
   type CompeteState, type CompetitionReplay, type PeriodResult, type SportId, type WeekRecapTarget,
@@ -34,9 +34,24 @@ const COOL_HR = "#7cc6e8";
 const STAT_COLOR = { muted: MUTED_LIGHT, gold: WEEK_RECAP_COLORS.progress, success: SUCCESS_LIGHT } as const;
 const HR_BAR_COLOR = { high: HIGH_HR, warm: WEEK_RECAP_COLORS.progress, good: SUCCESS_LIGHT, cool: COOL_HR } as const;
 const PODIUM_STEP = {
-  1: { height: 60, avatar: 54, pedestal: { backgroundColor: "rgba(247, 201, 72, 0.24)", borderColor: "rgba(247, 201, 72, 0.52)" }, badge: "#f7c948", ink: "#142b3b" },
-  2: { height: 44, avatar: 44, pedestal: { backgroundColor: "rgba(255, 255, 255, 0.13)", borderColor: "rgba(255, 255, 255, 0.26)" }, badge: "rgba(255, 255, 255, 0.24)", ink: WEEK_RECAP_COLORS.text },
-  3: { height: 34, avatar: 44, pedestal: { backgroundColor: "rgba(184, 121, 69, 0.22)", borderColor: "rgba(184, 121, 69, 0.44)" }, badge: "rgba(184, 121, 69, 0.55)", ink: WEEK_RECAP_COLORS.text },
+  1: {
+    height: 92, avatar: 54, topPoints: "8,0 112,0 120,14 0,14", lipY: 14,
+    topA: "#fae082", topB: "#cb9128", lip: "#fff3ba",
+    faceA: "#d3a134", faceAOpacity: 0.62, faceB: "#7a5416", faceBOpacity: 0.24,
+    badgeBg: "#f5c642", badgeBorder: "#ffe896", ink: "#142b3b",
+  },
+  2: {
+    height: 68, avatar: 44, topPoints: "11,0 119,0 120,12 0,12", lipY: 12,
+    topA: "#95a7b2", topB: "#556670", lip: "#d4e2ea",
+    faceA: "#6e818c", faceAOpacity: 0.52, faceB: "#33444e", faceBOpacity: 0.2,
+    badgeBg: "#495b66", badgeBorder: "#9bb0bc", ink: WEEK_RECAP_COLORS.text,
+  },
+  3: {
+    height: 54, avatar: 44, topPoints: "1,0 109,0 120,12 0,12", lipY: 12,
+    topA: "#be804c", topB: "#73421c", lip: "#eac09a",
+    faceA: "#965828", faceAOpacity: 0.52, faceB: "#532e12", faceBOpacity: 0.18,
+    badgeBg: "#79451f", badgeBorder: "#cc8f5d", ink: WEEK_RECAP_COLORS.text,
+  },
 } as const;
 
 export function WeekRecap({ state, results, nonRaceWeek, social, onClose, loadReplay, hiddenIds = [] }: {
@@ -49,7 +64,7 @@ export function WeekRecap({ state, results, nonRaceWeek, social, onClose, loadRe
   const [index, setIndex] = useState(0);
   const [choices, setChoices] = useState(false);
   const [replays, setReplays] = useState<Record<string, CompetitionReplay | null>>({});
-  const { current, page, last, title, description, label } = weekRecapCopy(pages, index);
+  const { current, page, last, title, label } = weekRecapCopy(pages, index);
   const celebrated = useRef(false);
   const reduced = useReducedMotion();
   const router = useRouter();
@@ -110,7 +125,6 @@ export function WeekRecap({ state, results, nonRaceWeek, social, onClose, loadRe
 
             <View style={s.heading}>
               <AppText role="display" accessibilityRole="header" style={s.light}>{title}</AppText>
-              <AppText style={s.mutedLight}>{description}</AppText>
             </View>
 
             <WeekRecapFit key={current}>
@@ -176,7 +190,7 @@ function ResultsView({ state, result, replay, hiddenIds, reduced }: {
           </View>
         ))}
       </View>
-      <ResultCard result={result} units={state.units} variant="recap" />
+      <ResultCard result={result} units={state.units} variant="recap" replay={replay} hiddenIds={hiddenIds} />
     </View>
   );
 }
@@ -217,18 +231,17 @@ function PodiumHero({ replay, state, result, hiddenIds, reduced }: {
         const progress = anims[step];
         const translateY = progress.interpolate({ inputRange: [0, 1], outputRange: [20, 0] });
         return (
-          <Animated.View key={step} style={[s.podiumCol, { opacity: progress, transform: [{ translateY }] }]}>
+          <Animated.View key={step} style={[s.podiumCol, step === 1 && s.podiumColFirst, { opacity: progress, transform: [{ translateY }] }]}>
             <View style={s.podiumAthlete}>
               <View style={[s.avatarFrame, step === 1 && s.firstFrame]}>
                 {step === 1 && (
-                  <Svg width={76} height={64} viewBox="0 0 84 70" style={s.laurel} accessible={false}>
-                    {LAUREL_WREATH_PATHS.map((d) => <Path key={d} d={d} fill="none" stroke="#f7c948" strokeWidth="2.4" strokeLinecap="round" />)}
+                  <Svg width={96} height={66} viewBox="0 0 100 68" style={s.laurel} accessible={false}>
+                    {LAUREL_WREATH_STEMS.map((d) => <Path key={d} d={d} fill="none" stroke="#f7c948" strokeWidth="1.6" strokeLinecap="round" />)}
+                    {LAUREL_WREATH_PATHS.map((d) => <Path key={d} d={d} fill="#f7c948" />)}
                   </Svg>
                 )}
                 {entry ? (
-                  <View style={[s.avatarRing, step === 1 ? s.ringFirst : entry.you && s.ringYou]}>
-                    <UserAvatar src={entry.avatarUrl} name={entry.name} size={meta.avatar} />
-                  </View>
+                  <UserAvatar src={entry.avatarUrl} name={entry.name} size={meta.avatar} />
                 ) : (
                   <View style={[s.emptyAvatar, { width: meta.avatar, height: meta.avatar, borderRadius: meta.avatar / 2 }]}>
                     <AppText role="caption" style={s.mutedLight}>—</AppText>
@@ -240,8 +253,25 @@ function PodiumHero({ replay, state, result, hiddenIds, reduced }: {
               </AppText>
               {entry && <AppText role="caption" style={[s.mutedLight, s.tabular]} numberOfLines={1}>{entry.metricLabel}</AppText>}
             </View>
-            <View style={[s.pedestal, meta.pedestal, { height: meta.height }]}>
-              <View style={[s.pedestalBadge, { backgroundColor: meta.badge }]}>
+            <View style={[s.pedestal, { height: meta.height, paddingTop: meta.lipY + 10 }]}>
+              <Svg width="100%" height="100%" viewBox="0 0 120 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill} accessible={false}>
+                <Defs>
+                  <LinearGradient id={`pod-top-${step}`} x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0" stopColor={meta.topA} stopOpacity="0.95" />
+                    <Stop offset="1" stopColor={meta.topB} stopOpacity="0.88" />
+                  </LinearGradient>
+                  <LinearGradient id={`pod-face-${step}`} x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0" stopColor={meta.faceA} stopOpacity={meta.faceAOpacity} />
+                    <Stop offset="0.55" stopColor={meta.faceB} stopOpacity={meta.faceBOpacity} />
+                    <Stop offset="1" stopColor={WEEK_RECAP_COLORS.background} stopOpacity="0" />
+                  </LinearGradient>
+                </Defs>
+                <Polygon points={meta.topPoints} fill={`url(#pod-top-${step})`} />
+                <Rect x={0} y={meta.lipY} width={120} height={100 - meta.lipY} fill={`url(#pod-face-${step})`} />
+                <Path d={`M0 ${meta.lipY} H120`} stroke={meta.lip} strokeWidth="1.6" strokeOpacity="0.6" fill="none" />
+                <Path d={`M1 ${meta.lipY} V100 M119 ${meta.lipY} V100`} stroke={meta.lip} strokeWidth="1" strokeOpacity="0.18" fill="none" />
+              </Svg>
+              <View style={[s.pedestalBadge, { backgroundColor: meta.badgeBg, borderColor: meta.badgeBorder }]}>
                 <AppText role="label" style={[s.tabular, { color: meta.ink }]}>{step}</AppText>
               </View>
             </View>
@@ -317,7 +347,7 @@ function Training({ state, target }: { state: CompeteState; target: WeekRecapTar
           {hr.totalMinutes > 0 && <AppText role="caption" style={[s.mutedLight, s.tabular]}>Total {hr.totalMinutes} min</AppText>}
         </View>
         {hr.ranges.length > 0 ? (
-          <View style={s.hrList}>
+          <ScrollView style={s.hrScroll} contentContainerStyle={s.hrList} nestedScrollEnabled showsVerticalScrollIndicator>
             {hr.ranges.map((row) => (
               <View key={row.id} style={s.hrRow}>
                 <AppText role="caption" style={[s.light, s.hrLabel]} numberOfLines={1}>{row.label}</AppText>
@@ -329,7 +359,7 @@ function Training({ state, target }: { state: CompeteState; target: WeekRecapTar
                 </View>
               </View>
             ))}
-          </View>
+          </ScrollView>
         ) : (
           <AppText role="caption" style={s.mutedLight}>No heart-rate samples recorded this week.</AppText>
         )}
@@ -371,40 +401,39 @@ const s = StyleSheet.create({
   heading: { gap: 4 },
   arrival: { alignItems: "center", gap: 24, paddingTop: 16 },
   resultsWrap: { gap: 12 },
-  podiumRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 10, paddingTop: 4 },
+  podiumRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 0, paddingTop: 2 },
   podiumCol: { flex: 1, alignItems: "center", gap: 8 },
-  podiumAthlete: { alignItems: "center", gap: 2, width: "100%" },
+  podiumColFirst: { zIndex: 2 },
+  podiumAthlete: { alignItems: "center", gap: 2, width: "100%", paddingHorizontal: 4 },
   avatarFrame: { alignItems: "center", justifyContent: "center", position: "relative" },
-  firstFrame: { width: 76, height: 64 },
+  firstFrame: { width: 96, height: 66 },
   laurel: { position: "absolute", top: 0 },
-  avatarRing: { borderRadius: 999, padding: 2, borderWidth: 2, borderColor: "rgba(255,255,255,0.45)" },
-  ringFirst: { borderColor: "#f7c948" },
-  ringYou: { borderColor: WEEK_RECAP_COLORS.progress },
-  emptyAvatar: { backgroundColor: GLASS_BG, borderWidth: 1, borderColor: GLASS_BORDER, alignItems: "center", justifyContent: "center" },
-  pedestal: { width: "100%", borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: 8, borderBottomRightRadius: 8, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  pedestalBadge: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  emptyAvatar: { backgroundColor: "rgba(255, 255, 255, 0.08)", alignItems: "center", justifyContent: "center" },
+  pedestal: { width: "100%", overflow: "hidden", alignItems: "center", justifyContent: "flex-start" },
+  pedestalBadge: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.2, alignItems: "center", justifyContent: "center" },
   highlightsList: { gap: 8 },
   highlightRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 11 },
   highlightIcon: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
   highlightText: { flex: 1, gap: 1 },
   trainingWrap: { gap: 10 },
   glassCard: { backgroundColor: GLASS_BG, borderRadius: 18, borderWidth: 1, borderColor: GLASS_BORDER },
-  statCardsRow: { flexDirection: "row", gap: 8 },
+  statCardsRow: { flexDirection: "row", gap: 8, flexShrink: 0 },
   statCard: { flex: 1, paddingVertical: 10, paddingHorizontal: 8, alignItems: "center", gap: 3 },
-  chartCard: { padding: 12, gap: 6 },
+  chartCard: { padding: 12, gap: 6, flexShrink: 0 },
   chartHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   chartTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1 },
   modeToggle: { flexDirection: "row", borderRadius: 999, borderWidth: 1, borderColor: GLASS_BORDER, backgroundColor: "rgba(255,255,255,0.06)", padding: 2, gap: 2 },
   modePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
   modePillActive: { backgroundColor: WEEK_RECAP_COLORS.progress },
-  hrCard: { padding: 12, gap: 8 },
+  hrCard: { padding: 12, gap: 8, flexShrink: 0 },
+  hrScroll: { maxHeight: 112 },
   hrList: { gap: 6 },
   hrRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   hrLabel: { width: 92 },
   hrStat: { width: 68 },
   hrTrack: { flex: 1, height: 8, borderRadius: 4, backgroundColor: "rgba(255, 255, 255, 0.12)", overflow: "hidden" },
   hrFill: { height: 8, borderRadius: 4 },
-  nextCard: { padding: 12, gap: 4 },
+  nextCard: { padding: 12, gap: 4, flexShrink: 0 },
   nextHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 2 },
   nextPill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
   nextPillActive: { backgroundColor: "rgba(140, 205, 171, 0.18)" },

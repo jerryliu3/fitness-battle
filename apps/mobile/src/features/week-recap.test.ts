@@ -14,11 +14,21 @@ vi.mock("react-native", () => ({
   },
   View: "View",
   Pressable: "Pressable",
+  ScrollView: "ScrollView",
   Modal: "Modal",
   StyleSheet: { create: (s: unknown) => s },
 }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaProvider: "Provider", SafeAreaView: "SafeArea", initialWindowMetrics: null }));
-vi.mock("react-native-svg", () => ({ default: "Svg", Circle: "Circle", Path: "Path" }));
+vi.mock("react-native-svg", () => ({
+  default: "Svg",
+  Circle: "Circle",
+  Defs: "Defs",
+  LinearGradient: "LinearGradient",
+  Path: "Path",
+  Polygon: "Polygon",
+  Rect: "Rect",
+  Stop: "Stop",
+}));
 vi.mock("../theme", async () => {
   const { getAppColors } = await import("@fitness-battle/shared");
   return { useThemeColors: () => getAppColors("light") };

@@ -11,7 +11,7 @@ import { UserAvatar } from "@/ui/user-avatar";
 import { Ember } from "@/components/mascot/ember";
 import { CompetitionReplayButton } from "@/features/replay/competition-replay";
 import {
-  APP_ICON_PATHS, LAUREL_WREATH_PATHS, WEEK_RECAP_COLORS, formatEffort, formatPeriodDateRange,
+  APP_ICON_PATHS, LAUREL_WREATH_PATHS, LAUREL_WREATH_STEMS, WEEK_RECAP_COLORS, formatEffort, formatPeriodDateRange,
   sportById, weekRecapBreakdown, weekRecapCopy, weekRecapHeartRateRanges, weekRecapHighlights,
   weekRecapPages, weekRecapPodium, weekRecapTraining,
   type CompeteState, type CompetitionReplay, type PeriodResult, type SportId, type WeekRecapTarget,
@@ -38,6 +38,23 @@ const atmosphere = {
 
 const STEP_CLASS = { 1: "is-first", 2: "is-second", 3: "is-third" } as const;
 const STEP_DELAY = { 3: 0.05, 2: 0.22, 1: 0.40 } as const;
+const PODIUM_STEP = {
+  1: {
+    topPoints: "8,0 112,0 120,14 0,14", lipY: 14,
+    topA: "#fae082", topB: "#cb9128", lip: "#fff3ba",
+    faceA: "#d3a134", faceAOpacity: 0.62, faceB: "#7a5416", faceBOpacity: 0.24,
+  },
+  2: {
+    topPoints: "11,0 119,0 120,12 0,12", lipY: 12,
+    topA: "#95a7b2", topB: "#556670", lip: "#d4e2ea",
+    faceA: "#6e818c", faceAOpacity: 0.52, faceB: "#33444e", faceBOpacity: 0.2,
+  },
+  3: {
+    topPoints: "1,0 109,0 120,12 0,12", lipY: 12,
+    topA: "#be804c", topB: "#73421c", lip: "#eac09a",
+    faceA: "#965828", faceAOpacity: 0.52, faceB: "#532e12", faceBOpacity: 0.18,
+  },
+} as const;
 
 function RecapIcon({ name, size = 16 }: { name: keyof typeof APP_ICON_PATHS; size?: number }) {
   return (
@@ -56,7 +73,7 @@ export function WeekRecap({ state, results, nonRaceWeek, social, onDismiss, load
   const pages = weekRecapPages(results, nonRaceWeek);
   const [index, setIndex] = useState(0);
   const [replays, setReplays] = useState<Record<string, CompetitionReplay | null>>({});
-  const { current, page, last, title, description, label } = weekRecapCopy(pages, index);
+  const { current, page, last, title, label } = weekRecapCopy(pages, index);
   const reduced = useReducedMotion();
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { heading.current?.focus({ preventScroll: true }); }, [current]);
@@ -74,7 +91,7 @@ export function WeekRecap({ state, results, nonRaceWeek, social, onDismiss, load
   return (
     <Dialog.Root open><Dialog.Portal>
       <Dialog.Overlay className="focus-round-overlay" />
-      <Dialog.Content className="focus-round-takeover week-recap-afterglow" style={atmosphere} aria-describedby="round-description"
+      <Dialog.Content className="focus-round-takeover week-recap-afterglow" style={atmosphere} aria-describedby={undefined}
         onEscapeKeyDown={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()}
         onOpenAutoFocus={(e) => { e.preventDefault(); heading.current?.focus({ preventScroll: true }); }}>
         <div className="week-recap-progress" role="progressbar" aria-label="Week recap progress"
@@ -104,7 +121,6 @@ export function WeekRecap({ state, results, nonRaceWeek, social, onDismiss, load
               </div>
             )}
             <Dialog.Title ref={heading} tabIndex={-1}>{title}</Dialog.Title>
-            <Dialog.Description id="round-description">{description}</Dialog.Description>
           </header>
 
           <WeekRecapFit>
@@ -171,7 +187,7 @@ function ResultsView({ state, result, replay, hiddenIds, reduced }: {
           </div>
         ))}
       </div>
-      <ResultCard key={result.id} result={result} units={state.units} variant="recap" />
+      <ResultCard key={result.id} result={result} units={state.units} variant="recap" replay={replay} hiddenIds={hiddenIds} />
     </div>
   );
 }
@@ -186,10 +202,11 @@ function PodiumHero({ replay, state, result, hiddenIds, reduced }: {
         const isFirst = step === 1;
         const avatarSize = isFirst ? 54 : 44;
         const stepClass = STEP_CLASS[step];
+        const meta = PODIUM_STEP[step];
         return (
           <motion.div
             key={`${result.id}-${step}`}
-            className="week-recap-podium-col"
+            className={`week-recap-podium-col ${stepClass}`}
             initial={reduced ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: reduced ? 0 : 0.34, delay: reduced ? 0 : STEP_DELAY[step], ease: "easeOut" }}
@@ -197,20 +214,36 @@ function PodiumHero({ replay, state, result, hiddenIds, reduced }: {
             <div className="week-recap-podium-athlete">
               <div className={`week-recap-avatar-frame ${stepClass}`}>
                 {isFirst && (
-                  <svg className="week-recap-laurel" width="76" height="64" viewBox="0 0 84 70" aria-hidden="true">
-                    {LAUREL_WREATH_PATHS.map((d) => <path key={d} d={d} fill="none" stroke="#f7c948" strokeWidth="2.4" strokeLinecap="round" />)}
+                  <svg className="week-recap-laurel" width="96" height="66" viewBox="0 0 100 68" aria-hidden="true">
+                    {LAUREL_WREATH_STEMS.map((d) => <path key={d} d={d} fill="none" stroke="#f7c948" strokeWidth="1.6" strokeLinecap="round" />)}
+                    {LAUREL_WREATH_PATHS.map((d) => <path key={d} d={d} fill="#f7c948" />)}
                   </svg>
                 )}
                 {entry ? (
-                  <span className={`week-recap-avatar-ring ${stepClass}${entry.you && !isFirst ? " is-you" : ""}`}>
-                    <UserAvatar src={entry.avatarUrl} name={entry.name} size={avatarSize} decorative />
-                  </span>
+                  <UserAvatar src={entry.avatarUrl} name={entry.name} size={avatarSize} decorative />
                 ) : <span className="week-recap-empty-avatar" style={{ width: avatarSize, height: avatarSize }}>—</span>}
               </div>
               <AppText role="label" className={`week-recap-podium-name${entry?.you ? " is-you" : ""}`}>{entry?.name ?? "—"}</AppText>
               {entry && <AppText role="caption" className="week-recap-podium-metric">{entry.metricLabel}</AppText>}
             </div>
-            <div className={`week-recap-pedestal ${stepClass}`}>
+            <div className={`week-recap-pedestal ${stepClass}`} style={{ paddingTop: meta.lipY + 10 }}>
+              <svg className="week-recap-pedestal-svg" viewBox="0 0 120 100" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id={`web-pod-top-${step}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor={meta.topA} stopOpacity="0.95" />
+                    <stop offset="1" stopColor={meta.topB} stopOpacity="0.88" />
+                  </linearGradient>
+                  <linearGradient id={`web-pod-face-${step}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor={meta.faceA} stopOpacity={meta.faceAOpacity} />
+                    <stop offset="0.55" stopColor={meta.faceB} stopOpacity={meta.faceBOpacity} />
+                    <stop offset="1" stopColor={WEEK_RECAP_COLORS.background} stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <polygon points={meta.topPoints} fill={`url(#web-pod-top-${step})`} />
+                <rect x="0" y={meta.lipY} width="120" height={100 - meta.lipY} fill={`url(#web-pod-face-${step})`} />
+                <path d={`M0 ${meta.lipY} H120`} stroke={meta.lip} strokeWidth="1.6" strokeOpacity="0.6" fill="none" />
+                <path d={`M1 ${meta.lipY} V100 M119 ${meta.lipY} V100`} stroke={meta.lip} strokeWidth="1" strokeOpacity="0.18" fill="none" />
+              </svg>
               <AppText role="label" className={`week-recap-pedestal-badge ${stepClass}`}>{step}</AppText>
             </div>
           </motion.div>
