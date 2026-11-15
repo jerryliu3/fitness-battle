@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  nextCompetitionReplaySpeed, competitionReplayFrame, competitionReplayDate, indexCompetitionReplay, localCompetitionReplay,
+  nextCompetitionReplaySpeed, competitionReplayFrame, competitionReplayDateForState, indexCompetitionReplay, localCompetitionReplay,
   competitionReplayTimeMs, competitionReplayCursorFromTimeMs, REPLAY_MINUTES_PER_REAL_SECOND_1X,
   type CompeteState, type CompetitionReplay, type CompetitionReplaySelection,
 } from "@fitness-battle/shared";
@@ -82,8 +82,8 @@ export function useFieldTimeline(state: CompeteState | undefined, selection: Com
     cursor: bounded, count, playing, seek, live, toggle, error, speed,
     changeSpeed: () => setSpeed(nextCompetitionReplaySpeed),
     ready: Boolean(index) && !error, retry: () => setAttempt(value => value + 1),
-    latestLabel: index ? competitionReplayDate(index, count, true) : "",
-    label: index ? competitionReplayDate(index, bounded, position === null) : "Loading timeline…",
+    latestLabel: index && state ? competitionReplayDateForState(state, index, count, true) : "",
+    label: index && state ? competitionReplayDateForState(state, index, bounded, position === null) : "Loading timeline…",
     preview: index?.replay.scope === "local", simulated: index?.replay.athletes.some(athlete => athlete.synthetic),
   };
 }

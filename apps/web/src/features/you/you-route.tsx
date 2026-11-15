@@ -26,6 +26,7 @@ import { RankSymbol } from "@/ui/rank-symbol";
 import { AuthPrompt } from "@/components/auth-gate";
 import { Sheet } from "@/ui/sheet";
 import Link from "next/link";
+import { TimezoneCombobox } from "@/ui/timezone-combobox";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -723,6 +724,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
             <div className="club-preference-row"><strong>Units</strong><div className="focus-segments" role="group" aria-label="Unit system">
               {(["us", "metric"] as const).map(units => <button key={units} type="button" aria-pressed={state.units === units} onClick={() => dispatch({ type: "set-units", units })}>{units === "us" ? "Imperial" : "Metric"}</button>)}
             </div></div>
+            <TimezoneCombobox value={state.timezone} onChange={timezone => dispatch({ type: "set-timezone", timezone })}/>
             <label className="club-preference-row"><strong>Primary sport</strong><select className="fb-input" value={state.primary} onChange={event => dispatch({ type: "set-primary", sport: event.target.value as SportId })}>
               {SPORTS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select></label>
@@ -816,10 +818,6 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
                 Score is mostly distance, or time when there is no GPS. Heart
                 rate can add a little. Pace adds less. Effort score never falls below
                 500.
-              </AppParagraph>
-              <AppParagraph typographyRole="caption" className="fb-note">
-                Competition weeks run Monday 00:00 to next Monday 00:00 Eastern
-                Time (ET / New York). New fields open Monday midnight Eastern Time.
               </AppParagraph>
             </Section>
           ) : null}

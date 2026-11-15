@@ -6,14 +6,14 @@ import { BenchmarkChart } from "../ui/benchmark-chart";
 import { useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import {
-  APP_TIMEZONE,
+  accountTimeZone,
   clampTrainingAnchor,
   competeNow,
   dayKey,
   earliestDataDate,
   formatTrainingHours,
   formatWeeklyCompetitionRange,
-  shiftAppDay,
+  shiftZonedDay,
   shiftTrainingMonth,
   sportById,
   defaultTrainingSports,
@@ -44,16 +44,17 @@ const colors = [
 ];
 
   const now = competeNow(state);
+  const displayTz = accountTimeZone(state);
   const [gridWidth, setGridWidth] = useState(280);
   const [sports, setSports] = useState<SportId[]>(() => defaultTrainingSports()),
     [range, setRange] = useState<TrainingRange>("week"),
     [anchor, setAnchor] = useState(() => now),
     [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const buckets = trainingBuckets(state.activities, sports, range, anchor, now),
-    cells = trainingAtlas(state.activities, sports, anchor, now);
+  const buckets = trainingBuckets(state.activities, sports, range, anchor, now, "open", displayTz),
+    cells = trainingAtlas(state.activities, sports, anchor, now, "open", displayTz);
   const day =
     cells.find((d) => d.day === selectedDay) ??
-    cells.find((d) => d.day === dayKey(now)) ??
+    cells.find((d) => d.day === dayKey(now, displayTz)) ??
     cells.find((d) => d.inMonth && !d.future);
   const earliest = useMemo(() => earliestDataDate(state, now, createdAt), [state, now, createdAt]);
   const { prevAllowed, nextAllowed } = trainingRangeNavigation(
@@ -61,15 +62,16 @@ const colors = [
     earliest,
     now,
     range,
+    displayTz,
   );
   const move = (n: number) => {
     if (n < 0 && !prevAllowed) return;
     if (n > 0 && !nextAllowed) return;
     const target =
       range === "week"
-        ? shiftAppDay(anchor, n * 7)
-        : shiftTrainingMonth(anchor, n * (range === "year" ? 12 : 1));
-    setAnchor(clampTrainingAnchor(target, earliest, now, range));
+        ? shiftZonedDay(anchor, n * 7, displayTz)
+        : shiftTrainingMonth(anchor, n * (range === "year" ? 12 : 1), displayTz);
+    setAnchor(clampTrainingAnchor(target, earliest, now, range, displayTz));
     setSelectedDay(null);
   };
   return (
@@ -89,9 +91,9 @@ const colors = [
         </Pressable>
         <AppText role="label" >
           {range === "week"
-            ? formatWeeklyCompetitionRange(anchor)
+            ? formatWeeklyCompetitionRange(anchor, displayTz)
             : anchor.toLocaleDateString("en-US", {
-                timeZone: APP_TIMEZONE,
+                timeZone: displayTz,
                 ...(range === "year"
                   ? { year: "numeric" }
                   : { month: "long", year: "numeric" }),
@@ -116,17 +118,17 @@ const colors = [
           onChange={(next) => {
             setRange(next);
             setAnchor((current) =>
-              clampTrainingAnchor(current, earliest, now, next),
+              clampTrainingAnchor(current, earliest, now, next, displayTz),
             );
           }}
         />
       </View>
-      <BenchmarkChart key={sports.join(",")} buckets={buckets} now={now} dateLabel={range === "week" ? formatWeeklyCompetitionRange(anchor) : anchor.toLocaleDateString("en-US", { timeZone: APP_TIMEZONE, ...(range === "year" ? { year: "numeric" } : { month: "long", year: "numeric" }) })} />
+      <BenchmarkChart key={sports.join(",")} buckets={buckets} now={now} displayTimeZone={displayTz} dateLabel={range === "week" ? formatWeeklyCompetitionRange(anchor, displayTz) : anchor.toLocaleDateString("en-US", { timeZone: displayTz, ...(range === "year" ? { year: "numeric" } : { month: "long", year: "numeric" }) })} />
       <FocusDisclosure title="Daily activity">
         <Text style={f.kicker}>
           {anchor.toLocaleDateString("en-US", {
             month: "long",
-            timeZone: APP_TIMEZONE,
+            timeZone: displayTz,
           })}{" "}
           · daily activity
         </Text>

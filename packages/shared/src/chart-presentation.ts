@@ -1,7 +1,7 @@
 import { countsForTraining } from "./compete/journal";
 import { competeNow } from "./compete/engine";
 import type { CompeteState } from "./compete/sports";
-import { APP_TIMEZONE, dayKey, shiftAppDay, startOfZonedDay, weeklyPeriodBounds } from "./period";
+import { APP_TIMEZONE, accountTimeZone, dayKey, shiftAppDay, shiftZonedDay, startOfZonedDay, weeklyPeriodBounds } from "./period";
 import type { ChartDatum } from "./chart-scrubber";
 import { earliestDataDate, type TrainingBucket } from "./training-view";
 
@@ -47,6 +47,7 @@ export interface OpenLineTimeline {
   showTime?: boolean;
   step?: boolean;
   zeroMin?: boolean;
+  timeZone?: string;
 }
 
 /** Presentation only: no smoothing, interpolation of observations, or scoring writes. */
@@ -70,9 +71,10 @@ export function openLineModel(
   const origin = timeline ? calendarPosition(timeline.start) : 0;
   const timeSpan = timeline ? Math.max(.001, calendarPosition(timeline.end) - origin) : 1;
   const timeX = (at: string) => left + (calendarPosition(new Date(at)) - origin) / timeSpan * (right - left);
-  const crossesYear = rows.length > 0 && dayKey(new Date(rows[0]!.date)).slice(0, 4) !== dayKey(new Date(rows[rows.length - 1]!.date)).slice(0, 4);
-  const dateFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", ...(crossesYear ? { year: "numeric" } : {}), timeZone: APP_TIMEZONE });
-  const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE });
+  const displayTz = timeline?.timeZone ?? APP_TIMEZONE;
+  const crossesYear = rows.length > 0 && dayKey(new Date(rows[0]!.date), displayTz).slice(0, 4) !== dayKey(new Date(rows[rows.length - 1]!.date), displayTz).slice(0, 4);
+  const dateFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", ...(crossesYear ? { year: "numeric" } : {}), timeZone: displayTz });
+  const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: displayTz });
   const date = (value: string) => dateFormatter.format(new Date(value));
   const points = rows.map((row, i) => ({ id: row.id, x: timeline ? timeX(row.date) : x(i), y: y(row.value), label: timeline?.showTime ? `${date(row.date)}, ${timeFormatter.format(new Date(row.date))}` : date(row.date), value: format(row.value) }));
   const trace = (pts: readonly { x: number; y: number }[]) => pts.flatMap((point, i) => [
@@ -126,35 +128,36 @@ export function openLineModel(
   };
 }
 
-/** Current Eastern calendar training week (Monday–Monday), optionally preceded by three complete weeks. */
+/** Current account-calendar training week (Monday–Monday), optionally preceded by three complete weeks. */
 export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks" = "week", now = competeNow(state), createdAt?: string | null) {
-  const period = weeklyPeriodBounds(now), days = range === "week" ? 7 : 28;
-  const start = shiftAppDay(period.startsAt, -(days - 7));
+  const displayTz = accountTimeZone(state);
+  const period = weeklyPeriodBounds(now, displayTz), days = range === "week" ? 7 : 28;
+  const start = shiftZonedDay(period.startsAt, -(days - 7), displayTz);
   const earliest = earliestDataDate(state, now, createdAt);
   const clampedStart = earliest && earliest.getTime() > start.getTime() && (range === "fourWeeks" || Boolean(createdAt))
-    ? startOfZonedDay(earliest)
+    ? startOfZonedDay(earliest, displayTz)
     : start;
   const eligible = state.activities.filter(activity => countsForTraining(activity) && Date.parse(activity.startedAt) <= now.getTime());
   const byDay = new Map<string, number>();
   for (const activity of eligible) {
-    const key = dayKey(new Date(activity.startedAt));
+    const key = dayKey(new Date(activity.startedAt), displayTz);
     byDay.set(key, (byDay.get(key) ?? 0) + Math.max(0, activity.movingSec));
   }
   const cumulative = (from: Date, count: number) => {
     let hours = 0;
     return Array.from({ length: count }, (_, i) => {
-      const at = shiftAppDay(from, i), id = dayKey(at);
+      const at = shiftZonedDay(from, i, displayTz), id = dayKey(at, displayTz);
       hours += (byDay.get(id) ?? 0) / 3600;
       return { id, date: at.toISOString(), value: hours };
     });
   };
-  const activeDays = Array.from({ length: days }, (_, i) => shiftAppDay(start, i))
-    .filter(at => dayKey(at) >= dayKey(clampedStart) && dayKey(at) <= dayKey(now));
+  const activeDays = Array.from({ length: days }, (_, i) => shiftZonedDay(start, i, displayTz))
+    .filter(at => dayKey(at, displayTz) >= dayKey(clampedStart, displayTz) && dayKey(at, displayTz) <= dayKey(now, displayTz));
   const elapsed = activeDays.length;
   if (range === "week") {
     const events = (from: Date, until: Date) => {
       let hours = 0;
-      const exclusiveEnd = shiftAppDay(start, 7).getTime();
+      const exclusiveEnd = shiftZonedDay(start, 7, displayTz).getTime();
       const rows = [{ id: `start:${from.toISOString()}`, date: from.toISOString(), value: 0 }];
       for (const activity of eligible.filter(a => Date.parse(a.startedAt) >= from.getTime() && Date.parse(a.startedAt) <= until.getTime() && Date.parse(a.startedAt) < exclusiveEnd && a.movingSec > 0)
         .sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt) || a.id.localeCompare(b.id))) {
@@ -166,7 +169,7 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
       }
       return rows;
     };
-    const end = shiftAppDay(start, 7);
+    const end = shiftZonedDay(start, 7, displayTz);
     const effectiveFrom = new Date(Math.max(start.getTime(), clampedStart.getTime()));
     const chart = openLineModel(
       now < effectiveFrom ? [] : events(effectiveFrom, new Date(Math.min(now.getTime(), end.getTime()))),
@@ -176,7 +179,7 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
     );
     return { ...chart, xTicks: Array.from({ length: 7 }, (_, i) => ({
       x: chart.left + (i + 0.5) / 7 * (chart.right - chart.left),
-      label: shiftAppDay(start, i).toLocaleDateString("en-US", { weekday: "short", timeZone: APP_TIMEZONE }),
+      label: shiftZonedDay(start, i, displayTz).toLocaleDateString("en-US", { weekday: "short", timeZone: displayTz }),
       anchor: "middle" as const,
     })) };
   }
@@ -195,7 +198,11 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
 }
 
 /** Shared zero-based bars and average, excluding future buckets on both platforms. */
-export function benchmarkBars(buckets: readonly TrainingBucket[], now: Date) {
+export function benchmarkBars(
+  buckets: readonly TrainingBucket[],
+  now: Date,
+  timeZone: string = APP_TIMEZONE,
+) {
   const width = 340, height = 200, top = 28, bottom = 154, left = 32, right = 332;
   const recorded = buckets.filter(bucket => Date.parse(bucket.start) <= now.getTime());
   const average = recorded.length ? recorded.reduce((sum, bucket) => sum + bucket.movingSec, 0) / recorded.length : 0;
@@ -206,7 +213,7 @@ export function benchmarkBars(buckets: readonly TrainingBucket[], now: Date) {
   const slot = (right - left) / Math.max(1, buckets.length);
   const bars = buckets.map((bucket, i) => ({ ...bucket, x: left + (i + .5) * slot, y: y(bucket.movingSec), future: Date.parse(bucket.start) > now.getTime() }));
   const points = bars.filter(bar => !bar.future).map(bar => ({ id: bar.start, x: bar.x, y: bar.y,
-    label: new Date(bar.start).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE }), value: (bar.movingSec / 3600).toFixed(1) }));
+    label: new Date(bar.start).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone }), value: (bar.movingSec / 3600).toFixed(1) }));
   const tickHours = [0, topHour / 2, topHour];
   const formatHour = (h: number) => Number.isInteger(h) ? String(h) : h.toFixed(1);
   return { width, height, top, bottom, left, right, bars, points, barWidth: slot * .62, average, averageY: y(average),
@@ -259,6 +266,7 @@ function effortScoreEvents(state: CompeteState, track: "open" | "verified", now:
 
 /** Score events are committed changes, not estimates from activity distance. */
 export function effortScoreLine(state: CompeteState, track: "open" | "verified", range: EffortHistoryRange, now = competeNow(state), createdAt?: string | null) {
+  const displayTz = accountTimeZone(state);
   const start = shiftAppDay(now, -effortScoreLookbackDays(range));
   const end = shiftAppDay(now, 1);
   const earliest = earliestDataDate(state, now, createdAt);
@@ -271,8 +279,8 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
   const rating = state.ratings.find(r => r.sport === state.primary);
   const current = (track === "verified" ? rating?.verifiedElo : rating?.openElo) ?? 500;
   const eventsInWindow = events.filter(event => Date.parse(event.occurredAt) >= effectiveStart.getTime());
-  const eventDays = new Set(eventsInWindow.map(event => dayKey(new Date(event.occurredAt))));
-  const todayKey = dayKey(now);
+  const eventDays = new Set(eventsInWindow.map(event => dayKey(new Date(event.occurredAt), displayTz)));
+  const todayKey = dayKey(now, displayTz);
   const startDay = startOfZonedDay(effectiveStart);
   const todayStart = startOfZonedDay(now);
   type TimelineRow = { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean };
@@ -280,7 +288,7 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
   for (let d = 0; ; d += 1) {
     const day = shiftAppDay(startDay, d);
     if (day.getTime() >= todayStart.getTime()) break;
-    const key = dayKey(day);
+    const key = dayKey(day, displayTz);
     if (key === todayKey || eventDays.has(key)) continue;
     const at = day.getTime() < effectiveStart.getTime() ? effectiveStart : day;
     dailyRows.push({
@@ -324,7 +332,7 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
     }
   }
   rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: !!rows.length && rows.at(-1)!.value !== current });
-  const chart = openLineModel(rows, value => String(Math.round(value)), 7, { start: timelineStart, end: timelineEnd, showTime: range === "week", step: false });
+  const chart = openLineModel(rows, value => String(Math.round(value)), 7, { start: timelineStart, end: timelineEnd, showTime: range === "week", step: false, timeZone: displayTz });
   // Unknown award times remain gaps in the data. Dashed bridges connect the
   // known readings visually without asserting an award time in that interval.
   return { ...chart, bridges: chart.segments.slice(1).map((line, index) =>

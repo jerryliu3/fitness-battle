@@ -8,23 +8,25 @@ import {
   APP_TIMEZONE,
   type RecordAttempt,
 } from "@fitness-battle/shared";
-const date = (at: string) =>
-  new Date(at).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: APP_TIMEZONE,
-  });
 export function RecordChart({
   rows,
   selected,
   now,
   onSelect,
+  displayTimeZone = APP_TIMEZONE,
 }: {
   rows: RecordAttempt[];
   selected: string;
   now: Date;
+  displayTimeZone?: string;
   onSelect: (id: string) => void;
 }) {
+  const date = (at: string) =>
+    new Date(at).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      timeZone: displayTimeZone,
+    });
   const chart = personalRecordChart(rows, now);
   if (!chart) return null;
   return (

@@ -128,7 +128,7 @@ describe("home-deck shared model", () => {
 
   it("handles dismissal persistence helpers and horizontal swipe threshold", () => {
     const now = new Date("2026-10-22T14:00:00.000Z");
-    const key = homeDeckDismissStorageKey("alice", now);
+    const key = homeDeckDismissStorageKey("alice", now, "America/New_York");
     expect(key).toBe("fb:home-deck-dismissed:v1:alice:2026-10-22");
 
     const raw = serializeDismissedCardIds(["session", "compete", "session"]);

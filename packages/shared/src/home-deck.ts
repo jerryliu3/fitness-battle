@@ -5,7 +5,7 @@ import { countsOnTrack } from "./compete/ledger";
 import { competitionTrack, sportById, type Activity, type CompeteState } from "./compete/sports";
 import { suggestionForState } from "./compete/suggestion";
 import { buildHealth7DayCorridorModel, homeHealthMetrics } from "./home-health";
-import { APP_TIMEZONE, dayKey, getZonedWeekday, shiftAppDay, weeklyPeriodBounds } from "./period";
+import { APP_TIMEZONE, accountTimeZone, dayKey, getZonedWeekday, shiftAppDay, weeklyPeriodBounds } from "./period";
 import { portfolioWeekChart } from "./week-chart";
 
 export type HomeDeckCardId = "session" | "compete" | "route" | "insight";
@@ -171,9 +171,10 @@ export function buildHomeRouteWeek(
   state: CompeteState,
   now: Date = competeNow(state),
 ): HomeRouteWeekModel {
+  const displayTz = accountTimeZone(state);
   const period = weeklyPeriodBounds(now);
-  const today = dayKey(now, APP_TIMEZONE);
-  const weekday = getZonedWeekday(now, APP_TIMEZONE);
+  const today = dayKey(now, displayTz);
+  const weekday = getZonedWeekday(now, displayTz);
   const todayIndex = Math.min(6, Math.max(0, weekday === 0 ? 6 : weekday - 1));
   const weekNumber = easternWeekNumber(now);
 
@@ -188,7 +189,7 @@ export function buildHomeRouteWeek(
 
   const byDay = new Map<string, Activity[]>();
   for (const activity of eligible) {
-    const key = dayKey(new Date(activity.startedAt), APP_TIMEZONE);
+    const key = dayKey(new Date(activity.startedAt), displayTz);
     const list = byDay.get(key);
     if (list) list.push(activity);
     else byDay.set(key, [activity]);
@@ -196,7 +197,7 @@ export function buildHomeRouteWeek(
 
   const stops: HomeRouteDayStop[] = Array.from({ length: 7 }, (_, index) => {
     const at = shiftAppDay(period.startsAt, index);
-    const key = dayKey(at, APP_TIMEZONE);
+    const key = dayKey(at, displayTz);
     const dayActivities = (byDay.get(key) ?? []).sort((a, b) =>
       a.startedAt.localeCompare(b.startedAt),
     );
@@ -222,7 +223,7 @@ export function buildHomeRouteWeek(
         weekday: "short",
         month: "short",
         day: "numeric",
-        timeZone: APP_TIMEZONE,
+        timeZone: displayTz,
       }),
       status,
       sessionCount,
@@ -392,7 +393,7 @@ export function buildHomeDeck(
   const healthMetrics = homeHealthMetrics(state, now);
   const corridorModels = healthMetrics.map((m) => ({
     metric: m,
-    chart: buildHealth7DayCorridorModel(m, now),
+    chart: buildHealth7DayCorridorModel(m, now, { timeZone: accountTimeZone(state) }),
   }));
   const availableToday = corridorModels.filter((item) => item.metric.value !== "—");
 
@@ -481,9 +482,9 @@ export function buildHomeDeck(
   return [sessionCard, competeCard, routeCard, insightCard];
 }
 
-export function homeDeckDismissStorageKey(accountKey: string, now: Date): string {
+export function homeDeckDismissStorageKey(accountKey: string, now: Date, timeZone: string): string {
   const safeAccount = encodeURIComponent((accountKey || "guest").trim() || "guest");
-  return `fb:home-deck-dismissed:v1:${safeAccount}:${dayKey(now, APP_TIMEZONE)}`;
+  return `fb:home-deck-dismissed:v1:${safeAccount}:${dayKey(now, timeZone)}`;
 }
 
 export function parseDismissedCardIds(raw: string | null | undefined): HomeDeckCardId[] {

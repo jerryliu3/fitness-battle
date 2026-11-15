@@ -2,14 +2,14 @@
 import { AppParagraph, AppText, Section } from "@/ui/section";
 import { useMemo, useState } from "react";
 import {
-  APP_TIMEZONE,
+  accountTimeZone,
   clampTrainingAnchor,
   competeNow,
   dayKey,
   earliestDataDate,
   formatTrainingHours,
   formatWeeklyCompetitionRange,
-  shiftAppDay,
+  shiftZonedDay,
   shiftTrainingMonth,
   sportById,
   defaultTrainingSports,
@@ -27,21 +27,22 @@ import { TrainingSportMenu } from "./training-sport-menu";
 
 export function TrainingAtlas({ state }: { state: CompeteState }) {
   const now = competeNow(state);
+  const displayTz = accountTimeZone(state);
   const [sports, setSports] = useState<SportId[]>(() => defaultTrainingSports()),
     [range, setRange] = useState<TrainingRange>("week"),
     [anchor, setAnchor] = useState(() => now),
     [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const buckets = trainingBuckets(state.activities, sports, range, anchor, now),
-    cells = trainingAtlas(state.activities, sports, anchor, now);
+  const buckets = trainingBuckets(state.activities, sports, range, anchor, now, "open", displayTz),
+    cells = trainingAtlas(state.activities, sports, anchor, now, "open", displayTz);
   const day =
     cells.find((d) => d.day === selectedDay) ??
-    cells.find((d) => d.day === dayKey(now)) ??
+    cells.find((d) => d.day === dayKey(now, displayTz)) ??
     cells.find((d) => d.inMonth && !d.future);
   const dateLabel =
     range === "week"
-      ? formatWeeklyCompetitionRange(anchor)
+      ? formatWeeklyCompetitionRange(anchor, displayTz)
       : anchor.toLocaleDateString("en-US", {
-          timeZone: APP_TIMEZONE,
+          timeZone: displayTz,
           ...(range === "year"
             ? { year: "numeric" }
             : { month: "long", year: "numeric" }),
@@ -52,15 +53,16 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     earliest,
     now,
     range,
+    displayTz,
   );
   const move = (direction: number) => {
     if (direction < 0 && !prevAllowed) return;
     if (direction > 0 && !nextAllowed) return;
     const target =
       range === "week"
-        ? shiftAppDay(anchor, direction * 7)
-        : shiftTrainingMonth(anchor, direction * (range === "year" ? 12 : 1));
-    setAnchor(clampTrainingAnchor(target, earliest, now, range));
+        ? shiftZonedDay(anchor, direction * 7, displayTz)
+        : shiftTrainingMonth(anchor, direction * (range === "year" ? 12 : 1), displayTz);
+    setAnchor(clampTrainingAnchor(target, earliest, now, range, displayTz));
     setSelectedDay(null);
   };
   return (
@@ -93,12 +95,12 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           →
         </button>
       </div>
-      <BenchmarkChart key={sports.join(",")} buckets={buckets} now={now} dateLabel={dateLabel} />
+      <BenchmarkChart key={sports.join(",")} buckets={buckets} now={now} dateLabel={dateLabel} displayTimeZone={displayTz} />
         <ChartRangeToggle
           value={range}
           onChange={(next) => {
             setRange(next);
-            setAnchor((current) => clampTrainingAnchor(current, earliest, now, next));
+            setAnchor((current) => clampTrainingAnchor(current, earliest, now, next, displayTz));
           }}
         />
       <details className="club-calendar">
@@ -108,7 +110,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         <AppParagraph typographyRole="label" className="fb-kicker">
           {anchor.toLocaleDateString("en-US", {
             month: "long",
-            timeZone: APP_TIMEZONE,
+            timeZone: displayTz,
           })}{" "}
           · daily activity
         </AppParagraph>
@@ -122,7 +124,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
             <div
               className="atlas-grid"
               role="group"
-              aria-label={`${anchor.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: APP_TIMEZONE })} recorded activity`}
+              aria-label={`${anchor.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: displayTz })} recorded activity`}
             >
               {cells.map((d) => (
                 <button
@@ -147,7 +149,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
                 {new Date(`${day.day}T12:00:00Z`).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
-                  timeZone: APP_TIMEZONE,
+                  timeZone: displayTz,
                 })}{" "}
                 · {formatTrainingHours(day.movingSec)} hr
               </AppParagraph>

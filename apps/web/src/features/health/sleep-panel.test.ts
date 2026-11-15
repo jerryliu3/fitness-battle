@@ -13,6 +13,6 @@ describe("sleep reading context", () => {
     const html = renderToStaticMarkup(createElement(SleepPanel, { state, now, onJoin: () => {}, onLeave: () => {} }));
     expect(html).toContain("Latest sleep");
     expect(html).toContain("Wake date 2026-10-25");
-    expect(html).toContain("current competition week");
+    expect(html).not.toContain("competition week");
   });
 });

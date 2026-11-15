@@ -1,6 +1,6 @@
 import { APP_TIMEZONE, weeklyCompetitionLastDay } from "./period";
 import { nextDailyWaveWindowAt } from "./matching/waves";
-import { competitionQueue, waveTimeLabel } from "./compete/participation";
+import { competitionQueue, waveTimeLabelForState } from "./compete/participation";
 import { rankForElo } from "./compete/ranks";
 import { ELO_UNRANKED, competitionTrack, competitionTrackLabel, sportById, type CompeteState } from "./compete/sports";
 import type { CompeteEvent } from "./compete-home";
@@ -29,7 +29,8 @@ export function eventRegistration(state: CompeteState, event: CompeteEvent, now:
     start: window.waveStart.toISOString(),
     stampYear: window.waveStart.toLocaleDateString("en-US", { timeZone: APP_TIMEZONE, year: "numeric" }),
     headline: sleep ? "Rest up. Rise up." : event === "strength" ? "Make every rep matter." : "Your next start line.",
-    starts: waveTimeLabel(window.waveStart), ends: waveTimeLabel(new Date(window.weekEnd.getTime() - 60_000)),
+    starts: waveTimeLabelForState(state, window.waveStart),
+    ends: waveTimeLabelForState(state, new Date(window.weekEnd.getTime() - 60_000)),
     description: sleep ? "Make rest part of your competition. Your counted sleep nights build a score from sleep quality and consistency." : event === "strength" ? "Build your week through strength training. Counted session time and recorded heart rate contribute effort points." : event === "walking" ? "Stack daily steps from your tracker throughout the week. Distance from walk workouts does not move this field." : `Build your total ${name.toLowerCase()} distance throughout the week and climb your matched field.`,
     details: [
       { title: "How scoring works", summary: sleep ? "Sleep quality & consistency" : event === "strength" ? "Training effort points" : event === "walking" ? "Total steps" : "Total distance", detail: sleep ? "The field ranks your average nightly sleep score, adjusted for how many eligible nights you log. Missing nights reduce the contest score; more hours alone do not guarantee a higher score." : event === "strength" ? "Time in training earns effort points. Recorded heart rate can add a small bonus. Lift weights and rep totals are not scored." : event === "walking" ? "Your counted daily steps are summed across the week. Distance from GPS walks is not used here." : "Your exact counted distance determines place. Equal totals share a place; rounded display values do not create ties." },

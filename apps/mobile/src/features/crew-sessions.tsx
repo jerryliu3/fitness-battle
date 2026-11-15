@@ -8,7 +8,7 @@ import { DateTimeField } from "../ui/form-picker";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import {
-  APP_TIMEZONE,
+  accountTimeZone,
   crewSessionDraftId,
   crewSessionError,
   formatAppDateTime,
@@ -22,6 +22,7 @@ import { useAuth } from "../lib/auth";
 import { mobileEnv } from "../lib/env";
 import { requestApi } from "../lib/api";
 import { FocusButton, FocusSheet } from "../ui/focus";
+import { useCompeteStore } from "../lib/compete-store";
 export function CrewSessions({
   crewId,
   compact = false,
@@ -40,6 +41,8 @@ export function CrewSessions({
 const colors=useThemeColors();
 const f=useFocusStyles();
 
+  const { state } = useCompeteStore();
+  const sessionTz = accountTimeZone(state ?? {});
   const { user, accessToken, offlineMode } = useAuth();
   const [sessions, setSessions] = useState<CrewSession[]>([]),
     [open, setOpen] = useState(false),
@@ -261,10 +264,10 @@ const f=useFocusStyles();
           value={title}
           onChangeText={setTitle}
         />
-        <AppText role="caption" secondary >Date · Eastern (EST)</AppText>
-        <DateTimeField label="Session date · Eastern" mode="date" value={day} onChange={setDay} />
-        <AppText role="caption" secondary >Time · Eastern (EST)</AppText>
-        <DateTimeField label="Session time · Eastern" mode="time" value={time} onChange={setTime} />
+        <AppText role="caption" secondary >Date</AppText>
+        <DateTimeField label="Session date" mode="date" value={day} onChange={setDay} />
+        <AppText role="caption" secondary >Time</AppText>
+        <DateTimeField label="Session time" mode="time" value={time} onChange={setTime} />
         <AppText role="caption" secondary >Duration</AppText>
         <View style={f.chipRow}>
           {[15, 30, 45, 60, 90, 120, 180, 240].map((n) => (
@@ -302,7 +305,7 @@ const f=useFocusStyles();
                 title,
                 startsAt,
                 durationMin: Number(duration),
-                timeZone: APP_TIMEZONE,
+                timeZone: sessionTz,
               });
             } catch (e) {
               setError((e as Error).message);

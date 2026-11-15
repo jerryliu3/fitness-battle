@@ -14,7 +14,7 @@ import {
 } from "./compete/sports";
 import { initialsFromName, selfLaneLabel } from "./compete/track";
 import { findSynthetic, syntheticVolumeInWindow } from "./matching/synthetic-bank";
-import { APP_TIMEZONE, endOfZonedDay, formatAppDateTime, shiftAppDay } from "./period";
+import { APP_TIMEZONE, accountTimeZone, endOfZonedDay, formatAppDateTime, shiftAppDay } from "./period";
 import { competePeriodWindow } from "./phone-views";
 
 export type FieldViewDimension = "2d" | "3d" | "4d" | "graph";
@@ -283,7 +283,9 @@ function finalizeTimeSeriesModel(input: {
     historyAvailable?: boolean;
   }[];
   options?: CompeteTimeSeriesOptions;
+  displayTimeZone?: string;
 }): CompeteTimeSeriesModel {
+  const displayTz = input.displayTimeZone ?? APP_TIMEZONE;
   const view: CompeteTimeSeriesView =
     input.options?.view === "event" ? "event" : "trajectory";
   const resolvedAthletes =
@@ -418,7 +420,7 @@ function finalizeTimeSeriesModel(input: {
     weekday: "short",
     month: "short",
     day: "numeric",
-    timeZone: APP_TIMEZONE,
+    timeZone: displayTz,
   });
   const subjectPart = `${selectedAthlete.firstName}’s trajectory`;
   const timeLabel = `${datePart} · ${isScrubbing ? "Inspected" : "Live"} · ${subjectPart}`;
@@ -426,11 +428,7 @@ function finalizeTimeSeriesModel(input: {
   const nowDayIndex = Math.min(6, Math.floor(nowFraction * 6.999));
   const activeDayIndex = Math.min(6, Math.floor(cursorFraction * 6.999));
   const dayTicks: CompeteTimeSeriesDayTick[] = Array.from({ length: 7 }, (_, i) => {
-    const dayDate = shiftAppDay(input.periodStart, i);
-    const label = dayDate.toLocaleDateString("en-US", {
-      weekday: "short",
-      timeZone: APP_TIMEZONE,
-    });
+    const label = `Day ${i + 1}`;
     return {
       index: i,
       label,
@@ -480,8 +478,8 @@ function finalizeTimeSeriesModel(input: {
     isScrubbing,
     historyAvailable,
     timeLabel,
-    cursorTimeLabel: formatAppDateTime(cursorDate),
-    latestTimeLabel: formatAppDateTime(new Date(startMs + nowFraction * spanMs)),
+    cursorTimeLabel: formatAppDateTime(cursorDate, { timeZone: displayTz }),
+    latestTimeLabel: formatAppDateTime(new Date(startMs + nowFraction * spanMs), { timeZone: displayTz }),
     athletes,
     selectedAthlete,
     overtakes,
@@ -692,6 +690,7 @@ export function buildCompeteTimeSeriesModel(
     unit,
     rawAthletes,
     options,
+    displayTimeZone: accountTimeZone(state),
   });
 }
 
@@ -792,6 +791,7 @@ export function buildSleepTimeSeriesModel(
     unit: "score",
     rawAthletes,
     options,
+    displayTimeZone: accountTimeZone(state),
   });
 }
 

@@ -3,7 +3,7 @@ import { createThemedStyles, useThemedStyles, useHomeHealthColors } from "../the
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Circle, G, Line, Path } from "react-native-svg";
-import { formatHealthNumber, buildHealth7DayCorridorModel, competeNow, dottedCircleDasharray, healthSignal, healthSignalBounds, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
+import { accountTimeZone, formatHealthNumber, buildHealth7DayCorridorModel, competeNow, dottedCircleDasharray, healthSignal, healthSignalBounds, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
 import { ChartScrubber, type ChartDatum } from "../ui/chart-scrubber";
 import { ChartSvg, ChartText } from "../ui/chart-text";
 import { AppText } from "../ui/section";
@@ -38,7 +38,7 @@ const HealthCorridorDetail = memo(function HealthCorridorDetail({
   }, [selected.id]);
 
   const chart = useMemo(
-    () => buildHealth7DayCorridorModel(selected, now, { weekCorridorFallback: true }),
+    () => buildHealth7DayCorridorModel(selected, now, { weekCorridorFallback: true, timeZone: accountTimeZone(state) }),
     [selected, now],
   );
   const scrubPoints = useMemo<ChartDatum[]>(

@@ -15,7 +15,7 @@ import { PortraitField } from "@/features/club/portrait-field";
 import { useFieldAppearance } from "@/features/field/components/field-course";
 import {
   APP_ICON_PATHS,
-  coursePositionLeaders, competitionReplayDimension, nextCompetitionReplaySpeed, competitionReplayFrame, competitionReplayCaption, competitionReplayDate,
+  coursePositionLeaders, competitionReplayDimension, nextCompetitionReplaySpeed, competitionReplayFrame, competitionReplayCaption, competitionReplayDateForState,
   competitionReplayTimeMs, competitionReplayCursorFromTimeMs, REPLAY_MINUTES_PER_REAL_SECOND_1X,
   indexCompetitionReplay, localCompetitionReplay, initialsFromName, fieldDefaultSpan,
   clampCourseCenter, sportById,
@@ -127,7 +127,7 @@ export function ReplayViewer({ state, selection, initialDimension, embedded = fa
 
       </div>
       <footer className="competition-replay-controls">
-        <div className="competition-replay-event"><strong>{competitionReplayCaption(index, cursor)}</strong><span>{competitionReplayDate(index, cursor)} · {Math.ceil(cursor)} / {count}</span></div>
+        <div className="competition-replay-event"><strong>{competitionReplayCaption(index, cursor)}</strong><span>{competitionReplayDateForState(state, index, cursor)} · {Math.ceil(cursor)} / {count}</span></div>
         <div className="competition-replay-athletes" aria-label="Current positions">{coursePositionLeaders(frame?.rows ?? []).map(row => <button type="button" className="fb-btn-line" key={row.id} aria-label={`Focus ${row.name}`} aria-pressed={row.id === focus?.id} onClick={() => select(row.id)}>#{row.place} {row.name.split(" ")[0]} · {row.value.toFixed(1)} {unit}</button>)}</div>
         <input type="range" min={0} max={Math.max(1, count)} step="any" value={cursor} disabled={!count} onChange={event => seek(Number(event.target.value))} aria-label="Competition replay timeline" aria-valuetext={`${Math.ceil(cursor)} of ${count} events. ${competitionReplayCaption(index, cursor)}`} />
         <div className="competition-replay-actions">

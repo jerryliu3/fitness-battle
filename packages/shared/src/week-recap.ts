@@ -1,4 +1,4 @@
-import { formatAppDateTime, weeklyPeriodBounds } from "./period";
+import { accountTimeZone, formatAccountDateTime, weeklyPeriodBounds } from "./period";
 import { APP_TIMEZONE, dayKey } from "./timezone";
 import { activityEffort } from "./compete/effort";
 import { competeNow, formatEffort, formatVolume } from "./compete/engine";
@@ -19,9 +19,21 @@ export interface WeekRecapHighlight { icon: "trophy" | "bolt" | "progress"; tone
 export interface WeekRecapHrRange { id: string; label: string; minutes: number; pct: number; tone: "high" | "warm" | "good" | "cool" }
 export interface WeekRecapTarget { sport: SportId; periodStart: string; periodEnd: string; result?: PeriodResult }
 
-export function formatPeriodDateRange(periodStart: string, periodEnd: string): string {
-  const fmt = (ms: number) => new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE });
+export function formatPeriodDateRange(
+  periodStart: string,
+  periodEnd: string,
+  timeZone: string = APP_TIMEZONE,
+): string {
+  const fmt = (ms: number) => new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone });
   return `${fmt(Date.parse(periodStart))} – ${fmt(Date.parse(periodEnd) - 1)}`;
+}
+
+export function formatAccountPeriodDateRange(
+  state: { timezone?: string | null },
+  periodStart: string,
+  periodEnd: string,
+): string {
+  return formatPeriodDateRange(periodStart, periodEnd, accountTimeZone(state));
 }
 
 /** Returns the previous closed Mon-Mon week window when the athlete logged activities (used for non-racers + revisit link). */
@@ -276,6 +288,7 @@ export function weekRecapHighlights(
 
 /** Calendar-date buckets preserve Eastern dates across DST and timestamp encodings. */
 export function weekRecapTraining(state: CompeteState, target: WeekRecapTarget & { track?: PeriodResult["track"] }) {
+  const displayTz = accountTimeZone(state);
   const start = Date.parse(target.periodStart), end = Date.parse(target.periodEnd);
   const track = target.result?.track ?? target.track;
   const activities = state.activities.filter(a => {
@@ -285,17 +298,17 @@ export function weekRecapTraining(state: CompeteState, target: WeekRecapTarget &
   });
   const dates: string[] = [];
   if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
-    const last = dayKey(new Date(end - 1), APP_TIMEZONE);
-    for (let date = dayKey(new Date(start), APP_TIMEZONE); date <= last;
+    const last = dayKey(new Date(end - 1), displayTz);
+    for (let date = dayKey(new Date(start), displayTz); date <= last;
       date = new Date(Date.parse(`${date}T12:00:00Z`) + 86400000).toISOString().slice(0, 10)) dates.push(date);
   }
-  const effortValues = dates.map(date => activities.filter(a => dayKey(new Date(a.startedAt), APP_TIMEZONE) <= date)
+  const effortValues = dates.map(date => activities.filter(a => dayKey(new Date(a.startedAt), displayTz) <= date)
     .reduce((sum, a) => sum + activityEffort(a), 0));
   return {
     available: activities.length > 0,
     hasEffort: activities.length > 0 && effortValues.some(v => v > 0),
-    labels: dates.map(date => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })),
-    values: dates.map(date => activities.filter(a => dayKey(new Date(a.startedAt), APP_TIMEZONE) <= date)
+    labels: dates.map(date => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: displayTz })),
+    values: dates.map(date => activities.filter(a => dayKey(new Date(a.startedAt), displayTz) <= date)
       .reduce((sum, a) => sum + a.movingSec / 60, 0)),
     effortValues,
   };
@@ -324,8 +337,8 @@ export function weekRecapNextRound(state: CompeteState, target: { sport: SportId
   }
   return {
     pill: enrollment.status === "upcoming"
-      ? formatAppDateTime(enrollment.startsAt)
-      : `Started ${formatAppDateTime(enrollment.startsAt)}`,
+      ? formatAccountDateTime(state, enrollment.startsAt)
+      : `Started ${formatAccountDateTime(state, enrollment.startsAt)}`,
     detail: countdown,
     active: true,
   };

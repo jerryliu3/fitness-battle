@@ -1,5 +1,4 @@
 import {
-  APP_TIMEZONE,
   activityEffort,
   distanceUnitLabel,
   formatClockTime,
@@ -15,12 +14,12 @@ import { createThemedStyles, useThemeColors, useThemedStyles } from "../theme";
 import { ActivityLeadingGraphic } from "./activity-leading-graphic";
 import { AppText } from "./section";
 
-function formatActivityDate(iso: string) {
+function formatActivityDate(iso: string, timeZone: string) {
   return new Date(iso).toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
-    timeZone: APP_TIMEZONE,
+    timeZone,
   });
 }
 
@@ -31,6 +30,7 @@ export function ActivityListRow({
   units,
   accessToken,
   surface = "card",
+  timeZone,
   onPress,
 }: {
   activity: Activity;
@@ -38,6 +38,7 @@ export function ActivityListRow({
   units: UnitSystem;
   accessToken: string | null;
   surface?: "card" | "soft";
+  timeZone: string;
   onPress: (activity: Activity) => void;
 }) {
   const c = useThemeColors();
@@ -62,7 +63,7 @@ export function ActivityListRow({
       <View style={s.metaCol}>
         <AppText role="row">{sportInfo.name}</AppText>
         <AppText role="caption" secondary>
-          {formatActivityDate(activity.startedAt)}
+          {formatActivityDate(activity.startedAt, timeZone)}
           {activity.distanceM > 0
             ? ` · ${formatDistanceM(activity.distanceM, units)} ${distanceUnitLabel(units)}`
             : ""}

@@ -4,7 +4,7 @@ import { AppParagraph, Section, AppHeading } from "@/ui/section";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  APP_TIMEZONE,
+  accountTimeZone,
   crewSessionDraftId,
   crewSessionError,
   formatAppDateTime,
@@ -14,6 +14,7 @@ import {
   type CrewSession,
 } from "@fitness-battle/shared";
 import { Sheet } from "@/ui/sheet";
+import { useCompete } from "@/components/compete-context";
 export function CrewSessions({
   crewId,
   compact = false,
@@ -31,6 +32,8 @@ export function CrewSessions({
   demo?: boolean;
   sport?: string;
 }) {
+  const { state } = useCompete();
+  const sessionTz = accountTimeZone(state ?? {});
   const [sessions, setSessions] = useState<CrewSession[]>([]),
     [open, setOpen] = useState(false),
     [cancelTarget, setCancelTarget] = useState<CrewSession | null>(null),
@@ -245,7 +248,7 @@ export function CrewSessions({
           />
         </label>
         <label className="fb-field">
-          Time · Eastern (EST)
+          Time
           <input
             type="time"
             value={time}
@@ -287,7 +290,7 @@ export function CrewSessions({
                 title,
                 startsAt,
                 durationMin: duration,
-                timeZone: APP_TIMEZONE,
+                timeZone: sessionTz,
               });
             } catch (e) {
               setError((e as Error).message);

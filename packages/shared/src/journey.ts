@@ -1,4 +1,4 @@
-import { dayKey } from "./timezone";
+import { APP_TIMEZONE, dayKey } from "./timezone";
 
 /** Horizontal lane for a stop. Position lives on the stop — the route only reads centers. */
 export type JourneyLane = "l" | "c" | "r";
@@ -34,6 +34,7 @@ export type JourneyActivityDay<
 export function groupActivitiesByDay<T extends { startedAt: string }>(
   activities: ReadonlyArray<T>,
   limit = 30,
+  timeZone: string = APP_TIMEZONE,
 ): JourneyActivityDay<T>[] {
   const byDay = new Map<string, T[]>();
   const newestFirst = [...activities].sort(
@@ -42,7 +43,7 @@ export function groupActivitiesByDay<T extends { startedAt: string }>(
   for (const activity of newestFirst) {
     const at = new Date(activity.startedAt);
     if (!Number.isFinite(at.getTime())) continue;
-    const day = dayKey(at);
+    const day = dayKey(at, timeZone);
     const bucket = byDay.get(day);
     if (bucket) bucket.push(activity);
     else byDay.set(day, [activity]);

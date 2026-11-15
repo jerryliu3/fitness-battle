@@ -5,7 +5,7 @@ import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { RankAvatar } from "../ui/rank-symbol";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { Pressable, View } from "react-native";
-import { competeNow, competitionActivityLog, competitionMomentFeedEntries, competitionReplayTimeMs, formatCompetitionFeedTimestamp, type CompeteState, type CompetitionMoment, type SportId } from "@fitness-battle/shared";
+import { competeNow, competitionActivityLog, competitionMomentFeedEntries, competitionReplayTimeMs, formatCompetitionFeedTimestampForState, type CompeteState, type CompetitionMoment, type SportId } from "@fitness-battle/shared";
 import { AppText } from "../ui/section";
 import { useThemeColors } from "../theme";
 import { AppIcon } from "../ui/app-icon";
@@ -61,7 +61,7 @@ export function RaceUpdates({ state, sport, active, moment, revealCount }: { sta
         {!row.movement ? <RankAvatar rank="beginner" src={row.avatarUrl} name={row.actorName} size={56} /> : <View style={{ width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: c.actionSoft }}><AppIcon name="progress" size={24} /></View>}
         <View style={{ flex: 1, flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
           <View style={{ flex: 1, gap: 4, minWidth: 0 }}><AppText role="label">{row.title}</AppText><AppText role="caption" secondary>{row.detail}</AppText></View>
-          <AppText role="caption" secondary style={{ flexShrink: 0, paddingTop: 2 }}>{formatCompetitionFeedTimestamp(row.at, feedReferenceMs)}</AppText>
+          <AppText role="caption" secondary style={{ flexShrink: 0, paddingTop: 2 }}>{formatCompetitionFeedTimestampForState(state, row.at, feedReferenceMs)}</AppText>
         </View>
       </Animated.View>)}</View>
     </>}

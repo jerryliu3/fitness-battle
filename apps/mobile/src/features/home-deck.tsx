@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   buildHomeDeck,
   competeNow,
+  accountTimeZone,
   homeDeckDismissStorageKey,
   paletteForDeckTone,
   parseDismissedCardIds,
@@ -411,7 +412,7 @@ export function HomeDeck({
   const isDark = mode === "dark";
 
   const now = competeNow(state);
-  const storageKey = homeDeckDismissStorageKey(accountKey, now);
+  const storageKey = homeDeckDismissStorageKey(accountKey, now, accountTimeZone(state));
   const [dismissedIds, setDismissedIds] = useState<HomeDeckCardId[]>(
     () => memoryDismissed.get(storageKey) ?? [],
   );

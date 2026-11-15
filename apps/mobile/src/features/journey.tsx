@@ -1,7 +1,7 @@
 import { useFocusStyles } from "../ui/focus";
 import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
-import { APP_TIMEZONE, dayKey, groupActivitiesByDay, planJourneyTrail, routeThroughCenters, sportById, type Activity, type JourneyLane, type UnitSystem } from "@fitness-battle/shared";
+import { accountTimeZone, dayKey, groupActivitiesByDay, planJourneyTrail, routeThroughCenters, sportById, type Activity, type JourneyLane, type UnitSystem } from "@fitness-battle/shared";
 import { useEffect, useState, useCallback } from "react";
 import { useFocusEffect } from "expo-router";
 import { Pressable, Text, View } from "react-native";
@@ -38,6 +38,7 @@ const c=useThemeColors();
 const f=useFocusStyles();
 
   const { state, dispatch, accountKey } = useCompeteStore();
+  const displayTz = state ? accountTimeZone(state) : accountTimeZone({});
   const [removed, setRemoved] = useState<Activity | null>(null);
   useEffect(() => {
     setRemoved(null);
@@ -45,16 +46,17 @@ const f=useFocusStyles();
   }, [accountKey]);
   const [width, setWidth] = useState(320);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const todayKey = dayKey(new Date(), APP_TIMEZONE);
+  const todayKey = dayKey(new Date(), displayTz);
   useFocusEffect(useCallback(()=>()=>setSelectedDay(null),[]));
-  const days = groupActivitiesByDay(activities, 30);
+  const days = groupActivitiesByDay(activities, 30, displayTz);
   const todayDay = days.find((d) => d.day === todayKey);
   const pastDays = days.filter((d) => d.day !== todayKey);
   const allPastDays = groupActivitiesByDay(
     activities.filter(
-      (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) !== todayKey,
+      (a) => dayKey(new Date(a.startedAt), displayTz) !== todayKey,
     ),
     Infinity,
+    displayTz,
   );
   const plan = planJourneyTrail(allPastDays);
   const truncated =
@@ -144,7 +146,7 @@ const f=useFocusStyles();
                   weekday: "short",
                   month: "short",
                   day: "numeric",
-                  timeZone: "UTC",
+                  timeZone: displayTz,
                 })
               : null;
             const titleLabel = day
@@ -263,7 +265,7 @@ const f=useFocusStyles();
                 weekday: "long",
                 month: "short",
                 day: "numeric",
-                timeZone: "UTC",
+                timeZone: displayTz,
               })
             : "Sessions"
         }

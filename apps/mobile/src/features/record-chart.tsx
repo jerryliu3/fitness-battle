@@ -14,26 +14,28 @@ import {
 } from "@fitness-battle/shared";
 import { ChartScrubber } from "../ui/chart-scrubber";
 
-const date = (at: string) =>
-  new Date(at).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: APP_TIMEZONE,
-  });
 export function RecordChart({
   rows,
   selected,
   now,
   onSelect,
+  displayTimeZone = APP_TIMEZONE,
 }: {
   rows: RecordAttempt[];
   selected?: string | null;
+  displayTimeZone?: string;
   now: Date;
   onSelect: (id: string) => void;
 }) {
 const clubColors=useThemeColors();
   const clipId = useId();
   const [scrubbed, setScrubbed] = useState<ChartDatum | undefined>();
+  const date = (at: string) =>
+    new Date(at).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      timeZone: displayTimeZone,
+    });
 
   const chart = personalRecordChart(rows, now);
   if (!chart) return null;

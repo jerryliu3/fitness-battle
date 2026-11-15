@@ -2,8 +2,11 @@
 import { AppParagraph, AppText, SectionHeader, AppHeading } from "@/ui/section";
 
 import {
+  accountTimeZone,
   APP_TIMEZONE,
   competitionTrack,
+  formatAccountPeriodDateRange,
+  formatPeriodDateRange,
   formatEloDelta,
   sportById,
   type PeriodResult,
@@ -14,23 +17,6 @@ import {
 import { CompetitionReplayButton } from "@/features/replay/competition-replay";
 import { ResultCard } from "./result-card";
 import { useMemo, useState } from "react";
-
-function weekLabel(periodStart: string, periodEnd: string): string {
-  const start = new Date(periodStart).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: APP_TIMEZONE,
-  });
-  const end = new Date(new Date(periodEnd).getTime() - 1).toLocaleDateString(
-    "en-US",
-    {
-      month: "short",
-      day: "numeric",
-      timeZone: APP_TIMEZONE,
-    },
-  );
-  return `${start} – ${end}`;
-}
 
 export function SeasonHistory({
   results,
@@ -44,6 +30,9 @@ export function SeasonHistory({
   state?: CompeteState;
 }) {
   const [sportFilter, setSportFilter] = useState<SportId | "all">("all");
+  const displayTz = state ? accountTimeZone(state) : APP_TIMEZONE;
+  const roundRange = (start: string, end: string) =>
+    state ? formatAccountPeriodDateRange(state, start, end) : formatPeriodDateRange(start, end);
 
   const sports = useMemo(() => {
     const ids = [...new Set(results.map((row) => row.sport))];
@@ -103,10 +92,10 @@ export function SeasonHistory({
       <div className="weekly-chapters">
         {!rows.length?<AppParagraph typographyRole="caption" className="fb-note">No closed weeks match this selection.</AppParagraph>:null}
         {rows.map((row,index)=>{
-          const month=new Date(Date.parse(row.periodEnd)-1).toLocaleDateString("en-US",{month:"long",year:"numeric",timeZone:APP_TIMEZONE});
+          const month=new Date(Date.parse(row.periodEnd)-1).toLocaleDateString("en-US",{month:"long",year:"numeric",timeZone:displayTz});
           const previous=rows[index-1];
-          const previousMonth=previous?new Date(Date.parse(previous.periodEnd)-1).toLocaleDateString("en-US",{month:"long",year:"numeric",timeZone:APP_TIMEZONE}):null;
-          return <div key={row.id}>{month!==previousMonth?<h4 className="fb-kicker chapter-month">{month}</h4>:null}<details className="weekly-chapter"><summary><span className={`chapter-place${row.place===1?" is-first":""}`}>#{row.place}</span><span className="chapter-label"><b>{weekLabel(row.periodStart,row.periodEnd)}</b><AppText as="small" role="caption" secondary>{sportById(row.sport).name} · {row.track==="verified"?"GPS":"Open"} · {row.place} of {row.fieldSize}{row.frozen?" · frozen":""}</AppText></span><span className="chapter-delta">{formatEloDelta(row.eloBefore,row.eloAfter)}<AppText as="small" role="caption" secondary>score</AppText></span></summary><ResultCard result={row} units={units}/>{state && <CompetitionReplayButton state={state} selection={row} label="Replay this round" />}</details></div>;
+          const previousMonth=previous?new Date(Date.parse(previous.periodEnd)-1).toLocaleDateString("en-US",{month:"long",year:"numeric",timeZone:displayTz}):null;
+          return <div key={row.id}>{month!==previousMonth?<h4 className="fb-kicker chapter-month">{month}</h4>:null}<details className="weekly-chapter"><summary><span className={`chapter-place${row.place===1?" is-first":""}`}>#{row.place}</span><span className="chapter-label"><b>{roundRange(row.periodStart, row.periodEnd)}</b><AppText as="small" role="caption" secondary>{sportById(row.sport).name} · {row.track==="verified"?"GPS":"Open"} · {row.place} of {row.fieldSize}{row.frozen?" · frozen":""}</AppText></span><span className="chapter-delta">{formatEloDelta(row.eloBefore,row.eloAfter)}<AppText as="small" role="caption" secondary>score</AppText></span></summary><ResultCard result={row} units={units} account={state}/>{state && <CompetitionReplayButton state={state} selection={row} label="Replay this round" />}</details></div>;
         })}
       </div>
     </section>

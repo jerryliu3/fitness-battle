@@ -13,6 +13,7 @@ import { AppIcon } from "../src/ui/app-icon";
 import { IntegrationIcon } from "../src/ui/integration-icon";
 
 import { ChoicePicker } from "../src/ui/choice-picker";
+import { TimezonePicker } from "../src/ui/timezone-picker";
 import {
   RANK_BANDS,
   SPORTS,
@@ -632,6 +633,11 @@ const styles=useThemedStyles(stylesThemes);
                     onChange={units => dispatch({ type: "set-units", units })} />
                 </View>
               </View>
+              <TimezonePicker
+                label="Time zone"
+                value={state.timezone}
+                onChange={timezone => dispatch({ type: "set-timezone", timezone })}
+              />
               <View style={[f.row, { minHeight: 48, alignItems: "center", justifyContent: "space-between" }]}>
                 <AppText role="label">Primary sport</AppText>
                 <ChoicePicker systemMenu label="Primary sport" value={state.primary} options={SPORTS.map(s => ({ value: s.id, label: s.name }))}

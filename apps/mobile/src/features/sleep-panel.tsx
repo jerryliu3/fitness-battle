@@ -40,7 +40,7 @@ const f=useFocusStyles();
       <SectionHeader title={view.lastNight ? "Latest sleep" : "No night recorded yet"}/>
       {view.lastNight ? (
         <>
-          <AppText role="caption" secondary>Wake date {view.lastNight.day}. Weekly standings count nights in the current competition week.</AppText>
+          <AppText role="caption" secondary>Wake date {view.lastNight.day}.</AppText>
           <Text style={f.massive}>{view.lastNight.score}</Text>
           <AppText role="body" secondary >
             sleep score · {formatSleepDuration(view.lastNight.durationMin)}

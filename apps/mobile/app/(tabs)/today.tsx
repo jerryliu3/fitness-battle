@@ -1,5 +1,5 @@
 import {
-  APP_TIMEZONE,
+  accountTimeZone,
   buildTodayRoute,
   competeNow,
   countsOnTrack,
@@ -61,12 +61,13 @@ export default function Home() {
 
   const route = buildTodayRoute(state);
   const now = competeNow(state);
+  const displayTz = accountTimeZone(state);
   const counted = state.activities.filter(
     (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
   );
-  const todayKey = dayKey(now, APP_TIMEZONE);
+  const todayKey = dayKey(now, displayTz);
   const todayActivities = counted.filter(
-    (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === todayKey,
+    (a) => dayKey(new Date(a.startedAt), displayTz) === todayKey,
   );
 
   return (

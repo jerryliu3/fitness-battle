@@ -6,7 +6,7 @@ import { useState, type ReactNode } from "react";
 import { RecordChart } from "./record-chart";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import {
-  APP_TIMEZONE,
+  accountTimeZone,
   RECORD_DISTANCES,
   competeNow,
   formatClockTime,
@@ -14,14 +14,14 @@ import {
   type CompeteState,
 } from "@fitness-battle/shared";
 
-
-const date = (v: string) =>
-  new Date(v).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: APP_TIMEZONE,
-  });
 export function TrainingHistory({ state, children }: { state: CompeteState; children?: ReactNode }) {
+  const displayTz = accountTimeZone(state);
+  const date = (v: string) =>
+    new Date(v).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      timeZone: displayTz,
+    });
 const f=useFocusStyles();
 
   const [distance,setDistance]=useState(""),[receipt,setReceipt]=useState<string|null>(null);
@@ -77,7 +77,7 @@ const f=useFocusStyles();
               {inspected.verified ? " · GPS recorded" : ""}
             </StatusBadge>
           </View>
-          <RecordChart rows={rows} selected={receipt} now={now} onSelect={setReceipt} />
+          <RecordChart rows={rows} selected={receipt} now={now} displayTimeZone={displayTz} onSelect={setReceipt} />
           <ActivityRoute units={state.units} key={inspected.activityId} activity={state.activities.find(a => a.id === inspected.activityId)} milestone />
         </Section>
       ) : null}

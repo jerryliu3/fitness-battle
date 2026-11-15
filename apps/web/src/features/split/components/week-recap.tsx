@@ -11,7 +11,7 @@ import { UserAvatar } from "@/ui/user-avatar";
 import { Ember } from "@/components/mascot/ember";
 import { CompetitionReplayButton } from "@/features/replay/competition-replay";
 import {
-  APP_ICON_PATHS, WEEK_RECAP_COLORS, formatEffort, formatPeriodDateRange,
+  APP_ICON_PATHS, WEEK_RECAP_COLORS, formatEffort, formatAccountPeriodDateRange,
   sportById, weekRecapBreakdown, weekRecapCopy, weekRecapHeartRateRanges, weekRecapHighlights,
   weekRecapPages, weekRecapPodium, weekRecapTraining,
   type CompeteState, type CompetitionReplay, type PeriodResult, type SportId, type WeekRecapTarget,
@@ -125,7 +125,7 @@ export function WeekRecap({ state, results, nonRaceWeek, social, onDismiss, load
                   )}
                 </div>
                 <AppText role="caption" className="week-recap-date-range">
-                  {formatPeriodDateRange(page.kind === "results" ? page.result.periodStart : page.periodStart, page.kind === "results" ? page.result.periodEnd : page.periodEnd)}
+                  {formatAccountPeriodDateRange(state, page.kind === "results" ? page.result.periodStart : page.periodStart, page.kind === "results" ? page.result.periodEnd : page.periodEnd)}
                 </AppText>
               </div>
             )}
@@ -223,7 +223,7 @@ function ResultsView({ state, result, replay, hiddenIds, reduced }: {
           </div>
         ))}
       </div>
-      <ResultCard key={result.id} result={result} units={state.units} variant="recap" replay={replay} hiddenIds={hiddenIds} />
+      <ResultCard key={result.id} result={result} units={state.units} variant="recap" replay={replay} hiddenIds={hiddenIds} account={state} />
     </div>
   );
 }

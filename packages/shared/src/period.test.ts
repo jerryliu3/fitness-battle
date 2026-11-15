@@ -121,4 +121,11 @@ describe("Eastern calendar offsets", () => {
     expect(label).not.toContain(" at ");
     expect(label).not.toMatch(/EST|EDT|ET/);
   });
+
+  it("formatAccountDateTime uses profile timezone", async () => {
+    const { formatAccountDateTime, formatCompetitionDateTime } = await import("./timezone");
+    const state = { timezone: "America/Los_Angeles" };
+    expect(formatAccountDateTime(state, "2026-11-11T19:15:00Z")).toBe("Nov 11, 11:15 AM");
+    expect(formatCompetitionDateTime("2026-11-11T19:15:00Z")).toBe("Nov 11, 2:15 PM");
+  });
 });

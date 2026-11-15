@@ -11,7 +11,7 @@ import { WeekRecap } from "../src/features/club-week-recap";
 import { SessionStage } from "../src/features/session-stage";
 import { HomeActivityActions } from "../src/features/home-activity-actions";
 import { useCompeteStore } from "../src/lib/compete-store";
-import { APP_TIMEZONE, buildTodayRoute, competeNow, countsOnTrack, dayKey } from "@fitness-battle/shared";
+import { accountTimeZone, buildTodayRoute, competeNow, countsOnTrack, dayKey } from "@fitness-battle/shared";
 import { FocusSheet } from "../src/ui/focus";
 
 
@@ -25,11 +25,12 @@ const s=useThemedStyles(sThemes);
   if (!state) return null;
   const route = buildTodayRoute(state);
   const now = competeNow(state);
+  const displayTz = accountTimeZone(state);
   const counted = state.activities.filter(
     (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
   );
   const todayActivities = counted.filter(
-    (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayKey(now, APP_TIMEZONE),
+    (a) => dayKey(new Date(a.startedAt), displayTz) === dayKey(now, displayTz),
   );
 
   return (

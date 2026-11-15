@@ -1,5 +1,5 @@
 import { countsOnTrack } from "./compete/ledger";
-import { weeklyPeriodBounds, APP_TIMEZONE, getZonedWeekday } from "./period";
+import { weeklyPeriodBounds, APP_TIMEZONE, accountTimeZone, getZonedWeekday } from "./period";
 import { competitionTrack, sportById } from "./compete/sports";
 import { formatClockTime } from "./compete/pace";
 import { formatVolume, formatEffort, type BoardRow } from "./compete/engine";
@@ -10,8 +10,9 @@ import type { CompeteState, SportId, UnitSystem } from "./compete/sports";
 
 /** Calendar-week presentation only; does not change competition enrollment bounds. */
 export function clubWeekSummary(state: CompeteState, now = competeNow(state)) {
-  const bounds = weeklyPeriodBounds(now);
-  const weekday = getZonedWeekday(now, APP_TIMEZONE);
+  const displayTz = accountTimeZone(state);
+  const bounds = weeklyPeriodBounds(now, displayTz);
+  const weekday = getZonedWeekday(now, displayTz);
   const daysFromMonday = weekday === 0 ? 6 : weekday - 1;
   const daysPassed = Math.min(7, Math.max(1, daysFromMonday + 1));
   const previous = trainingBuckets(
@@ -20,8 +21,10 @@ export function clubWeekSummary(state: CompeteState, now = competeNow(state)) {
     "week",
     new Date(bounds.startsAt.getTime() - 1),
     now,
+    "open",
+    displayTz,
   );
-  const days = trainingBuckets(state.activities, "all", "week", now, now);
+  const days = trainingBuckets(state.activities, "all", "week", now, now, "open", displayTz);
   const total = (rows: typeof days) =>
     rows.reduce((n, row) => n + row.movingSec, 0);
   const currentDays = days.slice(0, daysPassed);
@@ -36,7 +39,7 @@ export function clubWeekSummary(state: CompeteState, now = competeNow(state)) {
     greeting:
       Number(
         new Intl.DateTimeFormat("en-US", {
-          timeZone: APP_TIMEZONE,
+          timeZone: displayTz,
           hour: "numeric",
           hourCycle: "h23",
         }).format(now),
@@ -44,7 +47,7 @@ export function clubWeekSummary(state: CompeteState, now = competeNow(state)) {
         ? "Good morning"
         : Number(
               new Intl.DateTimeFormat("en-US", {
-                timeZone: APP_TIMEZONE,
+                timeZone: displayTz,
                 hour: "numeric",
                 hourCycle: "h23",
               }).format(now),
