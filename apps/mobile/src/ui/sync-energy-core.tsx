@@ -1,79 +1,68 @@
 import { useEffect, useId } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Svg, { Circle, ClipPath, Defs, LinearGradient, Path, Rect, Stop } from "react-native-svg";
+import Svg, { Circle, ClipPath, Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import Animated, { cancelAnimation, Easing, ReduceMotion, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from "react-native-reanimated";
 import { clubDuration, formatVolume, type CompeteState, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
+import { AppIcon, type AppIconName } from "./app-icon";
 import { textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
 
-const Fill = Animated.createAnimatedComponent(Rect);
+const Water = Animated.createAnimatedComponent(Path);
 const Ring = Animated.createAnimatedComponent(Circle);
 const circumference = 2 * Math.PI * 94;
 
-/** Charge represents selected moving time as a share of this sync receipt. */
-export function SyncEnergyCore({ activities, totalSeconds, units, draining }: {
-  activities: SyncReviewReceipt["activities"]; totalSeconds: number; units: CompeteState["units"]; draining: boolean;
+export function SyncEnergyCore({ activities, totalSeconds, units, draining, size = 176, active = true, effortDelta }: {
+  activities: SyncReviewReceipt["activities"]; totalSeconds: number; units: CompeteState["units"]; draining: boolean; size?: number; active?: boolean; effortDelta: number | null;
 }) {
   const c = useThemeColors();
   const reduced = useReducedMotion();
   const id = useId().replace(/:/g, "");
   const seconds = activities.reduce((sum, a) => sum + a.movingSec, 0);
   const fraction = totalSeconds > 0 ? Math.min(1, seconds / totalSeconds) : 0;
-  const charge = useSharedValue(0);
-  const orbit = useSharedValue(0);
-  const vibration = useSharedValue(0);
+  const charge = useSharedValue(0), phase = useSharedValue(0), vibration = useSharedValue(0);
   useEffect(() => {
-    // Reanimated reads the system preference synchronously, preserving the entrance fill.
     charge.value = withTiming(draining ? 0 : fraction, { duration: draining ? 780 : 1100, easing: Easing.inOut(Easing.cubic), reduceMotion: ReduceMotion.System });
     return () => cancelAnimation(charge);
   }, [fraction, draining, charge]);
-  const energized = !reduced && fraction > 0 && !draining;
+  const energized = active && !reduced && fraction > 0 && !draining;
   useEffect(() => {
-    if (!energized) {
-      cancelAnimation(orbit); cancelAnimation(vibration);
-      orbit.value = 0; vibration.value = 0;
-      return;
-    }
-    orbit.value = 0;
-    orbit.value = withRepeat(withTiming(360, { duration: 4200, easing: Easing.linear }), -1, false);
-    vibration.value = withRepeat(withSequence(withTiming(1, { duration: 65 }), withTiming(-1, { duration: 65 }), withTiming(0, { duration: 65 }), withTiming(0, { duration: 1500 })), -1, false);
-    return () => { cancelAnimation(orbit); cancelAnimation(vibration); };
-  }, [energized, orbit, vibration]);
-  const fillProps = useAnimatedProps(() => ({ y: 194 - 164 * charge.value, height: 164 * charge.value }));
-  const ringProps = useAnimatedProps(() => ({ strokeDashoffset: circumference * (1 - charge.value) }));
-  const boltStyle = useAnimatedStyle(() => ({ opacity: .35 + charge.value * .65, transform: [{ translateX: vibration.value * charge.value * 1.8 }, { rotate: `${vibration.value * charge.value * 4}deg` }, { scale: 1 + charge.value * .12 }] }));
-  const orbitStyle = useAnimatedStyle(() => ({ opacity: reduced ? 0 : charge.value * .8, transform: [{ rotate: `${orbit.value}deg` }] }));
+    phase.value = 0; vibration.value = 0;
+    if (!energized) return;
+    phase.value = withRepeat(withTiming(2 * Math.PI, { duration: 4200, easing: Easing.linear }), -1, false);
+    vibration.value = withRepeat(withSequence(withTiming(1, { duration: 65 }), withTiming(-1, { duration: 65 }), withTiming(1, { duration: 65 }), withTiming(0, { duration: 65 }), withTiming(0, { duration: 1500 })), -1, false);
+    return () => { cancelAnimation(phase); cancelAnimation(vibration); };
+  }, [energized, phase, vibration]);
+  const waterProps = useAnimatedProps(() => {
+    const y = 198 - 172 * charge.value;
+    const wave = reduced ? 0 : Math.sin(phase.value) * 4;
+    return { d: `M26 ${y} C55 ${y - 5 + wave} 82 ${y + 5 + wave} 112 ${y} S169 ${y - 5 - wave} 198 ${y} V200 H26 Z` };
+  });
+  const ringProps = useAnimatedProps(() => ({ strokeDashoffset: circumference * (1 - charge.value), strokeOpacity: charge.value > 0 ? 1 : 0 }));
+  const boltStyle = useAnimatedStyle(() => ({ opacity: .4 + charge.value * .6, transform: [{ translateX: vibration.value * charge.value * 2 }, { rotate: `${vibration.value * charge.value * 4}deg` }, { scale: 1 + charge.value * .1 }] }));
+  const sparksStyle = useAnimatedStyle(() => ({ opacity: reduced ? 0 : Math.abs(vibration.value) * charge.value, transform: [{ rotate: `${phase.value * 540 / Math.PI}deg` }] }));
   const distance = activities.reduce((sum, a) => sum + a.distanceM, 0);
-  const hasElevation = activities.length > 0 && activities.every(a => a.elevationGainM != null);
-  const elevation = activities.reduce((sum, a) => sum + (a.elevationGainM ?? 0), 0);
-  return <View style={{ gap: 14, alignItems: "center" }}>
-    <View accessible accessibilityLabel={`${clubDuration(seconds)} selected moving time. ${Math.round(fraction * 100)} percent of synced moving time selected.`} style={{ width: 224, height: 224, alignItems: "center", justifyContent: "center" }}>
-      <Svg width={224} height={224} viewBox="0 0 224 224" style={StyleSheet.absoluteFill}>
+  const metric = (icon: AppIconName, label: string, value: string) => <View accessible accessibilityLabel={`${label}: ${value}`} style={{ alignItems: "center", gap: 3 }}>
+    <AppIcon name={icon} size={20} color={c.fieldTeal}/><Text style={[textStyle("label"), { color: c.ink, textAlign: "center" }]}>{value}</Text><Text style={[textStyle("caption"), { color: c.muted }]}>{label}</Text>
+  </View>;
+  return <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4 }}>
+    <View style={{ flex: 1, gap: 20 }}>{metric("running", "Distance", formatVolume("running", distance, seconds, units))}{metric("time", "Time", clubDuration(seconds))}</View>
+    <View accessible accessibilityLabel="Selected activity energy" style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      <Svg width={size} height={size} viewBox="0 0 224 224" style={StyleSheet.absoluteFill}>
         <Defs>
-          <LinearGradient id={`${id}fill`} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0" stopColor={c.tennis} stopOpacity=".08"/><Stop offset=".5" stopColor={c.tennis} stopOpacity=".18"/><Stop offset="1" stopColor={c.tennis} stopOpacity=".3"/></LinearGradient>
-          <LinearGradient id={`${id}ring`} x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0" stopColor={c.tennis}/><Stop offset="1" stopColor={c.fieldTeal}/></LinearGradient>
+          <LinearGradient id={`${id}fill`} x1="0%" y1="0%" x2="0%" y2="100%"><Stop offset="0" stopColor="#dca21c"/><Stop offset=".45" stopColor="#ffe178"/><Stop offset="1" stopColor="#fffdf0"/></LinearGradient>
           <ClipPath id={`${id}clip`}><Circle cx="112" cy="112" r="82"/></ClipPath>
         </Defs>
-        <Circle cx="112" cy="112" r="94" fill="none" stroke={c.line} strokeWidth="8"/>
-        <Ring cx="112" cy="112" r="94" fill="none" stroke={`url(#${id}ring)`} strokeWidth="8" strokeLinecap="round" strokeDasharray={`${circumference} ${circumference}`} rotation="-90" origin="112,112" animatedProps={ringProps}/>
+        <Circle cx="112" cy="112" r="94" fill="none" stroke={c.line} strokeWidth="6"/>
+        <Ring cx="112" cy="112" r="94" fill="none" stroke={c.tennis} strokeWidth="6" strokeLinecap="round" strokeDasharray={`${circumference} ${circumference}`} rotation="-90" origin="112,112" animatedProps={ringProps}/>
         <Circle cx="112" cy="112" r="82" fill={c.card}/>
-        <Fill x="30" width="164" clipPath={`url(#${id}clip)`} fill={`url(#${id}fill)`} animatedProps={fillProps}/>
+        <Water clipPath={`url(#${id}clip)`} fill={`url(#${id}fill)`} animatedProps={waterProps}/>
       </Svg>
-      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, orbitStyle]}>
-        <Svg width={224} height={224} viewBox="0 0 224 224"><Path d="M107 8l-5 9h6l-2 8 12-13h-7l4-6z" fill={c.tennis}/><Circle cx="112" cy="209" r="3" fill={c.tennis}/></Svg>
+      <Animated.View pointerEvents="none" style={[{ position: "absolute", width: size * .65, height: size * .65 }, sparksStyle]}>
+        <Svg width="100%" height="100%" viewBox="0 0 100 100"><Path d="M23 9l-8 15h9l-3 12 15-20h-10l4-10z M77 65l-9 16h9l-3 12 15-20h-10l4-10z" fill={c.tennis}/></Svg>
       </Animated.View>
-      <Animated.View style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.tennis, alignItems: "center", justifyContent: "center" }, boltStyle]}><Svg width={32} height={36} viewBox="0 0 32 36"><Path d="M19 2L5 21h10l-2 13 15-21H18z" fill={c.textOnAction}/></Svg></Animated.View>
-      <Text style={[textStyle("display"), { color: c.ink, marginTop: 6 }]}>{clubDuration(seconds)}</Text>
-      <Text style={[textStyle("caption"), { color: c.ink }]}>moving time</Text>
+      <Animated.View style={boltStyle}><Svg width={size * .29} height={size * .38} viewBox="0 0 32 36"><Path d="M19 2L5 21h10l-2 13 15-21H18z" fill={c.tennis} stroke="#dca21c" strokeWidth=".5"/></Svg></Animated.View>
     </View>
-    <Text style={[textStyle("caption"), { color: c.muted }]}>{Math.round(fraction * 100)}% of synced moving time selected</Text>
-    <View style={{ flexDirection: "row", width: "100%", justifyContent: "space-around", gap: 12 }}>
-      {[
-        ["Distance", formatVolume("running", distance, seconds, units)],
-        ["Activities", `${activities.length}`],
-        ["Elevation", !hasElevation ? "—" : units === "us" ? `${Math.round(elevation * 3.28084)} ft` : `${Math.round(elevation)} m`],
-      ].map(([label, value]) => <View key={label} style={{ alignItems: "center", flex: 1, gap: 3 }}><Text style={[textStyle("label"), { color: c.ink }]}>{value}</Text><Text style={[textStyle("caption"), { color: c.muted }]}>{label}</Text></View>)}
-    </View>
+    <View style={{ flex: 1, gap: 20 }}>{metric("layers", "Activities", `${activities.length}`)}{metric("scoring", "Effort score", effortDelta === null ? "—" : `${effortDelta >= 0 ? "+" : ""}${effortDelta.toLocaleString("en-US", { maximumFractionDigits: 1 })}`)}</View>
   </View>;
 }

@@ -558,9 +558,16 @@ it("runs debug sync through review, actual application, full-screen combo and ac
   expect(screen.props.moment).toBeNull();
   expect(screen.props.debug).toBe(true);
   const ids = screen.props.receipt.activities.map((a: { id: string }) => a.id);
+  const beforePreview = api.state;
+  const beforeRating = api.state!.ratings.find(r => r.sport === "running")!.verifiedElo;
+  const predictedDelta = screen.props.scoreDelta(ids);
+  expect(screen.props.scoreDelta([])).toBe(0);
+  expect(api.state).toBe(beforePreview);
+  expect(predictedDelta).toBeTypeOf("number");
   await act(async () => { screen.props.onComplete(ids); await flush(); });
   screen = renderer.root.findByType("SyncReview" as never);
   expect(screen.props.receipt).toBeNull();
+  expect(api.state!.ratings.find(r => r.sport === "running")!.verifiedElo - beforeRating).toBe(predictedDelta);
   expect(screen.props.moment.plan.overtakenIds.length).toBeGreaterThanOrEqual(2);
   expect(api.state?.activities.filter(a => ids.includes(a.id))).toHaveLength(2);
   await act(async () => { screen.props.onAcknowledge(); });
