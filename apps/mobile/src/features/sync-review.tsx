@@ -124,11 +124,11 @@ const c=useThemeColors();
     <ActivityRoute activity={activity} units={state.units}/>
     <Text style={[textStyle("heading"), { color: c.ink }]}>{formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units)} · {clubDuration(activity.movingSec)}</Text>
     <Text style={[textStyle("body"), { color: c.ink }]}>{formatAppDateTime(activity.startedAt, { year: true })}</Text>
-    <ActivityMetricBars activity={activity} history={[...receipt.activities, ...state.activities]} units={state.units}/>
+    <ActivityMetrics activity={activity} units={state.units}/>
   </View>;
   return <View style={{ gap: 20, flex: 1 }}>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.tennis, alignItems: "center", justifyContent: "center" }}><Text style={[textStyle("heading"), { color: c.ink }]}>✓</Text></View>
+      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.tennis, alignItems: "center", justifyContent: "center" }}><Text style={[textStyle("heading"), { color: c.textOnAction }]}>✓</Text></View>
       <Text accessibilityRole="header" style={[textStyle("heading"), { color: c.ink }]}>Activities synced</Text>
     </View>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
@@ -143,7 +143,7 @@ const c=useThemeColors();
           hitSlop={8}
           style={({ pressed }) => [{ opacity: saving || selected.length === activities.length ? 0.35 : pressed ? 0.6 : 1 }]}
         >
-          <Text style={{ ...textStyle("label"), color: c.ink, textDecorationLine: "none" }}>Select all</Text>
+          <Text style={{ ...textStyle("label"), color: c.ink }}>Select all</Text>
         </Pressable>
         <Text style={{ ...textStyle("caption"), color: c.muted }}>·</Text>
         <Pressable
@@ -155,7 +155,7 @@ const c=useThemeColors();
           hitSlop={8}
           style={({ pressed }) => [{ opacity: saving || selected.length === 0 ? 0.35 : pressed ? 0.6 : 1 }]}
         >
-          <Text style={{ ...textStyle("label"), color: c.ink, textDecorationLine: "none" }}>Deselect all</Text>
+          <Text style={{ ...textStyle("label"), color: c.ink }}>Deselect all</Text>
         </Pressable>
       </View>
     </View>
@@ -279,7 +279,7 @@ const c=useThemeColors();
                   </Pressable>
                 </View>
 
-                <ActivityMetricBars activity={a} history={[...receipt.activities, ...state.activities]} units={state.units}/>
+                <ActivityMetrics activity={a} units={state.units}/>
               </View>
             </View>
           );
@@ -310,7 +310,7 @@ const c=useThemeColors();
           onResponderMove={e => { if (saving) return; dragDistance.current = Math.max(0, e.nativeEvent.pageX - dragStart.current); updateSwipe(dragDistance.current); }}
           onResponderRelease={e => { if (saving) return; const distance = Math.max(0, e.nativeEvent.pageX - dragStart.current); dragging.current = false; if (distance / travel >= .85) finish(); else setProgress(0); }}
           onResponderTerminate={() => { dragging.current = false; if (!saving) setProgress(0); }}>
-          <View pointerEvents="none" style={{ position: "absolute", top: 5, left: 4, width: 56, height: 56, borderRadius: 28, backgroundColor: c.tennis, justifyContent: "center", alignItems: "center", transform: [{ translateX: progress * travel }] }}>{saving ? <ActivityIndicator color={c.ink} /> : <Text style={{ ...textStyle("heading"), color: c.ink }}>→</Text>}</View>
+          <View pointerEvents="none" style={{ position: "absolute", top: 5, left: 4, width: 56, height: 56, borderRadius: 28, backgroundColor: c.tennis, justifyContent: "center", alignItems: "center", transform: [{ translateX: progress * travel }] }}>{saving ? <ActivityIndicator color={c.textOnAction} /> : <Text style={{ ...textStyle("heading"), color: c.textOnAction }}>→</Text>}</View>
         </View>
       </View>
     </View>
@@ -465,12 +465,12 @@ const c=useThemeColors();
   );
 }
 
-function ActivityMetricBars({ activity, history, units }: { activity: SyncReviewReceipt["activities"][number]; history: CompeteState["activities"]; units: CompeteState["units"] }) {
+function ActivityMetrics({ activity, units }: { activity: SyncReviewReceipt["activities"][number]; units: CompeteState["units"] }) {
 const c=useThemeColors();
 
   return <View style={{ gap: 10 }}>
     <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16, paddingVertical: 6 }}>
-    {syncReviewMetrics(activity, history, units).map(metric => <View key={metric.id} accessible accessibilityLabel={`${metric.label}: ${metric.valueLabel}. ${metric.comparisonLabel}`} style={{ width: "47%", gap: 6 }}>
+    {syncReviewMetrics(activity, [], units).map(metric => <View key={metric.id} accessible accessibilityLabel={`${metric.label}: ${metric.valueLabel}`} style={{ width: "47%", gap: 6 }}>
       <Text style={{ ...textStyle("caption"), color: c.muted }}>{metric.label}</Text>
       <Text style={{ ...textStyle("label"), color: c.ink }}>{metric.valueLabel}</Text>
     </View>)}
