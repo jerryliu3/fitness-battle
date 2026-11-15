@@ -14,14 +14,13 @@ import { useCompetitionCourse } from "./use-competition-course";
 import { useFieldTimeline } from "./use-field-timeline";
 import { FieldTimeline } from "./field-timeline";
 import { CompetitionReplayModal } from "./competition-replay";
-import { RankAvatar } from "../ui/rank-symbol";
+import { StandingsList } from "./standings-list";
 import { AppText, textStyle } from "../ui/section";
 import { useFieldFlight } from "../ui/use-field-flight";
 import { FieldOverlayView, SlidingFieldPanel } from "../ui/field-overlay-motion";
 import { PortraitField } from "../ui/portrait-field";
 import {
   coursePositionLeaders,
-  standingsBar,
   orderedArenaLanes,
   competitionQueue,
   createFieldOverlayHold,
@@ -34,7 +33,6 @@ import {
   buildArenaModel,
   initialsFromName,
   ordinalPlace,
-  rankSymbolForScore,
   shellTabFromPath,
   weeklyBoard,
   type CourseDistanceTarget,
@@ -680,78 +678,17 @@ const f=useFocusStyles();
       {!standingsOnly && !expanded && !queued && <FieldTimeline timeline={timeline} />}
       {!expanded ? <AthleteProfileSheet athlete={profileAthlete} onClose={() => setProfileAthlete(null)} /> : null}
       {!queued && !persistent && <View style={[f.section, { paddingTop: 16 }]}>
-        <View style={{ gap: 10 }}>
-          {ranked.map((lane) => {
-            if (hiddenIds.includes(lane.id)) return <View key={lane.id} style={{ minHeight: 72 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />;
-            const rank = place(lane.values[2]);
-            const bar = standingsBar(lane.values[2], leaderValue, rank);
-            const elo = scores.find((row) => row.id === lane.id)?.elo;
-            return (
-              <Animated.View key={lane.id} layout={reduceMotion ? undefined : LinearTransition.duration(240)}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${lane.name}, place ${rank}, ${lane.values[2].toFixed(arena.unit === "pts" ? 1 : 2)} ${arena.unit}`}
-                onPress={() => onFocusAthlete ? onFocusAthlete(lane.id) : selectAthlete(lane.id)}
-                style={[
-                  f.row,
-                  {
-                    paddingVertical: 10,
-                    paddingHorizontal: 10,
-                    borderRadius: 12,
-                    backgroundColor: lane.you ? c.soft : "transparent",
-                  },
-                ]}
-              >
-                <Text style={[textStyle("label"), { width: 22 }]}>{rank}</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel={`Open ${lane.name}'s profile`} onPress={event => { event.stopPropagation(); openProfile(lane); }} hitSlop={4} style={{ overflow: "visible" }}>
-                <RankAvatar
-                  rank={rankSymbolForScore(elo)}
-                  src={lane.avatarUrl}
-                  name={lane.name}
-                  size={56}
-                />
-                </Pressable>
-                <View style={[f.grow, { gap: 6 }]}>
-                  <View style={[f.row, { alignItems: "center", justifyContent: "space-between" }]}>
-                    <View style={{ flex: 1, gap: 2, marginRight: 12 }}>
-                      <AppText role="label" numberOfLines={1}>
-                        {lane.name}
-                      </AppText>
-                      <Text style={[textStyle("caption"), { color: c.muted }]}>
-                        {elo ?? "—"} effort score
-                      </Text>
-                    </View>
-                    <View style={{ alignItems: "flex-end" }}>
-                      <Text style={{ ...textStyle("heading"), color: c.ink }}>
-                        {lane.values[2].toFixed(arena.unit === "pts" ? 1 : 2)} {arena.unit}
-                      </Text>
-                    </View>
-                  </View>
-                  {/* Visual proportion bar aligned underneath the user's name */}
-                  <View
-                    style={{
-                      height: 6,
-                      borderRadius: 999,
-                      backgroundColor: c.line,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <Animated.View layout={reduceMotion ? undefined : LinearTransition.duration(180)}
-                      style={{
-                        width: `${bar.percent}%`,
-                        height: "100%",
-                        borderRadius: 999,
-                        backgroundColor:
-                          bar.color,
-                      }}
-                    />
-                  </View>
-                </View>
-              </Pressable>
-              </Animated.View>
-            );
-          })}
-        </View>
+        <StandingsList
+          ranked={ranked.map((lane) => ({ ...lane, value: lane.values[2] }))}
+          hiddenIds={hiddenIds}
+          unit={arena.unit}
+          scores={scores}
+          onSelectAthlete={(lane) => onFocusAthlete ? onFocusAthlete(lane.id) : selectAthlete(lane.id)}
+          onOpenProfile={(lane) => {
+            const target = ranked.find((item) => item.id === lane.id);
+            if (target) openProfile(target);
+          }}
+        />
       </View>}
     </View>
   );

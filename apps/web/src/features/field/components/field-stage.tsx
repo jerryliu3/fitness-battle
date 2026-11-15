@@ -2,6 +2,7 @@
 import { useCompetitionTimeline } from "@/features/arena/competition-timeline-context";
 import { Sheet } from "@/ui/sheet";
 import { FieldViewSwitcher } from "./field-view-switcher";
+import { StandingsList } from "./standings-list";
 import { CompeteTimeSeriesChart } from "./compete-time-series-chart";
 import { GeographicCourse } from "@/features/course/geographic-course";
 import { useCompetitionCourse } from "@/features/course/use-competition-course";
@@ -12,12 +13,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { playCue } from "@/lib/haptics";
 import { usePathname } from "next/navigation";
 import {
-  standingsBar,
   fieldFlightDuration, fieldFlightEase,
   arenaFieldHigh,
   type CourseDistanceTarget,
   type CompeteState,
-  effortRankBadge,
   rankSymbolForScore,
   fieldDefaultSpan,
   clampCourseCenter,
@@ -728,90 +727,25 @@ export function FieldStage({
             ) : null}
 
             <p className="fb-note">Places use exact {unit === "pts" ? "effort" : "distance"} totals; displayed values are rounded.</p>
-            <div className="focus-standings-bars" role="list">
-              {ranked.map((lane) => {
-                const r = placeOf(lane.value);
-                const bar = standingsBar(lane.value, leaderValue, r);
-                const elo = scoreMap[lane.id];
-                return (
-                  <div
-                    key={lane.id}
-                    role="listitem"
-                    className={
-                      lane.you
-                        ? "focus-standing-bar-row is-you"
-                        : "focus-standing-bar-row"
-                    }
-                    onClick={() => onFocusAthlete ? onFocusAthlete(lane.id) : toggleSelect(lane.id)}
-                    tabIndex={0}
-                    onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); if (onFocusAthlete) onFocusAthlete(lane.id); else toggleSelect(lane.id); } }}
-                  >
-                    <span className="focus-standing-rank">{r}</span>
-                    <button type="button" aria-label={`Open ${lane.name}'s profile`} onClick={event => { event.stopPropagation(); setProfileLane(lane); }} style={{ border: 0, padding: 0, background: "transparent", cursor: "pointer", overflow: "visible" }}>
-                    <RankAvatar
-                      rank={rankSymbolForScore(elo)}
-                      src={lane.avatarUrl}
-                      name={lane.name}
-                      size={52}
-                      fallback={
-                        <svg
-                          className="focus-standing-avatar"
-                          width="26"
-                          height="36"
-                          viewBox="-40 -50 80 100"
-                          aria-hidden="true"
-                        >
-                          <PolishedRacer
-                            x={0}
-                            y={0}
-                            you={Boolean(lane.you)}
-                            gold={r === 1}
-                            showWake={false}
-                          />
-                        </svg>
-                      }
-                    />
-                    </button>
-                    <div className="focus-standing-bar-content">
-                      <div className="focus-standing-bar-top">
-                        <strong className="focus-standing-name">
-                          {lane.name}
-                          {elo != null
-                            ? ` ${effortRankBadge(elo).symbol}`
-                            : ""}
-                        </strong>
-                        <div className="focus-standing-metrics">
-                          <strong>
-                            {lane.value.toFixed(unit === "pts" ? 1 : 2)} {unit}
-                          </strong>
-                          <small>{elo ?? "—"} effort score</small>
-                        </div>
-                      </div>
-                      <div className="focus-standing-bar-track" aria-hidden="true">
-                        <div
-                          className={
-                            r === 1
-                              ? "focus-standing-bar-fill is-leader"
-                              : lane.you
-                                ? "focus-standing-bar-fill is-you"
-                                : "focus-standing-bar-fill"
-                          }
-                          style={{ width: `${bar.percent}%`, background: bar.color }}
-                        />
-                      </div>
-                    </div>
+            <StandingsList
+              ranked={ranked}
+              unit={unit}
+              scores={scoreMap}
+              onSelectAthlete={(lane) =>
+                onFocusAthlete ? onFocusAthlete(lane.id) : toggleSelect(lane.id)
+              }
+              onOpenProfile={(lane) => setProfileLane(lane)}
+              footer={
+                ghost ? (
+                  <div className="club-past-self">
+                    <span>Past you · unranked</span>
+                    <strong>
+                      {valueAt(ghost, time).toFixed(1)} {unit}
+                    </strong>
                   </div>
-                );
-              })}
-              {ghost ? (
-                <div className="club-past-self">
-                  <span>Past you · unranked</span>
-                  <strong>
-                    {valueAt(ghost, time).toFixed(1)} {unit}
-                  </strong>
-                </div>
-              ) : null}
-            </div>
+                ) : null
+              }
+            />
           </div>
         ) : null}
       </div>

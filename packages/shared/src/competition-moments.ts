@@ -1,9 +1,9 @@
 import { fieldDefaultSpan } from "./field-course";
-import { arenaBaselineStorageKey, readArenaBaseline, reconcileArenaOvertake, serializeArenaBaseline, type ArenaOvertakePlan, type ArenaSceneLane } from "./arena-view";
+import { arenaBaselineStorageKey, ordinalPlace, readArenaBaseline, reconcileArenaOvertake, serializeArenaBaseline, type ArenaOvertakePlan, type ArenaSceneLane } from "./arena-view";
 import { buildArenaModel, competePeriodWindow } from "./phone-views";
 import { competeNow, type Action } from "./compete/engine";
 import { initialsFromName } from "./compete/track";
-import { competitionTrack, type CompeteState, type SportId } from "./compete/sports";
+import { competitionTrack, sportById, type CompeteState, type SportId } from "./compete/sports";
 
 export interface CompetitionMoment {
   id: string;
@@ -117,10 +117,132 @@ export function competitionMomentScene(moment: CompetitionMoment, progress: numb
   const start = Math.max(0, Math.min(ownIndex - 1, standings.length - 3));
   const rival = frame.nearestId ? frame.values[frame.nearestId] : frame.youValue;
   const replayFocusIds = [moment.plan.youId, ...(frame.nearestId ? [frame.nearestId] : [])];
-  return { ...frame, lanes, replayFocusIds, standings: standings.slice(start, start + 3), view: {
+  return { ...frame, lanes, replayFocusIds, ranked: standings, standings: standings.slice(start, start + 3), view: {
     center: (frame.youValue+rival)/2,
     span: Math.max(fieldDefaultSpan(moment.unit) * (1 - frame.focus * .18),Math.abs(frame.youValue-rival)*3),
   } };
+}
+
+export interface CompetitionMomentSummary {
+  sportLabel: string;
+  badge: string;
+  headline: string;
+  detail: string;
+  tone: "gain" | "steady" | "passed";
+  overtakeCount: number;
+  overtakeLabel: string | null;
+}
+
+/** Concise progress summary for the top replay chip, updating live as crossings occur. */
+export function competitionMomentProgressSummary(
+  moment: CompetitionMoment,
+  frame: ReturnType<typeof photoFinishFrame>,
+): CompetitionMomentSummary {
+  const sportName = sportById(moment.sport).name;
+  const sportLabel = `${sportName} · Replay`;
+  const badge = `#${frame.rank}`;
+  const decimals = moment.unit === "pts" ? 0 : 1;
+  const delta = Math.max(0, moment.plan.youAfter - moment.plan.youBefore);
+  const deltaText = `+${delta.toFixed(decimals)} ${moment.unit} added`;
+  const passedBy = !moment.plan.hasOvertake && Boolean(moment.plan.passedByIds?.length);
+  const placesUp = Math.max(0, moment.plan.rankBefore - frame.rank);
+  const placesDown = Math.max(0, frame.rank - moment.plan.rankBefore);
+
+  if (moment.plan.hasOvertake) {
+    const detail =
+      frame.count === 0 && !frame.done
+        ? `Starting in ${ordinalPlace(moment.plan.rankBefore)}`
+        : placesUp > 0
+          ? `You moved into ${ordinalPlace(frame.rank)} · ↑${placesUp} ${placesUp === 1 ? "spot" : "spots"}`
+          : `You moved into ${ordinalPlace(frame.rank)}`;
+    const overtakeCount = moment.plan.overtakenIds.length > 0 ? frame.count : 0;
+    const overtakeLabel = moment.plan.overtakenIds.length > 0
+      ? `${overtakeCount} ${overtakeCount === 1 ? "overtake" : "overtakes"}`
+      : null;
+    return {
+      sportLabel,
+      badge,
+      headline: delta > 0 ? deltaText : `Moved into ${ordinalPlace(frame.rank)}`,
+      detail,
+      tone: "gain",
+      overtakeCount,
+      overtakeLabel,
+    };
+  }
+
+  if (passedBy) {
+    const names = moment.plan.passedByNames?.length
+      ? `${moment.plan.passedByNames.join(", ")} moved ahead`
+      : "Field standings updated";
+    return {
+      sportLabel,
+      badge,
+      headline: frame.count > 0 || frame.done ? `Moved to ${ordinalPlace(frame.rank)}` : `In ${ordinalPlace(moment.plan.rankBefore)}`,
+      detail: (frame.count > 0 || frame.done) && placesDown > 0
+        ? `Down ${placesDown} ${placesDown === 1 ? "spot" : "spots"} · ${names}`
+        : names,
+      tone: "passed",
+      overtakeCount: 0,
+      overtakeLabel: null,
+    };
+  }
+
+  return {
+    sportLabel,
+    badge,
+    headline: delta > 0 ? deltaText : `${sportName} update`,
+    detail: `Holding ${ordinalPlace(frame.rank)}`,
+    tone: "steady",
+    overtakeCount: 0,
+    overtakeLabel: null,
+  };
+}
+
+/** Feed row representing this moment when the full field activity ledger is unavailable (local preview). */
+export function competitionMomentFeedEntry(
+  moment: CompetitionMoment,
+  youName: string,
+  youAvatarUrl: string | null = null,
+  fallbackAt: string = new Date().toISOString(),
+) {
+  const decimals = moment.unit === "pts" ? 0 : 1;
+  const delta = Math.max(0, moment.plan.youAfter - moment.plan.youBefore).toLocaleString("en-US", { maximumFractionDigits: decimals });
+  const laneById = new Map(moment.lanes.map(lane => [lane.id, lane]));
+  const passedBy = !moment.plan.hasOvertake && Boolean(moment.plan.passedByIds?.length);
+  if (passedBy) {
+    const rivalId = moment.plan.passedByIds![0]!;
+    const rivalLane = laneById.get(rivalId);
+    const names = moment.plan.passedByNames?.length ? moment.plan.passedByNames : [rivalLane?.name ?? "A rival"];
+    return {
+      id: `moment:${moment.id}`,
+      at: rivalLane?.lastUpdated ?? fallbackAt,
+      simulated: true,
+      actorId: rivalId,
+      actorName: rivalLane?.name ?? names[0]!,
+      avatarUrl: rivalLane?.avatarUrl ?? null,
+      title: `${names.join(" and ")} overtook ${youName}!`,
+      detail: `Place ${moment.plan.rankBefore} → ${moment.plan.rankAfter}`,
+      movement: true,
+    };
+  }
+  const overtakenNames = moment.plan.overtakenIds.map(id => laneById.get(id)?.name).filter((name): name is string => Boolean(name));
+  const youLane = laneById.get(moment.plan.youId);
+  const moved = moment.plan.rankAfter < moment.plan.rankBefore;
+  return {
+    id: `moment:${moment.id}`,
+    at: youLane?.lastUpdated ?? fallbackAt,
+    simulated: true,
+    actorId: moment.plan.youId,
+    actorName: youName,
+    avatarUrl: youAvatarUrl,
+    title: moment.plan.hasOvertake && overtakenNames.length
+      ? `${youName} overtook ${overtakenNames.join(" and ")}!`
+      : `${youName} logged +${delta} ${moment.unit}`,
+    detail: moved
+      ? `+${delta} ${moment.unit} · Place ${moment.plan.rankBefore} → ${moment.plan.rankAfter}`
+      : `Place ${moment.plan.rankAfter}`,
+    movement: moment.plan.hasOvertake && moved,
+  };
 }
 
 /** Receipt computation always uses metric baselines; presentation honors units. */
