@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { freshState } from "./compete/engine";
 import type { Activity, PeriodResult } from "./compete/sports";
-import { weekRecapPages, weekRecapTraining } from "./week-recap";
+import type { CompetitionReplay } from "./competition-replay";
+import { weekRecapNextRound, weekRecapPages, weekRecapPodium, weekRecapTraining } from "./week-recap";
 
 const result: PeriodResult = {
   id: "running-open", sport: "running", track: "open",
@@ -63,5 +64,76 @@ describe("week recap training", () => {
   });
   it("does not include manual sessions in GPS results", () => {
     expect(weekRecapTraining(stateWith([activity("2026-10-27T16:00:00Z")]), { ...result, track: "verified" }).available).toBe(false);
+  });
+  it("computes cumulative effort values across the week", () => {
+    const series = weekRecapTraining(stateWith([
+      activity("2026-10-26T16:00:00Z", 600),
+      activity("2026-10-28T16:00:00Z", 1200),
+    ]), result);
+    expect(series.hasEffort).toBe(true);
+    expect(series.effortValues[0]).toBeGreaterThan(0);
+    expect(series.effortValues[2]).toBeGreaterThan(series.effortValues[0]!);
+    expect(series.effortValues.at(-1)).toBeCloseTo(series.effortValues[2]!, 6);
+  });
+});
+
+describe("week recap next round", () => {
+  it("formats upcoming countdown and renewal state", () => {
+    const state = {
+      ...freshState(new Date("2026-11-02T00:00:00Z")),
+      demoNow: "2026-11-01T17:00:00Z",
+      enrollments: [{
+        sport: "running" as const,
+        waveStart: "2026-11-02T11:00:00Z",
+        weekEnd: "2026-11-09T05:00:00Z",
+        capacity: 8,
+        peerIds: [],
+        syntheticIds: [],
+        autoEnrollNext: true,
+      }],
+    };
+    const next = weekRecapNextRound(state, result);
+    expect(next.active).toBe(true);
+    expect(next.pill).toBe("Starts in 18h");
+    expect(next.subtext).toBe("Renews after this round.");
+  });
+  it("handles missing enrollment honestly", () => {
+    const next = weekRecapNextRound(stateWith([]), result);
+    expect(next.active).toBe(false);
+    expect(next.pill).toBe("Not joined");
+  });
+});
+
+describe("week recap podium", () => {
+  it("orders top 3 replay finishers as 2nd, 1st, 3rd and respects blocked ids", () => {
+    const replay: CompetitionReplay = {
+      sport: "running",
+      track: "open",
+      periodStart: result.periodStart,
+      periodEnd: result.periodEnd,
+      through: result.periodEnd,
+      scope: "field",
+      athletes: [
+        { id: "a", name: "Alice Park", you: true },
+        { id: "b", name: "Bob Chen", you: false },
+        { id: "c", name: "Carla Diaz", you: false },
+      ],
+      events: [
+        { id: "1", athleteId: "a", at: "2026-10-27T12:00:00Z", distanceM: 9656, movingSec: 3000, effort: 10.4 },
+        { id: "2", athleteId: "b", at: "2026-10-27T12:00:00Z", distanceM: 8047, movingSec: 2700, effort: 8.6 },
+        { id: "3", athleteId: "c", at: "2026-10-27T12:00:00Z", distanceM: 4828, movingSec: 1800, effort: 5.2 },
+      ],
+    };
+    const slots = weekRecapPodium(replay, { ...stateWith([]), name: "Alice Park", units: "us" }, result);
+    expect(slots.map(s => `${s.step}:${s.entry?.name}:${s.entry?.metricLabel}`))
+      .toEqual(["2:Bob Chen:5.0 mi", "1:Alice Park:6.0 mi", "3:Carla Diaz:3.0 mi"]);
+    const filtered = weekRecapPodium(replay, { ...stateWith([]), name: "Alice Park", units: "us" }, result, ["b"]);
+    expect(filtered.map(s => `${s.step}:${s.entry?.name}`)).toEqual(["2:Carla Diaz", "1:Alice Park"]);
+  });
+  it("renders a single centered podium when fieldSize is 1", () => {
+    const solo = weekRecapPodium(null, { ...stateWith([]), name: "Alice Park", units: "us" }, { ...result, place: 1, fieldSize: 1 });
+    expect(solo).toHaveLength(1);
+    expect(solo[0]?.step).toBe(1);
+    expect(solo[0]?.entry?.you).toBe(true);
   });
 });

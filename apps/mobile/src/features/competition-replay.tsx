@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Modal, Pressable, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import {
+  WEEK_RECAP_COLORS,
   orderedArenaLanes,
   coursePositionLeaders, competitionReplayDimension, nextCompetitionReplaySpeed, competitionReplayFrame, competitionReplayCaption, competitionReplayDate,
   competitionReplayTimeMs, competitionReplayCursorFromTimeMs, REPLAY_MINUTES_PER_REAL_SECOND_1X,
@@ -50,42 +51,36 @@ export function CompetitionReplayButton({
   initialFlat?: boolean;
   dimension?: "2d" | "3d" | "4d" | "graph";
   label?: string;
-  variant?: "button" | "inline";
+  variant?: "button" | "inline" | "link";
   secondary?: boolean;
 }) {
 const appearanceColors = useThemeColors();
 
   const [open, setOpen] = useState(false);
+  const openReplay = () => { void playCue("light"); setOpen(true); };
+  const compactVariant = variant !== "button";
+  const textLabel = label || (variant === "link" ? "Replay this round" : "View replay");
   return (
     <>
-      {variant === "inline" ? (
+      {compactVariant ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={label || "View replay"}
-          onPress={() => { void playCue("light"); setOpen(true); }}
+          accessibilityLabel={textLabel}
+          onPress={openReplay}
           style={({ pressed }) => [
-            {
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 6,
-              minHeight: 34,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 999,
-              backgroundColor: "rgba(20, 20, 19, 0.78)",
-              borderWidth: 1,
-              borderColor: "rgba(255, 255, 255, 0.2)",
-            },
+            variant === "link"
+              ? { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, minHeight: 44, paddingHorizontal: 14 }
+              : { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 34, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.78)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.2)" },
             pressed && { opacity: 0.75 },
           ]}
         >
-          <AppIcon name="replay" size={14} color={appearanceColors.white} />
-          <Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>
-            {label || "View replay"}
+          <AppIcon name="replay" size={variant === "link" ? 16 : 14} color={variant === "link" ? WEEK_RECAP_COLORS.text : appearanceColors.white} />
+          <Text style={[textStyle(variant === "link" ? "label" : "caption"), { color: variant === "link" ? WEEK_RECAP_COLORS.text : appearanceColors.white, opacity: variant === "link" ? 0.9 : 1 }]}>
+            {textLabel}
           </Text>
         </Pressable>
       ) : (
-        <FocusButton secondary={secondary} label={label} onPress={() => { void playCue("light"); setOpen(true); }} />
+        <FocusButton secondary={secondary} label={label} onPress={openReplay} />
       )}
       <CompetitionReplayModal open={open} state={state} selection={selection} initialFlat={initialFlat} dimension={dimension} onClose={() => setOpen(false)} />
     </>

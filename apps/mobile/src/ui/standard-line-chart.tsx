@@ -4,7 +4,7 @@ import { chartTextProps } from "./section";
 import { ChartScrubber, type ChartDatum } from "./chart-scrubber";
 import { useId, useState } from "react";
 import { Animated } from "react-native";
-import { Polyline, Line, Defs, ClipPath, Rect, G, Path, Circle } from "react-native-svg";
+import { Polyline, Line, Defs, ClipPath, LinearGradient, Stop, Rect, G, Path, Circle } from "react-native-svg";
 import { ChartSvg as Svg, ChartText as SvgText } from "./chart-text";
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
@@ -30,6 +30,9 @@ export interface StandardLineChartProps {
   onSelectIdx?: (index: number) => void;
   stroke?: string;
   height?: number;
+  showArea?: boolean;
+  showTrend?: boolean;
+  onSelectionChange?: (point: ChartDatum | undefined) => void;
   corridor?: {
     high: number[];
     low: number[];
@@ -38,7 +41,7 @@ export interface StandardLineChartProps {
   ariaLabel?: string;
 }
 
-export function StandardLineChart({ revealProgress, showAxes = true, showSummary = false, pointLabels, values, xLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, selectedIdx, height = 190, stroke: suppliedstroke, corridor, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
+export function StandardLineChart({ revealProgress, showAxes = true, showSummary = false, showArea = false, showTrend = true, onSelectionChange, pointLabels, values, xLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, selectedIdx, height = 190, stroke: suppliedstroke, corridor, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
 const c=useThemeColors();
 const stroke=suppliedstroke ?? c.tennis;
 
@@ -86,11 +89,17 @@ const stroke=suppliedstroke ?? c.tennis;
    dotBorderColor={c.card}
    isSelectedHollow={isActiveOutOfCorridor}
    label={ariaLabel ?? accessibilityLabel ?? "Daily trend"}
-   onSelectionChange={setScrubbedPoint}
+   onSelectionChange={(point) => { setScrubbedPoint(point); onSelectionChange?.(point); }}
    onSelect={id => onSelectIdx?.(Number(id))}
  >
  <Svg width="100%" height={height} viewBox={`0 0 340 ${height}`} preserveAspectRatio="none">
  <Defs>
+   {showArea && geo.areaPath ? (
+     <LinearGradient id={`${clipId}-area`} x1="0" y1="0" x2="0" y2="1">
+       <Stop offset="0" stopColor={stroke} stopOpacity={0.28} />
+       <Stop offset="1" stopColor={stroke} stopOpacity={0.02} />
+     </LinearGradient>
+   ) : null}
    {revealProgress && <ClipPath id={clipId}><AnimatedRect x={geo.xStart} y={0} height={height} width={revealProgress.interpolate({inputRange:[0,1],outputRange:[0,geo.xEnd-geo.xStart]})}/></ClipPath>}
    {activePoint && <>
      <ClipPath id={`${clipId}-left`}><Rect x={0} y={0} width={activePoint.x} height={height} /></ClipPath>
@@ -134,7 +143,8 @@ const stroke=suppliedstroke ?? c.tennis;
      </>
    ) : (
      <>
-       {!!geo.trendPolyline && (() => {
+       {showArea && geo.areaPath ? <Path d={geo.areaPath} fill={`url(#${clipId}-area)`} /> : null}
+       {showTrend && !!geo.trendPolyline && (() => {
          const avgLabel = trendLabelPosition(geo.trendPolyline, 340);
          return (
            <>
