@@ -123,7 +123,6 @@ export function normalizeCompeteIntent(
         ...base,
         activityId: raw.activityId,
         disposition: raw.disposition,
-        dispositionReason: raw.dispositionReason?.slice(0, 240),
         syncPresentation: raw.syncPresentation,
       };
     default:

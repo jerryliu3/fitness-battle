@@ -10,7 +10,7 @@ const now = "2026-10-21T12:00:00.000Z";
 
 describe("compete intents phase A", () => {
   it("classifies profile and enrollment actions", () => {
-    expect(isPhaseACompeteIntentAction({ type: "rename", name: "A" })).toBe(true);
+    expect(isPhaseACompeteIntentAction({ type: "rename" })).toBe(true);
     expect(isPhaseACompeteIntentAction({ type: "log-manual" })).toBe(false);
   });
 
