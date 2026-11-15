@@ -10,6 +10,7 @@ import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, MarkerVie
 import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, RACE_TRAIL_MIN_WIDTH_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { CourseOptions } from "./course-options";
+import { FieldFollowChip } from "./field-follow-chip";
 import { FieldOverlayView } from "./field-overlay-motion";
 import { AppText, textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
@@ -21,10 +22,11 @@ const isValidPose = (p?: CourseCameraPose | null): p is CourseCameraPose =>
   Boolean(p && p.center && Array.isArray(p.center) && (Math.abs(p.center[0]) >= 1e-6 || Math.abs(p.center[1]) >= 1e-6) && !Number.isNaN(p.center[0]) && !Number.isNaN(p.center[1]) && typeof p.zoom === "number" && p.zoom > 1);
 
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
-export default function CourseMap({ presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, onSnapshot, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, onChoose2D, onOptionsChange, overlaysHidden = false, distanceTarget }: {
+export default function CourseMap({ presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, mapFollowing, onFollowChipPress, followAthleteName, onReady, onSnapshot, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, onChoose2D, onOptionsChange, overlaysHidden = false, distanceTarget }: {
   presentationActive?: boolean;
   cardSessionKey?: string | number | boolean;
   initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
+  mapFollowing?: boolean; onFollowChipPress?: () => void; followAthleteName?: string;
   onReady?: () => void; onSnapshot?: (uri: string) => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null;
   hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; onChoose2D?: () => void; onOptionsChange?: (options: ReactNode | null) => void; overlaysHidden?: boolean;
 }) {
@@ -151,16 +153,37 @@ const appearanceColors = useThemeColors();
     toggleSpacing: () => setSpaced(value => !value),
     overview: () => { overviewHold.current = Boolean(replay); onFollowChange?.(false); controller.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); onFlatChange?.(true); },
   };
-  useEffect(() => {
-    if (!onOptionsChange) return;
-    onOptionsChange(<CourseOptions flat={flat} spaced={spaced}
+  const followChipPress = useRef(onFollowChipPress);
+  followChipPress.current = onFollowChipPress;
+  const courseOptionsMenu = (
+    <CourseOptions
+      flat={flat}
+      spaced={spaced}
       onReplay={onReplay ? () => optionsHandlers.current.onReplay?.() : undefined}
       onChoose2D={onChoose2D ? () => optionsHandlers.current.onChoose2D?.() : undefined}
       onToggleDimension={() => optionsHandlers.current.toggleDimension()}
       onToggleSpacing={() => optionsHandlers.current.toggleSpacing()}
-      onOverview={() => optionsHandlers.current.overview()} />);
+      onOverview={() => optionsHandlers.current.overview()}
+    />
+  );
+  const publishedOptions =
+    onFollowChipPress != null ? (
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <FieldFollowChip
+          following={mapFollowing ?? false}
+          athleteName={followAthleteName ?? "athlete"}
+          onPress={() => followChipPress.current?.()}
+        />
+        {courseOptionsMenu}
+      </View>
+    ) : (
+      courseOptionsMenu
+    );
+  useEffect(() => {
+    if (!onOptionsChange) return;
+    onOptionsChange(publishedOptions);
     return () => onOptionsChange(null);
-  }, [onOptionsChange, flat, spaced, Boolean(onReplay), Boolean(onChoose2D)]);
+  }, [onOptionsChange, flat, spaced, mapFollowing, followAthleteName, Boolean(onReplay), Boolean(onChoose2D), onFollowChipPress != null]);
   return <View style={{ flex: 1, minHeight: 0 }}>
     <MapView ref={mapRef} accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled={!onSnapshot} attributionEnabled={false}
       logoPosition={{ top: 8, right: 34 }} attributionPosition={{ top: 8, right: 8 }}
@@ -208,14 +231,7 @@ const appearanceColors = useThemeColors();
     {!onSnapshot ? <MapAttribution top={insets.top + 9} /> : null}
     {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), position: "absolute", left: 8, right: 8, bottom: controlsBottom + 136, padding: 12, borderRadius: 12, backgroundColor: appearanceColors.surfaceCard }}>{error}</Text> : null}
     {!onOptionsChange && optionsTop != null ? <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()} style={{ position: "absolute", top: optionsTop, right: 12 }}>
-      <CourseOptions
-        onReplay={onReplay} onChoose2D={onChoose2D}
-        flat={flat}
-        spaced={spaced}
-        onToggleDimension={() => { controller.dimension(flat ? "3d" : "2d", !(followAthlete && controller.following && scene.selected)); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && controller.following) focus(); }}
-        onToggleSpacing={() => setSpaced(value => !value)}
-        onOverview={() => { onFollowChange?.(false); controller.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); onFlatChange?.(true); }}
-      />
+      {publishedOptions}
     </FieldOverlayView> : null}
   </View>;
 }

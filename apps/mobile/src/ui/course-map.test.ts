@@ -270,7 +270,11 @@ it("publishes working course controls to the sheet and removes the map's duplica
   await act(async () => { renderer = create(createElement(CourseMap, {
     course: createRaceCourse("City", [[0, 0], [.02, 0]]), lanes: [], unit: "km", selectedId: "", focusRequest: 0, onSelect() {}, onChoose2D, onOptionsChange,
   })); });
-  const options = () => onOptionsChange.mock.calls.at(-1)![0];
+  const options = () => {
+    const published = onOptionsChange.mock.calls.at(-1)![0];
+    const children = Array.isArray(published.props.children) ? published.props.children : [published.props.children];
+    return children.find((child: { props?: { onToggleSpacing?: unknown } }) => child?.props?.onToggleSpacing) ?? published;
+  };
   expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Course options")).toBe(false);
   expect(options().props.spaced).toBe(true);
   await act(async () => options().props.onToggleSpacing());
