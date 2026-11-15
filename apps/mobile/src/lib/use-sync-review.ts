@@ -8,7 +8,6 @@ import {
 } from "react";
 import {
   competeNow,
-  competitionTrack,
   dayKey,
   changedTodaySync,
   changedSyncActivities,
@@ -172,20 +171,7 @@ export function useSyncReviewGate(
     const held = new Set(activities.map(a => a.id));
     return { ...next, activities: [...next.activities.filter(a => !held.has(a.id)), ...known.activities.filter(a => held.has(a.id))] };
   };
-  // Preview the same pending actions as confirmation without dispatching or writing.
-  const scoreDelta = (selected: readonly string[]) => {
-    const value = pending.current, before = current.current.state;
-    if (!value || value.receipt.preview || !before) return null;
-    const after = selectedSyncActions(value.actions, selected).reduce(reduceCompete, before);
-    const sports = new Set(value.receipt.activities.filter(a => selected.includes(a.id)).map(a => a.sport));
-    return before.ratings.filter(r => sports.has(r.sport)).reduce((sum, rating) => {
-      const next = after.ratings.find(r => r.sport === rating.sport)!;
-      const key = competitionTrack(rating.sport) === "verified" ? "verifiedElo" : "openElo";
-      return sum + next[key] - rating[key];
-    }, 0);
-  };
   return {
-    scoreDelta,
     dispatch,
     stage,
     holdRemote,

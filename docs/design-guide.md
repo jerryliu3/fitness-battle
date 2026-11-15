@@ -1142,10 +1142,12 @@ Sync review uses a compact activity carousel with three icon metrics (distance,
 time, heart rate), four selected totals flanking an energy core, and a single
 “Swipe to save” action. The core contains a yellow bolt, a gently waving gold to
 pale fill, and nearby sparks during charge pulses; Reduced Motion stays still.
-The score total previews the existing confirmation reducer's actual Effort Score
-change across the selected sports' competition tracks, without dispatching or
-writing. Charge still represents selected synced moving time pending a personal
-volume benchmark decision. Compact screens and large accessibility text retain
+The effort total sums the selected activities' existing activityEffort values;
+it is labeled Effort and does not claim a persistent Effort Score award. Charge
+compares selected moving seconds with the nearest-rank 90th percentile of active
+daily moving time across the previous 30 completed Eastern days, across sports.
+Exclude receipt activities and uncounted history. Use 60 minutes until seven
+active days are available; cap the visual at full without capping displayed totals. Compact screens and large accessibility text retain
 scrolling as a fallback. Activity details opens an edge-to-edge route with the
 shared material back button and Compete sheet; returning preserves selection
 and the carousel position. Hosted map controls reserve space for native overlays.

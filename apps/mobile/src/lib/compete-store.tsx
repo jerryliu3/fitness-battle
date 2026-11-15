@@ -1180,7 +1180,6 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             key={accountRef.current ?? "guest"}
             debug={debugActive}
             receipt={syncReview.receipt}
-            scoreDelta={syncReview.scoreDelta}
             moment={experience.moment}
             remaining={experience.remaining}
             onAcknowledge={() => { experience.acknowledge(); if (debugActive && experience.remaining <= 1) resetDebugState(); }}

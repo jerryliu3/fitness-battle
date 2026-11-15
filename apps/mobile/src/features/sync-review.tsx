@@ -18,7 +18,7 @@ import {
   type ScrollViewInstance,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { APP_TIMEZONE, syncReviewMetrics, clubDuration, formatAppDateTime, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
+import { APP_TIMEZONE, competeNow, syncChargeBenchmark, syncReviewMetrics, clubDuration, formatAppDateTime, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { AppIcon, type AppIconName } from "../ui/app-icon";
 import { MaterialBack } from "../ui/material-back";
 import { CompeteSheet } from "../ui/compete-sheet";
@@ -30,18 +30,17 @@ import { ScreenFade } from "../ui/screen-fade";
 import { CompetitionMoment } from "./competition-moment";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 
-export function SyncReview({ receipt, state, moment, debug = false, remaining = 0, onComplete, scoreDelta, onAcknowledge = () => {} }: {
+export function SyncReview({ receipt, state, moment, debug = false, remaining = 0, onComplete, onAcknowledge = () => {} }: {
   receipt: SyncReviewReceipt | null; state: CompeteState; debug?: boolean; moment?: Moment | null; remaining?: number;
-  scoreDelta?: (selected: readonly string[]) => number | null;
   onComplete: (selected?: readonly string[], quiet?: boolean) => unknown; onAcknowledge?: () => void;
 }) {
   const reduced = useReducedMotion();
   const close = () => { if (receipt) onComplete(undefined, true); };
   return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "fade"} onRequestClose={close}>
-    <SafeAreaProvider><ScreenFade identity={receipt ? `receipt:${receipt.account}:${receipt.day}` : `moment:${moment?.id}`}>{!receipt && moment ? <CompetitionMoment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete} scoreDelta={scoreDelta}/> : null}</ScreenFade></SafeAreaProvider>
+    <SafeAreaProvider><ScreenFade identity={receipt ? `receipt:${receipt.account}:${receipt.day}` : `moment:${moment?.id}`}>{!receipt && moment ? <CompetitionMoment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete}/> : null}</ScreenFade></SafeAreaProvider>
   </Modal>;
 }
-function Review({ receipt, state, onComplete, scoreDelta }: { scoreDelta?: (selected: readonly string[]) => number | null; receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {
+function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {
 const c=useThemeColors();
 
   const windowDimensions = useWindowDimensions();
@@ -62,7 +61,7 @@ const c=useThemeColors();
     if (saveTimer.current) globalThis.clearTimeout(saveTimer.current);
   }, []);
   const activities = receipt.activities, selected = activities.filter(a => !excluded.includes(a.id));
-  const effortDelta = useMemo(() => scoreDelta?.(selected.map(a => a.id)) ?? null, [scoreDelta, activities, excluded, state]);
+  const benchmarkSeconds = useMemo(() => syncChargeBenchmark(state.activities, activities, competeNow(state)), [state, activities]);
   const detent = useRef(0);
   // Each detent plays at most once per gesture, including threshold oscillation.
   const updateSwipe = (distance: number) => {
@@ -281,7 +280,7 @@ const c=useThemeColors();
         }}
       />
     </View>
-    <SyncEnergyCore activities={selected} totalSeconds={activities.reduce((sum, a) => sum + a.movingSec, 0)} units={state.units} draining={saving} size={coreSize} active={!detail} effortDelta={effortDelta}/>
+    <SyncEnergyCore activities={selected} benchmarkSeconds={benchmarkSeconds} units={state.units} draining={saving} size={coreSize} active={!detail}/>
     <View style={{ marginTop: "auto", paddingTop: 4, gap: 8 }}>
       <View onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ height: 66, borderRadius: 36, backgroundColor: c.surfaceInverse, justifyContent: "center", position: "relative", overflow: "hidden" }}>
         <View pointerEvents="none" style={{ position: "absolute", left: progress * width, right: 0, top: 0, bottom: 0, overflow: "hidden", justifyContent: "center" }}>
