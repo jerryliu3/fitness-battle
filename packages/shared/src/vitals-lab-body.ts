@@ -444,17 +444,18 @@ export function vitalsLabMetricsFromModel(
     const vital = spec.vitalId
       ? model?.vitals.metrics.find((m) => m.id === spec.vitalId)
       : undefined;
-    const fallback = DEFAULT_VALUES[spec.id];
-    const sparkline =
-      vital?.series.map((p) => p.value) ?? DEFAULT_SPARK[spec.id];
-    let value = fallback.value;
-    if (vital) {
+    const hasSeries = (vital?.series.length ?? 0) > 0;
+    const sparkline = hasSeries ? vital!.series.map((p) => p.value) : [];
+    let value = "";
+    if (vital && vital.formattedCurrent !== "—") {
       if (spec.id === "spo2") {
         value = String(Math.min(100, Math.max(70, Math.round(vital.current))));
       } else if (spec.id === "rhr") {
         value = String(Math.max(38, Math.round(vital.current)));
       } else if (spec.id === "resp") {
         value = vital.current.toFixed(1);
+      } else if (spec.id === "sleep" && model?.sleep.lastNight.durationMin) {
+        value = formatSleepDuration(model.sleep.lastNight.durationMin);
       } else {
         value = vital.formattedCurrent
           .replace(/\s*(ms|bpm|brpm|%).*$/i, "")
@@ -465,11 +466,9 @@ export function vitalsLabMetricsFromModel(
       ...spec,
       value,
       displayParts:
-        spec.id === "sleep"
-          ? parseDurationParts(value) ?? fallback.displayParts
-          : undefined,
-      status: vital?.statusLabel ?? fallback.status,
-      delta: vital?.deltaLabel ?? fallback.delta,
+        spec.id === "sleep" && value ? parseDurationParts(value) : undefined,
+      status: hasSeries ? (vital?.statusLabel ?? "") : "",
+      delta: hasSeries ? (vital?.deltaLabel ?? "") : "",
       sparkline,
     };
   });

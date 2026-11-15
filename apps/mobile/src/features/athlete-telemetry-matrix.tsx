@@ -50,10 +50,12 @@ const s=useThemedStyles(sThemes);
       id: "vitals",
       domain: "vitals" as const,
       kicker: "Overnight HRV",
-      value: signedOut ? "—" : (model.vitals.metrics[0]?.formattedCurrent ?? "64 ms"),
+      value: signedOut ? "—" : (model.vitals.metrics[0]?.formattedCurrent ?? "—"),
       delta: signedOut
         ? "No data"
-        : `${model.vitals.metrics[0]?.statusLabel ?? "Normal"} corridor`,
+        : model.vitals.metrics[0]?.series.length
+          ? `${model.vitals.metrics[0]?.statusLabel ?? "Recorded"} corridor`
+          : "No recorded data",
       points: signedOut ? [] : (model.vitals.metrics[0]?.series.map((p) => p.value) ?? []),
       accent: c.tennis,
       corridor: !signedOut && model.vitals.metrics[0]
@@ -67,10 +69,12 @@ const s=useThemedStyles(sThemes);
       id: "sleep",
       domain: "sleep" as const,
       kicker: "Sleep & Debt",
-      value: signedOut ? "—" : `${model.sleep.lastNight.score} score`,
+      value: signedOut ? "—" : model.sleep.nights.length ? `${model.sleep.lastNight.score} score` : "—",
       delta: signedOut
         ? "No data"
-        : `${model.sleep.lastNight.restorativePct}% restorative · ${model.sleep.lastNight.debtMin}m debt`,
+        : model.sleep.nights.length
+          ? `${model.sleep.lastNight.restorativePct}% restorative · ${model.sleep.lastNight.debtMin}m debt`
+          : "No recorded sleep",
       points: signedOut ? [] : model.sleep.nights.map((n) => n.score),
       accent: c.tennis,
     },
@@ -78,7 +82,7 @@ const s=useThemedStyles(sThemes);
       id: "load",
       domain: "load" as const,
       kicker: "Workload Ratio",
-      value: signedOut ? "—" : `${model.load.acwrCurrent.toFixed(2)}x`,
+      value: signedOut ? "—" : model.load.series.length ? `${model.load.acwrCurrent.toFixed(2)}x` : "—",
       delta: signedOut ? "No data" : model.load.acwrStatusLabel,
       points: signedOut ? [] : model.load.series.map((b) => b.acwr * 100),
       accent: c.tennis,
@@ -87,10 +91,12 @@ const s=useThemedStyles(sThemes);
       id: "performance",
       domain: "performance" as const,
       kicker: "Aerobic Efficiency",
-      value: signedOut ? "—" : model.performance.efCurrent.toFixed(2),
+      value: signedOut ? "—" : model.performance.series.length ? model.performance.efCurrent.toFixed(2) : "—",
       delta: signedOut
         ? "No data"
-        : `${model.performance.efDeltaPct >= 0 ? "+" : ""}${model.performance.efDeltaPct}% pace/HR`,
+        : model.performance.series.length
+          ? `${model.performance.efDeltaPct >= 0 ? "+" : ""}${model.performance.efDeltaPct}% pace/HR`
+          : "No cardio sessions",
       points: signedOut ? [] : model.performance.series.map((p) => p.efficiencyFactor),
       accent: c.tennis,
     },
@@ -98,10 +104,12 @@ const s=useThemedStyles(sThemes);
       id: "combined",
       domain: "combined" as const,
       kicker: "Readiness Brief",
-      value: signedOut ? "—" : `${model.vitals.readinessComposite}%`,
+      value: signedOut ? "—" : model.vitals.readinessComposite > 0 ? `${model.vitals.readinessComposite}%` : "—",
       delta: signedOut
         ? "No data"
-        : `Strain ceiling ${model.combined.optimalStrainCeiling}`,
+        : model.combined.series.length
+          ? `Strain ceiling ${model.combined.optimalStrainCeiling || "—"}`
+          : "No recorded data",
       points: signedOut ? [] : model.combined.series.map((s) => s.nextDayReadiness),
       accent: c.tennis,
       hero: true,

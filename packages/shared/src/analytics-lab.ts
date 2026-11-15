@@ -1,3 +1,4 @@
+import { buildAnalyticsLabModelFromState } from "./analytics-lab-state";
 import { clamp, unitInterval, type CompeteState } from "./compete/sports";
 import { APP_TIMEZONE, dayKey, shiftAppDay } from "./period";
 
@@ -751,10 +752,10 @@ export function buildAnalyticsLabModel(
   scenarioOrState: AnalyticsScenarioId | CompeteState | null = "peak_build",
   timeLens: AnalyticsTimeLens = "30d",
 ): AnalyticsLabModel {
-  const state =
-    typeof scenarioOrState === "object" && scenarioOrState !== null
-      ? scenarioOrState
-      : null;
+  if (typeof scenarioOrState === "object" && scenarioOrState !== null) {
+    return buildAnalyticsLabModelFromState(scenarioOrState, timeLens);
+  }
+  const state = null as CompeteState | null;
   const scenario: AnalyticsScenarioId = state
     ? deriveScenarioFromCompeteState(state)
     : typeof scenarioOrState === "string"

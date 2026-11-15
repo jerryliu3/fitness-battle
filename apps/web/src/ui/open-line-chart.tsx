@@ -10,9 +10,9 @@ import "./open-line-chart.css";
 import { ChartSvg, ChartText } from "./chart-text";
 import { useChartTween } from "./use-chart-tween";
 
-export function OpenLineChart({ chart: targetChart, label, unit, range, onRangeChange, includeYear = true, live = false, footerAction, showAxes = true, showDateRange = true }: {
+export function OpenLineChart({ chart: targetChart, label, unit, range, onRangeChange, includeYear = true, live = false, footerAction, showAxes = true, showDateRange = true, hideTrendLine = false }: {
   chart: OpenLineModel; showAxes?: boolean; showDateRange?: boolean; label: string; unit: string; range: OpenLineRange;
-  onRangeChange: (range: OpenLineRange) => void; includeYear?: boolean; live?: boolean; footerAction?: ReactNode;
+  onRangeChange: (range: OpenLineRange) => void; includeYear?: boolean; live?: boolean; footerAction?: ReactNode; hideTrendLine?: boolean;
 }) {
   const reduced = Boolean(useReducedMotion());
   const chart = useChartTween(targetChart, String(range), interpolateOpenLineModel, reduced);
@@ -29,7 +29,7 @@ export function OpenLineChart({ chart: targetChart, label, unit, range, onRangeC
         {chart.yTicks.map((tick, i) => <g key={`${tick.y}-${i}`}><line x1={chart.left} x2={chart.right} y1={tick.y} y2={tick.y} stroke={c.line} strokeWidth={.5}/><ChartText x={chart.left - 6} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</ChartText></g>)}
         {chart.xTicks.map((tick, i) => <ChartText key={i} x={tick.x} y={chart.bottom + 18} textAnchor={tick.anchor ?? (i === 0 ? "start" : i === chart.xTicks.length - 1 ? "end" : "middle")} fill={c.muted}>{tick.label}</ChartText>)}
         </g>}
-        {chart.trendLine && <>
+        {chart.trendLine && !hideTrendLine && <>
           <polyline points={chart.trendLine} fill="none" stroke={c.secondary} strokeWidth="1.75" strokeDasharray="3 3" strokeLinecap="round" strokeLinejoin="round" />
           {avgLabel && <ChartText x={avgLabel.x} y={avgLabel.y} textAnchor="middle" fill={c.secondary}>Avg</ChartText>}
         </>}

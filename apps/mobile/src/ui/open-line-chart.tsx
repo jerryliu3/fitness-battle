@@ -11,10 +11,10 @@ import { useChartTween } from "./use-chart-tween";
 import { ChartScrubber } from "./chart-scrubber";
 import { useSceneActive } from "./use-scene-active";
 
-export function OpenLineChart({ chart: targetChart, label, unit, range, onRangeChange, includeYear = true, live = false, openHero = false, footerAction, showAxes = true, showDateRange = false, hideSummary = false, hideRangeToggle = false, uniformAspect = false, onSelectionChange }: {
+export function OpenLineChart({ chart: targetChart, label, unit, range, onRangeChange, includeYear = true, live = false, openHero = false, footerAction, showAxes = true, showDateRange = false, hideSummary = false, hideRangeToggle = false, hideTrendLine = false, uniformAspect = false, onSelectionChange }: {
   chart: OpenLineModel; showAxes?: boolean; showDateRange?: boolean; label: string; unit: string; range: OpenLineRange | EffortHistoryRange;
   onRangeChange: (range: OpenLineRange) => void; includeYear?: boolean; live?: boolean; openHero?: boolean; footerAction?: ReactNode;
-  hideSummary?: boolean; hideRangeToggle?: boolean; uniformAspect?: boolean; onSelectionChange?: (point: ChartDatum | undefined) => void;
+  hideSummary?: boolean; hideRangeToggle?: boolean; hideTrendLine?: boolean; uniformAspect?: boolean; onSelectionChange?: (point: ChartDatum | undefined) => void;
 }) {
 const c=useThemeColors();
 const s=useThemedStyles(sThemes);
@@ -101,7 +101,7 @@ const s=useThemedStyles(sThemes);
           {chart.yTicks.map((tick, i) => <G key={`${tick.y}-${i}`}><Line x1={chart.left} x2={chart.right} y1={tick.y} y2={tick.y} stroke={c.line} strokeWidth={.5}/><ChartText x={chart.left - 6} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</ChartText></G>)}
           {chart.xTicks.map((tick, i) => <ChartText key={i} x={tick.x} y={chart.bottom + 18} textAnchor={tick.anchor ?? (i === 0 ? "start" : i === chart.xTicks.length - 1 ? "end" : "middle")} fill={c.muted}>{tick.label}</ChartText>)}
         </G>}
-        {!!chart.trendLine && (
+        {!!chart.trendLine && !hideTrendLine && (
           <>
             <Polyline
               points={chart.trendLine}

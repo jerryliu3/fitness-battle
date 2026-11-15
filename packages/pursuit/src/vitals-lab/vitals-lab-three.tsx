@@ -1212,7 +1212,9 @@ export function VitalsLabThreeViewport({
       active: false,
       pointerId: -1,
       lastX: 0,
+      lastY: 0,
     };
+    const clampPanY = (value: number) => Math.min(0.45, Math.max(-0.45, value));
     const pointers = new Map<number, { x: number; y: number }>();
     let pinchState: { distance: number; zoom: number } | null = null;
 
@@ -1232,6 +1234,7 @@ export function VitalsLabThreeViewport({
         dragState.active = true;
         dragState.pointerId = e.pointerId;
         dragState.lastX = e.clientX;
+        dragState.lastY = e.clientY;
         renderer.domElement.style.cursor = "grabbing";
         stateRef.current.onDragStart?.();
       } else if (pointers.size === 2) {
@@ -1257,8 +1260,15 @@ export function VitalsLabThreeViewport({
 
       if (!dragState.active || e.pointerId !== dragState.pointerId) return;
       const dx = e.clientX - dragState.lastX;
+      const dy = e.clientY - dragState.lastY;
       dragState.lastX = e.clientX;
+      dragState.lastY = e.clientY;
       cameraGoalRef.current.rotY += dx * 0.011;
+      if (cameraGoalRef.current.zoom > 1.02) {
+        cameraGoalRef.current.panY = clampPanY(
+          cameraGoalRef.current.panY - dy * 0.0022,
+        );
+      }
     };
 
     const handlePointerUp = (e: PointerEvent) => {

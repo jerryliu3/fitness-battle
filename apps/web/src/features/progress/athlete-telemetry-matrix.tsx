@@ -55,9 +55,11 @@ export function AthleteTelemetryMatrix({
       id: "vitals",
       domain: "vitals" as const,
       kicker: "Overnight HRV",
-      value: model.vitals.metrics[0]?.formattedCurrent ?? "64 ms",
-      delta: `${model.vitals.metrics[0]?.statusLabel ?? "Normal"} · Baseline ${model.vitals.metrics[0]?.baselineMin ?? 62}–${model.vitals.metrics[0]?.baselineMax ?? 82} ms`,
-      points: model.vitals.metrics[0]?.series.map((p) => p.value) ?? [60, 62, 65, 64, 66, 63, 64],
+      value: model.vitals.metrics[0]?.formattedCurrent ?? "—",
+      delta: model.vitals.metrics[0]?.series.length
+        ? `${model.vitals.metrics[0]?.statusLabel ?? "Recorded"} · Baseline ${model.vitals.metrics[0]?.baselineMin}–${model.vitals.metrics[0]?.baselineMax} ms`
+        : "No recorded data",
+      points: model.vitals.metrics[0]?.series.map((p) => p.value) ?? [],
       accent: c.fieldTeal,
       corridor: model.vitals.metrics[0]
         ? {
@@ -70,8 +72,10 @@ export function AthleteTelemetryMatrix({
       id: "sleep",
       domain: "sleep" as const,
       kicker: "Sleep & Debt",
-      value: `${model.sleep.lastNight.score} pts`,
-      delta: `${model.sleep.lastNight.restorativePct}% restorative · +${model.sleep.lastNight.debtMin}m debt`,
+      value: model.sleep.nights.length ? `${model.sleep.lastNight.score} pts` : "—",
+      delta: model.sleep.nights.length
+        ? `${model.sleep.lastNight.restorativePct}% restorative · +${model.sleep.lastNight.debtMin}m debt`
+        : "No recorded sleep",
       points: model.sleep.nights.map((n) => n.score),
       accent: c.fieldTeal,
     },
@@ -79,7 +83,7 @@ export function AthleteTelemetryMatrix({
       id: "load",
       domain: "load" as const,
       kicker: "Workload Ratio",
-      value: `${model.load.acwrCurrent.toFixed(2)}x`,
+      value: model.load.series.length ? `${model.load.acwrCurrent.toFixed(2)}x` : "—",
       delta: model.load.acwrStatusLabel,
       points: model.load.series.map((b) => b.acwr),
       accent: c.tennis,
@@ -88,8 +92,10 @@ export function AthleteTelemetryMatrix({
       id: "performance",
       domain: "performance" as const,
       kicker: "Aerobic Efficiency",
-      value: model.performance.efCurrent.toFixed(2),
-      delta: `${model.performance.efDeltaPct >= 0 ? "+" : ""}${model.performance.efDeltaPct}% pace/HR`,
+      value: model.performance.series.length ? model.performance.efCurrent.toFixed(2) : "—",
+      delta: model.performance.series.length
+        ? `${model.performance.efDeltaPct >= 0 ? "+" : ""}${model.performance.efDeltaPct}% pace/HR`
+        : "No cardio sessions",
       points: model.performance.series.map((p) => p.efficiencyFactor),
       accent: c.tennis,
     },
@@ -97,8 +103,10 @@ export function AthleteTelemetryMatrix({
       id: "combined",
       domain: "combined" as const,
       kicker: "Readiness Brief",
-      value: `${model.vitals.readinessComposite}%`,
-      delta: `Strain ceiling: ${model.combined.optimalStrainCeiling} / 21`,
+      value: model.vitals.readinessComposite > 0 ? `${model.vitals.readinessComposite}%` : "—",
+      delta: model.combined.series.length
+        ? `Strain ceiling: ${model.combined.optimalStrainCeiling || "—"} / 21`
+        : "No recorded data",
       points: model.combined.series.map((s) => s.nextDayReadiness),
       accent: c.fieldTeal,
     },
