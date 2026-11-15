@@ -56,6 +56,7 @@ it("reduced motion offers Replay icon, Continue, centered progress chip with ove
   const standings = renderer.root.findByType("StandingsList" as never);
   expect(standings.props.ranked.length).toBeGreaterThanOrEqual(4);
   expect(renderer.root.findByType("RaceUpdates" as never).props.moment).toBe(sample);
+  expect(renderer.root.findByType("RaceUpdates" as never).props.revealCount).toBeUndefined();
   await act(async () => { buttons[0].props.onPress(); buttons[0].props.onPress(); });
   expect(done).toHaveBeenCalledOnce();
   await act(async () => renderer.unmount());
@@ -80,6 +81,7 @@ it("autoplays after map readiness, toggles pause/play/replay icon, allows immedi
     expect(renderer.root.findAllByType("FocusButton" as never).map(button => button.props.label)).toEqual(["Continue"]);
     expect(renderer.root.findByType("FieldViewSwitcher" as never).props.compact).toBe(true);
     await act(async () => map().props.onReady());
+    expect(renderer.root.findByType("RaceUpdates" as never).props.revealCount).toBe(0);
     await act(async () => playback().props.onPress());
     expect(playback().props.accessibilityLabel).toBe("Play replay");
     expect(playback().findByType("AppIcon" as never).props.name).toBe("play");

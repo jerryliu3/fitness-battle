@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { applyDebugEvent } from "./compete/debug-events";
 import { freshState } from "./compete/engine";
-import { competitionMomentFeedEntry, competitionMoments, competitionMomentProgressSummary, competitionMomentScene, competitionMomentSnapshots, momentStorageKey, photoFinishFrame, selectedSyncActions } from "./competition-moments";
+import { competitionMomentFeedEntries, competitionMoments, competitionMomentProgressSummary, competitionMomentScene, competitionMomentSnapshots, momentStorageKey, photoFinishFrame, selectedSyncActions } from "./competition-moments";
 const pinned = new Date("2026-10-24T18:00:00Z");
 const state = { ...freshState(pinned), demoNow: pinned.toISOString() };
 function fixture(event: "overtake" | "overtaken") {
@@ -163,34 +163,32 @@ it("summarizes overtakes, steady gains, and passes with full ranked standings", 
   expect(gainEnd.ranked).toHaveLength(gain.lanes.length);
   expect(competitionMomentProgressSummary(gain, gainStart)).toMatchObject({
     tone: "gain",
-    badge: `#${gain.plan.rankBefore}`,
-    detail: expect.stringContaining("Starting in"),
+    headline: expect.stringContaining("added"),
     overtakeCount: 0,
     overtakeLabel: "0 overtakes",
   });
   expect(competitionMomentProgressSummary(gain, gainEnd)).toMatchObject({
     tone: "gain",
-    badge: `#${gain.plan.rankAfter}`,
     headline: expect.stringContaining("added"),
-    detail: expect.stringContaining("moved into"),
     overtakeCount: gain.plan.overtakenIds.length,
     overtakeLabel: expect.stringContaining("overtake"),
   });
-  expect(competitionMomentFeedEntry(gain, "Alex")).toMatchObject({
+  expect(competitionMomentFeedEntries(gain, "Alex", null, "2026-10-24T18:00:00Z", 0)).toHaveLength(1);
+  expect(competitionMomentFeedEntries(gain, "Alex")[0]).toMatchObject({
     movement: true,
     title: expect.stringContaining("overtook"),
-    detail: expect.stringContaining(`Place ${gain.plan.rankBefore} → ${gain.plan.rankAfter}`),
   });
 
   const loss = fixture("overtaken").moments[0];
   const lossEnd = competitionMomentScene(loss, 1);
   expect(competitionMomentProgressSummary(loss, lossEnd)).toMatchObject({
     tone: "passed",
-    badge: `#${loss.plan.rankAfter}`,
+    headline: expect.stringContaining("Moved to"),
     overtakeCount: 0,
     overtakeLabel: null,
   });
-  expect(competitionMomentFeedEntry(loss, "Alex")).toMatchObject({
+  expect(competitionMomentFeedEntries(loss, "Alex", null, "2026-10-24T18:00:00Z", 0)).toEqual([]);
+  expect(competitionMomentFeedEntries(loss, "Alex")[0]).toMatchObject({
     movement: true,
     title: expect.stringContaining("overtook Alex"),
   });

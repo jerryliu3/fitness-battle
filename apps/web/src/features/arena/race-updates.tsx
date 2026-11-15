@@ -3,26 +3,39 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { RankAvatar } from "@/ui/rank-symbol";
 import { useCompetitionTimeline } from "./competition-timeline-context";
-import { competeNow, competitionActivityLog, competitionMomentFeedEntry, formatAppDateTime, type CompeteState, type CompetitionMoment, type SportId } from "@fitness-battle/shared";
+import { competeNow, competitionActivityLog, competitionMomentFeedEntries, formatAppDateTime, type CompeteState, type CompetitionMoment, type SportId } from "@fitness-battle/shared";
 import { AppParagraph, AppText } from "@/ui/section";
 import { CompeteIcon } from "./event-home";
 import { useEventActivity } from "./use-event-activity";
 
-export function RaceUpdates({ state, sport, active, moment }: { state: CompeteState; sport: SportId; active: boolean; moment?: CompetitionMoment }) {
+export function RaceUpdates({ state, sport, active, moment, revealCount }: { state: CompeteState; sport: SportId; active: boolean; moment?: CompetitionMoment; revealCount?: number }) {
   const timeline = useCompetitionTimeline();
   const fallback = useEventActivity(state, sport, active && !timeline);
   const completed = Math.floor(timeline?.cursor ?? 0);
   const rows = useMemo(() => {
     if (timeline?.index) return competitionActivityLog(timeline.index, [], completed);
     if (timeline) return [];
-    if (!moment || fallback.scope !== "local") return fallback.rows;
+    if (!moment) return fallback.rows;
+    if (fallback.scope !== "local") {
+      if (revealCount === 0 && moment.plan.hasOvertake) {
+        const latestId = state.activities.filter((activity) => activity.sport === sport).at(-1)?.id;
+        if (latestId) return fallback.rows.filter((row) => !row.id.endsWith(`:${latestId}`));
+      }
+      return fallback.rows;
+    }
     const passedBy = !moment.plan.hasOvertake && Boolean(moment.plan.passedByIds?.length);
     const youIndex = passedBy ? -1 : fallback.rows.findIndex((row) => row.actorId === "you");
-    const entry = competitionMomentFeedEntry(moment, state.name, state.avatarUrl, fallback.rows[youIndex]?.at ?? fallback.rows[0]?.at ?? competeNow(state).toISOString());
+    const entries = competitionMomentFeedEntries(
+      moment,
+      state.name,
+      state.avatarUrl,
+      fallback.rows[youIndex]?.at ?? fallback.rows[0]?.at ?? competeNow(state).toISOString(),
+      revealCount,
+    );
     return youIndex >= 0
-      ? fallback.rows.map((row, index) => (index === youIndex ? entry : row))
-      : [entry, ...fallback.rows];
-  }, [timeline?.index, completed, fallback.rows, fallback.scope, moment, state]);
+      ? fallback.rows.flatMap((row, index) => (index === youIndex ? entries : [row]))
+      : [...entries, ...fallback.rows];
+  }, [timeline?.index, completed, fallback.rows, fallback.scope, moment, revealCount, sport, state]);
   const loading = timeline ? !timeline.ready : fallback.loading;
   const error = timeline?.error ?? fallback.error;
   const retry = timeline?.retry ?? fallback.retry;

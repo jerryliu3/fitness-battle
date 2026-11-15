@@ -125,45 +125,32 @@ export function competitionMomentScene(moment: CompetitionMoment, progress: numb
 
 export interface CompetitionMomentSummary {
   sportLabel: string;
-  badge: string;
   headline: string;
-  detail: string;
   tone: "gain" | "steady" | "passed";
   overtakeCount: number;
   overtakeLabel: string | null;
 }
 
-/** Concise progress summary for the top replay chip, updating live as crossings occur. */
+/** Concise single-row progress summary for the top replay chip, updating live as crossings occur. */
 export function competitionMomentProgressSummary(
   moment: CompetitionMoment,
   frame: ReturnType<typeof photoFinishFrame>,
 ): CompetitionMomentSummary {
   const sportName = sportById(moment.sport).name;
   const sportLabel = `${sportName} · Replay`;
-  const badge = `#${frame.rank}`;
   const decimals = moment.unit === "pts" ? 0 : 1;
   const delta = Math.max(0, moment.plan.youAfter - moment.plan.youBefore);
   const deltaText = `+${delta.toFixed(decimals)} ${moment.unit} added`;
   const passedBy = !moment.plan.hasOvertake && Boolean(moment.plan.passedByIds?.length);
-  const placesUp = Math.max(0, moment.plan.rankBefore - frame.rank);
-  const placesDown = Math.max(0, frame.rank - moment.plan.rankBefore);
 
   if (moment.plan.hasOvertake) {
-    const detail =
-      frame.count === 0 && !frame.done
-        ? `Starting in ${ordinalPlace(moment.plan.rankBefore)}`
-        : placesUp > 0
-          ? `You moved into ${ordinalPlace(frame.rank)} · ↑${placesUp} ${placesUp === 1 ? "spot" : "spots"}`
-          : `You moved into ${ordinalPlace(frame.rank)}`;
     const overtakeCount = moment.plan.overtakenIds.length > 0 ? frame.count : 0;
     const overtakeLabel = moment.plan.overtakenIds.length > 0
       ? `${overtakeCount} ${overtakeCount === 1 ? "overtake" : "overtakes"}`
       : null;
     return {
       sportLabel,
-      badge,
       headline: delta > 0 ? deltaText : `Moved into ${ordinalPlace(frame.rank)}`,
-      detail,
       tone: "gain",
       overtakeCount,
       overtakeLabel,
@@ -171,16 +158,9 @@ export function competitionMomentProgressSummary(
   }
 
   if (passedBy) {
-    const names = moment.plan.passedByNames?.length
-      ? `${moment.plan.passedByNames.join(", ")} moved ahead`
-      : "Field standings updated";
     return {
       sportLabel,
-      badge,
       headline: frame.count > 0 || frame.done ? `Moved to ${ordinalPlace(frame.rank)}` : `In ${ordinalPlace(moment.plan.rankBefore)}`,
-      detail: (frame.count > 0 || frame.done) && placesDown > 0
-        ? `Down ${placesDown} ${placesDown === 1 ? "spot" : "spots"} · ${names}`
-        : names,
       tone: "passed",
       overtakeCount: 0,
       overtakeLabel: null,
@@ -189,31 +169,33 @@ export function competitionMomentProgressSummary(
 
   return {
     sportLabel,
-    badge,
     headline: delta > 0 ? deltaText : `${sportName} update`,
-    detail: `Holding ${ordinalPlace(frame.rank)}`,
     tone: "steady",
     overtakeCount: 0,
     overtakeLabel: null,
   };
 }
 
-/** Feed row representing this moment when the full field activity ledger is unavailable (local preview). */
-export function competitionMomentFeedEntry(
+/** Feed rows representing this moment when the full field activity ledger is unavailable (local preview). */
+export function competitionMomentFeedEntries(
   moment: CompetitionMoment,
   youName: string,
   youAvatarUrl: string | null = null,
   fallbackAt: string = new Date().toISOString(),
+  revealCount?: number,
 ) {
   const decimals = moment.unit === "pts" ? 0 : 1;
   const delta = Math.max(0, moment.plan.youAfter - moment.plan.youBefore).toLocaleString("en-US", { maximumFractionDigits: decimals });
   const laneById = new Map(moment.lanes.map(lane => [lane.id, lane]));
+  const youLane = laneById.get(moment.plan.youId);
+  const at = youLane?.lastUpdated ?? fallbackAt;
   const passedBy = !moment.plan.hasOvertake && Boolean(moment.plan.passedByIds?.length);
   if (passedBy) {
+    if (revealCount === 0) return [];
     const rivalId = moment.plan.passedByIds![0]!;
     const rivalLane = laneById.get(rivalId);
     const names = moment.plan.passedByNames?.length ? moment.plan.passedByNames : [rivalLane?.name ?? "A rival"];
-    return {
+    return [{
       id: `moment:${moment.id}`,
       at: rivalLane?.lastUpdated ?? fallbackAt,
       simulated: true,
@@ -223,26 +205,48 @@ export function competitionMomentFeedEntry(
       title: `${names.join(" and ")} overtook ${youName}!`,
       detail: `Place ${moment.plan.rankBefore} → ${moment.plan.rankAfter}`,
       movement: true,
-    };
+    }];
   }
-  const overtakenNames = moment.plan.overtakenIds.map(id => laneById.get(id)?.name).filter((name): name is string => Boolean(name));
-  const youLane = laneById.get(moment.plan.youId);
-  const moved = moment.plan.rankAfter < moment.plan.rankBefore;
-  return {
+
+  const baseEntry = {
     id: `moment:${moment.id}`,
-    at: youLane?.lastUpdated ?? fallbackAt,
+    at,
     simulated: true,
     actorId: moment.plan.youId,
     actorName: youName,
     avatarUrl: youAvatarUrl,
-    title: moment.plan.hasOvertake && overtakenNames.length
-      ? `${youName} overtook ${overtakenNames.join(" and ")}!`
-      : `${youName} logged +${delta} ${moment.unit}`,
-    detail: moved
-      ? `+${delta} ${moment.unit} · Place ${moment.plan.rankBefore} → ${moment.plan.rankAfter}`
-      : `Place ${moment.plan.rankAfter}`,
-    movement: moment.plan.hasOvertake && moved,
+    title: `${youName} logged +${delta} ${moment.unit}`,
+    detail: `Place ${moment.plan.rankBefore}`,
+    movement: false,
   };
+
+  if (!moment.plan.hasOvertake || !moment.plan.overtakenIds.length) {
+    return [baseEntry];
+  }
+
+  // Reveal overtaken cards in the order your marker crosses each rival.
+  const orderedIds = [...moment.plan.overtakenIds].sort(
+    (a, b) => (moment.plan.rivals[a]?.endValue ?? 0) - (moment.plan.rivals[b]?.endValue ?? 0),
+  );
+  const visible = revealCount === undefined ? orderedIds.length : Math.max(0, Math.min(orderedIds.length, revealCount));
+  const passEntries = orderedIds.slice(0, visible).flatMap((rivalId, index) => {
+    const rivalName = laneById.get(rivalId)?.name ?? "a rival";
+    const fromRank = Math.max(moment.plan.rankAfter, moment.plan.rankBefore - index);
+    const toRank = Math.max(moment.plan.rankAfter, fromRank - 1);
+    return [{
+      id: `moment:${moment.id}:pass:${rivalId}`,
+      at,
+      simulated: true,
+      actorId: moment.plan.youId,
+      actorName: youName,
+      avatarUrl: youAvatarUrl,
+      title: `${youName} overtook ${rivalName}!`,
+      detail: `Place ${fromRank} → ${toRank}`,
+      movement: true,
+    }];
+  }).reverse();
+
+  return [...passEntries, baseEntry];
 }
 
 /** Receipt computation always uses metric baselines; presentation honors units. */

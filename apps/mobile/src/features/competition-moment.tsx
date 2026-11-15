@@ -171,12 +171,6 @@ export function CompetitionMoment({
     setPlaying((value) => !value);
   };
 
-  const badgeTone = {
-    gain: { backgroundColor: c.actionSoft, borderColor: c.actionPrimary, textColor: c.ink },
-    passed: { backgroundColor: c.statusErrorSoft, borderColor: c.statusError, textColor: c.statusError },
-    steady: { backgroundColor: c.soft, borderColor: c.line, textColor: c.ink },
-  }[summary.tone];
-
   const progressChip = (
     <View
       pointerEvents="none"
@@ -185,25 +179,9 @@ export function CompetitionMoment({
         summary.tone === "gain" && { borderColor: c.actionPrimary },
       ]}
     >
-      <View
-        style={[
-          styles.rankBadge,
-          { backgroundColor: badgeTone.backgroundColor, borderColor: badgeTone.borderColor },
-        ]}
-      >
-        <Text style={{ ...textStyle("caption"), color: badgeTone.textColor }}>{summary.badge}</Text>
-      </View>
-      <View style={{ flexShrink: 1, gap: 1 }}>
-        <Text numberOfLines={1} style={{ ...textStyle("label"), color: c.ink }}>
-          {summary.headline}
-        </Text>
-        <Text
-          numberOfLines={1}
-          style={{ ...textStyle("caption"), color: summary.tone === "gain" ? c.ink : c.muted }}
-        >
-          {summary.detail}
-        </Text>
-      </View>
+      <Text numberOfLines={1} style={{ ...textStyle("label"), color: c.ink, flexShrink: 1 }}>
+        {summary.headline}
+      </Text>
       {summary.overtakeLabel ? (
         <View style={[styles.overtakeBadge, { backgroundColor: c.actionSoft }]}>
           <Text style={{ ...textStyle("caption"), color: c.ink }}>{summary.overtakeLabel}</Text>
@@ -376,7 +354,7 @@ export function CompetitionMoment({
               />
             }
             activity={(visible) =>
-              state ? <RaceUpdates state={state} sport={moment.sport} active={visible} moment={moment} /> : null
+              state ? <RaceUpdates state={state} sport={moment.sport} active={visible} moment={moment} revealCount={frame.done ? undefined : frame.count} /> : null
             }
           />
         </CompeteSheet>
@@ -410,13 +388,14 @@ const stylesThemes = createThemedStyles((themeColors) => {
     },
     progressChip: {
       alignSelf: "center",
-      maxWidth: 288,
+      marginHorizontal: 56,
+      maxWidth: 236,
       flexDirection: "row",
       alignItems: "center",
-      gap: 9,
+      gap: 8,
       backgroundColor: c.card,
       borderRadius: 999,
-      paddingHorizontal: 10,
+      paddingHorizontal: 12,
       paddingVertical: 6,
       borderWidth: 1,
       borderColor: c.line,
@@ -425,20 +404,11 @@ const stylesThemes = createThemedStyles((themeColors) => {
       flexShrink: 0,
       borderRadius: 999,
       paddingHorizontal: 8,
-      paddingVertical: 4,
+      paddingVertical: 3,
     },
     playbackButton: {
       width: 52,
       paddingHorizontal: 0,
-    },
-    rankBadge: {
-      minWidth: 32,
-      height: 32,
-      paddingHorizontal: 6,
-      borderRadius: 16,
-      borderWidth: 1,
-      alignItems: "center",
-      justifyContent: "center",
     },
   };
 });

@@ -238,13 +238,9 @@ export function CompetitionMoment({
           </div>
         ) : null}
         <div className="moment-replay-chip" data-tone={summary.tone}>
-          <span className="moment-replay-rank-badge" style={typographyStyle("caption")}>
-            {summary.badge}
-          </span>
-          <div className="moment-replay-chip-copy">
-            <strong style={typographyStyle("label")}>{summary.headline}</strong>
-            <small style={typographyStyle("caption")}>{summary.detail}</small>
-          </div>
+          <strong className="moment-replay-chip-headline" style={typographyStyle("label")}>
+            {summary.headline}
+          </strong>
           {summary.overtakeLabel ? (
             <span className="moment-replay-overtake-badge" style={typographyStyle("caption")}>
               {summary.overtakeLabel}
@@ -288,7 +284,7 @@ export function CompetitionMoment({
               />
             }
             activity={(visible) =>
-              state ? <RaceUpdates state={state} sport={moment.sport} active={visible} moment={moment} /> : null
+              state ? <RaceUpdates state={state} sport={moment.sport} active={visible} moment={moment} revealCount={frame.done ? undefined : frame.count} /> : null
             }
           />
         </CompeteSheet>
