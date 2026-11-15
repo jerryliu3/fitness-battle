@@ -91,7 +91,7 @@ export function EventRegistration({
               </div>
               <AppParagraph typographyRole="support" className="ui-text-secondary">{detail.description}</AppParagraph>
               <div className="registration-field-box">
-                <AppText role="caption" secondary>Meet your competitors when you join.</AppText>
+                <AppText role="caption" secondary>You’ll see the other athletes when the event starts.</AppText>
                 <div className="registration-mysteries" aria-label="You and seven mystery athletes">
                   {Array.from({ length: 8 }, (_, i) => (
                     <AppText as="span" role={i === 0 ? "field" : "caption"} key={i} className={i === 0 ? "is-you" : undefined} style={{ animationDelay: `${800 + i * 65}ms` }}>

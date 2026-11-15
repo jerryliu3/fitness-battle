@@ -392,7 +392,7 @@ export function EventRegistration({
                 <AppText role="support" secondary>{detail.description}</AppText>
 
                 <View style={{ gap: 10, paddingTop: 4 }}>
-                  <AppText role="caption" secondary>Meet your competitors when you join.</AppText>
+                  <AppText role="caption" secondary>You’ll see the other athletes when the event starts.</AppText>
                   <View
                     accessible
                     accessibilityLabel="You and seven mystery athletes"
