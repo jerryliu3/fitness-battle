@@ -142,10 +142,10 @@ export function useVitalsLabHostSource() {
   return host;
 }
 
-const styleThemes = createThemedStyles((theme) => ({
+const styleThemes = createThemedStyles(() => ({
   frame: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: theme.soft,
+    backgroundColor: "transparent",
   },
   web: {
     flex: 1,

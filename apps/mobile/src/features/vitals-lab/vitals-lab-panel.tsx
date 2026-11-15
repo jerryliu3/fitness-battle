@@ -4,7 +4,7 @@ import {
   type VitalsLabMetricDisplay,
   type VitalsLabMetricId,
 } from "@fitness-battle/shared";
-import { createThemedStyles, useAppTheme, useThemedStyles } from "../../theme";
+import { createThemedStyles, useThemedStyles } from "../../theme";
 import { AppText } from "../../ui/section";
 import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -17,10 +17,12 @@ function MetricCard({
   metric,
   active,
   onPress,
+  onDark = false,
 }: {
   metric: VitalsLabMetricDisplay;
   active: boolean;
   onPress: () => void;
+  onDark?: boolean;
 }) {
   const s = useThemedStyles(cardThemes);
   const hasValue = Boolean(metric.value);
@@ -31,12 +33,25 @@ function MetricCard({
       accessibilityState={{ selected: active, disabled: !hasValue }}
       disabled={!hasValue}
       onPress={onPress}
-      style={[s.card, active && hasValue && s.cardActive, !hasValue && s.cardMuted]}
+      style={[
+        s.card,
+        onDark && s.cardOnDark,
+        active && hasValue && (onDark ? s.cardActiveOnDark : s.cardActive),
+        !hasValue && s.cardMuted,
+      ]}
     >
-      <AppText role="caption" secondary numberOfLines={1}>
+      <AppText
+        role="caption"
+        secondary={!onDark}
+        style={onDark ? s.captionOnDark : undefined}
+        numberOfLines={1}
+      >
         {metric.label}
       </AppText>
-      <AppText role="label" style={{ fontVariant: ["tabular-nums"] }}>
+      <AppText
+        role="label"
+        style={[{ fontVariant: ["tabular-nums"] }, onDark ? s.labelOnDark : undefined]}
+      >
         {hasValue
           ? metric.unit
             ? `${metric.value} ${metric.unit}`
@@ -57,11 +72,24 @@ const cardThemes = createThemedStyles((theme) => ({
     gap: 2,
     width: 100,
   },
+  cardOnDark: {
+    borderColor: "rgba(108, 229, 232, 0.22)",
+    backgroundColor: "rgba(8, 18, 24, 0.78)",
+  },
   cardActive: {
     borderColor: theme.tennis,
   },
+  cardActiveOnDark: {
+    borderColor: "#F3C952",
+  },
   cardMuted: {
     opacity: 0.72,
+  },
+  captionOnDark: {
+    color: "rgba(232, 240, 242, 0.68)",
+  },
+  labelOnDark: {
+    color: "#E8F0F2",
   },
 }));
 
@@ -72,19 +100,21 @@ function chartMetricFromVitals(id: VitalsLabMetricId): HealthLabChartMetric | nu
   return null;
 }
 
+const LAB_STAGE_BG = "#0a161d";
+
 export function VitalsLabPanel({
   state,
   signedOut = false,
   onChartMetricChange,
+  immersive = false,
 }: {
   state?: CompeteState | null;
   signedOut?: boolean;
   onChartMetricChange?: (metric: HealthLabChartMetric) => void;
+  immersive?: boolean;
 }) {
-  const { mode } = useAppTheme();
   const s = useThemedStyles(panelThemes);
-  const appearance = mode === "dark" ? "dark" : "light";
-  const stageBg = appearance === "dark" ? "#0a161d" : "#f3f6f7";
+  const appearance = "dark" as const;
 
   const metrics = useMemo(
     () => vitalsLabMetricsFromCompeteState(state, { signedOut }),
@@ -109,6 +139,7 @@ export function VitalsLabPanel({
           metric={m}
           active={lab.activeMetricId === m.id}
           onPress={() => selectMetric(m)}
+          onDark
         />
       ))}
     </View>
@@ -116,7 +147,11 @@ export function VitalsLabPanel({
 
   return (
     <View
-      style={[s.stage, { height: STAGE_HEIGHT, backgroundColor: stageBg }]}
+      style={[
+        s.stage,
+        immersive ? s.stageImmersive : { height: STAGE_HEIGHT },
+        { backgroundColor: LAB_STAGE_BG },
+      ]}
       accessibilityLabel="Vitals Lab body scan"
     >
       <VitalsLabCanvas model={lab.canvasModel} host={host} />
@@ -134,6 +169,10 @@ const panelThemes = createThemedStyles(() => ({
     borderRadius: 16,
     overflow: "hidden",
     position: "relative",
+  },
+  stageImmersive: {
+    flex: 1,
+    borderRadius: 0,
   },
   hudOverlay: {
     ...StyleSheet.absoluteFill,

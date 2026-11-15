@@ -62,41 +62,49 @@ export function ProgressScreen({
 
   if (!state) return null;
 
+  const tabs = (
+    <FocusSegments
+      variant="tabs"
+      label="Progress spaces"
+      value={space}
+      options={PROGRESS_TABS}
+      onChange={setSpace}
+    />
+  );
+
   return (
     <SafeAreaView style={f.safe} edges={["top"]}>
-      <ScrollView contentContainerStyle={f.content}>
-        <SectionStack divided={false}>
-          {/* Top 3 Spaces Segment Selector */}
-          <FocusSegments
-            variant="tabs"
-            label="Progress spaces"
-            value={space}
-            options={PROGRESS_TABS}
-            onChange={setSpace}
-          />
-
-          {/* Animated Transition between Spaces */}
-          <MotionStep identity={space}>
-            {space === "performance" ? (
-              <PerformanceSpace state={state} />
-            ) : space === "journey" ? (
-              <JourneySpace
-                state={state}
-                initialHorizon={
-                  rawHorizon === "month" || rawHorizon === "year"
-                    ? rawHorizon
-                    : "week"
-                }
-              />
-            ) : (
-              <HealthLabSpace
-                state={state}
-                signedOut={accountKey === "device"}
-              />
-            )}
-          </MotionStep>
-        </SectionStack>
-      </ScrollView>
+      {space === "health_lab" ? (
+        <View style={{ flex: 1 }}>
+          <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8 }}>{tabs}</View>
+          <View style={{ flex: 1 }}>
+            <HealthLabSpace
+              state={state}
+              signedOut={accountKey === "device"}
+            />
+          </View>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={f.content}>
+          <SectionStack divided={false}>
+            {tabs}
+            <MotionStep identity={space}>
+              {space === "performance" ? (
+                <PerformanceSpace state={state} />
+              ) : (
+                <JourneySpace
+                  state={state}
+                  initialHorizon={
+                    rawHorizon === "month" || rawHorizon === "year"
+                      ? rawHorizon
+                      : "week"
+                  }
+                />
+              )}
+            </MotionStep>
+          </SectionStack>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
