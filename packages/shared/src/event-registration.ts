@@ -32,18 +32,18 @@ export function eventRegistration(state: CompeteState, event: CompeteEvent, now:
     starts: waveTimeLabel(window.waveStart), ends: waveTimeLabel(new Date(window.weekEnd.getTime() - 60_000)),
     description: sleep ? "Make rest part of your competition. Your counted sleep nights build a score from sleep quality and consistency." : event === "strength" ? "Build your week through strength training. Counted session time and recorded heart rate contribute effort points." : event === "walking" ? "Stack daily steps from your tracker throughout the week. Distance from walk workouts does not move this field." : `Build your total ${name.toLowerCase()} distance throughout the week and climb your matched field.`,
     details: [
-      { title: "How scoring works", summary: sleep ? "Sleep quality & consistency" : event === "strength" ? "Training effort points" : event === "walking" ? "Total steps" : "Total distance", detail: sleep ? "The field ranks your average nightly sleep score, adjusted for how many eligible nights you log. Missing nights reduce the contest score; more hours alone do not guarantee a higher score." : event === "strength" ? "Time in training earns effort points. Recorded heart rate can add a small bonus. Lift weights and rep totals are not scored." : event === "walking" ? "Your counted daily steps are summed across the wave. The highest step total leads; distance from GPS walks is not used here." : "Your exact counted distance determines place. Equal totals share a place; rounded display values do not create ties." },
+      { title: "How scoring works", summary: sleep ? "Sleep quality & consistency" : event === "strength" ? "Training effort points" : event === "walking" ? "Total steps" : "Total distance", detail: sleep ? "The field ranks your average nightly sleep score, adjusted for how many eligible nights you log. Missing nights reduce the contest score; more hours alone do not guarantee a higher score." : event === "strength" ? "Time in training earns effort points. Recorded heart rate can add a small bonus. Lift weights and rep totals are not scored." : event === "walking" ? "Your counted daily steps are summed across the week. Distance from GPS walks is not used here." : "Your exact counted distance determines place. Equal totals share a place; rounded display values do not create ties." },
       { title: "Matched field", summary: "A field of up to 8", detail: "The field is assigned when the wave starts. Solo fields prefer a similar entry Effort Score. Names and standings stay hidden until the start." },
-      { title: "Your entry tier", summary: rankForElo(rating ?? ELO_UNRANKED).name, detail: "Based on your current Effort Score. The actual roster is assigned at the wave start; this is not a predicted finishing place." },
+      { title: "Your entry tier", summary: rankForElo(rating ?? ELO_UNRANKED).name, detail: "Matches you with competitors at a similar effort level based on your current Effort Score." },
       { title: "What counts", summary: sleep ? "Sleep & recovery" : event === "walking" ? "Daily step totals" : competitionTrackLabel(event), detail: sleep ? "Eligible sleep records from connected health trackers or manual sleep entries. Only eligible records contribute competition credit." : event === "walking" ? "Steps synced from Apple Health, Health Connect, Garmin, WHOOP, or Oura. Walk workouts stay in your training log but do not add steps here unless your tracker reports them as daily step counts." : verified ? "Only eligible recorded, GPS-verified activity counts on this track. Pending, excluded and future activities do not count." : "Eligible recorded or manual activities count on the Open track. Pending, excluded and future activities do not count." },
     ],
-    renewal: "Starts at zero. Renews into the Monday 6 AM ET wave. Cancel before your wave starts, or turn off renewal during the week.",
+    renewal: "Starts on the next 6 AM ET morning wave and renews weekly on Monday. Cancel before your wave starts, or turn off renewal during the week.",
   };
 }
 
 export type RegistrationRuleCard = {
-  id: "scoring" | "schedule" | "tier" | "field";
-  icon: "layers" | "calendar" | "trophy" | "crew";
+  id: "scoring" | "schedule" | "tier";
+  icon: "layers" | "calendar" | "trophy";
   title: string;
   summary: string;
   detail: string;
@@ -51,12 +51,11 @@ export type RegistrationRuleCard = {
 };
 
 export function registrationDetailCards(detail: ReturnType<typeof eventRegistration>): RegistrationRuleCard[] {
-  const [scoring, field, tier, eligibility] = detail.details;
+  const [scoring, , tier, eligibility] = detail.details;
   return [
     { id: "scoring", icon: "layers", title: "Scoring", summary: scoring!.summary, detail: scoring!.detail, footnote: eligibility!.summary },
     { id: "schedule", icon: "calendar", title: "Schedule", summary: "Weekly rounds", detail: detail.renewal },
     { id: "tier", icon: "trophy", title: "Entry tier", summary: tier!.summary, detail: tier!.detail },
-    { id: "field", icon: "crew", title: "Your field", summary: "8 competitors", detail: field!.detail },
   ];
 }
 

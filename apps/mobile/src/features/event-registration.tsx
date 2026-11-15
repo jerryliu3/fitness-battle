@@ -58,7 +58,7 @@ function RuleFlipCard({
       accessibilityState={{ expanded: flipped }}
       accessibilityLabel={`${item.title}, ${item.summary}. ${flipped ? item.detail : "Tap to see details."}`}
       onPress={onToggle}
-      style={{ flex: 1, minHeight: rowHeight }}
+      style={{ width: "100%", minHeight: rowHeight }}
     >
       <Animated.View
         pointerEvents={flipped ? "none" : "auto"}
@@ -74,17 +74,18 @@ function RuleFlipCard({
           borderWidth: 1,
           borderColor: c.line,
           backgroundColor: c.card,
-          padding: 14,
-          paddingRight: 26,
+          paddingHorizontal: 14,
+          paddingVertical: 12,
+          paddingRight: 36,
           flexDirection: "row",
           alignItems: "center",
-          gap: 10,
+          gap: 12,
           backfaceVisibility: "hidden",
           opacity: frontOpacity,
           transform: [{ perspective: 1000 }, { rotateY: frontRotate }],
         }}
       >
-        <View style={{ position: "absolute", top: 10, right: 10 }}>
+        <View style={{ position: "absolute", top: 12, right: 14 }}>
           <CompeteIcon name="replay" size={14} color={c.muted} />
         </View>
         <View style={{ width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 11, backgroundColor: c.soft }}>
@@ -110,19 +111,23 @@ function RuleFlipCard({
           borderWidth: 1,
           borderColor: tint,
           backgroundColor: c.card,
-          padding: 14,
-          gap: 6,
+          paddingHorizontal: 14,
+          paddingVertical: 12,
+          justifyContent: "center",
+          gap: 4,
           backfaceVisibility: "hidden",
           opacity: backOpacity,
           transform: [{ perspective: 1000 }, { rotateY: backRotate }],
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <AppText role="label">{item.title}</AppText>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, flexWrap: "wrap", flex: 1 }}>
+            <AppText role="label">{item.title}</AppText>
+            {item.footnote ? <AppText role="field" secondary>{item.footnote}</AppText> : null}
+          </View>
           <CompeteIcon name="replay" size={14} color={c.muted} />
         </View>
         <AppText role="caption" secondary>{item.detail}</AppText>
-        {item.footnote ? <AppText role="field">{item.footnote}</AppText> : null}
       </Animated.View>
     </Pressable>
   );
@@ -150,7 +155,7 @@ export function EventRegistration({
   const reduced = useReducedMotion();
   const [step, setStep] = useState(registered ? 1 : 0);
   const [flipped, setFlipped] = useState<Record<number, boolean>>({});
-  const [cardHeight, setCardHeight] = useState(124);
+  const [cardHeight, setCardHeight] = useState(72);
   const [claiming, setClaiming] = useState(false);
   const [ticketHeight, setTicketHeight] = useState(0);
   const rotation = useRef(new Animated.Value(registered ? 180 : 0)).current;
@@ -279,9 +284,11 @@ export function EventRegistration({
             <AppText role="display" accessibilityRole="header" style={{ color: c.textOnInverse }}>
               {back ? "You’re on the start list." : "Your spot is ready."}
             </AppText>
-            <AppText role="body" style={{ color: c.textOnInverse, opacity: 0.82 }}>
-              {back ? detail.headline : "One last step to join your field."}
-            </AppText>
+            {back ? (
+              <AppText role="body" style={{ color: c.textOnInverse, opacity: 0.82 }}>
+                {detail.headline}
+              </AppText>
+            ) : null}
           </View>
         </View>
 
@@ -417,42 +424,25 @@ export function EventRegistration({
                 <AppText role="caption" secondary>Tap a card to learn more</AppText>
               </View>
               <View style={{ gap: 10 }}>
-                {[0, 1].map(rowIndex => {
-                  const start = rowIndex * 2;
-                  return (
-                    <View key={start} style={{ flexDirection: "row", gap: 10 }}>
-                      {ruleCards.slice(start, start + 2).map((item, offset) => {
-                        const index = start + offset;
-                        return (
-                          <RuleFlipCard
-                            key={item.id}
-                            item={item}
-                            tint={tint}
-                            flipped={Boolean(flipped[index])}
-                            reduced={reduced}
-                            rowHeight={cardHeight}
-                            onMeasure={measured => setCardHeight(prev => (measured > prev ? measured : prev))}
-                            onToggle={() => setFlipped(prev => ({ ...prev, [index]: !prev[index] }))}
-                          />
-                        );
-                      })}
-                    </View>
-                  );
-                })}
+                {ruleCards.map((item, index) => (
+                  <RuleFlipCard
+                    key={item.id}
+                    item={item}
+                    tint={tint}
+                    flipped={Boolean(flipped[index])}
+                    reduced={reduced}
+                    rowHeight={cardHeight}
+                    onMeasure={measured => setCardHeight(prev => (measured > prev ? measured : prev))}
+                    onToggle={() => setFlipped(prev => ({ ...prev, [index]: !prev[index] }))}
+                  />
+                ))}
               </View>
             </View>
           </>
         ) : (
-          <View style={{ gap: 12 }}>
-            <View style={{ minHeight: ticketHeight || undefined }}>
-              {face(false)}
-              {face(true)}
-            </View>
-            {!claimed && (
-              <AppText role="caption" secondary style={{ textAlign: "center" }}>
-                Your entry will be confirmed when you claim your spot.
-              </AppText>
-            )}
+          <View style={{ minHeight: ticketHeight || undefined }}>
+            {face(false)}
+            {face(true)}
           </View>
         )}
       </Animated.View>

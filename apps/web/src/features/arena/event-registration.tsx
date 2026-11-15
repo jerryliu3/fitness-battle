@@ -6,7 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { WaveCountdown } from "@/ui/wave-countdown";
 import { CompeteIcon, EventArt } from "./event-home";
 
-function TicketHeader({ event, tag, title, subtitle }: { event: CompeteEvent; tag: string; title: string; subtitle: string }) {
+function TicketHeader({ event, tag, title, subtitle }: { event: CompeteEvent; tag: string; title: string; subtitle?: string }) {
   return (
     <div className="registration-ticket-art">
       <EventArt event={event} />
@@ -16,7 +16,7 @@ function TicketHeader({ event, tag, title, subtitle }: { event: CompeteEvent; ta
       </div>
       <div className="registration-ticket-art-copy">
         <AppHeading role="display">{title}</AppHeading>
-        <AppText role="body" className="registration-ticket-sub">{subtitle}</AppText>
+        {subtitle && <AppText role="body" className="registration-ticket-sub">{subtitle}</AppText>}
       </div>
     </div>
   );
@@ -131,11 +131,13 @@ export function EventRegistration({
                         </span>
                         <span className="registration-rule-face registration-rule-back" aria-hidden={!isFlipped}>
                           <span className="registration-rule-back-head">
-                            <AppText role="label">{item.title}</AppText>
+                            <span className="registration-rule-back-title">
+                              <AppText role="label">{item.title}</AppText>
+                              {item.footnote && <AppText role="field" className="registration-rule-footnote">{item.footnote}</AppText>}
+                            </span>
                             <span className="registration-rule-flip" aria-hidden="true"><CompeteIcon name="replay" size={14} /></span>
                           </span>
                           <AppText role="caption" secondary>{item.detail}</AppText>
-                          {item.footnote && <AppText role="field" className="registration-rule-footnote">{item.footnote}</AppText>}
                         </span>
                       </span>
                     </button>
@@ -161,7 +163,6 @@ export function EventRegistration({
                   event={event}
                   tag={eventTag.toUpperCase()}
                   title="Your spot is ready."
-                  subtitle="One last step to join your field."
                 />
                 <div className="registration-ticket-body">
                   <AppHeading>{detail.name}</AppHeading>
@@ -208,11 +209,6 @@ export function EventRegistration({
                 </div>
               </div>
             </div>
-            {!claimed && (
-              <AppParagraph typographyRole="caption" className="registration-ticket-note ui-text-secondary">
-                Your entry will be confirmed when you claim your spot.
-              </AppParagraph>
-            )}
           </motion.div>
         )}
       </AnimatePresence>
