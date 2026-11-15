@@ -27,6 +27,7 @@ export interface RouteTimelapseMapProps {
   /** Array of [lng, lat] coordinates or an encoded polyline string */
   coordinates: LngLat[] | string;
   routeReplay?: RouteReplaySample[];
+  hudInsets?: { top: number; bottom: number };
   /** Camera mode: '3d-flyover' or '2d-overview'. Default: '3d-flyover' */
   mode?: "3d-flyover" | "2d-overview";
   /** Animation duration in milliseconds. Default: 12000 (12s) */
@@ -50,6 +51,7 @@ export interface RouteTimelapseMapProps {
 export function RouteTimelapseMap({
   coordinates,
   routeReplay,
+  hudInsets,
   mode: initialMode = "3d-flyover",
   durationMs = 12000,
   accentColor = "#f7c948",
@@ -435,7 +437,7 @@ export function RouteTimelapseMap({
 
       {/* Floating Header Metadata HUD */}
       {replaySamples.length > 0 ? (
-        <div className="pointer-events-none absolute top-3 left-3 right-3 z-10 flex justify-center">
+        <div className="pointer-events-none absolute top-3 left-3 right-3 z-10 flex justify-center" style={hudInsets ? { top: hudInsets.top } : undefined}>
           <div className="route-recorded-metrics pointer-events-auto w-full rounded-2xl border border-white/10 bg-[#142b3b]/90 px-4 py-2.5 shadow-2xl backdrop-blur-md text-white" aria-label="Recorded measurements at the replay position">
             <span><small>Recorded time</small><b>{activeSample ? `${Math.floor(activeSample.elapsedSec / 60)}:${String(Math.floor(activeSample.elapsedSec) % 60).padStart(2, "0")}` : "—"}</b></span>
             <span><small>Speed</small><b>{activeSample?.speedMps != null ? `${(activeSample.speedMps * (units === "us" ? 2.236936 : 3.6)).toFixed(1)} ${units === "us" ? "mph" : "km/h"}` : "—"}</b></span>
@@ -447,7 +449,7 @@ export function RouteTimelapseMap({
 
       {/* Floating Mobile Control HUD */}
       {mapLoaded && (
-        <div className="absolute bottom-3 left-3 right-3 sm:left-4 sm:right-4 z-10">
+        <div className="absolute bottom-3 left-3 right-3 sm:left-4 sm:right-4 z-10" style={hudInsets ? { bottom: hudInsets.bottom } : undefined}>
           <RouteControlsHud
             isPlaying={isPlaying}
             isFinished={isFinished}

@@ -2,13 +2,14 @@ import { createThemedStyles, useThemedStyles } from "../theme";
 import { useReducedMotion } from "./use-reduced-motion";
 import { AppText, textStyle } from "./section";
 import { useEffect, useMemo, useState } from "react";
-import { Modal, SafeAreaView, Text, View } from "react-native";
+import { Modal, SafeAreaView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { activityRoute, normalizeRouteReplay, type RouteReplaySample, type Activity } from "@fitness-battle/shared";
 import { FocusSegments } from "./focus";
 import { IconButton } from "./icon-button";
 import { RouteStaticPreview } from "./route-static-preview";
 import { RouteTimelapse } from "./route-timelapse";
 
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
 import { mobileEnv } from "../lib/env";
@@ -17,15 +18,19 @@ import { mobileEnv } from "../lib/env";
 export function ActivityRoute({
   activity,
   milestone = false,
+  immersive = false,
   units = "metric",
 }: {
   activity?: Activity;
   milestone?: boolean;
+  immersive?: boolean;
   units?: "us" | "metric";
 }) {
 const s=useThemedStyles(sThemes);
 
   const auth = useAuth();
+  const insets = useSafeAreaInsets();
+  const window = useWindowDimensions();
   const reduced = useReducedMotion();
   const [fetched, setFetched] = useState<{ id: string; owner?: string; detailedPolyline?: string; samples: RouteReplaySample[] } | null>(null);
   const fetchedLine = fetched?.id === activity?.id && fetched?.owner === auth.user?.id ? fetched?.detailedPolyline : undefined;
@@ -73,9 +78,9 @@ const s=useThemedStyles(sThemes);
   if (!coordinates || !activity) return null;
 
   const player = unavailable ? (
-    <View style={s.unavailableBox}>
-      <RouteStaticPreview coordinates={coordinates} height={260} strokeColor="176c75" showPlayBadge={false} />
-      <AppText role="caption">
+    <View style={[s.unavailableBox, immersive && { flex: 1, padding: 0 }]}>
+      <RouteStaticPreview coordinates={coordinates} width={immersive ? window.width : undefined} height={immersive ? window.height : 260} strokeColor="176c75" showPlayBadge={false} />
+      <AppText role="caption" style={immersive ? [s.unavailableCaption, { top: insets.top + 64 }] : undefined}>
         Route outline only. Interactive maps and flyovers are currently unavailable.
       </AppText>
     </View>
@@ -86,10 +91,18 @@ const s=useThemedStyles(sThemes);
       routeReplay={routeReplay ?? undefined}
       units={units}
       mode={mode}
+      hudInsets={immersive ? { top: insets.top + 64, bottom: window.height * .42 + 12 } : undefined}
       onUnavailable={() => setUnavailable(true)}
-      style={fullScreen ? s.fullPlayer : s.inlinePlayer}
+      style={immersive ? [s.fullPlayer, { borderRadius: 0 }] : fullScreen ? s.fullPlayer : s.inlinePlayer}
     />
   );
+
+  if (immersive) return <View style={StyleSheet.absoluteFill}>
+    {player}
+    <View style={{ position: "absolute", top: insets.top + 8, right: 16, width: 160 }}>
+      <FocusSegments label="Replay mode" value={mode} options={[{ value: "2d-overview", label: "2D" }, { value: "3d-flyover", label: "3D" }]} onChange={value => setMode(value as typeof mode)}/>
+    </View>
+  </View>;
 
   return (
     <View style={s.container}>
@@ -189,5 +202,6 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   },
   fullContent: { flex: 1, backgroundColor: themeColors.textPrimary },
   fullPlayer: { flex: 1, width: "100%" },
+  unavailableCaption: { position: "absolute", left: 16, right: 16, padding: 12, borderRadius: 12, backgroundColor: c.paper },
   unavailableBox: { padding: 12, gap: 10, alignItems: "center" },
 };});

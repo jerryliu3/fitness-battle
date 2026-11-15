@@ -49,6 +49,7 @@ describe("Mobile RouteTimelapse", () => {
           coordinates: MARIN_HEADLANDS_ROUTE_COORDINATES,
           routeReplay: [{ progress: 0, elapsedSec: 0, heartRate: 140 }],
           mode: "3d-flyover",
+          hudInsets: { top: 100, bottom: 340 },
           accentColor: "#f7c948",
         }),
       );
@@ -62,6 +63,7 @@ describe("Mobile RouteTimelapse", () => {
     expect(webView.props.source.uri).not.toContain("routeReplay");
     await act(async () => webView.props.onMessage({ nativeEvent: { data: JSON.stringify({ type: "route-ready" }) } }));
     expect(mockInjectJavaScript.mock.calls.at(-1)?.[0]).toContain("routeReplay");
+    expect(mockInjectJavaScript.mock.calls.at(-1)?.[0]).toContain('"hudInsets":{"top":100,"bottom":340}');
     expect(mockInjectJavaScript).toHaveBeenCalledWith(expect.stringContaining(JSON.stringify(encodePolyline(MARIN_HEADLANDS_ROUTE_COORDINATES))));
   });
 
