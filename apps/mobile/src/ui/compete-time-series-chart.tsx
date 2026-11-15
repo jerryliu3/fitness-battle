@@ -722,21 +722,6 @@ const sThemes = createThemedStyles((themeColors) => {
     flex: 1,
     gap: 2,
   },
-  eyebrowRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  liveDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 999,
-  },
-  eyebrowText: {
-    ...textStyle("caption"),
-    letterSpacing: 0.6,
-    color: c.muted,
-  },
   immersiveName: {
     ...textStyle("heading"),
     color: c.ink,

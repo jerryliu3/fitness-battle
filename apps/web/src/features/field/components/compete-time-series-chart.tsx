@@ -269,10 +269,6 @@ export function CompeteTimeSeriesChart({
     </svg>;
   }
 
-  const safeSport = sport ?? state?.primary ?? "running";
-  const meetTitle = `${mode === "sleep" ? "SLEEP" : sportById(safeSport).name.toUpperCase()} MEET`;
-  const meetStatus = model.isScrubbing ? model.timeLabel.toUpperCase() : "LIVE";
-
   return (
     <div
       aria-label="Weekly competition time-series graph"
@@ -308,30 +304,6 @@ export function CompeteTimeSeriesChart({
             highlight={model.selectedAthlete.you}
           />
           <div style={{ display: "grid", gap: 2, minWidth: 0, flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span
-                aria-hidden="true"
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: 999,
-                  background: model.isScrubbing ? c.muted : c.statusSuccess,
-                  flex: "none",
-                }}
-              />
-              <span
-                style={{
-                  ...typographyStyle("caption"),
-                  letterSpacing: "0.04em",
-                  color: c.muted,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {`${meetTitle} · ${meetStatus}`}
-              </span>
-            </div>
             <strong
               style={{
                 ...typographyStyle("heading"),
