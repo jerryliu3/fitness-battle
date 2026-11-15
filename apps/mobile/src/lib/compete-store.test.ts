@@ -112,6 +112,18 @@ function accountState(id: string) {
   state.name = id;
   return state;
 }
+function isAccountSaveCall(url: string, init?: RequestInit) {
+  if (!init?.method) return false;
+  if (init.method === "PUT" && url.includes("/api/compete") && !url.includes("/intents")) {
+    return true;
+  }
+  return init.method === "POST" && url.includes("/api/compete/intents");
+}
+function accountSaveCalls() {
+  return fetcher.mock.calls.filter(([url, init]) =>
+    isAccountSaveCall(String(url), init),
+  );
+}
 beforeEach(() => {
   mock.appStateListeners.clear();
   vi.useFakeTimers();
@@ -127,8 +139,8 @@ beforeEach(() => {
   fetcher = vi
     .fn()
     .mockImplementation(async (_url: string, init: RequestInit) =>
-      init.method === "PUT"
-        ? Response.json({ ok: true, updatedAt: "2026-10-20T13:00:00Z" })
+      isAccountSaveCall(_url, init)
+        ? Response.json({ ok: true, updatedAt: "2026-10-20T13:00:00Z", state: accountState(mock.auth.user?.id ?? "guest") })
         : Response.json({ state: accountState(mock.auth.user?.id ?? "guest") }),
     );
   vi.stubGlobal("fetch", fetcher);
@@ -214,7 +226,7 @@ describe("mobile account lifecycle", () => {
     expect(api.state?.name).toBe("Synthetic");
     await act(async () => api.dispatch({ type: "set-city", city: "Boston" }));
     await save();
-    expect(fetcher.mock.calls.some(([, init]) => init.method === "PUT")).toBe(true);
+    expect(accountSaveCalls().length).toBeGreaterThan(0);
   });
   it.each([
     "/athlete",
@@ -285,9 +297,7 @@ describe("mobile account lifecycle", () => {
     await switchTo("Alice");
     expect(api.state?.name).toBe("Alice");
     await save();
-    expect(
-      fetcher.mock.calls.filter(([, options]) => options.method === "PUT"),
-    ).toHaveLength(0);
+    expect(accountSaveCalls()).toHaveLength(0);
     expect(
       JSON.parse(mock.values.get(accountStorageKeys(null).state)!).name,
     ).toBe("Guest draft");
@@ -310,11 +320,9 @@ describe("mobile account lifecycle", () => {
       api.dispatch({ type: "set-units", units: "metric" });
     });
     await save();
-    const writes = fetcher.mock.calls.filter(
-      ([, options]) => options.method === "PUT",
-    );
+    const writes = accountSaveCalls();
     expect(writes).toHaveLength(1);
-    expect(JSON.parse(writes[0][1].body as string).state).toMatchObject({
+    expect(JSON.parse(writes[0]![1]!.body as string).state).toMatchObject({
       city: "Toronto",
       units: "metric",
     });
@@ -322,8 +330,8 @@ describe("mobile account lifecycle", () => {
   it("surfaces open-week conflicts, preserves the draft, and retries", async () => {
     login("Alice");
     await mount();
-    fetcher.mockImplementation(async (_url: string, init: RequestInit) =>
-      init.method === "PUT"
+    fetcher.mockImplementation(async (url: string, init: RequestInit) =>
+      isAccountSaveCall(url, init)
         ? Response.json({ error: "week_still_open" }, { status: 409 })
         : Response.json({ state: accountState("Alice") }),
     );
@@ -346,8 +354,8 @@ describe("mobile account lifecycle", () => {
   });
   it("sends the loaded revision and blocks stale retries until explicit account reload", async () => {
     login("Alice");
-    fetcher.mockImplementation(async (_url: string, init: RequestInit) =>
-      init.method === "PUT"
+    fetcher.mockImplementation(async (url: string, init: RequestInit) =>
+      isAccountSaveCall(url, init)
         ? Response.json({ error: "account_changed_reload" }, { status: 409 })
         : Response.json({
             state: accountState("Alice"),
@@ -359,8 +367,7 @@ describe("mobile account lifecycle", () => {
       api.dispatch({ type: "set-city", city: "Local draft" }),
     );
     await save();
-    const writes = () =>
-      fetcher.mock.calls.filter(([, options]) => options.method === "PUT");
+    const writes = () => accountSaveCalls();
     expect(JSON.parse(writes()[0]![1].body as string).updatedAt).toBe(
       "revision-1",
     );
@@ -433,9 +440,7 @@ describe("mobile account lifecycle", () => {
       api.dispatch({ type: "set-city", city: "Unsafe replacement" });
     });
     await save();
-    expect(
-      fetcher.mock.calls.filter(([, options]) => options.method === "PUT"),
-    ).toHaveLength(0);
+    expect(accountSaveCalls()).toHaveLength(0);
     expect(api.saveError).toContain("could not load");
     expect(api.canWrite).toBe(false);
     fetcher.mockImplementation(async () =>
@@ -552,7 +557,7 @@ it("does not manufacture a dirty draft or save request for an unchanged preferen
   await act(async () => { api.dispatch({ type: "set-city", city: api.state!.city }); await flush(); });
   await save();
   expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBeUndefined();
-  expect(fetcher.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(0);
+  expect(accountSaveCalls()).toHaveLength(0);
 });
 
 it("retries a persisted draft after sign-in without claiming a save has already failed", async () => {
@@ -561,14 +566,15 @@ it("retries a persisted draft after sign-in without claiming a save has already 
   mock.values.set(keys.dirty, "1");
   mock.values.set(`${keys.state}:revision`, "revision-1");
   login("Alice");
-  fetcher.mockImplementation(async (_url: string, init: RequestInit) => init.method === "PUT"
-    ? Response.json({ updatedAt: "revision-2" })
-    : Response.json({ state: accountState("Alice"), updatedAt: "revision-1" }));
+  fetcher.mockImplementation(async (url: string, init: RequestInit) =>
+    isAccountSaveCall(url, init)
+      ? Response.json({ updatedAt: "revision-2", state: accountState("Alice") })
+      : Response.json({ state: accountState("Alice"), updatedAt: "revision-1" }));
   await mount();
   expect(api.saveError).toBeNull();
   expect(api.state?.city).toBe("Draft city");
   await save();
-  expect(fetcher.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(1);
+  expect(accountSaveCalls()).toHaveLength(1);
   expect(mock.values.has(keys.dirty)).toBe(false);
   expect(api.saveError).toBeNull();
 });
@@ -593,15 +599,16 @@ it("preserves restored draft units through refresh and automatic retry", async (
   mock.values.set(keys.state, JSON.stringify({ ...accountState("Alice"), units: "metric" }));
   mock.values.set(keys.dirty, "1");
   mock.values.set(`${keys.state}:revision`, "revision-1");
-  fetcher.mockImplementation(async (_url: string, init: RequestInit) => init.method === "PUT"
-    ? Response.json({ updatedAt: "revision-2" })
-    : Response.json({ state: { ...accountState("Alice"), units: "us" }, updatedAt: "revision-1" }));
+  fetcher.mockImplementation(async (url: string, init: RequestInit) =>
+    isAccountSaveCall(url, init)
+      ? Response.json({ updatedAt: "revision-2", state: { ...accountState("Alice"), units: "metric" } })
+      : Response.json({ state: { ...accountState("Alice"), units: "us" }, updatedAt: "revision-1" }));
   await mount();
   expect(api.state?.units).toBe("metric");
   await act(async () => { await api.refresh(); });
   expect(api.state?.units).toBe("metric");
   await save();
-  const writes = fetcher.mock.calls.filter(([, init]) => init?.method === "PUT");
+  const writes = accountSaveCalls();
   expect(writes).toHaveLength(1);
   expect(JSON.parse(writes[0]![1]!.body as string).state.units).toBe("metric");
   expect(mock.values.has(keys.dirty)).toBe(false);
@@ -616,12 +623,12 @@ it("removes an orphan dirty flag before caching the loaded account", async () =>
   await mount();
   await save();
   expect(mock.values.has(keys.dirty)).toBe(false);
-  expect(fetcher.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(0);
+  expect(accountSaveCalls()).toHaveLength(0);
   await switchTo(null);
   await switchTo("Alice");
   await save();
   expect(api.saveError).toBeNull();
-  expect(fetcher.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(0);
+  expect(accountSaveCalls()).toHaveLength(0);
 });
 
 
@@ -693,15 +700,16 @@ it("shows retry progress, sends the current draft once, and retains it until the
 
 it("resurfaces conflict recovery on another edit without attempting an unsafe save", async () => {
   login("Alice"); await mount();
-  fetcher.mockImplementation(async (_url: string, init: RequestInit) => init.method === "PUT"
-    ? Response.json({ error: "account_changed_reload" }, { status: 409 })
-    : Response.json({ state: accountState("Alice"), updatedAt: "revision-1" }));
+  fetcher.mockImplementation(async (url: string, init: RequestInit) =>
+    isAccountSaveCall(url, init)
+      ? Response.json({ error: "account_changed_reload" }, { status: 409 })
+      : Response.json({ state: accountState("Alice"), updatedAt: "revision-1" }));
   await act(async () => api.dispatch({ type: "set-city", city: "First draft" }));
   await save();
   const original = renderer.root.findByType("AccountSaveToast" as never);
   await act(async () => api.dispatch({ type: "set-city", city: "Another draft" }));
   expect(renderer.root.findByType("AccountSaveToast" as never)).not.toBe(original);
   await save();
-  expect(fetcher.mock.calls.filter(([, init]) => init.method === "PUT")).toHaveLength(1);
+  expect(accountSaveCalls()).toHaveLength(1);
   expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBe("1");
 });
