@@ -63,7 +63,8 @@ export function EventRegistration({
   const [flipped, setFlipped] = useState<Record<number, boolean>>({});
   const [claiming, setClaiming] = useState(false);
   const claimed = registered;
-  useEffect(() => { if (error) setClaiming(false); }, [error]);
+  const claimPending = !claimed && (busy || claiming);
+  useEffect(() => { if (registered || error) setClaiming(false); }, [registered, error]);
 
   const now = competeNow(state);
   const detail = eventRegistration(state, event, now);
@@ -79,7 +80,7 @@ export function EventRegistration({
           type="button"
           className="registration-close"
           aria-label="Close registration"
-          disabled={busy || claiming}
+          disabled={claimPending}
           onClick={onClose}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
@@ -208,10 +209,10 @@ export function EventRegistration({
                   <button
                     type="button"
                     className="fb-btn"
-                    disabled={busy || claiming || claimed}
+                    disabled={claimPending || claimed}
                     onClick={() => { setClaiming(true); onClaim(); }}
                   >
-                    {busy || claiming ? "Claiming your spot…" : "Claim your spot"}
+                    {claimPending ? "Claiming your spot…" : "Claim your spot"}
                   </button>
                 </div>
               </div>

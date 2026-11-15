@@ -162,6 +162,7 @@ export function EventRegistration({
   const entry = useRef(new Animated.Value(0)).current;
   const stepMotion = useRef(new Animated.Value(1)).current;
   const claimed = registered;
+  const claimPending = !claimed && claiming;
 
   useEffect(() => {
     entry.setValue(reduced ? 1 : 0);
@@ -199,8 +200,8 @@ export function EventRegistration({
   const eventTag = crew ? "Crew Derby" : "Weekly event";
 
   useEffect(() => {
-    if (error) setClaiming(false);
-  }, [error]);
+    if (registered || error) setClaiming(false);
+  }, [registered, error]);
 
   useEffect(() => {
     if (step !== 1 || !claimed) {
@@ -343,8 +344,8 @@ export function EventRegistration({
           </View>
 
           <FocusButton
-            label={back ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →` : claiming ? "Claiming your spot…" : "Claim your spot"}
-            disabled={claiming && !registered}
+            label={back ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →` : claimPending ? "Claiming your spot…" : "Claim your spot"}
+            disabled={claimPending}
             onPress={back ? onView : () => {
               setClaiming(true);
               requestAnimationFrame(() => {
@@ -364,7 +365,7 @@ export function EventRegistration({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Close registration"
-            disabled={claiming && !registered}
+            disabled={claimPending}
             onPress={onClose}
             style={{
               width: 40,
@@ -375,7 +376,7 @@ export function EventRegistration({
               backgroundColor: c.card,
               alignItems: "center",
               justifyContent: "center",
-              opacity: claiming && !registered ? 0.45 : 1,
+              opacity: claimPending ? 0.45 : 1,
             }}
           >
             <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={c.ink} strokeWidth={2.2} strokeLinecap="round">
