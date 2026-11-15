@@ -4,11 +4,14 @@ import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 import { encodePolyline, freshState, type SyncReviewReceipt } from "@fitness-battle/shared";
 vi.mock("../ui/sync-energy-core", () => ({ SyncEnergyCore: "SyncEnergyCore" }));
+vi.mock("../ui/material-back", () => ({ MaterialBack: "MaterialBack" }));
+vi.mock("../ui/compete-sheet", () => ({ CompeteSheet: "CompeteSheet" }));
+vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("../ui/activity-route", () => ({ ActivityRoute: "ActivityRoute" }));
 vi.mock("../ui/route-static-preview", () => ({ RouteStaticPreview: "RouteStaticPreview" }));
 vi.mock("./competition-moment", () => ({ CompetitionMoment: "CompetitionMoment" }));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
-vi.mock("react-native-safe-area-context", () => ({ SafeAreaProvider: "SafeAreaProvider", SafeAreaView: "SafeAreaView" }));
+vi.mock("react-native-safe-area-context", () => ({ SafeAreaProvider: "SafeAreaProvider", SafeAreaView: "SafeAreaView", useSafeAreaInsets: () => ({ top: 59, bottom: 34, left: 0, right: 0 }) }));
 vi.mock("../ui/focus", () => ((()=>{const mock={
   FocusSheet: "Sheet",
   FocusButton: "Button",
@@ -83,7 +86,15 @@ it("a native full-screen swipe confirms the selected activities once without nav
   });
   const map = renderer!.root.findByType("RouteStaticPreview" as never);
   expect(map.props.width).toBe(342);
-  expect(map.props.height).toBe(180);
+  expect(map.props.height).toBe(135);
+  const summary = renderer!.root.findAllByType("ScrollView" as never).find(node => !node.props.horizontal)!;
+  expect(summary.props.scrollEnabled).toBe(false);
+  const details = renderer!.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "View Running activity details")!;
+  await act(async () => details.props.onPress());
+  expect(renderer!.root.findByType("ActivityRoute" as never).props.immersive).toBe(true);
+  expect(renderer!.root.findByType("MaterialBack" as never).props.label).toBe("Back to activities");
+  await act(async () => renderer!.root.findByType("MaterialBack" as never).props.onPress());
+  expect(renderer!.root.findAllByType("ActivityRoute" as never)).toHaveLength(0);
   const slider = renderer!.root
     .findAllByType("View" as never)
     .find((n) => n.props.onResponderRelease)!;
@@ -103,7 +114,7 @@ it("a native full-screen swipe confirms the selected activities once without nav
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 1000)); });
   expect(done).toHaveBeenCalledTimes(1);
   expect(done).toHaveBeenCalledWith(["a"]);
-  expect(renderer!.root.findByType("Modal" as never).props.presentationStyle).toBe("fullScreen");
+  expect(renderer!.root.findAllByType("Modal" as never)[0].props.presentationStyle).toBe("fullScreen");
   await act(async () => renderer!.unmount());
 });
 
@@ -188,7 +199,7 @@ it("supports Select all and Deselect all, and omits the saved safely message", a
   expect(deselectAllBtn).toBeDefined();
   expect(selectAllBtn).toBeDefined();
 
-  expect(renderer!.root.findByType("SyncEnergyCore" as never).props.totalSeconds).toBe(3600);
+  expect(renderer!.root.findByType("SyncEnergyCore" as never).props.benchmarkSeconds).toBe(3600);
 
   // Initially all 2 activities are selected, so Select all is disabled
   expect(selectAllBtn!.props.accessibilityState?.disabled).toBe(true);
