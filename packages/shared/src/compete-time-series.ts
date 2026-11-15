@@ -1,6 +1,5 @@
 import { ordinalPlace } from "./arena-view";
 import { competitionPlace } from "./competition-place";
-import { activityEffort } from "./compete/effort";
 import { competeNow, weeklyBoard } from "./compete/engine";
 import { buildSleepView, collapseNights, sleepContest } from "./compete/health";
 import { countsOnTrack } from "./compete/ledger";
@@ -130,7 +129,7 @@ function firstNameOf(name: string, you: boolean): string {
 
 function formatMetricValue(value: number, unit: string): string {
   const safe = Number.isFinite(value) ? Math.max(0, value) : 0;
-  if (unit === "km" || unit === "mi") {
+  if (unit === "km" || unit === "mi" || unit === "hrs") {
     return safe.toFixed(1);
   }
   return Math.round(safe).toLocaleString("en-US");
@@ -139,12 +138,8 @@ function formatMetricValue(value: number, unit: string): string {
 function niceAxisCeiling(peak: number, unit: string): number {
   if (unit === "score") return 100;
   const safePeak = Number.isFinite(peak) ? Math.max(0, peak) : 0;
-  if (safePeak <= 0) return unit === "pts" ? 10 : 2;
+  if (safePeak <= 0) return 2;
   const padded = safePeak * 1.08;
-  if (unit === "pts") {
-    const step = padded <= 10 ? 2 : padded <= 25 ? 5 : padded <= 60 ? 10 : padded <= 150 ? 25 : 50;
-    return Math.ceil(padded / step) * step;
-  }
   const step = padded <= 6 ? 1 : padded <= 15 ? 2 : padded <= 30 ? 5 : 10;
   return Math.ceil(padded / step) * step;
 }
@@ -538,7 +533,7 @@ function buildYouVertices(
   let cumulative = 0;
 
   for (const act of eligible) {
-    const delta = spec.gps ? act.distanceM / divisor : activityEffort(act);
+    const delta = spec.gps ? act.distanceM / divisor : act.movingSec / 3600;
     if (delta <= 0) continue;
     const t = clamp(0, nowFraction, (Date.parse(act.startedAt) - startMs) / spanMs);
     cumulative += delta;
@@ -592,7 +587,7 @@ function buildCompetitorVertices(
     const cutoffMs = Math.min(clampedNowMs, dayEnd.getTime());
     const t = clamp(0, nowFraction, (cutoffMs - startMs) / spanMs);
     const vol = syntheticVolumeInWindow(synthetic, sport, periodStart, periodEnd, track, new Date(cutoffMs), spec.gps);
-    rawPoints.push({ t, value: spec.gps ? vol.distanceM / divisor : vol.effort });
+    rawPoints.push({ t, value: spec.gps ? vol.distanceM / divisor : vol.movingSec / 3600 });
     cursor = dayEnd;
   }
 
@@ -621,7 +616,7 @@ export function buildCompeteTimeSeriesModel(
   options?: CompeteTimeSeriesOptions,
 ): CompeteTimeSeriesModel {
   const spec = sportById(sport);
-  const unit = spec.gps ? (state.units === "metric" ? "km" : "mi") : "pts";
+  const unit = spec.gps ? (state.units === "metric" ? "km" : "mi") : "hrs";
   const period = competePeriodWindow(state, now, sport);
   const startMs = period.startsAt.getTime();
   const endMs = period.endsAt.getTime();
@@ -653,7 +648,7 @@ export function buildCompeteTimeSeriesModel(
         ];
 
   const rawAthletes = rows.map((row) => {
-    const liveValue = spec.gps ? row.distanceM / divisor : row.effort;
+    const liveValue = spec.gps ? row.distanceM / divisor : row.movingSec / 3600;
     const vertices = row.you
       ? buildYouVertices(
           state,

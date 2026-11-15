@@ -21,7 +21,6 @@ import { playCue } from "../lib/haptics";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { AppIcon } from "./app-icon";
 import { chartTextProps, textStyle } from "./section";
-import { AthletePennant } from "./athlete-pennant";
 import { UserAvatar } from "./user-avatar";
 import { useReducedMotion } from "./use-reduced-motion";
 
@@ -256,9 +255,6 @@ export function CompeteTimeSeriesChart({
     </View>;
   }
 
-  const meetTitle = `${mode === "sleep" ? "SLEEP" : sportById(sport ?? state.primary).name.toUpperCase()} MEET`;
-  const meetStatus = model.isScrubbing ? model.timeLabel.toUpperCase() : "LIVE";
-
   return (
     <View
       accessibilityLabel="Weekly competition time-series graph"
@@ -286,12 +282,6 @@ export function CompeteTimeSeriesChart({
             highlight={model.selectedAthlete.you}
           />
           <View style={s.immersiveHeaderText}>
-            <View style={s.eyebrowRow}>
-              <View style={[s.liveDot, { backgroundColor: model.isScrubbing ? c.muted : c.statusSuccess }]} />
-              <Text style={s.eyebrowText} numberOfLines={1}>
-                {`${meetTitle} · ${meetStatus}`}
-              </Text>
-            </View>
             <Text style={s.immersiveName} numberOfLines={1}>
               {model.selectedAthlete.name}
             </Text>
@@ -485,14 +475,14 @@ export function CompeteTimeSeriesChart({
                 strokeWidth={1.35}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                opacity={0.32}
+                opacity={0.22}
               />
               <Circle
                 cx={athlete.cursorX}
                 cy={athlete.cursorY}
                 r={2.4}
                 fill="#94a3b8"
-                opacity={0.45}
+                opacity={0.3}
               />
             </G>
           ))}
@@ -541,22 +531,8 @@ export function CompeteTimeSeriesChart({
               stroke={c.paper}
               strokeWidth={1.8}
             />
-            {/* Athlete Callout (Full pennant card in fullscreen aligned to right; clean pill in card preview) */}
-            {immersive ? (
-              <G transform={`translate(${model.selectedAthlete.cursorX} ${model.selectedAthlete.cursorY})`}>
-                <AthletePennant
-                  lane={{
-                    name: model.selectedAthlete.name,
-                    you: model.selectedAthlete.you,
-                    avatarUrl: model.selectedAthlete.avatarUrl,
-                  }}
-                  x={Math.max(16, model.width - 158 - model.selectedAthlete.cursorX)}
-                  y={clamp(model.top - model.selectedAthlete.cursorY, model.bottom - 46 - model.selectedAthlete.cursorY, -23)}
-                  detail={`${model.placeLabel} · ${model.selectedAthlete.formattedValueAtCursor} ${model.unit}`}
-                  prefix={`athlete-${model.selectedAthlete.id}`}
-                />
-              </G>
-            ) : (
+            {/* Athlete Callout (Clean pill in card preview; immersive uses header + highlighted trace) */}
+            {!immersive && (
               <G>
                 <Rect
                   x={model.tipPill.x}
@@ -627,35 +603,37 @@ export function CompeteTimeSeriesChart({
         })()}
       </View>
 
-      {/* Graph View Switcher: Trajectory vs Event */}
-      <View style={s.viewToggleTrack} accessibilityRole="tablist">
-        {GRAPH_VIEWS.map((option) => {
-          const selected = activeView === option.id;
-          return (
-            <Pressable
-              key={option.id}
-              accessibilityRole="tab"
-              accessibilityState={{ selected }}
-              accessibilityLabel={`${option.label} graph view`}
-              onPress={() => {
-                if (selected) return;
-                void playCue("selection");
-                setActiveView(option.id);
-              }}
-              style={[s.viewToggleTab, selected && s.viewToggleTabSelected]}
-            >
-              <AppIcon
-                name={option.icon}
-                size={15}
-                color={selected ? c.ink : c.muted}
-              />
-              <Text style={[s.viewToggleLabel, selected && s.viewToggleLabelSelected]}>
-                {option.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {/* Graph View Switcher: Trajectory vs Event (non-immersive; immersive uses layers menu) */}
+      {!immersive && (
+        <View style={s.viewToggleTrack} accessibilityRole="tablist">
+          {GRAPH_VIEWS.map((option) => {
+            const selected = activeView === option.id;
+            return (
+              <Pressable
+                key={option.id}
+                accessibilityRole="tab"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`${option.label} graph view`}
+                onPress={() => {
+                  if (selected) return;
+                  void playCue("selection");
+                  setActiveView(option.id);
+                }}
+                style={[s.viewToggleTab, selected && s.viewToggleTabSelected]}
+              >
+                <AppIcon
+                  name={option.icon}
+                  size={15}
+                  color={selected ? c.ink : c.muted}
+                />
+                <Text style={[s.viewToggleLabel, selected && s.viewToggleLabelSelected]}>
+                  {option.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
 
       {/* Single-Select Athlete Quick-Focus Chips */}
       {!immersive && (

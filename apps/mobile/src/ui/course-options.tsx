@@ -76,27 +76,45 @@ function LayersMenu({
   );
 }
 
-export function GraphOptions() {
+export function GraphOptions({
+  eventView = false,
+  onToggleEventView,
+}: {
+  eventView?: boolean;
+  onToggleEventView?: () => void;
+} = {}) {
   const { mode, colors: c, setPreference } = useAppTheme();
   return (
     <LayersMenu
       label="Graph options"
       closeLabel="Close graph options"
-      estimatedHeight={56}
+      estimatedHeight={onToggleEventView ? 104 : 56}
       minWidth={200}
       buttonBackgroundColor={c.card}
       buttonBorderColor={c.line}
       iconColor={c.ink}
     >
       {() => (
-        <SettingsToggleRow
-          label="Dark mode"
-          value={mode === "dark"}
-          onChange={() => {
-            void playCue("selection");
-            setPreference(mode === "dark" ? "light" : "dark");
-          }}
-        />
+        <>
+          {onToggleEventView && (
+            <SettingsToggleRow
+              label="Event view"
+              value={eventView}
+              onChange={() => {
+                void playCue("selection");
+                onToggleEventView();
+              }}
+            />
+          )}
+          <SettingsToggleRow
+            label="Dark mode"
+            value={mode === "dark"}
+            onChange={() => {
+              void playCue("selection");
+              setPreference(mode === "dark" ? "light" : "dark");
+            }}
+          />
+        </>
       )}
     </LayersMenu>
   );

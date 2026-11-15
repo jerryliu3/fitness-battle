@@ -679,9 +679,12 @@ const f=useFocusStyles();
       {!expanded ? <AthleteProfileSheet athlete={profileAthlete} onClose={() => setProfileAthlete(null)} /> : null}
       {!queued && !persistent && <View style={[f.section, { paddingTop: 16 }]}>
         <StandingsList
-          ranked={ranked.map((lane) => ({ ...lane, value: lane.values[2] }))}
+          ranked={ranked.map((lane) => ({
+            ...lane,
+            value: arena.unit === "pts" ? (scores.find((s) => s.id === lane.id)?.movingSec ?? 0) / 3600 : lane.values[2],
+          }))}
           hiddenIds={hiddenIds}
-          unit={arena.unit}
+          unit={arena.unit === "pts" ? "hrs" : arena.unit}
           scores={scores}
           onSelectAthlete={(lane) => onFocusAthlete ? onFocusAthlete(lane.id) : selectAthlete(lane.id)}
           onOpenProfile={(lane) => {
