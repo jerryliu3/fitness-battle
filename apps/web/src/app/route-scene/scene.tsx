@@ -18,7 +18,6 @@ export interface RouteSceneMessage {
   type: "set-route" | "play" | "pause" | "seek" | "toggle-mode";
   coordinates?: LngLat[] | string;
   routeReplay?: unknown;
-  hudInsets?: { top: number; bottom: number };
   mode?: "3d-flyover" | "2d-overview";
   accentColor?: string;
   durationMs?: number;
@@ -37,7 +36,6 @@ export function RouteScene() {
   const [coordinates, setCoordinates] = useState<LngLat[] | string>(
     paramPolyline || "",
   );
-  const [hudInsets, setHudInsets] = useState<{ top: number; bottom: number }>();
   const [routeReplay, setRouteReplay] = useState<RouteReplaySample[]>([]);
   const [mode, setMode] = useState<"3d-flyover" | "2d-overview">(paramMode);
   const [accentColor, setAccentColor] = useState<string>(paramAccent);
@@ -70,7 +68,6 @@ export function RouteScene() {
       if (msg.type === "set-route") {
         if (msg.coordinates) setCoordinates(msg.coordinates);
         setRouteReplay(normalizeRouteReplay(msg.routeReplay));
-        setHudInsets(msg.hudInsets);
         if (msg.mode) setMode(msg.mode);
         if (msg.accentColor) setAccentColor(msg.accentColor);
         if (Number.isFinite(msg.durationMs)) setDurationMs(Math.max(1000, Math.min(120000, msg.durationMs!)));
@@ -106,7 +103,6 @@ export function RouteScene() {
         <RouteTimelapseMap
           coordinates={coordinates}
           routeReplay={routeReplay}
-          hudInsets={hudInsets}
           key={`${typeof coordinates === "string" ? coordinates : JSON.stringify(coordinates)}:${mode}`}
           mode={mode}
           autoPlay={false}

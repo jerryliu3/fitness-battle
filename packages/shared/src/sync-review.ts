@@ -1,4 +1,4 @@
-import { dayKey, shiftAppDay } from "./period";
+import { dayKey } from "./period";
 import { countsOnTrack, dispositionOf, mergeActivities, provenanceOf } from "./compete/ledger";
 import { competeNow, reduceCompete, type Action } from "./compete/engine";
 import type { Activity, CompeteState } from "./compete/sports";
@@ -92,19 +92,4 @@ export function planSyncReview(action: Action, state: CompeteState) {
     activities,
     preview: false,
   };
-}
-
-/** Personal charge reference; receipt activities never establish their own baseline. */
-export function syncChargeBenchmark(history: readonly Activity[], receipt: readonly Activity[], now: Date): number {
-  const today = dayKey(now), lower = dayKey(shiftAppDay(now, -30));
-  const held = new Set(receipt.map(a => a.id));
-  const days = new Map<string, number>();
-  for (const activity of history) {
-    if (held.has(activity.id) || !countsOnTrack(activity, "open") || !Number.isFinite(activity.movingSec) || activity.movingSec <= 0 || !Number.isFinite(Date.parse(activity.startedAt))) continue;
-    const day = dayKey(new Date(activity.startedAt));
-    if (day < lower || day >= today) continue;
-    days.set(day, (days.get(day) ?? 0) + activity.movingSec);
-  }
-  const totals = [...days.values()].sort((a, b) => a - b);
-  return totals.length < 7 ? 3600 : totals[Math.ceil(totals.length * .9) - 1]!;
 }

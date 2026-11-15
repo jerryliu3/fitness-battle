@@ -17,7 +17,6 @@ export interface RouteTimelapseProps {
   onFinish?: () => void;
   onUnavailable?: () => void;
   style?: StyleProp<ViewStyle>;
-  hudInsets?: { top: number; bottom: number };
 }
 
 export function RouteTimelapse({
@@ -30,7 +29,6 @@ export function RouteTimelapse({
   onFinish,
   onUnavailable,
   style,
-  hudInsets,
 }: RouteTimelapseProps) {
   const colors = useLegacyColors();
   const accentColor = suppliedaccentColor ?? colors.lime;
@@ -74,7 +72,6 @@ const styles=useThemedStyles(stylesThemes);
     if (ready.current) {
       inject({
         type: "set-route",
-        hudInsets,
         routeReplay,
         coordinates: polylineStr,
         mode,
@@ -82,7 +79,7 @@ const styles=useThemedStyles(stylesThemes);
         durationMs,
       });
     }
-  }, [polylineStr, routeReplay, mode, accentColor, durationMs, active, hudInsets?.top, hudInsets?.bottom]);
+  }, [polylineStr, routeReplay, mode, accentColor, durationMs, active]);
 
   return (
     <View style={[styles.frame, style]}>
@@ -107,7 +104,7 @@ const styles=useThemedStyles(stylesThemes);
             const msg = JSON.parse(event.nativeEvent.data);
             if (msg.type === "route-ready") {
               ready.current = true;
-              inject({ type: "set-route", hudInsets, routeReplay, coordinates: polylineStr, mode, accentColor, durationMs });
+              inject({ type: "set-route", routeReplay, coordinates: polylineStr, mode, accentColor, durationMs });
             } else if (msg.type === "route-finish") {
               onFinish?.();
             } else if (msg.type === "route-unavailable") {

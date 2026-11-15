@@ -1,7 +1,8 @@
+import { useFocusStyles } from "../ui/focus";
 import { useThemeColors } from "../theme";
 import { playCue } from "../lib/haptics";
 import { textStyle } from "../ui/section";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -17,15 +18,12 @@ import {
   useWindowDimensions,
   type ScrollViewInstance,
 } from "react-native";
-import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { APP_TIMEZONE, competeNow, syncChargeBenchmark, syncReviewMetrics, clubDuration, formatAppDateTime, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
-import { AppIcon, type AppIconName } from "../ui/app-icon";
-import { MaterialBack } from "../ui/material-back";
-import { CompeteSheet } from "../ui/compete-sheet";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { APP_TIMEZONE, syncReviewMetrics, clubDuration, formatAppDateTime, formatVolume, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
+import { FocusButton } from "../ui/focus";
 import { ActivityRoute } from "../ui/activity-route";
 import { RouteStaticPreview } from "../ui/route-static-preview";
 
-import { SyncEnergyCore } from "../ui/sync-energy-core";
 import { ScreenFade } from "../ui/screen-fade";
 import { CompetitionMoment } from "./competition-moment";
 import { useReducedMotion } from "../ui/use-reduced-motion";
@@ -34,21 +32,29 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
   receipt: SyncReviewReceipt | null; state: CompeteState; debug?: boolean; moment?: Moment | null; remaining?: number;
   onComplete: (selected?: readonly string[], quiet?: boolean) => unknown; onAcknowledge?: () => void;
 }) {
+const f=useFocusStyles();
+
   const reduced = useReducedMotion();
   const close = () => { if (receipt) onComplete(undefined, true); };
+  const scroll = useRef<ScrollViewInstance | null>(null);
+  const resetScroll = () => scroll.current?.scrollTo({ y: 0, animated: false });
+  useEffect(resetScroll, [receipt ? "review" : moment?.id]);
   return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "fade"} onRequestClose={close}>
-    <SafeAreaProvider><ScreenFade identity={receipt ? `receipt:${receipt.account}:${receipt.day}` : `moment:${moment?.id}`}>{!receipt && moment ? <CompetitionMoment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete}/> : null}</ScreenFade></SafeAreaProvider>
+    <SafeAreaProvider><ScreenFade identity={receipt ? `receipt:${receipt.account}:${receipt.day}` : `moment:${moment?.id}`}>{!receipt && moment ? <CompetitionMoment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
+      <ScrollView ref={scroll} contentContainerStyle={{ padding: 22, gap: 20, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+        {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete} resetScroll={resetScroll}/> : null}
+      </ScrollView>
+    </SafeAreaView>}</ScreenFade></SafeAreaProvider>
   </Modal>;
 }
-function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {
+function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () => void; receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {
+const appearanceColors = useThemeColors();
+
+const f=useFocusStyles();
 const c=useThemeColors();
 
   const windowDimensions = useWindowDimensions();
-  const insets = useSafeAreaInsets();
-  const availableHeight = windowDimensions.height - insets.top - insets.bottom;
-  const mapHeight = Math.round(Math.max(72, Math.min(160, availableHeight * .18)));
-  const coreSize = Math.round(Math.max(112, Math.min(184, availableHeight * .23, windowDimensions.width * .45)));
-  const cardWidth = Math.max(260, Math.min(360, Math.round((windowDimensions.width || 375) - 48)));
+  const cardWidth = Math.max(260, Math.min(360, Math.round((windowDimensions.width || 375) * 0.82)));
   const cardGap = 12;
   const cardScroll = useRef<ScrollViewInstance | null>(null);
   const reduced = useReducedMotion();
@@ -57,11 +63,11 @@ const c=useThemeColors();
   const complete = useRef(false), dragStart = useRef(0), dragDistance = useRef(0), dragging = useRef(false), saveTimer = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const excludedRef = useRef(excluded);
   excludedRef.current = excluded;
+  useEffect(resetScroll, [detail]);
   useEffect(() => () => {
     if (saveTimer.current) globalThis.clearTimeout(saveTimer.current);
   }, []);
   const activities = receipt.activities, selected = activities.filter(a => !excluded.includes(a.id));
-  const benchmarkSeconds = useMemo(() => syncChargeBenchmark(state.activities, activities, competeNow(state)), [state, activities]);
   const detent = useRef(0);
   // Each detent plays at most once per gesture, including threshold oscillation.
   const updateSwipe = (distance: number) => {
@@ -111,26 +117,19 @@ const c=useThemeColors();
   };
   const travel = Math.max(1, width - 60);
   const activity = activities.find(a => a.id === detail);
-  const detailContent = activity ? <View style={{ flex: 1, backgroundColor: c.paper }}>
-    <ActivityRoute activity={activity} units={state.units} immersive/>
-    <View style={{ position: "absolute", top: insets.top + 8, left: 16, zIndex: 40 }}><MaterialBack onPress={() => setDetail(null)} label="Back to activities"/></View>
-    <CompeteSheet active expandRequest={0} defaultIndex={1} overview={<View style={{ gap: 4 }}>
-      <Text accessibilityRole="header" style={[textStyle("heading"), { color: c.ink }]}>{sportById(activity.sport).name}</Text>
-      <Text style={[textStyle("caption"), { color: c.muted }]}>{formatAppDateTime(activity.startedAt, { year: true })}</Text>
-    </View>}>
-      <ActivityMetrics activity={activity} units={state.units}/>
-      {syncReviewMetrics(activity, [], state.units).filter(m => m.id === "elevation").map(m => <Text key={m.id} style={[textStyle("body"), { color: c.ink, marginTop: 16 }]}>{m.label} · {m.valueLabel}</Text>)}
-      {!activityRoute(activity) && <Text style={[textStyle("body"), { color: c.muted, marginTop: 16 }]}>No GPS route recorded</Text>}
-    </CompeteSheet>
-  </View> : null;
-  return <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={["top", "bottom"]}>
-    <ScrollView scrollEnabled={windowDimensions.fontScale > 1.2 || availableHeight < 650} contentContainerStyle={{ flexGrow: 1, padding: 16, gap: availableHeight < 650 ? 8 : 12 }}>
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.tennis, alignItems: "center", justifyContent: "center" }}><Text style={[textStyle("heading"), { color: c.textOnAction }]}>✓</Text></View>
-      <Text accessibilityRole="header" style={[textStyle("heading"), { color: c.ink }]}>Activities synced</Text>
-    </View>
+  if (activity) return <View style={{ gap: 20 }}>
+    <FocusButton secondary label="← All activities" disabled={saving} onPress={() => setDetail(null)}/>
+    <Text style={f.kicker}>ACTIVITY DETAILS</Text><Text accessibilityRole="header" style={[textStyle("display"), { color: c.ink }]}>{sportById(activity.sport).name}</Text>
+    <ActivityRoute activity={activity} units={state.units}/>
+    <Text style={[textStyle("heading"), { color: c.ink }]}>{formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units)} · {clubDuration(activity.movingSec)}</Text>
+    <Text style={[textStyle("body"), { color: c.ink }]}>{formatAppDateTime(activity.startedAt, { year: true })}</Text>
+    <ActivityMetricBars activity={activity} history={[...receipt.activities, ...state.activities]} units={state.units}/>
+  </View>;
+  return <View style={{ gap: 20, flex: 1 }}>
+    <Text accessibilityRole="header" style={[textStyle("display"), { color: c.ink }]}>Sync completed</Text>
+    <Text style={f.massive}>{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</Text>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-      <Text style={[textStyle("caption"), { color: c.muted }]}>{selected.length} of {activities.length} selected</Text>
+      <Text style={[textStyle("body"), { color: c.ink }]}>{selected.length} of {activities.length} activities selected.</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Pressable
           accessibilityRole="button"
@@ -141,7 +140,7 @@ const c=useThemeColors();
           hitSlop={8}
           style={({ pressed }) => [{ opacity: saving || selected.length === activities.length ? 0.35 : pressed ? 0.6 : 1 }]}
         >
-          <Text style={{ ...textStyle("label"), color: c.ink }}>Select all</Text>
+          <Text style={{ ...textStyle("label"), color: c.ink, textDecorationLine: "underline" }}>Select all</Text>
         </Pressable>
         <Text style={{ ...textStyle("caption"), color: c.muted }}>·</Text>
         <Pressable
@@ -153,7 +152,7 @@ const c=useThemeColors();
           hitSlop={8}
           style={({ pressed }) => [{ opacity: saving || selected.length === 0 ? 0.35 : pressed ? 0.6 : 1 }]}
         >
-          <Text style={{ ...textStyle("label"), color: c.ink }}>Deselect all</Text>
+          <Text style={{ ...textStyle("label"), color: c.ink, textDecorationLine: "underline" }}>Deselect all</Text>
         </Pressable>
       </View>
     </View>
@@ -182,17 +181,17 @@ const c=useThemeColors();
                 width: cardWidth,
                 borderRadius: 20,
                 overflow: "hidden",
-                backgroundColor: c.surfaceCard,
+                backgroundColor: appearanceColors.surfaceCard,
                 borderWidth: 1,
                 borderColor: c.line,
               }}
             >
               {coords ? (
-                <View style={{ height: mapHeight, overflow: "hidden", backgroundColor: "#0b242c" }}>
+                <View style={{ height: 180, overflow: "hidden", backgroundColor: "#0b242c" }}>
                   <RouteStaticPreview
                     coordinates={coords}
                     width={cardWidth}
-                    height={mapHeight}
+                    height={180}
                     strokeColor="176c75"
                     showPlayBadge={false}
                     onPress={() => openDetail(a.id)}
@@ -201,24 +200,37 @@ const c=useThemeColors();
               ) : (
                 <View
                   style={{
-                    height: mapHeight,
+                    height: 180,
                     backgroundColor: "#102e38",
                     padding: 16,
-                    justifyContent: "center",
-                    alignItems: "center",
+                    justifyContent: "space-between",
                   }}
                 >
-                  <AppIcon name={a.sport} size={44} color={c.tennis}/>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text style={{ ...textStyle("caption"), color: c.tennis }}>
+                      {sportById(a.sport).name.toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={{ gap: 2 }}>
+                    <Text style={{ ...textStyle("display"), color: appearanceColors.white }}>
+                      {formatVolume(a.sport, a.distanceM, a.movingSec, state.units)}
+                    </Text>
+                    <Text style={{ ...textStyle("body"), color: "rgba(255,255,255,0.75)" }}>
+                      {clubDuration(a.movingSec)}
+                    </Text>
+                  </View>
+                  <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,0.5)" }}>
+                    {new Date(a.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}
+                  </Text>
                 </View>
               )}
 
-              <View style={{ padding: 12, gap: 8 }}>
+              <View style={{ padding: 14, gap: 10 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                   <Pressable
                     accessibilityRole="checkbox"
                     accessibilityLabel={`Count ${sportById(a.sport).name} activity ${a.id}`}
                     accessibilityState={{ checked: isCounted, disabled: saving }}
-                    accessibilityHint="Deselected activities stay saved, excluded from competition."
                     disabled={saving}
                     onPress={() => {
                       if (saving) return;
@@ -260,11 +272,11 @@ const c=useThemeColors();
                     onPress={() => openDetail(a.id)}
                     style={{ minHeight: 36, minWidth: 44, justifyContent: "center", alignItems: "flex-end" }}
                   >
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}><Text style={{ ...textStyle("caption"), color: c.ink }}>View details</Text><AppIcon name="chevron" size={16}/></View>
+                    <Text style={{ ...textStyle("label"), color: c.ink }}>Details ↗</Text>
                   </Pressable>
                 </View>
 
-                <ActivityMetrics activity={a} units={state.units}/>
+                <ActivityMetricBars activity={a} history={[...receipt.activities, ...state.activities]} units={state.units}/>
               </View>
             </View>
           );
@@ -280,11 +292,11 @@ const c=useThemeColors();
         }}
       />
     </View>
-    <SyncEnergyCore activities={selected} benchmarkSeconds={benchmarkSeconds} units={state.units} draining={saving} size={coreSize} active={!detail}/>
-    <View style={{ marginTop: "auto", paddingTop: 4, gap: 8 }}>
+    {!receipt.preview && excluded.length > 0 && <Text style={[textStyle("caption"), { color: c.ink }]}>Deselected activities stay saved, excluded from competition.</Text>}
+    <View style={{ marginTop: "auto", paddingTop: 16, gap: 12 }}>
       <View onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ height: 66, borderRadius: 36, backgroundColor: c.surfaceInverse, justifyContent: "center", position: "relative", overflow: "hidden" }}>
         <View pointerEvents="none" style={{ position: "absolute", left: progress * width, right: 0, top: 0, bottom: 0, overflow: "hidden", justifyContent: "center" }}>
-          <Text style={[textStyle("label"), { color: c.textOnInverse, textAlign: "center", width, marginLeft: -progress * width }]}>Swipe to save</Text>
+          <Text style={[textStyle("label"), { color: c.textOnInverse, textAlign: "center", width, marginLeft: -progress * width }]}>{selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</Text>
         </View>
         <View accessible accessibilityRole="adjustable" accessibilityLabel="Swipe to confirm synced activities" accessibilityState={{ busy: saving }} accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }} accessibilityActions={[{ name: "increment", label: "Confirm activities" }]} onAccessibilityAction={finish} style={StyleSheet.absoluteFill}
           onStartShouldSetResponder={e => !saving && e.nativeEvent.locationX <= 64}
@@ -294,15 +306,11 @@ const c=useThemeColors();
           onResponderMove={e => { if (saving) return; dragDistance.current = Math.max(0, e.nativeEvent.pageX - dragStart.current); updateSwipe(dragDistance.current); }}
           onResponderRelease={e => { if (saving) return; const distance = Math.max(0, e.nativeEvent.pageX - dragStart.current); dragging.current = false; if (distance / travel >= .85) finish(); else setProgress(0); }}
           onResponderTerminate={() => { dragging.current = false; if (!saving) setProgress(0); }}>
-          <View pointerEvents="none" style={{ position: "absolute", top: 5, left: 4, width: 56, height: 56, borderRadius: 28, backgroundColor: c.tennis, justifyContent: "center", alignItems: "center", transform: [{ translateX: progress * travel }] }}>{saving ? <ActivityIndicator color={c.textOnAction} /> : <Text style={{ ...textStyle("heading"), color: c.textOnAction }}>→</Text>}</View>
+          <View pointerEvents="none" style={{ position: "absolute", top: 5, left: 4, width: 56, height: 56, borderRadius: 28, backgroundColor: c.soft, justifyContent: "center", alignItems: "center", transform: [{ translateX: progress * travel }] }}>{saving ? <ActivityIndicator color={c.ink} /> : <Text style={{ ...textStyle("heading"), color: c.ink }}>→</Text>}</View>
         </View>
       </View>
     </View>
-    </ScrollView>
-    <Modal visible={!!activity} presentationStyle="fullScreen" animationType={reduced ? "none" : "fade"} onRequestClose={() => setDetail(null)}>
-      <SafeAreaProvider>{detailContent}</SafeAreaProvider>
-    </Modal>
-  </SafeAreaView>;
+  </View>;
 }
 
 export function computeWindowStart(
@@ -453,20 +461,17 @@ const c=useThemeColors();
   );
 }
 
-function ActivityMetrics({ activity, units }: { activity: SyncReviewReceipt["activities"][number]; units: CompeteState["units"] }) {
+function ActivityMetricBars({ activity, history, units }: { activity: SyncReviewReceipt["activities"][number]; history: CompeteState["activities"]; units: CompeteState["units"] }) {
 const c=useThemeColors();
 
-  const recorded = syncReviewMetrics(activity, [], units);
-  const metrics: { label: string; value: string; icon: AppIconName }[] = [
-    { label: "Distance", value: recorded.find(m => m.id === "distance")?.valueLabel ?? "—", icon: "distance" },
-    { label: "Time", value: clubDuration(activity.movingSec), icon: "time" },
-    { label: "Avg HR", value: recorded.find(m => m.id === "heart-rate")?.valueLabel ?? "—", icon: "heart" },
-  ];
-  return <View style={{ flexDirection: "row", gap: 8 }}>
-    {metrics.map(metric => <View key={metric.label} accessible accessibilityLabel={`${metric.label}: ${metric.value}`} style={{ flex: 1, alignItems: "center", gap: 3 }}>
-      <AppIcon name={metric.icon} size={18} color={c.muted}/>
-      <Text style={{ ...textStyle("label"), color: c.ink }}>{metric.value}</Text>
-      <Text style={{ ...textStyle("caption"), color: c.muted }}>{metric.label}</Text>
+  return <View style={{ gap: 10 }}>
+    <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16, paddingVertical: 6 }}>
+    {syncReviewMetrics(activity, history, units).map(metric => <View key={metric.id} accessible accessibilityLabel={`${metric.label}: ${metric.valueLabel}. ${metric.comparisonLabel}`} style={{ width: "47%", gap: 6 }}>
+      <Text style={{ ...textStyle("label"), color: c.ink }}>{metric.label}: {metric.valueLabel}</Text>
+      <View style={{ height: 4, backgroundColor: c.line, overflow: "hidden" }}>
+        <View style={{ height: 4, width: `${(metric.fraction ?? 0) * 100}%`, backgroundColor: c.fieldTeal }}/>
+      </View>
     </View>)}
+    </View>
   </View>;
 }
