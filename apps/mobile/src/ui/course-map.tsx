@@ -62,6 +62,20 @@ const appearanceColors = useThemeColors();
   const flatRef = useRef(flat);
   flatRef.current = flat;
   const overviewHold = useRef(false);
+  /** True while the user is touching the map — filters programmatic isUserInteraction. */
+  const mapUserGesture = useRef(false);
+  const mapUserGestureTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const beginMapUserGesture = () => {
+    if (mapUserGestureTimer.current) clearTimeout(mapUserGestureTimer.current);
+    mapUserGesture.current = true;
+  };
+  const endMapUserGesture = () => {
+    if (mapUserGestureTimer.current) clearTimeout(mapUserGestureTimer.current);
+    mapUserGestureTimer.current = setTimeout(() => {
+      mapUserGesture.current = false;
+      mapUserGestureTimer.current = null;
+    }, 200);
+  };
   useEffect(() => {
     overviewHold.current = false;
     if (replayActive) setFlat(initialFlat);
@@ -168,13 +182,13 @@ const appearanceColors = useThemeColors();
   );
   const publishedOptions =
     onFollowChipPress != null ? (
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+      <View style={{ flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+        {courseOptionsMenu}
         <FieldFollowChip
           following={mapFollowing ?? false}
           athleteName={followAthleteName ?? "athlete"}
           onPress={() => followChipPress.current?.()}
         />
-        {courseOptionsMenu}
       </View>
     ) : (
       courseOptionsMenu
@@ -186,6 +200,9 @@ const appearanceColors = useThemeColors();
   }, [onOptionsChange, flat, spaced, mapFollowing, followAthleteName, Boolean(onReplay), Boolean(onChoose2D), onFollowChipPress != null]);
   return <View style={{ flex: 1, minHeight: 0 }}>
     <MapView ref={mapRef} accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled={!onSnapshot} attributionEnabled={false}
+      onTouchStart={beginMapUserGesture}
+      onTouchEnd={endMapUserGesture}
+      onTouchCancel={endMapUserGesture}
       logoPosition={{ top: 8, right: 34 }} attributionPosition={{ top: 8, right: 8 }}
       scaleBarEnabled={optionsTop == null && !replay}
       scaleBarPosition={{ bottom: controlsBottom + 100, left: 8 }}
@@ -208,7 +225,13 @@ const appearanceColors = useThemeColors();
         if (typeof p.zoom === "number" && p.zoom <= 0.1) return;
         pose.current = { center: [p.center[0], p.center[1]], zoom: p.zoom, pitch: p.pitch, bearing: p.heading };
         if (!replay) { rememberedCameras.set(cameraKey, pose.current); if (controller.courseMetres !== null) rememberedProgress.set(cameraKey, controller.courseMetres); else rememberedProgress.delete(cameraKey); }
-        if (p.isUserInteraction && controller.following) { controller.interrupt(); onFollowChange?.(false); }
+        if (p.isUserInteraction && controller.following && mapUserGesture.current) {
+          if (mapUserGestureTimer.current) clearTimeout(mapUserGestureTimer.current);
+          mapUserGesture.current = false;
+          mapUserGestureTimer.current = null;
+          controller.interrupt();
+          onFollowChange?.(false);
+        }
       }} />
       <ShapeSource id="completed" shape={visibleTrails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineSortKey: ["get", "priority"], lineWidth: ["interpolate", ["exponential", 2], ["zoom"], 0, RACE_TRAIL_MIN_WIDTH_PIXELS, 16, Math.max(RACE_TRAIL_MIN_WIDTH_PIXELS, trailWidth * 2 ** 16), 22, trailWidth * 2 ** 22], lineCap: "round", lineJoin: "round" }} /></ShapeSource>
       <ShapeSource id="athletes" shape={visibleMarkers} onPress={event => { const id = event.features[0]?.properties?.id; if (typeof id === "string") onSelect(id); }}>
