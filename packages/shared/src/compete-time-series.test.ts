@@ -68,7 +68,7 @@ describe("compete-time-series", () => {
     expect(initial.unit).toBe("hrs");
     expect(initial.selectedAthlete.you).toBe(true);
     expect(initial.athletes.filter((a) => a.selected)).toHaveLength(1);
-    expect(initial.dayTicks).toHaveLength(7);
+    expect(initial.dayTicks).toHaveLength(4);
 
     const rival = initial.athletes.find((a) => !a.you)!;
     expect(rival).toBeDefined();

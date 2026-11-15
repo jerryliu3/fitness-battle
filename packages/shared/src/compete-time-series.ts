@@ -82,6 +82,7 @@ export interface CompeteTimeSeriesModel {
   yTicks: CompeteTimeSeriesYTick[];
   dayTicks: CompeteTimeSeriesDayTick[];
   nowFraction: number;
+  xSpanFraction: number;
   nowX: number;
   spanMs: number;
   cursorFraction: number;
@@ -118,7 +119,7 @@ export interface CompeteTimeSeriesOptions {
 const CHART_WIDTH = 342;
 const CHART_HEIGHT = 204;
 const PLOT_LEFT = 34;
-const PLOT_RIGHT = 296;
+const PLOT_RIGHT = 330;
 const PLOT_TOP = 20;
 
 function firstNameOf(name: string, you: boolean): string {
@@ -317,8 +318,12 @@ function finalizeTimeSeriesModel(input: {
   );
   const yMax = niceAxisCeiling(peak, input.unit);
 
+  const nowDayIndex = Math.min(6, Math.floor(nowFraction * 6.999));
+  const daysShown = nowDayIndex + 1;
+  const xSpanFraction = daysShown / 7;
+
   const xForT = (t: number) =>
-    PLOT_LEFT + clamp(0, 1, t) * (PLOT_RIGHT - PLOT_LEFT);
+    PLOT_LEFT + clamp(0, 1, t / xSpanFraction) * (PLOT_RIGHT - PLOT_LEFT);
   const yForValue = (v: number) =>
     plotBottom - (clamp(0, yMax, v) / Math.max(1, yMax)) * (plotBottom - PLOT_TOP);
 
@@ -423,9 +428,8 @@ function finalizeTimeSeriesModel(input: {
   const subjectPart = `${selectedAthlete.firstName}’s trajectory`;
   const timeLabel = `${datePart} · ${isScrubbing ? "Inspected" : "Live"} · ${subjectPart}`;
 
-  const nowDayIndex = Math.min(6, Math.floor(nowFraction * 6.999));
   const activeDayIndex = Math.min(6, Math.floor(cursorFraction * 6.999));
-  const dayTicks: CompeteTimeSeriesDayTick[] = Array.from({ length: 7 }, (_, i) => {
+  const dayTicks: CompeteTimeSeriesDayTick[] = Array.from({ length: daysShown }, (_, i) => {
     const dayDate = shiftAppDay(input.periodStart, i);
     const label = dayDate.toLocaleDateString("en-US", {
       weekday: "short",
@@ -434,8 +438,8 @@ function finalizeTimeSeriesModel(input: {
     return {
       index: i,
       label,
-      x: PLOT_LEFT + (i / 6) * (PLOT_RIGHT - PLOT_LEFT),
-      future: i > nowDayIndex,
+      x: daysShown === 1 ? PLOT_LEFT + (PLOT_RIGHT - PLOT_LEFT) / 2 : PLOT_LEFT + (i / (daysShown - 1)) * (PLOT_RIGHT - PLOT_LEFT),
+      future: false,
       active: i === activeDayIndex,
     };
   });
@@ -473,6 +477,7 @@ function finalizeTimeSeriesModel(input: {
     yTicks,
     dayTicks,
     nowFraction,
+    xSpanFraction,
     nowX,
     spanMs,
     cursorFraction,

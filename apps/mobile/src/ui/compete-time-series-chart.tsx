@@ -88,7 +88,7 @@ export function CompeteTimeSeriesChart({
   const { blocks } = useAthleteBlocks();
   const excludedIds = useMemo(() => [...new Set([...(hiddenIds ?? []), ...blocks.map(block => block.id)])], [hiddenIds, blocks]);
   const { height: screenHeight } = RN.useWindowDimensions();
-  const plotHeight = immersive ? Math.max(220, screenHeight - topInset - bottomInset - 360) : 204;
+  const plotHeight = immersive ? Math.max(260, screenHeight - topInset - bottomInset - 210) : 204;
   const s = useThemedStyles(sThemes);
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
@@ -162,7 +162,8 @@ export function CompeteTimeSeriesChart({
     const width = Math.max(1, plotWidthRef.current);
     const svgX = (locationX / width) * model.width;
     const rawFraction =
-      (svgX - model.left) / Math.max(1, model.right - model.left);
+      ((svgX - model.left) / Math.max(1, model.right - model.left)) *
+      model.xSpanFraction;
     const clamped = clamp(0, model.nowFraction, rawFraction);
     const dayBucket = Math.floor(clamped * 14);
     if (lastDayBucketRef.current !== dayBucket) {
@@ -265,8 +266,10 @@ export function CompeteTimeSeriesChart({
           borderRadius: 0,
           borderWidth: 0,
           backgroundColor: c.paper,
-          paddingTop: topInset + 58,
-          paddingBottom: bottomInset + 136,
+          paddingHorizontal: 10,
+          paddingTop: topInset + 6,
+          paddingBottom: bottomInset + 130,
+          gap: 6,
           justifyContent: "space-between",
         },
         reserveTopControls && { paddingTop: 64 },
@@ -278,7 +281,7 @@ export function CompeteTimeSeriesChart({
           <UserAvatar
             src={model.selectedAthlete.avatarUrl}
             name={model.selectedAthlete.name}
-            size={56}
+            size={40}
             highlight={model.selectedAthlete.you}
           />
           <View style={s.immersiveHeaderText}>
@@ -715,12 +718,15 @@ const sThemes = createThemedStyles((themeColors) => {
   immersiveHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    paddingHorizontal: 4,
+    justifyContent: "center",
+    alignSelf: "center",
+    minHeight: 44,
+    gap: 10,
+    paddingHorizontal: 56,
   },
   immersiveHeaderText: {
-    flex: 1,
-    gap: 2,
+    flexShrink: 1,
+    gap: 1,
   },
   immersiveName: {
     ...textStyle("heading"),
