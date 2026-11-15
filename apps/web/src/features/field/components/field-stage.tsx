@@ -2,6 +2,7 @@
 import { useCompetitionTimeline } from "@/features/arena/competition-timeline-context";
 import { Sheet } from "@/ui/sheet";
 import { FieldViewSwitcher } from "./field-view-switcher";
+import { StandingsList } from "./standings-list";
 import { CompeteTimeSeriesChart } from "./compete-time-series-chart";
 import { GeographicCourse } from "@/features/course/geographic-course";
 import { useCompetitionCourse } from "@/features/course/use-competition-course";
@@ -12,12 +13,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { playCue } from "@/lib/haptics";
 import { usePathname } from "next/navigation";
 import {
-  standingsBar,
   fieldFlightDuration, fieldFlightEase,
   arenaFieldHigh,
   type CourseDistanceTarget,
   type CompeteState,
-  effortRankBadge,
   rankSymbolForScore,
   fieldDefaultSpan,
   clampCourseCenter,
@@ -40,7 +39,6 @@ import { placeAt, valueAt, type SceneRunner } from "../geometry";
 import { coursePositionLeaders } from "@fitness-battle/shared";
 import { useFieldTimeline } from "@/features/replay/use-field-timeline";
 import { FieldTimeline } from "@/features/replay/field-timeline";
-import { CompetitionReplayButton } from "@/features/replay/competition-replay";
 import type { FieldModel } from "../model";
 
 export function FieldStage({
@@ -384,7 +382,7 @@ export function FieldStage({
           <span className="focus-broadcast-tower-kicker">Current Leaders</span>
           {coursePositionLeaders(ranked).map((peer, idx) => {
             const delta = peer.value - leaderValue;
-            const isSelected = (trackSelected || you.id) === peer.id;
+            const isSelected = (trackSelected || (you?.id ?? "")) === peer.id;
             return (
               <button
                 key={peer.id}
@@ -428,7 +426,7 @@ export function FieldStage({
             ↑ Ahead
           </button>
         ) : null}
-        <button
+        {you ? <button
           type="button"
           className="focus-broadcast-rail-btn is-you"
           onClick={() => {
@@ -437,7 +435,7 @@ export function FieldStage({
           }}
         >
           YOU
-        </button>
+        </button> : null}
         {behindPeer ? (
           <button
             type="button"
@@ -450,7 +448,6 @@ export function FieldStage({
             ↓ Behind
           </button>
         ) : null}
-      {backgroundMode && replayState && !queueOverlay && <div className="focus-broadcast-replay-chip"><CompetitionReplayButton state={replayState} selection={{ sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: model.periodEnd }} initialFlat={courseFlat} dimension={viewDimension} label="Replay" /></div>}
       </div>
 
       {focusedLane && !backgroundMode ? (
@@ -553,13 +550,13 @@ export function FieldStage({
               state={replayState}
               sport={model.sport}
               track={model.track}
-              selectedId={trackSelected || you.id}
+              selectedId={trackSelected || (you?.id ?? "")}
               onSelectAthlete={toggleSelect}
               reserveTopControls={!lanesImmersive}
             />
           ) : null}
           {viewDimension === "4d" && (persistent || tabActive) ? <div className="focus-geographic-host" style={{ position: "relative", height: persistent || lanesImmersive ? "100%" : 460 }}>
-            <GeographicCourse cardSessionKey={lanesImmersive} initialFlat={courseFlat} onFlatChange={setCourseFlat} lanes={fieldLanes} unit={unit} selectedId={(lanesImmersive ? trackSelected : null) || you.id} focusRequest={lanesImmersive ? focusRequest : 0} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={lanesImmersive ? courseTarget : null} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? (spotlightCollapsed ? 136 : 236) + (replayState && !backgroundMode ? 128 : 0) : 8} />
+            <GeographicCourse cardSessionKey={lanesImmersive} initialFlat={courseFlat} onFlatChange={setCourseFlat} lanes={fieldLanes} unit={unit} selectedId={(lanesImmersive ? trackSelected : null) || (you?.id ?? "")} focusRequest={lanesImmersive ? focusRequest : 0} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={lanesImmersive ? courseTarget : null} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? (spotlightCollapsed ? 136 : 236) + (replayState && !backgroundMode ? 128 : 0) : 8} />
             {!lanesImmersive ? <button type="button" className="focus-portal-pill is-accent" style={{ position: "absolute", top: 12, right: 12 }} aria-label="Expand 3D course to full screen" onClick={() => setLanesImmersive(true)}>Full Arena ⤢</button> : null}
           </div> : null}
           {viewDimension === "3d" && (persistent || tabActive) ? (
@@ -573,7 +570,7 @@ export function FieldStage({
               focusRequest={focusRequest}
               onGestureStart={cancelCenterTween}
               onViewChange={next => { cancelCenterTween(); setSpan(next.span); setCenter(clampViewCenter(next.center, next.span)); }}
-              selectedId={trackSelected || you.id}
+              selectedId={trackSelected || (you?.id ?? "")}
               immersive={lanesImmersive}
               controlsTop={lanesImmersive ? 12 : 66}
               onExpand={() => {
@@ -624,7 +621,7 @@ export function FieldStage({
                 focusRequest={focusRequest}
                 onGestureStart={cancelCenterTween}
                 onViewChange={next => { cancelCenterTween(); setSpan(next.span); setCenter(clampViewCenter(next.center, next.span)); }}
-                selected={trackSelected || you.id}
+                selected={trackSelected || (you?.id ?? "")}
                 onSelect={toggleSelect}
                 onBackgroundTap={() => {
                   void playCue("light");
@@ -728,90 +725,25 @@ export function FieldStage({
             ) : null}
 
             <p className="fb-note">Places use exact {unit === "pts" ? "effort" : "distance"} totals; displayed values are rounded.</p>
-            <div className="focus-standings-bars" role="list">
-              {ranked.map((lane) => {
-                const r = placeOf(lane.value);
-                const bar = standingsBar(lane.value, leaderValue, r);
-                const elo = scoreMap[lane.id];
-                return (
-                  <div
-                    key={lane.id}
-                    role="listitem"
-                    className={
-                      lane.you
-                        ? "focus-standing-bar-row is-you"
-                        : "focus-standing-bar-row"
-                    }
-                    onClick={() => onFocusAthlete ? onFocusAthlete(lane.id) : toggleSelect(lane.id)}
-                    tabIndex={0}
-                    onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); if (onFocusAthlete) onFocusAthlete(lane.id); else toggleSelect(lane.id); } }}
-                  >
-                    <span className="focus-standing-rank">{r}</span>
-                    <button type="button" aria-label={`Open ${lane.name}'s profile`} onClick={event => { event.stopPropagation(); setProfileLane(lane); }} style={{ border: 0, padding: 0, background: "transparent", cursor: "pointer", overflow: "visible" }}>
-                    <RankAvatar
-                      rank={rankSymbolForScore(elo)}
-                      src={lane.avatarUrl}
-                      name={lane.name}
-                      size={52}
-                      fallback={
-                        <svg
-                          className="focus-standing-avatar"
-                          width="26"
-                          height="36"
-                          viewBox="-40 -50 80 100"
-                          aria-hidden="true"
-                        >
-                          <PolishedRacer
-                            x={0}
-                            y={0}
-                            you={Boolean(lane.you)}
-                            gold={r === 1}
-                            showWake={false}
-                          />
-                        </svg>
-                      }
-                    />
-                    </button>
-                    <div className="focus-standing-bar-content">
-                      <div className="focus-standing-bar-top">
-                        <strong className="focus-standing-name">
-                          {lane.name}
-                          {elo != null
-                            ? ` ${effortRankBadge(elo).symbol}`
-                            : ""}
-                        </strong>
-                        <div className="focus-standing-metrics">
-                          <strong>
-                            {lane.value.toFixed(unit === "pts" ? 1 : 2)} {unit}
-                          </strong>
-                          <small>{elo ?? "—"} effort score</small>
-                        </div>
-                      </div>
-                      <div className="focus-standing-bar-track" aria-hidden="true">
-                        <div
-                          className={
-                            r === 1
-                              ? "focus-standing-bar-fill is-leader"
-                              : lane.you
-                                ? "focus-standing-bar-fill is-you"
-                                : "focus-standing-bar-fill"
-                          }
-                          style={{ width: `${bar.percent}%`, background: bar.color }}
-                        />
-                      </div>
-                    </div>
+            <StandingsList
+              ranked={ranked}
+              unit={unit}
+              scores={scoreMap}
+              onSelectAthlete={(lane) =>
+                onFocusAthlete ? onFocusAthlete(lane.id) : toggleSelect(lane.id)
+              }
+              onOpenProfile={(lane) => setProfileLane(lane)}
+              footer={
+                ghost ? (
+                  <div className="club-past-self">
+                    <span>Past you · unranked</span>
+                    <strong>
+                      {valueAt(ghost, time).toFixed(1)} {unit}
+                    </strong>
                   </div>
-                );
-              })}
-              {ghost ? (
-                <div className="club-past-self">
-                  <span>Past you · unranked</span>
-                  <strong>
-                    {valueAt(ghost, time).toFixed(1)} {unit}
-                  </strong>
-                </div>
-              ) : null}
-            </div>
+                ) : null
+              }
+            />
           </div>
         ) : null}
       </div>

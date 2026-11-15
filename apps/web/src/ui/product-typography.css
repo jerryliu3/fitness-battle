@@ -98,8 +98,6 @@
 .phone-shell :is(.focus-settings-label, .fb-field-label) { font: var(--type-field); }
 .phone-shell :is(.phone-tab > span, .focus-tab-label, .fb-tab-label) { font: var(--type-nav); }
 
-.phone-shell .competition-replay-event { font: var(--type-row); letter-spacing: var(--type-row-tracking); }
-
 /* Expanded standings use the same row/value hierarchy as native. */
 .phone-shell .focus-standing-name { font: var(--type-row); letter-spacing: var(--type-row-tracking); }
 .phone-shell .focus-standing-metrics > strong { font: var(--type-value); letter-spacing: var(--type-value-tracking); }

@@ -102,9 +102,6 @@ vi.mock("../features/sleep-panel", () => ({ SleepPanel: () => null }));
 vi.mock("../features/round-takeover", () => ({ RoundTakeover: () => null }));
 vi.mock("../features/geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
 vi.mock("../features/use-competition-course", () => ({ useCompetitionCourse: () => ({ course: null, error: "", retry() {} }) }));
-vi.mock("../features/competition-replay", () => ({
-  CompetitionReplayButton: "CompetitionReplayButton", CompetitionReplayModal: "ReplayModal",
-}));
 vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./arena-3d", () => ({ Arena3D: () => null }));
 vi.mock("./portrait-field", () => ({ PortraitField: "PortraitField" }));

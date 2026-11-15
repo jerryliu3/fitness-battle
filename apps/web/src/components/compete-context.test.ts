@@ -17,6 +17,7 @@ import { freshState } from "@fitness-battle/shared";
 const auth = vi.hoisted(() => ({ user: { id: "athlete", mode: "supabase", dataOrigin: "recorded", displayName: "Athlete", email: "test@example.com" } }));
 vi.mock("@/components/auth-context", () => ({ useAuth: () => ({ user: auth.user, loading: false, offlineMode: false }) }));
 import { CompeteProvider, useCompete } from "./compete-context";
+import { useBootCover } from "@/shell/boot-readiness";
 let renderer: ReactTestRenderer;
 let api: ReturnType<typeof useCompete>;
 let fetcher: ReturnType<typeof vi.fn>;
@@ -237,4 +238,21 @@ it("preserves restored draft units through refresh and automatic retry", async (
   expect(body.state?.units ?? body.actions?.[0]?.units).toBe("metric");
   expect(values.has("fb-compete-v1:athlete:device-only")).toBe(false);
   expect(api.saveError).toBeNull();
+});
+
+it("defers presenting SyncReview / overtake replay until ApplicationBootGate unmounts its cover", async () => {
+  fetcher = vi.fn(async () => Response.json({ state: freshState(), updatedAt: "initial" }));
+  vi.stubGlobal("fetch", fetcher);
+  function CoveredChild({ covering }: { covering: boolean }) {
+    useBootCover(covering);
+    return createElement(Probe);
+  }
+  const tree = (covering: boolean) => createElement(CompeteProvider, null, createElement(CoveredChild, { covering }));
+  await act(async () => { renderer = create(tree(true)); await flush(); });
+  await act(async () => { api.triggerDebugEvent?.("sync-combo"); await flush(); });
+  await act(async () => { await vi.advanceTimersByTimeAsync(500); await flush(); });
+  expect(renderer.root.findAllByType("SyncReview" as never)).toHaveLength(0);
+  await act(async () => { renderer.update(tree(false)); await flush(); });
+  const review = renderer.root.findByType("SyncReview" as never);
+  expect(review.props.receipt.activities).toHaveLength(2);
 });

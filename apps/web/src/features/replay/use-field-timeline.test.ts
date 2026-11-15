@@ -14,8 +14,8 @@ const ledger: CompetitionReplay = { ...selection, scope: "field", through: "2026
   { id: "two", athleteId: "peer", at: "2026-10-21T12:00:00Z", distanceM: 2000, movingSec: 600, effort: 2 },
 ] };
 let renderer: ReactTestRenderer;
-function Harness({ active = true, selected = selection, current = state }) {
-  return createElement("timeline", { value: useFieldTimeline(current, selected, active) });
+function Harness({ active = true, selected = selection, current = state, replay = false }) {
+  return createElement("timeline", { value: useFieldTimeline(current, selected, active, replay) });
 }
 const timeline = () => renderer.root.findByType("timeline" as never).props.value as ReturnType<typeof useFieldTimeline>;
 beforeEach(() => {
@@ -43,7 +43,7 @@ it("starts with live totals, seeks forward and backward, and explicitly returns 
 it("pauses on manual seeking and backgrounding, and finishes at live totals", async () => {
   await mount();
   await act(async () => timeline().toggle());
-  await act(async () => { vi.advanceTimersByTime(2667); });
+  await act(async () => { vi.advanceTimersByTime(6400); });
   expect(timeline().cursor).toBeGreaterThan(.48); expect(timeline().cursor).toBeLessThan(.52);
   await act(async () => timeline().seek(1));
   await act(async () => { vi.advanceTimersByTime(1000); });
@@ -52,7 +52,7 @@ it("pauses on manual seeking and backgrounding, and finishes at live totals", as
   await act(async () => mocks.pause!());
   expect(timeline().playing).toBe(false);
   await act(async () => timeline().toggle());
-  await act(async () => { vi.advanceTimersByTime(4200); });
+  await act(async () => { vi.advanceTimersByTime(10100); });
   expect(timeline().frame).toBeNull(); expect(timeline().playing).toBe(false);
 });
 it("retains history when changing units and pauses when its tab becomes inactive", async () => {
@@ -82,4 +82,14 @@ it("uses Debug's local history and keeps authenticated failures explicit after D
   mocks.request.mockImplementation(async () => new Response(JSON.stringify(ledger)));
   await act(async () => timeline().retry());
   expect(timeline().ready).toBe(true); expect(timeline().count).toBe(2);
+});
+it("starts from the beginning, autoplays, and holds the final frame in round replay mode", async () => {
+  await act(async () => { renderer = create(createElement(Harness, { replay: true })); await Promise.resolve(); });
+  expect(timeline().cursor).toBe(0);
+  expect(timeline().playing).toBe(true);
+  expect(timeline().frame).not.toBeNull();
+  await act(async () => { vi.advanceTimersByTime(24000); });
+  expect(timeline().playing).toBe(false);
+  expect(timeline().cursor).toBe(2);
+  expect(timeline().frame).not.toBeNull();
 });

@@ -6,10 +6,11 @@ import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 
-export function CompeteIcon({ name, size = 26, gold = false }: { name: keyof typeof COMPETE_ICONS | CompeteEvent; size?: number; gold?: boolean }) {
+export function CompeteIcon({ name, size = 26, gold = false, color }: { name: keyof typeof COMPETE_ICONS | CompeteEvent; size?: number; gold?: boolean; color?: string }) {
   const c = useThemeColors();
   const path = name in COMPETE_ICONS ? COMPETE_ICONS[name as keyof typeof COMPETE_ICONS] : SPORT_ICON_PATHS[name as keyof typeof SPORT_ICON_PATHS];
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={gold ? c.podiumGold : c.ink} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" accessible={Platform.OS === "web" ? undefined : false} aria-hidden={Platform.OS === "web" ? true : undefined}><Path d={path} fill={(name in SPORT_ICON_PATHS || name in APP_ICON_PATHS) ? (gold ? c.podiumGold : c.ink) : "none"} stroke={(name in SPORT_ICON_PATHS || name in APP_ICON_PATHS) ? "none" : undefined} /></Svg>;
+  const resolved = color ?? (gold ? c.podiumGold : c.ink);
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={resolved} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" accessible={Platform.OS === "web" ? undefined : false} aria-hidden={Platform.OS === "web" ? true : undefined}><Path d={path} fill={(name in SPORT_ICON_PATHS || name in APP_ICON_PATHS) ? resolved : "none"} stroke={(name in SPORT_ICON_PATHS || name in APP_ICON_PATHS) ? "none" : undefined} /></Svg>;
 }
 
 function MetallicFill({ silver = false }: { silver?: boolean }) {

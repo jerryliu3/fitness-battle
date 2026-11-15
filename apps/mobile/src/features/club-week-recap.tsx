@@ -8,6 +8,7 @@ import {
   clubDuration,
   clubWeekSummary,
   latestClubRecap,
+  settledWeekBreakdownTarget,
   sportById,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -20,6 +21,7 @@ const s=useThemedStyles(sThemes);
   const router = useRouter(),
     week = clubWeekSummary(state),
     recap = latestClubRecap(state),
+    breakdown = recap ? null : settledWeekBreakdownTarget(state),
     difference = week.movingSec - week.previousSec;
   return (
     <Section  title="Your week, in perspective">
@@ -45,6 +47,24 @@ const s=useThemedStyles(sThemes);
           {difference >= 0 ? "+" : "−"}
           {clubDuration(Math.abs(difference))} {week.daysPassed >= 7 ? "compared with all of last week." : "compared with this point last week."}
         </AppText>
+      ) : breakdown ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="View last week breakdown"
+          onPress={() => router.push("/arena?breakdown=latest")}
+          style={s.receipt}
+        >
+          <View style={{ flex: 1, gap: 4 }}>
+            <AppText role="row">Your last week in motion.</AppText>
+            <AppText role="support" secondary>
+              {new Date(breakdown.periodStart).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                timeZone: APP_TIMEZONE,
+              })} · View week breakdown →
+            </AppText>
+          </View>
+        </Pressable>
       ) : null}
       {recap ? (
         <Pressable
@@ -70,6 +90,24 @@ const s=useThemedStyles(sThemes);
             <AppText role="support" secondary >
               {recap.eloAfter - recap.eloBefore >= 0 ? "+" : ""}
               {recap.eloAfter - recap.eloBefore} Effort Score · View recap →
+            </AppText>
+          </View>
+        </Pressable>
+      ) : breakdown ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="View last week breakdown"
+          onPress={() => router.push("/arena?breakdown=latest")}
+          style={s.receipt}
+        >
+          <View style={{ flex: 1, gap: 4 }}>
+            <AppText role="row">Your last week in motion.</AppText>
+            <AppText role="support" secondary>
+              {new Date(breakdown.periodStart).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                timeZone: APP_TIMEZONE,
+              })} · View week breakdown →
             </AppText>
           </View>
         </Pressable>

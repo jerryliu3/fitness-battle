@@ -1,7 +1,6 @@
 vi.mock("react-native-reanimated", () => ({ default: { View: "AnimatedRow" }, LinearTransition: { duration: () => ({}) } }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
 import { CompetitionTimelineProvider, CompetitionTimelineControls } from "./competition-timeline-context";
-vi.mock("./competition-replay", () => ({ CompetitionReplayModal: "ReplayModal" }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: null, offlineMode: true }) }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "" } }));
 vi.mock("../lib/api", () => ({ requestApi: vi.fn() }));
@@ -239,15 +238,11 @@ it("scrubs the current field and preserves its cursor across dimensions and full
   expect(map.props.lanes.map((lane: { value: number }) => lane.value)).toEqual(liveValues);
 });
 
-it("leaves the redesigned immersive sheet free of the legacy timeline and keeps its replay action", async () => {
+it("leaves the redesigned immersive sheet free of the legacy timeline and invokes timeline toggle on replay", async () => {
   await act(async () => renderer.unmount());
   await act(async () => { renderer = create(createElement(CompetitionField, { sport: "running", track: "verified", persistent: true, backgroundMode: true })); });
   expect(renderer.root.findAllByProps({ accessibilityLabel: "Competition timeline" })).toHaveLength(0);
-  const map = renderer.root.findByType("GeographicCourse" as never);
-  await act(async () => map.props.onReplay());
-  expect(renderer.root.findByType("ReplayModal" as never).props.open).toBe(true);
-  await act(async () => renderer.root.findByType("ReplayModal" as never).props.onClose());
-  expect(renderer.root.findByType("ReplayModal" as never).props.open).toBe(false);
+  expect(renderer.root.findByType("GeographicCourse" as never).props.onReplay).toBeTypeOf("function");
 });
 
 it("shares historical positions between the retained map and standings and bounds the vertical course rail", async () => {

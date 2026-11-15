@@ -44,7 +44,7 @@ const f=useFocusStyles();
           />
           <SettingsRow
             title="Preferences"
-            detail="Units, sports & week freezes"
+            detail="Units & sports"
             onPress={() =>
               router.push({
                 pathname: "/athlete-settings",

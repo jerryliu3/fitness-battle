@@ -3,21 +3,26 @@ import * as RN from "react-native";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import * as SvgModule from "react-native-svg";
 import {
+  APP_COLORS,
   competeChartPreview,
-  buildCompeteTimeSeriesModel,
-  buildSleepTimeSeriesModel,
+  evaluateCompeteTimeSeriesModel,
+  prepareCompeteTimeSeriesBase,
+  prepareSleepTimeSeriesBase,
   clamp,
   competeNow,
+  sportById,
   type CompeteState,
   type CompeteTimeSeriesModel,
+  type CompeteTimeSeriesView,
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { playCue } from "../lib/haptics";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
+import { AppIcon } from "./app-icon";
 import { chartTextProps, textStyle } from "./section";
-import { AthletePennant } from "./athlete-pennant";
+import { UserAvatar } from "./user-avatar";
 import { useReducedMotion } from "./use-reduced-motion";
 
 function svgTag<K extends keyof typeof SvgModule>(
@@ -37,6 +42,11 @@ const SvgText = svgTag("Text", "SvgText");
 
 const DIRECTION_LOCK_PX = 4;
 
+const GRAPH_VIEWS: readonly { id: CompeteTimeSeriesView; label: string; icon: "progress" | "scoring" }[] = [
+  { id: "trajectory", label: "Trajectory", icon: "progress" },
+  { id: "event", label: "Event", icon: "scoring" },
+];
+
 export function CompeteTimeSeriesChart({
   state,
   sport,
@@ -48,6 +58,10 @@ export function CompeteTimeSeriesChart({
   reserveTopControls = false,
   compact = false,
   immersive = false,
+  topInset = 0,
+  bottomInset = 0,
+  view,
+  onViewChange,
   timelineFraction,
   onTimelineChange,
   active = true,
@@ -62,6 +76,10 @@ export function CompeteTimeSeriesChart({
   reserveTopControls?: boolean;
   compact?: boolean;
   immersive?: boolean;
+  topInset?: number;
+  bottomInset?: number;
+  view?: CompeteTimeSeriesView;
+  onViewChange?: (view: CompeteTimeSeriesView) => void;
   timelineFraction?: number | null;
   onTimelineChange?: (value: number | null) => void;
   active?: boolean;
@@ -71,11 +89,14 @@ export function CompeteTimeSeriesChart({
   const { blocks } = useAthleteBlocks();
   const excludedIds = useMemo(() => [...new Set([...(hiddenIds ?? []), ...blocks.map(block => block.id)])], [hiddenIds, blocks]);
   const { height: screenHeight } = RN.useWindowDimensions();
-  const plotHeight = immersive ? Math.max(240, screenHeight - 380) : 204;
+  const plotHeight = immersive ? Math.max(260, screenHeight - topInset - bottomInset - 210) : 204;
   const s = useThemedStyles(sThemes);
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
   );
+  const [internalView, setInternalView] = useState<CompeteTimeSeriesView>("event");
+  const activeView = view ?? internalView;
+  const setActiveView = onViewChange ?? setInternalView;
   const [internalFraction, setInternalFraction] = useState<number | null>(null);
   const scrubFraction = timelineFraction !== undefined ? timelineFraction : internalFraction;
   const setScrubFraction = onTimelineChange ?? setInternalFraction;
@@ -103,28 +124,36 @@ export function CompeteTimeSeriesChart({
     selectedId !== undefined ? selectedId : internalSelectedId;
 
   const now = competeNow(state);
-  const model: CompeteTimeSeriesModel = useMemo(() => {
+  const nowMs = now.getTime();
+  const baseModel = useMemo(() => {
+    const viewOption = compact ? undefined : activeView;
     if (mode === "sleep") {
-      return buildSleepTimeSeriesModel(state, now, {
-        height: plotHeight,
+      return prepareSleepTimeSeriesBase(state, now, {
         hiddenIds: excludedIds,
-        selectedAthleteId: activeSelectedId,
-        scrubFraction,
+        view: viewOption,
       });
     }
-    return buildCompeteTimeSeriesModel(
+    return prepareCompeteTimeSeriesBase(
       state,
       sport ?? state.primary,
       track,
       now,
       {
-        height: plotHeight,
         hiddenIds: excludedIds,
-        selectedAthleteId: activeSelectedId,
-        scrubFraction,
+        view: viewOption,
       },
     );
-  }, [state, sport, track, mode, excludedIds, activeSelectedId, scrubFraction, plotHeight, now.getTime()]);
+  }, [state, sport, track, mode, excludedIds, activeView, compact, nowMs]);
+
+  const model: CompeteTimeSeriesModel = useMemo(
+    () =>
+      evaluateCompeteTimeSeriesModel(baseModel, {
+        height: plotHeight,
+        selectedAthleteId: activeSelectedId,
+        scrubFraction,
+      }),
+    [baseModel, plotHeight, activeSelectedId, scrubFraction],
+  );
 
   const handleSelectAthlete = (id: string) => {
     void playCue("selection");
@@ -134,13 +163,25 @@ export function CompeteTimeSeriesChart({
     onSelectAthlete?.(id);
   };
 
-  const updateScrubFromLocationX = (locationX: number) => {
+  const scrubRafRef = useRef<number | null>(null);
+  const pendingLocationXRef = useRef<number | null>(null);
+  const lastCommittedFractionRef = useRef<number | null>(null);
+
+  const commitScrubFromLocationX = (locationX: number) => {
     if (!model.historyAvailable) return;
     const width = Math.max(1, plotWidthRef.current);
     const svgX = (locationX / width) * model.width;
     const rawFraction =
-      (svgX - model.left) / Math.max(1, model.right - model.left);
+      ((svgX - model.left) / Math.max(1, model.right - model.left)) *
+      model.xSpanFraction;
     const clamped = clamp(0, model.nowFraction, rawFraction);
+    if (
+      lastCommittedFractionRef.current !== null &&
+      Math.abs(clamped - lastCommittedFractionRef.current) < 1e-4
+    ) {
+      return;
+    }
+    lastCommittedFractionRef.current = clamped;
     const dayBucket = Math.floor(clamped * 14);
     if (lastDayBucketRef.current !== dayBucket) {
       lastDayBucketRef.current = dayBucket;
@@ -149,8 +190,36 @@ export function CompeteTimeSeriesChart({
     setScrubFraction(clamped);
   };
 
-  const updateScrubRef = useRef(updateScrubFromLocationX);
-  updateScrubRef.current = updateScrubFromLocationX;
+  const commitScrubRef = useRef(commitScrubFromLocationX);
+  commitScrubRef.current = commitScrubFromLocationX;
+
+  const scheduleScrubFromLocationX = (locationX: number) => {
+    pendingLocationXRef.current = locationX;
+    if (typeof requestAnimationFrame !== "function") {
+      commitScrubRef.current(locationX);
+      return;
+    }
+    if (scrubRafRef.current !== null) return;
+    scrubRafRef.current = requestAnimationFrame(() => {
+      scrubRafRef.current = null;
+      const x = pendingLocationXRef.current;
+      if (x !== null) commitScrubRef.current(x);
+    });
+  };
+
+  const clearScheduledScrub = () => {
+    pendingLocationXRef.current = null;
+    lastCommittedFractionRef.current = null;
+    if (scrubRafRef.current !== null && typeof cancelAnimationFrame === "function") {
+      cancelAnimationFrame(scrubRafRef.current);
+      scrubRafRef.current = null;
+    }
+  };
+
+  useEffect(() => clearScheduledScrub, []);
+
+  const updateScrubRef = useRef(scheduleScrubFromLocationX);
+  updateScrubRef.current = scheduleScrubFromLocationX;
 
   const panHandlers = useMemo(() => {
     if (compact) return {};
@@ -183,11 +252,13 @@ export function CompeteTimeSeriesChart({
       onPanResponderRelease: () => {
         directionRef.current = null;
         lastDayBucketRef.current = null;
+        clearScheduledScrub();
         setScrubFraction(null);
       },
       onPanResponderTerminate: () => {
         directionRef.current = null;
         lastDayBucketRef.current = null;
+        clearScheduledScrub();
         setScrubFraction(null);
       },
     }).panHandlers;
@@ -237,58 +308,100 @@ export function CompeteTimeSeriesChart({
       accessibilityLabel="Weekly competition time-series graph"
       style={[
         s.card,
-        immersive && { flex: 1, borderRadius: 0, borderWidth: 0, backgroundColor: c.paper, paddingTop: 112 },
+        immersive && {
+          flex: 1,
+          borderRadius: 0,
+          borderWidth: 0,
+          backgroundColor: c.paper,
+          paddingHorizontal: 10,
+          paddingTop: topInset + 6,
+          paddingBottom: bottomInset + 130,
+          gap: 6,
+          justifyContent: "space-between",
+        },
         reserveTopControls && { paddingTop: 64 },
       ]}
     >
       {/* Pure Open Line Header */}
-      <View style={s.headerRow}>
-        <View style={s.headerLeft}>
-          <Text style={s.timeCaption} numberOfLines={1}>
-            {model.timeLabel}
-          </Text>
-          <View style={s.readingRow}>
-            <Text style={s.heroValue}>
-              {model.selectedAthlete.formattedValueAtCursor}
-              <Text style={s.heroUnit}> {model.unit}</Text>
+      {immersive ? (
+        <View style={s.immersiveHeader}>
+          <UserAvatar
+            src={model.selectedAthlete.avatarUrl}
+            name={model.selectedAthlete.name}
+            size={40}
+            highlight={model.selectedAthlete.you}
+          />
+          <View style={s.immersiveHeaderText}>
+            <Text style={s.immersiveName} numberOfLines={1}>
+              {model.selectedAthlete.name}
             </Text>
-            <View
-              style={[
-                s.placeBadge,
-                model.selectedAthlete.you
-                  ? s.placeBadgeYou
-                  : s.placeBadgeRival,
-              ]}
-            >
+            <View style={s.immersiveMetaRow}>
               <Text
                 style={[
-                  s.placeBadgeText,
-                  model.selectedAthlete.you
-                    ? s.placeBadgeTextYou
-                    : s.placeBadgeTextRival,
+                  s.immersivePlace,
+                  model.selectedAthlete.placeAtCursor !== 1 && {
+                    color: model.selectedAthlete.you ? c.fieldTeal : c.ink,
+                  },
                 ]}
               >
                 {model.placeLabel}
               </Text>
+              <Text style={s.immersiveMetaDot}>·</Text>
+              <Text style={s.immersiveMetric}>
+                {`${model.selectedAthlete.formattedValueAtCursor} ${model.unit}`}
+              </Text>
             </View>
           </View>
         </View>
+      ) : (
+        <View style={s.headerRow}>
+          <View style={s.headerLeft}>
+            <Text style={s.timeCaption} numberOfLines={1}>
+              {model.timeLabel}
+            </Text>
+            <View style={s.readingRow}>
+              <Text style={s.heroValue}>
+                {model.selectedAthlete.formattedValueAtCursor}
+                <Text style={s.heroUnit}> {model.unit}</Text>
+              </Text>
+              <View
+                style={[
+                  s.placeBadge,
+                  model.selectedAthlete.you
+                    ? s.placeBadgeYou
+                    : s.placeBadgeRival,
+                ]}
+              >
+                <Text
+                  style={[
+                    s.placeBadgeText,
+                    model.selectedAthlete.you
+                      ? s.placeBadgeTextYou
+                      : s.placeBadgeTextRival,
+                  ]}
+                >
+                  {model.placeLabel}
+                </Text>
+              </View>
+            </View>
+          </View>
 
-        <View style={s.headerRight}>
-          <Text style={s.gapPrimary} numberOfLines={1}>
-            {model.gapLabel}
-          </Text>
-          {model.historyAvailable && <Text
-            style={[
-              s.overtakeSub,
-              model.overtakeCount > 0 && { color: c.fieldTeal },
-            ]}
-            numberOfLines={1}
-          >
-            {model.overtakeLabel}
-          </Text>}
+          <View style={s.headerRight}>
+            <Text style={s.gapPrimary} numberOfLines={1}>
+              {model.gapLabel}
+            </Text>
+            {model.historyAvailable && <Text
+              style={[
+                s.overtakeSub,
+                model.overtakeCount > 0 && { color: c.fieldTeal },
+              ]}
+              numberOfLines={1}
+            >
+              {model.overtakeLabel}
+            </Text>}
+          </View>
         </View>
-      </View>
+      )}
 
       {/* Time-Series SVG Plot */}
       <View
@@ -301,23 +414,25 @@ export function CompeteTimeSeriesChart({
         onTouchStart={(event) => {
           if (compact) return;
           if (event.nativeEvent.locationX != null) {
-            updateScrubFromLocationX(event.nativeEvent.locationX);
+            scheduleScrubFromLocationX(event.nativeEvent.locationX);
           }
         }}
         onTouchMove={(event) => {
           if (compact) return;
           if (event.nativeEvent.locationX != null) {
-            updateScrubFromLocationX(event.nativeEvent.locationX);
+            scheduleScrubFromLocationX(event.nativeEvent.locationX);
           }
         }}
         onTouchEnd={() => {
           if (compact) return;
           lastDayBucketRef.current = null;
+          clearScheduledScrub();
           setScrubFraction(null);
         }}
         onTouchCancel={() => {
           if (compact) return;
           lastDayBucketRef.current = null;
+          clearScheduledScrub();
           setScrubFraction(null);
         }}
         accessible
@@ -388,7 +503,7 @@ export function CompeteTimeSeriesChart({
                 strokeDasharray="2 3"
                 opacity={0.45}
               />
-              {model.cursorTimeLabel ? (
+              {!immersive && model.cursorTimeLabel ? (
                 <SvgText
                   {...chartTextProps()}
                   x={Math.max(model.left + 36, Math.min(model.right - 36, model.cursorX))}
@@ -412,14 +527,14 @@ export function CompeteTimeSeriesChart({
                 strokeWidth={1.35}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                opacity={0.32}
+                opacity={0.22}
               />
               <Circle
                 cx={athlete.cursorX}
                 cy={athlete.cursorY}
                 r={2.4}
                 fill="#94a3b8"
-                opacity={0.45}
+                opacity={0.3}
               />
             </G>
           ))}
@@ -447,7 +562,7 @@ export function CompeteTimeSeriesChart({
                 stroke={c.tennis}
                 strokeWidth={1.8}
               />
-              <Circle cx={node.x} cy={node.y} r={1.8} fill={c.ink} />
+              <Circle cx={node.x} cy={node.y} r={1.8} fill={c.textOnAction} />
             </G>
           ))}
 
@@ -468,22 +583,8 @@ export function CompeteTimeSeriesChart({
               stroke={c.paper}
               strokeWidth={1.8}
             />
-            {/* Athlete Callout (Full pennant card in fullscreen aligned to right; clean pill in card preview) */}
-            {immersive ? (
-              <G transform={`translate(${model.selectedAthlete.cursorX} ${model.selectedAthlete.cursorY})`}>
-                <AthletePennant
-                  lane={{
-                    name: model.selectedAthlete.name,
-                    you: model.selectedAthlete.you,
-                    avatarUrl: model.selectedAthlete.avatarUrl,
-                  }}
-                  x={Math.max(16, model.width - 158 - model.selectedAthlete.cursorX)}
-                  y={clamp(model.top - model.selectedAthlete.cursorY, model.bottom - 46 - model.selectedAthlete.cursorY, -23)}
-                  detail={`${model.placeLabel} · ${model.selectedAthlete.formattedValueAtCursor} ${model.unit}`}
-                  prefix={`athlete-${model.selectedAthlete.id}`}
-                />
-              </G>
-            ) : (
+            {/* Athlete Callout (Clean pill in card preview; immersive uses header + highlighted trace) */}
+            {!immersive && (
               <G>
                 <Rect
                   x={model.tipPill.x}
@@ -554,6 +655,38 @@ export function CompeteTimeSeriesChart({
         })()}
       </View>
 
+      {/* Graph View Switcher: Trajectory vs Event (non-immersive; immersive uses layers menu) */}
+      {!immersive && (
+        <View style={s.viewToggleTrack} accessibilityRole="tablist">
+          {GRAPH_VIEWS.map((option) => {
+            const selected = activeView === option.id;
+            return (
+              <Pressable
+                key={option.id}
+                accessibilityRole="tab"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`${option.label} graph view`}
+                onPress={() => {
+                  if (selected) return;
+                  void playCue("selection");
+                  setActiveView(option.id);
+                }}
+                style={[s.viewToggleTab, selected && s.viewToggleTabSelected]}
+              >
+                <AppIcon
+                  name={option.icon}
+                  size={15}
+                  color={selected ? c.ink : c.muted}
+                />
+                <Text style={[s.viewToggleLabel, selected && s.viewToggleLabelSelected]}>
+                  {option.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+
       {/* Single-Select Athlete Quick-Focus Chips */}
       {!immersive && (
         <ScrollView
@@ -621,6 +754,7 @@ export function CompeteTimeSeriesChart({
 
 const sThemes = createThemedStyles((themeColors) => {
   const c = themeColors;
+  const dark = c.paper === APP_COLORS.dark.paper;
   return {
   card: {
     backgroundColor: c.card,
@@ -629,6 +763,73 @@ const sThemes = createThemedStyles((themeColors) => {
     borderColor: c.line,
     padding: 16,
     gap: 10,
+  },
+  immersiveHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    minHeight: 44,
+    gap: 10,
+    paddingHorizontal: 56,
+  },
+  immersiveHeaderText: {
+    flexShrink: 1,
+    gap: 1,
+  },
+  immersiveName: {
+    ...textStyle("heading"),
+    color: c.ink,
+  },
+  immersiveMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  immersivePlace: {
+    ...textStyle("label"),
+    color: c.podiumGold,
+  },
+  immersiveMetaDot: {
+    ...textStyle("label"),
+    color: c.muted,
+  },
+  immersiveMetric: {
+    ...textStyle("label"),
+    color: c.muted,
+    fontVariant: ["tabular-nums"],
+  },
+  viewToggleTrack: {
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 4,
+    borderRadius: 999,
+    backgroundColor: c.card,
+    borderWidth: 1,
+    borderColor: c.line,
+    gap: 4,
+  },
+  viewToggleTab: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    minHeight: 36,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  viewToggleTabSelected: dark
+    ? { backgroundColor: c.actionSoft, borderColor: c.podiumGold }
+    : { backgroundColor: c.soft, borderColor: c.line },
+  viewToggleLabel: {
+    ...textStyle("label"),
+    color: c.muted,
+  },
+  viewToggleLabelSelected: {
+    color: c.ink,
   },
   headerRow: {
     flexDirection: "row",

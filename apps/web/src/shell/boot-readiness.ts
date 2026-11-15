@@ -1,18 +1,32 @@
 "use client";
 
-import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState, type Context } from "react";
 
 // Screen requests register while the app mounts underneath the launch cover.
 // Once opened, the gate stays open: later refreshes never replay startup.
 export const BootLoadingContext = createContext<((id: symbol, loading: boolean) => void) | null>(null);
+export const BootCoverContext = createContext<((id: symbol, covering: boolean) => void) | null>(null);
+export const BootOpenedContext = createContext(true);
+
+function useBootSignal(context: Context<((id: symbol, active: boolean) => void) | null>, active: boolean, label: string) {
+  const report = useContext(context);
+  const id = useRef(Symbol(label));
+  useLayoutEffect(() => {
+    report?.(id.current, active);
+    return () => report?.(id.current, false);
+  }, [report, active]);
+}
 
 export function useBootLoading(loading: boolean) {
-  const report = useContext(BootLoadingContext);
-  const id = useRef(Symbol("boot request"));
-  useLayoutEffect(() => {
-    report?.(id.current, loading);
-    return () => report?.(id.current, false);
-  }, [report, loading]);
+  useBootSignal(BootLoadingContext, loading, "boot request");
+}
+
+export function useBootCover(covering: boolean) {
+  useBootSignal(BootCoverContext, covering, "boot cover");
+}
+
+export function useBootOpened() {
+  return useContext(BootOpenedContext);
 }
 
 export function useBootRequests() {

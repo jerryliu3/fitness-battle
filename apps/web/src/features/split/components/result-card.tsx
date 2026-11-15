@@ -1,27 +1,69 @@
 "use client";
 import { AppText } from "@/ui/section";
+import { SportActivityIcon } from "@/ui/sport-activity-icon";
 
 import { useState } from "react";
 import { useReducedMotion } from "motion/react";
 import {
   APP_TIMEZONE,
   formatEloDelta,
+  formatPeriodDateRange,
   formatVolume,
   formatEffort,
+  ordinalPlace,
   sportById,
+  weekRecapMetrics,
+  type CompetitionReplay,
   type PeriodResult,
   type UnitSystem,
 } from "@fitness-battle/shared";
 export function ResultCard({
   result,
   units,
+  variant = "default",
+  replay,
+  hiddenIds = [],
 }: {
   result: PeriodResult;
   units: UnitSystem;
+  variant?: "default" | "recap";
+  replay?: CompetitionReplay | null;
+  hiddenIds?: readonly string[];
 }) {
   const [receipt, setReceipt] = useState(false),
     reduced = useReducedMotion();
-  const range = `${new Date(result.periodStart).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} – ${new Date(Date.parse(result.periodEnd) - 1).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}`;
+  const range = formatPeriodDateRange(result.periodStart, result.periodEnd);
+
+  if (variant === "recap") {
+    const delta = result.eloAfter - result.eloBefore;
+    const deltaText = formatEloDelta(result.eloBefore, result.eloAfter);
+    const showDelta = !result.frozen;
+    const podiumWin = !result.frozen && result.place <= 3;
+    return (
+      <section className="week-recap-result-card" aria-label="Your result">
+        <div className="week-recap-result-top">
+          <AppText role="caption" className="week-recap-result-title">Your result</AppText>
+          <AppText role="label" className={`week-recap-place-pill${podiumWin ? " is-podium" : ""}`}>
+            {ordinalPlace(result.place)} place{result.frozen ? " · Frozen" : ""}
+          </AppText>
+        </div>
+        <div className="week-recap-result-metrics">
+          {weekRecapMetrics(result, units, replay, hiddenIds).map((metric) => (
+            <div key={metric.key}>
+              <AppText role="caption">{metric.key}</AppText>
+              <AppText role="value" className="week-recap-result-value">
+                {metric.value}
+                {metric.key === "Effort" && showDelta && (
+                  <AppText role="label" className={`week-recap-rating-delta${delta > 0 ? " is-pos" : delta < 0 ? " is-neg" : ""}`}> ({deltaText})</AppText>
+                )}
+              </AppText>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <button
       type="button"

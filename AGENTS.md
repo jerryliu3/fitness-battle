@@ -42,6 +42,10 @@ If those paths are not in this checkout, they live in the Fitness Battle Project
 - **PR Hygiene & Worktrees**:
   - Prefer small, clean, stacked PRs against `origin/main` (e.g., 1 PR per tab/feature rather than massive combined PRs).
   - Use isolated git worktrees or branches for parallel streams. Rebase cleanly on `origin/main`.
+- **Mobile Worktree & Device Builds**:
+  - Run `pnpm install` in the worktree after creating or rebasing it so all native modules (e.g. `expo-updates`, Mapbox) are present before `pod install` / `expo run:ios`.
+  - Ensure Mapbox credentials/env (`apps/mobile/.env`, `~/.netrc`) are in place before building.
+  - Always serve Metro from the **current worktree** (stop any stale Metro from another checkout on port 8081, or pass an explicit `--port` and keep Metro running) so the iOS binary has a valid script URL on launch.
 - **Testing & Local Verification Instructions**:
   - When work is ready for the user to review locally, always provide the exact working directory and commands to run the web dev server or test in the iOS simulator.
 - **Product Ambiguity**:

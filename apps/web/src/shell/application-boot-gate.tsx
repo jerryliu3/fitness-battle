@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { BootLoadingContext, useBootRequests } from "./boot-readiness";
+import { BootLoadingContext, BootOpenedContext, useBootCover, useBootRequests } from "./boot-readiness";
 
 /** Mount the application first, then uncover its committed content and assets. */
 export function ApplicationBootGate({ ready, splash, children }: {
@@ -11,6 +11,7 @@ export function ApplicationBootGate({ ready, splash, children }: {
 }) {
   const { pending, report } = useBootRequests();
   const [opened, setOpened] = useState(false);
+  useBootCover(!opened);
   const content = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (opened || !ready || pending) return;
@@ -42,7 +43,9 @@ export function ApplicationBootGate({ ready, splash, children }: {
     };
   }, [opened, ready, pending]);
   return <BootLoadingContext.Provider value={report}>
-    <div ref={content} inert={!opened} aria-hidden={!opened} style={opened ? undefined : { visibility: "hidden" }}>{children}</div>
-    {!opened && <div style={{ position: "fixed", inset: 0, zIndex: 10000, overflow: "auto" }}>{splash}</div>}
+    <BootOpenedContext.Provider value={opened}>
+      <div ref={content} inert={!opened} aria-hidden={!opened} style={opened ? undefined : { visibility: "hidden" }}>{children}</div>
+      {!opened && <div style={{ position: "fixed", inset: 0, zIndex: 10000, overflow: "auto" }}>{splash}</div>}
+    </BootOpenedContext.Provider>
   </BootLoadingContext.Provider>;
 }

@@ -5,17 +5,21 @@ import { SportIcon } from "../ui/sport-icon";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import {
-  APP_TIMEZONE,
   formatEloDelta,
+  formatPeriodDateRange,
   formatVolume,
   formatEffort,
   ordinalPlace,
   sportById,
   rankSymbolForRankName,
+  weekRecapMetrics,
   type AppColors,
+  type CompetitionReplay,
   type PeriodResult,
   type UnitSystem,
 } from "@fitness-battle/shared";
+
+export { formatPeriodDateRange };
 
 export function podiumMedalColor(c: AppColors, place: number): string | null {
   return place === 1 ? c.podiumGold : place === 2 ? c.podiumSilver : place === 3 ? c.podiumBronze : null;
@@ -28,47 +32,37 @@ export function eloDeltaPalette(c: AppColors, frozen: boolean, delta: number) {
   };
 }
 
-export function formatPeriodDateRange(periodStart: string, periodEnd: string): string {
-  const fmt = (ms: number) =>
-    new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE });
-  return `${fmt(Date.parse(periodStart))} – ${fmt(Date.parse(periodEnd) - 1)}`;
-}
-
 export function ResultBreakdownContent({
   result,
   units,
   deltaText,
   showReceipt = true,
+  plainMetrics = false,
 }: {
   result: PeriodResult;
   units: UnitSystem;
   deltaText: string;
   showReceipt?: boolean;
+  plainMetrics?: boolean;
 }) {
   const s = useThemedStyles(sThemes);
+  const metrics = weekRecapMetrics(result, units);
   return (
     <>
-      <View style={s.metricsRow}>
-        <View style={s.metricCell}>
-          <AppText role="caption" secondary>Volume</AppText>
-          <AppText role="label" style={s.tabular} numberOfLines={1}>
-            {formatVolume(result.sport, result.distanceM, result.movingSec, units)}
-          </AppText>
-        </View>
-        <View style={s.metricDivider} />
-        <View style={s.metricCell}>
-          <AppText role="caption" secondary>Effort</AppText>
-          <AppText role="label" style={s.tabular} numberOfLines={1}>
-            {formatEffort(result.effort)} pts
-          </AppText>
-        </View>
-        <View style={s.metricDivider} />
-        <View style={s.metricCell}>
-          <AppText role="caption" secondary>Rating</AppText>
-          <AppText role="label" style={s.tabular} numberOfLines={1}>
-            {result.eloAfter}
-          </AppText>
-        </View>
+      <View style={plainMetrics ? s.metricsRowPlain : s.metricsRow}>
+        {metrics.map((metric, idx) => (
+          <View key={metric.key} style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+            {idx > 0 && <View style={plainMetrics ? s.metricDividerGlass : s.metricDivider} />}
+            <View style={s.metricCell}>
+              <AppText role="caption" secondary>
+                {metric.key}
+              </AppText>
+              <AppText role={plainMetrics ? "value" : "label"} style={s.tabular} numberOfLines={1}>
+                {metric.value}
+              </AppText>
+            </View>
+          </View>
+        ))}
       </View>
 
       {showReceipt ? (
@@ -95,11 +89,17 @@ export function ResultCard({
   units,
   podiumAthletes = [],
   compact = false,
+  variant = "default",
+  replay,
+  hiddenIds = [],
 }: {
   result: PeriodResult;
   units: UnitSystem;
   podiumAthletes?: { id: string; name: string; place: number; you: boolean; avatarUrl?: string | null; rank?: string | null }[];
   compact?: boolean;
+  variant?: "default" | "recap";
+  replay?: CompetitionReplay | null;
+  hiddenIds?: readonly string[];
 }) {
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
@@ -111,6 +111,50 @@ export function ResultCard({
   const deltaText = formatEloDelta(result.eloBefore, result.eloAfter);
   const podiumColor = podiumMedalColor(c, result.place);
   const { bg: deltaBg, text: deltaColor } = eloDeltaPalette(c, Boolean(result.frozen), delta);
+  const placeBadgeTone = !result.frozen && result.place <= 3
+    ? { bg: c.statusSuccessSoft, text: c.statusSuccess }
+    : { bg: c.soft, text: c.ink };
+
+  if (variant === "recap") {
+    const metrics = weekRecapMetrics(result, units, replay, hiddenIds);
+    const showDelta = !result.frozen;
+    const placePositive = !result.frozen && result.place <= 3;
+    return (
+      <View style={[s.recapGlassCard, s.recapCard]}>
+        <View style={s.recapHeader}>
+          <AppText role="caption" style={s.recapMuted}>Your result</AppText>
+          <View style={[s.placePill, { backgroundColor: placePositive ? "rgba(140, 205, 171, 0.18)" : "rgba(255, 255, 255, 0.12)" }]}>
+            <AppText role="label" style={[s.tabular, { color: placePositive ? "#8ccdab" : "#f9f7ec" }]}>
+              {ordinalPlace(result.place)} place{result.frozen ? " · Frozen" : ""}
+            </AppText>
+          </View>
+        </View>
+        <View style={s.recapDividerDark} />
+        <View style={s.metricsRowPlain}>
+          {metrics.map((metric, idx) => (
+            <View key={metric.key} style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+              {idx > 0 && <View style={s.metricDividerGlass} />}
+              <View style={s.metricCell}>
+                <AppText role="caption" style={s.recapMuted}>
+                  {metric.key}
+                </AppText>
+                <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
+                  <AppText role="value" style={[s.tabular, s.recapLight]} numberOfLines={1}>
+                    {metric.value}
+                  </AppText>
+                  {metric.key === "Effort" && showDelta && (
+                    <AppText role="label" style={[s.tabular, { color: delta > 0 ? "#8ccdab" : delta < 0 ? "#f09c98" : "rgba(249, 247, 236, 0.72)" }]}>
+                      ({deltaText})
+                    </AppText>
+                  )}
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  }
 
   return (
     <Pressable
@@ -351,5 +395,46 @@ const sThemes = createThemedStyles((c) => ({
   },
   tabular: {
     fontVariant: ["tabular-nums"],
+  },
+  recapGlassCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+  },
+  recapLight: {
+    color: "#f9f7ec",
+  },
+  recapMuted: {
+    color: "rgba(249, 247, 236, 0.68)",
+  },
+  recapCard: {
+    padding: 18,
+    gap: 14,
+  },
+  recapHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  placePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  recapDividerDark: {
+    height: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.14)",
+  },
+  metricsRowPlain: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 2,
+  },
+  metricDividerGlass: {
+    width: 1,
+    height: 32,
+    backgroundColor: "rgba(255, 255, 255, 0.14)",
   },
 }));

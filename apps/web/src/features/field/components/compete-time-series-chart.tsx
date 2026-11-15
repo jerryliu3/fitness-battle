@@ -2,21 +2,126 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { colors as c } from "@/theme/app-colors";
+import { useAppearance } from "@/theme/appearance-provider";
 import {
+  APP_ICON_PATHS,
   competeChartPreview,
   buildCompeteTimeSeriesModel,
   buildSleepTimeSeriesModel,
   clamp,
   competeNow,
   freshState,
+  sportById,
   type CompeteState,
   type CompeteTimeSeriesModel,
+  type CompeteTimeSeriesView,
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
 import { playCue } from "@/lib/haptics";
 import { typographyStyle } from "@/ui/section";
+import { UserAvatar } from "@/ui/user-avatar";
 import { AthletePennant } from "./athlete-pennant";
+
+const GRAPH_VIEWS: readonly { id: CompeteTimeSeriesView; label: string; icon: "progress" | "scoring" }[] = [
+  { id: "trajectory", label: "Trajectory", icon: "progress" },
+  { id: "event", label: "Event", icon: "scoring" },
+];
+
+export function GraphOptions() {
+  const { preference, setPreference } = useAppearance();
+  const [open, setOpen] = useState(false);
+  const [systemDark, setSystemDark] = useState(false);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const sync = () => setSystemDark(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  const dark = preference === "dark" || (preference === "system" && systemDark);
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <button
+        type="button"
+        className="club-icon-button"
+        aria-label="Graph options"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        onClick={() => setOpen((value) => !value)}
+      >
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d={APP_ICON_PATHS.layers} />
+        </svg>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          aria-label="Graph options menu"
+          style={{
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            right: 0,
+            minWidth: 200,
+            padding: 12,
+            borderRadius: 14,
+            background: c.card,
+            border: `1px solid ${c.line}`,
+            boxShadow: "0 10px 28px rgba(0, 0, 0, 0.16)",
+            zIndex: 30,
+          }}
+        >
+          <label
+            style={{
+              ...typographyStyle("label"),
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              minHeight: 36,
+              color: c.ink,
+              cursor: "pointer",
+            }}
+          >
+            <span>Dark mode</span>
+            <input
+              type="checkbox"
+              role="switch"
+              aria-label="Dark mode"
+              checked={dark}
+              onChange={() => {
+                void playCue("selection");
+                setPreference(dark ? "light" : "dark");
+              }}
+              style={{ width: 18, height: 18, accentColor: c.podiumGold, cursor: "pointer" }}
+            />
+          </label>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function CompeteTimeSeriesChart({
   state,
@@ -30,6 +135,8 @@ export function CompeteTimeSeriesChart({
   reserveTopControls = false,
   compact = false,
   immersive = false,
+  view,
+  onViewChange,
   timelineFraction,
   onTimelineChange,
 }: {
@@ -44,12 +151,14 @@ export function CompeteTimeSeriesChart({
   reserveTopControls?: boolean;
   compact?: boolean;
   immersive?: boolean;
+  view?: CompeteTimeSeriesView;
+  onViewChange?: (view: CompeteTimeSeriesView) => void;
   timelineFraction?: number | null;
   onTimelineChange?: (value: number | null) => void;
 }) {
   const [plotHeight, setPlotHeight] = useState(204);
   useEffect(() => {
-    const resize = () => setPlotHeight(immersive ? Math.max(240, window.innerHeight - 380) : 204);
+    const resize = () => setPlotHeight(immersive ? Math.max(220, window.innerHeight - 380) : 204);
     resize();
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
@@ -57,6 +166,9 @@ export function CompeteTimeSeriesChart({
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
   );
+  const [internalView, setInternalView] = useState<CompeteTimeSeriesView>("trajectory");
+  const activeView = view ?? internalView;
+  const setActiveView = onViewChange ?? setInternalView;
   const [internalFraction, setInternalFraction] = useState<number | null>(null);
   const scrubFraction = timelineFraction !== undefined ? timelineFraction : internalFraction;
   const setScrubFraction = onTimelineChange ?? setInternalFraction;
@@ -69,12 +181,14 @@ export function CompeteTimeSeriesChart({
   const effectiveNow = now ?? (state ? competeNow(state) : new Date());
   const model: CompeteTimeSeriesModel = useMemo(() => {
     const safeState = state ?? freshState(effectiveNow);
+    const viewOption = compact ? undefined : activeView;
     if (mode === "sleep") {
       return buildSleepTimeSeriesModel(safeState, effectiveNow, {
         height: plotHeight,
         hiddenIds,
         selectedAthleteId: activeSelectedId,
         scrubFraction,
+        view: viewOption,
       });
     }
     return buildCompeteTimeSeriesModel(
@@ -87,6 +201,7 @@ export function CompeteTimeSeriesChart({
         hiddenIds,
         selectedAthleteId: activeSelectedId,
         scrubFraction,
+        view: viewOption,
       },
     );
   }, [
@@ -99,6 +214,8 @@ export function CompeteTimeSeriesChart({
     activeSelectedId,
     scrubFraction,
     plotHeight,
+    activeView,
+    compact,
     effectiveNow.getTime(),
   ]);
 
@@ -156,105 +273,165 @@ export function CompeteTimeSeriesChart({
     <div
       aria-label="Weekly competition time-series graph"
       style={{
-        background: immersive ? c.accentSecondarySoft : c.card,
+        background: immersive ? c.paper : c.card,
         borderRadius: immersive ? 0 : 20,
         border: immersive ? "none" : `1px solid ${c.line}`,
+        height: immersive ? "100%" : undefined,
+        boxSizing: "border-box",
         padding: 16,
-        paddingTop: immersive ? "calc(env(safe-area-inset-top) + 100px)" : reserveTopControls ? 64 : 16,
+        paddingTop: immersive ? "calc(env(safe-area-inset-top, 0px) + 64px)" : reserveTopControls ? 64 : 16,
+        paddingBottom: immersive ? "calc(env(safe-area-inset-bottom, 0px) + 136px)" : 16,
         display: "grid",
+        alignContent: immersive ? "space-between" : undefined,
         gap: 10,
         color: c.ink,
       }}
     >
       {/* Pure Open Line Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
-          <span
-            style={{
-              ...typographyStyle("caption"),
-              color: c.muted,
-            }}
-          >
-            {model.timeLabel}
-          </span>
+      {immersive ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            padding: "0 4px",
+          }}
+        >
+          <UserAvatar
+            src={model.selectedAthlete.avatarUrl}
+            name={model.selectedAthlete.name}
+            size={56}
+            highlight={model.selectedAthlete.you}
+          />
+          <div style={{ display: "grid", gap: 2, minWidth: 0, flex: 1 }}>
+            <strong
+              style={{
+                ...typographyStyle("heading"),
+                color: c.ink,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {model.selectedAthlete.name}
+            </strong>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span
+                style={{
+                  ...typographyStyle("label"),
+                  color:
+                    model.selectedAthlete.placeAtCursor === 1
+                      ? c.podiumGold
+                      : model.selectedAthlete.you
+                        ? c.fieldTeal
+                        : c.ink,
+                }}
+              >
+                {model.placeLabel}
+              </span>
+              <span style={{ ...typographyStyle("label"), color: c.muted }}>·</span>
+              <span
+                style={{
+                  ...typographyStyle("label"),
+                  color: c.muted,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {`${model.selectedAthlete.formattedValueAtCursor} ${model.unit}`}
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
+            <span
+              style={{
+                ...typographyStyle("caption"),
+                color: c.muted,
+              }}
+            >
+              {model.timeLabel}
+            </span>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: 8,
+                flexWrap: "wrap",
+              }}
+            >
+              <strong
+                style={{
+                  ...typographyStyle("hero"),
+                  color: c.ink,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {model.selectedAthlete.formattedValueAtCursor}
+                <small
+                  style={{
+                    ...typographyStyle("body"),
+                    color: c.muted,
+                    marginLeft: 4,
+                  }}
+                >
+                  {model.unit}
+                </small>
+              </strong>
+              <span
+                style={{
+                  ...typographyStyle("caption"),
+                  padding: "2px 8px",
+                  borderRadius: 6,
+                  background: model.selectedAthlete.you
+                    ? "rgba(23, 108, 117, 0.1)"
+                    : "rgba(247, 201, 72, 0.24)",
+                  color: model.selectedAthlete.you ? c.fieldTeal : c.ink,
+                }}
+              >
+                {model.placeLabel}
+              </span>
+            </div>
+          </div>
+
           <div
             style={{
-              display: "flex",
-              alignItems: "baseline",
-              gap: 8,
-              flexWrap: "wrap",
+              display: "grid",
+              justifyItems: "end",
+              gap: 2,
+              paddingTop: 2,
+              textAlign: "right",
             }}
           >
             <strong
               style={{
-                ...typographyStyle("hero"),
+                ...typographyStyle("label"),
                 color: c.ink,
                 fontVariantNumeric: "tabular-nums",
               }}
             >
-              {model.selectedAthlete.formattedValueAtCursor}
-              <small
-                style={{
-                  ...typographyStyle("body"),
-                  color: c.muted,
-                  marginLeft: 4,
-                }}
-              >
-                {model.unit}
-              </small>
+              {model.gapLabel}
             </strong>
-            <span
+            {model.historyAvailable && <span
               style={{
                 ...typographyStyle("caption"),
-                padding: "2px 8px",
-                borderRadius: 6,
-                background: model.selectedAthlete.you
-                  ? "rgba(23, 108, 117, 0.1)"
-                  : "rgba(247, 201, 72, 0.24)",
-                color: model.selectedAthlete.you ? c.fieldTeal : c.ink,
+                color: model.overtakeCount > 0 ? c.fieldTeal : c.muted,
               }}
             >
-              {model.placeLabel}
-            </span>
+              {model.overtakeLabel}
+            </span>}
           </div>
         </div>
-
-        <div
-          style={{
-            display: "grid",
-            justifyItems: "end",
-            gap: 2,
-            paddingTop: 2,
-            textAlign: "right",
-          }}
-        >
-          <strong
-            style={{
-              ...typographyStyle("label"),
-              color: c.ink,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            {model.gapLabel}
-          </strong>
-          {model.historyAvailable && <span
-            style={{
-              ...typographyStyle("caption"),
-              color: model.overtakeCount > 0 ? c.fieldTeal : c.muted,
-            }}
-          >
-            {model.overtakeLabel}
-          </span>}
-        </div>
-      </div>
+      )}
 
       {/* Time-Series SVG Plot */}
       <div
@@ -400,7 +577,7 @@ export function CompeteTimeSeriesChart({
                 stroke={c.tennis}
                 strokeWidth={1.8}
               />
-              <circle cx={node.x} cy={node.y} r={1.8} fill={c.ink} />
+              <circle cx={node.x} cy={node.y} r={1.8} fill={c.textOnAction} />
             </g>
           ))}
 
@@ -418,7 +595,7 @@ export function CompeteTimeSeriesChart({
               cy={model.selectedAthlete.cursorY}
               r={4.5}
               fill={selectedStroke}
-              stroke="#ffffff"
+              stroke={c.paper}
               strokeWidth={1.8}
             />
             {/* Athlete Callout (Full pennant card in fullscreen aligned to right; clean pill in card preview) */}
@@ -461,6 +638,65 @@ export function CompeteTimeSeriesChart({
             )}
           </g>
         </svg>
+      </div>
+
+      {/* Graph View Switcher: Trajectory vs Event */}
+      <div
+        role="tablist"
+        aria-label="Graph view"
+        style={{
+          justifySelf: "center",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          padding: 4,
+          borderRadius: 999,
+          background: c.card,
+          border: `1px solid ${c.line}`,
+        }}
+      >
+        {GRAPH_VIEWS.map((option) => {
+          const selected = activeView === option.id;
+          return (
+            <button
+              key={option.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-label={`${option.label} graph view`}
+              onClick={() => {
+                if (selected) return;
+                void playCue("selection");
+                setActiveView(option.id);
+              }}
+              style={{
+                ...typographyStyle("label"),
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                minHeight: 36,
+                padding: "0 16px",
+                borderRadius: 999,
+                border: `1px solid ${
+                  selected
+                    ? "light-dark(var(--app-border-subtle), var(--app-podium-gold))"
+                    : "transparent"
+                }`,
+                background: selected
+                  ? "light-dark(var(--app-accent-secondary-soft), var(--app-action-soft))"
+                  : "transparent",
+                color: selected ? c.ink : c.muted,
+                cursor: "pointer",
+              }}
+            >
+              <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <path d={APP_ICON_PATHS[option.icon]} />
+              </svg>
+              <span>{option.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Single-Select Athlete Quick-Focus Chips */}

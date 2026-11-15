@@ -2165,19 +2165,11 @@
 .club-distance-controls .club-board-peers{gap:4px}
 .club-distance-controls .club-board-zoom{gap:4px}
 
-/* Event replay owns its viewport; the timeline stays reachable on short screens. */
+/* Full-screen round replay hosts Compete's field and bottom sheet above Week Recap. */
 .competition-replay-overlay{position:fixed;inset:0;background:color-mix(in srgb, var(--app-text-primary) 26.67%, transparent);z-index:140}
-.competition-replay-dialog{position:fixed;inset:0;z-index:141;height:100dvh;display:flex;flex-direction:column;background:var(--paper);color:var(--ink);outline:none;padding:env(safe-area-inset-top) max(8px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px,env(safe-area-inset-left));box-sizing:border-box;overflow-y:auto}
-.competition-replay-header{display:flex;gap:12px;align-items:center;padding:8px;flex-shrink:0}.competition-replay-header>div{flex:1}.competition-replay-header h2{font:var(--type-heading);margin:0}.competition-replay-header p,.competition-replay-controls p{font:var(--type-caption);color:var(--muted);margin:4px 0}.competition-replay-header button{min-height:44px}
-.competition-replay-message{margin:auto;text-align:center;padding:24px}.competition-replay-viewbar{display:flex;align-items:center;justify-content:space-between;gap:12px;font:var(--type-caption);padding:0 8px 8px}.competition-replay-viewbar .focus-segments{margin:0}.competition-replay-viewbar [aria-pressed=true]{background:var(--app-soft);color:var(--app-text-primary)}
-.competition-replay-scene{position:relative;flex:1;min-height:140px;overflow:hidden}.competition-replay-scene .focus-lane-scroll{height:100%;min-height:0;max-height:none;border-radius:12px}.competition-replay-scene .club-perspective-group{height:100%;display:flex;flex-direction:column}.competition-replay-scene .club-board-status{display:none}.competition-replay-scene .club-perspective-board{flex:1;min-height:0;aspect-ratio:auto;max-width:none}.competition-replay-follow{position:absolute;bottom:12px;right:12px;background:var(--app-surface-card);min-height:44px}
-.competition-replay-controls{flex-shrink:0;padding:12px 8px 8px;background:var(--paper);border-top:1px solid var(--line)}.competition-replay-event{display:flex;flex-direction:column;gap:4px;min-height:52px;font:var(--type-label)}.competition-replay-event>span{font:var(--type-caption);color:var(--muted)}.competition-replay-controls input{display:block;width:100%;height:44px;accent-color:var(--teal,var(--app-chart-series));cursor:ew-resize;touch-action:none}
-.competition-replay-actions{display:flex;justify-content:center;align-items:center;gap:6px}.competition-replay-actions button{min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:12px;background:var(--app-surface-card);color:var(--ink);font:var(--type-label);padding:6px 10px}.competition-replay-actions .competition-replay-play{background:var(--app-soft);min-width:72px}.competition-replay-actions button:disabled{opacity:.4}.competition-replay-trigger{min-height:44px}
-@media(min-width:900px){.competition-replay-scene,.competition-replay-controls,.competition-replay-viewbar{width:min(100%,1000px);align-self:center}.competition-replay-actions{gap:12px}}
-
-.competition-replay-scene .focus-lane-surface{height:100%;min-height:0}
-
-.competition-replay-actions{flex-wrap:wrap}
+.round-replay-dialog{position:fixed;inset:0;z-index:150;isolation:isolate;background:var(--paper);color:var(--ink);outline:none}
+.round-replay-dialog .compete-field-options{z-index:110}
+.competition-replay-trigger{min-height:44px}
 
 /* Full Arena lays out the persistent scene across the actual viewport. */
 .focus-field-expanded { height:100dvh; overflow:hidden; }
@@ -2195,26 +2187,21 @@
 .club-fullscreen-sheet:has(.moment-replay) > .club-sheet-heading,
 .club-fullscreen-sheet:has(.moment-replay) > .club-sheet-heading + p { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); }
 .moment-replay { position: absolute; inset: 0; color: var(--club-ink, var(--app-text-primary)); }
-.moment-replay-field { position: absolute; inset: 0 0 80px; }
+.moment-replay-field { position: absolute; inset: 0; }
 .moment-replay-field .focus-lane-surface, .moment-replay-field .focus-lane-scroll { height: 100%; }
 .moment-replay-field .focus-lane-scroll { scrollbar-width: none; }
-.moment-replay-top { position: absolute; inset: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) auto max(16px, env(safe-area-inset-left)); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; pointer-events: none; }
-.moment-replay-label, .moment-replay-standings, .moment-replay-feedback { background: color-mix(in srgb, var(--app-surface-canvas) 92.94%, transparent); border: 1px solid var(--club-border, var(--app-border-subtle)); border-radius: 20px; padding: 14px 16px; box-shadow: 0 4px 24px color-mix(in srgb, var(--app-text-primary) 4.71%, transparent); backdrop-filter: blur(16px); }
-.moment-replay-label { display: grid; gap: 6px; }
-.moment-replay-label small { font: var(--type-caption); color: var(--app-text-secondary); }
-.moment-replay-standings { width: min(280px, 48vw); }
-.moment-replay-standings > div { display: flex; align-items: baseline; gap: 10px; padding: 5px 0; font: var(--type-caption); }
-.moment-replay-standings span { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.moment-replay-standings .is-you { font: var(--type-field); }
-.moment-replay-standings small { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.moment-replay-bottom { position: absolute; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(420px, calc(100% - 32px)); display: grid; gap: 12px; }
-.moment-replay-feedback { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; }
-.moment-replay-feedback > strong { font: var(--type-display); font-variant-numeric: tabular-nums; }
-.moment-replay-feedback > strong span { font: var(--type-label); }
-.moment-replay-feedback > b { background: var(--app-soft); padding: 6px 10px; border-radius: 12px; font: var(--type-label); }
-.moment-replay-feedback > small { font: var(--type-caption); flex-basis: 100%; color: var(--app-text-secondary); }
-.moment-replay-bottom > button { width: 100%; min-height: 48px; }
-@media (max-width: 540px) { .moment-replay-top { flex-direction: column; } .moment-replay-label { padding: 10px 14px; } .moment-replay-standings { align-self: flex-end; width: 220px; } }
+.moment-replay-top { position: absolute; inset: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) auto max(16px, env(safe-area-inset-left)); display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; z-index: 20; }
+.moment-replay-sport-pill { min-height: 32px; margin-inline: 56px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: var(--card, var(--app-surface-card)); border: 1px solid var(--line, var(--app-border-subtle)); color: var(--ink, var(--app-text-primary)); }
+.moment-replay-chip { width: fit-content; max-width: min(244px, calc(100% - 144px)); display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--card, var(--app-surface-card)); border: 1px solid var(--line, var(--app-border-subtle)); color: var(--ink, var(--app-text-primary)); box-shadow: 0 4px 24px color-mix(in srgb, var(--app-text-primary) 4.71%, transparent); }
+.moment-replay-chip[data-tone="gain"] { border-color: var(--action-primary, var(--app-action-primary)); }
+.moment-replay-chip-headline { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.moment-replay-overtake-badge { flex: none; padding: 3px 8px; border-radius: 999px; background: var(--action-soft, var(--app-action-soft)); color: var(--ink, var(--app-text-primary)); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.moment-replay-overview { display: grid; gap: 10px; }
+.moment-replay-overview-actions { display: grid; grid-template-columns: auto auto 1fr; gap: 10px; }
+.moment-replay-overview-actions > button { min-height: 48px; }
+.moment-replay-playback-btn { width: 52px; padding: 0; justify-content: center; }
+.moment-replay-speed-btn { min-width: 56px; padding: 0 10px; justify-content: center; font-variant-numeric: tabular-nums; }
+.moment-replay-embedded-footer { position: absolute; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(420px, calc(100% - 32px)); z-index: 20; }
 
 /* Stable panel bounds allow interrupted slides to reverse without reflow. */
 .focus-broadcast-tower,
@@ -2300,7 +2287,6 @@
 .geographic-map .mapboxgl-ctrl-bottom-right { bottom: calc(var(--map-controls-bottom, 8px) + 60px); }
 .geographic-map-controls { transition: opacity 160ms ease; }
 .is-holding-field .geographic-map-controls { opacity: 0; pointer-events: none; }
-.competition-replay-scene > .geographic-field-scene { width: 100%; }
 @media (prefers-reduced-motion: reduce) { .geographic-map-controls { transition: none; } }
 
 .course-callout-target:focus-visible { outline: 3px solid var(--teal, var(--app-chart-series)); border-radius: 12px; }
@@ -2344,8 +2330,7 @@
 .session-detail-footer { display: grid; gap: 12px; border-top: 1px solid var(--line); padding-top: 20px; }
 .session-detail { width: 100%; max-width: 620px; margin-inline: auto; }
 .club-fullscreen-sheet:has(.session-detail) > .club-sheet-heading { position: sticky; top: 0; z-index: 2; padding-block: 8px; background: var(--paper); }
-.focus-broadcast-replay-chip { pointer-events: auto; border-radius: 999px; background: rgba(20,20,19,.78); padding: 2px 8px; }
-.focus-broadcast-replay-chip button, .focus-broadcast-rail-btn { min-height: 44px; }
+.focus-broadcast-rail-btn { min-height: 44px; }
 
 /* The overview stays independent of the sliding athlete panel. */
 .focus-broadcast-spotlight { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 56px); }
@@ -2369,13 +2354,6 @@
   bottom: calc(max(14px, env(safe-area-inset-bottom)) + 220px);
 }
 .focus-broadcast-overview .focus-field-overview { background: var(--card); }
-.focus-broadcast-replay-chip .competition-replay-trigger { border-radius: 999px; padding-inline: 14px; }
-
-.week-board-preview .competition-replay-scene{height:340px;min-height:340px;position:relative;flex:none}.week-board-preview{border-radius:20px;overflow:hidden;margin-bottom:20px}
-
-.competition-replay-athletes { display:flex; flex-wrap:wrap; gap:6px; }
-.competition-replay-athletes button { min-height:44px; font:var(--type-caption); }
-.competition-replay-viewbar { flex-wrap:wrap; }
 
 .field-timeline { padding: 8px 12px; background: var(--card); color: var(--ink); border-radius: 12px; }
 .field-timeline-heading { display: flex; align-items: center; gap: 8px; }

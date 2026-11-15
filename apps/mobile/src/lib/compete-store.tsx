@@ -1,4 +1,5 @@
 import { Toast } from "../ui/toast";
+import { useBootOpened } from "../ui/boot-readiness";
 import { playCue, playPattern } from "./haptics";
 import { clubAchievements, weeklyActivityStreak, competeNow, rankForElo } from "@fitness-battle/shared";
 import { useCompetitionExperience } from "./use-competition-experience";
@@ -164,6 +165,7 @@ async function preloadBaselineCache(
 }
 
 export function CompeteProvider({ children, navigationReady = true }: { children: ReactNode; navigationReady?: boolean }) {
+  const bootOpened = useBootOpened();
   const navigationReadyRef = useRef(navigationReady);
   navigationReadyRef.current = navigationReady;
   const pathname = usePathname();
@@ -1170,7 +1172,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         priority={saveConflict ? 20 : 10}
       />
       {children}
-      {(syncReview.receipt || experience.moment) && state ? (
+      {bootOpened && (syncReview.receipt || experience.moment) && state ? (
         <Suspense
           fallback={
             <Text accessibilityLiveRegion="polite">Opening today’s recap…</Text>

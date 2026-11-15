@@ -13,15 +13,13 @@ import { GeographicCourse } from "./geographic-course";
 import { useCompetitionCourse } from "./use-competition-course";
 import { useFieldTimeline } from "./use-field-timeline";
 import { FieldTimeline } from "./field-timeline";
-import { CompetitionReplayModal } from "./competition-replay";
-import { RankAvatar } from "../ui/rank-symbol";
+import { StandingsList } from "./standings-list";
 import { AppText, textStyle } from "../ui/section";
 import { useFieldFlight } from "../ui/use-field-flight";
 import { FieldOverlayView, SlidingFieldPanel } from "../ui/field-overlay-motion";
 import { PortraitField } from "../ui/portrait-field";
 import {
   coursePositionLeaders,
-  standingsBar,
   orderedArenaLanes,
   competitionQueue,
   createFieldOverlayHold,
@@ -34,7 +32,6 @@ import {
   buildArenaModel,
   initialsFromName,
   ordinalPlace,
-  rankSymbolForScore,
   shellTabFromPath,
   weeklyBoard,
   type CourseDistanceTarget,
@@ -65,6 +62,8 @@ export function CompetitionField({
   onExit,
   onDetails,
   presentationActive,
+  periodOverride,
+  focusedOverride,
   externalAthleteFocus,
   onFocusAthlete,
   externalCourseTarget,
@@ -78,6 +77,8 @@ export function CompetitionField({
   onExit?: () => void;
   onDetails?: () => void;
   presentationActive?: boolean;
+  periodOverride?: { startsAt: Date; endsAt: Date };
+  focusedOverride?: boolean;
   onOptionsChange?: (options: ReactNode | null) => void;
   externalAthleteFocus?: { id: string; request: number } | null;
   onFocusAthlete?: (id: string) => void;
@@ -92,12 +93,12 @@ const f=useFocusStyles();
   const { blocks } = useAthleteBlocks();
   const hiddenIds = useMemo(() => blocks.map(block => block.id), [blocks]);
   const now = state ? competeNow(state) : new Date();
-  const queue = state ? competitionQueue(state, sport, now) : null;
+  const queue = !periodOverride && state ? competitionQueue(state, sport, now) : null;
   const queued = Boolean(queue && (queue.queued || queue.awaitingField));
   const queueOverlay = queued && state && !backgroundMode ? <QueuedField overlay state={state} event={sport} now={now} onCancel={() => dispatch({ type: "opt-out", sport })} /> : null;
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
-  const isFocused = (presentationActive ?? true) && shellTabFromPath(pathname)?.id === "arena";
+  const isFocused = focusedOverride ?? ((presentationActive ?? true) && shellTabFromPath(pathname)?.id === "arena");
   const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d" | "graph">(() => (state && buildArenaModel(state, undefined, track, sport)?.unit === "pts") ? "graph" : "4d");
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
 
@@ -112,7 +113,6 @@ const f=useFocusStyles();
     return () => onOptionsChange(null);
   }, [onOptionsChange, sceneDimension, queued, sport]);
   const [courseFlat, setCourseFlat] = useState(false);
-  const [courseReplayOpen, setCourseReplayOpen] = useState(false);
   const [expanded, setExpanded] = useState(persistent);
   const [leadersHeight, setLeadersHeight] = useState(0);
   const [spotlightCollapsed, setSpotlightCollapsed] = useState(false);
@@ -155,7 +155,7 @@ const f=useFocusStyles();
     () => (state ? buildArenaModel(state, undefined, track, sport) : null),
     [state, track, sport],
   );
-  const period = state ? competePeriodWindow(state, competeNow(state), sport) : null;
+  const period = periodOverride ?? (state ? competePeriodWindow(state, competeNow(state), sport) : null);
   const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(sport, period?.startsAt.toISOString() ?? "", period?.endsAt.toISOString() ?? "", debugActive, !standingsOnly && sceneDimension === "4d" && (persistent || isFocused));
   useEffect(() => setCourseTarget(null), [accountKey, sport, period?.startsAt.getTime(), liveArena?.unit]);
   const sharedTimeline = useCompetitionTimeline();
@@ -173,7 +173,7 @@ const f=useFocusStyles();
   useEffect(() => { if (externalAthleteFocus && !hiddenIds.includes(externalAthleteFocus.id)) { setSelectedId(externalAthleteFocus.id); const lane = arena?.lanes.find(item => item.id === externalAthleteFocus.id); if (lane) setCenter(lane.values[2]); setCourseTarget(null); setFocusRequest(value => value + 1); } }, [externalAthleteFocus, hiddenIds]);
   const defaultSpan = fieldDefaultSpan(arena?.unit ?? "km");
   const viewSpan = span ?? defaultSpan;
-  useEffect(() => { if (!isFocused) { setCourseReplayOpen(false); if (!persistent) setExpanded(false); } }, [isFocused, persistent]);
+  useEffect(() => { if (!isFocused && !persistent) setExpanded(false); }, [isFocused, persistent]);
   const me = arena?.lanes.find((l) => l.you);
   const total = me?.values[2] ?? 0;
 
@@ -282,7 +282,7 @@ const f=useFocusStyles();
       ) : null}
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <View pointerEvents={expanded ? "auto" : "none"} style={{ flex: 1 }}>
-          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={courseReplay ? false : true} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseReplay ? undefined : courseTarget} replay={courseReplay} onReplay={sharedTimeline ? timeline.toggle : backgroundMode ? () => setCourseReplayOpen(true) : timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
+          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={courseReplay ? false : true} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseReplay ? undefined : courseTarget} replay={courseReplay} onReplay={timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
           <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>Tap to open full screen</Text></View>
@@ -406,7 +406,6 @@ const f=useFocusStyles();
           <View onTouchStartCapture={() => hold.current?.reset()} style={[f.safe, { backgroundColor: "#0b242c", position: "relative" }]}>
             {fieldContent}
             {queueOverlay}
-            {backgroundMode && <CompetitionReplayModal open={courseReplayOpen} state={state} selection={{ sport, track, periodStart: period.startsAt.toISOString(), periodEnd: period.endsAt.toISOString() }} initialFlat={courseFlat} dimension={sceneDimension} onClose={() => setCourseReplayOpen(false)} />}
             {/* Top Bar HUD */}
             <FieldOverlayView
               hidden={overlaysHidden}
@@ -680,78 +679,20 @@ const f=useFocusStyles();
       {!standingsOnly && !expanded && !queued && <FieldTimeline timeline={timeline} />}
       {!expanded ? <AthleteProfileSheet athlete={profileAthlete} onClose={() => setProfileAthlete(null)} /> : null}
       {!queued && !persistent && <View style={[f.section, { paddingTop: 16 }]}>
-        <View style={{ gap: 10 }}>
-          {ranked.map((lane) => {
-            if (hiddenIds.includes(lane.id)) return <View key={lane.id} style={{ minHeight: 72 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />;
-            const rank = place(lane.values[2]);
-            const bar = standingsBar(lane.values[2], leaderValue, rank);
-            const elo = scores.find((row) => row.id === lane.id)?.elo;
-            return (
-              <Animated.View key={lane.id} layout={reduceMotion ? undefined : LinearTransition.duration(240)}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${lane.name}, place ${rank}, ${lane.values[2].toFixed(arena.unit === "pts" ? 1 : 2)} ${arena.unit}`}
-                onPress={() => onFocusAthlete ? onFocusAthlete(lane.id) : selectAthlete(lane.id)}
-                style={[
-                  f.row,
-                  {
-                    paddingVertical: 10,
-                    paddingHorizontal: 10,
-                    borderRadius: 12,
-                    backgroundColor: lane.you ? c.soft : "transparent",
-                  },
-                ]}
-              >
-                <Text style={[textStyle("label"), { width: 22 }]}>{rank}</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel={`Open ${lane.name}'s profile`} onPress={event => { event.stopPropagation(); openProfile(lane); }} hitSlop={4} style={{ overflow: "visible" }}>
-                <RankAvatar
-                  rank={rankSymbolForScore(elo)}
-                  src={lane.avatarUrl}
-                  name={lane.name}
-                  size={56}
-                />
-                </Pressable>
-                <View style={[f.grow, { gap: 6 }]}>
-                  <View style={[f.row, { alignItems: "center", justifyContent: "space-between" }]}>
-                    <View style={{ flex: 1, gap: 2, marginRight: 12 }}>
-                      <AppText role="label" numberOfLines={1}>
-                        {lane.name}
-                      </AppText>
-                      <Text style={[textStyle("caption"), { color: c.muted }]}>
-                        {elo ?? "—"} effort score
-                      </Text>
-                    </View>
-                    <View style={{ alignItems: "flex-end" }}>
-                      <Text style={{ ...textStyle("heading"), color: c.ink }}>
-                        {lane.values[2].toFixed(arena.unit === "pts" ? 1 : 2)} {arena.unit}
-                      </Text>
-                    </View>
-                  </View>
-                  {/* Visual proportion bar aligned underneath the user's name */}
-                  <View
-                    style={{
-                      height: 6,
-                      borderRadius: 999,
-                      backgroundColor: c.line,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <Animated.View layout={reduceMotion ? undefined : LinearTransition.duration(180)}
-                      style={{
-                        width: `${bar.percent}%`,
-                        height: "100%",
-                        borderRadius: 999,
-                        backgroundColor:
-                          bar.color,
-                      }}
-                    />
-                  </View>
-                </View>
-              </Pressable>
-              </Animated.View>
-            );
-          })}
-        </View>
+        <StandingsList
+          ranked={ranked.map((lane) => ({
+            ...lane,
+            value: arena.unit === "pts" ? (scores.find((s) => s.id === lane.id)?.movingSec ?? 0) / 3600 : lane.values[2],
+          }))}
+          hiddenIds={hiddenIds}
+          unit={arena.unit === "pts" ? "hrs" : arena.unit}
+          scores={scores}
+          onSelectAthlete={(lane) => onFocusAthlete ? onFocusAthlete(lane.id) : selectAthlete(lane.id)}
+          onOpenProfile={(lane) => {
+            const target = ranked.find((item) => item.id === lane.id);
+            if (target) openProfile(target);
+          }}
+        />
       </View>}
     </View>
   );

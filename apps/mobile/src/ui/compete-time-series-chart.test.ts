@@ -6,9 +6,11 @@ import { freshState, reduceCompete } from "@fitness-battle/shared";
 const mocks = vi.hoisted(() => ({ loopStart: vi.fn(), loopStop: vi.fn() }));
 
 vi.mock("react-native", () => ({
+  Platform: { OS: "ios" },
   useColorScheme: () => "light",
   View: "View",
   Text: "Text",
+  Image: "Image",
   Pressable: "Pressable",
   ScrollView: "ScrollView",
   AppState: { currentState: "active", addEventListener: () => ({ remove() {} }) },
@@ -33,6 +35,7 @@ vi.mock("react-native-svg", () => ({
   Circle: "Circle",
   G: "G",
   Line: "Line",
+  Path: "Path",
   Polyline: "Polyline",
   Rect: "Rect",
   Text: "SvgText",
@@ -72,4 +75,49 @@ it("uses solid backgrounds and pulses the selected athlete position", async () =
     plot.props.onLayout({ nativeEvent: { layout: { width: 358, height: 464 } } });
   });
   expect(renderer.root.findAllByType("AnimatedView" as never).length).toBeGreaterThan(0);
+});
+
+it("renders the streamlined athlete header in immersive mode and switches between Trajectory and Event views", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const start = new Date("2026-10-19T09:00:00Z");
+  const now = new Date("2026-10-23T18:00:00Z");
+  let state = reduceCompete(freshState(start), { type: "opt-in", sport: "strength", now: start.toISOString() });
+  state = reduceCompete(state, {
+    type: "log-manual",
+    sport: "strength",
+    activityId: "lift-big",
+    movingSec: 10800,
+    distanceM: 0,
+    startedAt: "2026-10-22T14:00:00Z",
+    now: "2026-10-22T18:00:00Z",
+  });
+  state = {
+    ...state,
+    activities: state.activities.map((a) => ({ ...a, avgHr: 175, provenance: "recorded" })),
+  };
+
+  await act(async () => {
+    renderer = create(createElement(CompeteTimeSeriesChart, { state, sport: "strength", immersive: true, view: "trajectory" }));
+  });
+
+  const textContent = renderer.root.findAllByType("Text" as never).map((n) => String(n.props.children));
+  expect(textContent.some((t) => t.includes("STRENGTH MEET"))).toBe(false);
+  expect(textContent.some((t) => t === state.name)).toBe(true);
+  expect(textContent.some((t) => /place$/.test(t))).toBe(true);
+  expect(textContent.some((t) => t.endsWith("hrs"))).toBe(true);
+
+  const hasVerticalJump = (points: string) => {
+    const coords = points.trim().split(/\s+/).map((pair) => pair.split(",").map(Number));
+    return coords.some(([x, y], i) => i > 0 && x === coords[i - 1]![0] && y !== coords[i - 1]![1]);
+  };
+
+  const trajectoryLines = renderer.root.findAllByType("Polyline" as never).map((n) => String(n.props.points));
+  expect(trajectoryLines.some(hasVerticalJump)).toBe(false);
+
+  await act(async () => {
+    renderer.update(createElement(CompeteTimeSeriesChart, { state, sport: "strength", immersive: true, view: "event" }));
+  });
+
+  const eventLines = renderer.root.findAllByType("Polyline" as never).map((n) => String(n.props.points));
+  expect(eventLines).not.toEqual(trajectoryLines);
 });

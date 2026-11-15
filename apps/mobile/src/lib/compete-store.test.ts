@@ -10,6 +10,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { accountStorageKeys } from "./account-state";
 import { CompeteProvider, useCompeteStore } from "./compete-store";
+import { BootOpenedContext } from "../ui/boot-readiness";
 
 const mock = vi.hoisted(() => ({
   auth: {
@@ -746,4 +747,41 @@ it("resurfaces conflict recovery on another edit without attempting an unsafe sa
   await save();
   expect(accountSaveCalls()).toHaveLength(1);
   expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBe("1");
+});
+
+it("defers presenting SyncReview / overtake replay until BootOpenedContext is true", async () => {
+  const baseline = freshState();
+  const moment = {
+    id: "overtake:rev-1:running",
+    sport: "running" as const,
+    track: "open" as const,
+    kind: "overtake" as const,
+    recordedAt: "2026-10-22T15:59:00Z",
+    plan: {
+      headline: "You passed Alex",
+      detail: "Up 1 spot",
+      youBefore: 1,
+      youAfter: 4,
+      overtakenIds: ["rival-1"],
+      hasOvertake: true,
+      youRankBefore: 2,
+      youRankAfter: 1,
+      runners: [],
+      gains: [],
+      route: null,
+    },
+  };
+  fetcher = vi.fn(async () => Response.json({ state: { ...baseline, committedOvertakeMoments: [moment] }, updatedAt: "revision-1" }));
+  vi.stubGlobal("fetch", fetcher);
+  login("Alice");
+  const renderWithBoot = (opened: boolean) => createElement(
+    BootOpenedContext.Provider,
+    { value: opened },
+    createElement(CompeteProvider, null, createElement(() => { api = useCompeteStore(); return null; })),
+  );
+  await act(async () => { renderer = create(renderWithBoot(false)); await flush(); });
+  expect(renderer.root.findAllByType("SyncReview" as never)).toHaveLength(0);
+  await act(async () => { renderer.update(renderWithBoot(true)); await flush(); });
+  const review = renderer.root.findByType("SyncReview" as never);
+  expect(review.props.moment?.id).toBe(moment.id);
 });

@@ -65,10 +65,10 @@ describe("compete-time-series", () => {
     };
 
     const initial = buildCompeteTimeSeriesModel(state, "strength", "open", now);
-    expect(initial.unit).toBe("pts");
+    expect(initial.unit).toBe("hrs");
     expect(initial.selectedAthlete.you).toBe(true);
     expect(initial.athletes.filter((a) => a.selected)).toHaveLength(1);
-    expect(initial.dayTicks).toHaveLength(7);
+    expect(initial.dayTicks).toHaveLength(4);
 
     const rival = initial.athletes.find((a) => !a.you)!;
     expect(rival).toBeDefined();
@@ -192,7 +192,7 @@ it("does not invent history or past places for a real rival with only current to
   expect(model.historyAvailable).toBe(false);
   expect(model.isScrubbing).toBe(false);
   expect(model.cursorFraction).toBe(model.nowFraction);
-  expect(model.athletes.find(a => a.id === "real-rival")?.vertices).toEqual([{ t: model.nowFraction, value: 120 }]);
+  expect(model.athletes.find(a => a.id === "real-rival")?.vertices).toEqual([{ t: model.nowFraction, value: 1 }]);
   expect(model.overtakes).toEqual([]);
   const filtered = buildCompeteTimeSeriesModel(state, "strength", "open", now, { hiddenIds: ["real-rival"], scrubFraction: .1 });
   expect(filtered.athletes.some(athlete => athlete.id === "real-rival")).toBe(false);
@@ -204,7 +204,7 @@ it("connects recorded activity with diagonal lines, without vertical step jumps"
   const now = new Date("2026-10-22T18:00:00Z");
   let state = reduceCompete(freshState(new Date("2026-10-19T09:00:00Z")), { type: "opt-in", sport: "strength", now: "2026-10-19T09:00:00Z" });
   state = reduceCompete(state, { type: "log-manual", sport: "strength", activityId: "lift", movingSec: 3600, distanceM: 0, startedAt: "2026-10-22T14:00:00Z", now: now.toISOString() });
-  const model = buildCompeteTimeSeriesModel(state, "strength", "open", now);
+  const model = buildCompeteTimeSeriesModel(state, "strength", "open", now, { view: "trajectory" });
   const vertices = model.selectedAthlete.vertices;
   expect(vertices.length).toBeGreaterThanOrEqual(2);
   const last = vertices[vertices.length - 1]!;
@@ -213,4 +213,53 @@ it("connects recorded activity with diagonal lines, without vertical step jumps"
   expect(interpolateTimeSeriesAt(vertices, model.nowFraction)).toBe(model.selectedAthlete.currentValue);
   const verticalJump = vertices.findIndex((v, i) => i > 0 && v.t === vertices[i - 1]!.t && v.value !== vertices[i - 1]!.value);
   expect(verticalJump).toBe(-1);
+  expect(model.view).toBe("trajectory");
+  expect(model.overtakes).toEqual([]);
+});
+
+it("uses step functions and computes overtakes on event completion in event view", () => {
+  const start = new Date("2026-10-19T09:00:00Z");
+  const now = new Date("2026-10-23T18:00:00Z");
+  let state = reduceCompete(freshState(start), { type: "opt-in", sport: "strength", now: start.toISOString() });
+  // Big session that lifts you past one or more synthetic rivals at the event timestamp
+  state = reduceCompete(state, {
+    type: "log-manual",
+    sport: "strength",
+    activityId: "lift-big",
+    movingSec: 28800,
+    distanceM: 0,
+    startedAt: "2026-10-22T14:00:00Z",
+    now: "2026-10-22T18:00:00Z",
+  });
+  state = {
+    ...state,
+    activities: state.activities.map((a) => ({ ...a, avgHr: 185, provenance: "recorded" })),
+  };
+  const enrollment = state.enrollments.find((e) => e.sport === "strength")!;
+  enrollment.peerIds = ["synth:strength:0"];
+  enrollment.syntheticIds = ["synth:strength:0"];
+  enrollment.capacity = 2;
+  enrollment.fieldBoard = {
+    crewId: "solo",
+    crewName: "Open Field",
+    sport: "strength",
+    waveStart: enrollment.waveStart,
+    weekEnd: enrollment.weekEnd,
+    capacity: 2,
+    memberIds: ["you", "synth:strength:0"],
+    members: [{ id: "synth:strength:0", name: "Rival", elo: 1000, effort: 15, movingSec: 1800, distanceM: 0 }],
+    syntheticIds: ["synth:strength:0"],
+  };
+
+  const trajectory = buildCompeteTimeSeriesModel(state, "strength", "open", now, { view: "trajectory" });
+  expect(trajectory.view).toBe("trajectory");
+  expect(trajectory.overtakes).toEqual([]);
+
+  const eventModel = buildCompeteTimeSeriesModel(state, "strength", "open", now);
+  expect(eventModel.view).toBe("event");
+  const vertices = eventModel.selectedAthlete.vertices;
+  expect(eventModel.selectedAthlete.currentValue).toBeGreaterThan(0);
+  const rampStartIdx = vertices.findIndex((v, i) => i > 0 && v.value === 0 && vertices[i + 1] && vertices[i + 1]!.value > 0 && vertices[i + 1]!.t > v.t);
+  expect(rampStartIdx).toBeGreaterThanOrEqual(0);
+  expect(eventModel.overtakes.length, JSON.stringify({ overtakes: eventModel.overtakes, athletes: eventModel.athletes.map(a => ({ id: a.id, v: a.currentValue, pts: a.vertices })) })).toBeGreaterThan(0);
 });

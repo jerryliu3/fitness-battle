@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { router, useGlobalSearchParams, usePathname } from "expo-router";
 import { useAuth } from "./auth";
 import { useCompeteStore } from "./compete-store";
+import { useBootOpened } from "../ui/boot-readiness";
 
 export function useOnboardingRequired() {
   const { user, loading } = useAuth();
@@ -14,11 +15,12 @@ export function useOnboardingRequired() {
 /** Keep incomplete accounts in setup, including restored navigation stacks. */
 export function OnboardingNavigation() {
   const { required } = useOnboardingRequired();
+  const bootOpened = useBootOpened();
   const path = usePathname();
   const params = useGlobalSearchParams<{ panel?: string; tracker?: string; provider?: string }>();
   const connecting = (path === "/athlete" || path === "/athlete-settings") && (params.panel === "connections" || params.tracker !== undefined || params.provider !== undefined);
   useEffect(() => {
-    if (required && path !== "/onboarding" && !connecting) router.replace("/onboarding");
-  }, [required, path, connecting]);
+    if (required && bootOpened && path !== "/onboarding" && !connecting) router.replace("/onboarding");
+  }, [required, bootOpened, path, connecting]);
   return null;
 }

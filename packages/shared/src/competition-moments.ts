@@ -1,9 +1,9 @@
 import { fieldDefaultSpan } from "./field-course";
-import { arenaBaselineStorageKey, readArenaBaseline, reconcileArenaOvertake, serializeArenaBaseline, type ArenaOvertakePlan, type ArenaSceneLane } from "./arena-view";
+import { arenaBaselineStorageKey, ordinalPlace, readArenaBaseline, reconcileArenaOvertake, serializeArenaBaseline, type ArenaOvertakePlan, type ArenaSceneLane } from "./arena-view";
 import { buildArenaModel, competePeriodWindow } from "./phone-views";
 import { competeNow, type Action } from "./compete/engine";
 import { initialsFromName } from "./compete/track";
-import { competitionTrack, type CompeteState, type SportId } from "./compete/sports";
+import { competitionTrack, sportById, type CompeteState, type SportId } from "./compete/sports";
 
 export interface CompetitionMoment {
   id: string;
@@ -117,10 +117,136 @@ export function competitionMomentScene(moment: CompetitionMoment, progress: numb
   const start = Math.max(0, Math.min(ownIndex - 1, standings.length - 3));
   const rival = frame.nearestId ? frame.values[frame.nearestId] : frame.youValue;
   const replayFocusIds = [moment.plan.youId, ...(frame.nearestId ? [frame.nearestId] : [])];
-  return { ...frame, lanes, replayFocusIds, standings: standings.slice(start, start + 3), view: {
+  return { ...frame, lanes, replayFocusIds, ranked: standings, standings: standings.slice(start, start + 3), view: {
     center: (frame.youValue+rival)/2,
     span: Math.max(fieldDefaultSpan(moment.unit) * (1 - frame.focus * .18),Math.abs(frame.youValue-rival)*3),
   } };
+}
+
+export interface CompetitionMomentSummary {
+  sportLabel: string;
+  headline: string;
+  tone: "gain" | "steady" | "passed";
+  overtakeCount: number;
+  overtakeLabel: string | null;
+}
+
+/** Concise single-row progress summary for the top replay chip, updating live as crossings occur. */
+export function competitionMomentProgressSummary(
+  moment: CompetitionMoment,
+  frame: ReturnType<typeof photoFinishFrame>,
+): CompetitionMomentSummary {
+  const sportName = sportById(moment.sport).name;
+  const sportLabel = `${sportName} · Replay`;
+  const decimals = moment.unit === "pts" ? 0 : 1;
+  const delta = Math.max(0, moment.plan.youAfter - moment.plan.youBefore);
+  const deltaText = `+${delta.toFixed(decimals)} ${moment.unit} added`;
+  const passedBy = !moment.plan.hasOvertake && Boolean(moment.plan.passedByIds?.length);
+
+  if (moment.plan.hasOvertake) {
+    const overtakeCount = moment.plan.overtakenIds.length > 0 ? frame.count : 0;
+    const overtakeLabel = moment.plan.overtakenIds.length > 0
+      ? `${overtakeCount} ${overtakeCount === 1 ? "overtake" : "overtakes"}`
+      : null;
+    return {
+      sportLabel,
+      headline: delta > 0 ? deltaText : `Moved into ${ordinalPlace(frame.rank)}`,
+      tone: "gain",
+      overtakeCount,
+      overtakeLabel,
+    };
+  }
+
+  if (passedBy) {
+    return {
+      sportLabel,
+      headline: frame.count > 0 || frame.done ? `Moved to ${ordinalPlace(frame.rank)}` : `In ${ordinalPlace(moment.plan.rankBefore)}`,
+      tone: "passed",
+      overtakeCount: 0,
+      overtakeLabel: null,
+    };
+  }
+
+  return {
+    sportLabel,
+    headline: delta > 0 ? deltaText : `${sportName} update`,
+    tone: "steady",
+    overtakeCount: 0,
+    overtakeLabel: null,
+  };
+}
+
+/** Feed rows representing this moment when the full field activity ledger is unavailable (local preview). */
+export function competitionMomentFeedEntries(
+  moment: CompetitionMoment,
+  youName: string,
+  youAvatarUrl: string | null = null,
+  fallbackAt: string = new Date().toISOString(),
+  revealCount?: number,
+) {
+  const decimals = moment.unit === "pts" ? 0 : 1;
+  const delta = Math.max(0, moment.plan.youAfter - moment.plan.youBefore).toLocaleString("en-US", { maximumFractionDigits: decimals });
+  const laneById = new Map(moment.lanes.map(lane => [lane.id, lane]));
+  const youLane = laneById.get(moment.plan.youId);
+  const at = youLane?.lastUpdated ?? fallbackAt;
+  const passedBy = !moment.plan.hasOvertake && Boolean(moment.plan.passedByIds?.length);
+  if (passedBy) {
+    if (revealCount === 0) return [];
+    const rivalId = moment.plan.passedByIds![0]!;
+    const rivalLane = laneById.get(rivalId);
+    const names = moment.plan.passedByNames?.length ? moment.plan.passedByNames : [rivalLane?.name ?? "A rival"];
+    return [{
+      id: `moment:${moment.id}`,
+      at: rivalLane?.lastUpdated ?? fallbackAt,
+      simulated: true,
+      actorId: rivalId,
+      actorName: rivalLane?.name ?? names[0]!,
+      avatarUrl: rivalLane?.avatarUrl ?? null,
+      title: `${names.join(" and ")} overtook ${youName}!`,
+      detail: `Place ${moment.plan.rankBefore} → ${moment.plan.rankAfter}`,
+      movement: true,
+    }];
+  }
+
+  const baseEntry = {
+    id: `moment:${moment.id}`,
+    at,
+    simulated: true,
+    actorId: moment.plan.youId,
+    actorName: youName,
+    avatarUrl: youAvatarUrl,
+    title: `${youName} logged +${delta} ${moment.unit}`,
+    detail: `Place ${moment.plan.rankBefore}`,
+    movement: false,
+  };
+
+  if (!moment.plan.hasOvertake || !moment.plan.overtakenIds.length) {
+    return [baseEntry];
+  }
+
+  // Reveal overtaken cards in the order your marker crosses each rival.
+  const orderedIds = [...moment.plan.overtakenIds].sort(
+    (a, b) => (moment.plan.rivals[a]?.endValue ?? 0) - (moment.plan.rivals[b]?.endValue ?? 0),
+  );
+  const visible = revealCount === undefined ? orderedIds.length : Math.max(0, Math.min(orderedIds.length, revealCount));
+  const passEntries = orderedIds.slice(0, visible).flatMap((rivalId, index) => {
+    const rivalName = laneById.get(rivalId)?.name ?? "a rival";
+    const fromRank = Math.max(moment.plan.rankAfter, moment.plan.rankBefore - index);
+    const toRank = Math.max(moment.plan.rankAfter, fromRank - 1);
+    return [{
+      id: `moment:${moment.id}:pass:${rivalId}`,
+      at,
+      simulated: true,
+      actorId: moment.plan.youId,
+      actorName: youName,
+      avatarUrl: youAvatarUrl,
+      title: `${youName} overtook ${rivalName}!`,
+      detail: `Place ${fromRank} → ${toRank}`,
+      movement: true,
+    }];
+  }).reverse();
+
+  return [...passEntries, baseEntry];
 }
 
 /** Receipt computation always uses metric baselines; presentation honors units. */
