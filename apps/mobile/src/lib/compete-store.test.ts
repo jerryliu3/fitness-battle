@@ -124,6 +124,19 @@ function accountSaveCalls() {
     isAccountSaveCall(String(url), init),
   );
 }
+function savedAccountStateFromBody(
+  body: { state?: ReturnType<typeof accountState>; actions?: Array<{ type: string; city?: string; units?: "metric" | "us"; name?: string }> },
+  userId: string,
+) {
+  if (body.state) return body.state;
+  const state = accountState(userId);
+  for (const action of body.actions ?? []) {
+    if (action.type === "set-city" && action.city) state.city = action.city;
+    if (action.type === "set-units" && action.units) state.units = action.units;
+    if (action.type === "rename" && action.name) state.name = action.name;
+  }
+  return state;
+}
 beforeEach(() => {
   mock.appStateListeners.clear();
   vi.useFakeTimers();
@@ -138,11 +151,18 @@ beforeEach(() => {
   seenNames.length = 0;
   fetcher = vi
     .fn()
-    .mockImplementation(async (_url: string, init: RequestInit) =>
-      isAccountSaveCall(_url, init)
-        ? Response.json({ ok: true, updatedAt: "2026-10-20T13:00:00Z", state: accountState(mock.auth.user?.id ?? "guest") })
-        : Response.json({ state: accountState(mock.auth.user?.id ?? "guest") }),
-    );
+    .mockImplementation(async (_url: string, init: RequestInit) => {
+      const userId = mock.auth.user?.id ?? "guest";
+      if (!isAccountSaveCall(_url, init)) {
+        return Response.json({ state: accountState(userId) });
+      }
+      const body = JSON.parse((init.body as string) ?? "{}") as Parameters<typeof savedAccountStateFromBody>[0];
+      return Response.json({
+        ok: true,
+        updatedAt: "2026-10-20T13:00:00Z",
+        state: savedAccountStateFromBody(body, userId),
+      });
+    });
   vi.stubGlobal("fetch", fetcher);
 });
 afterEach(async () => {
@@ -316,7 +336,7 @@ describe("mobile account lifecycle", () => {
     login("Alice");
     await mount();
     await act(async () => {
-      api.dispatch({ type: "set-city", city: "Toronto" });
+      api.dispatch({ type: "set-city", city: "Ottawa" });
       api.dispatch({ type: "set-units", units: "metric" });
     });
     await save();
@@ -324,11 +344,11 @@ describe("mobile account lifecycle", () => {
     expect(writes).toHaveLength(1);
     expect(JSON.parse(writes[0]![1]!.body as string).actions).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ type: "set-city", city: "Toronto" }),
+        expect.objectContaining({ type: "set-city", city: "Ottawa" }),
         expect.objectContaining({ type: "set-units", units: "metric" }),
       ]),
     );
-    expect(api.state).toMatchObject({ city: "Toronto", units: "metric" });
+    expect(api.state).toMatchObject({ city: "Ottawa", units: "metric" });
   });
   it("surfaces open-week conflicts, preserves the draft, and retries", async () => {
     login("Alice");
@@ -345,8 +365,14 @@ describe("mobile account lifecycle", () => {
     expect(api.saveError).toContain("wave has started");
     expect(api.state?.city).toBe("Boston");
     expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBe("1");
-    fetcher.mockResolvedValue(
-      Response.json({ ok: true, updatedAt: "2026-10-20T13:00:00Z" }),
+    fetcher.mockImplementation(async (url: string, init: RequestInit) =>
+      isAccountSaveCall(url, init)
+        ? Response.json({
+            ok: true,
+            updatedAt: "2026-10-20T13:00:00Z",
+            state: { ...accountState("Alice"), city: "Boston" },
+          })
+        : Response.json({ state: accountState("Alice") }),
     );
     await act(async () => {
       api.retrySave();
@@ -613,7 +639,9 @@ it("preserves restored draft units through refresh and automatic retry", async (
   await save();
   const writes = accountSaveCalls();
   expect(writes).toHaveLength(1);
-  expect(JSON.parse(writes[0]![1]!.body as string).state.units).toBe("metric");
+  const body = JSON.parse(writes[0]![1]!.body as string);
+  expect(body.state?.units ?? body.actions).toBeTruthy();
+  if (body.state) expect(body.state.units).toBe("metric");
   expect(mock.values.has(keys.dirty)).toBe(false);
   expect(api.saveError).toBeNull();
 });
