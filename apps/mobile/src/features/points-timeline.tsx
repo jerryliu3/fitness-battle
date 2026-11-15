@@ -5,6 +5,7 @@ import {
   buildSleepTimeSeriesModel,
   competeNow,
   competitionTrack,
+  nextCompetitionReplaySpeed,
   REPLAY_MINUTES_PER_REAL_SECOND_1X,
   type CompeteEvent,
   type CompeteState,
@@ -38,7 +39,7 @@ export function PointsTimeline({
       : buildCompeteTimeSeriesModel(state, event, competitionTrack(event), now, { scrubFraction: fraction, hiddenIds });
 
   const [playing, setPlaying] = useState(false);
-  const [speed, setSpeed] = useState<1 | 2 | 4>(1);
+  const [speed, setSpeed] = useState(1);
 
   const count = model.nowFraction > 0 ? 1000 : 0;
   const cursor =
@@ -60,21 +61,15 @@ export function PointsTimeline({
     const startFraction = fractionRef.current ?? 0;
     const spanMinutes = Math.max(1, (model.spanMs || (7 * 24 * 60 * 60 * 1000)) / 60_000);
     const fractionPerMs = (REPLAY_MINUTES_PER_REAL_SECOND_1X * speed) / (spanMinutes * 1000);
-    let lastPaint = -Infinity;
-
     const tick = () => {
       const elapsed = Date.now() - start;
       const progress = startFraction + elapsed * fractionPerMs;
-      const nowMs = Date.now();
-      if (nowMs - lastPaint >= 60 || progress >= nowFractionRef.current) {
-        lastPaint = nowMs;
-        if (progress >= nowFractionRef.current) {
-          onChangeRef.current(null);
-          setPlaying(false);
-          return;
-        }
-        onChangeRef.current(reduced ? Math.round(progress * 100) / 100 : progress);
+      if (progress >= nowFractionRef.current) {
+        onChangeRef.current(null);
+        setPlaying(false);
+        return;
       }
+      onChangeRef.current(reduced ? Math.round(progress * 100) / 100 : progress);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -95,7 +90,7 @@ export function PointsTimeline({
   };
 
   const changeSpeed = () => {
-    setSpeed((s) => (s === 1 ? 2 : s === 2 ? 4 : 1));
+    setSpeed(nextCompetitionReplaySpeed);
   };
 
   if (!model.historyAvailable) {

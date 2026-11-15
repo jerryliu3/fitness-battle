@@ -108,7 +108,7 @@ export interface CompeteTimeSeriesYTick {
   y: number;
 }
 
-export const REPLAY_MINUTES_PER_REAL_SECOND_1X = 360;
+export const REPLAY_MINUTES_PER_REAL_SECOND_1X = 150;
 
 export interface CompeteTimeSeriesModel {
   view: CompeteTimeSeriesView;

@@ -503,7 +503,7 @@ export function CompeteTimeSeriesChart({
                 strokeDasharray="2 3"
                 opacity={0.45}
               />
-              {model.cursorTimeLabel ? (
+              {!immersive && model.cursorTimeLabel ? (
                 <SvgText
                   {...chartTextProps()}
                   x={Math.max(model.left + 36, Math.min(model.right - 36, model.cursorX))}
