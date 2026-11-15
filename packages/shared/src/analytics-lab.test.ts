@@ -90,6 +90,8 @@ describe("analytics-lab shared model", () => {
     expect(deriveScenarioFromCompeteState(sparseState)).toBe("sparse_new");
     const sparseModel = buildAnalyticsLabModel(sparseState, "30d");
     expect(sparseModel.scenario).toBe("sparse_new");
+    expect(sparseModel.vitals.metrics[0]!.series).toHaveLength(0);
+    expect(sparseModel.sleep.nights).toHaveLength(0);
 
     // 2. Overreaching state when recent readiness and sleep are suppressed
     const overState = {
@@ -97,8 +99,12 @@ describe("analytics-lab shared model", () => {
       activities: Array.from({ length: 10 }, (_, i) => ({
         id: `act-${i}`,
         sport: "running",
+        source: "garmin",
         startedAt: new Date(Date.now() - i * 86400000).toISOString(),
+        distanceM: 5000,
         movingSec: 3600,
+        avgHr: 145,
+        verified: true,
       })),
       readiness: [{ id: "r1", score: 50 }, { id: "r2", score: 45 }],
       sleepNights: [{ id: "s1", score: 55 }, { id: "s2", score: 58 }],
@@ -106,15 +112,16 @@ describe("analytics-lab shared model", () => {
     expect(deriveScenarioFromCompeteState(overState)).toBe("overreaching");
     const overModel = buildAnalyticsLabModel(overState, "30d");
     expect(overModel.scenario).toBe("overreaching");
+    expect(overModel.load.series.some((row) => row.totalHours > 0)).toBe(true);
 
     // 3. Peak build with real activities informing holdings
     const healthyState = {
       calibrated: true,
       activities: [
-        { id: "a1", sport: "running", startedAt: new Date().toISOString(), movingSec: 7200 },
-        { id: "a2", sport: "running", startedAt: new Date().toISOString(), movingSec: 7200 },
-        { id: "a3", sport: "cycling", startedAt: new Date().toISOString(), movingSec: 3600 },
-        { id: "a4", sport: "strength", startedAt: new Date().toISOString(), movingSec: 1800 },
+        { id: "a1", sport: "running", source: "garmin", startedAt: new Date().toISOString(), distanceM: 12000, movingSec: 7200, avgHr: 150, verified: true },
+        { id: "a2", sport: "running", source: "garmin", startedAt: new Date().toISOString(), distanceM: 12000, movingSec: 7200, avgHr: 150, verified: true },
+        { id: "a3", sport: "cycling", source: "garmin", startedAt: new Date().toISOString(), distanceM: 8000, movingSec: 3600, avgHr: 140, verified: true },
+        { id: "a4", sport: "strength", source: "garmin", startedAt: new Date().toISOString(), distanceM: 0, movingSec: 1800, avgHr: 120, verified: false },
       ],
       readiness: [{ id: "r1", score: 85 }],
       sleepNights: [{ id: "s1", score: 88 }],
@@ -122,8 +129,10 @@ describe("analytics-lab shared model", () => {
     expect(deriveScenarioFromCompeteState(healthyState)).toBe("peak_build");
     const healthyModel = buildAnalyticsLabModel(healthyState, "30d");
     expect(healthyModel.scenario).toBe("peak_build");
-    expect(healthyModel.market.holdings[0]!.sport).toBe("Running (GPS)");
-    expect(healthyModel.market.holdings[0]!.hours).toBe(4);
+    const runHolding = healthyModel.market.holdings.find((h) => h.ticker === "RUN");
+    expect(runHolding?.sport).toBe("Running (GPS)");
+    expect(runHolding?.hours).toBe(4);
+    expect(healthyModel.vitals.metrics[0]!.series).toHaveLength(0);
   });
 
   it("formats domain titles and time durations", () => {

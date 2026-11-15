@@ -16,14 +16,10 @@ describe("vitals-lab-body", () => {
     expect(vitalsLabSystemToHealth("full")).toBe("full");
   });
 
-  it("provides overnight baseline metrics with split Sleep parts by default", () => {
+  it("leaves flank metrics empty without an analytics model", () => {
     const metrics = vitalsLabMetricsFromModel();
     expect(metrics).toHaveLength(6);
-    const sleep = metrics.find((m) => m.id === "sleep");
-    expect(sleep?.displayParts).toEqual([
-      { num: "7", unit: "h " },
-      { num: "42", unit: "m" },
-    ]);
+    expect(metrics.every((m) => m.value === "" && m.sparkline.length === 0)).toBe(true);
   });
 
   it("parses native canvas bridge messages", () => {

@@ -254,13 +254,18 @@
 /* Flanking Metric Columns */
 .vitals-lab__col {
   position: absolute;
-  top: 14px;
-  bottom: 48px;
+  top: 8px;
+  bottom: auto;
+  max-height: calc(100% - 56px);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 10px;
   pointer-events: none;
   z-index: 4;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .vitals-lab__col--left {

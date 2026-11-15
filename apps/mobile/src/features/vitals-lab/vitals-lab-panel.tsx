@@ -177,10 +177,11 @@ const panelThemes = createThemedStyles(() => ({
   hudOverlay: {
     ...StyleSheet.absoluteFill,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     paddingHorizontal: 4,
-    paddingVertical: 8,
+    paddingTop: 6,
+    paddingBottom: 8,
   },
   hudSpacer: { flex: 1 },
-  metricCol: { gap: 8, zIndex: 2 },
+  metricCol: { gap: 6, zIndex: 2 },
 }));
