@@ -137,7 +137,7 @@ vi.mock("./vitals-lab-body-scan", () => ({
 }));
 
 vi.mock("../ui/compete-sheet", () => ({
-  CompeteSheet: ({ children }: { children: unknown }) => createElement("View", null, children),
+  CompeteSheet: ({ children }: any) => createElement("View", null, children),
 }));
 
 vi.mock("../ui/focus", () => ({
