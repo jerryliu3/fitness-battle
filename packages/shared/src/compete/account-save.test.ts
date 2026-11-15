@@ -24,7 +24,7 @@ describe("coalesceSaveActions", () => {
         provider: "strava",
         activities: [
           { id: "a-1", disposition: "excluded" },
-          { id: "a-2", disposition: "counted" },
+          { id: "a-2", disposition: "excluded" },
         ],
       } as Action,
     ]);
@@ -34,7 +34,7 @@ describe("coalesceSaveActions", () => {
         provider: "strava",
         activities: [
           { id: "a-1", disposition: "excluded" },
-          { id: "a-2", disposition: "counted" },
+          { id: "a-2", disposition: "excluded" },
         ],
       },
     ]);
@@ -75,9 +75,10 @@ describe("planSaveActionBatches", () => {
     const batches = planSaveActionBatches([
       { type: "apply-sync", provider: "oura", sleepNights } as Action,
     ]);
-    expect(batches).toHaveLength(2);
+    expect(batches).toHaveLength(1);
+    expect(batches[0]).toHaveLength(2);
     expect(batches[0]![0]!.sleepNights).toHaveLength(MAX_SYNC_SLEEP);
-    expect(batches[1]![0]!.sleepNights).toHaveLength(1);
+    expect(batches[0]![1]!.sleepNights).toHaveLength(1);
   });
 
   it("splits large apply-sync payloads and oversized queues", () => {
@@ -92,10 +93,10 @@ describe("planSaveActionBatches", () => {
         activities,
       } as Action,
     ]);
-    expect(batches).toHaveLength(2);
-    expect(batches[0]).toHaveLength(1);
+    expect(batches).toHaveLength(1);
+    expect(batches[0]).toHaveLength(2);
     expect(batches[0]![0]!.activities).toHaveLength(MAX_SYNC_ACTIVITIES);
-    expect(batches[1]![0]!.activities).toHaveLength(1);
+    expect(batches[0]![1]!.activities).toHaveLength(1);
   });
 });
 
@@ -133,6 +134,7 @@ describe("runAccountSaveSteps", () => {
         { type: "rename", name: "Ada" } as Action,
       ],
       state,
+      true,
     );
     let calls = 0;
     const result = await runAccountSaveSteps("athlete", "rev-a", steps, async () => {
