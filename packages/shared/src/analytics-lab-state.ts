@@ -435,14 +435,13 @@ function buildMarket(state: CompeteState, now: Date, timeLens: AnalyticsTimeLens
   const share = (hours: number) =>
     totalActHours > 0 ? Math.round((hours / totalActHours) * 100) : 0;
 
-  const holdings: AssetHolding[] = totalActHours > 0
-    ? [
-        { sport: "Running (GPS)", ticker: "RUN", sharePct: share(runHours), hours: runHours, returnPts: 0, yieldPerHour: 0, colorKey: "teal" },
-        { sport: "Cycling (GPS)", ticker: "CYC", sharePct: share(cycHours), hours: cycHours, returnPts: 0, yieldPerHour: 0, colorKey: "tennis" },
-        { sport: "Strength (Open)", ticker: "STR", sharePct: share(strHours), hours: strHours, returnPts: 0, yieldPerHour: 0, colorKey: "ink" },
-        { sport: "Sleep & Recovery", ticker: "SLP", sharePct: share(sleepHours), hours: sleepHours, returnPts: 0, yieldPerHour: 0, colorKey: "green" },
-      ].filter((h) => h.hours > 0)
-    : [];
+  const allHoldings: AssetHolding[] = [
+    { sport: "Running (GPS)", ticker: "RUN", sharePct: share(runHours), hours: runHours, returnPts: 0, yieldPerHour: 0, colorKey: "teal" },
+    { sport: "Cycling (GPS)", ticker: "CYC", sharePct: share(cycHours), hours: cycHours, returnPts: 0, yieldPerHour: 0, colorKey: "tennis" },
+    { sport: "Strength (Open)", ticker: "STR", sharePct: share(strHours), hours: strHours, returnPts: 0, yieldPerHour: 0, colorKey: "ink" },
+    { sport: "Sleep & Recovery", ticker: "SLP", sharePct: share(sleepHours), hours: sleepHours, returnPts: 0, yieldPerHour: 0, colorKey: "green" },
+  ];
+  const holdings = totalActHours > 0 ? allHoldings.filter((h) => h.hours > 0) : [];
 
   return {
     tickerSymbol: "$ATHL",
