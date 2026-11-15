@@ -35,5 +35,6 @@ it("renders the 2-step flow with field inside hero, flippable rule cards, and cl
 
     await act(async () => tree.update(createElement(EventRegistration, { ...props, registered: true })));
     expect(tree.root.findByProps({ className: "registration-ticket" }).props["data-claimed"]).toBe(true);
+    expect(tree.root.findByProps({ className: "registration-close" }).props.disabled).toBe(false);
   } finally { await act(async () => tree.unmount()); vi.unstubAllGlobals(); }
 });
