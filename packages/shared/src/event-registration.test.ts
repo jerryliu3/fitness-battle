@@ -32,16 +32,16 @@ it("uses the registered wave for the ticket stamp after the next daily cutoff", 
   expect(detail.stampYear).toBe("2026");
 });
 
-it("returns four flippable rule cards for scoring, schedule, entry tier, and field", () => {
+it("returns three flippable rule cards for scoring, schedule, and entry tier", () => {
   const now = new Date("2026-11-08T12:00:00Z");
   const detail = eventRegistration(freshState(now), "walking", now);
   const cards = registrationDetailCards(detail);
-  expect(cards.map(card => card.title)).toEqual(["Scoring", "Schedule", "Entry tier", "Your field"]);
-  expect(cards.map(card => card.summary)).toEqual(["Total steps", "Weekly rounds", detail.details[2]!.summary, "8 competitors"]);
+  expect(cards.map(card => card.title)).toEqual(["Scoring", "Schedule", "Entry tier"]);
+  expect(cards.map(card => card.summary)).toEqual(["Total steps", "Weekly rounds", detail.details[2]!.summary]);
   expect(cards[0]!.detail).toBe(detail.details[0]!.detail);
   expect(cards[0]!.footnote).toBe(detail.details[3]!.summary);
   expect(cards[1]!.detail).toBe(detail.renewal);
-  expect(cards[3]!.detail).toBe(detail.details[1]!.detail);
+  expect(cards[2]!.detail).toBe(detail.details[2]!.detail);
   expect(registrationTicketRows(detail).map(row => row.label)).toEqual(["Entry tier", "Starts", "Scoring", "Field"]);
   expect(entryBarcode("walking:week-a")).toHaveLength(60);
   expect(entryBarcode("walking:week-a")).not.toEqual(entryBarcode("walking:week-b"));

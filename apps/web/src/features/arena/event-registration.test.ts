@@ -19,13 +19,16 @@ it("renders the 2-step flow with field inside hero, flippable rule cards, and cl
     expect(hero.findByProps({ className: "registration-mysteries" }).findAllByType("span")).toHaveLength(8);
 
     const ruleCards = tree.root.findAllByProps({ className: "registration-rule-card" });
-    expect(ruleCards).toHaveLength(4);
+    expect(ruleCards).toHaveLength(3);
     expect(ruleCards[0]!.props["data-flipped"]).toBe(false);
     await act(async () => ruleCards[0]!.props.onClick());
     expect(tree.root.findAllByProps({ className: "registration-rule-card" })[0]!.props["data-flipped"]).toBe(true);
 
     await act(async () => tree.root.findAllByType("button").find(node => node.children.includes("Continue →"))!.props.onClick());
-    expect(tree.root.findByProps({ className: "registration-ticket" }).findAllByType("h2")[0]!.children.join("")).toBe("Your spot is ready.");
+    const ticket = tree.root.findByProps({ className: "registration-ticket" });
+    expect(ticket.findAllByType("h2")[0]!.children.join("")).toBe("Your spot is ready.");
+    expect(tree.root.findAllByProps({ className: "registration-ticket-note" })).toHaveLength(0);
+    expect(ticket.findAllByProps({ className: "registration-ticket-sub" })).toHaveLength(1);
 
     await act(async () => tree.root.findAllByType("button").find(node => node.children.includes("Claim your spot"))!.props.onClick());
     expect(props.onClaim).toHaveBeenCalledOnce();
