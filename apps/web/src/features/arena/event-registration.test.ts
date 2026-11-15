@@ -1,8 +1,8 @@
-import { createElement, type ReactNode } from "react";
+import { createElement } from "react";
 import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 import { freshState } from "@fitness-battle/shared";
-vi.mock("motion/react", () => ({ motion: { div: "div" }, AnimatePresence: ({ children }: { children: ReactNode }) => children, useReducedMotion: () => true }));
+vi.mock("motion/react", () => ({ motion: { div: "div" }, useReducedMotion: () => true }));
 vi.mock("./event-home", () => ({ CompeteIcon: () => null, EventArt: () => null }));
 vi.mock("@/ui/wave-countdown", () => ({ WaveCountdown: () => null }));
 import { EventRegistration } from "./event-registration";
@@ -24,7 +24,14 @@ it("renders the 2-step flow with field inside hero, flippable rule cards, and cl
     await act(async () => ruleCards[0]!.props.onClick());
     expect(tree.root.findAllByProps({ className: "registration-rule-card" })[0]!.props["data-flipped"]).toBe(true);
 
+    const stage = tree.root.findByProps({ className: "registration-stage" });
+    expect(stage.children).toHaveLength(2);
+    expect(stage.findByProps({ className: "registration-step" }).props["aria-hidden"]).toBe(false);
+    expect(stage.findByProps({ className: "registration-ticket-scene registration-step" }).props["aria-hidden"]).toBe(true);
+
     await act(async () => tree.root.findAllByType("button").find(node => node.children.includes("Continue →"))!.props.onClick());
+    expect(stage.findByProps({ className: "registration-step" }).props["aria-hidden"]).toBe(true);
+    expect(stage.findByProps({ className: "registration-ticket-scene registration-step" }).props["aria-hidden"]).toBe(false);
     const ticket = tree.root.findByProps({ className: "registration-ticket" });
     expect(ticket.findAllByType("h2")[0]!.children.join("")).toBe("Your spot is ready.");
     expect(tree.root.findAllByProps({ className: "registration-ticket-note" })).toHaveLength(0);
