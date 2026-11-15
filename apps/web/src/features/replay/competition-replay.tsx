@@ -13,6 +13,7 @@ import { ArenaLanes } from "@/features/focus/arena-lanes";
 import { PortraitField } from "@/features/club/portrait-field";
 import { useFieldAppearance } from "@/features/field/components/field-course";
 import {
+  APP_ICON_PATHS,
   coursePositionLeaders, competitionReplayDimension, nextCompetitionReplaySpeed, competitionReplayFrame, competitionReplayCaption, competitionReplayDate,
   competitionReplayTimeMs, competitionReplayCursorFromTimeMs, REPLAY_MINUTES_PER_REAL_SECOND_1X,
   indexCompetitionReplay, localCompetitionReplay, initialsFromName, fieldDefaultSpan,
@@ -20,12 +21,17 @@ import {
   type CompetitionReplay, type CompetitionReplaySelection, type CompeteState,
 } from "@fitness-battle/shared";
 
-export function CompetitionReplayButton({ state, selection, dimension = "4d", initialFlat = false, label = "Replay competition" }: {
-  state: CompeteState; selection: CompetitionReplaySelection; dimension?: "2d" | "3d" | "4d" | "graph"; initialFlat?: boolean; label?: string;
+export function CompetitionReplayButton({ state, selection, dimension = "4d", initialFlat = false, label = "Replay competition", variant = "button" }: {
+  state: CompeteState; selection: CompetitionReplaySelection; dimension?: "2d" | "3d" | "4d" | "graph"; initialFlat?: boolean; label?: string; variant?: "button" | "link";
 }) {
   const [open, setOpen] = useState(false);
   return <Dialog.Root open={open} onOpenChange={setOpen}>
-    <Dialog.Trigger asChild><button type="button" className="fb-btn-line competition-replay-trigger">{label}</button></Dialog.Trigger>
+    <Dialog.Trigger asChild>
+      <button type="button" className={variant === "link" ? "week-recap-link-btn" : "fb-btn-line competition-replay-trigger"}>
+        {variant === "link" && <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.replay} /></svg>}
+        <span>{label}</span>
+      </button>
+    </Dialog.Trigger>
     {open && <Dialog.Portal><Dialog.Overlay className="competition-replay-overlay" /><Dialog.Content className="competition-replay-dialog" aria-describedby={undefined}>
       <ReplayViewer key={`${selection.sport}:${selection.track}:${selection.periodStart}`} state={state} selection={selection} initialFlat={initialFlat} initialDimension={dimension} />
     </Dialog.Content></Dialog.Portal>}

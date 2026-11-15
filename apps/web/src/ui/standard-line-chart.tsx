@@ -1,8 +1,9 @@
 "use client";
 import { colors as c } from "@/theme/app-colors";
 
+import { useId } from "react";
 import { buildStandardChartGeometry } from "@fitness-battle/shared";
-import { ChartScrubber } from "./chart-scrubber";
+import { ChartScrubber, type ChartDatum } from "./chart-scrubber";
 import { ChartSvg, ChartText } from "./chart-text";
 export interface StandardLineChartProps {
   animateReveal?: boolean;
@@ -17,8 +18,10 @@ export interface StandardLineChartProps {
   formatAxisY?: (value: number) => string;
   selectedIdx?: number;
   onSelectIdx?: (index: number) => void;
+  onSelectionChange?: (point: ChartDatum | undefined) => void;
   stroke?: string;
   height?: number;
+  showArea?: boolean;
   corridor?: {
     high: number[];
     low: number[];
@@ -27,7 +30,8 @@ export interface StandardLineChartProps {
   accessibilityLabel?: string;
 }
 
-export function StandardLineChart({ values, xLabels, pointLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, selectedIdx, height = 190, showAxes = true, yAxisLabel = "Value", xAxisLabel, stroke = c.tennis, corridor, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
+export function StandardLineChart({ values, xLabels, pointLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, onSelectionChange, selectedIdx, height = 190, showAxes = true, showArea = false, yAxisLabel = "Value", xAxisLabel, stroke = c.tennis, corridor, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
+ const areaId = useId();
  const geo = buildStandardChartGeometry(values, 340, height, corridor);
  if (!values.length || !geo.points.length) return null;
  const safeSelectedIdx = selectedIdx === undefined ? undefined : Math.max(0, Math.min(selectedIdx, values.length - 1));
@@ -51,8 +55,16 @@ export function StandardLineChart({ values, xLabels, pointLabels, formatY = (v) 
            { x: xAt(Math.floor((values.length - 1) / 2)), label: pointLabels?.[Math.floor((values.length - 1) / 2)] ?? String(Math.floor((values.length - 1) / 2) + 1), anchor: "middle" },
            { x: geo.xEnd, label: pointLabels?.at(-1) ?? String(values.length), anchor: "end" },
          ];
- return <ChartScrubber hideSummary selectedPointId={safeSelectedIdx === undefined ? undefined : String(safeSelectedIdx)} points={points} width={340} height={height} plotTop={geo.yTop} plotBottom={geo.yBottom} label={ariaLabel ?? accessibilityLabel ?? "Daily trend"} onSelect={id => onSelectIdx?.(Number(id))}>
+ return <ChartScrubber hideSummary selectedPointId={safeSelectedIdx === undefined ? undefined : String(safeSelectedIdx)} points={points} width={340} height={height} plotTop={geo.yTop} plotBottom={geo.yBottom} label={ariaLabel ?? accessibilityLabel ?? "Daily trend"} onSelectionChange={onSelectionChange} onSelect={id => onSelectIdx?.(Number(id))}>
  <ChartSvg width="100%" height={height} viewBox={`0 0 340 ${height}`} preserveAspectRatio="none">
+ {showArea && geo.areaPath && (
+  <defs>
+    <linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor={stroke} stopOpacity="0.28" />
+      <stop offset="100%" stopColor={stroke} stopOpacity="0.02" />
+    </linearGradient>
+  </defs>
+ )}
  {showAxes && <g>
  <ChartText x={geo.xStart} y={14} fill={c.muted}>{yAxisLabel}</ChartText>
  <ChartText x={geo.xMid} y={height-2} textAnchor="middle" fill={c.muted}>{xAxisLabel ?? (xLabels ? "Date" : "Observation")}</ChartText>
@@ -61,6 +73,7 @@ export function StandardLineChart({ values, xLabels, pointLabels, formatY = (v) 
  {[{value:geo.yMax,y:geo.yTop},{value:geo.yMid,y:geo.yMidPos},{value:geo.yMin,y:geo.yBottom}].map((tick, i)=><ChartText key={`${tick.value}-${i}`} x={geo.xStart-6} y={tick.y+4} fill={c.muted} textAnchor="end">{(formatAxisY ?? formatY)(tick.value)}</ChartText>)}
  {xTicks.map((tick, i)=><ChartText key={i} x={tick.x} y={height-22} fill={c.muted} textAnchor={tick.anchor}>{tick.label}</ChartText>)}
  </g>}
+ {showArea && geo.areaPath && <path d={geo.areaPath} fill={`url(#${areaId})`} />}
  {geo.corridorPath && <path d={geo.corridorPath} fill={stroke} opacity={0.16}/>}
  {geo.corridorHighPolyline && <polyline points={geo.corridorHighPolyline} fill="none" stroke={stroke} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.65} />}
  {geo.corridorLowPolyline && <polyline points={geo.corridorLowPolyline} fill="none" stroke={stroke} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.65} />}

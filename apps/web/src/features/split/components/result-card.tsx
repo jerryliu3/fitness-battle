@@ -1,27 +1,72 @@
 "use client";
 import { AppText } from "@/ui/section";
+import { SportActivityIcon } from "@/ui/sport-activity-icon";
 
 import { useState } from "react";
 import { useReducedMotion } from "motion/react";
 import {
   APP_TIMEZONE,
   formatEloDelta,
+  formatPeriodDateRange,
   formatVolume,
   formatEffort,
+  ordinalPlace,
   sportById,
+  weekRecapMetrics,
   type PeriodResult,
   type UnitSystem,
 } from "@fitness-battle/shared";
 export function ResultCard({
   result,
   units,
+  variant = "default",
 }: {
   result: PeriodResult;
   units: UnitSystem;
+  variant?: "default" | "recap";
 }) {
   const [receipt, setReceipt] = useState(false),
     reduced = useReducedMotion();
-  const range = `${new Date(result.periodStart).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} – ${new Date(Date.parse(result.periodEnd) - 1).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}`;
+  const range = formatPeriodDateRange(result.periodStart, result.periodEnd);
+
+  if (variant === "recap") {
+    const sport = sportById(result.sport);
+    const deltaText = formatEloDelta(result.eloBefore, result.eloAfter);
+    const podiumWin = !result.frozen && result.place <= 3;
+    return (
+      <button
+        type="button"
+        className={`week-recap-result-card${receipt ? " is-expanded" : ""}`}
+        aria-label={`${receipt ? "Hide" : "View"} ${sport.name} result receipt`}
+        aria-expanded={receipt}
+        onClick={() => setReceipt(!receipt)}
+      >
+        <div className="week-recap-result-top">
+          <span className="week-recap-result-title">
+            <SportActivityIcon sport={result.sport} size={18} />
+            <strong>Your result</strong>
+          </span>
+          <span className={`week-recap-place-pill${podiumWin ? " is-podium" : ""}`}>
+            {ordinalPlace(result.place)} of {result.fieldSize}{result.frozen ? " · Frozen" : ""}
+          </span>
+        </div>
+        <div className="week-recap-result-metrics">
+          {weekRecapMetrics(result, units).map((metric) => (
+            <div key={metric.key}><span>{metric.key.toUpperCase()}</span><strong>{metric.value}</strong></div>
+          ))}
+        </div>
+        {receipt && (
+          <div className="week-recap-result-receipt">
+            <div><span>Starting score</span><b>{result.eloBefore}</b></div>
+            <div><span>Round adjustment</span><b>{deltaText}{result.frozen ? " (frozen)" : ""}</b></div>
+            <div><span>Final rating</span><b>{result.eloAfter}</b></div>
+            <div><span>Window</span><b>Eastern time · Mon–Mon</b></div>
+          </div>
+        )}
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"

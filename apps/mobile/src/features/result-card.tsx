@@ -5,17 +5,20 @@ import { SportIcon } from "../ui/sport-icon";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import {
-  APP_TIMEZONE,
   formatEloDelta,
+  formatPeriodDateRange,
   formatVolume,
   formatEffort,
   ordinalPlace,
   sportById,
   rankSymbolForRankName,
+  weekRecapMetrics,
   type AppColors,
   type PeriodResult,
   type UnitSystem,
 } from "@fitness-battle/shared";
+
+export { formatPeriodDateRange };
 
 export function podiumMedalColor(c: AppColors, place: number): string | null {
   return place === 1 ? c.podiumGold : place === 2 ? c.podiumSilver : place === 3 ? c.podiumBronze : null;
@@ -28,47 +31,37 @@ export function eloDeltaPalette(c: AppColors, frozen: boolean, delta: number) {
   };
 }
 
-export function formatPeriodDateRange(periodStart: string, periodEnd: string): string {
-  const fmt = (ms: number) =>
-    new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE });
-  return `${fmt(Date.parse(periodStart))} – ${fmt(Date.parse(periodEnd) - 1)}`;
-}
-
 export function ResultBreakdownContent({
   result,
   units,
   deltaText,
   showReceipt = true,
+  plainMetrics = false,
 }: {
   result: PeriodResult;
   units: UnitSystem;
   deltaText: string;
   showReceipt?: boolean;
+  plainMetrics?: boolean;
 }) {
   const s = useThemedStyles(sThemes);
+  const metrics = weekRecapMetrics(result, units);
   return (
     <>
-      <View style={s.metricsRow}>
-        <View style={s.metricCell}>
-          <AppText role="caption" secondary>Volume</AppText>
-          <AppText role="label" style={s.tabular} numberOfLines={1}>
-            {formatVolume(result.sport, result.distanceM, result.movingSec, units)}
-          </AppText>
-        </View>
-        <View style={s.metricDivider} />
-        <View style={s.metricCell}>
-          <AppText role="caption" secondary>Effort</AppText>
-          <AppText role="label" style={s.tabular} numberOfLines={1}>
-            {formatEffort(result.effort)} pts
-          </AppText>
-        </View>
-        <View style={s.metricDivider} />
-        <View style={s.metricCell}>
-          <AppText role="caption" secondary>Rating</AppText>
-          <AppText role="label" style={s.tabular} numberOfLines={1}>
-            {result.eloAfter}
-          </AppText>
-        </View>
+      <View style={plainMetrics ? s.metricsRowPlain : s.metricsRow}>
+        {metrics.map((metric, idx) => (
+          <View key={metric.key} style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+            {idx > 0 && <View style={plainMetrics ? s.metricDividerTall : s.metricDivider} />}
+            <View style={s.metricCell}>
+              <AppText role="caption" secondary style={plainMetrics ? s.metricUpper : undefined}>
+                {plainMetrics ? metric.key.toUpperCase() : metric.key}
+              </AppText>
+              <AppText role={plainMetrics ? "value" : "label"} style={s.tabular} numberOfLines={1}>
+                {metric.value}
+              </AppText>
+            </View>
+          </View>
+        ))}
       </View>
 
       {showReceipt ? (
@@ -95,11 +88,13 @@ export function ResultCard({
   units,
   podiumAthletes = [],
   compact = false,
+  variant = "default",
 }: {
   result: PeriodResult;
   units: UnitSystem;
   podiumAthletes?: { id: string; name: string; place: number; you: boolean; avatarUrl?: string | null; rank?: string | null }[];
   compact?: boolean;
+  variant?: "default" | "recap";
 }) {
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
@@ -111,6 +106,35 @@ export function ResultCard({
   const deltaText = formatEloDelta(result.eloBefore, result.eloAfter);
   const podiumColor = podiumMedalColor(c, result.place);
   const { bg: deltaBg, text: deltaColor } = eloDeltaPalette(c, Boolean(result.frozen), delta);
+  const placeBadgeTone = !result.frozen && result.place <= 3
+    ? { bg: c.statusSuccessSoft, text: c.statusSuccess }
+    : { bg: c.soft, text: c.ink };
+
+  if (variant === "recap") {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${receipt ? "Hide" : "View"} ${sport.name} result receipt. ${range}. ${result.track === "verified" ? "GPS" : "Open"}. ${ordinalPlace(result.place)} of ${result.fieldSize}. ${formatVolume(result.sport, result.distanceM, result.movingSec, units, result.effort)}. ${result.eloBefore} to ${result.eloAfter} effort score, ${deltaText}.`}
+        accessibilityState={{ expanded: receipt }}
+        onPress={() => setReceipt((v) => !v)}
+        style={({ pressed }) => [s.card, s.recapCard, pressed && { opacity: 0.94 }]}
+      >
+        <View style={s.recapHeader}>
+          <View style={s.sportRow}>
+            <SportIcon sport={result.sport} size={20} />
+            <AppText role="row">Your result</AppText>
+          </View>
+          <View style={[s.placePill, { backgroundColor: placeBadgeTone.bg }]}>
+            <AppText role="caption" style={[s.tabular, { color: placeBadgeTone.text, fontWeight: "700" }]}>
+              {ordinalPlace(result.place)} of {result.fieldSize}{result.frozen ? " · Frozen" : ""}
+            </AppText>
+          </View>
+        </View>
+        <View style={s.recapDivider} />
+        <ResultBreakdownContent result={result} units={units} deltaText={deltaText} showReceipt={receipt} plainMetrics />
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable
@@ -351,5 +375,38 @@ const sThemes = createThemedStyles((c) => ({
   },
   tabular: {
     fontVariant: ["tabular-nums"],
+  },
+  recapCard: {
+    padding: 18,
+    gap: 14,
+  },
+  recapHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  placePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  recapDivider: {
+    height: 1,
+    backgroundColor: c.line,
+  },
+  metricsRowPlain: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 2,
+  },
+  metricUpper: {
+    fontSize: 11,
+    letterSpacing: 0.6,
+  },
+  metricDividerTall: {
+    width: 1,
+    height: 32,
+    backgroundColor: c.line,
   },
 }));
