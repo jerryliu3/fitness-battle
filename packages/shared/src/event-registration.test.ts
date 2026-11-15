@@ -42,7 +42,8 @@ it("returns three flippable rule cards for scoring, schedule, and entry tier", (
   expect(cards[0]!.footnote).toBe(detail.details[3]!.summary);
   expect(cards[1]!.detail).toBe(detail.renewal);
   expect(cards[2]!.detail).toBe(detail.details[2]!.detail);
-  expect(registrationTicketRows(detail).map(row => row.label)).toEqual(["Entry tier", "Starts", "Scoring", "Field"]);
+  expect(registrationTicketRows(detail).map(row => row.label)).toEqual(["Entry tier", "Starts", "Ends", "Scoring", "Field"]);
+  expect(registrationTicketRows(detail)[2]?.value).toBe(detail.ends);
   expect(entryBarcode("walking:week-a")).toHaveLength(60);
   expect(entryBarcode("walking:week-a")).not.toEqual(entryBarcode("walking:week-b"));
 });

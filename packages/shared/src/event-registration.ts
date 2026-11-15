@@ -64,6 +64,7 @@ export function registrationTicketRows(detail: ReturnType<typeof eventRegistrati
   return [
     { label: "Entry tier", value: tier!.summary },
     { label: "Starts", value: detail.starts },
+    { label: "Ends", value: detail.ends },
     { label: "Scoring", value: scoring!.summary },
     { label: "Field", value: "Up to 8 athletes" },
   ] as const;
