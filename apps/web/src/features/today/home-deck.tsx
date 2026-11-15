@@ -12,6 +12,7 @@ import {
   type PointerEvent,
 } from "react";
 import {
+  accountTimeZone,
   buildHomeDeck,
   competeNow,
   homeDeckDismissStorageKey,
@@ -231,7 +232,7 @@ export function HomeDeck({
 }) {
   const router = useRouter();
   const now = competeNow(state);
-  const storageKey = homeDeckDismissStorageKey(accountKey, now);
+  const storageKey = homeDeckDismissStorageKey(accountKey, now, accountTimeZone(state));
 
   const [dismissedIds, setDismissedIds] = useState<HomeDeckCardId[]>(
     () => memoryDismissed.get(storageKey) ?? [],

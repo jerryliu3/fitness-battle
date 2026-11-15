@@ -8,18 +8,18 @@ import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import {
-  APP_TIMEZONE,
+  accountTimeZone,
   activityEffort,
   competeNow,
   countsOnTrack,
   dayKey,
   defaultTrainingSports,
   earliestDataDate,
-  formatAppCalendarDate,
+  formatAccountCalendarDate,
   formatEffort,
   formatTrainingHours,
   formatWeeklyCompetitionRange,
-  shiftAppDay,
+  shiftZonedDay,
   shiftTrainingMonth,
   trainingAtlas,
   trainingBuckets,
@@ -46,6 +46,7 @@ export function JourneySpace({
 
   const { user } = useAuth();
   const now = useMemo(() => competeNow(state), [state]);
+  const displayTz = accountTimeZone(state);
   const earliest = useMemo(() => earliestDataDate(state, now, user?.createdAt), [state, now, user?.createdAt]);
 
   const [horizon, setHorizon] = useState<HorizonChoice>(initialHorizon);
@@ -65,7 +66,7 @@ export function JourneySpace({
 
   // --- 1. Week Horizon (7 days strip) ---
   const calendarDays = useMemo(() => {
-    const week = weeklyPeriodBounds(shiftAppDay(now, dayOffset * 7));
+    const week = weeklyPeriodBounds(shiftZonedDay(now, dayOffset * 7, displayTz), displayTz);
     const monday = week.startsAt;
     const days: Array<{
       dayKey: string;
@@ -76,13 +77,13 @@ export function JourneySpace({
     }> = [];
 
     const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const todayStr = dayKey(now);
+    const todayStr = dayKey(now, displayTz);
 
     for (let i = 0; i < 7; i++) {
-      const d = shiftAppDay(monday, i);
-      const key = dayKey(d);
+      const d = shiftZonedDay(monday, i, displayTz);
+      const key = dayKey(d, displayTz);
       const hasActivity = state.activities.some((a) => {
-        return countsOnTrack(a, "open") && dayKey(new Date(a.startedAt)) === key;
+        return countsOnTrack(a, "open") && dayKey(new Date(a.startedAt), displayTz) === key;
       });
 
       days.push({
@@ -95,12 +96,12 @@ export function JourneySpace({
     }
 
     return { days, monday };
-  }, [state.activities, now, dayOffset]);
+  }, [state.activities, now, dayOffset, displayTz]);
 
   // Week summary
   const weekSummary = useMemo(() => {
     const startIso = calendarDays.monday.toISOString();
-    const endIso = shiftAppDay(calendarDays.monday, 7).toISOString();
+    const endIso = shiftZonedDay(calendarDays.monday, 7, displayTz).toISOString();
     const weekActs = state.activities.filter((a) => {
       return (
         countsOnTrack(a, "open") &&
@@ -114,19 +115,19 @@ export function JourneySpace({
   }, [state.activities, calendarDays.monday]);
 
   const { prevAllowed: weekPrevAllowed } = useMemo(
-    () => trainingRangeNavigation(calendarDays.monday, earliest, now, "week"),
-    [calendarDays.monday, earliest, now],
+    () => trainingRangeNavigation(calendarDays.monday, earliest, now, "week", displayTz),
+    [calendarDays.monday, earliest, now, displayTz],
   );
 
   // --- 2. Month Horizon (Training Atlas Heatmap) ---
   const monthAnchor = useMemo(
-    () => shiftTrainingMonth(now, monthOffset),
-    [now, monthOffset],
+    () => shiftTrainingMonth(now, monthOffset, displayTz),
+    [now, monthOffset, displayTz],
   );
 
   const { prevAllowed: monthPrevAllowed, nextAllowed: monthNextAllowed } = useMemo(
-    () => trainingRangeNavigation(monthAnchor, earliest, now, "month"),
-    [monthAnchor, earliest, now],
+    () => trainingRangeNavigation(monthAnchor, earliest, now, "month", displayTz),
+    [monthAnchor, earliest, now, displayTz],
   );
 
   const monthCells = useMemo(() => {
@@ -135,8 +136,10 @@ export function JourneySpace({
       defaultTrainingSports(),
       monthAnchor,
       now,
+      "open",
+      displayTz,
     );
-  }, [state.activities, monthAnchor, now]);
+  }, [state.activities, monthAnchor, now, displayTz]);
 
   const monthColors = useMemo(
     () => [c.card, `${c.tennis}33`, `${c.tennis}66`, `${c.tennis}99`, c.tennis],
@@ -150,17 +153,17 @@ export function JourneySpace({
     const hours = (movingSec / 3600).toFixed(1);
     const monthDays = new Set(inMonthCells.map((cell) => cell.day));
     const effort = formatEffort(state.activities.filter((a) =>
-      countsOnTrack(a, "open") && monthDays.has(dayKey(new Date(a.startedAt))),
+      countsOnTrack(a, "open") && monthDays.has(dayKey(new Date(a.startedAt), displayTz)),
     ).reduce((sum, a) => sum + activityEffort(a), 0));
     return { sessions, hours, effort };
   }, [monthCells, state.activities]);
 
   // --- 3. Year Horizon (Annual Atlas & Monthly Progression) ---
-  const yearAnchor = useMemo(() => trainingYearAnchor(now, yearOffset), [now, yearOffset]);
+  const yearAnchor = useMemo(() => trainingYearAnchor(now, yearOffset, displayTz), [now, yearOffset, displayTz]);
 
   const { prevAllowed: yearPrevAllowed, nextAllowed: yearNextAllowed } = useMemo(
-    () => trainingRangeNavigation(yearAnchor, earliest, now, "year"),
-    [yearAnchor, earliest, now],
+    () => trainingRangeNavigation(yearAnchor, earliest, now, "year", displayTz),
+    [yearAnchor, earliest, now, displayTz],
   );
 
   const yearBuckets = useMemo(() => {
@@ -170,6 +173,8 @@ export function JourneySpace({
       "year",
       yearAnchor,
       now,
+      "open",
+      displayTz,
     );
     if (!earliest) return all;
     const earliestDay = dayKey(earliest);
@@ -212,7 +217,7 @@ export function JourneySpace({
     let list = [...state.activities].filter((a) => countsOnTrack(a, "open"));
     if (selectedDayKey) {
       list = list.filter(
-        (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === selectedDayKey,
+        (a) => dayKey(new Date(a.startedAt), displayTz) === selectedDayKey,
       );
     }
     return list.sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
@@ -355,7 +360,7 @@ export function JourneySpace({
               {monthAnchor.toLocaleDateString("en-US", {
                 month: "long",
                 year: "numeric",
-                timeZone: APP_TIMEZONE,
+                timeZone: displayTz,
               })}
             </AppText>
 
@@ -570,7 +575,7 @@ export function JourneySpace({
         <View style={s.sectionHeaderRow}>
           <AppText role="heading">
             {selectedDayKey
-              ? `Activities on ${formatAppCalendarDate(selectedDayKey, { weekday: "short", month: "short", day: "numeric" })}`
+              ? `Activities on ${formatAccountCalendarDate(state, selectedDayKey, { weekday: "short", month: "short", day: "numeric" })}`
               : "Recent Activities"}
           </AppText>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
@@ -614,6 +619,7 @@ export function JourneySpace({
                 history={state.activities}
                 units={state.units}
                 accessToken={accessToken}
+                timeZone={displayTz}
                 onPress={setInspectedActivity}
               />
             ))}

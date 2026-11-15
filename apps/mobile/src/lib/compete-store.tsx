@@ -940,12 +940,12 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         pendingActionsRef.current.push(serializeCompeteIntent(action));
       }
       dirtyRef.current += 1;
-      if (["rename", "set-city", "set-gender", "set-country", "set-avatar", "opt-in", "opt-in-health", "opt-out", "opt-out-health", "log-manual", "complete-onboarding", "freeze", "unfreeze"].includes(action.type)) {
+      if (["rename", "set-city", "set-gender", "set-country", "set-timezone", "set-avatar", "opt-in", "opt-in-health", "opt-out", "opt-out-health", "log-manual", "complete-onboarding", "freeze", "unfreeze"].includes(action.type)) {
         if (!authRef.current.offlineMode && id) pendingFeedback.current = { account: id, generation: dirtyRef.current };
         else void playCue("light");
       }
       unsavedRef.current = true;
-      if (action.type === "set-units") unitsUnsavedRef.current = true;
+      if (action.type === "set-units" || action.type === "set-timezone") unitsUnsavedRef.current = true;
       stateRef.current = next;
       setState(next);
       seedArenaBaselinesFromState(
@@ -967,7 +967,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         if (accountRef.current !== id || lifecycle.current !== epoch) return;
         scheduleSave(
           stateRef.current ?? next,
-          action.type === "set-units" || action.type === "set-avatar" || action.type === "complete-onboarding",
+          action.type === "set-units" || action.type === "set-timezone" || action.type === "set-avatar" || action.type === "complete-onboarding",
           action.type === "set-avatar" && !loadReady.current,
         );
       }).catch(() => {

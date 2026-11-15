@@ -796,10 +796,6 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
                 rate can add a little. Pace adds less. Effort score never falls below
                 500.
               </AppParagraph>
-              <AppParagraph typographyRole="caption" className="fb-note">
-                Competition weeks run Monday 00:00 to next Monday 00:00 Eastern
-                Time (ET / New York). New fields open Monday midnight Eastern Time.
-              </AppParagraph>
             </Section>
           ) : null}
         </div>

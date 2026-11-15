@@ -1,6 +1,13 @@
 import { averageTiePosition, competitionPlace } from "../competition-place";
 import { applyEffortMilestones } from "./milestones";
-import { APP_TIMEZONE, shiftAppDay, type PeriodBounds } from "../period";
+import {
+  APP_TIMEZONE,
+  accountTimeZone,
+  dayKey,
+  isValidIanaTimeZone,
+  shiftAppDay,
+  type PeriodBounds,
+} from "../period";
 import {
   DensityMatcher,
   buildLocalBoard,
@@ -87,6 +94,7 @@ export interface Action {
     | "set-rank-symbol"
     | "set-card-highlights"
     | "set-units"
+    | "set-timezone"
     | "set-primary"
     | "set-focus"
     | "opt-in"
@@ -125,6 +133,7 @@ export interface Action {
   rankSymbol?: RankSymbolId | null;
   cardHighlights?: string[];
   units?: UnitSystem;
+  timezone?: string;
   sport?: SportId;
   metric?: HealthMetricId;
   focus?: CategoryFocus;
@@ -151,7 +160,7 @@ export interface Action {
   /** Result ids to clear from the pending reveal queue. */
   revealIds?: string[];
   activityId?: string;
-  /** Manual activity time; must be on the current Eastern date and no later than now. */
+  /** Manual activity time; must be on the current account-local date and no later than now. */
   startedAt?: string;
   disposition?: "counted" | "pending" | "excluded";
   goalDistance?: "5k" | "10k" | "half" | "marathon";
@@ -322,6 +331,7 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
       ? (parsed as CompeteState).crewBoard
       : null,
     units: parseUnitSystem((parsed as CompeteState).units),
+    timezone: parseTimezone((parsed as CompeteState).timezone),
     cardHighlights: Array.isArray((parsed as CompeteState).cardHighlights)
       ? Array.from(
           new Set(
@@ -354,6 +364,12 @@ function parseUnitSystem(value: unknown): UnitSystem {
   return value === "metric" ? "metric" : "us";
 }
 
+function parseTimezone(value: unknown): string {
+  if (typeof value !== "string") return APP_TIMEZONE;
+  const trimmed = value.trim();
+  return isValidIanaTimeZone(trimmed) ? trimmed : APP_TIMEZONE;
+}
+
 function isCrewBoardPin(value: unknown): value is CrewBoardPin {
   if (!value || typeof value !== "object") return false;
   const pin = value as CrewBoardPin;
@@ -378,6 +394,7 @@ export function freshState(now: Date = new Date()): CompeteState {
     name: "Guest",
     city: "Toronto",
     units: "us",
+    timezone: APP_TIMEZONE,
     primary: "running",
     focus: { family: "sport", id: "running" },
     clock: { kind: "weekly", periodStart },
@@ -1063,7 +1080,13 @@ function reduceCompeteAction(
       if (rolled.activities.some((item) => item.id === action.activityId)) return rolled;
       const startedAt = action.startedAt ?? now.toISOString();
       const timestamp = Date.parse(startedAt);
-      if (!Number.isFinite(timestamp) || timestamp > now.getTime() || dayKey(new Date(timestamp)) !== dayKey(now)) return rolled;
+      const tz = accountTimeZone(rolled);
+      if (
+        !Number.isFinite(timestamp) ||
+        timestamp > now.getTime() ||
+        dayKey(new Date(timestamp), tz) !== dayKey(now, tz)
+      )
+        return rolled;
       const activity: Activity = {
         id: action.activityId, sport: action.sport, startedAt: new Date(timestamp).toISOString(),
         distanceM, movingSec, avgHr: null, source: "manual", provenance: "manual",
@@ -1115,6 +1138,11 @@ function reduceCompeteAction(
     case "set-units": {
       if (action.units !== "us" && action.units !== "metric") return rolled;
       return { ...rolled, units: action.units };
+    }
+    case "set-timezone": {
+      const raw = action.timezone?.trim() ?? "";
+      if (!raw || !isValidIanaTimeZone(raw)) return rolled;
+      return { ...rolled, timezone: raw };
     }
     case "set-primary": {
       if (!action.sport) return rolled;

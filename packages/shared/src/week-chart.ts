@@ -1,27 +1,28 @@
 import { competeNow } from "./compete/engine";
 import { countsOnTrack } from "./compete/ledger";
 import type { CompeteState } from "./compete/sports";
-import { APP_TIMEZONE, dayKey, getZonedWeekday, shiftAppDay, weeklyPeriodBounds } from "./period";
+import { accountTimeZone, dayKey, getZonedWeekday, shiftAppDay, weeklyPeriodBounds } from "./period";
 
 /** Shared hour totals for Home and its detail view, independent of either SVG adapter. */
 export function weeklyHoursComparison(state: CompeteState, now = competeNow(state)) {
+  const displayTz = accountTimeZone(state);
   const period = weeklyPeriodBounds(now);
   const weekStart = period.startsAt.getTime(), weekEnd = period.endsAt.getTime();
   const previousStart = weeklyPeriodBounds(new Date(weekStart - 1)).startsAt;
   const rows = state.activities.filter(a => countsOnTrack(a, "open") && Date.parse(a.startedAt) <= now.getTime());
   const current = rows.filter(a => Date.parse(a.startedAt) >= weekStart && Date.parse(a.startedAt) < weekEnd);
   const previous = rows.filter(a => Date.parse(a.startedAt) >= previousStart.getTime() && Date.parse(a.startedAt) < weekStart);
-  const weekday = getZonedWeekday(now, APP_TIMEZONE);
+  const weekday = getZonedWeekday(now, displayTz);
   const nowDayIndex = Math.min(6, Math.max(0, weekday === 0 ? 6 : weekday - 1));
   function cumulative(activities: typeof rows, start: Date, days: number) {
     const secondsByDay = new Map<string, number>();
     for (const activity of activities) {
-      const key = dayKey(new Date(activity.startedAt), APP_TIMEZONE);
+      const key = dayKey(new Date(activity.startedAt), displayTz);
       secondsByDay.set(key, (secondsByDay.get(key) ?? 0) + (activity.movingSec || 0));
     }
     let total = 0;
     return Array.from({ length: days }, (_, index) => {
-      total += secondsByDay.get(dayKey(shiftAppDay(start, index), APP_TIMEZONE)) ?? 0;
+      total += secondsByDay.get(dayKey(shiftAppDay(start, index), displayTz)) ?? 0;
       return Number((total / 3600).toFixed(2));
     });
   }
@@ -63,7 +64,8 @@ export function portfolioWeekChart(state: CompeteState, now = competeNow(state))
   const previous = prevCumulativeHours.map((hours, index) => `${x(index).toFixed(1)},${y(hours).toFixed(1)}`).join(" ");
   const current = currCumulativeHours.map((hours, index) => `${x(index).toFixed(1)},${y(hours).toFixed(1)}`).join(" ");
   const period = weeklyPeriodBounds(now);
-  const date = (at: Date) => at.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE });
+  const displayTz = accountTimeZone(state);
+  const date = (at: Date) => at.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: displayTz });
   const inspection = currCumulativeHours.map((hours, index) => ({
     id: dayKey(shiftAppDay(period.startsAt, index)),
     x: x(index),

@@ -5,8 +5,8 @@ import { SportActivityIcon } from "@/ui/sport-activity-icon";
 import { useState } from "react";
 import { useReducedMotion } from "motion/react";
 import {
-  APP_TIMEZONE,
   formatEloDelta,
+  formatAccountPeriodDateRange,
   formatPeriodDateRange,
   formatVolume,
   formatEffort,
@@ -23,16 +23,21 @@ export function ResultCard({
   variant = "default",
   replay,
   hiddenIds = [],
+  account,
 }: {
   result: PeriodResult;
   units: UnitSystem;
   variant?: "default" | "recap";
   replay?: CompetitionReplay | null;
   hiddenIds?: readonly string[];
+  /** When set, round dates use profile timezone. */
+  account?: { timezone?: string | null };
 }) {
   const [receipt, setReceipt] = useState(false),
     reduced = useReducedMotion();
-  const range = formatPeriodDateRange(result.periodStart, result.periodEnd);
+  const range = account
+    ? formatAccountPeriodDateRange(account, result.periodStart, result.periodEnd)
+    : formatPeriodDateRange(result.periodStart, result.periodEnd);
 
   if (variant === "recap") {
     const delta = result.eloAfter - result.eloBefore;
@@ -110,8 +115,7 @@ export function ResultCard({
           <AppText as="small" role="caption" secondary>
             {result.frozen
               ? "Weekly score adjustment held by freeze"
-              : "Weekly score adjustment"}{" "}
-            · {APP_TIMEZONE}
+              : "Weekly score adjustment"}
           </AppText>
         </>
       ) : (

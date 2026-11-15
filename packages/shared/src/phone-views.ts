@@ -27,7 +27,7 @@ import {
   readArenaBaseline,
   serializeArenaBaseline,
 } from "./arena-view";
-import { APP_TIMEZONE, currentPeriodBounds } from "./period";
+import { APP_TIMEZONE, accountTimeZone, currentPeriodBounds } from "./period";
 
 export const CHECKPOINT_FRAME = { width: 320, height: 570 } as const;
 
@@ -202,10 +202,10 @@ function volumeLabel(activity: Activity): string {
   return `${Math.max(1, Math.round(activity.movingSec / 60))} min`;
 }
 
-function weekdayLabel(iso: string): string {
+function weekdayLabel(iso: string, timeZone: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
     weekday: "long",
-    timeZone: APP_TIMEZONE,
+    timeZone,
   });
 }
 
@@ -213,6 +213,7 @@ export function buildTodayRoute(
   state: CompeteState,
   now: Date = competeNow(state),
 ): TodayRoute {
+  const displayTz = accountTimeZone(state);
   const suggestion = suggestionForState(state, now);
   const past = countedInPeriod(state, now).slice(-2);
   const discs: CheckpointDisc[] = [];
@@ -223,7 +224,7 @@ export function buildTodayRoute(
     const anchor = pastAnchors[pastStart + index];
     if (!anchor) return;
     const volume = volumeLabel(activity);
-    const day = weekdayLabel(activity.startedAt);
+    const day = weekdayLabel(activity.startedAt, displayTz);
     discs.push({
       id: activity.id,
       role: "past",

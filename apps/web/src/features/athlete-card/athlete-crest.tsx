@@ -2,7 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import { useReducedMotion } from "motion/react";
-import { RANK_SYMBOL_GEOMETRY, rankSymbolForRankName, type AthleteCardModel } from "@fitness-battle/shared";
+import { APP_TIMEZONE, RANK_SYMBOL_GEOMETRY, rankSymbolForRankName, type AthleteCardModel } from "@fitness-battle/shared";
 import { cardOptics, REST_POSE } from "./card-optics";
 import { useCardRotation } from "./use-card-rotation";
 import styles from "./athlete-crest.module.css";
@@ -21,8 +21,8 @@ function Wordmark() { return <span className={styles.wordmark}>overtaek</span>; 
 function Stat({ value, label, dim = false }: { value: string | number; label: string; dim?: boolean }) {
   return <div className={styles.stat} data-dim={dim}><strong>{value}</strong><span>{label}</span></div>;
 }
-function RecordDate({ date }: { date: string }) {
-  return <time dateTime={date}>{new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" })}</time>;
+function RecordDate({ date, timeZone }: { date: string; timeZone: string }) {
+  return <time dateTime={date}>{new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone })}</time>;
 }
 
 /** The selected Crest composition, with Goalmaxxing's actual alloy optics. */
@@ -57,7 +57,7 @@ export function AthleteCrest({ model, active = true }: { model: AthleteCardModel
         </div>
         <div className={`${styles.face} ${styles.back}`} aria-hidden={!details} inert={!details}>
           <div className={styles.reverse}><Wordmark /><h2 title={model.name}>{model.name}</h2><p>{model.sport} · Primary sport</p>
-            <h3>{model.records.some(r => r.kind && r.kind !== "record") ? "Highlights" : "Personal bests"}</h3>{model.records.length ? <dl>{model.records.map(r => <div key={r.id ?? r.label}><dt>{r.label}{r.date ? <RecordDate date={r.date} /> : null}</dt><dd>{r.value}</dd></div>)}</dl> : <p>No highlights selected</p>}
+            <h3>{model.records.some(r => r.kind && r.kind !== "record") ? "Highlights" : "Personal bests"}</h3>{model.records.length ? <dl>{model.records.map(r => <div key={r.id ?? r.label}><dt>{r.label}{r.date ? <RecordDate date={r.date} timeZone={model.displayTimeZone ?? APP_TIMEZONE} /> : null}</dt><dd>{r.value}</dd></div>)}</dl> : <p>No highlights selected</p>}
             <h3>On Overtaek</h3><div className={styles.totals}><Stat value={model.overtakes} label="Overtakes" /><Stat value={model.rounds} label="Rounds" /><Stat value={model.streak} label="Week streak" dim={!model.streakActive} /></div>
           </div>
         </div>

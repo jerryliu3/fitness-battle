@@ -9,12 +9,12 @@ import { AppText, textStyle } from "./section";
 import { useChartTween } from "./use-chart-tween";
 import { useReducedMotion } from "./use-reduced-motion";
 
-export function BenchmarkChart({ buckets, now, dateLabel, hideSummary = false, onSelectionChange }: { buckets: TrainingBucket[]; now: Date; dateLabel: string; hideSummary?: boolean; onSelectionChange?: (point: { id: string; label: string; value: string } | undefined) => void }) {
+export function BenchmarkChart({ buckets, now, dateLabel, displayTimeZone, hideSummary = false, onSelectionChange }: { buckets: TrainingBucket[]; now: Date; dateLabel: string; displayTimeZone?: string; hideSummary?: boolean; onSelectionChange?: (point: { id: string; label: string; value: string } | undefined) => void }) {
 const c=useThemeColors();
 const s=useThemedStyles(sThemes);
 
   const reduceMotion = useReducedMotion();
-  const targetChart = useMemo(() => benchmarkBars(buckets, now), [buckets, now]);
+  const targetChart = useMemo(() => benchmarkBars(buckets, now, displayTimeZone), [buckets, now, displayTimeZone]);
   const chart = useChartTween(targetChart, dateLabel, interpolateBenchmarkBars, reduceMotion);
   const [selected, setSelected] = useState<string | null>(null);
   useEffect(() => { setSelected(null); }, [dateLabel]);

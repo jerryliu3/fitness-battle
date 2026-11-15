@@ -14,7 +14,7 @@ import {
 } from "./compete/sports";
 import { initialsFromName, selfLaneLabel } from "./compete/track";
 import { findSynthetic, syntheticVolumeInWindow } from "./matching/synthetic-bank";
-import { APP_TIMEZONE, endOfZonedDay, formatAppDateTime, shiftAppDay } from "./period";
+import { APP_TIMEZONE, accountTimeZone, endOfZonedDay, formatAppDateTime, shiftAppDay } from "./period";
 import { competePeriodWindow } from "./phone-views";
 
 export type FieldViewDimension = "2d" | "3d" | "4d" | "graph";
@@ -22,13 +22,6 @@ export type CompeteTimeSeriesView = "trajectory" | "event";
 
 const weekdayShortFormatter = new Intl.DateTimeFormat("en-US", {
   weekday: "short",
-  timeZone: APP_TIMEZONE,
-});
-
-const cursorDateFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "short",
-  month: "short",
-  day: "numeric",
   timeZone: APP_TIMEZONE,
 });
 
@@ -59,6 +52,7 @@ export interface CompeteTimeSeriesPreparedBase {
   resolvedAthletes: RawAthleteTimeSeries[];
   yMax: number;
   dayTickLabels: string[];
+  displayTimeZone: string;
 }
 
 export interface CompeteTimeSeriesVertex {
@@ -317,7 +311,9 @@ function prepareTimeSeriesBase(input: {
   unit: string;
   rawAthletes: RawAthleteTimeSeries[];
   view?: CompeteTimeSeriesView;
+  displayTimeZone?: string;
 }): CompeteTimeSeriesPreparedBase {
+  const displayTz = input.displayTimeZone ?? APP_TIMEZONE;
   const view: CompeteTimeSeriesView = input.view === "trajectory" ? "trajectory" : "event";
   const resolvedAthletes =
     view === "event"
@@ -364,6 +360,7 @@ function prepareTimeSeriesBase(input: {
     resolvedAthletes,
     yMax,
     dayTickLabels,
+    displayTimeZone: displayTz,
   };
 }
 
@@ -383,6 +380,7 @@ export function evaluateCompeteTimeSeriesModel(
     resolvedAthletes,
     yMax,
     dayTickLabels,
+    displayTimeZone: displayTz,
   } = base;
   const chartHeight = Number.isFinite(options?.height)
     ? Math.max(CHART_HEIGHT, options!.height!)
@@ -493,7 +491,12 @@ export function evaluateCompeteTimeSeriesModel(
   const placeLabel = `${ordinalPlace(selectedAthlete.placeAtCursor)} place`;
 
   const cursorDate = new Date(startMs + cursorFraction * spanMs);
-  const datePart = cursorDateFormatter.format(cursorDate);
+  const datePart = cursorDate.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    timeZone: displayTz,
+  });
   const subjectPart = `${selectedAthlete.firstName}’s trajectory`;
   const timeLabel = `${datePart} · ${isScrubbing ? "Inspected" : "Live"} · ${subjectPart}`;
 
@@ -547,8 +550,8 @@ export function evaluateCompeteTimeSeriesModel(
     isScrubbing,
     historyAvailable,
     timeLabel,
-    cursorTimeLabel: formatAppDateTime(cursorDate),
-    latestTimeLabel: formatAppDateTime(new Date(startMs + nowFraction * spanMs)),
+    cursorTimeLabel: formatAppDateTime(cursorDate, { timeZone: displayTz }),
+    latestTimeLabel: formatAppDateTime(new Date(startMs + nowFraction * spanMs), { timeZone: displayTz }),
     athletes,
     selectedAthlete,
     overtakes,
@@ -836,6 +839,7 @@ export function prepareCompeteTimeSeriesBase(
     unit,
     rawAthletes,
     view: options?.view,
+    displayTimeZone: accountTimeZone(state),
   });
 }
 
@@ -949,6 +953,7 @@ export function prepareSleepTimeSeriesBase(
     unit: "score",
     rawAthletes,
     view: options?.view,
+    displayTimeZone: accountTimeZone(state),
   });
 }
 

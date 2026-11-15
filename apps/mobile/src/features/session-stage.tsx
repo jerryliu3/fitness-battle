@@ -2,7 +2,7 @@ import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useState, type ReactNode } from "react";
 import { Modal, Pressable, View } from "react-native";
 import {
-  APP_TIMEZONE, EFFORT_TIER_LABELS, PROVIDERS, activityComparisons, activityEffort, activityRoute, competeNow, countsOnTrack,
+  accountTimeZone, EFFORT_TIER_LABELS, PROVIDERS, activityComparisons, activityEffort, activityRoute, competeNow, countsOnTrack,
   distanceUnitLabel, formatClockTime, formatDistanceM, formatEffort, formatTrainingHours,
   isJournalActivity,
   isVerifiedActivity, sessionEffortSummary, sessionStageModel, sportById,
@@ -70,7 +70,7 @@ export function SessionStage({ state, activities, suggestion, onRemove, actions 
             key={row.id}
             selected={row.id === current.id}
             onPress={() => setSelected(row.id)}
-            label={`${sportById(row.sport).name} · ${new Date(row.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE })}`}
+            label={`${sportById(row.sport).name} · ${new Date(row.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: accountTimeZone(state) })}`}
           />
         ))}
       </ChipRow>
@@ -94,13 +94,14 @@ export function ActivityDetailView({
   const [confirming, setConfirming] = useState(false);
   const [expanded, setExpanded] = useState<InsightKey | null>(null);
 
+  const displayTz = accountTimeZone(state);
   const sport = sportById(activity.sport);
   const hasRoute = Boolean(activityRoute(activity));
   const effortSummary = sessionEffortSummary(activity, state.activities);
   const effortPts = formatEffort(activityEffort(activity));
   const pace = sport.gps ? formatPace(activity.movingSec, activity.distanceM, state.units) : null;
-  const date = new Date(activity.startedAt).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: APP_TIMEZONE });
-  const time = new Date(activity.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE });
+  const date = new Date(activity.startedAt).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: displayTz });
+  const time = new Date(activity.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: displayTz });
   const { history, hasScatter } = useActivityContextAvailability(activity, state);
   const comparisons = activityComparisons(activity, state.activities, state.units, competeNow(state));
   const topComparison = comparisons[0];

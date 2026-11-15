@@ -1,12 +1,20 @@
 import { countsOnTrack } from "./compete/ledger";
 import { formatClockTime } from "./compete/pace";
 import { sportById, type Activity, type UnitSystem } from "./compete/sports";
-import { APP_TIMEZONE, dayKey, shiftAppDay } from "./period";
+import { APP_TIMEZONE, dayKey, shiftAppDay, shiftZonedDay } from "./period";
 
 export type ActivityContextMetric = "pace" | "time" | "hr" | "efficiency";
 export interface ActivityContextObservation { activity: Activity; time: number; value: number; average: number | null }
 export interface ActivityContextDailyVolume { date: Date; key: string; minutes: number; without: number; average: number; averageWithout: number }
-export const activityContextDateLabel = (date: Date | string) => new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE });
+export const activityContextDateLabel = (
+  date: Date | string,
+  timeZone: string = APP_TIMEZONE,
+) =>
+  new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone,
+  });
 export const activityContextMean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / Math.max(1, values.length);
 export const activityContextPositive = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value > 0;
 export const activityContextRecordedHr = (activity: Activity) => activityContextPositive(activity.avgHr) && activity.avgHr >= 20 && activity.avgHr <= 260 ? activity.avgHr : null;
@@ -85,24 +93,28 @@ export function activityContextFitHistory(points: { x: number; y: number; activi
   return { slope, intercept: yMean - slope * xMean, min: Math.min(...prior.map(p => p.x)), max: Math.max(...prior.map(p => p.x)), count: prior.length };
 }
 
-export function activityContextVolumeHistory(current: Activity, history: Activity[]): ActivityContextDailyVolume[] {
+export function activityContextVolumeHistory(
+  current: Activity,
+  history: Activity[],
+  timeZone: string = APP_TIMEZONE,
+): ActivityContextDailyVolume[] {
   const anchor = new Date(current.startedAt), currentId = current.id;
   const totals = new Map<string, { minutes: number; without: number }>();
   for (const row of history) {
-    const key = dayKey(new Date(row.startedAt));
+    const key = dayKey(new Date(row.startedAt), timeZone);
     const day = totals.get(key) ?? { minutes: 0, without: 0 };
     day.minutes += row.movingSec / 60;
     if (row.id !== currentId) day.without += row.movingSec / 60;
     totals.set(key, day);
   }
   const minutes = (at: Date, without: boolean) => {
-    const day = totals.get(dayKey(at));
+    const day = totals.get(dayKey(at, timeZone));
     return day ? without ? day.without : day.minutes : 0;
   };
   return Array.from({ length: 28 }, (_, index) => {
-    const date = shiftAppDay(anchor, index - 27);
-    return { date, key: dayKey(date), minutes: minutes(date, false), without: minutes(date, true),
-      average: activityContextMean(Array.from({ length: 7 }, (_, offset) => minutes(shiftAppDay(date, -offset), false))),
-      averageWithout: activityContextMean(Array.from({ length: 7 }, (_, offset) => minutes(shiftAppDay(date, -offset), true))) };
+    const date = shiftZonedDay(anchor, index - 27, timeZone);
+    return { date, key: dayKey(date, timeZone), minutes: minutes(date, false), without: minutes(date, true),
+      average: activityContextMean(Array.from({ length: 7 }, (_, offset) => minutes(shiftZonedDay(date, -offset, timeZone), false))),
+      averageWithout: activityContextMean(Array.from({ length: 7 }, (_, offset) => minutes(shiftZonedDay(date, -offset, timeZone), true))) };
   });
 }

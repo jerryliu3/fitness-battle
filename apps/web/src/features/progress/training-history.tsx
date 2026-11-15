@@ -5,20 +5,21 @@ import { TrainingAtlas } from "./training-atlas";
 import { useState, type ReactNode } from "react";
 import { RecordChart } from "./record-chart";
 import {
-  APP_TIMEZONE,
+  accountTimeZone,
   RECORD_DISTANCES,
   competeNow,
   formatClockTime,
   personalRecordHistory,
   type CompeteState,
 } from "@fitness-battle/shared";
-const date = (v: string) =>
-  new Date(v).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: APP_TIMEZONE,
-  });
 export function TrainingHistory({ state, children }: { state: CompeteState; children?: ReactNode }) {
+  const displayTz = accountTimeZone(state);
+  const date = (v: string) =>
+    new Date(v).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      timeZone: displayTz,
+    });
   const [distance, setDistance] = useState("");
   const now=competeNow(state);
   const records = personalRecordHistory(state, now);
@@ -75,7 +76,7 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
               {inspected.verified ? " · GPS recorded" : ""}
             </StatusBadge>
           </div>
-          <RecordChart rows={rows} selected={inspected.activityId} now={now} onSelect={setReceipt} />
+          <RecordChart rows={rows} selected={inspected.activityId} now={now} displayTimeZone={displayTz} onSelect={setReceipt} />
           <ActivityRoute units={state.units} key={inspected.activityId} activity={state.activities.find(a => a.id === inspected.activityId)} milestone />
         </Section>
       ) : null}

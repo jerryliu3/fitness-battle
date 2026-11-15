@@ -3,7 +3,7 @@ import { competeNow } from "./compete/engine";
 import { collapseNights, formatSleepDuration, type SleepNight } from "./compete/health";
 import type { CompeteState } from "./compete/sports";
 import { INTEGRATIONS } from "./fitness/providers";
-import { APP_TIMEZONE, dayKey, formatAppCalendarDate, shiftAppDay, startOfZonedDay } from "./period";
+import { accountTimeZone, dayKey, formatAccountCalendarDate, formatAppCalendarDate, shiftZonedDay, startOfZonedDay } from "./period";
 
 export interface HomeHealthMetric {
   id: "sleep" | "steps" | "resting-hr" | "hrv";
@@ -33,7 +33,8 @@ export function isSampleSleepNight(state: CompeteState, night: SleepNight): bool
 
 /** Presentation only. Do not infer daily health from workout HR/cadence or sleep scores. */
 export function homeHealthMetrics(state: CompeteState, now = competeNow(state)): HomeHealthMetric[] {
-  const today = dayKey(now);
+  const displayTz = accountTimeZone(state);
+  const today = dayKey(now, displayTz);
   const nights = collapseNights(state.sleepNights.filter(night =>
     !isSampleSleepNight(state, night) &&
     night.day <= today && Number.isFinite(night.durationMin) && night.durationMin > 0,
@@ -42,13 +43,13 @@ export function homeHealthMetrics(state: CompeteState, now = competeNow(state)):
   const latest = nights.at(-1);
   const source = night ? INTEGRATIONS.find(item => item.id === night.source)?.name ?? "Manual entry" : null;
   const history = Array.from({ length: 7 }, (_, index) =>
-    nights.find(item => item.day === dayKey(shiftAppDay(now, index - 6)))?.durationMin ?? null,
+    nights.find(item => item.day === dayKey(shiftZonedDay(now, index - 6, displayTz)))?.durationMin ?? null,
   );
   return [
     {
       id: "sleep", name: "Sleep", unit: "", value: night ? formatSleepDuration(night.durationMin) : "—",
       context: night ? "Last night" : "No reading today", history,
-      baselineHistory: nights.filter(n => n.day < dayKey(shiftAppDay(now, -6)) && n.day >= dayKey(shiftAppDay(now, -34))).map(n => n.durationMin),
+      baselineHistory: nights.filter(n => n.day < dayKey(shiftZonedDay(now, -6, displayTz)) && n.day >= dayKey(shiftZonedDay(now, -34, displayTz))).map(n => n.durationMin),
       detail: night
         ? `${source} · wake date ${night.day}. Recorded sleep duration; not a readiness score.`
         : latest ? `No sleep reading for today. Last recorded wake date: ${latest.day}.` : "No sleep duration recorded yet. Available tracker readings appear after sync.",
@@ -73,8 +74,8 @@ export function homeHealthMetrics(state: CompeteState, now = competeNow(state)):
         detail: current
           ? `${providerName} · recorded ${today}.${spec.key === "hrv" && current.provider === "apple_health" ? " SDNN, daily sample average; not RMSSD." : ""}`
           : `No recorded ${spec.name.toLowerCase()} available for today.`,
-        baselineHistory: Array.from({ length: 28 }, (_, i) => forDay(dayKey(shiftAppDay(now, i - 34)))?.[spec.key] ?? null),
-        history: Array.from({ length: 7 }, (_, i) => forDay(dayKey(shiftAppDay(now, i - 6)))?.[spec.key] ?? null),
+        baselineHistory: Array.from({ length: 28 }, (_, i) => forDay(dayKey(shiftZonedDay(now, i - 34, displayTz)))?.[spec.key] ?? null),
+        history: Array.from({ length: 7 }, (_, i) => forDay(dayKey(shiftZonedDay(now, i - 6, displayTz)))?.[spec.key] ?? null),
       };
     }),
   ];
@@ -92,11 +93,12 @@ export function recordedHealthSeries(
   now = competeNow(state),
   createdAt?: string | null,
 ): RecordedHealthPoint[] {
+  const displayTz = accountTimeZone(state);
   const span = Math.max(1, days);
-  const today = dayKey(now);
-  const defaultStartDate = shiftAppDay(startOfZonedDay(now), -(span - 1));
-  const start = dayKey(defaultStartDate);
-  const label = (day: string) => formatAppCalendarDate(day, { month: "short", day: "numeric" });
+  const today = dayKey(now, displayTz);
+  const defaultStartDate = shiftZonedDay(startOfZonedDay(now, displayTz), -(span - 1), displayTz);
+  const start = dayKey(defaultStartDate, displayTz);
+  const label = (day: string) => formatAccountCalendarDate(state, day, { month: "short", day: "numeric" });
   const observed = new Map<string, number>();
   if (metric === "sleep") {
     for (const night of collapseNights(state.sleepNights.filter(item =>
@@ -129,7 +131,7 @@ export function recordedHealthSeries(
       : null;
   const seriesStart = anchorDate && dayKey(anchorDate) > start ? anchorDate : defaultStartDate;
   return Array.from({ length: span }, (_, index) => {
-    const day = dayKey(shiftAppDay(seriesStart, index));
+    const day = dayKey(shiftZonedDay(seriesStart, index, displayTz), displayTz);
     return { day, label: label(day), value: day <= today ? (observed.get(day) ?? null) : null };
   });
 }
@@ -248,8 +250,9 @@ export interface Health7DayChartModel {
 export function buildHealth7DayCorridorModel(
   metric: HomeHealthMetric,
   now = new Date(),
-  options?: { weekCorridorFallback?: boolean },
+  options?: { weekCorridorFallback?: boolean; timeZone?: string },
 ): Health7DayChartModel {
+  const displayTz = options?.timeZone ?? accountTimeZone({});
   const personal =
     getHealthMetricCorridor(metric.id, metric.baselineHistory)
     ?? (options?.weekCorridorFallback
@@ -284,9 +287,9 @@ export function buildHealth7DayCorridorModel(
 
   const points: Health7DayPoint[] = metric.history.map((val, i) => {
     const x = Number((left + (i / 6) * (right - left)).toFixed(1));
-    const targetDate = shiftAppDay(now, i - 6);
-    const dayLabel = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "America/New_York" }).format(targetDate) ?? "";
-    const dateLabel = formatAppCalendarDate(dayKey(targetDate), { month: "short", day: "numeric" });
+    const targetDate = shiftZonedDay(now, i - 6, displayTz);
+    const dayLabel = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: displayTz }).format(targetDate) ?? "";
+    const dateLabel = formatAppCalendarDate(dayKey(targetDate, displayTz), { month: "short", day: "numeric" }, displayTz);
 
     if (val == null || !Number.isFinite(val)) {
       return {

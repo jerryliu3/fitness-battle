@@ -4,7 +4,7 @@ import { Section, AppText } from "../ui/section";
 import { Pressable, View } from "react-native";
 import { useRouter } from "expo-router";
 import {
-  APP_TIMEZONE,
+  accountTimeZone,
   clubDuration,
   clubWeekSummary,
   latestClubRecap,
@@ -18,6 +18,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
 const f=useFocusStyles();
 const s=useThemedStyles(sThemes);
 
+  const displayTz = accountTimeZone(state);
   const router = useRouter(),
     week = clubWeekSummary(state),
     recap = latestClubRecap(state),
@@ -60,7 +61,7 @@ const s=useThemedStyles(sThemes);
               {new Date(breakdown.periodStart).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
-                timeZone: APP_TIMEZONE,
+                timeZone: displayTz,
               })} · View week breakdown →
             </AppText>
           </View>
@@ -83,7 +84,7 @@ const s=useThemedStyles(sThemes);
               {new Date(recap.periodStart).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
-                timeZone: APP_TIMEZONE,
+                timeZone: displayTz,
               })}{" "}
               · Place {recap.place} of {recap.fieldSize}
             </AppText>
@@ -106,7 +107,7 @@ const s=useThemedStyles(sThemes);
               {new Date(breakdown.periodStart).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
-                timeZone: APP_TIMEZONE,
+                timeZone: displayTz,
               })} · View week breakdown →
             </AppText>
           </View>

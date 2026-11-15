@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { APP_TIMEZONE, competeNow, dayKey, type CompeteState } from "@fitness-battle/shared";
+import { accountTimeZone, competeNow, dayKey, type CompeteState } from "@fitness-battle/shared";
 
 export function useDailySuggestion(account: string, state: CompeteState | null) {
   const [, tick] = useState(0);
-  const day = state ? dayKey(competeNow(state), APP_TIMEZONE) : "";
+  const day = state ? dayKey(competeNow(state), accountTimeZone(state)) : "";
   const key = `fb:daily-suggestion:${account}`;
   const scope = `${key}:${day}`;
   const memory = useRef(new Set<string>());

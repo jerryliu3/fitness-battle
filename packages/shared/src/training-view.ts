@@ -1,4 +1,11 @@
-import { APP_TIMEZONE, dailyPeriodBounds, dayKey, monthlyPeriodBounds, shiftAppDay, weeklyPeriodBounds } from "./period";
+import {
+  APP_TIMEZONE,
+  dailyPeriodBounds,
+  dayKey,
+  monthlyPeriodBounds,
+  shiftZonedDay,
+  weeklyPeriodBounds,
+} from "./period";
 import { countsForTraining } from "./compete/journal";
 import { isVerifiedActivity } from "./compete/ledger";
 import { periodEffort } from "./compete/effort";
@@ -66,14 +73,22 @@ function sportMatches(sport: SportId, filter: TrainingSportFilter): boolean {
 export interface TrainingBucket {
   start: string; end: string; label: string; movingSec: number; sessions: number; distanceM: number; partial: boolean;
 }
-export function shiftTrainingMonth(anchor: Date, months: number): Date {
-  const [year, month] = dayKey(anchor).split("-").map(Number);
+export function shiftTrainingMonth(
+  anchor: Date,
+  months: number,
+  timeZone = APP_TIMEZONE,
+): Date {
+  const [year, month] = dayKey(anchor, timeZone).split("-").map(Number);
   return new Date(Date.UTC(year!, month! - 1 + months, 1, 12));
 }
 
-/** Noon UTC on January 1 of the Eastern calendar year, so buckets match the heading. */
-export function trainingYearAnchor(now: Date, yearOffset = 0): Date {
-  const year = Number(dayKey(now).slice(0, 4)) + yearOffset;
+/** Noon UTC on January 1 of the account calendar year, so buckets match the heading. */
+export function trainingYearAnchor(
+  now: Date,
+  yearOffset = 0,
+  timeZone = APP_TIMEZONE,
+): Date {
+  const year = Number(dayKey(now, timeZone).slice(0, 4)) + yearOffset;
   return new Date(Date.UTC(year, 0, 1, 12));
 }
 function eligible(
@@ -95,28 +110,112 @@ function bucket(rows: Activity[], start: Date, end: Date, now: Date, label: stri
   const included = rows.filter(a => Date.parse(a.startedAt) >= start.getTime() && Date.parse(a.startedAt) < end.getTime());
   return { start: start.toISOString(), end: end.toISOString(), label, movingSec: included.reduce((t,a)=>t+Math.max(0,a.movingSec),0), distanceM: included.reduce((t,a)=>t+Math.max(0,a.distanceM),0), sessions: included.length, partial: start <= now && now < end };
 }
-/** Calendar buckets are Eastern, half-open, and never synthesize activity. Month bars are clipped calendar weeks. */
-export function trainingBuckets(activities: Activity[], sport: TrainingSportFilter, range: TrainingRange, anchor: Date, now = new Date(), track: ScoreTrack = "open"): TrainingBucket[] {
+/** Calendar buckets follow the account timezone; half-open, no synthetic activity. Month bars are clipped weeks. */
+export function trainingBuckets(
+  activities: Activity[],
+  sport: TrainingSportFilter,
+  range: TrainingRange,
+  anchor: Date,
+  now = new Date(),
+  track: ScoreTrack = "open",
+  timeZone = APP_TIMEZONE,
+): TrainingBucket[] {
   const rows = eligible(activities, sport, track, now);
-  const week = weeklyPeriodBounds(anchor), month = monthlyPeriodBounds(anchor);
+  const week = weeklyPeriodBounds(anchor, timeZone);
+  const month = monthlyPeriodBounds(anchor, timeZone);
   if (range === "year") {
-    const year = Number(dayKey(anchor).slice(0,4));
-    return Array.from({length:12},(_,i)=>{ const at = new Date(Date.UTC(year,i,1,12)); const bounds=monthlyPeriodBounds(at); return bucket(rows,bounds.startsAt,bounds.endsAt,now,at.toLocaleDateString("en-US",{month:"short",timeZone:APP_TIMEZONE})); });
+    const year = Number(dayKey(anchor, timeZone).slice(0, 4));
+    return Array.from({ length: 12 }, (_, i) => {
+      const at = new Date(Date.UTC(year, i, 1, 12));
+      const bounds = monthlyPeriodBounds(at, timeZone);
+      return bucket(
+        rows,
+        bounds.startsAt,
+        bounds.endsAt,
+        now,
+        at.toLocaleDateString("en-US", { month: "short", timeZone }),
+      );
+    });
   }
-  if (range === "week") return Array.from({length:7},(_,i)=>{ const at=shiftAppDay(week.startsAt,i), bounds=dailyPeriodBounds(at); return bucket(rows,bounds.startsAt,bounds.endsAt,now,at.toLocaleDateString("en-US",{weekday:"short",timeZone:APP_TIMEZONE})); });
-  const result: TrainingBucket[]=[];
-  let cursor=month.startsAt;
-  while(cursor < month.endsAt){ const end=new Date(Math.min(weeklyPeriodBounds(cursor).endsAt.getTime(),month.endsAt.getTime())); result.push(bucket(rows,cursor,end,now,cursor.toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:APP_TIMEZONE}))); cursor=end; }
+  if (range === "week")
+    return Array.from({ length: 7 }, (_, i) => {
+      const at = shiftZonedDay(week.startsAt, i, timeZone);
+      const bounds = dailyPeriodBounds(at, timeZone);
+      return bucket(
+        rows,
+        bounds.startsAt,
+        bounds.endsAt,
+        now,
+        at.toLocaleDateString("en-US", { weekday: "short", timeZone }),
+      );
+    });
+  const result: TrainingBucket[] = [];
+  let cursor = month.startsAt;
+  while (cursor < month.endsAt) {
+    const end = new Date(
+      Math.min(
+        weeklyPeriodBounds(cursor, timeZone).endsAt.getTime(),
+        month.endsAt.getTime(),
+      ),
+    );
+    result.push(
+      bucket(
+        rows,
+        cursor,
+        end,
+        now,
+        cursor.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          timeZone,
+        }),
+      ),
+    );
+    cursor = end;
+  }
   return result;
 }
 export interface TrainingDay extends TrainingBucket { day: string; inMonth: boolean; future: boolean; intensity: number; activityIds: string[] }
-/** Monday-first month atlas with padding days and a stable, duration-based intensity scale. */
-export function trainingAtlas(activities: Activity[], sport: TrainingSportFilter, anchor: Date, now = new Date(), track: ScoreTrack = "open"): TrainingDay[] {
-  const rows=eligible(activities,sport,track,now), month=monthlyPeriodBounds(anchor), start=weeklyPeriodBounds(month.startsAt).startsAt;
-  const cells:TrainingDay[]=[];
-  for(let at=start; at < month.endsAt || cells.length%7!==0; at=shiftAppDay(at,1)){
-    const b=dailyPeriodBounds(at), day=dayKey(at), data=bucket(rows,b.startsAt,b.endsAt,now,String(Number(day.slice(-2))));
-    cells.push({...data,day,inMonth:at>=month.startsAt&&at<month.endsAt,future:day>dayKey(now),intensity:data.movingSec===0?0:Math.min(4,Math.ceil(data.movingSec/1800)),activityIds:rows.filter(a=>dayKey(new Date(a.startedAt))===day).map(a=>a.id)});
+/** Monday-first month atlas in the account timezone with padding days. */
+export function trainingAtlas(
+  activities: Activity[],
+  sport: TrainingSportFilter,
+  anchor: Date,
+  now = new Date(),
+  track: ScoreTrack = "open",
+  timeZone = APP_TIMEZONE,
+): TrainingDay[] {
+  const rows = eligible(activities, sport, track, now);
+  const month = monthlyPeriodBounds(anchor, timeZone);
+  const start = weeklyPeriodBounds(month.startsAt, timeZone).startsAt;
+  const cells: TrainingDay[] = [];
+  for (
+    let at = start;
+    at < month.endsAt || cells.length % 7 !== 0;
+    at = shiftZonedDay(at, 1, timeZone)
+  ) {
+    const b = dailyPeriodBounds(at, timeZone);
+    const day = dayKey(at, timeZone);
+    const data = bucket(
+      rows,
+      b.startsAt,
+      b.endsAt,
+      now,
+      String(Number(day.slice(-2))),
+    );
+    cells.push({
+      ...data,
+      day,
+      inMonth: at >= month.startsAt && at < month.endsAt,
+      future: day > dayKey(now, timeZone),
+      intensity:
+        data.movingSec === 0
+          ? 0
+          : Math.min(4, Math.ceil(data.movingSec / 1800)),
+      activityIds: rows
+        .filter((a) => dayKey(new Date(a.startedAt), timeZone) === day)
+        .map((a) => a.id),
+    });
   }
   return cells;
 }
@@ -161,14 +260,15 @@ export function trainingRangeNavigation(
   earliest: Date | null,
   now: Date,
   range: TrainingRange,
+  timeZone = APP_TIMEZONE,
 ): { prevAllowed: boolean; nextAllowed: boolean } {
   const nextAllowed =
     range === "year"
-      ? dayKey(anchor).slice(0, 4) < dayKey(now).slice(0, 4)
+      ? dayKey(anchor, timeZone).slice(0, 4) < dayKey(now, timeZone).slice(0, 4)
       : range === "month"
-        ? dayKey(anchor).slice(0, 7) < dayKey(now).slice(0, 7)
-        : weeklyPeriodBounds(anchor).startsAt.getTime() <
-          weeklyPeriodBounds(now).startsAt.getTime();
+        ? dayKey(anchor, timeZone).slice(0, 7) < dayKey(now, timeZone).slice(0, 7)
+        : weeklyPeriodBounds(anchor, timeZone).startsAt.getTime() <
+          weeklyPeriodBounds(now, timeZone).startsAt.getTime();
 
   if (!earliest) {
     return { prevAllowed: false, nextAllowed };
@@ -176,11 +276,11 @@ export function trainingRangeNavigation(
 
   const prevAllowed =
     range === "year"
-      ? dayKey(anchor).slice(0, 4) > dayKey(earliest).slice(0, 4)
+      ? dayKey(anchor, timeZone).slice(0, 4) > dayKey(earliest, timeZone).slice(0, 4)
       : range === "month"
-        ? dayKey(anchor).slice(0, 7) > dayKey(earliest).slice(0, 7)
-        : weeklyPeriodBounds(anchor).startsAt.getTime() >
-          weeklyPeriodBounds(earliest).startsAt.getTime();
+        ? dayKey(anchor, timeZone).slice(0, 7) > dayKey(earliest, timeZone).slice(0, 7)
+        : weeklyPeriodBounds(anchor, timeZone).startsAt.getTime() >
+          weeklyPeriodBounds(earliest, timeZone).startsAt.getTime();
 
   return { prevAllowed, nextAllowed };
 }
@@ -190,27 +290,28 @@ export function clampTrainingAnchor(
   earliest: Date | null,
   now: Date,
   range: TrainingRange,
+  timeZone = APP_TIMEZONE,
 ): Date {
   const lowerBound = earliest ?? now;
   if (range === "year") {
-    const anchorYear = dayKey(anchor).slice(0, 4);
-    const earliestYear = dayKey(lowerBound).slice(0, 4);
-    const nowYear = dayKey(now).slice(0, 4);
+    const anchorYear = dayKey(anchor, timeZone).slice(0, 4);
+    const earliestYear = dayKey(lowerBound, timeZone).slice(0, 4);
+    const nowYear = dayKey(now, timeZone).slice(0, 4);
     if (anchorYear < earliestYear) return lowerBound;
     if (anchorYear > nowYear) return now;
     return anchor;
   }
   if (range === "month") {
-    const anchorMonth = dayKey(anchor).slice(0, 7);
-    const earliestMonth = dayKey(lowerBound).slice(0, 7);
-    const nowMonth = dayKey(now).slice(0, 7);
+    const anchorMonth = dayKey(anchor, timeZone).slice(0, 7);
+    const earliestMonth = dayKey(lowerBound, timeZone).slice(0, 7);
+    const nowMonth = dayKey(now, timeZone).slice(0, 7);
     if (anchorMonth < earliestMonth) return lowerBound;
     if (anchorMonth > nowMonth) return now;
     return anchor;
   }
-  const anchorWeek = weeklyPeriodBounds(anchor).startsAt.getTime();
-  const earliestWeek = weeklyPeriodBounds(lowerBound).startsAt.getTime();
-  const nowWeek = weeklyPeriodBounds(now).startsAt.getTime();
+  const anchorWeek = weeklyPeriodBounds(anchor, timeZone).startsAt.getTime();
+  const earliestWeek = weeklyPeriodBounds(lowerBound, timeZone).startsAt.getTime();
+  const nowWeek = weeklyPeriodBounds(now, timeZone).startsAt.getTime();
   if (anchorWeek < earliestWeek) return lowerBound;
   if (anchorWeek > nowWeek) return now;
   return anchor;
@@ -234,10 +335,20 @@ export function sessionStageModel(activities: Activity[]) {
 }
 
 /** Honest full-period comparison; partial selections explicitly say so in the UI. */
-export function trainingComparison(activities: Activity[], sport: TrainingSportFilter, range: TrainingRange, anchor: Date, now = new Date()) {
-  const current=trainingBuckets(activities,sport,range,anchor,now);
-  const priorAnchor=range==="week"?shiftAppDay(anchor,-7):shiftTrainingMonth(anchor,range==="year"?-12:-1);
-  const previous=trainingBuckets(activities,sport,range,priorAnchor,now);
+export function trainingComparison(
+  activities: Activity[],
+  sport: TrainingSportFilter,
+  range: TrainingRange,
+  anchor: Date,
+  now = new Date(),
+  timeZone = APP_TIMEZONE,
+) {
+  const current = trainingBuckets(activities, sport, range, anchor, now, "open", timeZone);
+  const priorAnchor =
+    range === "week"
+      ? shiftZonedDay(anchor, -7, timeZone)
+      : shiftTrainingMonth(anchor, range === "year" ? -12 : -1, timeZone);
+  const previous = trainingBuckets(activities, sport, range, priorAnchor, now, "open", timeZone);
   const sum=(rows:TrainingBucket[])=>rows.reduce((n,b)=>n+b.movingSec,0);
   const total=sum(current),prior=sum(previous),partial=current.some(b=>b.partial);
   const percent=prior>0?(total-prior)/prior*100:null;

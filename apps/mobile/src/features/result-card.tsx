@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 import {
   formatEloDelta,
+  formatAccountPeriodDateRange,
   formatPeriodDateRange,
   formatVolume,
   formatEffort,
@@ -38,12 +39,14 @@ export function ResultBreakdownContent({
   deltaText,
   showReceipt = true,
   plainMetrics = false,
+  account,
 }: {
   result: PeriodResult;
   units: UnitSystem;
   deltaText: string;
   showReceipt?: boolean;
   plainMetrics?: boolean;
+  account?: { timezone?: string | null };
 }) {
   const s = useThemedStyles(sThemes);
   const metrics = weekRecapMetrics(result, units);
@@ -71,7 +74,7 @@ export function ResultBreakdownContent({
             ["Starting score", `${result.eloBefore}`],
             ["Round adjustment", `${deltaText}${result.frozen ? " (frozen)" : ""}`],
             ["Final rating", `${result.eloAfter}`],
-            ["Window", "Eastern time · Mon–Mon"],
+            ["Week", account ? formatAccountPeriodDateRange(account, result.periodStart, result.periodEnd) : formatPeriodDateRange(result.periodStart, result.periodEnd)],
           ].map(([label, value]) => (
             <View key={label} style={s.receiptLine}>
               <AppText role="caption" secondary>{label}</AppText>
@@ -92,6 +95,7 @@ export function ResultCard({
   variant = "default",
   replay,
   hiddenIds = [],
+  account,
 }: {
   result: PeriodResult;
   units: UnitSystem;
@@ -100,13 +104,16 @@ export function ResultCard({
   variant?: "default" | "recap";
   replay?: CompetitionReplay | null;
   hiddenIds?: readonly string[];
+  account?: { timezone?: string | null };
 }) {
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
   const [receipt, setReceipt] = useState(false);
 
   const sport = sportById(result.sport);
-  const range = formatPeriodDateRange(result.periodStart, result.periodEnd);
+  const range = account
+    ? formatAccountPeriodDateRange(account, result.periodStart, result.periodEnd)
+    : formatPeriodDateRange(result.periodStart, result.periodEnd);
   const delta = result.eloAfter - result.eloBefore;
   const deltaText = formatEloDelta(result.eloBefore, result.eloAfter);
   const podiumColor = podiumMedalColor(c, result.place);
@@ -258,7 +265,7 @@ export function ResultCard({
         </View>
       </View>
 
-      <ResultBreakdownContent result={result} units={units} deltaText={deltaText} showReceipt={receipt} />
+      <ResultBreakdownContent result={result} units={units} deltaText={deltaText} showReceipt={receipt} account={account} />
 
       <View style={s.footerToggle}>
         <AppText role="caption" secondary>

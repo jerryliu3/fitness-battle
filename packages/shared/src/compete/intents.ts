@@ -1,3 +1,4 @@
+import { isValidIanaTimeZone } from "../timezone";
 import { dayKey } from "./sports";
 import { SPORT_IDS, PROVIDER_IDS, sportById, type SportId } from "./sports";
 import { HEALTH_METRIC_IDS, type HealthMetricId } from "./health";
@@ -13,6 +14,7 @@ export const PHASE_A_COMPETE_INTENT_TYPES = [
   "set-city",
   "set-avatar",
   "set-units",
+  "set-timezone",
   "complete-onboarding",
   "opt-in",
   "opt-out",
@@ -138,6 +140,11 @@ export function normalizeCompeteIntent(
     case "set-units":
       if (raw.units !== "metric" && raw.units !== "us") throw new Error("invalid_intent");
       return { ...base, units: raw.units as UnitSystem };
+    case "set-timezone": {
+      const tz = typeof raw.timezone === "string" ? raw.timezone.trim() : "";
+      if (!tz || !isValidIanaTimeZone(tz)) throw new Error("invalid_intent");
+      return { ...base, timezone: tz };
+    }
     case "complete-onboarding":
       return base;
     case "set-primary":

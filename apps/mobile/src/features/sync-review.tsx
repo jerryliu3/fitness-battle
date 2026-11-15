@@ -18,7 +18,7 @@ import {
   type ScrollViewInstance,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { APP_TIMEZONE, competeNow, syncChargeBenchmark, syncReviewMetrics, formatAppDateTime, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewMetric, type SyncReviewReceipt } from "@fitness-battle/shared";
+import { accountTimeZone, competeNow, syncChargeBenchmark, syncReviewMetrics, formatAccountDateTime, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewMetric, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { AppIcon, type AppIconName } from "../ui/app-icon";
 import { MaterialBack, MaterialClose } from "../ui/material-back";
 import { CompeteSheet } from "../ui/compete-sheet";
@@ -259,7 +259,7 @@ const c=useThemeColors();
                         {sportById(a.sport).name}
                       </Text>
                       <Text style={{ ...textStyle("caption"), color: c.muted }}>
-                        {new Date(a.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} · {new Date(a.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE })}
+                        {new Date(a.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: accountTimeZone(state) })} · {new Date(a.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: accountTimeZone(state) })}
                       </Text>
                     </View>
                   </Pressable>
@@ -363,7 +363,7 @@ function CachedActivityDetail({
         {sportById(activity.sport).name}
       </Text>
       <Text style={[textStyle("caption"), { color: c.muted }]}>
-        {formatAppDateTime(activity.startedAt, { year: true })}
+        {formatAccountDateTime(state, activity.startedAt, { year: true })}
       </Text>
     </View>
   );

@@ -10,6 +10,7 @@ import {
 } from "@fitness-battle/shared";
 import { AppearanceControl } from "@/theme/appearance-provider";
 import { AppParagraph, SectionHeader } from "@/ui/section";
+import { TimezoneCombobox } from "@/ui/timezone-combobox";
 
 export function AthletePreferencesFields({
   state,
@@ -40,6 +41,10 @@ export function AthletePreferencesFields({
           ))}
         </div>
       </div>
+      <TimezoneCombobox
+        value={state.timezone}
+        onChange={(timezone) => dispatch({ type: "set-timezone", timezone })}
+      />
       <label className="club-preference-row">
         <strong>Primary sport</strong>
         <select

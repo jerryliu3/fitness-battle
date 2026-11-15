@@ -4,7 +4,7 @@ import { AppParagraph } from "@/ui/section";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { activityFromSample, competeNow, manualActivityInstant, parseManualActivity, SPORTS, sportById, type ActivitySample, type ReadinessSample, type SportId } from "@fitness-battle/shared";
+import { accountTimeZone, activityFromSample, competeNow, manualActivityInstant, parseManualActivity, SPORTS, sportById, type ActivitySample, type ReadinessSample, type SportId } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { Sheet } from "@/ui/sheet";
@@ -104,7 +104,7 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
         if (!ready || !sport) return;
         const parsed = parseManualActivity(sport, miles, minutes, state.units);
         if (parsed.error !== null) { setFormError(parsed.error); return; }
-        const when = manualActivityInstant(time, competeNow(state));
+        const when = manualActivityInstant(time, competeNow(state), accountTimeZone(state));
         if (when.error !== null) { setFormError(when.error); return; }
         const { movingSec, distanceM } = parsed;
         dispatch({ type: "log-manual", sport, movingSec, distanceM, startedAt: when.startedAt, activityId: `manual-${crypto.randomUUID()}` });
@@ -114,7 +114,7 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
         {sport && <>
         <label>Duration (minutes)<input className="fb-input" required type="number" min="0.1" max="1440" step="0.1" value={minutes} onChange={(event) => setMinutes(event.target.value)}/></label>
         {sport && sportById(sport).gps && <label>Distance ({state.units === "metric" ? "km" : "mi"})<input className="fb-input" required type="number" min="0" max={state.units === "metric" ? "2000" : "1242"} step="0.01" value={miles} onChange={(event) => setMiles(event.target.value)}/></label>}
-        <label>Time of day (optional · Eastern)<input className="fb-input" type="time" value={time} onChange={event => setTime(event.target.value)} /></label>
+        <label>Time of day (optional)<input className="fb-input" type="time" value={time} onChange={event => setTime(event.target.value)} /></label>
         </>}
         {formError && <AppParagraph typographyRole="caption" role="alert" className="fb-note">{formError}</AppParagraph>}
         <button disabled={!ready || !sport} type="submit" className="fb-btn">Add activity</button>

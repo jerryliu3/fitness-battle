@@ -148,7 +148,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
               <AppText role="label">{item.title}</AppText>
               <AppText role="caption" secondary>{item.detail}</AppText>
             </View>
-            <AppText role="caption" secondary style={{ flexShrink: 0 }}>{formatCompetitionFeedTimestamp(item.at, Date.parse(input.now))}</AppText>
+            <AppText role="caption" secondary style={{ flexShrink: 0 }}>{formatCompetitionFeedTimestamp(item.at, Date.parse(input.now), input.displayTimeZone)}</AppText>
           </View>
         </View>)}
       </View>
