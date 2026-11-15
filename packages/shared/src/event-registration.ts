@@ -41,13 +41,33 @@ export function eventRegistration(state: CompeteState, event: CompeteEvent, now:
   };
 }
 
-export function registrationDetailCards(detail: ReturnType<typeof eventRegistration>) {
-  const [scoring, , tier, eligibility] = detail.details;
+export type RegistrationRuleCard = {
+  id: "scoring" | "schedule" | "tier" | "field";
+  icon: "layers" | "calendar" | "trophy" | "crew";
+  title: string;
+  summary: string;
+  detail: string;
+  footnote?: string;
+};
+
+export function registrationDetailCards(detail: ReturnType<typeof eventRegistration>): RegistrationRuleCard[] {
+  const [scoring, field, tier, eligibility] = detail.details;
   return [
-    { title: "Scoring & eligibility", summary: scoring!.summary, detail: `${scoring!.detail} ${eligibility!.detail}` },
-    { title: "Schedule & renewal", summary: `Ends ${detail.ends}`, detail: detail.renewal },
-    tier!,
+    { id: "scoring", icon: "layers", title: "Scoring", summary: scoring!.summary, detail: scoring!.detail, footnote: eligibility!.summary },
+    { id: "schedule", icon: "calendar", title: "Schedule", summary: "Weekly rounds", detail: detail.renewal },
+    { id: "tier", icon: "trophy", title: "Entry tier", summary: tier!.summary, detail: tier!.detail },
+    { id: "field", icon: "crew", title: "Your field", summary: "8 competitors", detail: field!.detail },
   ];
+}
+
+export function registrationTicketRows(detail: ReturnType<typeof eventRegistration>) {
+  const [scoring, , tier] = detail.details;
+  return [
+    { label: "Entry tier", value: tier!.summary },
+    { label: "Starts", value: detail.starts },
+    { label: "Scoring", value: scoring!.summary },
+    { label: "Field", value: "Up to 8 athletes" },
+  ] as const;
 }
 
 /** Decorative ticket bars; never an entitlement or scannable credential. */

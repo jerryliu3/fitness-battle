@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { freshState, reduceCompete } from "./compete/engine";
-import { eventRegistration, entryBarcode, registrationDetailCards } from "./event-registration";
+import { eventRegistration, entryBarcode, registrationDetailCards, registrationTicketRows } from "./event-registration";
 
 describe("event registration package", () => {
   it("explains the actual strength scoring and next-wave commitment", () => {
@@ -32,12 +32,17 @@ it("uses the registered wave for the ticket stamp after the next daily cutoff", 
   expect(detail.stampYear).toBe("2026");
 });
 
-it("keeps registration details to scoring, schedule and league", () => {
+it("returns four flippable rule cards for scoring, schedule, entry tier, and field", () => {
   const now = new Date("2026-11-08T12:00:00Z");
   const detail = eventRegistration(freshState(now), "walking", now);
-  expect(registrationDetailCards(detail).map(card => card.title)).toEqual(["Scoring & eligibility", "Schedule & renewal", "Your entry tier"]);
-  expect(registrationDetailCards(detail)[0]!.detail).toContain(detail.details[3]!.detail);
-  expect(registrationDetailCards(detail)[1]!.detail).toBe(detail.renewal);
+  const cards = registrationDetailCards(detail);
+  expect(cards.map(card => card.title)).toEqual(["Scoring", "Schedule", "Entry tier", "Your field"]);
+  expect(cards.map(card => card.summary)).toEqual(["Total steps", "Weekly rounds", detail.details[2]!.summary, "8 competitors"]);
+  expect(cards[0]!.detail).toBe(detail.details[0]!.detail);
+  expect(cards[0]!.footnote).toBe(detail.details[3]!.summary);
+  expect(cards[1]!.detail).toBe(detail.renewal);
+  expect(cards[3]!.detail).toBe(detail.details[1]!.detail);
+  expect(registrationTicketRows(detail).map(row => row.label)).toEqual(["Entry tier", "Starts", "Scoring", "Field"]);
   expect(entryBarcode("walking:week-a")).toHaveLength(60);
   expect(entryBarcode("walking:week-a")).not.toEqual(entryBarcode("walking:week-b"));
 });

@@ -227,14 +227,14 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         {selectedSport && selectedSport !== "sleep" && queued && <CoursePreview state={state} sport={selectedSport} queued />}
         {selectedSport && (queued ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch(selectedSport === "sleep" ? { type: "opt-out-health", metric: "sleep" } : { type: "opt-out", sport: selectedSport }); setImmersiveAccount(null); }} /> : selectedSport === "sleep" ? <SleepPanel state={state} now={now} onJoin={() => openRegistration("sleep")} onLeave={() => dispatch({ type: sleep.renews ? "schedule-leave" : "resume-renewal", metric: "sleep" })} leaveLabel={sleep.renews ? "Stop after this week" : "Keep playing next week"} /> : null)}
       </Sheet>
-      <Sheet open={register} title={registrationCrew ? "Crew Derby" : sport ? `${eventRegistration(state, sport, now).name} Registration` : "Choose an event"} body={sport ? "" : "Pick your next start line."} onClose={() => { if (!joinBusy) setRegister(false); }} scrollResetKey={sport ?? "choose"} onClosed={() => {
+      <Sheet open={register} hideTitle={Boolean(sport)} minimal={Boolean(sport)} title={registrationCrew ? "Crew Derby" : sport ? `${eventRegistration(state, sport, now).name} Registration` : "Choose an event"} body={sport ? "" : "Pick your next start line."} onClose={() => { if (!joinBusy) setRegister(false); }} scrollResetKey={sport ?? "choose"} onClosed={() => {
         setRegistrationBackground(null);
         const event = pendingEntry.current;
         pendingEntry.current = null;
         if (event) enterEvent(event);
       }}>
         {sport ? <>
-          <EventRegistration key={`${account}:${sport}`} state={state} event={sport} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} busy={joinBusy} error={joinError || saveError || ""} onClaim={() => void claimEntry()} onView={() => { pendingEntry.current = sport; setRegister(false); }} />
+          <EventRegistration key={`${account}:${sport}`} state={state} event={sport} crew={Boolean(registrationCrew)} registered={sport === "sleep" ? sleepOptedIn : active.some(r => r.sport === sport)} busy={joinBusy} error={joinError || saveError || ""} onClaim={() => void claimEntry()} onClose={() => { if (!joinBusy) setRegister(false); }} onView={() => { pendingEntry.current = sport; setRegister(false); }} />
         </> : <div className="focus-sport-options" aria-label="Sport or category">
           {[...SPORTS.map(item => ({ id: item.id, name: item.name })), { id: "sleep" as const, name: "Sleep & recovery" }].filter(item => item.id === "sleep" ? !sleepOptedIn : !active.some(r => r.sport === item.id)).map(item => {
             const registered = item.id === "sleep" ? sleepOptedIn : active.some(r => r.sport === item.id);
