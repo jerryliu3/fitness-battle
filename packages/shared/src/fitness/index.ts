@@ -5,6 +5,7 @@ import type { FitnessProviderId } from "../types";
 
 export type { DailyHealthSample, FitnessAuthResult, FitnessProvider, SyncResult } from "./types";
 export { mockFitnessProvider } from "./mock-provider";
+export { journalSampleFromUnmapped } from "./journal-sample";
 export {
   createStravaProvider,
   mapSportToCategory,

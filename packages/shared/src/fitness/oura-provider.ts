@@ -3,6 +3,7 @@ import type { ActivitySample, ReadinessSample } from "../types";
 import type { FitnessHttp } from "./http";
 import { readJson } from "./http";
 import { createOAuth2Provider, type OAuth2Env, type OAuth2Pull } from "./oauth2";
+import { journalSampleFromUnmapped } from "./journal-sample";
 import { mapSportToCategory } from "./strava-provider";
 
 /**
@@ -60,11 +61,21 @@ async function ouraGet<T>(
 
 export function mapOuraWorkout(raw: OuraWorkout): ActivitySample | null {
   const sport = mapSportToCategory(raw.activity ?? "");
-  if (!sport || !raw.id || !raw.start_datetime) return null;
+  if (!raw.id || !raw.start_datetime) return null;
   const start = new Date(raw.start_datetime);
   const end = raw.end_datetime ? new Date(raw.end_datetime) : start;
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
   const movingSec = Math.max(0, Math.round((end.getTime() - start.getTime()) / 1000));
+  if (!sport) {
+    return journalSampleFromUnmapped({
+      id: `oura-${raw.id}`,
+      provider: "oura",
+      externalId: raw.id,
+      startedAt: start.toISOString(),
+      movingSec,
+      rawName: raw.label || raw.activity || "Workout",
+    });
+  }
   const distance = raw.distance ?? 0;
   const gps = sport !== "strength";
   return {

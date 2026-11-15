@@ -84,7 +84,7 @@ export function VitalsLabPanel({
   );
   const assetBase = mobileEnv.apiUrl.replace(/\/$/, "");
 
-  const lab = useVitalsLabController(metrics, appearance, assetBase);
+  const lab = useVitalsLabController(metrics, appearance, assetBase, state?.gender);
   const model = lab.canvasModel;
 
   const renderMetricColumn = (items: VitalsLabMetricDisplay[]) => (

@@ -33,14 +33,17 @@ describe("strava provider", () => {
     expect(sample?.categorySlug).toBe("running");
     expect(sample?.metricValue).toBe(5000);
     expect(sample?.movingSec).toBe(1500);
-    expect(mapStravaActivity({
+    const swim = mapStravaActivity({
       id: 9,
       name: "Pool",
       sport_type: "Swim",
       start_date: "2026-10-01T12:00:00Z",
       distance: 1500,
       moving_time: 1800,
-    })).toBeNull();
+    });
+    expect(swim).not.toBeNull();
+    expect(swim?.journalOnly).toBe(true);
+    expect(swim?.categorySlug).toBe("strength");
   });
 
   it("connects as stub without credentials", async () => {

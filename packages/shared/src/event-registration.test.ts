@@ -18,7 +18,7 @@ describe("event registration package", () => {
   it("keeps track eligibility and sleep coverage explicit", () => {
     const now = new Date("2026-11-08T12:00:00Z"), state = freshState(now);
     expect(eventRegistration(state, "running", now).details[3]?.detail).toContain("GPS-verified");
-    expect(eventRegistration(state, "walking", now).details[3]?.summary).toBe("Open");
+    expect(eventRegistration(state, "walking", now).details[3]?.summary).toBe("Daily step totals");
     expect(eventRegistration(state, "sleep", now).details[0]?.detail).toContain("Missing nights reduce");
   });
 });

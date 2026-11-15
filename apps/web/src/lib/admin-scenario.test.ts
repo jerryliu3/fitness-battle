@@ -8,6 +8,7 @@ function registered(sport: "running" | "strength" = "running") {
   return { ...state, enrollments: [plan.enrollment!], ratings: state.ratings.map((row) => row.sport === sport ? plan.rating! : row) };
 }
 const manual: Activity = { id: "manual", sport: "running", startedAt: "2026-10-31T16:00:00Z", distanceM: 5000, movingSec: 1800, avgHr: null, source: "manual", verified: false, provenance: "manual" };
+const leader: Activity = { ...manual, id: "leader", source: "strava", provenance: "recorded" };
 describe("admin scenario planning", () => {
   it("registers with the ordinary Eastern DST boundary and rejects overdue or duplicate enrollment", () => {
     const state = registered();
@@ -16,9 +17,9 @@ describe("admin scenario planning", () => {
     expect(() => registrationPlan(state, "cycling", "athlete", new Date("2026-11-03"))).toThrow("settle_due_rounds_first");
   });
   it("creates enough volume to pass without altering either account", () => {
-    const mover = registered(), other = { ...registered(), activities: [manual] };
+    const mover = registered(), other = { ...registered(), activities: [leader] };
     const payload = overtakeActivity(mover, other, "running", false, now);
-    const added: Activity = { ...manual, ...payload, id: "added" };
+    const added: Activity = { ...leader, ...payload, id: "added" };
     const before = periodEffort(other.activities, "running", new Date(mover.enrollments[0]!.waveStart), now, "open");
     const after = periodEffort([added], "running", new Date(mover.enrollments[0]!.waveStart), now, "open");
     expect(after.distanceM).toBeGreaterThan(before.distanceM);

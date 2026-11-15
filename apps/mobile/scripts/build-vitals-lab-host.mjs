@@ -25,7 +25,7 @@ for (const name of ["female.glb", "male.glb"]) {
 await esbuild.build({
   entryPoints: [path.join(mobileRoot, "vitals-lab-host/entry.tsx")],
   bundle: true,
-  outfile: path.join(outDir, "bundle.js"),
+  outfile: path.join(outDir, "host.iife"),
   platform: "browser",
   format: "iife",
   jsx: "automatic",

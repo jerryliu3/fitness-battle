@@ -16,6 +16,7 @@ vi.mock("../ui/section",()=>({AppText:"AppText",chartTextProps:()=>({})}));
 vi.mock("../ui/motion-step",()=>({MotionStep:"MotionStep"}));
 vi.mock("../ui/mascot/animated-ember",()=>({AnimatedEmber:"AnimatedEmber"}));
 vi.mock("../ui/choice-picker",()=>({ChoicePicker:"ChoicePicker"}));
+vi.mock("../ui/searchable-country-picker",()=>({SearchableCountryPicker:"SearchableCountryPicker"}));
 vi.mock("../ui/chip",()=>({Chip:"Chip"}));
 vi.mock("../ui/focus",()=>((()=>{const mock={FocusButton:"FocusButton",FocusSegments:"FocusSegments",f:{}};return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 vi.mock("./onboarding-visuals",()=>({OnboardingFade:"OnboardingFade",OnboardingOutlook:"OnboardingOutlook",OnboardingSummary:"OnboardingSummary"}));
@@ -23,13 +24,50 @@ vi.mock("./profile-photo",()=>({ProfilePhoto:"ProfilePhoto"}));
 vi.mock("../../app/athlete",()=>({TrackerConnections:"TrackerConnections"}));
 vi.mock("./onboarding-overtake",()=>({OnboardingOvertake:"OnboardingOvertake"}));
 import Onboarding from "../../app/onboarding";
+
+async function completeIdentityStep(r: ReactTestRenderer) {
+  await act(async () => {
+    r.root.findAllByType("TextInput" as never).find((n) => n.props.accessibilityLabel === "Display name")!.props.onChangeText("Jamie");
+    r.root.findByType("ChoicePicker" as never).props.onChange("female");
+    r.root.findByType("SearchableCountryPicker" as never).props.onChange("US");
+  });
+}
+
 it.each([false,true])("walks all setup steps and only saves a real completion (preview=%s)",async(preview)=>{
  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.clearAllMocks();mock.preview=preview?"1":undefined;
  let r!:ReactTestRenderer;await act(async()=>{r=create(createElement(Onboarding));});
- const button=(label:string)=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label===label)!;
- for(let step=0;step<6;step++) {expect(mock.dispatch).not.toHaveBeenCalled();await act(async()=>button(step===3?"Skip for now":"Continue").props.onPress());}
- const final=button(preview?"Finish preview":"Finish");await act(async()=>{final.props.onPress();final.props.onPress();});
- if(preview){expect(mock.dispatch).not.toHaveBeenCalled();expect(mock.storage).not.toHaveBeenCalled();}else{expect(mock.dispatch).toHaveBeenCalledWith({type:"set-units",units:state.units});expect(mock.dispatch.mock.calls.filter(([a])=>a.type==="complete-onboarding")).toHaveLength(1);expect(mock.replace).toHaveBeenCalledWith("/arena");}
+ const button=(label:string)=>{
+  const matches=r.root.findAllByType("FocusButton" as never).find(n=>n.props.label===label);
+  if(!matches) throw new Error(`Missing FocusButton "${label}"; saw ${r.root.findAllByType("FocusButton" as never).map(n=>n.props.label).join(", ")}`);
+  return matches;
+ };
+ const advance=async(label="Continue")=>act(async()=>button(label).props.onPress());
+ if (!preview) {
+   await advance();
+   await completeIdentityStep(r);
+   await advance();
+   await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Running")!.props.onPress());
+   await advance();
+   for (const label of ["Skip for now", "Continue", "Continue", "Finish"]) {
+     expect(mock.dispatch).not.toHaveBeenCalled();
+     await advance(label);
+   }
+ } else {
+   for (const label of ["Continue", "Continue", "Continue", "Skip for now", "Continue", "Continue", "Finish preview"]) {
+     expect(mock.dispatch).not.toHaveBeenCalled();
+     await advance(label);
+   }
+ }
+ if(preview){
+   expect(mock.dispatch).not.toHaveBeenCalled();
+   expect(mock.storage).not.toHaveBeenCalled();
+ }else{
+   expect(mock.dispatch).toHaveBeenCalledWith({type:"set-units",units:state.units});
+   expect(mock.dispatch).toHaveBeenCalledWith({type:"set-gender",gender:"female"});
+   expect(mock.dispatch).toHaveBeenCalledWith({type:"set-country",countryCode:"US"});
+   expect(mock.dispatch.mock.calls.filter(([a])=>a.type==="complete-onboarding")).toHaveLength(1);
+   expect(mock.replace).toHaveBeenCalledWith("/today");
+ }
  await act(async()=>r.unmount());
 });
 
@@ -37,15 +75,15 @@ it("validates the combined selection on Continue and supports sleep without a sp
  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.clearAllMocks();mock.preview=undefined;
  let r!:ReactTestRenderer;await act(async()=>{r=create(createElement(Onboarding));});
  const press=async(label:string)=>act(async()=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label===label)!.props.onPress());
- await press("Continue");await press("Continue");
+ await press("Continue");
+ await completeIdentityStep(r);
+ await press("Continue");
  const chip=(label:string)=>r.root.findAllByType("Chip" as never).find(n=>n.props.label===label)!;
- await act(async()=>chip("Running").props.onPress());
- expect(r.root.findAllByType("FocusSegments" as never)).toHaveLength(0);
  await press("Continue");
  expect(r.root.findAllByType("AppText" as never).some(n=>n.props.children==="Choose at least one sport or sleep tracking to continue.")).toBe(true);
  await act(async()=>chip("Sleep tracking").props.onPress());await press("Continue");
  expect(r.root.findAllByType("TrackerConnections" as never)).toHaveLength(1);
- await press("Skip for now");await press("Continue");await press("Continue");await press("Finish");
+ for (const label of ["Skip for now", "Continue", "Continue", "Finish"]) await press(label);
  expect(mock.dispatch).toHaveBeenCalledWith({type:"opt-in-health",metric:"sleep"});
  expect(mock.dispatch.mock.calls.some(([a])=>a.type==="opt-in"||a.type==="set-primary")).toBe(false);
  await act(async()=>r.unmount());
@@ -56,8 +94,11 @@ it("uses the top safe area and a primary dropdown only for multiple sports", asy
  let r!:ReactTestRenderer;await act(async()=>{r=create(createElement(Onboarding));});
  expect(r.root.findByType("SafeAreaView" as never).props.edges).toEqual(["top","bottom"]);
  const next=async()=>act(async()=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label==="Continue")!.props.onPress());
- await next();await next();
+ await next();
+ await completeIdentityStep(r);
+ await next();
  expect(r.root.findAllByType("ChoicePicker" as never)).toHaveLength(0);
+ await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Running")!.props.onPress());
  await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Cycling")!.props.onPress());
  const picker=r.root.findByType("ChoicePicker" as never);
  expect(picker.props.options.map((o:{value:string})=>o.value)).toEqual(["running","cycling"]);

@@ -1,5 +1,6 @@
 import { clubDuration, clubRivalCardSummary, clubWeekSummary, nextClubRival } from "./club-summary";
 import { competeNow, formatVolume, weeklyBoard } from "./compete/engine";
+import { countsForTraining } from "./compete/journal";
 import { countsOnTrack } from "./compete/ledger";
 import { competitionTrack, sportById, type Activity, type CompeteState } from "./compete/sports";
 import { suggestionForState } from "./compete/suggestion";
@@ -176,16 +177,14 @@ export function buildHomeRouteWeek(
   const todayIndex = Math.min(6, Math.max(0, weekday === 0 ? 6 : weekday - 1));
   const weekNumber = easternWeekNumber(now);
 
-  const eligible = state.activities.filter((a) => {
-    if (!countsOnTrack(a, "open")) return false;
-    const atMs = Date.parse(a.startedAt);
-    return (
-      Number.isFinite(atMs) &&
-      atMs <= now.getTime() &&
-      atMs >= period.startsAt.getTime() &&
-      atMs < period.endsAt.getTime()
-    );
-  });
+  const eligible = state.activities.filter(
+    (a) =>
+      countsForTraining(a) &&
+      Number.isFinite(Date.parse(a.startedAt)) &&
+      Date.parse(a.startedAt) <= now.getTime() &&
+      Date.parse(a.startedAt) >= period.startsAt.getTime() &&
+      Date.parse(a.startedAt) < period.endsAt.getTime(),
+  );
 
   const byDay = new Map<string, Activity[]>();
   for (const activity of eligible) {

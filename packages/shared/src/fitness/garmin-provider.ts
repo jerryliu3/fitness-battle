@@ -4,6 +4,7 @@ import type { FitnessHttp } from "./http";
 import { readJson } from "./http";
 import { mockFitnessProvider } from "./mock-provider";
 import { encodeForm } from "./http";
+import { journalSampleFromUnmapped } from "./journal-sample";
 import { mapSportToCategory, type StravaStore, type StravaTokenSet } from "./strava-provider";
 import type { FitnessAuthResult, FitnessProvider } from "./types";
 
@@ -63,10 +64,24 @@ function endpoints(env: GarminEnv) {
 }
 
 export function mapGarminActivity(raw: GarminSummary): ActivitySample | null {
-  const sport: CategorySlug | null = mapSportToCategory((raw.activityType ?? "").replace(/^(indoor_|virtual_|treadmill_)/i, ""));
-  if (!sport || raw.startTimeInSeconds == null) return null;
-  const externalId = String(raw.activityId ?? raw.summaryId?.replace(/-(detail|file)$/, "") ?? raw.startTimeInSeconds);
+  const typeLabel = (raw.activityType ?? "").replace(/^(indoor_|virtual_|treadmill_)/i, "");
+  const sport: CategorySlug | null = mapSportToCategory(typeLabel);
+  if (raw.startTimeInSeconds == null) return null;
   const movingSec = Math.max(0, Math.round(raw.durationInSeconds ?? 0));
+  if (!sport) {
+    const externalId = String(raw.activityId ?? raw.summaryId?.replace(/-(detail|file)$/, "") ?? raw.startTimeInSeconds);
+    return journalSampleFromUnmapped({
+      id: `garmin-${externalId}`,
+      provider: "garmin",
+      externalId,
+      startedAt: new Date(raw.startTimeInSeconds * 1000).toISOString(),
+      movingSec,
+      rawName: raw.activityName || typeLabel || "Workout",
+      avgHr: raw.averageHeartRateInBeatsPerMinute ?? null,
+      elevationGainM: Number.isFinite(raw.totalElevationGainInMeters) ? Math.max(0, raw.totalElevationGainInMeters!) : null,
+    });
+  }
+  const externalId = String(raw.activityId ?? raw.summaryId?.replace(/-(detail|file)$/, "") ?? raw.startTimeInSeconds);
   const distance = Math.max(0, raw.distanceInMeters ?? 0);
   const gps = sport !== "strength";
   const indoor = /treadmill|indoor|virtual|elliptical/i.test(`${raw.activityType ?? ""} ${raw.activityName ?? ""}`);

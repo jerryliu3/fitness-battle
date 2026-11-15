@@ -1,76 +1,26 @@
 import { dayKey } from "../period";
+import { isJournalActivity } from "./journal";
+import {
+  activityProvenancePrecedence,
+  dispositionOf,
+  isSampleActivity,
+  isVerifiedActivity,
+  normalizeSampleActivity,
+  provenanceOf,
+  type ActivityDisposition,
+  type ActivityProvenance,
+} from "./activity-meta";
 import { sportById, type Activity, type SportId } from "./sports";
 
-/** How a session entered the product. Demo rows are never a live tracker pull. */
-export type ActivityProvenance = "recorded" | "imported" | "manual" | "demo";
-
-/** Whether the session changes this week's score. */
-export type ActivityDisposition = "counted" | "pending" | "excluded";
-
-const PRECEDENCE: Record<ActivityProvenance, number> = {
-  recorded: 4,
-  imported: 3,
-  manual: 2,
-  demo: 1,
-};
-
-export function provenanceOf(activity: Activity): ActivityProvenance {
-  if (activity.provenance) return activity.provenance;
-  if (activity.source === "history") return "demo";
-  return "recorded";
-}
-
-const SAMPLE_ID_PREFIXES = [
-  "strava-stub-",
-  "garmin-stub-",
-  "whoop-stub-",
-  "oura-stub-",
-  "mock-",
-];
-
-export function isSampleActivityId(id: string): boolean {
-  return SAMPLE_ID_PREFIXES.some((prefix) => id.startsWith(prefix));
-}
-
-/** Calibration rows predate provenance and must not score or be shared. */
-export function isSampleActivity(activity: Activity): boolean {
-  return (
-    activity.source === "history" ||
-    provenanceOf(activity) === "demo" ||
-    isSampleActivityId(activity.id)
-  );
-}
-
-export function normalizeSampleActivity(activity: Activity): Activity {
-  if (!isSampleActivity(activity)) return activity;
-  if (
-    activity.provenance === "demo" &&
-    activity.disposition === "excluded" &&
-    activity.verified === false
-  ) {
-    return activity;
-  }
-  return {
-    ...activity,
-    provenance: "demo",
-    disposition: "excluded",
-    verified: false,
-    dispositionReason:
-      activity.dispositionReason ?? "This session does not count toward competition.",
-  };
-}
-
-export function dispositionOf(activity: Activity): ActivityDisposition {
-  return activity.disposition ?? "counted";
-}
-
-/** Verified means a GPS session the tracker recorded, not a file or a sample. */
-export function isVerifiedActivity(activity: Activity): boolean {
-  if (provenanceOf(activity) !== "recorded") return false;
-  if (isSampleActivity(activity)) return false;
-  if (!sportById(activity.sport).gps) return false;
-  return activity.verified;
-}
+export type { ActivityDisposition, ActivityProvenance };
+export {
+  dispositionOf,
+  isSampleActivity,
+  isSampleActivityId,
+  isVerifiedActivity,
+  normalizeSampleActivity,
+  provenanceOf,
+} from "./activity-meta";
 
 export function countsOnTrack(
   activity: Activity,
@@ -78,6 +28,7 @@ export function countsOnTrack(
 ): boolean {
   if (isSampleActivity(activity)) return false;
   if (dispositionOf(activity) !== "counted") return false;
+  if (isJournalActivity(activity)) return false;
   if (track === "verified") return isVerifiedActivity(activity);
   return true;
 }
@@ -99,16 +50,12 @@ export function sameWorkout(left: Activity, right: Activity): boolean {
 }
 
 function prefer(left: Activity, right: Activity): Activity {
-  const leftRank = PRECEDENCE[provenanceOf(left)];
-  const rightRank = PRECEDENCE[provenanceOf(right)];
+  const leftRank = activityProvenancePrecedence[provenanceOf(left)];
+  const rightRank = activityProvenancePrecedence[provenanceOf(right)];
   if (leftRank !== rightRank) return leftRank > rightRank ? left : right;
   return Date.parse(left.startedAt) <= Date.parse(right.startedAt) ? left : right;
 }
 
-/**
- * Keep one counted row per workout. A weaker copy stays visible as excluded
- * so a second provider does not add the kilometers twice.
- */
 export function mergeActivities(
   existing: Activity[],
   incoming: Activity[],
@@ -177,7 +124,6 @@ export interface TrendPoint {
   value: number;
 }
 
-/** Daily distance (km), moving pace (min/km), and rating after each settled week. */
 export function progressionTrends(
   activities: Activity[],
   sport: SportId,

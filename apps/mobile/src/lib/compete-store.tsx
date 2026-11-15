@@ -755,9 +755,6 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       setFieldNotice(notice);
       if (notice.personal && announcedNotice.current !== notice.title) {
         announcedNotice.current = notice.title;
-        if (canOpenCompeteNotice(pathname)) {
-          router.navigate("/arena");
-        }
       }
     });
     return () => {
@@ -940,7 +937,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       });
       if (JSON.stringify(next) === JSON.stringify(before)) return;
       dirtyRef.current += 1;
-      if (["rename", "set-city", "set-avatar", "opt-in", "opt-in-health", "opt-out", "opt-out-health", "log-manual", "complete-onboarding", "freeze", "unfreeze"].includes(action.type)) {
+      if (["rename", "set-city", "set-gender", "set-country", "set-avatar", "opt-in", "opt-in-health", "opt-out", "opt-out-health", "log-manual", "complete-onboarding", "freeze", "unfreeze"].includes(action.type)) {
         if (!authRef.current.offlineMode && id) pendingFeedback.current = { account: id, generation: dirtyRef.current };
         else void playCue("light");
       }

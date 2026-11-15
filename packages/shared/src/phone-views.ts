@@ -315,6 +315,7 @@ export function buildArenaModel(
     period.endsAt,
     track,
     now,
+    state.dailyHealth,
   );
   const board = optedIn ? weeklyBoard(state, sport, track, now) : [];
   const enrollment = state.enrollments.find(item => item.sport === sport);
@@ -353,6 +354,7 @@ export function buildArenaModel(
 
   const ghost = resolvePastSelfGhost({
     activities: state.activities,
+    dailyHealth: state.dailyHealth,
     sport,
     track,
     currentStart: period.startsAt,

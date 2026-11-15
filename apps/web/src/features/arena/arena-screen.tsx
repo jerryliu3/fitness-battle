@@ -50,6 +50,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const [courseOptions, setCourseOptions] = useState<ReactNode>(null);
   const [expandRequest, setExpandRequest] = useState(0);
   const immersive = immersiveAccount === (user?.id ?? "guest") && tabActive;
+  const dismissImmersive = () => setImmersiveAccount(null);
   useEffect(() => { if (!tabActive) setImmersiveAccount(null); }, [tabActive]);
   const [authOpen, setAuthOpen] = useState(false);
   const [registrationBackground, setRegistrationBackground] = useState<{ account: string; state: CompeteState } | null>(null);

@@ -1,4 +1,5 @@
 import { competeNow, fieldBoardForEnrollment, formatVolume, weeklyBoard } from "./engine";
+import { sportCountsGps } from "./activity-meta";
 import type { CompeteState, SportId, UnitSystem } from "./sports";
 
 export interface SeenRival {
@@ -41,21 +42,23 @@ export function seenFieldFromState(
   const board = weeklyBoard(state, sport, "open", now);
   const you = board.find((row) => row.you);
   if (!you) return null;
-  const pin = fieldBoardForEnrollment(state, enrollment);
-  const rivals = (pin?.members ?? [])
-    .filter((member) => member.id !== accountKey)
-    .map((member) => ({
-      id: member.id,
-      name: member.name,
-      distanceM: member.distanceM ?? 0,
-      movingSec: member.movingSec ?? 0,
+  const gps = sportCountsGps(sport);
+  const boardVolume = (row: { distanceM: number; effort: number }) =>
+    gps ? row.distanceM : row.effort;
+  const rivals = board
+    .filter((row) => !row.you)
+    .map((row) => ({
+      id: row.id,
+      name: row.name,
+      distanceM: boardVolume(row),
+      movingSec: row.movingSec,
     }));
   return {
     version: 1,
     accountKey,
     sport,
     periodStart: enrollment.waveStart,
-    youDistanceM: you.distanceM,
+    youDistanceM: boardVolume(you),
     youMovingSec: you.movingSec,
     youPlace: you.place,
     units: state.units,
@@ -80,11 +83,17 @@ function gained(before: number, after: number): boolean {
 
 function volumeGain(
   sport: SportId,
-  distanceM: number,
+  volumeDelta: number,
   movingSec: number,
   units: UnitSystem,
 ): string {
-  return formatVolume(sport, Math.max(0, distanceM), Math.max(0, movingSec), units);
+  if (sport === "walking") {
+    return formatVolume(sport, 0, 0, units, Math.max(0, volumeDelta));
+  }
+  if (!sportCountsGps(sport)) {
+    return formatVolume(sport, 0, Math.max(0, movingSec), units, Math.max(0, volumeDelta));
+  }
+  return formatVolume(sport, Math.max(0, volumeDelta), Math.max(0, movingSec), units);
 }
 
 /**

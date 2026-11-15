@@ -32,9 +32,17 @@ export {
   type ProviderLink,
   type PeriodResult,
   type UnitSystem,
+  type ProfileGender,
   competitionTrack,
   competitionTrackLabel,
 } from "./sports";
+export {
+  countsForTraining,
+  formatWalkingSteps,
+  isJournalActivity,
+  maxStepsOnDay,
+  walkingStepsInPeriod,
+} from "./journal";
 export {
   settleSleepWeeks,
   HEALTH_METRIC_IDS,

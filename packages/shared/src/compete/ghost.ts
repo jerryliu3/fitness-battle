@@ -1,5 +1,6 @@
 import { APP_TIMEZONE } from "../period";
 import type { PeriodKind } from "../types";
+import type { DailyHealthSample } from "../fitness/types";
 import { periodEffort } from "./effort";
 import type { Activity, ScoreTrack, SportId } from "./sports";
 import {
@@ -175,6 +176,7 @@ export function ghostEffortAt(
 
 export interface ResolvePastSelfGhostInput {
   activities: Activity[];
+  dailyHealth?: DailyHealthSample[];
   sport: SportId;
   track: ScoreTrack;
   currentStart: Date;
@@ -206,6 +208,7 @@ export function resolvePastSelfGhost(
     startsAt,
     endsAt,
     input.track,
+    { dailyHealth: input.dailyHealth },
   );
 
   const series =

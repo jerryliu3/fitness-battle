@@ -1,5 +1,6 @@
 import { recordedSleep } from "./sleep";
 import type { ActivitySample, ReadinessSample } from "../types";
+import { journalSampleFromUnmapped } from "./journal-sample";
 import { mapSportToCategory } from "./strava-provider";
 import type { FitnessHttp } from "./http";
 import { readJson } from "./http";
@@ -60,11 +61,22 @@ async function paged<T>(
 
 export function mapWhoopWorkout(raw: WhoopWorkout): ActivitySample | null {
   const sport = mapSportToCategory(raw.sport_name ?? "");
-  if (!sport || !raw.id || !raw.start) return null;
+  if (!raw.id || !raw.start) return null;
   const start = new Date(raw.start);
   const end = raw.end ? new Date(raw.end) : start;
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
   const movingSec = Math.max(0, Math.round((end.getTime() - start.getTime()) / 1000));
+  if (!sport) {
+    return journalSampleFromUnmapped({
+      id: `whoop-${raw.id}`,
+      provider: "whoop",
+      externalId: String(raw.id),
+      startedAt: start.toISOString(),
+      movingSec,
+      rawName: raw.sport_name ?? "Workout",
+      avgHr: raw.score?.average_heart_rate ?? null,
+    });
+  }
   const distance = raw.score?.distance_meter ?? 0;
   const gps = sport !== "strength";
   return {

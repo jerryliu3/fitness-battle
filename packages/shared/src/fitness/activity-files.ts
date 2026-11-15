@@ -1,6 +1,7 @@
 import { normalizeRouteReplay } from "../route-replay";
 import type { ActivitySample, CategorySlug, FitnessProviderId } from "../types";
 import { calculateRouteBounds, encodePolyline, simplifyCoordinates, type LngLat } from "../routeGeoUtils";
+import { journalSampleFromUnmapped } from "./journal-sample";
 import { mapSportToCategory } from "./strava-provider";
 
 const FIT_EPOCH_MS = Date.UTC(1989, 11, 31);
@@ -139,7 +140,7 @@ export function parseGpx(xml: string, provider: FitnessProviderId): ActivitySamp
   for (const chunk of chunks) {
     const name = tagText(chunk, "name") ?? "GPX activity";
     const type = tagText(chunk, "type") ?? name;
-    const sport = mapSportToCategory(type) ?? "running";
+    const slug = mapSportToCategory(type);
     const points: TrackPoint[] = [];
     const pattern = /<trkpt\b([^>]*?)(?:\/\s*>|>([\s\S]*?)<\/trkpt>)/gi;
     let match: RegExpExecArray | null;
@@ -149,14 +150,32 @@ export function parseGpx(xml: string, provider: FitnessProviderId): ActivitySamp
       const lon = /lon=["']([^"']+)["']/i.exec(attrs)?.[1];
       if (!lat || !lon) continue;
       points.push({
-        ...pointMetrics(match[2] ?? "", sport),
+        ...pointMetrics(match[2] ?? "", slug ?? "strength"),
         lat: Number(lat),
         lon: Number(lon),
         time: tagText(match[2] ?? "", "time") ?? undefined,
         elevation: tagText(match[2] ?? "", "ele") == null ? undefined : Number(tagText(match[2] ?? "", "ele")),
       });
     }
-    const sample = summarizeTrack(points, sport, name, provider);
+    if (!slug) {
+      const base = summarizeTrack(points, "strength", name, provider);
+      if (!base) continue;
+      activities.push(
+        journalSampleFromUnmapped({
+          id: base.id,
+          provider,
+          externalId: base.externalId,
+          startedAt: base.startedAt,
+          movingSec: base.movingSec ?? 0,
+          rawName: name,
+          summaryPolyline: base.summaryPolyline,
+          detailedPolyline: base.detailedPolyline,
+          elevationGainM: base.elevationGainM,
+        }),
+      );
+      continue;
+    }
+    const sample = summarizeTrack(points, slug, name, provider);
     if (sample) activities.push(sample);
   }
   return activities;
@@ -168,7 +187,6 @@ export function parseTcx(xml: string, provider: FitnessProviderId): ActivitySamp
   for (const block of blocks) {
     const sportAttr = /Sport="([^"]+)"/i.exec(block)?.[1] ?? "";
     const sport = mapSportToCategory(sportAttr);
-    if (!sport) continue;
     const startedAt = tagText(block, "Id") ?? "";
     const lapDistance = [...block.matchAll(/<DistanceMeters>([^<]+)<\/DistanceMeters>/gi)]
       .reduce((sum, item) => sum + Number(item[1] ?? 0), 0);
@@ -185,6 +203,20 @@ export function parseTcx(xml: string, provider: FitnessProviderId): ActivitySamp
     const movingSec = Math.max(0, Math.round(lapSeconds));
     const distance = Math.max(0, Math.round(lapDistance));
     const externalId = `file-${start.toISOString()}:${distance}:${movingSec}`;
+    if (!sport) {
+      activities.push(
+        journalSampleFromUnmapped({
+          id: `${provider}-${externalId}`,
+          provider,
+          externalId,
+          startedAt: start.toISOString(),
+          movingSec,
+          rawName: sportAttr || "Workout",
+          avgHr,
+        }),
+      );
+      continue;
+    }
     const gps = sport !== "strength";
     const points: TrackPoint[] = [...block.matchAll(/<Trackpoint\b[^>]*>([\s\S]*?)<\/Trackpoint>/gi)].flatMap(match => {
       const lat = tagText(match[1], "LatitudeDegrees"), lon = tagText(match[1], "LongitudeDegrees");

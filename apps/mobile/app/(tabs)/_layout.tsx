@@ -9,7 +9,8 @@ import { useThemeColors } from "../../src/theme";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { Animated, Easing, Platform, View, useWindowDimensions } from "react-native";
 import { useOnboardingRequired } from "../../src/lib/onboarding-navigation";
-import { Redirect } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
+import { shellTabFromPath, type ShellTabId } from "@fitness-battle/shared";
 import { Tabs } from "expo-router";
 import { PhoneTabBar } from "../../src/ui/phone-tab-bar";
 
@@ -18,6 +19,12 @@ export default function TabLayout() {
   const { mode } = useAppTheme();
   const SHELL_COLORS = useThemeColors();
   const pathname = usePathname();
+  const router = useRouter();
+  const competeOrigin = useRef<ShellTabId>("today");
+  useEffect(() => {
+    const tab = shellTabFromPath(pathname);
+    if (tab?.id && tab.id !== "arena") competeOrigin.current = tab.id;
+  }, [pathname]);
   const compete = pathname.endsWith("/arena");
   const [event, setEvent] = useState<{ account: string; sport: CompeteEvent } | null>(null);
   const [immersive, setImmersive] = useState(false);
@@ -26,7 +33,11 @@ export default function TabLayout() {
   const reduced = useReducedMotion();
   const slide = useRef(new Animated.Value(width)).current;
   useEffect(() => { Animated.timing(slide, { toValue: immersive && compete ? 0 : width, duration: reduced ? 0 : 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(); return () => slide.stopAnimation(); }, [immersive, compete, width, reduced, slide]);
-  const closeEvent = () => Animated.timing(slide, { toValue: width, duration: reduced ? 0 : 280, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(({ finished }) => { if (finished) setImmersive(false); });
+  const closeEvent = () => Animated.timing(slide, { toValue: width, duration: reduced ? 0 : 280, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(({ finished }) => {
+    if (!finished) return;
+    setImmersive(false);
+    if (competeOrigin.current !== "arena") router.navigate(`/${competeOrigin.current}`);
+  });
   const experience = { event, immersive: immersive && compete, enter: (account: string, sport: CompeteEvent) => { setEvent({ account, sport }); setImmersive(true); }, close: closeEvent };
   const host = <Animated.View pointerEvents={experience.immersive ? "auto" : "none"} accessibilityElementsHidden={!experience.immersive} importantForAccessibility={experience.immersive ? "auto" : "no-hide-descendants"} style={{ position: "absolute", inset: 0, transform: [{ translateX: slide }], zIndex: 100 }}><ArenaScreen persistent /></Animated.View>;
   const { pending, required } = useOnboardingRequired();

@@ -1,4 +1,4 @@
-import { countsOnTrack } from "./compete/ledger";
+import { countsForTraining } from "./compete/journal";
 import { competeNow } from "./compete/engine";
 import type { CompeteState } from "./compete/sports";
 import { APP_TIMEZONE, dayKey, shiftAppDay, startOfZonedDay, weeklyPeriodBounds } from "./period";
@@ -134,7 +134,7 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
   const clampedStart = earliest && earliest.getTime() > start.getTime() && (range === "fourWeeks" || Boolean(createdAt))
     ? startOfZonedDay(earliest)
     : start;
-  const eligible = state.activities.filter(activity => countsOnTrack(activity, "open") && Date.parse(activity.startedAt) <= now.getTime());
+  const eligible = state.activities.filter(activity => countsForTraining(activity) && Date.parse(activity.startedAt) <= now.getTime());
   const byDay = new Map<string, number>();
   for (const activity of eligible) {
     const key = dayKey(new Date(activity.startedAt));

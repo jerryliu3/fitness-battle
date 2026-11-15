@@ -70,7 +70,7 @@ export function ExploreEvents({ onChoose, state }: { onChoose(event: CompeteEven
   return <section className="compete-home-section" aria-label="Event registration">
     <AppHeading>Event registration</AppHeading>
     {categories.map(category => <div key={category.id} className="compete-category">
-      <div className="compete-section-heading"><div><CompeteIcon name={category.id === "recovery" ? "recovery" : category.id} size={22} /><AppHeading role="label" level={3}>{category.title}</AppHeading></div></div>
+      <div className="compete-section-heading"><div><CompeteIcon name={category.id} size={22} /><AppHeading role="label" level={3}>{category.title}</AppHeading></div></div>
       <div className={`compete-carousel compete-sports is-${category.id}`} tabIndex={0} aria-label={`${category.title} events carousel`}>
         {category.events.map(event => <button type="button" key={event} className="compete-sport-card" style={{ "--event-tint": COMPETE_ART_COLORS[event] } as CSSProperties} onClick={() => onChoose(event)}><EventArt event={event} /><CompeteIcon name={event} size={28} /><AppText role="label">{event[0].toUpperCase() + event.slice(1)}</AppText></button>)}
       </div>

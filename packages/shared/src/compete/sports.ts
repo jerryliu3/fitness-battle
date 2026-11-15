@@ -50,9 +50,8 @@ export const SPORTS: Sport[] = [
   {
     id: "walking",
     name: "Walking",
-    gps: true,
-    blurb: "Time on your feet, counted as distance.",
-    basePaceMinPerKm: 12.0,
+    gps: false,
+    blurb: "Weekly step totals from your connected tracker — not GPS walk distance.",
   },
   {
     id: "strength",
@@ -177,6 +176,8 @@ export interface Activity {
   /** counted | pending | excluded. Missing means counted. */
   disposition?: "counted" | "pending" | "excluded";
   dispositionReason?: string;
+  /** Unsupported / unmapped tracker workouts scored as journal sessions only. */
+  journalOnly?: boolean;
 }
 
 export interface ReadinessMark {
@@ -241,6 +242,8 @@ export interface PeriodResult {
 /** Display preference for distance. Default US customary (miles). */
 export type UnitSystem = "us" | "metric";
 
+export type ProfileGender = "male" | "female" | "other";
+
 export interface EffortScoreEvent {
   id: string;
   sport: SportId;
@@ -262,6 +265,8 @@ export interface CompeteState {
   version: 1;
   name: string;
   city: string;
+  gender?: ProfileGender | null;
+  countryCode?: string | null;
   avatarUrl?: string | null;
   /** Explicit preferred laurel rank symbol; falls back to current effort score band when omitted. */
   rankSymbol?: RankSymbolId | null;

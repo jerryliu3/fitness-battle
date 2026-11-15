@@ -104,6 +104,8 @@ export interface ActivitySample {
   elevationGainM?: number | null;
   /** Bounding box [minLng, minLat, maxLng, maxLat]. */
   routeBounds?: [number, number, number, number] | null;
+  /** Unsupported tracker sport: training log only, never field scoring. */
+  journalOnly?: boolean;
 }
 
 /** Daily recovery or sleep score from a readiness provider. */

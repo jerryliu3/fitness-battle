@@ -12,11 +12,22 @@ const joined = () =>
   });
 const log = (s: ReturnType<typeof joined>) =>
   reduceCompete(s, {
-    type: "log-manual",
-    sport: "running",
-    distanceM: 16093.44,
-    movingSec: 3600,
-    activityId: "manual-test",
+    type: "apply-sync",
+    provider: "garmin",
+    activities: [
+      {
+        id: "strava-milestone",
+        sport: "running",
+        startedAt: now.toISOString(),
+        distanceM: 16093.44,
+        movingSec: 3600,
+        avgHr: 140,
+        source: "garmin",
+        provenance: "imported",
+        verified: false,
+        disposition: "counted",
+      },
+    ],
     now: now.toISOString(),
   });
 describe("activity score growth", () => {
@@ -25,6 +36,7 @@ describe("activity score growth", () => {
     expect(milestoneStep("running", 2000)).toBe(8046.72);
     expect(milestoneStep("cycling", 500)).toBe(8046.72);
     expect(milestoneStep("strength", 500)).toBe(1800);
+    expect(milestoneStep("walking", 500)).toBe(1000);
   });
   it("awards immediately once, only on the eligible track", () => {
     const start = joined(),
@@ -38,13 +50,13 @@ describe("activity score growth", () => {
     const next = log(joined());
     const excluded = reduceCompete(next, {
       type: "set-disposition",
-      activityId: "manual-test",
+      activityId: "strava-milestone",
       disposition: "excluded",
       now: now.toISOString(),
     });
     const counted = reduceCompete(JSON.parse(JSON.stringify(excluded)), {
       type: "set-disposition",
-      activityId: "manual-test",
+      activityId: "strava-milestone",
       disposition: "counted",
       now: now.toISOString(),
     });
