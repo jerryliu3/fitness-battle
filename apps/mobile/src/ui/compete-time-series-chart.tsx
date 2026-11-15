@@ -94,7 +94,7 @@ export function CompeteTimeSeriesChart({
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
   );
-  const [internalView, setInternalView] = useState<CompeteTimeSeriesView>("trajectory");
+  const [internalView, setInternalView] = useState<CompeteTimeSeriesView>("event");
   const activeView = view ?? internalView;
   const setActiveView = onViewChange ?? setInternalView;
   const [internalFraction, setInternalFraction] = useState<number | null>(null);

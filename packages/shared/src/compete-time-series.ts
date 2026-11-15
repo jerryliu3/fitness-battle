@@ -39,6 +39,7 @@ export interface RawAthleteTimeSeries {
   you: boolean;
   currentValue: number;
   vertices: CompeteTimeSeriesVertex[];
+  eventVertices?: CompeteTimeSeriesVertex[];
   historyAvailable?: boolean;
 }
 
@@ -158,9 +159,9 @@ export interface CompeteTimeSeriesOptions {
 
 const CHART_WIDTH = 342;
 const CHART_HEIGHT = 204;
-const PLOT_LEFT = 34;
-const PLOT_RIGHT = 330;
-const PLOT_TOP = 20;
+const PLOT_LEFT = 26;
+const PLOT_RIGHT = 336;
+const PLOT_TOP = 14;
 
 function firstNameOf(name: string, you: boolean): string {
   if (you) return selfLaneLabel(name);
@@ -317,12 +318,12 @@ function prepareTimeSeriesBase(input: {
   rawAthletes: RawAthleteTimeSeries[];
   view?: CompeteTimeSeriesView;
 }): CompeteTimeSeriesPreparedBase {
-  const view: CompeteTimeSeriesView = input.view === "event" ? "event" : "trajectory";
+  const view: CompeteTimeSeriesView = input.view === "trajectory" ? "trajectory" : "event";
   const resolvedAthletes =
     view === "event"
       ? input.rawAthletes.map((a) => ({
           ...a,
-          vertices: toStepVertices(a.vertices),
+          vertices: a.eventVertices ?? toStepVertices(a.vertices),
         }))
       : input.rawAthletes;
   const startMs = input.periodStart.getTime();
@@ -618,6 +619,70 @@ function buildYouVertices(
   return vertices;
 }
 
+function buildYouRampVertices(
+  state: CompeteState,
+  sport: SportId,
+  track: ScoreTrack,
+  periodStart: Date,
+  periodEnd: Date,
+  clampedNowMs: number,
+  nowFraction: number,
+  liveValue: number,
+): CompeteTimeSeriesVertex[] {
+  const spec = sportById(sport);
+  const divisor = state.units === "metric" ? 1000 : 1609.344;
+  const startMs = periodStart.getTime();
+  const endMs = periodEnd.getTime();
+  const spanMs = Math.max(1, endMs - startMs);
+  const enrollment = state.enrollments.find((e) => e.sport === sport);
+  const sourceActivities = enrollment?.scoringActivities ?? state.activities;
+
+  const ramps: { t0: number; t1: number; delta: number }[] = [];
+  const boundaries = new Set<number>([0]);
+  if (nowFraction > 0) boundaries.add(nowFraction);
+
+  for (const act of sourceActivities) {
+    if (act.sport !== sport || !countsOnTrack(act, track)) continue;
+    const actStartMs = Date.parse(act.startedAt);
+    if (!Number.isFinite(actStartMs) || actStartMs >= endMs || actStartMs > clampedNowMs || actStartMs < startMs) {
+      continue;
+    }
+    const delta = spec.gps ? act.distanceM / divisor : act.movingSec / 3600;
+    if (delta <= 0) continue;
+    const durationMs = Math.max(0, act.movingSec) * 1000;
+    const t0 = clamp(0, nowFraction, (actStartMs - startMs) / spanMs);
+    const t1 = clamp(t0, nowFraction, (actStartMs + durationMs - startMs) / spanMs);
+    ramps.push({ t0, t1, delta });
+    boundaries.add(t0);
+    boundaries.add(t1);
+  }
+
+  const sortedT = [...boundaries].sort((a, b) => a - b);
+  const vertices: CompeteTimeSeriesVertex[] = [];
+  for (const t of sortedT) {
+    let val = 0;
+    for (const r of ramps) {
+      if (t <= r.t0) continue;
+      if (t >= r.t1 || r.t1 <= r.t0 + 1e-9) {
+        val += r.delta;
+      } else {
+        val += r.delta * ((t - r.t0) / (r.t1 - r.t0));
+      }
+    }
+    const prev = vertices[vertices.length - 1];
+    if (prev && Math.abs(t - prev.t) <= 1e-9) {
+      prev.value = val;
+    } else {
+      vertices.push({ t, value: val });
+    }
+  }
+
+  if (nowFraction > 0 && vertices.length > 0) {
+    vertices[vertices.length - 1]!.value = liveValue;
+  }
+  return vertices;
+}
+
 function buildCompetitorVertices(
   athleteId: string,
   sport: SportId,
@@ -737,6 +802,18 @@ export function prepareCompeteTimeSeriesBase(
           nowFraction,
           liveValue,
         );
+    const eventVertices = row.you
+      ? buildYouRampVertices(
+          state,
+          sport,
+          track,
+          period.startsAt,
+          period.endsAt,
+          clampedNowMs,
+          nowFraction,
+          liveValue,
+        )
+      : undefined;
     const avatarUrl = row.you
       ? state.avatarUrl
       : enrollment?.fieldBoard?.members.find((m) => m.id === row.id)?.avatarUrl;
@@ -748,6 +825,7 @@ export function prepareCompeteTimeSeriesBase(
       currentValue: liveValue,
       historyAvailable: row.you || Boolean(findSynthetic(sport, row.id)),
       vertices,
+      eventVertices,
     };
   });
 

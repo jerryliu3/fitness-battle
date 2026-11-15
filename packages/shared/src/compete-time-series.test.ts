@@ -204,7 +204,7 @@ it("connects recorded activity with diagonal lines, without vertical step jumps"
   const now = new Date("2026-10-22T18:00:00Z");
   let state = reduceCompete(freshState(new Date("2026-10-19T09:00:00Z")), { type: "opt-in", sport: "strength", now: "2026-10-19T09:00:00Z" });
   state = reduceCompete(state, { type: "log-manual", sport: "strength", activityId: "lift", movingSec: 3600, distanceM: 0, startedAt: "2026-10-22T14:00:00Z", now: now.toISOString() });
-  const model = buildCompeteTimeSeriesModel(state, "strength", "open", now);
+  const model = buildCompeteTimeSeriesModel(state, "strength", "open", now, { view: "trajectory" });
   const vertices = model.selectedAthlete.vertices;
   expect(vertices.length).toBeGreaterThanOrEqual(2);
   const last = vertices[vertices.length - 1]!;
@@ -255,13 +255,11 @@ it("uses step functions and computes overtakes on event completion in event view
   expect(trajectory.view).toBe("trajectory");
   expect(trajectory.overtakes).toEqual([]);
 
-  const eventModel = buildCompeteTimeSeriesModel(state, "strength", "open", now, { view: "event" });
+  const eventModel = buildCompeteTimeSeriesModel(state, "strength", "open", now);
   expect(eventModel.view).toBe("event");
   const vertices = eventModel.selectedAthlete.vertices;
   expect(eventModel.selectedAthlete.currentValue).toBeGreaterThan(0);
-  const verticalJump = vertices.findIndex((v, i) => i > 0 && v.t === vertices[i - 1]!.t && v.value > vertices[i - 1]!.value);
-  expect(verticalJump).toBeGreaterThan(0);
+  const rampStartIdx = vertices.findIndex((v, i) => i > 0 && v.value === 0 && vertices[i + 1] && vertices[i + 1]!.value > 0 && vertices[i + 1]!.t > v.t);
+  expect(rampStartIdx).toBeGreaterThanOrEqual(0);
   expect(eventModel.overtakes.length, JSON.stringify({ overtakes: eventModel.overtakes, athletes: eventModel.athletes.map(a => ({ id: a.id, v: a.currentValue, pts: a.vertices })) })).toBeGreaterThan(0);
-  // Before the vertical jump, value holds steady at the previous level (0 here)
-  expect(vertices[verticalJump - 1]!.value).toBe(0);
 });

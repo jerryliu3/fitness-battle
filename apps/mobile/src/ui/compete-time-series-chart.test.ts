@@ -119,5 +119,5 @@ it("renders the streamlined athlete header in immersive mode and switches betwee
   });
 
   const eventLines = renderer.root.findAllByType("Polyline" as never).map((n) => String(n.props.points));
-  expect(eventLines.some(hasVerticalJump)).toBe(true);
+  expect(eventLines).not.toEqual(trajectoryLines);
 });
