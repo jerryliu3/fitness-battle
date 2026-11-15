@@ -25,6 +25,35 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (loaded) void AsyncStorage.setItem(preferenceKey, preference).catch(() => {}); }, [loaded, preference]);
   return createElement(ThemeContext.Provider, { value: { preference, mode, colors: getAppColors(mode), setPreference: value => { changed.current = true; setPreference(value); } } }, children);
 }
+export function ScopedThemeProvider({
+  mode,
+  onChangeMode,
+  children,
+}: {
+  mode: "light" | "dark";
+  onChangeMode?: (mode: "light" | "dark") => void;
+  children: ReactNode;
+}) {
+  const parent = useAppTheme();
+  return createElement(
+    ThemeContext.Provider,
+    {
+      value: {
+        preference: mode,
+        mode,
+        colors: getAppColors(mode),
+        setPreference: (value) => {
+          if (onChangeMode) {
+            onChangeMode(value === "dark" ? "dark" : "light");
+          } else {
+            parent.setPreference(value);
+          }
+        },
+      },
+    },
+    children,
+  );
+}
 export function useAppTheme() { return useContext(ThemeContext); }
 export function useThemeColors() { return useAppTheme().colors; }
 type NamedStyles<T> = { [P in keyof T]: ViewStyle | TextStyle | ImageStyle };

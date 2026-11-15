@@ -11,7 +11,8 @@ import { EventHome, CoursePreview } from "../../src/features/event-home";
 import { CompeteIcon, CrewEvents, ExploreEvents, CompeteResults } from "../../src/features/compete-home-sections";
 import { CompeteSheet } from "../../src/ui/compete-sheet";
 import { SectionStack, AppText } from "../../src/ui/section";
-import { APP_TIMEZONE, competePeriodWindow, weeklyCompetitionLastDay, weeklyPeriodBounds, competitionQueue, competeNow, competitionTrack, eventRegistration, type CompeteState, type CrewBoardPin, type CompeteEvent } from "@fitness-battle/shared";
+import { APP_TIMEZONE, competePeriodWindow, weeklyCompetitionLastDay, weeklyPeriodBounds, competitionQueue, competeNow, competitionTrack, eventRegistration, getAppColors, type CompeteState, type CrewBoardPin, type CompeteEvent } from "@fitness-battle/shared";
+import { ScopedThemeProvider, useAppTheme } from "../../src/appearance";
 import { useThemeColors } from "../../src/theme";
 import { useFocusStyles } from "../../src/ui/focus";
 import {
@@ -118,7 +119,15 @@ const f=useFocusStyles();
   const queued = Boolean(queue?.queued || queue?.awaitingField);
   const detailDestination = queued && (selectedSport === "sleep" || selectedSport === "strength");
   const pointsEvent = selectedSport === "sleep" || selectedSport === "strength";
-  const [pointsView, setPointsView] = useState<"trajectory" | "event">("trajectory");
+  const [pointsView, setPointsView] = useState<"trajectory" | "event">("event");
+  const { mode: appMode } = useAppTheme();
+  const [pointsThemeOverride, setPointsThemeOverride] = useState<"light" | "dark" | null>(null);
+  useEffect(() => {
+    if (!experience.immersive) setPointsThemeOverride(null);
+  }, [experience.immersive, selectedSport]);
+  const scopedPointsTheme = persistent && pointsEvent && !queued;
+  const pointsMode = pointsThemeOverride ?? appMode;
+  const pointsPaper = scopedPointsTheme ? getAppColors(pointsMode).paper : c.paper;
   const track = competitionTrack(selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary);
   function openRegistration(event: CompeteEvent | null = null) {
     if (!state) return;
@@ -157,11 +166,10 @@ const f=useFocusStyles();
   }
 
 
-  return (
-    <CompetitionTimelineProvider state={state} selection={{ sport: selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary, track, periodStart: headerPeriod.startsAt.toISOString(), periodEnd: headerPeriod.endsAt.toISOString() }} enabled={persistent && Boolean(selectedSport) && !pointsEvent && !queued} active={focused && experience.immersive && !detailDestination}>
+  const content = (
     <SafeAreaView pointerEvents={persistent ? "box-none" : "auto"} style={[f.safe, persistent && { backgroundColor: "transparent" }]} edges={persistent ? [] : ["top"]}>
       {persistent && selectedSport && !pointsEvent ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}`} sport={selectedSport} track={track} persistent backgroundMode externalAthleteFocus={athleteFocus} onOptionsChange={setCourseOptions} presentationActive={experience.immersive} onExit={exit} /> : null}
-      {persistent && selectedSport && pointsEvent && !queued && <View style={{ flex: 1, backgroundColor: c.paper }}><CompeteTimeSeriesChart state={state} sport={selectedSport === "sleep" ? undefined : selectedSport} mode={selectedSport === "sleep" ? "sleep" : "sport"} track={track} selectedId={athleteFocus?.id} active={focused && experience.immersive} immersive topInset={insets.top} bottomInset={insets.bottom} view={pointsView} onViewChange={setPointsView} timelineFraction={pointsFraction} onTimelineChange={setPointsFraction} /><View style={{ position: "absolute", top: insets.top + 6, left: 12 }}><MaterialBack onPress={exit} /></View><View style={{ position: "absolute", top: insets.top + 6, right: 12, zIndex: 20 }}><GraphOptions eventView={pointsView === "event"} onToggleEventView={() => setPointsView((prev) => (prev === "event" ? "trajectory" : "event"))} /></View></View>}
+      {persistent && selectedSport && pointsEvent && !queued && <View style={{ flex: 1, backgroundColor: pointsPaper }}><CompeteTimeSeriesChart state={state} sport={selectedSport === "sleep" ? undefined : selectedSport} mode={selectedSport === "sleep" ? "sleep" : "sport"} track={track} selectedId={athleteFocus?.id} active={focused && experience.immersive} immersive topInset={insets.top} bottomInset={insets.bottom} view={pointsView} onViewChange={setPointsView} timelineFraction={pointsFraction} onTimelineChange={setPointsFraction} /><View style={{ position: "absolute", top: insets.top + 6, left: 12 }}><MaterialBack onPress={exit} /></View><View style={{ position: "absolute", top: insets.top + 6, right: 12, zIndex: 20 }}><GraphOptions eventView={pointsView === "event"} onToggleEventView={() => setPointsView((prev) => (prev === "event" ? "trajectory" : "event"))} /></View></View>}
       {persistent && experience.immersive && selectedSport && detailDestination && <SafeAreaView style={{ position: "absolute", inset: 0, backgroundColor: c.paper, zIndex: 40 }} edges={["top", "bottom"]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingHorizontal: 16, paddingVertical: 8 }}><MaterialBack onPress={exit} /><AppText role="heading" accessibilityRole="header">{selectedSport === "sleep" ? "Recovery" : `${SPORTS.find(item => item.id === selectedSport)?.name} meet`}</AppText></View>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, gap: 20 }}>
@@ -206,6 +214,14 @@ const f=useFocusStyles();
         </View>}
       </FocusSheet>
     </SafeAreaView>
+  );
+  return (
+    <CompetitionTimelineProvider state={state} selection={{ sport: selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary, track, periodStart: headerPeriod.startsAt.toISOString(), periodEnd: headerPeriod.endsAt.toISOString() }} enabled={persistent && Boolean(selectedSport) && !pointsEvent && !queued} active={focused && experience.immersive && !detailDestination}>
+      {scopedPointsTheme ? (
+        <ScopedThemeProvider mode={pointsMode} onChangeMode={setPointsThemeOverride}>
+          {content}
+        </ScopedThemeProvider>
+      ) : content}
     </CompetitionTimelineProvider>
   );
 }
