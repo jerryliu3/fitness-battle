@@ -196,12 +196,12 @@ const styles=useThemedStyles(stylesThemes);
 
   const draftName = name ?? state.name;
   const draftCity = city ?? state.city;
-  const draftGender = genderDraft ?? state.gender ?? "";
+  const draftGender = genderDraft ?? state.gender ?? null;
   const draftCountry = countryDraft ?? state.countryCode ?? "";
   const dirty =
     draftName !== state.name ||
     draftCity !== state.city ||
-    draftGender !== (state.gender ?? "") ||
+    draftGender !== (state.gender ?? null) ||
     draftCountry !== (state.countryCode ?? "");
   const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
 
@@ -655,7 +655,7 @@ const styles=useThemedStyles(stylesThemes);
                   { value: "other", label: "Other" },
                 ]}
                 onChange={(value) =>
-                  setGenderDraft(value === "unset" ? "" : (value as ProfileGender))
+                  setGenderDraft(value === "unset" ? null : (value as ProfileGender))
                 }
               />
               <SearchableCountryPicker
@@ -679,8 +679,8 @@ const styles=useThemedStyles(stylesThemes);
                     if (cityTrimmed !== state.city) {
                       dispatch({ type: "set-city", city: cityTrimmed });
                     }
-                    if (draftGender !== (state.gender ?? "")) {
-                      dispatch({ type: "set-gender", gender: draftGender || null });
+                    if (draftGender !== (state.gender ?? null)) {
+                      dispatch({ type: "set-gender", gender: draftGender });
                     }
                     if (draftCountry !== (state.countryCode ?? "")) {
                       dispatch({ type: "set-country", countryCode: draftCountry || null });
@@ -1004,7 +1004,7 @@ const styles=useThemedStyles(stylesThemes);
               { value: "other", label: "Other" },
             ]}
             onChange={(value) =>
-              setGenderDraft(value === "unset" ? "" : (value as ProfileGender))
+              setGenderDraft(value === "unset" ? null : (value as ProfileGender))
             }
           />
           <SearchableCountryPicker label="Country" value={draftCountry} onChange={(code) => setCountryDraft(code)} />
@@ -1025,8 +1025,8 @@ const styles=useThemedStyles(stylesThemes);
               if (cityTrimmed !== state.city) {
                 dispatch({ type: "set-city", city: cityTrimmed });
               }
-              if (draftGender !== (state.gender ?? "")) {
-                dispatch({ type: "set-gender", gender: draftGender || null });
+              if (draftGender !== (state.gender ?? null)) {
+                dispatch({ type: "set-gender", gender: draftGender });
               }
               if (draftCountry !== (state.countryCode ?? "")) {
                 dispatch({ type: "set-country", countryCode: draftCountry || null });
