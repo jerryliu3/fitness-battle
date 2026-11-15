@@ -1,7 +1,7 @@
 import { formatAppDateTime } from "./period";
 import { activityEffort } from "./compete/effort";
 import { countsOnTrack } from "./compete/ledger";
-import { competeNow } from "./compete/engine";
+import { competeNow, fieldBoardForEnrollment } from "./compete/engine";
 import { sportById, type CompeteState, type ScoreTrack, type SportId, type UnitSystem } from "./compete/sports";
 import { findSynthetic, syntheticVolumeInWindow } from "./matching/synthetic-bank";
 import { fieldDefaultSpan } from "./field-course";
@@ -64,7 +64,19 @@ export function localCompetitionReplay(state: CompeteState, selection: Competiti
   const events = state.activities.filter(a => a.sport === selection.sport && countsOnTrack(a, selection.track) && Date.parse(a.startedAt) >= Date.parse(selection.periodStart) && Date.parse(a.startedAt) < Math.min(Date.parse(selection.periodEnd), Date.parse(through))).map(a => ({
     id: a.id, athleteId: "you", at: a.startedAt, distanceM: a.distanceM, movingSec: a.movingSec, effort: activityEffort(a),
   }));
-  return { ...selection, through, athletes: [{ id: "you", name: state.name, avatarUrl: state.avatarUrl, you: true }], events, scope: "local" };
+  const enrollment = state.enrollments.find(item =>
+    item.sport === selection.sport && Date.parse(item.weekEnd) === Date.parse(selection.periodEnd),
+  );
+  const fieldBoard = enrollment ? fieldBoardForEnrollment(state, enrollment) : null;
+  const syntheticSet = new Set(enrollment?.syntheticIds ?? []);
+  const peerSet = new Set(enrollment?.peerIds ?? []);
+  const seatedPeers: CompetitionReplayAthlete[] =
+    fieldBoard && Date.parse(fieldBoard.waveStart) <= Date.parse(through)
+      ? fieldBoard.members
+          .filter(member => member.id !== "you" && !syntheticSet.has(member.id) && peerSet.has(member.id))
+          .map(member => ({ id: member.id, name: member.name, avatarUrl: member.avatarUrl ?? null, you: false }))
+      : [];
+  return { ...selection, through, athletes: [{ id: "you", name: state.name, avatarUrl: state.avatarUrl, you: true }, ...seatedPeers], events, scope: "local" };
 }
 
 interface AthleteSeries { steps: number[]; values: number[]; efforts: number[] }

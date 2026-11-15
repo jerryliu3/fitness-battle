@@ -16,7 +16,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { freshState } from "@fitness-battle/shared";
 const auth = vi.hoisted(() => ({ user: { id: "athlete", mode: "supabase", dataOrigin: "recorded", displayName: "Athlete", email: "test@example.com" } }));
 vi.mock("@/components/auth-context", () => ({ useAuth: () => ({ user: auth.user, loading: false, offlineMode: false }) }));
-vi.mock("@/lib/compete-demo-seed", () => ({ getDemoCompeteState: () => null }));
 import { CompeteProvider, useCompete } from "./compete-context";
 let renderer: ReactTestRenderer;
 let api: ReturnType<typeof useCompete>;

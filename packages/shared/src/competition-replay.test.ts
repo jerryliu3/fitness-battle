@@ -76,6 +76,35 @@ describe("competition replay presentation ledger", () => {
     expect(replay.athletes).toEqual([expect.objectContaining({ you: true })]);
     expect(replay.events.every(event => !event.simulated)).toBe(true);
   });
+  it("preserves seated fieldBoard peers in local preview without inventing opponent events", () => {
+    const state = freshState(new Date("2026-10-25T14:00:00Z"));
+    state.enrollments = [{
+      sport: "running",
+      waveStart: selection.periodStart,
+      weekEnd: selection.periodEnd,
+      capacity: 8,
+      peerIds: ["peer-1"],
+      syntheticIds: [],
+      autoEnrollNext: true,
+      fieldBoard: {
+        crewId: "solo",
+        crewName: "Open Field",
+        sport: "running",
+        waveStart: selection.periodStart,
+        weekEnd: selection.periodEnd,
+        capacity: 8,
+        memberIds: ["you", "peer-1"],
+        members: [
+          { id: "you", name: "Athlete", elo: 1000, distanceM: 0, movingSec: 0, effort: 0 },
+          { id: "peer-1", name: "Noah Brooks", elo: 1040, distanceM: 3000, movingSec: 900, effort: 3000 },
+        ],
+        syntheticIds: [],
+      },
+    }];
+    const replay = localCompetitionReplay(state, selection);
+    expect(replay.athletes.map(a => a.id)).toEqual(["you", "peer-1"]);
+    expect(replay.events).toEqual([]);
+  });
 });
 
 it("interpolates the displayed clock within an event, including reverse seeking", () => {

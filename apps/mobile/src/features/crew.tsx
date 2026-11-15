@@ -24,7 +24,6 @@ import {
   crewMemberWeekValue,
   crewLineup,
   crewTargetSpec,
-  getDemoCompeteState,
 } from "@fitness-battle/shared";
 import { Chip, ChipRow } from "../ui/chip";
 import { NumberStepper } from "../ui/number-stepper";
@@ -171,13 +170,12 @@ const f=useFocusStyles();
       return () => clearInterval(timer);
     }, [api.reload]),
   );
-  const demoSeed = !api.live && user ? getDemoCompeteState(user.id) ?? (user.email ? getDemoCompeteState(user.email.split("@")[0]) : null) : null;
   const pin =
     state?.crewBoard &&
     state.crewBoard.crewId !== "solo" &&
     !state.crewBoard.crewId.startsWith("field:")
       ? state.crewBoard
-      : demoSeed?.crewBoard ?? null;
+      : null;
   const rawCrews = (api.data?.crews ?? []).flatMap((r) =>
     r.crews ? [r.crews] : [],
   );
