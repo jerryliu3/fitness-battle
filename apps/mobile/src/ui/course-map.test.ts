@@ -44,7 +44,8 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
   expect(renderer.root.findAllByType("ShapeSource" as never).some(node => node.props.id === "course")).toBe(false);
   calls.setCamera.mockClear();
-  await act(async () => renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [.005, 0], zoom: 15, pitch: 30, heading: 20, isUserInteraction: true } } }));
+  const map = renderer.root.findByType("Map" as never);
+  await act(async () => { map.props.onTouchStart(); renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [.005, 0], zoom: 15, pitch: 30, heading: 20, isUserInteraction: true } } }); });
   expect(calls.setCamera).not.toHaveBeenCalled();
   calls.setCamera.mockClear();
   const updated = { ...props, lanes: props.lanes.map(lane => ({ ...lane, value: lane.value + .1 })) };
@@ -159,6 +160,37 @@ it("follows automatic progress along the route and settles on the racer", async 
   }
 });
 
+it("ignores programmatic camera interaction while re-enabling follow but unlocks on real map drag", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const props = {
+    course: createRaceCourse("Street", [[0, 0], [.02, 0]]),
+    lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 0 }],
+    unit: "km",
+    selectedId: "you",
+    focusRequest: 0,
+    onSelect: vi.fn(),
+    onFollowChange: vi.fn(),
+    followAthlete: true,
+    initialFlat: true,
+    mapFollowing: true,
+  };
+  const map = () => renderer.root.findByType("Map" as never);
+  const observer = () => renderer.root.findByType("Observer" as never);
+  const cameraChanged = (patch: object) => observer().props.onCameraChanged({ nativeEvent: { properties: { center: [0, 0], zoom: 16, pitch: 0, heading: 0, isUserInteraction: true, ...patch } } });
+  await act(async () => { renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "Camera" ? calls : null }); });
+  await act(async () => map().props.onDidFinishLoadingMap());
+  props.onFollowChange.mockClear();
+  await act(async () => { map().props.onTouchStart(); cameraChanged({ center: [.005, 0], zoom: 15 }); });
+  expect(props.onFollowChange).toHaveBeenCalledWith(false);
+  props.onFollowChange.mockClear();
+  await act(async () => renderer.update(createElement(CourseMap, { ...props, followAthlete: false, mapFollowing: false })));
+  await act(async () => renderer.update(createElement(CourseMap, { ...props, followAthlete: true, focusRequest: 1, mapFollowing: true })));
+  await act(async () => cameraChanged({ center: [0, 0] }));
+  expect(props.onFollowChange).not.toHaveBeenCalled();
+  await act(async () => { map().props.onTouchStart(); cameraChanged({ center: [.004, 0], zoom: 15 }); });
+  expect(props.onFollowChange).toHaveBeenCalledWith(false);
+});
+
 it("does not issue corrective native camera writes when a gesture updates Fixed mode", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const props = { course: createRaceCourse("Street", [[0, 0], [.02, 0]]), lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 0 }], unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn(), onFollowChange: vi.fn(), followAthlete: true, initialFlat: true };
@@ -166,7 +198,8 @@ it("does not issue corrective native camera writes when a gesture updates Fixed 
   await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
   expect(calls.setCamera.mock.lastCall![0].pitch).toBe(0);
   calls.setCamera.mockClear();
-  await act(async () => renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [.005, 0], zoom: 15, pitch: 0, heading: 0, isUserInteraction: true } } }));
+  const map = renderer.root.findByType("Map" as never);
+  await act(async () => { map.props.onTouchStart(); renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [.005, 0], zoom: 15, pitch: 0, heading: 0, isUserInteraction: true } } }); });
   expect(props.onFollowChange).toHaveBeenCalledWith(false);
   await act(async () => renderer.update(createElement(CourseMap, { ...props, followAthlete: false })));
   expect(calls.setCamera).not.toHaveBeenCalled();
@@ -270,7 +303,11 @@ it("publishes working course controls to the sheet and removes the map's duplica
   await act(async () => { renderer = create(createElement(CourseMap, {
     course: createRaceCourse("City", [[0, 0], [.02, 0]]), lanes: [], unit: "km", selectedId: "", focusRequest: 0, onSelect() {}, onChoose2D, onOptionsChange,
   })); });
-  const options = () => onOptionsChange.mock.calls.at(-1)![0];
+  const options = () => {
+    const published = onOptionsChange.mock.calls.at(-1)![0];
+    const children = Array.isArray(published.props.children) ? published.props.children : [published.props.children];
+    return children.find((child: { props?: { onToggleSpacing?: unknown } }) => child?.props?.onToggleSpacing) ?? published;
+  };
   expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Course options")).toBe(false);
   expect(options().props.spaced).toBe(true);
   await act(async () => options().props.onToggleSpacing());

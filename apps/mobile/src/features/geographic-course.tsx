@@ -16,11 +16,12 @@ class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean; 
 }
 
 /** Presentation-only scene. The field/replay host owns the weekly course. */
-export function GeographicCourse({ presentationActive = true, cardSessionKey, initialFlat, onFlatChange, onFollowChange, followAthlete, onReady, onSnapshot, replay, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, course, error = "", onRetry, controlsBottom = 8, overlaysHidden = false, optionsTop, onReplay, onChoose2D, onOptionsChange, distanceTarget }: {
+export function GeographicCourse({ presentationActive = true, cardSessionKey, initialFlat, onFlatChange, onFollowChange, followAthlete, mapFollowing, onFollowChipPress, followAthleteName, onReady, onSnapshot, replay, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, course, error = "", onRetry, controlsBottom = 8, overlaysHidden = false, optionsTop, onReplay, onChoose2D, onOptionsChange, distanceTarget }: {
   presentationActive?: boolean;
   onReady?: () => void; onSnapshot?: (uri: string) => void; replay?: CourseReplayFrame; hiddenIds?: readonly string[]; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void;
   cardSessionKey?: string | number | boolean;
   initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
+  mapFollowing?: boolean; onFollowChipPress?: () => void; followAthleteName?: string;
   distanceTarget?: CourseDistanceTarget | null;
   course: RaceCourse | null; error?: string; onRetry?: () => void; controlsBottom?: number; overlaysHidden?: boolean; optionsTop?: number | null; onReplay?: () => void; onChoose2D?: () => void; onOptionsChange?: (options: ReactNode | null) => void;
 }) {
@@ -46,7 +47,7 @@ const c=useThemeColors();
           Loading this competition’s course…
         </Text>
       </View> :
-      <MapBoundary><CourseMap presentationActive={presentationActive} cardSessionKey={cardSessionKey} initialFlat={initialFlat} onFlatChange={onFlatChange} followAthlete={followAthlete} onFollowChange={onFollowChange} key={course.name + course.length} course={course} replay={replay} onReady={prepared} onSnapshot={onSnapshot} lanes={lanes} hiddenIds={hiddenIds} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} optionsTop={optionsTop} onReplay={onReplay} onChoose2D={onChoose2D} onOptionsChange={onOptionsChange} /></MapBoundary>}
+      <MapBoundary><CourseMap presentationActive={presentationActive} cardSessionKey={cardSessionKey} initialFlat={initialFlat} onFlatChange={onFlatChange} followAthlete={followAthlete} onFollowChange={onFollowChange} mapFollowing={mapFollowing} onFollowChipPress={onFollowChipPress} followAthleteName={followAthleteName} key={course.name + course.length} course={course} replay={replay} onReady={prepared} onSnapshot={onSnapshot} lanes={lanes} hiddenIds={hiddenIds} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} optionsTop={optionsTop} onReplay={onReplay} onChoose2D={onChoose2D} onOptionsChange={onOptionsChange} /></MapBoundary>}
 
   </View>;
 }
