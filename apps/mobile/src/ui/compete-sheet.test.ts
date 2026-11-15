@@ -20,9 +20,9 @@ it("keeps stops ordered and body heights nonnegative on short screens", async ()
     expect(sheet().props.style.transform[0].translateY.value).toBeLessThanOrEqual(before);
     const overview = tree.root.findAllByType("View" as never).find(node => node.props.onLayout)!;
     await act(async () => overview.props.onLayout({ nativeEvent: { layout: { height: 20 } } }));
-    expect(tree.root.findByType("ScrollView" as never).props.style.height).toBeCloseTo(160 * 0.42 - 64);
+    expect(tree.root.findByType("ScrollView" as never).props.style.flex).toBe(1);
     await act(async () => overview.props.onLayout({ nativeEvent: { layout: { height: 1000 } } }));
-    expect(tree.root.findByType("ScrollView" as never).props.style.height).toBe(0);
+    expect(tree.root.findByType("ScrollView" as never).props.style.flex).toBe(1);
     expect(sheet().props.style.transform[0].translateY.value).toBe(0);
   } finally { await act(async () => tree.unmount()); vi.unstubAllGlobals(); }
 });
