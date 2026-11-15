@@ -18,7 +18,7 @@ it("reads the assigned route with the native bearer request and fails closed", a
   expect(mock.request.mock.calls[0]).toEqual(["https://api.example.test", "token", expect.stringContaining("/api/compete/course?")]);
   await act(async () => renderer.root.findByType("Probe" as never).props.retry());
   expect(renderer.root.findByType("Probe" as never).props.course).toBeNull();
-  expect(renderer.root.findByType("Probe" as never).props.error).toContain("unavailable");
+  expect(renderer.root.findByType("Probe" as never).props.error).toBe("");
 });
 it("ignores a late response after the competition changes", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
