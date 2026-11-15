@@ -145,7 +145,7 @@ describe("athlete profile navigation and layout", () => {
     });
     const sidePanel = renderer.root
       .findAllByType("SidePanel" as never)
-      .find((node) => node.props.title === "Settings");
+      .find((node) => node.props.title === "Edit profile");
     expect(sidePanel?.props.open).toBe(true);
   });
 
@@ -190,7 +190,7 @@ describe("athlete profile navigation and layout", () => {
     });
     const rendered = JSON.stringify(renderer.toJSON());
     expect(rendered).toContain("Public profile");
-    expect(rendered).toContain("Primary sport");
+    expect(rendered).toContain("AthleteCrest");
     expect(rendered).toContain("Achievements");
   });
 
