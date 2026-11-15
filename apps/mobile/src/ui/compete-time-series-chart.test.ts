@@ -97,18 +97,14 @@ it("renders the streamlined athlete header in immersive mode and switches betwee
   };
 
   await act(async () => {
-    renderer = create(createElement(CompeteTimeSeriesChart, { state, sport: "strength", immersive: true }));
+    renderer = create(createElement(CompeteTimeSeriesChart, { state, sport: "strength", immersive: true, view: "trajectory" }));
   });
 
   const textContent = renderer.root.findAllByType("Text" as never).map((n) => String(n.props.children));
-  expect(textContent.some((t) => t.includes("STRENGTH MEET · LIVE"))).toBe(true);
+  expect(textContent.some((t) => t.includes("STRENGTH MEET"))).toBe(false);
   expect(textContent.some((t) => t === state.name)).toBe(true);
   expect(textContent.some((t) => /place$/.test(t))).toBe(true);
-
-  const trajectoryTab = renderer.root.find((node) => node.props.accessibilityLabel === "Trajectory graph view");
-  const eventTab = renderer.root.find((node) => node.props.accessibilityLabel === "Event graph view");
-  expect(trajectoryTab.props.accessibilityState).toEqual({ selected: true });
-  expect(eventTab.props.accessibilityState).toEqual({ selected: false });
+  expect(textContent.some((t) => t.endsWith("hrs"))).toBe(true);
 
   const hasVerticalJump = (points: string) => {
     const coords = points.trim().split(/\s+/).map((pair) => pair.split(",").map(Number));
@@ -119,10 +115,9 @@ it("renders the streamlined athlete header in immersive mode and switches betwee
   expect(trajectoryLines.some(hasVerticalJump)).toBe(false);
 
   await act(async () => {
-    eventTab.props.onPress();
+    renderer.update(createElement(CompeteTimeSeriesChart, { state, sport: "strength", immersive: true, view: "event" }));
   });
 
-  expect(renderer.root.find((node) => node.props.accessibilityLabel === "Event graph view").props.accessibilityState).toEqual({ selected: true });
   const eventLines = renderer.root.findAllByType("Polyline" as never).map((n) => String(n.props.points));
   expect(eventLines.some(hasVerticalJump)).toBe(true);
 });

@@ -17,7 +17,7 @@ export function CompeteSheet({ children, expandRequest, active, overview, scroll
   const maximum = Math.max(160, height - insets.top - bottom);
   const [controlsHeight, setControlsHeight] = useState(76);
   const headingHeight = 44 + (overview ? controlsHeight : 0);
-  const minimum = Math.min(maximum, headingHeight + (overview ? 0 : insets.bottom));
+  const minimum = Math.min(maximum, headingHeight + insets.bottom);
   const middle = Math.max(minimum, maximum * .42);
   const stops = [minimum, middle, maximum];
   const [index, setIndex] = useState(0);
@@ -56,10 +56,10 @@ export function CompeteSheet({ children, expandRequest, active, overview, scroll
   });
   const pan = useMemo(() => createSheetPan(true), [maximum, offset, minimum, middle]);
   const overviewPan = useMemo(() => createSheetPan(false), [maximum, offset, minimum, middle]);
-  return <Animated.View pointerEvents={active ? "auto" : "none"} accessibilityElementsHidden={!active} style={{ position: "absolute", left: 0, right: 0, bottom, height: maximum, zIndex: flipping ? 100 : 30, transform: [{ translateY: offset }], backgroundColor: c.paper, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: flipping ? "visible" : "hidden" }}>
+  return <Animated.View pointerEvents={active ? "auto" : "none"} accessibilityElementsHidden={!active} style={{ position: "absolute", left: 0, right: 0, bottom, height: maximum, zIndex: flipping ? 100 : 30, transform: [{ translateY: offset }], backgroundColor: c.card, borderTopWidth: 1, borderColor: c.line, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: flipping ? "visible" : "hidden" }}>
 
     <View {...pan.panHandlers} accessible accessibilityRole="adjustable" accessibilityLabel="Competition sheet height" accessibilityValue={{ text: ["Minimized", "Partially expanded", "Fully expanded"][index] }} accessibilityActions={[{ name: "increment", label: "Expand" }, { name: "decrement", label: "Minimize" }]} onAccessibilityAction={event => snap(Math.max(0, Math.min(2, index + (event.nativeEvent.actionName === "increment" ? 1 : -1))))} style={{ height: 44, alignItems: "center", justifyContent: "center" }}><View style={{ width: 40, height: 4, borderRadius: 4, backgroundColor: c.muted }} /></View>
-    {overview && <View {...overviewPan.panHandlers} onLayout={event => setControlsHeight(Math.ceil(event.nativeEvent.layout.height))} style={{ paddingHorizontal: 16, paddingBottom: 8 + insets.bottom }}>{overview}</View>}
-    <ScrollView removeClippedSubviews={false} style={{ height: Math.max(0, stops[index] - headingHeight), flexGrow: 0, overflow: flipping ? "visible" : "hidden", zIndex: flipping ? 1 : 0 }} nestedScrollEnabled scrollEnabled={scrollable && index !== 0 && !flipping} accessibilityElementsHidden={index === 0} contentContainerStyle={{ padding: 20, paddingTop: 4, paddingBottom: insets.bottom + 48 }}><FlipLayer.Provider value={setFlipping}>{children}</FlipLayer.Provider></ScrollView>
+    {overview && <View {...overviewPan.panHandlers} onLayout={event => setControlsHeight(Math.ceil(event.nativeEvent.layout.height))} style={{ paddingHorizontal: 16, paddingBottom: 8 }}>{overview}</View>}
+    <ScrollView removeClippedSubviews={false} style={{ flex: 1, overflow: flipping ? "visible" : "hidden", zIndex: flipping ? 1 : 0 }} nestedScrollEnabled scrollEnabled={scrollable && index !== 0 && !flipping} accessibilityElementsHidden={index === 0} contentContainerStyle={{ padding: 20, paddingTop: 4, paddingBottom: insets.bottom + 48 }}><FlipLayer.Provider value={setFlipping}>{children}</FlipLayer.Provider></ScrollView>
   </Animated.View>;
 }

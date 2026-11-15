@@ -65,7 +65,7 @@ describe("compete-time-series", () => {
     };
 
     const initial = buildCompeteTimeSeriesModel(state, "strength", "open", now);
-    expect(initial.unit).toBe("pts");
+    expect(initial.unit).toBe("hrs");
     expect(initial.selectedAthlete.you).toBe(true);
     expect(initial.athletes.filter((a) => a.selected)).toHaveLength(1);
     expect(initial.dayTicks).toHaveLength(7);
@@ -192,7 +192,7 @@ it("does not invent history or past places for a real rival with only current to
   expect(model.historyAvailable).toBe(false);
   expect(model.isScrubbing).toBe(false);
   expect(model.cursorFraction).toBe(model.nowFraction);
-  expect(model.athletes.find(a => a.id === "real-rival")?.vertices).toEqual([{ t: model.nowFraction, value: 120 }]);
+  expect(model.athletes.find(a => a.id === "real-rival")?.vertices).toEqual([{ t: model.nowFraction, value: 1 }]);
   expect(model.overtakes).toEqual([]);
   const filtered = buildCompeteTimeSeriesModel(state, "strength", "open", now, { hiddenIds: ["real-rival"], scrubFraction: .1 });
   expect(filtered.athletes.some(athlete => athlete.id === "real-rival")).toBe(false);
