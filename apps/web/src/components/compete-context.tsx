@@ -228,8 +228,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef<CompeteState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queue = useRef<Action[]>([]);
-  const pendingIntentsRef = useRef<Action[]>([]);
-  const pendingSyncRef = useRef<Action[]>([]);
+  const pendingActionsRef = useRef<Action[]>([]);
   const pendingDocumentRef = useRef(false);
   const dirtyRef = useRef(0);
   const unsavedRef = useRef(false);
@@ -261,8 +260,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     statusRef.current = "loading";
     stateRef.current = null;
     queue.current = [];
-    pendingIntentsRef.current = [];
-    pendingSyncRef.current = [];
+    pendingActionsRef.current = [];
     pendingDocumentRef.current = false;
     dirtyRef.current = 0;
     unsavedRef.current = false;
@@ -290,14 +288,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           return;
         }
         try {
-          const syncBatch = [...pendingSyncRef.current];
-          const intentBatch = [...pendingIntentsRef.current];
-          const steps = accountSavePlan(
-            syncBatch,
-            intentBatch,
-            next,
-            pendingDocumentRef.current,
-          );
+          const actionBatch = [...pendingActionsRef.current];
+          const steps = accountSavePlan(actionBatch, next, pendingDocumentRef.current);
           const { response, body, revision, completedStepCount, transportError } =
             await runAccountSaveSteps(
             accountId,
@@ -310,18 +302,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           const acknowledged = dequeueAccountSaveWork(
             steps,
             saveFailed ? completedStepCount : steps.length,
-            syncBatch,
-            intentBatch,
+            actionBatch,
             pendingDocumentRef.current,
           );
           if (!saveFailed || completedStepCount > 0) {
-            pendingSyncRef.current = [
-              ...acknowledged.sync,
-              ...pendingSyncRef.current.slice(syncBatch.length),
-            ];
-            pendingIntentsRef.current = [
-              ...acknowledged.intents,
-              ...pendingIntentsRef.current.slice(intentBatch.length),
+            pendingActionsRef.current = [
+              ...acknowledged.actions,
+              ...pendingActionsRef.current.slice(actionBatch.length),
             ];
             pendingDocumentRef.current = acknowledged.document;
           }
@@ -361,8 +348,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
               removeStorageItem(deviceOnlyKey(accountId));
               unsavedRef.current = false;
               unitsUnsavedRef.current = false;
-              pendingIntentsRef.current = [];
-              pendingSyncRef.current = [];
+              pendingActionsRef.current = [];
             } else {
               unsavedRef.current = true;
               writeStorageItem(deviceOnlyKey(accountId), "1");
@@ -786,9 +772,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         const next = reduceCompete(before, withAccount);
         if (JSON.stringify(next) === JSON.stringify(before)) return;
         if (isCompeteSyncAction(withAccount)) {
-          pendingSyncRef.current.push(serializeCompeteSyncAction(withAccount));
+          pendingActionsRef.current.push(serializeCompeteSyncAction(withAccount));
         } else if (isCompeteAccountIntentAction(withAccount)) {
-          pendingIntentsRef.current.push(serializeCompeteIntent(withAccount));
+          pendingActionsRef.current.push(serializeCompeteIntent(withAccount));
         }
         dirtyRef.current += 1;
         unsavedRef.current = true;

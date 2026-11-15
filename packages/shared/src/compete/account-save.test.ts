@@ -7,22 +7,42 @@ const now = new Date("2026-10-28T15:00:00Z");
 const state = withAccountEloBaseline(freshState(now));
 
 describe("accountSavePlan", () => {
-  it("appends a document step when a recovered draft still needs full persist", () => {
+  it("sends one intent batch plus document when a recovered draft still needs full persist", () => {
     const steps = accountSavePlan(
-      [],
       [{ type: "rename", name: "Ada" } as Action],
       state,
       true,
     );
-    expect(steps.map((step) => step.kind)).toEqual(["intents", "document"]);
+    expect(steps.map((step) => step.kind)).toEqual(["actions", "document"]);
+  });
+
+  it("uses a single actions step for sync and intent work", () => {
+    const steps = accountSavePlan(
+      [
+        { type: "import-history", level: "steady" } as Action,
+        { type: "rename", name: "Ada" } as Action,
+      ],
+      state,
+    );
+    expect(steps).toEqual([
+      {
+        kind: "actions",
+        actions: [
+          { type: "import-history", level: "steady" },
+          { type: "rename", name: "Ada" },
+        ],
+      },
+    ]);
   });
 });
 
 describe("runAccountSaveSteps", () => {
   it("returns partial progress on transport failure without invalid Response status", async () => {
     const steps = accountSavePlan(
-      [{ type: "import-history", level: "steady" } as Action],
-      [{ type: "rename", name: "Ada" } as Action],
+      [
+        { type: "import-history", level: "steady" } as Action,
+        { type: "rename", name: "Ada" } as Action,
+      ],
       state,
     );
     let calls = 0;
@@ -44,9 +64,9 @@ describe("runAccountSaveSteps", () => {
 
 describe("dequeueAccountSaveWork", () => {
   it("keeps pendingDocument until the document step succeeds", () => {
-    const sync = [{ type: "import-history" } as Action];
-    const steps = accountSavePlan(sync, [], state, true);
-    expect(dequeueAccountSaveWork(steps, 1, sync, [], true).document).toBe(true);
-    expect(dequeueAccountSaveWork(steps, 2, sync, [], true).document).toBe(false);
+    const actions = [{ type: "import-history" } as Action];
+    const steps = accountSavePlan(actions, state, true);
+    expect(dequeueAccountSaveWork(steps, 1, actions, true).document).toBe(true);
+    expect(dequeueAccountSaveWork(steps, 2, actions, true).document).toBe(false);
   });
 });

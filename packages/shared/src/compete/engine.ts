@@ -1045,9 +1045,10 @@ function mergeSleepNights(state: CompeteState, incoming: SleepNight[]): CompeteS
 function reduceCompeteAction(
   state: CompeteState,
   action: Action,
+  settleBefore = true,
 ): CompeteState {
   const now = effectiveNow(state, action.now);
-  const rolled = rollClock(state, now);
+  const rolled = settleBefore ? rollClock(state, now) : state;
   switch (action.type) {
     case "rename": {
       const name = action.name?.trim().slice(0, 32);
@@ -1632,8 +1633,13 @@ export function formatNoticeUnits(
 
 export { SPORTS };
 
+/** Apply a user edit without advancing competition time or awarding milestones. */
+export function applyCompeteEdit(state: CompeteState, action: Action): CompeteState {
+  return reduceCompeteAction(state, action, false);
+}
+
 /** Apply activity growth immediately after every mutation, through the same path on web/native. */
 export function reduceCompete(state: CompeteState, action: Action): CompeteState {
-  const next = reduceCompeteAction(state, action);
+  const next = reduceCompeteAction(state, action, true);
   return applyEffortMilestones(next, effectiveNow(next, action.now));
 }

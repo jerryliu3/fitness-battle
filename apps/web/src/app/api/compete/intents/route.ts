@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   freshState,
-  isCompeteAccountIntentType,
+  isCompeteBatchSaveType,
   migrateCompeteState,
   openEnrollmentRemoved,
   withAccountEloBaseline,
@@ -20,11 +20,11 @@ import { createRequestClient } from "@/lib/supabase/request";
 import { committedScoreHistory, competeAccountJsonState } from "@/lib/compete-save-route";
 
 function parseActions(raw: unknown): Action[] | null {
-  if (!Array.isArray(raw) || raw.length === 0 || raw.length > 24) return null;
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > 32) return null;
   const actions: Action[] = [];
   for (const item of raw) {
     if (!item || typeof item !== "object" || typeof (item as Action).type !== "string") return null;
-    if (!isCompeteAccountIntentType((item as Action).type)) return null;
+    if (!isCompeteBatchSaveType((item as Action).type)) return null;
     actions.push(item as Action);
   }
   return actions;

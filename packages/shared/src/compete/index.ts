@@ -135,6 +135,7 @@ export {
   formatNoticeUnits,
   setRealPlayerPool,
   getRealPlayerPool,
+  applyCompeteEdit,
   type Action,
   type BoardRow,
 } from "./engine";
@@ -143,7 +144,9 @@ export {
   PHASE_B_COMPETE_INTENT_TYPES,
   COMPETE_ACCOUNT_INTENT_TYPES,
   COMPETE_SYNC_ACTION_TYPES,
+  COMPETE_BATCH_SAVE_TYPES,
   COMPETE_DOCUMENT_SAVE_TYPES,
+  isCompeteBatchSaveType,
   isPhaseACompeteIntentAction,
   isPhaseACompeteIntentType,
   isCompeteAccountIntentAction,

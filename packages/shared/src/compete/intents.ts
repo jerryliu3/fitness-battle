@@ -52,6 +52,11 @@ export const COMPETE_SYNC_ACTION_TYPES = [
   "import-history",
 ] as const satisfies readonly Action["type"][];
 
+export const COMPETE_BATCH_SAVE_TYPES = [
+  ...COMPETE_ACCOUNT_INTENT_TYPES,
+  ...COMPETE_SYNC_ACTION_TYPES,
+] as const satisfies readonly Action["type"][];
+
 /** Tracker batches plus actions that still need a full account document on save. */
 export const COMPETE_DOCUMENT_SAVE_TYPES = [
   ...COMPETE_SYNC_ACTION_TYPES,
@@ -61,13 +66,19 @@ export const COMPETE_DOCUMENT_SAVE_TYPES = [
 
 export type PhaseACompeteIntentType = (typeof PHASE_A_COMPETE_INTENT_TYPES)[number];
 export type CompeteAccountIntentType = (typeof COMPETE_ACCOUNT_INTENT_TYPES)[number];
+export type CompeteBatchSaveType = (typeof COMPETE_BATCH_SAVE_TYPES)[number];
 
 const accountIntentSet = new Set<string>(COMPETE_ACCOUNT_INTENT_TYPES);
+const batchSaveSet = new Set<string>(COMPETE_BATCH_SAVE_TYPES);
 const phaseASet = new Set<string>(PHASE_A_COMPETE_INTENT_TYPES);
 const rankSymbolSet = new Set<string>(RANK_SYMBOLS.map((row) => row.id));
 
 export function isCompeteAccountIntentType(type: string): type is CompeteAccountIntentType {
   return accountIntentSet.has(type);
+}
+
+export function isCompeteBatchSaveType(type: string): type is CompeteBatchSaveType {
+  return batchSaveSet.has(type);
 }
 
 export function isPhaseACompeteIntentType(type: string): type is PhaseACompeteIntentType {

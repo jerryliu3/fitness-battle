@@ -2,8 +2,7 @@ import type { Action } from "./engine";
 import type { CompeteState } from "./sports";
 
 export type AccountSaveTarget =
-  | { kind: "sync"; action: Action }
-  | { kind: "intents"; actions: Action[] }
+  | { kind: "actions"; actions: Action[] }
   | { kind: "document"; state: CompeteState };
 
 export type CompeteSaveResult = {
@@ -22,19 +21,15 @@ export type AccountSaveRunResult = {
   transportError: boolean;
 };
 
-/** Ordered client save steps: sync actions, intent batch, then document when required. */
+/** One intent batch when possible; document PUT only for recovery or empty action saves. */
 export function accountSavePlan(
-  pendingSync: Action[],
-  pendingIntents: Action[],
+  pendingActions: Action[],
   state: CompeteState,
   pendingDocument = false,
 ): AccountSaveTarget[] {
-  const steps: AccountSaveTarget[] = pendingSync.map((action) => ({
-    kind: "sync",
-    action,
-  }));
-  if (pendingIntents.length) steps.push({ kind: "intents", actions: pendingIntents });
-  if (pendingDocument || (!pendingSync.length && !pendingIntents.length)) {
+  const steps: AccountSaveTarget[] = [];
+  if (pendingActions.length) steps.push({ kind: "actions", actions: pendingActions });
+  if (pendingDocument || !pendingActions.length) {
     steps.push({ kind: "document", state });
   }
   return steps;
@@ -46,13 +41,7 @@ export function competeSaveRequest(
   updatedAt: string | null,
 ) {
   switch (target.kind) {
-    case "sync":
-      return {
-        url: "/api/compete/sync",
-        method: "POST" as const,
-        body: { accountId, updatedAt, action: target.action },
-      };
-    case "intents":
+    case "actions":
       return {
         url: "/api/compete/intents",
         method: "POST" as const,
@@ -105,21 +94,17 @@ export async function runAccountSaveSteps(
   return { response, body, revision, completedStepCount, transportError: false };
 }
 
-/** Drop acknowledged sync/intent/document work after a partial or full successful run. */
 export function dequeueAccountSaveWork(
   steps: AccountSaveTarget[],
   completedStepCount: number,
-  pendingSync: Action[],
-  pendingIntents: Action[],
+  pendingActions: Action[],
   pendingDocument: boolean,
-): { sync: Action[]; intents: Action[]; document: boolean } {
+): { actions: Action[]; document: boolean } {
   const completed = steps.slice(0, completedStepCount);
-  const completedSync = completed.filter((step) => step.kind === "sync").length;
-  const intentsDone = completed.some((step) => step.kind === "intents");
+  const actionsDone = completed.some((step) => step.kind === "actions");
   const documentDone = completed.some((step) => step.kind === "document");
   return {
-    sync: pendingSync.slice(completedSync),
-    intents: intentsDone ? [] : [...pendingIntents],
+    actions: actionsDone ? [] : [...pendingActions],
     document: pendingDocument && !documentDone,
   };
 }

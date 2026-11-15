@@ -206,8 +206,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   const unsavedRef = useRef(false);
   const unitsUnsavedRef = useRef(false);
   const revisionRef = useRef<string | null>(null);
-  const pendingIntentsRef = useRef<Action[]>([]);
-  const pendingSyncRef = useRef<Action[]>([]);
+  const pendingActionsRef = useRef<Action[]>([]);
   const pendingDocumentRef = useRef(false);
   const conflictRef = useRef(false);
   const [saveConflict, setSaveConflict] = useState(false);
@@ -238,8 +237,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     preDebugStateRef.current = null;
     setDebugActive(false);
     revisionRef.current = null;
-    pendingIntentsRef.current = [];
-    pendingSyncRef.current = [];
+    pendingActionsRef.current = [];
     pendingDocumentRef.current = false;
     conflictRef.current = false;
     setSaveConflict(false);
@@ -819,18 +817,12 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             });
             if (!account || account.userId !== id || !isCurrent())
               return;
-            const syncBatch = [...pendingSyncRef.current];
-            const intentBatch = [...pendingIntentsRef.current];
+            const actionBatch = [...pendingActionsRef.current];
             const headers = {
               "Content-Type": "application/json",
               Authorization: `Bearer ${account.token}`,
             };
-            const steps = accountSavePlan(
-              syncBatch,
-              intentBatch,
-              next,
-              pendingDocumentRef.current,
-            );
+            const steps = accountSavePlan(actionBatch, next, pendingDocumentRef.current);
             if (!steps.length) return;
             const { response, body, revision, completedStepCount, transportError } =
               await runAccountSaveSteps(
@@ -848,18 +840,13 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             const acknowledged = dequeueAccountSaveWork(
               steps,
               saveFailed ? completedStepCount : steps.length,
-              syncBatch,
-              intentBatch,
+              actionBatch,
               pendingDocumentRef.current,
             );
             if (!saveFailed || completedStepCount > 0) {
-              pendingSyncRef.current = [
-                ...acknowledged.sync,
-                ...pendingSyncRef.current.slice(syncBatch.length),
-              ];
-              pendingIntentsRef.current = [
-                ...acknowledged.intents,
-                ...pendingIntentsRef.current.slice(intentBatch.length),
+              pendingActionsRef.current = [
+                ...acknowledged.actions,
+                ...pendingActionsRef.current.slice(actionBatch.length),
               ];
               pendingDocumentRef.current = acknowledged.document;
             }
@@ -910,8 +897,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             if (!keepLocalDraft) {
               unsavedRef.current = false;
               unitsUnsavedRef.current = false;
-              pendingIntentsRef.current = [];
-              pendingSyncRef.current = [];
+              pendingActionsRef.current = [];
               await AsyncStorage.removeItem(scoped.dirty);
             } else {
               unsavedRef.current = true;
@@ -994,9 +980,9 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       });
       if (JSON.stringify(next) === JSON.stringify(before)) return;
       if (isCompeteSyncAction(action)) {
-        pendingSyncRef.current.push(serializeCompeteSyncAction(action));
+        pendingActionsRef.current.push(serializeCompeteSyncAction(action));
       } else if (isCompeteAccountIntentAction(action)) {
-        pendingIntentsRef.current.push(serializeCompeteIntent(action));
+        pendingActionsRef.current.push(serializeCompeteIntent(action));
       }
       dirtyRef.current += 1;
       if (["rename", "set-city", "set-gender", "set-country", "set-avatar", "opt-in", "opt-in-health", "opt-out", "opt-out-health", "log-manual", "complete-onboarding", "freeze", "unfreeze"].includes(action.type)) {
