@@ -14,7 +14,10 @@ import {
   persistCompeteAccount,
   settleAccountFields,
 } from "@/lib/compete-persist";
-import { applyCompeteIntents } from "@/lib/apply-compete-intents";
+import {
+  applyAccountSaveAfterSettlement,
+  applyAccountSaveBeforeSettlement,
+} from "@/lib/apply-compete-intents";
 import { competitionAuthorityDatabase } from "@/lib/competition-authority";
 import { createRequestClient } from "@/lib/supabase/request";
 import { committedScoreHistory, competeAccountJsonState } from "@/lib/compete-save-route";
@@ -64,11 +67,18 @@ export async function POST(request: Request): Promise<Response> {
       const stored = existing
         ? migrateCompeteState(existing.state)
         : withAccountEloBaseline(freshState(now));
-      const intentApplied = applyCompeteIntents(stored, actions, userId, now);
-      live = await settleAccountFields(supabase, userId, intentApplied, now, true);
+      const editsApplied = applyAccountSaveBeforeSettlement(stored, actions, userId, now);
+      const settledOnce = await settleAccountFields(supabase, userId, editsApplied, now, true);
+      const enrollmentApplied = applyAccountSaveAfterSettlement(
+        settledOnce,
+        actions,
+        userId,
+        now,
+      );
+      live = await settleAccountFields(supabase, userId, enrollmentApplied, now, true);
       if (
         existing &&
-        openEnrollmentRemoved(migrateCompeteState(existing.state), intentApplied, now)
+        openEnrollmentRemoved(migrateCompeteState(existing.state), enrollmentApplied, now)
       ) {
         return NextResponse.json({ error: "week_still_open", persisted: false }, { status: 409 });
       }

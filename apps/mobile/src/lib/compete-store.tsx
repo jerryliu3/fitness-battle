@@ -11,6 +11,7 @@ import {
   isCompeteSyncAction,
   accountSavePlan,
   dequeueAccountSaveWork,
+  isUnsaveableBatchError,
   runAccountSaveSteps,
   serializeCompeteIntent,
   serializeCompeteSyncAction,
@@ -857,6 +858,9 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               }
             }
             if (saveFailed) {
+              if (isUnsaveableBatchError(body?.error)) {
+                pendingActionsRef.current = [];
+              }
               pendingDocumentRef.current = true;
               await AsyncStorage.setItem(scoped.dirty, "1");
               if (

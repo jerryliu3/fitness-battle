@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Action } from "./engine";
 import { freshState, withAccountEloBaseline } from "./sports";
+import { MAX_SYNC_ACTIVITIES } from "./sync-intents";
 import {
   accountSavePlan,
   coalesceSaveActions,
   dequeueAccountSaveWork,
+  planSaveActionBatches,
+  remainingPendingSaveActions,
   runAccountSaveSteps,
 } from "./account-save";
 
@@ -12,7 +15,7 @@ const now = new Date("2026-10-28T15:00:00Z");
 const state = withAccountEloBaseline(freshState(now));
 
 describe("coalesceSaveActions", () => {
-  it("drops redundant disposition intents covered by apply-sync", () => {
+  it("drops disposition intents superseded by a later apply-sync", () => {
     const actions = coalesceSaveActions([
       { type: "set-disposition", activityId: "a-1", disposition: "excluded" } as Action,
       { type: "set-disposition", activityId: "a-2", disposition: "excluded" } as Action,
@@ -36,15 +39,44 @@ describe("coalesceSaveActions", () => {
       },
     ]);
   });
+
+  it("keeps a later exclusion after an apply-sync", () => {
+    const actions = coalesceSaveActions([
+      {
+        type: "apply-sync",
+        provider: "strava",
+        activities: [{ id: "a-1", disposition: "counted" }],
+      } as Action,
+      { type: "set-disposition", activityId: "a-1", disposition: "excluded" } as Action,
+    ]);
+    expect(actions).toHaveLength(2);
+    expect(actions[1]).toMatchObject({ type: "set-disposition", disposition: "excluded" });
+  });
+});
+
+describe("planSaveActionBatches", () => {
+  it("splits large apply-sync payloads and oversized queues", () => {
+    const activities = Array.from({ length: MAX_SYNC_ACTIVITIES + 1 }, (_, index) => ({
+      id: `run-${index}`,
+      source: "strava",
+    }));
+    const batches = planSaveActionBatches([
+      {
+        type: "apply-sync",
+        provider: "strava",
+        activities,
+      } as Action,
+    ]);
+    expect(batches).toHaveLength(2);
+    expect(batches[0]).toHaveLength(1);
+    expect(batches[0]![0]!.activities).toHaveLength(MAX_SYNC_ACTIVITIES);
+    expect(batches[1]![0]!.activities).toHaveLength(1);
+  });
 });
 
 describe("accountSavePlan", () => {
   it("sends one intent batch plus document when a recovered draft still needs full persist", () => {
-    const steps = accountSavePlan(
-      [{ type: "rename", name: "Ada" } as Action],
-      state,
-      true,
-    );
+    const steps = accountSavePlan([{ type: "rename", name: "Ada" } as Action], state, true);
     expect(steps.map((step) => step.kind)).toEqual(["actions", "document"]);
   });
 
@@ -100,5 +132,15 @@ describe("dequeueAccountSaveWork", () => {
     const steps = accountSavePlan(actions, state, true);
     expect(dequeueAccountSaveWork(steps, 1, actions, true).document).toBe(true);
     expect(dequeueAccountSaveWork(steps, 2, actions, true).document).toBe(false);
+  });
+
+  it("drops only acknowledged action batches on partial success", () => {
+    const pending = Array.from({ length: 40 }, (_, index) => ({
+      type: "rename",
+      name: `Athlete ${index}`,
+    })) as Action[];
+    const steps = accountSavePlan(pending, state);
+    const remaining = remainingPendingSaveActions(pending, steps, 1);
+    expect(remaining).toHaveLength(8);
   });
 });

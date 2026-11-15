@@ -1,20 +1,101 @@
 import type { Action } from "./engine";
 import type { CompeteState } from "./sports";
+import { MAX_SYNC_ACTIVITIES } from "./sync-intents";
 
-/** Drop set-disposition rows that an apply-sync in the same batch already encodes. */
-export function coalesceSaveActions(actions: Action[]): Action[] {
-  const syncActivityIds = new Set<string>();
+export const MAX_SAVE_ACTIONS = 32;
+
+/** Enrollment intents run only after canonical settlement on the server save path. */
+const ENROLLMENT_ACTIONS_AFTER_SETTLEMENT = new Set<Action["type"]>([
+  "opt-in",
+  "opt-out",
+  "opt-in-health",
+  "opt-out-health",
+  "schedule-leave",
+  "resume-renewal",
+  "set-crew-board",
+  "clear-crew-board",
+  "freeze",
+  "unfreeze",
+]);
+
+export function partitionEnrollmentSaveActions(actions: Action[]): {
+  edits: Action[];
+  enrollments: Action[];
+} {
+  const edits: Action[] = [];
+  const enrollments: Action[] = [];
   for (const action of actions) {
-    if (action.type !== "apply-sync") continue;
-    for (const row of action.activities ?? []) syncActivityIds.add(row.id);
+    if (ENROLLMENT_ACTIONS_AFTER_SETTLEMENT.has(action.type)) enrollments.push(action);
+    else edits.push(action);
   }
-  if (!syncActivityIds.size) return actions;
-  return actions.filter(
-    (action) =>
-      action.type !== "set-disposition" ||
-      !action.activityId ||
-      !syncActivityIds.has(action.activityId),
-  );
+  return { edits, enrollments };
+}
+
+/** Drop disposition intents superseded by a later activity choice in the same batch. */
+export function coalesceSaveActions(actions: Action[]): Action[] {
+  const lastChoiceIndex = new Map<string, number>();
+  actions.forEach((action, index) => {
+    if (action.type === "set-disposition" && action.activityId) {
+      lastChoiceIndex.set(action.activityId, index);
+    }
+    if (action.type === "apply-sync") {
+      for (const row of action.activities ?? []) lastChoiceIndex.set(row.id, index);
+    }
+  });
+  return actions.filter((action, index) => {
+    if (action.type !== "set-disposition" || !action.activityId) return true;
+    return lastChoiceIndex.get(action.activityId) === index;
+  });
+}
+
+export function splitApplySyncAction(action: Action): Action[] {
+  if (action.type !== "apply-sync") return [action];
+  const activities = action.activities ?? [];
+  if (activities.length <= MAX_SYNC_ACTIVITIES) return [action];
+  const parts: Action[] = [];
+  for (let index = 0; index < activities.length; index += MAX_SYNC_ACTIVITIES) {
+    parts.push({ ...action, activities: activities.slice(index, index + MAX_SYNC_ACTIVITIES) });
+  }
+  return parts;
+}
+
+export function expandSaveActions(pending: Action[]): Action[] {
+  return coalesceSaveActions(pending).flatMap(splitApplySyncAction);
+}
+
+export function chunkSaveActions(actions: Action[], max = MAX_SAVE_ACTIONS): Action[][] {
+  const chunks: Action[][] = [];
+  let current: Action[] = [];
+  for (const action of actions) {
+    if (current.length >= max) {
+      chunks.push(current);
+      current = [];
+    }
+    current.push(action);
+  }
+  if (current.length) chunks.push(current);
+  return chunks;
+}
+
+export function planSaveActionBatches(pending: Action[]): Action[][] {
+  return chunkSaveActions(expandSaveActions(pending));
+}
+
+/** Remove acknowledged network steps from the original pending user queue. */
+export function remainingPendingSaveActions(
+  pending: Action[],
+  steps: AccountSaveTarget[],
+  completedStepCount: number,
+): Action[] {
+  const planned = steps.filter((step) => step.kind === "actions");
+  const completedActionSteps = steps
+    .slice(0, completedStepCount)
+    .filter((step) => step.kind === "actions").length;
+  const done = planned.slice(0, completedActionSteps).flatMap((step) => step.actions);
+  const expanded = expandSaveActions(pending);
+  if (!done.length) return [...pending];
+  if (done.length >= expanded.length) return [];
+  return expanded.slice(done.length);
 }
 
 export type AccountSaveTarget =
@@ -37,19 +118,24 @@ export type AccountSaveRunResult = {
   transportError: boolean;
 };
 
-/** One intent batch when possible; document PUT only for recovery or empty action saves. */
+/** One or more intent batches, then document PUT only for recovery or empty action saves. */
 export function accountSavePlan(
   pendingActions: Action[],
   state: CompeteState,
   pendingDocument = false,
 ): AccountSaveTarget[] {
   const steps: AccountSaveTarget[] = [];
-  const actions = coalesceSaveActions(pendingActions);
-  if (actions.length) steps.push({ kind: "actions", actions });
+  for (const actions of planSaveActionBatches(pendingActions)) {
+    if (actions.length) steps.push({ kind: "actions", actions });
+  }
   if (pendingDocument || !pendingActions.length) {
     steps.push({ kind: "document", state });
   }
   return steps;
+}
+
+export function isUnsaveableBatchError(error: string | undefined): boolean {
+  return error === "invalid_intent" || error === "sync_batch_too_large" || error === "invalid_sync";
 }
 
 export function competeSaveRequest(
@@ -118,10 +204,9 @@ export function dequeueAccountSaveWork(
   pendingDocument: boolean,
 ): { actions: Action[]; document: boolean } {
   const completed = steps.slice(0, completedStepCount);
-  const actionsDone = completed.some((step) => step.kind === "actions");
   const documentDone = completed.some((step) => step.kind === "document");
   return {
-    actions: actionsDone ? [] : [...pendingActions],
+    actions: remainingPendingSaveActions(pendingActions, steps, completedStepCount),
     document: pendingDocument && !documentDone,
   };
 }

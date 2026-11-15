@@ -1645,11 +1645,6 @@ export function formatNoticeUnits(
 
 export { SPORTS };
 
-/** Close finished waves before edit-only reducers so enrollment actions see live registration. */
-export function prepareAccountForUserEdits(state: CompeteState, now: Date): CompeteState {
-  return settleCompetition(state, now);
-}
-
 /** Apply a user edit without advancing competition time or awarding milestones. */
 export function applyCompeteEdit(state: CompeteState, action: Action): CompeteState {
   return reduceCompeteAction(state, action, false);

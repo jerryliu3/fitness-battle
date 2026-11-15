@@ -4,9 +4,14 @@ import {
   freshState,
   reduceCompete,
   rollClock,
+  settleCompetition,
   withAccountEloBaseline,
 } from "@fitness-battle/shared";
-import { applyOrderedAccountActions } from "./apply-compete-intents";
+import {
+  applyAccountSaveAfterSettlement,
+  applyAccountSaveBeforeSettlement,
+  applyOrderedAccountActions,
+} from "./apply-compete-intents";
 
 const now = new Date("2026-10-28T15:00:00Z");
 const userId = "athlete";
@@ -31,12 +36,10 @@ it("rejoins after a stopped wave closes", () => {
         : enrollment,
     ),
   };
-  const applied = applyOrderedAccountActions(
-    stored,
-    [{ type: "opt-in", sport: "running" }],
-    userId,
-    now,
-  );
+  const actions = [{ type: "opt-in", sport: "running" as const }];
+  let applied = applyAccountSaveBeforeSettlement(stored, actions, userId, now);
+  applied = settleCompetition(applied, now);
+  applied = applyAccountSaveAfterSettlement(applied, actions, userId, now);
   expect(applied.ratings.find((row) => row.sport === "running")?.optedIn).toBe(true);
   expect(applied.enrollments.some((enrollment) => enrollment.sport === "running")).toBe(true);
 });

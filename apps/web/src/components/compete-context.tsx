@@ -32,6 +32,7 @@ import {
   isCompeteSyncAction,
   accountSavePlan,
   dequeueAccountSaveWork,
+  isUnsaveableBatchError,
   runAccountSaveSteps,
   serializeCompeteIntent,
   serializeCompeteSyncAction,
@@ -319,6 +320,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             }
           }
           if (saveFailed) {
+            if (isUnsaveableBatchError(body?.error)) {
+              pendingActionsRef.current = [];
+            }
             pendingDocumentRef.current = true;
             writeStorageItem(deviceOnlyKey(accountId), "1");
             if (body?.error === "account_changed_reload" || body?.error === "account_version_required") {
@@ -548,6 +552,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     if (conflictRef.current && accountId) {
       localStorage.setItem(`${storageKey(accountId)}:recovery`, JSON.stringify(stateRef.current));
       localStorage.removeItem(deviceOnlyKey(accountId));
+      pendingActionsRef.current = [];
+      pendingDocumentRef.current = false;
       conflictRef.current = false; setSaveConflict(false);
       unsavedRef.current = false; unitsUnsavedRef.current = false;
       dirtyRef.current += 1;
