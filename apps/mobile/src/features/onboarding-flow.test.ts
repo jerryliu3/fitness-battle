@@ -29,7 +29,7 @@ it.each([false,true])("walks all setup steps and only saves a real completion (p
  const button=(label:string)=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label===label)!;
  for(let step=0;step<6;step++) {expect(mock.dispatch).not.toHaveBeenCalled();await act(async()=>button(step===3?"Skip for now":"Continue").props.onPress());}
  const final=button(preview?"Finish preview":"Finish");await act(async()=>{final.props.onPress();final.props.onPress();});
- if(preview){expect(mock.dispatch).not.toHaveBeenCalled();expect(mock.storage).not.toHaveBeenCalled();}else{expect(mock.dispatch).toHaveBeenCalledWith({type:"set-units",units:state.units});expect(mock.dispatch.mock.calls.filter(([a])=>a.type==="complete-onboarding")).toHaveLength(1);expect(mock.replace).toHaveBeenCalledWith("/arena");}
+ if(preview){expect(mock.dispatch).not.toHaveBeenCalled();expect(mock.storage).not.toHaveBeenCalled();}else{expect(mock.dispatch).toHaveBeenCalledWith({type:"set-units",units:state.units});expect(mock.dispatch.mock.calls.filter(([a])=>a.type==="complete-onboarding")).toHaveLength(1);expect(mock.replace).toHaveBeenCalledWith("/today");}
  await act(async()=>r.unmount());
 });
 

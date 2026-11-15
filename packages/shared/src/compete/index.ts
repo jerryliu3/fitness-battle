@@ -32,6 +32,7 @@ export {
   type ProviderLink,
   type PeriodResult,
   type UnitSystem,
+  type ProfileGender,
   competitionTrack,
   competitionTrackLabel,
 } from "./sports";

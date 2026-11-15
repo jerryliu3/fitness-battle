@@ -1075,7 +1075,7 @@ function reduceCompeteAction(
     }
     case "set-gender": {
       const gender = action.gender;
-      if (gender == null || gender === "") return { ...rolled, gender: null };
+      if (gender == null) return { ...rolled, gender: null };
       if (gender !== "male" && gender !== "female" && gender !== "other") return rolled;
       return { ...rolled, gender };
     }

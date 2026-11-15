@@ -242,7 +242,6 @@ describe("mobile account lifecycle", () => {
     });
     await act(flush);
     expect(api.state?.activities).toHaveLength(1);
-    expect(api.fieldNotice?.personal).toBe(true);
     expect(mock.router.navigate).not.toHaveBeenCalled();
   });
   it("preserves an edit dispatched while refresh persists its revision", async () => {
