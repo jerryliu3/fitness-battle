@@ -184,7 +184,7 @@ function PodiumHero({ replay, state, result, hiddenIds }: {
             </View>
             <View style={[s.pedestal, meta.pedestal, { height: meta.height }]}>
               <View style={[s.pedestalBadge, { backgroundColor: meta.badge }]}>
-                <AppText role="caption" style={[s.tabular, { fontWeight: "800", color: meta.ink }]}>{step}</AppText>
+                <AppText role="label" style={[s.tabular, { color: meta.ink }]}>{step}</AppText>
               </View>
             </View>
           </View>
@@ -248,7 +248,7 @@ function Training({ state, result }: { state: CompeteState; result: PeriodResult
                   <Pressable key={mode} accessibilityRole="tab" accessibilityState={{ selected }}
                     onPress={() => { if (activeMode !== mode) { void playCue("selection"); setScrubbed(undefined); setChartMode(mode); } }}
                     style={[s.modePill, selected && { backgroundColor: colors.actionSoft }]}>
-                    <AppText role="caption" style={{ color: selected ? colors.ink : colors.muted, fontWeight: selected ? "700" : "500" }}>
+                    <AppText role={selected ? "label" : "caption"} style={{ color: selected ? colors.ink : colors.muted }}>
                       {mode === "time" ? "Time" : "Effort"}
                     </AppText>
                   </Pressable>
@@ -274,7 +274,7 @@ function Training({ state, result }: { state: CompeteState; result: PeriodResult
             <AppText role="label" style={s.light}>Next round</AppText>
           </View>
           <View style={[s.nextPill, nextRound.active ? s.nextPillActive : s.nextPillInactive]}>
-            <AppText role="caption" style={{ color: nextRound.active ? SUCCESS_LIGHT : MUTED_LIGHT, fontWeight: "700" }}>{nextRound.pill}</AppText>
+            <AppText role="label" style={{ color: nextRound.active ? SUCCESS_LIGHT : MUTED_LIGHT }}>{nextRound.pill}</AppText>
           </View>
         </View>
         <AppText role="row" style={s.light}>{nextRound.detail}</AppText>
@@ -300,7 +300,7 @@ const s = StyleSheet.create({
   eyebrowRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   backBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: GLASS_BG, borderWidth: 1, borderColor: GLASS_BORDER, alignItems: "center", justifyContent: "center" },
   trackBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: GLASS_BG, borderWidth: 1, borderColor: GLASS_BORDER },
-  trackText: { color: MUTED_LIGHT, fontSize: 11 },
+  trackText: { color: MUTED_LIGHT },
   heading: { gap: 4 },
   arrival: { alignItems: "center", gap: 24, paddingTop: 16 },
   resultsWrap: { gap: 16 },

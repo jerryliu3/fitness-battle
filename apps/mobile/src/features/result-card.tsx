@@ -125,7 +125,7 @@ export function ResultCard({
             <AppText role="row">Your result</AppText>
           </View>
           <View style={[s.placePill, { backgroundColor: placeBadgeTone.bg }]}>
-            <AppText role="caption" style={[s.tabular, { color: placeBadgeTone.text, fontWeight: "700" }]}>
+            <AppText role="label" style={[s.tabular, { color: placeBadgeTone.text }]}>
               {ordinalPlace(result.place)} of {result.fieldSize}{result.frozen ? " · Frozen" : ""}
             </AppText>
           </View>
@@ -400,10 +400,7 @@ const sThemes = createThemedStyles((c) => ({
     alignItems: "center",
     paddingVertical: 2,
   },
-  metricUpper: {
-    fontSize: 11,
-    letterSpacing: 0.6,
-  },
+  metricUpper: {},
   metricDividerTall: {
     width: 1,
     height: 32,
