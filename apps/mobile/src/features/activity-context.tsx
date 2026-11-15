@@ -3,6 +3,7 @@ import { useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
 import Svg, { Circle, ClipPath, Defs, G, Line, Path, Rect, Text as SvgText } from "react-native-svg";
 import {
+  APP_TIMEZONE,
   accountTimeZone, competeNow, computeNiceAxisTicks, sportById, trendLabelPosition, type Activity, type CompeteState, type UnitSystem,
   activityContextConstellation as constellation, activityContextDateLabel as dateLabel,
   activityContextFitHistory as fitHistory, activityContextFormatMetric as formatMetric,
@@ -46,16 +47,44 @@ export function useActivityContextAvailability(activity: Activity, state: Compet
   return { history, hasScatter };
 }
 
-export function ActivityScatterChart({ activity, history, units }: { activity: Activity; history: Activity[]; units: UnitSystem }) {
-  return <Constellation current={activity} history={history} units={units} />;
+export function ActivityScatterChart({
+  activity,
+  history,
+  units,
+  timeZone = APP_TIMEZONE,
+}: {
+  activity: Activity;
+  history: Activity[];
+  units: UnitSystem;
+  timeZone?: string;
+}) {
+  return <Constellation current={activity} history={history} units={units} timeZone={timeZone} />;
 }
 
-export function ActivityTrajectoryChart({ activity, history, units }: { activity: Activity; history: Activity[]; units: UnitSystem }) {
-  return <Trajectory current={activity} history={history} units={units} />;
+export function ActivityTrajectoryChart({
+  activity,
+  history,
+  units,
+  timeZone = APP_TIMEZONE,
+}: {
+  activity: Activity;
+  history: Activity[];
+  units: UnitSystem;
+  timeZone?: string;
+}) {
+  return <Trajectory current={activity} history={history} units={units} timeZone={timeZone} />;
 }
 
-export function ActivityVolumeChart({ activity, history }: { activity: Activity; history: Activity[] }) {
-  return <Ripple current={activity} history={history} />;
+export function ActivityVolumeChart({
+  activity,
+  history,
+  timeZone = APP_TIMEZONE,
+}: {
+  activity: Activity;
+  history: Activity[];
+  timeZone?: string;
+}) {
+  return <Ripple current={activity} history={history} timeZone={timeZone} />;
 }
 
 export function ActivityContext({ activity, state }: { activity: Activity; state: CompeteState }) {

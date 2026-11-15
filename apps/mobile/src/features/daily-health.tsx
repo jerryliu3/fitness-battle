@@ -20,10 +20,12 @@ const HealthCorridorDetail = memo(function HealthCorridorDetail({
   onMeasureHeight,
   originOffsetX,
   reduceMotion,
+  timeZone,
   styles: s,
 }: {
   selected: HealthMetricItem;
   now: Date;
+  timeZone: string;
   colors: ReturnType<typeof useHomeHealthColors>;
   detailAnim: Animated.Value;
   detailHeight: number;
@@ -38,8 +40,8 @@ const HealthCorridorDetail = memo(function HealthCorridorDetail({
   }, [selected.id]);
 
   const chart = useMemo(
-    () => buildHealth7DayCorridorModel(selected, now, { weekCorridorFallback: true, timeZone: accountTimeZone(state) }),
-    [selected, now],
+    () => buildHealth7DayCorridorModel(selected, now, { weekCorridorFallback: true, timeZone }),
+    [selected, now, timeZone],
   );
   const scrubPoints = useMemo<ChartDatum[]>(
     () =>
@@ -208,6 +210,7 @@ const s=useThemedStyles(sThemes);
 
   const metrics = useMemo(() => homeHealthMetrics(state), [state]);
   const now = useMemo(() => competeNow(state), [state]);
+  const timeZone = accountTimeZone(state);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [displayedId, setDisplayedId] = useState<string | null>(null);
   const [detailHeight, setDetailHeight] = useState(218);
@@ -337,6 +340,7 @@ const s=useThemedStyles(sThemes);
           onMeasureHeight={setDetailHeight}
           originOffsetX={fontScale > 1.2 ? 0 : (originRight ? 1 : -1) * Math.min(110, width * 0.22)}
           reduceMotion={reduceMotion}
+          timeZone={timeZone}
           styles={s}
         />
       ) : null}

@@ -319,6 +319,7 @@ const c=useThemeColors();
         open={detail === cachedActivity.id}
         history={metricHistory}
         units={state.units}
+        state={state}
         topInset={insets.top}
         onClose={() => setDetail(null)}
       />
@@ -331,6 +332,7 @@ function CachedActivityDetail({
   open,
   history,
   units,
+  state,
   topInset,
   onClose,
 }: {
@@ -338,6 +340,7 @@ function CachedActivityDetail({
   open: boolean;
   history: CompeteState["activities"];
   units: CompeteState["units"];
+  state: CompeteState;
   topInset: number;
   onClose: () => void;
 }) {
