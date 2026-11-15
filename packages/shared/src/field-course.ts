@@ -19,11 +19,22 @@ const path = (d: string, fill: string, extra: FieldNode["attrs"] = {}) => n("pat
 const MAX_VIEWPORT_TO_FIELD_RATIO = 3.9;
 
 /** A local chase window; the existing overview retains the whole accumulated course. */
-export function fieldDefaultSpan(unit: string) { return unit === "pts" ? 20 : unit === "mi" ? 1200 / 1609.344 : 1.2; }
-export function clampCourseCenter(value: number, span: number, high: number, unit: string, ground: FieldAppearance["ground"]) {
-  return ground === "oval" ? Math.max(0, Math.min(high, value)) : clampArenaLaneCenterToField(value, span, high, unit === "pts" ? 20 : 8);
+function fieldVolumeSpanCap(unit: string) {
+  return unit === "pts" || unit === "hrs" ? 20 : unit === "steps" ? 40_000 : 8;
 }
-export function fieldLoopLength(unit: string) { return unit === "pts" ? 20 : 1; }
+export function fieldDefaultSpan(unit: string) {
+  if (unit === "pts" || unit === "hrs") return 20;
+  if (unit === "steps") return 8_000;
+  return unit === "mi" ? 1200 / 1609.344 : 1.2;
+}
+export function clampCourseCenter(value: number, span: number, high: number, unit: string, ground: FieldAppearance["ground"]) {
+  return ground === "oval" ? Math.max(0, Math.min(high, value)) : clampArenaLaneCenterToField(value, span, high, fieldVolumeSpanCap(unit));
+}
+export function fieldLoopLength(unit: string) {
+  if (unit === "pts" || unit === "hrs") return 20;
+  if (unit === "steps") return 10_000;
+  return 1;
+}
 export function fieldLap(value: number, unit: string) {
   const total = Math.max(0, value) / fieldLoopLength(unit);
   const laps = Math.floor(total + 1e-9);

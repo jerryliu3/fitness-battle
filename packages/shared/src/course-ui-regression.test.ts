@@ -5,9 +5,9 @@ import { createCourseCamera, createRaceCourse } from "./race-course";
 import { syncReviewMetrics } from "./sync-review-metrics";
 import type { Activity } from "./compete/sports";
 
-it("normalizes every replay entry point for points fields and preserves requested map views", () => {
-  expect(competitionReplayDimension("strength")).toBe("2d");
-  expect(competitionReplayDimension("strength", "4d")).toBe("2d");
+it("normalizes every replay entry point for metric fields and preserves requested map views", () => {
+  expect(competitionReplayDimension("strength")).toBe("graph");
+  expect(competitionReplayDimension("strength", "4d")).toBe("graph");
   expect(competitionReplayDimension("running")).toBe("4d");
   expect(competitionReplayDimension("cycling", "2d")).toBe("2d");
 });

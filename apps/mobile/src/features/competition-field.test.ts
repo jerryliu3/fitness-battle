@@ -116,7 +116,6 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and time
   const overview = () => renderer.root.findByType("FieldOverview" as never);
   expect(overview().props.positionOnly).toBe(true);
   const selected = map().props.selectedId;
-  const fieldCenter = field().props.view.center;
   await act(async () => overview().props.onNavigate(.75));
   expect(map().props.distanceTarget).toMatchObject({ value: .75, request: 1 });
   expect(overview().props.view.center).toBe(.75);
@@ -159,10 +158,10 @@ it("keeps a navigable overview inside the athlete panel across collapse and expa
   await act(async () => button("Collapse athlete panel").props.onPress());
   expect(overview()).toBeDefined();
   const switcher = renderer.root.findAllByType("FieldViewSwitcher" as never)[0];
-  await act(async () => switcher.props.onChange("3d"));
+  await act(async () => switcher.props.onChange("2d"));
   expect(overview()).toBeDefined();
   await act(async () => overview().props.onNavigate(3));
-  expect(renderer.root.findByType("PortraitField" as never).props.view.center).toBe(3);
+  expect(field().props.view.center).toBe(3);
   await act(async () => button("Expand athlete panel").props.onPress());
   expect(overview()).toBeDefined();
 });

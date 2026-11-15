@@ -93,6 +93,7 @@ export * from "./race-history";
 export * from "./race-replay";
 export * from "./rank-symbols";
 export * from "./compete-time-series";
+export * from "./compete-field-view";
 
 export * from "./crew-overview";
 

@@ -41,7 +41,7 @@ export function CompetitionMoment({
   onConfirm,
   debug = false,
   embedded = false,
-  dimension = moment.unit === "pts" ? "2d" : "4d",
+  dimension = moment.unit === "km" || moment.unit === "mi" ? "4d" : "2d",
   course = null,
   autoStart = true,
 }: {

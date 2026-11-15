@@ -4,6 +4,7 @@ import { countsOnTrack } from "./compete/ledger";
 import { competeNow, fieldBoardForEnrollment } from "./compete/engine";
 import { sportById, type CompeteState, type ScoreTrack, type SportId, type UnitSystem } from "./compete/sports";
 import { findSynthetic, syntheticVolumeInWindow } from "./matching/synthetic-bank";
+import { normalizeCompeteFieldView } from "./compete-field-view";
 import { fieldDefaultSpan } from "./field-course";
 import type { CourseReplayFrame } from "./race-course";
 
@@ -246,7 +247,7 @@ export function competitionCourseReplayFrame(
 }
 
 export function competitionReplayDimension(sport: SportId, requested: "2d" | "3d" | "4d" | "graph" = "4d"): "2d" | "3d" | "4d" | "graph" {
-  return requested === "4d" && !sportById(sport).gps ? "2d" : requested;
+  return normalizeCompeteFieldView(sport, requested);
 }
 export function nextCompetitionReplaySpeed(speed: number) {
   const speeds = [.25, .5, 1, 2, 4];
