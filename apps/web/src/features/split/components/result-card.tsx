@@ -13,6 +13,7 @@ import {
   ordinalPlace,
   sportById,
   weekRecapMetrics,
+  type CompetitionReplay,
   type PeriodResult,
   type UnitSystem,
 } from "@fitness-battle/shared";
@@ -20,10 +21,14 @@ export function ResultCard({
   result,
   units,
   variant = "default",
+  replay,
+  hiddenIds = [],
 }: {
   result: PeriodResult;
   units: UnitSystem;
   variant?: "default" | "recap";
+  replay?: CompetitionReplay | null;
+  hiddenIds?: readonly string[];
 }) {
   const [receipt, setReceipt] = useState(false),
     reduced = useReducedMotion();
@@ -43,12 +48,12 @@ export function ResultCard({
           </span>
         </div>
         <div className="week-recap-result-metrics">
-          {weekRecapMetrics(result, units).map((metric) => (
+          {weekRecapMetrics(result, units, replay, hiddenIds).map((metric) => (
             <div key={metric.key}>
               <span>{metric.key.toUpperCase()}</span>
               <strong>
                 {metric.value}
-                {metric.key === "Rating" && showDelta && (
+                {metric.key === "Effort" && showDelta && (
                   <em className={`week-recap-rating-delta${delta > 0 ? " is-pos" : " is-neg"}`}> ({deltaText})</em>
                 )}
               </strong>

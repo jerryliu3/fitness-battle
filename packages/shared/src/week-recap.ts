@@ -74,7 +74,6 @@ export function weekRecapCopy(pages: readonly WeekRecapPage[], index: number) {
     page,
     last,
     title: page.kind === "arrival" ? "Small days. Quite a week." : page.kind === "results" ? "Race complete!" : "Week breakdown",
-    description: page.kind === "arrival" ? "Your effort, your progress." : page.kind === "results" ? "Your week, settled." : "Your week in motion.",
     label: last ? "Done" : page.kind === "arrival" ? "Reveal my finish →" : page.kind === "results" ? "See week breakdown →"
       : `${next && next.kind !== "arrival" ? sportById(next.kind === "results" ? next.result.sport : next.sport).name : "Next sport"} results →`,
   };
@@ -156,11 +155,35 @@ export function weekRecapHeartRateRanges(state: CompeteState, target: WeekRecapT
   return { totalMinutes: Math.round(totalSeconds / 60), hasGranular, ranges };
 }
 
-export function weekRecapMetrics(result: PeriodResult, units: UnitSystem) {
+export function weekRecapYourOvertakes(
+  replay: CompetitionReplay | null | undefined,
+  units: UnitSystem,
+  hiddenIds: readonly string[] = [],
+): number {
+  if (!replay || replay.events.length === 0) return 0;
+  const index = indexCompetitionReplay(replay, units);
+  let overtakes = 0;
+  let prevPlace: number | null = null;
+  for (let step = 0; step <= index.replay.events.length; step++) {
+    const rows = competitionReplayFrame(index, step).rows.filter(r => !hiddenIds.includes(r.id));
+    const you = rows.find(r => r.you);
+    if (!you) continue;
+    if (prevPlace != null && you.place < prevPlace) overtakes += prevPlace - you.place;
+    prevPlace = you.place;
+  }
+  return overtakes;
+}
+
+export function weekRecapMetrics(
+  result: PeriodResult,
+  units: UnitSystem,
+  replay?: CompetitionReplay | null,
+  hiddenIds: readonly string[] = [],
+) {
   return [
     { key: sportById(result.sport).gps ? "Distance" : "Volume", value: formatVolume(result.sport, result.distanceM, result.movingSec, units, result.effort) },
-    { key: "Effort", value: `${formatEffort(result.effort)} pts` },
-    { key: "Rating", value: `${Math.round(result.eloAfter)}` },
+    { key: "Overtakes", value: String(weekRecapYourOvertakes(replay, units, hiddenIds)) },
+    { key: "Effort", value: `${Math.round(result.eloAfter)}` },
   ] as const;
 }
 
@@ -206,38 +229,47 @@ export function weekRecapHighlights(
           title: `Field covered ${fieldTotalText}`,
           detail: `${events.length} workout${events.length === 1 ? "" : "s"} across ${activeIds.size} competitor${activeIds.size === 1 ? "" : "s"}.`,
         },
-        {
-          icon: "progress",
-          tone: "success",
-          title: overtakes > 0 ? `${overtakes} overtake${overtakes === 1 ? "" : "s"}` : "Steady standings",
-          detail: leadChanges > 0
-            ? `${leadChanges} lead change${leadChanges === 1 ? "" : "s"} across the week.`
-            : "Positions held firm through the finish.",
-        },
+        activeIds.size > 1
+          ? {
+            icon: "progress",
+            tone: "success",
+            title: leadChanges > 0 ? `${leadChanges} lead change${leadChanges === 1 ? "" : "s"}` : "Steady standings",
+            detail: overtakes > 0
+              ? `${overtakes} total position change${overtakes === 1 ? "" : "s"} across the field.`
+              : "Positions held firm through the finish.",
+          }
+          : {
+            icon: "progress",
+            tone: "success",
+            title: "Solo field run",
+            detail: `${totalMin} active minutes logged this round.`,
+          },
         ...(topRow ? [{
           icon: "trophy" as const,
           tone: "gold" as const,
-          title: topRow.you ? "Held the winning pace" : `${topRow.name} led the field`,
-          detail: sport.gps ? `Winning mark: ${topRow.value.toFixed(1)} ${distUnit}.` : `Winning mark: ${formatEffort(topRow.effort)} pts.`,
+          title: topRow.you ? "Top of the leaderboard" : `${topRow.name} led the field`,
+          detail: activeIds.size > 1
+            ? `${totalMin} total minutes logged by the field.`
+            : `Led ${sport.name} for the week.`,
         }] : []),
       ];
     }
   }
 
-  const yourVolume = formatVolume(result.sport, result.distanceM, result.movingSec, state.units, result.effort);
   const acts = breakdownActivities(state, { sport: result.sport, periodStart: result.periodStart, periodEnd: result.periodEnd, result });
+  const activeMin = Math.max(0, Math.round(result.movingSec / 60));
   return [
     {
       icon: "bolt",
       tone: "gold",
       title: `${result.fieldSize} athlete${result.fieldSize === 1 ? "" : "s"} in field`,
-      detail: `Your mark: ${yourVolume} across ${acts.length || 1} session${acts.length === 1 ? "" : "s"}.`,
+      detail: `${acts.length || 1} session${acts.length === 1 ? "" : "s"} logged in ${sport.name}.`,
     },
     {
-      icon: "trophy",
+      icon: "progress",
       tone: "success",
-      title: `Placed ${result.place} of ${result.fieldSize}`,
-      detail: `${formatEffort(result.effort)} effort points scored in ${sport.name}.`,
+      title: `${activeMin} active minutes`,
+      detail: result.fieldSize <= 1 ? "Solo week on the course." : "Steady standings through the week.",
     },
   ];
 }
