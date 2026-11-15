@@ -20,7 +20,7 @@ export default function TabLayout() {
   const SHELL_COLORS = useThemeColors();
   const pathname = usePathname();
   const router = useRouter();
-  const competeOrigin = useRef<ShellTabId>("today");
+  const competeOrigin = useRef<ShellTabId>("arena");
   useEffect(() => {
     const tab = shellTabFromPath(pathname);
     if (tab?.id && tab.id !== "arena") competeOrigin.current = tab.id;

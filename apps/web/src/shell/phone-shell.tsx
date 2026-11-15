@@ -81,7 +81,7 @@ export function PhoneShell({
   const [bootAnimDone, setBootAnimDone] = useState(false);
   const matched = tab?.id ?? null;
   const active = onAthlete ? null : intent ?? matched;
-  const competeOrigin = useRef<ShellTabId>("today");
+  const competeOrigin = useRef<ShellTabId>("arena");
   if (active && active !== "arena") competeOrigin.current = active;
   const accountKey = user?.id ?? "guest";
   const [visited, setVisited] = useState<Set<ShellTabId>>(
