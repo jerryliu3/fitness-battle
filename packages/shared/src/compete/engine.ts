@@ -1,3 +1,4 @@
+import { competeVolumeFromTotals } from "../compete-field-view";
 import { initializeEffortAccounts, settleAccountEffort } from './effort-account';
 import { createDeclaredEffortState, getScoreBreakdown, placementRewardPoints } from './effort-score';
 import { competitionPlace } from "../competition-place";
@@ -1472,10 +1473,10 @@ export function weeklyBoard(
   if (!enrollment) return [];
   if (Date.parse(enrollment.waveStart) > now.getTime() || enrollment.awaitingField) return [];
   const rows = groupFor(live, sport, track, enrollment, now);
-  const values = rows.map(row => sportById(sport).gps ? row.distanceM : row.effort);
-  return rows.map(row => ({
+  const values = rows.map((row) => competeVolumeFromTotals(sport, row, live.units));
+  return rows.map((row) => ({
     ...row,
-    place: competitionPlace(values, sportById(sport).gps ? row.distanceM : row.effort),
+    place: competitionPlace(values, competeVolumeFromTotals(sport, row, live.units)),
   }));
 }
 
@@ -1536,13 +1537,16 @@ export function formatVolume(
   if (sport === "walking") {
     return `${formatWalkingSteps(effort)} steps`;
   }
+  if (sport === "strength") {
+    return `${(movingSec / 3600).toFixed(1)} hrs`;
+  }
   if (sportById(sport).gps) {
     if (units === "metric") {
       return `${(distanceM / 1000).toFixed(1)} km`;
     }
     return `${(distanceM / 1609.344).toFixed(1)} mi`;
   }
-  return `${Math.round(movingSec / 60)} min`;
+  return `${(movingSec / 3600).toFixed(1)} hrs`;
 }
 
 /** Short unit label for season totals and lane captions. */

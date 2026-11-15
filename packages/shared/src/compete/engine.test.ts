@@ -265,6 +265,8 @@ describe("compete engine", () => {
     expect(metric.units).toBe("metric");
     expect(formatVolume("running", 5000, 1800, "us")).toBe("3.1 mi");
     expect(formatVolume("running", 5000, 1800, "metric")).toBe("5.0 km");
+    expect(formatVolume("strength", 0, 5400, "metric")).toBe("1.5 hrs");
+    expect(formatVolume("walking", 0, 0, "metric", 4200)).toBe("4,200 steps");
   });
 
   it("backfills missing sports in ratings and missing providers in links without crashing", () => {

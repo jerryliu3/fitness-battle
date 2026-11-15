@@ -10,6 +10,7 @@ import {
   arenaValueDecimals,
   arenaLaneValues,
   competeVolumeFromTotals,
+  formatArenaVolume,
   isGeographicArenaUnit,
 } from "./compete-field-view";
 import type { CheckpointSeries } from "./compete/track";
@@ -48,6 +49,7 @@ describe("competeFieldView", () => {
     expect(competeVolumeFromTotals("walking", { effort: 500, distanceM: 0, movingSec: 0 }, "metric")).toBe(500);
     expect(arenaLaneValues("strength", series, "metric")).toEqual([0.5, 1, 2]);
     expect(arenaLaneValues("walking", series, "metric")).toEqual([100, 200, 400]);
+    expect(formatArenaVolume("strength", { effort: 0, distanceM: 0, movingSec: 7200 }, "metric")).toBe("2 hrs");
   });
 
   it("exposes arena unit helpers for lane zoom and formatting", () => {

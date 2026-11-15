@@ -2,8 +2,7 @@
 import { AppText } from "@/ui/section";
 
 
-import { formatEffort } from "@fitness-battle/shared";
-import type { BoardRow } from "@fitness-battle/shared";
+import { formatArenaVolume, type BoardRow, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { motion, useReducedMotion } from "motion/react";
 
 export interface RosterGhost {
@@ -16,21 +15,25 @@ export interface RosterGhost {
 
 export function FieldRoster({
   rows,
+  sport,
+  units = "us",
   onSelect,
   selectedId,
   detail = "rating",
-  unit = "hrs",
   ghost = null,
 }: {
   rows: BoardRow[];
+  sport: SportId;
+  units?: CompeteState["units"];
   onSelect?: (id: string) => void;
   selectedId?: string;
   /** What the secondary line explains. */
   detail?: "rating" | "distance";
-  unit?: string;
   /** Past-self (or other) ghost — shown as a reference, never ranked. */
-  ghost?: RosterGhost | null;
+  ghost?: (RosterGhost & { distanceM?: number; movingSec?: number }) | null;
 }) {
+  const volumeLabel = (totals: { distanceM: number; movingSec: number; effort: number }) =>
+    formatArenaVolume(sport, totals, units);
   const reduced = useReducedMotion();
   const layout = reduced ? false : "position" as const;
   const transition = { layout: { type: "spring" as const, stiffness: 380, damping: 34 } };
@@ -59,7 +62,7 @@ export function FieldRoster({
               <AppText as="small" role="caption" secondary>{ghost.detail ?? "Reference · not ranked"}</AppText>
             </span>
             <b>
-              {formatEffort(ghost.effort)} {unit}
+              {volumeLabel({ distanceM: ghost.distanceM ?? 0, movingSec: ghost.movingSec ?? 0, effort: ghost.effort })}
             </b>
           </button>
         ) : (
@@ -76,7 +79,7 @@ export function FieldRoster({
               <AppText as="small" role="caption" secondary>{ghost.detail ?? "Reference · not ranked"}</AppText>
             </span>
             <b>
-              {formatEffort(ghost.effort)} {unit}
+              {volumeLabel({ distanceM: ghost.distanceM ?? 0, movingSec: ghost.movingSec ?? 0, effort: ghost.effort })}
             </b>
           </div>
         )
@@ -100,7 +103,7 @@ export function FieldRoster({
               <AppText as="small" role="caption" secondary>{secondary}</AppText>
             </span>
             <b>
-              {formatEffort(row.effort)} {unit}
+              {volumeLabel(row)}
             </b>
           </>
         );

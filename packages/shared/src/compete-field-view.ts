@@ -61,6 +61,18 @@ export function competeChartLiveValue(
   return competeVolumeFromTotals(sport, row, units);
 }
 
+export function formatArenaVolume(
+  sport: SportId,
+  totals: { distanceM: number; movingSec: number; effort: number },
+  units: CompeteState["units"],
+): string {
+  const unit = competeChartUnit(sport, units);
+  const value = competeVolumeFromTotals(sport, totals, units);
+  return `${value.toLocaleString("en-US", {
+    maximumFractionDigits: arenaValueDecimals(unit),
+  })} ${unit}`;
+}
+
 export function arenaLaneValues(
   sport: SportId,
   series: CheckpointSeries,

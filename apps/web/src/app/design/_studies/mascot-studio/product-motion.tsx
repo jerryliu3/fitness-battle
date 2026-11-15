@@ -51,7 +51,7 @@ export function ProductMotionStudy() {
       <button className={styles.advance} onClick={()=>setFriday(value=>!value)}>{friday?"Rewind to Tuesday":"Advance to Friday"}</button>
       <div className={styles.fieldGrid}>
         <LaneTrack runners={runners} ghost={null} time={time} extra={0} selected={selected} showGhost={false} unit="km" onSelect={setSelected}/>
-        <FieldRoster rows={rows} selectedId={selected} onSelect={setSelected} detail="distance" unit="km"/>
+        <FieldRoster sport="running" rows={rows} selectedId={selected} onSelect={setSelected} detail="distance" units="metric"/>
       </div>
     </section>
     <footer><Link href="/today">Try Today’s checkpoint →</Link><Link href="/arena">Explore the lanes →</Link><p>Reduced Motion keeps the finished wordmark still. Product feedback plays once in response to an action.</p></footer>
