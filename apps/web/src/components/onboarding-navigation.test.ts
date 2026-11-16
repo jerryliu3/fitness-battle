@@ -19,3 +19,12 @@ it("owns authenticated welcome routing and allows tracker callbacks", async () =
   expect(mock.replace).not.toHaveBeenCalled();
   await act(async () => r.unmount());
 });
+
+it("allows a signed-in account to review the guest journey without redirecting", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mock.replace.mockClear(); mock.completed = false; mock.path = "/app/welcome"; mock.params = new URLSearchParams("preview=1");
+  let r!: ReactTestRenderer;
+  await act(async () => { r = create(createElement(OnboardingNavigation)); });
+  expect(mock.replace).not.toHaveBeenCalled();
+  await act(async () => r.unmount());
+});

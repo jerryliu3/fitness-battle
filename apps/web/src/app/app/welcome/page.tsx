@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   athleteCardModelForPeer, athleteLocationLine, EMPTY_GUEST_INTRO, GUEST_INTRO_DRAFT_KEY,
   GUEST_INTRO_SEEN_KEY, GUEST_SIGNUP_PENDING_KEY, ONBOARDING_STEPS, ONBOARDING_TITLES,
@@ -17,18 +18,18 @@ import { SportActivityIcon } from "@/ui/sport-activity-icon";
 import { AppHeading, AppParagraph } from "@/ui/section";
 import "@/features/club/onboarding.css";
 
-export default function WelcomePage() {
+function Welcome({ preview }: { preview: boolean }) {
   const { user, loading } = useAuth();
   const top = useRef<HTMLElement>(null);
   const [ready, setReady] = useState(false);
   const [step, setStep] = useState<OnboardingStep>("sport");
   const [draft, setDraft] = useState<GuestIntroDraft>(EMPTY_GUEST_INTRO);
-  useEffect(() => { setDraft(readGuestIntroDraft() ?? EMPTY_GUEST_INTRO); setReady(true); }, []);
+  useEffect(() => { setDraft(preview ? EMPTY_GUEST_INTRO : readGuestIntroDraft() ?? EMPTY_GUEST_INTRO); setReady(true); }, [preview]);
   useEffect(() => {
-    if (ready) try { localStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify(draft)); } catch {}
-  }, [ready, draft]);
+    if (ready && !preview && !user) try { localStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify(draft)); } catch {}
+  }, [ready, draft, preview, user]);
   useEffect(() => { top.current?.scrollIntoView({ block: "start" }); }, [step]);
-  if (!ready || loading || user) return <AppParagraph>Loading…</AppParagraph>;
+  if (!ready || loading || (user && !preview)) return <AppParagraph>Loading…</AppParagraph>;
 
   const index = ONBOARDING_STEPS.indexOf(step);
   const name = draft.name.trim() || "Athlete";
@@ -39,6 +40,7 @@ export default function WelcomePage() {
     location: athleteLocationLine(draft.city, draft.countryCode || null),
   };
   function leave(signingIn = false) {
+    if (preview) return;
     try {
       localStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify(draft));
       localStorage.setItem(GUEST_INTRO_SEEN_KEY, "1");
@@ -81,7 +83,7 @@ export default function WelcomePage() {
     {step === "account" && <>
       <AthleteCrest model={card} />
       <AppParagraph>Keep your athlete and build your record.</AppParagraph>
-      <Link className="fb-btn" href="/signup" onClick={() => leave()}>Create account</Link>
+      <Link className="fb-btn" href={preview ? "/app/onboarding?preview=1" : "/signup"} onClick={() => leave()}>Create account</Link>
     </>}
     <div className="onboarding-actions">
       {index > 0 && <button className="fb-btn-line" type="button" onClick={() => setStep(ONBOARDING_STEPS[index - 1]!)}>Back</button>}
@@ -93,4 +95,11 @@ export default function WelcomePage() {
       <Link className="fb-btn-ghost" href="/app/today" onClick={() => leave()}>Explore the app</Link>
     </>}
   </section>;
+}
+
+function Entry() {
+  return <Welcome preview={useSearchParams().get("preview") === "1"} />;
+}
+export default function WelcomePage() {
+  return <Suspense fallback={<AppParagraph>Loading…</AppParagraph>}><Entry /></Suspense>;
 }

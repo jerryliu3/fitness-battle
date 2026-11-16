@@ -24,6 +24,10 @@ account matching rule in `packages/shared/src/onboarding-journey.ts`. The select
 Everyday Club tokens, chart components, rank artwork and athlete renderer remain
 the visual foundation. The supplied storyboard informs sequence and composition.
 
+Signed-in reviewers can open `/app/welcome?preview=1` to start at sport selection.
+This uses fresh in-memory choices, does not save guest drafts or change the account,
+and continues into the read-only post-account setup preview.
+
 ## Draft and account handoff
 
 Native AsyncStorage and web localStorage persist only sport/name/city/country,
@@ -63,7 +67,7 @@ From `/Users/jerryliu/.codex/worktrees/58bd/fitness-battle`:
 
 ```sh
 pnpm dev:web
-# Open http://localhost:3000/app/welcome
+# Open http://localhost:3000/app/welcome?preview=1
 
 pnpm --filter @fitness-battle/mobile exec expo start --dev-client --port 8082
 # Press i for the current-worktree iOS development client.

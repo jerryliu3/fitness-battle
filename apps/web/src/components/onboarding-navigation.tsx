@@ -10,13 +10,15 @@ export function OnboardingNavigation() {
   const { state, loadStatus } = useCompete();
   const path = usePathname(), params = useSearchParams(), router = useRouter();
   const connecting = path === "/app/athlete" && (params.get("panel") === "connections" || params.has("tracker") || params.has("provider"));
+  const preview = path === "/app/welcome" && params.get("preview") === "1";
   useEffect(() => {
+    if (preview) return;
     if (loading || !user || !state || (loadStatus !== "ready" && loadStatus !== "local")) return;
     if (path === "/app/welcome" || path === "/app") {
       router.replace(state.onboardingCompleted ? "/app/today" : "/app/onboarding");
     } else if (!state.onboardingCompleted && path !== "/app/onboarding" && !connecting) {
       router.replace(`/app/onboarding?next=${encodeURIComponent(path)}`);
     }
-  }, [loading, user, state?.onboardingCompleted, loadStatus, path, connecting, router]);
+  }, [loading, user, state?.onboardingCompleted, loadStatus, path, connecting, preview, router]);
   return null;
 }
