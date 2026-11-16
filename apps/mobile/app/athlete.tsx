@@ -259,8 +259,10 @@ const styles=useThemedStyles(stylesThemes);
       const normalizedEmail = email.trim().toLowerCase();
       let marked = false;
       if (guest?.name.trim()) {
-        await AsyncStorage.setItem(GUEST_SIGNUP_PENDING_KEY, normalizedEmail);
-        marked = true;
+        try {
+          await AsyncStorage.setItem(GUEST_SIGNUP_PENDING_KEY, normalizedEmail);
+          marked = true;
+        } catch { /* Lack of local storage must not block account creation. */ }
       }
       const result = await signUp({
         email,
@@ -268,7 +270,7 @@ const styles=useThemedStyles(stylesThemes);
         displayName: displayName.trim() || guest?.name.trim() || email.split("@")[0] || "Athlete",
       });
       if (result.error) {
-        if (marked) await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY);
+        if (marked) void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
         setAuthNote(result.error);
         return;
       }
