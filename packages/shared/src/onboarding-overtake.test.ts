@@ -1,0 +1,18 @@
+import { describe, expect, it } from "vitest";
+import { SPORT_IDS } from "./compete/sports";
+import { createOnboardingOvertakeMoment } from "./onboarding-overtake";
+import { competitionMomentScene } from "./competition-moments";
+
+describe("guest sport overtake", () => {
+  for (const sport of SPORT_IDS) {
+    it(`illustrates an overtake for ${sport} without account state`, () => {
+      const moment = createOnboardingOvertakeMoment("Taylor", sport);
+      expect(moment.sport).toBe(sport);
+      expect(moment.unit).toBe(sport === "running" || sport === "cycling" ? "km" : "pts");
+      expect(moment.lanes.find(l => l.you)?.name).toBe("Taylor");
+      expect(competitionMomentScene(moment, 0).rank).toBe(2);
+      expect(competitionMomentScene(moment, 1).rank).toBe(1);
+      expect(competitionMomentScene(moment, 1).count).toBe(1);
+    });
+  }
+});
