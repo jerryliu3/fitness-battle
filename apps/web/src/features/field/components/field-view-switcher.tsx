@@ -1,5 +1,5 @@
 "use client";
-import { APP_ICON_PATHS } from "@fitness-battle/shared";
+import { APP_ICON_PATHS, APP_ICON_VIEW_BOX } from "@fitness-battle/shared";
 import { colors as c } from "@/theme/app-colors";
 import { typographyStyle } from "@/ui/section";
 import { useEffect, useRef, useState } from "react";
@@ -10,14 +10,15 @@ type FieldViewOption = { value: FieldView; label: string; icon: keyof typeof APP
 
 const VIEW_ICONS: Record<FieldView, keyof typeof APP_ICON_PATHS> = {
   "2d": "distance",
-  "4d": "expand",
-  "3d": "expand",
+  "4d": "cubeFocus",
+  "3d": "cubeFocus",
   graph: "progress",
 };
 
 function FieldIcon({ name, size = 22, color = "currentColor" }: { name: keyof typeof APP_ICON_PATHS; size?: number; color?: string }) {
+  const viewBox = APP_ICON_VIEW_BOX[name] ?? "0 0 24 24";
   return (
-    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill={color}>
+    <svg aria-hidden="true" width={size} height={size} viewBox={viewBox} fill={color}>
       <path d={APP_ICON_PATHS[name]} />
     </svg>
   );
@@ -40,7 +41,7 @@ export function FieldViewSwitcher({
   const rootRef = useRef<HTMLDivElement>(null);
   const options: FieldViewOption[] = [
     { value: "2d", label: "2D", icon: "distance" },
-    ...(geographic ? [{ value: "4d" as const, label: "3D", icon: "expand" as const }] : []),
+    ...(geographic ? [{ value: "4d" as const, label: "3D", icon: "cubeFocus" as const }] : []),
     { value: "graph", label: "Timeline", icon: "progress" },
   ];
   const active = options.find((option) => option.value === value && !standings) ?? options[0]!;

@@ -10,8 +10,8 @@ type FieldViewOption = { value: FieldView; label: string; icon: AppIconName };
 
 const VIEW_ICONS: Record<FieldView, AppIconName> = {
   "2d": "distance",
-  "4d": "expand",
-  "3d": "expand",
+  "4d": "cubeFocus",
+  "3d": "cubeFocus",
   graph: "progress",
 };
 
@@ -27,7 +27,7 @@ export function FieldViewSwitcher({
   const c = useThemeColors();
   const options: FieldViewOption[] = [
     { value: "2d", label: "2D", icon: "distance" },
-    ...(geographic ? [{ value: "4d" as const, label: "3D", icon: "expand" as const }] : []),
+    ...(geographic ? [{ value: "4d" as const, label: "3D", icon: "cubeFocus" as const }] : []),
     { value: "graph", label: "Timeline", icon: "progress" },
   ];
   const active = options.find((option) => option.value === value) ?? options[0]!;
