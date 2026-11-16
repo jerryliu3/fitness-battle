@@ -28,6 +28,8 @@ import {
   type ArenaViewWindow,
   type BoardRow,
   defaultCompeteFieldView,
+  fieldZoomLimits,
+  arenaStandingsQuantityLabel,
   isGeographicCompete,
   normalizeCompeteFieldView,
   type CompeteArenaEvent,
@@ -64,6 +66,8 @@ export function FieldStage({
   replayState,
   queueOverlay,
   competeEvent,
+  timelineFraction,
+  onTimelineChange,
 }: {
   queueOverlay?: import("react").ReactNode;
   model: FieldModel;
@@ -82,6 +86,8 @@ export function FieldStage({
   tabActive?: boolean;
   replayState?: CompeteState;
   competeEvent?: CompeteArenaEvent;
+  timelineFraction?: number | null;
+  onTimelineChange?: (value: number | null) => void;
 }) {
   const presentationEvent: CompeteArenaEvent = competeEvent ?? model.sport;
   const geographic = isGeographicCompete(presentationEvent);
@@ -95,6 +101,7 @@ export function FieldStage({
     model.sport,
   );
   const unit = model.unit;
+  const zoomLimits = fieldZoomLimits(unit);
   const sharedTimeline = useCompetitionTimeline();
   const localTimeline = useFieldTimeline(!sharedTimeline && !backgroundMode && !standingsOnly ? replayState : undefined, { sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: model.periodEnd }, !backgroundMode && !standingsOnly && tabActive && presentationVisible && Boolean(replayState) && !queueOverlay);
   const timeline = sharedTimeline ?? localTimeline;
@@ -574,6 +581,8 @@ export function FieldStage({
               onSelectAthlete={toggleSelect}
               reserveTopControls={!lanesImmersive}
               immersive={backgroundMode && lanesImmersive}
+              timelineFraction={timelineFraction}
+              onTimelineChange={onTimelineChange}
             />
           ) : null}
           {viewDimension === "4d" && (persistent || tabActive) ? <div className="focus-geographic-host" style={{ position: "relative", height: persistent || lanesImmersive ? "100%" : 460 }}>
@@ -629,10 +638,10 @@ export function FieldStage({
                 <button
                   type="button"
                   aria-label="Zoom out"
-                  disabled={view.span >= (unit === "pts" ? 100 : 40)}
+                  disabled={view.span >= zoomLimits.max}
                   onClick={() => {
                     cancelCenterTween();
-                    setSpan(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5));
+                    setSpan(Math.min(zoomLimits.max, view.span * 1.5));
                   }}
                 >
                   −
@@ -640,10 +649,10 @@ export function FieldStage({
                 <button
                   type="button"
                   aria-label="Zoom in"
-                  disabled={view.span <= (unit === "pts" ? 2 : 0.5)}
+                  disabled={view.span <= zoomLimits.min}
                   onClick={() => {
                     cancelCenterTween();
-                    setSpan(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5));
+                    setSpan(Math.max(zoomLimits.min, view.span / 1.5));
                   }}
                 >
                   ＋
@@ -716,7 +725,7 @@ export function FieldStage({
               </button>
             ) : null}
 
-            <p className="fb-note">Places use exact {unit === "pts" ? "effort" : "distance"} totals; displayed values are rounded.</p>
+            <p className="fb-note">Places use exact {arenaStandingsQuantityLabel(unit)} totals; displayed values are rounded.</p>
             <StandingsList
               ranked={ranked}
               unit={unit}

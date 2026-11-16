@@ -171,7 +171,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   return (
     <CompetitionTimelineProvider state={state} selection={{ sport: selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary, track, periodStart: period.startsAt.toISOString(), periodEnd: period.endsAt.toISOString() }} active={immersive && !detailDestination && !metricImmersive}>
     <div className="focus-arena">
-      {selectedSport && selectedSport !== "sleep" && !queued && !detailDestination ? (
+      {selectedSport && !detailDestination ? (
         <FieldStage
           externalAthleteFocus={athleteFocus}
           key={`${account}:${selectedSport}:${state.units}`}
@@ -179,14 +179,33 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
           onOptionsChange={setCourseOptions}
           persistent
           backgroundMode
-          queueOverlay={queued ? <></> : undefined}
+          queueOverlay={
+            queued && selectedSport !== "sleep" ? (
+              <QueuedField
+                state={state}
+                event={selectedSport}
+                now={now}
+                onCancel={() => {
+                  dispatch({ type: "opt-out", sport: selectedSport });
+                  setImmersiveAccount(null);
+                }}
+                overlay
+              />
+            ) : undefined
+          }
           presentationVisible={immersive}
           onExit={() => setImmersiveAccount(null)}
           tabActive={tabActive}
           replayState={state}
-          sportTitle={SPORTS.find(s => s.id === selectedSport)?.name}
+          sportTitle={selectedSport === "sleep" ? "Recovery" : SPORTS.find((s) => s.id === selectedSport)?.name}
           model={buildFieldModel(state, arenaSport, track, now)}
-          boardRows={buildSplitBoard(state, arenaSport, track, now).rows}
+          boardRows={
+            selectedSport === "sleep"
+              ? undefined
+              : buildSplitBoard(state, arenaSport, track, now).rows
+          }
+          timelineFraction={metricImmersive ? pointsFraction : undefined}
+          onTimelineChange={metricImmersive ? setPointsFraction : undefined}
         />
       ) : null}
       {immersive && !detailDestination && <div className="compete-field-options">{courseOptions}</div>}
@@ -223,7 +242,7 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
       ) : null}
 
       {selectedSport && selectedSport !== "sleep" ? queue?.queued || queue?.awaitingField ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch({ type: "opt-out", sport: selectedSport }); setImmersiveAccount(null); }} /> : <CompetitionPanel key={`${account}:${selectedSport}:${period.startsAt.toISOString()}`} active={immersive} standings={<FieldStage competeEvent={selectedSport} onFocusAthlete={id => { setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} standingsOnly key={`${account}:${selectedSport}:${state.units}`} tabActive={immersive} replayState={state} sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} queueOverlay={queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => dispatch({ type: "opt-out", sport: selectedSport })} /> : undefined} />} activity={visible => <RaceUpdates state={state} sport={selectedSport} active={visible} />} /> : null}
-      {selectedSport === "sleep" && (queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event="sleep" now={now} onCancel={() => dispatch({type:"opt-out-health",metric:"sleep"})} /> : <SleepPanel hideChart state={state} now={now} onJoin={() => openRegistration("sleep")} onLeave={()=>dispatch({type:sleep.renews?"schedule-leave":"resume-renewal",metric:"sleep"})} leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"} />)}
+      {selectedSport === "sleep" && (queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event="sleep" now={now} onCancel={() => dispatch({type:"opt-out-health",metric:"sleep"})} /> : <SleepPanel hideChart={immersive} state={state} now={now} onJoin={() => openRegistration("sleep")} onLeave={()=>dispatch({type:sleep.renews?"schedule-leave":"resume-renewal",metric:"sleep"})} leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"} />)}
       </CompeteSheet>
       <div hidden={immersive}>
 

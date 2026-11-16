@@ -176,7 +176,7 @@ const f=useFocusStyles();
 
   const content = (
     <SafeAreaView pointerEvents={persistent ? "box-none" : "auto"} style={[f.safe, persistent && { backgroundColor: "transparent" }]} edges={persistent ? [] : ["top"]}>
-      {persistent && selectedSport && !queued && !detailDestination ? (
+      {persistent && selectedSport && !detailDestination ? (
         <CompetitionField
           key={`${accountKey}:${selectedSport}:${state.units}:${fieldSession}`}
           competeEvent={selectedSport}
@@ -211,7 +211,7 @@ const f=useFocusStyles();
           </AppText>
         ) : null}
         {!persistent && <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />}
-        {persistent ? selectedSport && selectedSport !== "sleep" ? queue?.queued || queue?.awaitingField ? <View style={{ gap: 16 }}><QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch({ type: "opt-out", sport: selectedSport }); }} /></View> : <CompetitionPanel key={`${accountKey}:${selectedSport}:${headerPeriod.startsAt.toISOString()}`} active={focused && experience.immersive} standings={<CompetitionField sport={selectedSport} track={track} standingsOnly onFocusAthlete={id => { setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} />} activity={visible => <RaceUpdates state={state} sport={selectedSport} active={visible} />} /> : selectedSport === "sleep" ? queue?.queued || queue?.awaitingField ? <QueuedField state={state} event="sleep" now={now} onCancel={() => { dispatch({ type: "opt-out-health", metric: "sleep" }); }} /> : <SleepPanel state={state} dispatch={dispatch} hideChart /> : null : <>
+        {persistent ? selectedSport && selectedSport !== "sleep" ? queue?.queued || queue?.awaitingField ? <View style={{ gap: 16 }}><QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch({ type: "opt-out", sport: selectedSport }); }} /></View> : <CompetitionPanel key={`${accountKey}:${selectedSport}:${headerPeriod.startsAt.toISOString()}`} active={focused && experience.immersive} standings={<CompetitionField sport={selectedSport} track={track} standingsOnly onFocusAthlete={id => { setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} />} activity={visible => <RaceUpdates state={state} sport={selectedSport} active={visible} />} /> : selectedSport === "sleep" ? queue?.queued || queue?.awaitingField ? <QueuedField state={state} event="sleep" now={now} onCancel={() => { dispatch({ type: "opt-out-health", metric: "sleep" }); }} /> : <SleepPanel state={state} dispatch={dispatch} hideChart={experience.immersive} /> : null : <>
           <EventHome active={focused && !experience.immersive} state={registrationBackground?.account === accountKey ? registrationBackground.state : state} accountKey={accountKey} onEnter={experience.enter} onRecovery={() => experience.enter(accountKey, "sleep")} />
 
         </>}
