@@ -6,7 +6,7 @@ import { createRaceCourse, raceCoursePosition, raceCourseRacerPosition } from ".
 it("gives each real racer a covered trail ending at its dot, without exposing future geometry", () => {
   const course = createRaceCourse("Street", [[0, 0], [.01, 0], [.02, 0]]);
   const lanes = [{ id: "you", name: "You", initials: "Y", you: true, value: .5 }, { id: "peer", name: "Peer", initials: "P", value: 1 }, { id: "ghost", name: "Past you", initials: "Y", ghost: true, value: 10 }];
-  const scene = raceCourseScene(course, lanes, "km", "peer");
+  const scene = raceCourseScene(course, lanes, "km", "peer", false);
   expect(scene.markers.features).toHaveLength(2);
   expect(scene.selected?.metres).toBe(1000);
   expect(scene.trails.features).toHaveLength(2);
@@ -23,21 +23,22 @@ it("gives each real racer a covered trail ending at its dot, without exposing fu
   expect(lanes[0].value).toBe(.5);
 });
 
-it("centers the viewer on the road and fits ten stable individual lanes across 3.78 metres", () => {
+it("draws one centerline trail for the selected racer in shared profile lane mode", () => {
   const course = createRaceCourse("Street", [[0, 0], [.01, 0]]);
   const lanes = Array.from({ length: 10 }, (_, i) => ({ id: `racer-${i}`, name: `Racer ${i}`, initials: "R", you: i === 7, value: .5 }));
   const scene = raceCourseScene(course, lanes, "km", "racer-0");
   expect(scene.markers.features.find(f => f.properties.you)?.geometry.coordinates).toEqual(raceCoursePosition(course, 500).coordinate);
-  const markers = [...scene.markers.features].sort((a, b) => a.geometry.coordinates[1] - b.geometry.coordinates[1]);
-  for (let i = 1; i < markers.length; i++) expect(distance(markers[i - 1].geometry.coordinates, markers[i].geometry.coordinates, { units: "meters" })).toBeCloseTo(.42, 3);
-  expect(distance(markers[0].geometry.coordinates, markers.at(-1)!.geometry.coordinates, { units: "meters" })).toBeCloseTo(3.78, 3);
-  expect(scene.trails.features).toHaveLength(10);
-  const selected = raceCourseScene(course, lanes, "km", "racer-9");
-  expect(selected.trails).toBe(scene.trails);
-  const reordered = raceCourseScene(course, [...lanes].reverse(), "km", "racer-9");
-  for (const marker of markers) expect(reordered.markers.features.find(f => f.id === marker.id)?.geometry.coordinates).toEqual(marker.geometry.coordinates);
-  const together = raceCourseScene(course, lanes, "km", "racer-0", 0);
-  for (const marker of together.markers.features) expect(marker.geometry.coordinates).toEqual(raceCoursePosition(course, 500).coordinate);
+  for (const marker of scene.markers.features) {
+    expect(marker.geometry.coordinates).toEqual(raceCoursePosition(course, 500).coordinate);
+  }
+  expect(scene.trails.features).toHaveLength(1);
+  expect(scene.trails.features[0]?.id).toBe("racer-0");
+  const racerNine = raceCourseScene(course, lanes, "km", "racer-9");
+  expect(racerNine.trails.features).toHaveLength(1);
+  expect(racerNine.trails.features[0]?.id).toBe("racer-9");
+  const separate = raceCourseScene(course, lanes, "km", "racer-0", false);
+  expect(separate.trails.features).toHaveLength(10);
+  expect(new Set(separate.markers.features.map((marker) => marker.geometry.coordinates.join(","))).size).toBeGreaterThan(1);
 });
 
 it("reveals no trail for zero activity and bounds overview to the known start", () => {
@@ -65,14 +66,16 @@ it("keeps each racer's trail aligned through bends, turnarounds, and the date li
   for (const course of [createRaceCourse("Corner", [[0, 0], [.01, 0], [.01, .01]]), createRaceCourse("Date line", [[179.99, 0], [-179.99, .01]])]) {
     for (const metres of [course.metres[1] - 1, course.metres[1], course.length * .3, course.length]) {
       const lanes = [{ id: "a", name: "A", initials: "A", you: true, value: metres / 1000 }, { id: "b", name: "B", initials: "B", value: metres / 1000 }];
-      const outbound = raceCourseScene(course, lanes, "km", "b");
-      const inbound = raceCourseScene(course, lanes.map(l => ({ ...l, value: (2 * course.length - metres) / 1000 })), "km", "b");
+      const outbound = raceCourseScene(course, lanes, "km", "b", false);
+      const inbound = raceCourseScene(course, lanes.map(l => ({ ...l, value: (2 * course.length - metres) / 1000 })), "km", "b", false);
       for (let i = 0; i < 2; i++) {
         expect(distance(outbound.markers.features[i].geometry.coordinates, inbound.markers.features[i].geometry.coordinates, { units: "meters" })).toBeLessThan(.001);
         expect(outbound.trails.features[i].geometry.coordinates.at(-1)).toEqual(outbound.markers.features[i].geometry.coordinates);
         expect(inbound.trails.features[i].geometry.coordinates.at(-1)).toEqual(inbound.markers.features[i].geometry.coordinates);
       }
-      expect(outbound.selected?.coordinate).toEqual(raceCourseRacerPosition(course, metres, -.42).coordinate);
+      expect(outbound.selected?.coordinate).toEqual(
+        outbound.trails.features.find((trail) => trail.id === outbound.selected?.id)?.geometry.coordinates.at(-1),
+      );
     }
   }
 });

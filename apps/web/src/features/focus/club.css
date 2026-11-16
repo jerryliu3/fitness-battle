@@ -2295,8 +2295,6 @@
 @media (prefers-reduced-motion: reduce) { .geographic-map-controls { transition: none; } }
 
 .course-callout-target:focus-visible { outline: 3px solid var(--teal, var(--app-chart-series)); border-radius: 12px; }
-.is-holding-field .course-athlete-callout { opacity: 0; pointer-events: none; }
-.is-holding-field .course-callout-target { pointer-events: none !important; }
 
 /* Activity details: session facts, inspectable history and concrete contribution. */
 .session-detail, .session-detail-content, .activity-context { display: grid; gap: 28px; min-width: 0; }

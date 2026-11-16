@@ -40,7 +40,7 @@ it("shares fullscreen, athlete panels, selection and timeline with 4D", async ()
   await act(async () => overview().props.onNavigate(.75));
   expect(map().props.distanceTarget).toMatchObject({ value: .75, request: 1 });
   expect(overview().props.view.center).toBe(.75);
-  expect(map().props.selectedId).toBe("you");
+  expect(map().props.selectedId).toBe("");
   await act(async () => map().props.onResumeFollow());
   expect(map().props.distanceTarget).toBeNull();
   await act(async () => button("Collapse athlete panel").props.onClick());

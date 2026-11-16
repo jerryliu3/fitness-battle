@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { CourseCallout } from "./course-callout";
 import { addMapboxAttribution, mapboxAttributionOptions } from "@/components/maps/mapbox-attribution";
 import { webEnv } from "@/lib/env";
@@ -18,10 +18,10 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   useEffect(() => { setDismissed(ids => ids.filter(id => id !== selectedId)); }, [selectedId, focusRequest]);
   const container = useRef<HTMLDivElement>(null), map = useRef<mapboxgl.Map | null>(null);
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(initialFlat), [following, setFollowing] = useState(true);
-  const [spaced, setSpaced] = useState(false);
+  const [sharedLane, setSharedLane] = useState(true);
   const earnedDistance = Math.max(0, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value));
   const clampedTarget = distanceTarget ? Math.max(0, Math.min(distanceTarget.value, earnedDistance)) : undefined;
-  const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? RACE_LANE_SPACING_METRES : 0), [course, lanes, unit, selectedId, spaced]);
+  const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, sharedLane), [course, lanes, unit, selectedId, sharedLane]);
   const latest = useRef({ scene, onSelect, onFollowChange, onReady, onSnapshot }); latest.current = { scene, onSelect, onFollowChange, onReady, onSnapshot };
   const reduced = useRef(false);
   const camera = useRef<ReturnType<typeof createCourseCamera> | null>(null);
@@ -53,8 +53,8 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
       const s = latest.current.scene;
       instance.addSource("completed", { type: "geojson", data: s.trails });
       instance.addSource("athletes", { type: "geojson", data: s.markers });
-      instance.addLayer({ id: "completed-line", type: "line", source: "completed", slot: "middle", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "priority"] }, paint: { "line-color": ["get", "color"], "line-width": spaced ? RACE_SEPARATE_WIDTH_PIXELS : RACE_OVERLAY_WIDTH_PIXELS } });
-      instance.addLayer({ id: "athlete-dots", type: "circle", source: "athletes", slot: "top", layout: { "circle-sort-key": ["case", ["get", "selected"], 2, ["get", "you"], 1, 0] }, paint: { "circle-radius": ["case", ["get", "selected"], RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS], "circle-color": ["get", "color"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
+      instance.addLayer({ id: "completed-line", type: "line", source: "completed", slot: "middle", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "priority"] }, paint: { "line-color": ["get", "color"], "line-width": sharedLane ? RACE_OVERLAY_WIDTH_PIXELS : RACE_SEPARATE_WIDTH_PIXELS } });
+      instance.addLayer({ id: "athlete-dots", type: "circle", source: "athletes", slot: "top", layout: { "circle-sort-key": ["case", ["get", "selected"], 2, ["get", "you"], 1, 0], visibility: sharedLane ? "none" : "visible" }, paint: { "circle-radius": ["case", ["get", "selected"], RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS], "circle-color": ["get", "color"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
       instance.on("click", "athlete-dots", event => { const id = event.features?.[0]?.properties?.id; if (typeof id === "string") latest.current.onSelect(id); });
       setReady(true); setError("");
       const prepared = () => { if (!initialized) { initialized = true; latest.current.onReady?.(); if (latest.current.onSnapshot) { try { latest.current.onSnapshot(instance.getCanvas().toDataURL("image/png")); } catch {} } } };
@@ -71,15 +71,22 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     return () => { observer.disconnect(); preference.removeEventListener("change", preferenceChanged); camera.current?.interrupt(false); instance.remove(); map.current = null; camera.current = null; };
   }, [course]);
   useEffect(() => {
-    const instance = map.current; if (!ready || !instance || !instance.getSource("completed")) return;
+    const instance = map.current;
+    if (!ready || !instance?.getSource("completed")) return;
     (instance.getSource("completed") as mapboxgl.GeoJSONSource).setData(scene.trails);
   }, [ready, scene.trails]);
   useEffect(() => {
-    if (ready) (map.current?.getSource("athletes") as mapboxgl.GeoJSONSource | undefined)?.setData(scene.markers);
+    const instance = map.current;
+    const athletes = instance?.getSource("athletes") as mapboxgl.GeoJSONSource | undefined;
+    if (!ready || !athletes) return;
+    athletes.setData(scene.markers);
   }, [ready, scene.markers]);
   useEffect(() => {
-    if (ready) map.current?.setPaintProperty("completed-line", "line-width", spaced ? RACE_SEPARATE_WIDTH_PIXELS : RACE_OVERLAY_WIDTH_PIXELS);
-  }, [ready, spaced]);
+    if (ready) map.current?.setPaintProperty("completed-line", "line-width", sharedLane ? RACE_OVERLAY_WIDTH_PIXELS : RACE_SEPARATE_WIDTH_PIXELS);
+  }, [ready, sharedLane]);
+  useEffect(() => {
+    if (ready) map.current?.setLayoutProperty("athlete-dots", "visibility", sharedLane ? "none" : "visible");
+  }, [ready, sharedLane]);
   useEffect(() => { if (!followAthlete && camera.current?.following) { camera.current.interrupt(false); setFollowing(false); } }, [followAthlete]);
   const lastFocus = useRef<{ course: RaceCourse; id: string; request: number; following: boolean; session?: string | number | boolean } | null>(null);
   useEffect(() => {
@@ -107,7 +114,12 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   const control = (label: string, action: () => void) => <button type="button" className="fb-btn-line" style={{ whiteSpace: "nowrap", minHeight: 38 }} onClick={() => { action(); const next = camera.current?.following ?? false; setFollowing(next); onFollowChange?.(next); }}>{label}</button>;
   return <div className="geographic-map" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", position: "relative", "--map-controls-bottom": `${controlsBottom}px` } as React.CSSProperties}>
     <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 0, position: "relative", overflow: "hidden" }} />
-    {ready && map.current ? scene.callouts.filter(lane => !dismissed.includes(lane.id)).map(lane => <CourseCallout key={lane.id} map={map.current!} lane={lane} coordinate={lane.coordinate} layout={lane.callout} passStrength={reduced.current ? 0 : replay?.passEffects.find(pass => pass.id === lane.id)?.strength ?? 0} detail={courseAthleteDetail(lanes, lane, unit)} onDismiss={!onSnapshot && lane.id === selectedId ? () => setDismissed(ids => [...ids, lane.id]) : undefined} onSelect={onSelect} />) : null}
+    {ready && map.current ? scene.callouts.map(lane => {
+      const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
+      const subdetail = courseAthleteSubdetail(lanes, lane, unit);
+      const selected = lane.id === selectedId && !dismissed.includes(lane.id);
+      return <CourseCallout key={lane.id} map={map.current!} lane={lane} coordinate={lane.coordinate} layout={lane.callout} passStrength={reduced.current ? 0 : replay?.passEffects.find(pass => pass.id === lane.id)?.strength ?? 0} detail={courseAthleteDetail(lanes, lane, unit)} subdetail={subdetail} selected={sharedLane ? selected || Boolean(onSnapshot && lane.you) : selected} gold={rank === 1} profileNodes={sharedLane} onDismiss={!onSnapshot && selected ? () => setDismissed(ids => [...ids, lane.id]) : undefined} onSelect={onSelect} />;
+    }) : null}
     {error ? <p role="alert" className="fb-copy" style={{ position: "absolute", left: 8, right: 8, bottom: controlsBottom + 100, padding: 12, background: "white" }}>{error}</p> : null}
     {!replay && <details className="geographic-map-controls">
       <summary className="geographic-map-controls-summary" aria-label="Course options">Course options ▾</summary>
@@ -115,7 +127,7 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
         {extraControls}
         {control(following ? "Following" : "Recenter", () => { if (scene.selected) { camera.current?.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); onResumeFollow?.(); onFollowChange?.(true); } })}
         {control(flat ? "3D chase" : "2D map", () => { camera.current?.dimension(flat ? "3d" : "2d", !(followAthlete && camera.current?.following && scene.selected)); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && camera.current?.following && scene.selected) camera.current.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); })}
-        {control(spaced ? "Shared lane: off" : "Shared lane: on", () => setSpaced(value => !value))}
+        {control(sharedLane ? "Shared lane: on" : "Shared lane: off", () => setSharedLane(value => !value))}
         {control("Race overview", () => { camera.current?.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); onFlatChange?.(true); })}
         <div className="geographic-map-controls-zoom">
           {control("Zoom in", () => camera.current?.zoom(1))}{control("Zoom out", () => camera.current?.zoom(-1))}

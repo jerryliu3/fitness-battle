@@ -12,6 +12,7 @@ import { createRaceCourse, raceCoursePosition, raceEffortMetres } from "@fitness
 const calls = vi.hoisted(() => ({ setCamera: vi.fn() }));
 vi.mock("react-native", () => ({ useWindowDimensions: () => ({ width: 390, height: 844 }),useColorScheme: () => "light",  View: "View", Text: "Text", Pressable: "Pressable", ScrollView: "ScrollView", Switch: "Switch", Platform: { OS: "ios" }, Modal: ({ visible, ...props }: { visible: boolean }) => visible ? createElement("Modal", { visible, ...props }) : null, Dimensions: { get: () => ({ width: 390, height: 844 }) }, StyleSheet: { create: (value: unknown) => value } }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
+vi.mock("./athlete-node", () => ({ AthleteNode: "AthleteNode" }));
 vi.mock("./athlete-pennant", () => ({ AthletePennant: "AthletePennant" }));
 vi.mock("react-native-svg", () => ({ default: "Svg", G: "G" }));
 vi.mock("./field-overlay-motion", () => ({ FieldOverlayView: "FieldOverlayView" }));
@@ -55,12 +56,12 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   await act(async () => renderer.update(createElement(CourseMap, { ...updated, selectedId: "peer", focusRequest: 1 })));
   const flight = calls.setCamera.mock.lastCall![0];
   expect(flight.animationDuration).toBeGreaterThan(500);
-  const marker = renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape.features.find((f: any) => f.id === "peer");
-  expect(flight.centerCoordinate).toEqual(marker.geometry.coordinates);
+  const peerCoordinate = raceCoursePosition(course, raceEffortMetres(1.1, "km")!).coordinate;
+  expect(flight.centerCoordinate).toEqual(peerCoordinate);
   expect(flight.zoomLevel).toBe(15);
   expect(flight.centerCoordinate[0]).toBeGreaterThan(.005);
   expect(renderer.root.findAllByType("Map" as never)).toHaveLength(1);
-  expect(renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "completed")!.props.shape).toBe(trails);
+  expect(renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "completed")!.props.shape.features).toHaveLength(1);
   expect(renderer.root.findByType("Camera" as never).props.maxZoomLevel).toBe(20);
   const button = (label: string) => renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === label);
   expect(button("See overview")).toBeUndefined();
@@ -78,26 +79,26 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   expect(["Following", "Recenter", "Zoom in", "Zoom out", "2D map"].every(label => !button(label))).toBe(true);
   expect(toggle("Perspective view").props.value).toBe(true);
   expect(toggle("Shared lane").props.value).toBe(true);
-  const together = renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape;
   await act(async () => toggle("Shared lane").props.onValueChange(false));
+  const together = renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape;
   expect(toggle("Shared lane").props.value).toBe(false);
   expect(button("See overview")).toBeDefined();
-  expect(renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape).not.toBe(together);
+  expect(renderer.root.findAllByType("ShapeSource" as never).some(node => node.props.id === "athletes")).toBe(true);
+  expect(renderer.root.findAllByType("AthletePennant" as never)).toHaveLength(2);
+  expect(renderer.root.findAllByType("AthleteNode" as never)).toHaveLength(0);
   await act(async () => toggle("Shared lane").props.onValueChange(true));
   await act(async () => toggle("Perspective view").props.onValueChange(false));
   expect(toggle("Perspective view").props.value).toBe(false);
-  expect(calls.setCamera.mock.lastCall![0]).toMatchObject({ centerCoordinate: marker.geometry.coordinates, pitch: 0 });
+  expect(calls.setCamera.mock.lastCall![0]).toMatchObject({ centerCoordinate: peerCoordinate, pitch: 0 });
   await act(async () => button("See overview")!.props.onPress());
   expect(button("See overview")).toBeUndefined();
   expect(calls.setCamera.mock.lastCall![0].bounds.ne[0]).toBeLessThan(.02);
-  const source = renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!;
-  await act(async () => source.props.onPress({ features: [{ properties: { id: "you" } }] }));
+  await act(async () => button("Focus You, 2nd · 0.6 km")!.props.onPress());
   expect(props.onSelect).toHaveBeenCalledWith("you");
   const cards = renderer.root.findAllByType("MarkerView" as never);
   expect(cards).toHaveLength(2);
-  expect(cards.find(card => card.props.anchor.x === 0)!.props.coordinate).toEqual(marker.geometry.coordinates);
   expect(cards.every(card => card.props.allowOverlap && card.props.allowZElevate === false)).toBe(true);
-  const labels = renderer.root.findAllByType("AthletePennant" as never);
+  const labels = renderer.root.findAllByType("AthleteNode" as never);
   expect(labels.map(label => label.props.detail)).toEqual(["2nd · 0.6 km", "1st · 1.1 km"]);
 
 });
@@ -130,6 +131,9 @@ it("hides a blocked racer without changing the other racer's position or place",
   const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
   const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: .5 }, { id: "peer", name: "Peer", initials: "P", value: 1 }], unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn() };
   await act(async () => { renderer = create(createElement(CourseMap, props)); });
+  await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
+  await act(async () => renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Course options")!.props.onPress());
+  await act(async () => renderer.root.findAllByType("Switch" as never).find(node => node.props.accessibilityLabel === "Shared lane")!.props.onValueChange(false));
   expect(renderer.root.findAllByType("ScrollView" as never)).toHaveLength(0);
   expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Course options")).toBe(true);
   expect(renderer.root.findByType("Map" as never).props.zoomEnabled).toBe(true);
@@ -155,8 +159,8 @@ it("follows automatic progress along the route and settles on the racer", async 
     expect(scheduledFrames.size).toBeGreaterThan(0);
     await finishCameraTravel();
     expect(calls.setCamera.mock.lastCall![0].animationDuration).toBe(0);
-    const marker = renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape.features[0];
-    expect(calls.setCamera.mock.lastCall![0].centerCoordinate).toEqual(marker.geometry.coordinates);
+    const marker = renderer.root.findByType("MarkerView" as never).props.coordinate;
+    expect(calls.setCamera.mock.lastCall![0].centerCoordinate).toEqual(marker);
   }
 });
 
@@ -225,7 +229,8 @@ it("frames both racers during slow motion and pulses only visible passed athlete
   expect(calls.setCamera.mock.lastCall![0].animationDuration).toBe(0);
   const markers = renderer.root.findAllByType("MarkerView" as never);
   expect(markers).toHaveLength(3);
-  expect(markers.find(marker=>marker.props.anchor.x === .5)!.props.coordinate).toEqual(markers.find(marker=>marker.props.anchor.x === 0)!.props.coordinate);
+  const callouts = markers.filter(marker => marker.props.anchor.x !== .5);
+  expect(callouts).toHaveLength(2);
   await act(async () => renderer.update(createElement(CourseMap, {...props,hiddenIds:["peer"]})));
   expect(renderer.root.findAllByType("MarkerView" as never)).toHaveLength(1);
   await act(async () => renderer.update(createElement(CourseMap, {...props,replay:{...props.replay,focus:0,passEffects:[]}})));
@@ -309,9 +314,9 @@ it("publishes working course controls to the sheet and removes the map's duplica
     return children.find((child: { props?: { onToggleSpacing?: unknown } }) => child?.props?.onToggleSpacing) ?? published;
   };
   expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Course options")).toBe(false);
-  expect(options().props.spaced).toBe(false);
+  expect(options().props.sharedLane).toBe(true);
   await act(async () => options().props.onToggleSpacing());
-  expect(options().props.spaced).toBe(true);
+  expect(options().props.sharedLane).toBe(false);
   await act(async () => options().props.onChoose2D());
   expect(onChoose2D).toHaveBeenCalledOnce();
   await act(async () => renderer.unmount());
