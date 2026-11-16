@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   dispositionOf,
+  initializeEffortAccounts,
+  settleAccountEffort,
   competitionMoments,
   readArenaBaseline,
   overtakeMomentForUnits,
@@ -311,15 +313,7 @@ export async function loadCompeteAccount(
       .order("period_start", { ascending: false }),
     db.from("period_freezes").select("period_start").eq("user_id", userId),
     db.from("wave_enrollments").select("*").eq("user_id", userId),
-    db
-      .from("activities")
-      .select(
-        "compete_key, sport, started_at, distance_m, moving_sec, avg_hr, verified, provenance, disposition, disposition_reason, source_label, provider, summary_polyline, detailed_polyline, route_bounds, elevation_gain_m, journal_only",
-      )
-      .eq("user_id", userId)
-      .not("compete_key", "is", null)
-      .order("started_at", { ascending: false })
-      .limit(2000),
+    loadEffortActivities(db,userId),
     db.from("sleep_nights").select("*").eq("user_id", userId).order("day", {
       ascending: false,
     }),
@@ -331,7 +325,7 @@ export async function loadCompeteAccount(
       .order("period_start", { ascending: false }),
     db.from("compete_duels").select("*").eq("user_id", userId),
     db.from("readiness_marks").select("*").eq("user_id", userId),
-    db.from("daily_health_readings").select("*").eq("user_id", userId).order("day", { ascending: false }).limit(365),
+    loadEffortDailyHealth(db,userId),
     db.from("fitness_connections").select("provider, status").eq("user_id", userId),
     db.from("effort_milestones").select("*").eq("user_id", userId).order("period_start", { ascending: false }).limit(1000),
     loadEffortScoreEvents(db, userId),
@@ -448,6 +442,8 @@ export async function loadCompeteAccount(
         movingSec: Number(row.moving_sec),
         eloBefore: Number(row.elo_before),
         eloAfter: Number(row.elo_after),
+        effortReward: row.effort_reward == null ? undefined : Number(row.effort_reward),
+        effortChange: row.effort_change ?? undefined,
         frozen: Boolean(row.frozen),
         settledAt: String(row.settled_at),
         acknowledgedAt: row.acknowledged_at ? String(row.acknowledged_at) : null,
@@ -603,6 +599,7 @@ export async function loadCompeteAccount(
   state = withDerivedPendingReveals({
     ...state,
     requiresCanonicalFields: true,
+    effortAccounts: prefs.effort_accounts ?? undefined,
     periodResults,
     recordAttempts: attempts,
     effortScoreEvents,
@@ -689,7 +686,7 @@ export async function settleAccountFields(
   scoreOpenPeriod = true,
 ): Promise<CompeteState> {
   const { settleSportRound, rollClock, weeklyWaveWindowAt, settleSleepWeeks, weekEndAfter } = await import("@fitness-battle/shared");
-  let next = state;
+  let next = settleAccountEffort(initializeEffortAccounts(state,now),now);
   if (acceptedFacts) {
     for (let guard = 0; guard < 12; guard++) {
       const sleep = next.healthRatings.find(r => r.metric === "sleep" && r.optedIn);
@@ -811,4 +808,32 @@ export async function overtakeSnapshotChanged(db: Db, userId: string, state: Com
   return competitionMomentSnapshots(canonical, userId).some(snapshot =>
     mayAdvanceOvertakeBaseline(snapshot, data?.[snapshot.key] ?? null) && data?.[snapshot.key] !== snapshot.value
   );
+}
+
+async function loadEffortActivities(db: Db,userId:string) {
+  const rows: Record<string, any>[]=[];
+  for(let offset=0;;offset+=1000){
+    const result=await db
+      .from("activities")
+      .select(
+        "compete_key, sport, started_at, distance_m, moving_sec, avg_hr, verified, provenance, disposition, disposition_reason, source_label, provider, summary_polyline, detailed_polyline, route_bounds, elevation_gain_m, journal_only",
+      )
+      .eq("user_id", userId)
+      .not("compete_key", "is", null)
+      .order("started_at", { ascending: false }).order("compete_key", { ascending: true })
+      .range(offset, offset + 999);
+    if(result.error)throw new Error(result.error.message);
+    rows.push(...(result.data??[]));
+    if((result.data?.length??0)<1000)return {data:rows};
+  }
+}
+
+async function loadEffortDailyHealth(db:Db,userId:string){
+ const rows: Record<string,any>[]=[];
+ for(let offset=0;;offset+=1000){
+  const result=await db.from("daily_health_readings").select("*").eq("user_id",userId).order("day",{ascending:false}).order("provider",{ascending:true}).range(offset,offset+999);
+  if(result.error)throw new Error(result.error.message);
+  rows.push(...(result.data??[]));
+  if((result.data?.length??0)<1000)return {data:rows,error:null};
+ }
 }

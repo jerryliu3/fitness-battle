@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   freshState,
+  initializeEffortAccounts,
   isCompeteBatchSaveType,
   migrateCompeteState,
   openEnrollmentRemoved,
@@ -63,7 +64,7 @@ export async function POST(request: Request): Promise<Response> {
       const existing = await loadCompeteAccount(supabase, userId);
       const stored = existing
         ? migrateCompeteState(existing.state)
-        : withAccountEloBaseline(freshState(now));
+        : initializeEffortAccounts(freshState(now),now);
       live = await applyAccountSaveInOrder(stored, actions, userId, now, (state, scoreOpenPeriod) =>
         settleAccountFields(supabase, userId, state, now, true, scoreOpenPeriod),
       );
