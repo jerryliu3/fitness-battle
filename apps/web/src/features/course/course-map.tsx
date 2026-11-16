@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { CourseCallout } from "./course-callout";
 import { addMapboxAttribution, mapboxAttributionOptions } from "@/components/maps/mapbox-attribution";
 import { webEnv } from "@/lib/env";
@@ -52,10 +52,7 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     instance.on("load", () => {
       const s = latest.current.scene;
       instance.addSource("completed", { type: "geojson", data: s.trails });
-      instance.addSource("athletes", { type: "geojson", data: s.markers });
       instance.addLayer({ id: "completed-line", type: "line", source: "completed", slot: "middle", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "priority"] }, paint: { "line-color": ["get", "color"], "line-width": spaced ? RACE_SEPARATE_WIDTH_PIXELS : RACE_OVERLAY_WIDTH_PIXELS } });
-      instance.addLayer({ id: "athlete-dots", type: "circle", source: "athletes", slot: "top", layout: { "circle-sort-key": ["case", ["get", "selected"], 2, ["get", "you"], 1, 0] }, paint: { "circle-radius": ["case", ["get", "selected"], RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS], "circle-color": ["get", "color"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
-      instance.on("click", "athlete-dots", event => { const id = event.features?.[0]?.properties?.id; if (typeof id === "string") latest.current.onSelect(id); });
       setReady(true); setError("");
       const prepared = () => { if (!initialized) { initialized = true; latest.current.onReady?.(); if (latest.current.onSnapshot) { try { latest.current.onSnapshot(instance.getCanvas().toDataURL("image/png")); } catch {} } } };
       instance.on("idle", prepared);
@@ -74,9 +71,6 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     const instance = map.current; if (!ready || !instance || !instance.getSource("completed")) return;
     (instance.getSource("completed") as mapboxgl.GeoJSONSource).setData(scene.trails);
   }, [ready, scene.trails]);
-  useEffect(() => {
-    if (ready) (map.current?.getSource("athletes") as mapboxgl.GeoJSONSource | undefined)?.setData(scene.markers);
-  }, [ready, scene.markers]);
   useEffect(() => {
     if (ready) map.current?.setPaintProperty("completed-line", "line-width", spaced ? RACE_SEPARATE_WIDTH_PIXELS : RACE_OVERLAY_WIDTH_PIXELS);
   }, [ready, spaced]);
@@ -107,7 +101,20 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   const control = (label: string, action: () => void) => <button type="button" className="fb-btn-line" style={{ whiteSpace: "nowrap", minHeight: 38 }} onClick={() => { action(); const next = camera.current?.following ?? false; setFollowing(next); onFollowChange?.(next); }}>{label}</button>;
   return <div className="geographic-map" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", position: "relative", "--map-controls-bottom": `${controlsBottom}px` } as React.CSSProperties}>
     <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 0, position: "relative", overflow: "hidden" }} />
-    {ready && map.current ? scene.callouts.filter(lane => !dismissed.includes(lane.id)).map(lane => <CourseCallout key={lane.id} map={map.current!} lane={lane} coordinate={lane.coordinate} layout={lane.callout} passStrength={reduced.current ? 0 : replay?.passEffects.find(pass => pass.id === lane.id)?.strength ?? 0} detail={courseAthleteDetail(lanes, lane, unit)} onDismiss={!onSnapshot && lane.id === selectedId ? () => setDismissed(ids => [...ids, lane.id]) : undefined} onSelect={onSelect} />) : null}
+    {ready && map.current ? scene.callouts.map(lane => {
+      const youValue = lanes.find(peer => peer.you && !peer.ghost)?.value ?? 0;
+      const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
+      const delta = lane.value - youValue;
+      const subdetail = lanes.some(peer => peer.mystery)
+        ? undefined
+        : lane.you
+          ? rank === 1
+            ? "Leading the field"
+            : `${(lane.value - earnedDistance).toFixed(1)} ${unit} vs #1`
+          : `${delta > 0 ? "+" : ""}${delta.toFixed(1)} ${unit}`;
+      const selected = lane.id === selectedId && !dismissed.includes(lane.id);
+      return <CourseCallout key={lane.id} map={map.current!} lane={lane} coordinate={lane.coordinate} layout={lane.callout} passStrength={reduced.current ? 0 : replay?.passEffects.find(pass => pass.id === lane.id)?.strength ?? 0} detail={courseAthleteDetail(lanes, lane, unit)} subdetail={subdetail} selected={selected || Boolean(onSnapshot && lane.you)} gold={rank === 1} onDismiss={!onSnapshot && selected ? () => setDismissed(ids => [...ids, lane.id]) : undefined} onSelect={onSelect} />;
+    }) : null}
     {error ? <p role="alert" className="fb-copy" style={{ position: "absolute", left: 8, right: 8, bottom: controlsBottom + 100, padding: 12, background: "white" }}>{error}</p> : null}
     {!replay && <details className="geographic-map-controls">
       <summary className="geographic-map-controls-summary" aria-label="Course options">Course options ▾</summary>

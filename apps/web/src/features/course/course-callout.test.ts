@@ -4,7 +4,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import type mapboxgl from "mapbox-gl";
 const mock = vi.hoisted(() => ({ instances: [] as any[] }));
 vi.mock("react-dom", () => ({ createPortal: (children: React.ReactNode) => children }));
-vi.mock("../field/components/athlete-pennant", () => ({ AthletePennant: "AthletePennant" }));
+vi.mock("../field/components/athlete-node", () => ({ AthleteNode: "AthleteNode" }));
 vi.mock("mapbox-gl", () => ({ default: { Marker: class {
   setLngLat = vi.fn().mockReturnThis(); addTo = vi.fn().mockReturnThis(); remove = vi.fn();
   constructor(public options: unknown) { mock.instances.push(this); }
@@ -24,8 +24,8 @@ it("retains a viewport-aligned marker through position updates and cleans it up"
   await act(async () => renderer.update(createElement(CourseCallout, { ...props, coordinate: [.01, .02], detail: "1st · 2.0 km" })));
   expect(mock.instances).toHaveLength(1);
   expect(marker.setLngLat).toHaveBeenLastCalledWith([.01, .02]);
-  expect(renderer.root.findByType("AthletePennant" as never).props.detail).toBe("1st · 2.0 km");
-  await act(async () => renderer.root.findByType("button").props.onClick({ stopPropagation() {} }));
+  expect(renderer.root.findByType("AthleteNode" as never).props.detail).toBe("1st · 2.0 km");
+  await act(async () => renderer.root.findAllByType("button")[0]!.props.onClick({ stopPropagation() {} }));
   expect(props.onSelect).toHaveBeenCalledWith("you");
   await act(async () => renderer.unmount());
   expect(marker.remove).toHaveBeenCalledTimes(1);
