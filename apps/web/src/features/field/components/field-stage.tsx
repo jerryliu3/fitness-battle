@@ -551,7 +551,7 @@ export function FieldStage({
               state={replayState}
               sport={model.sport}
               track={model.track}
-              selectedId={trackSelected || (you?.id ?? "")}
+              selectedId={tappedId}
               onSelectAthlete={toggleSelect}
               reserveTopControls={!lanesImmersive}
             />

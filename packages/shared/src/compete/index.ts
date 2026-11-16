@@ -11,6 +11,7 @@ export {
   PROVIDER_IDS,
   PROVIDERS,
   sportById,
+  isPointsEvent,
   dayKey,
   hashString,
   clamp,

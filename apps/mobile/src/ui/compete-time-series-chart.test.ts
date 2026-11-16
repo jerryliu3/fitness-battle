@@ -3,8 +3,6 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
 import { freshState, reduceCompete } from "@fitness-battle/shared";
 
-const mocks = vi.hoisted(() => ({ loopStart: vi.fn(), loopStop: vi.fn() }));
-
 vi.mock("react-native", () => ({
   Platform: { OS: "ios" },
   useColorScheme: () => "light",
@@ -13,17 +11,6 @@ vi.mock("react-native", () => ({
   Image: "Image",
   Pressable: "Pressable",
   ScrollView: "ScrollView",
-  AppState: { currentState: "active", addEventListener: () => ({ remove() {} }) },
-  Animated: {
-    View: "AnimatedView",
-    Value: class {
-      setValue() {}
-      interpolate() { return 0.5; }
-    },
-    timing: () => ({}),
-    loop: () => ({ start: mocks.loopStart, stop: mocks.loopStop }),
-  },
-  Easing: { ease: (x: number) => x, inOut: (fn: unknown) => fn },
   useWindowDimensions: () => ({ width: 390, height: 844 }),
   StyleSheet: {
     create: (value: unknown) => value,
@@ -41,8 +28,7 @@ vi.mock("react-native-svg", () => ({
   Text: "SvgText",
 }));
 vi.mock("./section", () => ({ chartTextProps: () => ({}), textStyle: () => ({}) }));
-vi.mock("./athlete-pennant", () => ({ AthletePennant: "AthletePennant" }));
-vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => false }));
+vi.mock("./athlete-node", () => ({ AthleteNode: "AthleteNode" }));
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [] }) }));
 vi.mock("../lib/haptics", () => ({ playCue() {} }));
 
@@ -50,13 +36,11 @@ import { CompeteTimeSeriesChart } from "./compete-time-series-chart";
 
 let renderer: ReactTestRenderer;
 afterEach(async () => {
-  mocks.loopStart.mockClear();
-  mocks.loopStop.mockClear();
   if (renderer) await act(async () => renderer.unmount());
   vi.unstubAllGlobals();
 });
 
-it("uses solid backgrounds and pulses the selected athlete position", async () => {
+it("uses solid backgrounds without a live pulse on the selected athlete", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const now = new Date("2026-10-26T18:00:00Z");
   const state = reduceCompete(freshState(now), { type: "opt-in", sport: "strength", now: now.toISOString() });
@@ -68,13 +52,12 @@ it("uses solid backgrounds and pulses the selected athlete position", async () =
   const styles = Object.assign({}, ...(Array.isArray(root.props.style) ? root.props.style.filter(Boolean) : [root.props.style]));
   expect(styles.backgroundColor).toBeTruthy();
   expect(styles.backgroundColor).not.toBe("transparent");
-  expect(mocks.loopStart).toHaveBeenCalled();
 
   const plot = renderer.root.find((node) => typeof node.props.onLayout === "function");
   await act(async () => {
     plot.props.onLayout({ nativeEvent: { layout: { width: 358, height: 464 } } });
   });
-  expect(renderer.root.findAllByType("AnimatedView" as never).length).toBeGreaterThan(0);
+  expect(renderer.root.findAllByType("AnimatedView" as never)).toHaveLength(0);
 });
 
 it("renders the streamlined athlete header in immersive mode and switches between Trajectory and Event views", async () => {

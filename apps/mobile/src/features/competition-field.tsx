@@ -33,6 +33,7 @@ import {
   initialsFromName,
   ordinalPlace,
   shellTabFromPath,
+  sportById,
   weeklyBoard,
   type CourseDistanceTarget,
   type ArenaSceneLane,
@@ -109,7 +110,7 @@ const f=useFocusStyles();
   const chooseViewRef = useRef(chooseView); chooseViewRef.current = chooseView;
   useEffect(() => {
     if (!onOptionsChange || sceneDimension === "4d") return;
-    onOptionsChange(<FieldViewSwitcher compact value={sceneDimension} geographic={!queued && sport !== "strength"} onChange={value => chooseViewRef.current(value)} />);
+    onOptionsChange(<FieldViewSwitcher compact value={sceneDimension} geographic={!queued && sportById(sport).gps} onChange={value => chooseViewRef.current(value)} />);
     return () => onOptionsChange(null);
   }, [onOptionsChange, sceneDimension, queued, sport]);
   const [courseFlat, setCourseFlat] = useState(false);
@@ -274,8 +275,7 @@ const f=useFocusStyles();
           state={state}
           sport={sport}
           track={track}
-          selectedId={selectedId ?? me?.id}
-          active={isFocused}
+          selectedId={selectedId}
           onSelectAthlete={(id) => {
             if (!hold.current?.suppressSelection()) selectAthlete(id);
           }}

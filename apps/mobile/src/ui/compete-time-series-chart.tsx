@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
 import * as RN from "react-native";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import * as SvgModule from "react-native-svg";
@@ -21,10 +21,9 @@ import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { playCue } from "../lib/haptics";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { AppIcon } from "./app-icon";
+import { AthleteNode } from "./athlete-node";
 import { chartTextProps, textStyle } from "./section";
 import { UserAvatar } from "./user-avatar";
-import { useReducedMotion } from "./use-reduced-motion";
-
 function svgTag<K extends keyof typeof SvgModule>(
   key: K,
   fallback: string,
@@ -37,7 +36,6 @@ const G = svgTag("G", "SvgG");
 const Line = svgTag("Line", "SvgLine");
 const Polyline = svgTag("Polyline", "SvgPolyline");
 const Circle = svgTag("Circle", "SvgCircle");
-const Rect = svgTag("Rect", "SvgRect");
 const SvgText = svgTag("Text", "SvgText");
 
 const DIRECTION_LOCK_PX = 4;
@@ -64,7 +62,6 @@ export function CompeteTimeSeriesChart({
   onViewChange,
   timelineFraction,
   onTimelineChange,
-  active = true,
 }: {
   state: CompeteState;
   sport?: SportId;
@@ -82,10 +79,8 @@ export function CompeteTimeSeriesChart({
   onViewChange?: (view: CompeteTimeSeriesView) => void;
   timelineFraction?: number | null;
   onTimelineChange?: (value: number | null) => void;
-  active?: boolean;
 }) {
   const c = useThemeColors();
-  const reduceMotion = useReducedMotion();
   const { blocks } = useAthleteBlocks();
   const excludedIds = useMemo(() => [...new Set([...(hiddenIds ?? []), ...blocks.map(block => block.id)])], [hiddenIds, blocks]);
   const { height: screenHeight } = RN.useWindowDimensions();
@@ -94,6 +89,7 @@ export function CompeteTimeSeriesChart({
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
   );
+  const [popupOpen, setPopupOpen] = useState(false);
   const [internalView, setInternalView] = useState<CompeteTimeSeriesView>("event");
   const activeView = view ?? internalView;
   const setActiveView = onViewChange ?? setInternalView;
@@ -101,22 +97,10 @@ export function CompeteTimeSeriesChart({
   const scrubFraction = timelineFraction !== undefined ? timelineFraction : internalFraction;
   const setScrubFraction = onTimelineChange ?? setInternalFraction;
   const plotWidthRef = useRef(300);
+  // Touch locationX is relative to the touched child (e.g. a node), so scrubbing uses page coordinates.
+  const plotRef = useRef<ComponentRef<typeof View>>(null);
+  const plotPageXRef = useRef(0);
   const [plotWidth, setPlotWidth] = useState(0);
-  const [foreground, setForeground] = useState(
-    () => !RN.AppState?.currentState || RN.AppState.currentState === "active",
-  );
-  useEffect(() => {
-    if (!RN.AppState?.addEventListener) return;
-    const subscription = RN.AppState.addEventListener("change", (status) => {
-      setForeground(status === "active");
-    });
-    return () => subscription?.remove?.();
-  }, []);
-  const pulseValueRef = useRef(
-    typeof RN.Animated?.Value === "function"
-      ? new RN.Animated.Value(0)
-      : null,
-  );
   const lastDayBucketRef = useRef<number | null>(null);
   const directionRef = useRef<"horizontal" | "vertical" | null>(null);
 
@@ -157,6 +141,11 @@ export function CompeteTimeSeriesChart({
 
   const handleSelectAthlete = (id: string) => {
     void playCue("selection");
+    if (model.selectedAthlete.id === id) {
+      setPopupOpen((open) => !open);
+    } else {
+      setPopupOpen(false);
+    }
     if (selectedId === undefined) {
       setInternalSelectedId(id);
     }
@@ -244,7 +233,7 @@ export function CompeteTimeSeriesChart({
               : "vertical";
         }
         if (directionRef.current === "horizontal") {
-          updateScrubRef.current(event.nativeEvent.locationX);
+          updateScrubRef.current(event.nativeEvent.pageX - plotPageXRef.current);
         }
       },
       onPanResponderTerminationRequest: () =>
@@ -264,30 +253,9 @@ export function CompeteTimeSeriesChart({
     }).panHandlers;
   }, [compact]);
 
-  const selectedStroke = model.selectedAthlete.you
-    ? c.fieldTeal
-    : c.podiumGold;
+  const placeColor = (place: number) => (place === 1 ? c.tennis : c.secondary);
+  const selectedLeads = model.selectedAthlete.placeAtCursor === 1;
   const unselectedAthletes = model.athletes.filter((a) => !a.selected);
-  const showLivePulse = !compact && !model.isScrubbing && !reduceMotion && active && foreground;
-
-  useEffect(() => {
-    const pulse = pulseValueRef.current;
-    if (!pulse || typeof RN.Animated?.loop !== "function" || typeof RN.Animated?.timing !== "function") return;
-    pulse.setValue(0);
-    if (!showLivePulse) return;
-    // Animate a native overlay rather than SVG props so the shadow tree stays clean.
-    const animation = RN.Animated.loop(
-      RN.Animated.timing(pulse, {
-        toValue: 1,
-        duration: 1800,
-        easing: RN.Easing?.inOut ? RN.Easing.inOut(RN.Easing.ease) : undefined,
-        useNativeDriver: true,
-        isInteraction: false,
-      }),
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [showLivePulse]);
 
   if (compact) {
     const preview = competeChartPreview(model);
@@ -296,12 +264,29 @@ export function CompeteTimeSeriesChart({
         {preview.yTicks.map(tick => <G key={tick.y}><Line x1={preview.left} x2={preview.right} y1={tick.y} y2={tick.y} stroke={c.line} /><SvgText {...chartTextProps()} x={preview.left - 8} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</SvgText></G>)}
         {preview.xTicks.map((tick, i) => <SvgText {...chartTextProps()} key={tick.label} x={tick.x} y={282} textAnchor={i ? "end" : "start"} fill={c.muted}>{tick.label}</SvgText>)}
         {preview.athletes.map(athlete => <G key={athlete.id}>
-          <Polyline points={athlete.points} fill="none" stroke={athlete.selected ? c.chartSeries : c.accentSecondary} strokeWidth={athlete.selected ? 4 : 2} opacity={athlete.selected ? 1 : .65} />
-          <Circle cx={athlete.x} cy={athlete.y} r={athlete.selected ? 7 : 3} fill={athlete.selected ? c.chartSeries : c.accentSecondary} />
+          <Polyline points={athlete.points} fill="none" stroke={placeColor(athlete.placeAtCursor)} strokeWidth={athlete.selected ? 4 : 2} opacity={athlete.selected ? 1 : .65} />
+          <G transform={`translate(${athlete.x} ${athlete.y})`}>
+            <AthleteNode
+              lane={athlete}
+              x={0}
+              y={0}
+              detail=""
+              prefix={`preview-${athlete.id}`}
+              expanded={false}
+              selected={athlete.id === activeSelectedId}
+              gold={athlete.placeAtCursor === 1}
+              nodeRadius={22}
+            />
+          </G>
         </G>)}
       </Svg>
     </View>;
   }
+
+  const cleanGapLabel = model.gapLabel
+    .replace(/^Tied with .+$/i, "Tied")
+    .replace(/(\s+to\s+#\d+)\s+.+$/i, "$1")
+    .replace(/\s+vs\s+.+$/i, "");
 
   return (
     <View
@@ -339,9 +324,7 @@ export function CompeteTimeSeriesChart({
               <Text
                 style={[
                   s.immersivePlace,
-                  model.selectedAthlete.placeAtCursor !== 1 && {
-                    color: model.selectedAthlete.you ? c.fieldTeal : c.ink,
-                  },
+                  !selectedLeads && { color: c.ink },
                 ]}
               >
                 {model.placeLabel}
@@ -367,44 +350,36 @@ export function CompeteTimeSeriesChart({
               <View
                 style={[
                   s.placeBadge,
-                  model.selectedAthlete.you
-                    ? s.placeBadgeYou
-                    : s.placeBadgeRival,
+                  selectedLeads && s.placeBadgeLeader,
                 ]}
               >
-                <Text
-                  style={[
-                    s.placeBadgeText,
-                    model.selectedAthlete.you
-                      ? s.placeBadgeTextYou
-                      : s.placeBadgeTextRival,
-                  ]}
-                >
+                <Text style={s.placeBadgeText}>
                   {model.placeLabel}
                 </Text>
               </View>
             </View>
           </View>
 
-          <View style={s.headerRight}>
-            <Text style={s.gapPrimary} numberOfLines={1}>
-              {model.gapLabel}
-            </Text>
-            {model.historyAvailable && <Text
-              style={[
-                s.overtakeSub,
-                model.overtakeCount > 0 && { color: c.fieldTeal },
-              ]}
-              numberOfLines={1}
-            >
-              {model.overtakeLabel}
-            </Text>}
-          </View>
+        <View style={s.headerRight}>
+          <Text style={s.gapPrimary} numberOfLines={1}>
+            {cleanGapLabel}
+          </Text>
+          {model.historyAvailable && <Text
+            style={[
+              s.overtakeSub,
+              model.overtakeCount > 0 && { color: c.fieldTeal },
+            ]}
+            numberOfLines={1}
+          >
+            {model.overtakeLabel}
+          </Text>}
+        </View>
         </View>
       )}
 
       {/* Time-Series SVG Plot */}
       <View
+        ref={plotRef}
         {...panHandlers}
         onLayout={(event) => {
           const nextWidth = Math.max(1, event.nativeEvent.layout.width);
@@ -413,15 +388,15 @@ export function CompeteTimeSeriesChart({
         }}
         onTouchStart={(event) => {
           if (compact) return;
-          if (event.nativeEvent.locationX != null) {
-            scheduleScrubFromLocationX(event.nativeEvent.locationX);
-          }
+          const { pageX } = event.nativeEvent;
+          plotRef.current?.measure((_x, _y, _width, _height, plotPageX) => {
+            plotPageXRef.current = plotPageX;
+            scheduleScrubFromLocationX(pageX - plotPageX);
+          });
         }}
         onTouchMove={(event) => {
           if (compact) return;
-          if (event.nativeEvent.locationX != null) {
-            scheduleScrubFromLocationX(event.nativeEvent.locationX);
-          }
+          scheduleScrubFromLocationX(event.nativeEvent.pageX - plotPageXRef.current);
         }}
         onTouchEnd={() => {
           if (compact) return;
@@ -517,25 +492,31 @@ export function CompeteTimeSeriesChart({
             </>
           )}
 
-          {/* Unselected background competitor traces */}
+          {/* Unselected background competitor traces + circular profile nodes */}
           {unselectedAthletes.map((athlete) => (
             <G key={athlete.id}>
               <Polyline
                 points={athlete.polyline}
                 fill="none"
-                stroke="#94a3b8"
-                strokeWidth={1.35}
+                stroke={placeColor(athlete.placeAtCursor)}
+                strokeWidth={2}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                opacity={0.22}
+                opacity={0.6}
               />
-              <Circle
-                cx={athlete.cursorX}
-                cy={athlete.cursorY}
-                r={2.4}
-                fill="#94a3b8"
-                opacity={0.3}
-              />
+              <G transform={`translate(${athlete.cursorX} ${athlete.cursorY})`}>
+                <AthleteNode
+                  lane={athlete}
+                  x={0}
+                  y={0}
+                  detail=""
+                  prefix={`ts-peer-${athlete.id}`}
+                  expanded={false}
+                  selected={false}
+                  gold={athlete.placeAtCursor === 1}
+                  nodeRadius={22}
+                />
+              </G>
             </G>
           ))}
 
@@ -544,7 +525,7 @@ export function CompeteTimeSeriesChart({
             <Polyline
               points={model.selectedAthlete.polyline}
               fill="none"
-              stroke={selectedStroke}
+              stroke={placeColor(model.selectedAthlete.placeAtCursor)}
               strokeWidth={3}
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -566,93 +547,62 @@ export function CompeteTimeSeriesChart({
             </G>
           ))}
 
-          {/* Selected Athlete Live/Cursor Tip Node + Pill */}
-          <G>
-            <Circle
-              cx={model.selectedAthlete.cursorX}
-              cy={model.selectedAthlete.cursorY}
-              r={8}
-              fill={selectedStroke}
-              opacity={0.16}
+          {/* Selected Athlete Live/Cursor Circular Profile Node + Expandable Detail Popup */}
+          <G transform={`translate(${model.selectedAthlete.cursorX} ${model.selectedAthlete.cursorY})`}>
+            <AthleteNode
+              lane={{
+                name: model.selectedAthlete.name,
+                initials: model.selectedAthlete.initials,
+                you: model.selectedAthlete.you,
+                avatarUrl: model.selectedAthlete.avatarUrl,
+              }}
+              x={clamp(
+                model.left - model.selectedAthlete.cursorX + 4,
+                model.width - 132 - model.selectedAthlete.cursorX,
+                model.selectedAthlete.cursorX > 180 ? -144 : 20,
+              )}
+              y={clamp(
+                model.top - model.selectedAthlete.cursorY - 8,
+                model.bottom - 48 - model.selectedAthlete.cursorY + 8,
+                model.selectedAthlete.cursorY > model.top + 56 ? -56 : 20,
+              )}
+              detail={`${model.placeLabel} · ${model.selectedAthlete.formattedValueAtCursor} ${model.unit}`}
+              subdetail={cleanGapLabel}
+              prefix={`athlete-${model.selectedAthlete.id}`}
+              expanded={popupOpen}
+              selected={model.selectedAthlete.id === activeSelectedId}
+              gold={selectedLeads}
+              nodeRadius={22}
             />
-            <Circle
-              cx={model.selectedAthlete.cursorX}
-              cy={model.selectedAthlete.cursorY}
-              r={4.5}
-              fill={selectedStroke}
-              stroke={c.paper}
-              strokeWidth={1.8}
-            />
-            {/* Athlete Callout (Clean pill in card preview; immersive uses header + highlighted trace) */}
-            {!immersive && (
-              <G>
-                <Rect
-                  x={model.tipPill.x}
-                  y={model.tipPill.y}
-                  width={model.tipPill.width}
-                  height={model.tipPill.height}
-                  rx={6}
-                  fill={model.selectedAthlete.you ? c.surfaceInverse : c.card}
-                  stroke={model.selectedAthlete.you ? "none" : c.line}
-                  strokeWidth={1}
-                />
-                <SvgText
-                  x={model.tipPill.x + model.tipPill.width / 2}
-                  y={model.tipPill.y + 13.5}
-                  textAnchor="middle"
-                  fill={model.selectedAthlete.you ? c.textOnInverse : c.ink}
-                >
-                  {model.tipPill.text}
-                </SvgText>
-              </G>
-            )}
           </G>
         </Svg>
-        {(() => {
-          const pulse = pulseValueRef.current;
-          const AnimatedView = RN.Animated?.View;
-          if (!showLivePulse || plotWidth <= 0 || !pulse || !AnimatedView) return null;
-          const scale = Math.min(plotWidth / model.width, 1);
-          const offsetX = (plotWidth - model.width * scale) / 2;
-          const offsetY = (model.height - model.height * scale) / 2;
-          const dotLeft = offsetX + model.selectedAthlete.cursorX * scale;
-          const dotTop = offsetY + model.selectedAthlete.cursorY * scale;
-          return (
-            <View
-              pointerEvents="none"
-              style={{
-                position: "absolute",
-                left: dotLeft - 14,
-                top: dotTop - 14,
-                width: 28,
-                height: 28,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <AnimatedView
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 14,
-                  backgroundColor: selectedStroke,
-                  opacity: pulse.interpolate({
-                    inputRange: [0, 0.65, 0.9, 1],
-                    outputRange: [0.55, 0.2, 0, 0],
-                  }),
-                  transform: [
-                    {
-                      scale: pulse.interpolate({
-                        inputRange: [0, 0.75, 1],
-                        outputRange: [4 / 14, 1, 1],
-                      }),
-                    },
-                  ],
-                }}
-              />
-            </View>
-          );
-        })()}
+        {plotWidth > 0
+          ? model.athletes.map((athlete) => {
+              const scale = Math.min(plotWidth / model.width, 1);
+              const offsetX = (plotWidth - model.width * scale) / 2;
+              const offsetY = (model.height - model.height * scale) / 2;
+              const nodeLeft = offsetX + athlete.cursorX * scale;
+              const nodeTop = offsetY + athlete.cursorY * scale;
+              const hitRadius = 28;
+              return (
+                <Pressable
+                  key={`node-hit-${athlete.id}`}
+                  accessible={false}
+                  onTouchStart={(event) => event.stopPropagation()}
+                  onTouchMove={(event) => event.stopPropagation()}
+                  onPress={() => handleSelectAthlete(athlete.id)}
+                  style={{
+                    position: "absolute",
+                    left: nodeLeft - hitRadius,
+                    top: nodeTop - hitRadius,
+                    width: hitRadius * 2,
+                    height: hitRadius * 2,
+                    borderRadius: hitRadius,
+                  }}
+                />
+              );
+            })
+          : null}
       </View>
 
       {/* Graph View Switcher: Trajectory vs Event (non-immersive; immersive uses layers menu) */}
@@ -730,7 +680,7 @@ export function CompeteTimeSeriesChart({
                         : s.chipNameSelectedRival),
                   ]}
                 >
-                  {athlete.firstName}
+                  {athlete.initials}
                 </Text>
                 <Text
                   style={[
@@ -864,20 +814,13 @@ const sThemes = createThemedStyles((themeColors) => {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+    backgroundColor: c.soft,
   },
-  placeBadgeYou: {
-    backgroundColor: "rgba(23, 108, 117, 0.1)",
-  },
-  placeBadgeRival: {
+  placeBadgeLeader: {
     backgroundColor: "rgba(247, 201, 72, 0.24)",
   },
   placeBadgeText: {
     ...textStyle("caption"),
-  },
-  placeBadgeTextYou: {
-    color: c.fieldTeal,
-  },
-  placeBadgeTextRival: {
     color: c.ink,
   },
   headerRight: {
