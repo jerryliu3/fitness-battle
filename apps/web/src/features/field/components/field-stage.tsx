@@ -622,7 +622,7 @@ export function FieldStage({
                 focusRequest={focusRequest}
                 onGestureStart={cancelCenterTween}
                 onViewChange={next => { cancelCenterTween(); setSpan(next.span); setCenter(clampViewCenter(next.center, next.span)); }}
-                selected={trackSelected || (you?.id ?? "")}
+                selected={tappedId}
                 onSelect={toggleSelect}
                 onBackgroundTap={() => {
                   void playCue("light");

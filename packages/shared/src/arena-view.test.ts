@@ -67,17 +67,12 @@ describe("distance viewport", () => {
     expect(arenaPosition(100, fit).edge).toBeNull();
     expect(fit.span).toBeCloseTo(115);
   });
-  it("clamps center in 2D lanes so the start line remains near the bottom", () => {
-    // When center is 0 (start line) and span is 20, center is clamped to 8.6
-    const clampedCenter = clampArenaLaneCenter(0, 20);
-    expect(clampedCenter).toBeCloseTo(8.6);
-    // At center = 8.6, start line (0) is at fraction 0.93 (near bottom of visual)
-    const pos = arenaPosition(0, { center: clampedCenter, span: 20 });
-    expect(pos.fraction).toBeCloseTo(0.93);
-    expect(pos.edge).toBeNull();
-
-    // When athlete has progressed well forward (e.g. 30 km), athlete remains centered
-    expect(clampArenaLaneCenter(30, 20)).toBe(30);
+  it("lets 2D lanes center athletes at the start line but never behind it", () => {
+    expect(clampArenaLaneCenter(0)).toBe(0);
+    expect(arenaPosition(0, { center: clampArenaLaneCenter(0), span: 20 }).fraction).toBeCloseTo(0.5);
+    expect(clampArenaLaneCenter(-5)).toBe(0);
+    expect(clampArenaLaneCenter(30)).toBe(30);
+    expect(clampArenaLaneCenterToField(0, 10, 0, 8)).toBe(0);
   });
   it("caps panning ahead of the current field leader", () => {
     const lanes = [

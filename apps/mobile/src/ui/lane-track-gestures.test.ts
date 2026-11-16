@@ -18,7 +18,7 @@ it("keeps the native field over a quarter wide while longitudinal distances keep
   const props = { lanes, unit: "km", showGhost: false, index: 2, fullscreen: true, animateSelection: false, appearance: { ground: "straight" as const, edges: "club" as const }, onSelect() {} };
   await act(async () => { renderer = create(createElement(LaneTrack, { ...props, view: { center: 485, span: 12 } })); });
   await act(async () => renderer.root.findAllByType("View" as never).find(n => n.props.onLayout)!.props.onLayout({ nativeEvent: { layout: { width: 390 } } }));
-  const positions = () => renderer.root.findAllByType("SvgPath" as never).filter(n => n.props.strokeWidth === 6).map(n => (n.props.d.match(/-?\d+(?:\.\d+)?/g) as string[]).map(Number).slice(-2)).sort((a, b) => a[0]! - b[0]!);
+  const positions = () => renderer.root.findAllByType("SvgPath" as never).filter(n => n.props.strokeLinecap === "round").map(n => (n.props.d.match(/-?\d+(?:\.\d+)?/g) as string[]).map(Number).slice(-2)).sort((a, b) => a[0]! - b[0]!);
   const a = positions();
   expect(a).toHaveLength(7);
   expect(a.at(-1)![0]! - a[0]![0]!).toBeCloseTo(390 / 3.9);
@@ -83,7 +83,7 @@ it("labels offscreen athletes from the window edge and removes hidden arrow hit 
   await act(async () => { renderer = create(createElement(LaneTrack, props)); });
   const arrows = () => renderer.root.findAllByType("Pressable" as never).filter(node => node.props.accessibilityLabel === "Focus Ahead");
   expect(arrows()).toHaveLength(1);
-  expect(renderer.root.findAllByType("SvgText" as never).some(node => node.props.children === "9.0 km")).toBe(true);
+  expect(renderer.root.findAllByType("SvgText" as never).some(node => node.props.children === "AH")).toBe(true);
   await act(async () => renderer.update(createElement(LaneTrack, { ...props, overlaysHidden: true })));
   expect(arrows()).toHaveLength(0);
   expect(renderer.root.findAllByType("FieldOverlayGroup" as never).some(node => node.props.hidden)).toBe(true);
@@ -100,5 +100,5 @@ it("hides a blocked athlete while preserving the lane layout", async () => {
   await act(async () => renderer.update(createElement(LaneTrack, { ...props, hiddenIds: ["peer"] })));
   expect(myMarker().props.style).toEqual(position);
   expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Focus Peer")).toBe(false);
-  expect(renderer.root.findAllByType("Racer" as never)).toHaveLength(1);
+  expect(renderer.root.findAllByType("Pressable" as never).filter(node => String(node.props.accessibilityLabel ?? "").startsWith("Focus "))).toHaveLength(1);
 });

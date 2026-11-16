@@ -87,9 +87,9 @@ export function BoardLab() {
 
   function stop() { cancelAnimationFrame(frame.current); cancelAnimationFrame(cameraFrame.current); setPlaying(false); }
   function reset() { stop(); setProgress(0); setCamera(null); setSession(null); setNotice(""); }
-  function pan(center: number) { stop(); setCamera({ center: clampArenaLaneCenter(center, view.span), span: view.span }); }
+  function pan(center: number) { stop(); setCamera({ center: clampArenaLaneCenter(center), span: view.span }); }
   function moveView(next: ArenaViewWindow, follow = false) {
-    stop(); const target = { ...next, center: clampArenaLaneCenter(next.center, next.span) };
+    stop(); const target = { ...next, center: clampArenaLaneCenter(next.center) };
     if (reduced) { setCamera(follow ? null : target); return; }
     const from = view, start = performance.now();
     const tick = (now: number) => {
@@ -100,7 +100,7 @@ export function BoardLab() {
     };
     cameraFrame.current = requestAnimationFrame(tick);
   }
-  function zoom(multiplier: number) { const span = Math.max(2, Math.min(120, view.span * multiplier)); moveView({ center: clampArenaLaneCenter(view.center, span), span }); }
+  function zoom(multiplier: number) { const span = Math.max(2, Math.min(120, view.span * multiplier)); moveView({ center: clampArenaLaneCenter(view.center), span }); }
   function select(id: string) { setSelected(id); setSession(null); }
   function chooseBackground(next: BackgroundId) { stop(); setBackground(next); if (next === "oval" || background === "oval") setCamera(null); }
   const isClubTrack = background === "straight" || background === "oval";

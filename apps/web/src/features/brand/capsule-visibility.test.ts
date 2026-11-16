@@ -38,7 +38,10 @@ async function goldPixels(svg: string, top: number, bottom: number, left = 0, ri
 }
 
 describe("production capsule visibility", () => {
-  it.each([0, 3, 6])("renders the gold head at value %s, including field edges", async value => {
+  it("rings the selected leader in gold before any trail is earned", () => {
+    expect(render("lanes", 0)).toMatch(/stroke="var\(--app-tennis, #f7c948\)" stroke-width="2.4"/);
+  });
+  it.each([3, 6])("renders the gold head at value %s, including field edges", async value => {
     // A 300 m head is compact in a 6 km overview, but remains painted at either edge.
     const course = fieldCourse(360, 540, 1, { center: 3, span: 6 }, "km", defaultFieldAppearance);
     const head = course.point(value, 0, 0, true);
@@ -51,11 +54,11 @@ describe("production capsule visibility", () => {
     expect(pixels).toBeLessThan(2000);
   });
   it("keeps the same world-size capsule legible at chase scale",async()=>{expect(await goldPixels(render("lanes",3,1.2),0,540)).toBeGreaterThan(500);});
-  it("replaces an out-of-range capsule with a dotted arrow", () => {
+  it("replaces an out-of-range athlete with a dotted profile node", () => {
     const svg = render("lanes", 8);
     expect(svg).not.toContain('data-polished-racer=');
+    expect(svg).toContain('data-offscreen="ahead"');
     expect(svg).toContain('stroke-dasharray="3 3"');
-    expect(svg).toContain("↑");
   });
   it("renders the standings capsule without a wake extending into the next row", async () => {
     const svg = render("standings");
