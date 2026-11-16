@@ -314,6 +314,7 @@ export function FieldStage({
     [...runners, ...(ghost ? [ghost] : [])],
     showGhost,
   );
+  const tappedId = selected === trackSelected ? trackSelected : "";
 
   const ranked = useMemo(
     () => [...fieldLanes].sort((a, b) => b.value - a.value),
@@ -382,7 +383,7 @@ export function FieldStage({
           <span className="focus-broadcast-tower-kicker">Current Leaders</span>
           {coursePositionLeaders(ranked).map((peer, idx) => {
             const delta = peer.value - leaderValue;
-            const isSelected = (trackSelected || (you?.id ?? "")) === peer.id;
+            const isSelected = tappedId === peer.id;
             return (
               <button
                 key={peer.id}
@@ -390,8 +391,8 @@ export function FieldStage({
                 className={
                   isSelected
                     ? "focus-broadcast-tower-row is-selected"
-                    : peer.you
-                      ? "focus-broadcast-tower-row is-you"
+                    : placeOf(peer.value) === 1
+                      ? "focus-broadcast-tower-row is-leader"
                       : "focus-broadcast-tower-row"
                 }
                 onClick={() => {
@@ -495,8 +496,8 @@ export function FieldStage({
                     className={
                       activeChip
                         ? "focus-broadcast-chip is-active"
-                        : peer.you
-                          ? "focus-broadcast-chip is-you"
+                        : placeOf(peer.value) === 1
+                          ? "focus-broadcast-chip is-leader"
                           : "focus-broadcast-chip"
                     }
                     onClick={() => {

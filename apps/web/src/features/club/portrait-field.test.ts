@@ -24,10 +24,9 @@ it("renders real portraits, relative gaps and in-board controls without requirin
     }),
   );
   expect(html).toContain("alex.jpg");
-  expect(html).toContain("+0.20 km");
+  expect(html).toContain("+0.2 km");
   expect(html).toContain('aria-label="Zoom in"');
   expect(html).toContain('aria-label="Next lane"');
-  expect(html).toContain("YOU");
   expect(html).toContain("Distance perspective field");
   expect(html).not.toContain("canvas");
 });

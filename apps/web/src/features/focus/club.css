@@ -1783,8 +1783,8 @@
 .focus-broadcast-tower-row.is-selected {
   background: rgba(200, 245, 59, 0.22);
 }
-.focus-broadcast-tower-row.is-you .focus-broadcast-tower-name,
-.focus-broadcast-tower-row.is-you .focus-broadcast-tower-rank {
+.focus-broadcast-tower-row.is-leader .focus-broadcast-tower-name,
+.focus-broadcast-tower-row.is-leader .focus-broadcast-tower-rank {
   color: #c8f53b;
 }
 .focus-broadcast-tower-rank {
@@ -1913,10 +1913,10 @@
   font: var(--type-caption);
   cursor: pointer;
 }
-.focus-broadcast-chip.is-you {
+.focus-broadcast-chip.is-leader {
   border-color: rgba(200, 245, 59, 0.48);
 }
-.focus-broadcast-chip.is-you span {
+.focus-broadcast-chip.is-leader span {
   color: #c8f53b;
 }
 .focus-broadcast-chip.is-active {
