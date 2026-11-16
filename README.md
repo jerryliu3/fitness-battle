@@ -34,7 +34,7 @@ Copy `apps/web/.env.example` to `apps/web/.env.local` and fill Supabase / Strava
 
 ## Race rankings
 
-Public race leaderboards live in this same web app, on a separate Supabase project from battles. Hosted project: [Race Rankings](https://supabase.com/dashboard/project/pzadctqmyekkydteivlf) (`pzadctqmyekkydteivlf`, us-east-1). Local config is `rankings-db/` (API port 54421, database port 54422).
+Public race leaderboards live in this same web app, on a separate Supabase project from battles. Hosted project: [rankings](https://supabase.com/dashboard/project/nevwdslqilysyeaccptz) (`nevwdslqilysyeaccptz`, us-east-2). Local config is `rankings-db/` (API port 54421, database port 54422).
 
 ```bash
 pnpm rankings:db:start
@@ -43,7 +43,7 @@ pnpm rankings:db:reset
 
 The first migration is the source ledger: provider result ids when present, otherwise source + edition + name + bib + category. Finish time is not part of that key.
 
-The public board is `/rankings`. Imports copy a full public results list (OpenTrack JSON, a MikaTiming list page, a CSV, or RunSignup's public results JSON), drop under-18 finishers, and write SQL under `packages/rankings/imports/`. See [`docs/ingestion.md`](./docs/ingestion.md). Set `NEXT_PUBLIC_RANKINGS_SUPABASE_URL` and `NEXT_PUBLIC_RANKINGS_SUPABASE_ANON_KEY` in `apps/web/.env.local`. Applying an import needs `RANKINGS_DATABASE_URL`.
+The public board is `/pace`. Imports copy a full public results list (OpenTrack JSON, a MikaTiming list page, a CSV, or RunSignup's public results JSON), drop under-18 finishers, and write SQL under `packages/rankings/imports/`. See [`docs/ingestion.md`](./docs/ingestion.md). Set `NEXT_PUBLIC_RANKINGS_SUPABASE_URL` and `NEXT_PUBLIC_RANKINGS_SUPABASE_ANON_KEY` in `apps/web/.env.local`; the example values connect to the hosted public rankings data. To test database changes in isolation, run `pnpm rankings:db:start` and `pnpm rankings:db:reset` and use the local project's URL and publishable key instead. Applying an import needs `RANKINGS_DATABASE_URL`.
 
 ## Auth (web)
 
