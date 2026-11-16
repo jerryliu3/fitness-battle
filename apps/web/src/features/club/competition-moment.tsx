@@ -23,10 +23,10 @@ import {
   competitionMomentScene,
   competitionTrack,
   competePeriodWindow,
-  defaultCompetitionMomentView,
+  defaultCompeteFieldView,
   isGeographicCompete,
   normalizeCompeteFieldView,
-  arenaValueDecimals,
+  formatArenaValue,
   type FieldViewDimension,
   nextCompetitionReplaySpeed,
   rankSymbolForScore,
@@ -47,7 +47,7 @@ export function CompetitionMoment({
   onConfirm,
   debug = false,
   embedded = false,
-  dimension = defaultCompetitionMomentView(moment.sport),
+  dimension = defaultCompeteFieldView(moment.sport),
   course = null,
   autoStart = true,
 }: {
@@ -115,7 +115,7 @@ export function CompetitionMoment({
     let raf = 0;
     const from = progressRef.current;
     const start = performance.now();
-    const duration = ((4200 + count * 1150) * (embedded ? 1.5 : 1) * (1 - from)) / speed;
+    const duration = ((6500 + count * 2200) * (embedded ? 1.5 : 1) * (1 - from)) / speed;
     const tick = (now: number) => {
       const p = from + (1 - from) * Math.min(1, (now - start) / Math.max(duration, 1));
       setProgress(p);
@@ -214,7 +214,6 @@ export function CompetitionMoment({
             track={track}
             selectedId={moment.plan.youId}
             immersive
-            timelineFraction={progress}
             active
           />
         ) : null}
@@ -347,8 +346,7 @@ export function CompetitionMoment({
                 size={112}
               />
               <p>
-                {profileAthlete.lane.value.toFixed(arenaValueDecimals(moment.unit))} {moment.unit}{" "}
-                this round
+                {formatArenaValue(profileAthlete.lane.value, moment.unit)} this round
               </p>
               <p>{profileAthlete.elo ?? "—"} effort score</p>
             </div>

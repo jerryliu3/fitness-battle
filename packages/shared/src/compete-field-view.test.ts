@@ -10,7 +10,7 @@ import {
   arenaValueDecimals,
   arenaLaneValues,
   competeVolumeFromTotals,
-  defaultCompetitionMomentView,
+  formatArenaValue,
   formatArenaVolume,
   isGeographicArenaUnit,
 } from "./compete-field-view";
@@ -30,6 +30,7 @@ describe("competeFieldView", () => {
       expect(defaultCompeteFieldView(event)).toBe("graph");
       expect(allowedCompeteFieldViews(event)).toEqual(["graph", "2d"]);
     }
+    expect(allowedCompeteFieldViews("sleep")).toEqual(["graph"]);
   });
 
   it("keeps Recovery chart-only in both policy and menu", () => {
@@ -69,8 +70,13 @@ describe("competeFieldView", () => {
     expect(normalizeCompeteFieldView("cycling", "3d")).toBe("2d");
   });
 
-  it("keeps moment defaults aligned with live compete", () => {
-    expect(defaultCompetitionMomentView("strength")).toBe(defaultCompeteFieldView("strength"));
-    expect(defaultCompetitionMomentView("running")).toBe(defaultCompeteFieldView("running"));
+  it("builds switcher options from presentation policy", () => {
+    expect(competeFieldSwitcherOptions("strength").map((o) => o.value)).toEqual(["graph", "2d"]);
+    expect(competeFieldSwitcherOptions("running").map((o) => o.value)).toEqual(["4d", "2d", "graph"]);
+  });
+
+  it("formats lane values with arena decimals", () => {
+    expect(formatArenaValue(12_500, "steps")).toBe("12,500 steps");
+    expect(formatArenaValue(2.5, "hrs")).toBe("2.5 hrs");
   });
 });

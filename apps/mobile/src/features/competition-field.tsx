@@ -22,7 +22,6 @@ import { FieldOverlayView, SlidingFieldPanel } from "../ui/field-overlay-motion"
 import { GraphOptions } from "../ui/course-options";
 import {
   coursePositionLeaders,
-  orderedArenaLanes,
   competitionQueue,
   createFieldOverlayHold,
   arenaFieldHigh,
@@ -189,7 +188,6 @@ const f=useFocusStyles();
     ? Math.max(460, dimensions.height)
     : inlineHeight);
   const laneAnchor = useRef<LaneAnchor | null>(null);
-  const portraitAnchor = useRef(0);
   const expandField = () => { if (!expanded) { void playCue("light"); setExpanded(true); } };
   const [center, setCenter] = useState<number | null>(null);
   useEffect(() => { if (externalCourseTarget) { setCourseTarget(externalCourseTarget); setCenter(externalCourseTarget.value); } }, [externalCourseTarget]);
@@ -278,8 +276,6 @@ const f=useFocusStyles();
     if (!lane || lane.mystery || hiddenIds.includes(id)) return;
     void playCue("selection");
     setCourseTarget(null);
-    const ordered = orderedArenaLanes(arena.lanes);
-    portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you));
     setSelectedId(id);
     setFollowing(true);
     setFocusRequest(value => value + 1);

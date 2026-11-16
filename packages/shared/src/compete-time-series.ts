@@ -15,7 +15,7 @@ import {
 import { initialsFromName, selfLaneLabel } from "./compete/track";
 import { findSynthetic, syntheticVolumeInWindow } from "./matching/synthetic-bank";
 import { APP_TIMEZONE, accountTimeZone, endOfZonedDay, formatAppDateTime, shiftAppDay } from "./period";
-import { competeChartLiveValue, competeChartUnit } from "./compete-field-view";
+import { competeChartUnit, competeVolumeFromTotals } from "./compete-field-view";
 import { walkingStepsInPeriod } from "./compete/journal";
 import { competePeriodWindow } from "./phone-views";
 
@@ -831,7 +831,7 @@ export function prepareCompeteTimeSeriesBase(
         ];
 
   const rawAthletes = rows.map((row) => {
-    const liveValue = competeChartLiveValue(sport, row, state.units);
+    const liveValue = competeVolumeFromTotals(sport, row, state.units);
     const historyAvailable = row.you || Boolean(findSynthetic(sport, row.id));
     const vertices = row.you
       ? buildYouVertices(

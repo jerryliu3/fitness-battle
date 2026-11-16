@@ -33,7 +33,6 @@ export * from "./crew-relay-scene";
 export * from "./crew-relay-presentation";
 export * from "./club-summary";
 
-export * from "./portrait-field";
 export * from "./compete-trail";
 export * from "./compete-carousel";
 export * from "./field-navigation";

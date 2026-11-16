@@ -18,10 +18,10 @@ import {
   competitionMomentScene,
   competitionTrack,
   competePeriodWindow,
-  defaultCompetitionMomentView,
+  defaultCompeteFieldView,
   isGeographicCompete,
   normalizeCompeteFieldView,
-  arenaValueDecimals,
+  formatArenaValue,
   type FieldViewDimension,
   nextCompetitionReplaySpeed,
   weeklyBoard,
@@ -47,7 +47,7 @@ export function CompetitionMoment({
   onConfirm,
   debug = false,
   embedded = false,
-  dimension = defaultCompetitionMomentView(moment.sport),
+  dimension = defaultCompeteFieldView(moment.sport),
   course = null,
   autoStart = true,
 }: {
@@ -248,7 +248,6 @@ export function CompetitionMoment({
             immersive
             topInset={insets.top}
             bottomInset={insets.bottom}
-            timelineFraction={progress}
             active
           />
         ) : null}
@@ -369,7 +368,7 @@ export function CompetitionMoment({
                     you: lane.you,
                     score: scores.find((row) => row.id === lane.id)?.elo,
                     contextLabel: "This round",
-                    contextValue: `${lane.value.toFixed(arenaValueDecimals(moment.unit))} ${moment.unit}`,
+                    contextValue: formatArenaValue(lane.value, moment.unit),
                     contextDetail: `Place ${rank} · ${moment.sport}`,
                   })
                 }

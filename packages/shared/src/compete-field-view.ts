@@ -16,11 +16,6 @@ export function defaultCompeteFieldView(event: CompeteArenaEvent): FieldViewDime
   return isGeographicCompete(event) ? "4d" : "graph";
 }
 
-/** Overtake moments use the same default view policy as live compete. */
-export function defaultCompetitionMomentView(event: CompeteArenaEvent): FieldViewDimension {
-  return defaultCompeteFieldView(event);
-}
-
 export function allowedCompeteFieldViews(event: CompeteArenaEvent): FieldViewDimension[] {
   if (event === "sleep") return ["graph"];
   return isGeographicCompete(event) ? ["4d", "2d", "graph"] : ["graph", "2d"];
@@ -58,14 +53,6 @@ export function competeVolumeFromTotals(
   return totals.movingSec / 3600;
 }
 
-export function competeChartLiveValue(
-  sport: SportId,
-  row: { distanceM: number; movingSec: number; effort: number },
-  units: CompeteState["units"],
-): number {
-  return competeVolumeFromTotals(sport, row, units);
-}
-
 export function formatArenaVolume(
   sport: SportId,
   totals: { distanceM: number; movingSec: number; effort: number },
@@ -73,6 +60,12 @@ export function formatArenaVolume(
 ): string {
   const unit = competeChartUnit(sport, units);
   const value = competeVolumeFromTotals(sport, totals, units);
+  return `${value.toLocaleString("en-US", {
+    maximumFractionDigits: arenaValueDecimals(unit),
+  })} ${unit}`;
+}
+
+export function formatArenaValue(value: number, unit: string): string {
   return `${value.toLocaleString("en-US", {
     maximumFractionDigits: arenaValueDecimals(unit),
   })} ${unit}`;
@@ -109,10 +102,6 @@ export function normalizeCompeteFieldView(
 /** Lane and replay presentation units (not compete field view dimensions). */
 export function isGeographicArenaUnit(unit: string): boolean {
   return unit === "km" || unit === "mi";
-}
-
-export function isMetricArenaUnit(unit: string): boolean {
-  return !isGeographicArenaUnit(unit);
 }
 
 /** Legacy persisted baselines may still read `pts`; treat like hours lanes. */
