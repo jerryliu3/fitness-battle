@@ -295,7 +295,6 @@ export async function loadCompeteAccount(
     { data: readinessRows },
     dailyHealthResult,
     { data: connectionRows },
-    milestoneResult,
     effortScoreEvents,
     attempts,
     overtakeResult,
@@ -327,14 +326,12 @@ export async function loadCompeteAccount(
     db.from("readiness_marks").select("*").eq("user_id", userId),
     loadEffortDailyHealth(db,userId),
     db.from("fitness_connections").select("provider, status").eq("user_id", userId),
-    db.from("effort_milestones").select("*").eq("user_id", userId).order("period_start", { ascending: false }).limit(1000),
     loadEffortScoreEvents(db, userId),
     loadAllRecordAttempts(db, userId),
     db.from("overtake_receipts").select("account_revision,sport,moment").eq("user_id", userId).order("account_revision", { ascending: false }).limit(50),
   ]);
 
   if (overtakeResult.error) throw new Error("overtake_receipts_unavailable");
-  if (milestoneResult.error) throw new Error("milestones_unavailable");
   const periodStart =
     prefs.clock_period_start != null
       ? String(prefs.clock_period_start)
@@ -606,7 +603,6 @@ export async function loadCompeteAccount(
     committedOvertakeMoments: (overtakeResult.data ?? []).filter(row =>
       enrollments.some(enrollment => enrollment.sport === row.sport && Date.parse(enrollment.waveStart) === Date.parse(row.moment?.periodStart ?? ""))
     ).map(row => ({ ...overtakeMomentForUnits(row.moment as CompetitionMoment, state.units), id: overtakeReceiptId(userId, row.account_revision, row.sport) })),
-    effortMilestones: (milestoneResult.data ?? []).map((r) => ({ sport: r.sport, track: r.track, periodStart: new Date(r.period_start).toISOString(), periodEnd: new Date(r.period_end).toISOString(), step: Number(r.step), earned: Number(r.earned) })),
     enrollments,
     activities,
     sleepNights,
