@@ -31,6 +31,9 @@ export function AthleteCrest({ model, onInteractionChange }: { model: AthleteCar
     return () => clearTimeout(timer);
   }, [active, loaded, failed]);
   return <View style={{ minHeight: 430, backgroundColor: c.paper }}>
+    {!loaded && <View style={{ position: "absolute", inset: 0, justifyContent: "center" }}>
+      <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />
+    </View>}
     {!failed && <WebView ref={web} source={{ uri }} originWhitelist={[origin]} javaScriptEnabled scrollEnabled={false} bounces={false}
       onTouchStart={() => onInteractionChange?.(true)} onTouchEnd={() => onInteractionChange?.(false)} onTouchCancel={() => onInteractionChange?.(false)}
       style={{ height: 430, backgroundColor: c.paper, opacity: loaded ? 1 : 0 }}
@@ -44,10 +47,6 @@ export function AthleteCrest({ model, onInteractionChange }: { model: AthleteCar
         if (message.type === "athlete-card-ready") { ready.current = true; inject(); }
         if (message.type === "athlete-card-rendered" && ready.current) setLoaded(true);
       } catch { /* Ignore malformed bridge messages. */ } }} />}
-    {failed && (
-      <View style={{ position: "absolute", inset: 0 }}>
-        <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />
-      </View>
-    )}
+
   </View>;
 }
