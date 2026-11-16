@@ -5,9 +5,9 @@ import { useAuth } from "../lib/auth";
 import Svg, { G } from "react-native-svg";
 import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
-import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, RACE_TRAIL_MIN_WIDTH_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { CourseOptions } from "./course-options";
 import { FieldFollowChip } from "./field-follow-chip";
@@ -32,6 +32,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
 }) {
 const appearanceColors = useThemeColors();
   const insets = useSafeAreaInsets();
+  const dimensions = useWindowDimensions();
   const sceneActive = useSceneActive();
   const active = sceneActive && presentationActive;
   const initialized = useRef(false);
@@ -49,15 +50,14 @@ const appearanceColors = useThemeColors();
   const prefix = useId();
   const ref = useRef<ComponentRef<typeof Camera>>(null);
   const reduced = useReducedMotion();
-  const [spaced, setSpaced] = useState(true);
+  const [spaced, setSpaced] = useState(false);
   const earnedDistance = Math.max(0, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value));
   const clampedTarget = distanceTarget ? Math.max(0, Math.min(distanceTarget.value, earnedDistance)) : undefined;
   const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? RACE_LANE_SPACING_METRES : 0), [course, lanes, unit, selectedId, spaced]);
   const visibleTrails = useMemo(() => hiddenIds.length ? { ...scene.trails, features: scene.trails.features.filter(feature => !hiddenIds.includes(String(feature.id))) } : scene.trails, [scene.trails, hiddenIds]);
   const visibleMarkers = useMemo(() => hiddenIds.length ? { ...scene.markers, features: scene.markers.features.filter(feature => !hiddenIds.includes(String(feature.id))) } : scene.markers, [scene.markers, hiddenIds]);
-  const trailWidth = RACE_TRAIL_WIDTH_METRES / (78271.516964 * Math.cos(course.coordinates[0][1] * Math.PI / 180));
   const fallbackCenter = scene.selected?.coordinate ?? course.coordinates[0];
-  const pose = useRef<CourseCameraPose>(restored.current ?? { center: fallbackCenter, zoom: 16, pitch: initialFlat ? 0 : 60, bearing: 0 });
+  const pose = useRef<CourseCameraPose>(restored.current ?? { center: fallbackCenter, zoom: courseInitialZoom(fallbackCenter[1], dimensions.height, initialFlat ? 0 : 60), pitch: initialFlat ? 0 : 60, bearing: 0 });
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(restored.current ? restored.current.pitch === 0 : initialFlat);
   const flatRef = useRef(flat);
   flatRef.current = flat;
@@ -198,7 +198,11 @@ const appearanceColors = useThemeColors();
     onOptionsChange(publishedOptions);
     return () => onOptionsChange(null);
   }, [onOptionsChange, flat, spaced, mapFollowing, followAthleteName, Boolean(onReplay), Boolean(onChoose2D), onFollowChipPress != null]);
-  return <View style={{ flex: 1, minHeight: 0 }}>
+  return <View style={{ flex: 1, minHeight: 0 }} onLayout={({ nativeEvent }) => {
+    if (initialized.current || restored.current || replay || mapUserGesture.current) return;
+    pose.current.zoom = courseInitialZoom(pose.current.center[1], nativeEvent.layout.height, pose.current.pitch);
+    if (ready) ref.current?.setCamera({ centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing, animationDuration: 0 });
+  }}>
     <MapView ref={mapRef} accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled={!onSnapshot} attributionEnabled={false}
       onTouchStart={beginMapUserGesture}
       onTouchEnd={endMapUserGesture}
@@ -233,9 +237,9 @@ const appearanceColors = useThemeColors();
           onFollowChange?.(false);
         }
       }} />
-      <ShapeSource id="completed" shape={visibleTrails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineSortKey: ["get", "priority"], lineWidth: ["interpolate", ["exponential", 2], ["zoom"], 0, RACE_TRAIL_MIN_WIDTH_PIXELS, 16, Math.max(RACE_TRAIL_MIN_WIDTH_PIXELS, trailWidth * 2 ** 16), 22, trailWidth * 2 ** 22], lineCap: "round", lineJoin: "round" }} /></ShapeSource>
+      <ShapeSource id="completed" shape={visibleTrails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineSortKey: ["get", "priority"], lineWidth: spaced ? RACE_SEPARATE_WIDTH_PIXELS : RACE_OVERLAY_WIDTH_PIXELS, lineCap: "round", lineJoin: "round" }} /></ShapeSource>
       <ShapeSource id="athletes" shape={visibleMarkers} onPress={event => { const id = event.features[0]?.properties?.id; if (typeof id === "string") onSelect(id); }}>
-        <CircleLayer id="athlete-dots" slot="top" style={{ circleRadius: ["case", ["get", "selected"], 5, 3], circleColor: ["case", ["get", "you"], "#f7c948", "#20b9c6"], circleStrokeColor: "#ffffff", circleStrokeWidth: 1 }} />
+        <CircleLayer id="athlete-dots" slot="top" style={{ circleSortKey: ["case", ["get", "selected"], 2, ["get", "you"], 1, 0], circleRadius: ["case", ["get", "selected"], RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS], circleColor: ["case", ["get", "you"], "#f7c948", "#20b9c6"], circleStrokeColor: "#ffffff", circleStrokeWidth: 1 }} />
       </ShapeSource>
       {!reduced && replay ? replay.passEffects.filter(pass => !hiddenIds.includes(pass.id)).map(pass => {
         const lane = scene.callouts.find(lane => lane.id === pass.id);

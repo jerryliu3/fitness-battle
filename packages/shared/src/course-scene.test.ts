@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { distance } from "@turf/turf";
-import { courseAthleteDetail, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, raceCourseScene } from "./course-scene";
+import { courseAthleteDetail, courseInitialZoom, coursePreviewLanes, raceCourseScene } from "./course-scene";
 import { createRaceCourse, raceCoursePosition, raceCourseRacerPosition } from "./race-course";
 
 it("gives each real racer a covered trail ending at its dot, without exposing future geometry", () => {
@@ -75,9 +75,7 @@ it("keeps each racer's trail aligned through bends, turnarounds, and the date li
   }
 });
 
-it("keeps a small gap between wider trails and labels every real racer independently of selection", () => {
-  expect(RACE_LANE_SPACING_METRES).toBeCloseTo(.35 * 1.2);
-  expect(RACE_LANE_SPACING_METRES - RACE_TRAIL_WIDTH_METRES).toBeCloseTo(.06);
+it("labels every real racer independently of selection", () => {
   const course = createRaceCourse("Street", [[0, 0], [.02, 0]]);
   const lanes = [{ id: "you", name: "You", initials: "Y", you: true, value: .5 }, { id: "a", name: "A", initials: "A", value: 1 }, { id: "b", name: "B", initials: "B", value: .4 }, { id: "past", name: "Past", initials: "P", ghost: true, value: 100 }];
   const scene = raceCourseScene(course, lanes, "km", "a");
@@ -89,4 +87,28 @@ it("keeps a small gap between wider trails and labels every real racer independe
   expect(reselected.callouts.map(lane => lane.id)).toEqual(["you", "a", "b"]);
   expect(reselected.callouts.map(lane => lane.callout)).toEqual(scene.callouts.map(lane => lane.callout));
   expect(new Set(scene.callouts.map(lane => `${lane.callout.left}:${lane.callout.y}`)).size).toBe(3);
+});
+
+
+it("keeps the initial ground span stable across viewport sizes and latitudes", () => {
+  const zoom = courseInitialZoom(0, 600, 0);
+  expect(78271.516964 / 2 ** zoom * 600).toBeCloseTo(2000);
+  expect(courseInitialZoom(0, 1200, 0)).toBeCloseTo(zoom + 1);
+  expect(courseInitialZoom(60, 600, 0)).toBeCloseTo(zoom - 1);
+  expect(courseInitialZoom(0, 600, 60)).toBeCloseTo(zoom + Math.log2(3));
+  expect(courseInitialZoom(0, 0, 60)).toBe(courseInitialZoom(0, 600, 60));
+});
+
+it.each(["km", "mi"])("includes reachable preview rivals using competition distance in %s", unit => {
+  const metresPerUnit = unit === "mi" ? 1609.344 : 1000;
+  const lanes = [
+    { id: "you", you: true, metres: 5000 },
+    { id: "ahead", metres: 5900 },
+    { id: "behind", metres: 4100 },
+    { id: "far", metres: 15000 },
+    { id: "past", ghost: true, metres: 5000 },
+  ].map(lane => ({ ...lane, name: lane.id, initials: "", value: lane.metres / metresPerUnit }));
+  expect(coursePreviewLanes(lanes, unit).map(lane => lane.id)).toEqual(["you", "ahead", "behind"]);
+  expect(coursePreviewLanes(lanes.filter(lane => !lane.you), unit)).toEqual([]);
+  expect(coursePreviewLanes(lanes, "pts")).toEqual([]);
 });
