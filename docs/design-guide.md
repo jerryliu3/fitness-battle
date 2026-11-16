@@ -144,6 +144,23 @@ This supersedes the November 6 map-as-tab composition and its separate overlaid
 navigation. Distance fields remain geographic 3D; points remain 2D. See the
 [implementation review](reviews/compete-event-home/README.md).
 
+### Geographic competition framing — November 15
+
+Distance maps initially target an approximately 2 km ground footprint, using the
+map height, latitude and pitch instead of a fixed zoom number. This is a
+flat-ground camera estimate: perspective and terrain can reveal distant scenery,
+and the 60° chase view is not symmetric ahead/behind the athlete. Field totals
+and distant rivals never widen the ordinary following camera. Overview still
+fits earned trails; overtake replay retains its pair-framing camera.
+
+Shared lane starts enabled. Its route is 8 screen pixels wide; separate routes
+are 4 pixels. Selected dots have a 9-pixel radius, other dots 7 pixels, with the
+selected dot drawn above peers. Lane offsets retain the existing geometry.
+Recenter changes position without resetting zoom. Existing camera retention on
+returning to a field remains intact. Fresh event previews use the same camera
+policy and include rivals within 1 km of the viewer's competition distance;
+queued previews keep their anonymous roster. Native previews honor athlete blocks.
+
 ## Brand and character exploration
 
 ### Athlete Crest — November 8

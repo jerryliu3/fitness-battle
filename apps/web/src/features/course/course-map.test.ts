@@ -8,11 +8,11 @@ vi.mock("mapbox-gl", () => ({ default: { Map: class {
   events = new Map<string, Function[]>(); sources = new Map<string, { setData: ReturnType<typeof vi.fn> }>();
   addControl = vi.fn();
   jumpTo = vi.fn(); fitBounds = vi.fn(); easeTo = vi.fn(); stop = vi.fn(); remove = vi.fn(); resize = vi.fn(); setPaintProperty = vi.fn();
-  constructor() { mock.instances.push(this); }
+  constructor(public options: any) { mock.instances.push(this); }
   getCenter() { return { toArray: () => [.005, 0] }; } getZoom() { return 15; } getPitch() { return 30; } getBearing() { return 20; }
   on(name: string, layer: Function | string, callback?: Function) { const handlers = this.events.get(name) ?? []; handlers.push(callback ?? layer as Function); this.events.set(name, handlers); }
   emit(name: string, event = {}) { this.events.get(name)?.forEach(callback => callback(event)); }
-  addSource(id: string) { this.sources.set(id, { setData: vi.fn() }); } getSource(id: string) { return this.sources.get(id); } addLayer() {}
+  addSource(id: string) { this.sources.set(id, { setData: vi.fn() }); } getSource(id: string) { return this.sources.get(id); } addLayer = vi.fn();
 }, AttributionControl: class {} } }));
 vi.mock("./course-callout", () => ({ CourseCallout: "CourseCallout" }));
 import CourseMap from "./course-map";
@@ -41,6 +41,10 @@ it("keeps one map instance, suspends following for user input and resumes on sel
   const instance = mock.instances[0];
   await act(async () => instance.emit("load"));
   expect(instance.easeTo.mock.lastCall[0].duration).toBe(0);
+  expect(instance.addLayer.mock.calls.find(([layer]: any[]) => layer.id === "athlete-dots")[0].paint["circle-radius"]).toEqual(["case", ["get", "selected"], 9, 7]);
+  expect(instance.setPaintProperty).toHaveBeenLastCalledWith("completed-line", "line-width", 8);
+  await act(async () => renderer.root.findAllByType("button").find(node => node.props.children === "Shared lane: on")!.props.onClick());
+  expect(instance.setPaintProperty).toHaveBeenLastCalledWith("completed-line", "line-width", 4);
   await act(async () => instance.emit("idle"));
   instance.easeTo.mockClear();
   await act(async () => instance.emit("movestart", { originalEvent: {} }));

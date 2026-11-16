@@ -3,8 +3,32 @@ import { ordinalPlace, type ArenaSceneLane } from "./arena-view";
 import type { LngLat } from "./routeGeoUtils";
 
 export const RACE_LANE_SPACING_METRES = .42;
-export const RACE_TRAIL_WIDTH_METRES = .36;
-export const RACE_TRAIL_MIN_WIDTH_PIXELS = 3;
+export const RACE_OVERLAY_WIDTH_PIXELS = 8;
+export const RACE_SEPARATE_WIDTH_PIXELS = 4;
+export const RACE_SELECTED_RADIUS_PIXELS = 9;
+export const RACE_ATHLETE_RADIUS_PIXELS = 7;
+export const RACE_LOCAL_RADIUS_METRES = 1000;
+
+/** Initial local ground span, independent of field totals. Perspective/terrain can
+ * show more distant scenery; this estimates the flat-ground viewport footprint
+ * using Mapbox's default vertical field of view (2 * atan(1/3)). */
+export function courseInitialZoom(latitude: number, height: number, pitch: number) {
+  const radians = pitch * Math.PI / 180;
+  const perspective = 1 / (Math.cos(radians) * (1 - (Math.tan(radians) / 3) ** 2));
+  return Math.max(0, Math.min(20, Math.log2(78271.516964 * Math.cos(latitude * Math.PI / 180) * (height > 0 ? height : 600) * perspective / (2 * RACE_LOCAL_RADIUS_METRES))));
+}
+
+/** Previews contain you and reachable rivals, never an entire distant field. */
+export function coursePreviewLanes(lanes: readonly ArenaSceneLane[], unit: string) {
+  const you = lanes.find(lane => lane.you && !lane.ghost);
+  if (!you) return [];
+  const metres = raceEffortMetres(you.value, unit);
+  if (metres === null) return [];
+  return lanes.filter(lane => {
+    const at = raceEffortMetres(lane.value, unit);
+    return !lane.ghost && at !== null && Math.abs(at - metres) <= RACE_LOCAL_RADIUS_METRES;
+  });
+}
 
 function buildCourseGeometry(course: RaceCourse, lanes: readonly ArenaSceneLane[], unit: string, spacing: number, anchorId: string) {
   const roster = lanes.filter(lane => !lane.ghost);

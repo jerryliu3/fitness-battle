@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, RACE_TRAIL_MIN_WIDTH_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { CourseCallout } from "./course-callout";
 import { addMapboxAttribution, mapboxAttributionOptions } from "@/components/maps/mapbox-attribution";
 import { webEnv } from "@/lib/env";
@@ -18,7 +18,7 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   useEffect(() => { setDismissed(ids => ids.filter(id => id !== selectedId)); }, [selectedId, focusRequest]);
   const container = useRef<HTMLDivElement>(null), map = useRef<mapboxgl.Map | null>(null);
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(initialFlat), [following, setFollowing] = useState(true);
-  const [spaced, setSpaced] = useState(true);
+  const [spaced, setSpaced] = useState(false);
   const earnedDistance = Math.max(0, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value));
   const clampedTarget = distanceTarget ? Math.max(0, Math.min(distanceTarget.value, earnedDistance)) : undefined;
   const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? RACE_LANE_SPACING_METRES : 0), [course, lanes, unit, selectedId, spaced]);
@@ -31,20 +31,21 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     reduced.current = preference.matches;
     let instance: mapboxgl.Map;
     try { instance = new mapboxgl.Map({ container: container.current, accessToken: webEnv.mapboxAccessToken,
-      preserveDrawingBuffer: Boolean(onSnapshot), interactive: !replay && !onSnapshot, style: "mapbox://styles/mapbox/standard", center: latest.current.scene.selected?.coordinate ?? course.coordinates[0], zoom: 16, pitch: initialFlat ? 0 : 60, minZoom: 0, maxZoom: 20,
+      preserveDrawingBuffer: Boolean(onSnapshot), interactive: !replay && !onSnapshot, style: "mapbox://styles/mapbox/standard", center: latest.current.scene.selected?.coordinate ?? course.coordinates[0], zoom: courseInitialZoom((latest.current.scene.selected?.coordinate ?? course.coordinates[0])[1], container.current.clientHeight, initialFlat ? 0 : 60), pitch: initialFlat ? 0 : 60, minZoom: 0, maxZoom: 20,
       ...mapboxAttributionOptions, antialias: true }); }
     catch { setError("This browser could not start the 3D map."); return; }
     setReady(false);
     map.current = instance;
     addMapboxAttribution(instance);
     const read = (): CourseCameraPose => ({ center: instance.getCenter().toArray(), zoom: instance.getZoom(), pitch: instance.getPitch(), bearing: instance.getBearing() });
+    let sized = container.current.clientHeight > 0;
     let routeFrame = 0;
     let initialized = false;
     const buildCamera = () => { camera.current = createCourseCamera({ read, trace: (poseAt, duration) => { const start = performance.now(); const tick = () => { const elapsed = performance.now() - start, fraction = Math.min(1, elapsed / duration), next = poseAt(fraction * fraction * (3 - 2 * fraction), elapsed); instance.jumpTo({ center: next.center, zoom: next.zoom, pitch: next.pitch, bearing: next.bearing }); if (elapsed < duration + 1200) routeFrame = requestAnimationFrame(tick); else routeFrame = 0; }; routeFrame = requestAnimationFrame(tick); }, fit: (bounds, duration) => { instance.fitBounds([bounds.sw, bounds.ne], { padding: 48, pitch: 0, bearing: 0, maxZoom: 20, duration }); }, stop: userGesture => { if (routeFrame) cancelAnimationFrame(routeFrame); routeFrame = 0; if (!userGesture) instance.stop(); }, move: (pose, duration) => instance.easeTo({ center: pose.center, zoom: pose.zoom, pitch: pose.pitch, bearing: pose.bearing, duration: initialized ? duration : 0 }) }, reduced.current, initialFlat ? "2d" : "3d"); };
     buildCamera();
     const preferenceChanged = () => { reduced.current = preference.matches; camera.current?.setReducedMotion(reduced.current); };
     preference.addEventListener("change", preferenceChanged);
-    const interrupt = (event: { originalEvent?: unknown }) => { if (event.originalEvent) { camera.current?.interrupt(); setFollowing(false); latest.current.onFollowChange?.(false); } };
+    const interrupt = (event: { originalEvent?: unknown }) => { if (event.originalEvent) { sized = true; camera.current?.interrupt(); setFollowing(false); latest.current.onFollowChange?.(false); } };
     instance.on("movestart", interrupt);
     instance.on("error", () => setError("Some map data could not load. Check your connection and Mapbox access."));
     instance.on("idle", () => setError(""));
@@ -52,15 +53,21 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
       const s = latest.current.scene;
       instance.addSource("completed", { type: "geojson", data: s.trails });
       instance.addSource("athletes", { type: "geojson", data: s.markers });
-      const trailWidth = RACE_TRAIL_WIDTH_METRES / (78271.516964 * Math.cos(course.coordinates[0][1] * Math.PI / 180));
-      instance.addLayer({ id: "completed-line", type: "line", source: "completed", slot: "middle", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "priority"] }, paint: { "line-color": ["get", "color"], "line-width": ["interpolate", ["exponential", 2], ["zoom"], 0, RACE_TRAIL_MIN_WIDTH_PIXELS, 16, Math.max(RACE_TRAIL_MIN_WIDTH_PIXELS, trailWidth * 2 ** 16), 22, trailWidth * 2 ** 22] } });
-      instance.addLayer({ id: "athlete-dots", type: "circle", source: "athletes", slot: "top", paint: { "circle-radius": ["case", ["get", "selected"], 5, 3], "circle-color": ["case", ["get", "you"], "#f7c948", "#20b9c6"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
+      instance.addLayer({ id: "completed-line", type: "line", source: "completed", slot: "middle", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "priority"] }, paint: { "line-color": ["get", "color"], "line-width": spaced ? RACE_SEPARATE_WIDTH_PIXELS : RACE_OVERLAY_WIDTH_PIXELS } });
+      instance.addLayer({ id: "athlete-dots", type: "circle", source: "athletes", slot: "top", layout: { "circle-sort-key": ["case", ["get", "selected"], 2, ["get", "you"], 1, 0] }, paint: { "circle-radius": ["case", ["get", "selected"], RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS], "circle-color": ["case", ["get", "you"], "#f7c948", "#20b9c6"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
       instance.on("click", "athlete-dots", event => { const id = event.features?.[0]?.properties?.id; if (typeof id === "string") latest.current.onSelect(id); });
       setReady(true); setError("");
       const prepared = () => { if (!initialized) { initialized = true; latest.current.onReady?.(); if (latest.current.onSnapshot) { try { latest.current.onSnapshot(instance.getCanvas().toDataURL("image/png")); } catch {} } } };
       instance.on("idle", prepared);
     });
-    const observer = new ResizeObserver(() => instance.resize()); observer.observe(container.current);
+    const observer = new ResizeObserver(() => {
+      instance.resize();
+      const height = container.current?.clientHeight ?? 0;
+      if (!sized && height > 0) {
+        sized = true;
+        instance.jumpTo({ zoom: courseInitialZoom(instance.getCenter().lat, height, instance.getPitch()) });
+      }
+    }); observer.observe(container.current);
     return () => { observer.disconnect(); preference.removeEventListener("change", preferenceChanged); camera.current?.interrupt(false); instance.remove(); map.current = null; camera.current = null; };
   }, [course]);
   useEffect(() => {
@@ -70,6 +77,9 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   useEffect(() => {
     if (ready) (map.current?.getSource("athletes") as mapboxgl.GeoJSONSource | undefined)?.setData(scene.markers);
   }, [ready, scene.markers]);
+  useEffect(() => {
+    if (ready) map.current?.setPaintProperty("completed-line", "line-width", spaced ? RACE_SEPARATE_WIDTH_PIXELS : RACE_OVERLAY_WIDTH_PIXELS);
+  }, [ready, spaced]);
   useEffect(() => { if (!followAthlete && camera.current?.following) { camera.current.interrupt(false); setFollowing(false); } }, [followAthlete]);
   const lastFocus = useRef<{ course: RaceCourse; id: string; request: number; following: boolean; session?: string | number | boolean } | null>(null);
   useEffect(() => {
