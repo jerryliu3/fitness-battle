@@ -13,6 +13,7 @@ const calls = vi.hoisted(() => ({ setCamera: vi.fn() }));
 vi.mock("react-native", () => ({ useWindowDimensions: () => ({ width: 390, height: 844 }),useColorScheme: () => "light",  View: "View", Text: "Text", Pressable: "Pressable", ScrollView: "ScrollView", Switch: "Switch", Platform: { OS: "ios" }, Modal: ({ visible, ...props }: { visible: boolean }) => visible ? createElement("Modal", { visible, ...props }) : null, Dimensions: { get: () => ({ width: 390, height: 844 }) }, StyleSheet: { create: (value: unknown) => value } }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
 vi.mock("./athlete-node", () => ({ AthleteNode: "AthleteNode" }));
+vi.mock("./athlete-pennant", () => ({ AthletePennant: "AthletePennant" }));
 vi.mock("react-native-svg", () => ({ default: "Svg", G: "G" }));
 vi.mock("./field-overlay-motion", () => ({ FieldOverlayView: "FieldOverlayView" }));
 vi.mock("./section", () => ({ AppText: "AppText", textStyle: () => ({}) }));
@@ -55,8 +56,8 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   await act(async () => renderer.update(createElement(CourseMap, { ...updated, selectedId: "peer", focusRequest: 1 })));
   const flight = calls.setCamera.mock.lastCall![0];
   expect(flight.animationDuration).toBeGreaterThan(500);
-  const marker = renderer.root.findAllByType("MarkerView" as never).find(node => node.props.anchor.x < .5)!.props.coordinate;
-  expect(flight.centerCoordinate).toEqual(marker);
+  const marker = renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape.features.find((f: any) => f.id === "peer");
+  expect(flight.centerCoordinate).toEqual(marker.geometry.coordinates);
   expect(flight.zoomLevel).toBe(15);
   expect(flight.centerCoordinate[0]).toBeGreaterThan(.005);
   expect(renderer.root.findAllByType("Map" as never)).toHaveLength(1);
@@ -78,25 +79,27 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   expect(["Following", "Recenter", "Zoom in", "Zoom out", "2D map"].every(label => !button(label))).toBe(true);
   expect(toggle("Perspective view").props.value).toBe(true);
   expect(toggle("Shared lane").props.value).toBe(true);
-  const together = renderer.root.findAllByType("MarkerView" as never).map(node => node.props.coordinate);
+  const together = renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape;
   await act(async () => toggle("Shared lane").props.onValueChange(false));
   expect(toggle("Shared lane").props.value).toBe(false);
   expect(button("See overview")).toBeDefined();
-  expect(renderer.root.findAllByType("MarkerView" as never).map(node => node.props.coordinate)).not.toEqual(together);
+  expect(renderer.root.findAllByType("ShapeSource" as never).some(node => node.props.id === "athletes")).toBe(false);
+  expect(renderer.root.findAllByType("AthleteNode" as never)).toHaveLength(2);
   await act(async () => toggle("Shared lane").props.onValueChange(true));
   await act(async () => toggle("Perspective view").props.onValueChange(false));
   expect(toggle("Perspective view").props.value).toBe(false);
-  expect(calls.setCamera.mock.lastCall![0]).toMatchObject({ centerCoordinate: marker, pitch: 0 });
+  expect(calls.setCamera.mock.lastCall![0]).toMatchObject({ centerCoordinate: marker.geometry.coordinates, pitch: 0 });
   await act(async () => button("See overview")!.props.onPress());
   expect(button("See overview")).toBeUndefined();
   expect(calls.setCamera.mock.lastCall![0].bounds.ne[0]).toBeLessThan(.02);
-  await act(async () => button("Focus You, 2nd · 0.6 km")!.props.onPress());
+  const source = renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!;
+  await act(async () => source.props.onPress({ features: [{ properties: { id: "you" } }] }));
   expect(props.onSelect).toHaveBeenCalledWith("you");
   const cards = renderer.root.findAllByType("MarkerView" as never);
   expect(cards).toHaveLength(2);
-  expect(cards.find(card => card.props.anchor.x < .5)!.props.coordinate).toEqual(marker);
+  expect(cards.find(card => card.props.anchor.x === 0)!.props.coordinate).toEqual(marker.geometry.coordinates);
   expect(cards.every(card => card.props.allowOverlap && card.props.allowZElevate === false)).toBe(true);
-  const labels = renderer.root.findAllByType("AthleteNode" as never);
+  const labels = renderer.root.findAllByType("AthletePennant" as never);
   expect(labels.map(label => label.props.detail)).toEqual(["2nd · 0.6 km", "1st · 1.1 km"]);
 
 });
@@ -133,12 +136,13 @@ it("hides a blocked racer without changing the other racer's position or place",
   expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Course options")).toBe(true);
   expect(renderer.root.findByType("Map" as never).props.zoomEnabled).toBe(true);
   expect(renderer.root.findByType("Map" as never).props.accessibilityLabel).not.toContain(course.name);
-  const markerCoord = () => renderer.root.findAllByType("MarkerView" as never)[0]!.props.coordinate;
-  const yourPosition = markerCoord();
+  const source = () => renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape;
+  const yourPosition = source().features.find((feature: { id: string }) => feature.id === "you").geometry.coordinates;
   await act(async () => renderer.update(createElement(CourseMap, { ...props, hiddenIds: ["peer"] })));
-  expect(markerCoord()).toEqual(yourPosition);
+  expect(source().features.map((feature: { id: string }) => feature.id)).toEqual(["you"]);
+  expect(source().features[0].geometry.coordinates).toEqual(yourPosition);
   expect(renderer.root.findAllByType("MarkerView" as never)).toHaveLength(1);
-  expect(renderer.root.findByType("AthleteNode" as never).props.detail).toContain("2nd");
+  expect(renderer.root.findByType("AthletePennant" as never).props.detail).toContain("2nd");
 });
 
 it("follows automatic progress along the route and settles on the racer", async () => {
@@ -153,8 +157,8 @@ it("follows automatic progress along the route and settles on the racer", async 
     expect(scheduledFrames.size).toBeGreaterThan(0);
     await finishCameraTravel();
     expect(calls.setCamera.mock.lastCall![0].animationDuration).toBe(0);
-    const marker = renderer.root.findByType("MarkerView" as never);
-    expect(calls.setCamera.mock.lastCall![0].centerCoordinate).toEqual(marker.props.coordinate);
+    const marker = renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape.features[0];
+    expect(calls.setCamera.mock.lastCall![0].centerCoordinate).toEqual(marker.geometry.coordinates);
   }
 });
 
@@ -223,7 +227,7 @@ it("frames both racers during slow motion and pulses only visible passed athlete
   expect(calls.setCamera.mock.lastCall![0].animationDuration).toBe(0);
   const markers = renderer.root.findAllByType("MarkerView" as never);
   expect(markers).toHaveLength(3);
-  expect(markers.find(marker=>marker.props.anchor.x === .5)!.props.coordinate).toEqual(markers.find(marker=>marker.props.anchor.x < .5)!.props.coordinate);
+  expect(markers.find(marker=>marker.props.anchor.x === .5)!.props.coordinate).toEqual(markers.find(marker=>marker.props.anchor.x === 0)!.props.coordinate);
   await act(async () => renderer.update(createElement(CourseMap, {...props,hiddenIds:["peer"]})));
   expect(renderer.root.findAllByType("MarkerView" as never)).toHaveLength(1);
   await act(async () => renderer.update(createElement(CourseMap, {...props,replay:{...props.replay,focus:0,passEffects:[]}})));
