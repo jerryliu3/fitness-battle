@@ -38,13 +38,19 @@ begin
   payload:=public.rankings_page('marathon','unknown',2096,'',1);
   if (payload->>'total')::integer<>206 then raise exception 'legacy page RPC lost editions'; end if;
   update public.performances set sex='female' where source_record_id=rec;
+  insert into public.source_records(source_id,event_edition_id,normalized_name,normalized_bib,category_key)
+  values(src,other_ed,'another runner','207','marathon:male') returning id into rec;
+  insert into public.performances(source_record_id,event_edition_id,athlete_name,sex,distance_slug,chip_time_ms,rank_time_ms,rank_clock,finish_status,result_date)
+  values(rec,other_ed,'Another runner','male','marathon',900000,900000,'chip','finished','2096-05-01');
   payload:=public.rankings_page_scoped('marathon','all',2096,'',1,null,null,other_ed);
-  if (payload->>'total')::integer is distinct from 1 then raise exception 'All-category field missing'; end if;
+  if (payload->>'total')::integer is distinct from 2
+    or (payload->'rows'->0->>'sex') is distinct from 'male'
+    or (payload->'rows'->1->>'sex') is distinct from 'female' then raise exception 'All-category field missing or incorrectly sorted'; end if;
   payload:=public.rankings_edition_history(other_ed,'marathon','all');
   if jsonb_array_length(payload) is distinct from 1 then raise exception 'Combined year history missing'; end if;
   update public.performances set unpublished=true where source_record_id=rec;
-  payload:=public.rankings_page_scoped('marathon','unknown',2096,'',1,null,null,other_ed);
-  if (payload->>'total')::integer<>0 then raise exception 'unpublished result leaked'; end if;
+  payload:=public.rankings_page_scoped('marathon','all',2096,'',1,null,null,other_ed);
+  if (payload->>'total')::integer is distinct from 1 or (payload->'rows'->0->>'sex') is distinct from 'female' then raise exception 'unpublished result leaked'; end if;
   update public.sources set display_allowed=false where id=src;
   payload:=public.rankings_page_scoped('marathon','unknown',2096,'',1,null,null,ed);
   if (payload->>'total')::integer<>0 or (payload->>'cohortTotal')::integer<>0
