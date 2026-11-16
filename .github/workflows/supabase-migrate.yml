@@ -35,4 +35,4 @@ jobs:
             exit 1
           fi
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
-          supabase db push --include-all
+          supabase db push --remote --include-all --yes
