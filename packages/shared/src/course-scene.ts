@@ -1,5 +1,6 @@
 import { raceCourseRacerPosition, raceCourseTrail, raceEffortMetres, type RaceCourse } from "./race-course";
 import { ordinalPlace, type ArenaSceneLane } from "./arena-view";
+import { getAppColors } from "./appearance";
 import type { LngLat } from "./routeGeoUtils";
 
 export const RACE_LANE_SPACING_METRES = .42;
@@ -30,6 +31,9 @@ export function coursePreviewLanes(lanes: readonly ArenaSceneLane[], unit: strin
   });
 }
 
+/** First place is gold; every other athlete uses the comparison color. */
+const leaderColor = (leader: boolean) => { const colors = getAppColors(); return leader ? colors.actionPrimary : colors.chartComparison; };
+
 function buildCourseGeometry(course: RaceCourse, lanes: readonly ArenaSceneLane[], unit: string, spacing: number, anchorId: string) {
   const roster = lanes.filter(lane => !lane.ghost);
   const ids = roster.map(lane => lane.id).sort();
@@ -37,13 +41,14 @@ function buildCourseGeometry(course: RaceCourse, lanes: readonly ArenaSceneLane[
   const offsets = new Map([[anchor, 0]]);
   // The viewer owns the centerline; peers alternate to either side in stable ID order.
   ids.filter(id => id !== anchor).forEach((id, index) => offsets.set(id, (index % 2 ? 1 : -1) * (1 + Math.floor(index / 2)) * spacing));
+  const leaderValue = Math.max(...roster.map(lane => lane.value));
   const athletes = roster.map(lane => {
     const metres = raceEffortMetres(lane.value, unit);
-    return metres === null ? null : { ...lane, ...raceCourseRacerPosition(course, metres, offsets.get(lane.id)) };
+    return metres === null ? null : { ...lane, ...raceCourseRacerPosition(course, metres, offsets.get(lane.id)), leader: lane.value >= leaderValue };
   }).filter(athlete => athlete !== null);
   const trails = { type: "FeatureCollection" as const, features: athletes.filter(athlete => athlete.metres > 0).map(athlete => ({
     type: "Feature" as const, id: athlete.id,
-    properties: { color: athlete.you ? "#f7c948" : "#20b9c6", priority: athlete.you ? 1 : 0 },
+    properties: { color: leaderColor(athlete.leader), priority: athlete.leader ? 1 : 0 },
     geometry: { type: "LineString" as const, coordinates: raceCourseTrail(course, athlete.metres, athlete.lateralMetres) },
   })) };
   // Overview fits earned trails and current dots, never the unreached course.
@@ -76,7 +81,7 @@ export function raceCourseScene(course: RaceCourse, lanes: readonly ArenaSceneLa
     callouts: athletes.map(athlete => ({ ...athlete, callout: courseCalloutLayout(slots.get(athlete.id) ?? 0) })),
     markers: { type: "FeatureCollection" as const, features: athletes.map(athlete => ({
       type: "Feature" as const, id: athlete.id,
-      properties: { id: athlete.id, name: athlete.name, mystery: Boolean(athlete.mystery), you: Boolean(athlete.you), selected: athlete.id === selected?.id },
+      properties: { id: athlete.id, name: athlete.name, mystery: Boolean(athlete.mystery), you: Boolean(athlete.you), leader: athlete.leader, color: leaderColor(athlete.leader), selected: athlete.id === selected?.id },
       geometry: { type: "Point" as const, coordinates: athlete.coordinate },
     })) },
   };

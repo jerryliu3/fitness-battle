@@ -52,6 +52,7 @@ const clubColors=useThemeColors();
 const f=useFocusStyles();
   const baseOverview = fieldOverview(lanes, view);
   const overview = positionOnly ? { ...baseOverview, high: Math.max(.001, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value)) } : baseOverview, [width, setWidth] = useState(240);
+  const leaderValue = Math.max(0, ...lanes.filter(l => !l.ghost).map(l => l.value));
   const latest = useRef({ overview, onNavigate, width }); latest.current = { overview, onNavigate, width };
   const start = useRef(0);
   const [pan] = useState(() => PanResponder.create({
@@ -65,7 +66,7 @@ const f=useFocusStyles();
     <View {...pan.panHandlers} onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ flex: 1, minHeight: 44, justifyContent: "center" }} accessible accessibilityRole="adjustable" accessibilityLabel={positionOnly ? "Course distance target" : "Field distance overview"} aria-valuemin={0} aria-valuemax={overview.high} aria-valuenow={Math.min(overview.high, Math.max(0, view.center))} aria-valuetext={`${view.center.toFixed(1)} ${unit}`} accessibilityValue={{ min: 0, max: overview.high, now: Math.min(overview.high, Math.max(0, view.center)), text: `${view.center.toFixed(1)} ${unit}` }} accessibilityActions={[{ name: "increment" }, { name: "decrement" }]} onAccessibilityAction={e => onNavigate(Math.max(0, Math.min(overview.high, view.center + (e.nativeEvent.actionName === "increment" ? 1 : -1) * view.span / 4)))}>
       <View pointerEvents="none" style={{ height: 1, backgroundColor: "#bdc8b5" }}/>
       <View pointerEvents="none" style={{ position: "absolute", top: positionOnly ? 8 : 12, height: positionOnly ? 28 : 20, left: `${(positionOnly ? Math.max(0, Math.min(1, view.center / overview.high)) : overview.from) * 100}%`, width: positionOnly ? 2 : `${overview.width * 100}%`, minWidth: 2, borderWidth: 1, borderColor: "#a9bc93", borderRadius: 4, backgroundColor: "#b4c79b26" }}/>
-      {lanes.filter(l => !l.ghost && !hiddenIds.includes(l.id)).map(l => <View pointerEvents="none" key={l.id} style={{ position: "absolute", left: `${Math.max(0, Math.min(100, l.value / overview.high * 100))}%`, top: 18, width: 3, height: 9, borderRadius: 3, backgroundColor: l.you ? "#d6a900" : "#a6b9b5" }}/>) }
+      {lanes.filter(l => !l.ghost && !hiddenIds.includes(l.id)).map(l => <View pointerEvents="none" key={l.id} style={{ position: "absolute", left: `${Math.max(0, Math.min(100, l.value / overview.high * 100))}%`, top: 18, width: 3, height: 9, borderRadius: 3, backgroundColor: l.value >= leaderValue ? "#d6a900" : "#a6b9b5" }}/>) }
     </View><AppText role="caption">{positionOnly ? "Leader" : `${overview.high.toFixed(1)} ${unit}`}</AppText>
   </View>;
 }

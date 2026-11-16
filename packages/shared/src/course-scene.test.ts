@@ -16,7 +16,9 @@ it("gives each real racer a covered trail ending at its dot, without exposing fu
     expect(trail.geometry.coordinates.every(c => c[0] <= raceCoursePosition(course, 1000).coordinate[0] + .000001)).toBe(true);
   }
   expect(scene.overviewCoordinates[1][0]).toBeLessThan(.01);
-  expect(scene.trails.features.find(f => f.id === "you")?.properties.color).toBe("#f7c948");
+  expect(scene.trails.features.find(f => f.id === "peer")?.properties.color).toBe("#f7c948");
+  expect(scene.trails.features.find(f => f.id === "you")?.properties.color).toBe("#637482");
+  expect(scene.markers.features.map(f => [f.id, f.properties.leader, f.properties.color])).toEqual([["you", false, "#637482"], ["peer", true, "#f7c948"]]);
   expect(raceCourseScene(course, lanes, "pts", "peer").markers.features).toHaveLength(0);
   expect(lanes[0].value).toBe(.5);
 });

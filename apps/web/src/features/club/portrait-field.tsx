@@ -2,10 +2,12 @@
 import { colors as appearanceColors } from "@/theme/app-colors";
 
 import { typographyStyle, AppText  } from "@/ui/section";
+import { AthleteNode } from "../field/components/athlete-node";
 
 import { useFieldGestures } from "../field/use-field-gestures";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
+  ordinalPlace,
   orderedArenaLanes,
   portraitField,
   portraitDepthAt,
@@ -60,6 +62,8 @@ export function PortraitField({
     return Math.max(0, ordered.findIndex(l => l.id === selectedId)) - Math.max(0, ordered.findIndex(l => l.you));
   });
   const prefix = useId().replace(/:/g, "");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  useEffect(() => { setExpandedId(null); }, [focusRequest]);
   const scene = useMemo(() => portraitField(lanes, view, undefined, laneOffset, prefix), [lanes, view.center, view.span, laneOffset, prefix]);
   const prevSelectedRef = useRef(focusOnMount ? "" : `${selectedId}:${focusRequest}`);
   const [exploreEnabled, setExploring] = useState(false);
@@ -98,7 +102,15 @@ export function PortraitField({
     surface: svg, view, unit, enabled: exploring,
     lateral: () => latest.current.scene.focus,
     onStart: () => { stopTravel(); onGestureStart?.(); },
-    onTap: (_event, target) => { const id = (target as Element)?.closest("[data-athlete]")?.getAttribute("data-athlete"); if (id) onSelect(id); },
+    onTap: (_event, target) => {
+      const id = (target as Element)?.closest("[data-athlete]")?.getAttribute("data-athlete");
+      if (id) {
+        setExpandedId(prev => prev === id ? null : id);
+        onSelect(id);
+      } else {
+        setExpandedId(null);
+      }
+    },
     onMove: gesture => {
       const node = svg.current;
       if (!node) return;
@@ -128,7 +140,7 @@ export function PortraitField({
         <b>
           {scene.place} / {scene.fieldSize} <AppText as="small" role="caption" secondary>PLACE</AppText>
         </b>
-        <span>{portraitFieldGap(scene.nextGap, unit)}</span>
+        <span>{portraitFieldGap(scene.nextGap, unit).replace(/^You[’']re\s+/i, "")}</span>
       </div>
     <div className={immersive ? "club-perspective-board is-immersive" : "club-perspective-board"}>
       <img
@@ -214,141 +226,74 @@ export function PortraitField({
           .sort((a, b) => a.y - b.y)
           .map((m, i) => {
             const id = `${prefix}-portrait-${i}`;
-            const markerTrail = m.trail
-              ? competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost))
-              : null;
+            const activeFocusId = selectedId ?? scene.ordered.find(l => l.you)?.id;
+            const isSelected = activeFocusId === m.id;
+            const isExpanded = expandedId === m.id && !m.ghost;
+            const rank = 1 + scene.ordered.filter(peer => peer.value > m.value + 1e-6).length;
+            const isGold = !m.ghost && rank === 1;
+            const anchorY = m.y - 22 * m.scale;
+            const pennantX = Math.max(8 - m.x, Math.min(412 - 128 - m.x, m.x > 210 ? -142 : 26));
+            const pennantY = anchorY > 190 ? -64 : 30;
+            const subdetail = m.mystery
+              ? undefined
+              : m.you
+                ? scene.nextGap === null
+                  ? "Leading the field"
+                  : `${scene.nextGap.toLocaleString("en-US", { maximumFractionDigits: unit === "pts" ? 0 : 2 })} ${unit} to next rival`
+                : `${m.gap > 0 ? "+" : ""}${m.gap.toFixed(unit === "pts" ? 0 : 2)} ${unit}`;
+            const selectOrToggle = () => {
+              setExpandedId(prev => prev === m.id ? null : m.id);
+              onSelect(m.id);
+            };
             return (
               <g
                 key={m.id}
-                transform={`translate(${m.x} ${m.y - 27 * m.scale}) scale(${m.scale})`}
+                transform={`translate(${m.x} ${anchorY})`}
                 role="button"
                 tabIndex={0}
-                aria-label={`${m.name}${m.you ? ", you" : ""}, ${m.gap > 0 ? "+" : ""}${m.gap.toFixed(1)} ${unit}${m.outside ? ", outside visible distance range" : ""}`}
+                aria-label={`${m.name}, ${m.gap > 0 ? "+" : ""}${m.gap.toFixed(1)} ${unit}${m.outside ? ", outside visible distance range" : ""}`}
                 data-athlete={m.id}
-                onClick={event => { if (event.detail === 0) onSelect(m.id); }}
+                onClick={event => { if (event.detail === 0) selectOrToggle(); }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    onSelect(m.id);
+                    selectOrToggle();
                   }
                 }}
               >
-                <rect x={-30 / m.scale} y={-45 / m.scale} width={60 / m.scale} height={90 / m.scale} fill="transparent" />
-                {!m.ghost && m.trail ? (
-                  <circle
-                    cx={0}
-                    cy={27}
-                    r={7}
-                    fill={markerTrail!.dotFill}
-                    stroke={markerTrail!.dotStroke}
-                    strokeWidth={3}
+                <g transform={`scale(${m.scale})`}>
+                  <rect x={-30 / m.scale} y={-45 / m.scale} width={60 / m.scale} height={90 / m.scale} fill="transparent" />
+                  <ellipse
+                    cy={22}
+                    rx={20}
+                    ry={7}
+                    fill="#061c21"
+                    opacity={0.38}
                   />
-                ) : (
-                  <>
-                    <ellipse
-                      cy={27}
-                      rx={24}
-                      ry={10}
-                      fill={m.color}
-                      opacity={0.16}
-                    />
-                    <ellipse
-                      cy={27}
-                      rx={16}
-                      ry={6}
-                      fill="#143c43"
-                      stroke={m.color}
-                      strokeWidth={2.5}
-                    />
-                    <ellipse cy={27} rx={5} ry={2} fill={m.color} />
-                  </>
-                )}
-                <path
-                  d="M-9 12 L0 27 L9 12"
-                  fill={m.you ? "#f7c948" : "#f8f9f6"}
-                />
-                {!m.mystery && <rect
-                  x={-23}
-                  y={-43}
-                  width={46}
-                  height={58}
-                  rx={12}
-                  fill={appearanceColors.white}
-                  stroke={m.you ? "#f7c948" : "#b3c9c5"}
-                  strokeWidth={m.you ? 3 : 1.5}
-                />}
-<g>{m.mystery ? <g><circle cy={-14} r={22} fill="white" stroke={appearanceColors.textSecondary} strokeWidth={2} strokeDasharray="3 3"/><text y={-8} textAnchor="middle" fill={appearanceColors.textSecondary}>?</text></g> : <>                <defs>
-                  <clipPath id={id}>
-                    <rect x={-19} y={-39} width={38} height={50} rx={9} />
-                  </clipPath>
-                </defs>
-                {m.avatarUrl ? (
-                  <image
-                    href={m.avatarUrl}
-                    x={-19}
-                    y={-39}
-                    width={38}
-                    height={50}
-                    preserveAspectRatio="xMidYMid slice"
-                    clipPath={`url(#${id})`}
+                  <ellipse
+                    cy={22}
+                    rx={12}
+                    ry={4}
+                    fill="none"
+                    stroke={m.you ? "#f7c948" : m.color}
+                    strokeWidth={1.8}
+                    opacity={0.65}
                   />
-                ) : (
-                  <>
-                    <rect
-                      x={-19}
-                      y={-39}
-                      width={38}
-                      height={50}
-                      rx={9}
-                      fill={m.you ? "#f7c948" : "#d8e5df"}
-                    />
-                    <text style={typographyStyle("caption")}
-                      y={-8}
-                      textAnchor="middle"
-                      fill={appearanceColors.textSecondary}
-
-                    >
-                      {m.initials}
-                    </text>
-                  </>
-                )}
-</>}</g>
+                </g>
                 <g className="athlete-pennant">
-                {m.you ? (
-                  <>
-                    <rect
-                      x={-22}
-                      y={-66}
-                      width={44}
-                      height={18}
-                      rx={9}
-                      fill={appearanceColors.actionPrimary}
-                    />
-                    <text style={typographyStyle("caption")}
-                      y={-53}
-                      textAnchor="middle"
-                      fill={appearanceColors.textSecondary}
-
-                    >
-                      YOU
-                    </text>
-                  </>
-                ) : null}
-                <text style={typographyStyle("caption")}
-                  y={45}
-                  textAnchor="middle"
-                  fill="white"
-
-                >
-                  {m.ghost ? "Past you" : m.name.split(" ")[0]}
-                </text>
-                {!m.you && !m.mystery ? (
-                  <text style={typographyStyle("caption")} y={61} textAnchor="middle" fill={appearanceColors.soft} >
-                    {m.outside ? `${m.direction} ` : ""}
-                    {m.gap > 0 ? "+" : ""}
-                    {m.gap.toFixed(unit === "pts" ? 0 : 2)} {unit}
-                  </text>
-                ) : null}
+                  <AthleteNode
+                    lane={m}
+                    prefix={id}
+                    x={pennantX}
+                    y={pennantY}
+                    nodeRadius={22}
+                    nodeScale={m.scale}
+                    selected={isSelected}
+                    expanded={isExpanded}
+                    gold={isGold}
+                    detail={`${ordinalPlace(rank)} · ${m.value.toFixed(unit === "pts" ? 0 : 1)} ${unit}`}
+                    subdetail={subdetail}
+                  />
                 </g>
               </g>
             );
@@ -364,14 +309,14 @@ export function PortraitField({
           const peers = scene.outside.filter(m => m.direction === direction && !m.ghost);
           if (!peers.length) return null;
           const nearest = peers.reduce((a,b) => Math.abs(a.value-view.center) < Math.abs(b.value-view.center) ? a : b);
-          return <button type="button" key={direction} onClick={() => { onSelect(nearest.id); }}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {nearest.name.split(" ")[0]} {`${nearest.edgeGap.toFixed(1)} ${unit} from view`}</button>;
+          return <button type="button" key={direction} onClick={() => { onSelect(nearest.id); }}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {`${nearest.edgeGap.toFixed(1)} ${unit} from view`}</button>;
         })}
       </div>
       <div className="club-board-controls club-distance-controls">
         <div className="club-board-peers">
           <button type="button" aria-label="Previous lane" disabled={scene.focus <= 0} onClick={() => shift(-1)}>←</button>
           <button type="button" aria-label="Move backward" disabled={scene.min <= 0} onClick={() => panTo(view.center - view.span / 3)}>↓</button>
-          <button type="button" onClick={() => { onSelect(lanes.find(l => l.you)?.id ?? ""); }}>{lanes.find(l => l.you)?.name.split(" ")[0] ?? "Athlete"}</button>
+          <button type="button" aria-label="Center lane" onClick={() => { onSelect(lanes.find(l => l.you)?.id ?? ""); }}>◎</button>
           <button type="button" aria-label="Move forward" onClick={() => panTo(view.center + view.span / 3)}>↑</button>
           <button type="button" aria-label="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onClick={() => shift(1)}>→</button>
         </div>

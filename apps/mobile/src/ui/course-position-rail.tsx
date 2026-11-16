@@ -21,8 +21,8 @@ export function CoursePositionRail({ value, maximum, unit, onChange, height = 14
     <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,.75)" }}>Leader</Text>
     <View {...pan.panHandlers} accessible accessibilityRole="adjustable" accessibilityLabel="Course position" accessibilityState={{ disabled: maximum <= 0 }} accessibilityValue={{ min: 0, max: maximum, now: bounded, text: `${bounded.toFixed(1)} ${unit} along the course` }} accessibilityActions={[{ name: "increment" }, { name: "decrement" }]} onAccessibilityAction={e => onChange(Math.max(0, Math.min(maximum, bounded + (e.nativeEvent.actionName === "increment" ? 1 : -1) * maximum / 20)))} style={{ height, width: 44, alignItems: "center" }}>
       <View pointerEvents="none" style={{ height, width: 1, backgroundColor: "rgba(255,255,255,.3)", borderRadius: 2 }} />
-      {markers.map((marker, i) => <View pointerEvents="none" key={i} style={{ position: "absolute", top: (1 - (maximum ? Math.min(1, Math.max(0, marker.value / maximum)) : 0)) * height, width: 9, height: 3, backgroundColor: marker.you ? c.tennis : "rgba(255,255,255,.6)", borderRadius: 2 }} />)}
-      <View pointerEvents="none" style={{ position: "absolute", top: (1 - (maximum ? bounded / maximum : 0)) * height - 1, width: 28, height: 2, borderRadius: 1, backgroundColor: c.tennis }} />
+      {markers.map((marker, i) => <View pointerEvents="none" key={i} style={{ position: "absolute", top: (1 - (maximum ? Math.min(1, Math.max(0, marker.value / maximum)) : 0)) * height, width: 9, height: 3, backgroundColor: marker.value >= maximum ? c.tennis : "rgba(255,255,255,.6)", borderRadius: 2 }} />)}
+      <View pointerEvents="none" style={{ position: "absolute", top: (1 - (maximum ? bounded / maximum : 0)) * height - 1, width: 28, height: 2, borderRadius: 1, backgroundColor: "#ffffff" }} />
     </View>
     <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,.75)" }}>Start</Text>
   </View>;

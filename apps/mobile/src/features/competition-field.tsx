@@ -473,7 +473,8 @@ const f=useFocusStyles();
               {coursePositionLeaders(ranked).map((peer, idx) => {
                 if (hiddenIds.includes(peer.id)) return <View key={peer.id} style={{ height: 24 }} />;
                 const delta = peer.values[2] - leaderValue;
-                const isSelected = (selectedId ?? me?.id) === peer.id;
+                const isSelected = selectedId === peer.id;
+                const leads = place(peer.values[2]) === 1;
                 return (
                   <Animated.View key={peer.id} layout={reduceMotion ? undefined : LinearTransition.duration(240)}>
                   <Pressable
@@ -498,7 +499,7 @@ const f=useFocusStyles();
                       style={{
                         ...textStyle("caption"),
                         width: 14,
-                        color: peer.you ? c.tennis : "rgba(255,255,255,0.7)",
+                        color: leads ? c.tennis : "rgba(255,255,255,0.7)",
                       }}
                     >
                       {place(peer.values[2])}
@@ -507,7 +508,7 @@ const f=useFocusStyles();
                       numberOfLines={1}
                       style={{
                         ...textStyle("caption"),
-                        color: peer.you ? c.tennis : "#ffffff",
+                        color: leads ? c.tennis : "#ffffff",
                         flex: 1,
                       }}
                     >
@@ -565,7 +566,7 @@ const f=useFocusStyles();
                     <Text
                       style={{
                         ...textStyle("caption"),
-                        color: focusedLane.you ? c.tennis : "rgba(255,255,255,0.65)",
+                        color: focusedRank === 1 ? c.tennis : "rgba(255,255,255,0.65)",
                       }}
                     >
                       {ordinalPlace(focusedRank).toUpperCase()} PLACE
@@ -624,7 +625,7 @@ const f=useFocusStyles();
                           borderWidth: 1,
                           borderColor: activeChip
                             ? c.tennis
-                            : peer.you
+                            : place(peer.values[2]) === 1
                               ? "rgba(200, 245, 59, 0.45)"
                               : "rgba(255, 255, 255, 0.14)",
                         }}
@@ -634,7 +635,7 @@ const f=useFocusStyles();
                             ...textStyle("caption"),
                             color: activeChip
                               ? c.ink
-                              : peer.you
+                              : place(peer.values[2]) === 1
                                 ? c.tennis
                                 : "rgba(255,255,255,0.7)",
                           }}

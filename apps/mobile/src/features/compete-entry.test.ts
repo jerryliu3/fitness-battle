@@ -23,6 +23,7 @@ vi.mock("./compete-experience", () => ({ useCompeteExperience: () => ({ event: {
 vi.mock("../ui/compete-time-series-chart", () => ({ CompeteTimeSeriesChart: "CompeteTimeSeriesChart" }));
 vi.mock("./points-timeline", () => ({ PointsTimeline: "PointsTimeline" }));
 vi.mock("./competition-field", () => ({ CompetitionField: () => null }));
+vi.mock("./deferred-course-map", () => ({ forgetCourseCameras() {} }));
 vi.mock("./event-home", () => ({ EventHome: "EventHome", CoursePreview: "CoursePreview" }));
 vi.mock("./event-registration", () => ({ EventRegistration: "EventRegistration" }));
 vi.mock("./compete-home-sections", () => ({ CompeteIcon: "CompeteIcon", CrewEvents: "CrewEvents", ExploreEvents: "ExploreEvents", CompeteResults: "CompeteResults" }));

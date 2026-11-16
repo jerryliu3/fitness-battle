@@ -24,6 +24,7 @@ import { useEffect, useRef, useState } from "react";
 import { BackHandler, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { CompetitionField } from "../../src/features/competition-field";
+import { forgetCourseCameras } from "../../src/features/deferred-course-map";
 import { RoundTakeover } from "../../src/features/round-takeover";
 import { QueuedField } from "../../src/features/queued-field";
 import { SleepPanel } from "../../src/features/sleep-panel";
@@ -70,6 +71,13 @@ const f=useFocusStyles();
   const [expandRequest, setExpandRequest] = useState(0);
   const [pointsFraction, setPointsFraction] = useState<number | null>(null);
   useEffect(() => { setPointsFraction(null); setAthleteFocus(null); }, [experience.event?.sport, accountKey]);
+  // Leaving an event discards in-event view changes so re-entry matches its preview.
+  const [fieldSession, setFieldSession] = useState(0);
+  const wasImmersive = useRef(experience.immersive);
+  useEffect(() => {
+    if (wasImmersive.current && !experience.immersive) { forgetCourseCameras(); setFieldSession(value => value + 1); }
+    wasImmersive.current = experience.immersive;
+  }, [experience.immersive]);
   const [registrationBackground, setRegistrationBackground] = useState<{ account: string; state: CompeteState } | null>(null);
   const [register, setRegister] = useState(false);
   const [selection,setSelection]=useState<{account:string;sport:SportId|"sleep"}|null>(null);
@@ -168,7 +176,7 @@ const f=useFocusStyles();
 
   const content = (
     <SafeAreaView pointerEvents={persistent ? "box-none" : "auto"} style={[f.safe, persistent && { backgroundColor: "transparent" }]} edges={persistent ? [] : ["top"]}>
-      {persistent && selectedSport && !pointsEvent ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}`} sport={selectedSport} track={track} persistent backgroundMode externalAthleteFocus={athleteFocus} onOptionsChange={setCourseOptions} presentationActive={experience.immersive} onExit={exit} /> : null}
+      {persistent && selectedSport && !pointsEvent ? <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${fieldSession}`} sport={selectedSport} track={track} persistent backgroundMode externalAthleteFocus={athleteFocus} onOptionsChange={setCourseOptions} presentationActive={experience.immersive} onExit={exit} /> : null}
       {persistent && selectedSport && pointsEvent && !queued && <View style={{ flex: 1, backgroundColor: pointsPaper }}><CompeteTimeSeriesChart state={state} sport={selectedSport === "sleep" ? undefined : selectedSport} mode={selectedSport === "sleep" ? "sleep" : "sport"} track={track} selectedId={athleteFocus?.id} active={focused && experience.immersive} immersive topInset={insets.top} bottomInset={insets.bottom} view={pointsView} onViewChange={setPointsView} timelineFraction={pointsFraction} onTimelineChange={setPointsFraction} /><View style={{ position: "absolute", top: insets.top + 6, left: 12 }}><MaterialBack onPress={exit} /></View><View style={{ position: "absolute", top: insets.top + 6, right: 12, zIndex: 20 }}><GraphOptions eventView={pointsView === "event"} onToggleEventView={() => setPointsView((prev) => (prev === "event" ? "trajectory" : "event"))} /></View></View>}
       {persistent && experience.immersive && selectedSport && detailDestination && <SafeAreaView style={{ position: "absolute", inset: 0, backgroundColor: c.paper, zIndex: 40 }} edges={["top", "bottom"]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingHorizontal: 16, paddingVertical: 8 }}><MaterialBack onPress={exit} /><AppText role="heading" accessibilityRole="header">{selectedSport === "sleep" ? "Recovery" : `${SPORTS.find(item => item.id === selectedSport)?.name} meet`}</AppText></View>

@@ -9,7 +9,7 @@ import { AthletePennant } from "../field/components/athlete-pennant";
 
 /** The SDK positions a screen-sized DOM marker; React never projects camera frames. */
 export function CourseCallout({ passStrength = 0, map, lane, coordinate, detail, onSelect, onDismiss, layout }: {
-  passStrength?: number; map: mapboxgl.Map; lane: ArenaSceneLane; coordinate: LngLat; detail: string; onSelect(id: string): void; onDismiss?: () => void; layout?: ReturnType<typeof courseCalloutLayout>;
+  passStrength?: number; map: mapboxgl.Map; lane: ArenaSceneLane & { leader?: boolean }; coordinate: LngLat; detail: string; onSelect(id: string): void; onDismiss?: () => void; layout?: ReturnType<typeof courseCalloutLayout>;
 }) {
   const prefix = useId();
   const placement = layout ?? courseCalloutLayout(lane.you ? 0 : 1);

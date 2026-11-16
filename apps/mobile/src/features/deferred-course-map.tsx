@@ -11,3 +11,7 @@ export function DeferredCourseMap(props: ComponentProps<typeof import("../ui/cou
   const NativeMap = require("../ui/course-map").default as typeof import("../ui/course-map").default;
   return <NativeMap {...props} />;
 }
+
+export function forgetCourseCameras() {
+  if (nativeCourseMapAvailable) (require("../ui/course-map") as typeof import("../ui/course-map")).forgetCourseCameras();
+}

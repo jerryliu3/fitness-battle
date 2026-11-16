@@ -1974,7 +1974,7 @@
 .focus-overview-map { position:relative; flex:1; min-width:0; height:44px; cursor:crosshair; touch-action:none; }
 .focus-overview-map::before { content:""; position:absolute; top:22px; left:0; right:0; height:1px; background:var(--app-soft); }
 .focus-overview-map i { position:absolute; height:9px; width:3px; top:18px; background:var(--app-soft); border-radius:3px; pointer-events:none; }
-.focus-overview-map i.is-you { background:#d6a900; }
+.focus-overview-map i.is-leader { background:#d6a900; }
 .focus-overview-map .focus-overview-window { top:12px; height:20px; min-width:2px; background:#b4c79b26; border:1px solid var(--app-text-secondary); border-radius:4px; }
 .focus-field-backdrop { position: fixed; inset: 0; z-index: 119; background: transparent; }
 .focus-field-expanded { position: fixed; inset: 0; z-index: 120; overflow: hidden; background: var(--paper, var(--paper)); box-sizing: border-box; outline: none; }
