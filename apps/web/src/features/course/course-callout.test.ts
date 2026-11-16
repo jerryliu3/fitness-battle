@@ -15,7 +15,7 @@ afterEach(async () => { if (renderer) await act(async () => renderer.unmount());
 it("retains a viewport-aligned marker through position updates and cleans it up", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("document", { createElement: () => ({ style: {}, setAttribute: vi.fn() }) });
-  const props = { map: {} as mapboxgl.Map, lane: { id: "you", name: "Runner", initials: "R", you: true, value: 1 }, coordinate: [0, 0] as [number, number], detail: "1st · 1.0 km", onSelect: vi.fn() };
+  const props = { map: {} as mapboxgl.Map, lane: { id: "you", name: "Runner", initials: "R", you: true, value: 1 }, coordinate: [0, 0] as [number, number], detail: "1st · 1.0 km", profileNodes: true, onSelect: vi.fn() };
   await act(async () => { renderer = create(createElement(CourseCallout, props)); });
   const marker = mock.instances[0];
   expect(marker.options).toMatchObject({ pitchAlignment: "viewport", rotationAlignment: "viewport", occludedOpacity: 1, anchor: "bottom-right" });
