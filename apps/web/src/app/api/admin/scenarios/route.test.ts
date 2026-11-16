@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { freshState, reduceCompete } from "@fitness-battle/shared";
 vi.mock("@/lib/admin-auth", () => ({ authorizeAdmin: vi.fn(), adminDatabase: vi.fn() }));
 vi.mock("@/lib/compete-persist", () => ({ loadCompeteAccount: vi.fn() }));
@@ -11,6 +11,7 @@ function request(extra = {}) {
  return new Request("https://test.local/api/admin/scenarios", { method: "POST", body: JSON.stringify({ target, actionId, updatedAt: "v1", action: "add-activity", sport: "running", distanceM: 5000, movingSec: 1800, verified: false, reason: "Exercise return experience", confirmation: `SCENARIO ${target}`, ...extra }) });
 }
 beforeEach(() => { vi.resetAllMocks(); vi.mocked(authorizeAdmin).mockResolvedValue(target); });
+afterEach(() => { vi.useRealTimers(); });
 describe("admin scenario API", () => {
  it("authorizes reads and writes before creating a service client", async () => {
   vi.mocked(authorizeAdmin).mockResolvedValue(null);
@@ -31,7 +32,9 @@ describe("admin scenario API", () => {
   expect(rpc).not.toHaveBeenCalled();
  });
  it("targets the opponent when arranging being overtaken, while checking the observed athlete revision", async () => {
-  const now = new Date();
+  // Mid-week, so yesterday's opt-in and today's activity share one competition week.
+  const now = new Date("2026-11-18T17:00:00.000Z");
+  vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(now);
   const state = reduceCompete(freshState(now), { type: "opt-in", sport: "running", now: new Date(now.getTime() - 86400000).toISOString() });
   const opponent = "00000000-0000-4000-8000-000000000003";
   const field = { id: actionId, sport: "running", member_ids: [target, opponent], updated_at: "field-v1" };
