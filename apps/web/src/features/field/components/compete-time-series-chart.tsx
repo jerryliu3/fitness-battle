@@ -1,4 +1,5 @@
 "use client";
+import { buildCompetitionMomentTimeSeriesModel, type CompetitionMoment } from "@fitness-battle/shared";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { colors as c } from "@/theme/app-colors";
@@ -139,6 +140,7 @@ export function CompeteTimeSeriesChart({
   onViewChange,
   timelineFraction,
   onTimelineChange,
+  momentReplay,
 }: {
   state?: CompeteState | null;
   now?: Date;
@@ -155,6 +157,7 @@ export function CompeteTimeSeriesChart({
   onViewChange?: (view: CompeteTimeSeriesView) => void;
   timelineFraction?: number | null;
   onTimelineChange?: (value: number | null) => void;
+  momentReplay?: { moment: CompetitionMoment; progress: number };
 }) {
   const [plotHeight, setPlotHeight] = useState(204);
   useEffect(() => {
@@ -181,6 +184,9 @@ export function CompeteTimeSeriesChart({
 
   const effectiveNow = now ?? (state ? competeNow(state) : new Date());
   const model: CompeteTimeSeriesModel = useMemo(() => {
+    if (momentReplay) return buildCompetitionMomentTimeSeriesModel(momentReplay.moment, momentReplay.progress, {
+      height: plotHeight, hiddenIds, selectedAthleteId: activeSelectedId,
+    });
     const safeState = state ?? freshState(effectiveNow);
     const viewOption = compact ? undefined : activeView;
     if (mode === "sleep") {
@@ -218,6 +224,7 @@ export function CompeteTimeSeriesChart({
     activeView,
     compact,
     effectiveNow.getTime(),
+    momentReplay,
   ]);
 
   const handleSelectAthlete = (id: string) => {

@@ -1,3 +1,4 @@
+import { photoFinishFrame, type CompetitionMoment } from "./competition-moments";
 import { ordinalPlace } from "./arena-view";
 import { competitionPlace } from "./competition-place";
 import { competeNow, weeklyBoard } from "./compete/engine";
@@ -891,6 +892,36 @@ export function prepareCompeteTimeSeriesBase(
     view: options?.view,
     displayTimeZone: accountTimeZone(state),
   });
+}
+
+/** Captured before/after totals, independent of current roster and workout history. */
+export function buildCompetitionMomentTimeSeriesModel(
+  moment: CompetitionMoment,
+  progress: number,
+  options?: Pick<CompeteTimeSeriesOptions, "height" | "hiddenIds" | "selectedAthleteId">,
+): CompeteTimeSeriesModel {
+  const { plan } = moment;
+  const hidden = new Set(options?.hiddenIds);
+  const periodStart = new Date(moment.periodStart ?? 0);
+  const periodEnd = new Date(moment.periodEnd ?? 7 * 86_400_000);
+  const base = prepareTimeSeriesBase({
+    periodStart, periodEnd, now: periodEnd, unit: moment.unit,
+    rawAthletes: moment.lanes.filter(lane => !hidden.has(lane.id)).map(lane => {
+      const rival = plan.rivals[lane.id];
+      const before = lane.you ? plan.youBefore : !plan.hasOvertake && rival ? rival.startValue : lane.value;
+      const after = lane.you ? plan.youAfter : rival?.endValue ?? lane.value;
+      const vertices = [{ t: 0, value: before }, { t: 1, value: after }];
+      return { ...lane, you: Boolean(lane.you), currentValue: after, vertices, eventVertices: vertices };
+    }),
+  });
+  const model = evaluateCompeteTimeSeriesModel(base, {
+    ...options, scrubFraction: photoFinishFrame(moment, progress).travel,
+  });
+  return { ...model, historyAvailable: false, overtakes: [], overtakeCount: 0,
+    dayTicks: model.dayTicks.filter(day => day.index === 0 || day.index === 6)
+      .map(day => ({ ...day, label: day.index === 0 ? "Before" : "After" })),
+    timeLabel: "Field movement replay", cursorTimeLabel: "", latestTimeLabel: "",
+  };
 }
 
 export function buildCompeteTimeSeriesModel(

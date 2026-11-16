@@ -37,7 +37,6 @@ export function competeChartUnit(
 ): string {
   if (sportById(sport).gps) return units === "metric" ? "km" : "mi";
   if (sport === "walking") return "steps";
-  if (sport === "strength") return "hrs";
   return "hrs";
 }
 

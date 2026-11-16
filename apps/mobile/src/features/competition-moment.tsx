@@ -19,7 +19,6 @@ import {
   competitionTrack,
   competePeriodWindow,
   defaultCompeteFieldView,
-  isGeographicCompete,
   normalizeCompeteFieldView,
   formatArenaValue,
   type FieldViewDimension,
@@ -71,7 +70,6 @@ export function CompetitionMoment({
   const insets = useSafeAreaInsets();
   const [height, setHeight] = useState(0);
   const reduced = useReducedMotion();
-  const geographic = isGeographicCompete(moment.sport);
   const [viewDimension, setViewDimension] = useState<FieldViewDimension>(() =>
     normalizeCompeteFieldView(moment.sport, dimension),
   );
@@ -244,6 +242,7 @@ export function CompetitionMoment({
             sport={moment.sport}
             track={competitionTrack(moment.sport)}
             selectedId={moment.plan.youId}
+            momentReplay={{ moment, progress }}
             hiddenIds={hiddenIds}
             immersive
             topInset={insets.top}

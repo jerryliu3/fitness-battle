@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   competeChartPreview,
+  buildCompetitionMomentTimeSeriesModel,
   buildCompeteTimeSeriesModel,
   buildSleepTimeSeriesModel,
   interpolateTimeSeriesAt,
@@ -296,4 +297,31 @@ it("uses step functions and computes overtakes on event completion in event view
   const rampStartIdx = vertices.findIndex((v, i) => i > 0 && v.value === 0 && vertices[i + 1] && vertices[i + 1]!.value > 0 && vertices[i + 1]!.t > v.t);
   expect(rampStartIdx).toBeGreaterThanOrEqual(0);
   expect(eventModel.overtakes.length, JSON.stringify({ overtakes: eventModel.overtakes, athletes: eventModel.athletes.map(a => ({ id: a.id, v: a.currentValue, pts: a.vertices })) })).toBeGreaterThan(0);
+});
+
+
+it("keeps captured moment chart values, ranks and paths aligned with every replay frame", async () => {
+  const { competitionMomentScene } = await import("./competition-moments");
+  const moment = {
+    id: "captured", sport: "strength" as const, unit: "hrs" as const,
+    lanes: [
+      { id: "you", name: "Alex", initials: "A", you: true, value: 3 },
+      { id: "peer", name: "Riley", initials: "R", value: 2 },
+    ],
+    plan: {
+      youId: "you", youBefore: 1, youAfter: 3, hasOvertake: true,
+      overtakenIds: ["peer"], rankBefore: 2, rankAfter: 1,
+      rivals: { peer: { startValue: 2, endValue: 2, overtaken: true } },
+    },
+  } as unknown as import("./competition-moments").CompetitionMoment;
+  for (const progress of [0, 0.3, 0.5, 0.8, 1]) {
+    const frame = competitionMomentScene(moment, progress);
+    const chart = buildCompetitionMomentTimeSeriesModel(moment, progress);
+    for (const row of frame.ranked) {
+      const athlete = chart.athletes.find(athlete => athlete.id === row.id)!;
+      expect(athlete.valueAtCursor).toBeCloseTo(row.value);
+      expect(athlete.placeAtCursor).toBe(row.place);
+      expect(athlete.polyline.endsWith(`${athlete.cursorX.toFixed(1)},${athlete.cursorY.toFixed(1)}`)).toBe(true);
+    }
+  }
 });
