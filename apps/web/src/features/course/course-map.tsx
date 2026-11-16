@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { CourseCallout } from "./course-callout";
 import { addMapboxAttribution, mapboxAttributionOptions } from "@/components/maps/mapbox-attribution";
 import { webEnv } from "@/lib/env";
@@ -109,16 +109,8 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   return <div className="geographic-map" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", position: "relative", "--map-controls-bottom": `${controlsBottom}px` } as React.CSSProperties}>
     <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 0, position: "relative", overflow: "hidden" }} />
     {ready && map.current ? scene.callouts.filter(lane => !dismissed.includes(lane.id)).map(lane => {
-      const youValue = lanes.find(peer => peer.you && !peer.ghost)?.value ?? 0;
       const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
-      const delta = lane.value - youValue;
-      const subdetail = lanes.some(peer => peer.mystery)
-        ? undefined
-        : lane.you
-          ? rank === 1
-            ? "Leading the field"
-            : `${(lane.value - earnedDistance).toFixed(1)} ${unit} vs #1`
-          : `${delta > 0 ? "+" : ""}${delta.toFixed(1)} ${unit}`;
+      const subdetail = courseAthleteSubdetail(lanes, lane, unit);
       const selected = lane.id === selectedId && !dismissed.includes(lane.id);
       return <CourseCallout key={lane.id} map={map.current!} lane={lane} coordinate={lane.coordinate} layout={lane.callout} passStrength={reduced.current ? 0 : replay?.passEffects.find(pass => pass.id === lane.id)?.strength ?? 0} detail={courseAthleteDetail(lanes, lane, unit)} subdetail={subdetail} selected={spaced ? selected || Boolean(onSnapshot && lane.you) : lane.id === selectedId} gold={rank === 1} profileNodes={spaced} onDismiss={!onSnapshot && (spaced ? selected : lane.id === selectedId) ? () => setDismissed(ids => [...ids, lane.id]) : undefined} onSelect={onSelect} />;
     }) : null}
