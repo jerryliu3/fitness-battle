@@ -21,7 +21,7 @@ import {
 import { playCue } from "@/lib/haptics";
 import { typographyStyle } from "@/ui/section";
 import { UserAvatar } from "@/ui/user-avatar";
-import { AthletePennant } from "./athlete-pennant";
+import { AthleteNode } from "./athlete-node";
 
 const GRAPH_VIEWS: readonly { id: CompeteTimeSeriesView; label: string; icon: "progress" | "scoring" }[] = [
   { id: "trajectory", label: "Trajectory", icon: "progress" },
@@ -166,6 +166,7 @@ export function CompeteTimeSeriesChart({
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
   );
+  const [popupOpen, setPopupOpen] = useState(false);
   const [internalView, setInternalView] = useState<CompeteTimeSeriesView>("trajectory");
   const activeView = view ?? internalView;
   const setActiveView = onViewChange ?? setInternalView;
@@ -221,6 +222,11 @@ export function CompeteTimeSeriesChart({
 
   const handleSelectAthlete = (id: string) => {
     void playCue("selection");
+    if (model.selectedAthlete.id === id) {
+      setPopupOpen((open) => !open);
+    } else {
+      setPopupOpen(false);
+    }
     if (selectedId === undefined) {
       setInternalSelectedId(id);
     }
@@ -250,9 +256,8 @@ export function CompeteTimeSeriesChart({
     setScrubFraction(null);
   };
 
-  const selectedStroke = model.selectedAthlete.you
-    ? c.fieldTeal
-    : c.podiumGold;
+  const placeColor = (place: number) => (place === 1 ? c.tennis : c.secondary);
+  const selectedLeads = model.selectedAthlete.placeAtCursor === 1;
   const unselectedAthletes = model.athletes.filter((a) => !a.selected);
 
   if (compact) {
@@ -263,11 +268,28 @@ export function CompeteTimeSeriesChart({
       {preview.yTicks.map(tick => <g key={tick.y}><line x1={preview.left} x2={preview.right} y1={tick.y} y2={tick.y} stroke={c.line} /><text style={typographyStyle("caption")} x={preview.left - 8} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</text></g>)}
       {preview.xTicks.map((tick, i) => <text style={typographyStyle("caption")} key={tick.label} x={tick.x} y={282} textAnchor={i ? "end" : "start"} fill={c.muted}>{tick.label}</text>)}
       {preview.athletes.map(athlete => <g key={athlete.id}>
-        <polyline points={athlete.points} fill="none" stroke={athlete.selected ? c.chartSeries : c.accentSecondary} strokeWidth={athlete.selected ? 4 : 2} opacity={athlete.selected ? 1 : .65} />
-        <circle cx={athlete.x} cy={athlete.y} r={athlete.selected ? 7 : 3} fill={athlete.selected ? c.chartSeries : c.accentSecondary} />
+        <polyline points={athlete.points} fill="none" stroke={placeColor(athlete.placeAtCursor)} strokeWidth={athlete.selected ? 4 : 2} opacity={athlete.selected ? 1 : .65} />
+        <g transform={`translate(${athlete.x} ${athlete.y})`}>
+          <AthleteNode
+            lane={athlete}
+            x={0}
+            y={0}
+            detail=""
+            prefix={`preview-${athlete.id}`}
+            expanded={false}
+            selected={athlete.id === activeSelectedId}
+            gold={athlete.placeAtCursor === 1}
+            nodeRadius={22}
+          />
+        </g>
       </g>)}
     </svg>;
   }
+
+  const cleanGapLabel = model.gapLabel
+    .replace(/^Tied with .+$/i, "Tied")
+    .replace(/(\s+to\s+#\d+)\s+.+$/i, "$1")
+    .replace(/\s+vs\s+.+$/i, "");
 
   return (
     <div
@@ -319,12 +341,7 @@ export function CompeteTimeSeriesChart({
               <span
                 style={{
                   ...typographyStyle("label"),
-                  color:
-                    model.selectedAthlete.placeAtCursor === 1
-                      ? c.podiumGold
-                      : model.selectedAthlete.you
-                        ? c.fieldTeal
-                        : c.ink,
+                  color: selectedLeads ? c.podiumGold : c.ink,
                 }}
               >
                 {model.placeLabel}
@@ -392,10 +409,8 @@ export function CompeteTimeSeriesChart({
                   ...typographyStyle("caption"),
                   padding: "2px 8px",
                   borderRadius: 6,
-                  background: model.selectedAthlete.you
-                    ? "rgba(23, 108, 117, 0.1)"
-                    : "rgba(247, 201, 72, 0.24)",
-                  color: model.selectedAthlete.you ? c.fieldTeal : c.ink,
+                  background: selectedLeads ? "rgba(247, 201, 72, 0.24)" : c.soft,
+                  color: c.ink,
                 }}
               >
                 {model.placeLabel}
@@ -419,7 +434,7 @@ export function CompeteTimeSeriesChart({
                 fontVariantNumeric: "tabular-nums",
               }}
             >
-              {model.gapLabel}
+              {cleanGapLabel}
             </strong>
             {model.historyAvailable && <span
               style={{
@@ -524,7 +539,7 @@ export function CompeteTimeSeriesChart({
             />
           )}
 
-          {/* Unselected background competitor traces */}
+          {/* Unselected background competitor traces + circular profile nodes */}
           {unselectedAthletes.map((athlete) => (
             <g
               key={athlete.id}
@@ -537,19 +552,25 @@ export function CompeteTimeSeriesChart({
               <polyline
                 points={athlete.polyline}
                 fill="none"
-                stroke="#94a3b8"
-                strokeWidth={1.35}
+                stroke={placeColor(athlete.placeAtCursor)}
+                strokeWidth={2}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                opacity={0.32}
+                opacity={0.6}
               />
-              <circle
-                cx={athlete.cursorX}
-                cy={athlete.cursorY}
-                r={2.5}
-                fill="#94a3b8"
-                opacity={0.45}
-              />
+              <g transform={`translate(${athlete.cursorX} ${athlete.cursorY})`}>
+                <AthleteNode
+                  lane={athlete}
+                  x={0}
+                  y={0}
+                  detail=""
+                  prefix={`ts-peer-${athlete.id}`}
+                  expanded={false}
+                  selected={false}
+                  gold={athlete.placeAtCursor === 1}
+                  nodeRadius={22}
+                />
+              </g>
             </g>
           ))}
 
@@ -558,7 +579,7 @@ export function CompeteTimeSeriesChart({
             <polyline
               points={model.selectedAthlete.polyline}
               fill="none"
-              stroke={selectedStroke}
+              stroke={placeColor(model.selectedAthlete.placeAtCursor)}
               strokeWidth={3}
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -581,61 +602,40 @@ export function CompeteTimeSeriesChart({
             </g>
           ))}
 
-          {/* Selected Athlete Live/Cursor Tip Node + Pill */}
-          <g>
-            <circle
-              cx={model.selectedAthlete.cursorX}
-              cy={model.selectedAthlete.cursorY}
-              r={8}
-              fill={selectedStroke}
-              opacity={0.16}
+          {/* Selected Athlete Live/Cursor Circular Profile Node + Expandable Detail Popup */}
+          <g
+            transform={`translate(${model.selectedAthlete.cursorX} ${model.selectedAthlete.cursorY})`}
+            style={{ cursor: "pointer" }}
+            onClick={(event) => {
+              event.stopPropagation();
+              handleSelectAthlete(model.selectedAthlete.id);
+            }}
+          >
+            <AthleteNode
+              lane={{
+                name: model.selectedAthlete.name,
+                initials: model.selectedAthlete.initials,
+                you: model.selectedAthlete.you,
+                avatarUrl: model.selectedAthlete.avatarUrl,
+              }}
+              x={clamp(
+                model.left - model.selectedAthlete.cursorX + 4,
+                model.width - 132 - model.selectedAthlete.cursorX,
+                model.selectedAthlete.cursorX > 180 ? -144 : 20,
+              )}
+              y={clamp(
+                model.top - model.selectedAthlete.cursorY - 8,
+                model.bottom - 48 - model.selectedAthlete.cursorY + 8,
+                model.selectedAthlete.cursorY > model.top + 56 ? -56 : 20,
+              )}
+              detail={`${model.placeLabel} · ${model.selectedAthlete.formattedValueAtCursor} ${model.unit}`}
+              subdetail={cleanGapLabel}
+              prefix={`athlete-${model.selectedAthlete.id}`}
+              expanded={popupOpen}
+              selected={model.selectedAthlete.id === activeSelectedId}
+              gold={selectedLeads}
+              nodeRadius={22}
             />
-            <circle
-              cx={model.selectedAthlete.cursorX}
-              cy={model.selectedAthlete.cursorY}
-              r={4.5}
-              fill={selectedStroke}
-              stroke={c.paper}
-              strokeWidth={1.8}
-            />
-            {/* Athlete Callout (Full pennant card in fullscreen aligned to right; clean pill in card preview) */}
-            {immersive ? (
-              <g transform={`translate(${model.selectedAthlete.cursorX} ${model.selectedAthlete.cursorY})`}>
-                <AthletePennant
-                  lane={{
-                    name: model.selectedAthlete.name,
-                    you: model.selectedAthlete.you,
-                    avatarUrl: model.selectedAthlete.avatarUrl,
-                  }}
-                  x={Math.max(16, model.width - 158 - model.selectedAthlete.cursorX)}
-                  y={clamp(model.top - model.selectedAthlete.cursorY, model.bottom - 46 - model.selectedAthlete.cursorY, -23)}
-                  detail={`${model.placeLabel} · ${model.selectedAthlete.formattedValueAtCursor} ${model.unit}`}
-                  prefix={`athlete-${model.selectedAthlete.id}`}
-                />
-              </g>
-            ) : (
-              <g>
-                <rect
-                  x={model.tipPill.x}
-                  y={model.tipPill.y}
-                  width={model.tipPill.width}
-                  height={model.tipPill.height}
-                  rx={6}
-                  fill={model.selectedAthlete.you ? c.surfaceInverse : c.card}
-                  stroke={model.selectedAthlete.you ? "none" : c.line}
-                  strokeWidth={1}
-                />
-                <text
-                  x={model.tipPill.x + model.tipPill.width / 2}
-                  y={model.tipPill.y + 13.5}
-                  textAnchor="middle"
-                  fill={model.selectedAthlete.you ? c.textOnInverse : c.ink}
-                  style={typographyStyle("caption")}
-                >
-                  {model.tipPill.text}
-                </text>
-              </g>
-            )}
           </g>
         </svg>
       </div>
@@ -762,7 +762,7 @@ export function CompeteTimeSeriesChart({
                 >
                   #{athlete.placeAtCursor}
                 </span>
-                <strong>{athlete.firstName}</strong>
+                <strong>{athlete.initials}</strong>
                 <span
                   style={{
                     fontVariantNumeric: "tabular-nums",

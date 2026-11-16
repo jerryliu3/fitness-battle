@@ -7,6 +7,8 @@ import { useThemeColors } from "../theme";
 import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
 import { QueuedField } from "./queued-field";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
+import { FieldArenaChromeStack } from "../ui/field-arena-chrome-stack";
+import type { FieldMapChromeSlot } from "@fitness-battle/shared";
 import { FieldGroundSwitcher } from "../ui/field-ground-switcher";
 import { CompeteTimeSeriesChart } from "../ui/compete-time-series-chart";
 import { GeographicCourse } from "./geographic-course";
@@ -33,6 +35,7 @@ import {
   initialsFromName,
   ordinalPlace,
   shellTabFromPath,
+  sportById,
   weeklyBoard,
   type CourseDistanceTarget,
   type ArenaSceneLane,
@@ -40,7 +43,7 @@ import {
   type SportId,
 } from "@fitness-battle/shared";
 import { usePathname } from "expo-router";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AppState, Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "../ui/icon-button";
@@ -107,11 +110,31 @@ const f=useFocusStyles();
     setSceneDimension(value);
   };
   const chooseViewRef = useRef(chooseView); chooseViewRef.current = chooseView;
-  useEffect(() => {
-    if (!onOptionsChange || sceneDimension === "4d") return;
-    onOptionsChange(<FieldViewSwitcher compact value={sceneDimension} geographic={!queued && sport !== "strength"} onChange={value => chooseViewRef.current(value)} />);
-    return () => onOptionsChange(null);
+  const mapChromeRef = useRef<Partial<Record<FieldMapChromeSlot, ReactNode>>>({});
+  const publishArenaOptions = useCallback(() => {
+    if (!onOptionsChange) return;
+    onOptionsChange(
+      <FieldArenaChromeStack
+        slots={{
+          view: <FieldViewSwitcher value={sceneDimension} geographic={!queued && sportById(sport).gps} onChange={value => chooseViewRef.current(value)} />,
+          options: mapChromeRef.current.options,
+          follow: mapChromeRef.current.follow,
+        }}
+      />,
+    );
   }, [onOptionsChange, sceneDimension, queued, sport]);
+  useEffect(() => {
+    if (!onOptionsChange) return;
+    publishArenaOptions();
+    return () => onOptionsChange(null);
+  }, [onOptionsChange, publishArenaOptions]);
+  const handleMapChromeChange = useCallback(
+    (slots: Partial<Record<FieldMapChromeSlot, ReactNode>> | null) => {
+      mapChromeRef.current = slots ?? {};
+      publishArenaOptions();
+    },
+    [publishArenaOptions],
+  );
   const [courseFlat, setCourseFlat] = useState(false);
   const [expanded, setExpanded] = useState(persistent);
   const [leadersHeight, setLeadersHeight] = useState(0);
@@ -274,8 +297,7 @@ const f=useFocusStyles();
           state={state}
           sport={sport}
           track={track}
-          selectedId={selectedId ?? me?.id}
-          active={isFocused}
+          selectedId={selectedId}
           onSelectAthlete={(id) => {
             if (!hold.current?.suppressSelection()) selectAthlete(id);
           }}
@@ -285,7 +307,7 @@ const f=useFocusStyles();
       ) : null}
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <View pointerEvents={expanded ? "auto" : "none"} style={{ flex: 1 }}>
-          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following && !chaseReplay} onFollowChange={setFollowing} mapFollowing={following} followAthleteName={focusedLane?.name ?? me?.name ?? "your athlete"} onFollowChipPress={expanded && !queued ? () => { if (following) setFollowing(false); else { setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } } : undefined} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={chaseReplay ? undefined : courseTarget} replay={chaseReplay} onReplay={timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
+          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following && !chaseReplay} onFollowChange={setFollowing} mapFollowing={following} followAthleteName={focusedLane?.name ?? me?.name ?? "your athlete"} onFollowChipPress={expanded && !queued ? () => { if (following) setFollowing(false); else { setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } } : undefined} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={chaseReplay ? undefined : courseTarget} replay={chaseReplay} onReplay={timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onMapChromeChange={onOptionsChange ? handleMapChromeChange : undefined} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
           <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>Tap to open full screen</Text></View>
@@ -341,7 +363,7 @@ const f=useFocusStyles();
             animateSelection={!reduceMotion}
             onGestureStart={flight.cancel}
             onViewChange={applyView}
-            selectedId={selectedId ?? me?.id}
+            selectedId={selectedId ?? undefined}
             lanes={arena.lanes}
             unit={arena.unit}
             showGhost={ghost}
@@ -439,7 +461,9 @@ const f=useFocusStyles();
                 />
               </View>}
               {!backgroundMode && onDetails ? <Pressable accessibilityRole="button" accessibilityLabel={backgroundMode ? "Expand standings" : "Events & standings"} onPress={onDetails} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.72)" }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{backgroundMode ? `${sport.charAt(0).toUpperCase()}${sport.slice(1)}` : "Events & standings"}</Text></Pressable> : null}
-              {!onOptionsChange && !(backgroundMode && sceneDimension === "4d") && <FieldViewSwitcher compact={backgroundMode} value={sceneDimension} geographic={!queued && arena.unit !== "pts"} onChange={chooseView} />}
+              {!onOptionsChange && !(backgroundMode && sceneDimension === "4d") && (
+                <FieldViewSwitcher value={sceneDimension} geographic={!queued && arena.unit !== "pts"} onChange={chooseView} />
+              )}
             </FieldOverlayView>
 
             {!queued && (sceneDimension !== "4d" || course) ? <>
@@ -473,7 +497,8 @@ const f=useFocusStyles();
               {coursePositionLeaders(ranked).map((peer, idx) => {
                 if (hiddenIds.includes(peer.id)) return <View key={peer.id} style={{ height: 24 }} />;
                 const delta = peer.values[2] - leaderValue;
-                const isSelected = (selectedId ?? me?.id) === peer.id;
+                const isSelected = selectedId === peer.id;
+                const leads = place(peer.values[2]) === 1;
                 return (
                   <Animated.View key={peer.id} layout={reduceMotion ? undefined : LinearTransition.duration(240)}>
                   <Pressable
@@ -498,7 +523,7 @@ const f=useFocusStyles();
                       style={{
                         ...textStyle("caption"),
                         width: 14,
-                        color: peer.you ? c.tennis : "rgba(255,255,255,0.7)",
+                        color: leads ? c.tennis : "rgba(255,255,255,0.7)",
                       }}
                     >
                       {place(peer.values[2])}
@@ -507,7 +532,7 @@ const f=useFocusStyles();
                       numberOfLines={1}
                       style={{
                         ...textStyle("caption"),
-                        color: peer.you ? c.tennis : "#ffffff",
+                        color: leads ? c.tennis : "#ffffff",
                         flex: 1,
                       }}
                     >
@@ -565,7 +590,7 @@ const f=useFocusStyles();
                     <Text
                       style={{
                         ...textStyle("caption"),
-                        color: focusedLane.you ? c.tennis : "rgba(255,255,255,0.65)",
+                        color: focusedRank === 1 ? c.tennis : "rgba(255,255,255,0.65)",
                       }}
                     >
                       {ordinalPlace(focusedRank).toUpperCase()} PLACE
@@ -624,7 +649,7 @@ const f=useFocusStyles();
                           borderWidth: 1,
                           borderColor: activeChip
                             ? c.tennis
-                            : peer.you
+                            : place(peer.values[2]) === 1
                               ? "rgba(200, 245, 59, 0.45)"
                               : "rgba(255, 255, 255, 0.14)",
                         }}
@@ -634,7 +659,7 @@ const f=useFocusStyles();
                             ...textStyle("caption"),
                             color: activeChip
                               ? c.ink
-                              : peer.you
+                              : place(peer.values[2]) === 1
                                 ? c.tennis
                                 : "rgba(255,255,255,0.7)",
                           }}

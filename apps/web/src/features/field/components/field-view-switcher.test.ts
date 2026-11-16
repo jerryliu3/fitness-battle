@@ -2,38 +2,70 @@ import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 import { FieldViewSwitcher } from "./field-view-switcher";
-it("offers 2D, geographic 3D and standings in an accessible dropdown", async () => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  const onChange = vi.fn(), onStandings = vi.fn(); let renderer!: ReactTestRenderer;
-  try {
-    await act(async () => { renderer = create(createElement(FieldViewSwitcher, { value: "4d", geographic: true, onChange, onStandings })); });
-    const select = renderer.root.findByType("select");
-    expect(select.props["aria-label"]).toBe("Field view");
-    expect(select.props.value).toBe("4d");
-    expect(renderer.root.findAllByType("option").map(option => option.props.children)).toEqual(["Graph", "2D map", "3D course", "Standings"]);
-    expect(renderer.root.findAllByType("option").map(option => option.props.value)).toEqual(["graph", "2d", "4d", "standings"]);
-    await act(async () => select.props.onChange({ target: { value: "standings" } }));
-    expect(onStandings).toHaveBeenCalledOnce();
-    await act(async () => select.props.onChange({ target: { value: "4d" } }));
-    expect(onChange).toHaveBeenCalledWith("4d");
-    await act(async () => select.props.onChange({ target: { value: "graph" } }));
-    expect(onChange).toHaveBeenCalledWith("graph");
-    await act(async () => renderer.update(createElement(FieldViewSwitcher, { value: "2d", geographic: false, onChange, standings: true, onStandings })));
-    expect(renderer.root.findByType("select").props.value).toBe("standings");
-    expect(renderer.root.findAllByType("option").map(option => option.props.value)).toEqual(["graph", "2d", "standings"]);
-  } finally { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); }
-});
 
-it("exposes camera zoom as dropdown actions without changing the selected view", async () => {
+vi.mock("@/lib/haptics", () => ({ playCue: vi.fn() }));
+
+function menuLabels(renderer: ReactTestRenderer) {
+  return renderer.root
+    .findAll((node) => node.type === "button" && node.props.role === "menuitemradio")
+    .map((item) => item.props.children[1].props.children);
+}
+
+async function openMenu(renderer: ReactTestRenderer, label: string) {
+  await act(async () => {
+    renderer.root.findByProps({ "aria-label": `Field view: ${label}` }).props.onClick();
+  });
+}
+
+it("opens a popover with 2D, 3D, and Timeline for geographic fields", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  const onChange = vi.fn(), onZoomIn = vi.fn(), onZoomOut = vi.fn();
+  const onChange = vi.fn();
   let renderer!: ReactTestRenderer;
   try {
-    await act(async () => { renderer = create(createElement(FieldViewSwitcher, { value: "2d", geographic: false, onChange, onZoomIn, onZoomOut })); });
-    const select = renderer.root.findByType("select");
-    await act(async () => select.props.onChange({ target: { value: "zoom-in" } }));
-    await act(async () => select.props.onChange({ target: { value: "zoom-out" } }));
-    expect(onZoomIn).toHaveBeenCalledOnce(); expect(onZoomOut).toHaveBeenCalledOnce();
-    expect(onChange).not.toHaveBeenCalled(); expect(select.props.value).toBe("2d");
-  } finally { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); }
+    await act(async () => {
+      renderer = create(createElement(FieldViewSwitcher, { value: "4d", geographic: true, onChange }));
+    });
+    await openMenu(renderer, "3D");
+    expect(menuLabels(renderer)).toEqual(["2D", "3D", "Timeline"]);
+    const twoD = renderer.root.find(
+      (node) => node.type === "button" && node.props.role === "menuitemradio" && node.props.children[1].props.children === "2D",
+    );
+    await act(async () => twoD.props.onClick());
+    expect(onChange).toHaveBeenCalledWith("2d");
+
+    await openMenu(renderer, "3D");
+    const timeline = renderer.root.find(
+      (node) => node.type === "button" && node.props.role === "menuitemradio" && node.props.children[1].props.children === "Timeline",
+    );
+    await act(async () => timeline.props.onClick());
+    expect(onChange).toHaveBeenCalledWith("graph");
+
+    await act(async () => renderer.update(createElement(FieldViewSwitcher, { value: "2d", geographic: false, onChange })));
+    await openMenu(renderer, "2D");
+    expect(menuLabels(renderer)).toEqual(["2D", "Timeline"]);
+  } finally {
+    if (renderer) await act(async () => renderer.unmount());
+    vi.unstubAllGlobals();
+  }
+});
+
+it("offers an optional standings row", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const onChange = vi.fn(), onStandings = vi.fn();
+  let renderer!: ReactTestRenderer;
+  try {
+    await act(async () => {
+      renderer = create(createElement(FieldViewSwitcher, { value: "2d", geographic: false, onChange, standings: true, onStandings }));
+    });
+    await openMenu(renderer, "2D");
+    const standings = renderer.root.find(
+      (node) => node.type === "button" && node.props.role === "menuitemradio" && node.props.children[1].props.children === "Standings",
+    );
+    expect(standings?.props["aria-checked"]).toBe(true);
+    await act(async () => standings!.props.onClick());
+    expect(onStandings).toHaveBeenCalledOnce();
+  } finally {
+    if (renderer) await act(async () => renderer.unmount());
+    vi.unstubAllGlobals();
+  }
 });

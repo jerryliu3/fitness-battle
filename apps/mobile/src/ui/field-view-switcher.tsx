@@ -1,62 +1,55 @@
-import { useRef } from "react";
-import { Platform } from "react-native";
-import { SettingsToggleRow } from "./settings-toggle-row";
-import { AppIcon } from "./app-icon";
+import { AppIcon, type AppIconName } from "./app-icon";
 import { useThemeColors } from "../theme";
-import { Pressable, Text, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
 import { AnchoredMenu, useAnchoredMenu } from "./anchored-menu";
 import { textStyle } from "./section";
 import { playCue } from "../lib/haptics";
 
+type FieldView = "2d" | "3d" | "4d" | "graph";
+type FieldViewOption = { value: FieldView; label: string; icon: AppIconName };
+
+const VIEW_ICONS: Record<FieldView, AppIconName> = {
+  "2d": "distance",
+  "4d": "cubeFocus",
+  "3d": "cubeFocus",
+  graph: "progress",
+};
 
 export function FieldViewSwitcher({
-  compact = false,
   value,
   geographic,
   onChange,
 }: {
-  compact?: boolean;
-  value: "2d" | "3d" | "4d" | "graph";
+  value: FieldView;
   geographic: boolean;
-  onChange(value: "2d" | "3d" | "4d" | "graph"): void;
+  onChange(value: FieldView): void;
 }) {
-const appearanceColors = useThemeColors();
-
-const c=useThemeColors();
-
-  const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
-    minWidth: compact ? 220 : 96,
-    estimatedHeight: compact ? 52 : 165,
-  });
-
-  const pendingChange = useRef<(() => void) | null>(null);
-  const finishChange = () => { const action = pendingChange.current; pendingChange.current = null; action?.(); };
-  const options: Array<{ value: "2d" | "3d" | "4d" | "graph"; label: string }> = [
-    { value: "graph", label: "Graph" },
-    { value: "2d", label: "2D" },
-    ...(geographic ? [{ value: "4d" as const, label: "3D" }] : []),
+  const c = useThemeColors();
+  const options: FieldViewOption[] = [
+    { value: "2d", label: "2D", icon: "distance" },
+    ...(geographic ? [{ value: "4d" as const, label: "3D", icon: "cubeFocus" as const }] : []),
+    { value: "graph", label: "Timeline", icon: "progress" },
   ];
-
-  const currentLabel =
-    value === "4d" ? "3D" : value === "graph" ? "Graph" : value.toUpperCase();
+  const active = options.find((option) => option.value === value) ?? options[0]!;
+  const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
+    minWidth: 200,
+    estimatedHeight: options.length * 48 + 16,
+  });
 
   return (
     <View ref={anchorRef} collapsable={false}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={compact ? "Course options" : `Dimension: ${currentLabel}`}
+        accessibilityLabel={`Field view: ${active.label}`}
         accessibilityState={{ expanded: open }}
-        hitSlop={compact ? 8 : undefined}
+        hitSlop={8}
         onPress={toggle}
         style={({ pressed }) => [
           {
             minHeight: 44,
             minWidth: 44,
-            justifyContent: "center",
-            paddingHorizontal: compact ? 10 : 12,
-            flexDirection: "row",
             alignItems: "center",
-            gap: 6,
+            justifyContent: "center",
             borderRadius: 999,
             backgroundColor: "rgba(20, 20, 19, 0.72)",
             borderWidth: 1,
@@ -65,57 +58,43 @@ const c=useThemeColors();
           pressed && { opacity: 0.75 },
         ]}
       >
-        {compact ? <AppIcon name="layers" size={22} color="#ffffff" /> : <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
-          {currentLabel} ▾
-        </Text>}
+        <AppIcon name={VIEW_ICONS[value]} size={22} color="#ffffff" />
       </Pressable>
       <AnchoredMenu
         open={open}
         onClose={close}
         menuLayout={menuLayout}
-        onDismiss={compact ? finishChange : undefined}
-        style={compact ? { width: menuLayout?.width ?? 220 } : undefined}
-        accessibilityLabel="Close dimension switcher"
+        style={{ width: menuLayout?.width ?? 200 }}
+        accessibilityLabel="Close field view switcher"
       >
-        {compact && geographic ? <SettingsToggleRow label="3D view" value={value === "4d"} onChange={() => { const next = value === "4d" ? "2d" : "4d"; if (Platform.OS === "ios") pendingChange.current = () => onChange(next); else onChange(next); close(); }} /> : options.map((opt) => {
-          const isSelected = opt.value === value;
+        {options.map((option) => {
+          const selected = option.value === value;
           return (
             <Pressable
-              key={opt.value}
+              key={option.value}
               accessibilityRole="button"
-              accessibilityLabel={`Select ${opt.label}`}
-              accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={`Select ${option.label}`}
+              accessibilityState={{ selected }}
               onPress={() => {
                 void playCue("selection");
-                onChange(opt.value);
+                onChange(option.value);
                 close();
               }}
               style={({ pressed }) => [
                 {
                   flexDirection: "row",
                   alignItems: "center",
-                  justifyContent: "space-between",
-                  minHeight: 44,
+                  gap: 12,
+                  minHeight: 48,
                   paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  backgroundColor: isSelected ? "rgba(20, 20, 19, 0.08)" : "transparent",
+                  backgroundColor: selected ? "rgba(20, 20, 19, 0.08)" : "transparent",
                 },
-                pressed && { opacity: 0.7 },
+                pressed && Platform.OS === "ios" ? { opacity: 0.7 } : null,
               ]}
             >
-              <Text
-                style={{
-                  ...textStyle("caption"),
-                  color: isSelected ? c.ink : c.muted,
-                }}
-              >
-                {opt.label}
-              </Text>
-              {isSelected ? (
-                <Text style={{ ...textStyle("caption"), color: c.ink }}>
-                  ✓
-                </Text>
-              ) : null}
+              <AppIcon name={option.icon} size={22} color={selected ? c.ink : c.muted} />
+              <Text style={{ ...textStyle("body"), flex: 1, color: selected ? c.ink : c.muted }}>{option.label}</Text>
+              {selected ? <Text style={{ ...textStyle("caption"), color: c.ink }}>✓</Text> : null}
             </Pressable>
           );
         })}

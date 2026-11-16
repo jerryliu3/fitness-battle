@@ -86,7 +86,6 @@ export function CompetitionMoment({
     }
     setCourseOptions(
       <FieldViewSwitcher
-        compact
         value="2d"
         geographic
         onChange={(next) => {
@@ -231,7 +230,6 @@ export function CompetitionMoment({
   const overlayControls =
     courseOptions ?? (
       <FieldViewSwitcher
-        compact
         value={viewDimension}
         geographic
         onChange={(next) => {

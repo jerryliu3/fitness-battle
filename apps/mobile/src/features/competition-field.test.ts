@@ -122,7 +122,7 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and time
   expect(overview().props.view.center).toBe(.75);
   expect(map().props.selectedId).toBe(selected);
   expect(field().props.view.center).toBe(fieldCenter);
-  await act(async () => map().props.onSelect(map().props.selectedId));
+  await act(async () => map().props.onSelect(map().props.lanes.find((lane: { you?: boolean }) => lane.you).id));
   expect(map().props.distanceTarget).toBeNull();
   expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(1);
   expect(button("Collapse current leaders")).toBeUndefined();

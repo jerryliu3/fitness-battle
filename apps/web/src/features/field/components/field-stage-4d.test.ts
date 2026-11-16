@@ -16,6 +16,7 @@ vi.mock("@/features/brand/polished-racer", () => ({ PolishedRacer: "PolishedRace
 vi.mock("@/ui/user-avatar", () => ({ UserAvatar: "UserAvatar" }));
 vi.mock("./expanding-field", () => ({ ExpandingField: ({ children, hud, open }: { children: ReactNode; hud: ReactNode; open: boolean }) => createElement("FieldHost", { open }, children, hud) }));
 import { FieldStage } from "./field-stage";
+import { FieldViewSwitcher } from "./field-view-switcher";
 let renderer: ReactTestRenderer;
 afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); });
 it("shares fullscreen, athlete panels, selection and timeline with 4D", async () => {
@@ -26,8 +27,9 @@ it("shares fullscreen, athlete panels, selection and timeline with 4D", async ()
   const model: FieldModel = { sport: "running", track: "open", periodStart: "2026-10-26T04:00:00Z", periodEnd: "2026-11-02T05:00:00Z", runners: [you, peer], ghost: null, you, referenceKm: 2, checkpointLabels: ["Mon", "Wed", "Now"], gps: true, unit: "km" };
   await act(async () => { renderer = create(createElement(FieldStage, { model, replayState: freshState(new Date("2026-10-26T18:00:00Z")) })); });
   const button = (label: string) => renderer.root.findAllByType("button").find(node => node.props["aria-label"] === label)!;
-  const choose = async (value: string) => act(async () => renderer.root.findByType("select").props.onChange({ target: { value } }));
-  expect(renderer.root.findByType("select").props.value).toBe("4d");
+  const switchers = () => renderer.root.findAllByType(FieldViewSwitcher);
+  const choose = async (value: string) => act(async () => switchers()[0]!.props.onChange(value));
+  expect(switchers()[0]!.props.value).toBe("4d");
   const map = () => renderer.root.findByType("GeographicCourse" as never);
   const course = DEMO_RACE_COURSE;
   expect(map().props.course).toBe(course);
@@ -40,7 +42,7 @@ it("shares fullscreen, athlete panels, selection and timeline with 4D", async ()
   await act(async () => overview().props.onNavigate(.75));
   expect(map().props.distanceTarget).toMatchObject({ value: .75, request: 1 });
   expect(overview().props.view.center).toBe(.75);
-  expect(map().props.selectedId).toBe("you");
+  expect(map().props.selectedId).toBe("");
   await act(async () => map().props.onResumeFollow());
   expect(map().props.distanceTarget).toBeNull();
   await act(async () => button("Collapse athlete panel").props.onClick());
@@ -80,17 +82,19 @@ it("scrubs in the main field and retains time through expansion and view changes
   await act(async () => { renderer = create(createElement(FieldStage, { model, replayState: state })); });
   const timeline = () => renderer.root.findByProps({ "aria-label": "Competition timeline" });
   const map = () => renderer.root.findByType("GeographicCourse" as never);
+  const switchers = () => renderer.root.findAllByType(FieldViewSwitcher);
+  const choose = async (value: string) => act(async () => switchers()[0]!.props.onChange(value));
   expect(map().props.lanes[0].value).toBe(5);
   await act(async () => timeline().props.onChange({ target: { value: "0" } }));
   expect(map().props.lanes[0].value).toBe(0);
   await act(async () => timeline().props.onChange({ target: { value: ".5" } }));
   expect(map().props.lanes[0].value).toBe(.5);
-  await act(async () => renderer.root.findByType("select").props.onChange({ target: { value: "2d" } }));
+  await choose("2d");
   const expand = renderer.root.findAllByType("button").find(node => node.props["aria-label"] === "Expand 2D map to full screen")!;
   await act(async () => expand.props.onClick());
   expect(timeline().props.value).toBe(.5);
   expect(renderer.root.findByType("ArenaLanes" as never).props.lanes[0].value).toBe(.5);
-  await act(async () => renderer.root.findByType("select").props.onChange({ target: { value: "4d" } }));
+  await choose("4d");
   expect(map().props.lanes[0].value).toBe(.5);
   const close = renderer.root.findAllByType("button").find(node => node.props["aria-label"] === "Close full screen field")!;
   await act(async () => close.props.onClick());

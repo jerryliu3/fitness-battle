@@ -23,6 +23,7 @@ vi.mock("./compete-experience", () => ({ useCompeteExperience: () => ({ event: {
 vi.mock("../ui/compete-time-series-chart", () => ({ CompeteTimeSeriesChart: "CompeteTimeSeriesChart" }));
 vi.mock("./points-timeline", () => ({ PointsTimeline: "PointsTimeline" }));
 vi.mock("./competition-field", () => ({ CompetitionField: () => null }));
+vi.mock("./deferred-course-map", () => ({ forgetCourseCameras() {} }));
 vi.mock("./event-home", () => ({ EventHome: "EventHome", CoursePreview: "CoursePreview" }));
 vi.mock("./event-registration", () => ({ EventRegistration: "EventRegistration" }));
 vi.mock("./compete-home-sections", () => ({ CompeteIcon: "CompeteIcon", CrewEvents: "CrewEvents", ExploreEvents: "ExploreEvents", CompeteResults: "CompeteResults" }));
@@ -57,9 +58,10 @@ it("opens the chosen sport package without registering until entry is claimed", 
   await act(async () => renderer.root.findByType("FocusSheet" as never).props.onClosed());
   expect(mock.enter).toHaveBeenCalledWith("alice", "walking");
 });
-it("opens queued walking on its course with cancellation in the standings sheet", async () => {
+it("opens queued running on its course with cancellation in the standings sheet", async () => {
+  mock.event = "running";
   mock.immersive = true;
-  mock.state = reduceCompete(mock.state!, { type: "opt-in", sport: "walking" });
+  mock.state = reduceCompete(mock.state!, { type: "opt-in", sport: "running" });
   await act(async () => { renderer = create(createElement(ArenaScreen, { persistent: true })); });
   expect(renderer.root.findAllByType("CompeteSheet" as never)).toHaveLength(1);
   const cancel = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "Cancel registration");
@@ -67,8 +69,15 @@ it("opens queued walking on its course with cancellation in the standings sheet"
   await act(async () => cancel!.props.onPress());
   const confirm = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "Yes, cancel registration");
   await act(async () => confirm!.props.onPress());
-  expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-out", sport: "walking" });
+  expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-out", sport: "running" });
   expect(mock.close).not.toHaveBeenCalled();
+});
+it("opens queued walking as the same points destination as strength", async () => {
+  mock.immersive = true;
+  mock.state = reduceCompete(mock.state!, { type: "opt-in", sport: "walking" });
+  await act(async () => { renderer = create(createElement(ArenaScreen, { persistent: true })); });
+  expect(renderer.root.findAllByType("CompeteSheet" as never)).toHaveLength(0);
+  expect(renderer.root.findAllByType("FocusButton" as never).some(node => node.props.label === "Cancel registration")).toBe(true);
 });
 it("opens an existing event from Explore without opening registration", async () => {
   mock.state = reduceCompete(mock.state!, { type: "opt-in", sport: "walking" });
@@ -101,8 +110,9 @@ it("opens queued Recovery as a destination and cancels its health registration",
   expect(mock.close).not.toHaveBeenCalled();
 });
 it("keeps the waiting-for-field destination open after the start without cancellation", async () => {
+  mock.event = "running";
   mock.immersive = true;
-  mock.state = reduceCompete(mock.state!, { type: "opt-in", sport: "walking" });
+  mock.state = reduceCompete(mock.state!, { type: "opt-in", sport: "running" });
   mock.state.enrollments[0]!.waveStart = "2026-11-08T11:00:00Z";
   mock.state.enrollments[0]!.awaitingField = true;
   await act(async () => { renderer = create(createElement(ArenaScreen, { persistent: true })); });

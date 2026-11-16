@@ -57,7 +57,6 @@ it("reduced motion shows the final result in either direction and confirms at mo
     const standings = renderer.root.findByType("StandingsList" as never);
     expect(standings.props.ranked.length).toBeGreaterThanOrEqual(4);
     expect(renderer.root.findByType("RaceUpdates" as never).props.moment).toBe(moment);
-    expect(renderer.root.findByType("FieldViewSwitcher" as never).props.compact).toBe(true);
     await act(async () => { buttons[2].props.onClick(); buttons[2].props.onClick(); });
     expect(done).toHaveBeenCalledTimes(1);
     await act(async () => renderer.unmount());

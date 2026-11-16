@@ -3,14 +3,17 @@ import { MapAttribution } from "./map-attribution";
 import { useThemeColors } from "../theme";
 import { useAuth } from "../lib/auth";
 import Svg, { G } from "react-native-svg";
+import { AthleteNode } from "./athlete-node";
 import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
-import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { CourseOptions } from "./course-options";
 import { FieldFollowChip } from "./field-follow-chip";
+import { FieldArenaChromeStack } from "./field-arena-chrome-stack";
+import type { FieldMapChromeSlot } from "@fitness-battle/shared";
 import { FieldOverlayView } from "./field-overlay-motion";
 import { AppText, textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
@@ -18,17 +21,21 @@ import { useSceneActive } from "./use-scene-active";
 
 const rememberedProgress = new Map<string, number>();
 const rememberedCameras = new Map<string, CourseCameraPose>();
+/** Entering an event starts from the same default camera its preview snapshot shows. */
+export function forgetCourseCameras() { rememberedCameras.clear(); rememberedProgress.clear(); }
 const isValidPose = (p?: CourseCameraPose | null): p is CourseCameraPose =>
   Boolean(p && p.center && Array.isArray(p.center) && (Math.abs(p.center[0]) >= 1e-6 || Math.abs(p.center[1]) >= 1e-6) && !Number.isNaN(p.center[0]) && !Number.isNaN(p.center[1]) && typeof p.zoom === "number" && p.zoom > 1);
 
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
-export default function CourseMap({ presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, mapFollowing, onFollowChipPress, followAthleteName, onReady, onSnapshot, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, onChoose2D, onOptionsChange, overlaysHidden = false, distanceTarget }: {
+export default function CourseMap({ presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, mapFollowing, onFollowChipPress, followAthleteName, onReady, onSnapshot, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, onChoose2D, onOptionsChange, onMapChromeChange, overlaysHidden = false, distanceTarget }: {
   presentationActive?: boolean;
   cardSessionKey?: string | number | boolean;
   initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
   mapFollowing?: boolean; onFollowChipPress?: () => void; followAthleteName?: string;
   onReady?: () => void; onSnapshot?: (uri: string) => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null;
-  hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; onChoose2D?: () => void; onOptionsChange?: (options: ReactNode | null) => void; overlaysHidden?: boolean;
+  hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; onChoose2D?: () => void;   onOptionsChange?: (options: ReactNode | null) => void;
+  onMapChromeChange?: (slots: Partial<Record<FieldMapChromeSlot, ReactNode>> | null) => void;
+  overlaysHidden?: boolean;
 }) {
 const appearanceColors = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -50,10 +57,10 @@ const appearanceColors = useThemeColors();
   const prefix = useId();
   const ref = useRef<ComponentRef<typeof Camera>>(null);
   const reduced = useReducedMotion();
-  const [spaced, setSpaced] = useState(false);
+  const [sharedLane, setSharedLane] = useState(true);
   const earnedDistance = Math.max(0, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value));
   const clampedTarget = distanceTarget ? Math.max(0, Math.min(distanceTarget.value, earnedDistance)) : undefined;
-  const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? RACE_LANE_SPACING_METRES : 0), [course, lanes, unit, selectedId, spaced]);
+  const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, sharedLane), [course, lanes, unit, selectedId, sharedLane]);
   const visibleTrails = useMemo(() => hiddenIds.length ? { ...scene.trails, features: scene.trails.features.filter(feature => !hiddenIds.includes(String(feature.id))) } : scene.trails, [scene.trails, hiddenIds]);
   const visibleMarkers = useMemo(() => hiddenIds.length ? { ...scene.markers, features: scene.markers.features.filter(feature => !hiddenIds.includes(String(feature.id))) } : scene.markers, [scene.markers, hiddenIds]);
   const fallbackCenter = scene.selected?.coordinate ?? course.coordinates[0];
@@ -164,7 +171,7 @@ const appearanceColors = useThemeColors();
   const optionsHandlers = useRef({ onReplay, onChoose2D, toggleDimension: () => {}, toggleSpacing: () => {}, overview: () => {} });
   optionsHandlers.current = { onReplay, onChoose2D,
     toggleDimension: () => { overviewHold.current = false; controller.dimension(flat ? "3d" : "2d", !(followAthlete && controller.following && scene.selected)); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && controller.following) focus(); },
-    toggleSpacing: () => setSpaced(value => !value),
+    toggleSpacing: () => setSharedLane(value => !value),
     overview: () => { overviewHold.current = Boolean(replay); onFollowChange?.(false); controller.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); onFlatChange?.(true); },
   };
   const followChipPress = useRef(onFollowChipPress);
@@ -172,7 +179,7 @@ const appearanceColors = useThemeColors();
   const courseOptionsMenu = (
     <CourseOptions
       flat={flat}
-      spaced={spaced}
+      sharedLane={sharedLane}
       onReplay={onReplay ? () => optionsHandlers.current.onReplay?.() : undefined}
       onChoose2D={onChoose2D ? () => optionsHandlers.current.onChoose2D?.() : undefined}
       onToggleDimension={() => optionsHandlers.current.toggleDimension()}
@@ -180,24 +187,30 @@ const appearanceColors = useThemeColors();
       onOverview={() => optionsHandlers.current.overview()}
     />
   );
-  const publishedOptions =
-    onFollowChipPress != null ? (
-      <View style={{ flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-        {courseOptionsMenu}
-        <FieldFollowChip
-          following={mapFollowing ?? false}
-          athleteName={followAthleteName ?? "athlete"}
-          onPress={() => followChipPress.current?.()}
-        />
-      </View>
-    ) : (
-      courseOptionsMenu
-    );
+  const mapChromeSlots: Partial<Record<FieldMapChromeSlot, ReactNode>> = {
+    options: courseOptionsMenu,
+    ...(onFollowChipPress != null
+      ? {
+          follow: (
+            <FieldFollowChip
+              following={mapFollowing ?? false}
+              athleteName={followAthleteName ?? "athlete"}
+              onPress={() => followChipPress.current?.()}
+            />
+          ),
+        }
+      : {}),
+  };
+  const publishedOptions = <FieldArenaChromeStack slots={mapChromeSlots} />;
   useEffect(() => {
+    if (onMapChromeChange) {
+      onMapChromeChange(mapChromeSlots);
+      return () => onMapChromeChange(null);
+    }
     if (!onOptionsChange) return;
     onOptionsChange(publishedOptions);
     return () => onOptionsChange(null);
-  }, [onOptionsChange, flat, spaced, mapFollowing, followAthleteName, Boolean(onReplay), Boolean(onChoose2D), onFollowChipPress != null]);
+  }, [onMapChromeChange, onOptionsChange, flat, sharedLane, mapFollowing, followAthleteName, Boolean(onReplay), Boolean(onChoose2D), onFollowChipPress != null]);
   return <View style={{ flex: 1, minHeight: 0 }} onLayout={({ nativeEvent }) => {
     if (initialized.current || restored.current || replay || mapUserGesture.current) return;
     pose.current.zoom = courseInitialZoom(pose.current.center[1], nativeEvent.layout.height, pose.current.pitch);
@@ -237,23 +250,44 @@ const appearanceColors = useThemeColors();
           onFollowChange?.(false);
         }
       }} />
-      <ShapeSource id="completed" shape={visibleTrails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineSortKey: ["get", "priority"], lineWidth: spaced ? RACE_SEPARATE_WIDTH_PIXELS : RACE_OVERLAY_WIDTH_PIXELS, lineCap: "round", lineJoin: "round" }} /></ShapeSource>
-      <ShapeSource id="athletes" shape={visibleMarkers} onPress={event => { const id = event.features[0]?.properties?.id; if (typeof id === "string") onSelect(id); }}>
-        <CircleLayer id="athlete-dots" slot="top" style={{ circleSortKey: ["case", ["get", "selected"], 2, ["get", "you"], 1, 0], circleRadius: ["case", ["get", "selected"], RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS], circleColor: ["case", ["get", "you"], "#f7c948", "#20b9c6"], circleStrokeColor: "#ffffff", circleStrokeWidth: 1 }} />
-      </ShapeSource>
+      <ShapeSource id="completed" shape={visibleTrails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineSortKey: ["get", "priority"], lineWidth: sharedLane ? RACE_OVERLAY_WIDTH_PIXELS : RACE_SEPARATE_WIDTH_PIXELS, lineCap: "round", lineJoin: "round" }} /></ShapeSource>
+      {!sharedLane ? <ShapeSource id="athletes" shape={visibleMarkers} onPress={event => { const id = event.features[0]?.properties?.id; if (typeof id === "string") onSelect(id); }}>
+        <CircleLayer id="athlete-dots" slot="top" style={{ circleSortKey: ["case", ["get", "selected"], 2, ["get", "you"], 1, 0], circleRadius: ["case", ["get", "selected"], RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS], circleColor: ["get", "color"], circleStrokeColor: "#ffffff", circleStrokeWidth: 1 }} />
+      </ShapeSource> : null}
       {!reduced && replay ? replay.passEffects.filter(pass => !hiddenIds.includes(pass.id)).map(pass => {
         const lane = scene.callouts.find(lane => lane.id === pass.id);
         return lane ? <MarkerView key={`pass-${pass.id}`} coordinate={lane.coordinate} anchor={{x:.5,y:.5}} allowOverlap allowOverlapWithPuck><View pointerEvents="none" style={{width:100,height:100,alignItems:"center",justifyContent:"center"}}><View style={{width:32+64*(1-pass.strength),height:32+64*(1-pass.strength),borderRadius:60,borderWidth:4,borderColor:appearanceColors.actionPrimary,backgroundColor:"#f7c94833",opacity:pass.strength}}/></View></MarkerView> : null;
       }) : null}
-      {!overlaysHidden ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id) && !dismissed.includes(lane.id)).map(lane => <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: lane.callout.left ? 1 : 0, y: lane.callout.originY / lane.callout.height }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
-        <View collapsable={false} pointerEvents="box-none" style={{ width: 170, height: lane.callout.height }}>
-          <Svg width={170} height={lane.callout.height} viewBox={`0 0 170 ${lane.callout.height}`} pointerEvents="none"><G transform={`translate(${lane.callout.originX} ${lane.callout.originY})`}>
-            <AthletePennant lane={lane} x={lane.callout.left ? -158 : 12} y={lane.callout.y} detail={courseAthleteDetail(lanes, lane, unit)} prefix={`${prefix}-${lane.id}`} />
-          </G></Svg>
-          <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${courseAthleteDetail(lanes, lane, unit)}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: 12, top: lane.callout.cardTop, width: 146, height: 46 }} />
-          {!onSnapshot && lane.id === selectedId && <Pressable accessibilityRole="button" accessibilityLabel={`Hide ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={8} style={{ position: "absolute", right: 4, top: lane.callout.cardTop - 8, width: 28, height: 28, borderRadius: 14, backgroundColor: appearanceColors.card, alignItems: "center", justifyContent: "center" }}><AppText role="label">−</AppText></Pressable>}
-        </View>
-      </MarkerView>) : null}
+      {!overlaysHidden ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id) && !dismissed.includes(lane.id)).map(lane => {
+        const detail = courseAthleteDetail(lanes, lane, unit);
+        if (!sharedLane) {
+          return <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: lane.callout.left ? 1 : 0, y: lane.callout.originY / lane.callout.height }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
+            <View collapsable={false} pointerEvents="box-none" style={{ width: 170, height: lane.callout.height }}>
+              <Svg width={170} height={lane.callout.height} viewBox={`0 0 170 ${lane.callout.height}`} pointerEvents="none"><G transform={`translate(${lane.callout.originX} ${lane.callout.originY})`}>
+                <AthletePennant lane={lane} x={lane.callout.left ? -158 : 12} y={lane.callout.y} detail={detail} prefix={`${prefix}-${lane.id}`} />
+              </G></Svg>
+              <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: 12, top: lane.callout.cardTop, width: 146, height: 46 }} />
+              {!onSnapshot && lane.id === selectedId ? <Pressable accessibilityRole="button" accessibilityLabel={`Hide ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={8} style={{ position: "absolute", right: 4, top: lane.callout.cardTop - 8, width: 28, height: 28, borderRadius: 14, backgroundColor: appearanceColors.card, alignItems: "center", justifyContent: "center" }}><AppText role="label">−</AppText></Pressable> : null}
+            </View>
+          </MarkerView>;
+        }
+        const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
+        const subdetail = courseAthleteSubdetail(lanes, lane, unit);
+        const selected = lane.id === selectedId && !dismissed.includes(lane.id);
+        const pad = 30, boxWidth = 170 + pad * 2, boxHeight = lane.callout.height + pad * 2;
+        const nodeX = lane.callout.originX + pad, nodeY = lane.callout.originY + pad;
+        const cardX = nodeX + (lane.callout.left ? -140 : 12), cardY = lane.callout.cardTop + pad;
+        return <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: nodeX / boxWidth, y: nodeY / boxHeight }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
+          <View collapsable={false} pointerEvents="box-none" style={{ width: boxWidth, height: boxHeight }}>
+            <Svg width={boxWidth} height={boxHeight} pointerEvents="none"><G transform={`translate(${nodeX} ${nodeY})`}>
+              <AthleteNode lane={lane} x={lane.callout.left ? -140 : 12} y={lane.callout.y} detail={detail} subdetail={subdetail} expanded={selected} selected={selected} gold={rank === 1} prefix={`${prefix}-${lane.id}`} />
+            </G></Svg>
+            {selected ? <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: cardX, top: cardY, width: 128, height: subdetail ? 44 : 30 }} /> : null}
+            <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: nodeX - 26, top: nodeY - 26, width: 52, height: 52, borderRadius: 26 }} />
+            {!onSnapshot && selected ? <Pressable accessibilityRole="button" accessibilityLabel={`Close ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={10} style={{ position: "absolute", left: cardX + 128 - 22, top: cardY + 4, width: 18, height: 18, alignItems: "center", justifyContent: "center" }}><AppText role="caption" secondary>×</AppText></Pressable> : null}
+          </View>
+        </MarkerView>;
+      }) : null}
     </MapView>
     {!onSnapshot ? <MapAttribution top={insets.top + 9} /> : null}
     {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), position: "absolute", left: 8, right: 8, bottom: controlsBottom + 136, padding: 12, borderRadius: 12, backgroundColor: appearanceColors.surfaceCard }}>{error}</Text> : null}

@@ -11,27 +11,27 @@ vi.mock("./section", () => ({ textStyle: () => ({}) }));
 vi.mock("../lib/haptics", () => ({ playCue: () => {} }));
 import { FieldViewSwitcher } from "./field-view-switcher";
 
-it("offers the course as 3D for distance fields and marks the chosen view without offering it for points", async () => {
+it("offers 2D, geographic 3D, and Timeline in a field view menu", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const onChange = vi.fn(); let renderer!: ReactTestRenderer;
   try {
     await act(async () => { renderer = create(createElement(FieldViewSwitcher, { value: "4d", geographic: true, onChange })); });
     const buttons = renderer.root.findAllByType("Pressable" as never);
-    const trigger = buttons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Dimension: 3D");
+    const trigger = buttons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Field view: 3D");
     expect(trigger).toBeDefined();
 
-    const optionGraph = buttons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Select Graph");
+    const optionTimeline = buttons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Select Timeline");
     const option2D = buttons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Select 2D");
     const option3D = buttons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Select 3D");
-    const option4D = buttons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Select 4D");
-    expect(optionGraph).toBeDefined();
+  const option4D = buttons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Select 4D");
+    expect(optionTimeline).toBeDefined();
     expect(option2D).toBeDefined();
     expect(option3D?.props.accessibilityState.selected).toBe(true);
     await act(async () => option3D!.props.onPress());
     expect(onChange).toHaveBeenCalledWith("4d");
     expect(option4D).toBeUndefined();
 
-    await act(async () => optionGraph!.props.onPress());
+    await act(async () => optionTimeline!.props.onPress());
     expect(onChange).toHaveBeenCalledWith("graph");
 
     await act(async () => option2D!.props.onPress());

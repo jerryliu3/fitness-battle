@@ -7,7 +7,7 @@ vi.mock("@/lib/env", () => ({ webEnv: { mapboxAccessToken: "public-test-token" }
 vi.mock("mapbox-gl", () => ({ default: { Map: class {
   events = new Map<string, Function[]>(); sources = new Map<string, { setData: ReturnType<typeof vi.fn> }>();
   addControl = vi.fn();
-  jumpTo = vi.fn(); fitBounds = vi.fn(); easeTo = vi.fn(); stop = vi.fn(); remove = vi.fn(); resize = vi.fn(); setPaintProperty = vi.fn();
+  jumpTo = vi.fn(); fitBounds = vi.fn(); easeTo = vi.fn(); stop = vi.fn(); remove = vi.fn(); resize = vi.fn(); setPaintProperty = vi.fn(); setLayoutProperty = vi.fn();
   constructor(public options: any) { mock.instances.push(this); }
   getCenter() { return { toArray: () => [.005, 0] }; } getZoom() { return 15; } getPitch() { return 30; } getBearing() { return 20; }
   on(name: string, layer: Function | string, callback?: Function) { const handlers = this.events.get(name) ?? []; handlers.push(callback ?? layer as Function); this.events.set(name, handlers); }
@@ -41,10 +41,11 @@ it("keeps one map instance, suspends following for user input and resumes on sel
   const instance = mock.instances[0];
   await act(async () => instance.emit("load"));
   expect(instance.easeTo.mock.lastCall[0].duration).toBe(0);
-  expect(instance.addLayer.mock.calls.find(([layer]: any[]) => layer.id === "athlete-dots")[0].paint["circle-radius"]).toEqual(["case", ["get", "selected"], 9, 7]);
   expect(instance.setPaintProperty).toHaveBeenLastCalledWith("completed-line", "line-width", 8);
   await act(async () => renderer.root.findAllByType("button").find(node => node.props.children === "Shared lane: on")!.props.onClick());
   expect(instance.setPaintProperty).toHaveBeenLastCalledWith("completed-line", "line-width", 4);
+  await act(async () => renderer.root.findAllByType("button").find(node => node.props.children === "Shared lane: off")!.props.onClick());
+  instance.getSource("completed").setData.mockClear();
   await act(async () => instance.emit("idle"));
   instance.easeTo.mockClear();
   await act(async () => instance.emit("movestart", { originalEvent: {} }));
@@ -56,21 +57,20 @@ it("keeps one map instance, suspends following for user input and resumes on sel
   expect(instance.easeTo).toHaveBeenCalledTimes(1);
   expect(instance.easeTo.mock.lastCall[0].duration).toBeGreaterThan(500);
   expect(instance.easeTo.mock.lastCall[0].zoom).toBe(15);
-  const markers = instance.getSource("athletes").setData.mock.lastCall[0];
-  expect(instance.easeTo.mock.lastCall[0].center).toEqual(markers.features.find((f: any) => f.id === "peer").geometry.coordinates);
+  const labels = renderer.root.findAllByType("CourseCallout" as never);
+  const peerCoordinate = labels.find(label => label.props.lane.id === "peer")!.props.coordinate;
+  expect(instance.easeTo.mock.lastCall[0].center).toEqual(peerCoordinate);
   expect(mock.instances).toHaveLength(1);
   expect(instance.getSource("course")).toBeUndefined();
-  expect(instance.getSource("completed").setData).not.toHaveBeenCalled();
+  expect(instance.getSource("completed").setData).toHaveBeenCalledTimes(1);
   await act(async () => renderer.root.findAllByType("button").find(node => node.props.children === "2D map")!.props.onClick());
-  expect(instance.easeTo.mock.lastCall[0]).toMatchObject({ center: markers.features.find((f: any) => f.id === "peer").geometry.coordinates, pitch: 0 });
+  expect(instance.easeTo.mock.lastCall[0]).toMatchObject({ center: peerCoordinate, pitch: 0 });
   await act(async () => renderer.root.findAllByType("button").find(node => node.props.children === "Race overview")!.props.onClick());
   expect(instance.fitBounds.mock.lastCall[0][1][0]).toBeLessThan(.02);
   expect(instance.fitBounds.mock.lastCall[1].maxZoom).toBe(20);
-  await act(async () => instance.emit("click", { features: [{ properties: { id: "you" } }] }));
+  await act(async () => labels.find(label => label.props.lane.id === "you")!.props.onSelect("you"));
   expect(props.onSelect).toHaveBeenCalledWith("you");
-  const labels = renderer.root.findAllByType("CourseCallout" as never);
   expect(labels).toHaveLength(2);
-  expect(labels.find(label => label.props.lane.id === "peer")!.props.coordinate).toEqual(markers.features.find((f: any) => f.id === "peer").geometry.coordinates);
 
 });
 
@@ -114,11 +114,11 @@ it("restores dismissed cards on repeat selection and across preserved fullscreen
   await act(async () => mock.instances[0].emit("load"));
   const peer = () => renderer.root.findAllByType("CourseCallout" as never).find(node => node.props.lane.id === "peer");
   await act(async () => peer()!.props.onDismiss());
-  expect(peer()).toBeUndefined();
+  expect(peer()!.props.selected).toBe(false);
   await act(async () => renderer.update(createElement(CourseMap, { ...props, focusRequest: 2 })));
-  expect(peer()).toBeDefined();
+  expect(peer()!.props.selected).toBe(true);
   await act(async () => peer()!.props.onDismiss());
-  await act(async () => renderer.update(createElement(CourseMap, { ...props, cardSessionKey: false, selectedId: "you" })));
-  expect(peer()).toBeDefined();
+  await act(async () => renderer.update(createElement(CourseMap, { ...props, focusRequest: 2, cardSessionKey: false })));
+  expect(peer()!.props.selected).toBe(true);
   expect(mock.instances).toHaveLength(1);
 });

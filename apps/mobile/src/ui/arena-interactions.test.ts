@@ -101,6 +101,7 @@ vi.mock("../features/competition-summary", async () => {
 vi.mock("../features/sleep-panel", () => ({ SleepPanel: () => null }));
 vi.mock("../features/round-takeover", () => ({ RoundTakeover: () => null }));
 vi.mock("../features/geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
+vi.mock("../features/deferred-course-map", () => ({ forgetCourseCameras() {} }));
 vi.mock("../features/use-competition-course", () => ({ useCompetitionCourse: () => ({ course: null, error: "", retry() {} }) }));
 vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./arena-3d", () => ({ Arena3D: () => null }));

@@ -41,7 +41,7 @@ vi.mock("react-native-svg", () => ({
   Text: "SvgText",
 }));
 vi.mock("./section", () => ({ chartTextProps: () => ({}), textStyle: () => ({}) }));
-vi.mock("./athlete-pennant", () => ({ AthletePennant: "AthletePennant" }));
+vi.mock("./athlete-node", () => ({ AthleteNode: "AthleteNode" }));
 vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => false }));
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [] }) }));
 vi.mock("../lib/haptics", () => ({ playCue() {} }));
@@ -50,13 +50,11 @@ import { CompeteTimeSeriesChart } from "./compete-time-series-chart";
 
 let renderer: ReactTestRenderer;
 afterEach(async () => {
-  mocks.loopStart.mockClear();
-  mocks.loopStop.mockClear();
   if (renderer) await act(async () => renderer.unmount());
   vi.unstubAllGlobals();
 });
 
-it("uses solid backgrounds and pulses the selected athlete position", async () => {
+it("uses solid backgrounds without a live pulse on the selected athlete", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const now = new Date("2026-10-26T18:00:00Z");
   const state = reduceCompete(freshState(now), { type: "opt-in", sport: "strength", now: now.toISOString() });

@@ -2,6 +2,7 @@
 import { useCompetitionTimeline } from "@/features/arena/competition-timeline-context";
 import { Sheet } from "@/ui/sheet";
 import { FieldViewSwitcher } from "./field-view-switcher";
+import { FieldArenaChromeStack } from "./field-arena-chrome-stack";
 import { StandingsList } from "./standings-list";
 import { CompeteTimeSeriesChart } from "./compete-time-series-chart";
 import { GeographicCourse } from "@/features/course/geographic-course";
@@ -20,6 +21,7 @@ import {
   rankSymbolForScore,
   fieldDefaultSpan,
   clampCourseCenter,
+  initialsFromName,
   ordinalPlace,
   shellTabFromPath,
   resolveArenaSelectedId,
@@ -314,6 +316,7 @@ export function FieldStage({
     [...runners, ...(ghost ? [ghost] : [])],
     showGhost,
   );
+  const tappedId = selected === trackSelected ? trackSelected : "";
 
   const ranked = useMemo(
     () => [...fieldLanes].sort((a, b) => b.value - a.value),
@@ -347,7 +350,13 @@ export function FieldStage({
   const chooseViewRef = useRef(chooseView); chooseViewRef.current = chooseView;
   useEffect(() => {
     if (!onOptionsChange) return;
-    onOptionsChange(<FieldViewSwitcher compact value={viewDimension} geographic={unit !== "pts"} onChange={value => chooseViewRef.current(value)} />);
+    onOptionsChange(
+      <FieldArenaChromeStack
+        slots={{
+          view: <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={value => chooseViewRef.current(value)} />,
+        }}
+      />,
+    );
     return () => onOptionsChange(null);
   }, [onOptionsChange, viewDimension, unit]);
 
@@ -368,10 +377,11 @@ export function FieldStage({
         {!backgroundMode && <div className="focus-broadcast-title" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {sportTitle ?? model.sport}{queueOverlay ? " · Upcoming wave" : ` · ${displayPlace} / ${runners.length}`}
         </div>}
-        {!onOptionsChange && <FieldViewSwitcher compact={backgroundMode} value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
-          onStandings={queueOverlay ? undefined : () => { if (backgroundMode) onDetails?.(); else { setLanesImmersive(false); setStandingsOpen(true); } }}
-          onZoomIn={viewDimension !== "4d" && viewDimension !== "graph" ? () => { cancelCenterTween(); setSpan(Math.max(unit === "pts" ? 2 : .5, view.span / 1.5)); } : undefined}
-          onZoomOut={viewDimension !== "4d" && viewDimension !== "graph" ? () => { cancelCenterTween(); setSpan(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)); } : undefined} />}
+        {!onOptionsChange && (
+          <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
+            onStandings={queueOverlay ? undefined : () => { if (backgroundMode) onDetails?.(); else { setLanesImmersive(false); setStandingsOpen(true); } }}
+          />
+        )}
       </div>
 
       {!backgroundMode && !queueOverlay && replayState && <div className="field-timeline-fullscreen"><FieldTimeline timeline={timeline} /></div>}
@@ -382,7 +392,7 @@ export function FieldStage({
           <span className="focus-broadcast-tower-kicker">Current Leaders</span>
           {coursePositionLeaders(ranked).map((peer, idx) => {
             const delta = peer.value - leaderValue;
-            const isSelected = (trackSelected || (you?.id ?? "")) === peer.id;
+            const isSelected = tappedId === peer.id;
             return (
               <button
                 key={peer.id}
@@ -390,8 +400,8 @@ export function FieldStage({
                 className={
                   isSelected
                     ? "focus-broadcast-tower-row is-selected"
-                    : peer.you
-                      ? "focus-broadcast-tower-row is-you"
+                    : placeOf(peer.value) === 1
+                      ? "focus-broadcast-tower-row is-leader"
                       : "focus-broadcast-tower-row"
                 }
                 onClick={() => {
@@ -434,7 +444,7 @@ export function FieldStage({
             toggleSelect(you.id);
           }}
         >
-          YOU
+          {you.initials && you.initials.toUpperCase() !== "YOU" && you.initials.length >= 2 ? you.initials.toUpperCase() : initialsFromName(you.name)}
         </button> : null}
         {behindPeer ? (
           <button
@@ -495,8 +505,8 @@ export function FieldStage({
                     className={
                       activeChip
                         ? "focus-broadcast-chip is-active"
-                        : peer.you
-                          ? "focus-broadcast-chip is-you"
+                        : placeOf(peer.value) === 1
+                          ? "focus-broadcast-chip is-leader"
                           : "focus-broadcast-chip"
                     }
                     onClick={() => {
@@ -550,13 +560,13 @@ export function FieldStage({
               state={replayState}
               sport={model.sport}
               track={model.track}
-              selectedId={trackSelected || (you?.id ?? "")}
+              selectedId={tappedId}
               onSelectAthlete={toggleSelect}
               reserveTopControls={!lanesImmersive}
             />
           ) : null}
           {viewDimension === "4d" && (persistent || tabActive) ? <div className="focus-geographic-host" style={{ position: "relative", height: persistent || lanesImmersive ? "100%" : 460 }}>
-            <GeographicCourse cardSessionKey={lanesImmersive} initialFlat={courseFlat} onFlatChange={setCourseFlat} lanes={fieldLanes} unit={unit} selectedId={(lanesImmersive ? trackSelected : null) || (you?.id ?? "")} focusRequest={lanesImmersive ? focusRequest : 0} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={lanesImmersive ? courseTarget : null} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? (spotlightCollapsed ? 136 : 236) + (replayState && !backgroundMode ? 128 : 0) : 8} />
+            <GeographicCourse cardSessionKey={lanesImmersive} initialFlat={courseFlat} onFlatChange={setCourseFlat} lanes={fieldLanes} unit={unit} selectedId={lanesImmersive ? tappedId : ""} focusRequest={lanesImmersive ? focusRequest : 0} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={lanesImmersive ? courseTarget : null} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? (spotlightCollapsed ? 136 : 236) + (replayState && !backgroundMode ? 128 : 0) : 8} />
             {!lanesImmersive ? <button type="button" className="focus-portal-pill is-accent" style={{ position: "absolute", top: 12, right: 12 }} aria-label="Expand 3D course to full screen" onClick={() => setLanesImmersive(true)}>Full Arena ⤢</button> : null}
           </div> : null}
           {viewDimension === "3d" && (persistent || tabActive) ? (
@@ -621,7 +631,7 @@ export function FieldStage({
                 focusRequest={focusRequest}
                 onGestureStart={cancelCenterTween}
                 onViewChange={next => { cancelCenterTween(); setSpan(next.span); setCenter(clampViewCenter(next.center, next.span)); }}
-                selected={trackSelected || (you?.id ?? "")}
+                selected={tappedId}
                 onSelect={toggleSelect}
                 onBackgroundTap={() => {
                   void playCue("light");

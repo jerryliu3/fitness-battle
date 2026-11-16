@@ -1,5 +1,6 @@
 import { createThemedStyles, useThemedStyles } from "../theme";
 import { useThemeColors } from "../theme";
+import { AthleteNode } from "./athlete-node";
 import { FieldOverlayGroup, FieldOverlayView } from "./field-overlay-motion";
 import { chartTextProps, textStyle  } from "./section";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
@@ -13,12 +14,9 @@ import {
   View,
 } from "react-native";
 import Svg, {
-  Circle,
-  ClipPath,
   Defs,
   Ellipse,
   G,
-  Image as SvgImage,
   LinearGradient,
   Path,
   Rect,
@@ -26,6 +24,7 @@ import Svg, {
   Text as SvgText,
 } from "react-native-svg";
 import {
+  ordinalPlace,
   portraitField,
   portraitDepthAt,
   portraitPanDepthAt,
@@ -91,6 +90,8 @@ const s=useThemedStyles(sThemes);
 const appearanceColors = useThemeColors();
 
   const [laneOffset, setLaneOffset] = useState(laneAnchor?.current ?? 0);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  useEffect(() => { setExpandedId(null); }, [focusRequest]);
   const prefix = useId().replace(/:/g, "");
   if (laneAnchor) laneAnchor.current = laneOffset;
   const scene = useMemo(() => portraitField(lanes, view, undefined, laneOffset, prefix), [lanes, view.center, view.span, laneOffset, prefix]);
@@ -189,7 +190,7 @@ const appearanceColors = useThemeColors();
         <Text
           style={[s.white, { ...textStyle("caption"), color: appearanceColors.textPrimary, flexShrink: 1, textAlign: "right" }]}
         >
-          {portraitFieldGap(scene.nextGap, unit)}
+          {portraitFieldGap(scene.nextGap, unit).replace(/^You[’']re\s+/i, "")}
         </Text>
       </FieldOverlayView>
     <View
@@ -265,140 +266,81 @@ const appearanceColors = useThemeColors();
               .sort((a, b) => a.y - b.y)
               .map((m, i) => {
                 const id = `${prefix}-portrait-${i}`;
+                const activeFocusId = selectedId ?? scene.ordered.find(l => l.you)?.id;
+                const isSelected = activeFocusId === m.id;
+                const isExpanded = expandedId === m.id && !m.ghost;
+                const rank = 1 + scene.ordered.filter(peer => peer.value > m.value + 1e-6).length;
+                const isGold = !m.ghost && rank === 1;
+                const anchorY = m.y - 22 * m.scale;
+                const pennantX = Math.max(8 - m.x, Math.min(412 - 128 - m.x, m.x > 210 ? -142 : 26));
+                const pennantY = anchorY > 190 ? -64 : 30;
+                const subdetail = m.mystery
+                  ? undefined
+                  : m.you
+                    ? scene.nextGap === null
+                      ? "Leading the field"
+                      : `${scene.nextGap.toLocaleString("en-US", { maximumFractionDigits: unit === "pts" ? 0 : 2 })} ${unit} to next rival`
+                    : `${m.gap > 0 ? "+" : ""}${m.gap.toFixed(unit === "pts" ? 0 : 2)} ${unit}`;
                 return (
                   <G key={m.id}>
-                    <G transform={`translate(${m.x} ${m.y - 27 * m.scale}) scale(${m.scale})`}>
-                    <Rect x={-30 / m.scale} y={-45 / m.scale} width={60 / m.scale} height={90 / m.scale} fill="transparent" />
-                    {!m.ghost && m.trail ? (
-                      <Circle
-                        cx={0}
-                        cy={27}
-                        r={7}
-                        fill={appearanceColors.white}
-                        stroke={m.you ? "#f7c948" : "#98a6bc"}
-                        strokeWidth={3}
+                    <G transform={`translate(${m.x} ${anchorY}) scale(${m.scale})`}>
+                      <Rect x={-30 / m.scale} y={-45 / m.scale} width={60 / m.scale} height={90 / m.scale} fill="transparent" />
+                      <Ellipse
+                        cy={22}
+                        rx={20}
+                        ry={7}
+                        fill="#061c21"
+                        opacity={0.38}
                       />
-                    ) : (
-                      <>
-                        <Ellipse
-                          cy={27}
-                          rx={24}
-                          ry={10}
-                          fill={m.color}
-                          opacity={0.16}
-                        />
-                        <Ellipse
-                          cy={27}
-                          rx={16}
-                          ry={6}
-                          fill="#143c43"
-                          stroke={m.color}
-                          strokeWidth={2.5}
-                        />
-                        <Ellipse cy={27} rx={5} ry={2} fill={m.color} />
-                      </>
-                    )}
-                    <Path
-                      d="M-9 12 L0 27 L9 12"
-                      fill={m.you ? "#f7c948" : "#f8f9f6"}
-                    />
-                    {!m.mystery && <Rect
-                      x={-23}
-                      y={-43}
-                      width={46}
-                      height={58}
-                      rx={12}
-                      fill={appearanceColors.surfaceCanvas}
-                      stroke={m.you ? "#f7c948" : "#b3c9c5"}
-                      strokeWidth={m.you ? 3 : 1.5}
-                    />}
-<G>{m.mystery ? <G><Circle cy={-14} r={22} fill="white" stroke="#616c63" strokeWidth={2} strokeDasharray="3 3"/><SvgText y={-8} textAnchor="middle" fill={appearanceColors.textPrimary}>?</SvgText></G> : <>                    <Defs>
-                      <ClipPath id={id}>
-                        <Rect x={-19} y={-39} width={38} height={50} rx={9} />
-                      </ClipPath>
-                    </Defs>
-                    {m.avatarUrl ? (
-                      <SvgImage
-                        href={{ uri: m.avatarUrl }}
-                        x={-19}
-                        y={-39}
-                        width={38}
-                        height={50}
-                        preserveAspectRatio="xMidYMid slice"
-                        clipPath={`url(#${id})`}
+                      <Ellipse
+                        cy={22}
+                        rx={12}
+                        ry={4}
+                        fill="none"
+                        stroke={m.you ? "#f7c948" : m.color}
+                        strokeWidth={1.8}
+                        opacity={0.65}
                       />
-                    ) : (
-                      <>
-                        <Rect
-                          x={-19}
-                          y={-39}
-                          width={38}
-                          height={50}
-                          rx={9}
-                          fill={m.you ? "#f7c948" : "#d8e5df"}
-                        />
-                        <SvgText {...chartTextProps()}
-                          y={-8}
-                          textAnchor="middle"
-                          fill={appearanceColors.textPrimary}
-
-                        >
-                          {m.initials}
-                        </SvgText>
-                      </>
-                    )}
-</>}</G>
-                    <FieldOverlayGroup hidden={overlaysHidden}>
-                    {m.you ? (
-                      <>
-                        <Rect
-                          x={-22}
-                          y={-66}
-                          width={44}
-                          height={18}
-                          rx={9}
-                          fill={appearanceColors.actionPrimary}
-                        />
-                        <SvgText {...chartTextProps()}
-                          y={-53}
-                          textAnchor="middle"
-                          fill={appearanceColors.textPrimary}
-
-                        >
-                          YOU
-                        </SvgText>
-                      </>
-                    ) : null}
-                    <SvgText {...chartTextProps()}
-                      y={45}
-                      textAnchor="middle"
-                      fill="white"
-
-                    >
-                      {m.ghost
-                        ? "Past you"
-                        : m.name.split(" ")[0]}
-                    </SvgText>
-                    {!m.you && !m.mystery ? (
-                      <SvgText {...chartTextProps()}
-                        y={61}
-                        textAnchor="middle"
-                        fill="#e5eee5"
-
-                      >
-                        {m.outside ? `${m.direction} ` : ""}
-                        {m.gap > 0 ? "+" : ""}
-                        {m.gap.toFixed(unit === "pts" ? 0 : 2)} {unit}
-                      </SvgText>
-                    ) : null}
-                    </FieldOverlayGroup>
+                    </G>
+                    <G transform={`translate(${m.x} ${anchorY})`}>
+                      <AthleteNode
+                        lane={m}
+                        prefix={id}
+                        x={pennantX}
+                        y={pennantY}
+                        nodeRadius={22}
+                        nodeScale={m.scale}
+                        selected={isSelected}
+                        expanded={!overlaysHidden && isExpanded}
+                        gold={isGold}
+                        detail={`${ordinalPlace(rank)} · ${m.value.toFixed(unit === "pts" ? 0 : 1)} ${unit}`}
+                        subdetail={subdetail}
+                      />
                     </G>
                   </G>
                 );
               })}
           </Svg>
-          <Pressable accessible={false} onPress={() => {}} style={{ position: "absolute", inset: 0 }} />
-          {scene.markers.filter(m => !hiddenIds.includes(m.id) && m.x > 22 && m.x < 398).map(m => <Pressable key={m.id} accessibilityRole="button" accessibilityLabel={`Focus ${m.name}`} accessibilityState={{ selected: selectedId === m.id }} onPress={() => onSelect(m.id)} style={{ position: "absolute", left: (m.x - 30) / 420 * width, top: (m.y - 27 * m.scale - 45) / 600 * height, width: 60 / 420 * width, height: 90 / 600 * height }} />)}
+          <Pressable accessible={false} onPress={() => setExpandedId(null)} style={{ position: "absolute", inset: 0 }} />
+          {scene.markers.filter(m => !hiddenIds.includes(m.id) && m.x > 22 && m.x < 398).map(m => (
+              <Pressable
+                key={m.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Focus ${m.name}`}
+                accessibilityState={{ selected: selectedId === m.id }}
+                onPress={() => {
+                  setExpandedId(prev => prev === m.id ? null : m.id);
+                  onSelect(m.id);
+                }}
+                style={{
+                  position: "absolute",
+                  left: (m.x - 30) / 420 * width,
+                  top: (m.y - 22 * m.scale - 45) / 600 * height,
+                  width: 60 / 420 * width,
+                  height: 90 / 600 * height,
+                }}
+              />
+          ))}
       </View>
       {!fullscreen && (onToggleDimension || onExpand) ? (
         <View
@@ -464,14 +406,14 @@ const appearanceColors = useThemeColors();
           const peers = scene.outside.filter(m => m.direction === direction && !m.ghost && !hiddenIds.includes(m.id));
           if (!peers.length) return null;
           const nearest = peers.reduce((a,b) => Math.abs(a.value-view.center) < Math.abs(b.value-view.center) ? a : b);
-          return <Pressable key={direction} style={[s.controlRow, { minHeight: 44, paddingHorizontal: 12 }]} accessibilityRole="button" onPress={() => { onSelect(nearest.id); }}><Text style={[s.white, textStyle("caption")]}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {nearest.name.split(" ")[0]} {`${nearest.edgeGap.toFixed(1)} ${unit} from view`}</Text></Pressable>;
+          return <Pressable key={direction} style={[s.controlRow, { minHeight: 44, paddingHorizontal: 12 }]} accessibilityRole="button" onPress={() => { onSelect(nearest.id); }}><Text style={[s.white, textStyle("caption")]}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {`${nearest.edgeGap.toFixed(1)} ${unit} from view`}</Text></Pressable>;
         })}
       </FieldOverlayView>
       <FieldOverlayView hidden={overlaysHidden} style={[s.controls, fullscreen ? { position: "absolute", bottom: fullscreenControlsBottom, left: 0, right: 0 } : null]}>
         <View style={s.controlRow}>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Previous lane" disabled={scene.focus <= 0} onPress={() => shift(-1)}><Text style={s.white}>←</Text></Pressable>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move backward" disabled={scene.min <= 0} onPress={() => panTo(view.center - view.span / 3)}><Text style={s.white}>↓</Text></Pressable>
-          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Your lane" onPress={() => { onSelect(lanes.find(l => l.you)?.id ?? ""); }}><Text style={s.white}>{lanes.find(l => l.you)?.name.split(" ")[0] ?? "Athlete"}</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Center lane" onPress={() => { onSelect(lanes.find(l => l.you)?.id ?? ""); }}><Text style={s.white}>◎</Text></Pressable>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move forward" onPress={() => panTo(view.center + view.span / 3)}><Text style={s.white}>↑</Text></Pressable>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onPress={() => shift(1)}><Text style={s.white}>→</Text></Pressable>
         </View>

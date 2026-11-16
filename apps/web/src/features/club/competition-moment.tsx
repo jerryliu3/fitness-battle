@@ -229,7 +229,6 @@ export function CompetitionMoment({
       {!embedded && moment.unit !== "pts" ? (
         <div className="compete-field-options">
           <FieldViewSwitcher
-            compact
             value={viewDimension}
             geographic
             onChange={(next) => setViewDimension(next === "4d" ? "4d" : "2d")}

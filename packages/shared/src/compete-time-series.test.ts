@@ -6,6 +6,7 @@ import {
   interpolateTimeSeriesAt,
 } from "./compete-time-series";
 import { demoSleepNight, freshState, reduceCompete } from "./compete";
+import { competePeriodWindow } from "./phone-views";
 
 describe("compete-time-series", () => {
   it("keeps the current position inside a finite, close preview even at the start of a wave", () => {
@@ -69,6 +70,15 @@ describe("compete-time-series", () => {
     expect(initial.selectedAthlete.you).toBe(true);
     expect(initial.athletes.filter((a) => a.selected)).toHaveLength(1);
     expect(initial.dayTicks).toHaveLength(4);
+    expect(initial.dayTicks[0]?.label).toBe("Day 1");
+    expect(initial.dayTicks[0]?.x).toBe(initial.left);
+    expect(initial.dayTicks.map((d) => d.label)).toEqual([
+      "Day 1",
+      "Day 2",
+      "Day 3",
+      "Day 4",
+    ]);
+    expect(initial.timeLabel).toMatch(/^Day \d/);
 
     const rival = initial.athletes.find((a) => !a.you)!;
     expect(rival).toBeDefined();
@@ -180,7 +190,7 @@ it("fits every preview marker inside the axes and honors fullscreen plot height"
   }
 });
 
-it("does not invent history or past places for a real rival with only current totals", () => {
+it("draws a real rival with only current totals as a straight line without past places", () => {
   const now = new Date("2026-10-22T18:00:00Z");
   const state = reduceCompete(freshState(new Date("2026-10-19T09:00:00Z")), { type: "opt-in", sport: "strength", now: "2026-10-19T09:00:00Z" });
   const enrollment = state.enrollments.find(e => e.sport === "strength")!;
@@ -189,15 +199,39 @@ it("does not invent history or past places for a real rival with only current to
   enrollment.capacity = 2;
   enrollment.fieldBoard = { crewId: "solo", crewName: "Open Field", sport: "strength", waveStart: enrollment.waveStart, weekEnd: enrollment.weekEnd, capacity: 2, memberIds: ["you", "real-rival"], members: [{ id: "real-rival", name: "Rival", elo: 1000, effort: 120, movingSec: 3600, distanceM: 0 }], syntheticIds: [] };
   const model = buildCompeteTimeSeriesModel(state, "strength", "open", now, { scrubFraction: .1 });
-  expect(model.historyAvailable).toBe(false);
-  expect(model.isScrubbing).toBe(false);
-  expect(model.cursorFraction).toBe(model.nowFraction);
-  expect(model.athletes.find(a => a.id === "real-rival")?.vertices).toEqual([{ t: model.nowFraction, value: 1 }]);
+  expect(model.historyAvailable).toBe(true);
+  expect(model.isScrubbing).toBe(true);
+  expect(model.cursorFraction).toBe(0.1);
+  expect(model.athletes.find(a => a.id === "real-rival")?.vertices).toEqual([{ t: 0, value: 0 }, { t: model.nowFraction, value: 1 }]);
   expect(model.overtakes).toEqual([]);
   const filtered = buildCompeteTimeSeriesModel(state, "strength", "open", now, { hiddenIds: ["real-rival"], scrubFraction: .1 });
   expect(filtered.athletes.some(athlete => athlete.id === "real-rival")).toBe(false);
   expect(filtered.historyAvailable).toBe(true);
   expect(filtered.isScrubbing).toBe(true);
+});
+
+it("enables scrub as soon as the wave clock is running", () => {
+  const start = new Date("2026-10-19T09:00:00Z");
+  const state = reduceCompete(freshState(start), {
+    type: "opt-in",
+    sport: "strength",
+    now: start.toISOString(),
+  });
+  const period = competePeriodWindow(state, start, "strength");
+  const atStart = buildCompeteTimeSeriesModel(
+    state,
+    "strength",
+    "open",
+    period.startsAt,
+  );
+  expect(atStart.historyAvailable).toBe(false);
+  const afterStart = buildCompeteTimeSeriesModel(
+    state,
+    "strength",
+    "open",
+    new Date(period.startsAt.getTime() + 1),
+  );
+  expect(afterStart.historyAvailable).toBe(true);
 });
 
 it("connects recorded activity with diagonal lines, without vertical step jumps", () => {
