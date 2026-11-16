@@ -5,7 +5,7 @@ import {
 } from "./arena-view";
 import { presentationAvatarUrl } from "./profile/avatar-paths";
 
-export type ArenaSceneUnit = "km" | "mi" | "pts";
+export type ArenaSceneUnit = "km" | "mi" | "pts" | "hrs" | "steps";
 
 export interface ArenaSceneMessage {
   type: "arena-view";
@@ -15,7 +15,7 @@ export interface ArenaSceneMessage {
   selected: string;
 }
 
-const ARENA_UNITS = new Set<ArenaSceneUnit>(["km", "mi", "pts"]);
+const ARENA_UNITS = new Set<ArenaSceneUnit>(["km", "mi", "pts", "hrs", "steps"]);
 
 /** Only bounded presentation data crosses into the embedded renderer; never credentials. */
 export function parseArenaSceneMessage(

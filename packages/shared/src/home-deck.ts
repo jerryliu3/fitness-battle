@@ -1,4 +1,5 @@
 import { clubDuration, clubRivalCardSummary, clubWeekSummary, nextClubRival } from "./club-summary";
+import { competeVolumeFromTotals } from "./compete-field-view";
 import { competeNow, formatVolume, weeklyBoard } from "./compete/engine";
 import { countsForTraining } from "./compete/journal";
 import { countsOnTrack } from "./compete/ledger";
@@ -334,12 +335,11 @@ export function buildHomeDeck(
   const { you: boardYou, rival: nextRival } = nextClubRival(board);
   const rivalHidden = Boolean(nextRival && hiddenIds.has(nextRival.id));
   const competeHeadline = rivalHidden ? "Your field is moving." : rawSummary.headline;
-  const competeDistanceMode = Boolean(sport && sportById(sport).gps);
   const competeVisual: HomeDeckCardVisual | undefined =
     boardYou && sport && nextRival && !rivalHidden
       ? (() => {
-          const youVal = competeDistanceMode ? boardYou.distanceM : boardYou.effort;
-          const rivalVal = competeDistanceMode ? nextRival.distanceM : nextRival.effort;
+          const youVal = competeVolumeFromTotals(sport, boardYou, state.units);
+          const rivalVal = competeVolumeFromTotals(sport, nextRival, state.units);
           const scaleMax = Math.max(youVal, rivalVal, 1);
           const rivalFirst = nextRival.name.trim().split(/\s+/)[0] || "Rival";
           const youAhead = youVal > rivalVal;

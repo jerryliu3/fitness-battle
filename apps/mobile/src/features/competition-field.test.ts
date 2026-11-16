@@ -35,7 +35,6 @@ vi.mock("../ui/rank-symbol", () => ({ RankAvatar: "RankAvatar", RankSymbol: "Ran
 vi.mock("../ui/section", () => ({ AppText: "AppText", textStyle: () => ({}) }));
 vi.mock("../ui/rank-badge", () => ({ RankBadge: "RankBadge" }));
 vi.mock("../ui/use-field-flight", () => ({ useFieldFlight: () => ({ cancel() {}, fly: mocks.fly }) }));
-vi.mock("../ui/portrait-field", () => ({ PortraitField: "PortraitField" }));
 vi.mock("../ui/lane-track", () => ({ LaneTrack: "LaneTrack" }));
 vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("../ui/polished-racer", () => ({ PolishedRacer: "PolishedRacer" }));
@@ -116,12 +115,11 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and time
   const overview = () => renderer.root.findByType("FieldOverview" as never);
   expect(overview().props.positionOnly).toBe(true);
   const selected = map().props.selectedId;
-  const fieldCenter = field().props.view.center;
   await act(async () => overview().props.onNavigate(.75));
   expect(map().props.distanceTarget).toMatchObject({ value: .75, request: 1 });
   expect(overview().props.view.center).toBe(.75);
   expect(map().props.selectedId).toBe(selected);
-  expect(field().props.view.center).toBe(fieldCenter);
+  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(0);
   await act(async () => map().props.onSelect(map().props.lanes.find((lane: { you?: boolean }) => lane.you).id));
   expect(map().props.distanceTarget).toBeNull();
   expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(1);
@@ -159,10 +157,10 @@ it("keeps a navigable overview inside the athlete panel across collapse and expa
   await act(async () => button("Collapse athlete panel").props.onPress());
   expect(overview()).toBeDefined();
   const switcher = renderer.root.findAllByType("FieldViewSwitcher" as never)[0];
-  await act(async () => switcher.props.onChange("3d"));
+  await act(async () => switcher.props.onChange("2d"));
   expect(overview()).toBeDefined();
   await act(async () => overview().props.onNavigate(3));
-  expect(renderer.root.findByType("PortraitField" as never).props.view.center).toBe(3);
+  expect(field().props.view.center).toBe(3);
   await act(async () => button("Expand athlete panel").props.onPress());
   expect(overview()).toBeDefined();
 });
@@ -265,4 +263,24 @@ it("shares historical positions between the retained map and standings and bound
   expect(rows[0].props.accessibilityLabel).toContain("0.00");
   await act(async () => timeline().props.onAccessibilityAction({ nativeEvent: { actionName: "increment" } }));
   expect(map.props.lanes.some((lane: { value: number }) => lane.value > 0)).toBe(true);
+});
+
+it("keeps the new vertical chrome and clears map controls when switching to lanes", async () => {
+  const onOptionsChange = vi.fn();
+  await act(async () => renderer.update(createElement(CompetitionField, {
+    sport: "running", track: "verified", persistent: true, onOptionsChange,
+  })));
+  const slots = () => onOptionsChange.mock.calls.filter(([value]) => value).at(-1)![0].props.slots;
+  await act(async () => slots().view.props.onChange("4d"));
+  const map = renderer.root.findByType("GeographicCourse" as never);
+  await act(async () => map.props.onMapChromeChange({
+    options: createElement("MapOptions"), follow: createElement("FollowChip"),
+  }));
+  expect(slots().view.props.event).toBe("running");
+  expect(slots().options.type).toBe("MapOptions");
+  expect(slots().follow.type).toBe("FollowChip");
+  await act(async () => slots().view.props.onChange("2d"));
+  expect(slots().options).toBeNull();
+  expect(slots().follow).toBeNull();
+  expect(field()).toBeDefined();
 });

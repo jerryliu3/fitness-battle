@@ -128,7 +128,7 @@ const f=useFocusStyles();
       </ScrollView>
       <AppText role="label" >
         {peer.name} · #{peer.place} ·{" "}
-        {formatVolume(result.sport, peer.distanceM, peer.movingSec, units)}
+        {formatVolume(result.sport, peer.distanceM, peer.movingSec, units, peer.effort ?? 0)}
       </AppText>
       <View style={f.row}>
         <FocusButton

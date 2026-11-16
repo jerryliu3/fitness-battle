@@ -1,4 +1,5 @@
 import type { ArenaViewWindow } from "./arena-view";
+import { fieldZoomLimits } from "./compete-field-view";
 
 /** Camera travel is measured in visible windows, so miles and points feel alike. */
 export function fieldFlightDuration(from: ArenaViewWindow, to: ArenaViewWindow, lanes = 0): number {
@@ -13,7 +14,8 @@ export function fieldFlightEase(progress: number): number {
 }
 
 export function fieldZoomSpan(span: number, unit: string): number {
-  return Math.max(unit === "pts" ? 2 : .5, Math.min(unit === "pts" ? 100 : 40, span));
+  const { min, max } = fieldZoomLimits(unit);
+  return Math.max(min, Math.min(max, span));
 }
 
 /** Keep the distance beneath the fingers fixed, including a moving pinch midpoint. */

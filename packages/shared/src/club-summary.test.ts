@@ -139,7 +139,12 @@ it("keeps a newer Open-only running recap ahead of an older GPS recap", () => {
 
 import { clubRivalCardSummary } from "./club-summary";
 describe("Home rival card presentation", () => {
-  const athlete = (id: string, place: number, distanceM: number, effort = 0) => ({ ...row(id, place, id === "you"), distanceM, effort });
+  const athlete = (id: string, place: number, distanceM: number, effort = 0, movingSec = 0) => ({
+    ...row(id, place, id === "you"),
+    distanceM,
+    effort,
+    movingSec,
+  });
   it("targets the next higher place even when a trailing athlete is closer", () => {
     const rows = [athlete("far-leader", 1, 10000), athlete("Mara Chen", 2, 6000), athlete("you", 3, 5000), athlete("trailing", 4, 4999)];
     expect(clubRivalCardSummary(rows, "running", "metric")).toEqual({ place: "3rd", headline: "1.0 km behind Mara", caption: "Next rival in your field" });
@@ -159,15 +164,19 @@ describe("Home rival card presentation", () => {
     const rows = [athlete("Mara", 1, 5000), athlete("you", 1, 5000)];
     expect(clubRivalCardSummary(rows, "running", "metric").headline).toBe("Level with Mara");
   });
-  it("uses effort points for strength rather than unrelated distance", () => {
-    const rows = [athlete("Mara", 1, 0, 12.5), athlete("you", 2, 9000, 10)];
-    expect(clubRivalCardSummary(rows, "strength", "us").headline).toBe("2.5 pts behind Mara");
+  it("uses training hours for strength rather than unrelated distance", () => {
+    const rows = [
+      athlete("Mara", 1, 0, 12.5, 12.5 * 3600),
+      athlete("you", 2, 0, 10, 10 * 3600),
+    ];
+    expect(clubRivalCardSummary(rows, "strength", "us").headline).toBe("2.5 hrs behind Mara");
   });
   it("does not round a positive close gap down to zero", () => {
     const rows = [athlete("Mara", 1, 5010, .01), athlete("you", 2, 5000)];
     expect(clubRivalCardSummary(rows, "running", "metric").headline).toBe("10 m behind Mara");
     expect(clubRivalCardSummary(rows, "running", "us").headline).toBe("33 ft behind Mara");
-    expect(clubRivalCardSummary(rows, "strength", "metric").headline).toBe("<0.1 pts behind Mara");
+    const strengthRows = [athlete("Mara", 1, 0, 0, 36), athlete("you", 2, 0, 0, 0)];
+    expect(clubRivalCardSummary(strengthRows, "strength", "metric").headline).toBe("<0.1 hrs behind Mara");
   });
   it("keeps ordinal suffixes and handles solo, missing-self and unregistered fields", () => {
     for (const [place, text] of [[2, "2nd"], [11, "11th"], [12, "12th"], [13, "13th"], [21, "21st"], [22, "22nd"], [23, "23rd"]] as const) {

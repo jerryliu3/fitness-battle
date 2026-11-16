@@ -1,3 +1,4 @@
+import { competeVolumeFromTotals } from "../compete-field-view";
 import { initializeEffortAccounts, settleAccountEffort } from './effort-account';
 import { createDeclaredEffortState, getScoreBreakdown, placementRewardPoints } from './effort-score';
 import { competitionPlace } from "../competition-place";
@@ -584,6 +585,7 @@ function groupFor(
       }] as const];
     })) : undefined,
     track,
+    units: state.units,
     asOf,
   });
   return rows.map((row) => ({
@@ -671,7 +673,7 @@ function settleEnrollment(
   const openTotals = openRows.map(total);
   const verifiedPlace = verifiedIdx >= 0 ? competitionPlace(verifiedTotals, total(verifiedRows[verifiedIdx]!)) - 1 : placeOrLast(-1, verifiedRows.length);
   const openPlace = openIdx >= 0 ? competitionPlace(openTotals, total(openRows[openIdx]!)) - 1 : placeOrLast(-1, openRows.length);
-  // Missing you → zero effort so Elo takes inactivity decay, not a fake last-place race.
+  // A missing roster row contributes no event volume or placement reward.
   const verifiedEffort = verifiedIdx >= 0 ? (verifiedRows[verifiedIdx]?.effort ?? 0) : 0;
   const openEffort = openIdx >= 0 ? (openRows[openIdx]?.effort ?? 0) : 0;
   const youVerified = verifiedIdx >= 0 ? verifiedRows[verifiedIdx] : undefined;
@@ -1472,10 +1474,10 @@ export function weeklyBoard(
   if (!enrollment) return [];
   if (Date.parse(enrollment.waveStart) > now.getTime() || enrollment.awaitingField) return [];
   const rows = groupFor(live, sport, track, enrollment, now);
-  const values = rows.map(row => sportById(sport).gps ? row.distanceM : row.effort);
-  return rows.map(row => ({
+  const values = rows.map((row) => competeVolumeFromTotals(sport, row, live.units));
+  return rows.map((row) => ({
     ...row,
-    place: competitionPlace(values, sportById(sport).gps ? row.distanceM : row.effort),
+    place: competitionPlace(values, competeVolumeFromTotals(sport, row, live.units)),
   }));
 }
 
@@ -1536,13 +1538,16 @@ export function formatVolume(
   if (sport === "walking") {
     return `${formatWalkingSteps(effort)} steps`;
   }
+  if (sport === "strength") {
+    return `${(movingSec / 3600).toFixed(1)} hrs`;
+  }
   if (sportById(sport).gps) {
     if (units === "metric") {
       return `${(distanceM / 1000).toFixed(1)} km`;
     }
     return `${(distanceM / 1609.344).toFixed(1)} mi`;
   }
-  return `${Math.round(movingSec / 60)} min`;
+  return `${(movingSec / 3600).toFixed(1)} hrs`;
 }
 
 /** Short unit label for season totals and lane captions. */

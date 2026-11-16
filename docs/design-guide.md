@@ -1168,3 +1168,20 @@ active days are available; cap the visual at full without capping displayed tota
 scrolling as a fallback. Activity details opens an edge-to-edge route with the
 shared material back button and Compete sheet; returning preserves selection
 and the carousel position. Hosted map controls reserve space for native overlays.
+
+
+Compete field selection keeps the icon popover and Cube Focus icon. GPS sports
+start in 3D and offer 3D, 2D and Timeline; strength and walking start in Timeline
+and offer Timeline and 2D. Recovery retains its Timeline-only policy. Circular
+profile nodes and their expanded cards use the shared volume units: hours,
+steps or distance. Gold follows first place. Map controls stay in the vertical
+view/layers/follow stack and disappear when their renderer is no longer active.
+Current-only rival totals must not be turned into historical curves or places;
+when historical field data is absent, the timeline remains at the current reading.
+
+All queued events retain their normal field background (GPS 3D; metric Timeline).
+Waiting details replace standings/activity inside the same bottom sheet, including cancellation before the start.
+
+Recap keeps its legacy workout-intensity curve under Workout effort, including
+tooltips and accessibility text. It is distinct from the official weekly Effort
+Score and its Training/History/Competition breakdown.

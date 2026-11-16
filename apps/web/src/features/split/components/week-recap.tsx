@@ -308,7 +308,7 @@ function Training({ state, target }: { state: CompeteState; target: WeekRecapTar
         <div className="week-recap-chart-header">
           <div className="week-recap-chart-title">
             <RecapIcon name="scoring" size={16} />
-            <AppText role="label">{scrubbed ? `${scrubbed.label} · ${scrubbed.value}` : activeMode === "time" ? "Training time" : "Effort"}</AppText>
+            <AppText role="label">{scrubbed ? `${scrubbed.label} · ${scrubbed.value}` : activeMode === "time" ? "Training time" : "Workout effort"}</AppText>
           </div>
           {series.available && series.hasEffort && (
             <div className="week-recap-mode-toggle" role="tablist" aria-label="Chart metric">
@@ -316,7 +316,7 @@ function Training({ state, target }: { state: CompeteState; target: WeekRecapTar
                 <button key={mode} type="button" role="tab" aria-selected={activeMode === mode}
                   className={`week-recap-mode-pill${activeMode === mode ? " is-selected" : ""}`}
                   onClick={() => { if (activeMode !== mode) { setScrubbed(undefined); setChartMode(mode); } }}>
-                  {mode === "time" ? "Time" : "Effort"}
+                  {mode === "time" ? "Time" : "Workout effort"}
                 </button>
               ))}
             </div>
@@ -325,12 +325,12 @@ function Training({ state, target }: { state: CompeteState; target: WeekRecapTar
         {series.available ? (
           <StandardLineChart height={140} showArea animateReveal followRevealDot onSelectionChange={setScrubbed}
             stroke={WEEK_RECAP_COLORS.progress} axisColor="rgba(255, 255, 255, 0.18)" labelColor="rgba(249, 247, 236, 0.72)"
-            yAxisLabel={activeMode === "time" ? "Training (min)" : "Effort (pts)"} xAxisLabel="Date (ET)"
+            yAxisLabel={activeMode === "time" ? "Training (min)" : "Workout effort"} xAxisLabel="Date (ET)"
             values={activeMode === "time" ? series.values : series.effortValues} pointLabels={series.labels}
             xLabels={[series.labels[0]!, series.labels[Math.floor((series.labels.length - 1) / 2)]!, series.labels.at(-1)!]}
             formatAxisY={(v) => (activeMode === "time" ? `${Math.round(v)}` : `${Number(v.toFixed(1))}`)}
-            formatY={(v) => (activeMode === "time" ? `${Math.round(v)} min` : `${formatEffort(v)} pts`)}
-            ariaLabel={activeMode === "time" ? "Cumulative training minutes in the settled week" : "Cumulative effort points in the settled week"} />
+            formatY={(v) => (activeMode === "time" ? `${Math.round(v)} min` : `${formatEffort(v)} workout effort`)}
+            ariaLabel={activeMode === "time" ? "Cumulative training minutes in the settled week" : "Cumulative workout effort in the settled week"} />
         ) : <AppParagraph>Detailed activity history is unavailable for this archived week.</AppParagraph>}
       </div>
 

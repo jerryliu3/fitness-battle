@@ -63,11 +63,11 @@ describe("competition replay presentation ledger", () => {
     expect(replay.events.every(e => e.simulated)).toBe(true);
     expect(replay.events.some(e => e.athleteId === "peer")).toBe(false);
   });
-  it("uses existing effort points for non-GPS fields", () => {
+  it("uses hours for strength replay while retaining internal effort", () => {
     const replay = { ...ledger([{ ...event("s", "you", 0), effort: 4, movingSec: 1800 }]), sport: "strength" as const, track: "open" as const };
     const index = indexCompetitionReplay(replay, "us");
-    expect(index.unit).toBe("pts");
-    expect(competitionReplayFrame(index, 1).rows.find(r => r.you)?.value).toBe(4);
+    expect(index.unit).toBe("hrs");
+    expect(competitionReplayFrame(index, 1).rows.find(r => r.you)?.value).toBeCloseTo(0.5);
   });
   it("keeps a local preview to the signed-in athlete when no other account is seated", () => {
     const state = freshState(new Date("2026-10-25T14:00:00Z"));
@@ -136,4 +136,21 @@ it("converts bidirectionally between replay cursor and competition time ms", () 
   expect(competitionReplayCursorFromTimeMs(index, e1Ms + (e2Ms - e1Ms) * 0.5)).toBeCloseTo(1.5);
   expect(competitionReplayCursorFromTimeMs(index, e2Ms)).toBe(2);
   expect(competitionReplayCursorFromTimeMs(index, e2Ms + 10000)).toBe(2);
+});
+
+
+it("replays daily walking steps once per day using the highest provider reading", () => {
+  const state = freshState(new Date("2026-10-25T14:00:00Z"));
+  state.demoNow = "2026-10-25T14:00:00Z";
+  state.dailyHealth = [
+    { provider: "strava", day: "2026-10-20", steps: 4000 },
+    { provider: "garmin", day: "2026-10-20", steps: 6000 },
+    { provider: "garmin", day: "2026-10-21", steps: 2000 },
+    { provider: "garmin", day: "2026-10-26", steps: 9000 },
+  ];
+  const replay = localCompetitionReplay(state, { ...selection, sport: "walking", track: "open" });
+  const index = indexCompetitionReplay(replay, "metric");
+  expect(index.unit).toBe("steps");
+  expect(replay.events).toHaveLength(2);
+  expect(competitionReplayFrame(index, 2).rows.find(row => row.you)?.value).toBe(8000);
 });

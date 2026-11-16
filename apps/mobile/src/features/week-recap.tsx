@@ -345,7 +345,7 @@ function Training({ state, target, reduced }: { state: CompeteState; target: Wee
           <View style={s.chartTitleRow}>
             <AppIcon name="scoring" size={16} color={SUCCESS_LIGHT} />
             <AppText role="label" style={s.light} numberOfLines={1}>
-              {scrubbed ? `${scrubbed.label} · ${scrubbed.value}` : activeMode === "time" ? "Training time" : "Effort"}
+              {scrubbed ? `${scrubbed.label} · ${scrubbed.value}` : activeMode === "time" ? "Training time" : "Workout effort"}
             </AppText>
           </View>
           {series.available && series.hasEffort && (
@@ -357,7 +357,7 @@ function Training({ state, target, reduced }: { state: CompeteState; target: Wee
                     onPress={() => { if (activeMode !== mode) { void playCue("selection"); setScrubbed(undefined); setChartMode(mode); } }}
                     style={[s.modePill, selected && s.modePillActive]}>
                     <AppText role={selected ? "label" : "caption"} style={{ color: selected ? "#142b3b" : MUTED_LIGHT }}>
-                      {mode === "time" ? "Time" : "Effort"}
+                      {mode === "time" ? "Time" : "Workout effort"}
                     </AppText>
                   </Pressable>
                 );
@@ -371,8 +371,8 @@ function Training({ state, target, reduced }: { state: CompeteState; target: Wee
             values={activeMode === "time" ? series.values : series.effortValues} pointLabels={series.labels}
             xLabels={[series.labels[0]!, series.labels[Math.floor((series.labels.length - 1) / 2)]!, series.labels.at(-1)!]}
             formatAxisY={(v) => (activeMode === "time" ? `${Math.round(v)}` : `${Number(v.toFixed(1))}`)}
-            formatY={(v) => (activeMode === "time" ? `${Math.round(v)} min` : `${formatEffort(v)} pts`)}
-            accessibilityLabel={activeMode === "time" ? "Cumulative training minutes in the settled week" : "Cumulative effort points in the settled week"} />
+            formatY={(v) => (activeMode === "time" ? `${Math.round(v)} min` : `${formatEffort(v)} workout effort`)}
+            accessibilityLabel={activeMode === "time" ? "Cumulative training minutes in the settled week" : "Cumulative workout effort in the settled week"} />
         ) : <AppText role="support" style={s.mutedLight}>Detailed activity history is unavailable for this archived week.</AppText>}
       </View>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { effortRankBadge, rankSymbolForScore, standingsBar } from "@fitness-battle/shared";
+import { arenaValueDecimals, effortRankBadge, rankSymbolForScore, standingsBar } from "@fitness-battle/shared";
 import { PolishedRacer } from "@/features/brand/polished-racer";
 import { RankAvatar } from "@/ui/rank-symbol";
 
@@ -116,7 +116,7 @@ export function StandingsList<T extends StandingsRowItem>({
                 </strong>
                 <div className="focus-standing-metrics">
                   <strong>
-                    {lane.value.toFixed(unit === "pts" ? 1 : 2)} {unit}
+                    {lane.value.toFixed(arenaValueDecimals(unit))} {unit}
                   </strong>
                   <small>{elo ?? "—"} effort score</small>
                 </div>

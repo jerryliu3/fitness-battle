@@ -23,10 +23,10 @@ it("opens a popover with 2D, 3D, and Timeline for geographic fields", async () =
   let renderer!: ReactTestRenderer;
   try {
     await act(async () => {
-      renderer = create(createElement(FieldViewSwitcher, { value: "4d", geographic: true, onChange }));
+      renderer = create(createElement(FieldViewSwitcher, { value: "4d", event: "running", onChange }));
     });
     await openMenu(renderer, "3D");
-    expect(menuLabels(renderer)).toEqual(["2D", "3D", "Timeline"]);
+    expect(menuLabels(renderer)).toEqual(["3D", "2D", "Timeline"]);
     const twoD = renderer.root.find(
       (node) => node.type === "button" && node.props.role === "menuitemradio" && node.props.children[1].props.children === "2D",
     );
@@ -40,9 +40,9 @@ it("opens a popover with 2D, 3D, and Timeline for geographic fields", async () =
     await act(async () => timeline.props.onClick());
     expect(onChange).toHaveBeenCalledWith("graph");
 
-    await act(async () => renderer.update(createElement(FieldViewSwitcher, { value: "2d", geographic: false, onChange })));
+    await act(async () => renderer.update(createElement(FieldViewSwitcher, { value: "2d", event: "strength", onChange })));
     await openMenu(renderer, "2D");
-    expect(menuLabels(renderer)).toEqual(["2D", "Timeline"]);
+    expect(menuLabels(renderer)).toEqual(["Timeline", "2D"]);
   } finally {
     if (renderer) await act(async () => renderer.unmount());
     vi.unstubAllGlobals();
@@ -55,7 +55,7 @@ it("offers an optional standings row", async () => {
   let renderer!: ReactTestRenderer;
   try {
     await act(async () => {
-      renderer = create(createElement(FieldViewSwitcher, { value: "2d", geographic: false, onChange, standings: true, onStandings }));
+      renderer = create(createElement(FieldViewSwitcher, { value: "2d", event: "strength", onChange, standings: true, onStandings }));
     });
     await openMenu(renderer, "2D");
     const standings = renderer.root.find(
@@ -64,6 +64,21 @@ it("offers an optional standings row", async () => {
     expect(standings?.props["aria-checked"]).toBe(true);
     await act(async () => standings!.props.onClick());
     expect(onStandings).toHaveBeenCalledOnce();
+  } finally {
+    if (renderer) await act(async () => renderer.unmount());
+    vi.unstubAllGlobals();
+  }
+});
+
+it("uses the shared Recovery policy in the icon popover", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  let renderer!: ReactTestRenderer;
+  try {
+    await act(async () => { renderer = create(createElement(FieldViewSwitcher, {
+      event: "sleep", value: "graph", onChange: vi.fn(),
+    })); });
+    await openMenu(renderer, "Timeline");
+    expect(menuLabels(renderer)).toEqual(["Timeline"]);
   } finally {
     if (renderer) await act(async () => renderer.unmount());
     vi.unstubAllGlobals();

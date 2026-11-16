@@ -15,7 +15,7 @@ it("offers 2D, geographic 3D, and Timeline in a field view menu", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const onChange = vi.fn(); let renderer!: ReactTestRenderer;
   try {
-    await act(async () => { renderer = create(createElement(FieldViewSwitcher, { value: "4d", geographic: true, onChange })); });
+    await act(async () => { renderer = create(createElement(FieldViewSwitcher, { value: "4d", event: "running", onChange })); });
     const buttons = renderer.root.findAllByType("Pressable" as never);
     const trigger = buttons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Field view: 3D");
     expect(trigger).toBeDefined();
@@ -37,8 +37,24 @@ it("offers 2D, geographic 3D, and Timeline in a field view menu", async () => {
     await act(async () => option2D!.props.onPress());
     expect(onChange).toHaveBeenCalledWith("2d");
 
-    await act(async () => renderer.update(createElement(FieldViewSwitcher, { value: "2d", geographic: false, onChange })));
+    await act(async () => renderer.update(createElement(FieldViewSwitcher, { value: "2d", event: "strength", onChange })));
     const updatedButtons = renderer.root.findAllByType("Pressable" as never);
     expect(updatedButtons.find((b: { props: { accessibilityLabel?: string } }) => b.props.accessibilityLabel === "Select 3D")).toBeUndefined();
   } finally { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); }
+});
+
+it("uses the shared Recovery policy without offering an unrelated sport view", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  let renderer!: ReactTestRenderer;
+  try {
+    await act(async () => { renderer = create(createElement(FieldViewSwitcher, {
+      event: "sleep", value: "graph", onChange: vi.fn(),
+    })); });
+    const choices = renderer.root.findAllByType("Pressable" as never)
+      .filter(button => button.props.accessibilityLabel.startsWith("Select "));
+    expect(choices.map(button => button.props.accessibilityLabel)).toEqual(["Select Timeline"]);
+  } finally {
+    if (renderer) await act(async () => renderer.unmount());
+    vi.unstubAllGlobals();
+  }
 });

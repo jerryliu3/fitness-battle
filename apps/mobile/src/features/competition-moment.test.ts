@@ -14,6 +14,7 @@ vi.mock("../lib/haptics", () => ({ playCue: vi.fn(), playPattern: vi.fn(() => vi
 vi.mock("../ui/field-course", () => ({ useFieldAppearance: () => [defaultFieldAppearance] }));
 vi.mock("../ui/lane-track", () => ({ LaneTrack: "LaneTrack" }));
 vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
+vi.mock("../ui/compete-time-series-chart", () => ({ CompeteTimeSeriesChart: "CompeteTimeSeriesChart" }));
 vi.mock("./competition-panel", () => ({
   CompetitionPanel: ({ standings, activity }: { standings: ReactNode; activity: (visible: boolean) => ReactNode }) =>
     createElement("CompetitionPanel", null, standings, activity(true)),

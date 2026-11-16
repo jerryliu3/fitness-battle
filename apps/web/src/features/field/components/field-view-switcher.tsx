@@ -1,12 +1,13 @@
 "use client";
+import { competeFieldSwitcherOptions, type CompeteArenaEvent, type FieldViewDimension } from "@fitness-battle/shared";
+
 import { APP_ICON_PATHS, APP_ICON_VIEW_BOX } from "@fitness-battle/shared";
 import { colors as c } from "@/theme/app-colors";
 import { typographyStyle } from "@/ui/section";
 import { useEffect, useRef, useState } from "react";
 import { playCue } from "@/lib/haptics";
 
-type FieldView = "2d" | "3d" | "4d" | "graph";
-type FieldViewOption = { value: FieldView; label: string; icon: keyof typeof APP_ICON_PATHS };
+type FieldView = FieldViewDimension;
 
 const VIEW_ICONS: Record<FieldView, keyof typeof APP_ICON_PATHS> = {
   "2d": "distance",
@@ -26,25 +27,21 @@ function FieldIcon({ name, size = 22, color = "currentColor" }: { name: keyof ty
 
 export function FieldViewSwitcher({
   value,
-  geographic,
+  event,
   onChange,
   standings = false,
   onStandings,
 }: {
   value: FieldView;
-  geographic: boolean;
+  event: CompeteArenaEvent;
   onChange(value: FieldView): void;
   standings?: boolean;
   onStandings?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  const options: FieldViewOption[] = [
-    { value: "2d", label: "2D", icon: "distance" },
-    ...(geographic ? [{ value: "4d" as const, label: "3D", icon: "cubeFocus" as const }] : []),
-    { value: "graph", label: "Timeline", icon: "progress" },
-  ];
-  const active = options.find((option) => option.value === value && !standings) ?? options[0]!;
+  const options = competeFieldSwitcherOptions(event);
+  const active = options.find((option) => option.value === value) ?? options[0]!;
 
   useEffect(() => {
     if (!open || typeof document === "undefined") return;
@@ -122,7 +119,7 @@ export function FieldViewSwitcher({
                   textAlign: "left",
                 }}
               >
-                <FieldIcon name={option.icon} color={selected ? c.ink : c.muted} />
+                <FieldIcon name={VIEW_ICONS[option.value]} color={selected ? c.ink : c.muted} />
                 <span style={{ flex: 1 }}>{option.label}</span>
                 {selected ? <span aria-hidden="true">✓</span> : null}
               </button>

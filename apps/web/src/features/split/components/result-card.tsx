@@ -9,7 +9,6 @@ import {
   formatAccountPeriodDateRange,
   formatPeriodDateRange,
   formatVolume,
-  formatEffort,
   ordinalPlace,
   sportById,
   weekRecapMetrics,
@@ -106,8 +105,8 @@ export function ResultCard({
               result.distanceM,
               result.movingSec,
               units,
-            )}{" "}
-            · {formatEffort(result.effort)} effort
+              result.effort,
+            )}
           </span>
           <span>
             {result.eloBefore} → {result.eloAfter} effort score
@@ -152,6 +151,7 @@ export function ResultCard({
               result.distanceM,
               result.movingSec,
               units,
+              result.effort,
             )}
           </span>
           <span className="week-result-score">

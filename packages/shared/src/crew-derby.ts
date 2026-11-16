@@ -1,11 +1,11 @@
 import type { SportId, UnitSystem } from "./compete/sports";
-import { formatDistanceM, distanceUnitLabel } from "./compete/engine";
+import { formatArenaVolume } from "./compete-field-view";
 export interface CrewDerby {
   field_id: string; sport: SportId; wave_start: string; week_end: string;
   teams: { crew_id: string; name: string; score: number; place: number }[];
 }
 export function crewDerbyScore(sport: SportId, value: number, units?: UnitSystem): string {
-  return sport === "strength" ? `${Number(value.toFixed(1))} pts` : `${formatDistanceM(value, units)} ${distanceUnitLabel(units)}`;
+  return formatArenaVolume(sport, { distanceM: value, movingSec: value, effort: value }, units ?? "us");
 }
 export function crewDerbyOpponent(derby: CrewDerby, crewId: string) {
   const index = derby.teams.findIndex(team => team.crew_id === crewId);

@@ -2,7 +2,8 @@ import { countsOnTrack } from "./compete/ledger";
 import { weeklyPeriodBounds, APP_TIMEZONE, accountTimeZone, getZonedWeekday } from "./period";
 import { competitionTrack, sportById } from "./compete/sports";
 import { formatClockTime } from "./compete/pace";
-import { formatVolume, formatEffort, type BoardRow } from "./compete/engine";
+import { competeChartUnit, competeVolumeFromTotals, arenaValueDecimals } from "./compete-field-view";
+import { formatVolume, type BoardRow } from "./compete/engine";
 import { ordinalPlace } from "./arena-view";
 import { competeNow } from "./compete/engine";
 import { trainingBuckets } from "./training-view";
@@ -90,13 +91,19 @@ export function clubRivalCardSummary(rows: readonly BoardRow[], sport: SportId |
     caption: you ? "Keep showing up. Every effort counts." : "Register for a weekly event.",
   };
   const distance = sportById(sport).gps;
-  const delta = distance ? rival.distanceM - you.distanceM : rival.effort - you.effort;
+  const delta = distance
+    ? rival.distanceM - you.distanceM
+    : competeVolumeFromTotals(sport, rival, units) - competeVolumeFromTotals(sport, you, units);
   const gap = Math.abs(delta);
+  const unit = competeChartUnit(sport, units);
+  const decimals = arenaValueDecimals(unit);
   const amount = distance
     ? gap > 0 && gap < (units === "metric" ? 50 : 80.4672)
       ? units === "metric" ? `${Math.max(1, Math.round(gap))} m` : `${Math.max(1, Math.round(gap / .3048))} ft`
       : formatVolume(sport, gap, 0, units)
-    : gap > 0 && gap < .05 ? "<0.1 pts" : `${formatEffort(gap)} pts`;
+    : gap > 0 && gap < 10 ** -decimals
+      ? `<${(10 ** -decimals).toFixed(decimals)} ${unit}`
+      : `${gap.toLocaleString("en-US", { maximumFractionDigits: decimals })} ${unit}`;
   const name = rival.name.trim().split(/\s+/)[0] || "your rival";
   const label = rival.place < you.place ? "Next rival" : "Closest rival";
   return {

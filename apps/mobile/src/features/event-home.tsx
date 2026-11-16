@@ -5,7 +5,7 @@ import { useCompetitionCourse } from "./use-competition-course";
 import { GeographicCourse } from "./geographic-course";
 import { useCompeteStore } from "../lib/compete-store";
 import { Animated, Image, Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
-import { competeEventCarouselPageIndex, formatActivityAge, competePeriodWindow, coursePreviewLanes, initialsFromName, type ArenaSceneLane, buildArenaModel, competitionQueue, competitionTrack, competeNow, ordinalPlace, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { competeEventCarouselPageIndex, formatActivityAge, competePeriodWindow, coursePreviewLanes, initialsFromName, type ArenaSceneLane, buildArenaModel, competitionQueue, competitionTrack, competeNow, isMetricCompete, ordinalPlace, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppText, textStyle } from "../ui/section";
 import { useThemeColors } from "../theme";
 import { AppIcon } from "../ui/app-icon";
@@ -93,7 +93,7 @@ export function CoursePreview({ state, sport, queued }: { state: CompeteState; s
   const model = buildArenaModel(state, undefined, competitionTrack(sport), sport);
   const me = model?.lanes.find(lane => lane.you);
 
-  if (!queued && model?.unit === "pts") {
+  if (!queued && isMetricCompete(sport)) {
     return (
       <View
         style={{
@@ -131,7 +131,7 @@ function SnapshotPreview({ cacheKey, course, lanes, unit }: { cacheKey: string; 
   return <View pointerEvents="none" style={{ width: "100%", aspectRatio: 1, borderRadius: 12, overflow: "hidden", backgroundColor: c.paper }}>
     {capturing && course ? <GeographicCourse key={cacheKey} course={course} lanes={lanes} unit={unit} selectedId={lanes.find(lane => lane.you)?.id ?? ""} focusRequest={0} onSelect={() => {}} onSnapshot={capture} optionsTop={0} /> : null}
     <View style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, alignItems: "center", justifyContent: "center", backgroundColor: c.paper }}>
-      {uri ? <Image source={{ uri }} resizeMode="cover" accessibilityLabel="3D snapshot of your current race position" style={{ width: "100%", height: "100%" }} /> : capturing ? null : <AppText role="caption" secondary>{unit === "pts" ? "Points event" : "Preview unavailable"}</AppText>}
+      {uri ? <Image source={{ uri }} resizeMode="cover" accessibilityLabel="3D snapshot of your current race position" style={{ width: "100%", height: "100%" }} /> : capturing ? null : <AppText role="caption" secondary>{unit === "hrs" || unit === "steps" ? "Chart preview" : "Preview unavailable"}</AppText>}
     </View>
   </View>;
 }

@@ -5,6 +5,7 @@ export interface WeeklyPeer {
   fieldSize: number;
   distanceM: number;
   movingSec: number;
+  effort?: number;
   canRepeat: boolean;
   congrats: boolean;
   repeat: boolean;

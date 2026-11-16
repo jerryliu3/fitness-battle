@@ -1,7 +1,7 @@
 import { useThemeColors } from "../theme";
 import { AthleteNode } from "./athlete-node";
 import { chartTextProps, textStyle  } from "./section";
-import { fieldCourse, fieldCourseScene, fieldScaleMarks, defaultFieldAppearance, type FieldAppearance, fieldZoomSpan, pinchFieldView, fieldFlightDuration, fieldFlightEase, fieldProgressTrail, arenaPosition, arenaWindow, fieldDefaultSpan, ordinalPlace, athletePennantOffset, arenaFieldHigh, clampCourseCenter, initialsFromName, orderedArenaLanes, fieldLaneMarkerScale, type ArenaLane, type ArenaOvertakeFrame, type ArenaOvertakePlan, type ArenaViewWindow } from "@fitness-battle/shared";
+import { arenaValueDecimals, fieldCourse, fieldCourseScene, fieldScaleMarks, defaultFieldAppearance, type FieldAppearance, fieldZoomSpan, pinchFieldView, fieldFlightDuration, fieldFlightEase, fieldProgressTrail, arenaPosition, arenaWindow, fieldDefaultSpan, ordinalPlace, athletePennantOffset, arenaFieldHigh, clampCourseCenter, initialsFromName, orderedArenaLanes, fieldLaneMarkerScale, type ArenaLane, type ArenaOvertakeFrame, type ArenaOvertakePlan, type ArenaViewWindow } from "@fitness-battle/shared";
 import { memo, useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
 import { PanResponder, Pressable, Text, View } from "react-native";
 import Svg, {
@@ -89,6 +89,7 @@ const appearanceColors = useThemeColors();
 const c=useThemeColors();
 
   const prefix = useId();
+  const valueDecimals = arenaValueDecimals(unit);
   const [width, setWidth] = useState(340);
   const [visibleScroll, setVisibleScroll] = useState(anchor?.current?.scroll ?? 0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -225,7 +226,7 @@ const c=useThemeColors();
             width={width}
             height={height}
             viewBox={`${visibleScroll} 0 ${width} ${height}`}
-            accessibilityLabel={`2D field, ${bounds.min.toFixed(2)} to ${bounds.max.toFixed(2)} ${unit}`}
+            accessibilityLabel={`2D field, ${bounds.min.toFixed(valueDecimals)} to ${bounds.max.toFixed(valueDecimals)} ${unit}`}
           >
             <Rect x={visibleScroll} width={width} height={height} fill="transparent" />
             <G>{groundPaint}</G>
@@ -308,8 +309,8 @@ const c=useThemeColors();
                 : l.you
                   ? isGold
                     ? "Leading the field"
-                    : `${(value - fieldHigh).toFixed(1)} ${unit} vs #1`
-                  : `${deltaToYou > 0 ? "+" : ""}${deltaToYou.toFixed(1)} ${unit}`;
+                    : `${(value - fieldHigh).toFixed(valueDecimals)} ${unit} vs #1`
+                  : `${deltaToYou > 0 ? "+" : ""}${deltaToYou.toFixed(valueDecimals)} ${unit}`;
               const pennantWidth=128, visibleLeft=previous.current?.scroll??0;
               const pennantX=Math.max(visibleLeft-xx+8,Math.min(visibleLeft+width-xx-pennantWidth-8,l.you?-pennantWidth-16:16));
               const pennantY=athletePennantOffset(yy,course.point(youVal,Math.max(0,ordered.findIndex(peer=>peer.you)),0,true).y,l.you,height);
@@ -375,7 +376,7 @@ const c=useThemeColors();
                         selected={isSelected}
                         expanded={!overlaysHidden && isExpanded}
                         gold={isGold}
-                        detail={`${ordered.some(peer => peer.mystery) ? "Starts at zero" : ordinalPlace(rank)} · ${value.toFixed(1)} ${unit}`}
+                        detail={`${ordered.some(peer => peer.mystery) ? "Starts at zero" : ordinalPlace(rank)} · ${value.toFixed(valueDecimals)} ${unit}`}
                         subdetail={subdetail}
                       />
                     )}

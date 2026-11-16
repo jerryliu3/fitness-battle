@@ -10,7 +10,6 @@ vi.mock("@/features/course/use-competition-course", () => ({ useCompetitionCours
 vi.mock("@/lib/haptics", () => ({ playCue() {} }));
 vi.mock("./field-course", () => ({ useFieldAppearance: () => [defaultFieldAppearance], FieldOverview: "FieldOverview" }));
 vi.mock("@/features/course/geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
-vi.mock("@/features/club/portrait-field", () => ({ PortraitField: "PortraitField" }));
 vi.mock("@/features/focus/arena-lanes", () => ({ ArenaLanes: "ArenaLanes" }));
 vi.mock("@/features/brand/polished-racer", () => ({ PolishedRacer: "PolishedRacer" }));
 vi.mock("@/ui/user-avatar", () => ({ UserAvatar: "UserAvatar" }));

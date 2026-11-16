@@ -1,23 +1,19 @@
 import { PointsTimeline } from "../../src/features/points-timeline";
-import { CompeteTimeSeriesChart } from "../../src/ui/compete-time-series-chart";
-import { GraphOptions } from "../../src/ui/course-options";
-import { MaterialBack } from "../../src/ui/material-back";
 import { CompetitionPanel } from "../../src/features/competition-panel";
 import { CompetitionTimelineProvider, CompetitionTimelineControls } from "../../src/features/competition-timeline-context";
 import { EventRegistration } from "../../src/features/event-registration";
 import { useCompeteExperience } from "../../src/features/compete-experience";
 import { RaceUpdates } from "../../src/features/race-updates";
-import { EventHome, CoursePreview } from "../../src/features/event-home";
+import { EventHome } from "../../src/features/event-home";
 import { CompeteIcon, CrewEvents, ExploreEvents, CompeteResults } from "../../src/features/compete-home-sections";
 import { CompeteSheet } from "../../src/ui/compete-sheet";
 import { SectionStack, AppText } from "../../src/ui/section";
-import { APP_TIMEZONE, competePeriodWindow, weeklyCompetitionLastDay, weeklyPeriodBounds, competitionQueue, competeNow, competitionTrack, eventRegistration, getAppColors, type CompeteState, type CrewBoardPin, type CompeteEvent } from "@fitness-battle/shared";
+import { APP_TIMEZONE, competePeriodWindow, weeklyCompetitionLastDay, weeklyPeriodBounds, competitionQueue, competeNow, competitionTrack, eventRegistration, getAppColors, isMetricCompete, type CompeteState, type CrewBoardPin, type CompeteEvent } from "@fitness-battle/shared";
 import { ScopedThemeProvider, useAppTheme } from "../../src/appearance";
 import { useThemeColors } from "../../src/theme";
 import { useFocusStyles } from "../../src/ui/focus";
 import {
   SPORTS,
-  isPointsEvent,
   type SportId,
 } from "@fitness-battle/shared";
 import { useGlobalSearchParams, usePathname, useRouter } from "expo-router";
@@ -132,12 +128,12 @@ const f=useFocusStyles();
   const timeRemaining = remainingMs === 0 ? "Ended" : remainingDays >= 1 ? `${remainingDays} day${remainingDays === 1 ? "" : "s"} left` : `${remainingHours} hour${remainingHours === 1 ? "" : "s"} left`;
   const queue = selectedSport ? competitionQueue(state, selectedSport, now) : null;
   const queued = Boolean(queue?.queued || queue?.awaitingField);
-  const pointsEvent = !!selectedSport && isPointsEvent(selectedSport);
-  const detailDestination = queued && pointsEvent;
-  const scopedPointsTheme = persistent && pointsEvent && !queued;
+  const metricImmersive = selectedSport ? isMetricCompete(selectedSport) : false;
+  const scopedPointsTheme = persistent && metricImmersive && !queued;
   const pointsMode = pointsThemeOverride ?? appMode;
   const pointsPaper = scopedPointsTheme ? getAppColors(pointsMode).paper : c.paper;
   const track = competitionTrack(selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary);
+  const arenaSport = selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary;
   function openRegistration(event: CompeteEvent | null = null) {
     if (!state) return;
     setRegistrationBackground({ account: accountKey, state });
@@ -177,10 +173,11 @@ const f=useFocusStyles();
 
   const content = (
     <SafeAreaView pointerEvents={persistent ? "box-none" : "auto"} style={[f.safe, persistent && { backgroundColor: "transparent" }]} edges={persistent ? [] : ["top"]}>
-      {persistent && selectedSport && selectedSport !== "sleep" ? (
+      {persistent && selectedSport ? (
         <CompetitionField
           key={`${accountKey}:${selectedSport}:${state.units}:${fieldSession}`}
-          sport={selectedSport}
+          competeEvent={selectedSport}
+          sport={arenaSport}
           track={track}
           persistent
           backgroundMode
@@ -188,45 +185,14 @@ const f=useFocusStyles();
           onOptionsChange={setCourseOptions}
           presentationActive={experience.immersive}
           onExit={exit}
+          chartView={pointsView}
+          onChartViewChange={setPointsView}
+          timelineFraction={pointsFraction}
+          onTimelineChange={setPointsFraction}
         />
       ) : null}
-      {persistent && selectedSport === "sleep" && !queued ? (
-        <View style={{ flex: 1, backgroundColor: pointsPaper }}>
-          <CompeteTimeSeriesChart
-            state={state}
-            mode="sleep"
-            track={track}
-            selectedId={athleteFocus?.id}
-            immersive
-            topInset={insets.top}
-            bottomInset={insets.bottom}
-            view={pointsView}
-            onViewChange={setPointsView}
-            timelineFraction={pointsFraction}
-            onTimelineChange={setPointsFraction}
-          />
-          <View style={{ position: "absolute", top: insets.top + 6, left: 12 }}>
-            <MaterialBack onPress={exit} />
-          </View>
-          <View style={{ position: "absolute", top: insets.top + 6, right: 12, zIndex: 20 }}>
-            <GraphOptions
-              eventView={pointsView === "event"}
-              onToggleEventView={() => setPointsView((prev) => (prev === "event" ? "trajectory" : "event"))}
-            />
-          </View>
-        </View>
-      ) : null}
-      {persistent && experience.immersive && selectedSport && detailDestination && <SafeAreaView style={{ position: "absolute", inset: 0, backgroundColor: c.paper, zIndex: 40 }} edges={["top", "bottom"]}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingHorizontal: 16, paddingVertical: 8 }}><MaterialBack onPress={exit} /><AppText role="heading" accessibilityRole="header">{selectedSport === "sleep" ? "Recovery" : `${SPORTS.find(item => item.id === selectedSport)?.name} meet`}</AppText></View>
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, gap: 20 }}>
-          {queued && selectedSport !== "sleep" && <CoursePreview state={state} sport={selectedSport} queued />}
-          {queued ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch(selectedSport === "sleep" ? { type: "opt-out-health", metric: "sleep" } : { type: "opt-out", sport: selectedSport }); }} /> : <SleepPanel state={state} dispatch={dispatch} />}
-        </ScrollView>
-      </SafeAreaView>}
-      {persistent && experience.immersive && !detailDestination && selectedSport && selectedSport !== "sleep" ? (
-        <View style={{ position: "absolute", top: insets.top + 54, right: 16, zIndex: 20 }}>{courseOptions}</View>
-      ) : null}
-      {(!persistent || !detailDestination) && <ArenaSheet scrollable={!queued} persistent={persistent} expandRequest={expandRequest} defaultSheetIndex={queued ? 1 : 0} active={focused && experience.immersive} overview={persistent && !queue?.queued && !queue?.awaitingField ? pointsEvent && selectedSport ? <PointsTimeline state={state} event={selectedSport} fraction={pointsFraction} onChange={setPointsFraction} /> : <CompetitionTimelineControls /> : undefined}>
+      {persistent && experience.immersive && <View style={{ position: "absolute", top: insets.top + 54, right: 16, zIndex: 20 }}>{courseOptions}</View>}
+      {<ArenaSheet scrollable={!queued} persistent={persistent} expandRequest={expandRequest} defaultSheetIndex={queued ? 1 : 0} active={focused && experience.immersive} overview={persistent && !queue?.queued && !queue?.awaitingField ? metricImmersive && selectedSport ? <PointsTimeline state={state} event={selectedSport} fraction={pointsFraction} onChange={setPointsFraction} /> : <CompetitionTimelineControls /> : undefined}>
 <SectionStack divided={false}>
         {!persistent && <View style={{ gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><CompeteIcon name="wreath" size={34} gold /><AppText role="display" accessibilityRole="header">Compete</AppText></View></View><View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 }}><AppText role="body" secondary>{dateRange}</AppText><View style={{ backgroundColor: c.actionSoft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 }}><AppText role="label">{timeRemaining}</AppText></View></View></View>}
         {standingsStale ? (
@@ -235,7 +201,7 @@ const f=useFocusStyles();
           </AppText>
         ) : null}
         {!persistent && <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />}
-        {persistent ? selectedSport && selectedSport !== "sleep" ? queue?.queued || queue?.awaitingField ? <View style={{ gap: 16 }}><QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch({ type: "opt-out", sport: selectedSport }); }} /></View> : <CompetitionPanel key={`${accountKey}:${selectedSport}:${headerPeriod.startsAt.toISOString()}`} active={focused && experience.immersive} standings={<CompetitionField sport={selectedSport} track={track} standingsOnly onFocusAthlete={id => { setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} />} activity={visible => <RaceUpdates state={state} sport={selectedSport} active={visible} />} /> : selectedSport === "sleep" ? queue?.queued || queue?.awaitingField ? <QueuedField state={state} event="sleep" now={now} onCancel={() => { dispatch({ type: "opt-out-health", metric: "sleep" }); }} /> : <SleepPanel state={state} dispatch={dispatch} hideChart /> : null : <>
+        {persistent ? selectedSport && selectedSport !== "sleep" ? queue?.queued || queue?.awaitingField ? <View style={{ gap: 16 }}><QueuedField state={state} event={selectedSport} now={now} onCancel={() => { dispatch({ type: "opt-out", sport: selectedSport }); }} /></View> : <CompetitionPanel key={`${accountKey}:${selectedSport}:${headerPeriod.startsAt.toISOString()}`} active={focused && experience.immersive} standings={<CompetitionField sport={selectedSport} track={track} timelineFraction={metricImmersive ? pointsFraction : undefined} standingsOnly onFocusAthlete={id => { setAthleteFocus(previous => ({ id, request: (previous?.request ?? 0) + 1 })); }} />} activity={visible => <RaceUpdates state={state} sport={selectedSport} active={visible} />} /> : selectedSport === "sleep" ? queue?.queued || queue?.awaitingField ? <QueuedField state={state} event="sleep" now={now} onCancel={() => { dispatch({ type: "opt-out-health", metric: "sleep" }); }} /> : <SleepPanel state={state} dispatch={dispatch} hideChart /> : null : <>
           <EventHome active={focused && !experience.immersive} state={registrationBackground?.account === accountKey ? registrationBackground.state : state} accountKey={accountKey} onEnter={experience.enter} onRecovery={() => experience.enter(accountKey, "sleep")} />
 
         </>}
@@ -264,7 +230,7 @@ const f=useFocusStyles();
     </SafeAreaView>
   );
   return (
-    <CompetitionTimelineProvider state={state} selection={{ sport: selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary, track, periodStart: headerPeriod.startsAt.toISOString(), periodEnd: headerPeriod.endsAt.toISOString() }} enabled={persistent && Boolean(selectedSport) && selectedSport !== "sleep" && !queued} active={focused && experience.immersive && !detailDestination}>
+    <CompetitionTimelineProvider state={state} selection={{ sport: selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary, track, periodStart: headerPeriod.startsAt.toISOString(), periodEnd: headerPeriod.endsAt.toISOString() }} enabled={persistent && Boolean(selectedSport) && !metricImmersive && !queued} active={focused && experience.immersive}>
       {scopedPointsTheme ? (
         <ScopedThemeProvider mode={pointsMode} onChangeMode={setPointsThemeOverride}>
           {content}

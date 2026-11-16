@@ -40,7 +40,8 @@ describe("single-sport competition",()=>{
  it("shows recovery alone when it is the only registration",()=>{
   mock.state=reduceCompete(freshState(),{type:"opt-in-health",metric:"sleep",now:"2026-10-21T09:00:00Z"});
   const html=renderToStaticMarkup(createElement(ArenaScreen));
-  expect(html).toContain("data-sleep-field");expect(html).not.toContain("data-active-field");
+  expect(html).toContain("data-sleep-field");
+  expect(html).toContain('data-active-field="Recovery"');
   expect(html).toContain('data-active="false"');
   expect(html).toContain("Sleep competition");
  });
@@ -100,4 +101,25 @@ it("enters a queued race before exposing its countdown and cancellation", async 
     expect(renderer.root.findAllByProps({ "data-event-page": true })).toHaveLength(0);
     expect(renderer.root.findByProps({ "aria-label": "Enter Running field" })).toBeDefined();
   } finally { await act(async () => renderer.unmount()); vi.unstubAllGlobals(); }
+});
+
+it("keeps queued metric fields behind the waiting sheet", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.stubGlobal("document", { hidden: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
+  mock.dispatch.mockClear();
+  mock.state = reduceCompete(freshState(), { type: "opt-in", sport: "walking" });
+  let renderer!: ReactTestRenderer;
+  await act(async () => { renderer = create(createElement(ArenaScreen)); });
+  try {
+    await act(async () => renderer.root.findByProps({ "aria-label": "Enter Walking field" }).props.onClick());
+    const destination = renderer.root;
+    expect(renderer.root.findAllByProps({ "data-active-field": "Walking" })).toHaveLength(1);
+    const cancel = destination.findAllByType("button").find(node => node.children.includes("Cancel registration"));
+    expect(cancel).toBeDefined();
+    await act(async () => cancel!.props.onClick());
+    expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-out", sport: "walking" });
+  } finally {
+    await act(async () => renderer.unmount());
+    vi.unstubAllGlobals();
+  }
 });

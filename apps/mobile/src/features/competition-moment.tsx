@@ -8,6 +8,7 @@ import { StandingsList } from "./standings-list";
 import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
 import { CompeteSheet } from "../ui/compete-sheet";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
+import { CompeteTimeSeriesChart } from "../ui/compete-time-series-chart";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +18,10 @@ import {
   competitionMomentScene,
   competitionTrack,
   competePeriodWindow,
+  defaultCompeteFieldView,
+  normalizeCompeteFieldView,
+  formatArenaValue,
+  type FieldViewDimension,
   nextCompetitionReplaySpeed,
   weeklyBoard,
   type ArenaLane,
@@ -41,7 +46,7 @@ export function CompetitionMoment({
   onConfirm,
   debug = false,
   embedded = false,
-  dimension = moment.unit === "pts" ? "2d" : "4d",
+  dimension = defaultCompeteFieldView(moment.sport),
   course = null,
   autoStart = true,
 }: {
@@ -50,7 +55,7 @@ export function CompetitionMoment({
   onConfirm: () => void;
   debug?: boolean;
   embedded?: boolean;
-  dimension?: "2d" | "4d";
+  dimension?: FieldViewDimension;
   course?: RaceCourse | null;
   autoStart?: boolean;
 }) {
@@ -65,8 +70,13 @@ export function CompetitionMoment({
   const insets = useSafeAreaInsets();
   const [height, setHeight] = useState(0);
   const reduced = useReducedMotion();
-  const [viewDimension, setViewDimension] = useState(dimension);
-  useEffect(() => setViewDimension(dimension), [dimension]);
+  const [viewDimension, setViewDimension] = useState<FieldViewDimension>(() =>
+    normalizeCompeteFieldView(moment.sport, dimension),
+  );
+  useEffect(() => setViewDimension(normalizeCompeteFieldView(moment.sport, dimension)), [dimension, moment.sport]);
+  const chooseView = (next: FieldViewDimension) => {
+    setViewDimension(normalizeCompeteFieldView(moment.sport, next));
+  };
   const [courseOptions, setCourseOptions] = useState<ReactNode>(null);
   const [profileAthlete, setProfileAthlete] = useState<AthleteProfileSelection | null>(null);
   const assigned = useCompetitionCourse(
@@ -74,27 +84,10 @@ export function CompetitionMoment({
     moment.periodStart ?? period?.startsAt.toISOString() ?? "",
     moment.periodEnd ?? period?.endsAt.toISOString() ?? "",
     debug,
-    !course && viewDimension !== "2d",
+    !course && viewDimension === "4d",
   );
   const [sceneReady, setSceneReady] = useState(false);
   useEffect(() => setSceneReady(false), [viewDimension]);
-  useEffect(() => {
-    if (embedded || viewDimension !== "2d") return;
-    if (moment.unit === "pts") {
-      setCourseOptions(null);
-      return;
-    }
-    setCourseOptions(
-      <FieldViewSwitcher
-        value="2d"
-        geographic
-        onChange={(next) => {
-          if (next === "2d" || next === "4d") setViewDimension(next);
-        }}
-      />,
-    );
-    return () => setCourseOptions(null);
-  }, [embedded, viewDimension, moment.unit]);
 
   const [progress, setProgress] = useState(reduced ? 1 : 0);
   const [playing, setPlaying] = useState(autoStart);
@@ -231,10 +224,8 @@ export function CompetitionMoment({
     courseOptions ?? (
       <FieldViewSwitcher
         value={viewDimension}
-        geographic
-        onChange={(next) => {
-          if (next === "2d" || next === "4d") setViewDimension(next);
-        }}
+        event={moment.sport}
+        onChange={chooseView}
       />
     );
 
@@ -245,6 +236,20 @@ export function CompetitionMoment({
         style={StyleSheet.absoluteFill}
         pointerEvents="box-none"
       >
+        {viewDimension === "graph" && state ? (
+          <CompeteTimeSeriesChart
+            state={state}
+            sport={moment.sport}
+            track={competitionTrack(moment.sport)}
+            selectedId={moment.plan.youId}
+            momentReplay={{ moment, progress }}
+            hiddenIds={hiddenIds}
+            immersive
+            topInset={insets.top}
+            bottomInset={insets.bottom}
+            active
+          />
+        ) : null}
         {viewDimension === "4d" ? (
           <GeographicCourse
             cardSessionKey={replayGeneration}
@@ -256,7 +261,7 @@ export function CompetitionMoment({
             replay={frame}
             optionsTop={null}
             onOptionsChange={embedded ? undefined : setCourseOptions}
-            onChoose2D={embedded ? undefined : () => setViewDimension("2d")}
+            onChoose2D={embedded ? undefined : () => chooseView("2d")}
             overlaysHidden
             lanes={frame.lanes}
             unit={moment.unit}
@@ -264,7 +269,7 @@ export function CompetitionMoment({
             focusRequest={0}
             onSelect={ignore}
           />
-        ) : (
+        ) : viewDimension === "2d" ? (
           height > 0 && (
             <LaneTrack
               replayFocusIds={frame.replayFocusIds}
@@ -284,10 +289,10 @@ export function CompetitionMoment({
               view={frame.view}
             />
           )
-        )}
+        ) : null}
       </View>
 
-      {!embedded && moment.unit !== "pts" && overlayControls ? (
+      {!embedded && overlayControls ? (
         <View style={{ position: "absolute", top: insets.top + 54, right: 16, zIndex: 20 }}>
           {overlayControls}
         </View>
@@ -362,7 +367,7 @@ export function CompetitionMoment({
                     you: lane.you,
                     score: scores.find((row) => row.id === lane.id)?.elo,
                     contextLabel: "This round",
-                    contextValue: `${lane.value.toFixed(moment.unit === "pts" ? 1 : 2)} ${moment.unit}`,
+                    contextValue: formatArenaValue(lane.value, moment.unit),
                     contextDetail: `Place ${rank} · ${moment.sport}`,
                   })
                 }

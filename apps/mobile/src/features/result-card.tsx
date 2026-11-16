@@ -9,7 +9,6 @@ import {
   formatAccountPeriodDateRange,
   formatPeriodDateRange,
   formatVolume,
-  formatEffort,
   ordinalPlace,
   sportById,
   rankSymbolForRankName,
@@ -166,7 +165,7 @@ export function ResultCard({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${receipt ? "Hide" : "View"} ${sport.name} result receipt. ${range}. ${result.track === "verified" ? "GPS" : "Open"}. Place ${result.place} of ${result.fieldSize}. ${formatVolume(result.sport, result.distanceM, result.movingSec, units)}. ${result.eloBefore} to ${result.eloAfter} effort score, ${deltaText}. ${result.frozen ? "Weekly score adjustment held by freeze." : "Weekly score adjustment."}`}
+      accessibilityLabel={`${receipt ? "Hide" : "View"} ${sport.name} result receipt. ${range}. ${result.track === "verified" ? "GPS" : "Open"}. Place ${result.place} of ${result.fieldSize}. ${formatVolume(result.sport, result.distanceM, result.movingSec, units, result.effort)}. ${result.eloBefore} to ${result.eloAfter} effort score, ${deltaText}. ${result.frozen ? "Weekly score adjustment held by freeze." : "Weekly score adjustment."}`}
       accessibilityState={{ expanded: receipt }}
       onPress={() => setReceipt((v) => !v)}
       style={({ pressed }) => [

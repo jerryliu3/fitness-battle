@@ -33,7 +33,6 @@ export * from "./crew-relay-scene";
 export * from "./crew-relay-presentation";
 export * from "./club-summary";
 
-export * from "./portrait-field";
 export * from "./compete-trail";
 export * from "./compete-carousel";
 export * from "./field-navigation";
@@ -93,6 +92,7 @@ export * from "./race-history";
 export * from "./race-replay";
 export * from "./rank-symbols";
 export * from "./compete-time-series";
+export * from "./compete-field-view";
 
 export * from "./crew-overview";
 

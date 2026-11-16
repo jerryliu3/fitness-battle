@@ -36,3 +36,15 @@ it("keeps denied or unavailable timelines explicit without returning another fie
   mock.rpc.mockResolvedValue({ data: null, error: { code: "PGRST202" } });
   expect((await GET(new Request(url))).status).toBe(503);
 });
+
+
+it("uses field-authorized walking steps without reading private health rows", async () => {
+  mock.rpc.mockResolvedValue({ data: {
+    sport: "walking", track: "open", periodStart: "2026-10-19T04:00:00Z", periodEnd: "2026-10-26T04:00:00Z",
+    through: "2026-10-25T12:00:00Z", athletes: [{ id: "peer", name: "Rival", you: false }],
+    events: [{ id: "walking:peer:2026-10-20", athleteId: "peer", at: "2026-10-20T04:00:00Z", distanceM: 0, movingSec: 0, effort: 6200 }],
+  }, error: null });
+  const response = await GET(new Request(url.replace("sport=running&track=verified", "sport=walking&track=open")));
+  expect((await response.json()).events[0].effort).toBe(6200);
+  expect(mock.portraits).toHaveBeenCalledTimes(1);
+});

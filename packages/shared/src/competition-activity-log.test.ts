@@ -46,8 +46,8 @@ describe("competition activity feed", () => {
     expect(competitionActivityLog(index)[0]).toMatchObject({ title: "Riley overtook Alex!", avatarUrl: "https://example.com/portrait.jpg", movement: true });
     expect(competitionActivityLog(index, ["you"])[0]?.title).toBe("Riley logged +1.5 km");
   });
-  it("shows strength effort points, rather than inventing lift weights", () => {
+  it("shows strength volume in hours while replay retains effort for settlement", () => {
     const index = indexCompetitionReplay({ ...replay, sport: "strength", track: "open", events: [{ ...replay.events[0]!, distanceM: 0, effort: 4, movingSec: 1800 }] }, "metric");
-    expect(competitionActivityLog(index)[0]?.title).toBe("Alex logged +4 pts");
+    expect(competitionActivityLog(index)[0]?.title).toBe("Alex logged +0.5 hrs");
   });
 });

@@ -5,6 +5,7 @@ import {
   formatEffort,
   formatVolume,
   initialsFromName,
+  sportById,
   type BoardRow,
   type SportId,
   type UnitSystem,
@@ -49,19 +50,20 @@ export function WeekRecords({
   units?: UnitSystem;
   fieldSize: number;
 }) {
+  const gps = sportById(sport).gps;
   return (
     <div className="sp-records">
       <div>
-        <span>Distance</span>
+        <span>{gps ? "Distance" : "Volume"}</span>
         <strong>
           {you
-            ? formatVolume(sport, you.distanceM, you.movingSec, units)
+            ? formatVolume(sport, you.distanceM, you.movingSec, units, you.effort)
             : "—"}
         </strong>
       </div>
       <div>
-        <span>Effort</span>
-        <strong>{you ? formatEffort(you.effort) : "—"}</strong>
+        <span>Effort score</span>
+        <strong>{you ? formatEffort(you.elo) : "—"}</strong>
       </div>
       <div>
         <span>Place</span>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
+import { buildCompetitionMomentTimeSeriesModel, type CompetitionMoment } from "@fitness-battle/shared";
 import * as RN from "react-native";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import * as SvgModule from "react-native-svg";
@@ -63,6 +64,7 @@ export function CompeteTimeSeriesChart({
   onViewChange,
   timelineFraction,
   onTimelineChange,
+  momentReplay,
   active = true,
 }: {
   state: CompeteState;
@@ -81,6 +83,7 @@ export function CompeteTimeSeriesChart({
   onViewChange?: (view: CompeteTimeSeriesView) => void;
   timelineFraction?: number | null;
   onTimelineChange?: (value: number | null) => void;
+  momentReplay?: { moment: CompetitionMoment; progress: number };
   active?: boolean;
 }) {
   const c = useThemeColors();
@@ -129,6 +132,7 @@ export function CompeteTimeSeriesChart({
   const now = competeNow(state);
   const nowMs = now.getTime();
   const baseModel = useMemo(() => {
+    if (momentReplay) return null;
     const viewOption = compact ? undefined : activeView;
     if (mode === "sleep") {
       return prepareSleepTimeSeriesBase(state, now, {
@@ -146,16 +150,18 @@ export function CompeteTimeSeriesChart({
         view: viewOption,
       },
     );
-  }, [state, sport, track, mode, excludedIds, activeView, compact, nowMs]);
+  }, [state, sport, track, mode, excludedIds, activeView, compact, nowMs, momentReplay?.moment]);
 
   const model: CompeteTimeSeriesModel = useMemo(
     () =>
-      evaluateCompeteTimeSeriesModel(baseModel, {
+      momentReplay ? buildCompetitionMomentTimeSeriesModel(momentReplay.moment, momentReplay.progress, {
+        height: plotHeight, hiddenIds: excludedIds, selectedAthleteId: activeSelectedId,
+      }) : evaluateCompeteTimeSeriesModel(baseModel!, {
         height: plotHeight,
         selectedAthleteId: activeSelectedId,
         scrubFraction,
       }),
-    [baseModel, plotHeight, activeSelectedId, scrubFraction],
+    [baseModel, plotHeight, activeSelectedId, scrubFraction, momentReplay, excludedIds],
   );
 
   const handleSelectAthlete = (id: string) => {

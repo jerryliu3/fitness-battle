@@ -6,7 +6,8 @@ import {
 } from "../compete/track";
 import { athleteWeekEffort, type FieldAthlete } from "../compete/field";
 import type { DailyHealthSample } from "../fitness/types";
-import { sportById, type Activity, type ScoreTrack, type SportId } from "../compete/sports";
+import { competeVolumeFromTotals } from "../compete-field-view";
+import { sportById, type Activity, type ScoreTrack, type SportId, type UnitSystem } from "../compete/sports";
 import type {
   LocalBoardRow,
   PoolPlayer,
@@ -36,6 +37,7 @@ export interface LocalBoardInput {
   /** Canonical totals take precedence over compatibility activity stubs. */
   peerVolumes?: ReadonlyMap<string, { effort: number; distanceM: number; movingSec: number }>;
   track: ScoreTrack;
+  units?: UnitSystem;
   asOf?: Date;
 }
 
@@ -127,7 +129,7 @@ export function buildLocalBoard(input: LocalBoardInput): LocalBoardRow[] {
   const waveStart = new Date(input.enrollment.waveStart);
   const weekEnd = new Date(input.enrollment.weekEnd);
   const sport = input.enrollment.sport;
-  const gps = sportById(sport).gps;
+  const units = input.units ?? "us";
 
   const through = new Date(Math.min(asOf.getTime(), weekEnd.getTime()));
   const youVolume = periodEffort(
@@ -178,7 +180,7 @@ export function buildLocalBoard(input: LocalBoardInput): LocalBoardRow[] {
   }
 
   if(input.nativeEffort && sport==="strength")for(const row of rows)row.effort=row.movingSec;
-  const total = (row: LocalBoardRow) => gps ? row.distanceM : row.effort;
+  const total = (row: LocalBoardRow) => competeVolumeFromTotals(sport, row, units);
   rows.sort((a, b) => total(b) - total(a) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
   const values = rows.map(total);
   return rows.map(row => ({ ...row, place: competitionPlace(values, total(row)) }));

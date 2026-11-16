@@ -4,8 +4,13 @@ import { countsOnTrack } from "./compete/ledger";
 import { competeNow, fieldBoardForEnrollment } from "./compete/engine";
 import { sportById, type CompeteState, type ScoreTrack, type SportId, type UnitSystem } from "./compete/sports";
 import { findSynthetic, syntheticVolumeInWindow } from "./matching/synthetic-bank";
+import { normalizeCompeteFieldView } from "./compete-field-view";
 import { fieldDefaultSpan } from "./field-course";
 import type { CourseReplayFrame } from "./race-course";
+import { competeVolumeFromTotals } from "./compete-field-view";
+import { competeArenaUnit, type ArenaDistanceUnit } from "./phone-views";
+import { maxStepsOnDay } from "./compete/journal";
+import { dayKey, shiftAppDay } from "./period";
 
 export interface CompetitionReplaySelection {
   sport: SportId;
@@ -58,12 +63,52 @@ export function addSimulatedReplay(replay: CompetitionReplay, ids: readonly stri
   return { ...replay, athletes, events };
 }
 
+function localWalkingStepEvents(
+  state: CompeteState,
+  selection: CompetitionReplaySelection,
+  through: string,
+): CompetitionReplayEvent[] {
+  const periodStart = new Date(selection.periodStart);
+  const periodEnd = new Date(selection.periodEnd);
+  const cap = Math.min(Date.parse(through), periodEnd.getTime());
+  const events: CompetitionReplayEvent[] = [];
+  for (let cursor = periodStart; cursor.getTime() < cap; cursor = shiftAppDay(cursor, 1)) {
+    const steps = maxStepsOnDay(state.dailyHealth, dayKey(cursor));
+    if (steps <= 0) continue;
+    events.push({
+      id: `walking:${dayKey(cursor)}`,
+      athleteId: "you",
+      at: cursor.toISOString(),
+      distanceM: 0,
+      movingSec: 0,
+      effort: steps,
+    });
+  }
+  return events;
+}
+
 /** Offline preview only. Never infer real opponents' workout histories from totals. */
 export function localCompetitionReplay(state: CompeteState, selection: CompetitionReplaySelection): CompetitionReplay {
   const through = new Date(Math.min(competeNow(state).getTime(), Date.parse(selection.periodEnd))).toISOString();
-  const events = state.activities.filter(a => a.sport === selection.sport && countsOnTrack(a, selection.track) && Date.parse(a.startedAt) >= Date.parse(selection.periodStart) && Date.parse(a.startedAt) < Math.min(Date.parse(selection.periodEnd), Date.parse(through))).map(a => ({
-    id: a.id, athleteId: "you", at: a.startedAt, distanceM: a.distanceM, movingSec: a.movingSec, effort: activityEffort(a),
-  }));
+  const events =
+    selection.sport === "walking" && selection.track === "open"
+      ? localWalkingStepEvents(state, selection, through)
+      : state.activities
+          .filter(
+            (a) =>
+              a.sport === selection.sport &&
+              countsOnTrack(a, selection.track) &&
+              Date.parse(a.startedAt) >= Date.parse(selection.periodStart) &&
+              Date.parse(a.startedAt) < Math.min(Date.parse(selection.periodEnd), Date.parse(through)),
+          )
+          .map((a) => ({
+            id: a.id,
+            athleteId: "you",
+            at: a.startedAt,
+            distanceM: a.distanceM,
+            movingSec: a.movingSec,
+            effort: activityEffort(a),
+          }));
   const enrollment = state.enrollments.find(item =>
     item.sport === selection.sport && Date.parse(item.weekEnd) === Date.parse(selection.periodEnd),
   );
@@ -82,7 +127,7 @@ export function localCompetitionReplay(state: CompeteState, selection: Competiti
 interface AthleteSeries { steps: number[]; values: number[]; efforts: number[] }
 export interface CompetitionReplayIndex {
   replay: CompetitionReplay;
-  unit: "km" | "mi" | "pts";
+  unit: ArenaDistanceUnit;
   series: Map<string, AthleteSeries>;
 }
 /** O(events + athletes) memory; no full leaderboard snapshot for every event. */
@@ -95,16 +140,19 @@ export function indexCompetitionReplay(input: CompetitionReplay, units: UnitSyst
     seen.add(key);
     return e.distanceM > 0 || e.movingSec > 0 || e.effort > 0;
   }).sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || a.athleteId.localeCompare(b.athleteId) || a.id.localeCompare(b.id));
-  const gps = sportById(input.sport).gps;
-  const divisor = units === "metric" ? 1000 : 1609.344;
   const series = new Map<string, AthleteSeries>(input.athletes.map(a => [a.id, { steps: [0], values: [0], efforts: [0] }]));
   events.forEach((event, i) => {
     const s = series.get(event.athleteId)!;
+    const delta = competeVolumeFromTotals(input.sport, event, units);
     s.steps.push(i + 1);
-    s.values.push(s.values[s.values.length - 1]! + (gps ? event.distanceM / divisor : event.effort));
+    s.values.push(s.values[s.values.length - 1]! + delta);
     s.efforts.push(s.efforts[s.efforts.length - 1]! + event.effort);
   });
-  return { replay: { ...input, events }, series, unit: gps ? units === "metric" ? "km" : "mi" : "pts" };
+  return {
+    replay: { ...input, events },
+    series,
+    unit: competeArenaUnit(input.sport, units),
+  };
 }
 
 function atStep(series: AthleteSeries, step: number) {
@@ -123,7 +171,7 @@ export function competitionReplayFrame(index: CompetitionReplayIndex, cursor: nu
     const after = atStep(s, afterStep);
     return { ...athlete, value: before.value + (after.value - before.value) * fraction, effort: before.effort + (after.effort - before.effort) * fraction };
   });
-  // Match the 2D/portrait field: GPS distance, or effort points for strength.
+  // Match the 2D/portrait field: distance, hours, or steps depending on sport.
   // Equal values share a place, including everyone at the starting line.
   rows.sort((a, b) => b.value - a.value || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
   let place = 1;
@@ -246,7 +294,7 @@ export function competitionCourseReplayFrame(
 }
 
 export function competitionReplayDimension(sport: SportId, requested: "2d" | "3d" | "4d" | "graph" = "4d"): "2d" | "3d" | "4d" | "graph" {
-  return requested === "4d" && !sportById(sport).gps ? "2d" : requested;
+  return normalizeCompeteFieldView(sport, requested);
 }
 export function nextCompetitionReplaySpeed(speed: number) {
   const speeds = [.25, .5, 1, 2, 4];

@@ -1,6 +1,8 @@
 import {
   competeNow,
   buildArenaModel,
+  arenaLaneValues,
+  competeArenaUnit,
   competitionQueue,
   fieldBoardForEnrollment,
   latestCountedActivityAt,
@@ -46,23 +48,6 @@ export interface FieldModel {
   unit: ArenaDistanceUnit;
 }
 
-function displaySeries(
-  distanceM: number[],
-  effort: number[],
-  gps: boolean,
-  units: CompeteState["units"],
-): [number, number, number] {
-  if (!gps) {
-    return [effort[0] ?? 0, effort[1] ?? 0, effort[2] ?? 0];
-  }
-  const divisor = units === "metric" ? 1000 : 1609.344;
-  return [
-    (distanceM[0] ?? 0) / divisor,
-    (distanceM[1] ?? 0) / divisor,
-    (distanceM[2] ?? 0) / divisor,
-  ];
-}
-
 export function buildFieldModel(
   state: CompeteState,
   sport: SportId,
@@ -80,11 +65,7 @@ export function buildFieldModel(
   const enrollment = state.enrollments.find(item => item.sport === sport);
   const fieldBoard = enrollment ? fieldBoardForEnrollment(state, enrollment) : null;
   const gps = sportById(sport).gps;
-  const unit: ArenaDistanceUnit = gps
-    ? state.units === "metric"
-      ? "km"
-      : "mi"
-    : "pts";
+  const unit: ArenaDistanceUnit = competeArenaUnit(sport, state.units);
 
   const runners: FieldRunner[] = board.rows.map((row) => {
     const series = row.you
@@ -98,7 +79,7 @@ export function buildFieldModel(
           board.periodEnd,
           now,
         );
-    const km = displaySeries(series.distanceM, series.effort, gps, state.units);
+    const km = arenaLaneValues(sport, series, state.units);
     return {
       id: row.id,
       name: row.you ? state.name : row.name,
@@ -129,12 +110,7 @@ export function buildFieldModel(
           id: board.ghost.id,
           name: board.ghost.name,
           initials: board.ghost.initials,
-          km: displaySeries(
-            board.ghost.series.distanceM,
-            board.ghost.series.effort,
-            gps,
-            state.units,
-          ),
+          km: arenaLaneValues(sport, board.ghost.series, state.units),
           place: 0,
           effort: board.ghost.series.effort[2]!,
           ghost: true,

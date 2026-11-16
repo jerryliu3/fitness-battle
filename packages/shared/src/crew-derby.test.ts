@@ -9,6 +9,7 @@ it("selects the next crew for the leader and the crew ahead for other teams", ()
   expect(crewDerbyOpponent(derby, "outsider")).toBeUndefined();
 });
 it("formats the ordinary event score without target percentages", () => {
-  expect(crewDerbyScore("strength", 12.25)).toBe("12.3 pts");
+  expect(crewDerbyScore("strength", 5400)).toBe("1.5 hrs");
+  expect(crewDerbyScore("walking", 12500)).toBe("12,500 steps");
   expect(crewDerbyScore("running", 1500, "metric")).toContain("km");
 });

@@ -28,6 +28,7 @@ import {
   serializeArenaBaseline,
 } from "./arena-view";
 import { APP_TIMEZONE, accountTimeZone, currentPeriodBounds } from "./period";
+import { arenaLaneValues } from "./compete-field-view";
 
 export const CHECKPOINT_FRAME = { width: 320, height: 570 } as const;
 
@@ -95,7 +96,17 @@ export function stableFieldLanes(lanes: readonly ArenaLane[]): ArenaLane[] {
   return orderedArenaLanes(lanes);
 }
 
-export type ArenaDistanceUnit = "km" | "mi" | "pts";
+export type ArenaDistanceUnit = "km" | "mi" | "pts" | "hrs" | "steps";
+
+export function competeArenaUnit(
+  sport: SportId,
+  units: CompeteState["units"],
+): ArenaDistanceUnit {
+  const spec = sportById(sport);
+  if (spec.gps) return units === "metric" ? "km" : "mi";
+  if (sport === "walking") return "steps";
+  return "hrs";
+}
 
 export interface ArenaModel {
   sportId: SportId;
@@ -276,19 +287,10 @@ export function buildTodayRoute(
 
 function seriesValues(
   series: CheckpointSeries,
-  gps: boolean,
+  sport: SportId,
   units: CompeteState["units"],
 ): [number, number, number] {
-  if (!gps) {
-    return [
-      series.effort[0] ?? 0,
-      series.effort[1] ?? 0,
-      series.effort[2] ?? 0,
-    ];
-  }
-  const divisor = units === "metric" ? 1000 : 1609.344;
-  const source = series.distanceM.map((meters) => meters / divisor);
-  return [source[0] ?? 0, source[1] ?? 0, source[2] ?? 0];
+  return arenaLaneValues(sport, series, units);
 }
 
 export function buildArenaModel(
@@ -304,7 +306,7 @@ export function buildArenaModel(
   );
   const queue = competitionQueue(state, sport, now);
   if (queue && (queue.queued || queue.awaitingField)) return {
-    sportId: sport, sportName: spec.name, unit: spec.gps ? (state.units === "metric" ? "km" : "mi") : "pts",
+    sportId: sport, sportName: spec.name, unit: competeArenaUnit(sport, state.units),
     labels: ["Start", "Start", "Start"], optedIn,
     lanes: [{ id: "you", name: state.name, avatarUrl: state.avatarUrl, you: true, ghost: false, values: [0, 0, 0] },
       ...Array.from({ length: queue.mysteryCount }, (_, i): ArenaLane => ({ id: `mystery-${i}`, name: `Athlete #${i + 1}`, mystery: true, you: false, ghost: false, values: [0, 0, 0] }))],
@@ -349,7 +351,7 @@ export function buildArenaModel(
             now,
           )
         : undefined,
-      values: seriesValues(series, spec.gps, state.units),
+      values: seriesValues(series, sport, state.units),
     };
   });
 
@@ -369,14 +371,14 @@ export function buildArenaModel(
       name: ghost.name,
       you: false,
       ghost: true,
-      values: seriesValues(ghost.series, spec.gps, state.units),
+      values: seriesValues(ghost.series, sport, state.units),
     });
   }
 
   return {
     sportId: sport,
     sportName: spec.name,
-    unit: spec.gps ? (state.units === "metric" ? "km" : "mi") : "pts",
+    unit: competeArenaUnit(sport, state.units),
     labels: youSeries.labels,
     lanes,
     optedIn,
@@ -399,12 +401,7 @@ export function seedArenaBaselinesFromState(
   for (const rating of state.ratings) {
     if (!rating.optedIn) continue;
     const sport = rating.sport;
-    const spec = sportById(sport);
-    const unit: ArenaDistanceUnit = spec.gps
-      ? state.units === "metric"
-        ? "km"
-        : "mi"
-      : "pts";
+    const unit: ArenaDistanceUnit = competeArenaUnit(sport, state.units);
     const periodStart = competePeriodWindow(
       state,
       now,

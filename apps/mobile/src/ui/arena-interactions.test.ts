@@ -105,7 +105,6 @@ vi.mock("../features/deferred-course-map", () => ({ forgetCourseCameras() {} }))
 vi.mock("../features/use-competition-course", () => ({ useCompetitionCourse: () => ({ course: null, error: "", retry() {} }) }));
 vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./arena-3d", () => ({ Arena3D: () => null }));
-vi.mock("./portrait-field", () => ({ PortraitField: "PortraitField" }));
 vi.mock("./award-shelf", () => ({ AwardShelf: () => null }));
 vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG", Path: "SvgPath", Defs: "SvgDefs", LinearGradient: "SvgGradient", Stop: "SvgStop", Rect: "SvgRect" }));
 vi.mock("./polished-racer", () => ({ PolishedRacer: "PolishedRacer" }));

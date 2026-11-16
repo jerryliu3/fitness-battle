@@ -19,24 +19,30 @@ import { StandingsList } from "./standings-list";
 import { AppText, textStyle } from "../ui/section";
 import { useFieldFlight } from "../ui/use-field-flight";
 import { FieldOverlayView, SlidingFieldPanel } from "../ui/field-overlay-motion";
-import { PortraitField } from "../ui/portrait-field";
+import { GraphOptions } from "../ui/course-options";
 import {
   coursePositionLeaders,
-  orderedArenaLanes,
   competitionQueue,
   createFieldOverlayHold,
   arenaFieldHigh,
   clampCourseCenter,
   competeNow,
   competePeriodWindow,
+  defaultCompeteFieldView,
+  buildCompeteTimeSeriesModel,
   fieldDefaultSpan,
   competitionCourseReplayFrame,
   buildArenaModel,
   initialsFromName,
+  isGeographicCompete,
+  normalizeCompeteFieldView,
+  arenaValueDecimals,
+  formatArenaVolume,
   ordinalPlace,
   shellTabFromPath,
-  sportById,
   weeklyBoard,
+  type CompeteArenaEvent,
+  type CompeteTimeSeriesView,
   type CourseDistanceTarget,
   type ArenaSceneLane,
   type ScoreTrack,
@@ -71,9 +77,15 @@ export function CompetitionField({
   onFocusAthlete,
   externalCourseTarget,
   onOptionsChange,
+  competeEvent,
+  chartView,
+  onChartViewChange,
+  timelineFraction,
+  onTimelineChange,
 }: {
   sport: SportId;
   track: ScoreTrack;
+  competeEvent?: CompeteArenaEvent;
   persistent?: boolean;
   backgroundMode?: boolean;
   standingsOnly?: boolean;
@@ -86,11 +98,19 @@ export function CompetitionField({
   externalAthleteFocus?: { id: string; request: number } | null;
   onFocusAthlete?: (id: string) => void;
   externalCourseTarget?: CourseDistanceTarget | null;
+  chartView?: CompeteTimeSeriesView;
+  onChartViewChange?: (view: CompeteTimeSeriesView) => void;
+  timelineFraction?: number | null;
+  onTimelineChange?: (value: number | null) => void;
 }) {
 const appearanceColors = useThemeColors();
 
 const c=useThemeColors();
 const f=useFocusStyles();
+
+  const presentationEvent: CompeteArenaEvent = competeEvent ?? sport;
+  const geographic = isGeographicCompete(presentationEvent);
+  const chartSleepMode = presentationEvent === "sleep";
 
   const { state, accountKey, debugActive, dispatch } = useCompeteStore();
   const { blocks } = useAthleteBlocks();
@@ -102,12 +122,17 @@ const f=useFocusStyles();
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = focusedOverride ?? ((presentationActive ?? true) && shellTabFromPath(pathname)?.id === "arena");
-  const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d" | "graph">(() => (state && buildArenaModel(state, undefined, track, sport)?.unit === "pts") ? "graph" : "4d");
+  const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d" | "graph">(() =>
+    defaultCompeteFieldView(presentationEvent));
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
+
+  useEffect(() => {
+    setSceneDimension(defaultCompeteFieldView(presentationEvent));
+  }, [presentationEvent, sport, track, accountKey]);
 
   const chooseView = (value: "2d" | "3d" | "4d" | "graph") => {
     flight.cancel();
-    setSceneDimension(value);
+    setSceneDimension(normalizeCompeteFieldView(presentationEvent, value));
   };
   const chooseViewRef = useRef(chooseView); chooseViewRef.current = chooseView;
   const mapChromeRef = useRef<Partial<Record<FieldMapChromeSlot, ReactNode>>>({});
@@ -116,13 +141,15 @@ const f=useFocusStyles();
     onOptionsChange(
       <FieldArenaChromeStack
         slots={{
-          view: <FieldViewSwitcher value={sceneDimension} geographic={!queued && sportById(sport).gps} onChange={value => chooseViewRef.current(value)} />,
-          options: mapChromeRef.current.options,
-          follow: mapChromeRef.current.follow,
+          view: <FieldViewSwitcher value={sceneDimension} event={presentationEvent} onChange={value => chooseViewRef.current(value)} />,
+          options: sceneDimension === "graph" && onChartViewChange
+            ? <GraphOptions eventView={(chartView ?? "event") === "event"} onToggleEventView={() => onChartViewChange((chartView ?? "event") === "event" ? "trajectory" : "event")} />
+            : sceneDimension === "4d" ? mapChromeRef.current.options : null,
+          follow: sceneDimension === "4d" ? mapChromeRef.current.follow : null,
         }}
       />,
     );
-  }, [onOptionsChange, sceneDimension, queued, sport]);
+  }, [onOptionsChange, sceneDimension, presentationEvent, chartView, onChartViewChange]);
   useEffect(() => {
     if (!onOptionsChange) return;
     publishArenaOptions();
@@ -161,7 +188,6 @@ const f=useFocusStyles();
     ? Math.max(460, dimensions.height)
     : inlineHeight);
   const laneAnchor = useRef<LaneAnchor | null>(null);
-  const portraitAnchor = useRef(0);
   const expandField = () => { if (!expanded) { void playCue("light"); setExpanded(true); } };
   const [center, setCenter] = useState<number | null>(null);
   useEffect(() => { if (externalCourseTarget) { setCourseTarget(externalCourseTarget); setCenter(externalCourseTarget.value); } }, [externalCourseTarget]);
@@ -187,13 +213,21 @@ const f=useFocusStyles();
     sport, track, periodStart: period?.startsAt.toISOString() ?? "", periodEnd: period?.endsAt.toISOString() ?? "",
   }, !backgroundMode && !standingsOnly && !queued && isFocused && Boolean(period));
   const timeline = sharedTimeline ?? localTimeline;
-  const arena = useMemo(() => !timeline.frame || !liveArena ? liveArena : {
+  const metricFrame = useMemo(() => !geographic && !chartSleepMode && state && timelineFraction != null
+    ? buildCompeteTimeSeriesModel(state, sport, track, now, { scrubFraction: timelineFraction }) : null,
+    [state, sport, track, geographic, chartSleepMode, timelineFraction]);
+  const arena = useMemo(() => metricFrame && liveArena ? {
+    ...liveArena, lanes: liveArena.lanes.map(lane => {
+      const value = metricFrame.athletes.find(athlete => athlete.id === lane.id)?.valueAtCursor ?? lane.values[2];
+      return { ...lane, values: [value, value, value] as [number, number, number] };
+    }),
+  } : !timeline.frame || !liveArena ? liveArena : {
     ...liveArena,
     lanes: timeline.frame.rows.map(row => ({
       ...row, initials: initialsFromName(row.name), ghost: false, mystery: false,
       values: [row.value, row.value, row.value] as [number, number, number],
     })),
-  }, [liveArena, timeline.frame]);
+  }, [liveArena, timeline.frame, metricFrame]);
   useEffect(() => { if (externalAthleteFocus && !hiddenIds.includes(externalAthleteFocus.id)) { setSelectedId(externalAthleteFocus.id); const lane = arena?.lanes.find(item => item.id === externalAthleteFocus.id); if (lane) setCenter(lane.values[2]); setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } }, [externalAthleteFocus, hiddenIds]);
   const defaultSpan = fieldDefaultSpan(arena?.unit ?? "km");
   const viewSpan = span ?? defaultSpan;
@@ -242,8 +276,6 @@ const f=useFocusStyles();
     if (!lane || lane.mystery || hiddenIds.includes(id)) return;
     void playCue("selection");
     setCourseTarget(null);
-    const ordered = orderedArenaLanes(arena.lanes);
-    portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you));
     setSelectedId(id);
     setFollowing(true);
     setFocusRequest(value => value + 1);
@@ -256,11 +288,16 @@ const f=useFocusStyles();
   const place = (value: number) =>
     1 + ranked.filter((lane) => lane.values[2] > value).length;
   const scores = weeklyBoard(state, sport, track);
+  const volumeDecimals = arenaValueDecimals(arena.unit);
   const openProfile = (lane: (typeof ranked)[number]) => {
+    const row = scores.find((entry) => entry.id === lane.id);
     setProfileAthlete({
       id: lane.id, name: lane.name, avatarUrl: lane.avatarUrl, you: lane.you,
-      score: scores.find((row) => row.id === lane.id)?.elo,
-      contextLabel: "This week", contextValue: `${lane.values[2].toFixed(arena.unit === "pts" ? 1 : 2)} ${arena.unit}`,
+      score: row?.elo,
+      contextLabel: "This week",
+      contextValue: row
+        ? formatArenaVolume(sport, row, state.units)
+        : `${lane.values[2].toFixed(volumeDecimals)} ${arena.unit}`,
       contextDetail: `Place ${place(lane.values[2])} · ${sport}`,
     });
   };
@@ -295,14 +332,22 @@ const f=useFocusStyles();
       {sceneDimension === "graph" ? (
         <CompeteTimeSeriesChart
           state={state}
-          sport={sport}
+          sport={chartSleepMode ? undefined : sport}
+          mode={chartSleepMode ? "sleep" : "sport"}
           track={track}
           selectedId={selectedId}
           onSelectAthlete={(id) => {
             if (!hold.current?.suppressSelection()) selectAthlete(id);
           }}
           hiddenIds={hiddenIds}
-          reserveTopControls={!expanded}
+          reserveTopControls={!expanded && !backgroundMode}
+          immersive={backgroundMode && expanded}
+          topInset={insets.top}
+          bottomInset={insets.bottom}
+          view={chartView}
+          onViewChange={onChartViewChange}
+          timelineFraction={timelineFraction}
+          onTimelineChange={onTimelineChange}
         />
       ) : null}
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
@@ -313,82 +358,52 @@ const f=useFocusStyles();
           <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>Tap to open full screen</Text></View>
         </Pressable> : null}
       </View> : null}
-      {sceneDimension === "3d" ? (
-        <PortraitField
-          hiddenIds={hiddenIds}
-          lanes={arena.lanes.map((l) => ({
-            ...l,
-            initials: l.mystery ? "?" : initialsFromName(l.name),
-          mystery: l.mystery,
-            value: l.values[2],
-          }))}
-          view={view}
-          unit={arena.unit}
-          selectedId={selectedId ?? me?.id}
-          focusRequest={focusRequest}
-          animateSelection={!reduceMotion}
-          onGestureStart={flight.cancel}
-          onViewChange={applyView}
-          onZoom={zoomTo}
-          onPan={panTo}
-          height={sceneHeight}
-          fullscreen={expanded}
-          controlsTop={expanded ? 12 : 66}
-          fullscreenControlsBottom={safeBottom + (backgroundMode ? 220 : 348)}
-          overlaysHidden={overlaysHidden}
-          onExpand={expandField}
-          laneAnchor={portraitAnchor}
-          onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }}
-        />
-      ) : null}
-      <View
-        style={{
-          display: sceneDimension === "2d" ? "flex" : "none",
-        }}
-      >
-        <View style={{ position: "relative" }}>
-          <LaneTrack
-            clampView={!timeline.frame}
-            hiddenIds={hiddenIds}
-            appearance={appearance}
-            onChangeAppearance={setAppearance}
-            height={sceneHeight}
-            fullscreen={expanded}
-            overlaysHidden={overlaysHidden}
-            onExpand={expandField}
-              onZoom={directZoom}
-            anchor={laneAnchor}
-            active={isFocused && sceneDimension === "2d"}
-            focusRequest={focusRequest}
-            animateSelection={!reduceMotion}
-            onGestureStart={flight.cancel}
-            onViewChange={applyView}
-            selectedId={selectedId ?? undefined}
-            lanes={arena.lanes}
-            unit={arena.unit}
-            showGhost={ghost}
-            index={2}
-            onSelect={lane => { if (!hold.current?.suppressSelection()) selectAthlete(lane.id); }}
-            view={view}
-            onPan={panTo}
-          />
-        </View>
-        {!expanded ? (
-          <View style={{ marginTop: 8, borderRadius: 12, overflow: "hidden" }}>
-            <FieldOverview
+      {sceneDimension === "2d" ? (
+        <>
+          <View style={{ position: "relative" }}>
+            <LaneTrack
+              clampView={!timeline.frame}
               hiddenIds={hiddenIds}
-              lanes={fieldLanes}
-              view={view}
+              appearance={appearance}
+              onChangeAppearance={setAppearance}
+              height={sceneHeight}
+              fullscreen={expanded}
+              overlaysHidden={overlaysHidden}
+              onExpand={expandField}
+              onZoom={directZoom}
+              anchor={laneAnchor}
+              active={isFocused && sceneDimension === "2d"}
+              focusRequest={focusRequest}
+              animateSelection={!reduceMotion}
+              onGestureStart={flight.cancel}
+              onViewChange={applyView}
+              selectedId={selectedId ?? undefined}
+              lanes={arena.lanes}
               unit={arena.unit}
-              onNavigate={(value) => {
-                setCenter(value);
-                if (appearance.ground === "oval")
-                  setSpan(Math.min(view.span, fieldDefaultSpan(arena.unit) / 2));
-              }}
+              showGhost={ghost}
+              index={2}
+              onSelect={lane => { if (!hold.current?.suppressSelection()) selectAthlete(lane.id); }}
+              view={view}
+              onPan={panTo}
             />
           </View>
-        ) : null}
-      </View>
+          {!expanded ? (
+            <View style={{ marginTop: 8, borderRadius: 12, overflow: "hidden" }}>
+              <FieldOverview
+                hiddenIds={hiddenIds}
+                lanes={fieldLanes}
+                view={view}
+                unit={arena.unit}
+                onNavigate={(value) => {
+                  setCenter(value);
+                  if (appearance.ground === "oval")
+                    setSpan(Math.min(view.span, fieldDefaultSpan(arena.unit) / 2));
+                }}
+              />
+            </View>
+          ) : null}
+        </>
+      ) : null}
     </View>
   );
 
@@ -409,7 +424,7 @@ const f=useFocusStyles();
         >
           <FieldViewSwitcher
             value={sceneDimension}
-            geographic={!queued && arena.unit !== "pts"}
+            event={presentationEvent}
             onChange={chooseView}
           />
           {sceneDimension === "2d" ? (
@@ -428,7 +443,7 @@ const f=useFocusStyles();
           presentationStyle="fullScreen"
           onRequestClose={() => persistent ? onExit?.() : setExpanded(false)}
         >
-          <View onTouchStartCapture={() => hold.current?.reset()} style={[f.safe, { backgroundColor: "#0b242c", position: "relative" }]}>
+          <View onTouchStartCapture={() => hold.current?.reset()} style={[f.safe, { flex: sceneDimension === "graph" && backgroundMode ? 1 : undefined, backgroundColor: sceneDimension === "graph" && backgroundMode ? c.paper : "#0b242c", position: "relative" }]}>
             {fieldContent}
             {queueOverlay}
             {/* Top Bar HUD */}
@@ -461,12 +476,10 @@ const f=useFocusStyles();
                 />
               </View>}
               {!backgroundMode && onDetails ? <Pressable accessibilityRole="button" accessibilityLabel={backgroundMode ? "Expand standings" : "Events & standings"} onPress={onDetails} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.72)" }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{backgroundMode ? `${sport.charAt(0).toUpperCase()}${sport.slice(1)}` : "Events & standings"}</Text></Pressable> : null}
-              {!onOptionsChange && !(backgroundMode && sceneDimension === "4d") && (
-                <FieldViewSwitcher value={sceneDimension} geographic={!queued && arena.unit !== "pts"} onChange={chooseView} />
-              )}
+              {!onOptionsChange && !(backgroundMode && sceneDimension === "4d") && <FieldViewSwitcher value={sceneDimension} event={presentationEvent} onChange={chooseView} />}
             </FieldOverlayView>
 
-            {!queued && (sceneDimension !== "4d" || course) ? <>
+            {!queued && sceneDimension !== "graph" && (sceneDimension !== "4d" || course) ? <>
             {/* Broadcast HUD: Left Current Positions Tower */}
             <SlidingFieldPanel
               label="current leaders"
@@ -604,7 +617,7 @@ const f=useFocusStyles();
                   </View>
                   <View style={{ alignItems: "flex-end", gap: 2 }}>
                     <Text style={{ ...textStyle("heading"), color: c.tennis }}>
-                      {focusedLane.values[2].toFixed(1)} {arena.unit}
+                      {focusedLane.values[2].toFixed(volumeDecimals)} {arena.unit}
                     </Text>
                     <Text
                       style={{
@@ -615,8 +628,8 @@ const f=useFocusStyles();
                       {focusedLane.you
                         ? focusedRank === 1
                           ? "Leading the field"
-                          : `${Math.abs(focusedDeltaToLeader).toFixed(1)} ${arena.unit} to 1st`
-                        : `${focusedDeltaToYou > 0 ? "+" : ""}${focusedDeltaToYou.toFixed(1)} ${arena.unit} vs you`}
+                          : `${Math.abs(focusedDeltaToLeader).toFixed(volumeDecimals)} ${arena.unit} to 1st`
+                        : `${focusedDeltaToYou > 0 ? "+" : ""}${focusedDeltaToYou.toFixed(volumeDecimals)} ${arena.unit} vs you`}
                     </Text>
                   </View>
                 </View>
@@ -710,10 +723,10 @@ const f=useFocusStyles();
         <StandingsList
           ranked={ranked.map((lane) => ({
             ...lane,
-            value: arena.unit === "pts" ? (scores.find((s) => s.id === lane.id)?.movingSec ?? 0) / 3600 : lane.values[2],
+            value: lane.values[2],
           }))}
           hiddenIds={hiddenIds}
-          unit={arena.unit === "pts" ? "hrs" : arena.unit}
+          unit={arena.unit}
           scores={scores}
           onSelectAthlete={(lane) => onFocusAthlete ? onFocusAthlete(lane.id) : selectAthlete(lane.id)}
           onOpenProfile={(lane) => {

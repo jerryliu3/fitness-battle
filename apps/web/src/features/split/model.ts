@@ -2,18 +2,10 @@ import {
   APP_TIMEZONE,
   activityCheckpoints,
   competeNow,
-  effortTrackMax,
-  formatEffort,
-  ghostEffortAt as effortAtGhost,
-  ghostHasVolume,
-  initialsFromName,
-  interpolateSeries,
   resolvePastSelfGhost,
-  syntheticCheckpoints,
   waveWindowAt,
   weeklyBoard,
   type BoardRow,
-  type CheckpointIndex,
   type CheckpointSeries,
   type CompeteState,
   type GhostPeriodSelector,
@@ -21,19 +13,6 @@ import {
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
-
-export type ComparisonMode = "self" | "field";
-
-export interface TrackLane {
-  id: string;
-  name: string;
-  initials: string;
-  effort: number;
-  checkpoints: [number, number, number];
-  you?: boolean;
-  ghost?: boolean;
-  place?: number;
-}
 
 export interface SplitBoardModel {
   sport: SportId;
@@ -47,12 +26,6 @@ export interface SplitBoardModel {
   youSeries: CheckpointSeries;
   /** Past-self (or other) ghost for the selected prior window. */
   ghost: GhostReference;
-  /** Convenience: `ghost.series` when the window has countable volume. */
-  ghostSeries: CheckpointSeries | null;
-  ghostEffortAt: (checkpoint: number) => number;
-  nearby: TrackLane[];
-  fieldLanes: TrackLane[];
-  trackMax: number;
   checkpointLabels: [string, string, string];
   weekActivities: CompeteState["activities"];
 }
@@ -87,13 +60,15 @@ export function buildSplitBoard(
   const rows = optedIn ? weeklyBoard(state, sport, track, now) : [];
   const you = rows.find((row) => row.you) ?? null;
 
+  const enrollment = state.enrollments.find(item => item.sport === sport);
   const youSeries = activityCheckpoints(
-    state.activities,
+    enrollment?.scoringActivities ?? state.activities,
     sport,
     period.startsAt,
     period.endsAt,
     track,
     now,
+    state.dailyHealth,
   );
 
   const ghost = resolvePastSelfGhost({
@@ -106,46 +81,6 @@ export function buildSplitBoard(
     selector: options.ghostSelector,
     periodKind: state.clock.kind,
   });
-  const ghostSeries = ghostHasVolume(ghost) ? ghost.series : null;
-
-  const nearbyRows = (() => {
-    if (!you) return rows.slice(0, 3);
-    const index = rows.findIndex((row) => row.you);
-    const start = Math.max(0, index - 1);
-    return rows.slice(start, start + 3);
-  })();
-
-  const fieldLanes: TrackLane[] = rows.map((row) => {
-    const series = row.you
-      ? youSeries
-      : syntheticCheckpoints(
-          row.effort,
-          row.distanceM,
-          row.movingSec,
-          row.id,
-          period.startsAt,
-          period.endsAt,
-          now,
-        );
-    return {
-      id: row.id,
-      name: row.you ? "Your week" : row.name,
-      initials: row.you ? initialsFromName(state.name) : initialsFromName(row.name),
-      effort: row.effort,
-      checkpoints: series.effort,
-      you: row.you,
-      place: row.place,
-    };
-  });
-
-  const nearby: TrackLane[] = nearbyRows.map(
-    (row) => fieldLanes.find((lane) => lane.id === row.id)!,
-  );
-
-  const trackMax = effortTrackMax([
-    ...fieldLanes.map((lane) => lane.effort),
-    ...(ghostSeries ? ghostSeries.effort : []),
-  ]);
 
   return {
     sport,
@@ -166,11 +101,6 @@ export function buildSplitBoard(
     you,
     youSeries,
     ghost,
-    ghostSeries,
-    ghostEffortAt: (checkpoint: number) => effortAtGhost(ghost, checkpoint),
-    nearby,
-    fieldLanes,
-    trackMax,
     checkpointLabels: youSeries.labels,
     weekActivities: state.activities
       .filter((activity) => {
@@ -180,50 +110,5 @@ export function buildSplitBoard(
         return at >= period.startsAt && at < period.endsAt;
       })
       .sort((a, b) => a.startedAt.localeCompare(b.startedAt)),
-  };
-}
-
-export function laneAtCheckpoint(
-  lane: TrackLane,
-  checkpoint: CheckpointIndex | number,
-): number {
-  return interpolateSeries(lane.checkpoints, checkpoint);
-}
-
-export function formatPts(value: number): string {
-  return formatEffort(value);
-}
-
-export function deltaCopy(
-  youEffort: number,
-  ghostEffort: number,
-  ghostLabel = "your previous week",
-): { delta: number; headline: string; detail: string } {
-  const delta = Math.round((youEffort - ghostEffort) * 10) / 10;
-  if (ghostEffort <= 0) {
-    return {
-      delta,
-      headline: "Your line this week.",
-      detail: `No activity in ${ghostLabel} at this cutoff.`,
-    };
-  }
-  if (Math.abs(delta) < 0.05) {
-    return {
-      delta: 0,
-      headline: `Level with ${ghostLabel}.`,
-      detail: "Same cutoff. Same effort points so far.",
-    };
-  }
-  if (delta > 0) {
-    return {
-      delta,
-      headline: "points ahead of your own week.",
-      detail: "Same point in the week. A little more movement in the books.",
-    };
-  }
-  return {
-    delta,
-    headline: `points behind ${ghostLabel}.`,
-    detail: "Same cutoff. Room to catch your own line.",
   };
 }

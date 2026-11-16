@@ -1050,7 +1050,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         key === fieldSeenStorageKey(expectedId) ||
         key === `fb-overtake-seen:${expectedId}` ||
         key.startsWith(`fb-arena-baseline:${expectedId}:`) ||
-        key.startsWith(`moment:v1:fb-arena-baseline:${expectedId}:`),
+        /^moment:v[12]:fb-arena-baseline:/.test(key) && key.includes(`:${expectedId}:`),
     );
     await AsyncStorage.multiRemove([
       scoped.state,
