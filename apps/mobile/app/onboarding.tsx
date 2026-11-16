@@ -64,7 +64,7 @@ export default function Onboarding() {
       try { saved = !preview && raw ? JSON.parse(raw) : null; } catch { /* Ignore corrupt drafts. */ }
       const useGuest = !preview && Boolean(user?.email && pending?.toLowerCase() === user.email.toLowerCase() && guest);
       const initialSports = useGuest && guest ? [guest.sport] : state?.ratings.filter(r => r.optedIn).map(r => r.sport) ?? [];
-      const selectedSports = Array.isArray(saved?.sports) ? saved.sports.filter((s): s is SportId => SPORTS.some(sport => sport.id === s)) : initialSports;
+      const selectedSports = Array.isArray(saved?.sports) ? saved.sports.filter((s: unknown): s is SportId => SPORTS.some(sport => sport.id === s)) : initialSports;
       setStep(Math.max(0, Math.min(2, Number(saved?.step) || 0)));
       setName(typeof saved?.name === "string" ? saved.name : useGuest ? guest!.name : user?.displayName ?? state?.name ?? "");
       setCity(typeof saved?.city === "string" ? saved.city : useGuest ? guest!.city : state?.city ?? "");
@@ -145,7 +145,7 @@ export default function Onboarding() {
             <TextInput accessibilityLabel="Display name" style={f.input} value={name} onChangeText={setName} maxLength={80} />
             <AppText role="label">City (optional)</AppText>
             <TextInput accessibilityLabel="City" style={f.input} value={city} onChangeText={setCity} maxLength={80} />
-            <SearchableCountryPicker label="Country (optional)" value={countryCode} onChange={setCountryCode} />
+            <SearchableCountryPicker label="Country (optional)" value={countryCode} onChange={setCountryCode} allowClear />
             <ChoicePicker label="Gender (optional)" value={gender} placeholder="Prefer not to say"
               options={[{ value: "female", label: "Female" }, { value: "male", label: "Male" }, { value: "other", label: "Other" }]}
               onChange={value => setGender(value as ProfileGender)} />
