@@ -37,6 +37,7 @@ import { SettingsRow } from "../src/ui/settings-row";
 import { DataSyncActions } from "../src/features/data-sync-actions";
 import { mobileEnv } from "../src/lib/env";
 import { useAuth } from "../src/lib/auth";
+import { GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft } from "../src/lib/guest-intro";
 import { useCompeteStore } from "../src/lib/compete-store";
 import {
   createAppleHealthDeps,
@@ -130,6 +131,17 @@ const styles=useThemedStyles(stylesThemes);
     }
   }
   const appliedTracker = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!user && params.auth === "signup") {
+      setAuthMode("signup");
+      let alive = true;
+      void readGuestIntroDraft().then(guest => {
+        if (alive && guest?.name) setDisplayName(current => current || guest.name);
+      }).catch(() => {});
+      return () => { alive = false; };
+    }
+  }, [params.auth, user?.id]);
 
   useEffect(() => {
     if (params.edit === "1") setSettingsOpen(true);
@@ -241,12 +253,22 @@ const styles=useThemedStyles(stylesThemes);
         setAuthNote(null);
         return;
       }
+      // Mark the intended new account before signup can trigger auth navigation.
+      // Existing sign-ins never import a guest athlete profile by accident.
+      const guest = await readGuestIntroDraft().catch(() => null);
+      const normalizedEmail = email.trim().toLowerCase();
+      let marked = false;
+      if (guest?.name.trim()) {
+        await AsyncStorage.setItem(GUEST_SIGNUP_PENDING_KEY, normalizedEmail);
+        marked = true;
+      }
       const result = await signUp({
         email,
         password,
-        displayName: displayName.trim() || email.split("@")[0] || "Athlete",
+        displayName: displayName.trim() || guest?.name.trim() || email.split("@")[0] || "Athlete",
       });
       if (result.error) {
+        if (marked) await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY);
         setAuthNote(result.error);
         return;
       }
