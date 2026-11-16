@@ -1,6 +1,6 @@
 import { fieldDefaultSpan } from "./field-course";
 import { arenaBaselineStorageKey, ordinalPlace, readArenaBaseline, reconcileArenaOvertake, serializeArenaBaseline, type ArenaOvertakePlan, type ArenaSceneLane } from "./arena-view";
-import { buildArenaModel, competePeriodWindow } from "./phone-views";
+import { buildArenaModel, competePeriodWindow, type ArenaDistanceUnit } from "./phone-views";
 import { competeNow, type Action } from "./compete/engine";
 import { initialsFromName } from "./compete/track";
 import { competitionTrack, sportById, type CompeteState, type SportId } from "./compete/sports";
@@ -10,7 +10,7 @@ export interface CompetitionMoment {
   sport: SportId;
   periodStart?: string;
   periodEnd?: string;
-  unit: "km" | "mi" | "pts";
+  unit: ArenaDistanceUnit;
   lanes: ArenaSceneLane[];
   plan: ArenaOvertakePlan;
 }
