@@ -1,3 +1,4 @@
+import type { SportId, ScoreTrack } from "./sports";
 /** Historical migration receipt shape; never used to award Effort Score. */
 export interface EffortMilestone {
   sport: SportId;
