@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import Svg, { Circle, G, Line, Path } from "react-native-svg";
-import { ONBOARDING_FEATURES, type OnboardingFeatureId } from "@fitness-battle/shared";
+import { ONBOARDING_FEATURES, SPORTS, type SportId, type OnboardingFeatureId } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
 
 const names = ["Alex", "You", "Sam"] as const;
 
-export function OnboardingFeatureTour() {
+export function OnboardingFeatureTour({ sport }: { sport: SportId }) {
   const c = useThemeColors();
   const [selected, setSelected] = useState<OnboardingFeatureId>("crews");
   const [board, setBoard] = useState<"weekly" | "all-time">("weekly");
   const feature = ONBOARDING_FEATURES.find(item => item.id === selected)!;
+  const selectedSport = SPORTS.find(item => item.id === sport)?.name ?? "Running";
+  const sampleRows = sport === "cycling" ? ["46.2 km", "43.8 km", "39.5 km"] : sport === "walking" ? ["45,000 steps", "42,200 steps", "39,100 steps"] : sport === "strength" ? ["210 min", "185 min", "170 min"] : ["12.4 km", "11.9 km", "10.1 km"];
+  const goal = sport === "cycling" ? ["Ride 150 km together", "108 / 150 km"] : sport === "walking" ? ["Walk 120,000 steps together", "86,400 / 120,000 steps"] : sport === "strength" ? ["Train 360 minutes together", "259 / 360 min"] : ["Move 40 km together", "28.8 / 40 km"];
   const card = { borderRadius: 18, borderWidth: 1, borderColor: c.line, backgroundColor: c.card, padding: 18, gap: 14 } as const;
   const tab = (active: boolean) => ({
     flex: 1, minHeight: 44, alignItems: "center" as const, justifyContent: "center" as const,
@@ -31,12 +34,12 @@ export function OnboardingFeatureTour() {
     <AppText secondary>{feature.description}</AppText>
     {selected === "crews" && <View style={card}>
       <AppText role="caption" secondary>ILLUSTRATIVE · WEEKLY CREW GOAL</AppText>
-      <AppText role="heading">Move 40 km together</AppText>
+      <AppText role="heading">{goal[0]}</AppText>
       <View style={{ height: 12, borderRadius: 10, backgroundColor: c.soft, overflow: "hidden" }}>
         <View style={{ width: "72%", height: "100%", backgroundColor: c.tennis, borderRadius: 10 }} />
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <AppText role="caption">28.8 / 40 km</AppText>
+        <AppText role="caption">{goal[1]}</AppText>
         <AppText role="caption" secondary>72% of your crew's goal</AppText>
       </View>
       <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
@@ -59,8 +62,8 @@ export function OnboardingFeatureTour() {
           </Pressable>)}
       </View>
       {board === "weekly" ? <>
-        <AppText role="caption" secondary>EXAMPLE · WEEKLY { "RUNNING" } FIELD</AppText>
-        {[["1", "Alex", "12.4 km"], ["2", "You", "11.9 km"], ["3", "Sam", "10.1 km"]].map(([place, person, score]) =>
+        <AppText role="caption" secondary>EXAMPLE · WEEKLY {selectedSport.toUpperCase()} FIELD</AppText>
+        {[["1", "Alex", sampleRows[0]!], ["2", "You", sampleRows[1]!], ["3", "Sam", sampleRows[2]!]].map(([place, person, score]) =>
           <View key={place} style={{ flexDirection: "row", gap: 12, alignItems: "center", padding: 11, borderRadius: 11, backgroundColor: person === "You" ? c.actionSoft : c.paper }}>
             <AppText role="heading">#{place}</AppText><AppText role="label" style={{ flex: 1 }}>{person}</AppText><AppText role="caption">{score}</AppText>
           </View>)}
