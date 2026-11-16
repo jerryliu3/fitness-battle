@@ -109,7 +109,7 @@ export default function Welcome() {
           {back}
         </>}
         {step === "features" && <>
-          <OnboardingFeatureTour />
+          <OnboardingFeatureTour sport={draft.sport} />
           <FocusButton label="Create my athlete" onPress={() => void go("athlete")} />
           {back}
         </>}
