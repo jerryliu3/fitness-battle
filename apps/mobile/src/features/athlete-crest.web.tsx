@@ -31,7 +31,7 @@ export function AthleteCrest({ model }: { model: AthleteCardModel; onInteraction
     const timer = setTimeout(() => setFailed(true), 12000);
     return () => clearTimeout(timer);
   }, [active, loaded, failed]);
-  return <View style={{ minHeight: failed ? undefined : 390 }}>
+  return <View style={{ minHeight: 390 }}>
     {!failed && createElement("iframe", { ref: frame, title: `${model.name} athlete card`, src: uri, onError: () => { setLoaded(false); setFailed(true); }, style: { width: "100%", height: 390, border: 0, opacity: loaded ? 1 : 0 } })}
     {!loaded && <View style={{ position: "absolute", inset: 0 }}>
       <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />

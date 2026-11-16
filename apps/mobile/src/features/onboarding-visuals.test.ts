@@ -1,27 +1,17 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-const motion = vi.hoisted(() => ({ reduced: true, timing: vi.fn() }));
-vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => motion.reduced }));
-vi.mock("react-native", () => ({useColorScheme: () => "light",  View: "View", LayoutAnimation: { configureNext: vi.fn(), Presets: { easeInEaseOut: {} } }, Animated: { View: "AnimatedView", Value: class { setValue = vi.fn(); }, timing: (...args: unknown[]) => { motion.timing(...args); return { start: vi.fn(), stop: vi.fn() }; } } }));
-vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path" }));
+vi.mock("react-native", () => ({ useColorScheme: () => "light", View: "View" }));
 vi.mock("../ui/section", () => ({ AppText: "AppText" }));
-vi.mock("../ui/sport-icon", () => ({ SportIcon: "SportIcon" }));
+vi.mock("../ui/rank-symbol", () => ({ RankSymbol: "RankSymbol" }));
 vi.mock("../ui/standard-line-chart", () => ({ StandardLineChart: "Chart" }));
-import { OnboardingOutlook } from "./onboarding-visuals";
-it("restarts the staged reveal after the device motion preference resolves", async () => {
- vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.useFakeTimers();
+import { OnboardingPotential } from "./onboarding-potential";
+it("keeps potential growth separate from earned rank and score", async () => {
+ vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
  let r!:ReactTestRenderer;
- await act(async()=>{r=create(createElement(OnboardingOutlook));});
- expect(r.root.findAllByType("Chart" as never)).toHaveLength(1);
- motion.reduced=false;
- await act(async()=>r.update(createElement(OnboardingOutlook)));
- expect(r.root.findAllByType("Chart" as never)).toHaveLength(0);
- await act(async()=>{vi.advanceTimersByTime(2399);});
- expect(r.root.findAllByType("Chart" as never)).toHaveLength(0);
- await act(async()=>{vi.advanceTimersByTime(1);});
- expect(r.root.findAllByType("Chart" as never)).toHaveLength(1);
- expect(motion.timing.mock.calls.some(([,config])=>config.duration===1500)).toBe(true);
- expect(motion.timing.mock.calls.some(([,config])=>config.duration===400)).toBe(true);
- await act(async()=>r.unmount());vi.useRealTimers();vi.unstubAllGlobals();
+ await act(async()=>{r=create(createElement(OnboardingPotential));});
+ expect(r.root.findByType("Chart" as never).props.values).toEqual([1000,1020,1050,1080,1110,1160,1210]);
+ expect(r.root.findAllByType("RankSymbol" as never).map(n=>n.props.rank)).toEqual(["active","challenger"]);
+ expect(r.root.findAllByType("AppText" as never).some(n=>n.props.children==="Potential Effort Score")).toBe(true);
+ await act(async()=>r.unmount());
 });

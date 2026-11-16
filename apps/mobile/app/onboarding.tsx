@@ -4,7 +4,7 @@ import { Modal, ScrollView, TextInput, View, type ScrollViewInstance } from "rea
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import {
-  detectDeviceTimeZone, nextDailyWaveWindowAt, waveTimeLabel, PROVIDERS, SPORTS,
+  detectDeviceTimeZone, nextDailyWaveWindowAt, waveTimeLabel, guestIntroForAccount, SPORTS,
   type ProfileGender, type SportId, type UnitSystem,
 } from "@fitness-battle/shared";
 import { TrackerConnections } from "./athlete";
@@ -15,7 +15,6 @@ import { ChoicePicker } from "../src/ui/choice-picker";
 import { Chip } from "../src/ui/chip";
 import { AppText } from "../src/ui/section";
 import { MotionStep } from "../src/ui/motion-step";
-import { AnimatedEmber } from "../src/ui/mascot/animated-ember";
 import { FocusButton, FocusSegments, useFocusStyles } from "../src/ui/focus";
 import { OnboardingSummary } from "../src/features/onboarding-visuals";
 import { ProfilePhoto } from "../src/features/profile-photo";
@@ -27,8 +26,8 @@ import { useCompeteStore } from "../src/lib/compete-store";
 const titles = ["Bring your training along.", "A few more things about you.", "Your starting line is here."];
 
 export default function Onboarding() {
-  const colors = useThemeColors();
   const f = useFocusStyles();
+  const colors = useThemeColors();
   const reduced = useReducedMotion();
   const { state, canWrite, dispatch } = useCompeteStore();
   const { user } = useAuth();
@@ -62,14 +61,15 @@ export default function Onboarding() {
       if (!alive) return;
       let saved: Record<string, unknown> | null = null;
       try { saved = !preview && raw ? JSON.parse(raw) : null; } catch { /* Ignore corrupt drafts. */ }
-      const useGuest = !preview && Boolean(user?.email && pending?.toLowerCase() === user.email.toLowerCase() && guest);
-      const initialSports = useGuest && guest ? [guest.sport] : state?.ratings.filter(r => r.optedIn).map(r => r.sport) ?? [];
+      const imported = preview ? null : guestIntroForAccount(guest, pending, user?.email);
+      const useGuest = Boolean(imported);
+      const initialSports = imported ? [imported.sport] : state?.ratings.filter(r => r.optedIn).map(r => r.sport) ?? [];
       const selectedSports = Array.isArray(saved?.sports) ? saved.sports.filter((s: unknown): s is SportId => SPORTS.some(sport => sport.id === s)) : initialSports;
-      setStep(Math.max(0, Math.min(2, Number(saved?.step) || 0)));
-      setName(typeof saved?.name === "string" ? saved.name : useGuest ? guest!.name : user?.displayName ?? state?.name ?? "");
-      setCity(typeof saved?.city === "string" ? saved.city : useGuest ? guest!.city : state?.city ?? "");
+      setStep(Math.max(0, Math.min(2, Math.trunc(Number(saved?.step) || 0))));
+      setName(typeof saved?.name === "string" ? saved.name : imported ? imported.name : user?.displayName ?? state?.name ?? "");
+      setCity(typeof saved?.city === "string" ? saved.city : imported ? imported.city : state?.city ?? "");
       setGender(saved?.gender === "male" || saved?.gender === "female" || saved?.gender === "other" ? saved.gender : state?.gender ?? "");
-      setCountryCode(typeof saved?.countryCode === "string" ? saved.countryCode : useGuest ? guest!.countryCode : state?.countryCode ?? "");
+      setCountryCode(typeof saved?.countryCode === "string" ? saved.countryCode : imported ? imported.countryCode : state?.countryCode ?? "");
       setUnits(saved?.units === "us" || saved?.units === "metric" ? saved.units : state?.units ?? "us");
       setSports(selectedSports);
       setSleep(typeof saved?.sleep === "boolean" ? saved.sleep : Boolean(state?.healthRatings.some(r => r.metric === "sleep" && r.optedIn)));
@@ -120,8 +120,8 @@ export default function Onboarding() {
     if (sports[0]) dispatch({ type: "set-primary", sport: sports[0] });
     if (sleep) dispatch({ type: "opt-in-health", metric: "sleep" });
     dispatch({ type: "complete-onboarding" });
-    void AsyncStorage.removeItem(key);
-    if (guestImported) void AsyncStorage.multiRemove([GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY]);
+    void AsyncStorage.removeItem(key).catch(() => {});
+    if (guestImported) void AsyncStorage.multiRemove([GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY]).catch(() => {});
     router.replace("/today");
   }
 
@@ -129,15 +129,14 @@ export default function Onboarding() {
     <SafeAreaProvider><SafeAreaView style={f.safe} edges={["top", "bottom"]}>
       <ScrollView ref={scroll} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled"
         contentContainerStyle={[f.content, { maxWidth: 520, width: "100%", alignSelf: "center" }]}>
-        <View style={{ alignItems: "center", backgroundColor: colors.actionSoft, borderRadius: 24, padding: 12 }}>
-          <AnimatedEmber size={110} />
-        </View>
         <MotionStep identity={String(step)}>
-          <AppText role="caption" secondary>{preview ? "DEBUG PREVIEW" : `FINISH SETUP · ${step + 1} / 3`}</AppText>
+          <View style={{ flexDirection: "row", gap: 5 }} accessibilityLabel={`Setup step ${step + 1} of 3`}>
+            {titles.map((title, i) => <View key={title} style={{ flex: 1, height: 5, borderRadius: 8, backgroundColor: i <= step ? colors.tennis : colors.line }} />)}
+          </View>
           <AppText role="display" accessibilityRole="header">{titles[step]}</AppText>
           {step === 0 && <>
-            <AppText secondary>Connect your tracker to count real training. You can also skip this and connect later.</AppText>
-            {preview ? PROVIDERS.map(p => <FocusButton key={p.id} secondary disabled label={`${p.name} · Connect (preview)`} onPress={() => {}} />) : <TrackerConnections />}
+            <AppText secondary>Connect your tracker to bring your training along. You can also connect later.</AppText>
+            {!preview && <TrackerConnections />}
           </>}
           {step === 1 && <>
             {!preview && <ProfilePhoto state={state} />}
@@ -178,7 +177,7 @@ export default function Onboarding() {
           <View style={{ flexDirection: "row", gap: 12 }}>
             {step > 0 && <View style={{ flex: 1 }}><FocusButton secondary label="Back" onPress={() => setStep(step - 1)} /></View>}
             <View style={{ flex: 1 }}><FocusButton
-              label={step === 2 ? (preview ? "Finish preview" : "Finish setup & register") : step === 0 ? "Continue (or skip trackers)" : "Continue"}
+              label={step === 2 ? "Finish setup & register" : step === 0 && !state.links.some(link => link.status === "connected") ? "Skip for now" : "Continue"}
               disabled={step === 2 && !preview && !canWrite}
               onPress={() => step < 2 ? advance() : finish()} /></View>
           </View>

@@ -35,10 +35,10 @@ export default function MarketingHomePage() {
           the trackers you already trust.
         </AppParagraph>
         <div className="fb-marketing-actions">
-          <Link href="/app/today" className="fb-btn">
+          <Link href="/app" className="fb-btn">
             Open the app
           </Link>
-          <Link href="/signup" className="fb-btn-line">
+          <Link href="/app/welcome" className="fb-btn-line">
             Create account
           </Link>
         </div>

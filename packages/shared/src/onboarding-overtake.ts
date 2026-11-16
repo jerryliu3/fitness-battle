@@ -3,7 +3,7 @@ import type { CompetitionMoment } from "./competition-moments";
 import type { SportId } from "./compete/sports";
 
 /** An illustrative public course and two fictional racers; never applied to account state. */
-export const onboardingOvertakeCourse = createRaceCourse("Overtake tutorial · sample course", [[-73.974,40.764],[-73.970,40.770],[-73.965,40.773]]);
+export const onboardingOvertakeCourse = createRaceCourse("First overtake", [[-73.974,40.764],[-73.970,40.770],[-73.965,40.773]]);
 
 export function createOnboardingOvertakeMoment(name = "Athlete", sport: SportId = "running"): CompetitionMoment {
   const athleteName = name.trim() || "Athlete";

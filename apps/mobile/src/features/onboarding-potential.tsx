@@ -1,35 +1,32 @@
-import { rankForElo, SPORTS, type SportId } from "@fitness-battle/shared";
+import { ONBOARDING_GROWTH } from "@fitness-battle/shared";
 import { View } from "react-native";
 import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
+import { RankSymbol } from "../ui/rank-symbol";
 import { StandardLineChart } from "../ui/standard-line-chart";
 
-/** An explicitly hypothetical illustration, not a result or entitlement. */
-export function OnboardingPotential({ sport }: { sport: SportId }) {
+export function OnboardingPotential() {
   const c = useThemeColors();
-  const scores = [1000, 1020, 1050, 1110, 1160, 1210];
-  const first = scores[0]!, last = scores[scores.length - 1]!;
-  const sportName = SPORTS.find(s => s.id === sport)?.name ?? "Fitness";
+  const { scores, labels, pointLabels, from, to } = ONBOARDING_GROWTH;
+  const panel = { backgroundColor: c.card, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: c.line, gap: 12 };
   return <View style={{ gap: 18 }}>
-    <View style={{ backgroundColor: c.card, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: c.line, gap: 12 }}>
-      <AppText role="caption" secondary>{sportName.toUpperCase()} · EXAMPLE EFFORT SCORE</AppText>
+    <View style={panel}>
+      <AppText role="label">Potential Effort Score</AppText>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <AppText role="display">{first.toLocaleString()}</AppText>
-        <AppText role="heading" secondary>→</AppText>
-        <AppText role="display" style={{ color: c.ink }}>{last.toLocaleString()}</AppText>
+        <AppText role="display">1,000</AppText><AppText role="heading" secondary>→</AppText>
+        <AppText role="display">1,210</AppText>
       </View>
-      <AppText role="body" secondary>See how consistent training and competition results could build your score over time.</AppText>
-      <StandardLineChart height={166} values={scores} xLabels={["Start", "Week 3", "Week 6"]} showAxes showTrend={false}
-        accessibilityLabel={`Illustrative ${sportName.toLowerCase()} effort score increases from ${first} to ${last}`} />
+      <StandardLineChart height={166} values={scores} xLabels={labels} pointLabels={pointLabels} yAxisLabel="Effort Score" xAxisLabel="Week" showAxes showTrend={false}
+        accessibilityLabel="Potential Effort Score growth from 1000 to 1210 over six weeks" />
     </View>
-    <View style={{ backgroundColor: c.card, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: c.line, gap: 12 }}>
+    <View style={panel}>
       <AppText role="label">Potential rank progression</AppText>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-        <AppText role="heading">{rankForElo(first).name}</AppText>
+      <View style={{ flexDirection: "row", justifyContent: "space-around", alignItems: "center", gap: 10 }}>
+        <View style={{ alignItems: "center" }}><RankSymbol rank={from.id} size={72} decorative /><AppText role="label">{from.name}</AppText></View>
         <AppText role="heading" secondary>→</AppText>
-        <AppText role="heading">{rankForElo(last).name}</AppText>
+        <View style={{ alignItems: "center" }}><RankSymbol rank={to.id} size={72} decorative /><AppText role="label">{to.name}</AppText></View>
       </View>
     </View>
-    <AppText role="caption" secondary>Illustrative only. This is not an earned score, rank, reward, or promise of future results.</AppText>
+    <AppText role="caption" secondary>Your progress will depend on your training and competition results.</AppText>
   </View>;
 }

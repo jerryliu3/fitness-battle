@@ -1,6 +1,8 @@
 "use client";
 import { AppParagraph, AppHeading } from "@/ui/section";
 
+import { GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY } from "@fitness-battle/shared";
+import { readGuestIntroDraft } from "@/lib/guest-intro";
 import { useAuth } from "@/components/auth-context";
 import {
   buildLoginHref,
@@ -21,9 +23,11 @@ function SignupForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => { setDisplayName(readGuestIntroDraft()?.name ?? ""); }, []);
+
   useEffect(() => {
     if (!loading && user) {
-      window.location.assign(next);
+      window.location.assign(`/app/onboarding?next=${encodeURIComponent(next)}`);
     }
   }, [loading, user, next]);
 
@@ -33,8 +37,14 @@ function SignupForm() {
     setError(null);
     setMessage(null);
     try {
+      const guest = readGuestIntroDraft();
+      if (guest) try {
+        localStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ ...guest, name: displayName.trim() || guest.name }));
+        localStorage.setItem(GUEST_SIGNUP_PENDING_KEY, email.trim().toLowerCase());
+      } catch {}
       const result = await signUp({ email, password, displayName });
       if (result.error) {
+        try { localStorage.removeItem(GUEST_SIGNUP_PENDING_KEY); } catch {}
         setError(result.error);
         setBusy(false);
         return;
@@ -50,6 +60,7 @@ function SignupForm() {
           : "/onboarding";
       window.location.assign(dest);
     } catch (err) {
+      try { localStorage.removeItem(GUEST_SIGNUP_PENDING_KEY); } catch {}
       setError(err instanceof Error ? err.message : "Could not create the account.");
       setBusy(false);
     }
@@ -60,8 +71,7 @@ function SignupForm() {
       <AppParagraph typographyRole="label" className="fb-kicker">overtaek</AppParagraph>
       <AppHeading level={1} role="display" className="fb-title">Create account</AppHeading>
       <AppParagraph typographyRole="body" className="fb-copy">
-        After signup you will set preferences and run a one-time 90-day
-        calibration.
+        Save your athlete, then connect your trackers and finish setup.
       </AppParagraph>
       <form className="fb-stack" onSubmit={onSubmit}>
         <label className="fb-field">

@@ -1,0 +1,21 @@
+import { createElement } from "react";
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
+import { expect, it, vi } from "vitest";
+const mock = vi.hoisted(() => ({ path: "/app/welcome", completed: false, replace: vi.fn(), params: new URLSearchParams() }));
+vi.mock("next/navigation", () => ({ usePathname: () => mock.path, useSearchParams: () => mock.params, useRouter: () => ({ replace: mock.replace }) }));
+vi.mock("./auth-context", () => ({ useAuth: () => ({ user: { id: "a" }, loading: false }) }));
+vi.mock("./compete-context", () => ({ useCompete: () => ({ state: { onboardingCompleted: mock.completed }, loadStatus: "ready" }) }));
+import { OnboardingNavigation } from "./onboarding-navigation";
+it("owns authenticated welcome routing and allows tracker callbacks", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  let r!: ReactTestRenderer;
+  await act(async () => { r = create(createElement(OnboardingNavigation)); });
+  expect(mock.replace).toHaveBeenLastCalledWith("/app/onboarding");
+  mock.completed = true;
+  await act(async () => r.update(createElement(OnboardingNavigation)));
+  expect(mock.replace).toHaveBeenLastCalledWith("/app/today");
+  mock.replace.mockClear(); mock.completed = false; mock.path = "/app/athlete"; mock.params = new URLSearchParams("provider=strava");
+  await act(async () => r.update(createElement(OnboardingNavigation)));
+  expect(mock.replace).not.toHaveBeenCalled();
+  await act(async () => r.unmount());
+});

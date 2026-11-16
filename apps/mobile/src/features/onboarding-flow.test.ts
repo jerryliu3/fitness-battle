@@ -7,7 +7,7 @@ vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
 vi.mock("react-native",()=>({useColorScheme: () => "light", Modal:"Modal",ScrollView:"ScrollView",TextInput:"TextInput",View:"View"}));
 vi.mock("react-native-svg",()=>({default:"Svg",Rect:"Rect",Text:"SvgText"}));
 vi.mock("react-native-safe-area-context",()=>({SafeAreaProvider:"SafeAreaProvider",SafeAreaView:"SafeAreaView"}));
-vi.mock("@react-native-async-storage/async-storage",()=>({default:{getItem:async()=>null,setItem:mock.storage,removeItem:vi.fn()}}));
+vi.mock("@react-native-async-storage/async-storage",()=>({default:{getItem:async()=>null,setItem:mock.storage,removeItem:vi.fn(async()=>{}),multiRemove:vi.fn(async()=>{})}}));
 vi.mock("expo-router",()=>({useLocalSearchParams:()=>({preview:mock.preview}),useRouter:()=>({replace:mock.replace,back:mock.back,canGoBack:()=>true})}));
 vi.mock("../lib/auth",()=>({useAuth:()=>({user:{id:"a",displayName:"Jamie"}})}));
 const state=freshState();
@@ -30,7 +30,7 @@ async function completeIdentityStep(r: ReactTestRenderer) {
     r.root.findAllByType("TextInput" as never).find((n) => n.props.accessibilityLabel === "Display name")!.props.onChangeText("Jamie");
     r.root
       .findAllByType("ChoicePicker" as never)
-      .find((n) => n.props.label === "Gender")!
+      .find((n) => n.props.label === "Gender (optional)")!
       .props.onChange("female");
     r.root.findByType("SearchableCountryPicker" as never).props.onChange("US");
   });
@@ -45,22 +45,15 @@ it.each([false,true])("walks all setup steps and only saves a real completion (p
   return matches;
  };
  const advance=async(label="Continue")=>act(async()=>button(label).props.onPress());
+ await advance("Skip for now");
  if (!preview) {
-   await advance();
    await completeIdentityStep(r);
-   await advance();
    await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Running")!.props.onPress());
-   await advance();
-   for (const label of ["Skip for now", "Continue", "Continue", "Finish"]) {
-     expect(mock.dispatch).not.toHaveBeenCalled();
-     await advance(label);
-   }
- } else {
-   for (const label of ["Continue", "Continue", "Continue", "Skip for now", "Continue", "Continue", "Finish preview"]) {
-     expect(mock.dispatch).not.toHaveBeenCalled();
-     await advance(label);
-   }
  }
+ expect(mock.dispatch).not.toHaveBeenCalled();
+ await advance();
+ expect(mock.dispatch).not.toHaveBeenCalled();
+ await advance("Finish setup & register");
  if(preview){
    expect(mock.dispatch).not.toHaveBeenCalled();
    expect(mock.storage).not.toHaveBeenCalled();
@@ -78,15 +71,13 @@ it("validates the combined selection on Continue and supports sleep without a sp
  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.clearAllMocks();mock.preview=undefined;
  let r!:ReactTestRenderer;await act(async()=>{r=create(createElement(Onboarding));});
  const press=async(label:string)=>act(async()=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label===label)!.props.onPress());
- await press("Continue");
+ await press("Skip for now");
  await completeIdentityStep(r);
- await press("Continue");
  const chip=(label:string)=>r.root.findAllByType("Chip" as never).find(n=>n.props.label===label)!;
  await press("Continue");
  expect(r.root.findAllByType("AppText" as never).some(n=>n.props.children==="Choose at least one sport or sleep tracking to continue.")).toBe(true);
  await act(async()=>chip("Sleep tracking").props.onPress());await press("Continue");
- expect(r.root.findAllByType("TrackerConnections" as never)).toHaveLength(1);
- for (const label of ["Skip for now", "Continue", "Continue", "Finish"]) await press(label);
+ await press("Finish setup & register");
  expect(mock.dispatch).toHaveBeenCalledWith({type:"opt-in-health",metric:"sleep"});
  expect(mock.dispatch.mock.calls.some(([a])=>a.type==="opt-in"||a.type==="set-primary")).toBe(false);
  await act(async()=>r.unmount());
@@ -97,10 +88,9 @@ it("uses the top safe area and a primary dropdown only for multiple sports", asy
  let r!:ReactTestRenderer;await act(async()=>{r=create(createElement(Onboarding));});
  expect(r.root.findByType("SafeAreaView" as never).props.edges).toEqual(["top","bottom"]);
  const next=async()=>act(async()=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label==="Continue")!.props.onPress());
- await next();
+ await act(async()=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label==="Skip for now")!.props.onPress());
  await completeIdentityStep(r);
- await next();
- expect(r.root.findAllByType("ChoicePicker" as never)).toHaveLength(0);
+ expect(r.root.findAllByType("ChoicePicker" as never).some(n=>n.props.label==="Primary sport")).toBe(false);
  await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Running")!.props.onPress());
  await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Cycling")!.props.onPress());
   const picker = r.root

@@ -1,0 +1,52 @@
+import { createElement } from "react";
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
+import { beforeEach, expect, it, vi } from "vitest";
+import { freshState, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY } from "@fitness-battle/shared";
+const mock = vi.hoisted(() => ({ replace: vi.fn(), dispatch: vi.fn(), params: new URLSearchParams(), storage: new Map<string, string>() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: mock.replace }), useSearchParams: () => mock.params }));
+vi.mock("@/components/auth-context", () => ({ useAuth: () => ({ user: { id: "a", email: "taylor@example.com", displayName: "Taylor" } }) }));
+const state = freshState();
+vi.mock("@/components/compete-context", () => ({ useCompete: () => ({ state, loadStatus: "ready", dispatch: mock.dispatch }) }));
+vi.mock("@/components/auth-gate", () => ({ AuthGate: ({ children }: { children: unknown }) => children }));
+vi.mock("@/ui/section", () => ({ AppHeading: "h2", AppParagraph: "p" }));
+vi.mock("@/ui/country-combobox", () => ({ CountryCombobox: "CountryCombobox" }));
+vi.mock("@/ui/timezone-combobox", () => ({ TimezoneCombobox: "TimezoneCombobox" }));
+vi.mock("@/features/you/profile-photo", () => ({ ProfilePhoto: "ProfilePhoto" }));
+vi.mock("@/features/you/you-route", () => ({ TrackerConnections: "TrackerConnections" }));
+vi.mock("./onboarding-visuals", () => ({ OnboardingSummary: "OnboardingSummary", OnboardingUnits: "OnboardingUnits" }));
+import Onboarding from "@/app/app/onboarding/page";
+
+beforeEach(() => {
+  vi.clearAllMocks(); mock.storage.clear(); mock.params = new URLSearchParams();
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const storage = { getItem: (key: string) => mock.storage.get(key) ?? null, setItem: (key: string, value: string) => mock.storage.set(key, value), removeItem: (key: string) => mock.storage.delete(key) };
+  vi.stubGlobal("localStorage", storage); vi.stubGlobal("sessionStorage", storage);
+});
+it("imports the intended signup draft, skips trackers and registers only on Finish", async () => {
+  mock.storage.set(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ sport: "walking", name: "Taylor", city: "Boston", countryCode: "US" }));
+  mock.storage.set(GUEST_SIGNUP_PENDING_KEY, "taylor@example.com");
+  let r!: ReactTestRenderer;
+  await act(async () => { r = create(createElement(Onboarding)); });
+  const press = async (label: string) => act(async () => r.root.findAllByType("button").find(n => n.props.children === label)!.props.onClick());
+  await press("Skip for now");
+  expect(r.root.findAllByType("input")[0].props.value).toBe("Taylor");
+  expect(r.root.findAllByType("button").find(n => n.props.children === "Walking")!.props["aria-pressed"]).toBe(true);
+  await press("Continue");
+  expect(mock.dispatch).not.toHaveBeenCalled();
+  await press("Finish setup & register");
+  expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-in", sport: "walking", accountId: "a" });
+  expect(mock.dispatch).toHaveBeenCalledWith({ type: "complete-onboarding" });
+  expect(mock.storage.has(GUEST_INTRO_DRAFT_KEY)).toBe(false);
+  expect(mock.replace).toHaveBeenCalledWith("/app/today");
+  await act(async () => r.unmount());
+});
+it("keeps debug navigation read-only with the same button copy", async () => {
+  mock.params = new URLSearchParams("preview=1");
+  let r!: ReactTestRenderer;
+  await act(async () => { r = create(createElement(Onboarding)); });
+  const press = async (label: string) => act(async () => r.root.findAllByType("button").find(n => n.props.children === label)!.props.onClick());
+  await press("Skip for now"); await press("Continue"); await press("Finish setup & register");
+  expect(mock.dispatch).not.toHaveBeenCalled();
+  expect(mock.storage.size).toBe(0);
+  await act(async () => r.unmount());
+});
