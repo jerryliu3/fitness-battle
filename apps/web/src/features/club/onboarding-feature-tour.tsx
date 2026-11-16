@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { ONBOARDING_FEATURES, type OnboardingFeatureId } from "@fitness-battle/shared";
+import { ONBOARDING_FEATURES, SPORTS, type SportId, type OnboardingFeatureId } from "@fitness-battle/shared";
 import { AppHeading, AppParagraph } from "@/ui/section";
 
 /** Static product examples: never pretend the guest has a crew, a rank, or health data. */
-export function OnboardingFeatureTour() {
+export function OnboardingFeatureTour({ sport }: { sport: SportId }) {
   const [selected, setSelected] = useState<OnboardingFeatureId>("crews");
   const [board, setBoard] = useState<"weekly" | "all-time">("weekly");
   const feature = ONBOARDING_FEATURES.find(item => item.id === selected)!;
+  const selectedSport = SPORTS.find(item => item.id === sport)?.name ?? "Running";
+  const sampleRows = sport === "cycling" ? ["46.2 km", "43.8 km", "39.5 km"] : sport === "walking" ? ["45,000 steps", "42,200 steps", "39,100 steps"] : sport === "strength" ? ["210 min", "185 min", "170 min"] : ["12.4 km", "11.9 km", "10.1 km"];
+  const goal = sport === "cycling" ? ["Ride 150 km together", "108 / 150 km"] : sport === "walking" ? ["Walk 120,000 steps together", "86,400 / 120,000 steps"] : sport === "strength" ? ["Train 360 minutes together", "259 / 360 min"] : ["Move 40 km together", "28.8 / 40 km"];
   return <div className="fb-stack onboarding-features">
     <AppParagraph>There's more to Overtaek than your own workouts. Explore what you can do.</AppParagraph>
     <div className="onboarding-feature-tabs" aria-label="Explore Overtaek features">
@@ -22,9 +25,9 @@ export function OnboardingFeatureTour() {
 
     {selected === "crews" && <section className="fb-card fb-stack onboarding-feature-demo">
       <AppParagraph typographyRole="caption">ILLUSTRATIVE · WEEKLY CREW GOAL</AppParagraph>
-      <AppHeading>Move 40 km together</AppHeading>
+      <AppHeading>{goal[0]}</AppHeading>
       <div className="onboarding-meter"><span style={{ width: "72%" }}/></div>
-      <div className="onboarding-split"><strong>28.8 / 40 km</strong><small>72% of crew goal</small></div>
+      <div className="onboarding-split"><strong>{goal[1]}</strong><small>72% of crew goal</small></div>
       <div className="onboarding-crew-row"><span>A</span><span>Y</span><span>S</span><p>Support each other's progress.</p></div>
       <div className="onboarding-feature-note"><strong>Crew Derby</strong><p>Compete alongside your crew against another team.</p></div>
     </section>}
@@ -35,8 +38,8 @@ export function OnboardingFeatureTour() {
         <button type="button" aria-pressed={board === "all-time"} onClick={() => setBoard("all-time")}>All time</button>
       </div>
       {board === "weekly" ? <>
-        <AppParagraph typographyRole="caption">EXAMPLE · WEEKLY RUNNING FIELD</AppParagraph>
-        {[["1", "Alex", "12.4 km"], ["2", "You", "11.9 km"], ["3", "Sam", "10.1 km"]].map(([place, athlete, value]) =>
+        <AppParagraph typographyRole="caption">EXAMPLE · WEEKLY {selectedSport.toUpperCase()} FIELD</AppParagraph>
+        {[["1", "Alex", sampleRows[0]!], ["2", "You", sampleRows[1]!], ["3", "Sam", sampleRows[2]!]].map(([place, athlete, value]) =>
           <div className="onboarding-board-row" data-you={athlete === "You"} key={place}>
             <strong>#{place}</strong><span>{athlete}</span><strong>{value}</strong>
           </div>)}
