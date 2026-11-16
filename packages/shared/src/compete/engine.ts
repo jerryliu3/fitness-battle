@@ -1,5 +1,6 @@
-import { averageTiePosition, competitionPlace } from "../competition-place";
-import { applyEffortMilestones } from "./milestones";
+import { initializeEffortAccounts, settleAccountEffort } from './effort-account';
+import { createDeclaredEffortState, getScoreBreakdown, placementRewardPoints } from './effort-score';
+import { competitionPlace } from "../competition-place";
 import {
   APP_TIMEZONE,
   accountTimeZone,
@@ -21,12 +22,11 @@ import {
   type PoolPlayer,
   type WaveEnrollment,
 } from "../matching";
-import { eloFromWeeklyEffort, periodEffort } from "./effort";
+import { periodEffort } from "./effort";
 import type { RankSymbolId } from "../rank-symbols";
 import { formatWalkingSteps } from "./journal";
 import { mergeActivities, normalizeSampleActivity, provenanceOf } from "./ledger";
 import { isTrainingGoal } from "./suggestion";
-import { settleElo } from "./elo";
 import {
   demoSleepNight,
   freshHealthRatings,
@@ -109,6 +109,7 @@ export interface Action {
   | "apply-sync"
   | "import-history"
     | "complete-lesson"
+    | "declare-effort"
     | "complete-onboarding"
     | "freeze"
     | "unfreeze"
@@ -122,6 +123,7 @@ export interface Action {
     | "clear-crew-board"
     /** Demo/dev: settle the open week as if Monday already arrived. */
     | "debug-close-week";
+  declaredWeeklyVolume?: number;
   distanceM?: number;
   movingSec?: number;
   name?: string;
@@ -185,35 +187,9 @@ function withRating(
   };
 }
 
-/** Lift unranked (<= 500) effort scores to the account baseline of 1000 for unstarted sports. */
+/** Establish the sole scoring model for an account. */
 export function withAccountEloBaseline(state: CompeteState): CompeteState {
-  let changed = false;
-  const ratings = state.ratings.map((item) => {
-    const hasHistory =
-      item.optedIn ||
-      state.activities.some((act) => act.sport === item.sport) ||
-      state.periodResults.some((res) => res.sport === item.sport);
-    if (hasHistory && item.openElo >= ELO_FLOOR) {
-      return item;
-    }
-    const openElo = item.openElo <= ELO_UNRANKED ? ELO_BASE : item.openElo;
-    const verifiedElo =
-      item.verifiedElo <= ELO_UNRANKED ? ELO_BASE : item.verifiedElo;
-    const lockOpen = item.lockOpen <= ELO_UNRANKED ? ELO_BASE : item.lockOpen;
-    const lockVerified =
-      item.lockVerified <= ELO_UNRANKED ? ELO_BASE : item.lockVerified;
-    if (
-      openElo === item.openElo &&
-      verifiedElo === item.verifiedElo &&
-      lockOpen === item.lockOpen &&
-      lockVerified === item.lockVerified
-    ) {
-      return item;
-    }
-    changed = true;
-    return { ...item, openElo, verifiedElo, lockOpen, lockVerified };
-  });
-  return changed ? { ...state, ratings } : state;
+  return initializeEffortAccounts(state,new Date());
 }
 
 /** Fill defaults on parsed compete JSON before use. */
@@ -587,6 +563,7 @@ function groupFor(
   const seen = new Set(fromPool.map((peer) => peer.id));
   const peers = [...fromPool, ...fromCrew.filter((peer) => !seen.has(peer.id))];
   const rows = buildLocalBoard({
+    nativeEffort: true,
     enrollment,
     viewer: {
       id: "you",
@@ -669,7 +646,7 @@ function settleEnrollment(
   state: CompeteState,
   enrollment: WaveEnrollment,
 ): CompeteState {
-  state = applyEffortMilestones(state, new Date(enrollment.weekEnd));
+  state = initializeEffortAccounts(state,new Date(enrollment.waveStart));
   const periodStart = enrollment.waveStart;
   const end = new Date(enrollment.weekEnd);
   const frozen = state.frozenPeriods.includes(periodStart);
@@ -694,31 +671,13 @@ function settleEnrollment(
   const openTotals = openRows.map(total);
   const verifiedPlace = verifiedIdx >= 0 ? competitionPlace(verifiedTotals, total(verifiedRows[verifiedIdx]!)) - 1 : placeOrLast(-1, verifiedRows.length);
   const openPlace = openIdx >= 0 ? competitionPlace(openTotals, total(openRows[openIdx]!)) - 1 : placeOrLast(-1, openRows.length);
-  const verifiedScorePosition = verifiedIdx >= 0 ? averageTiePosition(verifiedTotals, total(verifiedRows[verifiedIdx]!)) : verifiedPlace;
-  const openScorePosition = openIdx >= 0 ? averageTiePosition(openTotals, total(openRows[openIdx]!)) : openPlace;
   // Missing you → zero effort so Elo takes inactivity decay, not a fake last-place race.
   const verifiedEffort = verifiedIdx >= 0 ? (verifiedRows[verifiedIdx]?.effort ?? 0) : 0;
   const openEffort = openIdx >= 0 ? (openRows[openIdx]?.effort ?? 0) : 0;
   const youVerified = verifiedIdx >= 0 ? verifiedRows[verifiedIdx] : undefined;
   const youOpen = openIdx >= 0 ? openRows[openIdx] : undefined;
-  const nextVerified = gps
-    ? settleElo(
-        current.verifiedElo,
-        verifiedRows.filter((row) => !row.you).map((row) => row.elo),
-        verifiedScorePosition,
-        verifiedRows.length,
-        verifiedEffort,
-        frozen,
-      )
-    : current.verifiedElo;
-  const nextOpen = settleElo(
-    current.openElo,
-    openRows.filter((row) => !row.you).map((row) => row.elo),
-    openScorePosition,
-    openRows.length,
-    openEffort,
-    frozen,
-  );
+  const nextVerified = current.verifiedElo;
+  const nextOpen = current.openElo;
 
   const additions: PeriodResult[] = [
     settleTrackResult({
@@ -763,6 +722,12 @@ function settleEnrollment(
     verifiedElo: nextVerified,
     openElo: nextOpen,
   });
+  {
+    const rows=gps?verifiedRows:openRows;
+    const you=rows.find(r=>r.you);
+    const reward=you&&!frozen?placementRewardPoints({yourParticipantId:you.id,participants:rows.map(r=>({participantId:r.id,eligibleEventVolume:gps?r.distanceM:r.effort}))}):0;
+    for(const result of additions)result.effortReward=reward;
+  }
   const periodResults = appendPeriodResults(next.periodResults, additions);
   next = {
     ...next,
@@ -805,7 +770,7 @@ export function settleCompetition(
   const liveWave = weeklyWaveWindowAt(now);
   const liveStart = liveWave.waveStart.toISOString();
   // Preserve the closing roster until all matching enrollments have settled.
-  let next = applyEffortMilestones(ensureEnrollments(state, now), now);
+  let next = ensureEnrollments(initializeEffortAccounts(state,now), now);
   let guard = 0;
 
   while (guard < 12) {
@@ -856,7 +821,7 @@ export function settleCompetition(
       clock: { ...next.clock, periodStart: liveStart },
     };
   }
-  return settleSleepWeeks(next, now, next.demoNow ?? now.toISOString());
+  return settleSleepWeeks(settleAccountEffort(next, now), now, next.demoNow ?? now.toISOString());
 }
 
 /** Backfill wave seats for opted-in sports missing an enrollment (migrations). */
@@ -951,46 +916,7 @@ function historyFor(level: "light" | "steady" | "heavy", now: Date): Activity[] 
 }
 
 export function calibrateFromAcceptedHistory(state: CompeteState, now: Date): CompeteState {
-  let next = state;
-  for (const sport of SPORT_IDS) {
-    if (!rating(state, sport).optedIn) continue;
-    let openSum = 0;
-    let verifiedSum = 0;
-    let weeks = 0;
-    for (let back = 0; back < 90; back += 7) {
-      const end = shiftAppDay(now, -back);
-      const start = shiftAppDay(now, -back - 7);
-      const open = periodEffort(state.activities, sport, start, end, "open", {
-        dailyHealth: state.dailyHealth,
-        now,
-      }).effort;
-      const verified = periodEffort(
-        state.activities,
-        sport,
-        start,
-        end,
-        "verified",
-        { dailyHealth: state.dailyHealth, now },
-      ).effort;
-      if (open <= 0) continue;
-      openSum += open;
-      verifiedSum += verified;
-      weeks += 1;
-    }
-    if (weeks === 0) continue;
-    const openElo = Math.max(rating(state, sport).openElo, eloFromWeeklyEffort(openSum / weeks));
-    const verifiedElo = sportById(sport).gps
-      ? Math.max(rating(state, sport).verifiedElo, eloFromWeeklyEffort(verifiedSum / weeks))
-      : rating(state, sport).verifiedElo;
-    next = withRating(next, sport, {
-      openElo,
-      verifiedElo,
-      lockOpen: openElo,
-      lockVerified: verifiedElo,
-      lockPeriod: state.clock.periodStart,
-    });
-  }
-  return { ...next, calibrated: true };
+  return {...settleAccountEffort(initializeEffortAccounts({...state,effortAccounts:undefined},now),now),calibrated:true};
 }
 
 function syncProvider(
@@ -1363,6 +1289,15 @@ function reduceCompeteAction(
         ),
       };
     }
+    case "declare-effort": {
+      if(rolled.onboardingCompleted||!action.sport||typeof action.declaredWeeklyVolume!=="number"||!Number.isFinite(action.declaredWeeklyVolume)||action.declaredWeeklyVolume<0)return rolled;
+      const initialized=initializeEffortAccounts(rolled,now);
+      const account=initialized.effortAccounts![action.sport]!;
+      if(account.state.calibrationSamples>1||account.state.cumulativeNormalizedVolume>0)return initialized;
+      const declared=createDeclaredEffortState(action.sport,action.declaredWeeklyVolume!);
+      const score=getScoreBreakdown(action.sport,declared).displayedScore;
+      return {...initialized,effortAccounts:{...initialized.effortAccounts,[action.sport]:{...account,state:declared}},ratings:initialized.ratings.map(r=>r.sport===action.sport?{...r,openElo:score,verifiedElo:score,lockOpen:score,lockVerified:score}:r)};
+    }
     case "complete-onboarding":
       return { ...rolled, onboardingCompleted: true };
     case "sync": {
@@ -1680,5 +1615,5 @@ export function applyCompeteEdit(state: CompeteState, action: Action): CompeteSt
 /** Apply activity growth immediately after every mutation, through the same path on web/native. */
 export function reduceCompete(state: CompeteState, action: Action): CompeteState {
   const next = reduceCompeteAction(state, action, true);
-  return applyEffortMilestones(next, effectiveNow(next, action.now));
+  return next;
 }

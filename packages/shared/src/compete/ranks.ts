@@ -1,4 +1,3 @@
-import { ELO_CAP, ELO_FLOOR, clamp } from "./sports";
 import type { RankSymbolId } from "../rank-symbols";
 
 export interface RankBand {
@@ -11,67 +10,67 @@ export interface RankBand {
 /**
  * Fitness-style ladder from weekly effort Elo (not gaming metals).
  * Score moves mainly with counted distance (or time when there is no GPS).
- * Activity milestones only add; empty weeks decay slightly via weekly settlement. Floor is 500.
+ * Official rank changes happen at weekly recap, with two-week demotion protection.
  */
 export const RANK_BANDS: RankBand[] = [
   {
     id: "beginner",
     name: "Beginner",
-    min: ELO_FLOOR,
+    min: 0,
     blurb: "Just getting started — every counted session moves you up",
   },
   {
     id: "rookie",
     name: "Rookie",
-    min: 800,
+    min: 1250,
     blurb: "Habit forming — a few solid weeks of showing up",
   },
   {
     id: "active",
     name: "Active",
-    min: 1000,
+    min: 2500,
     blurb: "Baseline field — regular weekly volume among peers",
   },
   {
     id: "challenger",
     name: "Challenger",
-    min: 1200,
+    min: 3750,
     blurb: "Reliable weeks — volume holds without long gaps",
   },
   {
     id: "athlete",
     name: "Athlete",
-    min: 1400,
+    min: 5000,
     blurb: "Above the pack — harder weeks than most on your field",
   },
   {
     id: "elite",
     name: "Elite",
-    min: 1600,
+    min: 6250,
     blurb: "High output — consistently near the top of peer fields",
   },
   {
     id: "master",
     name: "Master",
-    min: 1800,
+    min: 7500,
     blurb: "Commanding mastery — big sustained volume week after week",
   },
   {
     id: "olympian",
     name: "Olympian",
-    min: 2000,
+    min: 8750,
     blurb: "Rare consistency — big volume sustained week after week",
   },
   {
     id: "champion",
     name: "Champion",
-    min: 2200,
+    min: 10000,
     blurb: "Top band — maxed weekly effort relative to the field",
   },
 ];
 
 export function rankForElo(elo: number): RankBand {
-  if (elo <= 0) {
+  if (elo < 0) {
     return {
       id: "beginner",
       name: "Unranked",
@@ -79,7 +78,7 @@ export function rankForElo(elo: number): RankBand {
       blurb: "No account baseline yet — create an account to start at 1000",
     };
   }
-  const safe = clamp(ELO_FLOOR, ELO_CAP, elo);
+  const safe = Math.max(0, elo);
   let band = RANK_BANDS[0]!;
   for (const candidate of RANK_BANDS) {
     if (safe >= candidate.min) band = candidate;
@@ -135,9 +134,11 @@ export function rankSymbolForRankName(name: string | null | undefined): RankSymb
   }
 }
 
-export function effectiveRankSymbol(state?: { rankSymbol?: RankSymbolId | null; ratings?: Array<{ sport: string; openElo?: number; verifiedElo?: number }>; primary?: string } | null): RankSymbolId {
+export function effectiveRankSymbol(state?: { rankSymbol?: RankSymbolId | null; ratings?: Array<{ sport: string; openElo?: number; verifiedElo?: number }>; effortAccounts?: import("./effort-account").EffortAccounts; primary?: string } | null): RankSymbolId {
   if (!state) return "beginner";
   if (state.rankSymbol) return state.rankSymbol;
+  const official = state.effortAccounts?.[state.primary as import("./sports").SportId];
+  if(official) return RANK_BANDS[official.state.officialRankIndex]!.id;
   const rating = state.ratings?.find(r => r.sport === state.primary);
   const score = rating?.verifiedElo ?? rating?.openElo;
   return rankSymbolForScore(score);

@@ -1,13 +1,16 @@
-import { ELO_CAP, ELO_FLOOR, ELO_K, INACTIVITY_DECAY, clamp } from "./sports";
+import { ELO_K, INACTIVITY_DECAY, clamp } from "./sports";
+// Sleep has its own rating scale; these are not sport Effort Score bounds.
+const ELO_FLOOR = 500;
+const ELO_CAP = 2400;
 
 export function expectedScore(own: number, opponent: number): number {
   return 1 / (1 + 10 ** ((opponent - own) / 400));
 }
 
 /**
- * Chess-style update against the rest of a small weekly group.
+ * Sleep competition rating update. Sport Effort Score does not call this function.
  * `place` is 0 for first. A week with no effort decays toward the floor
- * instead of being scored as a last-place loss. Activity milestones are separate.
+ * instead of being scored as a last-place loss.
  */
 export function settleElo(
   own: number,

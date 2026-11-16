@@ -1,5 +1,5 @@
 import {
-  calibrateFromAcceptedHistory, competeNow, dayKey, freshState, nextDailyWaveWindowAt, reduceCompete, rollClock,
+  initializeEffortAccounts, calibrateFromAcceptedHistory, competeNow, dayKey, freshState, nextDailyWaveWindowAt, reduceCompete, rollClock,
   SPORT_IDS, withAccountEloBaseline, withDerivedPendingReveals,
   type Activity, type CompeteState, type CrewBoardPin,
 } from "@fitness-battle/shared";
@@ -33,7 +33,7 @@ export function applyCompetitionActivityIntents(next: CompeteState, incoming: Co
 /** The document transports user intentions. Ratings, locks, receipts and results
  * always start from the server copy; supplied score values are never imported. */
 export function deriveCompetitionIntents(stored: CompeteState | null, incoming: CompeteState, userId: string, now: Date): CompeteState {
-  let next = applyCompetitionActivityIntents(stored ?? withAccountEloBaseline(freshState(now)), incoming, now);
+  let next = applyCompetitionActivityIntents(stored ?? initializeEffortAccounts(freshState(now),now), incoming, now);
   next = { ...next, requiresCanonicalFields: true, demoNow: null,
     name: incoming.name.trim().slice(0, 80) || next.name, city: incoming.city.trim().slice(0, 80),
     gender: incoming.gender !== undefined ? incoming.gender : next.gender,

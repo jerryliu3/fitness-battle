@@ -1,4 +1,4 @@
-import type { CompeteState } from "@fitness-battle/shared";
+import { readAccountEffort, SPORT_IDS, type CompeteState } from "@fitness-battle/shared";
 import { loadEffortScoreEvents } from "@/lib/compete-persist";
 
 export async function committedScoreHistory(
@@ -17,10 +17,11 @@ export async function committedScoreHistory(
   }
 }
 
-export function competeAccountJsonState(live: CompeteState) {
+export function competeAccountJsonState(live: CompeteState): CompeteState {
   return {
     ...live,
     requiresCanonicalFields: true,
+    liveEffortScores: Object.fromEntries(SPORT_IDS.map(sport=>[sport,readAccountEffort(live,sport,new Date())])),
     enrollments: live.enrollments.map((e) => ({
       ...e,
       awaitingField: e.awaitingField ?? !e.fieldBoard,

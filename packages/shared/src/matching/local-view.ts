@@ -15,6 +15,7 @@ import type {
 import { waveLengthDays } from "./waves";
 
 export interface LocalBoardInput {
+  nativeEffort?: boolean;
   enrollment: WaveEnrollment;
   viewer: {
     id: string;
@@ -176,6 +177,7 @@ export function buildLocalBoard(input: LocalBoardInput): LocalBoardRow[] {
     });
   }
 
+  if(input.nativeEffort && sport==="strength")for(const row of rows)row.effort=row.movingSec;
   const total = (row: LocalBoardRow) => gps ? row.distanceM : row.effort;
   rows.sort((a, b) => total(b) - total(a) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
   const values = rows.map(total);

@@ -10,11 +10,11 @@ import type { DailyHealthSample } from "../fitness/types";
 import type { RankSymbolId } from "../rank-symbols";
 
 /** Starting effort score for signed-in accounts (and after first join). */
-export const ELO_BASE = 1000;
+export const ELO_BASE = 0;
 /** Guest / pre-account default — baseline 500 until account creation. */
-export const ELO_UNRANKED = 500;
-export const ELO_FLOOR = 500;
-export const ELO_CAP = 2400;
+export const ELO_UNRANKED = 0;
+export const ELO_FLOOR = 0;
+export const ELO_CAP = Infinity;
 export const ELO_K = 24;
 export const INACTIVITY_DECAY = 12;
 export const STARTING_FREEZES = 3;
@@ -222,6 +222,8 @@ export interface TrainingGoal {
 
 /** Locked snapshot written when a weekly period settles. */
 export interface PeriodResult {
+  effortReward?: number;
+  effortChange?: { training: number; history: number; competition: number };
   id: string;
   periodStart: string;
   periodEnd: string;
@@ -259,6 +261,8 @@ export interface EffortScoreEvent {
 }
 
 export interface CompeteState {
+  liveEffortScores?: Partial<Record<SportId, ReturnType<typeof import("./effort-account").readAccountEffort>>>;
+  effortAccounts?: import("./effort-account").EffortAccounts;
   /** Read-only server history of actual committed score changes. */
   effortScoreEvents?: EffortScoreEvent[];
   /** Transient configured-account guard; unresolved rosters cannot be locally settled. */

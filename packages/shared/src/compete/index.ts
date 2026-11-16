@@ -110,7 +110,7 @@ export {
   type EffortTier,
   type SessionEffortSummary,
 } from "./effort";
-export { expectedScore, settleElo } from "./elo";
+export { expectedScore } from "./elo";
 export { lessonFor, type Lesson } from "./lessons";
 export {
   freshState,
@@ -287,7 +287,7 @@ export type { GoalDistance, TrainingGoal } from "./sports";
 export { parseManualActivity, manualActivityInstant } from "./manual-input";
 export { roundReveal, roundEnrollment } from "./round-reveal";
 
-export { applyEffortMilestones, milestoneStep, type EffortMilestone } from "./milestones";
+export { type EffortMilestone } from "./milestones";
 
 export { RECORD_DISTANCES, recordAttemptsForActivity, personalRecordHistory, weeklyTraining, recordStepPath, type RecordAttempt, type TrainingWeek } from "./progress";
 export {
@@ -306,7 +306,6 @@ export {
 export { crewSessionInstant, crewSessionError, type CrewSession } from './crew-sessions';
 export { crewSessionDraftId } from './crew-sessions';
 export { repeatStatus, type WeeklySocial, type WeeklyPeer } from './weekly-social';
-export { currentEffortMilestone } from './milestones';
 export { personalRecordChart } from "./progress";
 
 export { validateCrewSessionDraft, demoCrewSessionMutation, type CrewSessionMutation } from "./crew-sessions";
@@ -317,3 +316,9 @@ export {
   type DebugEventOption,
   type DebugEventResult,
 } from "./debug-events";
+
+export { calculateLiveEffortScore, settleEffortWeek, updateEffortBaseline, trainingPosition, historicalBonusPoints, placementRewardPoints, createEmptyEffortState, createDeclaredEffortState, createImportedEffortState, getScoreBreakdown, SPORT_CONFIG as EFFORT_SPORT_CONFIG, SCORING_VERSION as EFFORT_SCORING_VERSION, type EffortState, type LiveEffortInput } from './effort-score';
+export { eligibleEffortVolume, liveEffortFromActivities } from './effort-volume';
+
+export { initializeEffortAccounts, settleAccountEffort, readAccountEffort, type EffortAccounts } from './effort-account';
+export { replayEffortHistory } from './effort-account';

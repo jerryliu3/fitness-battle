@@ -20,10 +20,10 @@ describe("mobile account state", () => {
     );
     expect(nameForAccount("Guest", "Guest", "alice@example.com")).toBe("alice");
   });
-  it("lifts only live empty accounts and leaves guests at the shared baseline", () => {
+  it("starts guests and signed-in empty accounts at zero", () => {
     const state = freshState();
     expect(hydrateAccountIdentity(state, null, false).ratings[0].openElo).toBe(
-      500,
+      0,
     );
     expect(
       hydrateAccountIdentity(
@@ -31,7 +31,7 @@ describe("mobile account state", () => {
         { displayName: "Alice", email: "a@test.com" },
         true,
       ).ratings[0].openElo,
-    ).toBe(1000);
+    ).toBe(0);
   });
   it("suppresses week_still_open sync noise while surfacing other save failures", () => {
     expect(saveFailure("week_still_open")).toBeNull();

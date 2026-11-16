@@ -1,3 +1,4 @@
+import { readAccountEffort } from './compete/effort-account';
 import { countsForTraining } from "./compete/journal";
 import { competeNow } from "./compete/engine";
 import type { CompeteState } from "./compete/sports";
@@ -248,7 +249,7 @@ export function effortScoreComparison(
   const inWindow = chartEvents.some(event => Date.parse(event.occurredAt) >= start.getTime());
   if (!inWindow) return null;
   const rating = state.ratings.find(r => r.sport === state.primary);
-  const current = (track === "verified" ? rating?.verifiedElo : rating?.openElo) ?? 500;
+  const current = readAccountEffort(state,state.primary,now)?.liveScore ?? (track === "verified" ? rating?.verifiedElo : rating?.openElo) ?? 0;
   const prior = effortScoreAt(chartEvents, start, current);
   if (!Number.isFinite(prior) || prior === 0) return null;
   return { current, prior, pct: ((current - prior) / prior) * 100 };
@@ -282,7 +283,7 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
   const events = effortScoreEvents(state, track, now);
   const rows: { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean }[] = [];
   const rating = state.ratings.find(r => r.sport === state.primary);
-  const current = (track === "verified" ? rating?.verifiedElo : rating?.openElo) ?? 500;
+  const current = readAccountEffort(state,state.primary,now)?.liveScore ?? (track === "verified" ? rating?.verifiedElo : rating?.openElo) ?? 0;
   const eventsInWindow = events.filter(event => Date.parse(event.occurredAt) >= effectiveStart.getTime());
   const eventDays = new Set(eventsInWindow.map(event => dayKey(new Date(event.occurredAt), displayTz)));
   const todayKey = dayKey(now, displayTz);

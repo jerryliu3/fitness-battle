@@ -1,3 +1,4 @@
+import { readAccountEffort } from './compete/effort-account';
 import {
   APP_TIMEZONE,
   dailyPeriodBounds,
@@ -9,7 +10,6 @@ import {
 import { countsForTraining } from "./compete/journal";
 import { isVerifiedActivity } from "./compete/ledger";
 import { periodEffort } from "./compete/effort";
-import { currentEffortMilestone } from "./compete/milestones";
 import { competeNow } from "./compete/engine";
 import {
   ELO_CAP,
@@ -317,16 +317,14 @@ export function clampTrainingAnchor(
   return anchor;
 }
 
-/** Presentation of the existing +1 receipt rule; high-water awards are never reassigned to a particular session. */
+/** Live score progress toward the next rank threshold. */
 export function effortPointProgress(state: CompeteState, sport: SportId = state.primary, track: ScoreTrack = "open", now=competeNow(state)) {
-  const rating=state.ratings.find(r=>r.sport===sport), enrollment=state.enrollments.find(e=>e.sport===sport);
-  const receipt=currentEffortMilestone(state,sport,track);
-  if(!rating?.optedIn || !enrollment || !receipt || Date.parse(enrollment.waveStart)>now.getTime() || Date.parse(enrollment.weekEnd)<=now.getTime())return null;
-  const totals=periodEffort(state.activities,sport,new Date(enrollment.waveStart),new Date(Math.min(Date.parse(enrollment.weekEnd),now.getTime()+1)),track,{dailyHealth:state.dailyHealth,now});
-  const volume=sport==="strength"?totals.movingSec:sport==="walking"?totals.effort:totals.distanceM;
-  const score=track==="open"?rating.openElo:rating.verifiedElo;
-  const threshold=(receipt.earned+1)*receipt.step;
-  return {sport,track,score,earned:receipt.earned,step:receipt.step,volume,remaining:Math.max(0,threshold-volume),retained:volume<receipt.earned*receipt.step,fraction:score>=ELO_CAP?1:Math.max(0,Math.min(1,(volume-receipt.earned*receipt.step)/receipt.step)),capped:score>=ELO_CAP};
+  const live=readAccountEffort(state,sport,now);
+  if(live){
+    const score=live.liveScore, next=(Math.floor(score/1250)+1)*1250;
+    return {sport,track,score,earned:Math.max(0,score-live.settledScore),step:1,volume:0,remaining:next-score,retained:false,fraction:(score%1250)/1250,capped:false,officialRank:live.officialRank,live:true};
+  }
+  return null;
 }
 
 export function sessionStageModel(activities: Activity[]) {

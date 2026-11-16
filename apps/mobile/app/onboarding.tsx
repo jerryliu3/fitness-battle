@@ -39,6 +39,7 @@ const f=useFocusStyles();
   const [step, setStep] = useState(0), [name, setName] = useState(""), [city, setCity] = useState("");
   const [gender, setGender] = useState<ProfileGender | "">("");
   const [countryCode, setCountryCode] = useState("");
+  const [weeklyVolume,setWeeklyVolume]=useState<Partial<Record<SportId,string>>>({});
   const [sports, setSports] = useState<SportId[]>([]), [units, setUnits] = useState<UnitSystem>("us"), [sleep, setSleep] = useState(false);
   const [timezone, setTimezone] = useState(() => detectDeviceTimeZone());
 
@@ -48,7 +49,7 @@ const f=useFocusStyles();
   useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),30_000);return ()=>clearInterval(timer);},[]);
   useEffect(() => { let alive = true; setReady(false); void AsyncStorage.getItem(key).then(raw => {
     if (!alive) return;
-    let draft; try { draft = !preview && raw ? JSON.parse(raw) : null; } catch {}
+    let draft: Record<string, any> | null = null; try { draft = !preview && raw ? JSON.parse(raw) : null; } catch {}
     setStep(Math.max(0, Math.min(6, Number(draft?.step) || 0)));
     setName(typeof draft?.name === "string" ? draft.name : "");
     setCity(typeof draft?.city === "string" ? draft.city : "");
@@ -58,9 +59,9 @@ const f=useFocusStyles();
     setSports(Array.isArray(draft?.sports) ? draft.sports.filter((id: SportId) => SPORTS.some(s => s.id === id)) : []);
     setSleep(Boolean(draft?.sleep));
     setTimezone(typeof draft?.timezone === "string" ? draft.timezone : detectDeviceTimeZone());
-    setLoadedKey(key); setReady(true);
+    setWeeklyVolume(Object.fromEntries(SPORTS.flatMap(s=>typeof draft?.weeklyVolume?.[s.id]==="string"?[[s.id,draft.weeklyVolume[s.id]]]:[])));setLoadedKey(key); setReady(true);
   }).catch(() => { if (alive) setReady(true); }); return () => { alive = false; }; }, [key, preview, Boolean(state)]);
-  useEffect(() => { if (ready && loadedKey === key && !preview) void AsyncStorage.setItem(key, JSON.stringify({step,name,city,gender,countryCode,sports,units,sleep,timezone})).catch(() => {}); }, [ready,loadedKey,preview,key,step,name,city,gender,countryCode,sports,units,sleep,timezone]);
+  useEffect(() => { if (ready && loadedKey === key && !preview) void AsyncStorage.setItem(key, JSON.stringify({step,name,city,gender,countryCode,sports,units,sleep,timezone,weeklyVolume})).catch(() => {}); }, [ready,loadedKey,preview,key,step,name,city,gender,countryCode,sports,units,sleep,timezone,weeklyVolume]);
   if (!preview && state?.onboardingCompleted) return <Redirect href="/today" />;
   if (!state || !ready) return <AppText>Loading setup…</AppText>;
   const identityReady = name.trim().length > 0 && (gender === "male" || gender === "female" || gender === "other") && countryCode.length === 2;
@@ -84,6 +85,11 @@ const f=useFocusStyles();
     dispatch({ type: "set-country", countryCode });
     dispatch({ type: "set-units", units });
     dispatch({ type: "set-timezone", timezone });
+    for(const sport of sports){
+      const value=weeklyVolume[sport];
+      if(value!==undefined&&value!==""&&Number.isFinite(Number(value))&&Number(value)>=0)dispatch({type:"declare-effort",sport,declaredWeeklyVolume:Number(value)*(sport==="running"||sport==="cycling"?(units==="metric"?1000:1609.344):sport==="strength"?60:1)});
+    }
+
     for (const sport of sports) dispatch({ type: "opt-in", sport, accountId: user.id });
     if(sports[0]) dispatch({ type: "set-primary", sport: sports[0] });
     if (sleep) dispatch({ type: "opt-in-health", metric: "sleep" });
@@ -115,7 +121,7 @@ const f=useFocusStyles();
         <SearchableCountryPicker label="Country" value={countryCode} onChange={setCountryCode}/>
         <TimezonePicker label="Time zone" value={timezone} onChange={setTimezone} />
       </>}
-      {step===2 && <><AppText secondary>You can change this later under your profile.</AppText><AppText role="heading">Sports</AppText><View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{SPORTS.map(s=><Chip key={s.id} label={s.name} selected={sports.includes(s.id)} onPress={()=>setSports(current=>current.includes(s.id)?current.filter(id=>id!==s.id):[...current,s.id])}/>)}</View>{sports.length>1&&<><AppText role="label">Primary sport</AppText><ChoicePicker label="Primary sport" value={sports[0]!} options={sports.map(id=>({value:id,label:SPORTS.find(s=>s.id===id)!.name}))} onChange={id=>setSports([id,...sports.filter(s=>s!==id)])}/></>}{sports.some(s=>s!=="strength")&&<View style={{alignItems:"flex-start",gap:12}}><AppText role="label">Distance units</AppText><View style={{width:210}}><FocusSegments label="Distance units" options={[{value:"us",label:"Miles"},{value:"metric",label:"Kilometres"}]} value={units} onChange={setUnits}/></View></View>}<AppText role="heading">Sleep & recovery</AppText><View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}><Chip label="Sleep tracking" selected={sleep} onPress={()=>setSleep(!sleep)}/></View>{selectionError&&!sports.length&&!sleep&&<AppText accessibilityRole="alert">Choose at least one sport or sleep tracking to continue.</AppText>}</>}
+      {step===2 && <><AppText secondary>You can change this later under your profile.</AppText><AppText role="heading">Sports</AppText><View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{SPORTS.map(s=><Chip key={s.id} label={s.name} selected={sports.includes(s.id)} onPress={()=>setSports(current=>current.includes(s.id)?current.filter(id=>id!==s.id):[...current,s.id])}/>)}</View>{sports.length>1&&<><AppText role="label">Primary sport</AppText><ChoicePicker label="Primary sport" value={sports[0]!} options={sports.map(id=>({value:id,label:SPORTS.find(s=>s.id===id)!.name}))} onChange={id=>setSports([id,...sports.filter(s=>s!==id)])}/></>}{sports.some(s=>s!=="strength")&&<View style={{alignItems:"flex-start",gap:12}}><AppText role="label">Distance units</AppText><View style={{width:210}}><FocusSegments label="Distance units" options={[{value:"us",label:"Miles"},{value:"metric",label:"Kilometres"}]} value={units} onChange={setUnits}/></View></View>}{sports.map(sport=><View key={sport}><AppText role="label">Typical weekly {SPORTS.find(s=>s.id===sport)!.name.toLowerCase()} ({sport==="walking"?"steps":sport==="strength"?"minutes":units==="metric"?"km":"miles"})</AppText><TextInput style={f.input} keyboardType="decimal-pad" accessibilityLabel={`Typical weekly ${sport}`} placeholder="Optional · 0 if just starting" value={weeklyVolume[sport]??""} onChangeText={value=>setWeeklyVolume(current=>({...current,[sport]:value}))}/></View>)}<AppText role="heading">Sleep & recovery</AppText><View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}><Chip label="Sleep tracking" selected={sleep} onPress={()=>setSleep(!sleep)}/></View>{selectionError&&!sports.length&&!sleep&&<AppText accessibilityRole="alert">Choose at least one sport or sleep tracking to continue.</AppText>}</>}
 
       {step===3 && <><AppText secondary>Connect a tracker now to authorize your real account.</AppText>{preview ? PROVIDERS.map(p=><FocusButton key={p.id} secondary disabled label={`${p.name} · Connect (preview)`} onPress={()=>{}}/>) : <TrackerConnections/>}</>}
       {step===4 && <><AppText secondary>The moment your effort takes you ahead of another athlete. Don’t get overtaken!</AppText><OnboardingOvertake/></>}

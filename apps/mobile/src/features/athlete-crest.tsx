@@ -46,7 +46,7 @@ export function AthleteCrest({ model, onInteractionChange }: { model: AthleteCar
       } catch { /* Ignore malformed bridge messages. */ } }} />}
     {failed && (
       <View style={{ position: "absolute", inset: 0 }}>
-        <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} />
+        <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />
       </View>
     )}
   </View>;

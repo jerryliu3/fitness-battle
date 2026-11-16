@@ -3,9 +3,9 @@ import { freshState, withAccountEloBaseline } from "./compete";
 import { effortHistory } from "./effort-history";
 
 describe("shared effort history", () => {
-  it("renders guest baseline 500 with current day as the last day of the period", () => {
+  it("renders guest baseline zero with current day as the last day of the period", () => {
     const model = effortHistory(freshState(), "open", null);
-    expect(model.effectiveElo).toBe(500);
+    expect(model.effectiveElo).toBe(0);
     expect(model.dailyValues).toHaveLength(30);
     expect(model.pts).toHaveLength(30);
     expect(model.lastPoint.x).toBe(model.xEnd);
@@ -39,7 +39,7 @@ describe("shared effort history", () => {
     state.ratings.find((r) => r.sport === state.primary)!.verifiedElo = 1130;
     expect(
       effortHistory(state, "open", {}, "alice@example.com").effectiveElo,
-    ).toBe(1000);
+    ).toBe(0);
     expect(
       effortHistory(state, "verified", {}, "alice@example.com").effectiveElo,
     ).toBe(1130);

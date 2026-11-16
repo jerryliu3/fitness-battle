@@ -27,18 +27,19 @@ function Setup({preview}:{preview:boolean}) {
   const [gender,setGender]=useState<ProfileGender|"">("");
   const [countryCode,setCountryCode]=useState("");
   useEffect(()=>{setupTop.current?.scrollIntoView({block:"start"});},[step]);
+  const [weeklyVolume,setWeeklyVolume]=useState<Partial<Record<SportId,string>>>({});
   const [sports,setSports]=useState<SportId[]>([]),[units,setUnits]=useState<UnitSystem>("us"),[sleep,setSleep]=useState(false);
   const [timezone,setTimezone]=useState(()=>detectDeviceTimeZone());
-  useEffect(()=>{if(!state)return; let d;try{d=!preview?JSON.parse(sessionStorage.getItem(key)??"null"):null;}catch{}
+  useEffect(()=>{if(!state)return; let d: Record<string, any> | null = null;try{d=!preview?JSON.parse(sessionStorage.getItem(key)??"null"):null;}catch{}
     setStep(Math.max(0,Math.min(6,Number(d?.step)||0)));
     setName(typeof d?.name==="string"?d.name:"");
     setCity(typeof d?.city==="string"?d.city:"");
     setGender(d?.gender==="male"||d?.gender==="female"||d?.gender==="other"?d.gender:"");
     setCountryCode(typeof d?.countryCode==="string"?d.countryCode:"");
     setUnits(d?.units==="metric"||d?.units==="us"?d.units:state.units);
-    setSports(Array.isArray(d?.sports)?d.sports.filter((id:SportId)=>SPORTS.some(s=>s.id===id)):[]);setSleep(Boolean(d?.sleep));setTimezone(typeof d?.timezone==="string"?d.timezone:detectDeviceTimeZone());setLoadedKey(key);setReady(true);
+    setSports(Array.isArray(d?.sports)?d.sports.filter((id:SportId)=>SPORTS.some(s=>s.id===id)):[]);setSleep(Boolean(d?.sleep));setTimezone(typeof d?.timezone==="string"?d.timezone:detectDeviceTimeZone());setWeeklyVolume(Object.fromEntries(SPORTS.flatMap(s=>typeof d?.weeklyVolume?.[s.id]==="string"?[[s.id,d.weeklyVolume[s.id]]]:[])));setLoadedKey(key);setReady(true);
   },[key,preview,Boolean(state)]);
-  useEffect(()=>{if(ready&&loadedKey===key&&!preview)try{sessionStorage.setItem(key,JSON.stringify({step,name,city,gender,countryCode,sports,units,sleep,timezone}));}catch{}},[ready,loadedKey,preview,key,step,name,city,gender,countryCode,sports,units,sleep,timezone]);
+  useEffect(()=>{if(ready&&loadedKey===key&&!preview)try{sessionStorage.setItem(key,JSON.stringify({step,name,city,gender,countryCode,sports,units,sleep,timezone,weeklyVolume}));}catch{}},[ready,loadedKey,preview,key,step,name,city,gender,countryCode,sports,units,sleep,timezone,weeklyVolume]);
   if(!state||!ready)return <AppParagraph>Loading setup…</AppParagraph>;
   const identityReady=name.trim().length>0&&(gender==="male"||gender==="female"||gender==="other")&&countryCode.length===2;
   const selectionReady=sports.length>0||sleep;
@@ -49,6 +50,11 @@ function Setup({preview}:{preview:boolean}) {
     dispatch({type:"set-country",countryCode});
     dispatch({type:"set-units",units});
     dispatch({type:"set-timezone",timezone});
+    for(const sport of sports){
+      const value=weeklyVolume[sport];
+      if(value!==undefined&&value!==""&&Number.isFinite(Number(value))&&Number(value)>=0)dispatch({type:"declare-effort",sport,declaredWeeklyVolume:Number(value)*(sport==="running"||sport==="cycling"?(units==="metric"?1000:1609.344):sport==="strength"?60:1)});
+    }
+
     for(const sport of sports)dispatch({type:"opt-in",sport,accountId:user.id});if(sports[0])dispatch({type:"set-primary",sport:sports[0]});if(sleep)dispatch({type:"opt-in-health",metric:"sleep"});dispatch({type:"complete-onboarding"});
     try{sessionStorage.removeItem(key);}catch{} router.replace(resolveSafePostLoginPath(params.get("next")));
   }

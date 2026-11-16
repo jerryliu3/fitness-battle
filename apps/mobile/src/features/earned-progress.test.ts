@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { freshState, reduceCompete, type Activity, type CompeteState } from "@fitness-battle/shared";
+import { freshState, reduceCompete, readAccountEffort, type Activity, type CompeteState } from "@fitness-battle/shared";
 const mock=vi.hoisted(()=>({state:null as CompeteState|null,account:"one",navigate:vi.fn()}));
 vi.mock("react-native",()=>({useColorScheme: () => "light",
  useWindowDimensions:()=>({width:390,height:844,fontScale:1}),
@@ -35,10 +35,11 @@ describe("native earned progress flows",()=>{
  it("shows score changes once after hydration, keeps reduced motion still and resets across accounts",async()=>{
   await act(async()=>{renderer=create(createElement(EffortRail));});
   expect(JSON.stringify(renderer.toJSON())).not.toContain("✦");
-  mock.state={...mock.state!,ratings:mock.state!.ratings.map(r=>r.sport==="running"?{...r,verifiedElo:r.verifiedElo+2}:r)};
+  mock.state={...mock.state!,activities:[recorded("new-run",1800)]};
+  const gain=readAccountEffort(mock.state,"running",now)!.liveScore;
   await act(async()=>renderer.update(createElement(EffortRail)));
-  expect(text()).toContain("+2");expect(JSON.stringify(renderer.toJSON())).not.toContain("✦");
-  mock.account="two";await act(async()=>renderer.update(createElement(EffortRail)));expect(text()).not.toContain("+2");
+  expect(text()).toContain(`+${gain}`);expect(JSON.stringify(renderer.toJSON())).not.toContain("✦");
+  mock.account="two";await act(async()=>renderer.update(createElement(EffortRail)));expect(renderer.root.findAllByType("Text" as never).some(n=>n.children.join("")===`+${gain}`)).toBe(false);
   await act(async()=>renderer.root.findByType("Pressable" as never).props.onPress());expect(mock.navigate).toHaveBeenCalledWith("/you?view=effort");
  });
  it("lets a multi-session day select a session and requires confirmation before removal",async()=>{

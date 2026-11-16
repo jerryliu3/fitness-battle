@@ -3,13 +3,14 @@ import { nextDailyWaveWindowAt, weeklyWaveWindowAt, weekEndAfter } from "../matc
 import { APP_TIMEZONE, endOfZonedDay, startOfZonedDay } from "../period";
 import { settleElo } from "./elo";
 import {
-  ELO_BASE,
   clamp,
   dayKey,
   unitInterval,
   type ProviderId,
   type SportId,
 } from "./sports";
+
+const ELO_BASE = 1000;
 
 /**
  * Health metrics sit beside volume sports. Each one is a bounded reading

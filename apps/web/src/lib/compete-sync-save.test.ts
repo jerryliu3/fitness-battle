@@ -25,13 +25,13 @@ beforeEach(() => {
   mock.history.mockResolvedValue([]);
 });
 afterEach(() => { vi.useRealTimers(); });
-it("saves a deselected sync without calculating unpersistable milestone awards", async () => {
+it("saves a deselected sync without crediting excluded volume", async () => {
   const incoming = { ...stored, activities: stored.activities.map(a => ({ ...a, disposition: "excluded" as const })) };
   const response = await PUT(request(incoming));
   expect(response.status).toBe(200);
   const state = mock.persist.mock.calls[0]![2] as CompeteState;
   expect(state.activities[0]!.disposition).toBe("excluded");
-  expect(state.effortMilestones!.every(r => r.earned === 0)).toBe(true);
+  expect(state.ratings).toEqual(stored.ratings);
   expect((await response.json()).persisted).toBe(true);
 });
 it("recomputes a concurrent tracker delivery once while preserving the optimistic account revision", async () => {

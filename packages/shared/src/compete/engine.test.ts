@@ -200,8 +200,9 @@ describe("compete engine", () => {
     );
     expect(open?.place).toBeGreaterThanOrEqual(1);
     expect(open?.fieldSize).toBe(1);
-    expect(open?.eloBefore).toBe(1003);
-    expect(open?.eloBefore).toBeGreaterThan(1000);
+    expect(open?.eloBefore).toBe(0);
+    expect(open?.eloAfter).toBeGreaterThan(0);
+    expect(open?.effortReward).toBe(0);
     expect(typeof open?.eloAfter).toBe("number");
     expect(closed.enrollments[0]?.waveStart).toBe("2026-10-19T10:00:00.000Z");
 
@@ -276,9 +277,9 @@ describe("compete engine", () => {
     const migrated = migrateCompeteState(partialState as never);
     expect(migrated.ratings.length).toBe(4);
     expect(migrated.ratings.find((r) => r.sport === "running")?.verifiedElo).toBe(1050);
-    expect(migrated.ratings.find((r) => r.sport === "cycling")?.verifiedElo).toBe(1000);
-    expect(migrated.ratings.find((r) => r.sport === "walking")?.verifiedElo).toBe(1000);
-    expect(migrated.ratings.find((r) => r.sport === "strength")?.verifiedElo).toBe(1000);
+    expect(migrated.ratings.find((r) => r.sport === "cycling")?.verifiedElo).toBe(0);
+    expect(migrated.ratings.find((r) => r.sport === "walking")?.verifiedElo).toBe(0);
+    expect(migrated.ratings.find((r) => r.sport === "strength")?.verifiedElo).toBe(0);
 
     expect(migrated.links.length).toBe(6);
     expect(migrated.links.find((l) => l.provider === "strava")?.status).toBe("connected");
@@ -543,15 +544,15 @@ describe("compete engine", () => {
   it("starts unsigned local state as Guest with unranked effort scores", () => {
     const state = freshState();
     expect(state.name).toBe("Guest");
-    expect(state.ratings.every((r) => r.openElo === 500 && r.verifiedElo === 500)).toBe(
+    expect(state.ratings.every((r) => r.openElo === 0 && r.verifiedElo === 0)).toBe(
       true,
     );
   });
 
-  it("lifts unranked scores to the account baseline", () => {
+  it("initializes an empty account at zero", () => {
     const baseline = withAccountEloBaseline(freshState());
     expect(
-      baseline.ratings.every((r) => r.openElo === 1000 && r.verifiedElo === 1000),
+      baseline.ratings.every((r) => r.openElo === 0 && r.verifiedElo === 0),
     ).toBe(true);
   });
 
@@ -561,8 +562,8 @@ describe("compete engine", () => {
       sport: "running",
     });
     const rating = joined.ratings.find((r) => r.sport === "running");
-    expect(rating?.openElo).toBe(1000);
-    expect(rating?.verifiedElo).toBe(1000);
+    expect(rating?.openElo).toBe(0);
+    expect(rating?.verifiedElo).toBe(0);
     expect(rating?.optedIn).toBe(true);
   });
 

@@ -1,3 +1,5 @@
+import { readAccountEffort } from './compete/effort-account';
+import { RANK_NAMES } from './compete/effort-score';
 import { athleteLocationLine } from "./countries";
 import { clubAchievements, clubDuration, clubLifetimeTotals, clubWeekSummary } from "./club-summary";
 import {
@@ -157,7 +159,7 @@ export function athleteCardHighlightCatalog(
     .reduce((n, a) => n + Math.max(0, a.distanceM), 0);
   const unit = distanceUnitLabel(state.units);
   const totalMovingSec = counted.reduce((n, a) => n + Math.max(0, a.movingSec), 0);
-  const primaryScore = state.ratings.find((r) => r.sport === state.primary)?.openElo ?? null;
+  const primaryScore = readAccountEffort(state,state.primary,now)?.liveScore ?? state.ratings.find((r) => r.sport === state.primary)?.openElo ?? null;
   const completedResults = state.periodResults.filter(
     (r) => r.track === "open" && Date.parse(r.periodEnd) <= now.getTime(),
   );
@@ -262,7 +264,7 @@ export function athleteCardModelForPeer(input: {
 }
 
 export function athleteCardModel(state: CompeteState, now = competeNow(state)): AthleteCardModel {
-  const score = state.ratings.find(r => r.sport === state.primary)?.openElo ?? null;
+  const score = readAccountEffort(state,state.primary,now)?.liveScore ?? state.ratings.find(r => r.sport === state.primary)?.openElo ?? null;
   const records: AthleteCardHighlightItem[] = Array.isArray(state.cardHighlights)
     ? (() => {
         const byId = new Map(athleteCardHighlightCatalog(state, now).map(item => [item.id, item]));
@@ -283,7 +285,7 @@ export function athleteCardModel(state: CompeteState, now = competeNow(state)): 
     countryCode,
     initials: initialsFromName(state.name),
     avatarUrl: state.avatarUrl ?? null,
-    sport: sportById(state.primary).name, score, rank: score === null ? null : rankForElo(score).name,
+    sport: sportById(state.primary).name, score, rank: state.effortAccounts?.[state.primary] ? RANK_NAMES[state.effortAccounts[state.primary]!.state.officialRankIndex] : score === null ? null : rankForElo(score).name,
     records, overtakes: state.lifetimeOvertakes, rounds: clubLifetimeTotals(state, now).weeks,
     streak: streak.count, streakActive: streak.active,
     displayTimeZone: accountTimeZone(state),

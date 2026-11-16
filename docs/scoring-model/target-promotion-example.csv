@@ -1,0 +1,9 @@
+sport,target_kind,scale,estimator,start,next_rank,target_weekly_volume,weeks_to_promote,cumulative_weeks,score_at_promotion,baseline_at_promotion,history_rank_intervals
+running,configured,even,ema,Beginner,Rookie,3.5,2,2,1404,2.333333,0.011832
+running,configured,even,ema,Rookie,Active,9.5,2,4,2579,5.2,0.022804
+running,configured,even,ema,Active,Challenger,16,4,8,3855,10.332362,0.042426
+running,configured,even,ema,Challenger,Athlete,27,4,12,5079,18.003224,0.062929
+running,configured,even,ema,Athlete,Elite,34,6,18,6319,27.656167,0.089666
+running,configured,even,ema,Elite,Master,50,6,24,7571,41.139118,0.118491
+running,configured,even,ema,Master,Olympian,65,8,32,8810,58.047961,0.156333
+running,configured,even,ema,Olympian,Champion,85,8,40,10066,77.147331,0.195038

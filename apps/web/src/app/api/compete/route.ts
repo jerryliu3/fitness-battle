@@ -70,7 +70,7 @@ export async function GET(request: Request): Promise<Response> {
         { db: competitionAuthorityDatabase(), receipts, computedAt: now, recordOvertakes: false },
       );
       state = await committedScoreHistory(supabase, userId, state);
-      return NextResponse.json({ state, updatedAt, settled: true });
+      return NextResponse.json({ state: competeAccountJsonState(state), updatedAt, settled: true });
     } catch (error) {
       console.error("GET /api/compete commit failed:", error instanceof Error ? error.message : "unknown");
       return NextResponse.json({ error: "account_not_saved" }, { status: 503 });
@@ -78,7 +78,7 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   return NextResponse.json({
-    state,
+    state: competeAccountJsonState(state),
     updatedAt: loaded.updatedAt,
     settled: false,
   });
