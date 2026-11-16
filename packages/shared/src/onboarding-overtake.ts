@@ -7,10 +7,11 @@ export const onboardingOvertakeCourse = createRaceCourse("First overtake", [[-73
 
 export function createOnboardingOvertakeMoment(name = "Athlete", sport: SportId = "running"): CompetitionMoment {
   const athleteName = name.trim() || "Athlete";
-  const unit = sport === "running" || sport === "cycling" ? "km" : "pts";
-  const youBefore = unit === "pts" ? 15 : .15;
-  const youAfter = unit === "pts" ? 85 : .85;
-  const rival = unit === "pts" ? 50 : .5;
+  const unit = sport === "walking" ? "steps" : sport === "strength" ? "hrs" : "km";
+  const scale = sport === "walking" ? 10_000 : 1;
+  const youBefore = .15 * scale;
+  const youAfter = .85 * scale;
+  const rival = .5 * scale;
   return {
     id: `onboarding-overtake:${sport}`, sport, unit,
     lanes: [

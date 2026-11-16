@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   detectDeviceTimeZone, guestIntroForAccount, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY,
   nextDailyWaveWindowAt, waveTimeLabel, SPORTS, type ProfileGender, type SportId, type UnitSystem,
+  parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, onboardingWeeklyVolumeUnit, type OnboardingWeeklyVolumes,
 } from "@fitness-battle/shared";
 import { TrackerConnections } from "@/features/you/you-route";
 import { CountryCombobox } from "@/ui/country-combobox";
@@ -31,6 +32,7 @@ function Setup({ preview }: { preview: boolean }) {
   const [gender, setGender] = useState<ProfileGender | "">("");
   const [countryCode, setCountryCode] = useState("");
   const [sports, setSports] = useState<SportId[]>([]);
+  const [weeklyVolume, setWeeklyVolume] = useState<OnboardingWeeklyVolumes>({});
   const [units, setUnits] = useState<UnitSystem>("us"), [sleep, setSleep] = useState(false);
   const [timezone, setTimezone] = useState(() => detectDeviceTimeZone());
   const [selectionError, setSelectionError] = useState(false);
@@ -57,14 +59,15 @@ function Setup({ preview }: { preview: boolean }) {
     setUnits(saved?.units === "us" || saved?.units === "metric" ? saved.units : state.units);
     setSports(Array.isArray(saved?.sports) ? saved.sports.filter((s: unknown): s is SportId => SPORTS.some(sport => sport.id === s)) : initialSports);
     setSleep(typeof saved?.sleep === "boolean" ? saved.sleep : Boolean(state.healthRatings.some(r => r.metric === "sleep" && r.optedIn)));
+    setWeeklyVolume(parseOnboardingWeeklyVolumes(saved?.weeklyVolume));
     setTimezone(typeof saved?.timezone === "string" ? saved.timezone : detectDeviceTimeZone());
     setGuestImported(Boolean(guest));
     setLoadedKey(key);
   }, [key, preview, user?.email, Boolean(state)]);
   useEffect(() => {
     if (loadedKey !== key || preview) return;
-    try { sessionStorage.setItem(key, JSON.stringify({ step, name, city, gender, countryCode, sports, units, sleep, timezone })); } catch {}
-  }, [loadedKey, key, preview, step, name, city, gender, countryCode, sports, units, sleep, timezone]);
+    try { sessionStorage.setItem(key, JSON.stringify({ step, name, city, gender, countryCode, sports, units, sleep, timezone, weeklyVolume })); } catch {}
+  }, [loadedKey, key, preview, step, name, city, gender, countryCode, sports, units, sleep, timezone, weeklyVolume]);
   useEffect(() => {
     if (!preview && state?.onboardingCompleted) router.replace(resolvePostOnboardingPath(params.get("next")));
   }, [preview, state?.onboardingCompleted, params, router]);
@@ -87,7 +90,11 @@ function Setup({ preview }: { preview: boolean }) {
     if (countryCode) dispatch({ type: "set-country", countryCode });
     dispatch({ type: "set-units", units });
     dispatch({ type: "set-timezone", timezone });
-    for (const sport of sports) dispatch({ type: "opt-in", sport, accountId: user.id });
+    for (const sport of sports) {
+      const declaredWeeklyVolume = onboardingDeclaredVolume(sport, weeklyVolume[sport], units);
+      if (declaredWeeklyVolume !== undefined) dispatch({ type: "declare-effort", sport, declaredWeeklyVolume });
+      dispatch({ type: "opt-in", sport, accountId: user.id });
+    }
     if (sports[0]) dispatch({ type: "set-primary", sport: sports[0] });
     if (sleep) dispatch({ type: "opt-in-health", metric: "sleep" });
     dispatch({ type: "complete-onboarding" });
@@ -122,7 +129,13 @@ function Setup({ preview }: { preview: boolean }) {
       {sports.length > 1 && <label className="fb-field">Primary sport<select value={sports[0]} onChange={e => { const id = e.target.value as SportId; setSports([id, ...sports.filter(s => s !== id)]); }}>
         {sports.map(id => <option key={id} value={id}>{SPORTS.find(s => s.id === id)!.name}</option>)}
       </select></label>}
-      {sports.some(s => s !== "strength") && <OnboardingUnits value={units} onChange={setUnits} />}
+      {SPORTS.some(s => s.gps && sports.includes(s.id)) && <OnboardingUnits value={units} onChange={setUnits} />}
+      {sports.map(sport => <label key={sport} className="fb-field">
+        Typical weekly {SPORTS.find(s => s.id === sport)!.name.toLowerCase()} ({onboardingWeeklyVolumeUnit(sport, units)})
+        <input type="number" inputMode="decimal" min="0" step="any" aria-label={`Typical weekly ${sport}`}
+          placeholder="Optional · 0 if just starting" value={weeklyVolume[sport] ?? ""}
+          onChange={e => setWeeklyVolume(current => ({ ...current, [sport]: e.target.value }))} />
+      </label>)}
       <AppHeading>Sleep & recovery</AppHeading>
       <div className="fb-chips"><button type="button" className={`fb-chip${sleep ? " on" : ""}`} aria-pressed={sleep} onClick={() => setSleep(!sleep)}>Sleep tracking</button></div>
       {selectionError && !identityReady && <AppParagraph role="alert">Enter your display name to continue.</AppParagraph>}

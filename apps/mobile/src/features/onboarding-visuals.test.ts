@@ -10,7 +10,7 @@ it("keeps potential growth separate from earned rank and score", async () => {
  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
  let r!:ReactTestRenderer;
  await act(async()=>{r=create(createElement(OnboardingPotential));});
- expect(r.root.findByType("Chart" as never).props.values).toEqual([1000,1020,1050,1080,1110,1160,1210]);
+ expect(r.root.findByType("Chart" as never).props.values).toEqual([2500,2625,2800,3000,3250,3500,3750]);
  expect(r.root.findAllByType("RankSymbol" as never).map(n=>n.props.rank)).toEqual(["active","challenger"]);
  expect(r.root.findAllByType("AppText" as never).some(n=>n.props.children==="Potential Effort Score")).toBe(true);
  await act(async()=>r.unmount());

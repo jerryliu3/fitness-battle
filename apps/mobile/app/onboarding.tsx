@@ -6,6 +6,7 @@ import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import {
   detectDeviceTimeZone, nextDailyWaveWindowAt, waveTimeLabel, guestIntroForAccount, SPORTS,
   type ProfileGender, type SportId, type UnitSystem,
+  parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, onboardingWeeklyVolumeUnit, type OnboardingWeeklyVolumes,
 } from "@fitness-battle/shared";
 import { TrackerConnections } from "./athlete";
 import { GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft } from "../src/lib/guest-intro";
@@ -40,6 +41,7 @@ export default function Onboarding() {
   const [gender, setGender] = useState<ProfileGender | "">("");
   const [countryCode, setCountryCode] = useState("");
   const [sports, setSports] = useState<SportId[]>([]);
+  const [weeklyVolume, setWeeklyVolume] = useState<OnboardingWeeklyVolumes>({});
   const [units, setUnits] = useState<UnitSystem>("us"), [sleep, setSleep] = useState(false);
   const [timezone, setTimezone] = useState(() => detectDeviceTimeZone());
   const [guestImported, setGuestImported] = useState(false);
@@ -73,6 +75,7 @@ export default function Onboarding() {
       setUnits(saved?.units === "us" || saved?.units === "metric" ? saved.units : state?.units ?? "us");
       setSports(selectedSports);
       setSleep(typeof saved?.sleep === "boolean" ? saved.sleep : Boolean(state?.healthRatings.some(r => r.metric === "sleep" && r.optedIn)));
+      setWeeklyVolume(parseOnboardingWeeklyVolumes(saved?.weeklyVolume));
       setTimezone(typeof saved?.timezone === "string" ? saved.timezone : detectDeviceTimeZone());
       setGuestImported(useGuest);
       setLoadedKey(key);
@@ -89,8 +92,8 @@ export default function Onboarding() {
 
   useEffect(() => {
     if (!ready || loadedKey !== key || preview) return;
-    void AsyncStorage.setItem(key, JSON.stringify({ step, name, city, gender, countryCode, sports, units, sleep, timezone })).catch(() => {});
-  }, [ready, loadedKey, preview, key, step, name, city, gender, countryCode, sports, units, sleep, timezone]);
+    void AsyncStorage.setItem(key, JSON.stringify({ step, name, city, gender, countryCode, sports, units, sleep, timezone, weeklyVolume })).catch(() => {});
+  }, [ready, loadedKey, preview, key, step, name, city, gender, countryCode, sports, units, sleep, timezone, weeklyVolume]);
 
   if (!preview && state?.onboardingCompleted) return <Redirect href="/today" />;
   if (!state || !ready) return <AppText>Loading setup…</AppText>;
@@ -116,7 +119,11 @@ export default function Onboarding() {
     if (countryCode.length === 2) dispatch({ type: "set-country", countryCode });
     dispatch({ type: "set-units", units });
     dispatch({ type: "set-timezone", timezone });
-    for (const sport of sports) dispatch({ type: "opt-in", sport, accountId: user.id });
+    for (const sport of sports) {
+      const declaredWeeklyVolume = onboardingDeclaredVolume(sport, weeklyVolume[sport], units);
+      if (declaredWeeklyVolume !== undefined) dispatch({ type: "declare-effort", sport, declaredWeeklyVolume });
+      dispatch({ type: "opt-in", sport, accountId: user.id });
+    }
     if (sports[0]) dispatch({ type: "set-primary", sport: sports[0] });
     if (sleep) dispatch({ type: "opt-in-health", metric: "sleep" });
     dispatch({ type: "complete-onboarding" });
@@ -158,12 +165,18 @@ export default function Onboarding() {
             {sports.length > 1 && <ChoicePicker label="Primary sport" value={sports[0]!}
               options={sports.map(id => ({ value: id, label: SPORTS.find(s => s.id === id)!.name }))}
               onChange={id => setSports([id as SportId, ...sports.filter(s => s !== id)])} />}
-            {sports.some(id => id !== "strength") && <View style={{ gap: 8 }}>
+            {SPORTS.some(s => s.gps && sports.includes(s.id)) && <View style={{ gap: 8 }}>
               <AppText role="label">Distance units</AppText>
               <View style={{ width: 210 }}><FocusSegments label="Distance units"
                 options={[{ value: "us", label: "Miles" }, { value: "metric", label: "Kilometres" }]}
                 value={units} onChange={setUnits} /></View>
             </View>}
+            {sports.map(sport => <View key={sport} style={{ gap: 8 }}>
+              <AppText role="label">Typical weekly {SPORTS.find(s => s.id === sport)!.name.toLowerCase()} ({onboardingWeeklyVolumeUnit(sport, units)})</AppText>
+              <TextInput style={f.input} keyboardType="decimal-pad" accessibilityLabel={`Typical weekly ${sport}`}
+                placeholder="Optional · 0 if just starting" value={weeklyVolume[sport] ?? ""}
+                onChangeText={value => setWeeklyVolume(current => ({ ...current, [sport]: value }))} />
+            </View>)}
             <AppText role="heading">Sleep & recovery</AppText>
             <Chip label="Sleep tracking" selected={sleep} onPress={() => setSleep(!sleep)} />
             {selectionError && !identityReady && <AppText accessibilityRole="alert">Enter your display name to continue.</AppText>}

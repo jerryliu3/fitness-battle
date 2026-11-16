@@ -31,9 +31,11 @@ it("imports the intended signup draft, skips trackers and registers only on Fini
   await press("Skip for now");
   expect(r.root.findAllByType("input")[0].props.value).toBe("Taylor");
   expect(r.root.findAllByType("button").find(n => n.props.children === "Walking")!.props["aria-pressed"]).toBe(true);
+  await act(async () => r.root.findAllByType("input").find(n => n.props["aria-label"] === "Typical weekly walking")!.props.onChange({ target: { value: "28000" } }));
   await press("Continue");
   expect(mock.dispatch).not.toHaveBeenCalled();
   await press("Finish setup & register");
+  expect(mock.dispatch).toHaveBeenCalledWith({ type: "declare-effort", sport: "walking", declaredWeeklyVolume: 28000 });
   expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-in", sport: "walking", accountId: "a" });
   expect(mock.dispatch).toHaveBeenCalledWith({ type: "complete-onboarding" });
   expect(mock.storage.has(GUEST_INTRO_DRAFT_KEY)).toBe(false);
@@ -45,7 +47,10 @@ it("keeps debug navigation read-only with the same button copy", async () => {
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Onboarding)); });
   const press = async (label: string) => act(async () => r.root.findAllByType("button").find(n => n.props.children === label)!.props.onClick());
-  await press("Skip for now"); await press("Continue"); await press("Finish setup & register");
+  await press("Skip for now");
+  await press("Walking");
+  await act(async () => r.root.findAllByType("input").find(n => n.props["aria-label"] === "Typical weekly walking")!.props.onChange({ target: { value: "28000" } }));
+  await press("Continue"); await press("Finish setup & register");
   expect(mock.dispatch).not.toHaveBeenCalled();
   expect(mock.storage.size).toBe(0);
   await act(async () => r.unmount());

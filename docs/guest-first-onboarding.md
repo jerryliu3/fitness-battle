@@ -8,11 +8,13 @@ into this journey; the website's marketing page links into it too.
 
 1. **Choose a sport** — Running, Cycling, Walking or Strength in a two-column grid.
 2. **Make your first overtake** — the existing competition player uses the selected
-   sport. Running/Cycling support geographic 3D and 2D; Walking/Strength use points
-   in 2D. Playback, replay, speed and Continue belong to the existing player.
-3. **See your potential** — a possible Effort Score trajectory from 1,000 to 1,210
+   sport. Running/Cycling start in geographic 3D; Walking/Strength start in Timeline,
+   showing steps/hours. View switching, playback, replay, speed and Continue
+   belong to the existing competition player and shared field policy.
+3. **See your potential** — a possible Effort Score trajectory from 2,500 to 3,750
    and the existing Active → Challenger rank art. Potential values never become
-   account facts and do not promise a particular result.
+   account facts and do not promise a particular result. Official rank changes
+   are confirmed at weekly recap, matching the current Effort Score model.
 4. **Create your athlete** — name and primary sport update the existing interactive
    3D Crest. City and country are optional profile preparation. Native retains a
    readable card while the remote scene loads or fails.
@@ -50,7 +52,7 @@ device/browser. Unrelated signed-in accounts do not inherit the guest profile.
 A new browser/device cannot recover the device-local draft.
 
 The existing authenticated reducer and persistence path remain the only writers.
-No scoring, period, OAuth or database semantics change. Missing integrations keep
+The merged weekly Effort Score, period, OAuth and database semantics are retained. Missing integrations keep
 their existing unavailable/not-connected states. Production and preview copy match;
 preview mode remains read-only in the data layer.
 
@@ -60,7 +62,11 @@ Native `/onboarding` and web `/app/onboarding` have three stages:
 
 1. Connect trackers, or skip until later.
 2. Finish profile and preferences: name, optional city/country/gender, time zone,
-   sports, primary sport, distance units and sleep tracking.
+   sports, primary sport, distance units, optional typical weekly training volume
+   and sleep tracking. Declarations are saved in the account draft, converted
+   to metres/seconds/steps and sent through the existing `declare-effort` action
+   only on explicit completion; the scorer retains its caps and verified-history
+   protections.
 3. Review choices and explicitly **Finish setup & register** for the next wave.
 
 Existing incomplete accounts can finish without a guest draft. Restored sessions

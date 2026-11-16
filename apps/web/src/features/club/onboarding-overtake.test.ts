@@ -1,15 +1,31 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-vi.mock("./competition-moment",()=>({CompetitionMoment:"CompetitionMoment"}));
+vi.mock("./competition-moment", () => ({ CompetitionMoment: "CompetitionMoment" }));
 import { OnboardingOvertake } from "./onboarding-overtake";
-it("switches view on the same player and resets only on explicit replay",async()=>{
- vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);let r!:ReactTestRenderer;
- await act(async()=>{r=create(createElement(OnboardingOvertake));});
- const player=()=>r.root.findByType("CompetitionMoment" as never);
- const first=player();const moment=first.props.moment;expect(first.props.dimension).toBe("4d");
- await act(async()=>r.root.findAllByType("button").find(b=>b.props.children==="2D field")!.props.onClick());
- expect(player()).toBe(first);expect(player().props.dimension).toBe("2d");expect(player().props.moment).toBe(moment);expect(player().props.course).not.toBeNull();
- await act(async()=>player().props.onConfirm());expect(player()).not.toBe(first);
- await act(async()=>r.unmount());
+it("leaves field controls with the shared player and resets only on explicit replay", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  let r!: ReactTestRenderer;
+  await act(async () => { r = create(createElement(OnboardingOvertake)); });
+  const player = () => r.root.findByType("CompetitionMoment" as never);
+  const first = player();
+  expect(first.props.dimension).toBe("4d");
+  expect(first.props.course).not.toBeNull();
+  expect(r.root.findAllByType("button")).toHaveLength(0);
+  await act(async () => player().props.onConfirm());
+  expect(player()).not.toBe(first);
+  await act(async () => r.unmount());
+});
+it.each(["walking", "strength"] as const)("uses the captured %s volume on the default Timeline", async sport => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const complete = vi.fn();
+  let r!: ReactTestRenderer;
+  await act(async () => { r = create(createElement(OnboardingOvertake, { sport, onComplete: complete })); });
+  const player = r.root.findByType("CompetitionMoment" as never);
+  expect(player.props.dimension).toBe("graph");
+  expect(player.props.moment.unit).toBe(sport === "walking" ? "steps" : "hrs");
+  expect(player.props.course).toBeNull();
+  await act(async () => player.props.onConfirm());
+  expect(complete).toHaveBeenCalledTimes(1);
+  await act(async () => r.unmount());
 });

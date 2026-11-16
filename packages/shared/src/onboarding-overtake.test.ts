@@ -8,7 +8,7 @@ describe("guest sport overtake", () => {
     it(`illustrates an overtake for ${sport} without account state`, () => {
       const moment = createOnboardingOvertakeMoment("Taylor", sport);
       expect(moment.sport).toBe(sport);
-      expect(moment.unit).toBe(sport === "running" || sport === "cycling" ? "km" : "pts");
+      expect(moment.unit).toBe(sport === "walking" ? "steps" : sport === "strength" ? "hrs" : "km");
       expect(moment.lanes.find(l => l.you)?.name).toBe("Taylor");
       expect(competitionMomentScene(moment, 0).rank).toBe(2);
       expect(competitionMomentScene(moment, 1).rank).toBe(1);

@@ -49,6 +49,7 @@ it.each([false,true])("walks all setup steps and only saves a real completion (p
  if (!preview) {
    await completeIdentityStep(r);
    await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Running")!.props.onPress());
+   await act(async()=>r.root.findAllByType("TextInput" as never).find(n=>n.props.accessibilityLabel==="Typical weekly running")!.props.onChangeText("7"));
  }
  expect(mock.dispatch).not.toHaveBeenCalled();
  await advance();
@@ -58,6 +59,7 @@ it.each([false,true])("walks all setup steps and only saves a real completion (p
    expect(mock.dispatch).not.toHaveBeenCalled();
    expect(mock.storage).not.toHaveBeenCalled();
  }else{
+   expect(mock.dispatch).toHaveBeenCalledWith({type:"declare-effort",sport:"running",declaredWeeklyVolume:11265.408});
    expect(mock.dispatch).toHaveBeenCalledWith({type:"set-units",units:state.units});
    expect(mock.dispatch).toHaveBeenCalledWith({type:"set-gender",gender:"female"});
    expect(mock.dispatch).toHaveBeenCalledWith({type:"set-country",countryCode:"US"});
