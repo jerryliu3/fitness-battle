@@ -150,7 +150,7 @@ export function applyDebugEvent(
     const kept = single.state.activities.filter(a => a.sport !== sport || Date.parse(a.startedAt) < period.startsAt.getTime() || Date.parse(a.startedAt) >= period.endsAt.getTime());
     const activities = event === "sync-combo" ? [
       { ...activity, id: `${activity.id}-1`, distanceM: Math.round(activity.distanceM * .6), movingSec: Math.round(activity.movingSec * .6) },
-      { ...activity, id: `${activity.id}-2`, startedAt: new Date(now.getTime() - 3600_000).toISOString(), distanceM: activity.distanceM - Math.round(activity.distanceM * .6), movingSec: activity.movingSec - Math.round(activity.movingSec * .6), ...(gps ? { summaryPolyline: SAMPLE_ROUTES[1].summaryPolyline, detailedPolyline: SAMPLE_ROUTES[1].summaryPolyline } : {}) },
+      { ...activity, id: `${activity.id}-2`, startedAt: new Date(Math.max(period.startsAt.getTime(), now.getTime() - 3600_000)).toISOString(), distanceM: activity.distanceM - Math.round(activity.distanceM * .6), movingSec: activity.movingSec - Math.round(activity.movingSec * .6), ...(gps ? { summaryPolyline: SAMPLE_ROUTES[1].summaryPolyline, detailedPolyline: SAMPLE_ROUTES[1].summaryPolyline } : {}) },
     ] : [activity];
     const nextState = reduceCompete({ ...single.state, activities: [...kept, ...activities] }, { type: "set-primary", sport, accountId: accountKey, now: now.toISOString() });
     for (const track of gps ? ["open", "verified"] as const : ["open"] as const) {
