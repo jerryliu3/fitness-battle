@@ -5,7 +5,7 @@ export function expectedScore(own: number, opponent: number): number {
 }
 
 /**
- * Chess-style update against the rest of a small weekly group.
+ * Sleep competition rating update. Sport Effort Score does not call this function.
  * `place` is 0 for first. A week with no effort decays toward the floor
  * instead of being scored as a last-place loss. Activity milestones are separate.
  */
