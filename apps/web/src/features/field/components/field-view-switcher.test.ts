@@ -37,3 +37,18 @@ it("exposes camera zoom as dropdown actions without changing the selected view",
     expect(onChange).not.toHaveBeenCalled(); expect(select.props.value).toBe("2d");
   } finally { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); }
 });
+
+it("renders direct 3D Course, 2D Lanes, and Graph pill buttons in compact arena mode", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const onChange = vi.fn();
+  let renderer!: ReactTestRenderer;
+  try {
+    await act(async () => { renderer = create(createElement(FieldViewSwitcher, { compact: true, value: "4d", geographic: true, onChange })); });
+    const buttons = renderer.root.findAllByType("button");
+    expect(buttons.map(button => button.props.children)).toEqual(["3D Course", "2D Lanes", "Graph"]);
+    await act(async () => buttons.find(button => button.props.children === "2D Lanes")!.props.onClick());
+    expect(onChange).toHaveBeenCalledWith("2d");
+    await act(async () => buttons.find(button => button.props.children === "Graph")!.props.onClick());
+    expect(onChange).toHaveBeenCalledWith("graph");
+  } finally { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); }
+});

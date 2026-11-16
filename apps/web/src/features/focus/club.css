@@ -2285,7 +2285,12 @@
 
 .geographic-map .mapboxgl-ctrl-bottom-left,
 .geographic-map .mapboxgl-ctrl-bottom-right { bottom: calc(var(--map-controls-bottom, 8px) + 60px); }
-.geographic-map-controls { transition: opacity 160ms ease; }
+.geographic-map-controls { position: absolute; bottom: var(--map-controls-bottom, 8px); right: 12px; z-index: 30; transition: opacity 160ms ease; }
+.geographic-map-controls-summary { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(20, 20, 19, 0.78); color: var(--app-white); letter-spacing: normal; text-transform: none; font: var(--type-caption); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; backdrop-filter: blur(12px); user-select: none; }
+.geographic-map-controls-summary::-webkit-details-marker { display: none; }
+.geographic-map-controls-panel { position: absolute; right: 0; bottom: calc(100% + 8px); width: 236px; padding: 10px; border-radius: 16px; background: rgba(20, 20, 19, 0.9); border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28); backdrop-filter: blur(16px); display: grid; gap: 6px; }
+.geographic-map-controls-panel .fb-btn-line { width: 100%; min-height: 38px; padding: 6px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.14); color: var(--app-white); letter-spacing: normal; text-transform: none; font: var(--type-caption); overflow: hidden; text-overflow: ellipsis; }
+.geographic-map-controls-zoom { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .is-holding-field .geographic-map-controls { opacity: 0; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .geographic-map-controls { transition: none; } }
 
