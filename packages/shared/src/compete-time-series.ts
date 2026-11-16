@@ -20,11 +20,6 @@ import { competePeriodWindow } from "./phone-views";
 export type FieldViewDimension = "2d" | "3d" | "4d" | "graph";
 export type CompeteTimeSeriesView = "trajectory" | "event";
 
-const weekdayShortFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "short",
-  timeZone: APP_TIMEZONE,
-});
-
 export interface RawAthleteTimeSeries {
   id: string;
   name: string;
@@ -327,9 +322,7 @@ function prepareTimeSeriesBase(input: {
   const spanMs = Math.max(1, endMs - startMs);
   const clampedNowMs = clamp(startMs, endMs, input.now.getTime());
   const nowFraction = clamp(0, 1, (clampedNowMs - startMs) / spanMs);
-  const historyAvailable = resolvedAthletes.every(
-    (athlete) => athlete.historyAvailable !== false,
-  );
+  const historyAvailable = clampedNowMs > startMs;
   const peak = Math.max(
     0,
     ...resolvedAthletes.flatMap((a) => [
@@ -340,10 +333,9 @@ function prepareTimeSeriesBase(input: {
   const yMax = niceAxisCeiling(peak, input.unit);
   const nowDayIndex = Math.min(6, Math.floor(nowFraction * 6.999));
   const daysShown = nowDayIndex + 1;
+  /** Plot grows through the week; ticks mark each day’s midnight (start). */
   const xSpanFraction = daysShown / 7;
-  const dayTickLabels = Array.from({ length: daysShown }, (_, i) =>
-    weekdayShortFormatter.format(shiftAppDay(input.periodStart, i)),
-  );
+  const dayTickLabels = Array.from({ length: daysShown }, (_, i) => `Day ${i + 1}`);
   return {
     periodStart: input.periodStart,
     periodEnd: input.periodEnd,
@@ -393,6 +385,7 @@ export function evaluateCompeteTimeSeriesModel(
   const cursorFraction = isScrubbing
     ? clamp(0, nowFraction, options!.scrubFraction!)
     : nowFraction;
+  const nowDayIndex = Math.min(6, Math.floor(nowFraction * 6.999));
 
   const xForT = (t: number) =>
     PLOT_LEFT + clamp(0, 1, t / xSpanFraction) * (PLOT_RIGHT - PLOT_LEFT);
@@ -491,20 +484,15 @@ export function evaluateCompeteTimeSeriesModel(
   const placeLabel = `${ordinalPlace(selectedAthlete.placeAtCursor)} place`;
 
   const cursorDate = new Date(startMs + cursorFraction * spanMs);
-  const datePart = cursorDate.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    timeZone: displayTz,
-  });
   const subjectPart = `${selectedAthlete.firstName}’s trajectory`;
+  const activeDayIndex = Math.min(6, Math.floor(cursorFraction * 6.999));
+  const datePart = `Day ${activeDayIndex + 1}`;
   const timeLabel = `${datePart} · ${isScrubbing ? "Inspected" : "Live"} · ${subjectPart}`;
 
-  const activeDayIndex = Math.min(6, Math.floor(cursorFraction * 6.999));
   const dayTicks: CompeteTimeSeriesDayTick[] = dayTickLabels.map((label, i) => ({
     index: i,
     label,
-    x: daysShown === 1 ? PLOT_LEFT + (PLOT_RIGHT - PLOT_LEFT) / 2 : PLOT_LEFT + (i / (daysShown - 1)) * (PLOT_RIGHT - PLOT_LEFT),
+    x: xForT(i / 7),
     future: false,
     active: i === activeDayIndex,
   }));
