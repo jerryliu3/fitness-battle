@@ -7,7 +7,7 @@ vi.mock("@/lib/env", () => ({ webEnv: { mapboxAccessToken: "public-test-token" }
 vi.mock("mapbox-gl", () => ({ default: { Map: class {
   events = new Map<string, Function[]>(); sources = new Map<string, { setData: ReturnType<typeof vi.fn> }>();
   addControl = vi.fn();
-  jumpTo = vi.fn(); fitBounds = vi.fn(); easeTo = vi.fn(); stop = vi.fn(); remove = vi.fn(); resize = vi.fn(); setPaintProperty = vi.fn();
+  jumpTo = vi.fn(); fitBounds = vi.fn(); easeTo = vi.fn(); stop = vi.fn(); remove = vi.fn(); resize = vi.fn(); setPaintProperty = vi.fn(); setLayoutProperty = vi.fn();
   constructor(public options: any) { mock.instances.push(this); }
   getCenter() { return { toArray: () => [.005, 0] }; } getZoom() { return 15; } getPitch() { return 30; } getBearing() { return 20; }
   on(name: string, layer: Function | string, callback?: Function) { const handlers = this.events.get(name) ?? []; handlers.push(callback ?? layer as Function); this.events.set(name, handlers); }
@@ -60,7 +60,7 @@ it("keeps one map instance, suspends following for user input and resumes on sel
   expect(instance.easeTo.mock.lastCall[0].center).toEqual(peerCoordinate);
   expect(mock.instances).toHaveLength(1);
   expect(instance.getSource("course")).toBeUndefined();
-  expect(instance.getSource("completed").setData).not.toHaveBeenCalled();
+  expect(instance.getSource("completed").setData).toHaveBeenCalledTimes(1);
   await act(async () => renderer.root.findAllByType("button").find(node => node.props.children === "2D map")!.props.onClick());
   expect(instance.easeTo.mock.lastCall[0]).toMatchObject({ center: peerCoordinate, pitch: 0 });
   await act(async () => renderer.root.findAllByType("button").find(node => node.props.children === "Race overview")!.props.onClick());
