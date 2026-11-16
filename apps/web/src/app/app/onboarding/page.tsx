@@ -30,7 +30,7 @@ function Setup({preview}:{preview:boolean}) {
   const [weeklyVolume,setWeeklyVolume]=useState<Partial<Record<SportId,string>>>({});
   const [sports,setSports]=useState<SportId[]>([]),[units,setUnits]=useState<UnitSystem>("us"),[sleep,setSleep]=useState(false);
   const [timezone,setTimezone]=useState(()=>detectDeviceTimeZone());
-  useEffect(()=>{if(!state)return; let d;try{d=!preview?JSON.parse(sessionStorage.getItem(key)??"null"):null;}catch{}
+  useEffect(()=>{if(!state)return; let d: Record<string, any> | null = null;try{d=!preview?JSON.parse(sessionStorage.getItem(key)??"null"):null;}catch{}
     setStep(Math.max(0,Math.min(6,Number(d?.step)||0)));
     setName(typeof d?.name==="string"?d.name:"");
     setCity(typeof d?.city==="string"?d.city:"");

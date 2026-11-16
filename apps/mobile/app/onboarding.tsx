@@ -49,7 +49,7 @@ const f=useFocusStyles();
   useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),30_000);return ()=>clearInterval(timer);},[]);
   useEffect(() => { let alive = true; setReady(false); void AsyncStorage.getItem(key).then(raw => {
     if (!alive) return;
-    let draft; try { draft = !preview && raw ? JSON.parse(raw) : null; } catch {}
+    let draft: Record<string, any> | null = null; try { draft = !preview && raw ? JSON.parse(raw) : null; } catch {}
     setStep(Math.max(0, Math.min(6, Number(draft?.step) || 0)));
     setName(typeof draft?.name === "string" ? draft.name : "");
     setCity(typeof draft?.city === "string" ? draft.city : "");
