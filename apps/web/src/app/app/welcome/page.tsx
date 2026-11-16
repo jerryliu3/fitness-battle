@@ -12,6 +12,7 @@ import { useAuth } from "@/components/auth-context";
 import { AthleteCrest } from "@/features/athlete-card/athlete-crest";
 import { OnboardingOvertake } from "@/features/club/onboarding-overtake";
 import { OnboardingPotential } from "@/features/club/onboarding-potential";
+import { OnboardingFeatureTour } from "@/features/club/onboarding-feature-tour";
 import { readGuestIntroDraft } from "@/lib/guest-intro";
 import { CountryCombobox } from "@/ui/country-combobox";
 import { SportActivityIcon } from "@/ui/sport-activity-icon";
@@ -63,12 +64,13 @@ function Welcome({ preview }: { preview: boolean }) {
       </div>
     </>}
     {step === "overtake" && <>
-      <AppParagraph>Close the gap and move ahead in {sportName.toLowerCase()}.</AppParagraph>
+      <AppParagraph>Make training fun: pass other athletes as you move. Join events with people near your level and keep each other motivated.</AppParagraph>
       <OnboardingOvertake sport={draft.sport} name={name} onComplete={next} />
     </>}
     {step === "growth" && <>
       <OnboardingPotential />
     </>}
+    {step === "features" && <OnboardingFeatureTour />}
     {step === "athlete" && <div className="onboarding-athlete">
       <AthleteCrest model={card} />
       <div className="fb-stack">
@@ -87,7 +89,7 @@ function Welcome({ preview }: { preview: boolean }) {
     <div className="onboarding-actions">
       {index > 0 && <button className="fb-btn-line" type="button" onClick={() => setStep(ONBOARDING_STEPS[index - 1]!)}>Back</button>}
       {step !== "account" && step !== "overtake" && <button className="fb-btn" type="button"
-        disabled={step === "athlete" && !draft.name.trim()} onClick={next}>{step === "growth" ? "Create my athlete" : "Continue"}</button>}
+        disabled={step === "athlete" && !draft.name.trim()} onClick={next}>{step === "growth" ? "Explore what else you can do" : step === "features" ? "Create my athlete" : "Continue"}</button>}
     </div>
     {(step === "sport" || step === "account") && <>
       <Link className="fb-btn-ghost" prefetch href={preview ? "/login?from=onboarding&preview=1" : "/login?from=onboarding"} onClick={() => leave(true)}>{step === "sport" ? "I already have an account" : "Sign in"}</Link>
