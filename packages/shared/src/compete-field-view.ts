@@ -60,3 +60,12 @@ export function normalizeCompeteFieldView(
   if (allowedCompeteFieldViews(event).includes(view)) return view;
   return defaultCompeteFieldView(event);
 }
+export function fieldZoomLimits(unit: string): { min: number; max: number } {
+  if (unit === "steps") return { min: 500, max: 40_000 };
+  if (unit === "hrs" || unit === "pts") return { min: 2, max: 100 };
+  return { min: 0.5, max: 40 };
+}
+
+export function arenaStandingsQuantityLabel(unit: string): "distance" | "volume" {
+  return unit === "km" || unit === "mi" ? "distance" : "volume";
+}
