@@ -118,7 +118,7 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
       const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
       const subdetail = courseAthleteSubdetail(lanes, lane, unit);
       const selected = lane.id === selectedId && !dismissed.includes(lane.id);
-      return <CourseCallout key={lane.id} map={map.current!} lane={lane} coordinate={lane.coordinate} layout={lane.callout} passStrength={reduced.current ? 0 : replay?.passEffects.find(pass => pass.id === lane.id)?.strength ?? 0} detail={courseAthleteDetail(lanes, lane, unit)} subdetail={subdetail} selected={sharedLane ? selected || Boolean(onSnapshot && lane.you) : selected} gold={rank === 1} profileNodes={sharedLane} onDismiss={!onSnapshot && selected ? () => setDismissed(ids => [...ids, lane.id]) : undefined} onSelect={onSelect} />;
+      return <CourseCallout key={lane.id} map={map.current!} lane={lane} coordinate={lane.coordinate} layout={lane.callout} passStrength={reduced.current ? 0 : replay?.passEffects.find(pass => pass.id === lane.id)?.strength ?? 0} detail={courseAthleteDetail(lanes, lane, unit)} subdetail={subdetail} selected={sharedLane ? selected || Boolean(onSnapshot && lane.you) : selected} gold={rank === 1} profileNodes onDismiss={!onSnapshot && selected ? () => setDismissed(ids => [...ids, lane.id]) : undefined} onSelect={onSelect} />;
     }) : null}
     {error ? <p role="alert" className="fb-copy" style={{ position: "absolute", left: 8, right: 8, bottom: controlsBottom + 100, padding: 12, background: "white" }}>{error}</p> : null}
     {!replay && <details className="geographic-map-controls">
