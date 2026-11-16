@@ -30,6 +30,8 @@ API auth: cookie session (web) or `Authorization: Bearer <access_token>` (mobile
 
 Migrations under `supabase/migrations/` are applied by `.github/workflows/supabase-migrate.yml` on push to `main` (needs GitHub Actions secrets `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`). You can also enable Supabase → Project Settings → Integrations → GitHub for the same effect.
 
+The separate rankings project uses `rankings-db/supabase/migrations/` and `.github/workflows/rankings-migrate.yml`. Configure `RANKINGS_SUPABASE_PROJECT_REF` and `RANKINGS_SUPABASE_DB_PASSWORD` as GitHub Actions secrets, plus `SUPABASE_ACCESS_TOKEN` with access to that project. The workflow runs when rankings migrations change on `main` or through `workflow_dispatch`. Review and test any existing migration backlog before the first manual run; `--include-all` also applies missing older migrations. Never point the rankings workflow at the battles project.
+
 Product hooks (web play shell):
 
 | Category | When |
