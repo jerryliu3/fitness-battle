@@ -7,6 +7,7 @@ import { athleteCardModelForPeer, athleteLocationLine, SPORTS, EMPTY_GUEST_INTRO
 import { AthleteCrest } from "../src/features/athlete-crest";
 import { OnboardingOvertake } from "../src/features/onboarding-overtake";
 import { OnboardingPotential } from "../src/features/onboarding-potential";
+import { OnboardingFeatureTour } from "../src/features/onboarding-feature-tour";
 import { SearchableCountryPicker } from "../src/ui/searchable-country-picker";
 import { SportIcon } from "../src/ui/sport-icon";
 import {
@@ -98,12 +99,17 @@ export default function Welcome() {
           <FocusButton secondary label="I already have an account" disabled={leaving} onPress={() => void leave("signin")} />
         </>}
         {step === "overtake" && <>
-          <AppText secondary>Close the gap and move ahead in {sportName.toLowerCase()}.</AppText>
+          <AppText secondary>Make training fun: pass other athletes as you move. Join events with people near your level and keep each other motivated.</AppText>
           <OnboardingOvertake sport={draft.sport} name={name} onComplete={() => void go("growth")} />
           {back}
         </>}
         {step === "growth" && <>
           <OnboardingPotential />
+          <FocusButton label="Explore what else you can do" onPress={() => void go("features")} />
+          {back}
+        </>}
+        {step === "features" && <>
+          <OnboardingFeatureTour />
           <FocusButton label="Create my athlete" onPress={() => void go("athlete")} />
           {back}
         </>}
