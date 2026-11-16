@@ -110,7 +110,7 @@ describe("production course contract", () => {
     expect(overviewTarget(2, 20)).toBe(20);
     expect(overviewTarget(.25, 20)).toBe(5);
     expect(clampCourseCenter(0, 3, 20, "km", "oval")).toBe(0);
-    expect(clampCourseCenter(0, 3, 20, "km", "trail")).toBeGreaterThan(0);
+    expect(clampCourseCenter(0, 3, 20, "km", "trail")).toBe(0);
   });
   it("normalizes distance/effort laps without converting or mutating accumulated totals", () => {
     expect(fieldLap(19.2, "km").laps).toBe(19);

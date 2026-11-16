@@ -39,18 +39,9 @@ export function arenaWindow(center: number, span: number) {
   };
 }
 
-/**
- * For 2D vertical lanes, ensures the starting line (0) remains near the bottom
- * of the visible track (leaving a minimal ~7% margin behind the line) rather
- * than centering on 0 and showing extensive empty space behind the start line.
- */
-export function clampArenaLaneCenter(center: number, span: number): number {
-  const safeSpan = Number.isFinite(span)
-    ? Math.max(0.5, Math.min(5000, span))
-    : 6;
-  const minCenter = safeSpan * 0.43;
-  const safeCenter = Number.isFinite(center) ? center : 0;
-  return Math.max(minCenter, safeCenter);
+/** 2D lanes never center behind the start line, but athletes at 0 can still be centered. */
+export function clampArenaLaneCenter(center: number): number {
+  return Number.isFinite(center) ? Math.max(0, center) : 0;
 }
 
 /** Keep the viewport from scrolling far past the current field leader. */
@@ -63,13 +54,9 @@ export function clampArenaLaneCenterToField(
   const safeSpan = Number.isFinite(span)
     ? Math.max(0.5, Math.min(5000, span))
     : 6;
-  const minCenter = safeSpan * 0.43;
-  const safeCenter = Number.isFinite(center) ? center : 0;
   const safeHigh = Number.isFinite(fieldHigh) ? Math.max(0, fieldHigh) : 0;
   const pad = Number.isFinite(aheadPadding) ? Math.max(0, aheadPadding) : 8;
-  const maxCenter = Math.max(minCenter, safeHigh + pad - safeSpan / 2);
-  const clamped = Math.max(minCenter, safeCenter);
-  return Math.min(clamped, maxCenter);
+  return Math.min(clampArenaLaneCenter(center), Math.max(0, safeHigh + pad - safeSpan / 2));
 }
 
 export function arenaFieldHigh(
@@ -390,7 +377,7 @@ export function stepArenaOvertake(
     ).length;
 
   const leadOffset = hasPassedBy ? 0 : Math.min(delta, safeSpan * 0.33) * (1 - travelT);
-  const viewCenter = clampArenaLaneCenter(youValue + leadOffset, safeSpan);
+  const viewCenter = clampArenaLaneCenter(youValue + leadOffset);
 
   return {
     progress: p,

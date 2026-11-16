@@ -1,9 +1,8 @@
 "use client";
 import { colors as appearanceColors } from "@/theme/app-colors";
 
-import { AthletePennant } from "../field/components/athlete-pennant";
+import { AthleteNode } from "../field/components/athlete-node";
 import { useFieldGestures } from "../field/use-field-gestures";
-import { UserAvatarSvg } from "@/ui/user-avatar-svg";
 import { typographyStyle } from "@/ui/section";
 
 import { useRef, useEffect, useLayoutEffect, useState, useId, useMemo } from "react";
@@ -18,7 +17,6 @@ import {
   clampArenaLaneCenter,
   orderedArenaLanes,
   polishedLaneScale,
-  competeAthleteTrailColors,
   fieldLaneMarkerScale,
   fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
   type ArenaOvertakeFrame,
@@ -27,7 +25,6 @@ import {
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
 import { drawFieldNode } from "@/features/field/components/field-course";
-import { PolishedRacer } from "@/features/brand/polished-racer";
 export function ArenaLanes({
   lanes,
   appearance = defaultFieldAppearance,
@@ -87,6 +84,8 @@ export function ArenaLanes({
   const laneScroll = useRef<number | null>(null);
   const scrollAfterZoom = useRef<number | null>(null);
   const [visibleScroll, setVisibleScroll] = useState(0);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  useEffect(() => { setExpandedId(null); }, [focusRequest]);
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
   const liveLanes =
     animating && overtakeFrame
@@ -96,9 +95,10 @@ export function ArenaLanes({
         }))
       : lanes;
   const ordered = orderedArenaLanes(liveLanes);
+  const focusId = selected || ordered.find(peer => peer.you)?.id;
   const ghost = liveLanes.find((l) => l.ghost);
-  const effectiveCenter = !clampView ? view.center : appearance.ground === "oval" ? Math.max(0, view.center) : clampArenaLaneCenter(view.center, view.span);
-  const clampPanCenter = (value: number, span: number) => appearance.ground === "oval" ? Math.max(0, value) : clampArenaLaneCenter(value, span);
+  const effectiveCenter = !clampView ? view.center : appearance.ground === "oval" ? Math.max(0, view.center) : clampArenaLaneCenter(view.center);
+  const clampPanCenter = (value: number, span: number) => appearance.ground === "oval" ? Math.max(0, value) : clampArenaLaneCenter(value);
   const effectiveView: ArenaViewWindow =
     effectiveCenter === view.center
       ? view
@@ -147,7 +147,7 @@ export function ArenaLanes({
     const el = host.current;
     if (!el || el.clientWidth === 0 || standings) return;
     const previous = previousGeometry.current;
-    const laneIndex = followSelected ? Math.max(0, ordered.findIndex(lane => lane.id === selected)) : previous && !previous.oval && !course.oval && previous.count === ordered.length
+    const laneIndex = followSelected ? Math.max(0, ordered.findIndex(lane => lane.id === focusId)) : previous && !previous.oval && !course.oval && previous.count === ordered.length
       ? ((laneScroll.current ?? el.scrollLeft) + previous.width / 2 - previous.left) / previous.laneWidth - 0.5
       : Math.max(0, ordered.findIndex((lane) => lane.you));
     el.scrollLeft = course.oval ? 0 : course.focusScroll ?? scrollAfterZoom.current ?? Math.max(0, Math.min(width - size.width, course.left + (laneIndex + .5) * laneWidth - size.width / 2));
@@ -155,20 +155,20 @@ export function ArenaLanes({
     setVisibleScroll(el.scrollLeft);
     laneScroll.current = el.scrollLeft;
     previousGeometry.current = { width: size.width, laneWidth, count: ordered.length, left: course.left, oval: course.oval };
-  }, [width, laneWidth, size.width, standings, course.oval, course.left, course.focusScroll, followSelected, selected]);
-  const prevSelectedRef = useRef(focusOnMount ? "" : `${selected}:${focusRequest}`);
+  }, [width, laneWidth, size.width, standings, course.oval, course.left, course.focusScroll, followSelected, focusId]);
+  const prevSelectedRef = useRef(focusOnMount ? "" : `${focusId}:${focusRequest}`);
   useLayoutEffect(() => {
-    const key = `${selected}:${focusRequest}`;
+    const key = `${focusId}:${focusRequest}`;
     if (!focusSelection) { host.current?.scrollTo({ left: host.current.scrollLeft, behavior: "instant" }); return; }
     if (replayFocusIds || prevSelectedRef.current === key) return;
     prevSelectedRef.current = key;
     const el = host.current;
-    if (!el || el.clientWidth === 0 || standings || course.oval || !selected) return;
-    const idx = ordered.findIndex((lane) => lane.id === selected);
+    if (!el || el.clientWidth === 0 || standings || course.oval || !focusId) return;
+    const idx = ordered.findIndex((lane) => lane.id === focusId);
     if (idx < 0) return;
     const nextScroll = Math.max(0, Math.min(width - size.width, course.left + (idx + .5) * laneWidth - size.width / 2));
     el.scrollTo({ left: nextScroll, behavior: reduced ? "instant" : "smooth" });
-  }, [selected, focusRequest, focusSelection, standings, course.oval, course.left, laneWidth, width, size.width, ordered]);
+  }, [focusId, focusRequest, focusSelection, standings, course.oval, course.left, laneWidth, width, size.width, ordered]);
   const gestures = useFieldGestures({
     surface, view: effectiveView, unit, enabled: immersive,
     lateral: () => host.current?.scrollLeft ?? 0,
@@ -193,7 +193,13 @@ export function ArenaLanes({
     },
     onTap: (event, target) => {
       const id = (target as Element).closest("[data-athlete]")?.getAttribute("data-athlete");
-      if (id) onSelect(id); else if (!standings) onBackgroundTap?.();
+      if (id) {
+        setExpandedId(prev => prev === id ? null : id);
+        onSelect(id);
+      } else {
+        setExpandedId(null);
+        if (!standings) onBackgroundTap?.();
+      }
     },
   });
   return (
@@ -236,7 +242,9 @@ export function ArenaLanes({
         ).map(({ lane, i }) => {
           if (!course.oval && (i < firstVisible || i > lastVisible)) return null;
           const trail = fieldProgressTrail(course, lane.value, i, unit);
-          return trail ? <path key={lane.id} d={trail} fill="none" stroke={competeAthleteTrailColors(Boolean(lane.you)).stroke} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" /> : null;
+          const trailWidth = 40 * Math.min(1.8, course.markerScale) * fieldLaneMarkerScale(Boolean(lane.you));
+          const leader = !ordered.some(peer => peer.value > lane.value);
+          return trail ? <path key={lane.id} d={trail} fill="none" stroke={leader ? appearanceColors.tennis : appearanceColors.secondary} strokeWidth={trailWidth} strokeLinecap="round" strokeLinejoin="round" /> : null;
         })}</g>}
         {ordered.map((l, i) => {
           if (!standings && !course.oval && (i < firstVisible || i > lastVisible)) return null;
@@ -252,16 +260,24 @@ export function ArenaLanes({
           const edge = !course.oval && position.edge;
           const markerScale = standings || edge ? 1 : Math.min(1.8, course.markerScale);
           const xx = 0, yy = 0;
-          const active = selected === l.id || l.you;
+          const isSelected = selected === l.id;
+          const isExpanded = !standings && !edge && expandedId === l.id;
           const headHalf =
-            29 *
+            24 *
             (standings
               ? polishedLaneScale(Boolean(l.you))
               : fieldLaneMarkerScale(Boolean(l.you)));
-          const pennantWidth=146;
+          const pennantWidth=128;
           const visibleLeft=host.current?.scrollLeft??0;
-          const pennantX=Math.max(visibleLeft-targetX+8,Math.min(visibleLeft+size.width-targetX-pennantWidth-8,l.you?-pennantWidth-12:12));
+          const pennantX=Math.max(visibleLeft-targetX+8,Math.min(visibleLeft+size.width-targetX-pennantWidth-8,l.you?-pennantWidth-16:16));
           const pennantY=athletePennantOffset(targetY,course.point(yourValue,Math.max(0,ordered.findIndex(peer=>peer.you)),0,true).y,Boolean(l.you),height);
+          const subdetail = liveLanes.some(peer => peer.mystery)
+            ? undefined
+            : l.you
+              ? rank === 1
+                ? "Leading the field"
+                : `${(l.value - (sortedByValue[0]?.value ?? 0)).toFixed(1)} ${unit} vs #1`
+              : relativeDistance(l.value);
           return (
             <Marker
               key={l.id}
@@ -280,6 +296,7 @@ export function ArenaLanes({
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   e.stopPropagation();
+                  setExpandedId(prev => prev === l.id ? null : l.id);
                   onSelect(l.id);
                 }
               }}
@@ -312,27 +329,43 @@ export function ArenaLanes({
                   data-overtake-ripple="true"
                 />
               )}
-              {/* Local echoes own their animation; replay only moves the parent marker. */}
-              {l.mystery ? <g data-mystery-marker="true"><circle cx={xx} cy={yy} r={18} fill="white" stroke={appearanceColors.textSecondary} strokeWidth={2} strokeDasharray="3 3"/><text x={xx} y={yy+5} textAnchor="middle" fill={appearanceColors.textSecondary} style={typographyStyle("label")}>?</text></g> : standings || !edge ? (
-                <PolishedRacer
-                  sizeScale={standings ? undefined : fieldLaneMarkerScale(Boolean(l.you))}
-                  x={xx}
-                  y={yy}
-                  you={Boolean(l.you)}
-                  gold={rank === 1}
-                  active={active}
-                  showWake={false}
-                  />
-              ) : <circle r={18} fill="white" stroke={appearanceColors.textSecondary} strokeDasharray="3 3"/>}
-              <rect className="focus-racer-focus-ring" x={-23} y={-headHalf-3} width={46} height={headHalf*2+6} rx={23} fill="none" stroke={appearanceColors.actionPrimary} strokeWidth={2}/>
-              <rect x={xx - 24 / markerScale} y={yy - Math.max(22 / markerScale, headHalf + 4)} width={48 / markerScale} height={Math.max(44 / markerScale, headHalf * 2 + 8)} rx="24" fill="transparent"/>
-              {standings && l.avatarUrl && <UserAvatarSvg src={l.avatarUrl} name={l.name} x={xx-17} y={yy-17} />}
-              {((standings && !l.avatarUrl) || (!standings && edge)) && <text style={typographyStyle("caption")} x={xx} y={yy+4} textAnchor="middle" className="lane-initial" fill={appearanceColors.textSecondary}>{!standings&&edge?(edge==="ahead"?"↑":"↓"):l.initials}</text>}
+              <rect className="focus-racer-focus-ring" x={-26} y={-26} width={52} height={52} rx={26} fill="none" stroke={appearanceColors.actionPrimary} strokeWidth={2}/>
+              <rect x={xx - 26 / markerScale} y={yy - Math.max(26 / markerScale, headHalf + 4)} width={52 / markerScale} height={Math.max(52 / markerScale, headHalf * 2 + 8)} rx="26" fill="transparent"/>
               </g>
-              {!standings&&edge&&<g pointerEvents="none"><rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><text style={typographyStyle("caption")} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill={appearanceColors.textSecondary}>{position.distanceOutside.toFixed(1)} {unit}</text></g>}
-              {!standings && !edge && (l.you || selected===l.id) && <g className="athlete-pennant" pointerEvents="none">
-                <AthletePennant lane={l} prefix={`${prefix}-portrait-${i}`} x={pennantX} y={pennantY} detail={`${liveLanes.some(peer => peer.mystery) ? "Starts at zero" : ordinalPlace(rank)} · ${l.you ? `${l.value.toFixed(1)} ${unit}` : relativeDistance(l.value)}`} />
-              </g>}
+              {l.mystery ? (
+                <g data-mystery-marker="true" transform={`scale(${markerScale})`}>
+                  <circle cx={xx} cy={yy} r={20} fill="white" stroke={appearanceColors.textSecondary} strokeWidth={2} strokeDasharray="3 3"/>
+                  <text x={xx} y={yy+5} textAnchor="middle" fill={appearanceColors.textSecondary} style={typographyStyle("label")}>?</text>
+                </g>
+              ) : !standings && edge ? (
+                <g pointerEvents="none">
+                  <AthleteNode
+                    lane={{ ...l, ghost: true }}
+                    prefix={`${prefix}-edge-${i}`}
+                    x={0}
+                    y={0}
+                    detail=""
+                    expanded={false}
+                    selected={isSelected}
+                    nodeRadius={18}
+                  />
+                </g>
+              ) : (
+                <g className="athlete-pennant">
+                  <AthleteNode
+                    lane={l}
+                    prefix={`${prefix}-portrait-${i}`}
+                    x={pennantX}
+                    y={pennantY}
+                    nodeScale={markerScale * (standings ? polishedLaneScale(Boolean(l.you)) : fieldLaneMarkerScale(Boolean(l.you)))}
+                    selected={isSelected}
+                    expanded={isExpanded}
+                    gold={rank === 1}
+                    detail={`${liveLanes.some(peer => peer.mystery) ? "Starts at zero" : ordinalPlace(rank)} · ${l.value.toFixed(1)} ${unit}`}
+                    subdetail={subdetail}
+                  />
+                </g>
+              )}
               <g aria-hidden={!standings} display={standings ? "inline" : "none"}>
               <motion.g initial={false} animate={{ opacity: standings ? 1 : 0 }}>
                 <rect x={-30} y={-33} width={Math.max(200, width - 16)} height={70} rx={14} fill="transparent" />

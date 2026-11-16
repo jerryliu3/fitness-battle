@@ -71,8 +71,8 @@ it("keeps the visible solid route when the start is offscreen and has no native 
   const lanes = [{ id: "me", name: "Me", initials: "M", you: true, ghost: false, values: [4, 4, 4] as [number, number, number] }];
   await act(async () => { renderer = create(createElement(LaneTrack, { lanes, unit: "km", index: 2, showGhost: false, fullscreen: true, view: { center: 4, span: 1.2 }, onSelect: vi.fn() })); });
   expect(renderer.root.findAllByType("ScrollView" as never)).toHaveLength(0);
-  const route = renderer.root.findAllByType("SvgPath" as never).find(n => n.props.strokeWidth === 6)!;
+  const route = renderer.root.findAllByType("SvgPath" as never).find(n => n.props.strokeLinecap === "round")!;
   expect(route.props.d).toContain("L");
   expect(route.props.stroke).toBe("#f7c948");
-  expect(renderer.root.findByType("Racer" as never).props.animation).toBeUndefined();
+  expect(renderer.root.findAllByType("SvgCircle" as never).length).toBeGreaterThan(0);
 });

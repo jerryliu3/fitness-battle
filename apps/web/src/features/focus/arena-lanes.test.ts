@@ -45,7 +45,7 @@ it("has no idle field clock and reuses scenery when only athlete values change",
   })));
   expect(scene).toHaveBeenCalledTimes(calls);
   expect(request).not.toHaveBeenCalled();
-  expect(renderer.root.findByType("Racer" as never).props.showWake).toBe(false);
+  expect(renderer.root.findAllByType("g").some(n => n.props.className === "athlete-pennant")).toBe(true);
 });
 it("uses the replay position immediately, without restarting marker easing", async () => {
   await mount({ playback: true });

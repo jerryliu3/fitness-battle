@@ -79,13 +79,13 @@ export function visibleSessions(sessions: readonly BoardSession[], lane: ArenaSc
 
 export function defaultBoardView(value: number, unit: BoardUnit): ArenaViewWindow {
   const span = unit === "pts" ? 20 : unit === "mi" ? 6 / 1.609344 : 6;
-  return { center: clampArenaLaneCenter(value, span), span };
+  return { center: clampArenaLaneCenter(value), span };
 }
 
 export function fitBoardView(lanes: readonly ArenaSceneLane[], unit: BoardUnit): ArenaViewWindow {
   const high = Math.max(1, ...lanes.filter(l => !l.ghost).map(l => l.value));
   const span = Math.max(defaultBoardView(0, unit).span, high * 1.12);
-  return { center: clampArenaLaneCenter(high / 2, span), span };
+  return { center: clampArenaLaneCenter(high / 2), span };
 }
 
 export function formatBoardValue(value: number, unit: BoardUnit) {

@@ -1,7 +1,7 @@
 import { useThemeColors } from "../theme";
-import { AthletePennant } from "./athlete-pennant";
+import { AthleteNode } from "./athlete-node";
 import { chartTextProps, textStyle  } from "./section";
-import { fieldCourse, fieldCourseScene, fieldScaleMarks, defaultFieldAppearance, type FieldAppearance, fieldZoomSpan, pinchFieldView, fieldFlightDuration, fieldFlightEase, fieldProgressTrail, arenaPosition, arenaWindow, fieldDefaultSpan, ordinalPlace, athletePennantOffset, arenaFieldHigh, clampCourseCenter, initialsFromName, orderedArenaLanes, competeAthleteTrailColors, fieldLaneMarkerScale, polishedCapsulePath, type ArenaLane, type ArenaOvertakeFrame, type ArenaOvertakePlan, type ArenaViewWindow } from "@fitness-battle/shared";
+import { fieldCourse, fieldCourseScene, fieldScaleMarks, defaultFieldAppearance, type FieldAppearance, fieldZoomSpan, pinchFieldView, fieldFlightDuration, fieldFlightEase, fieldProgressTrail, arenaPosition, arenaWindow, fieldDefaultSpan, ordinalPlace, athletePennantOffset, arenaFieldHigh, clampCourseCenter, initialsFromName, orderedArenaLanes, fieldLaneMarkerScale, type ArenaLane, type ArenaOvertakeFrame, type ArenaOvertakePlan, type ArenaViewWindow } from "@fitness-battle/shared";
 import { memo, useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
 import { PanResponder, Pressable, Text, View } from "react-native";
 import Svg, {
@@ -15,7 +15,6 @@ import Svg, {
 
 import { drawFieldNode } from "./field-course";
 import { FieldOverlayGroup } from "./field-overlay-motion";
-import { PolishedRacer } from "./polished-racer";
 export interface LaneAnchor { left: number; laneWidth: number; width: number; scroll: number; oval: boolean; count: number }
 
 function LaneTrackContent({
@@ -92,6 +91,8 @@ const c=useThemeColors();
   const prefix = useId();
   const [width, setWidth] = useState(340);
   const [visibleScroll, setVisibleScroll] = useState(anchor?.current?.scroll ?? 0);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  useEffect(() => { setExpandedId(null); }, [focusRequest]);
   const surface = useRef<ComponentRef<typeof View>>(null);
   const scrollAfterZoom = useRef<number | null>(null);
   const lateralTravel = useRef<number | null>(null);
@@ -173,24 +174,25 @@ const c=useThemeColors();
   const bounds = arenaWindow(v.center, v.span);
   const localAnchor = useRef<LaneAnchor | null>(null);
   const previous = anchor ?? localAnchor;
-  const prevSelectedRef = useRef(focusOnMount ? "" : `${selectedId}:${focusRequest}`);
+  const focusId = selectedId ?? me?.id;
+  const prevSelectedRef = useRef(focusOnMount ? "" : `${focusId}:${focusRequest}`);
   useEffect(() => {
     const old = previous.current;
-    const laneIndex = followSelected ? Math.max(0, ordered.findIndex(l => l.id === selectedId)) : old && !old.oval && !course.oval && old.count === ordered.length ? (old.scroll + old.width / 2 - old.left) / old.laneWidth - .5 : Math.max(0, ordered.findIndex(l => l.you));
+    const laneIndex = followSelected ? Math.max(0, ordered.findIndex(l => l.id === focusId)) : old && !old.oval && !course.oval && old.count === ordered.length ? (old.scroll + old.width / 2 - old.left) / old.laneWidth - .5 : Math.max(0, ordered.findIndex(l => l.you));
     const x = course.oval ? 0 : course.focusScroll ?? scrollAfterZoom.current ?? Math.max(0, Math.min(w - width, course.left + (laneIndex + .5) * lw - width / 2));
     scrollAfterZoom.current = null;
     setVisibleScroll(x);
     previous.current = { left: course.left, laneWidth: lw, width, scroll: x, oval: course.oval, count: ordered.length };
-  }, [w, lw, width, course.left, course.oval, course.focusScroll, followSelected, followSelected ? selectedId : undefined]);
+  }, [w, lw, width, course.left, course.oval, course.focusScroll, followSelected, followSelected ? focusId : undefined]);
   useEffect(() => {
-    const key = `${selectedId}:${focusRequest}`;
+    const key = `${focusId}:${focusRequest}`;
     if (!focusSelection) { stopLateralTravel(); return; }
-    if (replayFocusIds || !selectedId || key === prevSelectedRef.current || course.oval) {
+    if (replayFocusIds || !focusId || key === prevSelectedRef.current || course.oval) {
       prevSelectedRef.current = key;
       return;
     }
     prevSelectedRef.current = key;
-    const laneIndex = ordered.findIndex((l) => l.id === selectedId);
+    const laneIndex = ordered.findIndex((l) => l.id === focusId);
     if (laneIndex < 0) return;
     const x = Math.max(0, Math.min(w - width, course.left + (laneIndex + 0.5) * lw - width / 2));
     stopLateralTravel();
@@ -200,7 +202,7 @@ const c=useThemeColors();
     const started = Date.now(), duration = fieldFlightDuration(v, v, (x - from) / lw);
     const tick = () => { const t = Math.min(1, (Date.now() - started) / duration); apply(from + (x - from) * fieldFlightEase(t)); lateralTravel.current = t < 1 ? requestAnimationFrame(tick) : null; };
     lateralTravel.current = requestAnimationFrame(tick);
-  }, [selectedId, focusRequest, focusSelection, w, lw, width, course.left, course.oval, ordered.length]);
+  }, [focusId, focusRequest, focusSelection, w, lw, width, course.left, course.oval, ordered.length]);
   return (
     <View
       onLayout={(e) => {
@@ -270,7 +272,9 @@ const c=useThemeColors();
               ).map(({ lane, i }) => {
                 if (hiddenIds.includes(lane.id) || !course.oval && (i < firstVisible || i > lastVisible)) return null;
                 const trail = fieldProgressTrail(course, lane.value, i, unit);
-                return trail ? <Path key={lane.id} d={trail} fill="none" stroke={competeAthleteTrailColors(Boolean(lane.you)).stroke} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" /> : null;
+                const trailWidth = 40 * Math.min(1.8, course.markerScale) * fieldLaneMarkerScale(Boolean(lane.you));
+                const leader = !live.some(peer => peer.value > lane.value);
+                return trail ? <Path key={lane.id} d={trail} fill="none" stroke={leader ? c.tennis : c.secondary} strokeWidth={trailWidth} strokeLinecap="round" strokeLinejoin="round" /> : null;
               })}
             </G>
             {ordered.map((l, i) => {
@@ -289,11 +293,26 @@ const c=useThemeColors();
               const scale = edge ? 1 : Math.min(1.8, course.markerScale);
               const xx = point.x + (effect?.joltX ?? 0) * scale;
               const yy = point.y + (l.you ? charging * 4 * scale : 0);
-              const headHalf = 29 * fieldLaneMarkerScale(Boolean(l.you));
+              const headHalf = 24 * fieldLaneMarkerScale(Boolean(l.you));
               const rank=1+live.filter(peer=>peer.value>value+.000001).length;
-              const pennantWidth=146, visibleLeft=previous.current?.scroll??0;
-              const pennantX=Math.max(visibleLeft-xx+8,Math.min(visibleLeft+width-xx-pennantWidth-8,l.you?-pennantWidth-12:12));
-              const pennantY=athletePennantOffset(yy,course.point(overtakeFrame?.youValue??me?.values[index]??0,Math.max(0,ordered.findIndex(peer=>peer.you)),0,true).y,l.you,height);
+              const isGold = !ordered.some(
+                (peer) =>
+                  (overtakeFrame?.laneValues[peer.id] ?? peer.values[index]) > value,
+              );
+              const isSelected = selectedId === l.id;
+              const isExpanded = expandedId === l.id;
+              const youVal = overtakeFrame?.youValue ?? me?.values[index] ?? 0;
+              const deltaToYou = value - youVal;
+              const subdetail = ordered.some(peer => peer.mystery)
+                ? undefined
+                : l.you
+                  ? isGold
+                    ? "Leading the field"
+                    : `${(value - fieldHigh).toFixed(1)} ${unit} vs #1`
+                  : `${deltaToYou > 0 ? "+" : ""}${deltaToYou.toFixed(1)} ${unit}`;
+              const pennantWidth=128, visibleLeft=previous.current?.scroll??0;
+              const pennantX=Math.max(visibleLeft-xx+8,Math.min(visibleLeft+width-xx-pennantWidth-8,l.you?-pennantWidth-16:16));
+              const pennantY=athletePennantOffset(yy,course.point(youVal,Math.max(0,ordered.findIndex(peer=>peer.you)),0,true).y,l.you,height);
               return (
                 <FieldOverlayGroup hidden={Boolean(edge && overlaysHidden)} key={l.id}>
                   <G transform={`translate(${xx} ${yy}) rotate(${point.angle}) scale(${scale})`}>
@@ -318,45 +337,49 @@ const c=useThemeColors();
                       opacity={1 - effect.ripple}
                     />
                   ) : null}
-                  {l.mystery ? <G><Circle cx={0} cy={0} r={18} fill={c.card} stroke={c.muted} strokeWidth={2} strokeDasharray="3 3"/><SvgText {...chartTextProps()} x={0} y={4} textAnchor="middle" fill={c.ink}>?</SvgText><SvgText {...chartTextProps()} x={0} y={34} textAnchor="middle" fill={c.ink}>{l.name}</SvgText></G> : edge ? (
-                    <Circle
-                      cx={0}
-                      cy={0}
-                      r={18}
-                      fill="white"
-                      stroke={c.muted}
-                      strokeDasharray="3 3"
-                    />
-                  ) : (
-                    <PolishedRacer
-                      sizeScale={fieldLaneMarkerScale(Boolean(l.you))}
-                      x={0}
-                      y={0}
-                      you={l.you}
-                      gold={
-                        !ordered.some(
-                          (peer) =>
-                            (overtakeFrame?.laneValues[peer.id] ??
-                              peer.values[index]) > value,
-                        )
-                      }
-                    />
-                  )}
-
                   <Rect
-                    x={-24 / scale}
-                    y={-Math.max(22 / scale, headHalf + 4)}
-                    width={48 / scale}
-                    height={Math.max(44 / scale, headHalf * 2 + 8)}
-                    rx={24}
+                    x={-26 / scale}
+                    y={-Math.max(26 / scale, headHalf + 4)}
+                    width={52 / scale}
+                    height={Math.max(52 / scale, headHalf * 2 + 8)}
+                    rx={26}
                     fill="transparent"
                   />
-                  {edge?<SvgText {...chartTextProps()} x={0} y={4} textAnchor="middle"  fill={c.ink}>{edge==="ahead"?"↑":"↓"}</SvgText>:null}
                   </G>
-                  {edge?<G transform={`translate(${xx} ${yy})`} pointerEvents="none"><Rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><SvgText {...chartTextProps()} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill={c.muted}>{`${position.distanceOutside.toFixed(1)} ${unit}`}</SvgText></G>:null}
-                  {!edge&&(l.you||selectedId===l.id)?<FieldOverlayGroup hidden={overlaysHidden} transform={`translate(${xx} ${yy})`} pointerEvents="none">
-                    <AthletePennant lane={l} prefix={`${prefix}-portrait-${i}`} x={pennantX} y={pennantY} detail={`${ordered.some(peer => peer.mystery) ? "Starts at zero" : ordinalPlace(rank)} · ${l.you ? `${value.toFixed(1)} ${unit}` : `${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}`} />
-                  </FieldOverlayGroup>:null}
+                  <G transform={`translate(${xx} ${yy})`} pointerEvents="none">
+                    {l.mystery ? (
+                      <G transform={`scale(${scale})`}>
+                        <Circle cx={0} cy={0} r={20} fill={c.card} stroke={c.muted} strokeWidth={2} strokeDasharray="3 3"/>
+                        <SvgText {...chartTextProps()} x={0} y={4} textAnchor="middle" fill={c.ink}>?</SvgText>
+                      </G>
+                    ) : edge ? (
+                      <G>
+                        <AthleteNode
+                          lane={{ ...l, initials: initialsFromName(l.name), ghost: true }}
+                          prefix={`${prefix}-edge-${i}`}
+                          x={0}
+                          y={0}
+                          detail=""
+                          expanded={false}
+                          selected={isSelected}
+                          nodeRadius={18}
+                        />
+                      </G>
+                    ) : (
+                      <AthleteNode
+                        lane={{ ...l, initials: initialsFromName(l.name) }}
+                        prefix={`${prefix}-portrait-${i}`}
+                        x={pennantX}
+                        y={pennantY}
+                        nodeScale={scale * fieldLaneMarkerScale(Boolean(l.you))}
+                        selected={isSelected}
+                        expanded={!overlaysHidden && isExpanded}
+                        gold={isGold}
+                        detail={`${ordered.some(peer => peer.mystery) ? "Starts at zero" : ordinalPlace(rank)} · ${value.toFixed(1)} ${unit}`}
+                        subdetail={subdetail}
+                      />
+                    )}
+                  </G>
                 </FieldOverlayGroup>
               );
             })}
@@ -372,26 +395,30 @@ const c=useThemeColors();
               return (
                 <G
                   key="ghost-capsule"
-                  transform={`translate(${p.x} ${p.y}) rotate(${p.angle}) scale(${scale})`}
+                  transform={`translate(${p.x} ${p.y}) scale(${scale})`}
                   pointerEvents="none"
                 >
-                  <G transform={`scale(${markerScale})`} opacity={0.6}>
-                    <Path
-                      d={polishedCapsulePath()}
-                      fill="transparent"
+                  <G transform={`scale(${markerScale})`} opacity={0.68}>
+                    <Circle
+                      cx={0}
+                      cy={0}
+                      r={18}
+                      fill="rgba(20, 20, 19, 0.35)"
                       stroke={appearanceColors.white}
-                      strokeWidth={1.5}
+                      strokeWidth={1.8}
                       strokeDasharray="4 4"
                     />
-                    <Path
-                      d={polishedCapsulePath(2)}
+                    <Circle
+                      cx={0}
+                      cy={0}
+                      r={14}
                       fill="none"
                       stroke="rgba(255, 255, 255, 0.45)"
                       strokeWidth={1}
                       strokeDasharray="2 2"
                     />
                   </G>
-                  <G transform={`translate(0 ${-36 * markerScale})`}>
+                  <G transform={`translate(0 ${-28 * markerScale})`}>
                     <Rect
                       x={-28}
                       y={-8}
@@ -420,13 +447,18 @@ const c=useThemeColors();
           if (!course.oval && (i < firstVisible || i > lastVisible)) return null;
           const value = animating ? overtakeFrame?.laneValues[lane.id] ?? lane.values[index] : lane.values[index];
           const point = course.point(value, i, 0, true);
-          const x = Math.max(visibleScroll - point.x + 8, Math.min(visibleScroll + width - point.x - 154, lane.you ? -158 : 12));
+          const x = Math.max(visibleScroll - point.x + 8, Math.min(visibleScroll + width - point.x - 154, lane.you ? -162 : 16));
           const y = athletePennantOffset(point.y, course.point(me?.values[index] ?? 0, Math.max(0, ordered.findIndex(l => l.you)), 0, true).y, lane.you, height);
           const edge = !course.oval && arenaPosition(value, v).edge;
           if (edge && overlaysHidden) return [];
+          const isExpanded = expandedId === lane.id;
+          const handlePress = () => {
+            setExpandedId(prev => prev === lane.id ? null : lane.id);
+            onSelect(lane);
+          };
           return [
-            <Pressable key={lane.id} accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}`} accessibilityState={{ selected: selectedId === lane.id }} onPress={() => onSelect(lane)} style={{ position: "absolute", left: point.x - visibleScroll - 24, top: point.y - 30, width: 48, height: 60 }} />,
-            !overlaysHidden && !edge && (lane.you || lane.id === selectedId) ? <Pressable key={`${lane.id}-nameplate`} accessible={false} onPress={() => onSelect(lane)} style={{ position: "absolute", left: point.x - visibleScroll + x, top: point.y + y, width: 146, height: 46 }} /> : null,
+            <Pressable key={lane.id} accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}`} accessibilityState={{ selected: selectedId === lane.id }} onPress={handlePress} style={{ position: "absolute", left: point.x - visibleScroll - 28, top: point.y - 28, width: 56, height: 56 }} />,
+            !overlaysHidden && !edge && isExpanded ? <Pressable key={`${lane.id}-nameplate`} accessible={false} onPress={handlePress} style={{ position: "absolute", left: point.x - visibleScroll + x, top: point.y + y, width: 128, height: 44 }} /> : null,
           ];
         })}
         {ghost && (() => {
