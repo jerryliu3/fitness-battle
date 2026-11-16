@@ -61,13 +61,123 @@ function buildCourseGeometry(course: RaceCourse, lanes: readonly ArenaSceneLane[
   const overviewCoordinates: LngLat[] = athletes.length ? [[west, south], [east, north]] : [];
   return { athletes, trails, overviewCoordinates };
 }
+
+/** Shared-lane profile view: one centerline trail for the focused athlete; rivals float on-route. */
+function buildSharedProfileLaneGeometry(
+  course: RaceCourse,
+  lanes: readonly ArenaSceneLane[],
+  unit: string,
+  selectedId: string,
+) {
+  const roster = lanes.filter((lane) => !lane.ghost);
+  const leaderValue = Math.max(...roster.map((lane) => lane.value));
+  const athletes = roster
+    .map((lane) => {
+      const metres = raceEffortMetres(lane.value, unit);
+      return metres === null
+        ? null
+        : {
+            ...lane,
+            ...raceCourseRacerPosition(course, metres, 0),
+            leader: lane.value >= leaderValue,
+          };
+    })
+    .filter((athlete) => athlete !== null);
+  const selected =
+    athletes.find((lane) => lane.id === selectedId) ??
+    athletes.find((lane) => lane.you) ??
+    athletes[0];
+  const trails = {
+    type: "FeatureCollection" as const,
+    features:
+      selected && selected.metres > 0
+        ? [
+            {
+              type: "Feature" as const,
+              id: selected.id,
+              properties: {
+                color: leaderColor(selected.leader),
+                priority: selected.leader ? 1 : 0,
+              },
+              geometry: {
+                type: "LineString" as const,
+                coordinates: raceCourseTrail(course, selected.metres, 0),
+              },
+            },
+          ]
+        : [],
+  };
+  let west = Infinity,
+    east = -Infinity,
+    south = Infinity,
+    north = -Infinity;
+  const include = (coordinate: LngLat) => {
+    const lng =
+      coordinate[0] +
+      360 * Math.round((course.coordinates[0][0] - coordinate[0]) / 360);
+    west = Math.min(west, lng);
+    east = Math.max(east, lng);
+    south = Math.min(south, coordinate[1]);
+    north = Math.max(north, coordinate[1]);
+  };
+  for (const athlete of athletes) include(athlete.coordinate);
+  for (const trail of trails.features)
+    for (const coordinate of trail.geometry.coordinates) include(coordinate);
+  const overviewCoordinates: LngLat[] = athletes.length
+    ? [[west, south], [east, north]]
+    : [];
+  return { athletes, trails, overviewCoordinates };
+}
+
 // Selection only updates dots and the camera; it must not resend every long trail to Mapbox.
-const geometryCache = new WeakMap<RaceCourse, { lanes: readonly ArenaSceneLane[]; unit: string; spacing: number; anchor: string; geometry: ReturnType<typeof buildCourseGeometry> }>();
-export function raceCourseScene(course: RaceCourse, lanes: readonly ArenaSceneLane[], unit: string, selectedId: string, spacingMetres = RACE_LANE_SPACING_METRES) {
-  const anchor = lanes.find(lane => lane.you && !lane.ghost)?.id ?? "";
+const geometryCache = new WeakMap<
+  RaceCourse,
+  {
+    lanes: readonly ArenaSceneLane[];
+    unit: string;
+    spacing: number;
+    anchor: string;
+    selectedId?: string;
+    geometry: ReturnType<typeof buildCourseGeometry>;
+  }
+>();
+export function raceCourseScene(
+  course: RaceCourse,
+  lanes: readonly ArenaSceneLane[],
+  unit: string,
+  selectedId: string,
+  spacingMetres = RACE_LANE_SPACING_METRES,
+) {
+  const sharedProfileLane = spacingMetres > 0;
+  const anchor = lanes.find((lane) => lane.you && !lane.ghost)?.id ?? "";
   let cached = geometryCache.get(course);
-  if (!cached || cached.lanes !== lanes || cached.unit !== unit || cached.spacing !== spacingMetres || cached.anchor !== anchor) {
-    cached = { lanes, unit, spacing: spacingMetres, anchor, geometry: buildCourseGeometry(course, lanes, unit, lanes.some(lane => lane.mystery) ? Math.max(spacingMetres, 8) : spacingMetres, anchor) };
+  if (
+    !cached ||
+    cached.lanes !== lanes ||
+    cached.unit !== unit ||
+    cached.spacing !== spacingMetres ||
+    cached.anchor !== anchor ||
+    (sharedProfileLane && cached.selectedId !== selectedId)
+  ) {
+    const geometry = sharedProfileLane
+      ? buildSharedProfileLaneGeometry(course, lanes, unit, selectedId)
+      : buildCourseGeometry(
+          course,
+          lanes,
+          unit,
+          lanes.some((lane) => lane.mystery)
+            ? Math.max(spacingMetres, 8)
+            : spacingMetres,
+          anchor,
+        );
+    cached = {
+      lanes,
+      unit,
+      spacing: spacingMetres,
+      anchor,
+      selectedId: sharedProfileLane ? selectedId : undefined,
+      geometry,
+    };
     geometryCache.set(course, cached);
   }
   const { athletes, trails, overviewCoordinates } = cached.geometry;
