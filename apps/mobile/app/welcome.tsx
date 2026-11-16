@@ -129,7 +129,7 @@ export default function Welcome() {
             style={f.input} placeholder="Your city"
             onChangeText={value => setDraft(current => ({ ...current, city: value }))} />
           <SearchableCountryPicker label="Country (optional)" value={draft.countryCode}
-            onChange={value => setDraft(current => ({ ...current, countryCode: value }))} />
+            onChange={value => setDraft(current => ({ ...current, countryCode: value }))} allowClear />
           <AppText role="caption" secondary>More personal details and tracker connections come after account creation.</AppText>
           <FocusButton label="Continue" disabled={!draft.name.trim()} onPress={() => void go("account")} />
           {back}
