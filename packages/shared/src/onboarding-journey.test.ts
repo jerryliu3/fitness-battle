@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guestIntroForAccount, parseGuestIntroDraft, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, ONBOARDING_GROWTH } from "./onboarding-journey";
+import { guestIntroForAccount, parseGuestIntroDraft, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, ONBOARDING_GROWTH, ONBOARDING_STEPS, ONBOARDING_FEATURES } from "./onboarding-journey";
 
 const draft = { sport: "walking", name: "Taylor", city: "Boston", countryCode: "US" };
 describe("guest profile handoff", () => {
@@ -33,10 +33,14 @@ describe("weekly volume integration", () => {
   ] as const)("converts %s %s %s to native volume", (sport, value, units, native) => {
     expect(onboardingDeclaredVolume(sport, value, units)).toBe(native);
   });
-  it("keeps potential promotion on the current score scale", () => {
-    expect(ONBOARDING_GROWTH.from.id).toBe("active");
-    expect(ONBOARDING_GROWTH.to.id).toBe("challenger");
-    expect(ONBOARDING_GROWTH.scores[0]).toBe(2500);
-    expect(ONBOARDING_GROWTH.scores.at(-1)).toBe(3750);
+  it("uses a clearly illustrative growth scale without rank promises", () => {
+    expect(ONBOARDING_GROWTH.scores[0]).toBe(500);
+    expect(ONBOARDING_GROWTH.scores.at(-1)).toBe(2000);
+    expect(ONBOARDING_GROWTH.scores).toEqual([...ONBOARDING_GROWTH.scores].sort((a, b) => a - b));
+    expect(ONBOARDING_GROWTH.pointLabels).toHaveLength(ONBOARDING_GROWTH.scores.length);
+  });
+  it("keeps the same six onboarding stages and feature previews on both clients", () => {
+    expect(ONBOARDING_STEPS).toEqual(["sport", "overtake", "growth", "features", "athlete", "account"]);
+    expect(ONBOARDING_FEATURES.map(feature => feature.id)).toEqual(["crews", "leaderboards", "vitals"]);
   });
 });
