@@ -2,7 +2,7 @@ import { accountTimeZone, formatAccountDateTime, weeklyPeriodBounds } from "./pe
 import { APP_TIMEZONE, dayKey } from "./timezone";
 import { activityEffort } from "./compete/effort";
 import { arenaValueDecimals, competeChartUnit } from "./compete-field-view";
-import { competeNow, formatEffort, formatVolume } from "./compete/engine";
+import { competeNow, formatVolume } from "./compete/engine";
 import { countsOnTrack } from "./compete/ledger";
 import { roundEnrollment } from "./compete/round-reveal";
 import { SPORT_IDS, sportById, type CompeteState, type PeriodResult, type SportId, type UnitSystem } from "./compete/sports";

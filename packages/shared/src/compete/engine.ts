@@ -672,7 +672,7 @@ function settleEnrollment(
   const openTotals = openRows.map(total);
   const verifiedPlace = verifiedIdx >= 0 ? competitionPlace(verifiedTotals, total(verifiedRows[verifiedIdx]!)) - 1 : placeOrLast(-1, verifiedRows.length);
   const openPlace = openIdx >= 0 ? competitionPlace(openTotals, total(openRows[openIdx]!)) - 1 : placeOrLast(-1, openRows.length);
-  // Missing you → zero effort so Elo takes inactivity decay, not a fake last-place race.
+  // A missing roster row contributes no event volume or placement reward.
   const verifiedEffort = verifiedIdx >= 0 ? (verifiedRows[verifiedIdx]?.effort ?? 0) : 0;
   const openEffort = openIdx >= 0 ? (openRows[openIdx]?.effort ?? 0) : 0;
   const youVerified = verifiedIdx >= 0 ? verifiedRows[verifiedIdx] : undefined;

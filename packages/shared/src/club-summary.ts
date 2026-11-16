@@ -3,7 +3,7 @@ import { weeklyPeriodBounds, APP_TIMEZONE, accountTimeZone, getZonedWeekday } fr
 import { competitionTrack, sportById } from "./compete/sports";
 import { formatClockTime } from "./compete/pace";
 import { competeChartUnit, competeVolumeFromTotals, arenaValueDecimals } from "./compete-field-view";
-import { formatVolume, formatEffort, type BoardRow } from "./compete/engine";
+import { formatVolume, type BoardRow } from "./compete/engine";
 import { ordinalPlace } from "./arena-view";
 import { competeNow } from "./compete/engine";
 import { trainingBuckets } from "./training-view";
