@@ -8,7 +8,7 @@ import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
-import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { CourseOptions } from "./course-options";
 import { FieldFollowChip } from "./field-follow-chip";
@@ -261,16 +261,8 @@ const appearanceColors = useThemeColors();
             </View>
           </MarkerView>;
         }
-        const youValue = lanes.find(peer => peer.you && !peer.ghost)?.value ?? 0;
         const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
-        const delta = lane.value - youValue;
-        const subdetail = lanes.some(peer => peer.mystery)
-          ? undefined
-          : lane.you
-            ? rank === 1
-              ? "Leading the field"
-              : `${(lane.value - earnedDistance).toFixed(1)} ${unit} vs #1`
-            : `${delta > 0 ? "+" : ""}${delta.toFixed(1)} ${unit}`;
+        const subdetail = courseAthleteSubdetail(lanes, lane, unit);
         const selected = lane.id === selectedId && !dismissed.includes(lane.id);
         const pad = 30, boxWidth = 170 + pad * 2, boxHeight = lane.callout.height + pad * 2;
         const nodeX = lane.callout.originX + pad, nodeY = lane.callout.originY + pad;

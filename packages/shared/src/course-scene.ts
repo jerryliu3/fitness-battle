@@ -6,6 +6,8 @@ import type { LngLat } from "./routeGeoUtils";
 export const RACE_LANE_SPACING_METRES = .42;
 export const RACE_OVERLAY_WIDTH_PIXELS = 8;
 export const RACE_SEPARATE_WIDTH_PIXELS = 4;
+export const RACE_SELECTED_RADIUS_PIXELS = 9;
+export const RACE_ATHLETE_RADIUS_PIXELS = 7;
 export const RACE_LOCAL_RADIUS_METRES = 1000;
 
 /** Initial local ground span, independent of field totals. Perspective/terrain can
@@ -32,6 +34,26 @@ export function coursePreviewLanes(lanes: readonly ArenaSceneLane[], unit: strin
 /** First place is gold; every other athlete uses the comparison color. */
 const leaderColor = (leader: boolean) => { const colors = getAppColors(); return leader ? colors.actionPrimary : colors.chartComparison; };
 
+function courseOverviewCoordinates(
+  course: RaceCourse,
+  athletes: readonly { coordinate: LngLat }[],
+  trails: { features: readonly { geometry: { coordinates: readonly LngLat[] } }[] },
+): LngLat[] {
+  let west = Infinity, east = -Infinity, south = Infinity, north = -Infinity;
+  const include = (coordinate: LngLat) => {
+    const lng = coordinate[0] + 360 * Math.round((course.coordinates[0][0] - coordinate[0]) / 360);
+    west = Math.min(west, lng);
+    east = Math.max(east, lng);
+    south = Math.min(south, coordinate[1]);
+    north = Math.max(north, coordinate[1]);
+  };
+  for (const athlete of athletes) include(athlete.coordinate);
+  for (const trail of trails.features) {
+    for (const coordinate of trail.geometry.coordinates) include(coordinate);
+  }
+  return athletes.length ? [[west, south], [east, north]] : [];
+}
+
 function buildCourseGeometry(course: RaceCourse, lanes: readonly ArenaSceneLane[], unit: string, spacing: number, anchorId: string) {
   const roster = lanes.filter(lane => !lane.ghost);
   const ids = roster.map(lane => lane.id).sort();
@@ -49,17 +71,11 @@ function buildCourseGeometry(course: RaceCourse, lanes: readonly ArenaSceneLane[
     properties: { color: leaderColor(athlete.leader), priority: athlete.leader ? 1 : 0 },
     geometry: { type: "LineString" as const, coordinates: raceCourseTrail(course, athlete.metres, athlete.lateralMetres) },
   })) };
-  // Overview fits earned trails and current dots, never the unreached course.
-  let west = Infinity, east = -Infinity, south = Infinity, north = -Infinity;
-  const include = (coordinate: LngLat) => {
-    const lng = coordinate[0] + 360 * Math.round((course.coordinates[0][0] - coordinate[0]) / 360);
-    west = Math.min(west, lng); east = Math.max(east, lng);
-    south = Math.min(south, coordinate[1]); north = Math.max(north, coordinate[1]);
+  return {
+    athletes,
+    trails,
+    overviewCoordinates: courseOverviewCoordinates(course, athletes, trails),
   };
-  for (const athlete of athletes) include(athlete.coordinate);
-  for (const trail of trails.features) for (const coordinate of trail.geometry.coordinates) include(coordinate);
-  const overviewCoordinates: LngLat[] = athletes.length ? [[west, south], [east, north]] : [];
-  return { athletes, trails, overviewCoordinates };
 }
 
 /** Shared-lane profile view: one centerline trail for the focused athlete; rivals float on-route. */
@@ -107,26 +123,11 @@ function buildSharedProfileLaneGeometry(
           ]
         : [],
   };
-  let west = Infinity,
-    east = -Infinity,
-    south = Infinity,
-    north = -Infinity;
-  const include = (coordinate: LngLat) => {
-    const lng =
-      coordinate[0] +
-      360 * Math.round((course.coordinates[0][0] - coordinate[0]) / 360);
-    west = Math.min(west, lng);
-    east = Math.max(east, lng);
-    south = Math.min(south, coordinate[1]);
-    north = Math.max(north, coordinate[1]);
+  return {
+    athletes,
+    trails,
+    overviewCoordinates: courseOverviewCoordinates(course, athletes, trails),
   };
-  for (const athlete of athletes) include(athlete.coordinate);
-  for (const trail of trails.features)
-    for (const coordinate of trail.geometry.coordinates) include(coordinate);
-  const overviewCoordinates: LngLat[] = athletes.length
-    ? [[west, south], [east, north]]
-    : [];
-  return { athletes, trails, overviewCoordinates };
 }
 
 // Selection only updates dots and the camera; it must not resend every long trail to Mapbox.
@@ -200,6 +201,24 @@ export function courseAthleteDetail(lanes: readonly ArenaSceneLane[], lane: Aren
   if (lanes.some(peer => peer.mystery)) return "";
   const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
   return `${ordinalPlace(rank)} · ${lane.value.toFixed(1)} ${unit}`;
+}
+
+export function courseAthleteSubdetail(
+  lanes: readonly ArenaSceneLane[],
+  lane: ArenaSceneLane,
+  unit: string,
+): string | undefined {
+  if (lanes.some(peer => peer.mystery)) return undefined;
+  const leaderValue = Math.max(0, ...lanes.filter(peer => !peer.ghost).map(peer => peer.value));
+  const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
+  const youValue = lanes.find(peer => peer.you && !peer.ghost)?.value ?? 0;
+  if (lane.you) {
+    return rank === 1
+      ? "Leading the field"
+      : `${(lane.value - leaderValue).toFixed(1)} ${unit} vs #1`;
+  }
+  const delta = lane.value - youValue;
+  return `${delta > 0 ? "+" : ""}${delta.toFixed(1)} ${unit}`;
 }
 
 /** Stable screen-space tiers keep tied racers' cards from stacking on one another. */
