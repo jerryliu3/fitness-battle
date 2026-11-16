@@ -120,11 +120,11 @@ export function GraphOptions({
   );
 }
 
-export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing, onOverview, onReplay, onChoose2D }: {
+export function CourseOptions({ flat, sharedLane, onToggleDimension, onToggleSpacing, onOverview, onReplay, onChoose2D }: {
   onReplay?: () => void;
   onChoose2D?: () => void;
   flat: boolean;
-  spaced: boolean;
+  sharedLane: boolean;
   onToggleDimension(): void;
   onToggleSpacing(): void;
   onOverview(): void;
@@ -140,7 +140,7 @@ export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing
         const options = [
           ...(onChoose2D ? [{ label: "3D view", value: true, action: () => { runAfterDismiss(onChoose2D); close(); } }] : []),
           { label: "Perspective view", value: !flat, action: onToggleDimension },
-          { label: "Shared lane", value: !spaced, action: onToggleSpacing },
+          { label: "Shared lane", value: sharedLane, action: onToggleSpacing },
           ...(onReplay ? [{ label: "View replay", action: () => runAfterDismiss(onReplay) }] : []),
           { label: "See overview", action: onOverview },
         ];

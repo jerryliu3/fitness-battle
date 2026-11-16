@@ -44,6 +44,8 @@ it("keeps one map instance, suspends following for user input and resumes on sel
   expect(instance.setPaintProperty).toHaveBeenLastCalledWith("completed-line", "line-width", 8);
   await act(async () => renderer.root.findAllByType("button").find(node => node.props.children === "Shared lane: on")!.props.onClick());
   expect(instance.setPaintProperty).toHaveBeenLastCalledWith("completed-line", "line-width", 4);
+  await act(async () => renderer.root.findAllByType("button").find(node => node.props.children === "Shared lane: off")!.props.onClick());
+  instance.getSource("completed").setData.mockClear();
   await act(async () => instance.emit("idle"));
   instance.easeTo.mockClear();
   await act(async () => instance.emit("movestart", { originalEvent: {} }));

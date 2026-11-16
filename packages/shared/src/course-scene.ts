@@ -136,7 +136,7 @@ const geometryCache = new WeakMap<
   {
     lanes: readonly ArenaSceneLane[];
     unit: string;
-    spacing: number;
+    sharedProfileLane: boolean;
     anchor: string;
     selectedId?: string;
     geometry: ReturnType<typeof buildCourseGeometry>;
@@ -147,16 +147,15 @@ export function raceCourseScene(
   lanes: readonly ArenaSceneLane[],
   unit: string,
   selectedId: string,
-  spacingMetres = RACE_LANE_SPACING_METRES,
+  sharedProfileLane = true,
 ) {
-  const sharedProfileLane = spacingMetres > 0;
   const anchor = lanes.find((lane) => lane.you && !lane.ghost)?.id ?? "";
   let cached = geometryCache.get(course);
   if (
     !cached ||
     cached.lanes !== lanes ||
     cached.unit !== unit ||
-    cached.spacing !== spacingMetres ||
+    cached.sharedProfileLane !== sharedProfileLane ||
     cached.anchor !== anchor ||
     (sharedProfileLane && cached.selectedId !== selectedId)
   ) {
@@ -166,15 +165,13 @@ export function raceCourseScene(
           course,
           lanes,
           unit,
-          lanes.some((lane) => lane.mystery)
-            ? Math.max(spacingMetres, 8)
-            : spacingMetres,
+          lanes.some((lane) => lane.mystery) ? Math.max(RACE_LANE_SPACING_METRES, 8) : RACE_LANE_SPACING_METRES,
           anchor,
         );
     cached = {
       lanes,
       unit,
-      spacing: spacingMetres,
+      sharedProfileLane,
       anchor,
       selectedId: sharedProfileLane ? selectedId : undefined,
       geometry,
