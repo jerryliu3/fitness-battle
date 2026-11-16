@@ -70,7 +70,7 @@ function Welcome({ preview }: { preview: boolean }) {
     {step === "growth" && <>
       <OnboardingPotential />
     </>}
-    {step === "features" && <OnboardingFeatureTour />}
+    {step === "features" && <OnboardingFeatureTour sport={draft.sport} />}
     {step === "athlete" && <div className="onboarding-athlete">
       <AthleteCrest model={card} />
       <div className="fb-stack">
