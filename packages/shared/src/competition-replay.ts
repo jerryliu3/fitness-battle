@@ -143,11 +143,7 @@ export function indexCompetitionReplay(input: CompetitionReplay, units: UnitSyst
   const series = new Map<string, AthleteSeries>(input.athletes.map(a => [a.id, { steps: [0], values: [0], efforts: [0] }]));
   events.forEach((event, i) => {
     const s = series.get(event.athleteId)!;
-    const totals =
-      input.sport === "walking"
-        ? { distanceM: 0, movingSec: 0, effort: Math.max(0, event.effort) }
-        : event;
-    const delta = competeVolumeFromTotals(input.sport, totals, units);
+    const delta = competeVolumeFromTotals(input.sport, event, units);
     s.steps.push(i + 1);
     s.values.push(s.values[s.values.length - 1]! + delta);
     s.efforts.push(s.efforts[s.efforts.length - 1]! + event.effort);
