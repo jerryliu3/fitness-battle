@@ -55,6 +55,7 @@ export * from "./legacy-demo";
 export * from "./crew-activity";
 export * from "./weekly-streak";
 export * from "./product-icons";
+export * from "./field-chrome";
 export * from "./routeGeoUtils";
 export * from "./activity-route";
 export * from "./sampleRoute";

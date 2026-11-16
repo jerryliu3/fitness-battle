@@ -7,6 +7,8 @@ import { useThemeColors } from "../theme";
 import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
 import { QueuedField } from "./queued-field";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
+import { FieldArenaChromeStack } from "../ui/field-arena-chrome-stack";
+import type { FieldMapChromeSlot } from "@fitness-battle/shared";
 import { FieldGroundSwitcher } from "../ui/field-ground-switcher";
 import { CompeteTimeSeriesChart } from "../ui/compete-time-series-chart";
 import { GeographicCourse } from "./geographic-course";
@@ -108,14 +110,17 @@ const f=useFocusStyles();
     setSceneDimension(value);
   };
   const chooseViewRef = useRef(chooseView); chooseViewRef.current = chooseView;
-  const mapChromeRef = useRef<ReactNode>(null);
+  const mapChromeRef = useRef<Partial<Record<FieldMapChromeSlot, ReactNode>>>({});
   const publishArenaOptions = useCallback(() => {
     if (!onOptionsChange) return;
     onOptionsChange(
-      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 8 }}>
-        <FieldViewSwitcher value={sceneDimension} geographic={!queued && sportById(sport).gps} onChange={value => chooseViewRef.current(value)} />
-        {mapChromeRef.current}
-      </View>,
+      <FieldArenaChromeStack
+        slots={{
+          view: <FieldViewSwitcher value={sceneDimension} geographic={!queued && sportById(sport).gps} onChange={value => chooseViewRef.current(value)} />,
+          options: mapChromeRef.current.options,
+          follow: mapChromeRef.current.follow,
+        }}
+      />,
     );
   }, [onOptionsChange, sceneDimension, queued, sport]);
   useEffect(() => {
@@ -123,9 +128,9 @@ const f=useFocusStyles();
     publishArenaOptions();
     return () => onOptionsChange(null);
   }, [onOptionsChange, publishArenaOptions]);
-  const handleMapOptionsChange = useCallback(
-    (node: ReactNode | null) => {
-      mapChromeRef.current = node;
+  const handleMapChromeChange = useCallback(
+    (slots: Partial<Record<FieldMapChromeSlot, ReactNode>> | null) => {
+      mapChromeRef.current = slots ?? {};
       publishArenaOptions();
     },
     [publishArenaOptions],
@@ -302,7 +307,7 @@ const f=useFocusStyles();
       ) : null}
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <View pointerEvents={expanded ? "auto" : "none"} style={{ flex: 1 }}>
-          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following && !chaseReplay} onFollowChange={setFollowing} mapFollowing={following} followAthleteName={focusedLane?.name ?? me?.name ?? "your athlete"} onFollowChipPress={expanded && !queued ? () => { if (following) setFollowing(false); else { setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } } : undefined} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={chaseReplay ? undefined : courseTarget} replay={chaseReplay} onReplay={timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange ? handleMapOptionsChange : undefined} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
+          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following && !chaseReplay} onFollowChange={setFollowing} mapFollowing={following} followAthleteName={focusedLane?.name ?? me?.name ?? "your athlete"} onFollowChipPress={expanded && !queued ? () => { if (following) setFollowing(false); else { setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } } : undefined} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={chaseReplay ? undefined : courseTarget} replay={chaseReplay} onReplay={timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onMapChromeChange={onOptionsChange ? handleMapChromeChange : undefined} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
           <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>Tap to open full screen</Text></View>

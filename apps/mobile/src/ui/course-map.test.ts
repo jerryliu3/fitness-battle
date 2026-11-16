@@ -310,8 +310,10 @@ it("publishes working course controls to the sheet and removes the map's duplica
   })); });
   const options = () => {
     const published = onOptionsChange.mock.calls.at(-1)![0];
-    const children = Array.isArray(published.props.children) ? published.props.children : [published.props.children];
-    return children.find((child: { props?: { onToggleSpacing?: unknown } }) => child?.props?.onToggleSpacing) ?? published;
+    const slots = published.props?.slots as Record<string, unknown> | undefined;
+    const stackChild = slots?.options ?? published;
+    const children = Array.isArray(stackChild.props?.children) ? stackChild.props.children : [stackChild];
+    return children.find((child: { props?: { onToggleSpacing?: unknown } }) => child?.props?.onToggleSpacing) ?? stackChild;
   };
   expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Course options")).toBe(false);
   expect(options().props.sharedLane).toBe(true);

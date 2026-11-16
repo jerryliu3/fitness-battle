@@ -12,6 +12,8 @@ import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAt
 import { mobileEnv } from "../lib/env";
 import { CourseOptions } from "./course-options";
 import { FieldFollowChip } from "./field-follow-chip";
+import { FieldArenaChromeStack } from "./field-arena-chrome-stack";
+import type { FieldMapChromeSlot } from "@fitness-battle/shared";
 import { FieldOverlayView } from "./field-overlay-motion";
 import { AppText, textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
@@ -25,13 +27,15 @@ const isValidPose = (p?: CourseCameraPose | null): p is CourseCameraPose =>
   Boolean(p && p.center && Array.isArray(p.center) && (Math.abs(p.center[0]) >= 1e-6 || Math.abs(p.center[1]) >= 1e-6) && !Number.isNaN(p.center[0]) && !Number.isNaN(p.center[1]) && typeof p.zoom === "number" && p.zoom > 1);
 
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
-export default function CourseMap({ presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, mapFollowing, onFollowChipPress, followAthleteName, onReady, onSnapshot, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, onChoose2D, onOptionsChange, overlaysHidden = false, distanceTarget }: {
+export default function CourseMap({ presentationActive = true, cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, mapFollowing, onFollowChipPress, followAthleteName, onReady, onSnapshot, replay, course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop = 12, onReplay, onChoose2D, onOptionsChange, onMapChromeChange, overlaysHidden = false, distanceTarget }: {
   presentationActive?: boolean;
   cardSessionKey?: string | number | boolean;
   initialFlat?: boolean; onFlatChange?: (flat: boolean) => void; followAthlete?: boolean; onFollowChange?: (following: boolean) => void;
   mapFollowing?: boolean; onFollowChipPress?: () => void; followAthleteName?: string;
   onReady?: () => void; onSnapshot?: (uri: string) => void; replay?: CourseReplayFrame; distanceTarget?: CourseDistanceTarget | null;
-  hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; onChoose2D?: () => void; onOptionsChange?: (options: ReactNode | null) => void; overlaysHidden?: boolean;
+  hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number | null; onReplay?: () => void; onChoose2D?: () => void;   onOptionsChange?: (options: ReactNode | null) => void;
+  onMapChromeChange?: (slots: Partial<Record<FieldMapChromeSlot, ReactNode>> | null) => void;
+  overlaysHidden?: boolean;
 }) {
 const appearanceColors = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -183,24 +187,30 @@ const appearanceColors = useThemeColors();
       onOverview={() => optionsHandlers.current.overview()}
     />
   );
-  const publishedOptions =
-    onFollowChipPress != null ? (
-      <View style={{ flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-        {courseOptionsMenu}
-        <FieldFollowChip
-          following={mapFollowing ?? false}
-          athleteName={followAthleteName ?? "athlete"}
-          onPress={() => followChipPress.current?.()}
-        />
-      </View>
-    ) : (
-      courseOptionsMenu
-    );
+  const mapChromeSlots: Partial<Record<FieldMapChromeSlot, ReactNode>> = {
+    options: courseOptionsMenu,
+    ...(onFollowChipPress != null
+      ? {
+          follow: (
+            <FieldFollowChip
+              following={mapFollowing ?? false}
+              athleteName={followAthleteName ?? "athlete"}
+              onPress={() => followChipPress.current?.()}
+            />
+          ),
+        }
+      : {}),
+  };
+  const publishedOptions = <FieldArenaChromeStack slots={mapChromeSlots} />;
   useEffect(() => {
+    if (onMapChromeChange) {
+      onMapChromeChange(mapChromeSlots);
+      return () => onMapChromeChange(null);
+    }
     if (!onOptionsChange) return;
     onOptionsChange(publishedOptions);
     return () => onOptionsChange(null);
-  }, [onOptionsChange, flat, sharedLane, mapFollowing, followAthleteName, Boolean(onReplay), Boolean(onChoose2D), onFollowChipPress != null]);
+  }, [onMapChromeChange, onOptionsChange, flat, sharedLane, mapFollowing, followAthleteName, Boolean(onReplay), Boolean(onChoose2D), onFollowChipPress != null]);
   return <View style={{ flex: 1, minHeight: 0 }} onLayout={({ nativeEvent }) => {
     if (initialized.current || restored.current || replay || mapUserGesture.current) return;
     pose.current.zoom = courseInitialZoom(pose.current.center[1], nativeEvent.layout.height, pose.current.pitch);

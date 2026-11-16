@@ -2,6 +2,7 @@
 import { useCompetitionTimeline } from "@/features/arena/competition-timeline-context";
 import { Sheet } from "@/ui/sheet";
 import { FieldViewSwitcher } from "./field-view-switcher";
+import { FieldArenaChromeStack } from "./field-arena-chrome-stack";
 import { StandingsList } from "./standings-list";
 import { CompeteTimeSeriesChart } from "./compete-time-series-chart";
 import { GeographicCourse } from "@/features/course/geographic-course";
@@ -349,7 +350,13 @@ export function FieldStage({
   const chooseViewRef = useRef(chooseView); chooseViewRef.current = chooseView;
   useEffect(() => {
     if (!onOptionsChange) return;
-    onOptionsChange(<FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={value => chooseViewRef.current(value)} />);
+    onOptionsChange(
+      <FieldArenaChromeStack
+        slots={{
+          view: <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={value => chooseViewRef.current(value)} />,
+        }}
+      />,
+    );
     return () => onOptionsChange(null);
   }, [onOptionsChange, viewDimension, unit]);
 
