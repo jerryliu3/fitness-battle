@@ -1,4 +1,5 @@
 "use client";
+import { endOfZonedDay } from "@fitness-battle/shared";
 import { AppText, AppParagraph } from "@/ui/section";
 
 import { useEffect, useRef, useState } from "react";
@@ -11,6 +12,12 @@ import { useAuth } from "@/components/auth-context";
 export function EffortRail({ compact = false }: { compact?: boolean }) {
   const { state, loadStatus, saveError }=useCompete();
   const { user }=useAuth();
+  const [,refreshClock]=useState(0);
+  useEffect(()=>{
+    let timer:ReturnType<typeof setTimeout>;
+    const schedule=()=>{timer=setTimeout(()=>{refreshClock(value=>value+1);schedule();},Math.max(1,endOfZonedDay(new Date()).getTime()-Date.now()));};
+    schedule();return()=>clearTimeout(timer);
+  },[]);
   const model=state?effortPointProgress(state,state.primary,competitionTrack(state.primary)):null;
   const reduced=useReducedMotion();
   const previous=useRef<{scope:string;score:number}|null>(null);
@@ -26,14 +33,11 @@ export function EffortRail({ compact = false }: { compact?: boolean }) {
     return()=>window.clearTimeout(timer);
   },[scope,model?.score,ready,saveError]);
   if(!state||!model||!ready)return null;
-  const remaining=formatVolume(model.sport,model.sport==="strength"?0:model.remaining,model.sport==="strength"?model.remaining:0,state.units);
-  const headerLabel=compact
-    ? `${sportById(model.sport).name} Effort Score ${model.score}. Open Progress`
-    : `${sportById(model.sport).name} ${competitionTrackLabel(model.sport)} Effort Score ${model.score}. ${model.capped?"Maximum score":`${remaining} to the next point`}`;
-  return <Link className={`effort-rail${compact ? " effort-rail-compact" : ""}`} href="/you?view=effort#effort-score" aria-label={headerLabel}>
-    <span className="effort-rail-top"><span>{sportById(model.sport).name} · {rankForElo(model.score).name}</span><AppText role="value">{formatEffortScore(model.score)} <AppText as="small" role="caption" secondary>Effort Score</AppText></AppText></span>
-    <span className="effort-rail-track" role="progressbar" aria-label="Progress to next Effort Score point" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(model.fraction*100)}><motion.span initial={false} animate={{scaleX:model.fraction,scaleY:gain&&!reduced?[1,1.6,1]:1}} transition={{duration:reduced?0:.65}} />{!compact && <AppText as="small" role="caption" secondary className="effort-rail-remaining">{model.capped?"Maximum score":`${remaining} left`}</AppText>}</span>
-    <span className="effort-rail-caption"><span>{`${model.earned?`${competitionTrackLabel(model.sport)} · +${model.earned} this week`:competitionTrackLabel(model.sport)}`}</span></span>
+  const remaining=model.live ? `${model.remaining} points` : formatVolume(model.sport,model.sport==="strength"?0:model.remaining,model.sport==="strength"?model.remaining:0,state.units);
+  return <Link className={`effort-rail${compact ? " effort-rail-compact" : ""}`} href="/you?view=effort#effort-score" aria-label={`${sportById(model.sport).name} ${competitionTrackLabel(model.sport)} Effort Score ${model.score}. ${model.capped?"Maximum score":`${remaining} to the next rank`}`}>
+    <span className="effort-rail-top"><span>{sportById(model.sport).name} · {model.officialRank ?? rankForElo(model.score).name}</span><AppText role="value">{formatEffortScore(model.score)} <AppText as="small" role="caption" secondary>Effort Score</AppText></AppText></span>
+    <span className="effort-rail-track" role="progressbar" aria-label="Progress to next rank" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(model.fraction*100)}><motion.span initial={false} animate={{scaleX:model.fraction,scaleY:gain&&!reduced?[1,1.6,1]:1}} transition={{duration:reduced?0:.65}} />{!compact && <AppText as="small" role="caption" secondary className="effort-rail-remaining">{model.capped?"Maximum score":`${remaining} left`}</AppText>}</span>
+    <span className="effort-rail-caption"><span>{`${model.live ? "Live · " : ""}${model.earned?`${competitionTrackLabel(model.sport)} · +${model.earned} this week`:competitionTrackLabel(model.sport)}`}</span></span>
     {gain>0&&<span className="effort-rail-gain" role="status" key={`${model.score}:${gain}`}>+{gain}{!reduced&&<span className="effort-stars" aria-hidden="true">✦ ✧ ✦</span>}</span>}
   </Link>;
 }
@@ -43,7 +47,7 @@ export function ImpactReceipt({state,seconds,sport,title="What this added"}:{sta
   return <details className="session-impact"><summary>{title} <span>↗</span></summary><div>
     <AppParagraph typographyRole="body"><b>{(seconds/3600).toLocaleString("en-US",{maximumFractionDigits:2})} hr</b> of recorded activity</AppParagraph>
     {model&&<AppParagraph typographyRole="body">{sportById(sport).name} · {competitionTrackLabel(sport)} <b>+{model.earned} from activity this week</b></AppParagraph>}
-    {model&&!model.capped&&<AppText as="small" role="caption" secondary>{formatVolume(sport,sport==="strength"?0:model.remaining,sport==="strength"?model.remaining:0,state.units)} to the next Effort Score point</AppText>}
-    {model?.retained&&<AppText as="small" role="caption" secondary>Previously earned points are kept when a session is removed.</AppText>}
+    {model&&!model.capped&&<AppText as="small" role="caption" secondary>{formatVolume(sport,sport==="strength"?0:model.remaining,sport==="strength"?model.remaining:0,state.units)} to the next rank</AppText>}
+    {model?.retained&&<AppText as="small" role="caption" secondary>Score updates reflect eligible recorded activity.</AppText>}
   </div></details>;
 }

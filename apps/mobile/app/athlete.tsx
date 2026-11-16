@@ -602,12 +602,10 @@ const styles=useThemedStyles(stylesThemes);
         <ScrollView contentContainerStyle={f.content}>
 <SectionStack divided={false}>
           <AppText role="body" secondary>
-            Effort score is calculated differently for each sport—distance sports weigh GPS-tracked volume,
-            strength uses training time and effort points, and sleep competitions use nightly sleep quality.
+            Effort Score combines recent training, accumulated activity and weekly competition results. Running and cycling use distance, walking uses steps, and strength uses workout time.
           </AppText>
           <AppText role="body" secondary>
-            Logging activities and joining weekly fields boosts your score; showing up to events and closing
-            the week in the field moves it fastest.
+            Activities can raise your live score after today’s expected training is covered. Shortfalls appear the next day. Official scores and levels finalize weekly.
           </AppText>
         </SectionStack>
 </ScrollView>

@@ -216,6 +216,7 @@ function ResultsView({ state, result, replay, hiddenIds, reduced }: {
           </View>
         ))}
       </View>
+      {result.effortChange && <AppText>Training {result.effortChange.training} · History {result.effortChange.history} · Competition {result.effortChange.competition}</AppText>}
       <ResultCard result={result} units={state.units} variant="recap" replay={replay} hiddenIds={hiddenIds} account={state} />
     </View>
   );
