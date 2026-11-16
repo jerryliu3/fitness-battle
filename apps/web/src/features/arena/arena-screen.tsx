@@ -26,7 +26,7 @@ import { CoursePreview } from "./course-preview";
 import { QueuedField } from "./queued-field";
 import "./queued-field.css";
 import { Sheet } from "@/ui/sheet";
-import { APP_TIMEZONE, competitionQueue, competitionTrack, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, eventRegistration, type CompeteState, type CrewBoardPin, type CompeteEvent, type SportId } from "@fitness-battle/shared";
+import { APP_TIMEZONE, isPointsEvent, competitionQueue, competitionTrack, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, eventRegistration, type CompeteState, type CrewBoardPin, type CompeteEvent, type SportId } from "@fitness-battle/shared";
 
 function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
   const lastDay = weeklyCompetitionLastDay(endsAt);
@@ -115,7 +115,8 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const queue = selectedSport ? competitionQueue(state, selectedSport, now) : null;
   if (selectedSport === "sleep" && queue && !queue.queued) period.endsAt = new Date(queue.end);
   const queued = Boolean(queue?.queued || queue?.awaitingField);
-  const detailDestination = queued && (selectedSport === "sleep" || selectedSport === "strength");
+  const pointsEvent = !!selectedSport && isPointsEvent(selectedSport);
+  const detailDestination = queued && pointsEvent;
   const msLeft = Math.max(0, period.endsAt.getTime() - now.getTime());
   const daysLeft = Math.floor(msLeft / (24 * 3600 * 1000));
   const hoursLeft = Math.ceil(msLeft / (3600 * 1000));
@@ -167,12 +168,11 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   }
 
   const sleep = sleepRenewal(state);
-  const pointsEvent = selectedSport === "sleep" || selectedSport === "strength";
 
   return (
     <CompetitionTimelineProvider state={state} selection={{ sport: selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary, track, periodStart: period.startsAt.toISOString(), periodEnd: period.endsAt.toISOString() }} active={immersive && !detailDestination && !pointsEvent}>
     <div className="focus-arena">
-      {selectedSport && !pointsEvent ? <FieldStage externalAthleteFocus={athleteFocus} key={`${account}:${selectedSport}:${state.units}`} onOptionsChange={setCourseOptions} persistent backgroundMode queueOverlay={queued ? <></> : undefined} presentationVisible={immersive} onExit={() => setImmersiveAccount(null)} tabActive={tabActive} replayState={state} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
+      {selectedSport && selectedSport !== "sleep" && !pointsEvent ? <FieldStage externalAthleteFocus={athleteFocus} key={`${account}:${selectedSport}:${state.units}`} onOptionsChange={setCourseOptions} persistent backgroundMode queueOverlay={queued ? <></> : undefined} presentationVisible={immersive} onExit={() => setImmersiveAccount(null)} tabActive={tabActive} replayState={state} sportTitle={SPORTS.find(s => s.id === selectedSport)?.name} model={buildFieldModel(state,selectedSport,track,now)} boardRows={buildSplitBoard(state,selectedSport,track,now).rows} /> : null}
       {selectedSport && pointsEvent && !queued && <div className="compete-points-field" aria-hidden={!immersive} inert={!immersive} style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--app-surface-canvas)", opacity: immersive ? 1 : 0, pointerEvents: immersive ? "auto" : "none", transform: immersive ? "translateX(0)" : "translateX(100%)", transition: "transform 320ms cubic-bezier(.22,1,.36,1), opacity 320ms ease" }}><CompeteTimeSeriesChart state={state} sport={selectedSport === "sleep" ? undefined : selectedSport} mode={selectedSport === "sleep" ? "sleep" : "sport"} track={track} selectedId={athleteFocus?.id} immersive timelineFraction={pointsFraction} onTimelineChange={setPointsFraction} /><button type="button" className="club-icon-button compete-queued-back" style={{ position: "absolute", top: "calc(env(safe-area-inset-top, 0px) + 12px)", left: 16, zIndex: 20 }} aria-label="Back to events" onClick={() => setImmersiveAccount(null)}>←</button><div style={{ position: "absolute", top: "calc(env(safe-area-inset-top, 0px) + 12px)", right: 16, zIndex: 20 }}><GraphOptions /></div></div>}
       {immersive && !detailDestination && !pointsEvent && <div className="compete-field-options">{courseOptions}</div>}
 

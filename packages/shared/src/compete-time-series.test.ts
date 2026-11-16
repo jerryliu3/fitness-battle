@@ -180,7 +180,7 @@ it("fits every preview marker inside the axes and honors fullscreen plot height"
   }
 });
 
-it("does not invent history or past places for a real rival with only current totals", () => {
+it("draws a real rival with only current totals as a straight line without past places", () => {
   const now = new Date("2026-10-22T18:00:00Z");
   const state = reduceCompete(freshState(new Date("2026-10-19T09:00:00Z")), { type: "opt-in", sport: "strength", now: "2026-10-19T09:00:00Z" });
   const enrollment = state.enrollments.find(e => e.sport === "strength")!;
@@ -192,7 +192,7 @@ it("does not invent history or past places for a real rival with only current to
   expect(model.historyAvailable).toBe(false);
   expect(model.isScrubbing).toBe(false);
   expect(model.cursorFraction).toBe(model.nowFraction);
-  expect(model.athletes.find(a => a.id === "real-rival")?.vertices).toEqual([{ t: model.nowFraction, value: 1 }]);
+  expect(model.athletes.find(a => a.id === "real-rival")?.vertices).toEqual([{ t: 0, value: 0 }, { t: model.nowFraction, value: 1 }]);
   expect(model.overtakes).toEqual([]);
   const filtered = buildCompeteTimeSeriesModel(state, "strength", "open", now, { hiddenIds: ["real-rival"], scrubFraction: .1 });
   expect(filtered.athletes.some(athlete => athlete.id === "real-rival")).toBe(false);

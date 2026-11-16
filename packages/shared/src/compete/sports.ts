@@ -67,6 +67,11 @@ export function sportById(id: SportId): Sport {
   return sport;
 }
 
+/** Sleep and every non-GPS sport compete on points and share the points chart. */
+export function isPointsEvent(event: SportId | "sleep"): boolean {
+  return event === "sleep" || !sportById(event).gps;
+}
+
 export const PROVIDER_IDS = [
   "strava",
   "garmin",
