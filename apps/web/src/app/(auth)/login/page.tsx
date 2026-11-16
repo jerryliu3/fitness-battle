@@ -7,12 +7,15 @@ import {
   resolveSafePostLoginPath,
 } from "@/lib/auth/login-redirect";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useState } from "react";
 
 function LoginForm() {
   const { signIn, user, loading } = useAuth();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const fromOnboarding = searchParams.get("from") === "onboarding";
+  const onboardingHref = searchParams.get("preview") === "1" ? "/app/welcome?preview=1" : "/app/welcome";
   const next = resolveSafePostLoginPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,13 +23,14 @@ function LoginForm() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) {
-      window.location.assign(next);
+    if (!loading && user && !fromOnboarding && !busy) {
+      router.replace(next);
     }
-  }, [loading, user, next]);
+  }, [loading, user, next, fromOnboarding, busy, router]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -36,7 +40,7 @@ function LoginForm() {
         setBusy(false);
         return;
       }
-      window.location.assign(next);
+      router.replace(fromOnboarding ? `/app/onboarding?next=${encodeURIComponent(next)}` : next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not sign in.");
       setBusy(false);
@@ -45,6 +49,7 @@ function LoginForm() {
 
   return (
     <section className="fb-card fb-auth-card">
+      {fromOnboarding && <Link href={onboardingHref} className="fb-btn-ghost">Back</Link>}
       <AppParagraph typographyRole="label" className="fb-kicker">overtaek</AppParagraph>
       <AppHeading level={1} role="display" className="fb-title">Sign in</AppHeading>
       <AppParagraph typographyRole="body" className="fb-copy">
@@ -83,7 +88,7 @@ function LoginForm() {
 
       <AppParagraph typographyRole="caption" className="fb-note">
         New here?{" "}
-        <Link href={buildSignupHref(next)}>Create an account</Link>
+        <Link href={fromOnboarding ? onboardingHref : buildSignupHref(next)}>Create an account</Link>
       </AppParagraph>
       <AppParagraph typographyRole="caption" className="fb-note">
         <Link href="/terms">Terms of Service</Link>

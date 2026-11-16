@@ -246,3 +246,22 @@ describe("athlete profile navigation and layout", () => {
     expect(metrics.props.signedOut).toBe(true);
   });
 });
+
+
+describe("onboarding sign-in", () => {
+  it.each([true, false])("returns to onboarding with a visible Back control (history=%s)", async (history) => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    mock.user = null;
+    mock.params = { auth: "signin", from: "onboarding" };
+    mock.canGoBackValue = history;
+    await act(async () => { renderer = create(createElement(AthleteScreen)); });
+    const header = renderer.root.findByType("ScreenHeader" as never);
+    expect(header.props.localBack).toBe(true);
+    expect(header.props.title).toBe("Sign in");
+    expect(renderer.root.findAllByType("AthleteMetrics" as never)).toHaveLength(0);
+    await act(async () => header.props.onBack());
+    if (history) expect(mock.back).toHaveBeenCalled();
+    else expect(mock.replace).toHaveBeenCalledWith("/welcome");
+    mock.canGoBackValue = true;
+  });
+});

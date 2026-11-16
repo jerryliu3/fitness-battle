@@ -1,7 +1,6 @@
 import { SPORT_IDS, type SportId } from "./compete/sports";
 import { rankForElo } from "./compete/ranks";
 
-export const GUEST_INTRO_SEEN_KEY = "overtaek-guest-intro-seen-v1";
 export const GUEST_INTRO_DRAFT_KEY = "overtaek-guest-intro-draft-v1";
 export const GUEST_SIGNUP_PENDING_KEY = "overtaek-guest-signup-email-v1";
 export const ONBOARDING_STEPS = ["sport", "overtake", "growth", "athlete", "account"] as const;

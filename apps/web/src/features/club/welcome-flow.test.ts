@@ -18,6 +18,8 @@ it("starts a signed-in review at sports and keeps the whole journey read-only", 
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Welcome)); });
   expect(r.root.findByType("h1").props.children).toBe("What moves you?");
+  expect(r.root.findAllByType("a").some(n => n.props.children === "Explore the app")).toBe(false);
+  expect(r.root.findAllByType("a").find(n => n.props.children === "I already have an account")!.props.href).toBe("/login?from=onboarding&preview=1");
   const press = async (name: string) => act(async () => r.root.findAllByType("button").find(n => n.props.children === name)!.props.onClick());
   await press("Continue");
   await act(async () => r.root.findByType("OnboardingOvertake" as never).props.onComplete());

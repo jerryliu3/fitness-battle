@@ -103,6 +103,7 @@ const styles=useThemedStyles(stylesThemes);
     panel?: AthletePanel;
     edit?: string;
     auth?: AuthMode;
+    from?: string;
   }>();
   const [note, setNote] = useState<string | null>(null);
   const [syncBusy, setSyncBusy] = useState(false);
@@ -133,8 +134,9 @@ const styles=useThemedStyles(stylesThemes);
   const appliedTracker = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!user && params.auth === "signup") {
-      setAuthMode("signup");
+    if (!user && (params.auth === "signup" || params.auth === "signin")) {
+      setAuthMode(params.auth);
+      if (params.auth !== "signup") return;
       let alive = true;
       void readGuestIntroDraft().then(guest => {
         if (alive && guest?.name) setDisplayName(current => current || guest.name);
@@ -211,10 +213,13 @@ const styles=useThemedStyles(stylesThemes);
 
   const rowBusy = syncBusy || Boolean(busyProvider);
   const signedIn = Boolean(user);
+  const fromOnboarding = params.from === "onboarding" && !signedIn;
 
   const titles = { profile: "Edit profile", connections: "Data Sync", preferences: "Preferences", scoring: "How scoring works", account: "Account" };
   const exitAthletePanel = () => {
-    if (router.canGoBack()) {
+    if (fromOnboarding && !router.canGoBack()) {
+      router.replace("/welcome");
+    } else if (router.canGoBack()) {
       router.back();
     } else if (panel) {
       router.replace({ pathname: "/athlete", params: { edit: "1" } });
@@ -224,10 +229,10 @@ const styles=useThemedStyles(stylesThemes);
   };
   const pageHeader = (
     <ScreenHeader
-      localBack={Boolean(panel)}
+      localBack={Boolean(panel) || fromOnboarding}
       hidden={!panel && settingsOpen}
-      nativeBar={!panel}
-      title={panel ? titles[panel] : editingProfile ? "Edit profile" : "Athlete"}
+      nativeBar={!panel && !fromOnboarding}
+      title={panel ? titles[panel] : fromOnboarding ? (authMode === "signup" ? "Create account" : "Sign in") : editingProfile ? "Edit profile" : "Athlete"}
       onBack={
         editingProfile && !panel
           ? () => {
@@ -251,6 +256,7 @@ const styles=useThemedStyles(stylesThemes);
         }
         setPassword("");
         setAuthNote(null);
+        if (params.from === "onboarding") router.replace("/onboarding");
         return;
       }
       // Mark the intended new account before signup can trigger auth navigation.
@@ -407,7 +413,7 @@ const styles=useThemedStyles(stylesThemes);
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <AthleteMetrics state={state} sections="profile" signedOut={!signedIn} />
+          {!fromOnboarding && <AthleteMetrics state={state} sections="profile" signedOut={!signedIn} />}
           <Text style={styles.kicker}>Account</Text>
 
           <Text style={styles.name}>Sign in to Overtaek</Text>

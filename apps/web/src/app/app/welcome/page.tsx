@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   athleteCardModelForPeer, athleteLocationLine, EMPTY_GUEST_INTRO, GUEST_INTRO_DRAFT_KEY,
-  GUEST_INTRO_SEEN_KEY, GUEST_SIGNUP_PENDING_KEY, ONBOARDING_STEPS, ONBOARDING_TITLES,
+  GUEST_SIGNUP_PENDING_KEY, ONBOARDING_STEPS, ONBOARDING_TITLES,
   SPORTS, type GuestIntroDraft, type OnboardingStep,
 } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
@@ -26,10 +26,10 @@ function Welcome({ preview }: { preview: boolean }) {
   const [draft, setDraft] = useState<GuestIntroDraft>(EMPTY_GUEST_INTRO);
   useEffect(() => { setDraft(preview ? EMPTY_GUEST_INTRO : readGuestIntroDraft() ?? EMPTY_GUEST_INTRO); setReady(true); }, [preview]);
   useEffect(() => {
-    if (ready && !preview && !user) try { localStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify(draft)); } catch {}
-  }, [ready, draft, preview, user]);
+    if (ready && !preview && !loading && !user) try { localStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify(draft)); } catch {}
+  }, [ready, draft, preview, loading, user]);
   useEffect(() => { top.current?.scrollIntoView({ block: "start" }); }, [step]);
-  if (!ready || loading || (user && !preview)) return <AppParagraph>Loading…</AppParagraph>;
+  if (!ready || (!preview && (loading || user))) return <AppParagraph>Loading…</AppParagraph>;
 
   const index = ONBOARDING_STEPS.indexOf(step);
   const name = draft.name.trim() || "Athlete";
@@ -43,7 +43,6 @@ function Welcome({ preview }: { preview: boolean }) {
     if (preview) return;
     try {
       localStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify(draft));
-      localStorage.setItem(GUEST_INTRO_SEEN_KEY, "1");
       if (signingIn) localStorage.removeItem(GUEST_SIGNUP_PENDING_KEY);
     } catch {}
   }
@@ -91,8 +90,7 @@ function Welcome({ preview }: { preview: boolean }) {
         disabled={step === "athlete" && !draft.name.trim()} onClick={next}>{step === "growth" ? "Create my athlete" : "Continue"}</button>}
     </div>
     {(step === "sport" || step === "account") && <>
-      <Link className="fb-btn-ghost" href="/login" onClick={() => leave(true)}>{step === "sport" ? "I already have an account" : "Sign in"}</Link>
-      <Link className="fb-btn-ghost" href="/app/today" onClick={() => leave()}>Explore the app</Link>
+      <Link className="fb-btn-ghost" prefetch href={preview ? "/login?from=onboarding&preview=1" : "/login?from=onboarding"} onClick={() => leave(true)}>{step === "sport" ? "I already have an account" : "Sign in"}</Link>
     </>}
   </section>;
 }

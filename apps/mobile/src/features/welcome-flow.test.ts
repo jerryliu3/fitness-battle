@@ -1,11 +1,11 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-const mock = vi.hoisted(() => ({ replace: vi.fn(), save: vi.fn(async (_key: string, _value: string) => {}) }));
+const mock = vi.hoisted(() => ({ replace: vi.fn(), push: vi.fn(), save: vi.fn(async (_key: string, _value: string) => {}) }));
 vi.mock("react-native", () => ({ useColorScheme: () => "light", Pressable: "Pressable", ScrollView: "ScrollView", TextInput: "TextInput", View: "View" }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
 vi.mock("@react-native-async-storage/async-storage", () => ({ default: { getItem: async () => null, setItem: mock.save, removeItem: vi.fn(async () => {}) } }));
-vi.mock("expo-router", () => ({ useRouter: () => ({ replace: mock.replace }), Redirect: "Redirect" }));
+vi.mock("expo-router", () => ({ useRouter: () => ({ replace: mock.replace, push: mock.push }), Redirect: "Redirect" }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: null, loading: false }) }));
 vi.mock("../ui/section", () => ({ AppText: "AppText" }));
 vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton", useFocusStyles: () => ({}) }));
@@ -19,6 +19,7 @@ it("carries the chosen sport and identity through the pre-account journey", asyn
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Welcome)); });
+  expect(r.root.findAllByType("FocusButton" as never).map(n => n.props.label)).toEqual(["Continue", "I already have an account"]);
   const press = async (label: string) => act(async () => r.root.findAllByType("FocusButton" as never).find(n => n.props.label === label)!.props.onPress());
   await act(async () => r.root.findAllByType("Pressable" as never).find(n => n.props.accessibilityLabel === "Cycling")!.props.onPress());
   await press("Continue");
@@ -31,7 +32,7 @@ it("carries the chosen sport and identity through the pre-account journey", asyn
   await press("Continue");
   expect(r.root.findByType("AthleteCrest" as never).props.model.sport).toBe("Cycling");
   await press("Create account");
-  expect(mock.replace).toHaveBeenCalledWith("/athlete?auth=signup");
+  expect(mock.push).toHaveBeenCalledWith({ pathname: "/athlete", params: { auth: "signup", from: "onboarding" } });
   expect(mock.save.mock.calls.some(([, raw]) => typeof raw === "string" && raw.includes('"name":"Taylor"'))).toBe(true);
   await act(async () => r.unmount());
 });

@@ -10,7 +10,7 @@ import { OnboardingPotential } from "../src/features/onboarding-potential";
 import { SearchableCountryPicker } from "../src/ui/searchable-country-picker";
 import { SportIcon } from "../src/ui/sport-icon";
 import {
-  GUEST_INTRO_DRAFT_KEY, GUEST_INTRO_SEEN_KEY, GUEST_SIGNUP_PENDING_KEY,
+  GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY,
   readGuestIntroDraft, type GuestIntroDraft,
 } from "../src/lib/guest-intro";
 import { useAuth } from "../src/lib/auth";
@@ -48,14 +48,13 @@ export default function Welcome() {
     catch { /* Storage errors must not trap guests in onboarding. */ }
   }
   function go(next: OnboardingStep) { setStep(next); }
-  async function leave(destination: "/today" | "/athlete?auth=signin" | "/athlete?auth=signup") {
+  async function leave(mode: "signin" | "signup") {
     if (leaving) return;
     setLeaving(true);
     await saveDraft();
-    if (destination === "/athlete?auth=signin") await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
-    try { await AsyncStorage.setItem(GUEST_INTRO_SEEN_KEY, "1"); }
-    catch { /* The app remains accessible without local preferences. */ }
-    router.replace(destination);
+    if (mode === "signin") await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
+    router.push({ pathname: "/athlete", params: { auth: mode, from: "onboarding" } });
+    setLeaving(false);
   }
 
   if (loading || !ready) return <View style={{ flex: 1, backgroundColor: colors.paper }} />;
@@ -96,8 +95,7 @@ export default function Welcome() {
             })}
           </View>
           <FocusButton label="Continue" onPress={() => void go("overtake")} />
-          <FocusButton secondary label="I already have an account" disabled={leaving} onPress={() => void leave("/athlete?auth=signin")} />
-          <FocusButton secondary label="Explore the app" disabled={leaving} onPress={() => void leave("/today")} />
+          <FocusButton secondary label="I already have an account" disabled={leaving} onPress={() => void leave("signin")} />
         </>}
         {step === "overtake" && <>
           <AppText secondary>Close the gap and move ahead in {sportName.toLowerCase()}.</AppText>
@@ -127,9 +125,8 @@ export default function Welcome() {
         {step === "account" && <>
           <AthleteCrest model={card} onInteractionChange={setCardHeld} />
           <AppText secondary>Keep your athlete and build your record.</AppText>
-          <FocusButton label="Create account" disabled={leaving} onPress={() => void leave("/athlete?auth=signup")} />
-          <FocusButton secondary label="Sign in" disabled={leaving} onPress={() => void leave("/athlete?auth=signin")} />
-          <FocusButton secondary label="Explore without an account" disabled={leaving} onPress={() => void leave("/today")} />
+          <FocusButton label="Create account" disabled={leaving} onPress={() => void leave("signup")} />
+          <FocusButton secondary label="Sign in" disabled={leaving} onPress={() => void leave("signin")} />
           {back}
         </>}
       </ScrollView>

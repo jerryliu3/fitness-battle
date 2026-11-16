@@ -1,8 +1,8 @@
 # Sport-first onboarding — native and web
 
 A first-time signed-out visitor opens the same journey on native `/welcome` and
-web `/app/welcome`. Native `/` and web `/app` route returning guests to Home;
-the website's marketing page links into the journey.
+web `/app/welcome`. Native `/` and web `/app` always send signed-out visitors
+into this journey; the website's marketing page links into it too.
 
 ## Before account creation
 
@@ -17,7 +17,8 @@ the website's marketing page links into the journey.
    3D Crest. City and country are optional profile preparation. Native retains a
    readable card while the remote scene loads or fails.
 5. **Save your athlete** — retain the Crest, then enter the existing email/password
-   signup. Sign in and Explore remain available. No new auth providers are added.
+   signup. Existing users can choose Sign in. There is no guest-exploration exit
+   or dismissed-introduction flag. No new auth providers are added.
 
 Both platforms use the shared step order, titles, growth model, draft parser and
 account matching rule in `packages/shared/src/onboarding-journey.ts`. The selected
@@ -27,6 +28,13 @@ the visual foundation. The supplied storyboard informs sequence and composition.
 Signed-in reviewers can open `/app/welcome?preview=1` to start at sport selection.
 This uses fresh in-memory choices, does not save guest drafts or change the account,
 and continues into the read-only post-account setup preview.
+
+Sign in opened from onboarding has a Back control. Web preserves the preview
+return path, opens outside the account shell's startup animation, and does not redirect an already-active session until Sign in is
+explicitly submitted; other login entry points retain their normal behavior.
+Native pushes the account screen onto the welcome stack, with a direct welcome
+fallback when no navigation history exists. Successful onboarding sign-in resolves
+account setup before Home, avoiding an intermediate Home flash.
 
 ## Draft and account handoff
 
