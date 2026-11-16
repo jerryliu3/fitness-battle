@@ -1,14 +1,14 @@
 import { SPORT_IDS, type SportId, type UnitSystem } from "./compete/sports";
-import { RANK_BANDS } from "./compete/ranks";
 
 export const GUEST_INTRO_DRAFT_KEY = "overtaek-guest-intro-draft-v1";
 export const GUEST_SIGNUP_PENDING_KEY = "overtaek-guest-signup-email-v1";
-export const ONBOARDING_STEPS = ["sport", "overtake", "growth", "athlete", "account"] as const;
+export const ONBOARDING_STEPS = ["sport", "overtake", "growth", "features", "athlete", "account"] as const;
 export type OnboardingStep = typeof ONBOARDING_STEPS[number];
 export const ONBOARDING_TITLES: Record<OnboardingStep, string> = {
   sport: "What moves you?",
   overtake: "Make your first overtake.",
   growth: "See your potential.",
+  features: "More than a workout tracker.",
   athlete: "Create your athlete.",
   account: "Save your athlete.",
 };
@@ -63,13 +63,19 @@ export function onboardingDeclaredVolume(sport: SportId, value: string | undefin
   return Number.isFinite(native) ? native : undefined;
 }
 
-/** A possible trajectory for the outlook screen; never applied to account state. */
-const from = RANK_BANDS.find(rank => rank.id === "active")!;
-const to = RANK_BANDS.find(rank => rank.id === "challenger")!;
+/** Hypothetical example values only: do not treat 500 as an account starting score. */
 export const ONBOARDING_GROWTH = {
-  scores: [0, .1, .24, .4, .6, .8, 1].map(progress => Math.round(from.min + (to.min - from.min) * progress)),
-  pointLabels: ["Start", "Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"],
-  labels: ["Start", "Week 3", "Week 6"] as [string, string, string],
-  from,
-  to,
+  scores: [500, 620, 780, 990, 1250, 1520, 1770, 2000],
+  pointLabels: ["Start", "Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6", "Week 7"],
+  labels: ["Start", "Week 3", "Week 7"] as [string, string, string],
 };
+
+export const ONBOARDING_FEATURES = [
+  { id: "crews", label: "Crews", title: "Better together.",
+    description: "Make progress on shared weekly goals or take on another crew." },
+  { id: "leaderboards", label: "Leaderboards", title: "Find your place.",
+    description: "Fresh weekly competitions, plus longer-term benchmarks and percentiles." },
+  { id: "vitals", label: "Vitals Lab", title: "Understand your body.",
+    description: "Explore sleep, recovery and health trends beyond workout totals." },
+] as const;
+export type OnboardingFeatureId = typeof ONBOARDING_FEATURES[number]["id"];
