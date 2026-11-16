@@ -163,3 +163,9 @@ sensitive string and is bundled as a public runtime token through Expo extra.
 Credential values stay outside Git. EAS builds fail early when the token or native
 Mapbox plugin is absent. `RNMAPBOX_MAPS_DOWNLOAD_TOKEN`, when needed by the native
 SDK installer, is a separate build-only secret and must never enter Expo extra.
+
+### Effort Score rollout
+
+Apply `20261116090000_effort_account_state.sql` before deploying this scorer. It adds frozen weekly account state and event-reward receipts within existing versioned account/admin commits. On first migrated read the server calibrates from canonical recorded history; legacy score history is retained. Activity and step loading is paginated so a fixed history window cannot truncate lifetime credit. Self-declared volume is optional at onboarding and capped at Master without a verified peak or lifetime credit. Reads derive live provisional scores; only weekly settlement writes official ratings. No production migration was run. Run `supabase/tests/effort-account-state.sql` on a disposable migrated database; it checks migration presence and write permissions, not full transactional concurrency. The TypeScript account tests cover sequential zeros, replay/idempotency, declaration caps and 6/12-month recovery.
+
+For corrections to already settled historical activity, use the shared explicit `replayEffortHistory` operation with canonical facts and the existing audited admin commit. Ordinary sync/read paths intentionally do not rewrite settled history or re-award its lifetime volume. Live corrections in the open week recalculate from current eligible facts. Preserve stored event reward receipts and immutable event places when replaying.
