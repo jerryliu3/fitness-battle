@@ -16,7 +16,7 @@ export function OnboardingPotential({ sport }: { sport: SportId }) {
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <AppText role="display">{first.toLocaleString()}</AppText>
         <AppText role="heading" secondary>→</AppText>
-        <AppText role="display" style={{ color: c.fieldTeal ?? c.ink }}>{last.toLocaleString()}</AppText>
+        <AppText role="display" style={{ color: c.ink }}>{last.toLocaleString()}</AppText>
       </View>
       <AppText role="body" secondary>See how consistent training and competition results could build your score over time.</AppText>
       <StandardLineChart height={166} values={scores} xLabels={["Start", "Week 3", "Week 6"]} showAxes showTrend={false}
