@@ -10,6 +10,7 @@ import {
   arenaValueDecimals,
   arenaLaneValues,
   competeVolumeFromTotals,
+  defaultCompetitionMomentView,
   formatArenaVolume,
   isGeographicArenaUnit,
 } from "./compete-field-view";
@@ -66,5 +67,10 @@ describe("competeFieldView", () => {
     expect(normalizeCompeteFieldView("running", "4d")).toBe("4d");
     expect(normalizeCompeteFieldView("running", "graph")).toBe("graph");
     expect(normalizeCompeteFieldView("cycling", "3d")).toBe("2d");
+  });
+
+  it("keeps moment defaults aligned with live compete", () => {
+    expect(defaultCompetitionMomentView("strength")).toBe(defaultCompeteFieldView("strength"));
+    expect(defaultCompetitionMomentView("running")).toBe(defaultCompeteFieldView("running"));
   });
 });

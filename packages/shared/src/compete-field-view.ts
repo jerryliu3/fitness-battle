@@ -16,6 +16,11 @@ export function defaultCompeteFieldView(event: CompeteArenaEvent): FieldViewDime
   return isGeographicCompete(event) ? "4d" : "graph";
 }
 
+/** Overtake moments use the same default view policy as live compete. */
+export function defaultCompetitionMomentView(event: CompeteArenaEvent): FieldViewDimension {
+  return defaultCompeteFieldView(event);
+}
+
 export function allowedCompeteFieldViews(event: CompeteArenaEvent): FieldViewDimension[] {
   if (event === "sleep") return ["graph"];
   return isGeographicCompete(event) ? ["4d", "2d", "graph"] : ["graph", "2d"];
