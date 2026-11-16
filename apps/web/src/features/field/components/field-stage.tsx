@@ -349,7 +349,7 @@ export function FieldStage({
   const chooseViewRef = useRef(chooseView); chooseViewRef.current = chooseView;
   useEffect(() => {
     if (!onOptionsChange) return;
-    onOptionsChange(<FieldViewSwitcher compact value={viewDimension} geographic={unit !== "pts"} onChange={value => chooseViewRef.current(value)} />);
+    onOptionsChange(<FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={value => chooseViewRef.current(value)} />);
     return () => onOptionsChange(null);
   }, [onOptionsChange, viewDimension, unit]);
 
@@ -370,10 +370,11 @@ export function FieldStage({
         {!backgroundMode && <div className="focus-broadcast-title" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {sportTitle ?? model.sport}{queueOverlay ? " · Upcoming wave" : ` · ${displayPlace} / ${runners.length}`}
         </div>}
-        {!onOptionsChange && <FieldViewSwitcher compact={backgroundMode} value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
-          onStandings={queueOverlay ? undefined : () => { if (backgroundMode) onDetails?.(); else { setLanesImmersive(false); setStandingsOpen(true); } }}
-          onZoomIn={viewDimension !== "4d" && viewDimension !== "graph" ? () => { cancelCenterTween(); setSpan(Math.max(unit === "pts" ? 2 : .5, view.span / 1.5)); } : undefined}
-          onZoomOut={viewDimension !== "4d" && viewDimension !== "graph" ? () => { cancelCenterTween(); setSpan(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)); } : undefined} />}
+        {!onOptionsChange && (
+          <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
+            onStandings={queueOverlay ? undefined : () => { if (backgroundMode) onDetails?.(); else { setLanesImmersive(false); setStandingsOpen(true); } }}
+          />
+        )}
       </div>
 
       {!backgroundMode && !queueOverlay && replayState && <div className="field-timeline-fullscreen"><FieldTimeline timeline={timeline} /></div>}

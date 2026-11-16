@@ -83,7 +83,6 @@ it("autoplays after map readiness, toggles pause/play/replay icon, allows immedi
     await act(async () => speed().props.onPress());
     expect(speed().props.accessibilityLabel).toBe("Playback speed 2 times");
     expect(renderer.root.findAllByType("FocusButton" as never).map(button => button.props.label)).toEqual(["Continue"]);
-    expect(renderer.root.findByType("FieldViewSwitcher" as never).props.compact).toBe(true);
     await act(async () => map().props.onReady());
     expect(renderer.root.findByType("RaceUpdates" as never).props.revealCount).toBe(0);
     await act(async () => playback().props.onPress());
@@ -121,7 +120,6 @@ it("can play in 2D with view switcher and continue immediately when remaining > 
     await act(async () => { renderer = create(createElement(CompetitionMoment, { moment: moment(), remaining: 2, onConfirm: done })); });
     await act(async () => renderer.root.findByType("FieldViewSwitcher" as never).props.onChange("2d"));
     expect(renderer.root.findAllByType("GeographicCourse" as never)).toHaveLength(0);
-    expect(renderer.root.findByType("FieldViewSwitcher" as never).props.compact).toBe(true);
     const next = renderer.root.findAllByType("FocusButton" as never).find(button => button.props.label === "Continue (1 more)");
     expect(next).toBeDefined();
     await act(async () => next!.props.onPress());

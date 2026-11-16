@@ -41,7 +41,7 @@ import {
   type SportId,
 } from "@fitness-battle/shared";
 import { usePathname } from "expo-router";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AppState, Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "../ui/icon-button";
@@ -108,11 +108,28 @@ const f=useFocusStyles();
     setSceneDimension(value);
   };
   const chooseViewRef = useRef(chooseView); chooseViewRef.current = chooseView;
-  useEffect(() => {
-    if (!onOptionsChange || sceneDimension === "4d") return;
-    onOptionsChange(<FieldViewSwitcher compact value={sceneDimension} geographic={!queued && sportById(sport).gps} onChange={value => chooseViewRef.current(value)} />);
-    return () => onOptionsChange(null);
+  const mapChromeRef = useRef<ReactNode>(null);
+  const publishArenaOptions = useCallback(() => {
+    if (!onOptionsChange) return;
+    onOptionsChange(
+      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 8 }}>
+        <FieldViewSwitcher value={sceneDimension} geographic={!queued && sportById(sport).gps} onChange={value => chooseViewRef.current(value)} />
+        {mapChromeRef.current}
+      </View>,
+    );
   }, [onOptionsChange, sceneDimension, queued, sport]);
+  useEffect(() => {
+    if (!onOptionsChange) return;
+    publishArenaOptions();
+    return () => onOptionsChange(null);
+  }, [onOptionsChange, publishArenaOptions]);
+  const handleMapOptionsChange = useCallback(
+    (node: ReactNode | null) => {
+      mapChromeRef.current = node;
+      publishArenaOptions();
+    },
+    [publishArenaOptions],
+  );
   const [courseFlat, setCourseFlat] = useState(false);
   const [expanded, setExpanded] = useState(persistent);
   const [leadersHeight, setLeadersHeight] = useState(0);
@@ -285,7 +302,7 @@ const f=useFocusStyles();
       ) : null}
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <View pointerEvents={expanded ? "auto" : "none"} style={{ flex: 1 }}>
-          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following && !chaseReplay} onFollowChange={setFollowing} mapFollowing={following} followAthleteName={focusedLane?.name ?? me?.name ?? "your athlete"} onFollowChipPress={expanded && !queued ? () => { if (following) setFollowing(false); else { setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } } : undefined} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={chaseReplay ? undefined : courseTarget} replay={chaseReplay} onReplay={timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
+          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following && !chaseReplay} onFollowChange={setFollowing} mapFollowing={following} followAthleteName={focusedLane?.name ?? me?.name ?? "your athlete"} onFollowChipPress={expanded && !queued ? () => { if (following) setFollowing(false); else { setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } } : undefined} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={chaseReplay ? undefined : courseTarget} replay={chaseReplay} onReplay={timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onOptionsChange={onOptionsChange ? handleMapOptionsChange : undefined} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
           <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>Tap to open full screen</Text></View>
@@ -439,7 +456,9 @@ const f=useFocusStyles();
                 />
               </View>}
               {!backgroundMode && onDetails ? <Pressable accessibilityRole="button" accessibilityLabel={backgroundMode ? "Expand standings" : "Events & standings"} onPress={onDetails} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.72)" }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{backgroundMode ? `${sport.charAt(0).toUpperCase()}${sport.slice(1)}` : "Events & standings"}</Text></Pressable> : null}
-              {!onOptionsChange && !(backgroundMode && sceneDimension === "4d") && <FieldViewSwitcher compact={backgroundMode} value={sceneDimension} geographic={!queued && arena.unit !== "pts"} onChange={chooseView} />}
+              {!onOptionsChange && !(backgroundMode && sceneDimension === "4d") && (
+                <FieldViewSwitcher value={sceneDimension} geographic={!queued && arena.unit !== "pts"} onChange={chooseView} />
+              )}
             </FieldOverlayView>
 
             {!queued && (sceneDimension !== "4d" || course) ? <>
