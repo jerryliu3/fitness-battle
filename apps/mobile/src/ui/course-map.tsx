@@ -4,7 +4,6 @@ import { useThemeColors } from "../theme";
 import { useAuth } from "../lib/auth";
 import Svg, { G } from "react-native-svg";
 import { AthleteNode } from "./athlete-node";
-import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
@@ -250,17 +249,6 @@ const appearanceColors = useThemeColors();
       }) : null}
       {!overlaysHidden ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id) && !dismissed.includes(lane.id)).map(lane => {
         const detail = courseAthleteDetail(lanes, lane, unit);
-        if (!sharedLane) {
-          return <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: lane.callout.left ? 1 : 0, y: lane.callout.originY / lane.callout.height }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
-            <View collapsable={false} pointerEvents="box-none" style={{ width: 170, height: lane.callout.height }}>
-              <Svg width={170} height={lane.callout.height} viewBox={`0 0 170 ${lane.callout.height}`} pointerEvents="none"><G transform={`translate(${lane.callout.originX} ${lane.callout.originY})`}>
-                <AthletePennant lane={lane} x={lane.callout.left ? -158 : 12} y={lane.callout.y} detail={detail} prefix={`${prefix}-${lane.id}`} />
-              </G></Svg>
-              <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: 12, top: lane.callout.cardTop, width: 146, height: 46 }} />
-              {!onSnapshot && lane.id === selectedId ? <Pressable accessibilityRole="button" accessibilityLabel={`Hide ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={8} style={{ position: "absolute", right: 4, top: lane.callout.cardTop - 8, width: 28, height: 28, borderRadius: 14, backgroundColor: appearanceColors.card, alignItems: "center", justifyContent: "center" }}><AppText role="label">−</AppText></Pressable> : null}
-            </View>
-          </MarkerView>;
-        }
         const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
         const subdetail = courseAthleteSubdetail(lanes, lane, unit);
         const selected = lane.id === selectedId && !dismissed.includes(lane.id);

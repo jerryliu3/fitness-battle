@@ -84,8 +84,7 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   expect(toggle("Shared lane").props.value).toBe(false);
   expect(button("See overview")).toBeDefined();
   expect(renderer.root.findAllByType("ShapeSource" as never).some(node => node.props.id === "athletes")).toBe(true);
-  expect(renderer.root.findAllByType("AthletePennant" as never)).toHaveLength(2);
-  expect(renderer.root.findAllByType("AthleteNode" as never)).toHaveLength(0);
+  expect(renderer.root.findAllByType("AthleteNode" as never)).toHaveLength(2);
   await act(async () => toggle("Shared lane").props.onValueChange(true));
   await act(async () => toggle("Perspective view").props.onValueChange(false));
   expect(toggle("Perspective view").props.value).toBe(false);
@@ -144,7 +143,7 @@ it("hides a blocked racer without changing the other racer's position or place",
   expect(source().features.map((feature: { id: string }) => feature.id)).toEqual(["you"]);
   expect(source().features[0].geometry.coordinates).toEqual(yourPosition);
   expect(renderer.root.findAllByType("MarkerView" as never)).toHaveLength(1);
-  expect(renderer.root.findByType("AthletePennant" as never).props.detail).toContain("2nd");
+  expect(renderer.root.findByType("AthleteNode" as never).props.detail).toContain("2nd");
 });
 
 it("follows automatic progress along the route and settles on the racer", async () => {
