@@ -65,7 +65,7 @@ From `/Users/jerryliu/.codex/worktrees/58bd/fitness-battle`:
 pnpm dev:web
 # Open http://localhost:3000/app/welcome
 
-pnpm dev:mobile -- --port 8082
+pnpm --filter @fitness-battle/mobile exec expo start --dev-client --port 8082
 # Press i for the current-worktree iOS development client.
 ```
 
