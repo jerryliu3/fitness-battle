@@ -33,7 +33,7 @@ export function OnboardingFeatureTour({ sport }: { sport: SportId }) {
     <AppText role="heading" accessibilityRole="header">{feature.title}</AppText>
     <AppText secondary>{feature.description}</AppText>
     {selected === "crews" && <View style={card}>
-      <AppText role="caption" secondary>ILLUSTRATIVE · WEEKLY CREW GOAL</AppText>
+      <AppText role="caption" secondary>WEEKLY CREW GOAL</AppText>
       <AppText role="heading">{goal[0]}</AppText>
       <View style={{ height: 12, borderRadius: 10, backgroundColor: c.soft, overflow: "hidden" }}>
         <View style={{ width: "72%", height: "100%", backgroundColor: c.tennis, borderRadius: 10 }} />
@@ -62,20 +62,20 @@ export function OnboardingFeatureTour({ sport }: { sport: SportId }) {
           </Pressable>)}
       </View>
       {board === "weekly" ? <>
-        <AppText role="caption" secondary>EXAMPLE · WEEKLY {selectedSport.toUpperCase()} FIELD</AppText>
+        <AppText role="caption" secondary>WEEKLY {selectedSport.toUpperCase()} FIELD</AppText>
         {[["1", "Alex", sampleRows[0]!], ["2", "You", sampleRows[1]!], ["3", "Sam", sampleRows[2]!]].map(([place, person, score]) =>
           <View key={place} style={{ flexDirection: "row", gap: 12, alignItems: "center", padding: 11, borderRadius: 11, backgroundColor: person === "You" ? c.actionSoft : c.paper }}>
             <AppText role="heading">#{place}</AppText><AppText role="label" style={{ flex: 1 }}>{person}</AppText><AppText role="caption">{score}</AppText>
           </View>)}
         <AppText role="caption" secondary>Every week is a fresh field with athletes at a similar level.</AppText>
       </> : <>
-        <AppText role="caption" secondary>EXAMPLE · LIFETIME BENCHMARK</AppText>
+        <AppText role="caption" secondary>LIFETIME BENCHMARK</AppText>
         <AppText role="display">Top 25%</AppText>
-        <AppText role="body" secondary>See how a 5K time compares with broader results.</AppText>
+        <AppText role="body" secondary>See how your performance compares with broader results.</AppText>
         <View style={{ height: 10, borderRadius: 10, backgroundColor: c.soft, overflow: "hidden" }}>
           <View style={{ width: "75%", height: "100%", backgroundColor: c.tennis }} />
         </View>
-        <AppText role="caption" secondary>Percentile example only, not your result.</AppText>
+        <AppText role="caption" secondary>Compare your progress over time.</AppText>
       </>}
     </View>}
     {selected === "vitals" && <View style={{ ...card, backgroundColor: "#0A161D", borderColor: "#264650" }}>
@@ -100,7 +100,7 @@ export function OnboardingFeatureTour({ sport }: { sport: SportId }) {
           <AppText role="caption" style={{ color: "#E5F4F4", textAlign: "center" }}>{metric}</AppText>
         </View>)}
       </View>
-      <AppText role="caption" style={{ color: "#9DB8C2" }}>Preview only. Real measurements need connected health data and permission.</AppText>
+      <AppText role="caption" style={{ color: "#9DB8C2" }}>Connect health data to explore your own metrics.</AppText>
     </View>}
   </View>;
 }

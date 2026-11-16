@@ -7,6 +7,7 @@ import { RaceUpdates } from "./race-updates";
 import { StandingsList } from "./standings-list";
 import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
 import { CompeteSheet } from "../ui/compete-sheet";
+import { IconButton } from "../ui/icon-button";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { CompeteTimeSeriesChart } from "../ui/compete-time-series-chart";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -46,6 +47,8 @@ export function CompetitionMoment({
   onConfirm,
   debug = false,
   embedded = false,
+  fill = false,
+  onBack,
   dimension = defaultCompeteFieldView(moment.sport),
   course = null,
   autoStart = true,
@@ -55,6 +58,8 @@ export function CompetitionMoment({
   onConfirm: () => void;
   debug?: boolean;
   embedded?: boolean;
+  fill?: boolean;
+  onBack?: () => void;
   dimension?: FieldViewDimension;
   course?: RaceCourse | null;
   autoStart?: boolean;
@@ -185,7 +190,8 @@ export function CompetitionMoment({
   );
 
   const actionRow = (
-    <View style={{ flexDirection: "row", gap: 10 }}>
+    <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
+      {onBack && <IconButton icon="back" label="Back" onPress={onBack} />}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={playbackLabel}
@@ -230,7 +236,7 @@ export function CompetitionMoment({
     );
 
   return (
-    <View style={embedded ? { height: 600 } : { flex: 1 }}>
+    <View style={embedded && !fill ? { height: 600 } : { flex: 1 }}>
       <View
         onLayout={(e) => setHeight(e.nativeEvent.layout.height)}
         style={StyleSheet.absoluteFill}
@@ -245,8 +251,9 @@ export function CompetitionMoment({
             momentReplay={{ moment, progress }}
             hiddenIds={hiddenIds}
             immersive
-            topInset={insets.top}
-            bottomInset={insets.bottom}
+            topInset={embedded ? 56 : insets.top}
+            bottomInset={embedded ? 0 : insets.bottom}
+            viewportHeight={height || undefined}
             active
           />
         ) : null}
@@ -292,8 +299,8 @@ export function CompetitionMoment({
         ) : null}
       </View>
 
-      {!embedded && overlayControls ? (
-        <View style={{ position: "absolute", top: insets.top + 54, right: 16, zIndex: 20 }}>
+      {overlayControls ? (
+        <View style={{ position: "absolute", top: embedded ? 12 : insets.top + 54, right: 16, zIndex: 20 }}>
           {overlayControls}
         </View>
       ) : null}

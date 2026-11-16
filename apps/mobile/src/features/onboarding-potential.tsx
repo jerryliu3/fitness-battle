@@ -13,14 +13,14 @@ export function OnboardingPotential() {
   return <View style={{ gap: 18 }}>
     <AppText secondary>Stay consistent and see how your effort adds up over time.</AppText>
     <View style={panel}>
-      <AppText role="label">Example Effort Score</AppText>
+      <AppText role="label">Potential Effort Score</AppText>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <AppText role="display">{start.toLocaleString("en-US")}</AppText>
         <AppText role="heading" secondary>→</AppText>
         <AppText role="display">{end.toLocaleString("en-US")}</AppText>
       </View>
-      <StandardLineChart height={166} values={scores} xLabels={labels} pointLabels={pointLabels}
-        showAxes showTrend={false} accessibilityLabel={`Illustrative score growth from ${start} to ${end} across seven example weeks`} />
+      <StandardLineChart height={220} values={scores} xLabels={labels} pointLabels={pointLabels}
+        showAxes showTrend={false} accessibilityLabel={`Potential score growth from ${start} to ${end} over seven weeks`} />
     </View>
     <View style={panel}>
       <AppText role="heading">Every session is part of the story.</AppText>
@@ -35,6 +35,6 @@ export function OnboardingPotential() {
       </View>
       <AppText role="caption" secondary>Your long-term progress can grow even while weekly competitions start fresh.</AppText>
     </View>
-    <AppText role="caption" secondary>Illustrative only—not a starting score, prediction, or guaranteed gain. Real progress depends on your activity.</AppText>
+    <AppText role="caption" secondary>Your progress depends on your activity. Every athlete starts from their own baseline.</AppText>
   </View>;
 }

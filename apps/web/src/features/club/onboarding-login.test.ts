@@ -8,6 +8,7 @@ const mock = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({ useSearchParams: () => mock.params, useRouter: () => ({ replace: mock.replace }) }));
 vi.mock("next/link", () => ({ default: "a" }));
 vi.mock("@/components/auth-context", () => ({ useAuth: () => ({ user: mock.user, loading: false, signIn: mock.signIn }) }));
+vi.mock("@/ui/back-button", () => ({ BackButton: "BackButton" }));
 vi.mock("@/ui/section", () => ({ AppHeading: "h1", AppParagraph: "p" }));
 import Login from "@/app/(auth)/login/page";
 
@@ -21,7 +22,7 @@ it("waits for explicit sign-in even with an existing session and returns Back to
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Login)); });
   expect(mock.replace).not.toHaveBeenCalled();
-  expect(r.root.findAllByType("a").find(n => n.props.children === "Back")!.props.href).toBe("/app/welcome?preview=1");
+  expect(r.root.findByType("BackButton" as never).props.href).toBe("/app/welcome?preview=1");
   await act(async () => r.root.findAllByType("input")[0].props.onChange({ target: { value: "taylor@example.com" } }));
   await act(async () => r.root.findAllByType("input")[1].props.onChange({ target: { value: "password" } }));
   await act(async () => r.root.findByType("form").props.onSubmit({ preventDefault: vi.fn() }));
@@ -35,7 +36,7 @@ it("keeps failed sign-in on the form and offers the regular onboarding Back path
   mock.signIn.mockResolvedValue({ error: "Could not sign in." });
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Login)); });
-  expect(r.root.findAllByType("a").find(n => n.props.children === "Back")!.props.href).toBe("/app/welcome");
+  expect(r.root.findByType("BackButton" as never).props.href).toBe("/app/welcome");
   await act(async () => r.root.findByType("form").props.onSubmit({ preventDefault: vi.fn() }));
   expect(mock.replace).not.toHaveBeenCalled();
   expect(r.root.findAllByType("p").some(n => n.props.role === "alert")).toBe(true);

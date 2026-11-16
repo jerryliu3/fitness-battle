@@ -14,6 +14,7 @@ import { TimezonePicker } from "../src/ui/timezone-picker";
 import { SearchableCountryPicker } from "../src/ui/searchable-country-picker";
 import { ChoicePicker } from "../src/ui/choice-picker";
 import { Chip } from "../src/ui/chip";
+import { IconButton } from "../src/ui/icon-button";
 import { AppText } from "../src/ui/section";
 import { MotionStep } from "../src/ui/motion-step";
 import { FocusButton, FocusSegments, useFocusStyles } from "../src/ui/focus";
@@ -188,7 +189,7 @@ export default function Onboarding() {
             <AppText role="label">Next wave starts at {waveTimeLabel(nextDailyWaveWindowAt(new Date(now)).waveStart, timezone)}.</AppText>
           </>}
           <View style={{ flexDirection: "row", gap: 12 }}>
-            {step > 0 && <View style={{ flex: 1 }}><FocusButton secondary label="Back" onPress={() => setStep(step - 1)} /></View>}
+            {step > 0 && <IconButton icon="back" label="Back" onPress={() => setStep(step - 1)} />}
             <View style={{ flex: 1 }}><FocusButton
               label={step === 2 ? "Finish setup & register" : step === 0 && !state.links.some(link => link.status === "connected") ? "Skip for now" : "Continue"}
               disabled={step === 2 && !preview && !canWrite}

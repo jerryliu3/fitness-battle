@@ -1,4 +1,4 @@
-import { createElement, useEffect, useRef, useState } from "react";
+import { memo, createElement, useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import type { AthleteCardModel } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
@@ -7,7 +7,7 @@ import { AthleteProfileCard } from "./athlete-profile-card";
 import { useAppTheme } from "../theme";
 
 /** Expo web uses the same host and model; native uses a WebView. */
-export function AthleteCrest({ model }: { model: AthleteCardModel; onInteractionChange?: (held: boolean) => void }) {
+export const AthleteCrest = memo(function AthleteCrest({ model }: { model: AthleteCardModel; onInteractionChange?: (held: boolean) => void }) {
   const active = useSceneActive();
   const { mode } = useAppTheme();
   const frame = useRef<HTMLIFrameElement>(null);
@@ -37,4 +37,4 @@ export function AthleteCrest({ model }: { model: AthleteCardModel; onInteraction
       <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />
     </View>}
   </View>;
-}
+});

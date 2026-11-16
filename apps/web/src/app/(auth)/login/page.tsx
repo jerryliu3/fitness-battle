@@ -1,4 +1,5 @@
 "use client";
+import { BackButton } from "@/ui/back-button";
 import { AppParagraph, AppHeading } from "@/ui/section";
 
 import { useAuth } from "@/components/auth-context";
@@ -49,8 +50,10 @@ function LoginForm() {
 
   return (
     <section className="fb-card fb-auth-card">
-      {fromOnboarding && <Link href={onboardingHref} className="fb-btn-ghost">Back</Link>}
-      <AppParagraph typographyRole="label" className="fb-kicker">overtaek</AppParagraph>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {fromOnboarding && <BackButton href={onboardingHref} />}
+        <AppParagraph typographyRole="label" className="fb-kicker">overtaek</AppParagraph>
+      </div>
       <AppHeading level={1} role="display" className="fb-title">Sign in</AppHeading>
       <AppParagraph typographyRole="body" className="fb-copy">
         Your weekly fields, training progress and crew are waiting.

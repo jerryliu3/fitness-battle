@@ -24,7 +24,7 @@ export function OnboardingFeatureTour({ sport }: { sport: SportId }) {
     <AppParagraph>{feature.description}</AppParagraph>
 
     {selected === "crews" && <section className="fb-card fb-stack onboarding-feature-demo">
-      <AppParagraph typographyRole="caption">ILLUSTRATIVE · WEEKLY CREW GOAL</AppParagraph>
+      <AppParagraph typographyRole="caption">WEEKLY CREW GOAL</AppParagraph>
       <AppHeading>{goal[0]}</AppHeading>
       <div className="onboarding-meter"><span style={{ width: "72%" }}/></div>
       <div className="onboarding-split"><strong>{goal[1]}</strong><small>72% of crew goal</small></div>
@@ -38,18 +38,18 @@ export function OnboardingFeatureTour({ sport }: { sport: SportId }) {
         <button type="button" aria-pressed={board === "all-time"} onClick={() => setBoard("all-time")}>All time</button>
       </div>
       {board === "weekly" ? <>
-        <AppParagraph typographyRole="caption">EXAMPLE · WEEKLY {selectedSport.toUpperCase()} FIELD</AppParagraph>
+        <AppParagraph typographyRole="caption">WEEKLY {selectedSport.toUpperCase()} FIELD</AppParagraph>
         {[["1", "Alex", sampleRows[0]!], ["2", "You", sampleRows[1]!], ["3", "Sam", sampleRows[2]!]].map(([place, athlete, value]) =>
           <div className="onboarding-board-row" data-you={athlete === "You"} key={place}>
             <strong>#{place}</strong><span>{athlete}</span><strong>{value}</strong>
           </div>)}
         <AppParagraph typographyRole="caption">Every week is a fresh field with athletes at a similar level.</AppParagraph>
       </> : <>
-        <AppParagraph typographyRole="caption">EXAMPLE · LIFETIME BENCHMARK</AppParagraph>
+        <AppParagraph typographyRole="caption">LIFETIME BENCHMARK</AppParagraph>
         <strong className="onboarding-percentile">Top 25%</strong>
-        <AppParagraph>See how a 5K result compares with broader results.</AppParagraph>
+        <AppParagraph>See how your performance compares with broader results.</AppParagraph>
         <div className="onboarding-meter"><span style={{ width: "75%" }}/></div>
-        <AppParagraph typographyRole="caption">Percentile example only, not your result.</AppParagraph>
+        <AppParagraph typographyRole="caption">Compare your progress over time.</AppParagraph>
       </>}
     </section>}
 
@@ -66,8 +66,8 @@ export function OnboardingFeatureTour({ sport }: { sport: SportId }) {
         <g stroke="#57C7C3" opacity=".35" strokeDasharray="3 6"><path d="M0 70H150 M0 143H150"/></g>
       </svg>
       <div className="onboarding-health-metrics"><span>Sleep</span><span>HRV</span><span>Resting HR</span></div>
-      <p>Preview only. Actual metrics need connected data and permission.</p>
+      <p>Connect health data to explore your own metrics.</p>
     </section>}
-    <AppParagraph typographyRole="caption">Illustrative feature previews. No personal or crew data is loaded.</AppParagraph>
+    <AppParagraph typographyRole="caption">Build your crew, find your field and understand your body.</AppParagraph>
   </div>;
 }

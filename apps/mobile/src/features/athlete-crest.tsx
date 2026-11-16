@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import WebView, { type WebViewMessageEvent } from "react-native-webview";
 import type { AthleteCardModel } from "@fitness-battle/shared";
@@ -7,11 +7,13 @@ import { useSceneActive } from "../ui/use-scene-active";
 import { useAppTheme } from "../theme";
 import { AthleteProfileCard } from "./athlete-profile-card";
 
-export function AthleteCrest({ model, onInteractionChange }: { model: AthleteCardModel; onInteractionChange?: (held: boolean) => void }) {
+export const AthleteCrest = memo(function AthleteCrest({ model, onInteractionChange }: { model: AthleteCardModel; onInteractionChange?: (held: boolean) => void }) {
   const active = useSceneActive();
   const { mode, colors: c } = useAppTheme();
   const web = useRef<WebView<object>>(null);
   const ready = useRef(false);
+  const held = useRef(false);
+  const lastSent = useRef("");
   const unavailable = useRef(false);
   const latest = useRef({ type: "athlete-card", model, active, appearance: mode });
   latest.current = { type: "athlete-card", model, active, appearance: mode };
@@ -20,11 +22,20 @@ export function AthleteCrest({ model, onInteractionChange }: { model: AthleteCar
   const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/athlete-card-scene`;
   const origin = new URL(uri).origin;
   function inject() {
-    if (ready.current) web.current?.injectJavaScript(`window.dispatchEvent(new MessageEvent('message',{data:${JSON.stringify(latest.current)}}));true;`);
+    if (!ready.current || (held.current && active)) return;
+    const payload = JSON.stringify(latest.current);
+    if (payload === lastSent.current) return;
+    lastSent.current = payload;
+    web.current?.injectJavaScript(`window.dispatchEvent(new MessageEvent('message',{data:${payload}}));true;`);
+  }
+  function interaction(next: boolean) {
+    held.current = next;
+    onInteractionChange?.(next);
+    if (!next) inject();
   }
   function fail() { ready.current = false; unavailable.current = true; setLoaded(false); setFailed(true); onInteractionChange?.(false); }
   useEffect(inject, [model, active, mode]);
-  useEffect(() => { if (!active) onInteractionChange?.(false); return () => onInteractionChange?.(false); }, [active, onInteractionChange]);
+  useEffect(() => { if (!active) { held.current = false; onInteractionChange?.(false); } return () => onInteractionChange?.(false); }, [active, onInteractionChange]);
   useEffect(() => {
     if (!active || loaded || failed) return;
     const timer = setTimeout(fail, 12000);
@@ -35,7 +46,7 @@ export function AthleteCrest({ model, onInteractionChange }: { model: AthleteCar
       <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />
     </View>}
     {!failed && <WebView ref={web} source={{ uri }} originWhitelist={[origin]} javaScriptEnabled scrollEnabled={false} bounces={false}
-      onTouchStart={() => onInteractionChange?.(true)} onTouchEnd={() => onInteractionChange?.(false)} onTouchCancel={() => onInteractionChange?.(false)}
+      onTouchStart={() => interaction(true)} onTouchEnd={() => interaction(false)} onTouchCancel={() => interaction(false)}
       style={{ height: 430, backgroundColor: c.paper, opacity: loaded ? 1 : 0 }}
       onShouldStartLoadWithRequest={(request: { url: string }) => {
         if (request.url === "about:blank") return true;
@@ -49,4 +60,4 @@ export function AthleteCrest({ model, onInteractionChange }: { model: AthleteCar
       } catch { /* Ignore malformed bridge messages. */ } }} />}
 
   </View>;
-}
+});

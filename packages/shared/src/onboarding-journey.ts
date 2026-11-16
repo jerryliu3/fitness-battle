@@ -1,4 +1,7 @@
 import { SPORT_IDS, type SportId, type UnitSystem } from "./compete/sports";
+import { athleteCardModelForPeer } from "./athlete-card";
+import { athleteLocationLine } from "./countries";
+import { SPORTS } from "./compete/sports";
 
 export const GUEST_INTRO_DRAFT_KEY = "overtaek-guest-intro-draft-v1";
 export const GUEST_SIGNUP_PENDING_KEY = "overtaek-guest-signup-email-v1";
@@ -6,7 +9,7 @@ export const ONBOARDING_STEPS = ["sport", "overtake", "growth", "features", "ath
 export type OnboardingStep = typeof ONBOARDING_STEPS[number];
 export const ONBOARDING_TITLES: Record<OnboardingStep, string> = {
   sport: "What moves you?",
-  overtake: "Make your first overtake.",
+  overtake: "Make training a game.",
   growth: "See your potential.",
   features: "More than a workout tracker.",
   athlete: "Create your athlete.",
@@ -18,6 +21,7 @@ export type GuestIntroDraft = {
   name: string;
   city: string;
   countryCode: string;
+  introCompleted?: boolean;
 };
 export const EMPTY_GUEST_INTRO: GuestIntroDraft = { sport: "running", name: "", city: "", countryCode: "" };
 
@@ -33,6 +37,7 @@ export function parseGuestIntroDraft(raw: string | null): GuestIntroDraft | null
       sport: draft.sport as SportId,
       name: typeof draft.name === "string" ? draft.name.slice(0, 80) : "",
       city: typeof draft.city === "string" ? draft.city.slice(0, 80) : "",
+      ...(draft.introCompleted === true ? { introCompleted: true } : {}),
       countryCode: typeof draft.countryCode === "string" && /^[A-Z]{2}$/.test(draft.countryCode) ? draft.countryCode : "",
     };
   } catch { return null; }
@@ -63,6 +68,18 @@ export function onboardingDeclaredVolume(sport: SportId, value: string | undefin
   return Number.isFinite(native) ? native : undefined;
 }
 
+export function hasCompletedOnboardingIntro(draft: GuestIntroDraft | null, pendingEmail: string | null, email?: string | null) {
+  return Boolean(draft?.introCompleted && guestIntroForAccount(draft, pendingEmail, email));
+}
+
+export function onboardingAthleteCard(draft: GuestIntroDraft) {
+  return {
+    ...athleteCardModelForPeer({ name: draft.name.trim() || "Athlete", city: draft.city, sport: SPORTS.find(s => s.id === draft.sport)!.name }),
+    countryCode: draft.countryCode || null,
+    location: athleteLocationLine(draft.city, draft.countryCode || null),
+  };
+}
+
 /** Hypothetical example values only: do not treat 500 as an account starting score. */
 export const ONBOARDING_GROWTH = {
   scores: [500, 620, 780, 990, 1250, 1520, 1770, 2000],
@@ -79,3 +96,5 @@ export const ONBOARDING_FEATURES = [
     description: "Explore sleep, recovery and health trends beyond workout totals." },
 ] as const;
 export type OnboardingFeatureId = typeof ONBOARDING_FEATURES[number]["id"];
+
+export const ONBOARDING_OVERTAKE_COPY = "Join events with athletes at your level. Overtake each other as you train and keep one another moving.";

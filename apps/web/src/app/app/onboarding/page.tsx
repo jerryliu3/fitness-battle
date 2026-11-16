@@ -9,6 +9,7 @@ import {
 import { TrackerConnections } from "@/features/you/you-route";
 import { CountryCombobox } from "@/ui/country-combobox";
 import { TimezoneCombobox } from "@/ui/timezone-combobox";
+import { BackButton } from "@/ui/back-button";
 import { AppHeading, AppParagraph } from "@/ui/section";
 import { AuthGate } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
@@ -147,7 +148,7 @@ function Setup({ preview }: { preview: boolean }) {
       <AppParagraph typographyRole="label">Next wave starts at {waveTimeLabel(nextDailyWaveWindowAt(new Date(now)).waveStart, timezone)}.</AppParagraph>
     </>}
     <div className="onboarding-actions">
-      {step > 0 && <button type="button" className="fb-btn-line" onClick={() => setStep(step - 1)}>Back</button>}
+      {step > 0 && <BackButton onClick={() => setStep(step - 1)} />}
       <button className="fb-btn" type="button" disabled={step === 2 && !preview && !canWrite} onClick={() => step < 2 ? advance() : finish()}>
         {step === 2 ? "Finish setup & register" : step === 0 && !state.links.some(link => link.status === "connected") ? "Skip for now" : "Continue"}
       </button>

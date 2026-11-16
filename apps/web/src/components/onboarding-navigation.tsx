@@ -1,4 +1,6 @@
 "use client";
+import { GUEST_SIGNUP_PENDING_KEY, hasCompletedOnboardingIntro } from "@fitness-battle/shared";
+import { readGuestIntroDraft } from "@/lib/guest-intro";
 import { useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "./auth-context";
@@ -10,15 +12,21 @@ export function OnboardingNavigation() {
   const { state, loadStatus } = useCompete();
   const path = usePathname(), params = useSearchParams(), router = useRouter();
   const connecting = path === "/app/athlete" && (params.get("panel") === "connections" || params.has("tracker") || params.has("provider"));
-  const preview = path === "/app/welcome" && params.get("preview") === "1";
+  const preview = (path === "/app/welcome" || path === "/app/onboarding") && params.get("preview") === "1";
   useEffect(() => {
     if (preview) return;
     if (loading || !user || !state || (loadStatus !== "ready" && loadStatus !== "local")) return;
-    if (path === "/app/welcome" || path === "/app") {
-      router.replace(state.onboardingCompleted ? "/app/today" : "/app/onboarding");
-    } else if (!state.onboardingCompleted && path !== "/app/onboarding" && !connecting) {
-      router.replace(`/app/onboarding?next=${encodeURIComponent(path)}`);
+    if (state.onboardingCompleted) {
+      if (path === "/app/welcome" || path === "/app") router.replace("/app/today");
+      return;
     }
+    if (connecting) return;
+    let pending: string | null = null;
+    try { pending = localStorage.getItem(GUEST_SIGNUP_PENDING_KEY); } catch {}
+    const introDone = hasCompletedOnboardingIntro(readGuestIntroDraft(), pending, user.email);
+    const target = introDone ? "/app/onboarding" : "/app/welcome";
+    if (path !== target) router.replace(target);
+
   }, [loading, user, state?.onboardingCompleted, loadStatus, path, connecting, preview, router]);
   return null;
 }

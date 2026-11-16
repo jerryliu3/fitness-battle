@@ -60,6 +60,7 @@ export function CompeteTimeSeriesChart({
   immersive = false,
   topInset = 0,
   bottomInset = 0,
+  viewportHeight,
   view,
   onViewChange,
   timelineFraction,
@@ -79,6 +80,7 @@ export function CompeteTimeSeriesChart({
   immersive?: boolean;
   topInset?: number;
   bottomInset?: number;
+  viewportHeight?: number;
   view?: CompeteTimeSeriesView;
   onViewChange?: (view: CompeteTimeSeriesView) => void;
   timelineFraction?: number | null;
@@ -91,7 +93,7 @@ export function CompeteTimeSeriesChart({
   const { blocks } = useAthleteBlocks();
   const excludedIds = useMemo(() => [...new Set([...(hiddenIds ?? []), ...blocks.map(block => block.id)])], [hiddenIds, blocks]);
   const { height: screenHeight } = RN.useWindowDimensions();
-  const plotHeight = immersive ? Math.max(260, screenHeight - topInset - bottomInset - 210) : 204;
+  const plotHeight = immersive ? Math.max(140, (viewportHeight ?? screenHeight) - topInset - bottomInset - 210) : 204;
   const s = useThemedStyles(sThemes);
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,

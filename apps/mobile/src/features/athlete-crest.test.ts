@@ -28,7 +28,7 @@ it("handshakes before sending data, pauses on blur and releases native scrolling
   expect(scene.inject).toHaveBeenCalledWith(expect.stringContaining('"active":true'));
   await act(async () => web.props.onTouchStart()); expect(interaction).toHaveBeenLastCalledWith(true);
   scene.active = false;
-  await act(async () => renderer.update(createElement(AthleteCrest, { model, onInteractionChange: interaction })));
+  await act(async () => renderer.update(createElement(AthleteCrest, { model: { ...model }, onInteractionChange: interaction })));
   expect(scene.inject).toHaveBeenLastCalledWith(expect.stringContaining('"active":false'));
   expect(interaction).toHaveBeenLastCalledWith(false);
 });
@@ -44,4 +44,20 @@ it("keeps the fallback after process termination and ignores stale acknowledgeme
   expect(renderer.root.findByType("Fallback" as never).props.rank).toBe("Active");
   expect(renderer.root.findAllByType("WebView" as never)).toHaveLength(0);
   expect(renderer.root.findAllByType("Pressable" as never)).toHaveLength(0);
+});
+
+it("holds model updates during card interaction and sends only the latest change on release", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  await act(async () => { renderer = create(createElement(AthleteCrest, { model })); });
+  const web = () => renderer.root.findByType("WebView" as never);
+  await act(async () => web().props.onMessage({ nativeEvent: { data: '{"type":"athlete-card-ready"}' } }));
+  const sent = scene.inject.mock.calls.length;
+  await act(async () => web().props.onTouchStart());
+  await act(async () => renderer.update(createElement(AthleteCrest, { model: { ...model, name: "Taylor" } })));
+  expect(scene.inject).toHaveBeenCalledTimes(sent);
+  await act(async () => web().props.onTouchEnd());
+  expect(scene.inject).toHaveBeenCalledTimes(sent + 1);
+  expect(scene.inject).toHaveBeenLastCalledWith(expect.stringContaining('"name":"Taylor"'));
+  await act(async () => web().props.onTouchEnd());
+  expect(scene.inject).toHaveBeenCalledTimes(sent + 1);
 });

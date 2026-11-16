@@ -8,6 +8,7 @@ vi.mock("@/components/auth-context", () => ({ useAuth: () => ({ user: { id: "a",
 const state = freshState();
 vi.mock("@/components/compete-context", () => ({ useCompete: () => ({ state, loadStatus: "ready", dispatch: mock.dispatch }) }));
 vi.mock("@/components/auth-gate", () => ({ AuthGate: ({ children }: { children: unknown }) => children }));
+vi.mock("@/ui/back-button",()=>({BackButton:"BackButton"}));
 vi.mock("@/ui/section", () => ({ AppHeading: "h2", AppParagraph: "p" }));
 vi.mock("@/ui/country-combobox", () => ({ CountryCombobox: "CountryCombobox" }));
 vi.mock("@/ui/timezone-combobox", () => ({ TimezoneCombobox: "TimezoneCombobox" }));

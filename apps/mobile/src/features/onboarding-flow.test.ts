@@ -12,6 +12,7 @@ vi.mock("expo-router",()=>({useLocalSearchParams:()=>({preview:mock.preview}),us
 vi.mock("../lib/auth",()=>({useAuth:()=>({user:{id:"a",displayName:"Jamie"}})}));
 const state=freshState();
 vi.mock("../lib/compete-store",()=>({useCompeteStore:()=>({state,canWrite:true,dispatch:mock.dispatch})}));
+vi.mock("../ui/icon-button",()=>({IconButton:"IconButton"}));
 vi.mock("../ui/section",()=>({AppText:"AppText",chartTextProps:()=>({})}));
 vi.mock("../ui/motion-step",()=>({MotionStep:"MotionStep"}));
 vi.mock("../ui/mascot/animated-ember",()=>({AnimatedEmber:"AnimatedEmber"}));

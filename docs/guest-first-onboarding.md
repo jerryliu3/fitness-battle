@@ -7,20 +7,31 @@ into this journey; the website's marketing page links into it too.
 ## Before account creation
 
 1. **Choose a sport** — Running, Cycling, Walking or Strength in a two-column grid.
-2. **Make your first overtake** — the existing competition player uses the selected
+2. **Make training a game** — the existing competition player uses the selected
    sport. Running/Cycling start in geographic 3D; Walking/Strength start in Timeline,
    showing steps/hours. View switching, playback, replay, speed and Continue
-   belong to the existing competition player and shared field policy.
-3. **See your potential** — a possible Effort Score trajectory from 2,500 to 3,750
-   and the existing Active → Challenger rank art. Potential values never become
-   account facts and do not promise a particular result. Official rank changes
-   are confirmed at weekly recap, matching the current Effort Score model.
-4. **Create your athlete** — name and primary sport update the existing interactive
+   belong to the existing competition player and shared field policy. Native uses
+   the full remaining screen rather than a fixed-height card inside a scroll view.
+   Charts size from their actual container so embedded Strength/Walking replays
+   are not cropped by a taller window.
+3. **See your potential** — a possible Effort Score trajectory from 500 to 2,000,
+   focused on how training adds up. No rank ladder is introduced here and the
+   potential values never become account facts.
+4. **Explore features** — Crew goals and weekly leaderboard examples follow the
+   chosen sport, with tabs for Crews, Leaderboards and Vitals Lab.
+5. **Create your athlete** — name and primary sport update the existing interactive
    3D Crest. City and country are optional profile preparation. Native retains a
    readable card while the remote scene loads or fails.
-5. **Save your athlete** — retain the Crest, then enter the existing email/password
-   signup. Existing users can choose Sign in. There is no guest-exploration exit
-   or dismissed-introduction flag. No new auth providers are added.
+6. **Save your athlete** — email and password appear directly beneath the Crest,
+   with a Create account confirmation and the existing Terms/Privacy links.
+   Existing-account sign-in remains on the first screen only. There is no
+   guest-exploration exit or dismissed-introduction flag. No new auth providers
+   are added.
+
+Back is a compact icon beside the primary action; the sign-in page puts it beside
+the wordmark. Athlete card models are memoized and update when editing ends, not
+on every keystroke. Native queues model changes while held and deduplicates bridge
+messages before painting the latest model on release.
 
 Both platforms use the shared step order, titles, growth model, draft parser and
 account matching rule in `packages/shared/src/onboarding-journey.ts`. The selected
@@ -45,7 +56,8 @@ including edits before leaving a step. The guest draft has no account writes,
 registration, activity, score, rank, awards or tracker permissions. Parsing discards
 extra fields and invalid sports.
 
-On signup, save the latest name and intended email before auth can navigate.
+On inline signup, save `introCompleted: true`, the latest profile and intended
+email before auth can navigate. Email confirmation is shown on the same screen.
 Post-account setup imports a guest draft only for a matching email. Failed signup
 clears the pending marker; email confirmation can complete later on the same
 device/browser. Unrelated signed-in accounts do not inherit the guest profile.
@@ -69,11 +81,15 @@ Native `/onboarding` and web `/app/onboarding` have three stages:
    protections.
 3. Review choices and explicitly **Finish setup & register** for the next wave.
 
-Existing incomplete accounts can finish without a guest draft. Restored sessions
+Ordinary signup remains available outside this journey. An incomplete account
+without an account-matched completed introduction starts at sport selection.
+Authenticated users complete the first five steps, then go directly into setup
+without creating another account. Completed accounts are never forced back into
+the introduction. The completion marker is device-local; another device may
+repeat the introduction before completing setup. Restored sessions
 continue setup, allowing tracker callback destinations. Completing setup clears its
 account draft and the imported guest draft. Web return paths cannot loop back into
-onboarding or welcome. No account signup, tracker connection or registration is
-performed by the guest journey.
+onboarding or welcome. Tracker connections and competition registration remain in post-account setup.
 
 ## Local review
 
@@ -97,3 +113,4 @@ with immediate sessions and email confirmation, failed signup, another account's
 sign-in, skipping trackers, sleep-only setup, explicit registration and completed
 account redirects. Live provider authorization and native device rendering require
 a configured local environment.
+

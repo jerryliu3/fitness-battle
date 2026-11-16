@@ -264,7 +264,7 @@ const styles=useThemedStyles(stylesThemes);
       const guest = await readGuestIntroDraft().catch(() => null);
       const normalizedEmail = email.trim().toLowerCase();
       let marked = false;
-      if (guest?.name.trim()) {
+      if (guest?.introCompleted && guest.name.trim()) {
         try {
           await AsyncStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ ...guest, name: displayName.trim() || guest.name }));
           await AsyncStorage.setItem(GUEST_SIGNUP_PENDING_KEY, normalizedEmail);
@@ -288,7 +288,7 @@ const styles=useThemedStyles(stylesThemes);
       }
       setPassword("");
       setAuthNote(null);
-      router.replace("/onboarding");
+      router.replace(guest?.introCompleted ? "/onboarding" : "/welcome");
     } catch (error) {
       if (authMode === "signup") void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
       setAuthNote(error instanceof Error ? error.message : "Could not access your account.");

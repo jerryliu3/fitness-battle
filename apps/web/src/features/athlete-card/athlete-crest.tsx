@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { memo, useState, type CSSProperties } from "react";
 import { useReducedMotion } from "motion/react";
 import { APP_TIMEZONE, countryFlagEmoji, countryName, RANK_SYMBOL_GEOMETRY, rankSymbolForRankName, type AthleteCardModel } from "@fitness-battle/shared";
 import { cardOptics, REST_POSE } from "./card-optics";
@@ -26,7 +26,7 @@ function RecordDate({ date, timeZone }: { date: string; timeZone: string }) {
 }
 
 /** The selected Crest composition, with Goalmaxxing's actual alloy optics. */
-export function AthleteCrest({ model, active = true }: { model: AthleteCardModel; active?: boolean }) {
+export const AthleteCrest = memo(function AthleteCrest({ model, active = true }: { model: AthleteCardModel; active?: boolean }) {
   const still = Boolean(useReducedMotion()) || !active;
   const rotation = useCardRotation(still);
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
@@ -72,4 +72,4 @@ export function AthleteCrest({ model, active = true }: { model: AthleteCardModel
       </div>
     </div>
   </section>;
-}
+});

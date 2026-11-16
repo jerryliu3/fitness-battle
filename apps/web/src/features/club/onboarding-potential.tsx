@@ -10,10 +10,10 @@ export function OnboardingPotential() {
   return <div className="fb-stack">
     <AppParagraph>Stay consistent and see how your effort adds up over time.</AppParagraph>
     <section className="fb-card fb-stack">
-      <AppHeading>Example Effort Score</AppHeading>
+      <AppHeading>Potential Effort Score</AppHeading>
       <div className="onboarding-score"><strong>{start.toLocaleString("en-US")}</strong><span>→</span><strong>{end.toLocaleString("en-US")}</strong></div>
-      <StandardLineChart height={166} values={scores} xLabels={labels} pointLabels={pointLabels}
-        showAxes animateReveal accessibilityLabel={`Illustrative score growth from ${start} to ${end} across seven example weeks`} />
+      <StandardLineChart height={220} values={scores} xLabels={labels} pointLabels={pointLabels}
+        showAxes animateReveal accessibilityLabel={`Potential score growth from ${start} to ${end} over seven weeks`} />
     </section>
     <section className="fb-card fb-stack">
       <AppHeading>Every session is part of the story.</AppHeading>
@@ -23,6 +23,6 @@ export function OnboardingPotential() {
       </div>
       <AppParagraph typographyRole="caption">Your long-term progress can grow even while weekly competitions start fresh.</AppParagraph>
     </section>
-    <AppParagraph typographyRole="caption">Illustrative only—not a starting score, prediction, or guaranteed gain. Real progress depends on your activity.</AppParagraph>
+    <AppParagraph typographyRole="caption">Your progress depends on your activity. Every athlete starts from their own baseline.</AppParagraph>
   </div>;
 }

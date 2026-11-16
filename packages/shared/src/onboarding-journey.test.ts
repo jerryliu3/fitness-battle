@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guestIntroForAccount, parseGuestIntroDraft, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, ONBOARDING_GROWTH, ONBOARDING_STEPS, ONBOARDING_FEATURES } from "./onboarding-journey";
+import { guestIntroForAccount, parseGuestIntroDraft, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, ONBOARDING_GROWTH, ONBOARDING_STEPS, ONBOARDING_FEATURES, hasCompletedOnboardingIntro } from "./onboarding-journey";
 
 const draft = { sport: "walking", name: "Taylor", city: "Boston", countryCode: "US" };
 describe("guest profile handoff", () => {
@@ -43,4 +43,11 @@ describe("weekly volume integration", () => {
     expect(ONBOARDING_STEPS).toEqual(["sport", "overtake", "growth", "features", "athlete", "account"]);
     expect(ONBOARDING_FEATURES.map(feature => feature.id)).toEqual(["crews", "leaderboards", "vitals"]);
   });
+});
+
+it("only skips the introduction when it was completed for the current account", () => {
+  const completed = parseGuestIntroDraft(JSON.stringify({ sport: "running", name: "Taylor", introCompleted: true }));
+  expect(hasCompletedOnboardingIntro(completed, "taylor@example.com", "taylor@example.com")).toBe(true);
+  expect(hasCompletedOnboardingIntro(completed, "taylor@example.com", "someone@example.com")).toBe(false);
+  expect(hasCompletedOnboardingIntro({ ...completed!, introCompleted: false }, "taylor@example.com", "taylor@example.com")).toBe(false);
 });

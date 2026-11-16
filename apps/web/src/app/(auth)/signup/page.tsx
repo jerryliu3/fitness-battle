@@ -27,7 +27,7 @@ function SignupForm() {
 
   useEffect(() => {
     if (!loading && user) {
-      window.location.assign(`/app/onboarding?next=${encodeURIComponent(next)}`);
+      window.location.assign(readGuestIntroDraft()?.introCompleted ? `/app/onboarding?next=${encodeURIComponent(next)}` : "/app/welcome");
     }
   }, [loading, user, next]);
 
@@ -38,7 +38,7 @@ function SignupForm() {
     setMessage(null);
     try {
       const guest = readGuestIntroDraft();
-      if (guest) try {
+      if (guest?.introCompleted) try {
         localStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ ...guest, name: displayName.trim() || guest.name }));
         localStorage.setItem(GUEST_SIGNUP_PENDING_KEY, email.trim().toLowerCase());
       } catch {}
@@ -58,7 +58,7 @@ function SignupForm() {
         next && next !== "/today" && next !== "/"
           ? `/onboarding?next=${encodeURIComponent(next)}`
           : "/onboarding";
-      window.location.assign(dest);
+      window.location.assign(guest?.introCompleted ? dest : "/app/welcome");
     } catch (err) {
       try { localStorage.removeItem(GUEST_SIGNUP_PENDING_KEY); } catch {}
       setError(err instanceof Error ? err.message : "Could not create the account.");
