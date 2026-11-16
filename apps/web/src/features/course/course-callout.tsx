@@ -194,8 +194,6 @@ export function CourseCallout({
                 border: 0,
                 background: "transparent",
                 color: appearanceColors.textSecondary,
-                fontSize: 14,
-                lineHeight: 1,
                 cursor: "pointer",
                 pointerEvents: "auto",
               }}
