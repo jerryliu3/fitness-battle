@@ -20,6 +20,7 @@ import {
   rankSymbolForScore,
   fieldDefaultSpan,
   clampCourseCenter,
+  initialsFromName,
   ordinalPlace,
   shellTabFromPath,
   resolveArenaSelectedId,
@@ -435,7 +436,7 @@ export function FieldStage({
             toggleSelect(you.id);
           }}
         >
-          YOU
+          {you.initials && you.initials.toUpperCase() !== "YOU" && you.initials.length >= 2 ? you.initials.toUpperCase() : initialsFromName(you.name)}
         </button> : null}
         {behindPeer ? (
           <button

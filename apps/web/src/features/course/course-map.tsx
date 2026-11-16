@@ -104,18 +104,23 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     camera.current?.seek(course, metres);
     setFollowing(false);
   }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request, clampedTarget]);
-  const control = (label: string, action: () => void) => <button type="button" className="fb-btn-line" style={{ whiteSpace: "nowrap", minHeight: 44 }} onClick={() => { action(); const next = camera.current?.following ?? false; setFollowing(next); onFollowChange?.(next); }}>{label}</button>;
+  const control = (label: string, action: () => void) => <button type="button" className="fb-btn-line" style={{ whiteSpace: "nowrap", minHeight: 38 }} onClick={() => { action(); const next = camera.current?.following ?? false; setFollowing(next); onFollowChange?.(next); }}>{label}</button>;
   return <div className="geographic-map" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", position: "relative", "--map-controls-bottom": `${controlsBottom}px` } as React.CSSProperties}>
     <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 0, position: "relative", overflow: "hidden" }} />
     {ready && map.current ? scene.callouts.filter(lane => !dismissed.includes(lane.id)).map(lane => <CourseCallout key={lane.id} map={map.current!} lane={lane} coordinate={lane.coordinate} layout={lane.callout} passStrength={reduced.current ? 0 : replay?.passEffects.find(pass => pass.id === lane.id)?.strength ?? 0} detail={courseAthleteDetail(lanes, lane, unit)} onDismiss={!onSnapshot && lane.id === selectedId ? () => setDismissed(ids => [...ids, lane.id]) : undefined} onSelect={onSelect} />) : null}
     {error ? <p role="alert" className="fb-copy" style={{ position: "absolute", left: 8, right: 8, bottom: controlsBottom + 100, padding: 12, background: "white" }}>{error}</p> : null}
-    {!replay && <div className="geographic-map-controls" style={{ position: "absolute", bottom: controlsBottom, left: 8, right: 8, display: "flex", overflowX: "auto", gap: 8, padding: 8 }}>
-      {extraControls}
-      {control(following ? "Following" : "Recenter", () => { if (scene.selected) { camera.current?.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); onResumeFollow?.(); onFollowChange?.(true); } })}
-      {control(flat ? "3D chase" : "2D map", () => { camera.current?.dimension(flat ? "3d" : "2d", !(followAthlete && camera.current?.following && scene.selected)); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && camera.current?.following && scene.selected) camera.current.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); })}
-      {control(spaced ? "Shared lane: off" : "Shared lane: on", () => setSpaced(value => !value))}
-      {control("Race overview", () => { camera.current?.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); onFlatChange?.(true); })}
-      {control("Zoom in", () => camera.current?.zoom(1))}{control("Zoom out", () => camera.current?.zoom(-1))}
-    </div>}
+    {!replay && <details className="geographic-map-controls">
+      <summary className="geographic-map-controls-summary" aria-label="Course options">Course options ▾</summary>
+      <div className="geographic-map-controls-panel">
+        {extraControls}
+        {control(following ? "Following" : "Recenter", () => { if (scene.selected) { camera.current?.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); onResumeFollow?.(); onFollowChange?.(true); } })}
+        {control(flat ? "3D chase" : "2D map", () => { camera.current?.dimension(flat ? "3d" : "2d", !(followAthlete && camera.current?.following && scene.selected)); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && camera.current?.following && scene.selected) camera.current.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); })}
+        {control(spaced ? "Shared lane: off" : "Shared lane: on", () => setSpaced(value => !value))}
+        {control("Race overview", () => { camera.current?.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); onFlatChange?.(true); })}
+        <div className="geographic-map-controls-zoom">
+          {control("Zoom in", () => camera.current?.zoom(1))}{control("Zoom out", () => camera.current?.zoom(-1))}
+        </div>
+      </div>
+    </details>}
   </div>;
 }

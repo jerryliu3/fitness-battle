@@ -21,10 +21,51 @@ export function FieldViewSwitcher({ compact = false, value, geographic, onChange
       {onZoomOut ? <option value="zoom-out">Zoom out</option> : null}
     </optgroup> : null}
   </select>;
-  return compact ? <details style={{ position: "relative", marginLeft: "auto" }}><summary aria-label="Course options" style={{ listStyle: "none", cursor: "pointer", padding: 2, background: "transparent", color: c.ink }}>⚙</summary><div style={{ position: "absolute", right: 0, top: 36, width: 220, padding: 8, borderRadius: 12, background: c.card, color: c.ink, boxShadow: "0 8px 24px #142b3b22", zIndex: 2 }}>
-    {geographic ? <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, minHeight: 44, padding: "0 8px" }}><span>3D view</span><input type="checkbox" className="course-settings-switch" role="switch" aria-label="3D view" checked={value === "4d"} onChange={event => onChange(event.target.checked ? "4d" : "2d")} style={{ margin: 0, backgroundColor: value === "4d" ? c.tennis : c.line }} /></label> : <span>2D view</span>}
-    {onStandings ? <button type="button" className="fb-btn-line" onClick={onStandings}>Standings</button> : null}
-    {onZoomIn ? <button type="button" className="fb-btn-line" onClick={onZoomIn}>Zoom in</button> : null}
-    {onZoomOut ? <button type="button" className="fb-btn-line" onClick={onZoomOut}>Zoom out</button> : null}
-  </div></details> : selector;
+  const compactModes: Array<{ value: "2d" | "3d" | "4d" | "graph"; label: string }> = [
+    ...(geographic ? [{ value: "4d" as const, label: "3D Course" }] : []),
+    { value: "2d", label: "2D Lanes" },
+    { value: "graph", label: "Graph" },
+  ];
+  return compact ? (
+    <div
+      role="group"
+      aria-label="Field view"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        padding: 4,
+        borderRadius: 999,
+        background: "rgba(20, 20, 19, 0.78)",
+        border: "1px solid rgba(255, 255, 255, 0.18)",
+        backdropFilter: "blur(12px)",
+        marginLeft: "auto",
+      }}
+    >
+      {compactModes.map((mode) => {
+        const active = value === mode.value && !standings;
+        return (
+          <button
+            key={mode.value}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(mode.value)}
+            style={{
+              ...typographyStyle("caption"),
+              minHeight: 34,
+              padding: "0 12px",
+              borderRadius: 999,
+              border: 0,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              background: active ? c.tennis : "transparent",
+              color: active ? c.ink : "#ffffff",
+            }}
+          >
+            {mode.label}
+          </button>
+        );
+      })}
+    </div>
+  ) : selector;
 }
