@@ -1181,3 +1181,7 @@ when historical field data is absent, the timeline remains at the current readin
 
 All queued events retain their normal field background (GPS 3D; metric Timeline).
 Waiting details replace standings/activity inside the same bottom sheet, including cancellation before the start.
+
+Recap keeps its legacy workout-intensity curve under Workout effort, including
+tooltips and accessibility text. It is distinct from the official weekly Effort
+Score and its Training/History/Competition breakdown.

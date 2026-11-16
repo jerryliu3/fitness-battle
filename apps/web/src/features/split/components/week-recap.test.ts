@@ -83,7 +83,7 @@ function clickButton(label: string) {
 }
 
 describe("web week recap screens", () => {
-  it("renders Race complete podium + Your result card and Week breakdown with Time/Effort toggle and Next round", async () => {
+  it("renders Race complete podium + Your result card and Week breakdown with Time/Workout effort toggle and Next round", async () => {
     const state = settledState();
     const result = roundReveal(state)!.results[0]!;
     const replay: CompetitionReplay = {
@@ -153,12 +153,12 @@ describe("web week recap screens", () => {
     expect(breakdownJson).toContain("Update settings");
     expect(breakdownJson).toContain("Preferences");
 
-    // Toggle Time -> Effort inside chart card
-    const effortTab = view!.root.find((el) => el.type === "button" && el.props.role === "tab" && el.props.children === "Effort");
+    // Workout effort stays distinct from the official weekly Effort Score.
+    const effortTab = view!.root.find((el) => el.type === "button" && el.props.role === "tab" && el.props.children === "Workout effort");
     act(() => {
       effortTab.props.onClick();
     });
-    expect(textContent(view!.toJSON())).toContain("Effort");
+    expect(textContent(view!.toJSON())).toContain("Workout effort");
 
     expect(onDismiss).not.toHaveBeenCalled();
     clickButton("Done");
