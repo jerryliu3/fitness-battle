@@ -1,3 +1,4 @@
+import { competeFieldSwitcherOptions, type CompeteArenaEvent, type FieldViewDimension } from "@fitness-battle/shared";
 import { AppIcon, type AppIconName } from "./app-icon";
 import { useThemeColors } from "../theme";
 import { Platform, Pressable, Text, View } from "react-native";
@@ -5,8 +6,7 @@ import { AnchoredMenu, useAnchoredMenu } from "./anchored-menu";
 import { textStyle } from "./section";
 import { playCue } from "../lib/haptics";
 
-type FieldView = "2d" | "3d" | "4d" | "graph";
-type FieldViewOption = { value: FieldView; label: string; icon: AppIconName };
+type FieldView = FieldViewDimension;
 
 const VIEW_ICONS: Record<FieldView, AppIconName> = {
   "2d": "distance",
@@ -17,19 +17,15 @@ const VIEW_ICONS: Record<FieldView, AppIconName> = {
 
 export function FieldViewSwitcher({
   value,
-  geographic,
+  event,
   onChange,
 }: {
   value: FieldView;
-  geographic: boolean;
+  event: CompeteArenaEvent;
   onChange(value: FieldView): void;
 }) {
   const c = useThemeColors();
-  const options: FieldViewOption[] = [
-    { value: "2d", label: "2D", icon: "distance" },
-    ...(geographic ? [{ value: "4d" as const, label: "3D", icon: "cubeFocus" as const }] : []),
-    { value: "graph", label: "Timeline", icon: "progress" },
-  ];
+  const options = competeFieldSwitcherOptions(event);
   const active = options.find((option) => option.value === value) ?? options[0]!;
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
     minWidth: 200,
@@ -92,7 +88,7 @@ export function FieldViewSwitcher({
                 pressed && Platform.OS === "ios" ? { opacity: 0.7 } : null,
               ]}
             >
-              <AppIcon name={option.icon} size={22} color={selected ? c.ink : c.muted} />
+              <AppIcon name={VIEW_ICONS[option.value]} size={22} color={selected ? c.ink : c.muted} />
               <Text style={{ ...textStyle("body"), flex: 1, color: selected ? c.ink : c.muted }}>{option.label}</Text>
               {selected ? <Text style={{ ...textStyle("caption"), color: c.ink }}>✓</Text> : null}
             </Pressable>

@@ -28,6 +28,7 @@ import {
   type ArenaViewWindow,
   type BoardRow,
   defaultCompeteFieldView,
+  buildCompeteTimeSeriesModel,
   fieldZoomLimits,
   arenaStandingsQuantityLabel,
   isGeographicCompete,
@@ -105,6 +106,9 @@ export function FieldStage({
   const sharedTimeline = useCompetitionTimeline();
   const localTimeline = useFieldTimeline(!sharedTimeline && !backgroundMode && !standingsOnly ? replayState : undefined, { sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: model.periodEnd }, !backgroundMode && !standingsOnly && tabActive && presentationVisible && Boolean(replayState) && !queueOverlay);
   const timeline = sharedTimeline ?? localTimeline;
+  const metricFrame = useMemo(() => !geographic && !chartSleepMode && replayState && timelineFraction != null
+    ? buildCompeteTimeSeriesModel(replayState, model.sport, model.track, undefined, { scrubFraction: timelineFraction }) : null,
+    [replayState, model.sport, model.track, geographic, chartSleepMode, timelineFraction]);
   const runners = useMemo<SceneRunner[]>(
     () =>
       timeline.frame ? timeline.frame.rows.map(r => ({
@@ -116,11 +120,11 @@ export function FieldStage({
         name: r.name,
         avatarUrl: r.avatarUrl,
         initials: r.initials,
-        series: [0, ...r.km],
+        series: metricFrame ? [metricFrame.athletes.find(athlete => athlete.id === r.id)?.valueAtCursor ?? r.km[2]] : [0, ...r.km],
         you: r.you,
         mystery: r.mystery,
       })),
-    [model.runners, timeline.frame],
+    [model.runners, timeline.frame, metricFrame],
   );
   const time = Math.max(
     0,
@@ -128,7 +132,7 @@ export function FieldStage({
   );
   const you = runners.find((r) => r.you);
   const total = you ? valueAt(you, time) : 0;
-  const ghost: SceneRunner | null = !timeline.frame && model.ghost
+  const ghost: SceneRunner | null = !timeline.frame && !metricFrame && model.ghost
     ? {
         id: model.ghost.id,
         name: model.ghost.name,
@@ -369,12 +373,12 @@ export function FieldStage({
     onOptionsChange(
       <FieldArenaChromeStack
         slots={{
-          view: <FieldViewSwitcher value={viewDimension} geographic={geographic} onChange={value => chooseViewRef.current(value)} />,
+          view: <FieldViewSwitcher value={viewDimension} event={presentationEvent} onChange={value => chooseViewRef.current(value)} />,
         }}
       />,
     );
     return () => onOptionsChange(null);
-  }, [onOptionsChange, viewDimension, unit]);
+  }, [onOptionsChange, viewDimension, presentationEvent]);
 
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
 
@@ -394,7 +398,7 @@ export function FieldStage({
           {sportTitle ?? model.sport}{queueOverlay ? " · Upcoming wave" : ` · ${displayPlace} / ${runners.length}`}
         </div>}
         {!onOptionsChange && (
-          <FieldViewSwitcher value={viewDimension} geographic={geographic} onChange={chooseView}
+          <FieldViewSwitcher value={viewDimension} event={presentationEvent} onChange={chooseView}
             onStandings={queueOverlay ? undefined : () => { if (backgroundMode) onDetails?.(); else { setLanesImmersive(false); setStandingsOpen(true); } }}
           />
         )}
@@ -560,7 +564,7 @@ export function FieldStage({
     >
       <Sheet open={Boolean(profileLane)} title={profileLane?.name ?? "Athlete"} body="" onClose={() => setProfileLane(null)}>{profileLane ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "16px 0" }}><RankAvatar rank={rankSymbolForScore(scoreMap[profileLane.id])} src={profileLane.avatarUrl} name={profileLane.name} size={112} /><p>{profileLane.value.toFixed(2)} {unit} this event</p><p>{scoreMap[profileLane.id] ?? "—"} effort score</p></div> : null}</Sheet>
       {!standingsOnly && !lanesImmersive ? <div style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
-        <FieldViewSwitcher value={viewDimension} geographic={geographic} onChange={chooseView}
+        <FieldViewSwitcher value={viewDimension} event={presentationEvent} onChange={chooseView}
           standings={standingsOpen} onStandings={queueOverlay ? undefined : () => { cancelCenterTween(); setStandingsOpen(true); }} />
       </div> : null}
       {!standingsOnly && <div style={{ display: standingsOpen ? "none" : "flow-root" }}>

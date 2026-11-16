@@ -87,7 +87,7 @@ export function CompetitionMoment({
     setCourseOptions(
       <FieldViewSwitcher
         value="2d"
-        geographic
+        event={moment.sport}
         onChange={(next) => {
           if (next === "2d" || next === "4d") setViewDimension(next);
         }}
@@ -231,7 +231,7 @@ export function CompetitionMoment({
     courseOptions ?? (
       <FieldViewSwitcher
         value={viewDimension}
-        geographic
+        event={moment.sport}
         onChange={(next) => {
           if (next === "2d" || next === "4d") setViewDimension(next);
         }}

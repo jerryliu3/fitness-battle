@@ -327,7 +327,7 @@ function prepareTimeSeriesBase(input: {
   const spanMs = Math.max(1, endMs - startMs);
   const clampedNowMs = clamp(startMs, endMs, input.now.getTime());
   const nowFraction = clamp(0, 1, (clampedNowMs - startMs) / spanMs);
-  const historyAvailable = clampedNowMs > startMs;
+  const historyAvailable = clampedNowMs > startMs && resolvedAthletes.every(athlete => athlete.historyAvailable !== false);
   const peak = Math.max(
     0,
     ...resolvedAthletes.flatMap((a) => [
@@ -756,7 +756,7 @@ function buildCompetitorVertices(
   const spanMs = Math.max(1, endMs - startMs);
   const synthetic = findSynthetic(sport, athleteId);
 
-  if (!synthetic) return [{ t: 0, value: 0 }, { t: nowFraction, value: liveValue }];
+  if (!synthetic) return [{ t: nowFraction, value: liveValue }];
   const rawPoints: CompeteTimeSeriesVertex[] = [{ t: 0, value: 0 }];
   let cursor = new Date(startMs);
   while (cursor.getTime() < clampedNowMs) {

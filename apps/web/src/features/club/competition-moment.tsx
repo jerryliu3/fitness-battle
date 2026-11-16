@@ -230,7 +230,7 @@ export function CompetitionMoment({
         <div className="compete-field-options">
           <FieldViewSwitcher
             value={viewDimension}
-            geographic
+            event={moment.sport}
             onChange={(next) => setViewDimension(next === "4d" ? "4d" : "2d")}
           />
         </div>

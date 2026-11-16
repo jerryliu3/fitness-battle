@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   allowedCompeteFieldViews,
+  competeFieldSwitcherOptions,
   defaultCompeteFieldView,
   isGeographicCompete,
   isMetricCompete,
@@ -16,11 +17,17 @@ describe("competeFieldView", () => {
   });
 
   it("treats metric events as chart-first without map", () => {
-    for (const event of ["strength", "walking", "sleep"] as const) {
+    for (const event of ["strength", "walking"] as const) {
       expect(isMetricCompete(event)).toBe(true);
       expect(defaultCompeteFieldView(event)).toBe("graph");
       expect(allowedCompeteFieldViews(event)).toEqual(["graph", "2d"]);
     }
+  });
+
+  it("keeps Recovery chart-only in both policy and menu", () => {
+    expect(competeFieldSwitcherOptions("sleep")).toEqual([{ value: "graph", label: "Timeline" }]);
+    expect(normalizeCompeteFieldView("sleep", "2d")).toBe("graph");
+    expect(normalizeCompeteFieldView("sleep", "3d")).toBe("graph");
   });
 
   it("normalizes illegal views for the presentation kind", () => {

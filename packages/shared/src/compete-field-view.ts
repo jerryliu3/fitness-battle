@@ -3,15 +3,8 @@ import { sportById, type CompeteState, type SportId } from "./compete/sports";
 
 export type CompeteArenaEvent = SportId | "sleep";
 
-export type CompetePresentationKind = "geographic" | "metric";
-
-export function competePresentationKind(event: CompeteArenaEvent): CompetePresentationKind {
-  if (event === "sleep") return "metric";
-  return sportById(event).gps ? "geographic" : "metric";
-}
-
 export function isGeographicCompete(event: CompeteArenaEvent): boolean {
-  return competePresentationKind(event) === "geographic";
+  return event !== "sleep" && sportById(event).gps;
 }
 
 export function isMetricCompete(event: CompeteArenaEvent): boolean {
@@ -23,14 +16,18 @@ export function defaultCompeteFieldView(event: CompeteArenaEvent): FieldViewDime
 }
 
 export function allowedCompeteFieldViews(event: CompeteArenaEvent): FieldViewDimension[] {
+  if (event === "sleep") return ["graph"];
   return isGeographicCompete(event) ? ["4d", "2d", "graph"] : ["graph", "2d"];
 }
 
 export function competeFieldViewLabel(view: FieldViewDimension): string {
   if (view === "4d") return "3D";
-  if (view === "graph") return "Chart";
-  if (view === "2d") return "2D";
+  if (view === "graph") return "Timeline";
   return "2D";
+}
+
+export function competeFieldSwitcherOptions(event: CompeteArenaEvent) {
+  return allowedCompeteFieldViews(event).map(value => ({ value, label: competeFieldViewLabel(value) }));
 }
 
 export function competeChartUnit(
@@ -59,9 +56,7 @@ export function normalizeCompeteFieldView(
   event: CompeteArenaEvent,
   requested: FieldViewDimension,
 ): FieldViewDimension {
-  const allowed = new Set(allowedCompeteFieldViews(event));
-  if (allowed.has(requested)) return requested;
-  if (requested === "3d") return "2d";
-  if (requested === "4d" && !allowed.has("4d")) return defaultCompeteFieldView(event);
+  const view = requested === "3d" ? "2d" : requested;
+  if (allowedCompeteFieldViews(event).includes(view)) return view;
   return defaultCompeteFieldView(event);
 }

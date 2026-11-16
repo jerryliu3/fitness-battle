@@ -190,7 +190,7 @@ it("fits every preview marker inside the axes and honors fullscreen plot height"
   }
 });
 
-it("draws a real rival with only current totals as a straight line without past places", () => {
+it("does not invent historical rival totals or places from a current-only roster", () => {
   const now = new Date("2026-10-22T18:00:00Z");
   const state = reduceCompete(freshState(new Date("2026-10-19T09:00:00Z")), { type: "opt-in", sport: "strength", now: "2026-10-19T09:00:00Z" });
   const enrollment = state.enrollments.find(e => e.sport === "strength")!;
@@ -199,10 +199,10 @@ it("draws a real rival with only current totals as a straight line without past 
   enrollment.capacity = 2;
   enrollment.fieldBoard = { crewId: "solo", crewName: "Open Field", sport: "strength", waveStart: enrollment.waveStart, weekEnd: enrollment.weekEnd, capacity: 2, memberIds: ["you", "real-rival"], members: [{ id: "real-rival", name: "Rival", elo: 1000, effort: 120, movingSec: 3600, distanceM: 0 }], syntheticIds: [] };
   const model = buildCompeteTimeSeriesModel(state, "strength", "open", now, { scrubFraction: .1 });
-  expect(model.historyAvailable).toBe(true);
-  expect(model.isScrubbing).toBe(true);
-  expect(model.cursorFraction).toBe(0.1);
-  expect(model.athletes.find(a => a.id === "real-rival")?.vertices).toEqual([{ t: 0, value: 0 }, { t: model.nowFraction, value: 1 }]);
+  expect(model.historyAvailable).toBe(false);
+  expect(model.isScrubbing).toBe(false);
+  expect(model.cursorFraction).toBe(model.nowFraction);
+  expect(model.athletes.find(a => a.id === "real-rival")?.vertices).toEqual([{ t: model.nowFraction, value: 1 }]);
   expect(model.overtakes).toEqual([]);
   const filtered = buildCompeteTimeSeriesModel(state, "strength", "open", now, { hiddenIds: ["real-rival"], scrubFraction: .1 });
   expect(filtered.athletes.some(athlete => athlete.id === "real-rival")).toBe(false);

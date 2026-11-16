@@ -30,6 +30,7 @@ import {
   competeNow,
   competePeriodWindow,
   defaultCompeteFieldView,
+  buildCompeteTimeSeriesModel,
   fieldDefaultSpan,
   competitionCourseReplayFrame,
   buildArenaModel,
@@ -38,7 +39,6 @@ import {
   normalizeCompeteFieldView,
   ordinalPlace,
   shellTabFromPath,
-  sportById,
   weeklyBoard,
   type CompeteArenaEvent,
   type CompeteTimeSeriesView,
@@ -140,7 +140,7 @@ const f=useFocusStyles();
     onOptionsChange(
       <FieldArenaChromeStack
         slots={{
-          view: <FieldViewSwitcher value={sceneDimension} geographic={geographic} onChange={value => chooseViewRef.current(value)} />,
+          view: <FieldViewSwitcher value={sceneDimension} event={presentationEvent} onChange={value => chooseViewRef.current(value)} />,
           options: sceneDimension === "graph" && onChartViewChange
             ? <GraphOptions eventView={(chartView ?? "event") === "event"} onToggleEventView={() => onChartViewChange((chartView ?? "event") === "event" ? "trajectory" : "event")} />
             : sceneDimension === "4d" ? mapChromeRef.current.options : null,
@@ -148,7 +148,7 @@ const f=useFocusStyles();
         }}
       />,
     );
-  }, [onOptionsChange, sceneDimension, geographic, chartView, onChartViewChange]);
+  }, [onOptionsChange, sceneDimension, presentationEvent, chartView, onChartViewChange]);
   useEffect(() => {
     if (!onOptionsChange) return;
     publishArenaOptions();
@@ -213,13 +213,21 @@ const f=useFocusStyles();
     sport, track, periodStart: period?.startsAt.toISOString() ?? "", periodEnd: period?.endsAt.toISOString() ?? "",
   }, !backgroundMode && !standingsOnly && !queued && isFocused && Boolean(period));
   const timeline = sharedTimeline ?? localTimeline;
-  const arena = useMemo(() => !timeline.frame || !liveArena ? liveArena : {
+  const metricFrame = useMemo(() => !geographic && !chartSleepMode && state && timelineFraction != null
+    ? buildCompeteTimeSeriesModel(state, sport, track, now, { scrubFraction: timelineFraction }) : null,
+    [state, sport, track, geographic, chartSleepMode, timelineFraction]);
+  const arena = useMemo(() => metricFrame && liveArena ? {
+    ...liveArena, lanes: liveArena.lanes.map(lane => {
+      const value = metricFrame.athletes.find(athlete => athlete.id === lane.id)?.valueAtCursor ?? lane.values[2];
+      return { ...lane, values: [value, value, value] as [number, number, number] };
+    }),
+  } : !timeline.frame || !liveArena ? liveArena : {
     ...liveArena,
     lanes: timeline.frame.rows.map(row => ({
       ...row, initials: initialsFromName(row.name), ghost: false, mystery: false,
       values: [row.value, row.value, row.value] as [number, number, number],
     })),
-  }, [liveArena, timeline.frame]);
+  }, [liveArena, timeline.frame, metricFrame]);
   useEffect(() => { if (externalAthleteFocus && !hiddenIds.includes(externalAthleteFocus.id)) { setSelectedId(externalAthleteFocus.id); const lane = arena?.lanes.find(item => item.id === externalAthleteFocus.id); if (lane) setCenter(lane.values[2]); setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } }, [externalAthleteFocus, hiddenIds]);
   const defaultSpan = fieldDefaultSpan(arena?.unit ?? "km");
   const viewSpan = span ?? defaultSpan;
@@ -413,7 +421,7 @@ const f=useFocusStyles();
         >
           <FieldViewSwitcher
             value={sceneDimension}
-            geographic={!queued && geographic}
+            event={presentationEvent}
             onChange={chooseView}
           />
           {sceneDimension === "2d" ? (
@@ -465,7 +473,7 @@ const f=useFocusStyles();
                 />
               </View>}
               {!backgroundMode && onDetails ? <Pressable accessibilityRole="button" accessibilityLabel={backgroundMode ? "Expand standings" : "Events & standings"} onPress={onDetails} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.72)" }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{backgroundMode ? `${sport.charAt(0).toUpperCase()}${sport.slice(1)}` : "Events & standings"}</Text></Pressable> : null}
-              {!onOptionsChange && !(backgroundMode && sceneDimension === "4d") && <FieldViewSwitcher value={sceneDimension} geographic={!queued && geographic} onChange={chooseView} />}
+              {!onOptionsChange && !(backgroundMode && sceneDimension === "4d") && <FieldViewSwitcher value={sceneDimension} event={presentationEvent} onChange={chooseView} />}
             </FieldOverlayView>
 
             {!queued && sceneDimension !== "graph" && (sceneDimension !== "4d" || course) ? <>
