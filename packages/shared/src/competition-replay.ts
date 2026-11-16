@@ -9,6 +9,8 @@ import { fieldDefaultSpan } from "./field-course";
 import type { CourseReplayFrame } from "./race-course";
 import { competeVolumeFromTotals } from "./compete-field-view";
 import { competeArenaUnit, type ArenaDistanceUnit } from "./phone-views";
+import { maxStepsOnDay } from "./compete/journal";
+import { dayKey, shiftAppDay } from "./period";
 
 export interface CompetitionReplaySelection {
   sport: SportId;
@@ -61,12 +63,52 @@ export function addSimulatedReplay(replay: CompetitionReplay, ids: readonly stri
   return { ...replay, athletes, events };
 }
 
+function localWalkingStepEvents(
+  state: CompeteState,
+  selection: CompetitionReplaySelection,
+  through: string,
+): CompetitionReplayEvent[] {
+  const periodStart = new Date(selection.periodStart);
+  const periodEnd = new Date(selection.periodEnd);
+  const cap = Math.min(Date.parse(through), periodEnd.getTime());
+  const events: CompetitionReplayEvent[] = [];
+  for (let cursor = periodStart; cursor.getTime() < cap; cursor = shiftAppDay(cursor, 1)) {
+    const steps = maxStepsOnDay(state.dailyHealth, dayKey(cursor));
+    if (steps <= 0) continue;
+    events.push({
+      id: `walking:${dayKey(cursor)}`,
+      athleteId: "you",
+      at: cursor.toISOString(),
+      distanceM: 0,
+      movingSec: 0,
+      effort: steps,
+    });
+  }
+  return events;
+}
+
 /** Offline preview only. Never infer real opponents' workout histories from totals. */
 export function localCompetitionReplay(state: CompeteState, selection: CompetitionReplaySelection): CompetitionReplay {
   const through = new Date(Math.min(competeNow(state).getTime(), Date.parse(selection.periodEnd))).toISOString();
-  const events = state.activities.filter(a => a.sport === selection.sport && countsOnTrack(a, selection.track) && Date.parse(a.startedAt) >= Date.parse(selection.periodStart) && Date.parse(a.startedAt) < Math.min(Date.parse(selection.periodEnd), Date.parse(through))).map(a => ({
-    id: a.id, athleteId: "you", at: a.startedAt, distanceM: a.distanceM, movingSec: a.movingSec, effort: activityEffort(a),
-  }));
+  const events =
+    selection.sport === "walking" && selection.track === "open"
+      ? localWalkingStepEvents(state, selection, through)
+      : state.activities
+          .filter(
+            (a) =>
+              a.sport === selection.sport &&
+              countsOnTrack(a, selection.track) &&
+              Date.parse(a.startedAt) >= Date.parse(selection.periodStart) &&
+              Date.parse(a.startedAt) < Math.min(Date.parse(selection.periodEnd), Date.parse(through)),
+          )
+          .map((a) => ({
+            id: a.id,
+            athleteId: "you",
+            at: a.startedAt,
+            distanceM: a.distanceM,
+            movingSec: a.movingSec,
+            effort: activityEffort(a),
+          }));
   const enrollment = state.enrollments.find(item =>
     item.sport === selection.sport && Date.parse(item.weekEnd) === Date.parse(selection.periodEnd),
   );
@@ -101,7 +143,11 @@ export function indexCompetitionReplay(input: CompetitionReplay, units: UnitSyst
   const series = new Map<string, AthleteSeries>(input.athletes.map(a => [a.id, { steps: [0], values: [0], efforts: [0] }]));
   events.forEach((event, i) => {
     const s = series.get(event.athleteId)!;
-    const delta = competeVolumeFromTotals(input.sport, event, units);
+    const totals =
+      input.sport === "walking"
+        ? { distanceM: 0, movingSec: 0, effort: Math.max(0, event.effort) }
+        : event;
+    const delta = competeVolumeFromTotals(input.sport, totals, units);
     s.steps.push(i + 1);
     s.values.push(s.values[s.values.length - 1]! + delta);
     s.efforts.push(s.efforts[s.efforts.length - 1]! + event.effort);
