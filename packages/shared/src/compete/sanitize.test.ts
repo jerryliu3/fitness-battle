@@ -19,7 +19,7 @@ describe("sanitizeCompeteStateForAccount", () => {
   it("sets unranked guest scores to the account baseline on sanitize", () => {
     const sanitized = sanitizeCompeteStateForAccount(freshState());
     expect(
-      sanitized.ratings.every((r) => r.openElo === 1000 && r.verifiedElo === 1000),
+      sanitized.ratings.every((r) => r.openElo === 0 && r.verifiedElo === 0),
     ).toBe(true);
   });
 

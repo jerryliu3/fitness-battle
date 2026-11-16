@@ -65,16 +65,16 @@ describe("training calendar presentation",()=>{
 describe("next Effort Score point",()=>{
  const now=new Date("2026-10-21T12:00:00Z");
  const joined=()=>reduceCompete(freshState(now),{type:"opt-in",sport:"running",now:"2026-10-21T09:00:00Z"});
- it("uses the round receipt price and keeps Open independent from GPS",()=>{
+ it("shows live rank progress from native volume for both tracks",()=>{
   let state=joined();state=reduceCompete(state,{type:"apply-sync",provider:"garmin",activities:[{id:"today",sport:"running",startedAt:now.toISOString(),movingSec:3600,distanceM:7.3*1609.344,avgHr:145,source:"garmin",provenance:"imported",verified:false,disposition:"counted"}],now:now.toISOString()});
   const model=effortPointProgress(state,"running","open",now)!;
-  expect(model.earned).toBe(3);expect(model.step).toBeCloseTo(2*1609.344);expect(model.remaining).toBeCloseTo(.7*1609.344);expect(model.fraction).toBeCloseTo(.65);
-  expect(effortPointProgress(state,"running","verified",now)?.earned).toBe(0);
+  expect(model.earned).toBeGreaterThan(0);expect(model.remaining).toBe(1250-model.score%1250);expect(model.fraction).toBeCloseTo((model.score%1250)/1250);
+  expect(effortPointProgress(state,"running","verified",now)?.score).toBe(model.score);
  });
- it("honors durable high-water receipts after activity removal instead of re-awarding a point",()=>{
+ it("recomputes the live preview when activity is excluded without changing official score",()=>{
   const state=reduceCompete(joined(),{type:"apply-sync",provider:"garmin",activities:[{id:"today",sport:"running",startedAt:now.toISOString(),movingSec:3600,distanceM:7.3*1609.344,avgHr:145,source:"garmin",provenance:"imported",verified:false,disposition:"counted"}],now:now.toISOString()});
   const removed=reduceCompete(state,{type:"set-disposition",activityId:"today",disposition:"excluded",now:now.toISOString()});
-  const model=effortPointProgress(removed,"running","open",now)!;expect(model.earned).toBe(3);expect(model.fraction).toBe(0);expect(model.remaining).toBeCloseTo(8*1609.344);
+  const model=effortPointProgress(removed,"running","open",now)!;expect(model.earned).toBe(0);expect(model.score).toBe(0);expect(removed.ratings).toEqual(state.ratings);
  });
  it("does not display an earning target for inactive, future or ended rounds",()=>{
   expect(effortPointProgress(freshState(now),"running","open",now)).toBeNull();

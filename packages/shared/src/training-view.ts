@@ -317,7 +317,7 @@ export function clampTrainingAnchor(
   return anchor;
 }
 
-/** Presentation of the existing +1 receipt rule; high-water awards are never reassigned to a particular session. */
+/** Live score progress toward the next rank threshold. */
 export function effortPointProgress(state: CompeteState, sport: SportId = state.primary, track: ScoreTrack = "open", now=competeNow(state)) {
   const live=readAccountEffort(state,sport,now);
   if(live){

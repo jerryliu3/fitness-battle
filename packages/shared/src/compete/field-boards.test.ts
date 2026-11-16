@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { settleElo } from "./elo";
+import { getScoreBreakdown } from "./effort-score";
 import { fieldBoardForEnrollment, freshState, reduceCompete, rollClock, settleCompetition, weeklyBoard } from "./engine";
 import { prepareCompeteStateForAccount } from "./sanitize";
 import { applyRemoteSnapshot } from "./snapshot";
@@ -14,7 +14,7 @@ function fixture() {
   state.enrollments = [{ ...enrollment, peerIds: ["peer"], syntheticIds: [], capacity: 2, fieldBoard: pin }];
   return { state, pin };
 }
-it("uses the same weighted strength score for an athlete and their opponents", () => {
+it("uses the same native duration strength score for an athlete and their opponents", () => {
   const joined = reduceCompete(freshState(new Date(now)), { type: "opt-in", sport: "strength", now: "2026-10-21T09:00Z" });
   const active = reduceCompete(joined, { type: "log-manual", sport: "strength", movingSec: 3600, activityId: "strength-session", now: "2026-10-21T11:00Z" });
   active.activities = active.activities.map(activity => ({ ...activity, avgHr: 180, provenance: "recorded" }));
@@ -24,7 +24,7 @@ it("uses the same weighted strength score for an athlete and their opponents", (
     capacity: 2, syntheticIds: [], memberIds: ["athlete", "peer"], members: [{ id: "peer", name: "Peer", elo: 1000, distanceM: 0, movingSec: 3600, effort }] };
   active.enrollments = [{ ...enrollment, capacity: 2, peerIds: ["peer"], syntheticIds: [], fieldBoard: pin }];
   const board = weeklyBoard(active, "strength", "open", new Date(now));
-  expect(board.map(row => row.effort)).toEqual([effort, effort]);
+  expect(board.map(row => row.effort)).toEqual([3600, 3600]);
   expect(board.map(row => row.place)).toEqual([1, 1]);
 });
 it("uses the sport snapshot when the legacy board belongs to another sport", () => {
@@ -90,7 +90,8 @@ it("shares the same place for equal distance even when weighted effort differs, 
   const closed = rollClock(active, new Date("2026-10-26T04:01:00Z"));
   const result = closed.periodResults.find(row => row.sport === "running" && row.track === "open");
   expect(result?.place).toBe(1);
-  expect(result?.eloAfter).toBe(settleElo(result!.eloBefore, [1000], 0.5, 2, result!.effort, false));
+  expect(result?.effortReward).toBe(0);
+  expect(result?.eloAfter).toBe(getScoreBreakdown("running", closed.effortAccounts!.running!.state).displayedScore);
 });
 
 it("orders GPS standings by full distance, even when the rounded display or weighted efforts suggest otherwise", () => {
