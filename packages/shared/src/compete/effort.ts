@@ -54,10 +54,10 @@ export interface WorkoutSizeSummary {
 export const WORKOUT_SIZE_BAR_HEIGHT_RATIOS = [0.28, 0.44, 0.62, 0.81, 1] as const;
 
 export const WORKOUT_SIZE_LABELS: Record<WorkoutSizeTier, string> = {
-  small: "Small",
-  typical: "Typical",
-  large: "Large",
-  "very-large": "Very large",
+  small: "Easy",
+  typical: "Moderate",
+  large: "Hard",
+  "very-large": "All out",
 };
 
 /** Three layered podium colors across the 5 ascending workout size bars: bronze -> silver -> gold. */

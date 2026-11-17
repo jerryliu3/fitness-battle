@@ -20,7 +20,7 @@ export function WorkoutSizeIcon({
   return (
     <View
       accessible
-      accessibilityLabel={`Workout Size ${bars} of 5`}
+      accessibilityLabel={`Session effort ${bars} of 5`}
       style={[
         {
           width: size,

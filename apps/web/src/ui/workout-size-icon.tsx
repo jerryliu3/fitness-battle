@@ -14,7 +14,7 @@ export function WorkoutSizeIcon({ bars, size = 64 }: { bars: WorkoutSizeBarCount
   return (
     <span
       role="img"
-      aria-label={`Workout Size ${bars} of 5`}
+      aria-label={`Session effort ${bars} of 5`}
       style={{
         display: "inline-flex",
         alignItems: "flex-end",

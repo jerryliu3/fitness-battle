@@ -115,7 +115,7 @@ export function ActivityDetailView({
     {
       label: "Training XP",
       value: `${trainingXpText} XP`,
-      detail: activity.sport === "walking" ? "Credited from daily tracker steps" : `Workout Size · ${WORKOUT_SIZE_LABELS[workoutSize.tier]}`,
+      detail: activity.sport === "walking" ? "Credited from daily tracker steps" : `Session effort · ${WORKOUT_SIZE_LABELS[workoutSize.tier]}`,
       accent: c.podiumGold,
     },
     ...(activity.avgHr != null ? [{ label: "Avg heart rate", value: `${Math.round(activity.avgHr)} bpm`, accent: c.statusError }] : []),
@@ -166,14 +166,14 @@ export function ActivityDetailView({
         <View style={s.workoutSizeHero}>
           <WorkoutSizeIcon bars={workoutSize.bars} size={64} />
           <View style={{ flex: 1, gap: 4 }}>
-            <AppText role="caption" secondary>Workout Size · {workoutSize.bars}/5</AppText>
+            <AppText role="caption" secondary>Session effort · {workoutSize.bars}/5</AppText>
             <AppText role="heading" accessibilityRole="header">{WORKOUT_SIZE_LABELS[workoutSize.tier]}</AppText>
             <AppText role="caption" secondary>
               {!workoutSize.hasBaseline
                 ? "No recent workout baseline"
                 : workoutSize.ratio >= 1
-                  ? `${workoutSize.ratio.toFixed(1)}× your usual workout size`
-                  : `${Math.round(workoutSize.ratio * 100)}% of your usual workout size`}
+                  ? `${workoutSize.ratio.toFixed(1)}× your usual session`
+                  : `${Math.round(workoutSize.ratio * 100)}% of your usual session`}
             </AppText>
           </View>
         </View>
