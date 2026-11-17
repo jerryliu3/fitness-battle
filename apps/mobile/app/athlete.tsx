@@ -35,7 +35,7 @@ import { LegalLinks } from "../src/features/legal-links";
 import { AthleteMetrics } from "../src/features/athlete-metrics";
 import { SettingsRow } from "../src/ui/settings-row";
 import { DataSyncActions } from "../src/features/data-sync-actions";
-import { mobileEnv } from "../src/lib/env";
+import { mobileEnv, publicProfileOrigin } from "../src/lib/env";
 import { useAuth } from "../src/lib/auth";
 import { GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft } from "../src/lib/guest-intro";
 import { useCompeteStore } from "../src/lib/compete-store";
@@ -116,7 +116,6 @@ const styles=useThemedStyles(stylesThemes);
   const [authNote, setAuthNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(params.edit === "1");
-  const [editingProfile, setEditingProfile] = useState(false);
   const [editDraft, setEditDraft] = useState<AthleteProfileDraft | null>(null);
   const [cardDragging, setCardDragging] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
@@ -150,15 +149,8 @@ const styles=useThemedStyles(stylesThemes);
   }, [params.edit]);
 
   useEffect(() => {
-    if (panel !== "profile") return;
-    setEditingProfile(true);
-    router.replace({ pathname: "/athlete" });
-  }, [panel, router]);
-
-  useEffect(() => {
     setNote(null);
     setConfirmFreeze(false);
-    setEditingProfile(false);
     setEditDraft(null);
   }, [user?.id]);
 
@@ -232,15 +224,8 @@ const styles=useThemedStyles(stylesThemes);
       localBack={Boolean(panel) || fromOnboarding}
       hidden={!panel && settingsOpen}
       nativeBar={!panel && !fromOnboarding}
-      title={panel ? titles[panel] : fromOnboarding ? (authMode === "signup" ? "Create account" : "Sign in") : editingProfile ? "Edit profile" : "Athlete"}
-      onBack={
-        editingProfile && !panel
-          ? () => {
-              setEditingProfile(false);
-              setEditDraft(null);
-            }
-          : exitAthletePanel
-      }
+      title={panel ? titles[panel] : fromOnboarding ? (authMode === "signup" ? "Create account" : "Sign in") : "Athlete"}
+      onBack={exitAthletePanel}
     />
   );
 
@@ -657,7 +642,51 @@ const styles=useThemedStyles(stylesThemes);
   }
 
   if (panel === "profile") {
-    return <SafeAreaView style={styles.safe} edges={["top"]} />;
+    const profilePreview =
+      editDraft
+        ? {
+            ...state,
+            name: editDraft.name,
+            city: editDraft.city,
+            cardHighlights: editDraft.cardHighlights,
+            gender: editDraft.gender !== undefined ? editDraft.gender : state.gender,
+            countryCode: editDraft.countryCode !== undefined ? editDraft.countryCode : state.countryCode,
+          }
+        : state;
+    const closeProfile = () => {
+      setEditDraft(null);
+      exitAthletePanel();
+    };
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        {pageHeader}
+        <ScrollView
+          automaticallyAdjustKeyboardInsets
+          contentContainerStyle={f.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          <SectionStack divided={false}>
+            <AthleteCrest
+              key={user?.id ?? "guest"}
+              model={athleteCardModel(profilePreview, competeNow(state))}
+              onInteractionChange={setCardDragging}
+            />
+            <AthleteProfileEditor
+              state={state}
+              dispatch={dispatch}
+              onDraftChange={setEditDraft}
+              onCancel={closeProfile}
+              onSaved={(msg) => {
+                setEditDraft(null);
+                setNote(msg);
+                closeProfile();
+              }}
+            />
+          </SectionStack>
+        </ScrollView>
+        {note ? <Toast message={note} onDismiss={() => setNote(null)} /> : null}
+      </SafeAreaView>
+    );
   }
 
   if (panel === "preferences") {
@@ -706,23 +735,8 @@ const styles=useThemedStyles(stylesThemes);
   const records = personalRecordHistory(state, now);
   const awards = awardCards(state);
   const topRecords = records.slice(0, 3);
-  const joinedYear =
-    user && "createdAt" in user && typeof user.createdAt === "string" && Number.isFinite(Date.parse(user.createdAt))
-      ? new Date(user.createdAt).getUTCFullYear()
-      : null;
-  const previewState =
-    editingProfile && editDraft
-      ? {
-          ...state,
-          name: editDraft.name,
-          city: editDraft.city,
-          cardHighlights: editDraft.cardHighlights,
-          gender: editDraft.gender !== undefined ? editDraft.gender : state.gender,
-          countryCode: editDraft.countryCode !== undefined ? editDraft.countryCode : state.countryCode,
-        }
-      : state;
   const profileShareUrl = useMemo(() => {
-    const origin = mobileEnv.apiUrl.replace(/\/$/, "");
+    const origin = publicProfileOrigin(mobileEnv.apiUrl);
     const path = webProductPath("/athlete");
     const query = user?.id ? `?id=${encodeURIComponent(user.id)}` : "";
     return `${origin}${path}${query}`;
@@ -763,127 +777,85 @@ const styles=useThemedStyles(stylesThemes);
         >
           <AthleteCrest
             key={user?.id ?? "guest"}
-            model={athleteCardModel(previewState, now)}
+            model={athleteCardModel(state, now)}
             onInteractionChange={setCardDragging}
           />
         </View>
 
-        {editingProfile ? (
-          <AthleteProfileEditor
-            state={state}
-            dispatch={dispatch}
-            onDraftChange={setEditDraft}
-            onCancel={() => {
-              setEditingProfile(false);
-              setEditDraft(null);
-            }}
-            onSaved={(msg) => {
-              setEditingProfile(false);
-              setEditDraft(null);
-              setNote(msg);
-            }}
-          />
-        ) : (
-          <>
-            <View
-              style={[
-                f.card,
-                { padding: 14, backgroundColor: SHELL_COLORS.card, gap: 10 },
-              ]}
-            >
-              <View style={[f.row, { justifyContent: "space-between", alignItems: "center" }]}>
-                <AppText role="label">Public profile</AppText>
-                <AppText role="caption" secondary>
-                  {joinedYear ? `Since ${joinedYear}` : sportById(state.primary).name}
-                </AppText>
-              </View>
-              <View style={[f.row, { gap: 16 }]}>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <AppText role="caption" secondary>Location</AppText>
-                  <AppText role="body">{state.city.trim() || "Not set"}</AppText>
-                </View>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <AppText role="caption" secondary>Primary sport</AppText>
-                  <AppText role="body">{sportById(state.primary).name}</AppText>
-                </View>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 8,
-                  minHeight: 42,
-                  paddingLeft: 12,
-                  paddingRight: 5,
-                  paddingVertical: 4,
-                  borderWidth: 1,
-                  borderColor: SHELL_COLORS.line,
-                  borderRadius: SHELL_RADIUS.pill,
-                  backgroundColor: appearanceColors.paper,
-                }}
-              >
-                <AppText
-                  role="caption"
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                  style={{ flex: 1, minWidth: 0 }}
-                  accessibilityLabel={`Public profile link: ${profileShareUrl}`}
-                >
-                  {profileShareUrl}
-                </AppText>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Copy link"
-                  onPress={copyProfileShareUrl}
-                  style={({ pressed }) => ({
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    borderRadius: SHELL_RADIUS.pill,
-                    borderWidth: 1,
-                    borderColor: SHELL_COLORS.line,
-                    backgroundColor: SHELL_COLORS.card,
-                    opacity: pressed ? 0.75 : 1,
-                  })}
-                >
-                  <AppText role="caption">Copy</AppText>
-                </Pressable>
-              </View>
-            </View>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            minHeight: 42,
+            paddingLeft: 12,
+            paddingRight: 5,
+            paddingVertical: 4,
+            borderWidth: 1,
+            borderColor: SHELL_COLORS.line,
+            borderRadius: SHELL_RADIUS.pill,
+            backgroundColor: appearanceColors.paper,
+          }}
+        >
+          <AppText
+            role="caption"
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            style={{ flex: 1, minWidth: 0 }}
+            accessibilityLabel={`Public profile link: ${profileShareUrl}`}
+          >
+            {profileShareUrl}
+          </AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Copy link"
+            onPress={copyProfileShareUrl}
+            style={({ pressed }) => ({
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: SHELL_RADIUS.pill,
+              borderWidth: 1,
+              borderColor: SHELL_COLORS.line,
+              backgroundColor: SHELL_COLORS.card,
+              opacity: pressed ? 0.75 : 1,
+            })}
+          >
+            <AppText role="caption">Copy</AppText>
+          </Pressable>
+        </View>
 
-            <View style={[f.row, { gap: 8 }]}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Edit profile"
-                onPress={() => setEditingProfile(true)}
-                style={({ pressed }) => [
-                  f.button,
-                  f.secondary,
-                  { flex: 1, paddingHorizontal: 14, gap: 6 },
-                  pressed && { opacity: 0.78 },
-                ]}
-              >
-                <AppIcon name="edit" size={18} />
-                <Text style={[f.buttonText, { color: appearanceColors.ink }]}>Edit profile</Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Settings"
-                onPress={() => setSettingsOpen(true)}
-                style={({ pressed }) => [
-                  f.button,
-                  f.secondary,
-                  { flex: 1, paddingHorizontal: 14, gap: 6 },
-                  pressed && { opacity: 0.78 },
-                ]}
-              >
-                <AppIcon name="settings" size={18} />
-                <Text style={[f.buttonText, { color: appearanceColors.ink }]}>Settings</Text>
-              </Pressable>
-            </View>
+        <View style={[f.row, { gap: 8 }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Edit profile"
+            onPress={() => setPanel("profile")}
+            style={({ pressed }) => [
+              f.button,
+              f.secondary,
+              { flex: 1, paddingHorizontal: 14, gap: 6 },
+              pressed && { opacity: 0.78 },
+            ]}
+          >
+            <AppIcon name="edit" size={18} />
+            <Text style={[f.buttonText, { color: appearanceColors.ink }]}>Edit profile</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
+            onPress={() => setSettingsOpen(true)}
+            style={({ pressed }) => [
+              f.button,
+              f.secondary,
+              { flex: 1, paddingHorizontal: 14, gap: 6 },
+              pressed && { opacity: 0.78 },
+            ]}
+          >
+            <AppIcon name="settings" size={18} />
+            <Text style={[f.buttonText, { color: appearanceColors.ink }]}>Settings</Text>
+          </Pressable>
+        </View>
 
-            <Achievements state={state} />
-          </>
-        )}
+        <Achievements state={state} />
 
         {/* Awards Shelf under Athlete Crest */}
         {awards.length > 0 && (

@@ -15,7 +15,7 @@ import { SHELL_RADIUS, useThemeColors } from "../theme";
 import { ChoicePicker } from "../ui/choice-picker";
 import { FocusButton, FocusSegments, useFocusStyles } from "../ui/focus";
 import { AppText, SectionHeader, textStyle } from "../ui/section";
-import { SearchableCountryPicker } from "../ui/searchable-country-picker";
+import { CountryPicker } from "../ui/country-picker";
 import { ProfilePhoto } from "./profile-photo";
 
 type FilterKind = "all" | AthleteCardHighlightKind;
@@ -167,23 +167,20 @@ export function AthleteProfileEditor({
               placeholder="City"
             />
             <ChoicePicker
-              label="Gender"
-              value={gender ?? "unset"}
+              label="Gender (optional)"
+              value={gender ?? ""}
+              placeholder="Gender (optional)"
               options={[
-                { value: "unset", label: "Prefer not to say" },
                 { value: "female", label: "Female" },
                 { value: "male", label: "Male" },
                 { value: "other", label: "Other" },
               ]}
-              onChange={(value) =>
-                setGender(value === "unset" ? null : (value as ProfileGender))
-              }
+              onChange={(value) => setGender(value ? (value as ProfileGender) : null)}
             />
-            <SearchableCountryPicker
-              label="Country"
-              value={countryCode}
-              onChange={setCountryCode}
-            />
+            <View style={{ gap: 8 }}>
+              <AppText role="label">Country (optional)</AppText>
+              <CountryPicker value={countryCode} onChange={setCountryCode} />
+            </View>
           </View>
         </View>
         {error ? (
