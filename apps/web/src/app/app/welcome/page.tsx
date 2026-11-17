@@ -105,6 +105,7 @@ function Welcome({ preview }: { preview: boolean }) {
   }
   const back = index > 0 ? <BackButton disabled={busy || photoBusy} onClick={() => setStep(steps[index - 1]!)} /> : null;
   return <section ref={top} className="onboarding fb-stack">
+    <div className="onboarding-progress" role="img" aria-label={`Step ${index + 1} of ${steps.length}`}>{steps.map((s, i) => <span key={s} data-complete={i <= index} />)}</div>
     <OnboardingAthlete model={card} step={step} root={top} />
     <div className="onboarding-heading" data-compact={step === "overtake" || step === "growth"}>
       {step !== "growth" && <AppHeading level={1} role="display">{ONBOARDING_TITLES[step]}</AppHeading>}

@@ -1,6 +1,7 @@
+import { OnboardingProgress } from "../src/ui/onboarding-progress";
 import { useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { KeyboardAvoidingView, Modal, Platform, TextInput, View } from "react-native";
+import { Modal, TextInput, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -160,7 +161,7 @@ export default function Onboarding() {
 
   return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "fade"}>
     <SafeAreaProvider><SafeAreaView style={f.safe} edges={["top", "bottom"]}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <OnboardingProgress index={step === 0 ? 0 : step === 1 ? profilePage + 1 : 4} count={5} />
         <OnboardingCanvas>
         <View style={{ padding: 16 }}><MotionStep identity={`${step}:${profilePage}`}>
           <AppText role="display" accessibilityRole="header">{titles[step]}</AppText>
@@ -223,7 +224,6 @@ export default function Onboarding() {
           </View>
         </MotionStep></View>
         </OnboardingCanvas>
-      </KeyboardAvoidingView>
     </SafeAreaView></SafeAreaProvider>
   </Modal>;
 }

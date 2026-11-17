@@ -1,9 +1,10 @@
+import { OnboardingProgress } from "../src/ui/onboarding-progress";
 import { MaterialPanel } from "../src/ui/material-panel";
 import { OnboardingFeatureTour } from "../src/features/onboarding-feature-tour";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   EMPTY_GUEST_INTRO, ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId,
@@ -137,7 +138,7 @@ export default function Welcome() {
         onBack={() => setStep("athlete")} onComplete={() => void next()} />
     </View>}
     <SafeAreaView pointerEvents="box-none" style={{ flex: 1 }} edges={["top", "bottom"]}>
-      <KeyboardAvoidingView pointerEvents="box-none" style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <OnboardingProgress index={index} count={steps.length} />
         <OnboardingCanvas height={ONBOARDING_CANVAS.height}>
           <OnboardingAthlete model={card} step={step} onInteractionChange={setCardHeld} />
           {step !== "growth" && step !== "overtake" && <View pointerEvents="none" style={{ ...box(8, 48), right: 16 }}>
@@ -189,7 +190,6 @@ export default function Welcome() {
               : actions("Continue", () => void next(), photoBusy || (step === "athlete" && !draft.name.trim()))}
           </View>}
         </OnboardingCanvas>
-      </KeyboardAvoidingView>
     </SafeAreaView>
   </View>;
 }
