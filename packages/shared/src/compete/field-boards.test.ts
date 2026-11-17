@@ -4,7 +4,7 @@ import { fieldBoardForEnrollment, freshState, reduceCompete, rollClock, settleCo
 import { prepareCompeteStateForAccount } from "./sanitize";
 import { applyRemoteSnapshot } from "./snapshot";
 import type { CrewBoardPin } from "./sports";
-import { activityEffort } from "./effort";
+import { activityCompetitionVolume } from "./effort";
 const now = "2026-10-21T12:00:00.000Z";
 function fixture() {
   const state = reduceCompete(freshState(new Date(now)), { type: "opt-in", sport: "running", now: "2026-10-21T09:00:00Z" });
@@ -18,7 +18,7 @@ it("uses the same native duration strength score for an athlete and their oppone
   const joined = reduceCompete(freshState(new Date(now)), { type: "opt-in", sport: "strength", now: "2026-10-21T09:00Z" });
   const active = reduceCompete(joined, { type: "log-manual", sport: "strength", movingSec: 3600, activityId: "strength-session", now: "2026-10-21T11:00Z" });
   active.activities = active.activities.map(activity => ({ ...activity, avgHr: 180, provenance: "recorded" }));
-  const effort = activityEffort(active.activities[0]!);
+  const effort = activityCompetitionVolume(active.activities[0]!);
   const enrollment = active.enrollments[0]!;
   const pin: CrewBoardPin = { crewId: "solo", crewName: "Open Field", sport: "strength", waveStart: enrollment.waveStart, weekEnd: enrollment.weekEnd,
     capacity: 2, syntheticIds: [], memberIds: ["athlete", "peer"], members: [{ id: "peer", name: "Peer", elo: 1000, distanceM: 0, movingSec: 3600, effort }] };
@@ -69,7 +69,7 @@ it("refreshes per-sport peer totals in a dirty draft without losing the athlete'
   expect(weeklyBoard(merged, "running", "open", new Date(now)).find(row => row.id === "peer")?.distanceM).toBe(11000);
 });
 
-it("shares the same place for equal distance even when weighted effort differs, and settles ties fairly", () => {
+it("shares the same place for equal distance despite different pace and HR, and settles ties fairly", () => {
   const { state, pin } = fixture();
   state.name = "Zoe";
   state.demoNow = null;
@@ -86,7 +86,7 @@ it("shares the same place for equal distance even when weighted effort differs, 
   });
   const board = weeklyBoard(active, "running", "open", new Date(now));
   expect(board.map(row => row.place)).toEqual([1, 1]);
-  expect(board[0]!.effort).not.toEqual(board[1]!.effort);
+  expect(board[0]!.effort).toEqual(board[1]!.effort);
   const closed = rollClock(active, new Date("2026-10-26T04:01:00Z"));
   const result = closed.periodResults.find(row => row.sport === "running" && row.track === "open");
   expect(result?.place).toBe(1);

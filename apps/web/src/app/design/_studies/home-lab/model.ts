@@ -1,5 +1,5 @@
 import {
-  activityEffort, competeNow, countsOnTrack, freshState, reduceCompete,
+  activityTrainingXp, competeNow, countsOnTrack, freshState, reduceCompete,
   sportById, type Activity, type CompeteState, type ScoreTrack,
 } from "@fitness-battle/shared";
 import { buildSplitBoard } from "@/features/split/model";
@@ -32,7 +32,7 @@ export function homeSnapshot(state: CompeteState, track: ScoreTrack = "open"): P
   const now = competeNow(state);
   const board = buildSplitBoard(state, state.primary, track, now);
   const activities = board.weekActivities.filter(a => countsOnTrack(a, track) && new Date(a.startedAt) <= now);
-  const effort = activities.reduce((sum, a) => sum + activityEffort(a), 0);
+  const effort = activities.reduce((sum, a) => sum + activityTrainingXp(a), 0);
   const distanceM = activities.reduce((sum, a) => sum + a.distanceM, 0);
   const movingSec = activities.reduce((sum, a) => sum + a.movingSec, 0);
   const gps = sportById(state.primary).gps;

@@ -1,4 +1,4 @@
-import { EFFORT_BAR_COLOR_ROLES, EFFORT_BAR_HEIGHT_RATIOS, type EffortBarCount } from "@fitness-battle/shared";
+import { WORKOUT_SIZE_BAR_COLOR_ROLES, WORKOUT_SIZE_BAR_HEIGHT_RATIOS, type WorkoutSizeBarCount } from "@fitness-battle/shared";
 
 const ROLE_CSS_VAR = {
   podiumBronze: "var(--app-podium-bronze)",
@@ -6,15 +6,15 @@ const ROLE_CSS_VAR = {
   podiumGold: "var(--app-podium-gold)",
 } as const;
 
-export function EffortBarsIcon({ bars, size = 64 }: { bars: EffortBarCount; size?: number }) {
+export function WorkoutSizeIcon({ bars, size = 64 }: { bars: WorkoutSizeBarCount; size?: number }) {
   const maxBarHeight = Math.round(size * 0.72);
   const barWidth = Math.max(4, Math.round(size * 0.12));
   const gap = Math.max(2, Math.round(size * 0.06));
-  const activeColor = ROLE_CSS_VAR[EFFORT_BAR_COLOR_ROLES[Math.max(0, bars - 1)]!];
+  const activeColor = ROLE_CSS_VAR[WORKOUT_SIZE_BAR_COLOR_ROLES[Math.max(0, bars - 1)]!];
   return (
     <span
       role="img"
-      aria-label={`Effort ${bars} of 5`}
+      aria-label={`Session effort ${bars} of 5`}
       style={{
         display: "inline-flex",
         alignItems: "flex-end",
@@ -26,7 +26,7 @@ export function EffortBarsIcon({ bars, size = 64 }: { bars: EffortBarCount; size
         boxSizing: "border-box",
       }}
     >
-      {EFFORT_BAR_HEIGHT_RATIOS.map((ratio, index) => {
+      {WORKOUT_SIZE_BAR_HEIGHT_RATIOS.map((ratio, index) => {
         const active = index < bars;
         const fill = active ? activeColor : "var(--app-divider)";
         return (

@@ -38,3 +38,5 @@ The blocked-athlete privacy read stays behind that cover; ordinary loading never
 shows safety-settings copy. Privacy failures still expose Retry and Sign out. The
 launch gate remains mounted across sign-in and foreground privacy refresh, so later
 reads do not replay startup. Account and privacy reads still gate protected content.
+
+Activity training uses shared Training XP (1,000 XP per sport reference week). Activity details, sync summaries and training totals share that input with the profile Effort Score. Session effort bars compare session volume rather than intensity. No separate XP balance is persisted.

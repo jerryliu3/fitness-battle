@@ -1,6 +1,6 @@
-import { accountTimeZone, formatAccountDateTime, weeklyPeriodBounds } from "./period";
+import { accountTimeZone, formatAccountDateTime, weeklyPeriodBounds, startOfZonedDay, shiftZonedDay } from "./period";
 import { APP_TIMEZONE, dayKey } from "./timezone";
-import { activityEffort } from "./compete/effort";
+import { trainingXpInPeriod } from "./compete/training-xp";
 import { arenaValueDecimals, competeChartUnit } from "./compete-field-view";
 import { competeNow, formatVolume } from "./compete/engine";
 import { countsOnTrack } from "./compete/ledger";
@@ -303,15 +303,15 @@ export function weekRecapTraining(state: CompeteState, target: WeekRecapTarget &
     for (let date = dayKey(new Date(start), displayTz); date <= last;
       date = new Date(Date.parse(`${date}T12:00:00Z`) + 86400000).toISOString().slice(0, 10)) dates.push(date);
   }
-  const effortValues = dates.map(date => activities.filter(a => dayKey(new Date(a.startedAt), displayTz) <= date)
-    .reduce((sum, a) => sum + activityEffort(a), 0));
+  const trainingXpValues = dates.map(date => trainingXpInPeriod(state, new Date(start),
+    new Date(Math.min(end, competeNow(state).getTime()+1, shiftZonedDay(startOfZonedDay(new Date(`${date}T12:00:00Z`), displayTz),1,displayTz).getTime())), [target.sport]));
   return {
-    available: activities.length > 0,
-    hasEffort: activities.length > 0 && effortValues.some(v => v > 0),
+    available: activities.length > 0 || trainingXpValues.some(v => v > 0),
+    hasTrainingXp: trainingXpValues.some(v => v > 0),
     labels: dates.map(date => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: displayTz })),
     values: dates.map(date => activities.filter(a => dayKey(new Date(a.startedAt), displayTz) <= date)
       .reduce((sum, a) => sum + a.movingSec / 60, 0)),
-    effortValues,
+    trainingXpValues,
   };
 }
 

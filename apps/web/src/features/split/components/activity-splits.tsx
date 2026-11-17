@@ -5,8 +5,9 @@ import { AppParagraph, AppText, SectionHeader } from "@/ui/section";
 import {
   APP_TIMEZONE,
   accountTimeZone,
-  activityEffort,
-  formatEffort,
+  activityTrainingXp,
+  trainingXpInPeriod,
+  formatTrainingXp,
   formatVolume,
   type Activity,
   type CompeteState,
@@ -35,7 +36,7 @@ export function ActivitySplits({
       timeZone: displayTz,
     });
   const [openId, setOpenId] = useState<string | null>(null);
-  const total = activities.reduce((sum, item) => sum + activityEffort(item), 0);
+  const total = trainingXpInPeriod({activities}, new Date(0), new Date(Date.now()+1));
 
   if (activities.length === 0) {
     return (
@@ -52,7 +53,7 @@ export function ActivitySplits({
   return (
     <div className="sp-splits">
       {activities.map((activity, index) => {
-        const pts = activityEffort(activity);
+        const pts = activityTrainingXp(activity);
         const open = openId === activity.id;
         return (
           <div key={activity.id}>
@@ -77,11 +78,11 @@ export function ActivitySplits({
                   {activity.source}
                 </AppText>
               </span>
-              <b>{formatEffort(pts)} pts</b>
+              <b>{formatTrainingXp(pts)} XP</b>
             </button>
             {open ? (
               <AppParagraph typographyRole="caption" className="fb-note" style={{ padding: "0 4px 8px" }}>
-                Contributes to this week’s effort.{" "}
+                Contributes to your Effort Score.{" "}
                 {activity.avgHr != null
                   ? `Avg HR ${activity.avgHr}. `
                   : "No heart-rate mark. "}
@@ -95,7 +96,7 @@ export function ActivitySplits({
         <span>
           {activities.length} session{activities.length === 1 ? "" : "s"}.
         </span>
-        <strong>{formatEffort(total)}</strong>
+        <strong>{formatTrainingXp(total)} XP</strong>
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ import { stableLanes, type SceneRunner } from "@/features/field/geometry";
 import { buildSplitBoard } from "@/features/split/model";
 import {
   APP_TIMEZONE,
-  activityEffort, competeNow, countsOnTrack, dayKey, formatEffort, formatVolume,
+  activityTrainingXp, competeNow, countsOnTrack, dayKey, formatTrainingXp, formatVolume,
   initialsFromName, lessonFor, rankForElo, reduceCompete, sportById, suggestionForState,
   type Activity, type CompeteState,
 } from "@fitness-battle/shared";
@@ -198,7 +198,7 @@ function AdaptiveHome({ state, layout, accountId, baseline, persist, failed, sam
     setDetail({ title: `${formatDay(activity.startedAt)}’s ${sport.name.toLowerCase()}`, body: <>
       <p className="ah-eyebrow">{sampleMode ? "SAMPLE ACTIVITY" : `${activity.source.toUpperCase()} · COUNTED`}</p>
       <strong className="ah-sheet-number">{formatVolume(state.primary, activity.distanceM, activity.movingSec)}</strong>
-      <div className="ah-stat-row"><div><b>{Math.round(activity.movingSec / 60)} min</b><span>Moving time</span></div><div><b>{formatEffort(activityEffort(activity))}</b><span>Effort points</span></div></div>
+      <div className="ah-stat-row"><div><b>{Math.round(activity.movingSec / 60)} min</b><span>Moving time</span></div><div><b>{formatTrainingXp(activityTrainingXp(activity))}</b><span>Training XP</span></div></div>
       <p>This brought your week to <b>{formatVolume(state.primary, elapsed.reduce((sum,a) => sum + a.distanceM, 0), elapsed.reduce((sum,a) => sum + a.movingSec, 0))}</b>.</p>
       <button className="ah-primary" onClick={() => { setDetail(null); setView("arena"); }}>See it in the arena ↗</button>
     </> });

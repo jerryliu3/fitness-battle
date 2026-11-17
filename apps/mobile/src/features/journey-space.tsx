@@ -9,14 +9,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import {
   accountTimeZone,
-  activityEffort,
+  trainingXpInPeriod,
+  startOfZonedDay,
   competeNow,
-  countsOnTrack,
+  countsForTraining,
   dayKey,
   defaultTrainingSports,
   earliestDataDate,
   formatAccountCalendarDate,
-  formatEffort,
+  formatTrainingXp,
   formatTrainingHours,
   formatWeeklyCompetitionRange,
   shiftZonedDay,
@@ -83,7 +84,7 @@ export function JourneySpace({
       const d = shiftZonedDay(monday, i, displayTz);
       const key = dayKey(d, displayTz);
       const hasActivity = state.activities.some((a) => {
-        return countsOnTrack(a, "open") && dayKey(new Date(a.startedAt), displayTz) === key;
+        return countsForTraining(a) && dayKey(new Date(a.startedAt), displayTz) === key;
       });
 
       days.push({
@@ -104,15 +105,15 @@ export function JourneySpace({
     const endIso = shiftZonedDay(calendarDays.monday, 7, displayTz).toISOString();
     const weekActs = state.activities.filter((a) => {
       return (
-        countsOnTrack(a, "open") &&
+        countsForTraining(a) &&
         a.startedAt >= startIso &&
         a.startedAt < endIso
       );
     });
     const hours = (weekActs.reduce((sum, a) => sum + Math.max(0, a.movingSec), 0) / 3600).toFixed(1);
-    const effort = weekActs.reduce((sum, a) => sum + activityEffort(a), 0);
-    return { count: weekActs.length, hours, effort: formatEffort(effort) };
-  }, [state.activities, calendarDays.monday]);
+    const effort = trainingXpInPeriod(state, new Date(startIso), new Date(Math.min(Date.parse(endIso), now.getTime()+1)));
+    return { count: weekActs.length, hours, effort: formatTrainingXp(effort) };
+  }, [state.activities, state.dailyHealth, calendarDays.monday, now, displayTz]);
 
   const { prevAllowed: weekPrevAllowed } = useMemo(
     () => trainingRangeNavigation(calendarDays.monday, earliest, now, "week", displayTz),
@@ -152,11 +153,12 @@ export function JourneySpace({
     const movingSec = inMonthCells.reduce((sum, cell) => sum + cell.movingSec, 0);
     const hours = (movingSec / 3600).toFixed(1);
     const monthDays = new Set(inMonthCells.map((cell) => cell.day));
-    const effort = formatEffort(state.activities.filter((a) =>
-      countsOnTrack(a, "open") && monthDays.has(dayKey(new Date(a.startedAt), displayTz)),
-    ).reduce((sum, a) => sum + activityEffort(a), 0));
+    const days = [...monthDays].sort();
+    const effort = formatTrainingXp(days.length ? trainingXpInPeriod(state,
+      startOfZonedDay(new Date(`${days[0]}T12:00:00Z`), displayTz),
+      new Date(Math.min(shiftZonedDay(startOfZonedDay(new Date(`${days.at(-1)}T12:00:00Z`), displayTz), 1, displayTz).getTime(), now.getTime()+1))) : 0);
     return { sessions, hours, effort };
-  }, [monthCells, state.activities]);
+  }, [monthCells, state.activities, state.dailyHealth, now, displayTz]);
 
   // --- 3. Year Horizon (Annual Atlas & Monthly Progression) ---
   const yearAnchor = useMemo(() => trainingYearAnchor(now, yearOffset, displayTz), [now, yearOffset, displayTz]);
@@ -192,14 +194,14 @@ export function JourneySpace({
     const yearStr = dayKey(yearAnchor).slice(0, 4);
     const yearActs = state.activities.filter((a) => {
       return (
-        countsOnTrack(a, "open") &&
+        countsForTraining(a) &&
         dayKey(new Date(a.startedAt)).startsWith(yearStr) &&
         Date.parse(a.startedAt) <= now.getTime()
       );
     });
     const hours = (yearActs.reduce((sum, a) => sum + Math.max(0, a.movingSec), 0) / 3600).toFixed(0);
     const distanceM = yearActs.reduce((sum, a) => sum + Math.max(0, a.distanceM), 0);
-    const effort = formatEffort(yearActs.reduce((sum, a) => sum + activityEffort(a), 0));
+    const effort = formatTrainingXp(trainingXpInPeriod(state, startOfZonedDay(new Date(`${yearStr}-01-01T12:00:00Z`), displayTz), new Date(Math.min(startOfZonedDay(new Date(`${Number(yearStr)+1}-01-01T12:00:00Z`), displayTz).getTime(),now.getTime()+1))));
     const battles = state.periodResults.filter((r) =>
       r.periodStart.startsWith(yearStr),
     ).length;
@@ -210,11 +212,11 @@ export function JourneySpace({
       battles,
       effort,
     };
-  }, [state.activities, state.periodResults, yearAnchor, now]);
+  }, [state.activities, state.dailyHealth, state.periodResults, yearAnchor, now, displayTz]);
 
   // Filtered recent activities
   const recentActivities = useMemo(() => {
-    let list = [...state.activities].filter((a) => countsOnTrack(a, "open"));
+    let list = [...state.activities].filter((a) => countsForTraining(a));
     if (selectedDayKey) {
       list = list.filter(
         (a) => dayKey(new Date(a.startedAt), displayTz) === selectedDayKey,
@@ -336,7 +338,7 @@ export function JourneySpace({
               <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
                 {weekSummary.effort}
               </AppText>
-              <AppText role="caption" secondary>Effort</AppText>
+              <AppText role="caption" secondary>Training XP</AppText>
             </View>
           </View>
         </View>
@@ -476,7 +478,7 @@ export function JourneySpace({
               <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
                 {monthSummary.effort}
               </AppText>
-              <AppText role="caption" secondary>Effort</AppText>
+              <AppText role="caption" secondary>Training XP</AppText>
             </View>
           </View>
         </View>
@@ -564,7 +566,7 @@ export function JourneySpace({
               <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
                 {yearSummary.effort}
               </AppText>
-              <AppText role="caption" secondary>Effort</AppText>
+              <AppText role="caption" secondary>Training XP</AppText>
             </View>
           </View>
         </View>

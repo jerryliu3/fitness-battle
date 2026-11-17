@@ -41,8 +41,8 @@ it("shows total time and activity count around the effort core", async () => {
   expect(text).toContain("Total time");
   expect(text).toContain("2");
   expect(text).toContain("Activities");
-  expect(text).toContain("+10.1");
-  expect(text).toContain("effort");
+  expect(text).toContain("+155.3");
+  expect(text).toContain("Training XP");
   expect(text).not.toContain("synced moving time selected");
   expect(text).not.toContain("Elevation");
   expect(withTiming).toHaveBeenCalledWith(.5, expect.objectContaining({ duration: 1100, reduceMotion: "system" }));
@@ -65,7 +65,7 @@ it("keeps battery charge intact when saving (no depletion animation) and handles
   expect(text).toContain("0m");
   expect(text).toContain("0");
   expect(text).toContain("+0");
-  expect(text).toContain("effort");
+  expect(text).toContain("Training XP");
   expect(text).not.toContain("NaN");
   await act(async () => renderer!.unmount());
 });

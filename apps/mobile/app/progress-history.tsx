@@ -15,9 +15,10 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   accountTimeZone,
-  activityEffort,
-  countsOnTrack,
-  formatEffort,
+  trainingXpInPeriod,
+  competeNow,
+  countsForTraining,
+  formatTrainingXp,
   sportById,
   type Activity,
   type SportId,
@@ -52,7 +53,7 @@ export default function ProgressHistoryScreen() {
     if (!state?.activities) return [];
     return [...state.activities]
       .filter((a) => {
-        if (!countsOnTrack(a, "open")) return false;
+        if (!countsForTraining(a)) return false;
         if (selectedSport !== "all" && a.sport !== selectedSport) return false;
         return true;
       })
@@ -62,16 +63,13 @@ export default function ProgressHistoryScreen() {
   const summary = useMemo(() => {
     const count = filteredActivities.length;
     const movingSec = filteredActivities.reduce((acc, a) => acc + Math.max(0, a.movingSec), 0);
-    const effort = formatEffort(filteredActivities.reduce(
-      (acc, a) => acc + activityEffort(a),
-      0,
-    ));
+    const effort = formatTrainingXp(state ? trainingXpInPeriod(state, new Date(0), new Date(competeNow(state).getTime()+1), selectedSport === "all" ? undefined : [selectedSport]) : 0);
     return {
       count,
       hours: (movingSec / 3600).toFixed(1),
       effort,
     };
-  }, [filteredActivities]);
+  }, [filteredActivities, state, selectedSport]);
 
   if (!state) return null;
 
@@ -143,7 +141,7 @@ export default function ProgressHistoryScreen() {
                 <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
                   {summary.effort}
                 </AppText>
-                <AppText role="caption" secondary>Effort</AppText>
+                <AppText role="caption" secondary>Training XP</AppText>
               </View>
             </View>
 

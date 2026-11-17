@@ -1,13 +1,13 @@
 import { View, type StyleProp, type ViewStyle } from "react-native";
-import { EFFORT_BAR_COLOR_ROLES, EFFORT_BAR_HEIGHT_RATIOS, type EffortBarCount } from "@fitness-battle/shared";
+import { WORKOUT_SIZE_BAR_COLOR_ROLES, WORKOUT_SIZE_BAR_HEIGHT_RATIOS, type WorkoutSizeBarCount } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 
-export function EffortBarsIcon({
+export function WorkoutSizeIcon({
   bars,
   size = 64,
   style,
 }: {
-  bars: EffortBarCount;
+  bars: WorkoutSizeBarCount;
   size?: number;
   style?: StyleProp<ViewStyle>;
 }) {
@@ -15,12 +15,12 @@ export function EffortBarsIcon({
   const maxBarHeight = Math.round(size * 0.72);
   const barWidth = Math.max(4, Math.round(size * 0.12));
   const gap = Math.max(2, Math.round(size * 0.06));
-  const activeColor = c[EFFORT_BAR_COLOR_ROLES[Math.max(0, bars - 1)]!];
+  const activeColor = c[WORKOUT_SIZE_BAR_COLOR_ROLES[Math.max(0, bars - 1)]!];
 
   return (
     <View
       accessible
-      accessibilityLabel={`Effort ${bars} of 5`}
+      accessibilityLabel={`Session effort ${bars} of 5`}
       style={[
         {
           width: size,
@@ -34,7 +34,7 @@ export function EffortBarsIcon({
         style,
       ]}
     >
-      {EFFORT_BAR_HEIGHT_RATIOS.map((ratio, index) => {
+      {WORKOUT_SIZE_BAR_HEIGHT_RATIOS.map((ratio, index) => {
         const active = index < bars;
         const fill = active ? activeColor : c.divider;
         return (

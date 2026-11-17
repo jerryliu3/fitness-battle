@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { calculateLiveEffortScore, createDeclaredEffortState, createEmptyEffortState, getScoreBreakdown, historicalBonusPoints, placementRewardPoints, settleEffortWeek, SPORT_CONFIG, trainingPosition, updateEffortBaseline, type EffortState } from './effort-score';
+import { trainingXpForVolume, calculateLiveEffortScore, createDeclaredEffortState, createEmptyEffortState, getScoreBreakdown, historicalBonusPoints, placementRewardPoints, settleEffortWeek, SPORT_CONFIG, trainingPosition, updateEffortBaseline, type EffortState } from './effort-score';
 const mile = 1609.344;
 const established = (miles = 35): EffortState => ({ ...createEmptyEffortState(), baselineWeeklyVolume: miles*mile, peakObservedBaselineWeeklyVolume: miles*mile, calibrationSamples: 7, cumulativeNormalizedVolume: 26, officialRankIndex: 5 });
-const live = (s: EffortState, day: string, a=0, d=0) => calculateLiveEffortScore('running', s, {now:new Date(day),eligibleVolumeBeforeToday:a*mile,eligibleVolumeToday:d*mile});
+const live = (s: EffortState, day: string, a=0, d=0) => calculateLiveEffortScore('running', s, {now:new Date(day),trainingXpBeforeToday:trainingXpForVolume('running',a*mile),trainingXpToday:trainingXpForVolume('running',d*mile)});
 
 describe('canonical effort score',()=>{
  it('maps every native-unit anchor and extrapolates without a cap',()=>{
@@ -37,11 +37,11 @@ describe('canonical effort score',()=>{
  });
  it('settles each Monday once, rejects gaps and protects demotion for two weeks',()=>{
   const s=established();
-  const first=settleEffortWeek('running',s,{weekId:'2026-11-02',eligibleWeeklyVolume:0});
+  const first=settleEffortWeek('running',s,{weekId:'2026-11-02',eligibleTrainingXp:trainingXpForVolume('running',0)});
   expect(first.state.officialRankIndex).toBe(5);expect(first.state.consecutiveBelowRankWeeks).toBe(1);
-  expect(settleEffortWeek('running',first.state,{weekId:'2026-11-02',eligibleWeeklyVolume:99}).state).toBe(first.state);
-  expect(()=>settleEffortWeek('running',first.state,{weekId:'2026-11-23',eligibleWeeklyVolume:0})).toThrow('non-contiguous');
-  const second=settleEffortWeek('running',first.state,{weekId:'2026-11-09',eligibleWeeklyVolume:0});
+  expect(settleEffortWeek('running',first.state,{weekId:'2026-11-02',eligibleTrainingXp:trainingXpForVolume('running',99)}).state).toBe(first.state);
+  expect(()=>settleEffortWeek('running',first.state,{weekId:'2026-11-23',eligibleTrainingXp:trainingXpForVolume('running',0)})).toThrow('non-contiguous');
+  const second=settleEffortWeek('running',first.state,{weekId:'2026-11-09',eligibleTrainingXp:trainingXpForVolume('running',0)});
   expect(second.state.officialRankIndex).toBeLessThan(5);
   expect(second.state.cumulativeNormalizedVolume).toBe(s.cumulativeNormalizedVolume);
  });
@@ -72,7 +72,7 @@ describe('read-only daily effort projection',()=>{
   const s={...established(),competitionOffsetPoints:100};
   const sunday=live(s,'2026-11-09T04:59:59Z',30,5);
   expect(sunday.activityProjectedVolume).toBeCloseTo(35*mile);
-  const settled=settleEffortWeek('running',s,{weekId:'2026-11-02',eligibleWeeklyVolume:35*mile});
+  const settled=settleEffortWeek('running',s,{weekId:'2026-11-02',eligibleTrainingXp:trainingXpForVolume('running',35*mile)});
   expect(sunday.activityScore-settled.after.displayedScore).toBe(50);
  });
  it('uses Eastern calendar boundaries through spring and autumn DST changes',()=>{
@@ -85,7 +85,7 @@ describe('read-only daily effort projection',()=>{
  it('previews use the same recovery, provisional and Master+ weekly branches',()=>{
   for(const s of [createDeclaredEffortState('running',0),established(60),{...established(60),baselineWeeklyVolume:20*mile}]){
    const result=live(s,'2026-11-09T04:00:00Z',80,10);
-   const settled=settleEffortWeek('running',s,{weekId:'2026-11-02',eligibleWeeklyVolume:90*mile});
+   const settled=settleEffortWeek('running',s,{weekId:'2026-11-02',eligibleTrainingXp:trainingXpForVolume('running',90*mile)});
    expect(result.activityScore).toBe(settled.after.displayedScore);
   }
  });

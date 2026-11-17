@@ -1,10 +1,10 @@
 import {
   activityRoute,
-  sessionEffortSummary,
+  workoutSizeSummary,
   type Activity,
   type SportId,
 } from "@fitness-battle/shared";
-import { EffortBarsIcon } from "./effort-bars-icon";
+import { WorkoutSizeIcon } from "./workout-size-icon";
 import { RouteStaticPreview } from "./route-static-preview";
 
 export type ActivityGraphicSubject = {
@@ -43,6 +43,6 @@ export function ActivityLeadingGraphic({
       />
     );
   }
-  const effort = sessionEffortSummary(activity, history);
-  return <EffortBarsIcon bars={effort.bars} size={size} />;
+  const effort = workoutSizeSummary(activity, history);
+  return <WorkoutSizeIcon bars={effort.bars} size={size} />;
 }

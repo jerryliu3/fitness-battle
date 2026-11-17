@@ -1,3 +1,5 @@
+> November 17 implementation amendment: Training XP replaces activity effort points and is the canonical weekly/live training input: 1,000 XP per sport reference week. Convert XP to the native-volume baseline internally; every formula, benchmark, rank, competition rule and recovery rate below is unchanged. XP is derived from eligible, deduplicated training without HR/pace bonuses and has no persisted balance. Walking uses daily tracker steps only. Session effort bars compare relative session volume and retain the Easy / Moderate / Hard / All out labels. No activity migration or legacy scoring fallback is required.
+
 # Fitness Battle — Effort Score: Complete Implementation Specification
 
 **Status:** Agreed product direction, proposed implementation contract (November 16, 2026).  

@@ -1,7 +1,8 @@
+import { eligibleTrainingXp } from './training-xp';
 import { mergeActivities } from './ledger';
 import { dayKey, shiftAppDay, weeklyPeriodBounds } from '../period';
 import { createEmptyEffortState, getScoreBreakdown, settleEffortWeek, type EffortState } from './effort-score';
-import { eligibleEffortVolume, liveEffortFromActivities } from './effort-volume';
+import { liveEffortFromActivities } from './effort-volume';
 import { countsForTraining } from './journal';
 import { SPORT_IDS, type CompeteState, type SportId } from './sports';
 
@@ -43,7 +44,7 @@ export function settleAccountEffort(input:CompeteState,now:Date):CompeteState {
       if(initialized.enrollments.some(e=>e.sport===sport&&Date.parse(e.weekEnd)<=end.getTime()&&Date.parse(e.weekEnd)>start.getTime()))break;
       const result=periodResults.find(r=>r.sport===sport&&r.track==='open'&&r.effortReward!==undefined&&r.periodEnd===end.toISOString());
       const settled=settleEffortWeek(sport,account.state,{weekId:account.nextWeek,
-        eligibleWeeklyVolume:eligibleEffortVolume(canonical,sport,start,end,false),placementReward:result?.effortReward??0});
+        eligibleTrainingXp:eligibleTrainingXp(canonical,sport,start,end,false),placementReward:result?.effortReward??0});
       const training=Math.round(settled.after.trainingPoints-settled.before.trainingPoints),history=Math.round(settled.after.historyPoints-settled.before.historyPoints);
       periodResults=periodResults.map(r=>r.sport===sport&&r.periodEnd===end.toISOString()&&r.effortReward!==undefined?{...r,eloBefore:settled.before.displayedScore,eloAfter:settled.after.displayedScore,effortChange:{training,history,competition:settled.scoreDelta-training-history}}:r);
       account={state:settled.state,nextWeek:dayKey(end)};
