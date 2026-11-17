@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activityTrainingXp, eligibleTrainingXp, formatTrainingXp, trainingXpInPeriod } from './training-xp';
+import { activityBaseTrainingXp, activityTrainingXp, eligibleTrainingXp, formatTrainingXp, trainingXpInPeriod } from './training-xp';
 import { walkingStepsInPeriod } from './journal';
 import { activityCompetitionVolume, workoutSizeSummary } from './effort';
 import { calculateLiveEffortScore, createDeclaredEffortState, getScoreBreakdown, historicalBonusPoints, settleEffortWeek, SPORT_CONFIG, trainingXpForVolume, updateEffortBaseline } from './effort-score';
@@ -14,6 +14,13 @@ describe('Training XP', () => {
   expect(activityTrainingXp({...run, sport:'strength', movingSec:60})).toBeCloseTo(1000/180);
   expect(activityTrainingXp({...run, sport:'cycling', distanceM:1609.344})).toBe(10);
   expect(activityTrainingXp({...run, sport:'walking'})).toBe(0);
+ });
+ it('launches with neutral intensity for recorded HR, missing HR and manual workouts', () => {
+  for(const activity of [run,{...run,avgHr:null},{...run,avgHr:190,movingSec:300},{...run,source:'manual' as const,provenance:'manual' as const,verified:false}]) {
+   expect(activityBaseTrainingXp(activity)).toBe(50);
+   expect(activityTrainingXp(activity)).toBe(activityBaseTrainingXp(activity));
+   expect(eligibleTrainingXp({activities:[activity]},'running',start,end)).toBe(50);
+  }
  });
  it('preserves full precision and rounds only presentation', () => {
   const xp=activityTrainingXp({...run, distanceM:1});

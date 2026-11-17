@@ -5,10 +5,22 @@ import { mergeActivities } from './ledger';
 import { SPORT_IDS, type Activity, type CompeteState, type SportId } from './sports';
 
 /** Walking XP comes only from daily step readings, never inferred workout distance. */
-export function activityTrainingXp(activity: Activity): number {
+export function activityBaseTrainingXp(activity: Activity): number {
   if (!countsForTraining(activity) || activity.sport === 'walking' || !Number.isFinite(Date.parse(activity.startedAt))) return 0;
   const volume = activity.sport === 'strength' ? activity.movingSec : activity.distanceM;
   return Number.isFinite(volume) ? trainingXpForVolume(activity.sport, Math.max(0, volume)) : 0;
+}
+
+/** Launch policy: neutral with or without HR. Future personalized, verified
+ * intensity belongs here, so the same weighted XP reaches every score input.
+ * Enabling a bonus requires benchmark recalibration; pace is not stacked on HR.
+ */
+function trainingIntensityMultiplier(_activity: Activity): number {
+  return 1;
+}
+
+export function activityTrainingXp(activity: Activity): number {
+  return activityBaseTrainingXp(activity) * trainingIntensityMultiplier(activity);
 }
 
 /** One canonical workout; full precision through aggregation. */

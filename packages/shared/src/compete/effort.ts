@@ -1,4 +1,4 @@
-import { activityTrainingXp } from './training-xp';
+import { activityBaseTrainingXp } from './training-xp';
 import type { DailyHealthSample } from "../fitness/types";
 import { countsForTraining, walkingStepsInPeriod } from "./journal";
 import { countsOnTrack } from "./ledger";
@@ -107,7 +107,7 @@ export function workoutSizeSummary(
   const useSameSportPool = sameSport.length >= 2;
   const pool = useSameSportPool ? sameSport : recent;
 
-  const targetEffort = activityTrainingXp({
+  const targetEffort = activityBaseTrainingXp({
     id: target.id ?? "",
     sport: target.sport,
     startedAt: target.startedAt,
@@ -119,7 +119,7 @@ export function workoutSizeSummary(
     provenance: "manual",
   });
   // Compare XP within a sport; cross-sport session size uses duration.
-  const baselineEfforts = useSameSportPool ? pool.map(activityTrainingXp).filter((v) => v > 0) : [];
+  const baselineEfforts = useSameSportPool ? pool.map(activityBaseTrainingXp).filter((v) => v > 0) : [];
   const useEffort = targetEffort > 0 && baselineEfforts.length > 0;
   const targetValue = useEffort ? targetEffort : Math.max(0, target.movingSec);
   const baselineValues = useEffort
