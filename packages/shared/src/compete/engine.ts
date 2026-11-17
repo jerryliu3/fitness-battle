@@ -23,7 +23,6 @@ import {
   type PoolPlayer,
   type WaveEnrollment,
 } from "../matching";
-import { periodEffort } from "./effort";
 import type { RankSymbolId } from "../rank-symbols";
 import { formatWalkingSteps } from "./journal";
 import { mergeActivities, normalizeSampleActivity, provenanceOf } from "./ledger";

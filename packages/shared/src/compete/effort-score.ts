@@ -39,6 +39,17 @@ export const SPORT_CONFIG: Record<Sport, { readonly anchors: readonly number[]; 
   strength: { anchors: [0, 60, 120, 180, 240, 360, 480, 600, 780].map(minutes), referenceVolume: minutes(180) },
 };
 
+/** Display unit only; reference-week normalization and scoring remain unchanged. */
+export const TRAINING_XP_PER_REFERENCE_WEEK = 1000;
+export function trainingXpForVolume(sport: Sport, volume: number): number {
+  nonnegative(volume, 'training volume');
+  return volume / SPORT_CONFIG[sport].referenceVolume * TRAINING_XP_PER_REFERENCE_WEEK;
+}
+export function trainingVolumeForXp(sport: Sport, xp: number): number {
+  nonnegative(xp, 'Training XP');
+  return xp / TRAINING_XP_PER_REFERENCE_WEEK * SPORT_CONFIG[sport].referenceVolume;
+}
+
 /** Persistence is per user + sport. State is not a second user-facing score. */
 export interface EffortState {
   scoringVersion: string;
@@ -67,7 +78,7 @@ export interface CompetitionInput {
 export interface WeeklyInput {
   /** Actual Monday start in America/New_York, ISO date. No skipped weeks. */
   weekId: string;
-  eligibleWeeklyVolume: number;
+  eligibleTrainingXp: number;
   competition?: CompetitionInput | null;
   placementReward?: number;
 }
@@ -202,7 +213,7 @@ function mondayUtcMs(weekId: string): number {
  */
 export function settleEffortWeek(sport: Sport, prior: EffortState, input: WeeklyInput): WeeklyResult {
   const ms = mondayUtcMs(input.weekId);
-  nonnegative(input.eligibleWeeklyVolume, 'eligibleWeeklyVolume');
+  const eligibleWeeklyVolume = trainingVolumeForXp(sport, input.eligibleTrainingXp);
   const before = getScoreBreakdown(sport, prior);
   if (prior.lastSettledWeekId === input.weekId) {
     return { state: prior, before, after: before, scoreDelta: 0,
@@ -212,8 +223,8 @@ export function settleEffortWeek(sport: Sport, prior: EffortState, input: Weekly
     throw new Error('non-contiguous settlement: settle intervening weeks (including zero weeks) or replay history');
   }
 
-  const baseline = updateEffortBaseline(sport, prior, input.eligibleWeeklyVolume);
-  const q = prior.cumulativeNormalizedVolume + input.eligibleWeeklyVolume / SPORT_CONFIG[sport].referenceVolume;
+  const baseline = updateEffortBaseline(sport, prior, eligibleWeeklyVolume);
+  const q = prior.cumulativeNormalizedVolume + eligibleWeeklyVolume / SPORT_CONFIG[sport].referenceVolume;
   const placementReward = input.competition ? placementRewardPoints(input.competition) : (input.placementReward ?? 0);
   if(!Number.isFinite(placementReward) || placementReward < -30 || placementReward > 100) throw new Error("invalid_placement_reward");
   const competitionOffsetPoints = COMPETITION_RETENTION * prior.competitionOffsetPoints + placementReward;
@@ -251,7 +262,7 @@ export function settleEffortWeek(sport: Sport, prior: EffortState, input: Weekly
 
 /** Import complete, consecutive Monday weeks; activity and weekly zeros are canonicalized upstream. */
 export function createImportedEffortState(
-  sport: Sport, weeks: readonly {weekId: string; eligibleWeeklyVolume: number}[],
+  sport: Sport, weeks: readonly {weekId: string; eligibleTrainingXp: number}[],
 ): EffortState {
   let s = createEmptyEffortState();
   for (const w of [...weeks].sort((a,b) => a.weekId.localeCompare(b.weekId))) {
@@ -290,14 +301,14 @@ export function updateEffortBaseline(sport: Sport, prior: EffortState, volume: n
 
 export interface LiveEffortInput {
   now: Date;
-  eligibleVolumeBeforeToday: number;
-  eligibleVolumeToday: number;
+  trainingXpBeforeToday: number;
+  trainingXpToday: number;
 }
 
 export function calculateLiveEffortScore(sport: Sport, frozen: EffortState, input: LiveEffortInput) {
-  const { now, eligibleVolumeBeforeToday: a, eligibleVolumeToday: d } = input;
-  nonnegative(a, 'eligibleVolumeBeforeToday');
-  nonnegative(d, 'eligibleVolumeToday');
+  const { now } = input;
+  const a = trainingVolumeForXp(sport, input.trainingXpBeforeToday);
+  const d = trainingVolumeForXp(sport, input.trainingXpToday);
   if (!Number.isFinite(now.getTime())) throw new Error('invalid_live_time');
   const k = (getZonedWeekday(now) + 6) % 7;
   const forecast = frozen.baselineWeeklyVolume ?? 0;

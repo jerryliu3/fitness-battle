@@ -195,3 +195,9 @@ The November 16 complete implementation contract in `docs/effort-score-implement
 Open walking replay reads max-per-provider daily steps through the existing field-membership-authorized `competition_replay` RPC. Apply `20261116034130_compete_walking_replay.sql` before deploying the replay API; raw daily health readings remain owner-only. Replay field values and logged volume use hours, steps or distance; weekly Effort Score settlement remains a separate calculation.
 
 Crew Derby event totals use native metres, steps or strength seconds, presented through the shared volume formatter. Apply `20261116200454_compete_derby_native_volume.sql` with its clients. Team places remain independent of weekly Effort Score; never label an activity-effort aggregate as the official account score.
+
+## Training XP
+
+Training XP replaces activity effort points: `XP = 1000 × eligible native volume / sport reference volume`. Reference weeks are 20 running miles, 100 cycling miles, 56,000 walking steps and 180 strength minutes. Use shared `activityTrainingXp` for a session and `eligibleTrainingXp`/`trainingXpInPeriod` for deduplicated totals. Walking credit comes from provider-deduplicated daily steps, never GPS walk distance. Excluded, pending, synthetic and invalid rows earn no XP; counted journal/manual training remains eligible.
+
+Weekly settlement and live previews take XP as their canonical input and convert to the existing native-volume baseline internally. Rank curves, lifetime normalization, competition rewards, recovery and live floors are unchanged. Preserve full precision until display; no persisted XP balances or activity backfills. Activity bars describe **Workout Size**, relative to recent training, not intensity. HR and pace remain activity metrics without XP bonuses. Competition placement retains native metres/steps/seconds and does not use XP.

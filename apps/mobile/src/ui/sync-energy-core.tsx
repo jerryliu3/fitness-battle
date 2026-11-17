@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, ClipPath, Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import Animated, { cancelAnimation, Easing, ReduceMotion, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from "react-native-reanimated";
-import { activityEffort, clubDuration, formatVolume, type CompeteState, type SyncReviewReceipt } from "@fitness-battle/shared";
+import { trainingXpInPeriod, clubDuration, formatVolume, type CompeteState, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { AppIcon, type AppIconName } from "./app-icon";
 import { textStyle } from "./section";
@@ -14,7 +14,7 @@ const circumference = 2 * Math.PI * 94;
 const CHARGE_DURATION_MS = 1100;
 
 interface CoreNumbers {
-  effort: number;
+  xp: number;
   distance: number;
   seconds: number;
   count: number;
@@ -26,7 +26,7 @@ function easeInOutCubic(t: number): number {
 
 function useAnimatedCoreNumbers(targets: CoreNumbers, reduced: boolean): CoreNumbers {
   const [display, setDisplay] = useState<CoreNumbers>(() =>
-    reduced ? targets : { effort: 0, distance: 0, seconds: 0, count: 0 },
+    reduced ? targets : { xp: 0, distance: 0, seconds: 0, count: 0 },
   );
   const currentRef = useRef<CoreNumbers>(display);
   currentRef.current = display;
@@ -39,7 +39,7 @@ function useAnimatedCoreNumbers(targets: CoreNumbers, reduced: boolean): CoreNum
 
     const from = currentRef.current;
     if (
-      from.effort === targets.effort &&
+      from.xp === targets.xp &&
       from.distance === targets.distance &&
       from.seconds === targets.seconds &&
       from.count === targets.count
@@ -59,7 +59,7 @@ function useAnimatedCoreNumbers(targets: CoreNumbers, reduced: boolean): CoreNum
         return;
       }
       setDisplay({
-        effort: from.effort + (targets.effort - from.effort) * k,
+        xp: from.xp + (targets.xp - from.xp) * k,
         distance: from.distance + (targets.distance - from.distance) * k,
         seconds: from.seconds + (targets.seconds - from.seconds) * k,
         count: from.count + (targets.count - from.count) * k,
@@ -69,7 +69,7 @@ function useAnimatedCoreNumbers(targets: CoreNumbers, reduced: boolean): CoreNum
 
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
-  }, [targets.effort, targets.distance, targets.seconds, targets.count, reduced]);
+  }, [targets.xp, targets.distance, targets.seconds, targets.count, reduced]);
 
   return reduced ? targets : display;
 }
@@ -81,7 +81,7 @@ export function SyncEnergyCore({ activities, benchmarkSeconds, units = "metric",
   const reduced = useReducedMotion();
   const id = useId().replace(/:/g, "");
   const seconds = activities.reduce((sum, a) => sum + a.movingSec, 0);
-  const effort = activities.reduce((sum, a) => sum + activityEffort(a), 0);
+  const xp = trainingXpInPeriod({activities}, new Date(0), new Date(Date.now()+1));
   const distance = activities.reduce((sum, a) => sum + a.distanceM, 0);
   const fraction = benchmarkSeconds > 0 ? Math.min(1, seconds / benchmarkSeconds) : 0;
 
@@ -108,13 +108,13 @@ export function SyncEnergyCore({ activities, benchmarkSeconds, units = "metric",
   const ringProps = useAnimatedProps(() => ({ strokeDashoffset: circumference * (1 - charge.value), strokeOpacity: charge.value > 0 ? 1 : 0 }));
   const boltStyle = useAnimatedStyle(() => ({ opacity: .4 + charge.value * .6, transform: [{ translateX: vibration.value * charge.value * 2 }, { rotate: `${vibration.value * charge.value * 4}deg` }, { scale: 1 + charge.value * .1 }] }));
 
-  const shown = useAnimatedCoreNumbers({ effort, distance, seconds, count: activities.length }, reduced);
-  const settled = shown.effort === effort;
-  const shownEffort = settled ? effort : Math.round(shown.effort * 10) / 10;
-  const isZero = effort === 0 && shownEffort === 0;
-  const effortLabel = isZero
+  const shown = useAnimatedCoreNumbers({ xp, distance, seconds, count: activities.length }, reduced);
+  const settled = shown.xp === xp;
+  const shownXp = settled ? xp : Math.round(shown.xp * 10) / 10;
+  const isZero = xp === 0 && shownXp === 0;
+  const xpLabel = isZero
     ? "+0"
-    : `+${shownEffort.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`;
+    : `+${shownXp.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`;
   const isLight = c.paper === "#f8f9f6";
   const summaryItems: { icon: AppIconName; label: string; value: string }[] = [
     { icon: "distance", label: "Distance", value: formatVolume("running", shown.distance, shown.seconds, units) },
@@ -123,7 +123,7 @@ export function SyncEnergyCore({ activities, benchmarkSeconds, units = "metric",
   ];
 
   return <View style={{ alignItems: "center", gap: 14 }}>
-    <View accessible accessibilityLabel={`Selected activity energy, ${effortLabel} effort`} style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+    <View accessible accessibilityLabel={`Selected activity energy, ${xpLabel} Training XP`} style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
       <Svg width={size} height={size} viewBox="0 0 224 224" style={StyleSheet.absoluteFill}>
         <Defs>
           <LinearGradient id={`${id}fill`} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -140,8 +140,8 @@ export function SyncEnergyCore({ activities, benchmarkSeconds, units = "metric",
       </Svg>
       <View style={{ width: Math.round(size * 0.72), alignItems: "center", justifyContent: "center", gap: 1 }}>
         <Animated.View style={boltStyle}><Svg width={Math.round(size * .16)} height={Math.round(size * .2)} viewBox="0 0 32 36"><Path d="M19 2L5 21h10l-2 13 15-21H18z" fill={c.tennis} stroke="#dca21c" strokeWidth=".5"/></Svg></Animated.View>
-        <Text numberOfLines={1} style={[textStyle("metric"), { color: c.ink, fontVariant: ["tabular-nums"], textAlign: "center" }]}>{effortLabel}</Text>
-        <Text style={[textStyle("caption"), { color: c.muted }]}>effort</Text>
+        <Text numberOfLines={1} style={[textStyle("metric"), { color: c.ink, fontVariant: ["tabular-nums"], textAlign: "center" }]}>{xpLabel}</Text>
+        <Text style={[textStyle("caption"), { color: c.muted }]}>Training XP</Text>
       </View>
     </View>
     <View style={{ flexDirection: "row", alignItems: "center", width: "100%" }}>

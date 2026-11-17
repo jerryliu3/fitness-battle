@@ -28,8 +28,6 @@ export interface Sport {
   /** Distance from a GPS trace is the main effort signal. */
   gps: boolean;
   blurb: string;
-  /** Baseline min/km pace for scaling pace bonus (faster than baseline receives bonus). */
-  basePaceMinPerKm?: number;
 }
 
 export const SPORTS: Sport[] = [
@@ -37,15 +35,13 @@ export const SPORTS: Sport[] = [
     id: "running",
     name: "Running",
     gps: true,
-    blurb: "Distance first. Heart rate and pace only nudge the score.",
-    basePaceMinPerKm: 6.5,
+    blurb: "Training XP from your running distance.",
   },
   {
     id: "cycling",
     name: "Cycling",
     gps: true,
-    blurb: "Ride distance, with a small bump for effort and speed.",
-    basePaceMinPerKm: 3.0,
+    blurb: "Training XP from your cycling distance.",
   },
   {
     id: "walking",

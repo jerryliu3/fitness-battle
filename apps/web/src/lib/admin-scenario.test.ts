@@ -28,7 +28,7 @@ describe("admin scenario planning", () => {
   });
   it("does not count manual activity on Verified", () => {
     const payload = overtakeActivity(registered(), { ...registered(), activities: [manual, { ...manual, id: "gps", distanceM: 1000, movingSec: 600, verified: true, provenance: "recorded", source: "strava" }] }, "running", true, now);
-    expect(payload.distanceM).toBe(1500);
+    expect(payload.distanceM).toBe(1100);
     expect(payload.verified).toBe(true);
   });
   it("requires matching live windows and a mover that is strictly behind", () => {

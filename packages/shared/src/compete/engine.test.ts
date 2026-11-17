@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { activityFromSample } from "../fitness/samples";
-import { activityEffort } from "./effort";
 import { sameWorkout } from "./ledger";
 import { settleElo } from "./elo";
 import {
@@ -457,62 +456,6 @@ describe("compete engine", () => {
     const inflated = settleElo(1000, opponents, -1, 4, 12, false);
     const lastPlace = settleElo(1000, opponents, placeOrLast(-1, 4), 4, 12, false);
     expect(inflated).toBeGreaterThan(lastPlace);
-  });
-
-  it("scales pace bonus based on sport-specific baseline", () => {
-    // 5km in 20 min (4 min/km):
-    // Running base is 6.5 -> pace bonus should apply
-    const runEffort = activityEffort({
-      id: "run-fast",
-      sport: "running",
-      startedAt: "2026-10-12T10:00:00Z",
-      distanceM: 5000,
-      movingSec: 1200,
-      avgHr: null,
-      verified: true,
-      source: "strava",
-    });
-    expect(runEffort).toBeGreaterThan(5);
-
-    // Cycling 10km in 20 min (2 min/km = 30 km/h):
-    // Cycling base is 3.0 -> gets bonus
-    const cycleFast = activityEffort({
-      id: "cycle-fast",
-      sport: "cycling",
-      startedAt: "2026-10-12T10:00:00Z",
-      distanceM: 10000,
-      movingSec: 1200,
-      avgHr: null,
-      verified: true,
-      source: "strava",
-    });
-    // Cycling 10km in 60 min (6 min/km = 10 km/h):
-    // Slower than 3.0 base pace -> no bonus
-    const cycleSlow = activityEffort({
-      id: "cycle-slow",
-      sport: "cycling",
-      startedAt: "2026-10-12T10:00:00Z",
-      distanceM: 10000,
-      movingSec: 3600,
-      avgHr: null,
-      verified: true,
-      source: "strava",
-    });
-    expect(cycleFast).toBeGreaterThan(cycleSlow);
-
-    // Walking 3km in 30 min (10 min/km = 6 km/h):
-    // Faster than walking base (12.0) -> gets small pace bonus
-    const walkFast = activityEffort({
-      id: "walk-fast",
-      sport: "walking",
-      startedAt: "2026-10-12T10:00:00Z",
-      distanceM: 3000,
-      movingSec: 1800,
-      avgHr: null,
-      verified: true,
-      source: "strava",
-    });
-    expect(walkFast).toBeGreaterThan(3.0);
   });
 
   it("differentiates non-GPS workouts by duration rather than 0-distance", () => {

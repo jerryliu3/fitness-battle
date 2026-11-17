@@ -11,7 +11,6 @@ import {
 } from "./period";
 import { countsForTraining } from "./compete/journal";
 import { isVerifiedActivity } from "./compete/ledger";
-import { periodEffort } from "./compete/effort";
 import { competeNow } from "./compete/engine";
 import {
   ELO_CAP,

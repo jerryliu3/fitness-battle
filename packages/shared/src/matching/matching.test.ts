@@ -264,7 +264,7 @@ describe("local view clipping", () => {
     const rival = board.find((row) => row.id === "real-1");
     expect(rival).toBeTruthy();
     expect(rival!.distanceM).toBe(5000);
-    expect(rival!.effort).toBeLessThan(6);
+    expect(rival!.effort).toBe(5000);
   });
 
   it("synthetic volume only accrues inside the viewer wave", () => {

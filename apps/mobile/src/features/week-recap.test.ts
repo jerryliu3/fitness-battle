@@ -119,7 +119,7 @@ describe("native week recap navigation", () => {
   });
 });
 
-it("keeps the legacy workout-effort curve distinct from the weekly Effort Score", () => {
+it("shows the Training XP that feeds the weekly Effort Score", () => {
   const state = { ...freshState(), periodResults: [running] };
   state.activities = [{ id: "run", sport: "running", startedAt: "2026-11-04T15:00:00Z", distanceM: 5000,
     movingSec: 1800, avgHr: null, verified: true, source: "strava" }];
@@ -127,9 +127,9 @@ it("keeps the legacy workout-effort curve distinct from the weekly Effort Score"
   press("Reveal my finish →");
   press("See breakdown");
   const tab = view!.root.findAllByProps({ accessibilityRole: "tab" })
-    .find(node => node.findByType("Text" as never).props.children === "Workout effort")!;
+    .find(node => node.findByType("Text" as never).props.children === "Training XP")!;
   act(() => tab.props.onPress());
   const chart = view!.root.findByType("Chart" as never);
-  expect(chart.props.accessibilityLabel).toBe("Cumulative workout effort in the settled week");
-  expect(chart.props.formatY(8)).toBe("8 workout effort");
+  expect(chart.props.accessibilityLabel).toBe("Cumulative Training XP in the settled week");
+  expect(chart.props.formatY(8)).toBe("8 Training XP");
 });

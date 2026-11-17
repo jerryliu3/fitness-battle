@@ -96,18 +96,15 @@ export {
   type RankBand,
 } from "./ranks";
 export {
-  activityEffort,
+  activityCompetitionVolume,
   periodEffort,
-  eloFromWeeklyEffort,
-  sessionEffortSummary,
-  EFFORT_BAR_COLOR_ROLES,
-  EFFORT_BAR_HEIGHT_RATIOS,
-  EFFORT_TIER_LABELS,
-  HR_WEIGHT,
-  PACE_WEIGHT,
-  type EffortBarCount,
-  type EffortTier,
-  type SessionEffortSummary,
+  workoutSizeSummary,
+  WORKOUT_SIZE_BAR_COLOR_ROLES,
+  WORKOUT_SIZE_BAR_HEIGHT_RATIOS,
+  WORKOUT_SIZE_LABELS,
+  type WorkoutSizeBarCount,
+  type WorkoutSizeTier,
+  type WorkoutSizeSummary,
 } from "./effort";
 export { expectedScore } from "./elo";
 export { lessonFor, type Lesson } from "./lessons";
@@ -317,7 +314,10 @@ export {
 } from "./debug-events";
 
 export { calculateLiveEffortScore, settleEffortWeek, updateEffortBaseline, trainingPosition, historicalBonusPoints, placementRewardPoints, createEmptyEffortState, createDeclaredEffortState, createImportedEffortState, getScoreBreakdown, SPORT_CONFIG as EFFORT_SPORT_CONFIG, SCORING_VERSION as EFFORT_SCORING_VERSION, type EffortState, type LiveEffortInput } from './effort-score';
-export { eligibleEffortVolume, liveEffortFromActivities } from './effort-volume';
+export { liveEffortFromActivities } from './effort-volume';
 
 export { initializeEffortAccounts, settleAccountEffort, readAccountEffort, type EffortAccounts } from './effort-account';
 export { replayEffortHistory } from './effort-account';
+
+export { activityTrainingXp, eligibleTrainingXp, trainingXpInPeriod, formatTrainingXp } from './training-xp';
+export { TRAINING_XP_PER_REFERENCE_WEEK, trainingXpForVolume, trainingVolumeForXp } from './effort-score';

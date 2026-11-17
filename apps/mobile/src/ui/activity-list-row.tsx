@@ -1,9 +1,9 @@
 import {
-  activityEffort,
+  activityTrainingXp,
   distanceUnitLabel,
   formatClockTime,
   formatDistanceM,
-  formatEffort,
+  formatTrainingXp,
   sportById,
   type Activity,
   type UnitSystem,
@@ -44,12 +44,12 @@ export function ActivityListRow({
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
   const sportInfo = sportById(activity.sport);
-  const effort = formatEffort(activityEffort(activity));
+  const effort = formatTrainingXp(activityTrainingXp(activity));
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${sportInfo.name}, ${formatClockTime(activity.movingSec)}, ${effort} effort`}
+      accessibilityLabel={`${sportInfo.name}, ${formatClockTime(activity.movingSec)}, ${effort} Training XP`}
       onPressIn={() => prefetchActivityReplay(activity, accessToken)}
       onPress={() => onPress(activity)}
       style={[s.activityRow, surface === "soft" && s.activityRowSoft]}
@@ -74,7 +74,7 @@ export function ActivityListRow({
           {formatClockTime(activity.movingSec)}
         </AppText>
         <AppText role="label" style={{ color: c.tennis }}>
-          {effort} effort
+          {effort} XP
         </AppText>
       </View>
       <AppText role="caption" secondary style={s.chevron}>

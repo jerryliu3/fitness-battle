@@ -12,7 +12,7 @@ import { Ember } from "@/components/mascot/ember";
 import { CompetitionReplayButton } from "@/features/replay/competition-replay";
 import { AthletePreferencesFields } from "@/features/you/athlete-preferences";
 import {
-  APP_ICON_PATHS, WEEK_RECAP_COLORS, formatEffort, formatAccountPeriodDateRange,
+  APP_ICON_PATHS, WEEK_RECAP_COLORS, formatTrainingXp, formatAccountPeriodDateRange,
   sportById, weekRecapBreakdown, weekRecapCopy, weekRecapHeartRateRanges, weekRecapHighlights,
   weekRecapPages, weekRecapPodium, weekRecapTraining,
   type Action, type CompeteState, type CompetitionReplay, type PeriodResult, type SportId, type WeekRecapTarget,
@@ -288,9 +288,9 @@ function Training({ state, target }: { state: CompeteState; target: WeekRecapTar
   const series = weekRecapTraining(state, target);
   const { stats, nextRound } = weekRecapBreakdown(state, target);
   const hr = weekRecapHeartRateRanges(state, target);
-  const [chartMode, setChartMode] = useState<"time" | "effort">("time");
+  const [chartMode, setChartMode] = useState<"time" | "xp">("time");
   const [scrubbed, setScrubbed] = useState<ChartDatum | undefined>(undefined);
-  const activeMode = chartMode === "effort" && series.hasEffort ? "effort" : "time";
+  const activeMode = chartMode === "xp" && series.hasTrainingXp ? "xp" : "time";
 
   return (
     <section className="week-recap-training">
@@ -308,15 +308,15 @@ function Training({ state, target }: { state: CompeteState; target: WeekRecapTar
         <div className="week-recap-chart-header">
           <div className="week-recap-chart-title">
             <RecapIcon name="scoring" size={16} />
-            <AppText role="label">{scrubbed ? `${scrubbed.label} · ${scrubbed.value}` : activeMode === "time" ? "Training time" : "Workout effort"}</AppText>
+            <AppText role="label">{scrubbed ? `${scrubbed.label} · ${scrubbed.value}` : activeMode === "time" ? "Training time" : "Training XP"}</AppText>
           </div>
-          {series.available && series.hasEffort && (
+          {series.available && series.hasTrainingXp && (
             <div className="week-recap-mode-toggle" role="tablist" aria-label="Chart metric">
-              {(["time", "effort"] as const).map((mode) => (
+              {(["time", "xp"] as const).map((mode) => (
                 <button key={mode} type="button" role="tab" aria-selected={activeMode === mode}
                   className={`week-recap-mode-pill${activeMode === mode ? " is-selected" : ""}`}
                   onClick={() => { if (activeMode !== mode) { setScrubbed(undefined); setChartMode(mode); } }}>
-                  {mode === "time" ? "Time" : "Workout effort"}
+                  {mode === "time" ? "Time" : "Training XP"}
                 </button>
               ))}
             </div>
@@ -325,12 +325,12 @@ function Training({ state, target }: { state: CompeteState; target: WeekRecapTar
         {series.available ? (
           <StandardLineChart height={140} showArea animateReveal followRevealDot onSelectionChange={setScrubbed}
             stroke={WEEK_RECAP_COLORS.progress} axisColor="rgba(255, 255, 255, 0.18)" labelColor="rgba(249, 247, 236, 0.72)"
-            yAxisLabel={activeMode === "time" ? "Training (min)" : "Workout effort"} xAxisLabel="Date (ET)"
-            values={activeMode === "time" ? series.values : series.effortValues} pointLabels={series.labels}
+            yAxisLabel={activeMode === "time" ? "Training (min)" : "Training XP"} xAxisLabel="Date (ET)"
+            values={activeMode === "time" ? series.values : series.trainingXpValues} pointLabels={series.labels}
             xLabels={[series.labels[0]!, series.labels[Math.floor((series.labels.length - 1) / 2)]!, series.labels.at(-1)!]}
             formatAxisY={(v) => (activeMode === "time" ? `${Math.round(v)}` : `${Number(v.toFixed(1))}`)}
-            formatY={(v) => (activeMode === "time" ? `${Math.round(v)} min` : `${formatEffort(v)} workout effort`)}
-            ariaLabel={activeMode === "time" ? "Cumulative training minutes in the settled week" : "Cumulative workout effort in the settled week"} />
+            formatY={(v) => (activeMode === "time" ? `${Math.round(v)} min` : `${formatTrainingXp(v)} Training XP`)}
+            ariaLabel={activeMode === "time" ? "Cumulative training minutes in the settled week" : "Cumulative Training XP in the settled week"} />
         ) : <AppParagraph>Detailed activity history is unavailable for this archived week.</AppParagraph>}
       </div>
 

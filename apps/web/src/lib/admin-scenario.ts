@@ -25,8 +25,8 @@ export function overtakeActivity(mover: CompeteState, other: CompeteState, sport
   const theirs = periodEffort(other.activities, sport, start, now, track);
   const gps = sport !== "strength";
   if ((gps ? mine.distanceM >= theirs.distanceM : mine.effort >= theirs.effort)) throw new Error("mover_must_be_behind_add_leader_activity_or_reverse_direction");
-  const distanceM = gps ? Math.ceil(Math.max(theirs.distanceM - mine.distanceM + 100, (theirs.effort - mine.effort + 0.5) * 1000)) : 0;
-  const movingSec = gps ? Math.ceil(distanceM * (sport === "cycling" ? 0.18 : sport === "walking" ? 0.72 : 0.39)) : Math.ceil(Math.max(60, (theirs.effort - mine.effort + 0.5) * 450));
+  const distanceM = gps ? Math.ceil(theirs.distanceM - mine.distanceM + 100) : 0;
+  const movingSec = gps ? Math.ceil(distanceM * (sport === "cycling" ? 0.18 : sport === "walking" ? 0.72 : 0.39)) : Math.ceil(Math.max(60, theirs.movingSec - mine.movingSec + 60));
   if (distanceM > 1_000_000 || movingSec > 604800) throw new Error("scenario_too_large_use_smaller_test_totals");
   return { distanceM, movingSec, startedAt: new Date(now.getTime() - 1).toISOString(), verified };
 }

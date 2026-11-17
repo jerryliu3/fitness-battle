@@ -67,18 +67,20 @@ describe("week recap training", () => {
     expect(weekRecapTraining(stateWith([session]), strength).values.at(-1)).toBe(30);
     expect(weekRecapTraining(stateWith([]), strength).available).toBe(false);
   });
-  it("does not include manual sessions in GPS results", () => {
-    expect(weekRecapTraining(stateWith([activity("2026-10-27T16:00:00Z")]), { ...result, track: "verified" }).available).toBe(false);
+  it("keeps manual training XP separate from GPS competition minutes", () => {
+    const series=weekRecapTraining(stateWith([activity("2026-10-27T16:00:00Z")]), { ...result, track: "verified" });
+    expect(series.values.at(-1)).toBe(0);
+    expect(series.trainingXpValues.at(-1)).toBeGreaterThan(0);
   });
   it("computes cumulative effort values across the week", () => {
     const series = weekRecapTraining(stateWith([
       activity("2026-10-26T16:00:00Z", 600),
       activity("2026-10-28T16:00:00Z", 1200),
     ]), result);
-    expect(series.hasEffort).toBe(true);
-    expect(series.effortValues[0]).toBeGreaterThan(0);
-    expect(series.effortValues[2]).toBeGreaterThan(series.effortValues[0]!);
-    expect(series.effortValues.at(-1)).toBeCloseTo(series.effortValues[2]!, 6);
+    expect(series.hasTrainingXp).toBe(true);
+    expect(series.trainingXpValues[0]).toBeGreaterThan(0);
+    expect(series.trainingXpValues[2]).toBeGreaterThan(series.trainingXpValues[0]!);
+    expect(series.trainingXpValues.at(-1)).toBeCloseTo(series.trainingXpValues[2]!, 6);
   });
 });
 

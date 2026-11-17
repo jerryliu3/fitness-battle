@@ -1,5 +1,5 @@
 import { accountTimeZone, formatAppDateTime } from "./period";
-import { activityEffort } from "./compete/effort";
+import { activityCompetitionVolume } from "./compete/effort";
 import { countsOnTrack } from "./compete/ledger";
 import { competeNow, fieldBoardForEnrollment } from "./compete/engine";
 import { sportById, type CompeteState, type ScoreTrack, type SportId, type UnitSystem } from "./compete/sports";
@@ -107,7 +107,7 @@ export function localCompetitionReplay(state: CompeteState, selection: Competiti
             at: a.startedAt,
             distanceM: a.distanceM,
             movingSec: a.movingSec,
-            effort: activityEffort(a),
+            effort: activityCompetitionVolume(a),
           }));
   const enrollment = state.enrollments.find(item =>
     item.sport === selection.sport && Date.parse(item.weekEnd) === Date.parse(selection.periodEnd),
