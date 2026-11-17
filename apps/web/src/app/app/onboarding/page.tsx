@@ -137,7 +137,7 @@ function Setup({ preview }: { preview: boolean }) {
     </>}
     {step === 1 && <>
       {!preview && <ProfilePhoto state={state} email={user?.email} />}
-      <label className="fb-field">Display name<input value={name} onChange={e => setName(e.target.value)} maxLength={80} /></label>
+      <label className="fb-field">Name<input value={name} onChange={e => setName(e.target.value)} maxLength={80} /></label>
       <label className="fb-field">City (optional)<input value={city} onChange={e => setCity(e.target.value)} maxLength={80} /></label>
       <CountryCombobox label="Country (optional)" value={countryCode} onChange={setCountryCode} />
       <label className="fb-field">Gender (optional)<select value={gender} onChange={e => setGender(e.target.value as ProfileGender | "")}>
@@ -160,7 +160,7 @@ function Setup({ preview }: { preview: boolean }) {
       </label>)}
       <AppHeading>Sleep & recovery</AppHeading>
       <div className="fb-chips"><button type="button" className={`fb-chip${sleep ? " on" : ""}`} aria-pressed={sleep} onClick={() => setSleep(!sleep)}>Sleep tracking</button></div>
-    {selectionError && !identityReady && <AppParagraph role="alert">Enter your display name to continue.</AppParagraph>}
+    {selectionError && !identityReady && <AppParagraph role="alert">Enter your name to continue.</AppParagraph>}
     {selectionError && !selectionReady && <AppParagraph role="alert">Choose at least one sport or sleep tracking to continue.</AppParagraph>}
     </>}
     {step === 2 && <>

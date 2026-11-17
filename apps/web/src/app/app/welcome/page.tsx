@@ -123,13 +123,13 @@ function Welcome({ preview }: { preview: boolean }) {
       <AppParagraph>{ONBOARDING_OVERTAKE_COPY}</AppParagraph>
       <OnboardingOvertake sport={draft.sport} name={draft.name} photo={draft.photo} onComplete={() => void next()} onBack={() => setStep("athlete")} />
     </>}
-    {step === "growth" && <OnboardingFeatureTour sport={draft.sport} selected={feature} onSelect={setFeature} />}
+    {step === "growth" && <OnboardingFeatureTour draft={draft} selected={feature} onSelect={setFeature} />}
     {step === "athlete" && <>
       <AppParagraph>Give your athlete a name and a face.</AppParagraph>
       <OnboardingAthlete model={card} />
-      <label className="fb-field">Display name<input autoComplete="nickname" placeholder="Your name" value={draft.name} maxLength={80}
+      <label className="fb-field">Name<input autoComplete="nickname" placeholder="Your name" value={draft.name} maxLength={80}
         onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} onBlur={() => setCardDraft(draft)} /></label>
-      <label className="onboarding-photo fb-btn-ghost">{photoBusy ? "Reading photo…" : draft.photo ? "Change photo" : "Add photo"} <small>Optional</small>
+      <div className="onboarding-photo-row"><label className="onboarding-photo fb-btn fb-btn-secondary">{photoBusy ? "Reading photo…" : draft.photo ? "Change photo" : "Add photo"} <small>Optional</small>
         <input type="file" accept="image/png,image/jpeg,image/webp" disabled={photoBusy} onChange={async e => {
           const file = e.target.files?.[0]; e.target.value = "";
           if (!file) return;
@@ -142,7 +142,7 @@ function Welcome({ preview }: { preview: boolean }) {
           finally { setPhotoBusy(false); }
         }} />
       </label>
-      {draft.photo && <button className="fb-btn-ghost" type="button" onClick={() => { setDraft(d => ({ ...d, photo: undefined })); setCardDraft(d => ({ ...d, photo: undefined })); }}>Remove photo</button>}
+      {draft.photo && <button className="onboarding-remove-photo" type="button" onClick={() => { setDraft(d => ({ ...d, photo: undefined })); setCardDraft(d => ({ ...d, photo: undefined })); }}>Remove photo</button>}</div>
     </>}
     {step === "account" && <>
       <AppParagraph>Save your athlete and start competing for real.</AppParagraph>

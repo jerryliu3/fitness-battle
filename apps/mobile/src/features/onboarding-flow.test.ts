@@ -29,7 +29,7 @@ import Onboarding from "../../app/onboarding";
 
 async function completeIdentityStep(r: ReactTestRenderer) {
   await act(async () => {
-    r.root.findAllByType("TextInput" as never).find((n) => n.props.accessibilityLabel === "Display name")!.props.onChangeText("Jamie");
+    r.root.findAllByType("TextInput" as never).find((n) => n.props.accessibilityLabel === "Name")!.props.onChangeText("Jamie");
     r.root
       .findAllByType("ChoicePicker" as never)
       .find((n) => n.props.label === "Gender (optional)")!

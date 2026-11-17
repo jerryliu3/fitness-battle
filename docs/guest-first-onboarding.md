@@ -7,7 +7,7 @@ into this journey; the website's marketing page links into it too.
 ## Before account creation
 
 1. **Choose a sport** — Running, Cycling, Walking or Strength in a visual 2×2 grid.
-2. **Meet your athlete** — a full-size interactive Crest, required display name and
+2. **Meet your athlete** — a full-size interactive Crest, required Name field and
    optional photo. The card updates after a short edit delay, holding native bridge
    updates during rotation. No other profile questions appear here.
 3. **Make training fun** — the existing competition player carries the chosen name
@@ -22,10 +22,14 @@ into this journey; the website's marketing page links into it too.
    Create account and Terms/Privacy links. City, country and other preferences
    remain after signup. Existing-account sign-in stays on the first screen only.
 
-Mini-cards use a legible portrait/name treatment rather than another 3D scene.
-They are approximately 96px tall, reducing to a 64px chip on short screens. Tapping
-opens the full rotatable card. Web uses a shared layout transition between full and
-compact treatments; native uses reduced-motion-aware card transitions.
+The compact view renders the same directly rotatable athlete card on a transparent
+background, not a portrait chip or a tap-to-open modal. Native uses the same scene
+bridge with compact sizing; web uses the same Crest renderer and shared layout
+transition. The card keeps reserved top-right header space and a contextual label.
+
+Crew discovery reuses the product CrewRelay graphic with the guest’s name/photo
+in its roster. Health Lab reuses the product scan experience and metric controls,
+with in-memory preview readings that never enter account or health state.
 
 Back is a compact icon beside the primary action; the sign-in page puts it beside
 the wordmark. Athlete card models are memoized and update after a short typing pause or when editing ends. Native queues model changes while held and deduplicates bridge

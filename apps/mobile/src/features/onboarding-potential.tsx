@@ -11,7 +11,6 @@ export function OnboardingPotential() {
   const start = scores[0]!, end = scores[scores.length - 1]!;
   const panel = { backgroundColor: c.card, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: c.line, gap: 12 } as const;
   return <View style={{ gap: 18 }}>
-    <AppText secondary>See your effort add up.</AppText>
     <View style={panel}>
       <AppText role="label">Effort Score</AppText>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -23,6 +22,5 @@ export function OnboardingPotential() {
         showAxes showTrend={false} accessibilityLabel={`Potential score growth from ${start} to ${end} over seven weeks`} />
     </View>
     <AppText secondary>As you train, your athlete’s progress becomes visible through scores, records and trends.</AppText>
-    <AppText role="caption" secondary>Illustrative growth, not earned points.</AppText>
   </View>;
 }

@@ -285,9 +285,9 @@ export function athleteCardModel(state: CompeteState, now = competeNow(state)): 
   };
 }
 
-export function parseAthleteCardMessage(value: unknown): { model: AthleteCardModel; active: boolean; appearance: "light" | "dark" } | null {
+export function parseAthleteCardMessage(value: unknown): { model: AthleteCardModel; active: boolean; appearance: "light" | "dark"; compact?: boolean } | null {
   if (!value || typeof value !== "object") return null;
-  const message = value as { type?: unknown; model?: Partial<AthleteCardModel>; active?: unknown; appearance?: unknown };
+  const message = value as { type?: unknown; model?: Partial<AthleteCardModel>; active?: unknown; appearance?: unknown; compact?: unknown };
   const m = message.model;
   if (message.type !== "athlete-card" || typeof message.active !== "boolean" || !m ||
     !(message.appearance === undefined || message.appearance === "light" || message.appearance === "dark") ||
@@ -308,5 +308,5 @@ export function parseAthleteCardMessage(value: unknown): { model: AthleteCardMod
       typeof r.label === "string" && typeof r.value === "string" && typeof r.date === "string" &&
       (r.id === undefined || typeof r.id === "string") &&
       (r.kind === undefined || r.kind === "record" || r.kind === "achievement" || r.kind === "stat"))) return null;
-  return { model: m as AthleteCardModel, active: message.active, appearance: message.appearance === "dark" ? "dark" : "light" };
+  return { ...(message.compact === true ? { compact: true } : {}), model: m as AthleteCardModel, active: message.active, appearance: message.appearance === "dark" ? "dark" : "light" };
 }

@@ -7,7 +7,7 @@ import { AthleteProfileCard } from "./athlete-profile-card";
 import { useAppTheme } from "../theme";
 
 /** Expo web uses the same host and model; native uses a WebView. */
-export const AthleteCrest = memo(function AthleteCrest({ model }: { model: AthleteCardModel; onInteractionChange?: (held: boolean) => void }) {
+export const AthleteCrest = memo(function AthleteCrest({ model, compact = false }: { model: AthleteCardModel; compact?: boolean; onInteractionChange?: (held: boolean) => void }) {
   const active = useSceneActive();
   const { mode } = useAppTheme();
   const frame = useRef<HTMLIFrameElement>(null);
@@ -25,14 +25,14 @@ export const AthleteCrest = memo(function AthleteCrest({ model }: { model: Athle
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
   }, [origin]);
-  useEffect(() => { if (revision) frame.current?.contentWindow?.postMessage({ type: "athlete-card", model, active, appearance: mode }, origin); }, [revision, model, active, mode, origin]);
+  useEffect(() => { if (revision) frame.current?.contentWindow?.postMessage({ type: "athlete-card", model, active, appearance: mode, compact }, origin); }, [revision, model, active, mode, origin, compact]);
   useEffect(() => {
     if (!active || loaded || failed) return;
     const timer = setTimeout(() => setFailed(true), 12000);
     return () => clearTimeout(timer);
   }, [active, loaded, failed]);
-  return <View style={{ minHeight: 390 }}>
-    {!failed && createElement("iframe", { ref: frame, title: `${model.name} athlete card`, src: uri, onError: () => { setLoaded(false); setFailed(true); }, style: { width: "100%", height: 390, border: 0, opacity: loaded ? 1 : 0 } })}
+  return <View style={{ minHeight: compact ? 180 : 390 }}>
+    {!failed && createElement("iframe", { ref: frame, title: `${model.name} athlete card`, src: uri, onError: () => { setLoaded(false); setFailed(true); }, style: { width: "100%", height: compact ? 180 : 390, border: 0, opacity: loaded ? 1 : 0 } })}
     {!loaded && <View style={{ position: "absolute", inset: 0 }}>
       <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />
     </View>}

@@ -60,3 +60,5 @@
 .reverse time { display: block; font-size: 3.1cqi; font-weight: 400; margin-top: .5cqi; }
 .reverse dd { font: 600 6.4cqi var(--font-form),sans-serif; letter-spacing: -.04em; margin: 0; white-space: nowrap; }
 @media (forced-colors: active) { .edge,.shadow,.face::after { display: none; } .face { background: Canvas; color: CanvasText; } }
+
+.crest[data-compact="true"] .stage { padding:4px 8px 8px; }

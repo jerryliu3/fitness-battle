@@ -603,3 +603,7 @@
   border-color: var(--vl-gold);
   color: var(--vl-gold-ink);
 }
+
+/* Preserve scan contrast inside product shells with their own heading colors. */
+.vitals-lab .vitals-lab__title,
+.vitals-lab .vitals-lab__drawer-title { color: var(--vl-ink); }

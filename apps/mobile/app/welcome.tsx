@@ -125,7 +125,7 @@ export default function Welcome() {
     </View>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
       <View style={{ flex: 1 }}><AppText role={step === "overtake" || step === "growth" ? "heading" : "display"} accessibilityRole="header">{ONBOARDING_TITLES[step]}</AppText></View>
-      {(step === "overtake" || step === "growth") && <OnboardingAthlete compact model={card} label={step === "overtake" ? "Practice pass" : ONBOARDING_CARD_LABELS[feature]} />}
+      {(step === "overtake" || step === "growth") && <OnboardingAthlete compact model={card} label={step === "overtake" ? "Practice pass" : ONBOARDING_CARD_LABELS[feature]} onInteractionChange={setCardHeld} />}
     </View>
   </>;
   if (step === "overtake") return <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
@@ -148,16 +148,17 @@ export default function Welcome() {
           </Pressable>)}
         </View>
       </>}
-      {step === "growth" && <OnboardingFeatureTour sport={draft.sport} selected={feature} onSelect={setFeature} />}
+      {step === "growth" && <OnboardingFeatureTour draft={draft} selected={feature} onSelect={setFeature} />}
       {step === "athlete" && <AppText secondary>Give your athlete a name and a face.</AppText>}
       {step === "account" && <AppText secondary>Save your athlete and start competing for real.</AppText>}
       {(step === "athlete" || step === "account") && <OnboardingAthlete model={card} onInteractionChange={setCardHeld} departing={departing} onDeparted={enterOvertake} />}
       {step === "athlete" && <>
-        <AppText role="label">Display name</AppText>
-        <TextInput accessibilityLabel="Display name" value={draft.name} maxLength={80} placeholder="Your name" style={f.input}
+        <AppText role="label">Name</AppText>
+        <TextInput accessibilityLabel="Name" value={draft.name} maxLength={80} placeholder="Your name" style={f.input}
           onChangeText={name => setDraft(d => ({ ...d, name }))} onEndEditing={() => setCardDraft(draft)} />
-        <FocusButton secondary label={photoBusy ? "Reading photo…" : draft.photo ? "Change photo" : "Add photo (optional)"} disabled={photoBusy} onPress={() => void choosePhoto()} />
-        {draft.photo && <FocusButton secondary label="Remove photo" onPress={() => { setDraft(d => ({ ...d, photo: undefined })); setCardDraft(d => ({ ...d, photo: undefined })); }} />}
+        <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}><View style={{ flex: 1 }}><FocusButton secondary label={photoBusy ? "Reading photo…" : draft.photo ? "Change photo" : "Add photo (optional)"} disabled={photoBusy} onPress={() => void choosePhoto()} /></View>
+        {draft.photo && <Pressable accessibilityRole="button" onPress={() => { setDraft(d => ({ ...d, photo: undefined })); setCardDraft(d => ({ ...d, photo: undefined })); }} style={{ minHeight: 44, justifyContent: "center" }}><AppText>Remove photo</AppText></Pressable>}
+        </View>
       </>}
       {step === "account" && <>
         <AppText role="label">Email</AppText>

@@ -105,11 +105,13 @@ const LAB_STAGE_BG = "#0a161d";
 export function VitalsLabPanel({
   state,
   signedOut = false,
+  metrics: suppliedMetrics,
   onChartMetricChange,
   immersive = false,
 }: {
   state?: CompeteState | null;
   signedOut?: boolean;
+  metrics?: VitalsLabMetricDisplay[];
   onChartMetricChange?: (metric: HealthLabChartMetric) => void;
   immersive?: boolean;
 }) {
@@ -117,8 +119,8 @@ export function VitalsLabPanel({
   const appearance = "dark" as const;
 
   const metrics = useMemo(
-    () => vitalsLabMetricsFromCompeteState(state, { signedOut }),
-    [state, signedOut],
+    () => suppliedMetrics ?? vitalsLabMetricsFromCompeteState(state, { signedOut }),
+    [state, signedOut, suppliedMetrics],
   );
   const host = useVitalsLabHostSource();
   const assetBase = host?.assetBaseUrl ?? "";

@@ -1,3 +1,5 @@
+import { VITALS_LAB_METRICS, type VitalsLabMetricDisplay } from "./vitals-lab-body";
+import type { CrewWeekRelayInput } from "./compete/crew-relay";
 import { SPORT_IDS, type SportId, type UnitSystem } from "./compete/sports";
 import { athleteCardModelForPeer } from "./athlete-card";
 import { athleteLocationLine } from "./countries";
@@ -107,3 +109,27 @@ export const ONBOARDING_OVERTAKE_COPY = "Pass other athletes as you train. Compe
 export const ONBOARDING_CARD_LABELS: Record<OnboardingFeatureId, string> = {
   growth: "Future PR slot", crews: "Future team slot", vitals: "Vitals Lab slot",
 };
+
+export function onboardingCrewPreview(draft: GuestIntroDraft): CrewWeekRelayInput {
+  const distance = draft.sport === "cycling" ? 18000 : draft.sport === "walking" ? 4000 : 6000;
+  return {
+    sport: draft.sport, format: "relay", targetSessions: 12,
+    contract: draft.sport === "strength" ? { metric: "moving_sec", target: 21600 } : { metric: "distance_m", target: distance * 5 },
+    members: [
+      { user_id: "you", display_name: draft.name.trim() || "Athlete", avatar_url: draft.photo ?? null },
+      { user_id: "alex", display_name: "Alex" }, { user_id: "sam", display_name: "Sam" },
+    ],
+    entries: [
+      { user_id: "you", distance_m: distance, moving_sec: 3600, session_count: 2 },
+      { user_id: "alex", distance_m: distance * .8, moving_sec: 3000, session_count: 2 },
+      { user_id: "sam", distance_m: distance * 1.2, moving_sec: 4200, session_count: 3 },
+    ],
+  };
+}
+
+/** Presentation values for the guest scan; never merged into health/account state. */
+export const ONBOARDING_VITALS_METRICS: VitalsLabMetricDisplay[] = VITALS_LAB_METRICS.map(spec => ({
+  ...spec,
+  value: ({ hrv: "58", resp: "14", sleep: "7h 42m", rhr: "56", spo2: "98", active: "64" })[spec.id],
+  status: "", delta: "", sparkline: [],
+}));

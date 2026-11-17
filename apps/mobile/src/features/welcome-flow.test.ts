@@ -31,7 +31,7 @@ it("keeps the replay immersive, commits the card on editing end, then creates th
   await act(async () => r.root.findAllByType("Pressable" as never).find(n => n.props.accessibilityLabel === "Cycling")!.props.onPress());
   await press("Continue");
   const firstCard = r.root.findByType("OnboardingAthlete" as never).props.model;
-  const name = () => r.root.findAllByType("TextInput" as never).find(n => n.props.accessibilityLabel === "Display name")!;
+  const name = () => r.root.findAllByType("TextInput" as never).find(n => n.props.accessibilityLabel === "Name")!;
   await act(async () => name().props.onChangeText("Taylor"));
   expect(r.root.findByType("OnboardingAthlete" as never).props.model).toBe(firstCard);
   await act(async () => name().props.onEndEditing());

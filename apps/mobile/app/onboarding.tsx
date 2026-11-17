@@ -168,8 +168,8 @@ export default function Onboarding() {
           </>}
           {step === 1 && <>
             {!preview && <ProfilePhoto state={state} />}
-            <AppText role="label">Display name</AppText>
-            <TextInput accessibilityLabel="Display name" style={f.input} value={name} onChangeText={setName} maxLength={80} />
+            <AppText role="label">Name</AppText>
+            <TextInput accessibilityLabel="Name" style={f.input} value={name} onChangeText={setName} maxLength={80} />
             <AppText role="label">City (optional)</AppText>
             <TextInput accessibilityLabel="City" style={f.input} value={city} onChangeText={setCity} maxLength={80} />
             <SearchableCountryPicker label="Country (optional)" value={countryCode} onChange={setCountryCode} allowClear />
@@ -200,7 +200,7 @@ export default function Onboarding() {
             </View>)}
             <AppText role="heading">Sleep & recovery</AppText>
             <Chip label="Sleep tracking" selected={sleep} onPress={() => setSleep(!sleep)} />
-          {selectionError && !identityReady && <AppText accessibilityRole="alert">Enter your display name to continue.</AppText>}
+          {selectionError && !identityReady && <AppText accessibilityRole="alert">Enter your name to continue.</AppText>}
           {selectionError && !selectionReady && <AppText accessibilityRole="alert">Choose at least one sport or sleep tracking to continue.</AppText>}
           </>}
           {step === 2 && <>

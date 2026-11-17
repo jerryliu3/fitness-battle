@@ -69,9 +69,11 @@ const cardThemes = createThemedStyles((theme) => ({
 export function VitalsLabPanel({
   state,
   signedOut = false,
+  metrics: suppliedMetrics,
 }: {
   state?: CompeteState | null;
   signedOut?: boolean;
+  metrics?: VitalsLabMetricDisplay[];
 }) {
   const { mode } = useAppTheme();
   const s = useThemedStyles(panelThemes);
@@ -79,8 +81,8 @@ export function VitalsLabPanel({
   const stageBg = appearance === "dark" ? "#0a161d" : "#f3f6f7";
 
   const metrics = useMemo(
-    () => vitalsLabMetricsFromCompeteState(state, { signedOut }),
-    [state, signedOut],
+    () => suppliedMetrics ?? vitalsLabMetricsFromCompeteState(state, { signedOut }),
+    [state, signedOut, suppliedMetrics],
   );
   const assetBase = mobileEnv.apiUrl.replace(/\/$/, "");
 

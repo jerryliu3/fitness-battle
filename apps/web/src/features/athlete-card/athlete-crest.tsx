@@ -26,7 +26,7 @@ function RecordDate({ date, timeZone }: { date: string; timeZone: string }) {
 }
 
 /** The selected Crest composition, with Goalmaxxing's actual alloy optics. */
-export const AthleteCrest = memo(function AthleteCrest({ model, active = true }: { model: AthleteCardModel; active?: boolean }) {
+export const AthleteCrest = memo(function AthleteCrest({ model, active = true, compact = false }: { model: AthleteCardModel; active?: boolean; compact?: boolean }) {
   const still = Boolean(useReducedMotion()) || !active;
   const rotation = useCardRotation(still);
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export const AthleteCrest = memo(function AthleteCrest({ model, active = true }:
   const photo = model.avatarUrl && model.avatarUrl !== failedPhoto;
   const flag = countryFlagEmoji(model.countryCode);
   const personalBests = model.personalBests ?? [];
-  return <section className={styles.crest} aria-label="Athlete card" data-still={still}>
+  return <section className={styles.crest} aria-label="Athlete card" data-still={still} data-compact={compact}>
     <div ref={rotation.stage} className={styles.stage} style={cardOptics(REST_POSE) as CSSProperties} {...rotation.stageHandlers}>
       <div className={styles.shadow} aria-hidden="true" />
       <div className={styles.object} style={{ "--clip": CLIP, aspectRatio: `${WIDTH} / ${HEIGHT}` } as CSSProperties} tabIndex={0} role="group" aria-label={`${model.name} athlete card`} {...rotation.cardHandlers}>

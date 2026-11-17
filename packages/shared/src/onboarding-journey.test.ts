@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guestIntroForAccount, parseGuestIntroDraft, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, ONBOARDING_GROWTH, ONBOARDING_STEPS, ONBOARDING_FEATURES, hasCompletedOnboardingIntro } from "./onboarding-journey";
+import { guestIntroForAccount, parseGuestIntroDraft, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, ONBOARDING_GROWTH, ONBOARDING_STEPS, ONBOARDING_FEATURES, hasCompletedOnboardingIntro, onboardingCrewPreview, ONBOARDING_VITALS_METRICS } from "./onboarding-journey";
 
 const draft = { sport: "walking", name: "Taylor", city: "Boston", countryCode: "US" };
 describe("guest profile handoff", () => {
@@ -58,4 +58,13 @@ it("retains a bounded JPEG photo without importing arbitrary URLs or oversized d
   for (const invalid of ["javascript:alert(1)", "https://example.com/photo.jpg", "data:image/jpeg;base64," + "a".repeat(1_500_000)]) {
     expect(parseGuestIntroDraft(JSON.stringify({ ...draft, photo: invalid }))?.photo).toBeUndefined();
   }
+});
+
+it("keeps the chosen name and photo in the crew preview without account writes", () => {
+  const guest = { ...draft, sport: "strength" as const, photo: "data:image/jpeg;base64,/9j/" };
+  const crew = onboardingCrewPreview(guest);
+  expect(crew.members.find(m => m.user_id === "you")).toEqual({ user_id: "you", display_name: "Taylor", avatar_url: guest.photo });
+  expect(crew.sport).toBe("strength");
+  expect(ONBOARDING_VITALS_METRICS.every(m => m.value.length > 0)).toBe(true);
+  expect(guest).not.toHaveProperty("healthRatings");
 });

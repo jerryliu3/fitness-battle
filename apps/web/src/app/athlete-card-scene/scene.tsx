@@ -30,7 +30,8 @@ export function AthleteCardScene() {
     return () => window.removeEventListener("message", receive);
   }, []);
   useEffect(() => { if (message) send("athlete-card-rendered"); }, [message]);
-  return <main style={{ ...appearanceVariables(message?.appearance ?? "system"), minHeight: "100dvh", background: "var(--app-surface-canvas)", padding: "0 8px", overflow: "hidden" }}>
-    {message ? <AthleteCrest model={message.model} active={message.active} /> : null}
+  return <main style={{ ...appearanceVariables(message?.appearance ?? "system"), minHeight: "100dvh", background: "transparent", padding: message?.compact ? 0 : "0 8px", overflow: "hidden" }}>
+    <style>{"html,body { background: transparent !important; }"}</style>
+    {message ? <AthleteCrest model={message.model} active={message.active} compact={message.compact} /> : null}
   </main>;
 }

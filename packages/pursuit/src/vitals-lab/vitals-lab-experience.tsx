@@ -27,6 +27,7 @@ import "./vitals-lab-experience.css";
 
 export interface VitalsLabExperienceProps {
   analytics?: AnalyticsLabModel | null;
+  metrics?: VitalsLabMetricDisplay[];
   appearance?: "dark" | "light";
   embedded?: boolean;
   assetBaseUrl?: string;
@@ -123,6 +124,7 @@ function InfoIcon() {
 
 export function VitalsLabExperience({
   analytics = null,
+  metrics: suppliedMetrics,
   appearance: appearanceProp = "dark",
   embedded = false,
   assetBaseUrl = "",
@@ -162,7 +164,7 @@ export function VitalsLabExperience({
     return () => window.clearInterval(id);
   }, [autoScan, triggerScan]);
 
-  const metrics = useMemo(() => vitalsLabMetricsFromModel(analytics), [analytics]);
+  const metrics = useMemo(() => suppliedMetrics ?? vitalsLabMetricsFromModel(analytics), [analytics, suppliedMetrics]);
   const leftMetrics = useMemo(
     () => metrics.filter((m) => m.column === "left").sort((a, b) => a.row - b.row),
     [metrics],
