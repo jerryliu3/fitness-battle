@@ -320,7 +320,7 @@ export function PerformanceSpace({
             buckets={volumeBuckets}
             now={now}
             displayTimeZone={displayTz}
-            visibleFrom={volumeVisibleFrom}
+            visibleFrom={user?.createdAt ? volumeVisibleFrom : undefined}
             dateLabel={volumeRange}
             hideSummary={true}
             onSelectionChange={setInspectedVolume}

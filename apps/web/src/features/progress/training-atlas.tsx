@@ -114,7 +114,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           →
         </button>
       </div>
-      <BenchmarkChart key={sports.join(",")} buckets={buckets} now={barAsOf} dateLabel={dateLabel} displayTimeZone={displayTz} visibleFrom={earliest} />
+      <BenchmarkChart key={sports.join(",")} buckets={buckets} now={barAsOf} dateLabel={dateLabel} displayTimeZone={displayTz} visibleFrom={user?.createdAt ? earliest : undefined} />
         <ChartRangeToggle
           value={range}
           onChange={(next) => {
