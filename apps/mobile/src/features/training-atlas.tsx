@@ -137,7 +137,7 @@ const colors = [
           }}
         />
       </View>
-      <BenchmarkChart key={sports.join(",")} buckets={buckets} now={barAsOf} displayTimeZone={displayTz} dateLabel={range === "week" ? formatWeeklyCompetitionRange(anchor, displayTz) : anchor.toLocaleDateString("en-US", { timeZone: displayTz, ...(range === "year" ? { year: "numeric" } : { month: "long", year: "numeric" }) })} />
+      <BenchmarkChart key={sports.join(",")} buckets={buckets} now={barAsOf} displayTimeZone={displayTz} visibleFrom={earliest} dateLabel={range === "week" ? formatWeeklyCompetitionRange(anchor, displayTz) : anchor.toLocaleDateString("en-US", { timeZone: displayTz, ...(range === "year" ? { year: "numeric" } : { month: "long", year: "numeric" }) })} />
       <FocusDisclosure title="Daily activity">
         <Text style={f.kicker}>
           {anchor.toLocaleDateString("en-US", {

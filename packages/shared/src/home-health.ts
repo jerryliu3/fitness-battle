@@ -85,19 +85,19 @@ export type RecordedHealthMetric = "hrv" | "resting-hr" | "sleep";
 
 export type RecordedHealthPoint = { day: string; label: string; value: number | null };
 
-/** Recorded observations on the Eastern calendar window; left-aligns account creation / earliest data when window exceeds available history. */
+/** Recorded observations on a fixed rolling account-calendar window; missing days stay gaps. */
 export function recordedHealthSeries(
   state: CompeteState,
   metric: RecordedHealthMetric,
   days: number,
   now = competeNow(state),
-  createdAt?: string | null,
+  _createdAt?: string | null,
 ): RecordedHealthPoint[] {
   const displayTz = accountTimeZone(state);
   const span = Math.max(1, days);
   const today = dayKey(now, displayTz);
-  const defaultStartDate = shiftZonedDay(startOfZonedDay(now, displayTz), -(span - 1), displayTz);
-  const start = dayKey(defaultStartDate, displayTz);
+  const seriesStart = shiftZonedDay(startOfZonedDay(now, displayTz), -(span - 1), displayTz);
+  const start = dayKey(seriesStart, displayTz);
   const label = (day: string) => formatAccountCalendarDate(state, day, { month: "short", day: "numeric" });
   const observed = new Map<string, number>();
   if (metric === "sleep") {
@@ -121,15 +121,6 @@ export function recordedHealthSeries(
       if (!observed.has(row.day)) observed.set(row.day, row[key] as number);
     }
   }
-  if (!observed.size) return [];
-  const createdMs = createdAt ? Date.parse(createdAt) : NaN;
-  const firstObservedDay = [...observed.keys()].sort()[0];
-  const anchorDate = Number.isFinite(createdMs) && createdMs <= now.getTime()
-    ? startOfZonedDay(new Date(createdMs))
-    : firstObservedDay
-      ? startOfZonedDay(new Date(`${firstObservedDay}T12:00:00Z`))
-      : null;
-  const seriesStart = anchorDate && dayKey(anchorDate) > start ? anchorDate : defaultStartDate;
   return Array.from({ length: span }, (_, index) => {
     const day = dayKey(shiftZonedDay(seriesStart, index, displayTz), displayTz);
     return { day, label: label(day), value: day <= today ? (observed.get(day) ?? null) : null };

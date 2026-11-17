@@ -1,10 +1,12 @@
 import { readAccountEffort } from './compete/effort-account';
 import {
   APP_TIMEZONE,
+  accountTimeZone,
   dailyPeriodBounds,
   dayKey,
   monthlyPeriodBounds,
   shiftZonedDay,
+  startOfZonedDay,
   weeklyPeriodBounds,
 } from "./period";
 import { countsForTraining } from "./compete/journal";
@@ -221,21 +223,10 @@ export function trainingAtlas(
 }
 export function formatTrainingHours(seconds:number):string { return (Math.max(0,seconds)/3600).toLocaleString("en-US",{maximumFractionDigits:2}); }
 
-/**
- * Earliest chart date: prefers account creation date when provided and valid,
- * otherwise earliest recorded activity, period result, record attempt, effort event, or health reading.
- */
-export function earliestDataDate(
-  state: CompeteState,
-  now = competeNow(state),
-  createdAt?: string | null,
-): Date | null {
-  if (createdAt) {
-    const createdMs = Date.parse(createdAt);
-    if (Number.isFinite(createdMs) && createdMs <= now.getTime()) {
-      return new Date(createdMs);
-    }
-  }
+/** Max calendar lookback before account creation for synced history (training atlas / volume bars). */
+export const ACCOUNT_CHART_PREFILL_DAYS = 90;
+
+function earliestRecordedDataDate(state: CompeteState, now = competeNow(state)): Date | null {
   let min: number | undefined;
   const consider = (raw: string | undefined) => {
     if (!raw) return;
@@ -253,6 +244,29 @@ export function earliestDataDate(
   for (const s of state.sleepNights ?? []) consider(`${s.day}T12:00:00Z`);
 
   return min !== undefined ? new Date(min) : null;
+}
+
+/**
+ * Earliest navigable chart history: recorded data, account creation, and up to
+ * {@link ACCOUNT_CHART_PREFILL_DAYS} of pre-signup history after a one-time import.
+ */
+export function earliestDataDate(
+  state: CompeteState,
+  now = competeNow(state),
+  createdAt?: string | null,
+): Date | null {
+  const recorded = earliestRecordedDataDate(state, now);
+  if (!createdAt) return recorded;
+  const createdMs = Date.parse(createdAt);
+  if (!Number.isFinite(createdMs) || createdMs > now.getTime()) return recorded;
+  const displayTz = accountTimeZone(state);
+  const created = startOfZonedDay(new Date(createdMs), displayTz);
+  const prefillFloor = shiftZonedDay(created, -ACCOUNT_CHART_PREFILL_DAYS, displayTz);
+  if (!recorded) return created;
+  const recordedDay = startOfZonedDay(recorded, displayTz);
+  if (recordedDay.getTime() >= created.getTime()) return created;
+  if (recordedDay.getTime() >= prefillFloor.getTime()) return recordedDay;
+  return prefillFloor;
 }
 
 export function trainingRangeNavigation(
