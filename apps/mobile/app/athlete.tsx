@@ -34,6 +34,7 @@ import { AccountActions } from "../src/features/account-actions";
 import { LegalLinks } from "../src/features/legal-links";
 import { AthleteMetrics } from "../src/features/athlete-metrics";
 import { SettingsRow } from "../src/ui/settings-row";
+import { FitnessHistoryImport } from "../src/features/fitness-history-import";
 import { DataSyncActions } from "../src/features/data-sync-actions";
 import { mobileEnv, publicProfileOrigin } from "../src/lib/env";
 import { useAuth } from "../src/lib/auth";
@@ -131,6 +132,15 @@ const styles=useThemedStyles(stylesThemes);
     }
   }
   const appliedTracker = useRef<string | null>(null);
+  const [historyOffer, setHistoryOffer] = useState<ProviderId | null>(null);
+  function dismissHistory() {
+    setHistoryOffer(null);
+    if (user) void AsyncStorage.getItem(`onboarding-connect-return:${user.id}`).then(marker => {
+      if (!marker || currentUser.current !== user.id) return;
+      void AsyncStorage.removeItem(`onboarding-connect-return:${user.id}`);
+      if (!inlineConnections) router.replace("/onboarding");
+    }).catch(() => {});
+  }
 
   useEffect(() => {
     if (!user && (params.auth === "signup" || params.auth === "signin")) {
@@ -152,6 +162,7 @@ const styles=useThemedStyles(stylesThemes);
     setNote(null);
     setConfirmFreeze(false);
     setEditDraft(null);
+    setHistoryOffer(null);
   }, [user?.id]);
 
   useEffect(() => {
@@ -177,6 +188,7 @@ const styles=useThemedStyles(stylesThemes);
         linkStatus: "connected",
       });
       setNote(`${trackerProvider} connected.`);
+      setHistoryOffer(trackerProvider);
     } else if (tracker === "stub") {
       dispatch({ type: "link", provider: trackerProvider });
       setNote("Credentials are not set. Please try again later.");
@@ -186,7 +198,7 @@ const styles=useThemedStyles(stylesThemes);
       setNote("That tracker did not connect. Try again from the app.");
     }
     router.setParams({ tracker: undefined, provider: undefined });
-    if (user) void AsyncStorage.getItem(`onboarding-connect-return:${user.id}`).then(marker => {
+    if (tracker !== "connected" && user) void AsyncStorage.getItem(`onboarding-connect-return:${user.id}`).then(marker => {
       if (!marker) return;
       void AsyncStorage.removeItem(`onboarding-connect-return:${user.id}`);
       router.replace("/onboarding");
@@ -328,6 +340,7 @@ const styles=useThemedStyles(stylesThemes);
         setNote("Sync failed");
       } else {
         setNote(null);
+        setHistoryOffer(providerId);
       }
     } catch {
       setNote("Sync failed");
@@ -357,7 +370,7 @@ const styles=useThemedStyles(stylesThemes);
     try {
       if (inlineConnections) await AsyncStorage.setItem(`onboarding-connect-return:${user.id}`, "1");
       const result = await startCloudTrackerConnect(providerId);
-      if (inlineConnections && (result.tracker || result.stub)) {
+      if (inlineConnections && (result.tracker || result.stub) && result.tracker !== "connected") {
         await AsyncStorage.removeItem(`onboarding-connect-return:${user.id}`);
         router.replace("/onboarding");
       } else if (inlineConnections && result.cancelled) {
@@ -368,6 +381,7 @@ const styles=useThemedStyles(stylesThemes);
       if (result.tracker === "connected") {
         playPattern("confirm");
         appliedTracker.current = `connected:${linked}`;
+        setHistoryOffer(linked);
         dispatch({
           type: "apply-sync",
           provider: linked,
@@ -580,6 +594,7 @@ const styles=useThemedStyles(stylesThemes);
           </View>
           <Toast message={note ?? ""} onDismiss={() => setNote(null)} />
           {!inlineConnections && <DataSyncActions />}
+          <FitnessHistoryImport offer={historyOffer} onDismiss={dismissHistory} showSettings={!inlineConnections} />
         </SectionStack>);
     if (inlineConnections) return content;
     return (

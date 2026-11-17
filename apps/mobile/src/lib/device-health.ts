@@ -8,6 +8,7 @@ import {
   syncWindow,
   type ActivitySample,
   type CategorySlug,
+  type FitnessHistoryTicket,
 } from "@fitness-battle/shared";
 import { NativeModules, Platform } from "react-native";
 import {
@@ -48,6 +49,8 @@ export type SyncAppleHealthDeps = {
   localOnly?: boolean;
   /** Known latest workout timestamp for incremental sync windowing. */
   lastSyncAt?: string | null;
+  syncRange?: { since: string; until: string };
+  historyLease?: FitnessHistoryTicket["lease"];
 };
 
 function readReactNativeHealthPackage(): AppleHealthKitPackageExport | null {
@@ -138,7 +141,7 @@ export function sampleFromWorkout(
 async function postIngest(
   provider: "apple_health" | "google_health",
   activities: ActivitySample[],
-  deps: Pick<SyncAppleHealthDeps, "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly">,
+  deps: Pick<SyncAppleHealthDeps, "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly" | "historyLease">,
   health?:DeviceHealthExtra,
 ): Promise<DeviceSyncResult> {
   if (deps.localOnly) {
@@ -150,6 +153,7 @@ async function postIngest(
           ? `Connected on this phone. ${activities.length} workouts synced.`
           : "Connected on this phone.",
       count: activities.length,
+      activities,
     };
   }
   const auth = await deps.getAccessToken();
@@ -175,6 +179,7 @@ async function postIngest(
         activities,
         ...health,
         userId: auth.userId,
+        historyLease: deps.historyLease,
       }),
     });
   } catch (error) {
@@ -194,13 +199,26 @@ async function postIngest(
         : (body.error ?? "Ingest failed");
     return { ok: false, authorized: true, message, count: 0 };
   }
+  const body = await response.json();
+  if (body.persisted !== true) return { ok: false, authorized: true, message: "Workouts could not be saved. Please try again.", count: 0 };
   return {
     ok: true,
     authorized: true,
-    message: `Sent ${activities.length} workouts.`,
+    message: activities.length ? `Sent ${activities.length} workouts.` : "Tracker connected. No new workouts found.",
     count: activities.length,
-    activities,
+    activities: body.activities ?? activities,
   };
+}
+
+async function deviceSyncRange(provider: "apple_health" | "google_health", deps: Pick<SyncAppleHealthDeps, "syncRange" | "localOnly" | "lastSyncAt" | "getAccessToken" | "fetchFn" | "apiUrl">) {
+  if (deps.syncRange) return deps.syncRange;
+  if (deps.localOnly) return syncWindow({ lastSyncAt: deps.lastSyncAt ?? new Date().toISOString() });
+  const auth = await deps.getAccessToken();
+  if (!auth.token) throw new Error("Sign in to sync your tracker.");
+  const response = await deps.fetchFn(`${deps.apiUrl}/api/fitness/history?provider=${provider}`, { headers: { Authorization: `Bearer ${auth.token}` } });
+  const body = await response.json();
+  if (!response.ok || !body.window) throw new Error("Could not prepare sync. Please try again.");
+  return body.window as { since: string; until: string };
 }
 
 function healthKitErrorMessage(error: unknown): string {
@@ -234,7 +252,10 @@ export async function syncAppleHealth(
     };
   }
 
-  const { since: startDate, until: endDate } = syncWindow({ lastSyncAt: deps.lastSyncAt });
+  let range: { since: string; until: string };
+  try { range = await deviceSyncRange("apple_health", deps); }
+  catch (error) { return { ok: false, message: healthKitErrorMessage(error), count: 0 }; }
+  const { since: startDate, until: endDate } = range;
   let workouts: WorkoutLike[];
   try {
     workouts = await new Promise<WorkoutLike[]>((resolve, reject) => {
@@ -245,6 +266,7 @@ export async function syncAppleHealth(
             reject(new Error(healthKitErrorMessage(error)));
             return;
           }
+          if (startDate === endDate) { resolve([]); return; }
           kit.getAnchoredWorkouts(
             { startDate, endDate, type: "Workout" },
             (workoutError, results) => {
@@ -280,15 +302,7 @@ export async function syncAppleHealth(
     const locations=await new Promise<{latitude:number;longitude:number;timestamp?:string;altitude?:number;speed?:number}[]>(resolve=>routeReader.call(kit,{id:activity.externalId},(error:unknown,result:{data?:{locations?:{latitude:number;longitude:number;timestamp?:string;altitude?:number;speed?:number}[]}})=>resolve(error?[]:result?.data?.locations??[])));
     Object.assign(activity,routeMetadata(locations.map(p=>({lat:p.latitude,lon:p.longitude,time:p.timestamp,elevation:p.altitude,speedMps:p.speed})),activity.categorySlug));
   }
-  const healthExtra=await appleHealthExtra(kit as unknown as Record<string,unknown>,startDate,endDate);
-  if (activities.length === 0 && !healthExtra.dailyHealth.length && !healthExtra.sleepNights.length) {
-    return {
-      ok: true,
-      authorized: true,
-      message: "Apple Health is connected. No mapped workouts in the last 90 days yet.",
-      count: 0,
-    };
-  }
+  const healthExtra = startDate === endDate ? undefined : await appleHealthExtra(kit as unknown as Record<string,unknown>,startDate,endDate);
   return postIngest("apple_health", activities, deps,healthExtra);
 }
 
@@ -313,8 +327,9 @@ type HealthConnectModule = {
   ) => Promise<HealthConnectPermission[]>;
   readRecords: (
     type: string,
-    options: { timeRangeFilter: { operator: string; startTime: string; endTime: string } },
+    options: { timeRangeFilter: { operator: string; startTime: string; endTime: string }; pageToken?: string },
   ) => Promise<{
+    pageToken?: string;
     records?: {
       metadata?: { id?: string };
       startTime?: string;
@@ -337,7 +352,7 @@ function healthConnectGrantedExerciseRead(granted: HealthConnectPermission[]): b
 
 export type SyncHealthConnectDeps = Pick<
   SyncAppleHealthDeps,
-  "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly" | "lastSyncAt"
+  "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly" | "lastSyncAt" | "syncRange" | "historyLease"
 > & {
   platform?: string;
   /** Injectable for tests; defaults to require("react-native-health-connect"). */
@@ -363,6 +378,8 @@ export function createHealthConnectDeps(
     fetchFn: base.fetchFn,
     localOnly: base.localOnly,
     lastSyncAt: base.lastSyncAt,
+    syncRange: base.syncRange,
+    historyLease: base.historyLease,
     platform: overrides.platform ?? Platform.OS,
     healthModule: overrides.healthModule,
   };
@@ -403,6 +420,7 @@ export async function syncHealthConnect(
     };
   }
   if (!ready) return { ok: false, message: "Health Connect is not available on this device.", count: 0 };
+  const needsHistoryAccess = Boolean(deps.historyLease && deps.syncRange && Date.parse(deps.syncRange.until) - Date.parse(deps.syncRange.since) > 30 * 86_400_000);
   let granted: HealthConnectPermission[];
   try {
     granted = await health.requestPermission([
@@ -412,12 +430,13 @@ export async function syncHealthConnect(
       { accessType: "read", recordType: "RestingHeartRate" },
       { accessType: "read", recordType: "HeartRateVariabilityRmssd" },
       { accessType: "read", recordType: "SleepSession" },
+      ...(needsHistoryAccess ? [{ accessType: "read", recordType: "ReadHealthDataHistory" }] : []),
     ]);
   } catch {
     return {
       ok: false,
       authorized: false,
-      message: "Health Connect permission was not granted. Allow workout access and try again.",
+      message: needsHistoryAccess ? "Allow history access in Health Connect, or choose 30 days or fewer." : "Health Connect permission was not granted. Allow workout access and try again.",
       count: 0,
     };
   }
@@ -429,17 +448,29 @@ export async function syncHealthConnect(
       count: 0,
     };
   }
-  const { since: startTime, until: endTime } = syncWindow({ lastSyncAt: deps.lastSyncAt });
+  if (needsHistoryAccess && !granted.some(p => p.recordType === "ReadHealthDataHistory" && p.accessType === "read")) {
+    return { ok: false, authorized: true, message: "Allow history access in Health Connect, or choose 30 days or fewer.", count: 0 };
+  }
+  let window: { since: string; until: string };
+  try { window = await deviceSyncRange("google_health", deps); }
+  catch (error) { return { ok: false, authorized: true, message: healthKitErrorMessage(error), count: 0 }; }
+  const { since: startTime, until: endTime } = window;
+  if (startTime === endTime) return postIngest("google_health", [], deps);
   const range = { timeRangeFilter: { operator: "between", startTime, endTime } };
   let sessions: NonNullable<Awaited<ReturnType<HealthConnectModule["readRecords"]>>["records"]> = [];
   let distances: typeof sessions = [];
+  async function readAll(type: string) {
+    const records: typeof sessions = [];
+    let pageToken: string | undefined;
+    do {
+      const page = await health!.readRecords(type, { ...range, ...(pageToken ? { pageToken } : {}) });
+      records.push(...(page.records ?? []));
+      pageToken = page.pageToken;
+    } while (pageToken);
+    return records;
+  }
   try {
-    const [exercise, distance] = await Promise.all([
-      health.readRecords("ExerciseSession", range),
-      health.readRecords("Distance", range),
-    ]);
-    sessions = exercise.records ?? [];
-    distances = distance.records ?? [];
+    [sessions, distances] = await Promise.all([readAll("ExerciseSession"), readAll("Distance")]);
   } catch {
     return {
       ok: false,
@@ -487,14 +518,7 @@ export async function syncHealthConnect(
       (g): g is { recordType: string; accessType: string } =>
         typeof g.recordType === "string" && typeof g.accessType === "string",
     ),
+    window,
   );
-  if (activities.length === 0 && !healthExtra.dailyHealth.some(r=>r.steps!=null||r.restingHr!=null||r.hrv!=null) && !healthExtra.sleepNights.length) {
-    return {
-      ok: true,
-      authorized: true,
-      message: "Health Connect is connected. No mapped workouts in the last 90 days yet.",
-      count: 0,
-    };
-  }
   return postIngest("google_health", activities, deps,healthExtra);
 }

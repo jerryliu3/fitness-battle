@@ -12,6 +12,18 @@ export const INCREMENTAL_SYNC_DAYS = 14;
 /** After this many hours without a new sample, UI shows "stale". */
 export const SYNC_STALE_HOURS = 36;
 
+export interface FitnessHistoryStatus {
+  completed: boolean;
+  provider: string | null;
+  days: number | null;
+}
+
+export interface FitnessHistoryTicket {
+  lease: string;
+  since: string;
+  until: string;
+}
+
 export type SyncEvidence =
   | "never_asked"
   | "disconnected"
@@ -67,6 +79,17 @@ export function syncWindow(
       Math.ceil((now.getTime() - effective.getTime()) / 86_400_000),
     ),
   };
+}
+
+/** Ordinary sync never imports data from before this tracker was connected. */
+export function trackerSyncWindow(connection: {
+  lastSyncAt?: string | null;
+  connectedAt?: string | null;
+}, now = new Date()): SyncWindow {
+  const connectedAt = connection.connectedAt ?? connection.lastSyncAt ?? now.toISOString();
+  const window = syncWindow({ now, lastSyncAt: connection.lastSyncAt ?? connectedAt });
+  const since = new Date(Math.max(Date.parse(window.since), Date.parse(connectedAt))).toISOString();
+  return { ...window, since, days: Math.ceil((now.getTime() - Date.parse(since)) / 86_400_000) };
 }
 
 export function evidenceFromConnection(input: {

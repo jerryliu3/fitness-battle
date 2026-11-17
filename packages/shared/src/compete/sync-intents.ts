@@ -87,3 +87,15 @@ export function serializeCompeteSyncAction(action: Action): Action {
   }
   return rest as Action;
 }
+
+/** Keep large history receipts within the existing server intent limits. */
+export function serializeCompeteSyncActions(action: Action): Action[] {
+  if (action.type !== "apply-sync") return [serializeCompeteSyncAction(action)];
+  const count = Math.max(1, Math.ceil((action.activities?.length ?? 0) / MAX_SYNC_ACTIVITIES),
+    Math.ceil((action.sleepNights?.length ?? 0) / MAX_SYNC_SLEEP), Math.ceil((action.readiness?.length ?? 0) / MAX_SYNC_READINESS));
+  return Array.from({ length: count }, (_, i) => serializeCompeteSyncAction({ ...action,
+    activities: action.activities?.slice(i * MAX_SYNC_ACTIVITIES, (i + 1) * MAX_SYNC_ACTIVITIES),
+    sleepNights: action.sleepNights?.slice(i * MAX_SYNC_SLEEP, (i + 1) * MAX_SYNC_SLEEP),
+    readiness: action.readiness?.slice(i * MAX_SYNC_READINESS, (i + 1) * MAX_SYNC_READINESS),
+  }));
+}

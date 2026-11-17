@@ -18,6 +18,7 @@ vi.mock("./supabase", () => ({
 }));
 
 import { packageExportMissingNativeMethods } from "./apple-health-kit";
+import { syncWindow } from "@fitness-battle/shared";
 import { sampleFromWorkout, syncAppleHealth, type SyncAppleHealthDeps } from "./device-health";
 
 const brokenPackageExport = {
@@ -61,10 +62,11 @@ function testDeps(
     packageExport: brokenPackageExport,
     nativeModule: { initHealthKit, getAnchoredWorkouts },
     apiUrl: "https://example.test",
+    syncRange: syncWindow({ lastSyncAt: depOverrides.lastSyncAt }),
     getAccessToken: async () => ({ token: "token", userId: "user-1" }),
     fetchFn: vi.fn(async () => ({
       ok: true,
-      json: async () => ({}),
+      json: async () => ({ persisted: true }),
     })) as unknown as typeof fetch,
     ...depOverrides,
   };
@@ -179,7 +181,7 @@ describe("syncAppleHealth", () => {
       count: 0,
     });
     expect(result.message).toMatch(/connected/i);
-    expect(deps.fetchFn).not.toHaveBeenCalled();
+    expect(deps.fetchFn).toHaveBeenCalledWith("https://example.test/api/fitness/ingest", expect.anything());
   });
 
   it("surfaces a clear message when ingest fetch fails", async () => {
@@ -289,4 +291,27 @@ it("uses the incremental sync cursor and deduplicates sameWorkout sessions", asy
   expect(Date.parse(queryOptions.startDate)).toBeGreaterThan(
     Date.now() - 5 * 86_400_000,
   );
+});
+
+
+it("uses the server's normal window instead of silently importing 90 days", async () => {
+  const range = { since: "2026-11-17T17:00:00.000Z", until: "2026-11-17T18:00:00.000Z" };
+  const deps = testDeps({ syncRange: undefined, fetchFn: vi.fn(async (url: unknown) => ({ ok: true, json: async () => String(url).includes("/history?") ? { window: range } : { persisted: true, activities: [] } })) as unknown as typeof fetch });
+  expect((await syncAppleHealth(deps)).ok).toBe(true);
+  expect(deps.nativeModule?.getAnchoredWorkouts).toHaveBeenCalledWith(expect.objectContaining({ startDate: range.since, endDate: range.until }), expect.any(Function));
+});
+
+it("does not report upload success when the backend did not persist", async () => {
+  const deps = testDeps({ fetchFn: vi.fn(async () => ({ ok: true, json: async () => ({ persisted: false }) })) as unknown as typeof fetch });
+  expect((await syncAppleHealth(deps)).ok).toBe(false);
+});
+
+
+it("registers a first connection without querying a zero-length workout range", async () => {
+  const at = "2026-11-17T18:00:00.000Z";
+  const deps = testDeps({ syncRange: { since: at, until: at } });
+  expect((await syncAppleHealth(deps)).ok).toBe(true);
+  expect(deps.nativeModule?.initHealthKit).toHaveBeenCalledOnce();
+  expect(deps.nativeModule?.getAnchoredWorkouts).not.toHaveBeenCalled();
+  expect(deps.fetchFn).toHaveBeenCalledWith("https://example.test/api/fitness/ingest", expect.objectContaining({ body: expect.stringContaining('"activities":[]') }));
 });

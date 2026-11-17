@@ -68,3 +68,7 @@ it("rejects forged tracker rows that are not already on the account", () => {
     ),
   ).toThrow(/invalid_sync/);
 });
+
+it("requires the confirmed tracker import instead of generating calibration history", () => {
+  expect(() => resolveServerSyncAction(freshState(now), { type: "import-history" }, "athlete", now)).toThrow("history_confirmation_required");
+});

@@ -3,7 +3,7 @@ import { persistSleepNight } from "@/lib/garmin-record-store";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import type { CategorySlug } from "@fitness-battle/shared";
-import { syncWindow } from "@fitness-battle/shared";
+import { fitnessSyncWindow, finishFitnessHistory } from "@/lib/fitness-history";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider, isOAuthProvider } from "@/lib/fitness";
 import { createProviderStore, serviceDb, persistReadiness, persistSyncedActivities } from "@/lib/fitness-store";
@@ -15,12 +15,14 @@ export async function POST(request: Request) {
     categorySlug?: CategorySlug;
     since?: string;
     backfill?: boolean;
+    historyLease?: string;
     automatic?: boolean;
   };
   const userId = await resolveRequestUserId(request, body.userId);
   if (!userId) {
     return NextResponse.json({ error: "authentication_required" }, { status: 401 });
   }
+  if (body.backfill || body.since) return NextResponse.json({ error: "history_confirmation_required" }, { status: 400 });
   const providerId = body.provider && isOAuthProvider(body.provider) ? body.provider : "strava";
   const provider = getServerFitnessProvider(providerId);
   const connection = await provider.getConnection(userId);
@@ -33,10 +35,7 @@ export async function POST(request: Request) {
   if (limitError) return NextResponse.json({ error: "sync_unavailable" }, { status: 503 });
   if (!allowed) return NextResponse.json({ error: "sync_cooldown", message: "Sync is already running or the hourly limit has been reached." }, { status: 429, headers: { "Retry-After": "3600" } });
   try {
-  const window = syncWindow({
-    lastSyncAt: body.backfill ? null : (body.since ?? connection.lastSyncAt ?? null),
-    forceBackfill: Boolean(body.backfill),
-  });
+  const window = await fitnessSyncWindow(userId, providerId, body.historyLease);
 
   const result = await provider.syncActivities(userId, {
     categorySlug: body.categorySlug,
@@ -60,11 +59,11 @@ export async function POST(request: Request) {
     await createProviderStore(providerId)?.setConnection(connection);
     return NextResponse.json({ error: "sync_persistence_failed" }, { status: 503 });
   }
+  if (body.historyLease) await finishFitnessHistory(userId, body.historyLease, true);
   return NextResponse.json({
     ...result,
+    historyImported: Boolean(body.historyLease),
     since: window.since,
-    windowKind: window.kind,
-    windowDays: window.days,
     persisted,
   });
   } catch (error) {
@@ -72,6 +71,7 @@ export async function POST(request: Request) {
     if(error instanceof Error && error.message==="whoop_reconnect_required")return NextResponse.json({error:"provider_reconnect_required",message:"Reconnect WHOOP to approve sleep access."},{status:409});
     return NextResponse.json({ error: "provider_sync_failed" }, { status: 502 });
   } finally {
+    if (body.historyLease) await finishFitnessHistory(userId, body.historyLease, false).catch(() => {});
     await db.rpc("release_fitness_sync", { p_user: userId, p_provider: providerId, p_lease: lease });
   }
 }

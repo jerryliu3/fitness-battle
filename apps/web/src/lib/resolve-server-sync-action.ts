@@ -13,7 +13,7 @@ export function resolveServerSyncAction(
   now: Date,
 ): Action {
   const normalized = normalizeCompeteSyncAction(raw, userId, now.toISOString());
-  if (normalized.type === "import-history") return normalized;
+  if (normalized.type === "import-history") throw new Error("history_confirmation_required");
   if (normalized.type === "sync") {
     if (!normalized.allowSample) throw new Error("invalid_sync");
     return normalized;

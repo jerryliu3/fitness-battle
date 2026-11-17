@@ -162,6 +162,7 @@ export {
   MAX_SYNC_SLEEP,
   normalizeCompeteSyncAction,
   serializeCompeteSyncAction,
+  serializeCompeteSyncActions,
 } from "./sync-intents";
 export {
   accountSavePlan,

@@ -37,7 +37,7 @@ export const INTEGRATIONS: IntegrationSpec[] = [
       "Set STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, STRAVA_REDIRECT_URI on the web server",
       "User opens connect → authorize → callback exchanges code for tokens",
       "Server stores tokens privately and pulls athlete activities",
-      "First connect runs a one-time 90-day backfill; later syncs are incremental",
+      "After connecting, choose a one-time import of 1–90 days; later syncs are incremental",
     ],
     offlineCapability:
       "Without keys, connect returns status=stub and sync returns labeled mock activities.",
