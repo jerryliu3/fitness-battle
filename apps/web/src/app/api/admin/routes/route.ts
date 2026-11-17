@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { authorizeAdmin, adminDatabase } from "@/lib/admin-auth";
 import { buildAdminRouteOverview } from "@/lib/admin-route-overview";
-import { MAX_ADMIN_ROUTE_BYTES, ROUTE_ID, validateAdminRoute } from "@/lib/admin-route-input";
+import { MAX_ADMIN_ROUTE_BYTES, ROUTE_ID, validateAdminRoute, type AdminRaceRouteSummary } from "@/lib/admin-route-input";
 
 export async function GET(request: Request) {
   if (!await authorizeAdmin(request)) return NextResponse.json({ error: "admin_required" }, { status: 403 });
@@ -10,20 +10,28 @@ export async function GET(request: Request) {
   const db = adminDatabase();
   if (!db) return NextResponse.json({ error: "admin_not_configured" }, { status: 503 });
   try {
-    const query = db.from("race_routes").select(id ? "id,name,location,coordinates,is_active,updated_at" : "id,name,location,is_active,updated_at");
-    const { data, error } = id ? await query.eq("id", id).maybeSingle() : await query.order("id");
+    if (id) {
+      const { data, error } = await db.from("race_routes")
+        .select("id,name,location,coordinates,is_active,updated_at")
+        .eq("id", id).maybeSingle();
+      if (error) throw error;
+      if (!data) return NextResponse.json({ error: "Route not found. Reload the catalog." }, { status: 404 });
+      return NextResponse.json({ route: data }, { headers: { "Cache-Control": "private, no-store" } });
+    }
+    const { data: routes, error } = await db.from("race_routes")
+      .select("id,name,location,is_active,updated_at")
+      .order("id");
     if (error) throw error;
-    if (id && !data) return NextResponse.json({ error: "Route not found. Reload the catalog." }, { status: 404 });
-    if (id) return NextResponse.json({ route: data }, { headers: { "Cache-Control": "private, no-store" } });
     const { data: assignments, error: assignmentError } = await db
       .from("weekly_race_routes")
       .select("wave_start,route_id,route_name,created_at")
       .order("wave_start", { ascending: false })
       .limit(120);
     if (assignmentError) throw assignmentError;
+    const catalog = (routes ?? []) as AdminRaceRouteSummary[];
     return NextResponse.json({
-      routes: data ?? [],
-      overview: buildAdminRouteOverview(data ?? [], assignments ?? []),
+      routes: catalog,
+      overview: buildAdminRouteOverview(catalog, assignments ?? []),
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch { return NextResponse.json({ error: "Route catalog is unavailable. Please try again." }, { status: 503 }); }
 }

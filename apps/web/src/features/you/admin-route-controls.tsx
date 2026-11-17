@@ -119,13 +119,13 @@ export function AdminRouteControls() {
     </div>
     {overview ? <>
       <SectionHeader title="Where each surface gets its path" />
-      <motionlessTable ariaLabel="Route surfaces">
+      <RouteAdminTable ariaLabel="Route surfaces">
         <thead><tr><th style={tableCell}>Surface</th><th style={tableCell}>Managed on</th><th style={tableCell}>Storage</th></tr></thead>
         <tbody>{overview.surfaces.map(surface => <tr key={surface.id}><td style={tableCell}>{surface.label}<br /><small style={{ color: "var(--muted, #5c6b66)" }}>{surface.notes}</small></td><td style={tableCell}>{surface.managedOn === "server" ? "Server (Supabase + Vercel)" : "Client bundle"}</td><td style={tableCell}><code style={{ fontSize: 12 }}>{surface.storage}</code></td></tr>)}</tbody>
-      </motionlessTable>
+      </RouteAdminTable>
       <SectionHeader title="Catalog status" />
       <AppParagraph typographyRole="body">Active rotation order: {overview.activeIds.length ? overview.activeIds.join(" → ") : "none"}. New waves pick `floor(epoch / 1 week) % active count` from that sorted list unless you override an upcoming assignment.</AppParagraph>
-      <motionlessTable ariaLabel="Catalog routes">
+      <RouteAdminTable ariaLabel="Catalog routes">
         <thead><tr><th style={tableCell}>Route</th><th style={tableCell}>Status</th><th style={tableCell}>Frozen weeks</th><th style={tableCell}>Upcoming</th><th style={tableCell}></th></tr></thead>
         <tbody>{overview.catalog.map(route => <tr key={route.id}>
           <td style={tableCell}><strong>{route.name}</strong><br /><code style={{ fontSize: 12 }}>{route.id}</code>{route.location ? <><br />{route.location}</> : null}</td>
@@ -134,9 +134,9 @@ export function AdminRouteControls() {
           <td style={tableCell}>{route.upcomingWeeks}</td>
           <td style={tableCell}><button type="button" className="fb-btn-line" disabled={busy} onClick={() => loadRoute(route.id)}>Edit</button></td>
         </tr>)}</tbody>
-      </motionlessTable>
+      </RouteAdminTable>
       <SectionHeader title="Frozen wave assignments" />
-      <motionlessTable ariaLabel="Competition route assignments">
+      <RouteAdminTable ariaLabel="Competition route assignments">
         <thead><tr><th style={tableCell}>Wave start (ET)</th><th style={tableCell}>Assigned route</th><th style={tableCell}>Auto pick</th><th style={tableCell}>Status</th></tr></thead>
         <tbody>{overview.assignments.length ? overview.assignments.map(row => <tr key={row.wave_start}>
           <td style={tableCell}><code style={{ fontSize: 12 }}>{row.wave_start}</code><br />{formatWhen(row.wave_start)}</td>
@@ -144,16 +144,16 @@ export function AdminRouteControls() {
           <td style={tableCell}>{row.autoRouteId ? <code style={{ fontSize: 12 }}>{row.autoRouteId}</code> : "—"}<br />{row.matchesRotation ? "Matches rotation" : "Override"}</td>
           <td style={tableCell}>{row.started ? "Started" : "Upcoming"}</td>
         </tr>) : <tr><td colSpan={4} style={tableCell}>No frozen assignments yet. They appear when athletes first open 3D for a competition wave.</td></tr>}</tbody>
-      </motionlessTable>
+      </RouteAdminTable>
       <SectionHeader title="Override upcoming wave" />
       <AppParagraph typographyRole="body">Use the exact `wave_start` timestamp from an enrollment (ISO). Past waves stay frozen.</AppParagraph>
       <label className="fb-copy">Wave start ISO<input className="fb-input" style={{ display: "block", width: "100%" }} disabled={busy} value={assignWave} placeholder="2026-11-17T11:00:00.000Z" onChange={event => setAssignWave(event.target.value)} /></label>
-      <label className="fb-copy">Catalog route<select className="fb-input" style={{ display: "block", width: "100%" }} disabled={busy} value={assignRouteId} onChange={event => setAssignRouteId(event.target.value)}>
+      <label className="fb-copy">Catalog route<select aria-label="Override catalog route" className="fb-input" style={{ display: "block", width: "100%" }} disabled={busy} value={assignRouteId} onChange={event => setAssignRouteId(event.target.value)}>
         <option value="">Select a route</option>{routes.map(route => <option key={route.id} value={route.id}>{route.name} ({route.id})</option>)}
       </select></label>
       <button type="button" className="fb-btn" disabled={busy || !assignWave.trim() || !assignRouteId} onClick={assignWaveRoute}>Assign route to wave</button>
     </> : null}
-    {routes.length ? <label className="fb-copy">Saved routes<select className="fb-input" value={draft?.updated_at ? draft.id : ""} disabled={busy} onChange={event => loadRoute(event.target.value)} style={{ display: "block", width: "100%" }}>
+    {routes.length ? <label className="fb-copy">Saved routes<select aria-label="Saved routes" className="fb-input" value={draft?.updated_at ? draft.id : ""} disabled={busy} onChange={event => loadRoute(event.target.value)} style={{ display: "block", width: "100%" }}>
       <option value="">Select a route</option>{routes.map(route => <option key={route.id} value={route.id}>{route.name} · {route.is_active ? "Active" : "Inactive"}</option>)}
     </select></label> : null}
     {draft && <form onSubmit={event => { event.preventDefault(); save(); }} style={{ display: "grid", gap: 12 }}>
@@ -185,6 +185,6 @@ export function AdminRouteControls() {
 
 const tableCell = { border: "1px solid var(--line)", padding: "8px 10px", textAlign: "left" as const, verticalAlign: "top" as const };
 
-function motionlessTable({ ariaLabel, children }: { ariaLabel: string; children: ReactNode }) {
+function RouteAdminTable({ ariaLabel, children }: { ariaLabel: string; children: ReactNode }) {
   return <div style={{ overflowX: "auto" }}><table aria-label={ariaLabel} style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>{children}</table></div>;
 }

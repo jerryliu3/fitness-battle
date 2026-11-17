@@ -29,7 +29,7 @@ it("loads inactive routes for editing and preserves the draft on a concurrent-ed
   const overview = { surfaces: [], catalog: [], assignments: [], activeIds: [] };
   fetcher.mockResolvedValueOnce(Response.json({ routes: [{ ...saved, is_active: false }], overview })).mockResolvedValueOnce(Response.json({ route: { ...saved, is_active: false } })).mockResolvedValueOnce(Response.json({ error: "Route changed. Reload before saving." }, { status: 409 }));
   await act(async () => button("Load route catalog").props.onClick());
-  await act(async () => renderer.root.findByType("select").props.onChange({ target: { value: saved.id } }));
+  await act(async () => renderer.root.findByProps({ "aria-label": "Saved routes" }).props.onChange({ target: { value: saved.id } }));
   expect(input("Name").props.value).toBe("Park");
   expect(renderer.root.findByProps({ type: "checkbox" }).props.checked).toBe(false);
   await act(async () => input("Name").props.onChange({ target: { value: "My draft" } }));

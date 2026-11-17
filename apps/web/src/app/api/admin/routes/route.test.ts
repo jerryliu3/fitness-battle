@@ -24,7 +24,7 @@ it("reads metadata separately from an editable route", async () => {
   expect(catalog.select.mock.calls[0][0]).not.toContain("coordinates");
   const detail = await GET(new Request("https://test/api/admin/routes?id=park-loop"));
   expect((await detail.json()).route.id).toBe("park-loop");
-  expect(query.eq).toHaveBeenCalledWith("id", "park-loop");
+  expect(catalog.eq).toHaveBeenCalledWith("id", "park-loop");
 });
 it("validates and bounds geometry before any privileged write", async () => {
   expect((await POST(request({ ...input, coordinates: [[999, 0], [0, 0]] }))).status).toBe(400);
