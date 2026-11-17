@@ -64,6 +64,7 @@ export * from "./competition-replay";
 
 export { normalizeRouteReplay, routeReplayAt, type RouteReplaySample } from "./route-replay";
 export * from "./race-course";
+export * from "./race-route-catalog";
 export * from "./course-scene";
 
 export { createFieldOverlayHold } from "./field-overlay-hold";
@@ -77,6 +78,7 @@ export * from "./competition-place";
 export * from "./chart-geometry";
 export * from "./experience-concepts";
 export * from "./onboarding-overtake";
+export * from "./onboarding-course";
 export * from "./onboarding-journey";
 export * from "./chart-presentation";
 export * from "./appearance";
