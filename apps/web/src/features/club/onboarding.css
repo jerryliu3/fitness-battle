@@ -5,6 +5,8 @@
 .onboarding-sports { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .onboarding-sport { min-height: 142px; border: 1px solid var(--line); border-radius: 20px; background: var(--card); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font: inherit; cursor: pointer; }
 .onboarding-sport[aria-pressed="true"] { border: 2px solid var(--ink); background: var(--action-soft); }
+.onboarding-sport-emoji { display: inline-block; font: var(--type-display); line-height: var(--type-display-leading); transform: scale(3.6); }
+.onboarding-sport-emoji[data-mirror="true"] { transform: scale(3.6) scaleX(-1); }
 .onboarding-actions { display: flex; gap: 12px; align-items: center; }
 .onboarding-actions > .fb-btn { flex: 1; }
 .onboarding-actions:empty { display: none; }
@@ -13,7 +15,7 @@
 
 /* Interactive feature discovery, with no account or health data access. */
 .onboarding-feature-tabs { display: flex; border: 1px solid var(--line); border-radius: 999px; background: var(--soft); padding: 4px; gap: 2px; }
-.onboarding-feature-tabs button { flex: 1; min-width: 0; min-height: 44px; padding: 8px 5px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-weight: 700; font-size: 12px; cursor: pointer; }
+.onboarding-feature-tabs button { flex: 1; min-width: 0; min-height: 44px; padding: 8px 5px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: var(--type-label); cursor: pointer; }
 .onboarding-feature-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
 
 .onboarding-account { display: grid; gap: 18px; }

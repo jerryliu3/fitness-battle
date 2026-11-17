@@ -4,7 +4,7 @@ import { OnboardingFeatureTour } from "../src/features/onboarding-feature-tour";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ONBOARDING_SPORT_TILES as sportTiles, EMPTY_GUEST_INTRO, ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId,
@@ -22,8 +22,7 @@ import { useCompeteStore } from "../src/lib/compete-store";
 import { useThemeColors } from "../src/theme";
 import { FocusButton, useFocusStyles } from "../src/ui/focus";
 import { AppText } from "../src/ui/section";
-
-
+const SPORT_EMOJI_STYLE = { textAlign: "center" as const, transform: [{ scale: 4.5 }], includeFontPadding: false };
 
 export default function Welcome() {
   const { user, loading, signUp } = useAuth();
@@ -142,8 +141,8 @@ export default function Welcome() {
           {step === "overtake" && <View pointerEvents="none" style={{ ...box(8, 124), right: 122, borderRadius: 18, overflow: "hidden" }}>
             <MaterialPanel style={{ position: "absolute", inset: 0 }} />
             <View style={{ padding: 12, gap: 4 }}>
-              <AppText role="heading" style={{ fontSize: 22, lineHeight: 26 }} maxFontSizeMultiplier={1.2}>Make training fun.</AppText>
-              <AppText role="caption" style={{ fontSize: 13, lineHeight: 17 }} maxFontSizeMultiplier={1.2}>Race your level. Chase a friendly rival and make the next overtake yours.</AppText>
+              <AppText role="heading" maxFontSizeMultiplier={1.2}>Make training fun.</AppText>
+              <AppText role="caption" maxFontSizeMultiplier={1.2}>Race your level. Chase a friendly rival and make the next overtake yours.</AppText>
             </View>
           </View>}
           {step === "sport" && <>
@@ -154,10 +153,17 @@ export default function Welcome() {
                 style={{ width: 158, height: 182, alignItems: "center", justifyContent: "center", borderRadius: 26,
                   borderWidth: 2, borderColor: draft.sport === sport.id ? "#082637" : "transparent",
                   backgroundColor: sportTiles[sport.id].background }}>
-                <Text accessible={false} allowFontScaling={false} style={{ fontSize: 108, lineHeight: 126, textAlign: "center", includeFontPadding: false, transform: [{ scaleX: sportTiles[sport.id].mirror ? -1 : 1 }] }}>{sportTiles[sport.id].emoji}</Text>
+                <AppText
+                  accessible={false}
+                  allowFontScaling={false}
+                  role="display"
+                  style={{ ...SPORT_EMOJI_STYLE, transform: sportTiles[sport.id].mirror ? [{ scale: 4.5 }, { scaleX: -1 }] : [{ scale: 4.5 }] }}
+                >
+                  {sportTiles[sport.id].emoji}
+                </AppText>
                 <AppText role="label" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2} style={{ color: "#082637", alignSelf: "stretch", paddingHorizontal: 16 }}>{sport.name}</AppText>
                 {draft.sport === sport.id && <View pointerEvents="none" style={{ position: "absolute", top: 10, right: 10, width: 25, height: 25, borderRadius: 13, backgroundColor: "#082637", alignItems: "center", justifyContent: "center" }}>
-                  <Text accessible={false} allowFontScaling={false} style={{ color: "white", fontSize: 18, fontWeight: "800", lineHeight: 22 }}>✓</Text>
+                  <AppText accessible={false} allowFontScaling={false} role="label" style={{ color: "#ffffff" }}>✓</AppText>
                 </View>}
               </Pressable>)}
             </View>

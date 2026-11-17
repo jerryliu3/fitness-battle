@@ -119,7 +119,7 @@ function Welcome({ preview }: { preview: boolean }) {
       <div className="onboarding-sports">
         {SPORTS.map(sport => <button type="button" key={sport.id} className="onboarding-sport"
           style={{ background: sportTiles[sport.id].background }} aria-pressed={draft.sport === sport.id} onClick={() => { setDraft(d => ({ ...d, sport: sport.id })); setStep("athlete"); }}>
-          <span aria-hidden style={{ fontSize: 108, lineHeight: 1.2, transform: sportTiles[sport.id].mirror ? "scaleX(-1)" : undefined }}>{sportTiles[sport.id].emoji}</span><strong>{sport.name}</strong>
+          <span aria-hidden className="onboarding-sport-emoji" data-mirror={sportTiles[sport.id].mirror ? "true" : undefined}>{sportTiles[sport.id].emoji}</span><strong>{sport.name}</strong>
         </button>)}
       </div>
     </>}
