@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createRaceCourse, type LngLat } from "@fitness-battle/shared";
 import { MAX_ADMIN_ROUTE_BYTES, parseAdminRouteGpx, validateAdminRoute, type AdminRaceRoute, type AdminRaceRouteSummary } from "@/lib/admin-route-input";
 import type { AdminRouteAssignment, AdminRouteSurface } from "@/lib/admin-route-overview";
-import { AppParagraph, SectionHeader } from "@/ui/section";
+import { AppParagraph, AppText, SectionHeader } from "@/ui/section";
 
 type CatalogOverviewRow = AdminRaceRouteSummary & { frozenWeeks: number; upcomingWeeks: number; inRotation: boolean };
 type RouteOverview = {
@@ -121,14 +121,14 @@ export function AdminRouteControls() {
       <SectionHeader title="Where each surface gets its path" />
       <RouteAdminTable ariaLabel="Route surfaces">
         <thead><tr><th style={tableCell}>Surface</th><th style={tableCell}>Managed on</th><th style={tableCell}>Storage</th></tr></thead>
-        <tbody>{overview.surfaces.map(surface => <tr key={surface.id}><td style={tableCell}>{surface.label}<br /><small style={{ color: "var(--muted, #5c6b66)" }}>{surface.notes}</small></td><td style={tableCell}>{surface.managedOn === "server" ? "Server (Supabase + Vercel)" : "Client bundle"}</td><td style={tableCell}><code style={{ fontSize: 12 }}>{surface.storage}</code></td></tr>)}</tbody>
+        <tbody>{overview.surfaces.map(surface => <tr key={surface.id}><td style={tableCell}>{surface.label}<br /><AppText as="small" role="caption" secondary>{surface.notes}</AppText></td><td style={tableCell}>{surface.managedOn === "server" ? "Server (Supabase + Vercel)" : "Client bundle"}</td><td style={tableCell}><code className="fb-copy">{surface.storage}</code></td></tr>)}</tbody>
       </RouteAdminTable>
       <SectionHeader title="Catalog status" />
       <AppParagraph typographyRole="body">Active rotation order: {overview.activeIds.length ? overview.activeIds.join(" → ") : "none"}. New waves pick `floor(epoch / 1 week) % active count` from that sorted list unless you override an upcoming assignment.</AppParagraph>
       <RouteAdminTable ariaLabel="Catalog routes">
         <thead><tr><th style={tableCell}>Route</th><th style={tableCell}>Status</th><th style={tableCell}>Frozen weeks</th><th style={tableCell}>Upcoming</th><th style={tableCell}></th></tr></thead>
         <tbody>{overview.catalog.map(route => <tr key={route.id}>
-          <td style={tableCell}><strong>{route.name}</strong><br /><code style={{ fontSize: 12 }}>{route.id}</code>{route.location ? <><br />{route.location}</> : null}</td>
+          <td style={tableCell}><strong>{route.name}</strong><br /><code className="fb-copy">{route.id}</code>{route.location ? <><br />{route.location}</> : null}</td>
           <td style={tableCell}>{route.inRotation ? "In rotation" : "Inactive"}</td>
           <td style={tableCell}>{route.frozenWeeks}</td>
           <td style={tableCell}>{route.upcomingWeeks}</td>
@@ -139,9 +139,9 @@ export function AdminRouteControls() {
       <RouteAdminTable ariaLabel="Competition route assignments">
         <thead><tr><th style={tableCell}>Wave start (ET)</th><th style={tableCell}>Assigned route</th><th style={tableCell}>Auto pick</th><th style={tableCell}>Status</th></tr></thead>
         <tbody>{overview.assignments.length ? overview.assignments.map(row => <tr key={row.wave_start}>
-          <td style={tableCell}><code style={{ fontSize: 12 }}>{row.wave_start}</code><br />{formatWhen(row.wave_start)}</td>
-          <td style={tableCell}>{row.route_name}<br /><code style={{ fontSize: 12 }}>{row.route_id}</code></td>
-          <td style={tableCell}>{row.autoRouteId ? <code style={{ fontSize: 12 }}>{row.autoRouteId}</code> : "—"}<br />{row.matchesRotation ? "Matches rotation" : "Override"}</td>
+          <td style={tableCell}><code className="fb-copy">{row.wave_start}</code><br />{formatWhen(row.wave_start)}</td>
+          <td style={tableCell}>{row.route_name}<br /><code className="fb-copy">{row.route_id}</code></td>
+          <td style={tableCell}>{row.autoRouteId ? <code className="fb-copy">{row.autoRouteId}</code> : "—"}<br />{row.matchesRotation ? "Matches rotation" : "Override"}</td>
           <td style={tableCell}>{row.started ? "Started" : "Upcoming"}</td>
         </tr>) : <tr><td colSpan={4} style={tableCell}>No frozen assignments yet. They appear when athletes first open 3D for a competition wave.</td></tr>}</tbody>
       </RouteAdminTable>
@@ -186,5 +186,5 @@ export function AdminRouteControls() {
 const tableCell = { border: "1px solid var(--line)", padding: "8px 10px", textAlign: "left" as const, verticalAlign: "top" as const };
 
 function RouteAdminTable({ ariaLabel, children }: { ariaLabel: string; children: ReactNode }) {
-  return <div style={{ overflowX: "auto" }}><table aria-label={ariaLabel} style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>{children}</table></div>;
+  return <div style={{ overflowX: "auto" }}><table aria-label={ariaLabel} className="fb-copy" style={{ width: "100%", borderCollapse: "collapse" }}>{children}</table></div>;
 }
