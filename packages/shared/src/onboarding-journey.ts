@@ -79,10 +79,10 @@ export function onboardingWeeklyVolumeUnit(sport: SportId, units: UnitSystem) {
   return sport === "walking" ? "steps" : sport === "strength" ? "minutes" : units === "metric" ? "km" : "miles";
 }
 
-/** Distance entry stays compact; steps and minutes retain their native ranges. */
-export function onboardingWeeklyVolumeInput(sport: SportId, value: string): string {
+/** Keep onboarding volume entry within the supported input range. */
+export function onboardingWeeklyVolumeInput(value: string): string {
   if (!/^\d*\.?\d*$/.test(value)) return "0";
-  return (sport === "running" || sport === "cycling") && Number(value) > 100 ? "100" : value;
+  return Number(value) > 1000 ? "1000" : value;
 }
 
 /** Convert optional declarations to the scorer's metres, seconds or steps. */

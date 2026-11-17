@@ -186,7 +186,7 @@ export default function Onboarding() {
               <AppText role="caption" style={{ flex: 1 }}>Typical weekly {sport === "strength" ? "training" : sport === "walking" ? "steps" : "distance"} ({onboardingWeeklyVolumeUnit(sport, units)}) · {sportName}</AppText>
               <TextInput style={[f.input, { width: 80, textAlign: "center" }]} keyboardType="decimal-pad" accessibilityLabel={`Typical weekly ${sport}`}
                 value={weeklyVolume[sport] ?? "0"}
-                onChangeText={value => setWeeklyVolume(current => ({ ...current, [sport]: onboardingWeeklyVolumeInput(sport, value) }))} />
+                onChangeText={value => setWeeklyVolume(current => ({ ...current, [sport]: onboardingWeeklyVolumeInput(value) }))} />
             </View>}
             <EventRegistration state={state} event={sport} registered={registered} ticketOnly busy={saving || (!preview && !canWrite)} error={saveError ?? undefined} onBack={back} onClaim={() => void finish()} onView={() => void finish()} />
           </>}
