@@ -25,7 +25,11 @@ vi.mock("react-native", () => ({useColorScheme: () => "light",  AppState: { curr
   View: "View",
   Clipboard: { setString: vi.fn() },
 }));
-vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "https://example.test" } }));
+vi.mock("../lib/env", () => ({
+  mobileEnv: { apiUrl: "https://example.test" },
+  publicProfileOrigin: (apiUrl: string) =>
+    apiUrl.includes("localhost") ? apiUrl.replace(/\/$/, "") : "https://overtaek.xyz",
+}));
 vi.mock("react-native-safe-area-context", () => ({
   SafeAreaView: "SafeAreaView",
 }));
@@ -205,16 +209,16 @@ describe("athlete profile navigation and layout", () => {
     });
   });
 
-  it("renders read-only public profile summary with achievements below", async () => {
+  it("renders profile link row with achievements below crest", async () => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     mock.params = {};
     await act(async () => {
       renderer = create(createElement(AthleteScreen));
     });
     const rendered = JSON.stringify(renderer.toJSON());
-    expect(rendered).toContain("Public profile");
     expect(rendered).toContain("AthleteCrest");
     expect(rendered).toContain("Achievements");
+    expect(rendered).not.toContain("Primary sport");
   });
 
   it("renders shareable profile link row with copy and edit profile", async () => {
@@ -224,10 +228,23 @@ describe("athlete profile navigation and layout", () => {
       renderer = create(createElement(AthleteScreen));
     });
     const rendered = JSON.stringify(renderer.toJSON());
-    expect(rendered).toContain("https://example.test/app/athlete?id=alice");
+    expect(rendered).toContain("https://overtaek.xyz/app/athlete?id=alice");
     expect(rendered).toContain("Copy");
     expect(rendered).toContain("Edit profile");
     expect(rendered).toContain("Settings");
+  });
+
+  it("opens edit profile as a routed panel with crest and editor", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    mock.params = { panel: "profile" };
+    await act(async () => {
+      renderer = create(createElement(AthleteScreen));
+    });
+    const screenHeader = renderer.root.findByType("ScreenHeader" as never);
+    expect(screenHeader.props.title).toBe("Edit profile");
+    const rendered = JSON.stringify(renderer.toJSON());
+    expect(rendered).toContain("AthleteCrest");
+    expect(rendered).toContain("Identity");
   });
 
   it("renders signed out athlete page with updated copy and signedOut flag for metrics", async () => {

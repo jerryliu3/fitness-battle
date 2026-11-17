@@ -6,6 +6,14 @@ const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string>;
 /** Hosted web app used for API routes and embedded scenes (athlete card, arena, routes). */
 export const DEFAULT_PRODUCTION_API_URL = "https://fitness-battle-one.vercel.app";
 
+/** Public marketing site used in shareable profile links (not the dev API host). */
+export const PUBLIC_WEB_ORIGIN = "https://overtaek.xyz";
+
+export function publicProfileOrigin(apiUrl: string) {
+  if (isLoopbackApiUrl(apiUrl)) return apiUrl.replace(/\/$/, "");
+  return PUBLIC_WEB_ORIGIN;
+}
+
 function isLoopbackApiUrl(url: string) {
   try {
     const host = new URL(url).hostname;

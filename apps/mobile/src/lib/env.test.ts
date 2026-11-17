@@ -26,3 +26,19 @@ describe("mobileEnv apiUrl", () => {
     expect(mobileEnv.apiUrl).toBe(DEFAULT_PRODUCTION_API_URL);
   });
 });
+
+describe("publicProfileOrigin", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it("uses overtaek.xyz for non-loopback API hosts", async () => {
+    const { publicProfileOrigin, PUBLIC_WEB_ORIGIN } = await import("./env");
+    expect(publicProfileOrigin("https://example.test")).toBe(PUBLIC_WEB_ORIGIN);
+  });
+
+  it("keeps localhost for local dev", async () => {
+    const { publicProfileOrigin } = await import("./env");
+    expect(publicProfileOrigin("http://localhost:3000")).toBe("http://localhost:3000");
+  });
+});

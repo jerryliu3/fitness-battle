@@ -24,11 +24,11 @@ const f=useFocusStyles();
         <View style={{ gap: 8 }}>
           <SettingsRow
             title="Edit profile"
-            detail="Name & city"
+            detail="Name, city & card"
             onPress={() =>
-              router.replace({
-                pathname: "/athlete",
-                params: { edit: "1" },
+              router.push({
+                pathname: "/athlete-settings",
+                params: { panel: "profile" },
               })
             }
           />
