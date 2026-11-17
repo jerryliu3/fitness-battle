@@ -13,8 +13,10 @@ import {
   earliestDataDate,
   formatTrainingHours,
   formatWeeklyCompetitionRange,
+  monthlyPeriodBounds,
   shiftZonedDay,
   shiftTrainingMonth,
+  weeklyPeriodBounds,
   sportById,
   defaultTrainingSports,
   normalizeTrainingSports,
@@ -57,6 +59,18 @@ const colors = [
     cells.find((d) => d.day === dayKey(now, displayTz)) ??
     cells.find((d) => d.inMonth && !d.future);
   const earliest = useMemo(() => earliestDataDate(state, now, createdAt), [state, now, createdAt]);
+  const barAsOf = useMemo(() => {
+    const viewedEnd =
+      range === "week"
+        ? weeklyPeriodBounds(anchor, displayTz).endsAt
+        : range === "month"
+          ? monthlyPeriodBounds(anchor, displayTz).endsAt
+          : monthlyPeriodBounds(
+              new Date(Date.UTC(Number(dayKey(anchor, displayTz).slice(0, 4)), 11, 1, 12)),
+              displayTz,
+            ).endsAt;
+    return new Date(Math.min(viewedEnd.getTime(), now.getTime()));
+  }, [range, anchor, displayTz, now]);
   const { prevAllowed, nextAllowed } = trainingRangeNavigation(
     anchor,
     earliest,
@@ -123,7 +137,7 @@ const colors = [
           }}
         />
       </View>
-      <BenchmarkChart key={sports.join(",")} buckets={buckets} now={now} displayTimeZone={displayTz} dateLabel={range === "week" ? formatWeeklyCompetitionRange(anchor, displayTz) : anchor.toLocaleDateString("en-US", { timeZone: displayTz, ...(range === "year" ? { year: "numeric" } : { month: "long", year: "numeric" }) })} />
+      <BenchmarkChart key={sports.join(",")} buckets={buckets} now={barAsOf} displayTimeZone={displayTz} dateLabel={range === "week" ? formatWeeklyCompetitionRange(anchor, displayTz) : anchor.toLocaleDateString("en-US", { timeZone: displayTz, ...(range === "year" ? { year: "numeric" } : { month: "long", year: "numeric" }) })} />
       <FocusDisclosure title="Daily activity">
         <Text style={f.kicker}>
           {anchor.toLocaleDateString("en-US", {

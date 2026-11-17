@@ -261,6 +261,16 @@ it("aligns account creation date at the left of effortScoreLine and extends into
   expect(chart.xTicks.at(-1)?.label).toMatch(/^Dec [23]$/);
 });
 
+it("clamps home fourWeeks training line to account creation", () => {
+  const now = new Date("2026-11-09T15:00:00Z");
+  const createdAt = "2026-11-06T15:00:00Z";
+  const state = freshState(now);
+  state.activities = [];
+  const chart = homeTrainingLine(state, "fourWeeks", now, createdAt);
+  expect(chart.date.startsWith("Nov 6")).toBe(true);
+  expect(chart.points[0]?.label.startsWith("Nov 6")).toBe(true);
+});
+
 it("interpolates line and benchmark bar models smoothly between ranges", () => {
   const now = new Date("2026-11-05T17:00:00Z"), state = freshState(now);
   state.activities = [

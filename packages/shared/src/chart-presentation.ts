@@ -188,14 +188,21 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
   }
   const windowDays = Math.max(
     2,
-    Array.from({ length: days }, (_, i) => shiftAppDay(start, i)).filter(at => dayKey(at) >= dayKey(clampedStart)).length,
+    Array.from({ length: days }, (_, i) => shiftZonedDay(start, i, displayTz)).filter(
+      (at) => dayKey(at, displayTz) >= dayKey(clampedStart, displayTz),
+    ).length,
   );
   const cumRows: { id: string; date: string; value: number; inspectable?: boolean }[] = cumulative(clampedStart, elapsed);
   if (cumRows.length === 1) {
     cumRows.unshift({ id: `start:${clampedStart.toISOString()}`, date: clampedStart.toISOString(), value: 0, inspectable: false });
   }
   const fourWeeksTimeline = clampedStart.getTime() > start.getTime()
-    ? { start: clampedStart, end: shiftAppDay(clampedStart, days), zeroMin: true }
+    ? {
+        start: clampedStart,
+        end: shiftZonedDay(clampedStart, days, displayTz),
+        zeroMin: true,
+        timeZone: displayTz,
+      }
     : undefined;
   return openLineModel(cumRows, value => value.toFixed(1), windowDays, fourWeeksTimeline, true);
 }

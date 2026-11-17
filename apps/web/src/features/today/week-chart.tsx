@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { homeTrainingLine, type CompeteState } from "@fitness-battle/shared";
+import { useAuth } from "@/components/auth-context";
 import { AppHeading, TextAction } from "@/ui/section";
 import { ChartFrame } from "@/ui/chart-frame";
 import { OpenLineChart } from "@/ui/open-line-chart";
@@ -9,8 +10,9 @@ import { ActivityActions } from "./activity-actions";
 import "./week-chart.css";
 
 export function WeekChart({ state, detail = false, ready = true }: { state: CompeteState; detail?: boolean; ready?: boolean }) {
+  const { user } = useAuth();
   const [range, setRange] = useState<"week" | "fourWeeks">("week");
-  const chart = homeTrainingLine(state, range);
+  const chart = homeTrainingLine(state, range, undefined, user?.createdAt);
   return <ChartFrame ready={ready}><section className="home-portfolio" aria-label="Training hours">
     <div className="home-portfolio-header"><AppHeading level={1} role="display">Your effort</AppHeading><ActivityActions compact /></div>
     <OpenLineChart showDateRange={false} showAxes={true} chart={chart} label="Cumulative training hours" unit="hrs" range={range} onRangeChange={next => { if (next === "week" || next === "fourWeeks") setRange(next); }} includeYear={false} footerAction={!detail ? <TextAction href="/week" label="View week →" accessibilityLabel="View your full week" /> : undefined} />

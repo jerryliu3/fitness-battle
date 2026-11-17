@@ -9,8 +9,10 @@ import {
   earliestDataDate,
   formatTrainingHours,
   formatWeeklyCompetitionRange,
+  monthlyPeriodBounds,
   shiftZonedDay,
   shiftTrainingMonth,
+  weeklyPeriodBounds,
   sportById,
   defaultTrainingSports,
   normalizeTrainingSports,
@@ -24,8 +26,10 @@ import {
 import { BenchmarkChart } from "@/ui/benchmark-chart";
 import { ChartRangeToggle } from "./chart-range-toggle";
 import { TrainingSportMenu } from "./training-sport-menu";
+import { useAuth } from "@/components/auth-context";
 
 export function TrainingAtlas({ state }: { state: CompeteState }) {
+  const { user } = useAuth();
   const now = competeNow(state);
   const displayTz = accountTimeZone(state);
   const [sports, setSports] = useState<SportId[]>(() => defaultTrainingSports()),
@@ -47,7 +51,22 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
             ? { year: "numeric" }
             : { month: "long", year: "numeric" }),
         });
-  const earliest = useMemo(() => earliestDataDate(state, now), [state, now]);
+  const earliest = useMemo(
+    () => earliestDataDate(state, now, user?.createdAt),
+    [state, now, user?.createdAt],
+  );
+  const barAsOf = useMemo(() => {
+    const viewedEnd =
+      range === "week"
+        ? weeklyPeriodBounds(anchor, displayTz).endsAt
+        : range === "month"
+          ? monthlyPeriodBounds(anchor, displayTz).endsAt
+          : monthlyPeriodBounds(
+              new Date(Date.UTC(Number(dayKey(anchor, displayTz).slice(0, 4)), 11, 1, 12)),
+              displayTz,
+            ).endsAt;
+    return new Date(Math.min(viewedEnd.getTime(), now.getTime()));
+  }, [range, anchor, displayTz, now]);
   const { prevAllowed, nextAllowed } = trainingRangeNavigation(
     anchor,
     earliest,
@@ -95,7 +114,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           →
         </button>
       </div>
-      <BenchmarkChart key={sports.join(",")} buckets={buckets} now={now} dateLabel={dateLabel} displayTimeZone={displayTz} />
+      <BenchmarkChart key={sports.join(",")} buckets={buckets} now={barAsOf} dateLabel={dateLabel} displayTimeZone={displayTz} />
         <ChartRangeToggle
           value={range}
           onChange={(next) => {
