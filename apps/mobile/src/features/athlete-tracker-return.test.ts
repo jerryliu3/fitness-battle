@@ -59,7 +59,12 @@ vi.mock("../lib/device-health", () => ({
   syncAppleHealth: vi.fn(),
   syncHealthConnect: vi.fn(),
 }));
-vi.mock("../lib/platform-providers", () => ({ providersForDevice: () => [] }));
+const providersMock = vi.hoisted(() => ({
+  list: [] as { id: string; name: string }[],
+}));
+vi.mock("../lib/platform-providers", () => ({
+  providersForDevice: () => providersMock.list,
+}));
 vi.mock("../lib/tracker-connect", () => ({
   isCloudOAuthProvider: (id: string) => id === "strava",
   startCloudTrackerConnect: vi.fn(),
@@ -145,7 +150,7 @@ describe("athlete profile navigation and layout", () => {
     });
     const sidePanel = renderer.root
       .findAllByType("SidePanel" as never)
-      .find((node) => node.props.title === "Edit profile");
+      .find((node) => node.props.title === "Settings");
     expect(sidePanel?.props.open).toBe(true);
   });
 
@@ -162,6 +167,24 @@ describe("athlete profile navigation and layout", () => {
       screenHeader.props.onBack();
     });
     expect(mock.back).toHaveBeenCalled();
+  });
+
+  it("Data Sync uses secondary Connect rows and no header dismiss control", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    providersMock.list = [
+      { id: "apple_health", name: "Apple Health" },
+      { id: "strava", name: "Strava" },
+    ];
+    mock.params = { panel: "connections" };
+    await act(async () => {
+      renderer = create(createElement(AthleteScreen));
+    });
+    const screenHeader = renderer.root.findByType("ScreenHeader" as never);
+    expect(screenHeader.props.trailing).toBeUndefined();
+    const buttons = renderer.root.findAllByType("Button" as never);
+    const connect = buttons.find((node) => node.props.label === "Connect");
+    expect(connect?.props.secondary).toBe(true);
+    providersMock.list = [];
   });
 
   it("subpanel back button returns to /athlete with edit=1 when cannot go back", async () => {

@@ -6,13 +6,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SectionHeader, SectionStack, textStyle, AppText } from "../src/ui/section";
 import { AthletePreferencesFields } from "../src/features/athlete-preferences";
 import { activityFromSample } from "@fitness-battle/shared";
-import { GlassDismissButton, ScreenHeader } from "../src/ui/screen-header";
+import { ScreenHeader } from "../src/ui/screen-header";
 import { AppIcon } from "../src/ui/app-icon";
 import { IntegrationIcon } from "../src/ui/integration-icon";
 
-import { ChoicePicker } from "../src/ui/choice-picker";
 import {
-  SPORTS,
+  sportById,
   primaryFreezePeriodStart,
   competeNow,
   clubLifetimeTotals,
@@ -21,13 +20,10 @@ import {
   personalRecordHistory,
   formatClockTime,
   RECORD_DISTANCES,
-  competitionTrack,
-  effortPointProgress,
+  RANK_BANDS,
   type ProviderId,
-  type ProfileGender,
   webProductPath,
 } from "@fitness-battle/shared";
-import { SearchableCountryPicker } from "../src/ui/searchable-country-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
@@ -55,8 +51,12 @@ import {
 } from "../src/lib/tracker-connect";
 import { SHELL_RADIUS } from "../src/theme";
 import { FocusButton, FocusSheet, FocusSidePanel } from "../src/ui/focus";
-import { ProfilePhoto } from "../src/features/profile-photo";
 import { AthleteCrest } from "../src/features/athlete-crest";
+import {
+  AthleteProfileEditor,
+  type AthleteProfileDraft,
+} from "../src/features/athlete-edit-panel";
+import { RankSymbol } from "../src/ui/rank-symbol";
 import { Achievements } from "../src/features/club-achievements";
 import { AwardShelf } from "../src/ui/award-shelf";
 import { athleteCardModel, awardCards } from "@fitness-battle/shared";
@@ -102,10 +102,6 @@ const styles=useThemedStyles(stylesThemes);
     panel?: AthletePanel;
     edit?: string;
   }>();
-  const [name, setName] = useState<string | null>(null);
-  const [city, setCity] = useState<string | null>(null);
-  const [genderDraft, setGenderDraft] = useState<ProfileGender | null>(null);
-  const [countryDraft, setCountryDraft] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [syncBusy, setSyncBusy] = useState(false);
   const [busyProvider, setBusyProvider] = useState<string | null>(null);
@@ -116,7 +112,9 @@ const styles=useThemedStyles(stylesThemes);
   const [authBusy, setAuthBusy] = useState(false);
   const [authNote, setAuthNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
-  const [editOpen, setEditOpen] = useState(params.edit === "1");
+  const [settingsOpen, setSettingsOpen] = useState(params.edit === "1");
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editDraft, setEditDraft] = useState<AthleteProfileDraft | null>(null);
   const [cardDragging, setCardDragging] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const panel = inlineConnections ? "connections" : params.panel ?? null;
@@ -133,16 +131,20 @@ const styles=useThemedStyles(stylesThemes);
   const appliedTracker = useRef<string | null>(null);
 
   useEffect(() => {
-    if (params.edit === "1") setEditOpen(true);
+    if (params.edit === "1") setSettingsOpen(true);
   }, [params.edit]);
 
   useEffect(() => {
-    setName(null);
-    setCity(null);
-    setGenderDraft(null);
-    setCountryDraft(null);
+    if (panel !== "profile") return;
+    setEditingProfile(true);
+    router.replace({ pathname: "/athlete" });
+  }, [panel, router]);
+
+  useEffect(() => {
     setNote(null);
     setConfirmFreeze(false);
+    setEditingProfile(false);
+    setEditDraft(null);
   }, [user?.id]);
 
   useEffect(() => {
@@ -192,15 +194,6 @@ const styles=useThemedStyles(stylesThemes);
     );
   }
 
-  const draftName = name ?? state.name;
-  const draftCity = city ?? state.city;
-  const draftGender = genderDraft ?? state.gender ?? null;
-  const draftCountry = countryDraft ?? state.countryCode ?? "";
-  const dirty =
-    draftName !== state.name ||
-    draftCity !== state.city ||
-    draftGender !== (state.gender ?? null) ||
-    draftCountry !== (state.countryCode ?? "");
   const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
 
   const rowBusy = syncBusy || Boolean(busyProvider);
@@ -219,17 +212,16 @@ const styles=useThemedStyles(stylesThemes);
   const pageHeader = (
     <ScreenHeader
       localBack={Boolean(panel)}
-      hidden={!panel && editOpen}
+      hidden={!panel && settingsOpen}
       nativeBar={!panel}
-      title={panel ? titles[panel] : "Athlete"}
-      onBack={exitAthletePanel}
-      trailing={
-        panel === "connections" && !inlineConnections ? (
-          <GlassDismissButton
-            label="Close Data Sync"
-            onPress={exitAthletePanel}
-          />
-        ) : undefined
+      title={panel ? titles[panel] : editingProfile ? "Edit profile" : "Athlete"}
+      onBack={
+        editingProfile && !panel
+          ? () => {
+              setEditingProfile(false);
+              setEditDraft(null);
+            }
+          : exitAthletePanel
       }
     />
   );
@@ -485,18 +477,23 @@ const styles=useThemedStyles(stylesThemes);
             router.push("/blocked-athletes");
           }}
         />
-          <AccountActions showDeleteButton={false} footer={(openDelete) => (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 16 }}>
-              <LegalLinks />
-              <Pressable accessibilityRole="button" accessibilityLabel="Delete account" onPress={openDelete}>
-                <AppText role="label" style={{ color: "#b42318" }}>Delete account</AppText>
-              </Pressable>
-            </View>
-          )} />
-          <FocusButton
-            label="Sign out"
-            secondary
-            onPress={() => setConfirmSignOut(true)}
+          <AccountActions
+            showDeleteButton={false}
+            middle={
+              <FocusButton
+                label="Sign out"
+                secondary
+                onPress={() => setConfirmSignOut(true)}
+              />
+            }
+            footer={(openDelete) => (
+              <View style={{ gap: 14, paddingTop: 4 }}>
+                <LegalLinks />
+                <Pressable accessibilityRole="button" accessibilityLabel="Delete account" onPress={openDelete}>
+                  <AppText role="label" style={{ color: appearanceColors.statusError }}>Delete account</AppText>
+                </Pressable>
+              </View>
+            )}
           />
           <FocusSheet open={confirmSignOut} title="Sign out?" onClose={() => setConfirmSignOut(false)}><AppText role="body" secondary>You can sign in again to return to your account.</AppText><FocusButton label="Sign out" onPress={() => { setConfirmSignOut(false); void signOut(); }} /><FocusButton label="Cancel" secondary onPress={() => setConfirmSignOut(false)} /></FocusSheet>
         </SectionStack>
@@ -521,49 +518,17 @@ const styles=useThemedStyles(stylesThemes);
                 <Text style={[styles.rowTitle, { flex: 1 }]}>{provider.name}</Text>
               </>
             );
-            if (isDeviceProvider(provider.id)) {
-              const deviceId = provider.id;
+            const isDevice = isDeviceProvider(provider.id);
+            const isCloud = isCloudOAuthProvider(provider.id);
+            const connected = Boolean(link?.linked && link.status !== "disconnected");
+            const connecting = isDevice ? syncBusy : busyProvider === provider.id;
+            if (!isDevice && !isCloud) {
               return (
                 <View
-                  key={deviceId}
+                  key={provider.id}
                   style={[styles.syncRow, showDivider && styles.syncRowDivider]}
                 >
                   {title}
-                  <View style={{ flexShrink: 0 }}>
-                    <FocusButton
-                      label={syncBusy ? "Syncing…" : "Sync"}
-                      disabled={rowBusy}
-                      onPress={() => void syncDevice(deviceId)}
-                    />
-                  </View>
-                </View>
-              );
-            }
-            if (isCloudOAuthProvider(provider.id)) {
-              const cloudId = provider.id;
-              const connected =
-                link?.linked && link.status !== "disconnected";
-              return (
-                <View
-                  key={cloudId}
-                  style={[styles.syncRow, showDivider && styles.syncRowDivider]}
-                >
-                  {title}
-                  {connected ? (
-                    <DataSyncActions provider={cloudId} />
-                  ) : (
-                    <View style={{ flexShrink: 0 }}>
-                      <FocusButton
-                        label={
-                          busyProvider === provider.id
-                            ? "Authorizing…"
-                            : "Connect"
-                        }
-                        disabled={rowBusy}
-                        onPress={() => void connectCloud(cloudId)}
-                      />
-                    </View>
-                  )}
                 </View>
               );
             }
@@ -573,6 +538,22 @@ const styles=useThemedStyles(stylesThemes);
                 style={[styles.syncRow, showDivider && styles.syncRowDivider]}
               >
                 {title}
+                {connected ? (
+                  <DataSyncActions provider={provider.id} />
+                ) : (
+                  <View style={{ flexShrink: 0 }}>
+                    <FocusButton
+                      secondary
+                      label={connecting ? (isDevice ? "Connecting…" : "Authorizing…") : "Connect"}
+                      disabled={rowBusy}
+                      onPress={() =>
+                        isDevice
+                          ? void syncDevice(provider.id as "apple_health" | "google_health")
+                          : void connectCloud(provider.id)
+                      }
+                    />
+                  </View>
+                )}
               </View>
             );
           })}
@@ -607,13 +588,44 @@ const styles=useThemedStyles(stylesThemes);
           <AppText role="body" secondary>
             Activities can raise your live score after today’s expected training is covered. Shortfalls appear the next day. Official scores and levels finalize weekly.
           </AppText>
+          <SectionHeader title="Levels" />
+          <View style={{ gap: 10 }}>
+            {RANK_BANDS.map((band) => (
+              <View
+                key={band.id}
+                style={[
+                  f.row,
+                  {
+                    gap: 14,
+                    padding: 12,
+                    borderRadius: SHELL_RADIUS.card,
+                    borderWidth: 1,
+                    borderColor: SHELL_COLORS.line,
+                    backgroundColor: SHELL_COLORS.card,
+                  },
+                ]}
+              >
+                <RankSymbol rank={band.id} size={48} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <AppText role="label">{band.name}</AppText>
+                  <AppText role="caption" secondary>
+                    {band.min}+ · {band.blurb}
+                  </AppText>
+                </View>
+              </View>
+            ))}
+          </View>
         </SectionStack>
 </ScrollView>
       </SafeAreaView>
     );
   }
 
-  if (panel === "preferences" || panel === "profile") {
+  if (panel === "profile") {
+    return <SafeAreaView style={styles.safe} edges={["top"]} />;
+  }
+
+  if (panel === "preferences") {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
         {pageHeader}
@@ -623,116 +635,29 @@ const styles=useThemedStyles(stylesThemes);
           keyboardShouldPersistTaps="handled"
         >
 <SectionStack divided={false}>
-          {panel === "profile" ? (
-            <>
-              <Input style={textStyle("body")}
-                value={draftName}
-                onChangeText={setName}
-                accessibilityLabel="Name"
-                maxLength={32}
-                placeholder="Name"
+          <AthletePreferencesFields state={state} dispatch={dispatch} />
+          {false && (
+            <View style={[f.row, { minHeight: 48, alignItems: "center" }]}>
+              <View style={f.grow}><AppText role="label" >Freeze this week</AppText><AppText role="body" secondary >{state?.freezesLeft ?? 0} remaining</AppText></View>
+              <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }} thumbColor="#ffffff" ios_backgroundColor={SHELL_COLORS.line} accessibilityLabel="Freeze this week" value={frozen} disabled={!frozen && (state?.freezesLeft ?? 0) <= 0}
+                onValueChange={enabled => enabled ? setConfirmFreeze(true) : dispatch({ type: "unfreeze" })} />
+            </View>
+          )}
+          {false && state && (
+            <FocusSheet
+              open={confirmFreeze}
+              title="Freeze this week?"
+              body="Your weekly score adjustment is held this week. Activity milestones still count. You can undo this before the week ends."
+              onClose={() => setConfirmFreeze(false)}
+            >
+              <FocusButton
+                label="Confirm freeze"
+                onPress={() => {
+                  dispatch({ type: "freeze" });
+                  setConfirmFreeze(false);
+                }}
               />
-              <Input style={textStyle("body")}
-                value={draftCity}
-                onChangeText={setCity}
-                accessibilityLabel="City"
-                maxLength={40}
-                placeholder="City"
-              />
-              <AppText role="label">Gender</AppText>
-              <ChoicePicker
-                label="Gender"
-                value={draftGender || "unset"}
-                options={[
-                  { value: "unset", label: "Prefer not to say" },
-                  { value: "female", label: "Female" },
-                  { value: "male", label: "Male" },
-                  { value: "other", label: "Other" },
-                ]}
-                onChange={(value) =>
-                  setGenderDraft(value === "unset" ? null : (value as ProfileGender))
-                }
-              />
-              <SearchableCountryPicker
-                label="Country"
-                value={draftCountry}
-                onChange={(code) => setCountryDraft(code)}
-              />
-              {dirty ? (
-                <FocusButton
-                  label="Save profile"
-                  onPress={() => {
-                    const trimmed = draftName.trim();
-                    if (!trimmed) {
-                      setNote("Display name cannot be empty.");
-                      return;
-                    }
-                    if (trimmed !== state.name) {
-                      dispatch({ type: "rename", name: trimmed });
-                    }
-                    const cityTrimmed = draftCity.trim();
-                    if (cityTrimmed !== state.city) {
-                      dispatch({ type: "set-city", city: cityTrimmed });
-                    }
-                    if (draftGender !== (state.gender ?? null)) {
-                      dispatch({ type: "set-gender", gender: draftGender });
-                    }
-                    if (draftCountry !== (state.countryCode ?? "")) {
-                      dispatch({ type: "set-country", countryCode: draftCountry || null });
-                    }
-                    setName(null);
-                    setCity(null);
-                    setGenderDraft(null);
-                    setCountryDraft(null);
-                    setNote("Profile saved.");
-                  }}
-                />
-              ) : null}
-              {dirty ? (
-                <FocusButton
-                  label="Cancel profile changes"
-                  secondary
-                  onPress={() => {
-                    setName(null);
-                    setCity(null);
-                    setGenderDraft(null);
-                    setCountryDraft(null);
-                  }}
-                />
-              ) : null}
-              {note ? (
-                <AppText role="body" secondary  accessibilityLiveRegion="polite">
-                  {note}
-                </AppText>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <AthletePreferencesFields state={state} dispatch={dispatch} />
-              {false && (
-                <View style={[f.row, { minHeight: 48, alignItems: "center" }]}>
-                  <View style={f.grow}><AppText role="label" >Freeze this week</AppText><AppText role="body" secondary >{state?.freezesLeft ?? 0} remaining</AppText></View>
-                  <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }} thumbColor="#ffffff" ios_backgroundColor={SHELL_COLORS.line} accessibilityLabel="Freeze this week" value={frozen} disabled={!frozen && (state?.freezesLeft ?? 0) <= 0}
-                    onValueChange={enabled => enabled ? setConfirmFreeze(true) : dispatch({ type: "unfreeze" })} />
-                </View>
-              )}
-              {false && state && (
-                <FocusSheet
-                  open={confirmFreeze}
-                  title="Freeze this week?"
-                  body="Your weekly score adjustment is held this week. Activity milestones still count. You can undo this before the week ends."
-                  onClose={() => setConfirmFreeze(false)}
-                >
-                  <FocusButton
-                    label="Confirm freeze"
-                    onPress={() => {
-                      dispatch({ type: "freeze" });
-                      setConfirmFreeze(false);
-                    }}
-                  />
-                </FocusSheet>
-              )}
-            </>
+            </FocusSheet>
           )}
         </SectionStack>
 </ScrollView>
@@ -746,10 +671,21 @@ const styles=useThemedStyles(stylesThemes);
   const records = personalRecordHistory(state, now);
   const awards = awardCards(state);
   const topRecords = records.slice(0, 3);
-  const primaryTrack = competitionTrack(state.primary);
-  const primaryRating = state.ratings.find(r => r.sport === state.primary);
-  const effortModel = effortPointProgress(state, state.primary, primaryTrack);
-  const effortScore = effortModel?.score ?? (primaryRating ? (primaryTrack === "verified" ? primaryRating.verifiedElo : primaryRating.openElo) : 1000);
+  const joinedYear =
+    user && "createdAt" in user && typeof user.createdAt === "string" && Number.isFinite(Date.parse(user.createdAt))
+      ? new Date(user.createdAt).getUTCFullYear()
+      : null;
+  const previewState =
+    editingProfile && editDraft
+      ? {
+          ...state,
+          name: editDraft.name,
+          city: editDraft.city,
+          cardHighlights: editDraft.cardHighlights,
+          gender: editDraft.gender !== undefined ? editDraft.gender : state.gender,
+          countryCode: editDraft.countryCode !== undefined ? editDraft.countryCode : state.countryCode,
+        }
+      : state;
   const profileShareUrl = useMemo(() => {
     const origin = mobileEnv.apiUrl.replace(/\/$/, "");
     const path = webProductPath("/athlete");
@@ -792,73 +728,127 @@ const styles=useThemedStyles(stylesThemes);
         >
           <AthleteCrest
             key={user?.id ?? "guest"}
-            model={athleteCardModel(state, now)}
+            model={athleteCardModel(previewState, now)}
             onInteractionChange={setCardDragging}
           />
         </View>
 
-        <View style={[f.row, { gap: 8, alignItems: "stretch" }]}>
-          <View
-            style={{
-              flex: 1,
-              minWidth: 0,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-              minHeight: 48,
-              paddingLeft: 14,
-              paddingRight: 6,
-              paddingVertical: 6,
-              borderWidth: 1,
-              borderColor: SHELL_COLORS.line,
-              borderRadius: SHELL_RADIUS.pill,
-              backgroundColor: SHELL_COLORS.card,
+        {editingProfile ? (
+          <AthleteProfileEditor
+            state={state}
+            dispatch={dispatch}
+            onDraftChange={setEditDraft}
+            onCancel={() => {
+              setEditingProfile(false);
+              setEditDraft(null);
             }}
-          >
-            <AppText
-              role="caption"
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              style={{ flex: 1, minWidth: 0 }}
-              accessibilityLabel={`Public profile link: ${profileShareUrl}`}
+            onSaved={(msg) => {
+              setEditingProfile(false);
+              setEditDraft(null);
+              setNote(msg);
+            }}
+          />
+        ) : (
+          <>
+            <View
+              style={[
+                f.card,
+                { padding: 14, backgroundColor: SHELL_COLORS.card, gap: 10 },
+              ]}
             >
-              {profileShareUrl}
-            </AppText>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Copy link"
-              onPress={copyProfileShareUrl}
-              style={({ pressed }) => ({
-                paddingHorizontal: 10,
-                paddingVertical: 7,
-                borderRadius: SHELL_RADIUS.pill,
-                borderWidth: 1,
-                borderColor: SHELL_COLORS.line,
-                backgroundColor: appearanceColors.paper,
-                opacity: pressed ? 0.75 : 1,
-              })}
-            >
-              <AppText role="caption">Copy</AppText>
-            </Pressable>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Edit profile"
-            onPress={() => setEditOpen(true)}
-            style={({ pressed }) => [
-              f.button,
-              f.secondary,
-              { flexShrink: 0, paddingHorizontal: 14, gap: 6 },
-              pressed && { opacity: 0.78 },
-            ]}
-          >
-            <AppIcon name="edit" size={18} />
-            <Text style={[f.buttonText, { color: appearanceColors.ink }]}>Edit profile</Text>
-          </Pressable>
-        </View>
+              <View style={[f.row, { justifyContent: "space-between", alignItems: "center" }]}>
+                <AppText role="label">Public profile</AppText>
+                <AppText role="caption" secondary>
+                  {joinedYear ? `Since ${joinedYear}` : sportById(state.primary).name}
+                </AppText>
+              </View>
+              <View style={[f.row, { gap: 16 }]}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <AppText role="caption" secondary>Location</AppText>
+                  <AppText role="body">{state.city.trim() || "Not set"}</AppText>
+                </View>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <AppText role="caption" secondary>Primary sport</AppText>
+                  <AppText role="body">{sportById(state.primary).name}</AppText>
+                </View>
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                  minHeight: 42,
+                  paddingLeft: 12,
+                  paddingRight: 5,
+                  paddingVertical: 4,
+                  borderWidth: 1,
+                  borderColor: SHELL_COLORS.line,
+                  borderRadius: SHELL_RADIUS.pill,
+                  backgroundColor: appearanceColors.paper,
+                }}
+              >
+                <AppText
+                  role="caption"
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  style={{ flex: 1, minWidth: 0 }}
+                  accessibilityLabel={`Public profile link: ${profileShareUrl}`}
+                >
+                  {profileShareUrl}
+                </AppText>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Copy link"
+                  onPress={copyProfileShareUrl}
+                  style={({ pressed }) => ({
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: SHELL_RADIUS.pill,
+                    borderWidth: 1,
+                    borderColor: SHELL_COLORS.line,
+                    backgroundColor: SHELL_COLORS.card,
+                    opacity: pressed ? 0.75 : 1,
+                  })}
+                >
+                  <AppText role="caption">Copy</AppText>
+                </Pressable>
+              </View>
+            </View>
 
-        {/* Achievements section under Athlete Crest */}
-        <Achievements state={state} />
+            <View style={[f.row, { gap: 8 }]}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Edit profile"
+                onPress={() => setEditingProfile(true)}
+                style={({ pressed }) => [
+                  f.button,
+                  f.secondary,
+                  { flex: 1, paddingHorizontal: 14, gap: 6 },
+                  pressed && { opacity: 0.78 },
+                ]}
+              >
+                <AppIcon name="edit" size={18} />
+                <Text style={[f.buttonText, { color: appearanceColors.ink }]}>Edit profile</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Settings"
+                onPress={() => setSettingsOpen(true)}
+                style={({ pressed }) => [
+                  f.button,
+                  f.secondary,
+                  { flex: 1, paddingHorizontal: 14, gap: 6 },
+                  pressed && { opacity: 0.78 },
+                ]}
+              >
+                <AppIcon name="settings" size={18} />
+                <Text style={[f.buttonText, { color: appearanceColors.ink }]}>Settings</Text>
+              </Pressable>
+            </View>
+
+            <Achievements state={state} />
+          </>
+        )}
 
         {/* Awards Shelf under Athlete Crest */}
         {awards.length > 0 && (
@@ -939,91 +929,18 @@ const styles=useThemedStyles(stylesThemes);
     </ScrollView>
     </SafeAreaView>
 
-    {/* Side Panel for Edit Profile & Settings (not a bottom sheet) */}
     <FocusSidePanel
-      open={editOpen}
-      title="Edit profile"
+      open={settingsOpen}
+      title="Settings"
       headerDivider={false}
       onClose={() => {
-        setEditOpen(false);
+        setSettingsOpen(false);
         if (params.edit) {
           router.setParams({ edit: undefined });
         }
       }}
     >
-      <View style={{ gap: 16 }}>
-        <ProfilePhoto state={state} editSize={168} />
-        <View style={{ gap: 8 }}>
-          <Input
-            style={textStyle("body")}
-            value={draftName}
-            onChangeText={setName}
-            accessibilityLabel="Name"
-            maxLength={32}
-            placeholder="Name"
-          />
-          <Input
-            style={textStyle("body")}
-            value={draftCity}
-            onChangeText={setCity}
-            accessibilityLabel="City"
-            maxLength={40}
-            placeholder="City"
-          />
-          <ChoicePicker
-            label="Gender"
-            value={draftGender || "unset"}
-            options={[
-              { value: "unset", label: "Prefer not to say" },
-              { value: "female", label: "Female" },
-              { value: "male", label: "Male" },
-              { value: "other", label: "Other" },
-            ]}
-            onChange={(value) =>
-              setGenderDraft(value === "unset" ? null : (value as ProfileGender))
-            }
-          />
-          <SearchableCountryPicker label="Country" value={draftCountry} onChange={(code) => setCountryDraft(code)} />
-        </View>
-        {dirty ? (
-          <FocusButton
-            label="Save profile"
-            onPress={() => {
-              const trimmed = draftName.trim();
-              if (!trimmed) {
-                setNote("Display name cannot be empty.");
-                return;
-              }
-              if (trimmed !== state.name) {
-                dispatch({ type: "rename", name: trimmed });
-              }
-              const cityTrimmed = draftCity.trim();
-              if (cityTrimmed !== state.city) {
-                dispatch({ type: "set-city", city: cityTrimmed });
-              }
-              if (draftGender !== (state.gender ?? null)) {
-                dispatch({ type: "set-gender", gender: draftGender });
-              }
-              if (draftCountry !== (state.countryCode ?? "")) {
-                dispatch({ type: "set-country", countryCode: draftCountry || null });
-              }
-              setName(null);
-              setCity(null);
-              setGenderDraft(null);
-              setCountryDraft(null);
-              setNote("Profile saved.");
-            }}
-          />
-        ) : null}
-        {note ? (
-          <AppText role="body" secondary accessibilityLiveRegion="polite">
-            {note}
-          </AppText>
-        ) : null}
-      </View>
-
-      <View style={{ gap: 8, marginTop: 16 }}>
-        <SectionHeader title="Settings" />
+      <View style={{ gap: 8 }}>
         <SettingsRow
           title="Data Sync"
           detail="Trackers & history"
