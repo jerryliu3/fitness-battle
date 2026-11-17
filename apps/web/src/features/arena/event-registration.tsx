@@ -43,6 +43,7 @@ export function EventRegistration({
   error,
   registered,
   crew = false,
+  confirmationOnly = false,
   onClaim,
   onView,
 }: {
@@ -52,6 +53,7 @@ export function EventRegistration({
   error: string;
   registered: boolean;
   crew?: boolean;
+  confirmationOnly?: boolean;
   onClaim(): void;
   onView(): void;
 }) {
@@ -74,7 +76,7 @@ export function EventRegistration({
   return (
     <div className="event-registration" style={{ "--registration-color": COMPETE_ART_COLORS[event] } as CSSProperties}>
       <div className="registration-stage">
-        <motion.div
+        {!confirmationOnly && <motion.div
           initial={false}
           animate={{ opacity: step === 0 ? 1 : 0, x: step === 0 ? 0 : -12 }}
           transition={transition}
@@ -148,7 +150,7 @@ export function EventRegistration({
             <div className="registration-step-actions">
               <button type="button" className="fb-btn" onClick={() => setStep(1)}>Continue →</button>
             </div>
-        </motion.div>
+        </motion.div>}
 
         <motion.div
           initial={false}
@@ -206,7 +208,7 @@ export function EventRegistration({
                   </div>
                   <TicketStub status="CONFIRMED" barcode={barcode} />
                   <button type="button" className="fb-btn" onClick={onView}>
-                    View {Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →
+                    {confirmationOnly ? "Continue" : `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →`}
                   </button>
                 </div>
               </div>

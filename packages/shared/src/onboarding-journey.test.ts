@@ -84,3 +84,10 @@ it("replays presentation growth and crew progress without changing the guest dra
   expect(onboardingCrewReplay(guest, 1).entries).toEqual(onboardingCrewPreview(guest).entries);
   expect(guest).not.toHaveProperty("score");
 });
+it.each(["running", "cycling", "walking", "strength"] as const)("shows a sport-specific weekly crew goal at 60 percent for %s", async sport => {
+  const { onboardingCrewGoal } = await import("./onboarding-journey");
+  const guest = { sport, name: "Taylor", city: "", countryCode: "" };
+  const expected = { running: "18/30 km", cycling: "54/90 km", walking: "12,000/20,000 steps", strength: "3/5 hrs" };
+  expect(onboardingCrewGoal(guest, 1)).toBe(`Weekly goal: ${expected[sport]}`);
+  expect(onboardingCrewGoal(guest, 0)).toMatch(/^Weekly goal: 0\//);
+});

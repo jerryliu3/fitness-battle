@@ -48,3 +48,15 @@ it("renders the 2-step flow with field inside hero, flippable rule cards, and cl
     expect(tree.root.findByProps({ className: "registration-ticket" }).props["data-claimed"]).toBe(true);
   } finally { await act(async () => tree.unmount()); vi.unstubAllGlobals(); }
 });
+
+it("reuses the confirmed ticket without the registration walkthrough for onboarding", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const onView = vi.fn();
+  let tree!: ReturnType<typeof create>;
+  await act(async () => { tree = create(createElement(EventRegistration, { state: freshState(), event: "running", registered: true, confirmationOnly: true, busy: false, error: "", onClaim: vi.fn(), onView })); });
+  expect(tree.root.findAllByProps({ className: "registration-hero" })).toHaveLength(0);
+  expect(tree.root.findByProps({ className: "registration-ticket" }).props["data-claimed"]).toBe(true);
+  await act(async () => tree.root.findAllByType("button").find(n => n.props.children === "Continue")!.props.onClick());
+  expect(onView).toHaveBeenCalledOnce();
+  await act(async () => tree.unmount());
+});

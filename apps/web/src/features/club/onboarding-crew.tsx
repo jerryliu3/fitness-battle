@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
-import { APP_ICON_PATHS, onboardingCrewReplay, type GuestIntroDraft } from "@fitness-battle/shared";
+import { APP_ICON_PATHS, onboardingCrewGoal, onboardingCrewReplay, type GuestIntroDraft } from "@fitness-battle/shared";
+import { AppText } from "@/ui/section";
 import { CrewRelay } from "@/features/rally/crew-relay";
 
 export function OnboardingCrew({ draft }: { draft: GuestIntroDraft }) {
-  const [progress, setProgress] = useState(1), [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0), [playing, setPlaying] = useState(true);
   const frame = useRef(progress), reduced = useReducedMotion();
   frame.current = progress;
   useEffect(() => {
@@ -19,6 +20,7 @@ export function OnboardingCrew({ draft }: { draft: GuestIntroDraft }) {
     return () => clearInterval(timer);
   }, [playing, reduced]);
   return <div className="fb-stack">
+    <AppText role="label">{onboardingCrewGoal(draft, progress)}</AppText>
     <CrewRelay {...onboardingCrewReplay(draft, progress)} userId="you" compact units="metric" />
     <div className="onboarding-actions">
       <button className="ui-back-button" type="button" aria-label={playing ? "Pause crew replay" : "Play crew replay"} onClick={() => { if (!playing && progress >= 1) setProgress(0); setPlaying(!playing); }}><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={APP_ICON_PATHS[playing ? "pause" : "play"]} /></svg></button>

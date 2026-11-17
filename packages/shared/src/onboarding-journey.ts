@@ -4,6 +4,14 @@ import { SPORT_IDS, type SportId, type UnitSystem } from "./compete/sports";
 import { athleteCardModelForPeer } from "./athlete-card";
 import { athleteLocationLine } from "./countries";
 import { SPORTS } from "./compete/sports";
+import { crewWeekRelay } from "./compete/crew-relay";
+
+export const ONBOARDING_SPORT_TILES = {
+  running: { emoji: "🏃‍♂️", background: "#FCE4DA", mirror: true },
+  cycling: { emoji: "🚴‍♀️", background: "#DDEFF3", mirror: true },
+  walking: { emoji: "🚶‍♀️", background: "#E5F1DC", mirror: true },
+  strength: { emoji: "🏋️‍♂️", background: "#FFF0BE", mirror: false },
+};
 
 export const GUEST_INTRO_DRAFT_KEY = "overtaek-guest-intro-draft-v1";
 export const GUEST_SIGNUP_PENDING_KEY = "overtaek-guest-signup-email-v1";
@@ -105,7 +113,7 @@ export function onboardingCrewPreview(draft: GuestIntroDraft): CrewWeekRelayInpu
   const distance = draft.sport === "cycling" ? 18000 : draft.sport === "walking" ? 4000 : 6000;
   return {
     sport: draft.sport, format: "relay", targetSessions: 12,
-    contract: draft.sport === "strength" ? { metric: "moving_sec", target: 21600 } : { metric: "distance_m", target: distance * 5 },
+    contract: draft.sport === "strength" ? { metric: "moving_sec", target: 18000 } : { metric: "distance_m", target: distance * 5 },
     members: [
       { user_id: "you", display_name: draft.name.trim() || "Athlete", avatar_url: draft.photo ?? null },
       { user_id: "alex", display_name: "Alex" }, { user_id: "sam", display_name: "Sam" },
@@ -146,4 +154,11 @@ export const ONBOARDING_CANVAS = { width: 360, height: 640 };
 export function fitOnboardingCanvas(width: number, height: number, contentHeight: number) {
   const scale = Math.max(0, Math.min(1.2, width / ONBOARDING_CANVAS.width, height / Math.max(1, contentHeight)));
   return { scale, width: ONBOARDING_CANVAS.width * scale, height: contentHeight * scale };
+}
+
+export function onboardingCrewGoal(draft: GuestIntroDraft, progress: number) {
+  const relay = crewWeekRelay(onboardingCrewReplay(draft, progress));
+  const format = (value: number) => (value / (draft.sport === "walking" ? 1 : draft.sport === "strength" ? 3600 : 1000)).toLocaleString("en-US", { maximumFractionDigits: draft.sport === "walking" ? 0 : 1 });
+  const unit = draft.sport === "walking" ? "steps" : draft.sport === "strength" ? "hrs" : "km";
+  return `Weekly goal: ${format(relay.model.total)}/${format(relay.target ?? 0)} ${unit}`;
 }

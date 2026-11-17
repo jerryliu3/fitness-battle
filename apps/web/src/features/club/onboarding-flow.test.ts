@@ -1,83 +1,72 @@
-vi.mock("@/lib/supabase/client", () => ({ createClient: vi.fn() }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { beforeEach, expect, it, vi } from "vitest";
 import { freshState, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY } from "@fitness-battle/shared";
-const mock = vi.hoisted(() => ({ replace: vi.fn(), dispatch: vi.fn(), params: new URLSearchParams(), storage: new Map<string, string>(), upload: vi.fn(async () => "https://example.com/athlete.jpg") }));
+const mock = vi.hoisted(() => ({ replace: vi.fn(), dispatch: vi.fn(), params: new URLSearchParams(), storage: new Map<string, string>(), upload: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: mock.replace }), useSearchParams: () => mock.params }));
 vi.mock("@/components/auth-context", () => ({ useAuth: () => ({ user: { id: "a", email: "taylor@example.com", displayName: "Taylor" } }) }));
 const state = freshState();
 vi.mock("@/components/compete-context", () => ({ useCompete: () => ({ state, loadStatus: "ready", dispatch: mock.dispatch }) }));
 vi.mock("@/components/auth-gate", () => ({ AuthGate: ({ children }: { children: unknown }) => children }));
-vi.mock("@/ui/back-button",()=>({BackButton:"BackButton"}));
+vi.mock("@/ui/back-button", () => ({ BackButton: "BackButton" }));
 vi.mock("@/ui/section", () => ({ AppHeading: "h2", AppParagraph: "p" }));
-vi.mock("@/ui/country-combobox", () => ({ CountryCombobox: "CountryCombobox" }));
-vi.mock("@/ui/timezone-combobox", () => ({ TimezoneCombobox: "TimezoneCombobox" }));
+vi.mock("@/ui/country-combobox", () => ({ CountryCombobox: "Country" }));
+vi.mock("@/ui/timezone-combobox", () => ({ TimezoneCombobox: "Timezone" }));
 vi.mock("@/features/you/you-route", () => ({ TrackerConnections: "TrackerConnections" }));
-vi.mock("./onboarding-visuals", () => ({ OnboardingSummary: "OnboardingSummary", OnboardingUnits: "OnboardingUnits" }));
+vi.mock("./onboarding-units", () => ({ OnboardingUnits: "Units" }));
+vi.mock("@/features/arena/event-registration", () => ({ EventRegistration: "EventRegistration" }));
 vi.mock("@/lib/profile/avatar-upload", () => ({ uploadWebProfileAvatar: mock.upload }));
+vi.mock("@/lib/supabase/client", () => ({ createClient: vi.fn() }));
 import Onboarding from "@/app/app/onboarding/page";
-
 beforeEach(() => {
-  state.avatarUrl = null;
-  vi.clearAllMocks(); mock.storage.clear(); mock.params = new URLSearchParams();
+  vi.clearAllMocks(); mock.storage.clear(); mock.params = new URLSearchParams(); Object.assign(state, freshState());
+  mock.upload.mockResolvedValue("https://example.com/athlete.jpg");
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const storage = { getItem: (key: string) => mock.storage.get(key) ?? null, setItem: (key: string, value: string) => mock.storage.set(key, value), removeItem: (key: string) => mock.storage.delete(key) };
   vi.stubGlobal("localStorage", storage); vi.stubGlobal("sessionStorage", storage);
 });
-it("imports the intended signup draft, skips trackers and registers only on Finish", async () => {
-  mock.storage.set(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ sport: "walking", name: "Taylor", city: "Boston", countryCode: "US" }));
-  mock.storage.set(GUEST_SIGNUP_PENDING_KEY, "taylor@example.com");
+const next = (r: ReactTestRenderer) => act(async () => r.root.findByType("button").props.onClick());
+it.each([false, true])("uses one event with weekly volume on the starting line and a separate confirmation (preview=%s)", async preview => {
+  if (preview) mock.params = new URLSearchParams("preview=1");
+  else {
+    mock.storage.set(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ sport: "walking", name: "Taylor", introCompleted: true }));
+    mock.storage.set(GUEST_SIGNUP_PENDING_KEY, "taylor@example.com");
+  }
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Onboarding)); });
-  const press = async (label: string) => act(async () => r.root.findAllByType("button").find(n => n.props.children === label)!.props.onClick());
-  await press("Skip for now");
-  expect(r.root.findAllByType("input")[0].props.value).toBe("Taylor");
-  expect(r.root.findAllByType("button").find(n => n.props.children === "Walking")!.props["aria-pressed"]).toBe(true);
-  await act(async () => r.root.findAllByType("input").find(n => n.props["aria-label"] === "Typical weekly walking")!.props.onChange({ target: { value: "28000" } }));
-  await press("Continue");
+  expect(r.root.findAllByType("input")).toHaveLength(1);
+  expect(r.root.findByType("select").props.value).toBe("");
+  await next(r); await next(r);
+  const sport = preview ? "running" : "walking";
+  await act(async () => r.root.findByType("input").props.onChange({ target: { value: "28000" } }));
   expect(mock.dispatch).not.toHaveBeenCalled();
-  await press("Enter events");
-  expect(mock.dispatch).toHaveBeenCalledWith({ type: "declare-effort", sport: "walking", declaredWeeklyVolume: 28000 });
-  expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-in", sport: "walking", accountId: "a" });
-  expect(mock.dispatch).toHaveBeenCalledWith({ type: "complete-onboarding" });
-  expect(mock.storage.has(GUEST_INTRO_DRAFT_KEY)).toBe(false);
-  expect(mock.replace).toHaveBeenCalledWith("/app/today");
+  await next(r);
+  const ticket = r.root.findByType("EventRegistration" as never);
+  expect(ticket.props).toMatchObject({ event: sport, registered: true, confirmationOnly: true });
+  expect(mock.dispatch.mock.calls.some(([a]) => a.type === "complete-onboarding")).toBe(false);
+  await act(async () => ticket.props.onView());
+  if (preview) { expect(mock.dispatch).not.toHaveBeenCalled(); expect(mock.storage.size).toBe(0); }
+  else {
+    expect(mock.dispatch).toHaveBeenCalledWith({ type: "declare-effort", sport: "walking", declaredWeeklyVolume: 28000 });
+    expect(mock.dispatch.mock.calls.filter(([a]) => a.type === "opt-in")).toHaveLength(1);
+    expect(mock.dispatch).toHaveBeenCalledWith({ type: "complete-onboarding" });
+    expect(mock.storage.has(GUEST_INTRO_DRAFT_KEY)).toBe(false);
+  }
   await act(async () => r.unmount());
 });
-it("keeps debug navigation read-only with the same button copy", async () => {
-  mock.params = new URLSearchParams("preview=1");
-  let r!: ReactTestRenderer;
-  await act(async () => { r = create(createElement(Onboarding)); });
-  const press = async (label: string) => act(async () => r.root.findAllByType("button").find(n => n.props.children === label)!.props.onClick());
-  await press("Skip for now");
-  await press("Walking");
-  await act(async () => r.root.findAllByType("input").find(n => n.props["aria-label"] === "Typical weekly walking")!.props.onChange({ target: { value: "28000" } }));
-  await press("Continue"); await press("Enter events");
-  expect(mock.dispatch).not.toHaveBeenCalled();
-  expect(mock.storage.size).toBe(0);
-  await act(async () => r.unmount());
-});
-
-it.each([false, true])("uploads the guest photo over an existing avatar and retains it on failure (failure=%s)", async failure => {
+it.each([false, true])("uploads the selected photo before registration and retains it on failure (failure=%s)", async failure => {
   state.avatarUrl = "https://example.com/old-avatar.jpg";
-  mock.storage.set(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ sport: "walking", name: "Taylor", city: "", countryCode: "", photo: "data:image/jpeg;base64,/9j/" }));
+  mock.storage.set(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ sport: "walking", name: "Taylor", photo: "data:image/jpeg;base64,/9j/", introCompleted: true }));
   mock.storage.set(GUEST_SIGNUP_PENDING_KEY, "taylor@example.com");
   vi.stubGlobal("fetch", vi.fn(async () => ({ blob: async () => new Blob(["photo"], { type: "image/jpeg" }) })));
-  mock.upload.mockReset();
   if (failure) mock.upload.mockRejectedValueOnce(new Error("Upload failed"));
-  else mock.upload.mockResolvedValueOnce("https://example.com/athlete.jpg");
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Onboarding)); });
-  const press = async (label: string) => act(async () => r.root.findAllByType("button").find(n => n.props.children === label)!.props.onClick());
-  await press("Skip for now"); await press("Continue");
-  expect(mock.upload).not.toHaveBeenCalled();
-  await press("Enter events");
-  expect(mock.upload).toHaveBeenCalledWith(expect.objectContaining({ userId: "a", previousAvatarUrl: "https://example.com/old-avatar.jpg", requireStorage: true }));
+  await next(r); await next(r); await next(r);
+  expect(mock.upload).toHaveBeenCalledWith(expect.objectContaining({ userId: "a", previousAvatarUrl: state.avatarUrl, requireStorage: true }));
   if (failure) {
     expect(mock.dispatch).not.toHaveBeenCalled();
     expect(mock.storage.has(GUEST_INTRO_DRAFT_KEY)).toBe(true);
-    expect(r.root.findAllByType("p").some(n => n.props.children === "Upload failed")).toBe(true);
-  } else expect(mock.dispatch).toHaveBeenCalledWith({ type: "set-avatar", accountId: "a", avatarUrl: "https://example.com/athlete.jpg" });
+  } else expect(r.root.findByType("EventRegistration" as never).props.event).toBe("walking");
   await act(async () => r.unmount());
 });

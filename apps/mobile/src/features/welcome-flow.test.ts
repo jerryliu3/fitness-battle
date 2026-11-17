@@ -36,7 +36,7 @@ it("keeps the replay immersive, commits the card on editing end, then creates th
   expect(r.root.findByType("OnboardingAthlete" as never).props.model).toBe(firstCard);
   await act(async () => name().props.onEndEditing());
   expect(r.root.findByType("OnboardingAthlete" as never).props.model.name).toBe("Taylor");
-  await press("Add photo");
+  await press("Upload profile photo (optional)");
   expect(r.root.findByType("OnboardingAthlete" as never).props.model.avatarUrl).toBe("data:image/jpeg;base64,/9j/");
   await press("Continue");
   const replay = r.root.findByType("OnboardingOvertake" as never);

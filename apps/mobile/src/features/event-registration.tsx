@@ -138,6 +138,7 @@ export function EventRegistration({
   event,
   registered,
   crew = false,
+  confirmationOnly = false,
   error,
   onClaim,
   onView,
@@ -146,6 +147,7 @@ export function EventRegistration({
   event: CompeteEvent;
   registered: boolean;
   crew?: boolean;
+  confirmationOnly?: boolean;
   error?: string;
   onClaim(): void;
   onView(): void;
@@ -248,7 +250,7 @@ export function EventRegistration({
       accessibilityElementsHidden={back !== claimed}
       onLayout={e => setTicketHeight(value => Math.max(value, e.nativeEvent.layout.height))}
       style={{
-        position: "absolute",
+        position: confirmationOnly ? "relative" : "absolute",
         top: 0,
         left: 0,
         right: 0,
@@ -343,7 +345,7 @@ export function EventRegistration({
           </View>
 
           <FocusButton
-            label={back ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →` : claimPending ? "Claiming your spot…" : "Claim your spot"}
+            label={confirmationOnly ? "Continue" : back ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →` : claimPending ? "Claiming your spot…" : "Claim your spot"}
             disabled={claimPending}
             onPress={back ? onView : () => {
               setClaiming(true);
@@ -356,6 +358,8 @@ export function EventRegistration({
       </View>
     </Animated.View>
   );
+
+  if (confirmationOnly) return face(true);
 
   const sharedHeight = Math.max(stageHeight, ticketHeight);
 

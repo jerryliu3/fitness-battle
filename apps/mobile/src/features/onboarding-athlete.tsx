@@ -9,7 +9,7 @@ const targets = {
   athlete: { x: 40, y: 56, width: 280 },
   overtake: { x: 244, y: 0, width: 100 },
   growth: { x: 244, y: 0, width: 100 },
-  account: { x: 55, y: 48, width: 250 },
+  account: { x: 40, y: 48, width: 280 },
 };
 
 /** One scene stays mounted; only the presentation transform and in-memory model change. */

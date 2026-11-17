@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
-import { onboardingCrewReplay, type GuestIntroDraft } from "@fitness-battle/shared";
+import { onboardingCrewGoal, onboardingCrewReplay, type GuestIntroDraft } from "@fitness-battle/shared";
 import { CrewRelay } from "./crew-relay";
+import { AppText } from "../ui/section";
 import { IconButton } from "../ui/icon-button";
 import { useThemeColors } from "../theme";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 
 export function OnboardingCrew({ draft }: { draft: GuestIntroDraft }) {
   const c = useThemeColors(), reduced = useReducedMotion();
-  const [progress, setProgress] = useState(1), [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0), [playing, setPlaying] = useState(true);
   const frame = useRef(progress), width = useRef(1);
   frame.current = progress;
   useEffect(() => {
@@ -24,6 +25,7 @@ export function OnboardingCrew({ draft }: { draft: GuestIntroDraft }) {
   }, [playing, reduced]);
   const scrub = (x: number) => { setPlaying(false); setProgress(Math.max(0, Math.min(1, x / width.current))); };
   return <View style={{ gap: 12 }}>
+    <AppText role="label">{onboardingCrewGoal(draft, progress)}</AppText>
     <CrewRelay {...onboardingCrewReplay(draft, progress)} compact userId="you" units="metric" />
     <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
       <IconButton icon={playing ? "pause" : "play"} label={playing ? "Pause crew replay" : "Play crew replay"} onPress={() => { if (!playing && progress >= 1) setProgress(0); setPlaying(!playing); }} />

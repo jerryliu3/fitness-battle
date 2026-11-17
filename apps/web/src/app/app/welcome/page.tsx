@@ -5,7 +5,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormE
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  EMPTY_GUEST_INTRO, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY,
+  ONBOARDING_SPORT_TILES as sportTiles, EMPTY_GUEST_INTRO, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY,
   ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId, onboardingAthleteCard,
   guestIntroForAccount, SPORTS, type GuestIntroDraft, type OnboardingStep,
 } from "@fitness-battle/shared";
@@ -16,7 +16,6 @@ import { uploadWebProfileAvatar } from "@/lib/profile/avatar-upload";
 import { OnboardingOvertake } from "@/features/club/onboarding-overtake";
 import { resolveSafePostLoginPath } from "@/lib/auth/login-redirect";
 import { readGuestIntroDraft } from "@/lib/guest-intro";
-import { SportActivityIcon } from "@/ui/sport-activity-icon";
 import { BackButton } from "@/ui/back-button";
 import { AppHeading, AppParagraph } from "@/ui/section";
 import "@/features/club/onboarding.css";
@@ -119,8 +118,8 @@ function Welcome({ preview }: { preview: boolean }) {
       <AppParagraph>Choose your sport. You can add more later.</AppParagraph>
       <div className="onboarding-sports">
         {SPORTS.map(sport => <button type="button" key={sport.id} className="onboarding-sport"
-          aria-pressed={draft.sport === sport.id} onClick={() => setDraft(d => ({ ...d, sport: sport.id }))}>
-          <SportActivityIcon sport={sport.id} size={40} /><strong>{sport.name}</strong>
+          style={{ background: sportTiles[sport.id].background }} aria-pressed={draft.sport === sport.id} onClick={() => setDraft(d => ({ ...d, sport: sport.id }))}>
+          <span aria-hidden style={{ fontSize: 108, lineHeight: 1.2, transform: sportTiles[sport.id].mirror ? "scaleX(-1)" : undefined }}>{sportTiles[sport.id].emoji}</span><strong>{sport.name}</strong>
         </button>)}
       </div>
     </>}
@@ -132,7 +131,7 @@ function Welcome({ preview }: { preview: boolean }) {
       <div data-card-slot className="onboarding-card-slot-large" />
       <label className="fb-field"><input aria-label="Athlete name" autoComplete="nickname" placeholder="Athlete name" value={draft.name} maxLength={80}
         onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} onBlur={() => setCardDraft(draft)} /></label>
-      <div className="onboarding-photo-row"><label className="onboarding-photo fb-btn fb-btn-secondary">{photoBusy ? "Reading photo…" : draft.photo ? "Change photo" : "Add photo"} <small>Optional</small>
+      <div className="onboarding-photo-row"><label className="onboarding-photo fb-btn fb-btn-secondary">{photoBusy ? "Reading photo…" : "Upload profile photo (optional)"}
         <input type="file" accept="image/png,image/jpeg,image/webp" disabled={photoBusy} onChange={async e => {
           const file = e.target.files?.[0]; e.target.value = "";
           if (!file) return;

@@ -6,9 +6,9 @@ into this journey; the website's marketing page links into it too.
 
 ## Before account creation
 
-1. **Choose a sport** — Running, Cycling, Walking or Strength in a visual 2×2 grid.
+1. **Choose a sport** — Running, Cycling, Walking or Strength in pastel 2×2 tiles with native emoji. Running/Strength use male emoji, Cycling/Walking use female emoji; the moving sports face right.
 2. **Welcome athlete!** — a full-size interactive Crest, required single-line Athlete name field and
-   optional photo. The card updates after a short edit delay, holding native bridge
+   optional Upload profile photo button. The card updates after a short edit delay, holding native bridge
    updates during rotation. No other profile questions appear here.
 3. **Make training fun** — the existing competition player carries the chosen name
    and photo. Running/Cycling start in geographic 3D; Walking/Strength start in
@@ -17,8 +17,8 @@ into this journey; the website's marketing page links into it too.
 4. **Discover** — Growth, Crew and Vitals tabs share one page, headed See progress, Work together or Monitor health.
    Growth opens first with the 500 → 2,000 trajectory; these points are never earned
    account facts. The single score reading and card score animate from 500 to 2,000 on every
-   appearance. Crew uses its product relay graphic with Play and a scrubber.
-   Vitals includes a male/female model selector.
+   appearance. Crew uses its product relay graphic with Play and a scrubber, plus an animated sport-specific weekly goal reaching 60%.
+   Vitals includes a male/female model selector. Its actual renderer mounts behind the tabs as soon as Discover opens and remains mounted across tab changes.
 5. **Make it official** — the large Crest returns above email and password, with
    account creation and Terms/Privacy links. City, country and other preferences
    remain after signup. Existing-account sign-in stays on the first screen only.
@@ -89,16 +89,19 @@ preview mode remains read-only in the data layer.
 
 ## After account creation
 
-Native `/onboarding` and web `/app/onboarding` have three stages:
+Native `/onboarding` and web `/app/onboarding` collect details first:
 
-1. Connect trackers, or skip until later.
-2. Finish profile and preferences (three fitted pages on mobile): name, optional city/country/gender, time zone,
-   sports, primary sport, distance units, optional typical weekly training volume
-   and sleep tracking. Declarations are saved in the account draft, converted
-   to metres/seconds/steps and sent through the existing `declare-effort` action
-   only on explicit completion; the scorer retains its caps and verified-history
-   protections.
-3. Review choices and explicitly continue to register for the next wave.
+1. **Almost there! Final details** — optional city/country together, unselected gender,
+   time zone with a zone-specific GMT offset, and units. The saved athlete name is retained.
+2. **Bring your training along** — connect trackers or continue without one.
+3. **Your starting line is here** — optional weekly volume for the one sport selected
+   during the introduction, plus the next wave time. Continue registers that sport
+   through the existing opt-in action; no second sport/sleep selection is shown.
+4. The existing **confirmed-entry ticket** appears after registration. Its Continue
+   completes onboarding and enters the app. Additional events remain available in the app.
+
+Weekly declarations retain the shared metres/seconds/steps conversion and scoring
+protections. Preview mode exercises the same pages without registration or account writes.
 
 Ordinary signup remains available outside this journey. An incomplete account
 without an account-matched completed introduction starts at sport selection.

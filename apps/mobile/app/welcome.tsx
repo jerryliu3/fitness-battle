@@ -7,14 +7,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  EMPTY_GUEST_INTRO, ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId,
+  ONBOARDING_SPORT_TILES as sportTiles, EMPTY_GUEST_INTRO, ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId,
   onboardingAthleteCard, guestIntroForAccount, SPORTS, type OnboardingStep,
 } from "@fitness-battle/shared";
 import { OnboardingCanvas, ONBOARDING_CANVAS } from "../src/ui/onboarding-canvas";
 import { OnboardingAthlete } from "../src/features/onboarding-athlete";
 import * as ImagePicker from "expo-image-picker";
 import { OnboardingOvertake } from "../src/features/onboarding-overtake";
-import { VitalsLabCanvasPrefetch } from "../src/features/vitals-lab/vitals-lab-canvas-prefetch";
 import { LegalLinks } from "../src/features/legal-links";
 import { IconButton } from "../src/ui/icon-button";
 import { GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft, type GuestIntroDraft } from "../src/lib/guest-intro";
@@ -24,12 +23,7 @@ import { useThemeColors } from "../src/theme";
 import { FocusButton, useFocusStyles } from "../src/ui/focus";
 import { AppText } from "../src/ui/section";
 
-const sportTiles = {
-  running: { emoji: "🏃‍♀️", background: "#FCE4DA" },
-  cycling: { emoji: "🚴", background: "#DDEFF3" },
-  walking: { emoji: "🚶", background: "#E5F1DC" },
-  strength: { emoji: "🏋️‍♀️", background: "#FFF0BE" },
-};
+
 
 export default function Welcome() {
   const { user, loading, signUp } = useAuth();
@@ -134,7 +128,6 @@ export default function Welcome() {
   const field = { ...f.input, minHeight: 0, height: 46, paddingVertical: 8 };
   const box = (top: number, height: number) => ({ position: "absolute" as const, left: 16, right: 16, top, height });
   return <View style={{ flex: 1, backgroundColor: colors.paper, overflow: "hidden" }}>
-    <VitalsLabCanvasPrefetch />
     {step === "overtake" && <View style={{ position: "absolute", inset: 0 }}>
       <OnboardingOvertake fill sport={draft.sport} name={draft.name} photo={draft.photo} onOvertakeCountChange={setPreviewPasses}
         onBack={() => setStep("athlete")} onComplete={() => void next()} />
@@ -161,7 +154,7 @@ export default function Welcome() {
                 style={{ width: 158, height: 182, alignItems: "center", justifyContent: "center", borderRadius: 26,
                   borderWidth: 2, borderColor: draft.sport === sport.id ? "#082637" : "transparent",
                   backgroundColor: sportTiles[sport.id].background }}>
-                <Text accessible={false} allowFontScaling={false} style={{ fontSize: 108, lineHeight: 126, textAlign: "center", includeFontPadding: false }}>{sportTiles[sport.id].emoji}</Text>
+                <Text accessible={false} allowFontScaling={false} style={{ fontSize: 108, lineHeight: 126, textAlign: "center", includeFontPadding: false, transform: [{ scaleX: sportTiles[sport.id].mirror ? -1 : 1 }] }}>{sportTiles[sport.id].emoji}</Text>
                 <AppText role="label" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2} style={{ color: "#082637", alignSelf: "stretch", paddingHorizontal: 16 }}>{sport.name}</AppText>
                 {draft.sport === sport.id && <View pointerEvents="none" style={{ position: "absolute", top: 10, right: 10, width: 25, height: 25, borderRadius: 13, backgroundColor: "#082637", alignItems: "center", justifyContent: "center" }}>
                   <Text accessible={false} allowFontScaling={false} style={{ color: "white", fontSize: 18, fontWeight: "800", lineHeight: 22 }}>✓</Text>
@@ -174,7 +167,7 @@ export default function Welcome() {
             <View style={box(438, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Athlete name" placeholder="Athlete name" value={draft.name} maxLength={80} style={field}
               onChangeText={name => setDraft(d => ({ ...d, name }))} onEndEditing={() => setCardDraft(draft)} /></View>
             <View style={{ ...box(492, 52), flexDirection: "row", gap: 16, alignItems: "center" }}>
-              <View style={{ flex: 1 }}><FocusButton fit secondary label={photoBusy ? "Reading photo…" : draft.photo ? "Change photo" : "Add photo"} disabled={photoBusy} onPress={() => void choosePhoto()} /></View>
+              <View style={{ flex: 1 }}><FocusButton fit secondary label={photoBusy ? "Reading photo…" : "Upload profile photo (optional)"} disabled={photoBusy} onPress={() => void choosePhoto()} /></View>
               {draft.photo && <Pressable accessibilityRole="button" onPress={() => { setDraft(d => ({ ...d, photo: undefined })); setCardDraft(d => ({ ...d, photo: undefined })); }} style={{ minHeight: 44, justifyContent: "center" }}><AppText numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>Remove photo</AppText></Pressable>}
             </View>
           </>}
@@ -182,9 +175,9 @@ export default function Welcome() {
             <OnboardingFeatureTour draft={draft} selected={feature} onSelect={setFeature} onScoreChange={showScore} />
           </View>}
           {step === "account" && <>
-            <View style={box(390, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Email" placeholder="Email" style={field} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" editable={!confirmation} /></View>
-            <View style={box(448, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Password" placeholder="Password" style={field} value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoComplete="new-password" editable={!confirmation} /></View>
-            <View style={box(510, 38)}><LegalLinks /></View>
+            <View style={box(430, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Email" placeholder="Email" style={field} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" editable={!confirmation} /></View>
+            <View style={box(488, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Password" placeholder="Password" style={field} value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoComplete="new-password" editable={!confirmation} /></View>
+            {!error && !confirmation && <View style={box(542, 32)}><LegalLinks /></View>}
           </>}
           {(error || confirmation) && <View style={box(548, 36)}><AppText role="caption" accessibilityRole="alert" numberOfLines={2} adjustsFontSizeToFit>{error ?? "Check your email to confirm your account and continue setup."}</AppText></View>}
           {step !== "overtake" && <View style={box(584, 52)}>
