@@ -27,6 +27,7 @@ import "./vitals-lab-experience.css";
 
 export interface VitalsLabExperienceProps {
   analytics?: AnalyticsLabModel | null;
+  metrics?: VitalsLabMetricDisplay[];
   appearance?: "dark" | "light";
   embedded?: boolean;
   assetBaseUrl?: string;
@@ -123,13 +124,14 @@ function InfoIcon() {
 
 export function VitalsLabExperience({
   analytics = null,
+  metrics: suppliedMetrics,
   appearance: appearanceProp = "dark",
   embedded = false,
   assetBaseUrl = "",
   onAppearanceChange,
 }: VitalsLabExperienceProps) {
   const [appearance, setAppearance] = useState<"dark" | "light">(appearanceProp);
-  const [gender, setGender] = useState<VitalsLabGender>("female");
+  const [gender, setGender] = useState<VitalsLabGender>("male");
   const [viewMode, setViewMode] = useState<VitalsLabViewMode>("lumen");
   const [activeMetricId, setActiveMetricId] = useState<VitalsLabMetricId | null>(null);
   const [activeSystem, setActiveSystem] = useState<VitalsLabSystemId>("full");
@@ -162,7 +164,7 @@ export function VitalsLabExperience({
     return () => window.clearInterval(id);
   }, [autoScan, triggerScan]);
 
-  const metrics = useMemo(() => vitalsLabMetricsFromModel(analytics), [analytics]);
+  const metrics = useMemo(() => suppliedMetrics ?? vitalsLabMetricsFromModel(analytics), [analytics, suppliedMetrics]);
   const leftMetrics = useMemo(
     () => metrics.filter((m) => m.column === "left").sort((a, b) => a.row - b.row),
     [metrics],

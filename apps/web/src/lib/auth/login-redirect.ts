@@ -74,3 +74,11 @@ export function buildSignupHref(nextPath?: string | null) {
   const query = new URLSearchParams({ next: safeNextPath });
   return `/signup?${query.toString()}`;
 }
+
+/** Setup must not return to itself or to the guest introduction after completion. */
+export function resolvePostOnboardingPath(candidatePath?: string | null) {
+  const destination = resolveSafePostLoginPath(candidatePath);
+  const pathname = new URL(destination, SENTINEL_BASE_URL).pathname;
+  return pathname === "/app/onboarding" || pathname === "/app/welcome" || pathname === "/app"
+    ? DEFAULT_POST_LOGIN_PATH : destination;
+}

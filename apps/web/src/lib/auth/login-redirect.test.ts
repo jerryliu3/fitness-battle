@@ -67,3 +67,10 @@ describe("login-redirect", () => {
     });
   });
 });
+
+it("prevents setup and welcome return loops", async () => {
+  const { resolvePostOnboardingPath } = await import("./login-redirect");
+  expect(resolvePostOnboardingPath("/app/onboarding?next=/app/onboarding")).toBe("/app/today");
+  expect(resolvePostOnboardingPath("/app/welcome")).toBe("/app/today");
+  expect(resolvePostOnboardingPath("/app/arena")).toBe("/app/arena");
+});

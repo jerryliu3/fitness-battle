@@ -37,6 +37,7 @@ import { SettingsRow } from "../src/ui/settings-row";
 import { DataSyncActions } from "../src/features/data-sync-actions";
 import { mobileEnv } from "../src/lib/env";
 import { useAuth } from "../src/lib/auth";
+import { GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft } from "../src/lib/guest-intro";
 import { useCompeteStore } from "../src/lib/compete-store";
 import {
   createAppleHealthDeps,
@@ -101,11 +102,13 @@ const styles=useThemedStyles(stylesThemes);
     provider?: string;
     panel?: AthletePanel;
     edit?: string;
+    auth?: AuthMode;
+    from?: string;
   }>();
   const [note, setNote] = useState<string | null>(null);
   const [syncBusy, setSyncBusy] = useState(false);
   const [busyProvider, setBusyProvider] = useState<string | null>(null);
-  const [authMode, setAuthMode] = useState<AuthMode>("signin");
+  const [authMode, setAuthMode] = useState<AuthMode>(params.auth === "signup" ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -129,6 +132,18 @@ const styles=useThemedStyles(stylesThemes);
     }
   }
   const appliedTracker = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!user && (params.auth === "signup" || params.auth === "signin")) {
+      setAuthMode(params.auth);
+      if (params.auth !== "signup") return;
+      let alive = true;
+      void readGuestIntroDraft().then(guest => {
+        if (alive && guest?.name) setDisplayName(current => current || guest.name);
+      }).catch(() => {});
+      return () => { alive = false; };
+    }
+  }, [params.auth, user?.id]);
 
   useEffect(() => {
     if (params.edit === "1") setSettingsOpen(true);
@@ -198,10 +213,13 @@ const styles=useThemedStyles(stylesThemes);
 
   const rowBusy = syncBusy || Boolean(busyProvider);
   const signedIn = Boolean(user);
+  const fromOnboarding = params.from === "onboarding" && !signedIn;
 
   const titles = { profile: "Edit profile", connections: "Data Sync", preferences: "Preferences", scoring: "How scoring works", account: "Account" };
   const exitAthletePanel = () => {
-    if (router.canGoBack()) {
+    if (fromOnboarding && !router.canGoBack()) {
+      router.replace("/welcome");
+    } else if (router.canGoBack()) {
       router.back();
     } else if (panel) {
       router.replace({ pathname: "/athlete", params: { edit: "1" } });
@@ -211,10 +229,10 @@ const styles=useThemedStyles(stylesThemes);
   };
   const pageHeader = (
     <ScreenHeader
-      localBack={Boolean(panel)}
+      localBack={Boolean(panel) || fromOnboarding}
       hidden={!panel && settingsOpen}
-      nativeBar={!panel}
-      title={panel ? titles[panel] : editingProfile ? "Edit profile" : "Athlete"}
+      nativeBar={!panel && !fromOnboarding}
+      title={panel ? titles[panel] : fromOnboarding ? (authMode === "signup" ? "Create account" : "Sign in") : editingProfile ? "Edit profile" : "Athlete"}
       onBack={
         editingProfile && !panel
           ? () => {
@@ -238,14 +256,28 @@ const styles=useThemedStyles(stylesThemes);
         }
         setPassword("");
         setAuthNote(null);
+        if (params.from === "onboarding") router.replace("/onboarding");
         return;
+      }
+      // Mark the intended new account before signup can trigger auth navigation.
+      // Existing sign-ins never import a guest athlete profile by accident.
+      const guest = await readGuestIntroDraft().catch(() => null);
+      const normalizedEmail = email.trim().toLowerCase();
+      let marked = false;
+      if (guest?.introCompleted && guest.name.trim()) {
+        try {
+          await AsyncStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ ...guest, name: displayName.trim() || guest.name }));
+          await AsyncStorage.setItem(GUEST_SIGNUP_PENDING_KEY, normalizedEmail);
+          marked = true;
+        } catch { /* Lack of local storage must not block account creation. */ }
       }
       const result = await signUp({
         email,
         password,
-        displayName: displayName.trim() || email.split("@")[0] || "Athlete",
+        displayName: displayName.trim() || guest?.name.trim() || email.split("@")[0] || "Athlete",
       });
       if (result.error) {
+        if (marked) void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
         setAuthNote(result.error);
         return;
       }
@@ -256,7 +288,10 @@ const styles=useThemedStyles(stylesThemes);
       }
       setPassword("");
       setAuthNote(null);
-      router.replace("/onboarding");
+      router.replace(guest?.introCompleted ? "/onboarding" : "/welcome");
+    } catch (error) {
+      if (authMode === "signup") void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
+      setAuthNote(error instanceof Error ? error.message : "Could not access your account.");
     } finally {
       setAuthBusy(false);
     }
@@ -378,7 +413,7 @@ const styles=useThemedStyles(stylesThemes);
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <AthleteMetrics state={state} sections="profile" signedOut={!signedIn} />
+          {!fromOnboarding && <AthleteMetrics state={state} sections="profile" signedOut={!signedIn} />}
           <Text style={styles.kicker}>Account</Text>
 
           <Text style={styles.name}>Sign in to Overtaek</Text>
@@ -559,7 +594,7 @@ const styles=useThemedStyles(stylesThemes);
           })}
           </View>
           <Toast message={note ?? ""} onDismiss={() => setNote(null)} />
-          <DataSyncActions includeCalibration={!inlineConnections}/>
+          {!inlineConnections && <DataSyncActions />}
         </SectionStack>);
     if (inlineConnections) return content;
     return (

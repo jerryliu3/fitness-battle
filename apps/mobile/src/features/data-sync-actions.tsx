@@ -17,7 +17,7 @@ import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
 import { FocusButton } from "../ui/focus";
-export function DataSyncActions({ provider, includeCalibration = true }: { provider?: ProviderId; includeCalibration?: boolean }) {
+export function DataSyncActions({ provider }: { provider?: ProviderId }) {
 const f=useFocusStyles();
 
   const { user, accessToken, offlineMode } = useAuth();
@@ -232,7 +232,7 @@ const f=useFocusStyles();
                 />
               </View>
             ))}
-          {includeCalibration && <><SectionHeader title="Import fitness history"/>
+          <SectionHeader title="Import fitness history"/>
           <AppText role="body" secondary >
             {state.calibrated
               ? "History is locked in. This one-time calibration cannot run again."
@@ -247,7 +247,7 @@ const f=useFocusStyles();
             }
             disabled={busy || state.calibrated}
             onPress={() => dispatch({ type: "import-history" })}
-          /></>}
+          />
         </>
       ) : null}
       <Toast message={note} onDismiss={() => setNote("")} />

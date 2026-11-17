@@ -1,0 +1,38 @@
+.onboarding { position: relative; width: 100%; max-width: 520px; margin: 0 auto; padding: 20px 0 32px; scroll-margin-top: 24px; }
+.onboarding-progress { display: flex; gap: 5px; }
+.onboarding-progress span { flex: 1; height: 3px; border-radius: 8px; background: var(--line); }
+.onboarding-progress [data-complete="true"] { background: var(--action-primary); }
+.onboarding-sports { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.onboarding-sport { min-height: 142px; border: 1px solid var(--line); border-radius: 20px; background: var(--card); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font: inherit; cursor: pointer; }
+.onboarding-sport[aria-pressed="true"] { border: 2px solid var(--ink); background: var(--action-soft); }
+.onboarding-sport-emoji { display: inline-block; font: var(--type-display); line-height: var(--type-display-leading); transform: scale(3.6); }
+.onboarding-sport-emoji[data-mirror="true"] { transform: scale(3.6) scaleX(-1); }
+.onboarding-weekly-volume { display: flex; align-items: center; gap: 12px; }
+.onboarding-weekly-volume-label { flex: 1; margin: 0; font: var(--type-caption); }
+.onboarding-weekly-volume-input { width: 80px; }
+.onboarding-actions { display: flex; gap: 12px; align-items: center; }
+.onboarding-actions > .fb-btn { flex: 1; }
+.onboarding-actions:empty { display: none; }
+.onboarding-score { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.onboarding-score strong { font: var(--type-display); }
+
+/* Interactive feature discovery, with no account or health data access. */
+.onboarding-feature-tabs { display: flex; border: 1px solid var(--line); border-radius: 999px; background: var(--soft); padding: 4px; gap: 2px; }
+.onboarding-feature-tabs button { flex: 1; min-width: 0; min-height: 44px; padding: 8px 5px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: var(--type-label); cursor: pointer; }
+.onboarding-feature-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
+
+.onboarding-account { display: grid; gap: 18px; }
+
+.onboarding-heading { display:flex; align-items:center; gap:16px; }
+.onboarding-heading > h1 { flex:1; min-width:0; }
+.onboarding-heading[data-compact="true"] > h1 { font-size:var(--type-heading-size); line-height:var(--type-heading-leading); font-weight:var(--type-heading-weight); }
+.onboarding-persistent-card { position:absolute; top:0; left:0; width:320px; height:430px; z-index:30; }
+.onboarding-card-slot-small { width:116px; height:156px; flex:0 0 116px; margin-left:auto; }
+.onboarding-card-slot-large, .onboarding-card-slot-save { width:280px; height:380px; align-self:center; }
+.onboarding-photo { position:relative; cursor:pointer; text-align:center; }
+.onboarding-photo input { position:absolute; inset:0; opacity:0; width:100%; cursor:pointer; }
+
+.onboarding-photo-row { display:flex; align-items:center; gap:16px; }
+.onboarding-photo-row > .onboarding-photo { flex:1; background:var(--card); color:var(--ink); border:1px solid var(--line); }
+.onboarding-remove-photo { border:0; background:transparent; color:var(--ink); font:inherit; cursor:pointer; min-height:44px; padding:0; }
+.onboarding-photo:focus-within { outline:2px solid var(--app-focus-ring); outline-offset:3px; }

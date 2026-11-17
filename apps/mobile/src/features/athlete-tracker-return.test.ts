@@ -91,7 +91,7 @@ vi.mock("../ui/focus", () => ((()=>{const mock={
   FocusTextButton: "TextButton",
   f: {},
 };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
-import AthleteScreen from "../../app/athlete";
+import AthleteScreen, { TrackerConnections } from "../../app/athlete";
 let renderer: ReactTestRenderer;
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
@@ -245,4 +245,29 @@ describe("athlete profile navigation and layout", () => {
     const metrics = renderer.root.findByType("AthleteMetrics" as never);
     expect(metrics.props.signedOut).toBe(true);
   });
+});
+
+
+describe("onboarding sign-in", () => {
+  it.each([true, false])("returns to onboarding with a visible Back control (history=%s)", async (history) => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    mock.user = null;
+    mock.params = { auth: "signin", from: "onboarding" };
+    mock.canGoBackValue = history;
+    await act(async () => { renderer = create(createElement(AthleteScreen)); });
+    const header = renderer.root.findByType("ScreenHeader" as never);
+    expect(header.props.localBack).toBe(true);
+    expect(header.props.title).toBe("Sign in");
+    expect(renderer.root.findAllByType("AthleteMetrics" as never)).toHaveLength(0);
+    await act(async () => header.props.onBack());
+    if (history) expect(mock.back).toHaveBeenCalled();
+    else expect(mock.replace).toHaveBeenCalledWith("/welcome");
+    mock.canGoBackValue = true;
+  });
+});
+
+it("keeps onboarding tracker connections free of file-import and recap actions", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); mock.user = { id: "alice" };
+  await act(async () => { renderer = create(createElement(TrackerConnections)); });
+  expect(renderer.root.findAllByType("DataSyncActions" as never).some(node => !node.props.provider)).toBe(false);
 });

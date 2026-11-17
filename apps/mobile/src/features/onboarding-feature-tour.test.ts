@@ -1,0 +1,26 @@
+import { createElement } from "react";
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
+import { expect, it, vi } from "vitest";
+vi.mock("react-native", () => ({ View: "View" }));
+vi.mock("./vitals-lab/vitals-lab-panel", () => ({ VitalsLabPanel: "Vitals" }));
+vi.mock("../ui/section", () => ({ AppText: "Text" }));
+vi.mock("../ui/focus", () => ({ FocusSegments: "Segments" }));
+vi.mock("../ui/onboarding-canvas", () => ({ OnboardingCanvas: ({ children }: { children: unknown }) => children }));
+vi.mock("./onboarding-potential", () => ({ OnboardingPotential: "Growth" }));
+vi.mock("./onboarding-crew", () => ({ OnboardingCrew: "Crew" }));
+import { OnboardingFeatureTour } from "./onboarding-feature-tour";
+it("loads the actual Vitals renderer before selection and retains it across tabs", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const props = { draft: { sport: "running" as const, name: "Taylor", city: "", countryCode: "" }, selected: "growth" as const, onSelect: vi.fn() };
+  let r!: ReactTestRenderer;
+  await act(async () => { r = create(createElement(OnboardingFeatureTour, props)); });
+  const scan = r.root.findByType("Vitals" as never);
+  expect(scan.props.gender).toBe("male");
+  await act(async () => r.update(createElement(OnboardingFeatureTour, { ...props, selected: "vitals" })));
+  expect(r.root.findByType("Vitals" as never)).toBe(scan);
+  await act(async () => r.root.findAllByType("Segments" as never).find(n => n.props.label === "Body model")!.props.onChange("male"));
+  expect(scan.props.gender).toBe("male");
+  await act(async () => r.update(createElement(OnboardingFeatureTour, { ...props, selected: "crews" })));
+  expect(r.root.findByType("Vitals" as never)).toBe(scan);
+  await act(async () => r.unmount());
+});

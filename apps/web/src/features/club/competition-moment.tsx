@@ -1,5 +1,6 @@
 "use client";
 
+import { BackButton } from "@/ui/back-button";
 import { colors as appearanceColors } from "@/theme/app-colors";
 import { typographyStyle } from "@/ui/section";
 import { Sheet } from "@/ui/sheet";
@@ -46,6 +47,9 @@ export function CompetitionMoment({
   onConfirm,
   debug = false,
   embedded = false,
+  practice = false,
+  onOvertakeCountChange,
+  onBack,
   dimension = defaultCompeteFieldView(moment.sport),
   course = null,
   autoStart = true,
@@ -55,6 +59,9 @@ export function CompetitionMoment({
   onConfirm: () => void;
   debug?: boolean;
   embedded?: boolean;
+  practice?: boolean;
+  onOvertakeCountChange?: (count: number) => void;
+  onBack?: () => void;
   dimension?: FieldViewDimension;
   course?: RaceCourse | null;
   autoStart?: boolean;
@@ -125,6 +132,7 @@ export function CompetitionMoment({
 
   const frame = competitionMomentScene(moment, progress);
   const summary = competitionMomentProgressSummary(moment, frame);
+  useEffect(() => { onOvertakeCountChange?.(frame.count); }, [frame.count, onOvertakeCountChange]);
 
   const scoreMap = useMemo(
     () =>
@@ -168,7 +176,8 @@ export function CompetitionMoment({
   const continueLabel = remaining > 1 ? `Continue (${remaining - 1} more)` : "Continue";
   const overviewControls = (
     <div className="moment-replay-overview">
-      <div className="moment-replay-overview-actions">
+      <div className="moment-replay-overview-actions" style={onBack ? { gridTemplateColumns: "44px auto auto 1fr", alignItems: "center" } : undefined}>
+        {onBack && <BackButton onClick={onBack} />}
         <button
           type="button"
           className="fb-btn-line moment-replay-playback-btn"
@@ -247,15 +256,13 @@ export function CompetitionMoment({
         ) : null}
       </div>
 
-      {!embedded ? (
-        <div className="compete-field-options">
+      <div className="compete-field-options" style={embedded ? { position: "absolute", top: 12, right: 12 } : undefined}>
           <FieldViewSwitcher
             value={viewDimension}
             event={moment.sport}
             onChange={chooseView}
           />
-        </div>
-      ) : null}
+      </div>
 
       <header
         className="moment-replay-top"
@@ -267,16 +274,16 @@ export function CompetitionMoment({
             <span style={typographyStyle("caption")}>{summary.sportLabel}</span>
           </div>
         ) : null}
-        <div className="moment-replay-chip" data-tone={summary.tone}>
+        {(!practice || frame.count > 0) && <div className="moment-replay-chip" data-tone={summary.tone}>
           <strong className="moment-replay-chip-headline" style={typographyStyle("label")}>
-            {summary.headline}
+            {practice ? "You passed Alex!" : summary.headline}
           </strong>
-          {summary.overtakeLabel ? (
+          {!practice && summary.overtakeLabel ? (
             <span className="moment-replay-overtake-badge" style={typographyStyle("caption")}>
               {summary.overtakeLabel}
             </span>
           ) : null}
-        </div>
+        </div>}
       </header>
 
       {!reduced && frame.passEffects.length > 0 ? (

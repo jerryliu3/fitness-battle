@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, type CSSProperties } from "react";
 import { COMPETE_ART_COLORS, competeNow, eventRegistration, entryBarcode, registrationDetailCards, registrationTicketRows, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
+import { BackButton } from "@/ui/back-button";
 import { AppHeading, AppParagraph, AppText } from "@/ui/section";
 import { motion, useReducedMotion } from "motion/react";
 import { WaveCountdown } from "@/ui/wave-countdown";
@@ -43,6 +44,8 @@ export function EventRegistration({
   error,
   registered,
   crew = false,
+  ticketOnly = false,
+  onBack,
   onClaim,
   onView,
 }: {
@@ -52,12 +55,14 @@ export function EventRegistration({
   error: string;
   registered: boolean;
   crew?: boolean;
+  ticketOnly?: boolean;
+  onBack?: () => void;
   onClaim(): void;
   onView(): void;
 }) {
   const reduced = useReducedMotion();
   const transition = { duration: reduced ? 0 : 0.18 };
-  const [step, setStep] = useState(registered ? 1 : 0);
+  const [step, setStep] = useState(registered || ticketOnly ? 1 : 0);
   const [flipped, setFlipped] = useState<Record<number, boolean>>({});
   const [claiming, setClaiming] = useState(false);
   const claimed = registered;
@@ -67,14 +72,14 @@ export function EventRegistration({
   const now = competeNow(state);
   const detail = eventRegistration(state, event, now);
   const ruleCards = registrationDetailCards(detail);
-  const ticketRows = registrationTicketRows(detail);
+  const ticketRows = registrationTicketRows(detail).filter(row => !ticketOnly || row.label === "Starts" || row.label === "Scoring");
   const barcode = entryBarcode(`${event}:${detail.start}`);
   const eventTag = crew ? "Crew Derby" : "Weekly event";
 
   return (
-    <div className="event-registration" style={{ "--registration-color": COMPETE_ART_COLORS[event] } as CSSProperties}>
+    <div className="event-registration" data-compact={ticketOnly} style={{ "--registration-color": COMPETE_ART_COLORS[event] } as CSSProperties}>
       <div className="registration-stage">
-        <motion.div
+        {!ticketOnly && <motion.div
           initial={false}
           animate={{ opacity: step === 0 ? 1 : 0, x: step === 0 ? 0 : -12 }}
           transition={transition}
@@ -148,7 +153,7 @@ export function EventRegistration({
             <div className="registration-step-actions">
               <button type="button" className="fb-btn" onClick={() => setStep(1)}>Continue →</button>
             </div>
-        </motion.div>
+        </motion.div>}
 
         <motion.div
           initial={false}
@@ -174,14 +179,16 @@ export function EventRegistration({
                     ))}
                   </div>
                   <TicketStub status="READY TO CLAIM" barcode={barcode} />
+                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  {onBack && <BackButton disabled={busy || claimPending} onClick={onBack} />}
                   <button
                     type="button"
-                    className="fb-btn"
+                    className="fb-btn" style={{ flex: 1 }}
                     disabled={claimPending || claimed}
                     onClick={() => { setClaiming(true); onClaim(); }}
                   >
-                    {claimPending ? "Claiming your spot…" : "Claim your spot"}
-                  </button>
+                    {claimPending ? "Claiming your spot…" : ticketOnly ? "Continue" : "Claim your spot"}
+                  </button></div>
                 </div>
               </div>
 
@@ -205,9 +212,11 @@ export function EventRegistration({
                     </div>
                   </div>
                   <TicketStub status="CONFIRMED" barcode={barcode} />
-                  <button type="button" className="fb-btn" onClick={onView}>
-                    View {Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →
-                  </button>
+                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  {onBack && <BackButton disabled={busy || claimPending} onClick={onBack} />}
+                  <button type="button" className="fb-btn" style={{ flex: 1 }} disabled={busy} onClick={onView}>
+                    {ticketOnly ? "Continue" : `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →`}
+                  </button></div>
                 </div>
               </div>
             </div>

@@ -159,12 +159,15 @@ export function CompeteTimeSeriesChart({
   onTimelineChange?: (value: number | null) => void;
   momentReplay?: { moment: CompetitionMoment; progress: number };
 }) {
+  const container = useRef<HTMLDivElement>(null);
   const [plotHeight, setPlotHeight] = useState(204);
   useEffect(() => {
-    const resize = () => setPlotHeight(immersive ? Math.max(220, window.innerHeight - 380) : 204);
+    const resize = () => setPlotHeight(immersive ? Math.max(140, (container.current?.clientHeight || window.innerHeight) - 380) : 204);
     resize();
     window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(resize);
+    if (container.current) observer?.observe(container.current);
+    return () => { window.removeEventListener("resize", resize); observer?.disconnect(); };
   }, [immersive]);
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
@@ -300,6 +303,7 @@ export function CompeteTimeSeriesChart({
 
   return (
     <div
+      ref={container}
       aria-label="Weekly competition time-series graph"
       style={{
         background: immersive ? c.paper : c.card,

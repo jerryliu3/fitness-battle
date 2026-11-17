@@ -37,17 +37,14 @@ export function formatTimeZoneLabel(
 ): string {
   if (!isValidIanaTimeZone(timeZone)) return timeZone;
   const city = timeZone.split("/").pop()?.replace(/_/g, " ") ?? timeZone;
-  let offset = "";
-  try {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      timeZoneName: "shortOffset",
-    }).formatToParts(reference);
-    offset = parts.find((p) => p.type === "timeZoneName")?.value ?? "";
-  } catch {
-    /* ignore */
-  }
-  return offset ? `${city} (${offset})` : city;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone, year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", hour12: false, hourCycle: "h23",
+  }).formatToParts(reference);
+  const field = (type: string) => Number(parts.find(part => part.type === type)?.value);
+  const local = Date.UTC(field("year"), field("month") - 1, field("day"), field("hour") % 24, field("minute"));
+  const minutes = Math.round((local - Math.floor(reference.getTime() / 60_000) * 60_000) / 60_000);
+  const offset = minutes === 0 ? "GMT" : `GMT${minutes > 0 ? "+" : "−"}${Math.floor(Math.abs(minutes) / 60)}${Math.abs(minutes) % 60 ? `:${String(Math.abs(minutes) % 60).padStart(2, "0")}` : ""}`;
+  return `${city} (${offset})`;
 }
 
 export const COMPACT_TIME_ZONES = [

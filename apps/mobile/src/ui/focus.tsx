@@ -389,12 +389,14 @@ export function FocusButton({
   onPress,
   secondary = false,
   disabled = false,
+  fit = false,
 }: {
   label: string;
   accessibilityLabel?: string;
   onPress: () => void;
   secondary?: boolean;
   disabled?: boolean;
+  fit?: boolean;
 }) {
 const c=useThemeColors();
 const f=useThemedStyles(fThemes);
@@ -412,12 +414,13 @@ const f=useThemedStyles(fThemes);
       }}
       style={({ pressed }) => [
         f.button,
+        fit && { height: 52, minHeight: 52, paddingVertical: 0 },
         secondary && f.secondary,
         pressed && !disabled && { opacity: 0.78 },
         disabled && { opacity: 0.4 },
       ]}
     >
-      <Text style={[f.buttonText, secondary && { color: c.ink }]}>{label}</Text>
+      <Text numberOfLines={fit ? 2 : undefined} adjustsFontSizeToFit={fit} maxFontSizeMultiplier={fit ? 1.2 : undefined} minimumFontScale={fit ? 1 : undefined} style={[f.buttonText, secondary && { color: c.ink }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -430,6 +433,7 @@ export function FocusSegments<T extends string>({
   accent = false,
   variant = "segments",
   compact = false,
+  pill = false,
 }: {
   label: string;
   options: readonly { value: T; label: string; accessibilityLabel?: string }[];
@@ -438,6 +442,7 @@ export function FocusSegments<T extends string>({
   accent?: boolean;
   variant?: "segments" | "tabs";
   compact?: boolean;
+  pill?: boolean;
 }) {
 const c=useThemeColors();
 const f=useThemedStyles(fThemes);
@@ -470,12 +475,14 @@ const f=useThemedStyles(fThemes);
       style={[
         f.segments,
         compact && f.segmentsCompact,
+        pill && { borderRadius: 999 },
         variant === "tabs" && { backgroundColor: "transparent", borderWidth: 0, borderRadius: 0, padding: 0, borderBottomWidth: 1 },
       ]}
     >
       {width > 0 && <Animated.View pointerEvents="none" style={{
         position: "absolute", left: inset, width: segmentWidth,
         ...(variant === "tabs" ? { bottom: 0, height: 2 } : compact ? { top: 3, bottom: 3, borderRadius: 9 } : { top: 4, bottom: 4, borderRadius: 20 }),
+        ...(pill ? { borderRadius: 999 } : {}),
         backgroundColor: variant === "tabs" || !accent ? c.ink : c.tennis,
         transform: [{ translateX: position }],
       }} />}
@@ -503,7 +510,6 @@ const f=useThemedStyles(fThemes);
             minimumFontScale={compact ? 0.8 : undefined}
             style={[
               f.segmentText,
-              compact && f.segmentTextCompact,
               value === option.value && { color: variant === "tabs" ? c.ink : accent ? c.textOnAction : c.card },
             ]}
           >
@@ -711,9 +717,6 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
     ...textStyle("label"),
     color: c.muted,
     textAlign: "center",
-  },
-  segmentTextCompact: {
-    ...textStyle("caption"),
   },
   textButton: {
     minHeight: 44,

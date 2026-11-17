@@ -1,27 +1,26 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-const motion = vi.hoisted(() => ({ reduced: true, timing: vi.fn() }));
-vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => motion.reduced }));
-vi.mock("react-native", () => ({useColorScheme: () => "light",  View: "View", LayoutAnimation: { configureNext: vi.fn(), Presets: { easeInEaseOut: {} } }, Animated: { View: "AnimatedView", Value: class { setValue = vi.fn(); }, timing: (...args: unknown[]) => { motion.timing(...args); return { start: vi.fn(), stop: vi.fn() }; } } }));
-vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path" }));
+const animation = vi.hoisted(() => ({ timing: vi.fn((value: { setValue: (v: number) => void }, config: { toValue: number }) => ({ start: () => value.setValue(config.toValue), stop: vi.fn() })) }));
+vi.mock("react-native", () => ({ useColorScheme: () => "light", View: "View", Easing: { linear: "linear" }, Animated: {
+  Value: class { listeners: ((v: { value: number }) => void)[] = []; setValue(v: number) { this.listeners.forEach(fn => fn({ value: v })); } addListener(fn: (v: { value: number }) => void) { this.listeners.push(fn); return "1"; } removeListener() {} },
+  timing: animation.timing,
+} }));
+vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => false }));
 vi.mock("../ui/section", () => ({ AppText: "AppText" }));
-vi.mock("../ui/sport-icon", () => ({ SportIcon: "SportIcon" }));
 vi.mock("../ui/standard-line-chart", () => ({ StandardLineChart: "Chart" }));
-import { OnboardingOutlook } from "./onboarding-visuals";
-it("restarts the staged reveal after the device motion preference resolves", async () => {
- vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.useFakeTimers();
- let r!:ReactTestRenderer;
- await act(async()=>{r=create(createElement(OnboardingOutlook));});
- expect(r.root.findAllByType("Chart" as never)).toHaveLength(1);
- motion.reduced=false;
- await act(async()=>r.update(createElement(OnboardingOutlook)));
- expect(r.root.findAllByType("Chart" as never)).toHaveLength(0);
- await act(async()=>{vi.advanceTimersByTime(2399);});
- expect(r.root.findAllByType("Chart" as never)).toHaveLength(0);
- await act(async()=>{vi.advanceTimersByTime(1);});
- expect(r.root.findAllByType("Chart" as never)).toHaveLength(1);
- expect(motion.timing.mock.calls.some(([,config])=>config.duration===1500)).toBe(true);
- expect(motion.timing.mock.calls.some(([,config])=>config.duration===400)).toBe(true);
- await act(async()=>r.unmount());vi.useRealTimers();vi.unstubAllGlobals();
+import { OnboardingPotential } from "./onboarding-potential";
+it("starts a fresh reveal and updates a single score reading each time growth appears", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const score = vi.fn();
+  for (let i = 0; i < 2; i++) {
+    let r!: ReactTestRenderer;
+    await act(async () => { r = create(createElement(OnboardingPotential, { onScoreChange: score })); });
+    expect(r.root.findByType("Chart" as never).props.followRevealDot).toBe(true);
+    expect(r.root.findAllByType("AppText" as never).filter(n => n.props.role === "hero").map(n => n.props.children)).toEqual(["2,000"]);
+    await act(async () => r.unmount());
+  }
+  expect(animation.timing).toHaveBeenCalledTimes(2);
+  expect(score).toHaveBeenCalledWith(500);
+  expect(score).toHaveBeenCalledWith(2000);
 });

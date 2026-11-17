@@ -58,8 +58,10 @@ export function CompeteTimeSeriesChart({
   reserveTopControls = false,
   compact = false,
   immersive = false,
+  hideHeader = false,
   topInset = 0,
   bottomInset = 0,
+  viewportHeight,
   view,
   onViewChange,
   timelineFraction,
@@ -77,8 +79,10 @@ export function CompeteTimeSeriesChart({
   reserveTopControls?: boolean;
   compact?: boolean;
   immersive?: boolean;
+  hideHeader?: boolean;
   topInset?: number;
   bottomInset?: number;
+  viewportHeight?: number;
   view?: CompeteTimeSeriesView;
   onViewChange?: (view: CompeteTimeSeriesView) => void;
   timelineFraction?: number | null;
@@ -91,7 +95,7 @@ export function CompeteTimeSeriesChart({
   const { blocks } = useAthleteBlocks();
   const excludedIds = useMemo(() => [...new Set([...(hiddenIds ?? []), ...blocks.map(block => block.id)])], [hiddenIds, blocks]);
   const { height: screenHeight } = RN.useWindowDimensions();
-  const plotHeight = immersive ? Math.max(260, screenHeight - topInset - bottomInset - 210) : 204;
+  const plotHeight = immersive ? Math.max(viewportHeight ? 80 : 140, (viewportHeight ?? screenHeight) - topInset - bottomInset - 210) : 204;
   const s = useThemedStyles(sThemes);
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
@@ -352,7 +356,7 @@ export function CompeteTimeSeriesChart({
       ]}
     >
       {/* Pure Open Line Header */}
-      {immersive ? (
+      {hideHeader ? null : immersive ? (
         <View style={s.immersiveHeader}>
           <UserAvatar
             src={model.selectedAthlete.avatarUrl}

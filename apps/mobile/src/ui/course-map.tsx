@@ -69,6 +69,7 @@ const appearanceColors = useThemeColors();
   const flatRef = useRef(flat);
   flatRef.current = flat;
   const overviewHold = useRef(false);
+  const replayZoom = useRef<number | null>(null);
   /** True while the user is touching the map — filters programmatic isUserInteraction. */
   const mapUserGesture = useRef(false);
   const mapUserGestureTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -85,6 +86,7 @@ const appearanceColors = useThemeColors();
   };
   useEffect(() => {
     overviewHold.current = false;
+    replayZoom.current = null;
     if (replayActive) setFlat(initialFlat);
   }, [course, cardSessionKey]);
   const routeFrame = useRef(0);
@@ -142,7 +144,7 @@ const appearanceColors = useThemeColors();
     let raf = 0, previous = Date.now();
     let current = pose.current;
     const tick = () => {
-      if (overviewHold.current) { raf = requestAnimationFrame(tick); return; }
+      if (overviewHold.current || mapUserGesture.current) { current = pose.current; previous = Date.now(); raf = requestAnimationFrame(tick); return; }
       const target = replayTarget.current;
       if (!target) { raf = requestAnimationFrame(tick); return; }
       const now = Date.now();
@@ -151,7 +153,7 @@ const appearanceColors = useThemeColors();
       const angle = (from: number, to: number) => from + (((to - from) % 360 + 540) % 360 - 180) * blend;
       current = {
         center: [angle(current.center[0], target.center[0]), current.center[1] + (target.center[1] - current.center[1]) * blend],
-        zoom: current.zoom + (target.zoom - current.zoom) * blend,
+        zoom: current.zoom + ((replayZoom.current ?? target.zoom) - current.zoom) * blend,
         pitch: flatRef.current ? 0 : target.pitch,
         bearing: angle(current.bearing, target.bearing),
       };
@@ -216,7 +218,7 @@ const appearanceColors = useThemeColors();
     pose.current.zoom = courseInitialZoom(pose.current.center[1], nativeEvent.layout.height, pose.current.pitch);
     if (ready) ref.current?.setCamera({ centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing, animationDuration: 0 });
   }}>
-    <MapView ref={mapRef} accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled={!onSnapshot} attributionEnabled={false}
+    <MapView ref={mapRef} accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled={!onSnapshot} attributionEnabled={false}
       onTouchStart={beginMapUserGesture}
       onTouchEnd={endMapUserGesture}
       onTouchCancel={endMapUserGesture}
@@ -242,7 +244,8 @@ const appearanceColors = useThemeColors();
         if (typeof p.zoom === "number" && p.zoom <= 0.1) return;
         pose.current = { center: [p.center[0], p.center[1]], zoom: p.zoom, pitch: p.pitch, bearing: p.heading };
         if (!replay) { rememberedCameras.set(cameraKey, pose.current); if (controller.courseMetres !== null) rememberedProgress.set(cameraKey, controller.courseMetres); else rememberedProgress.delete(cameraKey); }
-        if (p.isUserInteraction && controller.following && mapUserGesture.current) {
+        if (replay && p.isUserInteraction && mapUserGesture.current) replayZoom.current = p.zoom;
+        if (!replay && p.isUserInteraction && controller.following && mapUserGesture.current) {
           if (mapUserGestureTimer.current) clearTimeout(mapUserGestureTimer.current);
           mapUserGesture.current = false;
           mapUserGestureTimer.current = null;

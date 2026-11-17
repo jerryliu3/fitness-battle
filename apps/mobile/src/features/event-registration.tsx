@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Pressable, View } from "react-native";
+import { Animated, Easing, Keyboard, Pressable, View } from "react-native";
 import {
   COMPETE_ART_COLORS,
   competeNow,
@@ -12,6 +12,7 @@ import {
   type RegistrationRuleCard,
 } from "@fitness-battle/shared";
 import { AppText } from "../ui/section";
+import { IconButton } from "../ui/icon-button";
 import { FocusButton } from "../ui/focus";
 import { WaveCountdown } from "../ui/wave-countdown";
 import { useReducedMotion } from "../ui/use-reduced-motion";
@@ -137,7 +138,10 @@ export function EventRegistration({
   state,
   event,
   registered,
+  busy = false,
   crew = false,
+  ticketOnly = false,
+  onBack,
   error,
   onClaim,
   onView,
@@ -145,7 +149,10 @@ export function EventRegistration({
   state: CompeteState;
   event: CompeteEvent;
   registered: boolean;
+  busy?: boolean;
   crew?: boolean;
+  ticketOnly?: boolean;
+  onBack?: () => void;
   error?: string;
   onClaim(): void;
   onView(): void;
@@ -159,12 +166,12 @@ export function EventRegistration({
   const [claiming, setClaiming] = useState(false);
   const [ticketHeight, setTicketHeight] = useState(0);
   const [stageHeight, setStageHeight] = useState(0);
-  const rotation = useRef(new Animated.Value(registered ? 180 : 0)).current;
+  const rotation = useRef(new Animated.Value(registered && !ticketOnly ? 180 : 0)).current;
   const stamp = useRef(new Animated.Value(registered ? 1 : 0)).current;
   const entry = useRef(new Animated.Value(0)).current;
   const stepProgress = useRef(new Animated.Value(registered ? 1 : 0)).current;
   const claimed = registered;
-  const claimPending = !claimed && claiming;
+  const claimPending = !claimed && (busy || claiming);
 
   useEffect(() => {
     entry.setValue(reduced ? 1 : 0);
@@ -192,7 +199,7 @@ export function EventRegistration({
   const now = competeNow(state);
   const detail = eventRegistration(state, event, now);
   const ruleCards = registrationDetailCards(detail);
-  const ticketRows = registrationTicketRows(detail);
+  const ticketRows = registrationTicketRows(detail).filter(row => !ticketOnly || row.label === "Starts" || row.label === "Scoring");
   const barcode = entryBarcode(`${event}:${detail.start}`);
   const eventTag = crew ? "Crew Derby" : "Weekly event";
 
@@ -201,7 +208,7 @@ export function EventRegistration({
   }, [registered, error]);
 
   useEffect(() => {
-    if (step !== 1 || !claimed) {
+    if ((!ticketOnly && step !== 1) || !claimed) {
       if (!claimed) {
         rotation.setValue(0);
         stamp.setValue(0);
@@ -237,7 +244,7 @@ export function EventRegistration({
     const motion = Animated.sequence(animations);
     motion.start();
     return () => motion.stop();
-  }, [step, claimed, reduced, rotation, stamp]);
+  }, [step, claimed, reduced, rotation, stamp, ticketOnly]);
 
   const frontOpacity = rotation.interpolate({ inputRange: [0, 89, 90, 180], outputRange: [1, 1, 0, 0] });
   const backOpacity = rotation.interpolate({ inputRange: [0, 90, 91, 180], outputRange: [0, 0, 1, 1] });
@@ -245,10 +252,11 @@ export function EventRegistration({
   const face = (back: boolean) => (
     <Animated.View
       pointerEvents={back === claimed ? "auto" : "none"}
+      aria-hidden={back !== claimed}
       accessibilityElementsHidden={back !== claimed}
       onLayout={e => setTicketHeight(value => Math.max(value, e.nativeEvent.layout.height))}
       style={{
-        position: "absolute",
+        position: ticketOnly && back === claimed ? "relative" : "absolute",
         top: 0,
         left: 0,
         right: 0,
@@ -266,7 +274,7 @@ export function EventRegistration({
       }}
     >
       <View style={{ backgroundColor: tint }}>
-        <View style={{ minHeight: 162, padding: 22, justifyContent: "space-between", gap: 18, backgroundColor: c.surfaceInverse, overflow: "hidden" }}>
+        <View style={{ minHeight: ticketOnly ? 96 : 162, padding: ticketOnly ? 14 : 22, justifyContent: "space-between", gap: ticketOnly ? 10 : 18, backgroundColor: c.surfaceInverse, overflow: "hidden" }}>
           <EventArt event={event} feature />
           <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
             <View style={{ width: 46, height: 46, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: c.card }}>
@@ -277,7 +285,7 @@ export function EventRegistration({
             </AppText>
           </View>
           <View style={{ gap: 4 }}>
-            <AppText role="display" accessibilityRole="header" style={{ color: c.textOnInverse }}>
+            <AppText role={ticketOnly ? "heading" : "display"} accessibilityRole="header" style={{ color: c.textOnInverse }}>
               {back ? "You’re on the start list." : "Your spot is ready."}
             </AppText>
             {back ? (
@@ -288,12 +296,12 @@ export function EventRegistration({
           </View>
         </View>
 
-        <View style={{ padding: 22, gap: 16 }}>
+        <View style={{ padding: ticketOnly ? 14 : 22, gap: ticketOnly ? 10 : 16 }}>
           {back ? (
             <>
               <View style={{ gap: 6 }}>
                 <AppText role="caption" secondary>YOUR WAVE STARTS IN</AppText>
-                {step === 1 ? <WaveCountdown start={detail.start} now={now} prominent /> : <AppText role="display">00:00:00</AppText>}
+                {step === 1 || ticketOnly ? <WaveCountdown start={detail.start} now={now} prominent={!ticketOnly} /> : <AppText role="display">00:00:00</AppText>}
               </View>
               <View style={{ transform: [{ rotate: "-5deg" }], alignSelf: "flex-start" }}>
                 <Animated.View
@@ -338,24 +346,29 @@ export function EventRegistration({
               <AppText role="field" secondary>{back ? "CONFIRMED" : "READY TO CLAIM"}</AppText>
             </View>
             <View accessible={false} style={{ flexDirection: "row", gap: 2 }}>
-              {barcode.map((width, i) => <View key={i} style={{ flex: width, height: 32, backgroundColor: c.ink, borderRadius: 1 }} />)}
+              {barcode.map((width, i) => <View key={i} style={{ flex: width, height: ticketOnly ? 20 : 32, backgroundColor: c.ink, borderRadius: 1 }} />)}
             </View>
           </View>
 
-          <FocusButton
-            label={back ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →` : claimPending ? "Claiming your spot…" : "Claim your spot"}
-            disabled={claimPending}
+          <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+          {onBack && <IconButton icon="back" label="Back" disabled={busy || claimPending} onPress={onBack} />}
+          <View style={{ flex: 1 }}><FocusButton
+            label={ticketOnly ? "Continue" : back ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →` : claimPending ? "Claiming your spot…" : "Claim your spot"}
+            disabled={busy || claimPending}
             onPress={back ? onView : () => {
               setClaiming(true);
               requestAnimationFrame(() => {
                 onClaim();
               });
             }}
-          />
+          /></View>
+          </View>
         </View>
       </View>
     </Animated.View>
   );
+
+  if (ticketOnly) return <View onTouchStart={Keyboard.dismiss}>{face(false)}{face(true)}{error && <AppText role="caption" accessibilityRole="alert">{error}</AppText>}</View>;
 
   const sharedHeight = Math.max(stageHeight, ticketHeight);
 

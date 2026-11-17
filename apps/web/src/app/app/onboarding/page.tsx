@@ -1,79 +1,175 @@
 "use client";
 import { Suspense, useEffect, useRef, useState } from "react";
-import { TrackerConnections } from "@/features/you/you-route";
-import { OnboardingOvertake } from "@/features/club/onboarding-overtake";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { detectDeviceTimeZone, nextDailyWaveWindowAt, waveTimeLabel, PROVIDERS, SPORTS, type ProfileGender, type SportId, type UnitSystem } from "@fitness-battle/shared";
+import {
+  ONBOARDING_SETUP_TITLES as titles, detectDeviceTimeZone, guestIntroForAccount, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY,
+  SPORTS, hasOnboardingTrainingHistory, type ProfileGender, type SportId, type UnitSystem,
+  onboardingWeeklyVolumeInput, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, onboardingWeeklyVolumeUnit, type OnboardingWeeklyVolumes,
+} from "@fitness-battle/shared";
+import { TrackerConnections } from "@/features/you/you-route";
 import { CountryCombobox } from "@/ui/country-combobox";
 import { TimezoneCombobox } from "@/ui/timezone-combobox";
-import { AppHeading, AppParagraph, typographyStyle } from "@/ui/section";
-import { Ember } from "@/components/mascot/ember";
+import { BackButton } from "@/ui/back-button";
+import { AppHeading, AppParagraph } from "@/ui/section";
 import { AuthGate } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
-import { ProfilePhoto } from "@/features/you/profile-photo";
-import { OnboardingOutlook, OnboardingSummary, OnboardingUnits } from "@/features/club/onboarding-visuals";
-import { resolveSafePostLoginPath } from "@/lib/auth/login-redirect";
-const titles = ["Good things start with you.","What should we call you?","What moves you?","Bring your training along.","This is an Overtake.","Make every week count.","Your starting line is here."];
-function Setup({preview}:{preview:boolean}) {
-  const {state,dispatch} = useCompete(); const {user} = useAuth(); const router=useRouter(), params=useSearchParams(), reduced=useReducedMotion();
-  const finished = useRef(false), setupTop=useRef<HTMLElement>(null);
-  const [selectionError,setSelectionError]=useState(false),[now,setNow]=useState(Date.now());
-  useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),30_000);return ()=>clearInterval(timer);},[]);
-  const key=`onboarding-draft:v5:${user?.id??"guest"}`;
-  const [loadedKey,setLoadedKey]=useState("");
-  const [ready,setReady]=useState(false),[step,setStep]=useState(0),[name,setName]=useState(""),[city,setCity]=useState("");
-  const [gender,setGender]=useState<ProfileGender|"">("");
-  const [countryCode,setCountryCode]=useState("");
-  useEffect(()=>{setupTop.current?.scrollIntoView({block:"start"});},[step]);
-  const [weeklyVolume,setWeeklyVolume]=useState<Partial<Record<SportId,string>>>({});
-  const [sports,setSports]=useState<SportId[]>([]),[units,setUnits]=useState<UnitSystem>("us"),[sleep,setSleep]=useState(false);
-  const [timezone,setTimezone]=useState(()=>detectDeviceTimeZone());
-  useEffect(()=>{if(!state)return; let d: Record<string, any> | null = null;try{d=!preview?JSON.parse(sessionStorage.getItem(key)??"null"):null;}catch{}
-    setStep(Math.max(0,Math.min(6,Number(d?.step)||0)));
-    setName(typeof d?.name==="string"?d.name:"");
-    setCity(typeof d?.city==="string"?d.city:"");
-    setGender(d?.gender==="male"||d?.gender==="female"||d?.gender==="other"?d.gender:"");
-    setCountryCode(typeof d?.countryCode==="string"?d.countryCode:"");
-    setUnits(d?.units==="metric"||d?.units==="us"?d.units:state.units);
-    setSports(Array.isArray(d?.sports)?d.sports.filter((id:SportId)=>SPORTS.some(s=>s.id===id)):[]);setSleep(Boolean(d?.sleep));setTimezone(typeof d?.timezone==="string"?d.timezone:detectDeviceTimeZone());setWeeklyVolume(Object.fromEntries(SPORTS.flatMap(s=>typeof d?.weeklyVolume?.[s.id]==="string"?[[s.id,d.weeklyVolume[s.id]]]:[])));setLoadedKey(key);setReady(true);
-  },[key,preview,Boolean(state)]);
-  useEffect(()=>{if(ready&&loadedKey===key&&!preview)try{sessionStorage.setItem(key,JSON.stringify({step,name,city,gender,countryCode,sports,units,sleep,timezone,weeklyVolume}));}catch{}},[ready,loadedKey,preview,key,step,name,city,gender,countryCode,sports,units,sleep,timezone,weeklyVolume]);
-  if(!state||!ready)return <AppParagraph>Loading setup…</AppParagraph>;
-  const identityReady=name.trim().length>0&&(gender==="male"||gender==="female"||gender==="other")&&countryCode.length===2;
-  const selectionReady=sports.length>0||sleep;
-  function advance(){if(step===1&&!identityReady&&!preview)return;if(step===2&&!selectionReady&&!preview){setSelectionError(true);return;}setSelectionError(false);setStep(step+1);}
-  function finish(){if(preview){router.replace("/app/arena");return;}if(!user||finished.current||!identityReady)return;finished.current=true;
-    dispatch({type:"rename",name:name.trim()||user.displayName});dispatch({type:"set-city",city:city.trim()});
-    dispatch({type:"set-gender",gender});
-    dispatch({type:"set-country",countryCode});
-    dispatch({type:"set-units",units});
-    dispatch({type:"set-timezone",timezone});
-    for(const sport of sports){
-      const value=weeklyVolume[sport];
-      if(value!==undefined&&value!==""&&Number.isFinite(Number(value))&&Number(value)>=0)dispatch({type:"declare-effort",sport,declaredWeeklyVolume:Number(value)*(sport==="running"||sport==="cycling"?(units==="metric"?1000:1609.344):sport==="strength"?60:1)});
+import { OnboardingUnits } from "@/features/club/onboarding-units";
+import { resolvePostOnboardingPath } from "@/lib/auth/login-redirect";
+import { createClient } from "@/lib/supabase/client";
+import { uploadWebProfileAvatar } from "@/lib/profile/avatar-upload";
+import { EventRegistration } from "@/features/arena/event-registration";
+import "@/features/arena/event-home.css";
+import { readGuestIntroDraft } from "@/lib/guest-intro";
+import "@/features/club/onboarding.css";
+
+function Setup({ preview }: { preview: boolean }) {
+  const { state, dispatch, loadStatus } = useCompete();
+  const { user, offlineMode } = useAuth();
+  const router = useRouter(), params = useSearchParams();
+  const previewSport = preview ? SPORTS.find(item => item.id === params.get("sport"))?.id : undefined;
+  const finished = useRef(false), top = useRef<HTMLElement>(null);
+  const key = `onboarding-draft:v7:${user?.id ?? "guest"}`;
+  const [loadedKey, setLoadedKey] = useState("");
+  const [step, setStep] = useState(0);
+  const [registered, setRegistered] = useState(false);
+  const [saving, setSaving] = useState(false), [saveError, setSaveError] = useState<string | null>(null);
+  const owner = useRef(user?.id);
+  owner.current = user?.id;
+  useEffect(() => () => { owner.current = undefined; }, []);
+  const [name, setName] = useState(""), [city, setCity] = useState("");
+  const [gender, setGender] = useState<ProfileGender | "">("");
+  const [countryCode, setCountryCode] = useState("");
+  const [sport, setSport] = useState<SportId>("running");
+  const [weeklyVolume, setWeeklyVolume] = useState<OnboardingWeeklyVolumes>({});
+  const [units, setUnits] = useState<UnitSystem>("us");
+  const [timezone, setTimezone] = useState(() => detectDeviceTimeZone());
+  const [guestImported, setGuestImported] = useState(false);
+  useEffect(() => { top.current?.scrollIntoView({ block: "start" }); }, [step]);
+  useEffect(() => {
+    if (!state) return;
+    let saved: Record<string, unknown> | null = null;
+    let pending: string | null = null;
+    try {
+      const raw: unknown = JSON.parse(sessionStorage.getItem(key) ?? "null");
+      if (!preview && raw && typeof raw === "object") saved = raw as Record<string, unknown>;
+      pending = localStorage.getItem(GUEST_SIGNUP_PENDING_KEY);
+    } catch {}
+    const guest = preview ? null : guestIntroForAccount(readGuestIntroDraft(), pending, user?.email);
+    const initialSport = previewSport ?? guest?.sport ?? state.primary;
+    finished.current = false;
+    const savedStep = Math.max(0, Math.min(2, Math.trunc(Number(saved?.step) || 0)));
+    setStep(savedStep);
+    setRegistered(false);
+    setName(typeof saved?.name === "string" ? saved.name : guest?.name || user?.displayName || state.name);
+    setCity(typeof saved?.city === "string" ? saved.city : guest?.city ?? state.city ?? "");
+    setGender(saved?.gender === "male" || saved?.gender === "female" || saved?.gender === "other" ? saved.gender : state.gender ?? "");
+    setCountryCode(typeof saved?.countryCode === "string" ? saved.countryCode : guest?.countryCode ?? state.countryCode ?? "");
+    setUnits(saved?.units === "us" || saved?.units === "metric" ? saved.units : state.units);
+    setSport(initialSport);
+    setWeeklyVolume(parseOnboardingWeeklyVolumes(saved?.weeklyVolume));
+    setTimezone(typeof saved?.timezone === "string" ? saved.timezone : detectDeviceTimeZone());
+    setGuestImported(Boolean(guest));
+    setLoadedKey(key);
+  }, [key, preview, previewSport, user?.email, Boolean(state)]);
+  useEffect(() => {
+    if (loadedKey !== key || preview) return;
+    try { sessionStorage.setItem(key, JSON.stringify({ step, name, city, gender, countryCode, units, timezone, weeklyVolume })); } catch {}
+  }, [loadedKey, key, preview, step, name, city, gender, countryCode, units, timezone, weeklyVolume]);
+  useEffect(() => {
+    if (!preview && state?.onboardingCompleted) router.replace(resolvePostOnboardingPath(params.get("next")));
+  }, [preview, state?.onboardingCompleted, params, router]);
+  const canWrite = loadStatus === "ready" || loadStatus === "local";
+  useEffect(() => {
+    if (step !== 2 || registered || !state || loadedKey !== key || (!preview && (!user || !canWrite))) return;
+    if (!preview && user) {
+      dispatch({ type: "rename", name: name.trim() });
+      dispatch({ type: "set-city", city: city.trim() });
+      dispatch({ type: "set-gender", gender: gender || null });
+      dispatch({ type: "set-country", countryCode });
+      dispatch({ type: "set-units", units });
+      dispatch({ type: "set-timezone", timezone });
+      if (!state.ratings.some(r => r.sport === sport && r.optedIn)) dispatch({ type: "opt-in", sport, accountId: user.id });
+      dispatch({ type: "set-primary", sport });
     }
+    setRegistered(true);
+  }, [step, registered, state, loadedKey, key, preview, user, canWrite, sport, name, city, gender, countryCode, units, timezone, dispatch]);
 
-    for(const sport of sports)dispatch({type:"opt-in",sport,accountId:user.id});if(sports[0])dispatch({type:"set-primary",sport:sports[0]});if(sleep)dispatch({type:"opt-in-health",metric:"sleep"});dispatch({type:"complete-onboarding"});
-    try{sessionStorage.removeItem(key);}catch{} router.replace(resolveSafePostLoginPath(params.get("next")));
+  if (!state || loadedKey !== key) return <AppParagraph>Loading setup…</AppParagraph>;
+  const sportName = SPORTS.find(item => item.id === sport)!.name;
+  const hasHistory = hasOnboardingTrainingHistory(state, sport);
+  const needsVolume = !hasHistory;
+  function advance() { setStep(Math.min(2, step + 1)); }
+  async function finish() {
+    if (preview) { router.replace("/app/arena"); return; }
+    if (!user || !state || !canWrite || finished.current) return;
+    finished.current = true;
+    setSaving(true); setSaveError(null);
+    try {
+      const guest = guestIntroForAccount(readGuestIntroDraft(), localStorage.getItem(GUEST_SIGNUP_PENDING_KEY), user.email);
+      if (guest?.photo) {
+        const blob = await (await fetch(guest.photo)).blob();
+        const avatarUrl = offlineMode ? guest.photo : await uploadWebProfileAvatar({ file: new File([blob], "athlete.jpg", { type: "image/jpeg" }), userId: user.id, previousAvatarUrl: state.avatarUrl, supabase: createClient(), requireStorage: true });
+        if (owner.current !== user.id) return;
+        dispatch({ type: "set-avatar", avatarUrl, accountId: user.id });
+      }
+    } catch (err) {
+      finished.current = false;
+      setSaveError(err instanceof Error ? err.message : "Could not save your photo. Please try again.");
+      return;
+    } finally { setSaving(false); }
+    if (owner.current !== user.id) return;
+    const declaredWeeklyVolume = onboardingDeclaredVolume(sport, weeklyVolume[sport] ?? "0", units);
+    if (!hasHistory && declaredWeeklyVolume !== undefined) dispatch({ type: "declare-effort", sport, declaredWeeklyVolume });
+    dispatch({ type: "complete-onboarding" });
+    try {
+      sessionStorage.removeItem(key);
+      if (guestImported) { localStorage.removeItem(GUEST_INTRO_DRAFT_KEY); localStorage.removeItem(GUEST_SIGNUP_PENDING_KEY); }
+    } catch {}
+    router.replace(resolvePostOnboardingPath(params.get("next")));
   }
-  return <section ref={setupTop} className="fb-stack" style={{maxWidth:480,margin:"0 auto",padding:"20px 0",scrollMarginTop:80}}>
-    <div style={{background:"var(--action-soft, #fff5d1)",borderRadius:24,display:"grid",placeItems:"center",padding:12}}><Ember style={{width:140,height:140}}/></div>
-    <AnimatePresence mode="wait"><motion.div key={step} className="fb-stack" initial={reduced?false:{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0}} transition={{duration:reduced?0:.22}}>
-      <AppParagraph typographyRole="caption">{preview?"DEBUG PREVIEW · NO CHANGES SAVED":`YOUR FIRST FIELD · ${step+1} / 7`}</AppParagraph>
-      <AppHeading level={1} role="display">{titles[step]}</AppHeading>
-      {step===0&&<AppParagraph>Meet Ember, your tiny teammate. Let’s set up your sports, preferences, and trackers one little step at a time.</AppParagraph>}
-      {step===1&&<>{!preview&&<ProfilePhoto state={state} email={user?.email}/>}<label className="fb-field">Display name<input value={name} onChange={e=>setName(e.target.value)} maxLength={80}/></label><label className="fb-field">City<input value={city} onChange={e=>setCity(e.target.value)} maxLength={80}/></label><label className="fb-field">Gender<select value={gender} onChange={e=>setGender(e.target.value as ProfileGender|"")} required><option value="" disabled>Select gender</option><option value="female">Female</option><option value="male">Male</option><option value="other">Other</option></select></label><CountryCombobox value={countryCode} onChange={setCountryCode}/><TimezoneCombobox value={timezone} onChange={setTimezone}/></>}
-      {step===2&&<><AppParagraph>You can change this later under your profile.</AppParagraph><AppHeading>Sports</AppHeading><div className="fb-chips">{SPORTS.map(s=><button type="button" className={`fb-chip${sports.includes(s.id)?" on":""}`} key={s.id} aria-pressed={sports.includes(s.id)} onClick={()=>setSports(current=>current.includes(s.id)?current.filter(id=>id!==s.id):[...current,s.id])}>{s.name}</button>)}</div>{sports.length>1&&<label className="fb-field">Primary sport<select value={sports[0]} onChange={e=>{const id=e.target.value as SportId;setSports([id,...sports.filter(s=>s!==id)]);}}>{sports.map(id=><option key={id} value={id}>{SPORTS.find(s=>s.id===id)?.name}</option>)}</select></label>}{sports.some(s=>s!=="strength")&&<OnboardingUnits value={units} onChange={setUnits}/>}<AppHeading>Sleep & recovery</AppHeading><div className="fb-chips"><button type="button" className={`fb-chip${sleep?" on":""}`} aria-pressed={sleep} onClick={()=>setSleep(!sleep)}>Sleep tracking</button></div>{selectionError&&!sports.length&&!sleep&&<AppParagraph role="alert">Choose at least one sport or sleep tracking to continue.</AppParagraph>}</>}
-
-      {step===3&&<><AppParagraph>Connect a tracker now to authorize your real account.</AppParagraph>{preview?PROVIDERS.map(p=><button key={p.id} className="fb-btn-line" disabled>{p.name} · Connect (preview)</button>):<TrackerConnections/>}</>}
-      {step===4&&<><AppParagraph>The moment your effort takes you ahead of another athlete. Don’t get overtaken!</AppParagraph><OnboardingOvertake/></>}
-      {step===5&&<OnboardingOutlook name={name}/>}
-      {step===6&&<><OnboardingSummary sports={sports} units={units} sleep={sleep}/><motion.div initial={{opacity:reduced?1:0}} animate={{opacity:1}} transition={{delay:reduced?0:(sports.length+Number(sleep))*.3+.4}}><AppParagraph typographyRole="label">Your next wave starts at {waveTimeLabel(nextDailyWaveWindowAt(new Date(now)).waveStart, timezone)}.</AppParagraph></motion.div></>}
-      <div style={{display:"flex",gap:12,alignItems:"stretch"}}>{step>0&&<button type="button" className="fb-btn-line" style={{flex:1}} onClick={()=>setStep(step-1)}>Back</button>}<button className="fb-btn" style={{flex:1}} type="button" disabled={!preview&&((step===1&&!identityReady)||(step===2&&!selectionReady))} onClick={()=>step<6?advance():finish()}>{step===6?preview?"Finish preview":"Finish":step===3?(state.links.some(link=>link.status==="connected")?"Continue":"Skip for now"):"Continue"}</button></div>
-    </motion.div></AnimatePresence>
+  return <section ref={top} className="onboarding fb-stack">
+    <div className="onboarding-progress" role="img" aria-label={`Setup step ${step + 1} of ${titles.length}`}>
+      {titles.map((title, i) => <span key={title} data-complete={i <= step} />)}
+    </div>
+    <AppHeading level={1} role="display">{titles[step]}</AppHeading>
+    {step === 0 && <>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 12 }}>
+        <label className="fb-field">City (optional)<input value={city} onChange={e => setCity(e.target.value)} maxLength={80} /></label>
+        <CountryCombobox label="Country (optional)" value={countryCode} onChange={setCountryCode} />
+      </div>
+      <label className="fb-field">Gender (optional)<select value={gender} onChange={e => setGender(e.target.value as ProfileGender | "")}>
+        <option value="">Gender (optional)</option><option value="female">Female</option><option value="male">Male</option><option value="other">Other</option>
+      </select></label>
+      <TimezoneCombobox value={timezone} onChange={setTimezone} />
+      <OnboardingUnits value={units} onChange={setUnits} />
+    </>}
+    {step === 1 && <>
+      <AppParagraph>Sync your tracker to bring up to 90 days of workouts. You can also connect later.</AppParagraph>
+      {!preview && <TrackerConnections />}
+    </>}
+    {step === 2 && <>
+      <AppParagraph>Your chosen event registers for the next wave. You can register for more events in the app.</AppParagraph>
+      {needsVolume && <label className="fb-field onboarding-weekly-volume">
+        <AppParagraph typographyRole="caption" className="onboarding-weekly-volume-label">Typical weekly {sport === "strength" ? "training" : sport === "walking" ? "steps" : "distance"} ({onboardingWeeklyVolumeUnit(sport, units)}) · {sportName}</AppParagraph>
+        <input className="onboarding-weekly-volume-input" type="number" inputMode="decimal" min="0" max={1000} step="any" aria-label={`Typical weekly ${sport}`}
+          value={weeklyVolume[sport] ?? "0"}
+          onChange={e => setWeeklyVolume(current => ({ ...current, [sport]: onboardingWeeklyVolumeInput(e.target.value) }))} />
+      </label>}
+      <EventRegistration state={state} event={sport} registered={registered} ticketOnly busy={saving || (!preview && !canWrite)} error={saveError ?? ""} onBack={() => { setRegistered(false); setStep(1); }} onClaim={finish} onView={finish} />
+    </>}
+    {step < 2 && <div className="onboarding-actions">
+      {step > 0 && <BackButton disabled={saving} onClick={() => setStep(step - 1)} />}
+      <button className="fb-btn" type="button" onClick={advance}>
+        Continue
+      </button>
+    </div>}
   </section>;
 }
-function Entry(){const preview=useSearchParams().get("preview")==="1";return preview?<Setup preview/>:<AuthGate reason="Sign in to save your preferences and join your first field."><Setup preview={false}/></AuthGate>;}
-export default function OnboardingPage(){return <Suspense fallback={<AppParagraph>Loading setup…</AppParagraph>}><Entry/></Suspense>;}
+function Entry() {
+  const preview = useSearchParams().get("preview") === "1";
+  return preview ? <Setup preview /> : <AuthGate reason="Sign in to save your preferences and join your first field."><Setup preview={false} /></AuthGate>;
+}
+export default function OnboardingPage() {
+  return <Suspense fallback={<AppParagraph>Loading setup…</AppParagraph>}><Entry /></Suspense>;
+}

@@ -324,3 +324,24 @@ it("publishes working course controls to the sheet and removes the map's duplica
   await act(async () => renderer.unmount());
   expect(onOptionsChange).toHaveBeenLastCalledWith(null);
 });
+
+it("allows pinch zoom during replay without fighting the gesture or resetting its zoom", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  const props = { course: createRaceCourse("Pinch replay", [[.1, .1], [.12, .1]]), lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: .5 }], unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn(), replay: { nearestId: "you", focus: 0, passEffects: [] } as never };
+  await act(async () => { renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "Camera" ? calls : null }); });
+  const map = renderer.root.findByType("Map" as never);
+  expect(map.props.zoomEnabled).toBe(true);
+  await act(async () => map.props.onDidFinishLoadingMap());
+  calls.setCamera.mockClear();
+  await act(async () => {
+    map.props.onTouchStart();
+    renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [.105, .1], zoom: 14, pitch: 60, heading: 0, isUserInteraction: true } } });
+  });
+  const tick = () => { const frames = [...scheduledFrames.values()]; scheduledFrames.clear(); frameTime += 16; frames.forEach(frame => frame(frameTime)); };
+  await act(async () => tick());
+  expect(calls.setCamera).not.toHaveBeenCalled();
+  await act(async () => { map.props.onTouchEnd(); vi.advanceTimersByTime(200); tick(); });
+  expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBe(14);
+  vi.useRealTimers();
+});

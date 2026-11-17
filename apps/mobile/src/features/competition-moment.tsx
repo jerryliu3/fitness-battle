@@ -7,6 +7,7 @@ import { RaceUpdates } from "./race-updates";
 import { StandingsList } from "./standings-list";
 import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
 import { CompeteSheet } from "../ui/compete-sheet";
+import { IconButton } from "../ui/icon-button";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { CompeteTimeSeriesChart } from "../ui/compete-time-series-chart";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -46,6 +47,9 @@ export function CompetitionMoment({
   onConfirm,
   debug = false,
   embedded = false,
+  practice = false,
+  onOvertakeCountChange,
+  onBack,
   dimension = defaultCompeteFieldView(moment.sport),
   course = null,
   autoStart = true,
@@ -55,6 +59,9 @@ export function CompetitionMoment({
   onConfirm: () => void;
   debug?: boolean;
   embedded?: boolean;
+  practice?: boolean;
+  onOvertakeCountChange?: (count: number) => void;
+  onBack?: () => void;
   dimension?: FieldViewDimension;
   course?: RaceCourse | null;
   autoStart?: boolean;
@@ -120,6 +127,7 @@ export function CompetitionMoment({
   useEffect(() => () => stopHaptics.current(), [moment.id]);
   const frame = competitionMomentScene(moment, progress);
   const summary = competitionMomentProgressSummary(moment, frame);
+  useEffect(() => { onOvertakeCountChange?.(frame.count); }, [frame.count, onOvertakeCountChange]);
   useEffect(() => {
     if (frame.count > previousCount.current && !passedBy) {
       const soleLead = frame.rank === 1 && frame.lanes.every((lane) => lane.you || lane.value < frame.youValue);
@@ -165,7 +173,7 @@ export function CompetitionMoment({
     setPlaying((value) => !value);
   };
 
-  const progressChip = (
+  const progressChip = practice && frame.count === 0 ? null : (
     <View
       pointerEvents="none"
       style={[
@@ -174,9 +182,9 @@ export function CompetitionMoment({
       ]}
     >
       <Text numberOfLines={1} style={{ ...textStyle("label"), color: c.ink, flexShrink: 1 }}>
-        {summary.headline}
+        {practice ? "You passed Alex!" : summary.headline}
       </Text>
-      {summary.overtakeLabel ? (
+      {!practice && summary.overtakeLabel ? (
         <View style={[styles.overtakeBadge, { backgroundColor: c.actionSoft }]}>
           <Text style={{ ...textStyle("caption"), color: c.ink }}>{summary.overtakeLabel}</Text>
         </View>
@@ -185,7 +193,8 @@ export function CompetitionMoment({
   );
 
   const actionRow = (
-    <View style={{ flexDirection: "row", gap: 10 }}>
+    <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
+      {onBack && <IconButton icon="back" label="Back" onPress={onBack} />}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={playbackLabel}
@@ -215,7 +224,7 @@ export function CompetitionMoment({
         </Text>
       </Pressable>
       <View style={{ flex: 1 }}>
-        <FocusButton label={continueLabel} onPress={confirm} />
+        <FocusButton label={practice ? "Continue" : continueLabel} onPress={confirm} />
       </View>
     </View>
   );
@@ -230,7 +239,7 @@ export function CompetitionMoment({
     );
 
   return (
-    <View style={embedded ? { height: 600 } : { flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <View
         onLayout={(e) => setHeight(e.nativeEvent.layout.height)}
         style={StyleSheet.absoluteFill}
@@ -245,8 +254,10 @@ export function CompetitionMoment({
             momentReplay={{ moment, progress }}
             hiddenIds={hiddenIds}
             immersive
-            topInset={insets.top}
-            bottomInset={insets.bottom}
+            hideHeader={practice}
+            topInset={practice ? 150 : embedded ? 56 : insets.top}
+            bottomInset={embedded ? 0 : insets.bottom}
+            viewportHeight={height || undefined}
             active
           />
         ) : null}
@@ -262,7 +273,7 @@ export function CompetitionMoment({
             optionsTop={null}
             onOptionsChange={embedded ? undefined : setCourseOptions}
             onChoose2D={embedded ? undefined : () => chooseView("2d")}
-            overlaysHidden
+            overlaysHidden={!practice}
             lanes={frame.lanes}
             unit={moment.unit}
             selectedId={moment.plan.youId}
@@ -292,8 +303,8 @@ export function CompetitionMoment({
         ) : null}
       </View>
 
-      {!embedded && overlayControls ? (
-        <View style={{ position: "absolute", top: insets.top + 54, right: 16, zIndex: 20 }}>
+      {overlayControls ? (
+        <View style={{ position: "absolute", top: practice ? 140 : embedded ? 12 : insets.top + 54, right: 16, zIndex: 20 }}>
           {overlayControls}
         </View>
       ) : null}
@@ -302,7 +313,7 @@ export function CompetitionMoment({
         pointerEvents="box-none"
         style={{
           position: "absolute",
-          top: embedded ? 12 : insets.top + 8,
+          top: practice ? 150 : embedded ? 12 : insets.top + 8,
           left: 16,
           right: 16,
           alignItems: "center",
@@ -338,7 +349,7 @@ export function CompetitionMoment({
       {embedded ? (
         <View
           pointerEvents="box-none"
-          style={{ position: "absolute", bottom: 16, left: 16, right: 16, alignItems: "center" }}
+          style={{ position: "absolute", bottom: 16 + insets.bottom, left: 16, right: 16, alignItems: "center" }}
         >
           <View style={{ width: "100%", maxWidth: 420 }}>
             {actionRow}

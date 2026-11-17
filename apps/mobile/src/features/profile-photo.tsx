@@ -3,7 +3,6 @@ import { playCue } from "../lib/haptics";
 import { AppText } from "../ui/section";
 import {
   buildAvatarCleanupPathsForProfileChange,
-  getCanonicalAvatarObjectPath,
   APP_ICON_PATHS,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -23,6 +22,7 @@ import Svg, { Path } from "react-native-svg";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { decodePhoto } from "../lib/profile-photo";
+import { uploadNativeProfileAvatar } from "../lib/avatar-upload";
 import { supabase } from "../lib/supabase";
 import { AppIcon } from "../ui/app-icon";
 
@@ -88,12 +88,7 @@ const c=useThemeColors();
         if (offlineMode) {
           url = `data:image/jpeg;base64,${asset.base64}`;
         } else {
-          const path = getCanonicalAvatarObjectPath(id);
-          const { error: uploadError } = await supabase.storage
-            .from("avatars")
-            .upload(path, bytes, { upsert: true, contentType: "image/jpeg" });
-          if (uploadError) throw uploadError;
-          url = `${supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
+          url = await uploadNativeProfileAvatar(bytes, id);
         }
       }
       if (remove && !offlineMode) {

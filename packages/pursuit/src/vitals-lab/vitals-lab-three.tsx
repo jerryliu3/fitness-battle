@@ -1192,13 +1192,14 @@ export function VitalsLabThreeViewport({
       });
 
     const updateSize = () => {
-      const rect = container.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return;
+      // Layout dimensions stay valid while onboarding animates its enclosing canvas scale.
+      const width = container.clientWidth, height = container.clientHeight;
+      if (width <= 0 || height <= 0) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       renderer.setPixelRatio(dpr);
-      renderer.setSize(rect.width, rect.height, false);
+      renderer.setSize(width, height, false);
       bodyUniforms.uPixelRatio.value = dpr;
-      camera.aspect = rect.width / rect.height;
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
     };
     updateSize();

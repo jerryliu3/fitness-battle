@@ -141,3 +141,8 @@
 @keyframes registration-stamp{0%{opacity:0;transform:rotate(-5deg) scale(1.8)}65%{opacity:1;transform:rotate(-5deg) scale(1)}100%{opacity:1;transform:rotate(-5deg) scale(1)}}
 @keyframes registration-person-in{from{opacity:0;transform:translateY(6px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(prefers-reduced-motion:reduce){.registration-step,.registration-mysteries>span,.registration-rule-inner,.registration-ticket{animation:none;transition:none}.registration-ticket[data-claimed="true"] .registration-entry-stamp{animation:none}}
+
+.event-registration[data-compact="true"] .registration-ticket-art { min-height:110px; padding:14px; gap:10px; }
+.event-registration[data-compact="true"] .registration-ticket-art-copy h2 { font:var(--type-heading); }
+.event-registration[data-compact="true"] .registration-ticket-body { padding:14px; gap:10px; }
+.event-registration[data-compact="true"] .registration-barcode { height:20px; }

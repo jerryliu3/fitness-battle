@@ -25,7 +25,10 @@ export function CountryCombobox({
   return (
     <label className="fb-field">
       <AppText role="field">{label}</AppText>
+      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {value && <span aria-hidden>{countryFlagEmoji(value)}</span>}
       <input
+        style={{ minWidth: 0, flex: 1 }}
         value={query}
         onChange={(e) => {
           const text = e.target.value;
@@ -47,6 +50,7 @@ export function CountryCombobox({
         placeholder="Search country"
         autoComplete="off"
       />
+      </span>
       {open && options.length > 0 ? (
         <ul
           className="fb-stack"
