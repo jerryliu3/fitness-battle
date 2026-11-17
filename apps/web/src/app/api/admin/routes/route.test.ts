@@ -15,11 +15,13 @@ it("checks owner authorization and same-origin writes before creating a service 
   expect(mock.database).not.toHaveBeenCalled();
 });
 it("reads metadata separately from an editable route", async () => {
-  const query = { select: vi.fn().mockReturnThis(), order: vi.fn().mockResolvedValue({ data: [input], error: null }), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: input, error: null }) };
-  mock.from.mockReturnValue(query);
+  const catalog = { select: vi.fn().mockReturnThis(), order: vi.fn().mockResolvedValue({ data: [input], error: null }), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: input, error: null }) };
+  const snapshots = { select: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue({ data: [], error: null }) };
+  mock.from.mockImplementation((table: string) => (table === "weekly_race_routes" ? snapshots : catalog));
   const list = await GET(new Request("https://test/api/admin/routes"));
   expect(list.status).toBe(200); expect(list.headers.get("cache-control")).toBe("private, no-store");
-  expect(query.select.mock.calls[0][0]).not.toContain("coordinates");
+  expect((await list.json()).overview.activeIds).toEqual(["park-loop"]);
+  expect(catalog.select.mock.calls[0][0]).not.toContain("coordinates");
   const detail = await GET(new Request("https://test/api/admin/routes?id=park-loop"));
   expect((await detail.json()).route.id).toBe("park-loop");
   expect(query.eq).toHaveBeenCalledWith("id", "park-loop");

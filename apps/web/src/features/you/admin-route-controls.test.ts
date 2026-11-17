@@ -26,7 +26,8 @@ it("previews a GPX draft before saving and retains the returned revision for lat
   expect(JSON.parse(fetcher.mock.calls[1][1].body).updatedAt).toBe(saved.updated_at);
 });
 it("loads inactive routes for editing and preserves the draft on a concurrent-edit conflict", async () => {
-  fetcher.mockResolvedValueOnce(Response.json({ routes: [{ ...saved, is_active: false }] })).mockResolvedValueOnce(Response.json({ route: { ...saved, is_active: false } })).mockResolvedValueOnce(Response.json({ error: "Route changed. Reload before saving." }, { status: 409 }));
+  const overview = { surfaces: [], catalog: [], assignments: [], activeIds: [] };
+  fetcher.mockResolvedValueOnce(Response.json({ routes: [{ ...saved, is_active: false }], overview })).mockResolvedValueOnce(Response.json({ route: { ...saved, is_active: false } })).mockResolvedValueOnce(Response.json({ error: "Route changed. Reload before saving." }, { status: 409 }));
   await act(async () => button("Load route catalog").props.onClick());
   await act(async () => renderer.root.findByType("select").props.onChange({ target: { value: saved.id } }));
   expect(input("Name").props.value).toBe("Park");

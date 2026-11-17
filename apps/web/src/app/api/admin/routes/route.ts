@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { authorizeAdmin, adminDatabase } from "@/lib/admin-auth";
+import { buildAdminRouteOverview } from "@/lib/admin-route-overview";
 import { MAX_ADMIN_ROUTE_BYTES, ROUTE_ID, validateAdminRoute } from "@/lib/admin-route-input";
 
 export async function GET(request: Request) {
@@ -13,7 +14,17 @@ export async function GET(request: Request) {
     const { data, error } = id ? await query.eq("id", id).maybeSingle() : await query.order("id");
     if (error) throw error;
     if (id && !data) return NextResponse.json({ error: "Route not found. Reload the catalog." }, { status: 404 });
-    return NextResponse.json(id ? { route: data } : { routes: data ?? [] }, { headers: { "Cache-Control": "private, no-store" } });
+    if (id) return NextResponse.json({ route: data }, { headers: { "Cache-Control": "private, no-store" } });
+    const { data: assignments, error: assignmentError } = await db
+      .from("weekly_race_routes")
+      .select("wave_start,route_id,route_name,created_at")
+      .order("wave_start", { ascending: false })
+      .limit(120);
+    if (assignmentError) throw assignmentError;
+    return NextResponse.json({
+      routes: data ?? [],
+      overview: buildAdminRouteOverview(data ?? [], assignments ?? []),
+    }, { headers: { "Cache-Control": "private, no-store" } });
   } catch { return NextResponse.json({ error: "Route catalog is unavailable. Please try again." }, { status: 503 }); }
 }
 
