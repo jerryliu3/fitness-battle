@@ -17,7 +17,7 @@ const WREATH_FRAME = {
 };
 const POINTS = [[24, 0], [296, 0], [320, 28], [320, 284], [300, 338], [160, 408], [20, 338], [0, 284], [0, 28]];
 const CLIP = `polygon(${POINTS.map(([x, y]) => `${x / WIDTH * 100}% ${y / HEIGHT * 100}%`).join(",")})`;
-function Wordmark() { return <span className={styles.wordmark}>overtaek</span>; }
+function BrandMark() { return <img className={styles.logo} src="/brand/overtaek/mark-transparent.png" alt="Overtaek" draggable={false} />; }
 function Stat({ value, label, dim = false }: { value: string | number; label: string; dim?: boolean }) {
   return <div className={styles.stat} data-dim={dim}><strong>{value}</strong><span>{label}</span></div>;
 }
@@ -55,7 +55,7 @@ export function AthleteCrest({ model, active = true }: { model: AthleteCardModel
           <div className={styles.stats}>
             {model.records.length ? <div className={styles.records} style={{ gridTemplateColumns: `repeat(${Math.min(3, model.records.length)}, 1fr)` }}>{model.records.slice(0, 3).map(r => <Stat key={r.id ?? r.label} value={r.value} label={!r.kind || r.kind === "record" ? `${r.label} PB` : r.label} />)}</div> : <p className={styles.noRecords}>No highlights selected</p>}
           </div>
-          <div className={styles.brand}><Wordmark /></div>
+          <div className={styles.brand}><BrandMark /></div>
         </div>
         <div className={`${styles.face} ${styles.back}`} aria-hidden={!details} inert={!details}>
           <div className={styles.reverse}>
@@ -67,7 +67,7 @@ export function AthleteCrest({ model, active = true }: { model: AthleteCardModel
             <section className={styles.detailSection}><h3>Competition</h3><div className={`${styles.totals} ${styles.competition}`}><Stat value={model.overtakes} label="Overtakes" /><Stat value={model.rounds} label="Rounds" /><Stat value={model.streak} label="Week streak" dim={!model.streakActive} /><Stat value={model.podiums ?? "—"} label="Podiums" /></div></section>
             {model.lifetime ? <section className={styles.detailSection}><h3>Lifetime</h3><div className={styles.totals}><Stat value={model.lifetime.distance} label="Distance" /><Stat value={model.lifetime.activities} label="Activities" /><Stat value={model.lifetime.time} label="Moving time" /></div></section> : null}
           </div>
-          <div className={styles.brand}><Wordmark /></div>
+          <div className={styles.brand}><BrandMark /></div>
         </div>
       </div>
     </div>
