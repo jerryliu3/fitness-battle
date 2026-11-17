@@ -95,9 +95,9 @@ export const ONBOARDING_GROWTH = {
 };
 
 export const ONBOARDING_FEATURES = [
-  { id: "growth", label: "Growth" },
-  { id: "crews", label: "Crew" },
-  { id: "vitals", label: "Health Lab" },
+  { id: "growth", label: "Growth", heading: "See progress" },
+  { id: "crews", label: "Crew", heading: "Work together" },
+  { id: "vitals", label: "Vitals", heading: "Monitor health" },
 ] as const;
 export type OnboardingFeatureId = typeof ONBOARDING_FEATURES[number]["id"];
 

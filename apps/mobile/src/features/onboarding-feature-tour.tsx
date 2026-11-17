@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View } from "react-native";
 import { VitalsLabPanel } from "./vitals-lab/vitals-lab-panel";
+import { AppText } from "../ui/section";
 import { FocusSegments } from "../ui/focus";
 import { OnboardingPotential } from "./onboarding-potential";
 import { OnboardingCrew } from "./onboarding-crew";
@@ -12,8 +13,9 @@ export function OnboardingFeatureTour({ draft, selected, onSelect, onScoreChange
 }) {
   const [gender, setGender] = useState<"female" | "male">("female");
   return <View style={{ flex: 1 }}>
-    <View style={{ width: 214, marginTop: 20, gap: 8 }}>
-      <FocusSegments label="Discover" compact pill options={ONBOARDING_FEATURES.map(item => ({ value: item.id, label: item.id === "vitals" ? "Vitals" : item.label }))} value={selected} onChange={onSelect} />
+    <View style={{ width: 214, marginTop: 8, gap: 8 }}>
+      <AppText accessibilityRole="header" role="heading" style={{ fontSize: 22, lineHeight: 26 }}>{ONBOARDING_FEATURES.find(item => item.id === selected)!.heading}</AppText>
+      <FocusSegments label="Discover" compact pill options={ONBOARDING_FEATURES.map(item => ({ value: item.id, label: item.label }))} value={selected} onChange={onSelect} />
       {selected === "vitals" && <FocusSegments label="Body model" compact pill options={[{ value: "female", label: "Female" }, { value: "male", label: "Male" }]} value={gender} onChange={setGender} />}
     </View>
     <View style={{ position: "absolute", top: 126, left: 0, right: 0, bottom: 0 }}>

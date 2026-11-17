@@ -219,10 +219,11 @@ export function crewWeekRelay(input: CrewWeekRelayInput) {
               ? "baseline"
               : "unknown";
   const contributions = crewMemberContributions(input, metric);
-  const active = contributions.filter((m) => m.value > 0);
-  const model = crewRelay(active, target);
+  // Assign colors from the full roster before hiding members without activity.
+  const model = crewRelay(contributions, target);
+  model.segments = model.segments.filter((m) => m.value > 0);
   const rosterSize = input.members.length;
-  const inactiveCount = Math.max(0, rosterSize - active.length);
+  const inactiveCount = Math.max(0, rosterSize - model.segments.length);
   return {
     model,
     metric,
@@ -230,7 +231,7 @@ export function crewWeekRelay(input: CrewWeekRelayInput) {
     kind,
     target: model.target,
     rosterSize,
-    activeCount: active.length,
+    activeCount: model.segments.length,
     inactiveCount,
     label:
       kind === "time"
