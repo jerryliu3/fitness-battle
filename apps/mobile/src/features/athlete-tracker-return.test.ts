@@ -150,7 +150,7 @@ describe("athlete profile navigation and layout", () => {
     });
     const sidePanel = renderer.root
       .findAllByType("SidePanel" as never)
-      .find((node) => node.props.title === "Edit profile");
+      .find((node) => node.props.title === "Settings");
     expect(sidePanel?.props.open).toBe(true);
   });
 

@@ -621,6 +621,10 @@ const styles=useThemedStyles(stylesThemes);
     );
   }
 
+  if (panel === "profile") {
+    return <SafeAreaView style={styles.safe} edges={["top"]} />;
+  }
+
   if (panel === "preferences") {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
