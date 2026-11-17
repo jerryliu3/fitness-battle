@@ -6,31 +6,29 @@ into this journey; the website's marketing page links into it too.
 
 ## Before account creation
 
-1. **Choose a sport** — Running, Cycling, Walking or Strength in a two-column grid.
-2. **Make training a game** — the existing competition player uses the selected
-   sport. Running/Cycling start in geographic 3D; Walking/Strength start in Timeline,
-   showing steps/hours. View switching, playback, replay, speed and Continue
-   belong to the existing competition player and shared field policy. Native uses
-   the full remaining screen rather than a fixed-height card inside a scroll view.
-   Charts size from their actual container so embedded Strength/Walking replays
-   are not cropped by a taller window.
-3. **See your potential** — a possible Effort Score trajectory from 500 to 2,000,
-   focused on how training adds up. No rank ladder is introduced here and the
-   potential values never become account facts.
-   Growth opens first in a three-tab page with Crew and Vitals Lab previews.
-   Crew goals follow the chosen sport.
-4. **Create your athlete** — name and primary sport update the existing interactive
-   3D Crest. City and country are optional profile preparation. Native retains a
-   readable card while the remote scene loads or fails.
-5. **Save your athlete** — email and password appear directly beneath the Crest,
-   with a Create account confirmation and the existing Terms/Privacy links.
-   Existing-account sign-in remains on the first screen only. There is no
-   guest-exploration exit or dismissed-introduction flag. No new auth providers
-   are added.
+1. **Choose a sport** — Running, Cycling, Walking or Strength in a visual 2×2 grid.
+2. **Meet your athlete** — a full-size interactive Crest, required display name and
+   optional photo. The card updates after a short edit delay, holding native bridge
+   updates during rotation. No other profile questions appear here.
+3. **Make training fun** — the existing competition player carries the chosen name
+   and photo. Running/Cycling start in geographic 3D; Walking/Strength start in
+   Timeline. A compact athlete card has reserved space beside the heading and the
+   pass result reads “You passed Alex!” without a large summary.
+4. **Your story is just starting** — Growth, Crew and Health Lab tabs share one page.
+   Growth opens first with the 500 → 2,000 trajectory; these points are never earned
+   account facts. The mini-card label changes between future PR, team and Vitals
+   slots. Crew goals follow the chosen sport.
+5. **Make it official** — the large Crest returns above email and password, with
+   Create account and Terms/Privacy links. City, country and other preferences
+   remain after signup. Existing-account sign-in stays on the first screen only.
+
+Mini-cards use a legible portrait/name treatment rather than another 3D scene.
+They are approximately 96px tall, reducing to a 64px chip on short screens. Tapping
+opens the full rotatable card. Web uses a shared layout transition between full and
+compact treatments; native uses reduced-motion-aware card transitions.
 
 Back is a compact icon beside the primary action; the sign-in page puts it beside
-the wordmark. Athlete card models are memoized and update when editing ends, not
-on every keystroke. Native queues model changes while held and deduplicates bridge
+the wordmark. Athlete card models are memoized and update after a short typing pause or when editing ends. Native queues model changes while held and deduplicates bridge
 messages before painting the latest model on release.
 
 Both platforms use the shared step order, titles, growth model, draft parser and
@@ -51,10 +49,15 @@ account setup before Home, avoiding an intermediate Home flash.
 
 ## Draft and account handoff
 
-Native AsyncStorage and web localStorage persist only sport/name/city/country,
+Native AsyncStorage and web localStorage persist sport/name/city/country and an optional bounded JPEG data URL,
 including edits before leaving a step. The guest draft has no account writes,
 registration, activity, score, rank, awards or tracker permissions. Parsing discards
 extra fields and invalid sports.
+
+Photos stay device-local before signup. On explicit setup completion, a matching
+guest photo uploads to the existing account-owned avatar path and the existing
+`set-avatar` action persists it. A failed upload retains the draft for retry; account
+switches cannot apply its result to another user.
 
 On inline signup, save `introCompleted: true`, the latest profile and intended
 email before auth can navigate. Email confirmation is shown on the same screen.

@@ -12,6 +12,6 @@ it("keeps potential growth separate from earned rank and score", async () => {
  await act(async()=>{r=create(createElement(OnboardingPotential));});
  expect(r.root.findByType("Chart" as never).props.values).toEqual([500,620,780,990,1250,1520,1770,2000]);
  expect(r.root.findAllByType("RankSymbol" as never)).toHaveLength(0);
- expect(r.root.findAllByType("AppText" as never).some(n=>n.props.children==="Potential Effort Score")).toBe(true);
+ expect(r.root.findAllByType("AppText" as never).some(n=>n.props.children==="Effort Score")).toBe(true);
  await act(async()=>r.unmount());
 });

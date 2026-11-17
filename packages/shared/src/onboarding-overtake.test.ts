@@ -6,7 +6,8 @@ import { competitionMomentScene } from "./competition-moments";
 describe("guest sport overtake", () => {
   for (const sport of SPORT_IDS) {
     it(`illustrates an overtake for ${sport} without account state`, () => {
-      const moment = createOnboardingOvertakeMoment("Taylor", sport);
+      const moment = createOnboardingOvertakeMoment("Taylor", sport, "data:image/jpeg;base64,/9j/");
+      expect(moment.lanes.find(l => l.you)?.avatarUrl).toBe("data:image/jpeg;base64,/9j/");
       expect(moment.sport).toBe(sport);
       expect(moment.unit).toBe(sport === "walking" ? "steps" : sport === "strength" ? "hrs" : "km");
       expect(moment.lanes.find(l => l.you)?.name).toBe("Taylor");

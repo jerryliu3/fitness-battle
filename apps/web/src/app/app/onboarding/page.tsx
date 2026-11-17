@@ -17,18 +17,24 @@ import { useCompete } from "@/components/compete-context";
 import { ProfilePhoto } from "@/features/you/profile-photo";
 import { OnboardingSummary, OnboardingUnits } from "@/features/club/onboarding-visuals";
 import { resolvePostOnboardingPath } from "@/lib/auth/login-redirect";
+import { createClient } from "@/lib/supabase/client";
+import { uploadWebProfileAvatar } from "@/lib/profile/avatar-upload";
 import { readGuestIntroDraft } from "@/lib/guest-intro";
 import "@/features/club/onboarding.css";
 
 const titles = ["Bring your training along.", "A few more things about you.", "Your starting line is here."];
 function Setup({ preview }: { preview: boolean }) {
   const { state, dispatch, loadStatus } = useCompete();
-  const { user } = useAuth();
+  const { user, offlineMode } = useAuth();
   const router = useRouter(), params = useSearchParams();
   const finished = useRef(false), top = useRef<HTMLElement>(null);
   const key = `onboarding-draft:v6:${user?.id ?? "guest"}`;
   const [loadedKey, setLoadedKey] = useState("");
   const [step, setStep] = useState(0);
+  const [saving, setSaving] = useState(false), [saveError, setSaveError] = useState<string | null>(null);
+  const owner = useRef(user?.id);
+  owner.current = user?.id;
+  useEffect(() => () => { owner.current = undefined; }, []);
   const [name, setName] = useState(""), [city, setCity] = useState("");
   const [gender, setGender] = useState<ProfileGender | "">("");
   const [countryCode, setCountryCode] = useState("");
@@ -81,10 +87,25 @@ function Setup({ preview }: { preview: boolean }) {
     setSelectionError(false);
     setStep(Math.min(2, step + 1));
   }
-  function finish() {
+  async function finish() {
     if (preview) { router.replace("/app/arena"); return; }
-    if (!user || !canWrite || finished.current || !identityReady || !selectionReady) return;
+    if (!user || !state || !canWrite || finished.current || !identityReady || !selectionReady) return;
     finished.current = true;
+    setSaving(true); setSaveError(null);
+    try {
+      const guest = guestIntroForAccount(readGuestIntroDraft(), localStorage.getItem(GUEST_SIGNUP_PENDING_KEY), user.email);
+      if (guest?.photo && !state.avatarUrl) {
+        const blob = await (await fetch(guest.photo)).blob();
+        const avatarUrl = offlineMode ? guest.photo : await uploadWebProfileAvatar({ file: new File([blob], "athlete.jpg", { type: "image/jpeg" }), userId: user.id, supabase: createClient(), requireStorage: true });
+        if (owner.current !== user.id) return;
+        dispatch({ type: "set-avatar", avatarUrl, accountId: user.id });
+      }
+    } catch (err) {
+      finished.current = false;
+      setSaveError(err instanceof Error ? err.message : "Could not save your photo. Please try again.");
+      return;
+    } finally { setSaving(false); }
+    if (owner.current !== user.id) return;
     dispatch({ type: "rename", name: name.trim() });
     dispatch({ type: "set-city", city: city.trim() });
     if (gender) dispatch({ type: "set-gender", gender });
@@ -139,18 +160,19 @@ function Setup({ preview }: { preview: boolean }) {
       </label>)}
       <AppHeading>Sleep & recovery</AppHeading>
       <div className="fb-chips"><button type="button" className={`fb-chip${sleep ? " on" : ""}`} aria-pressed={sleep} onClick={() => setSleep(!sleep)}>Sleep tracking</button></div>
-      {selectionError && !identityReady && <AppParagraph role="alert">Enter your display name to continue.</AppParagraph>}
-      {selectionError && !selectionReady && <AppParagraph role="alert">Choose at least one sport or sleep tracking to continue.</AppParagraph>}
+    {selectionError && !identityReady && <AppParagraph role="alert">Enter your display name to continue.</AppParagraph>}
+    {selectionError && !selectionReady && <AppParagraph role="alert">Choose at least one sport or sleep tracking to continue.</AppParagraph>}
     </>}
     {step === 2 && <>
       <OnboardingSummary sports={sports} units={units} sleep={sleep} />
       <AppParagraph>Your chosen events register for the next wave. You can change your preferences later.</AppParagraph>
       <AppParagraph typographyRole="label">Next wave starts at {waveTimeLabel(nextDailyWaveWindowAt(new Date(now)).waveStart, timezone)}.</AppParagraph>
     </>}
+    {saveError && <AppParagraph role="alert">{saveError}</AppParagraph>}
     <div className="onboarding-actions">
-      {step > 0 && <BackButton onClick={() => setStep(step - 1)} />}
-      <button className="fb-btn" type="button" disabled={step === 2 && !preview && !canWrite} onClick={() => step < 2 ? advance() : finish()}>
-        {step === 2 ? "Finish setup & register" : step === 0 && !state.links.some(link => link.status === "connected") ? "Skip for now" : "Continue"}
+      {step > 0 && <BackButton disabled={saving} onClick={() => setStep(step - 1)} />}
+      <button className="fb-btn" type="button" disabled={saving || (step === 2 && !preview && !canWrite)} onClick={() => step < 2 ? advance() : finish()}>
+        {saving ? "Saving…" : step === 2 ? "Enter events" : step === 0 && !state.links.some(link => link.status === "connected") ? "Skip for now" : "Continue"}
       </button>
     </div>
   </section>;

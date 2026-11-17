@@ -40,7 +40,7 @@ describe("weekly volume integration", () => {
     expect(ONBOARDING_GROWTH.pointLabels).toHaveLength(ONBOARDING_GROWTH.scores.length);
   });
   it("keeps the same five onboarding stages and feature previews on both clients", () => {
-    expect(ONBOARDING_STEPS).toEqual(["sport", "overtake", "growth", "athlete", "account"]);
+    expect(ONBOARDING_STEPS).toEqual(["sport", "athlete", "overtake", "growth", "account"]);
     expect(ONBOARDING_FEATURES.map(feature => feature.id)).toEqual(["growth", "crews", "vitals"]);
   });
 });
@@ -50,4 +50,12 @@ it("only skips the introduction when it was completed for the current account", 
   expect(hasCompletedOnboardingIntro(completed, "taylor@example.com", "taylor@example.com")).toBe(true);
   expect(hasCompletedOnboardingIntro(completed, "taylor@example.com", "someone@example.com")).toBe(false);
   expect(hasCompletedOnboardingIntro({ ...completed!, introCompleted: false }, "taylor@example.com", "taylor@example.com")).toBe(false);
+});
+
+it("retains a bounded JPEG photo without importing arbitrary URLs or oversized data", () => {
+  const photo = "data:image/jpeg;base64,/9j/";
+  expect(parseGuestIntroDraft(JSON.stringify({ ...draft, photo }))?.photo).toBe(photo);
+  for (const invalid of ["javascript:alert(1)", "https://example.com/photo.jpg", "data:image/jpeg;base64," + "a".repeat(1_500_000)]) {
+    expect(parseGuestIntroDraft(JSON.stringify({ ...draft, photo: invalid }))?.photo).toBeUndefined();
+  }
 });

@@ -47,6 +47,7 @@ export function CompetitionMoment({
   onConfirm,
   debug = false,
   embedded = false,
+  practice = false,
   onBack,
   dimension = defaultCompeteFieldView(moment.sport),
   course = null,
@@ -57,6 +58,7 @@ export function CompetitionMoment({
   onConfirm: () => void;
   debug?: boolean;
   embedded?: boolean;
+  practice?: boolean;
   onBack?: () => void;
   dimension?: FieldViewDimension;
   course?: RaceCourse | null;
@@ -269,16 +271,16 @@ export function CompetitionMoment({
             <span style={typographyStyle("caption")}>{summary.sportLabel}</span>
           </div>
         ) : null}
-        <div className="moment-replay-chip" data-tone={summary.tone}>
+        {(!practice || frame.count > 0) && <div className="moment-replay-chip" data-tone={summary.tone}>
           <strong className="moment-replay-chip-headline" style={typographyStyle("label")}>
-            {summary.headline}
+            {practice ? "You passed Alex!" : summary.headline}
           </strong>
-          {summary.overtakeLabel ? (
+          {!practice && summary.overtakeLabel ? (
             <span className="moment-replay-overtake-badge" style={typographyStyle("caption")}>
               {summary.overtakeLabel}
             </span>
           ) : null}
-        </div>
+        </div>}
       </header>
 
       {!reduced && frame.passEffects.length > 0 ? (

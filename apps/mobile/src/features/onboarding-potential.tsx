@@ -11,9 +11,9 @@ export function OnboardingPotential() {
   const start = scores[0]!, end = scores[scores.length - 1]!;
   const panel = { backgroundColor: c.card, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: c.line, gap: 12 } as const;
   return <View style={{ gap: 18 }}>
-    <AppText secondary>Stay consistent and see how your effort adds up over time.</AppText>
+    <AppText secondary>See your effort add up.</AppText>
     <View style={panel}>
-      <AppText role="label">Potential Effort Score</AppText>
+      <AppText role="label">Effort Score</AppText>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <AppText role="display">{start.toLocaleString("en-US")}</AppText>
         <AppText role="heading" secondary>→</AppText>
@@ -22,19 +22,7 @@ export function OnboardingPotential() {
       <StandardLineChart height={220} values={scores} xLabels={labels} pointLabels={pointLabels}
         showAxes showTrend={false} accessibilityLabel={`Potential score growth from ${start} to ${end} over seven weeks`} />
     </View>
-    <View style={panel}>
-      <AppText role="heading">Every session is part of the story.</AppText>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
-        {["Train", "Build effort", "New weekly field"].map((label, index) =>
-          <View key={label} style={{ flex: 1, alignItems: "center", gap: 6 }}>
-            <View style={{ width: 35, height: 35, borderRadius: 18, justifyContent: "center", alignItems: "center", backgroundColor: c.actionSoft }}>
-              <AppText role="label">{index + 1}</AppText>
-            </View>
-            <AppText role="caption" style={{ textAlign: "center" }}>{label}</AppText>
-          </View>)}
-      </View>
-      <AppText role="caption" secondary>Your long-term progress can grow even while weekly competitions start fresh.</AppText>
-    </View>
-    <AppText role="caption" secondary>Your progress depends on your activity. Every athlete starts from their own baseline.</AppText>
+    <AppText secondary>As you train, your athlete’s progress becomes visible through scores, records and trends.</AppText>
+    <AppText role="caption" secondary>Illustrative growth, not earned points.</AppText>
   </View>;
 }

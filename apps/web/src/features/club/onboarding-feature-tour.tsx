@@ -1,19 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { OnboardingPotential } from "./onboarding-potential";
 import { ONBOARDING_FEATURES, type SportId, type OnboardingFeatureId } from "@fitness-battle/shared";
 import { AppHeading, AppParagraph } from "@/ui/section";
 
 /** Static product examples: never pretend the guest has a crew, a rank, or health data. */
-export function OnboardingFeatureTour({ sport }: { sport: SportId }) {
-  const [selected, setSelected] = useState<OnboardingFeatureId>("growth");
+export function OnboardingFeatureTour({ sport, selected, onSelect }: { sport: SportId; selected: OnboardingFeatureId; onSelect: (id: OnboardingFeatureId) => void }) {
   const feature = ONBOARDING_FEATURES.find(item => item.id === selected)!;
   const goal = sport === "cycling" ? ["Ride 150 km together", "108 / 150 km"] : sport === "walking" ? ["Walk 120,000 steps together", "86,400 / 120,000 steps"] : sport === "strength" ? ["Train 360 minutes together", "259 / 360 min"] : ["Move 40 km together", "28.8 / 40 km"];
   return <div className="fb-stack onboarding-features">
     <div className="onboarding-feature-tabs" aria-label="Explore Overtaek features">
       {ONBOARDING_FEATURES.map(item => <button type="button" key={item.id}
-        aria-pressed={selected === item.id} onClick={() => setSelected(item.id)}>
+        aria-pressed={selected === item.id} onClick={() => onSelect(item.id)}>
         {item.label}
       </button>)}
     </div>

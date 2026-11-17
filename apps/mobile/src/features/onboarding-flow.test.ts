@@ -1,3 +1,4 @@
+vi.mock("../lib/avatar-upload", () => ({ uploadNativeProfileAvatar: vi.fn() }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
@@ -55,7 +56,7 @@ it.each([false,true])("walks all setup steps and only saves a real completion (p
  expect(mock.dispatch).not.toHaveBeenCalled();
  await advance();
  expect(mock.dispatch).not.toHaveBeenCalled();
- await advance("Finish setup & register");
+ await advance("Enter events");
  if(preview){
    expect(mock.dispatch).not.toHaveBeenCalled();
    expect(mock.storage).not.toHaveBeenCalled();
@@ -80,7 +81,7 @@ it("validates the combined selection on Continue and supports sleep without a sp
  await press("Continue");
  expect(r.root.findAllByType("AppText" as never).some(n=>n.props.children==="Choose at least one sport or sleep tracking to continue.")).toBe(true);
  await act(async()=>chip("Sleep tracking").props.onPress());await press("Continue");
- await press("Finish setup & register");
+ await press("Enter events");
  expect(mock.dispatch).toHaveBeenCalledWith({type:"opt-in-health",metric:"sleep"});
  expect(mock.dispatch.mock.calls.some(([a])=>a.type==="opt-in"||a.type==="set-primary")).toBe(false);
  await act(async()=>r.unmount());

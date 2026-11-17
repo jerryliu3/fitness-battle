@@ -12,7 +12,8 @@ vi.mock("@/ui/section", () => ({ AppHeading: "h1", AppParagraph: "p" }));
 vi.mock("@/ui/back-button", () => ({ BackButton: "BackButton" }));
 vi.mock("@/ui/sport-activity-icon", () => ({ SportActivityIcon: "SportIcon" }));
 vi.mock("@/ui/country-combobox", () => ({ CountryCombobox: "CountryCombobox" }));
-vi.mock("@/features/athlete-card/athlete-crest", () => ({ AthleteCrest: "AthleteCrest" }));
+vi.mock("./onboarding-athlete", () => ({ OnboardingAthlete: "OnboardingAthlete" }));
+vi.mock("motion/react", () => ({ LayoutGroup: ({ children }: { children: unknown }) => children }));
 vi.mock("./onboarding-overtake", () => ({ OnboardingOvertake: "OnboardingOvertake" }));
 vi.mock("./onboarding-potential", () => ({ OnboardingPotential: "OnboardingPotential" }));
 vi.mock("./onboarding-feature-tour", () => ({ OnboardingFeatureTour: "OnboardingFeatureTour" }));
@@ -25,8 +26,6 @@ beforeEach(() => {
 async function athlete(r: ReactTestRenderer) {
   const press = async (name: string) => act(async () => r.root.findAllByType("button").find(n => n.props.children === name)!.props.onClick());
   await press("Continue");
-  await act(async () => r.root.findByType("OnboardingOvertake" as never).props.onComplete());
-  await press("Create my athlete");
   return press;
 }
 it("keeps preview read-only and card model stable while fields are edited", async () => {
@@ -35,12 +34,15 @@ it("keeps preview read-only and card model stable while fields are edited", asyn
   expect(r.root.findByType("h1").props.children).toBe("What moves you?");
   expect(r.root.findAllByType("a").find(n => n.props.children === "I already have an account")!.props.href).toBe("/login?from=onboarding&preview=1");
   const press = await athlete(r);
-  const first = r.root.findByType("AthleteCrest" as never).props.model;
+  const first = r.root.findByType("OnboardingAthlete" as never).props.model;
   await act(async () => r.root.findAllByType("input")[0].props.onChange({ target: { value: "Taylor" } }));
-  expect(r.root.findByType("AthleteCrest" as never).props.model).toBe(first);
+  expect(r.root.findByType("OnboardingAthlete" as never).props.model).toBe(first);
   await act(async () => r.root.findAllByType("input")[0].props.onBlur());
-  expect(r.root.findByType("AthleteCrest" as never).props.model.name).toBe("Taylor");
-  await press("Continue");
+  expect(r.root.findByType("OnboardingAthlete" as never).props.model.name).toBe("Taylor");
+  await press("See yourself compete");
+  expect(r.root.findByType("OnboardingOvertake" as never).props.name).toBe("Taylor");
+  await act(async () => r.root.findByType("OnboardingOvertake" as never).props.onComplete());
+  await press("Make it official");
   expect(r.root.findAllByType("a").some(n => n.props.children === "Sign in")).toBe(false);
   await act(async () => r.root.findByType("form").props.onSubmit({ preventDefault: vi.fn() }));
   expect(mock.push).toHaveBeenCalledWith("/app/onboarding?preview=1");
@@ -53,7 +55,9 @@ it("shows email confirmation inline after signup and marks the introduction befo
   await act(async () => { r = create(createElement(Welcome)); });
   const press = await athlete(r);
   await act(async () => r.root.findAllByType("input")[0].props.onChange({ target: { value: "Taylor" } }));
-  await press("Continue");
+  await press("See yourself compete");
+  await act(async () => r.root.findByType("OnboardingOvertake" as never).props.onComplete());
+  await press("Make it official");
   await act(async () => r.root.findAllByType("input")[0].props.onChange({ target: { value: "taylor@example.com" } }));
   await act(async () => r.root.findAllByType("input")[1].props.onChange({ target: { value: "password" } }));
   await act(async () => r.root.findByType("form").props.onSubmit({ preventDefault: vi.fn() }));

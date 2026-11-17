@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { OnboardingPotential } from "./onboarding-potential";
 import { Pressable, View } from "react-native";
 import Svg, { Circle, G, Line, Path } from "react-native-svg";
@@ -8,9 +7,8 @@ import { AppText } from "../ui/section";
 
 const names = ["Alex", "You", "Sam"] as const;
 
-export function OnboardingFeatureTour({ sport }: { sport: SportId }) {
+export function OnboardingFeatureTour({ sport, selected, onSelect }: { sport: SportId; selected: OnboardingFeatureId; onSelect: (id: OnboardingFeatureId) => void }) {
   const c = useThemeColors();
-  const [selected, setSelected] = useState<OnboardingFeatureId>("growth");
   const feature = ONBOARDING_FEATURES.find(item => item.id === selected)!;
   const goal = sport === "cycling" ? ["Ride 150 km together", "108 / 150 km"] : sport === "walking" ? ["Walk 120,000 steps together", "86,400 / 120,000 steps"] : sport === "strength" ? ["Train 360 minutes together", "259 / 360 min"] : ["Move 40 km together", "28.8 / 40 km"];
   const card = { borderRadius: 18, borderWidth: 1, borderColor: c.line, backgroundColor: c.card, padding: 18, gap: 14 } as const;
@@ -23,7 +21,7 @@ export function OnboardingFeatureTour({ sport }: { sport: SportId }) {
     <View style={{ flexDirection: "row", gap: 7 }}>
       {ONBOARDING_FEATURES.map(item => <Pressable key={item.id} accessibilityRole="button"
         accessibilityLabel={item.label} accessibilityState={{ selected: item.id === selected }}
-        onPress={() => setSelected(item.id)} style={tab(item.id === selected)}>
+        onPress={() => onSelect(item.id)} style={tab(item.id === selected)}>
         <AppText role="caption" style={{ textAlign: "center" }}>{item.label}</AppText>
       </Pressable>)}
     </View>

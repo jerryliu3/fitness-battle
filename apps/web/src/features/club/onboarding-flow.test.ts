@@ -1,8 +1,9 @@
+vi.mock("@/lib/supabase/client", () => ({ createClient: vi.fn() }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { beforeEach, expect, it, vi } from "vitest";
 import { freshState, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY } from "@fitness-battle/shared";
-const mock = vi.hoisted(() => ({ replace: vi.fn(), dispatch: vi.fn(), params: new URLSearchParams(), storage: new Map<string, string>() }));
+const mock = vi.hoisted(() => ({ replace: vi.fn(), dispatch: vi.fn(), params: new URLSearchParams(), storage: new Map<string, string>(), upload: vi.fn(async () => "https://example.com/athlete.jpg") }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: mock.replace }), useSearchParams: () => mock.params }));
 vi.mock("@/components/auth-context", () => ({ useAuth: () => ({ user: { id: "a", email: "taylor@example.com", displayName: "Taylor" } }) }));
 const state = freshState();
@@ -15,6 +16,7 @@ vi.mock("@/ui/timezone-combobox", () => ({ TimezoneCombobox: "TimezoneCombobox" 
 vi.mock("@/features/you/profile-photo", () => ({ ProfilePhoto: "ProfilePhoto" }));
 vi.mock("@/features/you/you-route", () => ({ TrackerConnections: "TrackerConnections" }));
 vi.mock("./onboarding-visuals", () => ({ OnboardingSummary: "OnboardingSummary", OnboardingUnits: "OnboardingUnits" }));
+vi.mock("@/lib/profile/avatar-upload", () => ({ uploadWebProfileAvatar: mock.upload }));
 import Onboarding from "@/app/app/onboarding/page";
 
 beforeEach(() => {
@@ -35,7 +37,7 @@ it("imports the intended signup draft, skips trackers and registers only on Fini
   await act(async () => r.root.findAllByType("input").find(n => n.props["aria-label"] === "Typical weekly walking")!.props.onChange({ target: { value: "28000" } }));
   await press("Continue");
   expect(mock.dispatch).not.toHaveBeenCalled();
-  await press("Finish setup & register");
+  await press("Enter events");
   expect(mock.dispatch).toHaveBeenCalledWith({ type: "declare-effort", sport: "walking", declaredWeeklyVolume: 28000 });
   expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-in", sport: "walking", accountId: "a" });
   expect(mock.dispatch).toHaveBeenCalledWith({ type: "complete-onboarding" });
@@ -51,8 +53,30 @@ it("keeps debug navigation read-only with the same button copy", async () => {
   await press("Skip for now");
   await press("Walking");
   await act(async () => r.root.findAllByType("input").find(n => n.props["aria-label"] === "Typical weekly walking")!.props.onChange({ target: { value: "28000" } }));
-  await press("Continue"); await press("Finish setup & register");
+  await press("Continue"); await press("Enter events");
   expect(mock.dispatch).not.toHaveBeenCalled();
   expect(mock.storage.size).toBe(0);
+  await act(async () => r.unmount());
+});
+
+it.each([false, true])("uploads the guest photo on explicit completion and retains it on failure (failure=%s)", async failure => {
+  mock.storage.set(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ sport: "walking", name: "Taylor", city: "", countryCode: "", photo: "data:image/jpeg;base64,/9j/" }));
+  mock.storage.set(GUEST_SIGNUP_PENDING_KEY, "taylor@example.com");
+  vi.stubGlobal("fetch", vi.fn(async () => ({ blob: async () => new Blob(["photo"], { type: "image/jpeg" }) })));
+  mock.upload.mockReset();
+  if (failure) mock.upload.mockRejectedValueOnce(new Error("Upload failed"));
+  else mock.upload.mockResolvedValueOnce("https://example.com/athlete.jpg");
+  let r!: ReactTestRenderer;
+  await act(async () => { r = create(createElement(Onboarding)); });
+  const press = async (label: string) => act(async () => r.root.findAllByType("button").find(n => n.props.children === label)!.props.onClick());
+  await press("Skip for now"); await press("Continue");
+  expect(mock.upload).not.toHaveBeenCalled();
+  await press("Enter events");
+  expect(mock.upload).toHaveBeenCalledWith(expect.objectContaining({ userId: "a", requireStorage: true }));
+  if (failure) {
+    expect(mock.dispatch).not.toHaveBeenCalled();
+    expect(mock.storage.has(GUEST_INTRO_DRAFT_KEY)).toBe(true);
+    expect(r.root.findAllByType("p").some(n => n.props.children === "Upload failed")).toBe(true);
+  } else expect(mock.dispatch).toHaveBeenCalledWith({ type: "set-avatar", accountId: "a", avatarUrl: "https://example.com/athlete.jpg" });
   await act(async () => r.unmount());
 });

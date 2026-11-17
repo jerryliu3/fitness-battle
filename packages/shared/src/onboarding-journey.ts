@@ -5,14 +5,14 @@ import { SPORTS } from "./compete/sports";
 
 export const GUEST_INTRO_DRAFT_KEY = "overtaek-guest-intro-draft-v1";
 export const GUEST_SIGNUP_PENDING_KEY = "overtaek-guest-signup-email-v1";
-export const ONBOARDING_STEPS = ["sport", "overtake", "growth", "athlete", "account"] as const;
+export const ONBOARDING_STEPS = ["sport", "athlete", "overtake", "growth", "account"] as const;
 export type OnboardingStep = typeof ONBOARDING_STEPS[number];
 export const ONBOARDING_TITLES: Record<OnboardingStep, string> = {
   sport: "What moves you?",
-  overtake: "Make training a game.",
-  growth: "See your potential.",
-  athlete: "Create your athlete.",
-  account: "Save your athlete.",
+  overtake: "Make training fun.",
+  growth: "Your story is just starting.",
+  athlete: "Meet your athlete.",
+  account: "Make it official.",
 };
 
 export type GuestIntroDraft = {
@@ -21,8 +21,13 @@ export type GuestIntroDraft = {
   city: string;
   countryCode: string;
   introCompleted?: boolean;
+  photo?: string;
 };
 export const EMPTY_GUEST_INTRO: GuestIntroDraft = { sport: "running", name: "", city: "", countryCode: "" };
+
+export function isGuestPhoto(value: unknown): value is string {
+  return typeof value === "string" && value.length <= 1_500_000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
+}
 
 /** Device-local profile preparation. Never carries competition facts or permissions. */
 export function parseGuestIntroDraft(raw: string | null): GuestIntroDraft | null {
@@ -35,6 +40,7 @@ export function parseGuestIntroDraft(raw: string | null): GuestIntroDraft | null
     return {
       sport: draft.sport as SportId,
       name: typeof draft.name === "string" ? draft.name.slice(0, 80) : "",
+      ...(isGuestPhoto(draft.photo) ? { photo: draft.photo } : {}),
       city: typeof draft.city === "string" ? draft.city.slice(0, 80) : "",
       ...(draft.introCompleted === true ? { introCompleted: true } : {}),
       countryCode: typeof draft.countryCode === "string" && /^[A-Z]{2}$/.test(draft.countryCode) ? draft.countryCode : "",
@@ -73,7 +79,7 @@ export function hasCompletedOnboardingIntro(draft: GuestIntroDraft | null, pendi
 
 export function onboardingAthleteCard(draft: GuestIntroDraft) {
   return {
-    ...athleteCardModelForPeer({ name: draft.name.trim() || "Athlete", city: draft.city, sport: SPORTS.find(s => s.id === draft.sport)!.name }),
+    ...athleteCardModelForPeer({ name: draft.name.trim() || "Athlete", city: draft.city, avatarUrl: draft.photo, sport: SPORTS.find(s => s.id === draft.sport)!.name }),
     countryCode: draft.countryCode || null,
     location: athleteLocationLine(draft.city, draft.countryCode || null),
   };
@@ -91,9 +97,13 @@ export const ONBOARDING_FEATURES = [
     description: "Build your Effort Score through consistent training." },
   { id: "crews", label: "Crew", title: "Better together.",
     description: "Make progress on shared weekly goals or take on another crew." },
-  { id: "vitals", label: "Vitals Lab", title: "Understand your body.",
+  { id: "vitals", label: "Health Lab", title: "Understand your body.",
     description: "Explore sleep, recovery and health trends beyond workout totals." },
 ] as const;
 export type OnboardingFeatureId = typeof ONBOARDING_FEATURES[number]["id"];
 
-export const ONBOARDING_OVERTAKE_COPY = "Join events with athletes at your level. Overtake each other as you train and keep one another moving.";
+export const ONBOARDING_OVERTAKE_COPY = "Pass other athletes as you train. Compete with people at your level.";
+
+export const ONBOARDING_CARD_LABELS: Record<OnboardingFeatureId, string> = {
+  growth: "Future PR slot", crews: "Future team slot", vitals: "Vitals Lab slot",
+};

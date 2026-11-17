@@ -19,6 +19,8 @@ import { AppText } from "../src/ui/section";
 import { MotionStep } from "../src/ui/motion-step";
 import { FocusButton, FocusSegments, useFocusStyles } from "../src/ui/focus";
 import { OnboardingSummary } from "../src/features/onboarding-visuals";
+import { decodePhoto } from "../src/lib/profile-photo";
+import { uploadNativeProfileAvatar } from "../src/lib/avatar-upload";
 import { ProfilePhoto } from "../src/features/profile-photo";
 import { useReducedMotion } from "../src/ui/use-reduced-motion";
 import { useThemeColors } from "../src/theme";
@@ -32,12 +34,16 @@ export default function Onboarding() {
   const colors = useThemeColors();
   const reduced = useReducedMotion();
   const { state, canWrite, dispatch } = useCompeteStore();
-  const { user } = useAuth();
+  const { user, offlineMode } = useAuth();
   const router = useRouter();
   const preview = useLocalSearchParams<{ preview?: string }>().preview === "1";
   const key = `onboarding-draft:v6:${user?.id ?? "guest"}`;
   const [ready, setReady] = useState(false), [loadedKey, setLoadedKey] = useState("");
   const [step, setStep] = useState(0);
+  const [saving, setSaving] = useState(false), [saveError, setSaveError] = useState<string | null>(null);
+  const owner = useRef(user?.id);
+  owner.current = user?.id;
+  useEffect(() => () => { owner.current = undefined; }, []);
   const [name, setName] = useState(""), [city, setCity] = useState("");
   const [gender, setGender] = useState<ProfileGender | "">("");
   const [countryCode, setCountryCode] = useState("");
@@ -110,10 +116,24 @@ export default function Onboarding() {
     setStep(Math.min(2, step + 1));
   }
 
-  function finish() {
+  async function finish() {
     if (preview) { router.replace("/arena"); return; }
-    if (!user || !canWrite || finished.current || !identityReady || !selectionReady) return;
+    if (!user || !state || !canWrite || finished.current || !identityReady || !selectionReady) return;
     finished.current = true;
+    setSaving(true); setSaveError(null);
+    try {
+      const guest = guestIntroForAccount(await readGuestIntroDraft(), await AsyncStorage.getItem(GUEST_SIGNUP_PENDING_KEY), user.email);
+      if (guest?.photo && !state.avatarUrl) {
+        const avatarUrl = offlineMode ? guest.photo : await uploadNativeProfileAvatar(decodePhoto(guest.photo.split(",")[1]!), user.id);
+        if (owner.current !== user.id) return;
+        dispatch({ type: "set-avatar", avatarUrl, accountId: user.id });
+      }
+    } catch (err) {
+      finished.current = false;
+      setSaveError(err instanceof Error ? err.message : "Could not save your photo. Please try again.");
+      return;
+    } finally { setSaving(false); }
+    if (owner.current !== user.id) return;
     dispatch({ type: "rename", name: name.trim() });
     dispatch({ type: "set-city", city: city.trim() });
     if (gender) dispatch({ type: "set-gender", gender });
@@ -180,19 +200,20 @@ export default function Onboarding() {
             </View>)}
             <AppText role="heading">Sleep & recovery</AppText>
             <Chip label="Sleep tracking" selected={sleep} onPress={() => setSleep(!sleep)} />
-            {selectionError && !identityReady && <AppText accessibilityRole="alert">Enter your display name to continue.</AppText>}
-            {selectionError && !selectionReady && <AppText accessibilityRole="alert">Choose at least one sport or sleep tracking to continue.</AppText>}
+          {selectionError && !identityReady && <AppText accessibilityRole="alert">Enter your display name to continue.</AppText>}
+          {selectionError && !selectionReady && <AppText accessibilityRole="alert">Choose at least one sport or sleep tracking to continue.</AppText>}
           </>}
           {step === 2 && <>
             <OnboardingSummary sports={sports} units={units} sleep={sleep} />
             <AppText secondary>Your chosen events register for the next wave. You can change your preferences later.</AppText>
             <AppText role="label">Next wave starts at {waveTimeLabel(nextDailyWaveWindowAt(new Date(now)).waveStart, timezone)}.</AppText>
           </>}
+          {saveError && <AppText accessibilityRole="alert">{saveError}</AppText>}
           <View style={{ flexDirection: "row", gap: 12 }}>
-            {step > 0 && <IconButton icon="back" label="Back" onPress={() => setStep(step - 1)} />}
+            {step > 0 && <IconButton icon="back" label="Back" disabled={saving} onPress={() => setStep(step - 1)} />}
             <View style={{ flex: 1 }}><FocusButton
-              label={step === 2 ? "Finish setup & register" : step === 0 && !state.links.some(link => link.status === "connected") ? "Skip for now" : "Continue"}
-              disabled={step === 2 && !preview && !canWrite}
+              label={saving ? "Saving…" : step === 2 ? "Enter events" : step === 0 && !state.links.some(link => link.status === "connected") ? "Skip for now" : "Continue"}
+              disabled={saving || (step === 2 && !preview && !canWrite)}
               onPress={() => step < 2 ? advance() : finish()} /></View>
           </View>
         </MotionStep>

@@ -11,16 +11,8 @@
 .onboarding-actions:empty { display: none; }
 .onboarding-score { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .onboarding-score strong { font: var(--type-display); }
-.onboarding-athlete { display: grid; gap: 18px; }
-@media (min-width: 900px) {
-  .onboarding:has(.onboarding-athlete) { max-width: 760px; }
-  .onboarding-athlete { grid-template-columns: 1fr 1fr; align-items: center; }
-}
 
 /* Interactive feature discovery, with no account or health data access. */
-.onboarding-three-steps { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; text-align:center; }
-.onboarding-three-steps > div { display:flex; flex-direction:column; align-items:center; gap:10px; font-size:12px; }
-.onboarding-three-steps b { display:grid; place-items:center; width:36px; height:36px; border-radius:50%; background:var(--action-soft); }
 .onboarding-feature-tabs { display:flex; gap:7px; }
 .onboarding-feature-tabs button { flex:1; min-width:0; min-height:44px; padding:8px 5px; border:1px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink); font:inherit; font-weight:700; font-size:12px; cursor:pointer; }
 .onboarding-feature-tabs button[aria-pressed="true"] { border-color:var(--ink); background:var(--action-soft); }
@@ -44,3 +36,20 @@
 
 .onboarding-brand { display: flex; align-items: center; gap: 12px; }
 .onboarding-account { display: grid; gap: 18px; }
+
+.onboarding-heading { display:flex; align-items:center; gap:16px; }
+.onboarding-heading > h1 { flex:1; min-width:0; }
+.onboarding-heading[data-compact="true"] > h1 { font-size:var(--type-heading-size); line-height:var(--type-heading-leading); font-weight:var(--type-heading-weight); }
+.onboarding-mini { flex:0 0 158px; min-width:0; }
+.onboarding-mini > button { min-height:96px; width:100%; display:grid; grid-template-columns:32px minmax(0,1fr); align-content:center; align-items:center; gap:8px; padding:12px; border:1px solid var(--line); border-radius:16px; background:var(--card); color:var(--ink); box-shadow:0 5px 18px #00000014; text-align:left; cursor:pointer; font:inherit; }
+.onboarding-mini img,.onboarding-mini-portrait { width:32px; height:32px; border-radius:50%; object-fit:cover; }
+.onboarding-mini-portrait { display:grid; place-items:center; background:var(--action-soft); font-size:12px; }
+.onboarding-mini strong { font-size:13px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
+.onboarding-mini-label { grid-column:1/-1; font-size:11px; color:var(--muted); animation:onboarding-slot-in 180ms ease-out; }
+.onboarding-card-hero { width:100%; }
+.onboarding-photo { position:relative; cursor:pointer; text-align:center; }
+.onboarding-photo input { position:absolute; inset:0; opacity:0; width:100%; cursor:pointer; }
+.onboarding-photo small { color:var(--muted); margin-left:8px; }
+@keyframes onboarding-slot-in { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
+@media (max-height:740px) { .onboarding-mini { flex-basis:142px; } .onboarding-mini > button { min-height:64px; padding:8px; gap:4px 8px; } }
+@media (prefers-reduced-motion:reduce) { .onboarding-mini-label { animation:none; } }

@@ -47,6 +47,7 @@ export function CompetitionMoment({
   onConfirm,
   debug = false,
   embedded = false,
+  practice = false,
   fill = false,
   onBack,
   dimension = defaultCompeteFieldView(moment.sport),
@@ -58,6 +59,7 @@ export function CompetitionMoment({
   onConfirm: () => void;
   debug?: boolean;
   embedded?: boolean;
+  practice?: boolean;
   fill?: boolean;
   onBack?: () => void;
   dimension?: FieldViewDimension;
@@ -170,7 +172,7 @@ export function CompetitionMoment({
     setPlaying((value) => !value);
   };
 
-  const progressChip = (
+  const progressChip = practice && frame.count === 0 ? null : (
     <View
       pointerEvents="none"
       style={[
@@ -179,9 +181,9 @@ export function CompetitionMoment({
       ]}
     >
       <Text numberOfLines={1} style={{ ...textStyle("label"), color: c.ink, flexShrink: 1 }}>
-        {summary.headline}
+        {practice ? "You passed Alex!" : summary.headline}
       </Text>
-      {summary.overtakeLabel ? (
+      {!practice && summary.overtakeLabel ? (
         <View style={[styles.overtakeBadge, { backgroundColor: c.actionSoft }]}>
           <Text style={{ ...textStyle("caption"), color: c.ink }}>{summary.overtakeLabel}</Text>
         </View>

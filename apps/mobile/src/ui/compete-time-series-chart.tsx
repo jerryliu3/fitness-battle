@@ -93,7 +93,7 @@ export function CompeteTimeSeriesChart({
   const { blocks } = useAthleteBlocks();
   const excludedIds = useMemo(() => [...new Set([...(hiddenIds ?? []), ...blocks.map(block => block.id)])], [hiddenIds, blocks]);
   const { height: screenHeight } = RN.useWindowDimensions();
-  const plotHeight = immersive ? Math.max(140, (viewportHeight ?? screenHeight) - topInset - bottomInset - 210) : 204;
+  const plotHeight = immersive ? Math.max(viewportHeight ? 80 : 140, (viewportHeight ?? screenHeight) - topInset - bottomInset - 210) : 204;
   const s = useThemedStyles(sThemes);
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
     null,
