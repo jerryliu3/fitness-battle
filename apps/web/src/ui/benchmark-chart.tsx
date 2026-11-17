@@ -9,9 +9,9 @@ import { ChartSvg, ChartText } from "./chart-text";
 import "./benchmark-chart.css";
 import { useChartTween } from "./use-chart-tween";
 
-export function BenchmarkChart({ buckets, now, dateLabel, displayTimeZone }: { buckets: TrainingBucket[]; now: Date; dateLabel: string; displayTimeZone?: string }) {
+export function BenchmarkChart({ buckets, now, dateLabel, displayTimeZone, visibleFrom }: { buckets: TrainingBucket[]; now: Date; dateLabel: string; displayTimeZone?: string; visibleFrom?: Date | null }) {
   const reduced = Boolean(useReducedMotion());
-  const targetChart = useMemo(() => benchmarkBars(buckets, now, displayTimeZone), [buckets, now, displayTimeZone]);
+  const targetChart = useMemo(() => benchmarkBars(buckets, now, displayTimeZone, visibleFrom), [buckets, now, displayTimeZone, visibleFrom]);
   const chart = useChartTween(targetChart, dateLabel, interpolateBenchmarkBars, reduced);
   const [selected, setSelected] = useState<string | null>(null);
   useEffect(() => { setSelected(null); }, [dateLabel]);

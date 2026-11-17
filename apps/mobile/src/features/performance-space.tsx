@@ -16,6 +16,7 @@ import {
   RECORD_DISTANCES,
   competeNow,
   defaultTrainingSports,
+  earliestDataDate,
   effortScoreComparison,
   effortScoreLine,
   formatClockTime,
@@ -91,6 +92,10 @@ export function PerformanceSpace({
   const volumeBuckets = useMemo(
     () => trainingBuckets(state.activities, sportsFilter, volumeRange, now, now, "open", displayTz),
     [state.activities, sportsFilter, volumeRange, now, displayTz],
+  );
+  const volumeVisibleFrom = useMemo(
+    () => earliestDataDate(state, now, user?.createdAt),
+    [state, now, user?.createdAt],
   );
 
   const scoreComparison = useMemo(
@@ -315,6 +320,7 @@ export function PerformanceSpace({
             buckets={volumeBuckets}
             now={now}
             displayTimeZone={displayTz}
+            visibleFrom={user?.createdAt ? volumeVisibleFrom : undefined}
             dateLabel={volumeRange}
             hideSummary={true}
             onSelectionChange={setInspectedVolume}

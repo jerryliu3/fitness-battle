@@ -46,8 +46,8 @@ describe("Home daily health", () => {
   });
   it("omits generated vitals and sample nights from recorded health series", () => {
     const state = freshState(now);
-    expect(recordedHealthSeries(state, "hrv", 30, now)).toEqual([]);
-    expect(recordedHealthSeries(state, "sleep", 30, now)).toEqual([]);
+    expect(recordedHealthSeries(state, "hrv", 30, now).every(row => row.value == null)).toBe(true);
+    expect(recordedHealthSeries(state, "sleep", 30, now).every(row => row.value == null)).toBe(true);
     state.sleepNights = [night(), night({ id: "sleep-oura-2026-10-20", day: "2026-10-20" })];
     state.dailyHealth = [{ provider: "oura", day: "2026-10-24", hrv: 64, restingHr: 52 }];
     expect(recordedHealthSeries(state, "sleep", 30, now).map(row => row.value).filter(value => value != null)).toEqual([462]);
@@ -55,7 +55,7 @@ describe("Home daily health", () => {
       { day: "2026-10-24", label: "Oct 24", value: 64 },
     );
   });
-  it("left-aligns earliest recorded health observation and leaves missing/future days as gaps", () => {
+  it("uses a rolling seven-day window and leaves missing/future days as gaps", () => {
     const state = freshState(now);
     state.dailyHealth = [
       { provider: "oura", day: "2026-10-20", hrv: 58, restingHr: 51 },
@@ -63,9 +63,9 @@ describe("Home daily health", () => {
     ];
     const series = recordedHealthSeries(state, "hrv", 7, now);
     expect(series.map(row => row.day)).toEqual([
-      "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25", "2026-10-26",
+      "2026-10-18", "2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24",
     ]);
-    expect(series.map(row => row.value)).toEqual([58, null, null, null, 64, null, null]);
+    expect(series.map(row => row.value)).toEqual([null, null, 58, null, null, null, 64]);
   });
 });
 

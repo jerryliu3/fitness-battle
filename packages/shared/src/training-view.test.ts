@@ -188,13 +188,17 @@ describe("training date boundaries & navigation limiting", () => {
     expect(clampTrainingAnchor(wayPast, earliest, now, "week")).toBe(earliest);
   });
 
-  it("prefers valid account creation date and considers effort/health records", () => {
+  it("anchors account history at signup or up to ninety days of imported data", () => {
     const state = freshState(now);
     state.activities = [activity("old", "2025-06-14T08:00:00Z")];
-    expect(earliestDataDate(state, now, "2026-10-01T12:00:00Z")?.toISOString()).toBe("2026-10-01T12:00:00.000Z");
+    expect(earliestDataDate(state, now, "2026-10-01T12:00:00Z")?.toISOString()).toBe("2026-07-03T04:00:00.000Z");
+
+    state.activities = [activity("imported", "2026-09-20T12:00:00Z")];
+    expect(earliestDataDate(state, now, "2026-10-01T12:00:00Z")?.toISOString()).toBe("2026-09-20T04:00:00.000Z");
 
     const empty = freshState(now);
     empty.effortScoreEvents = [{ id: "e1", sport: "running", track: "open", occurredAt: "2026-09-10T12:00:00Z", scoreBefore: 1000, scoreAfter: 1010 }];
     expect(earliestDataDate(empty, now)?.toISOString()).toBe("2026-09-10T12:00:00.000Z");
+    expect(earliestDataDate(empty, now, "2026-10-01T12:00:00Z")?.toISOString()).toBe("2026-09-10T04:00:00.000Z");
   });
 });

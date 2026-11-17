@@ -12,7 +12,7 @@ export function EffortTrend({ state, email }: { state: CompeteState; email?: str
   const [lens, setLens] = useState<{ scope: string; track: ScoreTrack } | null>(null);
   const [range, setRange] = useState<OpenLineRange>("fourWeeks");
   const track = lens?.scope === scope ? lens.track : defaultTrack;
-  const chart = effortScoreLine(state, track, range);
+  const chart = effortScoreLine(state, track, range, undefined, user?.createdAt);
   return <section id="effort-score" className="effort-open-chart">
     <div className="focus-elo-track-toggle" role="group" aria-label="Effort chart score track">{(["open", "verified"] as const).map(value => <button type="button" key={value} aria-pressed={track === value} onClick={() => setLens({ scope, track: value })}>{value === "open" ? "Open" : "GPS Tracked"}</button>)}</div>
     <OpenLineChart hideTrendLine showAxes={true} live key={`${scope}:${track}`} chart={chart} label={`${track === "open" ? "Open" : "GPS Tracked"} effort score history`} unit="Effort score" range={range} onRangeChange={setRange} />

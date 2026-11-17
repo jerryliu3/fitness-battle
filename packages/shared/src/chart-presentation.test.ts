@@ -150,8 +150,21 @@ it("shows every recorded score change, filters sport/track/future, makes every d
     { id: "5", sport: "running", track: "open", occurredAt: "2026-10-23T12:00:00Z", scoreBefore: 1002, scoreAfter: 1003 },
   ];
   const chart = effortScoreLine(state, "open", "week", now);
-  expect(chart.points.map(p => p.id)).toEqual(["1", "2", "current"]);
-  expect(chart.points.map(p => p.value)).toEqual(["1001", "1002", "1002"]);
+  expect(chart.points.map(p => p.id)).toEqual([
+    "day:2026-10-16",
+    "day:2026-10-17",
+    "day:2026-10-18",
+    "day:2026-10-19",
+    "day:2026-10-20",
+    "day:2026-10-21",
+    "1",
+    "2",
+    "current",
+  ]);
+  expect(chart.points.map(p => p.value)).toEqual([
+    "1000", "1000", "1000", "1000", "1000", "1000",
+    "1001", "1002", "1002",
+  ]);
   expect(chart.points[0]!.x).toBeLessThan(chart.points[1]!.x);
   const withEarlierAccount = effortScoreLine(state, "open", "week", now, "2026-10-18T12:00:00Z");
   expect(withEarlierAccount.points.map(p => p.id)).toEqual([
@@ -259,6 +272,16 @@ it("aligns account creation date at the left of effortScoreLine and extends into
   const chart = effortScoreLine(state, "open", "fourWeeks", now, createdAt);
   expect(chart.xTicks[0]?.label).toBe("Nov 5");
   expect(chart.xTicks.at(-1)?.label).toMatch(/^Dec [23]$/);
+});
+
+it("keeps the Home fourWeeks line on the full calendar window when the account is new", () => {
+  const now = new Date("2026-11-09T15:00:00Z");
+  const createdAt = "2026-11-06T15:00:00Z";
+  const state = freshState(now);
+  state.activities = [];
+  const chart = homeTrainingLine(state, "fourWeeks", now, createdAt);
+  expect(chart.points[0]?.label.startsWith("Oct")).toBe(true);
+  expect(chart.value).toBe("0.0");
 });
 
 it("interpolates line and benchmark bar models smoothly between ranges", () => {
