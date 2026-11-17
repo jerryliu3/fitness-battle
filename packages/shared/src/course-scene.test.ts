@@ -23,6 +23,25 @@ it("gives each real racer a covered trail ending at its dot, without exposing fu
   expect(lanes[0].value).toBe(.5);
 });
 
+it("fans shared-lane markers symmetrically at the start line only", () => {
+  const course = createRaceCourse("Street", [[0, 0], [.01, 0]]);
+  const lanes = [
+    { id: "you", name: "You", initials: "Y", you: true, value: 0 },
+    { id: "mystery-0", name: "Athlete #1", initials: "?", mystery: true, value: 0 },
+    { id: "mystery-1", name: "Athlete #2", initials: "?", mystery: true, value: 0 },
+  ];
+  const scene = raceCourseScene(course, lanes, "km", "you");
+  const coordinates = scene.markers.features.map((marker) => marker.geometry.coordinates);
+  expect(new Set(coordinates.map((coordinate) => coordinate.join(","))).size).toBe(3);
+  const laterals = scene.callouts.map((lane) => lane.lateralMetres);
+  expect(laterals[0] + laterals[1] + laterals[2]).toBeCloseTo(0, 5);
+  expect(laterals.every((lateral) => Math.abs(lateral) <= 8)).toBe(true);
+  const midRace = raceCourseScene(course, lanes.map((lane) => ({ ...lane, value: .5 })), "km", "you");
+  for (const marker of midRace.markers.features) {
+    expect(marker.geometry.coordinates).toEqual(raceCoursePosition(course, 500).coordinate);
+  }
+});
+
 it("draws one centerline trail for the selected racer in shared profile lane mode", () => {
   const course = createRaceCourse("Street", [[0, 0], [.01, 0]]);
   const lanes = Array.from({ length: 10 }, (_, i) => ({ id: `racer-${i}`, name: `Racer ${i}`, initials: "R", you: i === 7, value: .5 }));
