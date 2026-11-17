@@ -29,15 +29,16 @@ presentation values change. Native retains the full model inside the scene and
 sends only changed fields across the bridge, avoiding repeated photo payloads
 during score animation. It scales down and moves to the top-right for Overtake
 and Discover, then returns to the center for signup. The practice count and growth
-score update this presentation model without entering account facts.
+score update this presentation model without entering account facts. The card uses the
+current product metadata/layout, with empty personal bests, unavailable podiums and
+blank lifetime totals until real account data exists.
 
 Mobile uses a 360×640 composition fitted to the available safe-area viewport. Its
 controls, visuals and card scale together. There is no page ScrollView, wordmark,
 card caption, or explanatory copy around Discover. A thin progress-pill row remains above
 the canvas. Keyboard avoidance preserves its scale and shifts only to reveal the focused
 field. Post-signup screens use a measured
-content canvas; the long preferences form is divided into identity, event selection
-and training-volume groups to keep each page usable without scrolling.
+content canvas for final details, tracker connections, and the combined training-volume/entry ticket.
 
 Crew discovery reuses the product CrewRelay graphic with the guest’s name/photo.
 Vitals reuses the product scan experience with in-memory preview readings;

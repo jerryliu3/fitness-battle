@@ -1,7 +1,7 @@
 import { VITALS_LAB_METRICS, type VitalsLabMetricDisplay } from "./vitals-lab-body";
 import type { CrewWeekRelayInput } from "./compete/crew-relay";
 import { SPORT_IDS, type SportId, type UnitSystem } from "./compete/sports";
-import { athleteCardModelForPeer } from "./athlete-card";
+import { athleteCardModelForPeer, type AthleteCardModel } from "./athlete-card";
 import { athleteLocationLine } from "./countries";
 import { SPORTS } from "./compete/sports";
 import { crewWeekRelay } from "./compete/crew-relay";
@@ -92,9 +92,11 @@ export function hasCompletedOnboardingIntro(draft: GuestIntroDraft | null, pendi
   return Boolean(draft?.introCompleted && guestIntroForAccount(draft, pendingEmail, email));
 }
 
-export function onboardingAthleteCard(draft: GuestIntroDraft) {
+export function onboardingAthleteCard(draft: GuestIntroDraft): AthleteCardModel {
   return {
     ...athleteCardModelForPeer({ name: draft.name.trim() || "Athlete", city: draft.city, avatarUrl: draft.photo, sport: SPORTS.find(s => s.id === draft.sport)!.name }),
+    personalBests: [],
+    lifetime: { distance: "—", activities: "—", time: "—" },
     countryCode: draft.countryCode || null,
     location: athleteLocationLine(draft.city, draft.countryCode || null),
   };
