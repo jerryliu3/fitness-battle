@@ -2,7 +2,7 @@ import { OnboardingFeatureTour } from "../src/features/onboarding-feature-tour";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   EMPTY_GUEST_INTRO, ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId,
@@ -14,7 +14,6 @@ import * as ImagePicker from "expo-image-picker";
 import { OnboardingOvertake } from "../src/features/onboarding-overtake";
 import { VitalsLabCanvasPrefetch } from "../src/features/vitals-lab/vitals-lab-canvas-prefetch";
 import { LegalLinks } from "../src/features/legal-links";
-import { SportIcon } from "../src/ui/sport-icon";
 import { IconButton } from "../src/ui/icon-button";
 import { GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft, type GuestIntroDraft } from "../src/lib/guest-intro";
 import { useAuth } from "../src/lib/auth";
@@ -22,6 +21,13 @@ import { useCompeteStore } from "../src/lib/compete-store";
 import { useThemeColors } from "../src/theme";
 import { FocusButton, useFocusStyles } from "../src/ui/focus";
 import { AppText } from "../src/ui/section";
+
+const sportTiles = {
+  running: { emoji: "🏃‍♀️", background: "#FCE4DA" },
+  cycling: { emoji: "🚴", background: "#DDEFF3" },
+  walking: { emoji: "🚶", background: "#E5F1DC" },
+  strength: { emoji: "🏋️‍♀️", background: "#FFF0BE" },
+};
 
 export default function Welcome() {
   const { user, loading, signUp } = useAuth();
@@ -142,10 +148,14 @@ export default function Welcome() {
             <View style={{ ...box(126, 380), flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
               {SPORTS.map(sport => <Pressable key={sport.id} accessibilityRole="button" accessibilityLabel={sport.name}
                 accessibilityState={{ selected: draft.sport === sport.id }} onPress={() => setDraft(d => ({ ...d, sport: sport.id }))}
-                style={{ width: 158, height: 182, alignItems: "center", justifyContent: "center", gap: 16, borderRadius: 20,
-                  borderWidth: draft.sport === sport.id ? 2 : 1, borderColor: draft.sport === sport.id ? colors.ink : colors.line,
-                  backgroundColor: draft.sport === sport.id ? colors.actionSoft : colors.card }}>
-                <SportIcon sport={sport.id} size={64} /><AppText role="label" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>{sport.name}</AppText>
+                style={{ width: 158, height: 182, alignItems: "center", justifyContent: "center", borderRadius: 26,
+                  borderWidth: 2, borderColor: draft.sport === sport.id ? "#082637" : "transparent",
+                  backgroundColor: sportTiles[sport.id].background }}>
+                <Text accessible={false} allowFontScaling={false} style={{ fontSize: 108, lineHeight: 126, textAlign: "center", includeFontPadding: false }}>{sportTiles[sport.id].emoji}</Text>
+                <AppText role="label" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2} style={{ color: "#082637", alignSelf: "stretch", paddingHorizontal: 16 }}>{sport.name}</AppText>
+                {draft.sport === sport.id && <View pointerEvents="none" style={{ position: "absolute", top: 10, right: 10, width: 25, height: 25, borderRadius: 13, backgroundColor: "#082637", alignItems: "center", justifyContent: "center" }}>
+                  <Text accessible={false} allowFontScaling={false} style={{ color: "white", fontSize: 18, fontWeight: "800", lineHeight: 22 }}>✓</Text>
+                </View>}
               </Pressable>)}
             </View>
             {(!user || preview) && <View style={box(520, 48)}><FocusButton fit secondary label="I already have an account" onPress={() => void signIn()} /></View>}
