@@ -150,9 +150,9 @@ function Setup({ preview }: { preview: boolean }) {
     </>}
     {step === 2 && <>
       <AppParagraph>Your chosen event registers for the next wave. You can register for more events in the app.</AppParagraph>
-      {needsVolume && <label className="fb-field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{ flex: 1, fontSize: "var(--type-caption-size)" }}>Typical weekly {sport === "strength" ? "training" : sport === "walking" ? "steps" : "distance"} ({onboardingWeeklyVolumeUnit(sport, units)}) · {sportName}</span>
-        <input style={{ width: 80 }} type="number" inputMode="decimal" min="0" max={1000} step="any" aria-label={`Typical weekly ${sport}`}
+      {needsVolume && <label className="fb-field onboarding-weekly-volume">
+        <AppParagraph typographyRole="caption" className="onboarding-weekly-volume-label">Typical weekly {sport === "strength" ? "training" : sport === "walking" ? "steps" : "distance"} ({onboardingWeeklyVolumeUnit(sport, units)}) · {sportName}</AppParagraph>
+        <input className="onboarding-weekly-volume-input" type="number" inputMode="decimal" min="0" max={1000} step="any" aria-label={`Typical weekly ${sport}`}
           value={weeklyVolume[sport] ?? "0"}
           onChange={e => setWeeklyVolume(current => ({ ...current, [sport]: onboardingWeeklyVolumeInput(e.target.value) }))} />
       </label>}

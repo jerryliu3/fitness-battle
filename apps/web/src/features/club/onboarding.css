@@ -7,6 +7,9 @@
 .onboarding-sport[aria-pressed="true"] { border: 2px solid var(--ink); background: var(--action-soft); }
 .onboarding-sport-emoji { display: inline-block; font: var(--type-display); line-height: var(--type-display-leading); transform: scale(3.6); }
 .onboarding-sport-emoji[data-mirror="true"] { transform: scale(3.6) scaleX(-1); }
+.onboarding-weekly-volume { display: flex; align-items: center; gap: 12px; }
+.onboarding-weekly-volume-label { flex: 1; margin: 0; font: var(--type-caption); }
+.onboarding-weekly-volume-input { width: 80px; }
 .onboarding-actions { display: flex; gap: 12px; align-items: center; }
 .onboarding-actions > .fb-btn { flex: 1; }
 .onboarding-actions:empty { display: none; }
