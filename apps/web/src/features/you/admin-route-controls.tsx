@@ -1,6 +1,6 @@
 "use client";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { createRaceCourse, type LngLat } from "@fitness-battle/shared";
+import { createRaceCourse, ONBOARDING_OVERTAKE_SURFACE_ID, type LngLat } from "@fitness-battle/shared";
 import { MAX_ADMIN_ROUTE_BYTES, parseAdminRouteGpx, validateAdminRoute, type AdminRaceRoute, type AdminRaceRouteSummary } from "@/lib/admin-route-input";
 import type { AdminRouteAssignment, AdminRouteSurface } from "@/lib/admin-route-overview";
 import { AppParagraph, AppText, SectionHeader } from "@/ui/section";
@@ -39,6 +39,7 @@ export function AdminRouteControls() {
   const [overview, setOverview] = useState<RouteOverview | null>(null);
   const [assignWave, setAssignWave] = useState("");
   const [assignRouteId, setAssignRouteId] = useState("");
+  const [assignOnboardingRouteId, setAssignOnboardingRouteId] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [coordinates, setCoordinates] = useState("");
   const [busy, setBusy] = useState(false), [note, setNote] = useState("");
@@ -82,6 +83,15 @@ export function AdminRouteControls() {
       }
     });
   }
+  function assignOnboardingSurface() {
+    if (!assignOnboardingRouteId.trim() || busy) return;
+    void perform(async (signal, current) => {
+      await read("/api/admin/routes/surface", signal, { surfaceId: ONBOARDING_OVERTAKE_SURFACE_ID, routeId: assignOnboardingRouteId.trim() });
+      if (!current()) return;
+      setNote("Onboarding overtake surface updated. New welcomes prefetch it in the background.");
+      loadCatalog();
+    });
+  }
   function assignWaveRoute() {
     if (!assignWave.trim() || !assignRouteId.trim() || busy) return;
     void perform(async (signal, current) => {
@@ -121,8 +131,14 @@ export function AdminRouteControls() {
       <SectionHeader title="Where each surface gets its path" />
       <RouteAdminTable ariaLabel="Route surfaces">
         <thead><tr><th style={tableCell}>Surface</th><th style={tableCell}>Managed on</th><th style={tableCell}>Storage</th></tr></thead>
-        <tbody>{overview.surfaces.map(surface => <tr key={surface.id}><td style={tableCell}>{surface.label}<br /><AppText as="small" role="caption" secondary>{surface.notes}</AppText></td><td style={tableCell}>{surface.managedOn === "server" ? "Server (Supabase + Vercel)" : "Client bundle"}</td><td style={tableCell}><code className="fb-copy">{surface.storage}</code></td></tr>)}</tbody>
+        <tbody>{overview.surfaces.map(surface => <tr key={surface.id}><td style={tableCell}>{surface.label}<br /><AppText as="small" role="caption" secondary>{surface.notes}</AppText></td><td style={tableCell}>{surface.managedOn === "server" ? "Server (Supabase + Vercel)" : "Client bundle"}</td><td style={tableCell}><code className="fb-copy">{surface.storage}</code>{surface.assignedRouteId ? <><br /><AppText as="small" role="caption">Now: {surface.assignedRouteName} · <code className="fb-copy">{surface.assignedRouteId}</code></AppText></> : null}</td></tr>)}</tbody>
       </RouteAdminTable>
+      <SectionHeader title="Onboarding overtake route" />
+      <AppParagraph typographyRole="body">Pick any catalog route for the welcome overtake step. Clients keep the bundled fallback until prefetch succeeds.</AppParagraph>
+      <label className="fb-copy">Onboarding catalog route<select aria-label="Onboarding surface route" className="fb-input" style={{ display: "block", width: "100%" }} disabled={busy} value={assignOnboardingRouteId || overview.surfaces.find(surface => surface.id === ONBOARDING_OVERTAKE_SURFACE_ID)?.assignedRouteId || ""} onChange={event => setAssignOnboardingRouteId(event.target.value)}>
+        <option value="">Select a route</option>{routes.map(route => <option key={route.id} value={route.id}>{route.name} ({route.id})</option>)}
+      </select></label>
+      <button type="button" className="fb-btn-line" disabled={busy || !(assignOnboardingRouteId || overview.surfaces.find(surface => surface.id === ONBOARDING_OVERTAKE_SURFACE_ID)?.assignedRouteId)} onClick={assignOnboardingSurface}>Save onboarding route</button>
       <SectionHeader title="Catalog status" />
       <AppParagraph typographyRole="body">Active rotation order: {overview.activeIds.length ? overview.activeIds.join(" → ") : "none"}. New waves pick `floor(epoch / 1 week) % active count` from that sorted list unless you override an upcoming assignment.</AppParagraph>
       <RouteAdminTable ariaLabel="Catalog routes">

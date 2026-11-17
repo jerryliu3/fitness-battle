@@ -17,7 +17,12 @@ it("checks owner authorization and same-origin writes before creating a service 
 it("reads metadata separately from an editable route", async () => {
   const catalog = { select: vi.fn().mockReturnThis(), order: vi.fn().mockResolvedValue({ data: [input], error: null }), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: input, error: null }) };
   const snapshots = { select: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue({ data: [], error: null }) };
-  mock.from.mockImplementation((table: string) => (table === "weekly_race_routes" ? snapshots : catalog));
+  const surfaces = { select: vi.fn().mockResolvedValue({ data: [], error: null }) };
+  mock.from.mockImplementation((table: string) => {
+    if (table === "weekly_race_routes") return snapshots;
+    if (table === "route_surface_assignments") return surfaces;
+    return catalog;
+  });
   const list = await GET(new Request("https://test/api/admin/routes"));
   expect(list.status).toBe(200); expect(list.headers.get("cache-control")).toBe("private, no-store");
   expect((await list.json()).overview.activeIds).toEqual(["park-loop"]);

@@ -8,8 +8,9 @@ import { Pressable, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ONBOARDING_SPORT_TILES as sportTiles, EMPTY_GUEST_INTRO, ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId,
-  onboardingAthleteCard, guestIntroForAccount, SPORTS, type OnboardingStep,
+  onboardingAthleteCard, guestIntroForAccount, sportById, SPORTS, type OnboardingStep,
 } from "@fitness-battle/shared";
+import { prefetchOnboardingCourseFromApi } from "../src/lib/onboarding-course";
 import { OnboardingCanvas, ONBOARDING_CANVAS } from "../src/ui/onboarding-canvas";
 import { OnboardingAthlete } from "../src/features/onboarding-athlete";
 import * as ImagePicker from "expo-image-picker";
@@ -44,6 +45,7 @@ export default function Welcome() {
   const [email, setEmail] = useState(""), [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState(false), [cardHeld, setCardHeld] = useState(false);
+  const [onboardingCourseRevision, setOnboardingCourseRevision] = useState(0);
   const steps: readonly OnboardingStep[] = user && !preview ? ONBOARDING_STEPS.filter(s => s !== "account") : ONBOARDING_STEPS;
   const baseCard = useMemo(() => onboardingAthleteCard(cardDraft), [cardDraft]);
   const card = useMemo(() => ({ ...baseCard, score: previewScore, overtakes: previewPasses }), [baseCard, previewScore, previewPasses]);
@@ -57,6 +59,10 @@ export default function Welcome() {
     const timer = setTimeout(() => { void AsyncStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify(draft)).catch(() => {}); }, 600);
     return () => clearTimeout(timer);
   }, [ready, loading, draft, preview, state?.onboardingCompleted]);
+  useEffect(() => {
+    if (!ready || !sportById(draft.sport).gps) return;
+    void prefetchOnboardingCourseFromApi().then(course => { if (course) setOnboardingCourseRevision(value => value + 1); });
+  }, [ready, draft.sport]);
   useEffect(() => {
     if (waitingForProfile) return;
     let alive = true;
@@ -129,7 +135,7 @@ export default function Welcome() {
   const box = (top: number, height: number) => ({ position: "absolute" as const, left: 16, right: 16, top, height });
   return <View style={{ flex: 1, backgroundColor: colors.paper, overflow: "hidden" }}>
     {step === "overtake" && <View style={{ position: "absolute", inset: 0 }}>
-      <OnboardingOvertake sport={draft.sport} name={draft.name} photo={draft.photo} onOvertakeCountChange={setPreviewPasses}
+      <OnboardingOvertake key={`${onboardingCourseRevision}:${draft.sport}`} sport={draft.sport} name={draft.name} photo={draft.photo} onOvertakeCountChange={setPreviewPasses}
         onBack={() => setStep("athlete")} onComplete={() => void next()} />
     </View>}
     <SafeAreaView pointerEvents="box-none" style={{ flex: 1 }} edges={["top", "bottom"]}>

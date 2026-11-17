@@ -28,10 +28,14 @@ export async function GET(request: Request) {
       .order("wave_start", { ascending: false })
       .limit(120);
     if (assignmentError) throw assignmentError;
+    const { data: surfaceAssignments, error: surfaceError } = await db
+      .from("route_surface_assignments")
+      .select("surface_id,route_id,updated_at");
+    if (surfaceError) throw surfaceError;
     const catalog = (routes ?? []) as AdminRaceRouteSummary[];
     return NextResponse.json({
       routes: catalog,
-      overview: buildAdminRouteOverview(catalog, assignments ?? []),
+      overview: buildAdminRouteOverview(catalog, assignments ?? [], surfaceAssignments ?? []),
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch { return NextResponse.json({ error: "Route catalog is unavailable. Please try again." }, { status: 503 }); }
 }

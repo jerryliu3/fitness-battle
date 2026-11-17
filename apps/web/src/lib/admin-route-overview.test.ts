@@ -13,7 +13,7 @@ it("summarizes frozen usage and whether an assignment matches catalog rotation",
     route_id: "central-park-loop",
     route_name: "Central Park",
     created_at: start,
-  }], Date.parse("2029-01-01T00:00:00Z"));
+  }], [], Date.parse("2029-01-01T00:00:00Z"));
   expect(overview.catalog[0].upcomingWeeks).toBe(1);
   expect(overview.assignments[0]?.matchesRotation).toBe(
     overview.assignments[0]?.route_id === overview.assignments[0]?.autoRouteId,

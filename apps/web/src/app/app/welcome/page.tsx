@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ONBOARDING_SPORT_TILES as sportTiles, EMPTY_GUEST_INTRO, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY,
   ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId, onboardingAthleteCard,
-  guestIntroForAccount, SPORTS, type GuestIntroDraft, type OnboardingStep,
+  guestIntroForAccount, sportById, SPORTS, type GuestIntroDraft, type OnboardingStep,
 } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
@@ -42,6 +42,7 @@ function Welcome({ preview }: { preview: boolean }) {
   const [email, setEmail] = useState(""), [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState(false);
+  const [onboardingCourseRevision, setOnboardingCourseRevision] = useState(0);
   const authenticatedIntro = Boolean(user) && !preview;
   const steps: readonly OnboardingStep[] = authenticatedIntro ? ONBOARDING_STEPS.filter(s => s !== "account") : ONBOARDING_STEPS;
   const baseCard = useMemo(() => onboardingAthleteCard(cardDraft), [cardDraft]);
@@ -68,6 +69,14 @@ function Welcome({ preview }: { preview: boolean }) {
     return () => clearTimeout(timer);
   }, [ready, draft, preview, loading, state?.onboardingCompleted]);
   useEffect(() => { top.current?.scrollIntoView({ block: "start" }); }, [step]);
+  useEffect(() => {
+    if (!ready || !sportById(draft.sport).gps) return;
+    void fetch("/api/routes/onboarding-course", { cache: "force-cache" })
+      .then(response => (response.ok ? response.json() : Promise.reject()))
+      .then(body => import("@fitness-battle/shared").then(({ prefetchOnboardingCourse }) => prefetchOnboardingCourse(async () => body)))
+      .then(course => { if (course) setOnboardingCourseRevision(value => value + 1); })
+      .catch(() => undefined);
+  }, [ready, draft.sport]);
   if (!ready || (!preview && (loading || (user && !state)))) return <AppParagraph>Loading…</AppParagraph>;
 
   const index = steps.indexOf(step);
@@ -124,7 +133,7 @@ function Welcome({ preview }: { preview: boolean }) {
       </div>
     </>}
     {step === "overtake" && <>
-      <OnboardingOvertake sport={draft.sport} name={draft.name} photo={draft.photo} onOvertakeCountChange={setPreviewPasses} onComplete={() => void next()} onBack={() => setStep("athlete")} />
+      <OnboardingOvertake key={onboardingCourseRevision} sport={draft.sport} name={draft.name} photo={draft.photo} onOvertakeCountChange={setPreviewPasses} onComplete={() => void next()} onBack={() => setStep("athlete")} />
     </>}
     {step === "growth" && <OnboardingFeatureTour draft={draft} selected={feature} onSelect={setFeature} onScoreChange={showScore} />}
     {step === "athlete" && <>
