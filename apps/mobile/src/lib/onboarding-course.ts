@@ -1,4 +1,3 @@
-import { mobileEnv } from "./env";
 import {
   ONBOARDING_OVERTAKE_SURFACE_ID,
   prefetchOnboardingCourse,
@@ -11,6 +10,7 @@ export function readOnboardingCourse(): RaceCourse {
 }
 
 export async function prefetchOnboardingCourseFromApi(accessToken?: string) {
+  const { mobileEnv } = await import("./env");
   const url = `${mobileEnv.apiUrl.replace(/\/$/, "")}/api/routes/onboarding-course`;
   const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined;
   try {
