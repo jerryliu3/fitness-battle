@@ -12,6 +12,7 @@ import { OnboardingCanvas, ONBOARDING_CANVAS } from "../src/ui/onboarding-canvas
 import { OnboardingAthlete } from "../src/features/onboarding-athlete";
 import * as ImagePicker from "expo-image-picker";
 import { OnboardingOvertake } from "../src/features/onboarding-overtake";
+import { VitalsLabCanvasPrefetch } from "../src/features/vitals-lab/vitals-lab-canvas-prefetch";
 import { LegalLinks } from "../src/features/legal-links";
 import { SportIcon } from "../src/ui/sport-icon";
 import { IconButton } from "../src/ui/icon-button";
@@ -123,6 +124,7 @@ export default function Welcome() {
   const field = { ...f.input, minHeight: 0, height: 46, paddingVertical: 8 };
   const box = (top: number, height: number) => ({ position: "absolute" as const, left: 16, right: 16, top, height });
   return <View style={{ flex: 1, backgroundColor: colors.paper, overflow: "hidden" }}>
+    <VitalsLabCanvasPrefetch />
     {step === "overtake" && <View style={{ position: "absolute", inset: 0 }}>
       <OnboardingOvertake fill sport={draft.sport} name={draft.name} photo={draft.photo} onOvertakeCountChange={setPreviewPasses}
         onBack={() => setStep("athlete")} onComplete={() => void next()} />
@@ -132,8 +134,9 @@ export default function Welcome() {
         <OnboardingCanvas height={ONBOARDING_CANVAS.height}>
           <OnboardingAthlete model={card} step={step} onInteractionChange={setCardHeld} />
           {step !== "growth" && <View pointerEvents="none" style={{ ...box(8, 48), right: step === "overtake" ? 120 : 16 }}>
-            <AppText role={step === "overtake" ? "heading" : "display"} accessibilityRole="header" style={{ flex: 1 }} maxFontSizeMultiplier={1.2} numberOfLines={2} adjustsFontSizeToFit>{ONBOARDING_TITLES[step]}</AppText>
+            <AppText role={step === "overtake" ? "heading" : "display"} accessibilityRole="header" style={{ flex: 1 }} maxFontSizeMultiplier={1.2} numberOfLines={2} adjustsFontSizeToFit>{step === "athlete" ? `Welcome ${draft.name.trim() || "athlete"}!` : ONBOARDING_TITLES[step]}</AppText>
           </View>}
+          {step === "overtake" && <View pointerEvents="none" style={{ ...box(64, 60), right: 124 }}><AppText role="caption" numberOfLines={3}>Race your level. Chase a friendly rival and make the next overtake yours.</AppText></View>}
           {step === "sport" && <>
             <View style={box(64, 48)}><AppText secondary style={{ flex: 1 }} numberOfLines={2} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>Choose your sport. You can add more later.</AppText></View>
             <View style={{ ...box(126, 380), flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
@@ -148,9 +151,9 @@ export default function Welcome() {
             {(!user || preview) && <View style={box(520, 48)}><FocusButton fit secondary label="I already have an account" onPress={() => void signIn()} /></View>}
           </>}
           {step === "athlete" && <>
-            <View style={box(414, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Athlete name" placeholder="Athlete name" value={draft.name} maxLength={80} style={field}
+            <View style={box(450, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Athlete name" placeholder="Athlete name" value={draft.name} maxLength={80} style={field}
               onChangeText={name => setDraft(d => ({ ...d, name }))} onEndEditing={() => setCardDraft(draft)} /></View>
-            <View style={{ ...box(474, 48), flexDirection: "row", gap: 16, alignItems: "center" }}>
+            <View style={{ ...box(514, 52), flexDirection: "row", gap: 16, alignItems: "center" }}>
               <View style={{ flex: 1 }}><FocusButton fit secondary label={photoBusy ? "Reading photo…" : draft.photo ? "Change photo" : "Add photo"} disabled={photoBusy} onPress={() => void choosePhoto()} /></View>
               {draft.photo && <Pressable accessibilityRole="button" onPress={() => { setDraft(d => ({ ...d, photo: undefined })); setCardDraft(d => ({ ...d, photo: undefined })); }} style={{ minHeight: 44, justifyContent: "center" }}><AppText numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>Remove photo</AppText></Pressable>}
             </View>
@@ -159,14 +162,14 @@ export default function Welcome() {
             <OnboardingFeatureTour draft={draft} selected={feature} onSelect={setFeature} onScoreChange={showScore} />
           </View>}
           {step === "account" && <>
-            <View style={box(350, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Email" placeholder="Email" style={field} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" editable={!confirmation} /></View>
-            <View style={box(408, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Password" placeholder="Password" style={field} value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoComplete="new-password" editable={!confirmation} /></View>
-            <View style={box(474, 44)}><LegalLinks /></View>
+            <View style={box(390, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Email" placeholder="Email" style={field} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" editable={!confirmation} /></View>
+            <View style={box(448, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Password" placeholder="Password" style={field} value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoComplete="new-password" editable={!confirmation} /></View>
+            <View style={box(510, 38)}><LegalLinks /></View>
           </>}
           {(error || confirmation) && <View style={box(528, 46)}><AppText role="caption" accessibilityRole="alert" numberOfLines={3} adjustsFontSizeToFit>{error ?? "Check your email to confirm your account and continue setup."}</AppText></View>}
           {step !== "overtake" && <View style={box(584, 52)}>
-            {step === "account" ? actions(busy ? "Creating…" : "Create account", () => void createAccount(), busy || confirmation || !email.trim() || password.length < 6)
-              : actions(step === "athlete" ? "See yourself compete" : step === "growth" ? "Make it official" : "Continue", () => void next(), photoBusy || (step === "athlete" && !draft.name.trim()))}
+            {step === "account" ? actions(busy ? "Creating…" : "Continue", () => void createAccount(), busy || confirmation || !email.trim() || password.length < 6)
+              : actions("Continue", () => void next(), photoBusy || (step === "athlete" && !draft.name.trim()))}
           </View>}
         </OnboardingCanvas>
       </KeyboardAvoidingView>

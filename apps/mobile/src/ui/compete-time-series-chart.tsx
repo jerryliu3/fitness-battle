@@ -58,6 +58,7 @@ export function CompeteTimeSeriesChart({
   reserveTopControls = false,
   compact = false,
   immersive = false,
+  hideHeader = false,
   topInset = 0,
   bottomInset = 0,
   viewportHeight,
@@ -78,6 +79,7 @@ export function CompeteTimeSeriesChart({
   reserveTopControls?: boolean;
   compact?: boolean;
   immersive?: boolean;
+  hideHeader?: boolean;
   topInset?: number;
   bottomInset?: number;
   viewportHeight?: number;
@@ -354,7 +356,7 @@ export function CompeteTimeSeriesChart({
       ]}
     >
       {/* Pure Open Line Header */}
-      {immersive ? (
+      {hideHeader ? null : immersive ? (
         <View style={s.immersiveHeader}>
           <UserAvatar
             src={model.selectedAthlete.avatarUrl}

@@ -226,7 +226,7 @@ export function CompetitionMoment({
         </Text>
       </Pressable>
       <View style={{ flex: 1 }}>
-        <FocusButton label={continueLabel} onPress={confirm} />
+        <FocusButton label={practice ? "Continue" : continueLabel} onPress={confirm} />
       </View>
     </View>
   );
@@ -256,6 +256,7 @@ export function CompetitionMoment({
             momentReplay={{ moment, progress }}
             hiddenIds={hiddenIds}
             immersive
+            hideHeader={practice}
             topInset={practice ? 150 : embedded ? 56 : insets.top}
             bottomInset={embedded ? 0 : insets.bottom}
             viewportHeight={height || undefined}
@@ -274,7 +275,7 @@ export function CompetitionMoment({
             optionsTop={null}
             onOptionsChange={embedded ? undefined : setCourseOptions}
             onChoose2D={embedded ? undefined : () => chooseView("2d")}
-            overlaysHidden
+            overlaysHidden={!practice}
             lanes={frame.lanes}
             unit={moment.unit}
             selectedId={moment.plan.youId}
@@ -350,7 +351,7 @@ export function CompetitionMoment({
       {embedded ? (
         <View
           pointerEvents="box-none"
-          style={{ position: "absolute", bottom: 16, left: 16, right: 16, alignItems: "center" }}
+          style={{ position: "absolute", bottom: 16 + insets.bottom, left: 16, right: 16, alignItems: "center" }}
         >
           <View style={{ width: "100%", maxWidth: 420 }}>
             {actionRow}

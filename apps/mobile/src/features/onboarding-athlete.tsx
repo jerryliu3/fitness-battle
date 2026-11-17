@@ -6,10 +6,10 @@ import { AthleteCrest } from "./athlete-crest";
 
 const targets = {
   sport: { x: 55, y: 56, width: 250 },
-  athlete: { x: 55, y: 56, width: 250 },
+  athlete: { x: 40, y: 56, width: 280 },
   overtake: { x: 244, y: 0, width: 100 },
   growth: { x: 244, y: 0, width: 100 },
-  account: { x: 75, y: 48, width: 210 },
+  account: { x: 55, y: 48, width: 250 },
 };
 
 /** One scene stays mounted; only the presentation transform and in-memory model change. */

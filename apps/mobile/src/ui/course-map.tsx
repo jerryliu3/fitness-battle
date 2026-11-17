@@ -216,7 +216,7 @@ const appearanceColors = useThemeColors();
     pose.current.zoom = courseInitialZoom(pose.current.center[1], nativeEvent.layout.height, pose.current.pitch);
     if (ready) ref.current?.setCamera({ centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing, animationDuration: 0 });
   }}>
-    <MapView ref={mapRef} accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled={!replay} scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled={!onSnapshot} attributionEnabled={false}
+    <MapView ref={mapRef} accessibilityLabel="Geographic race course. Drag to explore; pinch to zoom." zoomEnabled scrollEnabled={!replay} rotateEnabled={!replay} pitchEnabled={!replay} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled={!onSnapshot} attributionEnabled={false}
       onTouchStart={beginMapUserGesture}
       onTouchEnd={endMapUserGesture}
       onTouchCancel={endMapUserGesture}
