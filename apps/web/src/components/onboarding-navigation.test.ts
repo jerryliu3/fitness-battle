@@ -57,3 +57,12 @@ it("preserves the requested destination through the introduction and setup", asy
   expect(mock.replace).toHaveBeenLastCalledWith("/app/onboarding?next=%2Fapp%2Farena%3Finvite%3Dcrew");
   await act(async () => r.unmount());
 });
+
+it("keeps the requested destination for completed accounts entering welcome", async () => {
+  mock.path = "/app/welcome"; mock.completed = true;
+  mock.params = new URLSearchParams("next=%2Fapp%2Farena%3Finvite%3Dcrew");
+  let r!: ReactTestRenderer;
+  await act(async () => { r = create(createElement(OnboardingNavigation)); });
+  expect(mock.replace).toHaveBeenCalledWith("/app/arena?invite=crew");
+  await act(async () => r.unmount());
+});

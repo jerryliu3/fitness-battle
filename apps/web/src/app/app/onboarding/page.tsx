@@ -2,7 +2,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  detectDeviceTimeZone, guestIntroForAccount, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY,
+  ONBOARDING_SETUP_TITLES as titles, detectDeviceTimeZone, guestIntroForAccount, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY,
   SPORTS, hasOnboardingTrainingHistory, type ProfileGender, type SportId, type UnitSystem,
   onboardingWeeklyVolumeInput, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, onboardingWeeklyVolumeUnit, type OnboardingWeeklyVolumes,
 } from "@fitness-battle/shared";
@@ -23,7 +23,6 @@ import "@/features/arena/event-home.css";
 import { readGuestIntroDraft } from "@/lib/guest-intro";
 import "@/features/club/onboarding.css";
 
-const titles = ["Almost there! Final details", "Bring your training along.", "Your first event"];
 function Setup({ preview }: { preview: boolean }) {
   const { state, dispatch, loadStatus } = useCompete();
   const { user, offlineMode } = useAuth();
@@ -84,11 +83,17 @@ function Setup({ preview }: { preview: boolean }) {
   useEffect(() => {
     if (step !== 2 || registered || !state || loadedKey !== key || (!preview && (!user || !canWrite))) return;
     if (!preview && user) {
+      dispatch({ type: "rename", name: name.trim() });
+      dispatch({ type: "set-city", city: city.trim() });
+      dispatch({ type: "set-gender", gender: gender || null });
+      dispatch({ type: "set-country", countryCode });
+      dispatch({ type: "set-units", units });
+      dispatch({ type: "set-timezone", timezone });
       if (!state.ratings.some(r => r.sport === sport && r.optedIn)) dispatch({ type: "opt-in", sport, accountId: user.id });
       dispatch({ type: "set-primary", sport });
     }
     setRegistered(true);
-  }, [step, registered, state, loadedKey, key, preview, user, canWrite, sport, dispatch]);
+  }, [step, registered, state, loadedKey, key, preview, user, canWrite, sport, name, city, gender, countryCode, units, timezone, dispatch]);
 
   if (!state || loadedKey !== key) return <AppParagraph>Loading setup…</AppParagraph>;
   const sportName = SPORTS.find(item => item.id === sport)!.name;
@@ -96,7 +101,7 @@ function Setup({ preview }: { preview: boolean }) {
   const needsVolume = !hasHistory;
   function advance() { setStep(Math.min(2, step + 1)); }
   async function finish() {
-    if (preview) { complete(); return; }
+    if (preview) { router.replace("/app/arena"); return; }
     if (!user || !state || !canWrite || finished.current) return;
     finished.current = true;
     setSaving(true); setSaveError(null);
@@ -114,18 +119,8 @@ function Setup({ preview }: { preview: boolean }) {
       return;
     } finally { setSaving(false); }
     if (owner.current !== user.id) return;
-    dispatch({ type: "rename", name: name.trim() });
-    dispatch({ type: "set-city", city: city.trim() });
-    if (gender) dispatch({ type: "set-gender", gender });
-    if (countryCode) dispatch({ type: "set-country", countryCode });
-    dispatch({ type: "set-units", units });
-    dispatch({ type: "set-timezone", timezone });
     const declaredWeeklyVolume = onboardingDeclaredVolume(sport, weeklyVolume[sport] ?? "0", units);
     if (!hasHistory && declaredWeeklyVolume !== undefined) dispatch({ type: "declare-effort", sport, declaredWeeklyVolume });
-    complete();
-  }
-  function complete() {
-    if (preview) { router.replace("/app/arena"); return; }
     dispatch({ type: "complete-onboarding" });
     try {
       sessionStorage.removeItem(key);
@@ -134,8 +129,8 @@ function Setup({ preview }: { preview: boolean }) {
     router.replace(resolvePostOnboardingPath(params.get("next")));
   }
   return <section ref={top} className="onboarding fb-stack">
-    <div className="onboarding-progress" role="img" aria-label={`Setup step ${step + 1} of 3`}>
-      {[0, 1, 2].map(i => <span key={i} data-complete={i <= step} />)}
+    <div className="onboarding-progress" role="img" aria-label={`Setup step ${step + 1} of ${titles.length}`}>
+      {titles.map((title, i) => <span key={title} data-complete={i <= step} />)}
     </div>
     <AppHeading level={1} role="display">{titles[step]}</AppHeading>
     {step === 0 && <>
@@ -161,7 +156,7 @@ function Setup({ preview }: { preview: boolean }) {
           value={weeklyVolume[sport] ?? "0"}
           onChange={e => setWeeklyVolume(current => ({ ...current, [sport]: onboardingWeeklyVolumeInput(e.target.value) }))} />
       </label>}
-      <EventRegistration state={state} event={sport} registered={registered} ticketOnly busy={saving || (!preview && !canWrite)} error={saveError ?? ""} onBack={() => setStep(1)} onClaim={() => void finish()} onView={() => void finish()} />
+      <EventRegistration state={state} event={sport} registered={registered} ticketOnly busy={saving || (!preview && !canWrite)} error={saveError ?? ""} onBack={() => { setRegistered(false); setStep(1); }} onClaim={finish} onView={finish} />
     </>}
     {step < 2 && <div className="onboarding-actions">
       {step > 0 && <BackButton disabled={saving} onClick={() => setStep(step - 1)} />}

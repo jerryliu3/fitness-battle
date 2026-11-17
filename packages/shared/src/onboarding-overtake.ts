@@ -27,4 +27,3 @@ export function createOnboardingOvertakeMoment(name = "Athlete", sport: SportId 
   };
 }
 
-export const onboardingOvertakeMoment: CompetitionMoment = createOnboardingOvertakeMoment();

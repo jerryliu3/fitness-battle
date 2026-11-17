@@ -25,11 +25,9 @@
 .onboarding-heading[data-compact="true"] > h1 { font-size:var(--type-heading-size); line-height:var(--type-heading-leading); font-weight:var(--type-heading-weight); }
 .onboarding-persistent-card { position:absolute; top:0; left:0; width:320px; height:430px; z-index:30; }
 .onboarding-card-slot-small { width:116px; height:156px; flex:0 0 116px; margin-left:auto; }
-.onboarding-card-slot-large { width:280px; height:380px; align-self:center; }
-.onboarding-card-slot-save { width:280px; height:380px; align-self:center; }
+.onboarding-card-slot-large, .onboarding-card-slot-save { width:280px; height:380px; align-self:center; }
 .onboarding-photo { position:relative; cursor:pointer; text-align:center; }
 .onboarding-photo input { position:absolute; inset:0; opacity:0; width:100%; cursor:pointer; }
-.onboarding-photo small { color:var(--muted); margin-left:8px; }
 
 .onboarding-photo-row { display:flex; align-items:center; gap:16px; }
 .onboarding-photo-row > .onboarding-photo { flex:1; background:var(--card); color:var(--ink); border:1px solid var(--line); }

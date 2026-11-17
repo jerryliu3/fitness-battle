@@ -37,10 +37,10 @@ it("keeps preview read-only and card model stable while fields are edited", asyn
   expect(r.root.findByType("OnboardingAthlete" as never).props.model).toBe(first);
   await act(async () => r.root.findAllByType("input")[0].props.onBlur());
   expect(r.root.findByType("OnboardingAthlete" as never).props.model.name).toBe("Taylor");
-  await press("See yourself compete");
+  await press("Continue");
   expect(r.root.findByType("OnboardingOvertake" as never).props.name).toBe("Taylor");
   await act(async () => r.root.findByType("OnboardingOvertake" as never).props.onComplete());
-  await press("Make it official");
+  await press("Continue");
   expect(r.root.findAllByType("a").some(n => n.props.children === "Sign in")).toBe(false);
   await act(async () => r.root.findByType("form").props.onSubmit({ preventDefault: vi.fn() }));
   expect(mock.push).toHaveBeenCalledWith("/app/onboarding?preview=1&sport=running");
@@ -53,9 +53,9 @@ it("shows email confirmation inline after signup and marks the introduction befo
   await act(async () => { r = create(createElement(Welcome)); });
   const press = await athlete(r);
   await act(async () => r.root.findAllByType("input")[0].props.onChange({ target: { value: "Taylor" } }));
-  await press("See yourself compete");
+  await press("Continue");
   await act(async () => r.root.findByType("OnboardingOvertake" as never).props.onComplete());
-  await press("Make it official");
+  await press("Continue");
   await act(async () => r.root.findAllByType("input")[0].props.onChange({ target: { value: "taylor@example.com" } }));
   await act(async () => r.root.findAllByType("input")[1].props.onChange({ target: { value: "password" } }));
   await act(async () => r.root.findByType("form").props.onSubmit({ preventDefault: vi.fn() }));
@@ -73,9 +73,9 @@ it("preserves an invitation when saving the athlete inline", async () => {
   expect(r.root.findAllByType("a").find(n => n.props.children === "I already have an account")!.props.href).toContain("next=%2Fapp%2Farena%3Finvite%3Dcrew");
   const press = await athlete(r);
   await act(async () => r.root.findAllByType("input")[0].props.onChange({ target: { value: "Taylor" } }));
-  await press("See yourself compete");
+  await press("Continue");
   await act(async () => r.root.findByType("OnboardingOvertake" as never).props.onComplete());
-  await press("Make it official");
+  await press("Continue");
   await act(async () => {
     r.root.findAllByType("input")[0].props.onChange({ target: { value: "taylor@example.com" } });
     r.root.findAllByType("input")[1].props.onChange({ target: { value: "password" } });

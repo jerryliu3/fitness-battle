@@ -1,4 +1,5 @@
 "use client";
+import { GUEST_SIGNUP_PENDING_KEY } from "@fitness-battle/shared";
 import { BackButton } from "@/ui/back-button";
 import { AppParagraph, AppHeading } from "@/ui/section";
 
@@ -38,6 +39,7 @@ function LoginForm() {
     setBusy(true);
     setError(null);
     try {
+      if (fromOnboarding) try { localStorage.removeItem(GUEST_SIGNUP_PENDING_KEY); } catch {}
       const result = await signIn(email, password);
       if (result.error) {
         setError(result.error);

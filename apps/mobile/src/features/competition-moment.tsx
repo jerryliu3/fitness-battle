@@ -49,7 +49,6 @@ export function CompetitionMoment({
   embedded = false,
   practice = false,
   onOvertakeCountChange,
-  fill = false,
   onBack,
   dimension = defaultCompeteFieldView(moment.sport),
   course = null,
@@ -62,7 +61,6 @@ export function CompetitionMoment({
   embedded?: boolean;
   practice?: boolean;
   onOvertakeCountChange?: (count: number) => void;
-  fill?: boolean;
   onBack?: () => void;
   dimension?: FieldViewDimension;
   course?: RaceCourse | null;
@@ -241,7 +239,7 @@ export function CompetitionMoment({
     );
 
   return (
-    <View style={embedded && !fill ? { height: 600 } : { flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <View
         onLayout={(e) => setHeight(e.nativeEvent.layout.height)}
         style={StyleSheet.absoluteFill}

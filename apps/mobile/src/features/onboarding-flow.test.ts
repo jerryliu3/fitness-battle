@@ -25,7 +25,9 @@ vi.mock("../ui/onboarding-canvas", () => ({ OnboardingCanvas: ({ children }: { c
 import Onboarding from "../../app/onboarding";
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); vi.clearAllMocks(); mock.values.clear(); mock.preview = false;
-  Object.assign(state, freshState()); mock.upload.mockResolvedValue("https://example.com/new.jpg");
+  Object.assign(state, freshState()); mock.dispatch.mockImplementation(action => {
+    if (action.type === "opt-in") state.ratings.find(r => r.sport === action.sport)!.optedIn = true;
+  }); mock.upload.mockResolvedValue("https://example.com/new.jpg");
 });
 const next = (r: ReactTestRenderer) => act(async () => r.root.findByType("FocusButton" as never).props.onPress());
 it.each([false, true])("collects details first, registers one sport, shows a claimed card immediately (preview=%s)", async preview => {
@@ -38,6 +40,11 @@ it.each([false, true])("collects details first, registers one sport, shows a cla
   await next(r);
   expect(r.root.findAllByType("TrackerConnections" as never)).toHaveLength(preview ? 0 : 1);
   await next(r);
+
+  if (!preview) {
+    const actions = mock.dispatch.mock.calls.map(([action]) => action.type);
+    expect(actions.indexOf("set-timezone")).toBeLessThan(actions.indexOf("opt-in"));
+  }
   await act(async () => r.root.findByType("EventRegistration" as never).props.onBack());
   expect(r.root.findAllByType("TrackerConnections" as never)).toHaveLength(preview ? 0 : 1);
   await next(r);

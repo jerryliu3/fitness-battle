@@ -24,6 +24,7 @@ import { FocusButton, useFocusStyles } from "../src/ui/focus";
 import { AppText } from "../src/ui/section";
 const SPORT_EMOJI_STYLE = { textAlign: "center" as const, transform: [{ scale: 4.5 }], includeFontPadding: false };
 
+
 export default function Welcome() {
   const { user, loading, signUp } = useAuth();
   const { state } = useCompeteStore();
@@ -128,7 +129,7 @@ export default function Welcome() {
   const box = (top: number, height: number) => ({ position: "absolute" as const, left: 16, right: 16, top, height });
   return <View style={{ flex: 1, backgroundColor: colors.paper, overflow: "hidden" }}>
     {step === "overtake" && <View style={{ position: "absolute", inset: 0 }}>
-      <OnboardingOvertake fill sport={draft.sport} name={draft.name} photo={draft.photo} onOvertakeCountChange={setPreviewPasses}
+      <OnboardingOvertake sport={draft.sport} name={draft.name} photo={draft.photo} onOvertakeCountChange={setPreviewPasses}
         onBack={() => setStep("athlete")} onComplete={() => void next()} />
     </View>}
     <SafeAreaView pointerEvents="box-none" style={{ flex: 1 }} edges={["top", "bottom"]}>

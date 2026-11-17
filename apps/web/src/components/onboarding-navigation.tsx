@@ -1,6 +1,6 @@
 "use client";
 import { GUEST_SIGNUP_PENDING_KEY, hasCompletedOnboardingIntro } from "@fitness-battle/shared";
-import { resolveSafePostLoginPath } from "@/lib/auth/login-redirect";
+import { resolvePostOnboardingPath, resolveSafePostLoginPath } from "@/lib/auth/login-redirect";
 import { readGuestIntroDraft } from "@/lib/guest-intro";
 import { useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -19,7 +19,7 @@ export function OnboardingNavigation() {
     if (preview) return;
     if (loading || !user || !state || (loadStatus !== "ready" && loadStatus !== "local")) return;
     if (state.onboardingCompleted) {
-      if (path === "/app/welcome" || path === "/app") router.replace("/app/today");
+      if (path === "/app/welcome" || path === "/app") router.replace(resolvePostOnboardingPath(next));
       return;
     }
     if (connecting) return;

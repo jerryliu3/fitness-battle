@@ -103,8 +103,8 @@ Native `/onboarding` and web `/app/onboarding` have three pages:
    entry ticket. This question is omitted when accepted, real synced workouts exist
    for that sport. A connection with no workouts does not suppress it. Back returns
    to trackers while retaining the registration. Opening this page registers the event
-   and animates the ticket to its confirmed face; Continue saves final details and
-   enters the app. Volume defaults to 0 and is capped at 1,000 for every sport. No fourth page.
+   after saving the chosen profile preferences, then animates the ticket to its
+   confirmed face. Continue saves the photo and weekly volume and enters the app. Volume defaults to 0 and is capped at 1,000 for every sport. No fourth page.
 
 Practice rivals use the same stock portrait URLs already used by Goalmaxxing:
 Alex uses its male portrait and Maya its female portrait. The guest’s own chosen

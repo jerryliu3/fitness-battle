@@ -111,7 +111,7 @@ function Welcome({ preview }: { preview: boolean }) {
     <div className="onboarding-progress" role="img" aria-label={`Step ${index + 1} of ${steps.length}`}>{steps.map((s, i) => <span key={s} data-complete={i <= index} />)}</div>
     <OnboardingAthlete model={card} step={step} root={top} />
     <div className="onboarding-heading" data-compact={step === "overtake" || step === "growth"}>
-      {step !== "growth" && <AppHeading level={1} role="display">{ONBOARDING_TITLES[step]}</AppHeading>}
+      {step !== "growth" && <AppHeading level={1} role="display">{step === "athlete" ? `Welcome ${draft.name.trim() || "athlete"}!` : ONBOARDING_TITLES[step]}</AppHeading>}
       {(step === "overtake" || step === "growth") && <div data-card-slot className="onboarding-card-slot-small" />}
     </div>
     {step === "sport" && <>
@@ -152,13 +152,13 @@ function Welcome({ preview }: { preview: boolean }) {
         <label className="fb-field">Email<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} disabled={confirmation} /></label>
         <label className="fb-field">Password<input type="password" autoComplete="new-password" minLength={6} required value={password} onChange={e => setPassword(e.target.value)} disabled={confirmation} /></label>
         {confirmation && <AppParagraph role="status">Check your email to confirm your account and continue setup.</AppParagraph>}
-        <div className="onboarding-actions">{back}<button className="fb-btn" type="submit" disabled={busy || confirmation || !email.trim() || password.length < 6}>{busy ? "Creating…" : "Create account"}</button></div>
+        <div className="onboarding-actions">{back}<button className="fb-btn" type="submit" disabled={busy || confirmation || !email.trim() || password.length < 6}>{busy ? "Creating…" : "Continue"}</button></div>
       </form>
       <AppParagraph typographyRole="caption">By creating an account you agree to our <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.</AppParagraph>
     </>}
     {error && <AppParagraph role="alert">{error}</AppParagraph>}
     {step !== "sport" && step !== "account" && step !== "overtake" && <div className="onboarding-actions">
-      {back}<button className="fb-btn" type="button" disabled={photoBusy || (step === "athlete" && !draft.name.trim())} onClick={() => void next()}>{step === "athlete" ? "See yourself compete" : step === "growth" ? "Make it official" : "Continue"}</button>
+      {back}<button className="fb-btn" type="button" disabled={photoBusy || (step === "athlete" && !draft.name.trim())} onClick={() => void next()}>Continue</button>
     </div>}
     {step === "sport" && !authenticatedIntro && <Link className="fb-btn-ghost" prefetch href={`/login?from=onboarding${preview ? "&preview=1" : ""}${nextQuery ? `&${nextQuery}` : ""}`}>I already have an account</Link>}
   </section>;

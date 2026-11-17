@@ -19,7 +19,9 @@ vi.mock("@/lib/profile/avatar-upload", () => ({ uploadWebProfileAvatar: mock.upl
 vi.mock("@/lib/supabase/client", () => ({ createClient: vi.fn() }));
 import Onboarding from "@/app/app/onboarding/page";
 beforeEach(() => {
-  vi.clearAllMocks(); mock.storage.clear(); mock.params = new URLSearchParams(); Object.assign(state, freshState());
+  vi.clearAllMocks(); mock.storage.clear(); mock.params = new URLSearchParams(); Object.assign(state, freshState()); mock.dispatch.mockImplementation(action => {
+    if (action.type === "opt-in") state.ratings.find(r => r.sport === action.sport)!.optedIn = true;
+  });
   mock.upload.mockResolvedValue("https://example.com/athlete.jpg");
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const storage = { getItem: (key: string) => mock.storage.get(key) ?? null, setItem: (key: string, value: string) => mock.storage.set(key, value), removeItem: (key: string) => mock.storage.delete(key) };
@@ -37,6 +39,11 @@ it.each([false, true])("uses one event with weekly volume on the starting line a
   expect(r.root.findAllByType("input")).toHaveLength(1);
   expect(r.root.findByType("select").props.value).toBe("");
   await next(r); await next(r);
+
+  if (!preview) {
+    const actions = mock.dispatch.mock.calls.map(([action]) => action.type);
+    expect(actions.indexOf("set-timezone")).toBeLessThan(actions.indexOf("opt-in"));
+  }
   await act(async () => r.root.findByType("EventRegistration" as never).props.onBack());
   expect(r.root.findAllByType("TrackerConnections" as never)).toHaveLength(preview ? 0 : 1);
   await next(r);

@@ -3,17 +3,19 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 vi.mock("./competition-moment", () => ({ CompetitionMoment: "CompetitionMoment" }));
 import { OnboardingOvertake } from "./onboarding-overtake";
-it("leaves field controls with the shared player and resets only on explicit replay", async () => {
+it("leaves playback controls with the shared player and continues without remounting", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const complete = vi.fn();
   let r!: ReactTestRenderer;
-  await act(async () => { r = create(createElement(OnboardingOvertake)); });
+  await act(async () => { r = create(createElement(OnboardingOvertake, { onComplete: complete })); });
   const player = () => r.root.findByType("CompetitionMoment" as never);
   const first = player();
   expect(first.props.dimension).toBe("4d");
   expect(first.props.course).not.toBeNull();
   expect(r.root.findAllByType("button")).toHaveLength(0);
   await act(async () => player().props.onConfirm());
-  expect(player()).not.toBe(first);
+  expect(player()).toBe(first);
+  expect(complete).toHaveBeenCalledTimes(1);
   await act(async () => r.unmount());
 });
 it.each(["walking", "strength"] as const)("uses the captured %s volume on the default Timeline", async sport => {

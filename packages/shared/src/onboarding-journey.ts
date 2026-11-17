@@ -1,10 +1,8 @@
 import { VITALS_LAB_METRICS, type VitalsLabMetricDisplay } from "./vitals-lab-body";
-import type { CrewWeekRelayInput } from "./compete/crew-relay";
-import { SPORT_IDS, type SportId, type UnitSystem } from "./compete/sports";
+import { crewWeekRelay, type CrewWeekRelayInput } from "./compete/crew-relay";
+import { SPORTS, SPORT_IDS, type CompeteState, type SportId, type UnitSystem } from "./compete/sports";
 import { athleteCardModelForPeer, type AthleteCardModel } from "./athlete-card";
 import { athleteLocationLine } from "./countries";
-import { SPORTS } from "./compete/sports";
-import { crewWeekRelay } from "./compete/crew-relay";
 
 export const ONBOARDING_PORTRAITS = {
   alex: "https://randomuser.me/api/portraits/men/32.jpg",
@@ -20,6 +18,7 @@ export const ONBOARDING_SPORT_TILES = {
 
 export const GUEST_INTRO_DRAFT_KEY = "overtaek-guest-intro-draft-v1";
 export const GUEST_SIGNUP_PENDING_KEY = "overtaek-guest-signup-email-v1";
+export const ONBOARDING_SETUP_TITLES = ["Almost there! Final details", "Bring your training along.", "Your first event"] as const;
 export const ONBOARDING_STEPS = ["sport", "athlete", "overtake", "growth", "account"] as const;
 export type OnboardingStep = typeof ONBOARDING_STEPS[number];
 export const ONBOARDING_TITLES: Record<OnboardingStep, string> = {
@@ -72,7 +71,7 @@ export type OnboardingWeeklyVolumes = Partial<Record<SportId, string>>;
 export function parseOnboardingWeeklyVolumes(value: unknown): OnboardingWeeklyVolumes {
   if (!value || typeof value !== "object") return {};
   const saved = value as Record<string, unknown>;
-  return Object.fromEntries(SPORT_IDS.flatMap(sport => typeof saved[sport] === "string" ? [[sport, saved[sport]]] : []));
+  return Object.fromEntries(SPORT_IDS.flatMap(sport => typeof saved[sport] === "string" ? [[sport, onboardingWeeklyVolumeInput(saved[sport])]] : []));
 }
 
 export function onboardingWeeklyVolumeUnit(sport: SportId, units: UnitSystem) {
@@ -90,8 +89,7 @@ export function onboardingDeclaredVolume(sport: SportId, value: string | undefin
   if (!value?.trim()) return undefined;
   const amount = Number(value);
   if (!Number.isFinite(amount) || amount < 0) return undefined;
-  const native = amount * (sport === "running" || sport === "cycling" ? (units === "metric" ? 1000 : 1609.344) : sport === "strength" ? 60 : 1);
-  return Number.isFinite(native) ? native : undefined;
+  return Math.min(1000, amount) * (sport === "running" || sport === "cycling" ? (units === "metric" ? 1000 : 1609.344) : sport === "strength" ? 60 : 1);
 }
 
 export function hasCompletedOnboardingIntro(draft: GuestIntroDraft | null, pendingEmail: string | null, email?: string | null) {
@@ -177,6 +175,6 @@ export function onboardingCrewGoal(draft: GuestIntroDraft, progress: number) {
 }
 
 /** A connection alone is not evidence that any workouts were imported. */
-export function hasOnboardingTrainingHistory(state: Pick<import("./compete/sports").CompeteState, "activities">, sport: SportId) {
+export function hasOnboardingTrainingHistory(state: Pick<CompeteState, "activities">, sport: SportId) {
   return state.activities.some(activity => activity.sport === sport && activity.source !== "manual" && activity.source !== "history" && activity.provenance !== "demo" && activity.provenance !== "manual" && (activity.disposition ?? "counted") === "counted" && !activity.journalOnly);
 }

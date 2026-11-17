@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guestIntroForAccount, parseGuestIntroDraft, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, ONBOARDING_GROWTH, ONBOARDING_STEPS, ONBOARDING_FEATURES, hasCompletedOnboardingIntro, onboardingCrewPreview, ONBOARDING_VITALS_METRICS, fitOnboardingCanvas, onboardingGrowthScore, onboardingCrewReplay } from "./onboarding-journey";
+import { guestIntroForAccount, parseGuestIntroDraft, parseOnboardingWeeklyVolumes, onboardingWeeklyVolumeInput, onboardingDeclaredVolume, ONBOARDING_GROWTH, ONBOARDING_STEPS, ONBOARDING_FEATURES, hasCompletedOnboardingIntro, onboardingCrewPreview, ONBOARDING_VITALS_METRICS, fitOnboardingCanvas, onboardingGrowthScore, onboardingCrewReplay } from "./onboarding-journey";
 
 const draft = { sport: "walking", name: "Taylor", city: "Boston", countryCode: "US" };
 describe("guest profile handoff", () => {
@@ -23,13 +23,14 @@ describe("weekly volume integration", () => {
   it("restores only supported string declarations", () => {
     expect(parseOnboardingWeeklyVolumes({ running: "7", walking: 28000, swimming: "10" })).toEqual({ running: "7" });
     expect(parseOnboardingWeeklyVolumes(null)).toEqual({});
+    expect(parseOnboardingWeeklyVolumes({ running: "28000", walking: "9999" })).toEqual({ running: "1000", walking: "1000" });
   });
   it.each([
     ["running", "7", "us", 11265.408], ["cycling", "40", "metric", 40000],
-    ["walking", "28000", "us", 28000], ["strength", "120", "metric", 7200],
+    ["walking", "28000", "us", 1000], ["strength", "120", "metric", 7200],
     ["running", "0", "us", 0], ["running", "", "us", undefined],
     ["strength", " ", "us", undefined], ["walking", "-1", "metric", undefined],
-    ["running", "invalid", "us", undefined], ["running", "1e308", "us", undefined],
+    ["running", "invalid", "us", undefined], ["running", "1e308", "us", 1609344],
   ] as const)("converts %s %s %s to native volume", (sport, value, units, native) => {
     expect(onboardingDeclaredVolume(sport, value, units)).toBe(native);
   });
@@ -100,4 +101,11 @@ it("uses actual synced workouts, not a connected tracker or generated activity, 
   for (const override of [{ source: "history" as const }, { provenance: "demo" as const }, { disposition: "pending" as const }, { disposition: "excluded" as const }, { journalOnly: true }]) {
     expect(hasOnboardingTrainingHistory({ activities: [{ ...activity, ...override }] }, "running")).toBe(false);
   }
+});
+
+it("caps editable volume without breaking empty or fractional entry", () => {
+  expect(onboardingWeeklyVolumeInput("1200")).toBe("1000");
+  expect(onboardingWeeklyVolumeInput("12.5")).toBe("12.5");
+  expect(onboardingWeeklyVolumeInput("")).toBe("");
+  expect(onboardingWeeklyVolumeInput("-1")).toBe("0");
 });

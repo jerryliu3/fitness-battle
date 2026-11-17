@@ -5,7 +5,7 @@ import { Modal, TextInput, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import {
-  detectDeviceTimeZone, guestIntroForAccount, SPORTS, hasOnboardingTrainingHistory,
+  ONBOARDING_SETUP_TITLES as titles, detectDeviceTimeZone, guestIntroForAccount, SPORTS, hasOnboardingTrainingHistory,
   type ProfileGender, type SportId, type UnitSystem,
   onboardingWeeklyVolumeInput, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, onboardingWeeklyVolumeUnit, type OnboardingWeeklyVolumes,
 } from "@fitness-battle/shared";
@@ -25,8 +25,6 @@ import { uploadNativeProfileAvatar } from "../src/lib/avatar-upload";
 import { useReducedMotion } from "../src/ui/use-reduced-motion";
 import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
-
-const titles = ["Almost there! Final details", "Bring your training along.", "Your first event"];
 
 export default function Onboarding() {
   const f = useFocusStyles();
@@ -104,11 +102,17 @@ export default function Onboarding() {
   useEffect(() => {
     if (step !== 2 || registered || !state || !ready || loadedKey !== key || (!preview && (!user || !canWrite))) return;
     if (!preview && user) {
+      dispatch({ type: "rename", name: name.trim() });
+      dispatch({ type: "set-city", city: city.trim() });
+      dispatch({ type: "set-gender", gender: gender || null });
+      dispatch({ type: "set-country", countryCode });
+      dispatch({ type: "set-units", units });
+      dispatch({ type: "set-timezone", timezone });
       if (!state.ratings.some(r => r.sport === sport && r.optedIn)) dispatch({ type: "opt-in", sport, accountId: user.id });
       dispatch({ type: "set-primary", sport });
     }
     setRegistered(true);
-  }, [step, registered, state, ready, loadedKey, key, preview, user, canWrite, sport, dispatch]);
+  }, [step, registered, state, ready, loadedKey, key, preview, user, canWrite, sport, name, city, gender, countryCode, units, timezone, dispatch]);
 
   if (!preview && state?.onboardingCompleted) return <Redirect href="/today" />;
   if (!state || !ready) return <AppText>Loading setup…</AppText>;
@@ -116,10 +120,10 @@ export default function Onboarding() {
   const hasHistory = hasOnboardingTrainingHistory(state, sport);
   const needsVolume = !hasHistory;
   function advance() { setStep(Math.min(2, step + 1)); }
-  function back() { setStep(Math.max(0, step - 1)); }
+  function back() { setRegistered(false); setStep(Math.max(0, step - 1)); }
 
   async function finish() {
-    if (preview) { complete(); return; }
+    if (preview) { router.replace("/arena"); return; }
     if (!user || !state || !canWrite || finished.current) return;
     finished.current = true;
     setSaving(true); setSaveError(null);
@@ -136,18 +140,8 @@ export default function Onboarding() {
       return;
     } finally { setSaving(false); }
     if (owner.current !== user.id) return;
-    dispatch({ type: "rename", name: name.trim() });
-    dispatch({ type: "set-city", city: city.trim() });
-    if (gender) dispatch({ type: "set-gender", gender });
-    if (countryCode.length === 2) dispatch({ type: "set-country", countryCode });
-    dispatch({ type: "set-units", units });
-    dispatch({ type: "set-timezone", timezone });
     const declaredWeeklyVolume = onboardingDeclaredVolume(sport, weeklyVolume[sport] ?? "0", units);
     if (!hasHistory && declaredWeeklyVolume !== undefined) dispatch({ type: "declare-effort", sport, declaredWeeklyVolume });
-    complete();
-  }
-  function complete() {
-    if (preview) { router.replace("/arena"); return; }
     dispatch({ type: "complete-onboarding" });
     void AsyncStorage.removeItem(key).catch(() => {});
     if (guestImported) void AsyncStorage.multiRemove([GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY]).catch(() => {});
@@ -156,7 +150,7 @@ export default function Onboarding() {
 
   return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "fade"}>
     <SafeAreaProvider><SafeAreaView style={f.safe} edges={["top", "bottom"]}>
-        <OnboardingProgress index={step} count={3} />
+        <OnboardingProgress index={step} count={titles.length} />
         <OnboardingCanvas>
         <View style={{ padding: 16 }}><MotionStep identity={`${step}`}>
           <AppText role="display" accessibilityRole="header">{titles[step]}</AppText>
@@ -188,7 +182,7 @@ export default function Onboarding() {
                 value={weeklyVolume[sport] ?? "0"}
                 onChangeText={value => setWeeklyVolume(current => ({ ...current, [sport]: onboardingWeeklyVolumeInput(value) }))} />
             </View>}
-            <EventRegistration state={state} event={sport} registered={registered} ticketOnly busy={saving || (!preview && !canWrite)} error={saveError ?? undefined} onBack={back} onClaim={() => void finish()} onView={() => void finish()} />
+            <EventRegistration state={state} event={sport} registered={registered} ticketOnly busy={saving || (!preview && !canWrite)} error={saveError ?? undefined} onBack={back} onClaim={finish} onView={finish} />
           </>}
           {step < 2 && <View style={{ flexDirection: "row", gap: 12 }}>
             {step > 0 && <IconButton icon="back" label="Back" disabled={saving} onPress={back} />}
