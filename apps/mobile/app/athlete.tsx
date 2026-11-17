@@ -23,6 +23,7 @@ import {
   RECORD_DISTANCES,
   competitionTrack,
   effortPointProgress,
+  RANK_BANDS,
   type ProviderId,
   type ProfileGender,
   webProductPath,
@@ -57,6 +58,7 @@ import { SHELL_RADIUS } from "../src/theme";
 import { FocusButton, FocusSheet, FocusSidePanel } from "../src/ui/focus";
 import { ProfilePhoto } from "../src/features/profile-photo";
 import { AthleteCrest } from "../src/features/athlete-crest";
+import { RankSymbol } from "../src/ui/rank-symbol";
 import { Achievements } from "../src/features/club-achievements";
 import { AwardShelf } from "../src/ui/award-shelf";
 import { athleteCardModel, awardCards } from "@fitness-battle/shared";
@@ -477,18 +479,23 @@ const styles=useThemedStyles(stylesThemes);
             router.push("/blocked-athletes");
           }}
         />
-          <AccountActions showDeleteButton={false} footer={(openDelete) => (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 16 }}>
-              <LegalLinks />
-              <Pressable accessibilityRole="button" accessibilityLabel="Delete account" onPress={openDelete}>
-                <AppText role="label" style={{ color: "#b42318" }}>Delete account</AppText>
-              </Pressable>
-            </View>
-          )} />
-          <FocusButton
-            label="Sign out"
-            secondary
-            onPress={() => setConfirmSignOut(true)}
+          <AccountActions
+            showDeleteButton={false}
+            middle={
+              <FocusButton
+                label="Sign out"
+                secondary
+                onPress={() => setConfirmSignOut(true)}
+              />
+            }
+            footer={(openDelete) => (
+              <View style={{ gap: 14, paddingTop: 4 }}>
+                <LegalLinks />
+                <Pressable accessibilityRole="button" accessibilityLabel="Delete account" onPress={openDelete}>
+                  <AppText role="label" style={{ color: appearanceColors.statusError }}>Delete account</AppText>
+                </Pressable>
+              </View>
+            )}
           />
           <FocusSheet open={confirmSignOut} title="Sign out?" onClose={() => setConfirmSignOut(false)}><AppText role="body" secondary>You can sign in again to return to your account.</AppText><FocusButton label="Sign out" onPress={() => { setConfirmSignOut(false); void signOut(); }} /><FocusButton label="Cancel" secondary onPress={() => setConfirmSignOut(false)} /></FocusSheet>
         </SectionStack>
@@ -583,6 +590,33 @@ const styles=useThemedStyles(stylesThemes);
           <AppText role="body" secondary>
             Activities can raise your live score after today’s expected training is covered. Shortfalls appear the next day. Official scores and levels finalize weekly.
           </AppText>
+          <SectionHeader title="Levels" />
+          <View style={{ gap: 10 }}>
+            {RANK_BANDS.map((band) => (
+              <View
+                key={band.id}
+                style={[
+                  f.row,
+                  {
+                    gap: 14,
+                    padding: 12,
+                    borderRadius: SHELL_RADIUS.card,
+                    borderWidth: 1,
+                    borderColor: SHELL_COLORS.line,
+                    backgroundColor: SHELL_COLORS.card,
+                  },
+                ]}
+              >
+                <RankSymbol rank={band.id} size={48} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <AppText role="label">{band.name}</AppText>
+                  <AppText role="caption" secondary>
+                    {band.min}+ · {band.blurb}
+                  </AppText>
+                </View>
+              </View>
+            ))}
+          </View>
         </SectionStack>
 </ScrollView>
       </SafeAreaView>
