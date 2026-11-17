@@ -177,6 +177,19 @@ and the counted weekly streak. No percentile is inferred from ratings. Missing
 photos use initials; no cutout processing is required. See the
 [implementation review](reviews/athlete-crest/README.md).
 
+The November 16 layout refinement keeps the existing finish and interactions.
+The front shows the country flag and three selected highlights in one row;
+competition metrics move to the back. Defaults prioritize available primary-sport
+PBs, then fill from the existing highlight catalog, up to three. Explicit selections,
+including an empty selection, remain unchanged. The back groups identity/location,
+the first three available primary-sport personal bests with dates, competition
+metrics (overtakes, rounds, week streak and podiums) and counted lifetime distance, activities
+and moving time. Metadata values and labels use the largest sizes that fit the three-column
+front and four-column competition row. Dividers separate categories only;
+personal-best rows have no rules. Both faces use the same small circular black/yellow logo, with transparent
+negative space, centered slightly lower in the shield tip.
+No inferred athlete-profile percentages are displayed.
+
 The [Brand & Ember study](brand-study/brand-and-ember-studio.md) is available at `/design/brand` under the existing design access gate. It preserves ten brand territories, adds the current Ember in a Chain Reaction-inspired setting, and explores Everyday Club, Open Field and Pocket Arena as calmer foundations for customizable star finishes. The October 17 review selects Open Field’s structure with Everyday Club’s warm white, charcoal and gold. Ember’s preferred art references are The Pass / Challenger, Marginal Gains and Higher Ground, with shared anatomy and adjustable finishes. The study locker uses local fictional ownership and proposed unlock examples; it does not establish production rewards, entitlement, scoring or storage rules.
 
 ## Shared visual language

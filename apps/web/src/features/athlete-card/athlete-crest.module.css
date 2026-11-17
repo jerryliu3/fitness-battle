@@ -21,33 +21,42 @@
 .rating { left: 8cqi; }
 .sport { right: 8cqi; text-align: right; }
 .rating strong, .sport strong { display: block; font: 400 8cqi/1 var(--font-display),sans-serif; letter-spacing: -.025em; text-transform: uppercase; }
-.rating > span, .sport > span { display: block; margin-top: 1cqi; font: 700 2.7cqi/1.2 var(--font-body),sans-serif; letter-spacing: .03em; text-transform: uppercase; }
-.portrait { position: absolute; top: 21cqi; left: 50%; width: 30cqi; height: 30cqi; margin-left: -15cqi; overflow: visible; background: transparent; }
+.rating > span, .sport > span { display: block; margin-top: 1cqi; font: 700 3.2cqi/1.2 var(--font-body),sans-serif; letter-spacing: .03em; text-transform: uppercase; }
+.flag { position: absolute; top: 39cqi; left: 11cqi; font-size: 7cqi; line-height: 1; }
+.portrait { position: absolute; top: 26cqi; left: 50%; width: 30cqi; height: 30cqi; margin-left: -15cqi; overflow: visible; background: transparent; }
 .photo, .portrait > span { width: 100%; height: 100%; border-radius: 50%; background: #c5d4d9; }
 .photo { display: block; object-fit: cover; pointer-events: none; }
 .portrait > span { display: grid; place-items: center; font: 400 15cqi var(--font-display),sans-serif; }
 .wreath { position: absolute; z-index: 1; max-width: none; pointer-events: none; }
-.identity { position: absolute; top: 55cqi; left: 9cqi; right: 9cqi; text-align: center; }
-.crest .identity h2 { font: 400 7.5cqi/1.05 var(--font-display),sans-serif; text-transform: uppercase; margin: .5cqi 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.crest .identity[data-long-name="true"] h2 { font-size: 5.8cqi; }
-.stats { position: absolute; top: 70cqi; left: 10cqi; right: 10cqi; border-top: 1px solid #142b3b40; padding-top: 3cqi; }
+.identity { position: absolute; top: 61cqi; left: 9cqi; right: 9cqi; text-align: center; }
+.crest .identity h2 { font: 400 9.5cqi/1.05 var(--font-display),sans-serif; text-transform: uppercase; margin: .5cqi 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.crest .identity[data-long-name="true"] h2 { font-size: 6.5cqi; }
+.stats { position: absolute; top: 79cqi; left: 10cqi; right: 10cqi; border-top: 1px solid #142b3b40; padding-top: 5cqi; }
 .records, .totals { display: grid; grid-template-columns: repeat(3,1fr); gap: 2cqi; text-align: center; }
-.totals { margin-top: 3cqi; }
-.stat { min-width: 0; display: flex; flex-direction: row; align-items: baseline; justify-content: center; gap: 1.2cqi; }
-.stat strong { font: 700 4.2cqi/1.1 var(--font-form),sans-serif; letter-spacing: -.05em; font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
-.stat > span { font-size: 2.5cqi; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.totals { margin-top: 2cqi; }
+.competition { grid-template-columns: repeat(4,1fr); }
+.stat { min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1.5cqi; }
+.stat strong { font: 700 6.4cqi/1.1 var(--font-form),sans-serif; letter-spacing: -.05em; font-variant-numeric: tabular-nums; max-width: 100%; overflow-wrap: anywhere; flex-shrink: 0; }
+.stat > span { font-size: 3.6cqi; font-weight: 600; max-width: 100%; overflow-wrap: anywhere; }
 .stat[data-dim="true"] strong { opacity: .5; }
 .noRecords { margin: 0; min-height: 8cqi; display: grid; place-items: center; font-size: 3cqi; }
-.brand { position: absolute; top: 108cqi; left: 0; right: 0; text-align: center; }
-.brand .wordmark { font-size: 4.5cqi; }
-.wordmark { font: 900 6cqi/1 var(--font-overtaek),var(--font-body),sans-serif; letter-spacing: -.075em; }
+.brand { position: absolute; top: 107cqi; left: 0; right: 0; display: flex; justify-content: center; }
+.logo { display: block; width: 12cqi; height: 12cqi; object-fit: contain; pointer-events: none; }
+.reverse .stat { gap: 1cqi; }
+.reverse .totals { margin-top: 1cqi; }
+.reverse .stat strong { font-size: 5.5cqi; }
+.reverse .stat > span { font-size: 3.2cqi; }
 .reverse { position: absolute; inset: 7cqi 10cqi 16cqi; }
-.crest .reverse h2 { font-size: 6.5cqi; line-height: 1.1; letter-spacing: -.05em; margin: 3cqi 0 2cqi; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.reverse p { font-size: 3cqi; margin: 0 0 2cqi; }
-.crest .reverse h3 { font-size: 3.5cqi; line-height: 1.2; margin: 2cqi 0 1.5cqi; }
+.crest .reverse h2 { font-family: var(--font-display),sans-serif; font-size: 7.5cqi; text-transform: uppercase; line-height: 1.1; letter-spacing: -.05em; margin: 0 0 1cqi; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.location { display: flex; align-items: baseline; justify-content: space-between; gap: 3cqi; }
+.location > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.location > span:last-child { flex-shrink: 0; }
+.reverse p { font-size: 3.5cqi; margin: 0 0 2cqi; }
+.detailSection { border-top: 1px solid #142b3b40; margin-top: 1.5cqi; padding-top: 1.5cqi; }
+.crest .reverse h3 { font-size: 4.2cqi; line-height: 1.2; margin: 0 0 1cqi; }
 .reverse dl { margin: 0; }
-.reverse dl > div { display: flex; justify-content: space-between; align-items: center; gap: 3cqi; padding: 1.2cqi 0; border-bottom: 1px solid #142b3b30; }
-.reverse dt { font-size: 3.3cqi; font-weight: 700; }
-.reverse time { display: block; font-size: 2.3cqi; font-weight: 400; margin-top: .5cqi; }
-.reverse dd { font: 600 5.2cqi var(--font-form),sans-serif; letter-spacing: -.04em; margin: 0; white-space: nowrap; }
+.reverse dl > div { display: flex; justify-content: space-between; align-items: center; gap: 3cqi; padding: .3cqi 0; }
+.reverse dt { min-width: 0; overflow-wrap: anywhere; font-size: 4cqi; font-weight: 700; }
+.reverse time { display: block; font-size: 3.1cqi; font-weight: 400; margin-top: .5cqi; }
+.reverse dd { font: 600 6.4cqi var(--font-form),sans-serif; letter-spacing: -.04em; margin: 0; white-space: nowrap; }
 @media (forced-colors: active) { .edge,.shadow,.face::after { display: none; } .face { background: Canvas; color: CanvasText; } }

@@ -2,7 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import { useReducedMotion } from "motion/react";
-import { APP_TIMEZONE, RANK_SYMBOL_GEOMETRY, rankSymbolForRankName, type AthleteCardModel } from "@fitness-battle/shared";
+import { APP_TIMEZONE, countryFlagEmoji, countryName, RANK_SYMBOL_GEOMETRY, rankSymbolForRankName, type AthleteCardModel } from "@fitness-battle/shared";
 import { cardOptics, REST_POSE } from "./card-optics";
 import { useCardRotation } from "./use-card-rotation";
 import styles from "./athlete-crest.module.css";
@@ -17,7 +17,7 @@ const WREATH_FRAME = {
 };
 const POINTS = [[24, 0], [296, 0], [320, 28], [320, 284], [300, 338], [160, 408], [20, 338], [0, 284], [0, 28]];
 const CLIP = `polygon(${POINTS.map(([x, y]) => `${x / WIDTH * 100}% ${y / HEIGHT * 100}%`).join(",")})`;
-function Wordmark() { return <span className={styles.wordmark}>overtaek</span>; }
+function BrandMark() { return <img className={styles.logo} src="/brand/overtaek/mark-transparent.png" alt="Overtaek" draggable={false} />; }
 function Stat({ value, label, dim = false }: { value: string | number; label: string; dim?: boolean }) {
   return <div className={styles.stat} data-dim={dim}><strong>{value}</strong><span>{label}</span></div>;
 }
@@ -32,6 +32,8 @@ export function AthleteCrest({ model, active = true }: { model: AthleteCardModel
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
   const details = rotation.backVisible;
   const photo = model.avatarUrl && model.avatarUrl !== failedPhoto;
+  const flag = countryFlagEmoji(model.countryCode);
+  const personalBests = model.personalBests ?? [];
   return <section className={styles.crest} aria-label="Athlete card" data-still={still}>
     <div ref={rotation.stage} className={styles.stage} style={cardOptics(REST_POSE) as CSSProperties} {...rotation.stageHandlers}>
       <div className={styles.shadow} aria-hidden="true" />
@@ -45,21 +47,27 @@ export function AthleteCrest({ model, active = true }: { model: AthleteCardModel
           <svg className={styles.track} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} fill="none" aria-hidden="true">{[0, 1, 2, 3, 4, 5].map(i => <rect key={i} x={-114 - i * 15} y={96 - i * 15} width={385 + i * 30} height={460 + i * 30} rx={155 + i * 15} stroke="currentColor" transform="rotate(-28 160 224)" />)}</svg>
           <div className={styles.rating}><strong>{model.score === null ? "—" : model.score.toLocaleString("en-US")}</strong><span>Effort Score</span></div>
           <div className={styles.sport}><strong>{model.sport}</strong><span>Primary sport</span></div>
+          {flag ? <span className={styles.flag} role="img" aria-label={countryName(model.countryCode) ?? model.countryCode!}>{flag}</span> : null}
           <div className={styles.portrait}>{photo ? <img className={styles.photo} src={model.avatarUrl!} alt="" draggable={false} onError={() => setFailedPhoto(model.avatarUrl)} /> : <span aria-hidden="true">{model.initials}</span>}
             <img className={styles.wreath} src={`/rank-symbols/${rankSymbolForRankName(model.rank)}.png`} alt="" draggable={false} style={WREATH_FRAME} />
           </div>
           <div className={styles.identity} data-long-name={model.name.length > 18}><h2 title={model.name}>{model.name}</h2></div>
           <div className={styles.stats}>
             {model.records.length ? <div className={styles.records} style={{ gridTemplateColumns: `repeat(${Math.min(3, model.records.length)}, 1fr)` }}>{model.records.slice(0, 3).map(r => <Stat key={r.id ?? r.label} value={r.value} label={!r.kind || r.kind === "record" ? `${r.label} PB` : r.label} />)}</div> : <p className={styles.noRecords}>No highlights selected</p>}
-            <div className={styles.totals}><Stat value={model.overtakes} label="Overtakes" /><Stat value={model.rounds} label="Rounds" /><Stat value={model.streak} label="Week streak" dim={!model.streakActive} /></div>
           </div>
-          <div className={styles.brand}><Wordmark /></div>
+          <div className={styles.brand}><BrandMark /></div>
         </div>
         <div className={`${styles.face} ${styles.back}`} aria-hidden={!details} inert={!details}>
-          <div className={styles.reverse}><Wordmark /><h2 title={model.name}>{model.name}</h2><p>{model.sport} · Primary sport</p>
-            <h3>{model.records.some(r => r.kind && r.kind !== "record") ? "Highlights" : "Personal bests"}</h3>{model.records.length ? <dl>{model.records.map(r => <div key={r.id ?? r.label}><dt>{r.label}{r.date ? <RecordDate date={r.date} timeZone={model.displayTimeZone ?? APP_TIMEZONE} /> : null}</dt><dd>{r.value}</dd></div>)}</dl> : <p>No highlights selected</p>}
-            <h3>On Overtaek</h3><div className={styles.totals}><Stat value={model.overtakes} label="Overtakes" /><Stat value={model.rounds} label="Rounds" /><Stat value={model.streak} label="Week streak" dim={!model.streakActive} /></div>
+          <div className={styles.reverse}>
+            <header><h2 title={model.name}>{model.name}</h2><p className={styles.location}><span title={model.location}>{model.location}</span><span>{model.rank ?? "Athlete"}</span></p></header>
+            <section className={styles.detailSection}>
+              <h3>Personal bests</h3>
+              {personalBests.length ? <dl>{personalBests.map(r => <div key={r.id ?? r.label}><dt>{r.label}{r.date ? <RecordDate date={r.date} timeZone={model.displayTimeZone ?? APP_TIMEZONE} /> : null}</dt><dd>{r.value}</dd></div>)}</dl> : <p>No personal bests yet</p>}
+            </section>
+            <section className={styles.detailSection}><h3>Competition</h3><div className={`${styles.totals} ${styles.competition}`}><Stat value={model.overtakes} label="Overtakes" /><Stat value={model.rounds} label="Rounds" /><Stat value={model.streak} label="Week streak" dim={!model.streakActive} /><Stat value={model.podiums ?? "—"} label="Podiums" /></div></section>
+            {model.lifetime ? <section className={styles.detailSection}><h3>Lifetime</h3><div className={styles.totals}><Stat value={model.lifetime.distance} label="Distance" /><Stat value={model.lifetime.activities} label="Activities" /><Stat value={model.lifetime.time} label="Moving time" /></div></section> : null}
           </div>
+          <div className={styles.brand}><BrandMark /></div>
         </div>
       </div>
     </div>

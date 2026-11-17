@@ -51,51 +51,38 @@ export interface AthleteCardModel {
   score: number | null;
   rank: string | null;
   records: AthleteCardHighlightItem[];
+  personalBests?: AthleteCardHighlightItem[];
+  podiums?: number;
   overtakes: number;
   rounds: number;
   streak: number;
   streakActive: boolean;
+  lifetime?: { distance: string; activities: string; time: string };
 }
 
 export function defaultAthleteCardHighlights(
   state: CompeteState,
   now = competeNow(state),
 ): AthleteCardHighlightItem[] {
-  const definitions =
-    state.primary === "running" || state.primary === "cycling"
-      ? RECORD_DISTANCES[state.primary]
-      : [];
-  const best = new Map(
-    personalRecordHistory(state, now)
-      .filter((r) => r.sport === state.primary)
-      .map((r) => [r.distanceId, r]),
-  );
-  return definitions.flatMap((d) => {
-    const record = best.get(d.id);
-    return record
-      ? [{ label: d.label, value: formatClockTime(record.seconds), date: record.startedAt }]
-      : [];
-  });
+  return defaultHighlightOptions(state, athleteCardHighlightCatalog(state, now)).map(cardHighlightItem);
 }
 
-/** Default Row-1 highlight IDs shown in the Athlete Card customizer before any edit. */
+/** Default selection shared by the card and its customizer. */
 export function defaultAthleteCardHighlightIds(
   state: CompeteState,
   now = competeNow(state),
 ): string[] {
-  const definitions =
-    state.primary === "running" || state.primary === "cycling"
-      ? RECORD_DISTANCES[state.primary]
-      : [];
-  const earned = new Set(
-    personalRecordHistory(state, now)
-      .filter((r) => r.sport === state.primary)
-      .map((r) => r.distanceId),
-  );
-  return definitions
-    .filter((d) => earned.has(d.id))
-    .slice(0, ATHLETE_CARD_HIGHLIGHT_LIMIT)
-    .map((d) => `pb:${state.primary}:${d.id}`);
+  return defaultHighlightOptions(state, athleteCardHighlightCatalog(state, now)).map(item => item.id);
+}
+
+function cardHighlightItem({ id, kind, label, value, date }: AthleteCardHighlightOption): AthleteCardHighlightItem {
+  return { id, kind, label, value, date };
+}
+
+function defaultHighlightOptions(state: CompeteState, catalog: AthleteCardHighlightOption[]) {
+  const primaryRecords = catalog.filter(item => item.id.startsWith(`pb:${state.primary}:`));
+  return [...primaryRecords, ...catalog.filter(item => !primaryRecords.includes(item))]
+    .slice(0, ATHLETE_CARD_HIGHLIGHT_LIMIT);
 }
 
 /** Pickable PBs, earned achievements, and statistics for Row 1 of the Athlete Card. */
@@ -105,7 +92,8 @@ export function athleteCardHighlightCatalog(
 ): AthleteCardHighlightOption[] {
   const options: AthleteCardHighlightOption[] = [];
 
-  for (const record of personalRecordHistory(state, now)) {
+  const bestRecords = new Map(personalRecordHistory(state, now).map(record => [`${record.sport}:${record.distanceId}`, record]));
+  for (const record of bestRecords.values()) {
     const sportName = sportById(record.sport).name;
     const distanceLabel =
       RECORD_DISTANCES[record.sport].find((d) => d.id === record.distanceId)?.label ??
@@ -265,17 +253,15 @@ export function athleteCardModelForPeer(input: {
 
 export function athleteCardModel(state: CompeteState, now = competeNow(state)): AthleteCardModel {
   const score = readAccountEffort(state,state.primary,now)?.liveScore ?? state.ratings.find(r => r.sport === state.primary)?.openElo ?? null;
-  const records: AthleteCardHighlightItem[] = Array.isArray(state.cardHighlights)
-    ? (() => {
-        const byId = new Map(athleteCardHighlightCatalog(state, now).map(item => [item.id, item]));
-        return state.cardHighlights
-          .slice(0, ATHLETE_CARD_HIGHLIGHT_LIMIT)
-          .flatMap(id => {
-            const item = byId.get(id);
-            return item ? [{ id: item.id, kind: item.kind, label: item.label, value: item.value, date: item.date }] : [];
-          });
-      })()
-    : defaultAthleteCardHighlights(state, now);
+  const options = athleteCardHighlightCatalog(state, now);
+  const catalog = new Map(options.map(item => [item.id, item]));
+  const highlights = Array.isArray(state.cardHighlights)
+    ? state.cardHighlights.slice(0, ATHLETE_CARD_HIGHLIGHT_LIMIT).flatMap(id => {
+        const item = catalog.get(id);
+        return item ? [item] : [];
+      })
+    : defaultHighlightOptions(state, options);
+  const records = highlights.map(cardHighlightItem);
   const streak = weeklyActivityStreak(state.activities, now, state.dailyHealth);
   const countryCode = state.countryCode ?? null;
   return {
@@ -286,8 +272,15 @@ export function athleteCardModel(state: CompeteState, now = competeNow(state)): 
     initials: initialsFromName(state.name),
     avatarUrl: state.avatarUrl ?? null,
     sport: sportById(state.primary).name, score, rank: state.effortAccounts?.[state.primary] ? RANK_NAMES[state.effortAccounts[state.primary]!.state.officialRankIndex] : score === null ? null : rankForElo(score).name,
+    personalBests: options.filter(item => item.id.startsWith(`pb:${state.primary}:`)).slice(0, 3).map(cardHighlightItem),
+    podiums: Number(catalog.get("stat:podiums")!.value),
     records, overtakes: state.lifetimeOvertakes, rounds: clubLifetimeTotals(state, now).weeks,
     streak: streak.count, streakActive: streak.active,
+    lifetime: {
+      distance: catalog.get("stat:distance")!.value,
+      activities: catalog.get("stat:sessions")!.value,
+      time: catalog.get("stat:time")!.value,
+    },
     displayTimeZone: accountTimeZone(state),
   };
 }
@@ -304,6 +297,12 @@ export function parseAthleteCardMessage(value: unknown): { model: AthleteCardMod
     !(m.avatarUrl === null || typeof m.avatarUrl === "string") ||
     !(m.score === null || (typeof m.score === "number" && Number.isFinite(m.score))) ||
     !(m.rank === null || typeof m.rank === "string") || typeof m.streakActive !== "boolean" ||
+    !(m.podiums === undefined || (typeof m.podiums === "number" && Number.isInteger(m.podiums) && m.podiums >= 0)) ||
+    !(m.personalBests === undefined || (Array.isArray(m.personalBests) && m.personalBests.length <= 3 && m.personalBests.every(r => r &&
+      typeof r.label === "string" && typeof r.value === "string" && typeof r.date === "string" &&
+      (r.id === undefined || typeof r.id === "string") && (r.kind === undefined || r.kind === "record")))) ||
+    !(m.lifetime === undefined || (m.lifetime !== null && typeof m.lifetime === "object" &&
+      [m.lifetime.distance, m.lifetime.activities, m.lifetime.time].every(value => typeof value === "string"))) ||
     ![m.overtakes, m.rounds, m.streak].every(n => typeof n === "number" && Number.isFinite(n) && n >= 0) ||
     !Array.isArray(m.records) || m.records.length > 4 || !m.records.every(r => r &&
       typeof r.label === "string" && typeof r.value === "string" && typeof r.date === "string" &&
