@@ -3,7 +3,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   detectDeviceTimeZone, guestIntroForAccount, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY,
-  nextDailyWaveWindowAt, waveTimeLabel, SPORTS, type ProfileGender, type SportId, type UnitSystem,
+  SPORTS, hasOnboardingTrainingHistory, type ProfileGender, type SportId, type UnitSystem,
   parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, onboardingWeeklyVolumeUnit, type OnboardingWeeklyVolumes,
 } from "@fitness-battle/shared";
 import { TrackerConnections } from "@/features/you/you-route";
@@ -28,10 +28,12 @@ function Setup({ preview }: { preview: boolean }) {
   const { state, dispatch, loadStatus } = useCompete();
   const { user, offlineMode } = useAuth();
   const router = useRouter(), params = useSearchParams();
+  const previewSport = preview ? SPORTS.find(item => item.id === params.get("sport"))?.id : undefined;
   const finished = useRef(false), top = useRef<HTMLElement>(null);
   const key = `onboarding-draft:v7:${user?.id ?? "guest"}`;
   const [loadedKey, setLoadedKey] = useState("");
   const [step, setStep] = useState(0);
+  const [registered, setRegistered] = useState(false);
   const [saving, setSaving] = useState(false), [saveError, setSaveError] = useState<string | null>(null);
   const owner = useRef(user?.id);
   owner.current = user?.id;
@@ -44,8 +46,6 @@ function Setup({ preview }: { preview: boolean }) {
   const [units, setUnits] = useState<UnitSystem>("us");
   const [timezone, setTimezone] = useState(() => detectDeviceTimeZone());
   const [guestImported, setGuestImported] = useState(false);
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(timer); }, []);
   useEffect(() => { top.current?.scrollIntoView({ block: "start" }); }, [step]);
   useEffect(() => {
     if (!state) return;
@@ -57,10 +57,11 @@ function Setup({ preview }: { preview: boolean }) {
       pending = localStorage.getItem(GUEST_SIGNUP_PENDING_KEY);
     } catch {}
     const guest = preview ? null : guestIntroForAccount(readGuestIntroDraft(), pending, user?.email);
-    const initialSport = guest?.sport ?? state.primary;
+    const initialSport = previewSport ?? guest?.sport ?? state.primary;
     finished.current = false;
-    const savedStep = Math.max(0, Math.min(3, Math.trunc(Number(saved?.step) || 0)));
-    setStep(savedStep === 3 && !state.ratings.some(r => r.sport === initialSport && r.optedIn) ? 2 : savedStep);
+    const savedStep = Math.max(0, Math.min(2, Math.trunc(Number(saved?.step) || 0)));
+    setStep(savedStep);
+    setRegistered(!preview && state.ratings.some(r => r.sport === initialSport && r.optedIn));
     setName(typeof saved?.name === "string" ? saved.name : guest?.name || user?.displayName || state.name);
     setCity(typeof saved?.city === "string" ? saved.city : guest?.city ?? state.city ?? "");
     setGender(saved?.gender === "male" || saved?.gender === "female" || saved?.gender === "other" ? saved.gender : state.gender ?? "");
@@ -71,7 +72,7 @@ function Setup({ preview }: { preview: boolean }) {
     setTimezone(typeof saved?.timezone === "string" ? saved.timezone : detectDeviceTimeZone());
     setGuestImported(Boolean(guest));
     setLoadedKey(key);
-  }, [key, preview, user?.email, Boolean(state)]);
+  }, [key, preview, previewSport, user?.email, Boolean(state)]);
   useEffect(() => {
     if (loadedKey !== key || preview) return;
     try { sessionStorage.setItem(key, JSON.stringify({ step, name, city, gender, countryCode, units, timezone, weeklyVolume })); } catch {}
@@ -81,10 +82,13 @@ function Setup({ preview }: { preview: boolean }) {
   }, [preview, state?.onboardingCompleted, params, router]);
   if (!state || loadedKey !== key) return <AppParagraph>Loading setup…</AppParagraph>;
   const sportName = SPORTS.find(item => item.id === sport)!.name;
+  const hasHistory = hasOnboardingTrainingHistory(state, sport);
+  const needsVolume = !registered && !hasHistory;
+  const finalTitle = needsVolume ? sport === "strength" ? "Typical weekly training" : sport === "walking" ? "Typical weekly steps" : "Typical weekly distance" : "Your starting line is here.";
   const canWrite = loadStatus === "ready" || loadStatus === "local";
   function advance() { setStep(Math.min(2, step + 1)); }
   async function finish() {
-    if (preview) { setStep(3); return; }
+    if (preview) { setRegistered(true); return; }
     if (!user || !state || !canWrite || finished.current) return;
     finished.current = true;
     setSaving(true); setSaveError(null);
@@ -109,10 +113,10 @@ function Setup({ preview }: { preview: boolean }) {
     dispatch({ type: "set-units", units });
     dispatch({ type: "set-timezone", timezone });
     const declaredWeeklyVolume = onboardingDeclaredVolume(sport, weeklyVolume[sport], units);
-    if (declaredWeeklyVolume !== undefined) dispatch({ type: "declare-effort", sport, declaredWeeklyVolume });
+    if (!hasHistory && declaredWeeklyVolume !== undefined) dispatch({ type: "declare-effort", sport, declaredWeeklyVolume });
     dispatch({ type: "opt-in", sport, accountId: user.id });
     dispatch({ type: "set-primary", sport });
-    setStep(3);
+    setRegistered(true);
   }
   function complete() {
     if (preview) { router.replace("/app/arena"); return; }
@@ -124,10 +128,10 @@ function Setup({ preview }: { preview: boolean }) {
     router.replace(resolvePostOnboardingPath(params.get("next")));
   }
   return <section ref={top} className="onboarding fb-stack">
-    <div className="onboarding-progress" role="img" aria-label={`Setup step ${step + 1} of 4`}>
-      {[0, 1, 2, 3].map(i => <span key={i} data-complete={i <= step} />)}
+    <div className="onboarding-progress" role="img" aria-label={`Setup step ${step + 1} of 3`}>
+      {[0, 1, 2].map(i => <span key={i} data-complete={i <= step} />)}
     </div>
-    {step < 3 && <AppHeading level={1} role="display">{titles[step]}</AppHeading>}
+    <AppHeading level={1} role="display">{step === 2 ? finalTitle : titles[step]}</AppHeading>
     {step === 0 && <>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 12 }}>
         <label className="fb-field">City (optional)<input value={city} onChange={e => setCity(e.target.value)} maxLength={80} /></label>
@@ -140,27 +144,22 @@ function Setup({ preview }: { preview: boolean }) {
       <OnboardingUnits value={units} onChange={setUnits} />
     </>}
     {step === 1 && <>
-      <AppParagraph>Connect your tracker to bring your training along. You can also connect later.</AppParagraph>
+      <AppParagraph>Sync your tracker to bring up to 90 days of workouts. You can also connect later.</AppParagraph>
       {!preview && <TrackerConnections />}
     </>}
     {step === 2 && <>
-      <AppParagraph>Your {sportName.toLowerCase()} event registers for the next wave. You can register for more events in the app.</AppParagraph>
-      <label className="fb-field">Typical weekly {sportName.toLowerCase()} ({onboardingWeeklyVolumeUnit(sport, units)})
+      {needsVolume && <label className="fb-field">{sportName} ({onboardingWeeklyVolumeUnit(sport, units)})
         <input type="number" inputMode="decimal" min="0" step="any" aria-label={`Typical weekly ${sport}`}
           placeholder="Optional · 0 if just starting" value={weeklyVolume[sport] ?? ""}
           onChange={e => setWeeklyVolume(current => ({ ...current, [sport]: e.target.value }))} />
-      </label>
-      <AppParagraph typographyRole="label">Next wave starts at {waveTimeLabel(nextDailyWaveWindowAt(new Date(now)).waveStart, timezone)}.</AppParagraph>
+      </label>}
+      <AppParagraph>{registered ? "You’re registered." : "Your chosen event registers for the next wave."} You can register for more events in the app.</AppParagraph>
+      <EventRegistration state={state} event={sport} registered={registered} ticketOnly busy={saving || (!preview && !canWrite)} error={saveError ?? ""} onBack={registered ? undefined : () => setStep(1)} onClaim={() => void finish()} onView={complete} />
     </>}
-    {step === 3 && <>
-      <AppParagraph>You’re registered for {sportName.toLowerCase()}. You can register for more events in the app.</AppParagraph>
-      <EventRegistration state={state} event={sport} registered confirmationOnly busy={false} error="" onClaim={() => {}} onView={complete} />
-    </>}
-    {saveError && <AppParagraph role="alert">{saveError}</AppParagraph>}
-    {step < 3 && <div className="onboarding-actions">
+    {step < 2 && <div className="onboarding-actions">
       {step > 0 && <BackButton disabled={saving} onClick={() => setStep(step - 1)} />}
-      <button className="fb-btn" type="button" disabled={saving || (step === 2 && !preview && !canWrite)} onClick={() => step < 2 ? advance() : finish()}>
-        {saving ? "Saving…" : "Continue"}
+      <button className="fb-btn" type="button" onClick={advance}>
+        Continue
       </button>
     </div>}
   </section>;

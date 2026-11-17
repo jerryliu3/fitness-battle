@@ -53,10 +53,25 @@ it("reuses the confirmed ticket without the registration walkthrough for onboard
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const onView = vi.fn();
   let tree!: ReturnType<typeof create>;
-  await act(async () => { tree = create(createElement(EventRegistration, { state: freshState(), event: "running", registered: true, confirmationOnly: true, busy: false, error: "", onClaim: vi.fn(), onView })); });
+  await act(async () => { tree = create(createElement(EventRegistration, { state: freshState(), event: "running", registered: true, ticketOnly: true, busy: false, error: "", onClaim: vi.fn(), onView })); });
   expect(tree.root.findAllByProps({ className: "registration-hero" })).toHaveLength(0);
   expect(tree.root.findByProps({ className: "registration-ticket" }).props["data-claimed"]).toBe(true);
-  await act(async () => tree.root.findAllByType("button").find(n => n.props.children === "Continue")!.props.onClick());
+  await act(async () => tree.root.findByProps({ className: "registration-face registration-back" }).findAllByType("button").find(n => n.props.children === "Continue")!.props.onClick());
   expect(onView).toHaveBeenCalledOnce();
+  await act(async () => tree.unmount());
+});
+
+it("keeps registration and confirmation on the same ticket with a back action", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const props = { state: freshState(), event: "running" as const, registered: false, ticketOnly: true, busy: false, error: "", onClaim: vi.fn(), onView: vi.fn(), onBack: vi.fn() };
+  let tree!: ReturnType<typeof create>;
+  await act(async () => { tree = create(createElement(EventRegistration, props)); });
+  const front = tree.root.findByProps({ className: "registration-face registration-front" });
+  await act(async () => front.findAllByType("button").find(n => n.props.children === "Continue")!.props.onClick());
+  expect(props.onClaim).toHaveBeenCalledOnce();
+  await act(async () => tree.update(createElement(EventRegistration, { ...props, registered: true })));
+  expect(tree.root.findByProps({ className: "registration-ticket" }).props["data-claimed"]).toBe(true);
+  await act(async () => tree.root.findByProps({ className: "registration-face registration-back" }).findAllByType("button").find(n => n.props.children === "Continue")!.props.onClick());
+  expect(props.onView).toHaveBeenCalledOnce();
   await act(async () => tree.unmount());
 });

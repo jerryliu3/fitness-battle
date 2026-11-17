@@ -91,3 +91,13 @@ it.each(["running", "cycling", "walking", "strength"] as const)("shows a sport-s
   expect(onboardingCrewGoal(guest, 1)).toBe(`Weekly goal: ${expected[sport]}`);
   expect(onboardingCrewGoal(guest, 0)).toMatch(/^Weekly goal: 0\//);
 });
+it("uses actual synced workouts, not a connected tracker or generated activity, to skip volume questions", async () => {
+  const { hasOnboardingTrainingHistory } = await import("./onboarding-journey");
+  const activity = { id: "workout", sport: "running" as const, startedAt: "2026-11-16T12:00:00Z", distanceM: 5000, movingSec: 1800, avgHr: null, verified: true, source: "apple_health" as const };
+  expect(hasOnboardingTrainingHistory({ activities: [] }, "running")).toBe(false);
+  expect(hasOnboardingTrainingHistory({ activities: [activity] }, "running")).toBe(true);
+  expect(hasOnboardingTrainingHistory({ activities: [activity] }, "cycling")).toBe(false);
+  for (const override of [{ source: "history" as const }, { provenance: "demo" as const }, { disposition: "pending" as const }, { disposition: "excluded" as const }, { journalOnly: true }]) {
+    expect(hasOnboardingTrainingHistory({ activities: [{ ...activity, ...override }] }, "running")).toBe(false);
+  }
+});

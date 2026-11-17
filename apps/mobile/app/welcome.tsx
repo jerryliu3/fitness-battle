@@ -92,7 +92,7 @@ export default function Welcome() {
   }
   async function createAccount() {
     if (busy) return;
-    if (preview) { router.replace("/onboarding?preview=1"); return; }
+    if (preview) { router.replace(`/onboarding?preview=1&sport=${draft.sport}`); return; }
     setBusy(true); setError(null);
     try {
       await saveCompletedIntro(email);
@@ -150,7 +150,7 @@ export default function Welcome() {
             <View style={box(64, 48)}><AppText secondary style={{ flex: 1 }} numberOfLines={2} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>Choose your sport. You can add more later.</AppText></View>
             <View style={{ ...box(126, 380), flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
               {SPORTS.map(sport => <Pressable key={sport.id} accessibilityRole="button" accessibilityLabel={sport.name}
-                accessibilityState={{ selected: draft.sport === sport.id }} onPress={() => setDraft(d => ({ ...d, sport: sport.id }))}
+                accessibilityState={{ selected: draft.sport === sport.id }} onPress={() => { setDraft(d => ({ ...d, sport: sport.id })); setStep("athlete"); }}
                 style={{ width: 158, height: 182, alignItems: "center", justifyContent: "center", borderRadius: 26,
                   borderWidth: 2, borderColor: draft.sport === sport.id ? "#082637" : "transparent",
                   backgroundColor: sportTiles[sport.id].background }}>
@@ -180,7 +180,7 @@ export default function Welcome() {
             {!error && !confirmation && <View style={box(542, 32)}><LegalLinks /></View>}
           </>}
           {(error || confirmation) && <View style={box(548, 36)}><AppText role="caption" accessibilityRole="alert" numberOfLines={2} adjustsFontSizeToFit>{error ?? "Check your email to confirm your account and continue setup."}</AppText></View>}
-          {step !== "overtake" && <View style={box(584, 52)}>
+          {step !== "sport" && step !== "overtake" && <View style={box(584, 52)}>
             {step === "account" ? actions(busy ? "Creating…" : "Continue", () => void createAccount(), busy || confirmation || !email.trim() || password.length < 6)
               : actions("Continue", () => void next(), photoBusy || (step === "athlete" && !draft.name.trim()))}
           </View>}

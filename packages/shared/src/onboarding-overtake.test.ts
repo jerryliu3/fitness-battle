@@ -8,6 +8,7 @@ describe("guest sport overtake", () => {
     it(`illustrates an overtake for ${sport} without account state`, () => {
       const moment = createOnboardingOvertakeMoment("Taylor", sport, "data:image/jpeg;base64,/9j/");
       expect(moment.lanes.find(l => l.you)?.avatarUrl).toBe("data:image/jpeg;base64,/9j/");
+      expect(moment.lanes.filter(lane => !lane.you).every(lane => lane.avatarUrl?.startsWith("https://"))).toBe(true);
       expect(moment.sport).toBe(sport);
       expect(moment.unit).toBe(sport === "walking" ? "steps" : sport === "strength" ? "hrs" : "km");
       expect(moment.lanes.find(l => l.you)?.name).toBe("Taylor");

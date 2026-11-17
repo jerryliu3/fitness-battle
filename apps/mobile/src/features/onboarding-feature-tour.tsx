@@ -11,7 +11,7 @@ import { ONBOARDING_FEATURES, ONBOARDING_VITALS_METRICS, type GuestIntroDraft, t
 export function OnboardingFeatureTour({ draft, selected, onSelect, onScoreChange }: {
   draft: GuestIntroDraft; selected: OnboardingFeatureId; onSelect: (id: OnboardingFeatureId) => void; onScoreChange?: (score: number) => void;
 }) {
-  const [gender, setGender] = useState<"female" | "male">("female");
+  const [gender, setGender] = useState<"female" | "male">("male");
   return <View style={{ flex: 1 }}>
     <View style={{ width: 228, marginTop: 8, gap: 8 }}>
       <AppText accessibilityRole="header" role="heading">{ONBOARDING_FEATURES.find(item => item.id === selected)!.heading}</AppText>

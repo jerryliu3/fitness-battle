@@ -6,6 +6,11 @@ import { athleteLocationLine } from "./countries";
 import { SPORTS } from "./compete/sports";
 import { crewWeekRelay } from "./compete/crew-relay";
 
+export const ONBOARDING_PORTRAITS = {
+  alex: "https://randomuser.me/api/portraits/men/32.jpg",
+  maya: "https://randomuser.me/api/portraits/women/65.jpg",
+} as const;
+
 export const ONBOARDING_SPORT_TILES = {
   running: { emoji: "🏃‍♂️", background: "#FCE4DA", mirror: true },
   cycling: { emoji: "🚴‍♀️", background: "#DDEFF3", mirror: true },
@@ -116,12 +121,12 @@ export function onboardingCrewPreview(draft: GuestIntroDraft): CrewWeekRelayInpu
     contract: draft.sport === "strength" ? { metric: "moving_sec", target: 18000 } : { metric: "distance_m", target: distance * 5 },
     members: [
       { user_id: "you", display_name: draft.name.trim() || "Athlete", avatar_url: draft.photo ?? null },
-      { user_id: "alex", display_name: "Alex" }, { user_id: "sam", display_name: "Sam" },
+      { user_id: "alex", display_name: "Alex", avatar_url: ONBOARDING_PORTRAITS.alex }, { user_id: "maya", display_name: "Maya", avatar_url: ONBOARDING_PORTRAITS.maya },
     ],
     entries: [
       { user_id: "you", distance_m: distance, moving_sec: 3600, session_count: 2 },
       { user_id: "alex", distance_m: distance * .8, moving_sec: 3000, session_count: 2 },
-      { user_id: "sam", distance_m: distance * 1.2, moving_sec: 4200, session_count: 3 },
+      { user_id: "maya", distance_m: distance * 1.2, moving_sec: 4200, session_count: 3 },
     ],
   };
 }
@@ -161,4 +166,9 @@ export function onboardingCrewGoal(draft: GuestIntroDraft, progress: number) {
   const format = (value: number) => (value / (draft.sport === "walking" ? 1 : draft.sport === "strength" ? 3600 : 1000)).toLocaleString("en-US", { maximumFractionDigits: draft.sport === "walking" ? 0 : 1 });
   const unit = draft.sport === "walking" ? "steps" : draft.sport === "strength" ? "hrs" : "km";
   return `Weekly goal: ${format(relay.model.total)}/${format(relay.target ?? 0)} ${unit}`;
+}
+
+/** A connection alone is not evidence that any workouts were imported. */
+export function hasOnboardingTrainingHistory(state: Pick<import("./compete/sports").CompeteState, "activities">, sport: SportId) {
+  return state.activities.some(activity => activity.sport === sport && activity.source !== "manual" && activity.source !== "history" && activity.provenance !== "demo" && activity.provenance !== "manual" && (activity.disposition ?? "counted") === "counted" && !activity.journalOnly);
 }

@@ -594,7 +594,7 @@ const styles=useThemedStyles(stylesThemes);
           })}
           </View>
           <Toast message={note ?? ""} onDismiss={() => setNote(null)} />
-          <DataSyncActions includeCalibration={!inlineConnections}/>
+          {!inlineConnections && <DataSyncActions />}
         </SectionStack>);
     if (inlineConnections) return content;
     return (

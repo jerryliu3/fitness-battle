@@ -15,6 +15,7 @@ it("loads the actual Vitals renderer before selection and retains it across tabs
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(OnboardingFeatureTour, props)); });
   const scan = r.root.findByType("Vitals" as never);
+  expect(scan.props.gender).toBe("male");
   await act(async () => r.update(createElement(OnboardingFeatureTour, { ...props, selected: "vitals" })));
   expect(r.root.findByType("Vitals" as never)).toBe(scan);
   await act(async () => r.root.findAllByType("Segments" as never).find(n => n.props.label === "Body model")!.props.onChange("male"));

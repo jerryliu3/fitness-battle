@@ -22,7 +22,8 @@ beforeEach(() => {
 });
 async function athlete(r: ReactTestRenderer) {
   const press = async (name: string) => act(async () => r.root.findAllByType("button").find(n => n.props.children === name)!.props.onClick());
-  await press("Continue");
+  expect(r.root.findAllByType("button").some(n => n.props.children === "Continue")).toBe(false);
+  await act(async () => r.root.findAllByType("button").find(n => n.props.className === "onboarding-sport")!.props.onClick());
   return press;
 }
 it("keeps preview read-only and card model stable while fields are edited", async () => {
@@ -42,7 +43,7 @@ it("keeps preview read-only and card model stable while fields are edited", asyn
   await press("Make it official");
   expect(r.root.findAllByType("a").some(n => n.props.children === "Sign in")).toBe(false);
   await act(async () => r.root.findByType("form").props.onSubmit({ preventDefault: vi.fn() }));
-  expect(mock.push).toHaveBeenCalledWith("/app/onboarding?preview=1");
+  expect(mock.push).toHaveBeenCalledWith("/app/onboarding?preview=1&sport=running");
   expect(mock.signUp).not.toHaveBeenCalled(); expect(mock.setItem).not.toHaveBeenCalled();
   await act(async () => r.unmount());
 });

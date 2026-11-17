@@ -1,0 +1,21 @@
+import { createElement } from "react";
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
+import { expect, it, vi } from "vitest";
+vi.mock("react-native", () => ({ Pressable: "Button", TextInput: "Input", View: "View" }));
+vi.mock("./section", () => ({ AppText: "Text" }));
+vi.mock("./focus", () => ({ useFocusStyles: () => ({}), FocusSheet: ({ open, children }: { open: boolean; children: unknown }) => open ? children : null }));
+import { CountryPicker } from "./country-picker";
+it("shows the selected flag and searches countries without changing the field", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const change = vi.fn();
+  let r!: ReactTestRenderer;
+  await act(async () => { r = create(createElement(CountryPicker, { value: "US", onChange: change })); });
+  expect(r.root.findByType("Text" as never).props.children).toBe("🇺🇸 United States");
+  await act(async () => r.root.findByType("Button" as never).props.onPress());
+  await act(async () => r.root.findByType("Input" as never).props.onChangeText("can"));
+  expect(change).not.toHaveBeenCalled();
+  await act(async () => r.root.findAllByType("Button" as never).find(n => n.props.accessibilityLabel === "🇨🇦 Canada")!.props.onPress());
+  expect(change).toHaveBeenCalledWith("CA");
+  expect(r.root.findAllByType("Input" as never)).toHaveLength(0);
+  await act(async () => r.unmount());
+});

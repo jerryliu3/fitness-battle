@@ -1,5 +1,6 @@
 import { createRaceCourse } from "./race-course";
 import type { CompetitionMoment } from "./competition-moments";
+import { ONBOARDING_PORTRAITS } from "./onboarding-journey";
 import type { SportId } from "./compete/sports";
 
 /** An illustrative public course and two fictional racers; never applied to account state. */
@@ -16,7 +17,7 @@ export function createOnboardingOvertakeMoment(name = "Athlete", sport: SportId 
     id: `onboarding-overtake:${sport}`, sport, unit,
     lanes: [
       { id: "you", name: athleteName, initials: athleteName.slice(0, 2).toUpperCase(), you: true, avatarUrl, value: youAfter },
-      { id: "alex", name: "Alex", initials: "A", value: rival },
+      { id: "alex", name: "Alex", initials: "A", avatarUrl: ONBOARDING_PORTRAITS.alex, value: rival },
     ],
     plan: {
       youId: "you", youBefore, youAfter, rankBefore: 2, rankAfter: 1,

@@ -91,7 +91,7 @@ vi.mock("../ui/focus", () => ((()=>{const mock={
   FocusTextButton: "TextButton",
   f: {},
 };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
-import AthleteScreen from "../../app/athlete";
+import AthleteScreen, { TrackerConnections } from "../../app/athlete";
 let renderer: ReactTestRenderer;
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
@@ -264,4 +264,10 @@ describe("onboarding sign-in", () => {
     else expect(mock.replace).toHaveBeenCalledWith("/welcome");
     mock.canGoBackValue = true;
   });
+});
+
+it("keeps onboarding tracker connections free of file-import and recap actions", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); mock.user = { id: "alice" };
+  await act(async () => { renderer = create(createElement(TrackerConnections)); });
+  expect(renderer.root.findAllByType("DataSyncActions" as never).some(node => !node.props.provider)).toBe(false);
 });

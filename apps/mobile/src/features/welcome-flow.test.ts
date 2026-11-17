@@ -1,4 +1,3 @@
-vi.mock("./vitals-lab/vitals-lab-canvas-prefetch", () => ({ VitalsLabCanvasPrefetch: "VitalsLabCanvasPrefetch" }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
@@ -25,11 +24,10 @@ it("keeps the replay immersive, commits the card on editing end, then creates th
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Welcome)); });
-  expect(r.root.findAllByType("FocusButton" as never).map(n => n.props.label).sort()).toEqual(["Continue", "I already have an account"]);
+  expect(r.root.findAllByType("FocusButton" as never).map(n => n.props.label).sort()).toEqual(["I already have an account"]);
   const press = async (label: string) => act(async () => r.root.findAllByType("FocusButton" as never).find(n => n.props.label === label)!.props.onPress());
   await act(async () => r.root.findAllByType("Pressable" as never).find(n => n.props.accessibilityLabel === "Cycling")!.props.onPress());
   const persistentCard = r.root.findByType("OnboardingAthlete" as never);
-  await press("Continue");
   const firstCard = r.root.findByType("OnboardingAthlete" as never).props.model;
   const name = () => r.root.findAllByType("TextInput" as never).find(n => n.props.accessibilityLabel === "Athlete name")!;
   await act(async () => name().props.onChangeText("Taylor"));
@@ -69,7 +67,7 @@ it("retains edits when the signed-out account store finishes loading", async () 
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); mock.storeReady = false;
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Welcome)); });
-  await act(async () => r.root.findAllByType("FocusButton" as never).find(n => n.props.label === "Continue")!.props.onPress());
+  await act(async () => r.root.findAllByType("Pressable" as never).find(n => n.props.accessibilityLabel === "Running")!.props.onPress());
   const field = () => r.root.findByType("TextInput" as never);
   await act(async () => field().props.onChangeText("Taylor"));
   mock.storeReady = true;

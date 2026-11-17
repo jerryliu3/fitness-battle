@@ -5,13 +5,14 @@ import { Modal, TextInput, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import {
-  detectDeviceTimeZone, nextDailyWaveWindowAt, waveTimeLabel, guestIntroForAccount, SPORTS, COUNTRY_OPTIONS,
+  detectDeviceTimeZone, guestIntroForAccount, SPORTS, hasOnboardingTrainingHistory,
   type ProfileGender, type SportId, type UnitSystem,
   parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, onboardingWeeklyVolumeUnit, type OnboardingWeeklyVolumes,
 } from "@fitness-battle/shared";
 import { TrackerConnections } from "./athlete";
 import { GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft } from "../src/lib/guest-intro";
 import { TimezonePicker } from "../src/ui/timezone-picker";
+import { CountryPicker } from "../src/ui/country-picker";
 import { ChoicePicker } from "../src/ui/choice-picker";
 import { IconButton } from "../src/ui/icon-button";
 import { AppText } from "../src/ui/section";
@@ -25,7 +26,6 @@ import { useReducedMotion } from "../src/ui/use-reduced-motion";
 import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
 
-const countries = COUNTRY_OPTIONS.map(country => ({ value: country.code, label: country.name }));
 const titles = ["Almost there! Final details", "Bring your training along.", "Your starting line is here."];
 
 export default function Onboarding() {
@@ -34,10 +34,13 @@ export default function Onboarding() {
   const { state, canWrite, dispatch } = useCompeteStore();
   const { user, offlineMode } = useAuth();
   const router = useRouter();
-  const preview = useLocalSearchParams<{ preview?: string }>().preview === "1";
+  const params = useLocalSearchParams<{ preview?: string; sport?: string }>();
+  const preview = params.preview === "1";
+  const previewSport = preview ? SPORTS.find(item => item.id === params.sport)?.id : undefined;
   const key = `onboarding-draft:v7:${user?.id ?? "guest"}`;
   const [ready, setReady] = useState(false), [loadedKey, setLoadedKey] = useState("");
   const [step, setStep] = useState(0);
+  const [registered, setRegistered] = useState(false);
   const [saving, setSaving] = useState(false), [saveError, setSaveError] = useState<string | null>(null);
   const owner = useRef(user?.id);
   owner.current = user?.id;
@@ -51,8 +54,6 @@ export default function Onboarding() {
   const [timezone, setTimezone] = useState(() => detectDeviceTimeZone());
   const [guestImported, setGuestImported] = useState(false);
   const finished = useRef(false);
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(timer); }, []);
 
   useEffect(() => {
     if (!state) return;
@@ -69,10 +70,11 @@ export default function Onboarding() {
       try { saved = !preview && raw ? JSON.parse(raw) : null; } catch { /* Ignore corrupt drafts. */ }
       const imported = preview ? null : guestIntroForAccount(guest, pending, user?.email);
       const useGuest = Boolean(imported);
-      const initialSport = imported?.sport ?? state.primary;
+      const initialSport = previewSport ?? imported?.sport ?? state.primary;
       finished.current = false;
-      const savedStep = Math.max(0, Math.min(3, Math.trunc(Number(saved?.step) || 0)));
-      setStep(savedStep === 3 && !state.ratings.some(r => r.sport === initialSport && r.optedIn) ? 2 : savedStep);
+      const savedStep = Math.max(0, Math.min(2, Math.trunc(Number(saved?.step) || 0)));
+      setStep(savedStep);
+      setRegistered(!preview && state.ratings.some(r => r.sport === initialSport && r.optedIn));
       setName(typeof saved?.name === "string" ? saved.name : imported ? imported.name : user?.displayName ?? state?.name ?? "");
       setCity(typeof saved?.city === "string" ? saved.city : imported ? imported.city : state?.city ?? "");
       setGender(saved?.gender === "male" || saved?.gender === "female" || saved?.gender === "other" ? saved.gender : state?.gender ?? "");
@@ -92,7 +94,7 @@ export default function Onboarding() {
       }
     });
     return () => { alive = false; };
-  }, [key, preview, user?.email, Boolean(state)]);
+  }, [key, preview, previewSport, user?.email, Boolean(state)]);
 
   useEffect(() => {
     if (!ready || loadedKey !== key || preview) return;
@@ -102,11 +104,14 @@ export default function Onboarding() {
   if (!preview && state?.onboardingCompleted) return <Redirect href="/today" />;
   if (!state || !ready) return <AppText>Loading setup…</AppText>;
   const sportName = SPORTS.find(item => item.id === sport)!.name;
+  const hasHistory = hasOnboardingTrainingHistory(state, sport);
+  const needsVolume = !registered && !hasHistory;
+  const finalTitle = needsVolume ? sport === "strength" ? "Typical weekly training" : sport === "walking" ? "Typical weekly steps" : "Typical weekly distance" : "Your starting line is here.";
   function advance() { setStep(Math.min(2, step + 1)); }
   function back() { setStep(Math.max(0, step - 1)); }
 
   async function finish() {
-    if (preview) { setStep(3); return; }
+    if (preview) { setRegistered(true); return; }
     if (!user || !state || !canWrite || finished.current) return;
     finished.current = true;
     setSaving(true); setSaveError(null);
@@ -130,10 +135,10 @@ export default function Onboarding() {
     dispatch({ type: "set-units", units });
     dispatch({ type: "set-timezone", timezone });
     const declaredWeeklyVolume = onboardingDeclaredVolume(sport, weeklyVolume[sport], units);
-    if (declaredWeeklyVolume !== undefined) dispatch({ type: "declare-effort", sport, declaredWeeklyVolume });
+    if (!hasHistory && declaredWeeklyVolume !== undefined) dispatch({ type: "declare-effort", sport, declaredWeeklyVolume });
     dispatch({ type: "opt-in", sport, accountId: user.id });
     dispatch({ type: "set-primary", sport });
-    setStep(3);
+    setRegistered(true);
   }
   function complete() {
     if (preview) { router.replace("/arena"); return; }
@@ -145,17 +150,17 @@ export default function Onboarding() {
 
   return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "fade"}>
     <SafeAreaProvider><SafeAreaView style={f.safe} edges={["top", "bottom"]}>
-        <OnboardingProgress index={step} count={4} />
+        <OnboardingProgress index={step} count={3} />
         <OnboardingCanvas>
         <View style={{ padding: 16 }}><MotionStep identity={`${step}`}>
-          {step < 3 && <AppText role="display" accessibilityRole="header">{titles[step]}</AppText>}
+          <AppText role="display" accessibilityRole="header">{step === 2 ? finalTitle : titles[step]}</AppText>
           {step === 0 && <>
             <View style={{ flexDirection: "row", gap: 12 }}>
               <View style={{ flex: 1, gap: 8 }}><AppText role="label">City (optional)</AppText>
                 <TextInput accessibilityLabel="City" style={f.input} value={city} onChangeText={setCity} maxLength={80} />
               </View>
               <View style={{ flex: 1, gap: 8 }}><AppText role="label">Country (optional)</AppText>
-                <ChoicePicker label="Country (optional)" placeholder="Country" value={countryCode} onChange={setCountryCode} options={countries} />
+                <CountryPicker value={countryCode} onChange={setCountryCode} />
               </View>
             </View>
             <ChoicePicker label="Gender (optional)" value={gender} placeholder="Gender (optional)"
@@ -166,28 +171,23 @@ export default function Onboarding() {
             <FocusSegments label="Units" options={[{ value: "us", label: "Imperial" }, { value: "metric", label: "Metric" }]} value={units} onChange={setUnits} />
           </>}
           {step === 1 && <>
-            <AppText secondary>Connect your tracker to bring your training along. You can also connect later.</AppText>
+            <AppText secondary>Sync your tracker to bring up to 90 days of workouts. You can also connect later.</AppText>
             {!preview && <TrackerConnections />}
           </>}
           {step === 2 && <>
-            <AppText secondary>Your {sportName.toLowerCase()} event registers for the next wave. You can register for more events in the app.</AppText>
-            <AppText role="label">Typical weekly {sportName.toLowerCase()} ({onboardingWeeklyVolumeUnit(sport, units)})</AppText>
-            <TextInput style={f.input} keyboardType="decimal-pad" accessibilityLabel={`Typical weekly ${sport}`}
-              placeholder="Optional · 0 if just starting" value={weeklyVolume[sport] ?? ""}
-              onChangeText={value => setWeeklyVolume(current => ({ ...current, [sport]: value }))} />
-            <AppText role="label">Next wave starts at {waveTimeLabel(nextDailyWaveWindowAt(new Date(now)).waveStart, timezone)}.</AppText>
+            {needsVolume && <>
+              <AppText role="label">{sportName} ({onboardingWeeklyVolumeUnit(sport, units)})</AppText>
+              <TextInput style={f.input} keyboardType="decimal-pad" accessibilityLabel={`Typical weekly ${sport}`}
+                placeholder="Optional · 0 if just starting" value={weeklyVolume[sport] ?? ""}
+                onChangeText={value => setWeeklyVolume(current => ({ ...current, [sport]: value }))} />
+            </>}
+            <AppText secondary>{registered ? "You’re registered." : "Your chosen event registers for the next wave."} You can register for more events in the app.</AppText>
+            <EventRegistration state={state} event={sport} registered={registered} ticketOnly busy={saving || (!preview && !canWrite)} error={saveError ?? undefined} onBack={registered ? undefined : back} onClaim={() => void finish()} onView={complete} />
           </>}
-          {step === 3 && <>
-            <AppText secondary>You’re registered for {sportName.toLowerCase()}. You can register for more events in the app.</AppText>
-            <EventRegistration state={state} event={sport} registered confirmationOnly onClaim={() => {}} onView={complete} />
-          </>}
-          {saveError && <AppText accessibilityRole="alert">{saveError}</AppText>}
-          {step < 3 && <View style={{ flexDirection: "row", gap: 12 }}>
+          {step < 2 && <View style={{ flexDirection: "row", gap: 12 }}>
             {step > 0 && <IconButton icon="back" label="Back" disabled={saving} onPress={back} />}
             <View style={{ flex: 1 }}><FocusButton
-              label={saving ? "Saving…" : "Continue"}
-              disabled={saving || (step === 2 && !preview && !canWrite)}
-              onPress={() => step < 2 ? advance() : finish()} /></View>
+              label="Continue" onPress={advance} /></View>
           </View>}
         </MotionStep></View>
         </OnboardingCanvas>

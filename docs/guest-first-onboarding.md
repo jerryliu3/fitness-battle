@@ -6,7 +6,7 @@ into this journey; the website's marketing page links into it too.
 
 ## Before account creation
 
-1. **Choose a sport** — Running, Cycling, Walking or Strength in pastel 2×2 tiles with native emoji. Running/Strength use male emoji, Cycling/Walking use female emoji; the moving sports face right.
+1. **Choose a sport** — Running, Cycling, Walking or Strength in pastel 2×2 tiles with native emoji. Running/Strength use male emoji, Cycling/Walking use female emoji; the moving sports face right. Selecting a tile advances immediately; there is no Continue action on sport selection.
 2. **Welcome athlete!** — a full-size interactive Crest, required single-line Athlete name field and
    optional Upload profile photo button. The card updates after a short edit delay, holding native bridge
    updates during rotation. No other profile questions appear here.
@@ -18,7 +18,7 @@ into this journey; the website's marketing page links into it too.
    Growth opens first with the 500 → 2,000 trajectory; these points are never earned
    account facts. The single score reading and card score animate from 500 to 2,000 on every
    appearance. Crew uses its product relay graphic with Play and a scrubber, plus an animated sport-specific weekly goal reaching 60%.
-   Vitals includes a male/female model selector. Its actual renderer mounts behind the tabs as soon as Discover opens and remains mounted across tab changes.
+   Vitals defaults to the male model and includes a male/female selector. Its actual renderer mounts behind the tabs as soon as Discover opens and remains mounted across tab changes.
 5. **Make it official** — the large Crest returns above email and password, with
    account creation and Terms/Privacy links. City, country and other preferences
    remain after signup. Existing-account sign-in stays on the first screen only.
@@ -89,16 +89,25 @@ preview mode remains read-only in the data layer.
 
 ## After account creation
 
-Native `/onboarding` and web `/app/onboarding` collect details first:
+Native `/onboarding` and web `/app/onboarding` have three pages:
 
 1. **Almost there! Final details** — optional city/country together, unselected gender,
-   time zone with a zone-specific GMT offset, and units. The saved athlete name is retained.
-2. **Bring your training along** — connect trackers or continue without one.
-3. **Your starting line is here** — optional weekly volume for the one sport selected
-   during the introduction, plus the next wave time. Continue registers that sport
-   through the existing opt-in action; no second sport/sleep selection is shown.
-4. The existing **confirmed-entry ticket** appears after registration. Its Continue
-   completes onboarding and enters the app. Additional events remain available in the app.
+   time zone with a zone-specific GMT offset, and units. The country picker has flags
+   and a searchable sheet on native. The saved athlete name is retained.
+2. **Bring your training along** — connect/sync trackers or continue without one.
+   Onboarding omits recap previews, file imports and the separate calibration action.
+   First device and cloud syncs request up to 90 days of workouts after authorization;
+   the existing sync flow has no separate history-range chooser. Provider/OS limits apply.
+3. **Starting line** — optional weekly volume for the selected sport above a compact
+   entry ticket. This question is omitted when accepted, real synced workouts exist
+   for that sport. A connection with no workouts does not suppress it. Back returns
+   to trackers before registration. Continue registers the event and flips the same
+   ticket to its confirmed face; the final Continue enters the app. No fourth page.
+
+Practice rivals use the same stock portrait URLs already used by Goalmaxxing:
+Alex uses its male portrait and Maya its female portrait. The guest’s own chosen
+photo always takes precedence for their athlete. These are presentation identities
+only and never replace a real account’s profile photo.
 
 Weekly declarations retain the shared metres/seconds/steps conversion and scoring
 protections. Preview mode exercises the same pages without registration or account writes.

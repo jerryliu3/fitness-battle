@@ -16,7 +16,7 @@ vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("../ui/section", () => ({ AppText: "AppText" }));
 vi.mock("../ui/motion-step", () => ({ MotionStep: "MotionStep" }));
 vi.mock("../ui/choice-picker", () => ({ ChoicePicker: "ChoicePicker" }));
-vi.mock("../ui/searchable-country-picker", () => ({ SearchableCountryPicker: "Country" }));
+vi.mock("../ui/country-picker", () => ({ CountryPicker: "Country" }));
 vi.mock("../ui/timezone-picker", () => ({ TimezonePicker: "Timezone" }));
 vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton", FocusSegments: "FocusSegments", useFocusStyles: () => ({}) }));
 vi.mock("../../app/athlete", () => ({ TrackerConnections: "TrackerConnections" }));
@@ -40,9 +40,9 @@ it.each([false, true])("collects details first, registers one sport, then waits 
   await next(r);
   await act(async () => r.root.findByType("TextInput" as never).props.onChangeText("7"));
   expect(mock.dispatch).not.toHaveBeenCalled();
-  await next(r);
+  await act(async () => r.root.findByType("EventRegistration" as never).props.onClaim());
   const ticket = r.root.findByType("EventRegistration" as never);
-  expect(ticket.props).toMatchObject({ event: "running", registered: true, confirmationOnly: true });
+  expect(ticket.props).toMatchObject({ event: "running", registered: true, ticketOnly: true });
   expect(mock.dispatch.mock.calls.some(([action]) => action.type === "complete-onboarding")).toBe(false);
   if (!preview) {
     expect(mock.dispatch).toHaveBeenCalledWith({ type: "declare-effort", sport: "running", declaredWeeklyVolume: 11265.408 });
@@ -61,11 +61,12 @@ it.each([false, true])("preserves the chosen photo and sport through registratio
   if (failure) mock.upload.mockRejectedValueOnce(new Error("Upload failed"));
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Onboarding)); });
-  await next(r); await next(r); await next(r);
+  await next(r); await next(r);
+  await act(async () => r.root.findByType("EventRegistration" as never).props.onClaim());
   expect(mock.upload).toHaveBeenCalledWith(expect.any(ArrayBuffer), "a");
   if (failure) {
     expect(mock.dispatch).not.toHaveBeenCalled();
-    expect(r.root.findAllByType("AppText" as never).some(n => n.props.children === "Upload failed")).toBe(true);
+    expect(r.root.findByType("EventRegistration" as never).props.error).toBe("Upload failed");
   } else {
     expect(mock.dispatch).toHaveBeenCalledWith({ type: "set-avatar", avatarUrl: "https://example.com/new.jpg", accountId: "a" });
     expect(r.root.findByType("EventRegistration" as never).props.event).toBe("walking");
@@ -76,7 +77,22 @@ it("does not restore a confirmation when the event is not registered", async () 
   mock.values.set("onboarding-draft:v7:a", JSON.stringify({ step: 3 }));
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Onboarding)); });
-  expect(r.root.findAllByType("EventRegistration" as never)).toHaveLength(0);
+  expect(r.root.findByType("EventRegistration" as never).props.registered).toBe(false);
   expect(r.root.findByType("TextInput" as never).props.accessibilityLabel).toBe("Typical weekly running");
+  await act(async () => r.unmount());
+});
+it("omits the weekly-volume field and declaration when synced training exists", async () => {
+  state.activities.push({ id: "workout", sport: "running", startedAt: "2026-11-16T12:00:00Z", distanceM: 5000, movingSec: 1800, avgHr: null, verified: true, source: "apple_health" });
+  mock.values.set("onboarding-draft:v7:a", JSON.stringify({ weeklyVolume: { running: "7" } }));
+  let r!: ReactTestRenderer;
+  await act(async () => { r = create(createElement(Onboarding)); });
+  await next(r); await next(r);
+  expect(r.root.findAllByType("TextInput" as never)).toHaveLength(0);
+  const ticket = r.root.findByType("EventRegistration" as never);
+  expect(ticket.props.registered).toBe(false);
+  expect(ticket.props.onBack).toBeTypeOf("function");
+  await act(async () => ticket.props.onClaim());
+  expect(mock.dispatch.mock.calls.some(([action]) => action.type === "declare-effort")).toBe(false);
+  expect(r.root.findByType("EventRegistration" as never).props.registered).toBe(true);
   await act(async () => r.unmount());
 });

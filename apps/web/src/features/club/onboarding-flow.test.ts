@@ -40,9 +40,9 @@ it.each([false, true])("uses one event with weekly volume on the starting line a
   const sport = preview ? "running" : "walking";
   await act(async () => r.root.findByType("input").props.onChange({ target: { value: "28000" } }));
   expect(mock.dispatch).not.toHaveBeenCalled();
-  await next(r);
+  await act(async () => r.root.findByType("EventRegistration" as never).props.onClaim());
   const ticket = r.root.findByType("EventRegistration" as never);
-  expect(ticket.props).toMatchObject({ event: sport, registered: true, confirmationOnly: true });
+  expect(ticket.props).toMatchObject({ event: sport, registered: true, ticketOnly: true });
   expect(mock.dispatch.mock.calls.some(([a]) => a.type === "complete-onboarding")).toBe(false);
   await act(async () => ticket.props.onView());
   if (preview) { expect(mock.dispatch).not.toHaveBeenCalled(); expect(mock.storage.size).toBe(0); }
@@ -62,7 +62,8 @@ it.each([false, true])("uploads the selected photo before registration and retai
   if (failure) mock.upload.mockRejectedValueOnce(new Error("Upload failed"));
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Onboarding)); });
-  await next(r); await next(r); await next(r);
+  await next(r); await next(r);
+  await act(async () => r.root.findByType("EventRegistration" as never).props.onClaim());
   expect(mock.upload).toHaveBeenCalledWith(expect.objectContaining({ userId: "a", previousAvatarUrl: state.avatarUrl, requireStorage: true }));
   if (failure) {
     expect(mock.dispatch).not.toHaveBeenCalled();

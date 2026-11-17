@@ -92,7 +92,7 @@ function Welcome({ preview }: { preview: boolean }) {
   async function createAccount(event: FormEvent) {
     event.preventDefault();
     if (busy) return;
-    if (preview) { router.push("/app/onboarding?preview=1"); return; }
+    if (preview) { router.push(`/app/onboarding?preview=1&sport=${draft.sport}`); return; }
     setBusy(true); setError(null);
     try {
       saveCompletedIntro(email);
@@ -118,7 +118,7 @@ function Welcome({ preview }: { preview: boolean }) {
       <AppParagraph>Choose your sport. You can add more later.</AppParagraph>
       <div className="onboarding-sports">
         {SPORTS.map(sport => <button type="button" key={sport.id} className="onboarding-sport"
-          style={{ background: sportTiles[sport.id].background }} aria-pressed={draft.sport === sport.id} onClick={() => setDraft(d => ({ ...d, sport: sport.id }))}>
+          style={{ background: sportTiles[sport.id].background }} aria-pressed={draft.sport === sport.id} onClick={() => { setDraft(d => ({ ...d, sport: sport.id })); setStep("athlete"); }}>
           <span aria-hidden style={{ fontSize: 108, lineHeight: 1.2, transform: sportTiles[sport.id].mirror ? "scaleX(-1)" : undefined }}>{sportTiles[sport.id].emoji}</span><strong>{sport.name}</strong>
         </button>)}
       </div>
@@ -157,7 +157,7 @@ function Welcome({ preview }: { preview: boolean }) {
       <AppParagraph typographyRole="caption">By creating an account you agree to our <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.</AppParagraph>
     </>}
     {error && <AppParagraph role="alert">{error}</AppParagraph>}
-    {step !== "account" && step !== "overtake" && <div className="onboarding-actions">
+    {step !== "sport" && step !== "account" && step !== "overtake" && <div className="onboarding-actions">
       {back}<button className="fb-btn" type="button" disabled={photoBusy || (step === "athlete" && !draft.name.trim())} onClick={() => void next()}>{step === "athlete" ? "See yourself compete" : step === "growth" ? "Make it official" : "Continue"}</button>
     </div>}
     {step === "sport" && !authenticatedIntro && <Link className="fb-btn-ghost" prefetch href={`/login?from=onboarding${preview ? "&preview=1" : ""}${nextQuery ? `&${nextQuery}` : ""}`}>I already have an account</Link>}

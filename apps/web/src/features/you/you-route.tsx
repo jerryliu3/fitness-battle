@@ -623,7 +623,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
                   );
                 })}
 
-                <label className="fb-field" style={{ marginTop: 16 }}>
+                {!inlineConnections && <label className="fb-field" style={{ marginTop: 16 }}>
                   Garmin file (.fit, .gpx, .tcx, .zip)
                   <input
                     ref={fileRef}
@@ -635,7 +635,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
                       event.target.value = "";
                     }}
                   />
-                </label>
+                </label>}
                 {syncNote === "Sync failed" ? (
                   <button
                     type="button"

@@ -131,7 +131,7 @@ export function VitalsLabExperience({
   onAppearanceChange,
 }: VitalsLabExperienceProps) {
   const [appearance, setAppearance] = useState<"dark" | "light">(appearanceProp);
-  const [gender, setGender] = useState<VitalsLabGender>("female");
+  const [gender, setGender] = useState<VitalsLabGender>("male");
   const [viewMode, setViewMode] = useState<VitalsLabViewMode>("lumen");
   const [activeMetricId, setActiveMetricId] = useState<VitalsLabMetricId | null>(null);
   const [activeSystem, setActiveSystem] = useState<VitalsLabSystemId>("full");
