@@ -1,13 +1,14 @@
 import { OnboardingFeatureTour } from "../src/features/onboarding-feature-tour";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Redirect, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, TextInput, View, type ScrollViewInstance } from "react-native";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { KeyboardAvoidingView, Platform, Pressable, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  EMPTY_GUEST_INTRO, ONBOARDING_STEPS, ONBOARDING_TITLES, ONBOARDING_OVERTAKE_COPY, ONBOARDING_CARD_LABELS, isGuestPhoto, type OnboardingFeatureId,
+  EMPTY_GUEST_INTRO, ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId,
   onboardingAthleteCard, guestIntroForAccount, SPORTS, type OnboardingStep,
 } from "@fitness-battle/shared";
+import { OnboardingCanvas, ONBOARDING_CANVAS } from "../src/ui/onboarding-canvas";
 import { OnboardingAthlete } from "../src/features/onboarding-athlete";
 import * as ImagePicker from "expo-image-picker";
 import { OnboardingOvertake } from "../src/features/onboarding-overtake";
@@ -25,44 +26,45 @@ export default function Welcome() {
   const { user, loading, signUp } = useAuth();
   const { state } = useCompeteStore();
   const router = useRouter();
+  const preview = useLocalSearchParams<{ preview?: string }>().preview === "1";
   const colors = useThemeColors(), f = useFocusStyles();
   const [ready, setReady] = useState(false), [step, setStep] = useState<OnboardingStep>("sport");
   const [draft, setDraft] = useState<GuestIntroDraft>(EMPTY_GUEST_INTRO);
   const [feature, setFeature] = useState<OnboardingFeatureId>("growth");
-  const [departing, setDeparting] = useState(false);
-  const enterOvertake = useCallback(() => { setDeparting(false); setStep("overtake"); }, []);
+  const [previewScore, setPreviewScore] = useState<number | null>(null);
+  const [previewPasses, setPreviewPasses] = useState(0);
+  const showScore = useCallback((score: number) => setPreviewScore(Math.round(score / 50) * 50), []);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [cardDraft, setCardDraft] = useState<GuestIntroDraft>(EMPTY_GUEST_INTRO);
   const [email, setEmail] = useState(""), [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState(false), [cardHeld, setCardHeld] = useState(false);
-  const scroll = useRef<ScrollViewInstance>(null);
-  const steps: readonly OnboardingStep[] = user ? ONBOARDING_STEPS.filter(s => s !== "account") : ONBOARDING_STEPS;
-  const card = useMemo(() => onboardingAthleteCard(cardDraft), [cardDraft]);
+  const steps: readonly OnboardingStep[] = user && !preview ? ONBOARDING_STEPS.filter(s => s !== "account") : ONBOARDING_STEPS;
+  const baseCard = useMemo(() => onboardingAthleteCard(cardDraft), [cardDraft]);
+  const card = useMemo(() => ({ ...baseCard, score: previewScore, overtakes: previewPasses }), [baseCard, previewScore, previewPasses]);
   useEffect(() => {
     if (cardHeld) return;
     const timer = setTimeout(() => setCardDraft(draft), 120);
     return () => clearTimeout(timer);
   }, [draft, cardHeld]);
-  useEffect(() => { scroll.current?.scrollTo({ y: 0, animated: false }); }, [step]);
   useEffect(() => {
-    if (!ready || loading || state?.onboardingCompleted) return;
+    if (!ready || loading || preview || state?.onboardingCompleted) return;
     const timer = setTimeout(() => { void AsyncStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify(draft)).catch(() => {}); }, 600);
     return () => clearTimeout(timer);
-  }, [ready, loading, draft, state?.onboardingCompleted]);
+  }, [ready, loading, draft, preview, state?.onboardingCompleted]);
   useEffect(() => {
     if (loading || (user && !state)) return;
     let alive = true;
     void Promise.all([readGuestIntroDraft(), AsyncStorage.getItem(GUEST_SIGNUP_PENDING_KEY)]).then(([saved, pending]) => {
       if (!alive) return;
-      const initial = user && state ? guestIntroForAccount(saved, pending, user.email) ?? {
+      const initial = preview ? EMPTY_GUEST_INTRO : user && state ? guestIntroForAccount(saved, pending, user.email) ?? {
         sport: state.primary, name: user.displayName || state.name, city: state.city || "", countryCode: state.countryCode || "",
       } : saved ?? EMPTY_GUEST_INTRO;
       setDraft(initial); setCardDraft(initial); setReady(true);
     }).catch(() => { if (alive) setReady(true); });
     return () => { alive = false; };
-  }, [loading, user?.id, Boolean(state)]);
-  if (user && state?.onboardingCompleted) return <Redirect href="/today" />;
+  }, [loading, preview, user?.id, Boolean(state)]);
+  if (!preview && user && state?.onboardingCompleted) return <Redirect href="/today" />;
   if (loading || !ready) return <View style={{ flex: 1, backgroundColor: colors.paper }} />;
   const index = steps.indexOf(step);
   async function saveCompletedIntro(pendingEmail: string) {
@@ -74,9 +76,8 @@ export default function Welcome() {
   async function next() {
     setError(null);
     setCardDraft(draft);
-    if (step === "athlete") { setDeparting(true); return; }
     if (step === "growth") {
-      if (user) {
+      if (user && !preview) {
         try { await saveCompletedIntro(user.email); router.replace("/onboarding"); }
         catch { setError("Could not save setup on this device. Please try again."); }
         return;
@@ -86,6 +87,7 @@ export default function Welcome() {
   }
   async function createAccount() {
     if (busy) return;
+    if (preview) { router.replace("/onboarding?preview=1"); return; }
     setBusy(true); setError(null);
     try {
       await saveCompletedIntro(email);
@@ -111,68 +113,63 @@ export default function Welcome() {
     finally { setPhotoBusy(false); }
   }
   async function signIn() {
-    await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
+    if (!preview) await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
     router.push({ pathname: "/athlete", params: { auth: "signin", from: "onboarding" } });
   }
-  const back = index > 0 ? <IconButton icon="back" label="Back" disabled={busy || photoBusy || departing} onPress={() => setStep(steps[index - 1]!)} /> : null;
+  const back = index > 0 ? <IconButton icon="back" label="Back" disabled={busy || photoBusy} onPress={() => setStep(steps[index - 1]!)} /> : null;
   const actions = (label: string, onPress: () => void, disabled = false) => <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
-    {back}<View style={{ flex: 1 }}><FocusButton label={label} disabled={disabled} onPress={onPress} /></View>
+    {back}<View style={{ flex: 1 }}><FocusButton fit label={label} disabled={disabled} onPress={onPress} /></View>
   </View>;
-  const header = <>
-    <AppText role="caption" secondary>OVERTAEK</AppText>
-    <View style={{ flexDirection: "row", gap: 5 }} accessibilityLabel={`Step ${index + 1} of ${steps.length}`}>
-      {steps.map((s, i) => <View key={s} style={{ flex: 1, height: 5, borderRadius: 8, backgroundColor: i <= index ? colors.tennis : colors.line }} />)}
-    </View>
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-      <View style={{ flex: 1 }}><AppText role={step === "overtake" || step === "growth" ? "heading" : "display"} accessibilityRole="header">{ONBOARDING_TITLES[step]}</AppText></View>
-      {(step === "overtake" || step === "growth") && <OnboardingAthlete compact model={card} label={step === "overtake" ? "Practice pass" : ONBOARDING_CARD_LABELS[feature]} onInteractionChange={setCardHeld} />}
-    </View>
-  </>;
-  if (step === "overtake") return <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
-    <View style={{ padding: 20, gap: 12 }}>{header}<AppText secondary>{ONBOARDING_OVERTAKE_COPY}</AppText></View>
-    <OnboardingOvertake fill sport={draft.sport} name={draft.name} photo={draft.photo} onBack={() => setStep("athlete")} onComplete={() => void next()} />
-  </SafeAreaView>;
-  return <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
-    <ScrollView ref={scroll} scrollEnabled={!cardHeld} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
-      contentContainerStyle={[f.content, { maxWidth: 520, width: "100%", alignSelf: "center", paddingBottom: 32 }]}>
-      {header}
-      {step === "sport" && <>
-        <AppText secondary>Choose your sport. You can add more later.</AppText>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-          {SPORTS.map(sport => <Pressable key={sport.id} accessibilityRole="button" accessibilityLabel={sport.name}
-            accessibilityState={{ selected: draft.sport === sport.id }} onPress={() => setDraft(d => ({ ...d, sport: sport.id }))}
-            style={{ flexBasis: "46%", flexGrow: 1, minHeight: 142, alignItems: "center", justifyContent: "center", gap: 12,
-              borderRadius: 20, borderWidth: draft.sport === sport.id ? 2 : 1, borderColor: draft.sport === sport.id ? colors.ink : colors.line,
-              backgroundColor: draft.sport === sport.id ? colors.actionSoft : colors.card }}>
-            <SportIcon sport={sport.id} size={40} /><AppText role="label">{sport.name}</AppText>
-          </Pressable>)}
-        </View>
-      </>}
-      {step === "growth" && <OnboardingFeatureTour draft={draft} selected={feature} onSelect={setFeature} />}
-      {step === "athlete" && <AppText secondary>Give your athlete a name and a face.</AppText>}
-      {step === "account" && <AppText secondary>Save your athlete and start competing for real.</AppText>}
-      {(step === "athlete" || step === "account") && <OnboardingAthlete model={card} onInteractionChange={setCardHeld} departing={departing} onDeparted={enterOvertake} />}
-      {step === "athlete" && <>
-        <AppText role="label">Name</AppText>
-        <TextInput accessibilityLabel="Name" value={draft.name} maxLength={80} placeholder="Your name" style={f.input}
-          onChangeText={name => setDraft(d => ({ ...d, name }))} onEndEditing={() => setCardDraft(draft)} />
-        <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}><View style={{ flex: 1 }}><FocusButton secondary label={photoBusy ? "Reading photo…" : draft.photo ? "Change photo" : "Add photo (optional)"} disabled={photoBusy} onPress={() => void choosePhoto()} /></View>
-        {draft.photo && <Pressable accessibilityRole="button" onPress={() => { setDraft(d => ({ ...d, photo: undefined })); setCardDraft(d => ({ ...d, photo: undefined })); }} style={{ minHeight: 44, justifyContent: "center" }}><AppText>Remove photo</AppText></Pressable>}
-        </View>
-      </>}
-      {step === "account" && <>
-        <AppText role="label">Email</AppText>
-        <TextInput accessibilityLabel="Email" style={f.input} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" editable={!confirmation} />
-        <AppText role="label">Password</AppText>
-        <TextInput accessibilityLabel="Password" style={f.input} value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoComplete="new-password" editable={!confirmation} />
-        {confirmation && <AppText accessibilityRole="alert">Check your email to confirm your account and continue setup.</AppText>}
-      </>}
-      {error && <AppText accessibilityRole="alert">{error}</AppText>}
-      {step === "account" ? <>
-        {actions(busy ? "Creating…" : "Create account", () => void createAccount(), busy || confirmation || !email.trim() || password.length < 6)}
-        <LegalLinks />
-      </> : actions(step === "athlete" ? "See yourself compete" : step === "growth" ? "Make it official" : "Continue", () => void next(), photoBusy || departing || (step === "athlete" && !draft.name.trim()))}
-      {step === "sport" && !user && <FocusButton secondary label="I already have an account" onPress={() => void signIn()} />}
-    </ScrollView>
-  </SafeAreaView>;
+  const field = { ...f.input, minHeight: 0, height: 46, paddingVertical: 8 };
+  const box = (top: number, height: number) => ({ position: "absolute" as const, left: 16, right: 16, top, height });
+  return <View style={{ flex: 1, backgroundColor: colors.paper, overflow: "hidden" }}>
+    {step === "overtake" && <View style={{ position: "absolute", inset: 0 }}>
+      <OnboardingOvertake fill sport={draft.sport} name={draft.name} photo={draft.photo} onOvertakeCountChange={setPreviewPasses}
+        onBack={() => setStep("athlete")} onComplete={() => void next()} />
+    </View>}
+    <SafeAreaView pointerEvents="box-none" style={{ flex: 1 }} edges={["top", "bottom"]}>
+      <KeyboardAvoidingView pointerEvents="box-none" style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <OnboardingCanvas height={ONBOARDING_CANVAS.height}>
+          <OnboardingAthlete model={card} step={step} onInteractionChange={setCardHeld} />
+          {step !== "growth" && <View pointerEvents="none" style={{ ...box(8, 48), right: step === "overtake" ? 120 : 16 }}>
+            <AppText role={step === "overtake" ? "heading" : "display"} accessibilityRole="header" style={{ flex: 1 }} maxFontSizeMultiplier={1.2} numberOfLines={2} adjustsFontSizeToFit>{ONBOARDING_TITLES[step]}</AppText>
+          </View>}
+          {step === "sport" && <>
+            <View style={box(64, 48)}><AppText secondary style={{ flex: 1 }} numberOfLines={2} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>Choose your sport. You can add more later.</AppText></View>
+            <View style={{ ...box(126, 380), flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+              {SPORTS.map(sport => <Pressable key={sport.id} accessibilityRole="button" accessibilityLabel={sport.name}
+                accessibilityState={{ selected: draft.sport === sport.id }} onPress={() => setDraft(d => ({ ...d, sport: sport.id }))}
+                style={{ width: 158, height: 182, alignItems: "center", justifyContent: "center", gap: 16, borderRadius: 20,
+                  borderWidth: draft.sport === sport.id ? 2 : 1, borderColor: draft.sport === sport.id ? colors.ink : colors.line,
+                  backgroundColor: draft.sport === sport.id ? colors.actionSoft : colors.card }}>
+                <SportIcon sport={sport.id} size={64} /><AppText role="label" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>{sport.name}</AppText>
+              </Pressable>)}
+            </View>
+            {(!user || preview) && <View style={box(520, 48)}><FocusButton fit secondary label="I already have an account" onPress={() => void signIn()} /></View>}
+          </>}
+          {step === "athlete" && <>
+            <View style={box(414, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Athlete name" placeholder="Athlete name" value={draft.name} maxLength={80} style={field}
+              onChangeText={name => setDraft(d => ({ ...d, name }))} onEndEditing={() => setCardDraft(draft)} /></View>
+            <View style={{ ...box(474, 48), flexDirection: "row", gap: 16, alignItems: "center" }}>
+              <View style={{ flex: 1 }}><FocusButton fit secondary label={photoBusy ? "Reading photo…" : draft.photo ? "Change photo" : "Add photo"} disabled={photoBusy} onPress={() => void choosePhoto()} /></View>
+              {draft.photo && <Pressable accessibilityRole="button" onPress={() => { setDraft(d => ({ ...d, photo: undefined })); setCardDraft(d => ({ ...d, photo: undefined })); }} style={{ minHeight: 44, justifyContent: "center" }}><AppText numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>Remove photo</AppText></Pressable>}
+            </View>
+          </>}
+          {step === "growth" && <View style={{ ...box(12, 548) }}>
+            <OnboardingFeatureTour draft={draft} selected={feature} onSelect={setFeature} onScoreChange={showScore} />
+          </View>}
+          {step === "account" && <>
+            <View style={box(350, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Email" placeholder="Email" style={field} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" editable={!confirmation} /></View>
+            <View style={box(408, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Password" placeholder="Password" style={field} value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoComplete="new-password" editable={!confirmation} /></View>
+            <View style={box(474, 44)}><LegalLinks /></View>
+          </>}
+          {(error || confirmation) && <View style={box(528, 46)}><AppText role="caption" accessibilityRole="alert" numberOfLines={3} adjustsFontSizeToFit>{error ?? "Check your email to confirm your account and continue setup."}</AppText></View>}
+          {step !== "overtake" && <View style={box(584, 52)}>
+            {step === "account" ? actions(busy ? "Creating…" : "Create account", () => void createAccount(), busy || confirmation || !email.trim() || password.length < 6)
+              : actions(step === "athlete" ? "See yourself compete" : step === "growth" ? "Make it official" : "Continue", () => void next(), photoBusy || (step === "athlete" && !draft.name.trim()))}
+          </View>}
+        </OnboardingCanvas>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  </View>;
 }

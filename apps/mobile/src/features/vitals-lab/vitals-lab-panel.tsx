@@ -105,12 +105,16 @@ const LAB_STAGE_BG = "#0a161d";
 export function VitalsLabPanel({
   state,
   signedOut = false,
+  gender,
+  height = STAGE_HEIGHT,
   metrics: suppliedMetrics,
   onChartMetricChange,
   immersive = false,
 }: {
   state?: CompeteState | null;
   signedOut?: boolean;
+  gender?: "male" | "female";
+  height?: number;
   metrics?: VitalsLabMetricDisplay[];
   onChartMetricChange?: (metric: HealthLabChartMetric) => void;
   immersive?: boolean;
@@ -125,7 +129,7 @@ export function VitalsLabPanel({
   const host = useVitalsLabHostSource();
   const assetBase = host?.assetBaseUrl ?? "";
 
-  const lab = useVitalsLabController(metrics, appearance, assetBase, state?.gender);
+  const lab = useVitalsLabController(metrics, appearance, assetBase, gender ?? state?.gender);
 
   const selectMetric = (metric: VitalsLabMetricDisplay) => {
     lab.selectMetric(metric);
@@ -151,7 +155,7 @@ export function VitalsLabPanel({
     <View
       style={[
         s.stage,
-        immersive ? s.stageImmersive : { height: STAGE_HEIGHT },
+        immersive ? s.stageImmersive : { height },
         { backgroundColor: LAB_STAGE_BG },
       ]}
       accessibilityLabel="Vitals Lab body scan"

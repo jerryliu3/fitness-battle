@@ -13,7 +13,7 @@ export const ONBOARDING_TITLES: Record<OnboardingStep, string> = {
   sport: "What moves you?",
   overtake: "Make training fun.",
   growth: "Your story is just starting.",
-  athlete: "Meet your athlete.",
+  athlete: "Welcome athlete!",
   account: "Make it official.",
 };
 
@@ -95,20 +95,11 @@ export const ONBOARDING_GROWTH = {
 };
 
 export const ONBOARDING_FEATURES = [
-  { id: "growth", label: "Growth", title: "See your potential.",
-    description: "Build your Effort Score through consistent training." },
-  { id: "crews", label: "Crew", title: "Better together.",
-    description: "Make progress on shared weekly goals or take on another crew." },
-  { id: "vitals", label: "Health Lab", title: "Understand your body.",
-    description: "Explore sleep, recovery and health trends beyond workout totals." },
+  { id: "growth", label: "Growth" },
+  { id: "crews", label: "Crew" },
+  { id: "vitals", label: "Health Lab" },
 ] as const;
 export type OnboardingFeatureId = typeof ONBOARDING_FEATURES[number]["id"];
-
-export const ONBOARDING_OVERTAKE_COPY = "Pass other athletes as you train. Compete with people at your level.";
-
-export const ONBOARDING_CARD_LABELS: Record<OnboardingFeatureId, string> = {
-  growth: "Future PR slot", crews: "Future team slot", vitals: "Vitals Lab slot",
-};
 
 export function onboardingCrewPreview(draft: GuestIntroDraft): CrewWeekRelayInput {
   const distance = draft.sport === "cycling" ? 18000 : draft.sport === "walking" ? 4000 : 6000;
@@ -133,3 +124,26 @@ export const ONBOARDING_VITALS_METRICS: VitalsLabMetricDisplay[] = VITALS_LAB_ME
   value: ({ hrv: "58", resp: "14", sleep: "7h 42m", rhr: "56", spo2: "98", active: "64" })[spec.id],
   status: "", delta: "", sparkline: [],
 }));
+
+export function onboardingGrowthScore(progress: number) {
+  const values = ONBOARDING_GROWTH.scores;
+  const position = Math.max(0, Math.min(1, progress)) * (values.length - 1);
+  const i = Math.floor(position), a = values[i]!, b = values[Math.min(i + 1, values.length - 1)]!;
+  return Math.round(a + (b - a) * (position - i));
+}
+
+export function onboardingCrewReplay(draft: GuestIntroDraft, progress: number) {
+  const preview = onboardingCrewPreview(draft);
+  const frame = Math.max(0, Math.min(1, progress));
+  return { ...preview, entries: preview.entries.map((entry, i) => {
+    const amount = Math.max(0, Math.min(1, frame * 3 - i));
+    return { ...entry, distance_m: entry.distance_m * amount, moving_sec: entry.moving_sec * amount, session_count: (entry.session_count ?? 1) * amount };
+  }) };
+}
+
+export const ONBOARDING_CANVAS = { width: 360, height: 640 };
+
+export function fitOnboardingCanvas(width: number, height: number, contentHeight: number) {
+  const scale = Math.max(0, Math.min(1.2, width / ONBOARDING_CANVAS.width, height / Math.max(1, contentHeight)));
+  return { scale, width: ONBOARDING_CANVAS.width * scale, height: contentHeight * scale };
+}

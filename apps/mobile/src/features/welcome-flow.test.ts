@@ -1,12 +1,12 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-import { freshState } from "@fitness-battle/shared";
+import { freshState, GUEST_INTRO_DRAFT_KEY } from "@fitness-battle/shared";
 const mock = vi.hoisted(() => ({ replace: vi.fn(), push: vi.fn(), signUp: vi.fn(async () => ({})), pick: vi.fn(async () => ({ canceled: false, assets: [{ base64: "/9j/" }] })), save: vi.fn(async (_key: string, _value: string) => {}) }));
-vi.mock("react-native", () => ({ useColorScheme: () => "light", Pressable: "Pressable", ScrollView: "ScrollView", TextInput: "TextInput", View: "View" }));
+vi.mock("react-native", () => ({ useColorScheme: () => "light", KeyboardAvoidingView: "KeyboardAvoidingView", Platform: { OS: "ios" }, Pressable: "Pressable", ScrollView: "ScrollView", TextInput: "TextInput", View: "View" }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
 vi.mock("@react-native-async-storage/async-storage", () => ({ default: { getItem: async () => null, setItem: mock.save, removeItem: vi.fn(async () => {}) } }));
-vi.mock("expo-router", () => ({ useRouter: () => ({ replace: mock.replace, push: mock.push }), Redirect: "Redirect" }));
+vi.mock("expo-router", () => ({ useLocalSearchParams: () => ({}), useRouter: () => ({ replace: mock.replace, push: mock.push }), Redirect: "Redirect" }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: null, loading: false, signUp: mock.signUp }) }));
 const state = freshState();
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state }) }));
@@ -21,30 +21,36 @@ vi.mock("./onboarding-overtake", () => ({ OnboardingOvertake: "OnboardingOvertak
 vi.mock("./onboarding-potential", () => ({ OnboardingPotential: "OnboardingPotential" }));
 vi.mock("./legal-links", () => ({ LegalLinks: "LegalLinks" }));
 vi.mock("./onboarding-feature-tour", () => ({ OnboardingFeatureTour: "OnboardingFeatureTour" }));
+vi.mock("../ui/onboarding-canvas", () => ({ OnboardingCanvas: ({ children }: { children: unknown }) => children, ONBOARDING_CANVAS: { width: 360, height: 640 } }));
 import Welcome from "../../app/welcome";
 it("keeps the replay immersive, commits the card on editing end, then creates the account inline", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Welcome)); });
-  expect(r.root.findAllByType("FocusButton" as never).map(n => n.props.label)).toEqual(["Continue", "I already have an account"]);
+  expect(r.root.findAllByType("FocusButton" as never).map(n => n.props.label).sort()).toEqual(["Continue", "I already have an account"]);
   const press = async (label: string) => act(async () => r.root.findAllByType("FocusButton" as never).find(n => n.props.label === label)!.props.onPress());
   await act(async () => r.root.findAllByType("Pressable" as never).find(n => n.props.accessibilityLabel === "Cycling")!.props.onPress());
+  const persistentCard = r.root.findByType("OnboardingAthlete" as never);
   await press("Continue");
   const firstCard = r.root.findByType("OnboardingAthlete" as never).props.model;
-  const name = () => r.root.findAllByType("TextInput" as never).find(n => n.props.accessibilityLabel === "Name")!;
+  const name = () => r.root.findAllByType("TextInput" as never).find(n => n.props.accessibilityLabel === "Athlete name")!;
   await act(async () => name().props.onChangeText("Taylor"));
   expect(r.root.findByType("OnboardingAthlete" as never).props.model).toBe(firstCard);
   await act(async () => name().props.onEndEditing());
   expect(r.root.findByType("OnboardingAthlete" as never).props.model.name).toBe("Taylor");
-  await press("Add photo (optional)");
+  await press("Add photo");
   expect(r.root.findByType("OnboardingAthlete" as never).props.model.avatarUrl).toBe("data:image/jpeg;base64,/9j/");
   await press("See yourself compete");
-  await act(async () => r.root.findByType("OnboardingAthlete" as never).props.onDeparted());
   const replay = r.root.findByType("OnboardingOvertake" as never);
   expect(replay.props.photo).toBe("data:image/jpeg;base64,/9j/");
   expect(replay.props.sport).toBe("cycling"); expect(replay.props.fill).toBe(true);
   expect(r.root.findAllByType("ScrollView" as never)).toHaveLength(0);
+  await act(async () => replay.props.onOvertakeCountChange(1));
+  expect(persistentCard.props.model.overtakes).toBe(1);
   await act(async () => replay.props.onComplete());
+  await act(async () => r.root.findByType("OnboardingFeatureTour" as never).props.onScoreChange(1250));
+  expect(r.root.findByType("OnboardingAthlete" as never)).toBe(persistentCard);
+  expect(persistentCard.props.model.score).toBe(1250);
   await press("Make it official");
   expect(r.root.findAllByType("FocusButton" as never).some(n => n.props.label === "Sign in")).toBe(false);
   const field = (label: string) => r.root.findAllByType("TextInput" as never).find(n => n.props.accessibilityLabel === label)!;
@@ -54,5 +60,9 @@ it("keeps the replay immersive, commits the card on editing end, then creates th
   expect(mock.signUp).toHaveBeenCalledWith({ email: "taylor@example.com", password: "password", displayName: "Taylor" });
   expect(mock.replace).toHaveBeenCalledWith("/onboarding");
   expect(mock.save.mock.calls.some(([, raw]) => raw.includes('"introCompleted":true'))).toBe(true);
+  for (const [key, raw] of mock.save.mock.calls) if (key === GUEST_INTRO_DRAFT_KEY) {
+    expect(JSON.parse(raw)).not.toHaveProperty("score");
+    expect(JSON.parse(raw)).not.toHaveProperty("overtakes");
+  }
   await act(async () => r.unmount());
 });

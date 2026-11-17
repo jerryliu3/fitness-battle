@@ -73,3 +73,16 @@ it("renders the compact card as the same interactive transparent scene", async (
   await act(async () => web.props.onTouchStart());
   expect(interaction).toHaveBeenLastCalledWith(true);
 });
+
+it("retains the portrait in the scene while updating the score in memory", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const portrait = { ...model, avatarUrl: "data:image/jpeg;base64,portrait-payload" };
+  await act(async () => { renderer = create(createElement(AthleteCrest, { model: portrait })); });
+  const web = renderer.root.findByType("WebView" as never);
+  await act(async () => web.props.onMessage({ nativeEvent: { data: '{"type":"athlete-card-ready"}' } }));
+  expect(scene.inject).toHaveBeenLastCalledWith(expect.stringContaining("portrait-payload"));
+  await act(async () => renderer.update(createElement(AthleteCrest, { model: { ...portrait, score: 1250 } })));
+  const update = scene.inject.mock.calls.at(-1)![0];
+  expect(update).toContain('"score":1250');
+  expect(update).not.toContain("portrait-payload");
+});

@@ -7,29 +7,40 @@ into this journey; the website's marketing page links into it too.
 ## Before account creation
 
 1. **Choose a sport** — Running, Cycling, Walking or Strength in a visual 2×2 grid.
-2. **Meet your athlete** — a full-size interactive Crest, required Name field and
+2. **Welcome athlete!** — a full-size interactive Crest, required single-line Athlete name field and
    optional photo. The card updates after a short edit delay, holding native bridge
    updates during rotation. No other profile questions appear here.
 3. **Make training fun** — the existing competition player carries the chosen name
    and photo. Running/Cycling start in geographic 3D; Walking/Strength start in
-   Timeline. A compact athlete card has reserved space beside the heading and the
+   Timeline. A compact athlete card floats at the top-right and the
    pass result reads “You passed Alex!” without a large summary.
 4. **Your story is just starting** — Growth, Crew and Health Lab tabs share one page.
    Growth opens first with the 500 → 2,000 trajectory; these points are never earned
-   account facts. The mini-card label changes between future PR, team and Vitals
-   slots. Crew goals follow the chosen sport.
+   account facts. The single score reading and card score animate from 500 to 2,000 on every
+   appearance. Crew uses its product relay graphic with Play and a scrubber.
+   Health Lab includes a male/female model selector.
 5. **Make it official** — the large Crest returns above email and password, with
    Create account and Terms/Privacy links. City, country and other preferences
    remain after signup. Existing-account sign-in stays on the first screen only.
 
-The compact view renders the same directly rotatable athlete card on a transparent
-background, not a portrait chip or a tap-to-open modal. Native uses the same scene
-bridge with compact sizing; web uses the same Crest renderer and shared layout
-transition. The card keeps reserved top-right header space and a contextual label.
+One athlete-card renderer remains mounted throughout the introduction. Its loaded
+portrait, rotation and WebView survive step changes; only transforms and in-memory
+presentation values change. Native retains the full model inside the scene and
+sends only changed fields across the bridge, avoiding repeated photo payloads
+during score animation. It scales down and moves to the top-right for Overtake
+and Discover, then returns to the center for signup. The practice count and growth
+score update this presentation model without entering account facts.
 
-Crew discovery reuses the product CrewRelay graphic with the guest’s name/photo
-in its roster. Health Lab reuses the product scan experience and metric controls,
-with in-memory preview readings that never enter account or health state.
+Mobile uses a 360×640 composition fitted to the available safe-area viewport. Its
+controls, visuals and card scale together. There is no page ScrollView, wordmark,
+progress-bar row, card caption, or explanatory copy around Discover. Keyboard
+avoidance can resize the fitted composition. Post-signup screens use a measured
+content canvas; the long preferences form is divided into identity, event selection
+and training-volume groups to keep each page usable without scrolling.
+
+Crew discovery reuses the product CrewRelay graphic with the guest’s name/photo.
+Health Lab reuses the product scan experience with in-memory preview readings;
+neither preview activity nor health readings enter account or health state.
 
 Back is a compact icon beside the primary action; the sign-in page puts it beside
 the wordmark. Athlete card models are memoized and update after a short typing pause or when editing ends. Native queues model changes while held and deduplicates bridge
@@ -40,7 +51,7 @@ account matching rule in `packages/shared/src/onboarding-journey.ts`. The select
 Everyday Club tokens, chart components, rank artwork and athlete renderer remain
 the visual foundation. The supplied storyboard informs sequence and composition.
 
-Signed-in reviewers can open `/app/welcome?preview=1` to start at sport selection.
+Signed-in reviewers can open native `/welcome?preview=1` or web `/app/welcome?preview=1` to start at sport selection.
 This uses fresh in-memory choices, does not save guest drafts or change the account,
 and continues into the read-only post-account setup preview.
 
@@ -80,7 +91,7 @@ preview mode remains read-only in the data layer.
 Native `/onboarding` and web `/app/onboarding` have three stages:
 
 1. Connect trackers, or skip until later.
-2. Finish profile and preferences: name, optional city/country/gender, time zone,
+2. Finish profile and preferences (three fitted pages on mobile): name, optional city/country/gender, time zone,
    sports, primary sport, distance units, optional typical weekly training volume
    and sleep tracking. Declarations are saved in the account draft, converted
    to metres/seconds/steps and sent through the existing `declare-effort` action
@@ -106,12 +117,12 @@ From `/Users/jerryliu/.codex/worktrees/58bd/fitness-battle`:
 pnpm dev:web
 # Open http://localhost:3000/app/welcome?preview=1
 
-pnpm --filter @fitness-battle/mobile exec expo start --dev-client --port 8082
+pnpm --filter @fitness-battle/mobile exec expo start --dev-client --port 8089
 # Press i for the current-worktree iOS development client.
 ```
 
 For a fresh native build, first check Mapbox credentials in `apps/mobile/.env`
-and `~/.netrc`, then `cd apps/mobile && pnpm ios --port 8082`.
+and `~/.netrc`, then `cd apps/mobile && pnpm ios --port 8089`.
 Use the existing development client if native dependencies are unchanged.
 
 Review all four sports, narrow screens, large text, keyboard scrolling, dark mode,

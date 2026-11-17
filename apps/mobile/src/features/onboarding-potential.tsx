@@ -1,26 +1,33 @@
-import { ONBOARDING_GROWTH } from "@fitness-battle/shared";
-import { View } from "react-native";
+import { ONBOARDING_GROWTH, onboardingGrowthScore } from "@fitness-battle/shared";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Easing, View } from "react-native";
 import { useThemeColors } from "../theme";
+import { useReducedMotion } from "../ui/use-reduced-motion";
 import { AppText } from "../ui/section";
 import { StandardLineChart } from "../ui/standard-line-chart";
 
-/** A sample trajectory, not an actual or predicted guest score. */
-export function OnboardingPotential() {
-  const c = useThemeColors();
-  const { scores, labels, pointLabels } = ONBOARDING_GROWTH;
-  const start = scores[0]!, end = scores[scores.length - 1]!;
-  const panel = { backgroundColor: c.card, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: c.line, gap: 12 } as const;
-  return <View style={{ gap: 18 }}>
-    <View style={panel}>
-      <AppText role="label">Effort Score</AppText>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <AppText role="display">{start.toLocaleString("en-US")}</AppText>
-        <AppText role="heading" secondary>→</AppText>
-        <AppText role="display">{end.toLocaleString("en-US")}</AppText>
-      </View>
-      <StandardLineChart height={220} values={scores} xLabels={labels} pointLabels={pointLabels}
-        showAxes showTrend={false} accessibilityLabel={`Potential score growth from ${start} to ${end} over seven weeks`} />
-    </View>
-    <AppText secondary>As you train, your athlete’s progress becomes visible through scores, records and trends.</AppText>
+export function OnboardingPotential({ onScoreChange }: { onScoreChange?: (score: number) => void }) {
+  const c = useThemeColors(), reduced = useReducedMotion();
+  const progress = useRef(new Animated.Value(0)).current;
+  const [score, setScore] = useState(500);
+  useEffect(() => {
+    progress.setValue(reduced ? 1 : 0);
+    let last = -1;
+    const update = (value: number) => {
+      const next = Math.round(onboardingGrowthScore(value) / 25) * 25;
+      if (next === last) return;
+      last = next; setScore(next); onScoreChange?.(next);
+    };
+    update(reduced ? 1 : 0);
+    const listener = progress.addListener(({ value }) => update(value));
+    const animation = Animated.timing(progress, { toValue: 1, duration: reduced ? 0 : 2400, easing: Easing.linear, useNativeDriver: false });
+    animation.start();
+    return () => { animation.stop(); progress.removeListener(listener); };
+  }, [progress, reduced, onScoreChange]);
+  return <View style={{ backgroundColor: c.card, borderRadius: 24, padding: 16, gap: 12 }}>
+    <AppText role="caption">Effort Score</AppText>
+    <AppText role="hero">{score.toLocaleString("en-US")}</AppText>
+    <StandardLineChart height={234} values={ONBOARDING_GROWTH.scores} xLabels={ONBOARDING_GROWTH.labels} pointLabels={ONBOARDING_GROWTH.pointLabels}
+      revealProgress={progress} followRevealDot showAxes showTrend={false} accessibilityLabel="Potential Effort Score growth" />
   </View>;
 }

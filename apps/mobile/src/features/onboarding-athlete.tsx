@@ -1,40 +1,40 @@
 import { useEffect, useRef } from "react";
-import { Animated, useWindowDimensions } from "react-native";
-import type { AthleteCardModel } from "@fitness-battle/shared";
+import { Animated } from "react-native";
+import type { AthleteCardModel, OnboardingStep } from "@fitness-battle/shared";
 import { useReducedMotion } from "../ui/use-reduced-motion";
-import { AppText } from "../ui/section";
 import { AthleteCrest } from "./athlete-crest";
 
-export function OnboardingAthlete({ model, label, compact = false, onInteractionChange, departing = false, onDeparted }: {
-  model: AthleteCardModel; label?: string; compact?: boolean; departing?: boolean; onDeparted?: () => void; onInteractionChange?: (held: boolean) => void;
+const targets = {
+  sport: { x: 55, y: 56, width: 250 },
+  athlete: { x: 55, y: 56, width: 250 },
+  overtake: { x: 244, y: 0, width: 100 },
+  growth: { x: 244, y: 0, width: 100 },
+  account: { x: 75, y: 48, width: 210 },
+};
+
+/** One scene stays mounted; only the presentation transform and in-memory model change. */
+export function OnboardingAthlete({ model, step, onInteractionChange }: {
+  model: AthleteCardModel; step: OnboardingStep; onInteractionChange?: (held: boolean) => void;
 }) {
   const reduced = useReducedMotion();
-  const small = useWindowDimensions().height < 740;
-  const progress = useRef(new Animated.Value(1)).current;
+  const target = targets[step];
+  const x = useRef(new Animated.Value(target.x)).current;
+  const y = useRef(new Animated.Value(target.y)).current;
+  const scale = useRef(new Animated.Value(target.width / 320)).current;
   useEffect(() => {
-    if (departing) {
-      if (reduced) { onDeparted?.(); return; }
-      const exit = Animated.timing(progress, { toValue: 0, duration: 260, useNativeDriver: true });
-      exit.start(({ finished }) => { if (finished) onDeparted?.(); });
-      return () => exit.stop();
-    }
-    if (reduced) { progress.setValue(1); return; }
-    progress.setValue(0);
-    const animation = Animated.timing(progress, { toValue: 1, duration: 320, useNativeDriver: true });
+    const options = { duration: reduced ? 0 : 380, useNativeDriver: true };
+    const animation = Animated.parallel([
+      Animated.timing(x, { ...options, toValue: target.x }),
+      Animated.timing(y, { ...options, toValue: target.y }),
+      Animated.timing(scale, { ...options, toValue: target.width / 320 }),
+    ]);
     animation.start();
     return () => animation.stop();
-  }, [compact, reduced, progress, departing, onDeparted]);
-  if (!compact) return <Animated.View style={{ opacity: progress, transform: [{ scale: progress.interpolate({ inputRange: [0, 1], outputRange: [departing ? .24 : .86, 1] }) },
-      { translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [departing ? 110 : 0, 0] }) },
-      { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [departing ? -160 : 0, 0] }) },
-    ] }}>
-    <AthleteCrest model={model} onInteractionChange={onInteractionChange} />
-  </Animated.View>;
-  return <Animated.View style={{ width: small ? 124 : 144, opacity: progress, transform: [
-    { translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [-24, 0] }) },
-    { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1.25, 1] }) },
-  ] }}>
-    <AthleteCrest compact model={model} onInteractionChange={onInteractionChange} />
-    <AppText role="caption" secondary style={{ textAlign: "center" }}>{label}</AppText>
+  }, [target, reduced, x, y, scale]);
+  return <Animated.View pointerEvents={step === "sport" ? "none" : "auto"} accessibilityElementsHidden={step === "sport"}
+    importantForAccessibility={step === "sport" ? "no-hide-descendants" : "auto"}
+    style={{ position: "absolute", left: 0, top: 0, width: 320, height: 430, zIndex: 20,
+      opacity: step === "sport" ? 0 : 1, transformOrigin: "top left", transform: [{ translateX: x }, { translateY: y }, { scale }] }}>
+    <AthleteCrest transparent model={model} active={step !== "sport"} onInteractionChange={onInteractionChange} />
   </Animated.View>;
 }

@@ -3,18 +3,17 @@
 import { OnboardingFeatureTour } from "@/features/club/onboarding-feature-tour";
 
 
-import { Suspense, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   EMPTY_GUEST_INTRO, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY,
-  ONBOARDING_STEPS, ONBOARDING_TITLES, ONBOARDING_OVERTAKE_COPY, ONBOARDING_CARD_LABELS, isGuestPhoto, type OnboardingFeatureId, onboardingAthleteCard,
+  ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId, onboardingAthleteCard,
   guestIntroForAccount, SPORTS, type GuestIntroDraft, type OnboardingStep,
 } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { OnboardingAthlete } from "@/features/club/onboarding-athlete";
-import { LayoutGroup } from "motion/react";
 import { uploadWebProfileAvatar } from "@/lib/profile/avatar-upload";
 import { OnboardingOvertake } from "@/features/club/onboarding-overtake";
 import { readGuestIntroDraft } from "@/lib/guest-intro";
@@ -32,6 +31,9 @@ function Welcome({ preview }: { preview: boolean }) {
   const [step, setStep] = useState<OnboardingStep>("sport");
   const [draft, setDraft] = useState<GuestIntroDraft>(EMPTY_GUEST_INTRO);
   const [feature, setFeature] = useState<OnboardingFeatureId>("growth");
+  const [previewScore, setPreviewScore] = useState<number | null>(null);
+  const [previewPasses, setPreviewPasses] = useState(0);
+  const showScore = useCallback((score: number) => setPreviewScore(Math.round(score / 50) * 50), []);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [cardDraft, setCardDraft] = useState<GuestIntroDraft>(EMPTY_GUEST_INTRO);
   const [email, setEmail] = useState(""), [password, setPassword] = useState("");
@@ -39,7 +41,8 @@ function Welcome({ preview }: { preview: boolean }) {
   const [confirmation, setConfirmation] = useState(false);
   const authenticatedIntro = Boolean(user) && !preview;
   const steps: readonly OnboardingStep[] = authenticatedIntro ? ONBOARDING_STEPS.filter(s => s !== "account") : ONBOARDING_STEPS;
-  const card = useMemo(() => onboardingAthleteCard(cardDraft), [cardDraft]);
+  const baseCard = useMemo(() => onboardingAthleteCard(cardDraft), [cardDraft]);
+  const card = useMemo(() => ({ ...baseCard, score: previewScore, overtakes: previewPasses }), [baseCard, previewScore, previewPasses]);
   useEffect(() => {
     const timer = setTimeout(() => setCardDraft(draft), 120);
     return () => clearTimeout(timer);
@@ -101,14 +104,11 @@ function Welcome({ preview }: { preview: boolean }) {
     } finally { setBusy(false); }
   }
   const back = index > 0 ? <BackButton disabled={busy || photoBusy} onClick={() => setStep(steps[index - 1]!)} /> : null;
-  return <LayoutGroup id="welcome-athlete"><section ref={top} className="onboarding fb-stack">
-    <AppParagraph typographyRole="label">OVERTAEK</AppParagraph>
-    <div className="onboarding-progress" role="img" aria-label={`Step ${index + 1} of ${steps.length}`}>
-      {steps.map((s, i) => <span key={s} data-complete={i <= index} />)}
-    </div>
+  return <section ref={top} className="onboarding fb-stack">
+    <OnboardingAthlete model={card} step={step} root={top} />
     <div className="onboarding-heading" data-compact={step === "overtake" || step === "growth"}>
-      <AppHeading level={1} role="display">{ONBOARDING_TITLES[step]}</AppHeading>
-      {(step === "overtake" || step === "growth") && <OnboardingAthlete compact model={card} label={step === "overtake" ? "Practice pass" : ONBOARDING_CARD_LABELS[feature]} />}
+      {step !== "growth" && <AppHeading level={1} role="display">{ONBOARDING_TITLES[step]}</AppHeading>}
+      {(step === "overtake" || step === "growth") && <div data-card-slot className="onboarding-card-slot-small" />}
     </div>
     {step === "sport" && <>
       <AppParagraph>Choose your sport. You can add more later.</AppParagraph>
@@ -120,14 +120,12 @@ function Welcome({ preview }: { preview: boolean }) {
       </div>
     </>}
     {step === "overtake" && <>
-      <AppParagraph>{ONBOARDING_OVERTAKE_COPY}</AppParagraph>
-      <OnboardingOvertake sport={draft.sport} name={draft.name} photo={draft.photo} onComplete={() => void next()} onBack={() => setStep("athlete")} />
+      <OnboardingOvertake sport={draft.sport} name={draft.name} photo={draft.photo} onOvertakeCountChange={setPreviewPasses} onComplete={() => void next()} onBack={() => setStep("athlete")} />
     </>}
-    {step === "growth" && <OnboardingFeatureTour draft={draft} selected={feature} onSelect={setFeature} />}
+    {step === "growth" && <OnboardingFeatureTour draft={draft} selected={feature} onSelect={setFeature} onScoreChange={showScore} />}
     {step === "athlete" && <>
-      <AppParagraph>Give your athlete a name and a face.</AppParagraph>
-      <OnboardingAthlete model={card} />
-      <label className="fb-field">Name<input autoComplete="nickname" placeholder="Your name" value={draft.name} maxLength={80}
+      <div data-card-slot className="onboarding-card-slot-large" />
+      <label className="fb-field"><input aria-label="Athlete name" autoComplete="nickname" placeholder="Athlete name" value={draft.name} maxLength={80}
         onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} onBlur={() => setCardDraft(draft)} /></label>
       <div className="onboarding-photo-row"><label className="onboarding-photo fb-btn fb-btn-secondary">{photoBusy ? "Reading photo…" : draft.photo ? "Change photo" : "Add photo"} <small>Optional</small>
         <input type="file" accept="image/png,image/jpeg,image/webp" disabled={photoBusy} onChange={async e => {
@@ -145,8 +143,7 @@ function Welcome({ preview }: { preview: boolean }) {
       {draft.photo && <button className="onboarding-remove-photo" type="button" onClick={() => { setDraft(d => ({ ...d, photo: undefined })); setCardDraft(d => ({ ...d, photo: undefined })); }}>Remove photo</button>}</div>
     </>}
     {step === "account" && <>
-      <AppParagraph>Save your athlete and start competing for real.</AppParagraph>
-      <OnboardingAthlete model={card} />
+      <div data-card-slot className="onboarding-card-slot-save" />
       <form className="onboarding-account" onSubmit={createAccount}>
         <label className="fb-field">Email<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} disabled={confirmation} /></label>
         <label className="fb-field">Password<input type="password" autoComplete="new-password" minLength={6} required value={password} onChange={e => setPassword(e.target.value)} disabled={confirmation} /></label>
@@ -160,7 +157,7 @@ function Welcome({ preview }: { preview: boolean }) {
       {back}<button className="fb-btn" type="button" disabled={photoBusy || (step === "athlete" && !draft.name.trim())} onClick={() => void next()}>{step === "athlete" ? "See yourself compete" : step === "growth" ? "Make it official" : "Continue"}</button>
     </div>}
     {step === "sport" && !authenticatedIntro && <Link className="fb-btn-ghost" prefetch href={preview ? "/login?from=onboarding&preview=1" : "/login?from=onboarding"}>I already have an account</Link>}
-  </section></LayoutGroup>;
+  </section>;
 }
 function Entry() { return <Welcome preview={useSearchParams().get("preview") === "1"} />; }
 export default function WelcomePage() { return <Suspense fallback={<AppParagraph>Loading…</AppParagraph>}><Entry /></Suspense>; }

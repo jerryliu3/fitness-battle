@@ -389,12 +389,14 @@ export function FocusButton({
   onPress,
   secondary = false,
   disabled = false,
+  fit = false,
 }: {
   label: string;
   accessibilityLabel?: string;
   onPress: () => void;
   secondary?: boolean;
   disabled?: boolean;
+  fit?: boolean;
 }) {
 const c=useThemeColors();
 const f=useThemedStyles(fThemes);
@@ -417,7 +419,7 @@ const f=useThemedStyles(fThemes);
         disabled && { opacity: 0.4 },
       ]}
     >
-      <Text style={[f.buttonText, secondary && { color: c.ink }]}>{label}</Text>
+      <Text numberOfLines={fit ? 1 : undefined} adjustsFontSizeToFit={fit} maxFontSizeMultiplier={fit ? 1.2 : undefined} style={[f.buttonText, secondary && { color: c.ink }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -430,6 +432,7 @@ export function FocusSegments<T extends string>({
   accent = false,
   variant = "segments",
   compact = false,
+  pill = false,
 }: {
   label: string;
   options: readonly { value: T; label: string; accessibilityLabel?: string }[];
@@ -438,6 +441,7 @@ export function FocusSegments<T extends string>({
   accent?: boolean;
   variant?: "segments" | "tabs";
   compact?: boolean;
+  pill?: boolean;
 }) {
 const c=useThemeColors();
 const f=useThemedStyles(fThemes);
@@ -470,12 +474,14 @@ const f=useThemedStyles(fThemes);
       style={[
         f.segments,
         compact && f.segmentsCompact,
+        pill && { borderRadius: 999 },
         variant === "tabs" && { backgroundColor: "transparent", borderWidth: 0, borderRadius: 0, padding: 0, borderBottomWidth: 1 },
       ]}
     >
       {width > 0 && <Animated.View pointerEvents="none" style={{
         position: "absolute", left: inset, width: segmentWidth,
         ...(variant === "tabs" ? { bottom: 0, height: 2 } : compact ? { top: 3, bottom: 3, borderRadius: 9 } : { top: 4, bottom: 4, borderRadius: 20 }),
+        ...(pill ? { borderRadius: 999 } : {}),
         backgroundColor: variant === "tabs" || !accent ? c.ink : c.tennis,
         transform: [{ translateX: position }],
       }} />}

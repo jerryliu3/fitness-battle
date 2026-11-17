@@ -1,25 +1,31 @@
-import { Pressable, View } from "react-native";
-import { CrewRelay } from "./crew-relay";
+import { useState } from "react";
+import { View } from "react-native";
 import { VitalsLabPanel } from "./vitals-lab/vitals-lab-panel";
-import { AppText } from "../ui/section";
-import { useThemeColors } from "../theme";
+import { FocusSegments } from "../ui/focus";
 import { OnboardingPotential } from "./onboarding-potential";
-import { ONBOARDING_FEATURES, ONBOARDING_VITALS_METRICS, onboardingCrewPreview, type GuestIntroDraft, type OnboardingFeatureId } from "@fitness-battle/shared";
+import { OnboardingCrew } from "./onboarding-crew";
+import { OnboardingCanvas } from "../ui/onboarding-canvas";
+import { ONBOARDING_FEATURES, ONBOARDING_VITALS_METRICS, type GuestIntroDraft, type OnboardingFeatureId } from "@fitness-battle/shared";
 
-export function OnboardingFeatureTour({ draft, selected, onSelect }: { draft: GuestIntroDraft; selected: OnboardingFeatureId; onSelect: (id: OnboardingFeatureId) => void }) {
-  const feature = ONBOARDING_FEATURES.find(item => item.id === selected)!;
-  const c = useThemeColors();
-  return <View style={{ gap: 16 }}>
-    <View style={{ flexDirection: "row", gap: 7 }}>
-      {ONBOARDING_FEATURES.map(item => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={item.label}
-        accessibilityState={{ selected: item.id === selected }} onPress={() => onSelect(item.id)}
-        style={{ flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: 12,
-          backgroundColor: item.id === selected ? c.actionSoft : c.card, borderWidth: 1, borderColor: item.id === selected ? c.ink : c.line }}>
-        <AppText role="caption">{item.label}</AppText>
-      </Pressable>)}
+export function OnboardingFeatureTour({ draft, selected, onSelect, onScoreChange }: {
+  draft: GuestIntroDraft; selected: OnboardingFeatureId; onSelect: (id: OnboardingFeatureId) => void; onScoreChange?: (score: number) => void;
+}) {
+  const [gender, setGender] = useState<"female" | "male">("female");
+  return <View style={{ flex: 1 }}>
+    <View style={{ height: 44, marginTop: 130 }}>
+      <FocusSegments label="Discover" compact pill options={ONBOARDING_FEATURES.map(item => ({ value: item.id, label: item.label }))} value={selected} onChange={onSelect} />
     </View>
-    {selected === "growth" ? <OnboardingPotential /> : <><AppText role="heading">{feature.title}</AppText><AppText secondary>{feature.description}</AppText></>}
-    {selected === "crews" && <CrewRelay {...onboardingCrewPreview(draft)} userId="you" compact units="metric" />}
-    {selected === "vitals" && <VitalsLabPanel metrics={ONBOARDING_VITALS_METRICS} />}
+    <View style={{ position: "absolute", top: 190, left: 0, right: 0, bottom: 0 }}>
+      <OnboardingCanvas>
+        <View style={{ paddingHorizontal: 16, gap: 12 }}>
+          {selected === "growth" && <OnboardingPotential onScoreChange={onScoreChange} />}
+          {selected === "crews" && <OnboardingCrew draft={draft} />}
+          {selected === "vitals" && <>
+            <FocusSegments label="Body model" compact pill options={[{ value: "female", label: "Female" }, { value: "male", label: "Male" }]} value={gender} onChange={setGender} />
+            <VitalsLabPanel metrics={ONBOARDING_VITALS_METRICS} gender={gender} height={320} />
+          </>}
+        </View>
+      </OnboardingCanvas>
+    </View>
   </View>;
 }

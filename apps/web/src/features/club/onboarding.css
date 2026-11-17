@@ -23,17 +23,20 @@
 .onboarding-heading { display:flex; align-items:center; gap:16px; }
 .onboarding-heading > h1 { flex:1; min-width:0; }
 .onboarding-heading[data-compact="true"] > h1 { font-size:var(--type-heading-size); line-height:var(--type-heading-leading); font-weight:var(--type-heading-weight); }
-.onboarding-mini { flex:0 0 144px; min-width:0; position:relative; z-index:2; background:transparent; }
-.onboarding-mini-label { display:block; text-align:center; font-size:11px; color:var(--muted); animation:onboarding-slot-in 180ms ease-out; }
-.onboarding-card-hero { width:100%; }
+.onboarding { position:relative; }
+.onboarding-persistent-card { position:absolute; top:0; left:0; width:320px; height:430px; z-index:30; }
+.onboarding-card-slot-small { width:116px; height:156px; flex:0 0 116px; margin-left:auto; }
+.onboarding-card-slot-large { width:280px; height:380px; align-self:center; }
+.onboarding-card-slot-save { width:240px; height:324px; align-self:center; }
 .onboarding-photo { position:relative; cursor:pointer; text-align:center; }
 .onboarding-photo input { position:absolute; inset:0; opacity:0; width:100%; cursor:pointer; }
 .onboarding-photo small { color:var(--muted); margin-left:8px; }
-@keyframes onboarding-slot-in { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
-@media (max-height:740px) { .onboarding-mini { flex-basis:124px; } }
-@media (prefers-reduced-motion:reduce) { .onboarding-mini-label { animation:none; } }
 
 .onboarding-photo-row { display:flex; align-items:center; gap:16px; }
 .onboarding-photo-row > .onboarding-photo { flex:1; background:var(--card); color:var(--ink); border:1px solid var(--line); }
 .onboarding-remove-photo { border:0; background:transparent; color:var(--ink); font:inherit; cursor:pointer; min-height:44px; padding:0; }
 .onboarding-photo:focus-within { outline:2px solid var(--app-focus-ring); outline-offset:3px; }
+
+.onboarding-feature-tabs { border:1px solid var(--line); border-radius:999px; background:var(--soft); padding:4px; gap:2px; }
+.onboarding-feature-tabs button { border:0; border-radius:999px; background:transparent; }
+.onboarding-feature-tabs button[aria-pressed="true"] { background:var(--ink); color:var(--card); }

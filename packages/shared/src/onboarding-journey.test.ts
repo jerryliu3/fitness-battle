@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guestIntroForAccount, parseGuestIntroDraft, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, ONBOARDING_GROWTH, ONBOARDING_STEPS, ONBOARDING_FEATURES, hasCompletedOnboardingIntro, onboardingCrewPreview, ONBOARDING_VITALS_METRICS } from "./onboarding-journey";
+import { guestIntroForAccount, parseGuestIntroDraft, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, ONBOARDING_GROWTH, ONBOARDING_STEPS, ONBOARDING_FEATURES, hasCompletedOnboardingIntro, onboardingCrewPreview, ONBOARDING_VITALS_METRICS, fitOnboardingCanvas, onboardingGrowthScore, onboardingCrewReplay } from "./onboarding-journey";
 
 const draft = { sport: "walking", name: "Taylor", city: "Boston", countryCode: "US" };
 describe("guest profile handoff", () => {
@@ -67,4 +67,20 @@ it("keeps the chosen name and photo in the crew preview without account writes",
   expect(crew.sport).toBe("strength");
   expect(ONBOARDING_VITALS_METRICS.every(m => m.value.length > 0)).toBe(true);
   expect(guest).not.toHaveProperty("healthRatings");
+});
+
+it.each([[320, 480, 640], [320, 488, 900], [375, 589, 640], [390, 760, 1200], [430, 840, 640]])("fits the complete onboarding canvas into %s × %s with content height %s", (width, height, content) => {
+  const fitted = fitOnboardingCanvas(width, height, content);
+  expect(fitted.width).toBeLessThanOrEqual(width + 1e-6);
+  expect(fitted.height).toBeLessThanOrEqual(height + 1e-6);
+  expect(fitted.scale).toBeGreaterThan(0);
+});
+it("replays presentation growth and crew progress without changing the guest draft", () => {
+  expect(onboardingGrowthScore(0)).toBe(500);
+  expect(onboardingGrowthScore(.5)).toBe(1120);
+  expect(onboardingGrowthScore(1)).toBe(2000);
+  const guest = { ...draft, sport: "running" as const };
+  expect(onboardingCrewReplay(guest, 0).entries.every(e => e.distance_m === 0)).toBe(true);
+  expect(onboardingCrewReplay(guest, 1).entries).toEqual(onboardingCrewPreview(guest).entries);
+  expect(guest).not.toHaveProperty("score");
 });

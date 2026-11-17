@@ -69,10 +69,14 @@ const cardThemes = createThemedStyles((theme) => ({
 export function VitalsLabPanel({
   state,
   signedOut = false,
+  gender,
+  height = STAGE_HEIGHT,
   metrics: suppliedMetrics,
 }: {
   state?: CompeteState | null;
   signedOut?: boolean;
+  gender?: "male" | "female";
+  height?: number;
   metrics?: VitalsLabMetricDisplay[];
 }) {
   const { mode } = useAppTheme();
@@ -86,7 +90,7 @@ export function VitalsLabPanel({
   );
   const assetBase = mobileEnv.apiUrl.replace(/\/$/, "");
 
-  const lab = useVitalsLabController(metrics, appearance, assetBase, state?.gender);
+  const lab = useVitalsLabController(metrics, appearance, assetBase, gender ?? state?.gender);
   const model = lab.canvasModel;
 
   const renderMetricColumn = (items: VitalsLabMetricDisplay[]) => (
@@ -104,7 +108,7 @@ export function VitalsLabPanel({
 
   return (
     <View
-      style={[s.stage, { height: STAGE_HEIGHT, backgroundColor: stageBg }]}
+      style={[s.stage, { height, backgroundColor: stageBg }]}
       accessibilityLabel="Vitals Lab body scan"
     >
       <View style={StyleSheet.absoluteFill}>

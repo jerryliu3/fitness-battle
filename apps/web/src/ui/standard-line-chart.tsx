@@ -8,6 +8,8 @@ import { ChartScrubber, type ChartDatum } from "./chart-scrubber";
 import { ChartSvg, ChartText } from "./chart-text";
 export interface StandardLineChartProps {
   animateReveal?: boolean;
+  revealDuration?: number;
+  onRevealProgress?: (progress: number) => void;
   revealDelay?: number;
   followRevealDot?: boolean;
   showAxes?: boolean;
@@ -34,7 +36,7 @@ export interface StandardLineChartProps {
   accessibilityLabel?: string;
 }
 
-export function StandardLineChart({ animateReveal = false, revealDelay = 0, followRevealDot = false, values, xLabels, pointLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, onSelectionChange, selectedIdx, height = 190, showAxes = true, showArea = false, yAxisLabel = "Value", xAxisLabel, stroke = c.tennis, axisColor, labelColor, corridor, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
+export function StandardLineChart({ animateReveal = false, revealDuration = 850, onRevealProgress, revealDelay = 0, followRevealDot = false, values, xLabels, pointLabels, formatY = (v) => `${Math.round(v)}`, formatAxisY, onSelectIdx, onSelectionChange, selectedIdx, height = 190, showAxes = true, showArea = false, yAxisLabel = "Value", xAxisLabel, stroke = c.tennis, axisColor, labelColor, corridor, ariaLabel, accessibilityLabel }: StandardLineChartProps) {
  const areaId = useId();
  const revealClipId = useId();
  const reduced = useReducedMotion();
@@ -51,7 +53,7 @@ export function StandardLineChart({ animateReveal = false, revealDelay = 0, foll
    let timer = 0;
    const startAnim = () => {
      const start = performance.now();
-     const duration = 850;
+     const duration = revealDuration;
      const tick = (now: number) => {
        const t = Math.min(1, (now - start) / duration);
        setRevealProgress(1 - (1 - t) ** 3);
@@ -65,7 +67,9 @@ export function StandardLineChart({ animateReveal = false, revealDelay = 0, foll
      window.clearTimeout(timer);
      cancelAnimationFrame(raf);
    };
- }, [animateReveal, revealDelay, reduced, valuesKey]);
+ }, [animateReveal, revealDuration, revealDelay, reduced, valuesKey]);
+
+ useEffect(() => { onRevealProgress?.(revealProgress); }, [revealProgress, onRevealProgress]);
 
  const geo = buildStandardChartGeometry(values, 340, height, corridor);
  if (!values.length || !geo.points.length) return null;

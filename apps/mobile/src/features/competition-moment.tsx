@@ -48,6 +48,7 @@ export function CompetitionMoment({
   debug = false,
   embedded = false,
   practice = false,
+  onOvertakeCountChange,
   fill = false,
   onBack,
   dimension = defaultCompeteFieldView(moment.sport),
@@ -60,6 +61,7 @@ export function CompetitionMoment({
   debug?: boolean;
   embedded?: boolean;
   practice?: boolean;
+  onOvertakeCountChange?: (count: number) => void;
   fill?: boolean;
   onBack?: () => void;
   dimension?: FieldViewDimension;
@@ -127,6 +129,7 @@ export function CompetitionMoment({
   useEffect(() => () => stopHaptics.current(), [moment.id]);
   const frame = competitionMomentScene(moment, progress);
   const summary = competitionMomentProgressSummary(moment, frame);
+  useEffect(() => { onOvertakeCountChange?.(frame.count); }, [frame.count, onOvertakeCountChange]);
   useEffect(() => {
     if (frame.count > previousCount.current && !passedBy) {
       const soleLead = frame.rank === 1 && frame.lanes.every((lane) => lane.you || lane.value < frame.youValue);
@@ -253,7 +256,7 @@ export function CompetitionMoment({
             momentReplay={{ moment, progress }}
             hiddenIds={hiddenIds}
             immersive
-            topInset={embedded ? 56 : insets.top}
+            topInset={practice ? 150 : embedded ? 56 : insets.top}
             bottomInset={embedded ? 0 : insets.bottom}
             viewportHeight={height || undefined}
             active
@@ -302,7 +305,7 @@ export function CompetitionMoment({
       </View>
 
       {overlayControls ? (
-        <View style={{ position: "absolute", top: embedded ? 12 : insets.top + 54, right: 16, zIndex: 20 }}>
+        <View style={{ position: "absolute", top: practice ? 140 : embedded ? 12 : insets.top + 54, right: 16, zIndex: 20 }}>
           {overlayControls}
         </View>
       ) : null}
@@ -311,7 +314,7 @@ export function CompetitionMoment({
         pointerEvents="box-none"
         style={{
           position: "absolute",
-          top: embedded ? 12 : insets.top + 8,
+          top: practice ? 150 : embedded ? 12 : insets.top + 8,
           left: 16,
           right: 16,
           alignItems: "center",

@@ -1,19 +1,19 @@
 "use client";
-import { ONBOARDING_GROWTH } from "@fitness-battle/shared";
-import { AppHeading, AppParagraph } from "@/ui/section";
+import { useCallback, useState } from "react";
+import { ONBOARDING_GROWTH, onboardingGrowthScore } from "@fitness-battle/shared";
+import { AppHeading } from "@/ui/section";
 import { StandardLineChart } from "@/ui/standard-line-chart";
 
-/** Sample values, not the guest's actual starting score or expected outcome. */
-export function OnboardingPotential() {
-  const { scores, labels, pointLabels } = ONBOARDING_GROWTH;
-  const start = scores[0]!, end = scores[scores.length - 1]!;
-  return <div className="fb-stack">
-    <section className="fb-card fb-stack">
-      <AppHeading>Effort Score</AppHeading>
-      <div className="onboarding-score"><strong>{start.toLocaleString("en-US")}</strong><span>→</span><strong>{end.toLocaleString("en-US")}</strong></div>
-      <StandardLineChart height={220} values={scores} xLabels={labels} pointLabels={pointLabels}
-        showAxes animateReveal accessibilityLabel={`Potential score growth from ${start} to ${end} over seven weeks`} />
-    </section>
-    <AppParagraph>As you train, your athlete’s progress becomes visible through scores, records and trends.</AppParagraph>
-  </div>;
+export function OnboardingPotential({ onScoreChange }: { onScoreChange?: (score: number) => void }) {
+  const [score, setScore] = useState(500);
+  const reveal = useCallback((progress: number) => {
+    const next = onboardingGrowthScore(progress);
+    setScore(next); onScoreChange?.(next);
+  }, [onScoreChange]);
+  return <section className="fb-card fb-stack">
+    <AppHeading>Effort Score</AppHeading>
+    <div className="onboarding-score"><strong>{score.toLocaleString("en-US")}</strong></div>
+    <StandardLineChart height={220} values={ONBOARDING_GROWTH.scores} xLabels={ONBOARDING_GROWTH.labels} pointLabels={ONBOARDING_GROWTH.pointLabels}
+      showAxes animateReveal followRevealDot revealDuration={2400} onRevealProgress={reveal} accessibilityLabel="Potential Effort Score growth" />
+  </section>;
 }

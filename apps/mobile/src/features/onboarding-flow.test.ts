@@ -5,7 +5,7 @@ import { expect, it, vi } from "vitest";
 import { freshState } from "@fitness-battle/shared";
 const mock=vi.hoisted(()=>({preview:undefined as string|undefined,dispatch:vi.fn(),replace:vi.fn(),back:vi.fn(),storage:vi.fn(async()=>{})}));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
-vi.mock("react-native",()=>({useColorScheme: () => "light", Modal:"Modal",ScrollView:"ScrollView",TextInput:"TextInput",View:"View"}));
+vi.mock("react-native",()=>({useColorScheme: () => "light", KeyboardAvoidingView:"KeyboardAvoidingView",Platform:{OS:"ios"},Modal:"Modal",ScrollView:"ScrollView",TextInput:"TextInput",View:"View"}));
 vi.mock("react-native-svg",()=>({default:"Svg",Rect:"Rect",Text:"SvgText"}));
 vi.mock("react-native-safe-area-context",()=>({SafeAreaProvider:"SafeAreaProvider",SafeAreaView:"SafeAreaView"}));
 vi.mock("@react-native-async-storage/async-storage",()=>({default:{getItem:async()=>null,setItem:mock.storage,removeItem:vi.fn(async()=>{}),multiRemove:vi.fn(async()=>{})}}));
@@ -25,11 +25,12 @@ vi.mock("./onboarding-visuals",()=>({OnboardingFade:"OnboardingFade",OnboardingO
 vi.mock("./profile-photo",()=>({ProfilePhoto:"ProfilePhoto"}));
 vi.mock("../../app/athlete",()=>({TrackerConnections:"TrackerConnections"}));
 vi.mock("./onboarding-overtake",()=>({OnboardingOvertake:"OnboardingOvertake"}));
+vi.mock("../ui/onboarding-canvas", () => ({ OnboardingCanvas: ({ children }: { children: unknown }) => children }));
 import Onboarding from "../../app/onboarding";
 
 async function completeIdentityStep(r: ReactTestRenderer) {
   await act(async () => {
-    r.root.findAllByType("TextInput" as never).find((n) => n.props.accessibilityLabel === "Name")!.props.onChangeText("Jamie");
+    r.root.findAllByType("TextInput" as never).find((n) => n.props.accessibilityLabel === "Athlete name")!.props.onChangeText("Jamie");
     r.root
       .findAllByType("ChoicePicker" as never)
       .find((n) => n.props.label === "Gender (optional)")!
@@ -48,11 +49,11 @@ it.each([false,true])("walks all setup steps and only saves a real completion (p
  };
  const advance=async(label="Continue")=>act(async()=>button(label).props.onPress());
  await advance("Skip for now");
- if (!preview) {
-   await completeIdentityStep(r);
-   await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Running")!.props.onPress());
-   await act(async()=>r.root.findAllByType("TextInput" as never).find(n=>n.props.accessibilityLabel==="Typical weekly running")!.props.onChangeText("7"));
- }
+ await completeIdentityStep(r);
+ await advance();
+ await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Running")!.props.onPress());
+ await advance();
+ await act(async()=>r.root.findAllByType("TextInput" as never).find(n=>n.props.accessibilityLabel==="Typical weekly running")!.props.onChangeText("7"));
  expect(mock.dispatch).not.toHaveBeenCalled();
  await advance();
  expect(mock.dispatch).not.toHaveBeenCalled();
@@ -77,6 +78,7 @@ it("validates the combined selection on Continue and supports sleep without a sp
  const press=async(label:string)=>act(async()=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label===label)!.props.onPress());
  await press("Skip for now");
  await completeIdentityStep(r);
+ await press("Continue");
  const chip=(label:string)=>r.root.findAllByType("Chip" as never).find(n=>n.props.label===label)!;
  await press("Continue");
  expect(r.root.findAllByType("AppText" as never).some(n=>n.props.children==="Choose at least one sport or sleep tracking to continue.")).toBe(true);
@@ -94,6 +96,7 @@ it("uses the top safe area and a primary dropdown only for multiple sports", asy
  const next=async()=>act(async()=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label==="Continue")!.props.onPress());
  await act(async()=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label==="Skip for now")!.props.onPress());
  await completeIdentityStep(r);
+ await next();
  expect(r.root.findAllByType("ChoicePicker" as never).some(n=>n.props.label==="Primary sport")).toBe(false);
  await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Running")!.props.onPress());
  await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Cycling")!.props.onPress());

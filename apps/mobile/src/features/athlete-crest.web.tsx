@@ -7,8 +7,8 @@ import { AthleteProfileCard } from "./athlete-profile-card";
 import { useAppTheme } from "../theme";
 
 /** Expo web uses the same host and model; native uses a WebView. */
-export const AthleteCrest = memo(function AthleteCrest({ model, compact = false }: { model: AthleteCardModel; compact?: boolean; onInteractionChange?: (held: boolean) => void }) {
-  const active = useSceneActive();
+export const AthleteCrest = memo(function AthleteCrest({ model, compact = false, active: suppliedActive = true, transparent = false }: { model: AthleteCardModel; compact?: boolean; active?: boolean; transparent?: boolean; onInteractionChange?: (held: boolean) => void }) {
+  const active = useSceneActive() && suppliedActive;
   const { mode } = useAppTheme();
   const frame = useRef<HTMLIFrameElement>(null);
   const [revision, setRevision] = useState(0);

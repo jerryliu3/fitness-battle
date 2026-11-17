@@ -48,6 +48,7 @@ export function CompetitionMoment({
   debug = false,
   embedded = false,
   practice = false,
+  onOvertakeCountChange,
   onBack,
   dimension = defaultCompeteFieldView(moment.sport),
   course = null,
@@ -59,6 +60,7 @@ export function CompetitionMoment({
   debug?: boolean;
   embedded?: boolean;
   practice?: boolean;
+  onOvertakeCountChange?: (count: number) => void;
   onBack?: () => void;
   dimension?: FieldViewDimension;
   course?: RaceCourse | null;
@@ -130,6 +132,7 @@ export function CompetitionMoment({
 
   const frame = competitionMomentScene(moment, progress);
   const summary = competitionMomentProgressSummary(moment, frame);
+  useEffect(() => { onOvertakeCountChange?.(frame.count); }, [frame.count, onOvertakeCountChange]);
 
   const scoreMap = useMemo(
     () =>
