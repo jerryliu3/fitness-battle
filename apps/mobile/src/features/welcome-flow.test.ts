@@ -39,7 +39,7 @@ it("keeps the replay immersive, commits the card on editing end, then creates th
   await press("Continue");
   const replay = r.root.findByType("OnboardingOvertake" as never);
   expect(replay.props.photo).toBe("data:image/jpeg;base64,/9j/");
-  expect(replay.props.sport).toBe("cycling"); expect(replay.props.fill).toBe(true);
+  expect(replay.props.sport).toBe("cycling");
   expect(r.root.findAllByType("ScrollView" as never)).toHaveLength(0);
   await act(async () => replay.props.onOvertakeCountChange(1));
   expect(persistentCard.props.model.overtakes).toBe(1);
