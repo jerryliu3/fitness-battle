@@ -26,7 +26,6 @@ async function athlete(r: ReactTestRenderer) {
   const press = async (name: string) => act(async () => r.root.findAllByType("button").find(n => n.props.children === name)!.props.onClick());
   await press("Continue");
   await act(async () => r.root.findByType("OnboardingOvertake" as never).props.onComplete());
-  await press("Continue");
   await press("Create my athlete");
   return press;
 }

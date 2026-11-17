@@ -5,13 +5,12 @@ import { SPORTS } from "./compete/sports";
 
 export const GUEST_INTRO_DRAFT_KEY = "overtaek-guest-intro-draft-v1";
 export const GUEST_SIGNUP_PENDING_KEY = "overtaek-guest-signup-email-v1";
-export const ONBOARDING_STEPS = ["sport", "overtake", "growth", "features", "athlete", "account"] as const;
+export const ONBOARDING_STEPS = ["sport", "overtake", "growth", "athlete", "account"] as const;
 export type OnboardingStep = typeof ONBOARDING_STEPS[number];
 export const ONBOARDING_TITLES: Record<OnboardingStep, string> = {
   sport: "What moves you?",
   overtake: "Make training a game.",
   growth: "See your potential.",
-  features: "More than a workout tracker.",
   athlete: "Create your athlete.",
   account: "Save your athlete.",
 };
@@ -88,10 +87,10 @@ export const ONBOARDING_GROWTH = {
 };
 
 export const ONBOARDING_FEATURES = [
-  { id: "crews", label: "Crews", title: "Better together.",
+  { id: "growth", label: "Growth", title: "See your potential.",
+    description: "Build your Effort Score through consistent training." },
+  { id: "crews", label: "Crew", title: "Better together.",
     description: "Make progress on shared weekly goals or take on another crew." },
-  { id: "leaderboards", label: "Leaderboards", title: "Find your place.",
-    description: "Fresh weekly competitions, plus longer-term benchmarks and percentiles." },
   { id: "vitals", label: "Vitals Lab", title: "Understand your body.",
     description: "Explore sleep, recovery and health trends beyond workout totals." },
 ] as const;

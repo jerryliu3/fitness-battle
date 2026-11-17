@@ -17,12 +17,12 @@ into this journey; the website's marketing page links into it too.
 3. **See your potential** — a possible Effort Score trajectory from 500 to 2,000,
    focused on how training adds up. No rank ladder is introduced here and the
    potential values never become account facts.
-4. **Explore features** — Crew goals and weekly leaderboard examples follow the
-   chosen sport, with tabs for Crews, Leaderboards and Vitals Lab.
-5. **Create your athlete** — name and primary sport update the existing interactive
+   Growth opens first in a three-tab page with Crew and Vitals Lab previews.
+   Crew goals follow the chosen sport.
+4. **Create your athlete** — name and primary sport update the existing interactive
    3D Crest. City and country are optional profile preparation. Native retains a
    readable card while the remote scene loads or fails.
-6. **Save your athlete** — email and password appear directly beneath the Crest,
+5. **Save your athlete** — email and password appear directly beneath the Crest,
    with a Create account confirmation and the existing Terms/Privacy links.
    Existing-account sign-in remains on the first screen only. There is no
    guest-exploration exit or dismissed-introduction flag. No new auth providers
@@ -83,7 +83,7 @@ Native `/onboarding` and web `/app/onboarding` have three stages:
 
 Ordinary signup remains available outside this journey. An incomplete account
 without an account-matched completed introduction starts at sport selection.
-Authenticated users complete the first five steps, then go directly into setup
+Authenticated users complete the first four steps, then go directly into setup
 without creating another account. Completed accounts are never forced back into
 the introduction. The completion marker is device-local; another device may
 repeat the introduction before completing setup. Restored sessions

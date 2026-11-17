@@ -33,7 +33,6 @@ it("keeps the replay immersive, commits the card on editing end, then creates th
   expect(replay.props.sport).toBe("cycling"); expect(replay.props.fill).toBe(true);
   expect(r.root.findAllByType("ScrollView" as never)).toHaveLength(0);
   await act(async () => replay.props.onComplete());
-  await press("Continue");
   await press("Create my athlete");
   const firstCard = r.root.findByType("AthleteCrest" as never).props.model;
   const name = () => r.root.findAllByType("TextInput" as never).find(n => n.props.accessibilityLabel === "Display name")!;

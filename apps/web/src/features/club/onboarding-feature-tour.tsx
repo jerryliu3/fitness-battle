@@ -1,27 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { ONBOARDING_FEATURES, SPORTS, type SportId, type OnboardingFeatureId } from "@fitness-battle/shared";
+import { OnboardingPotential } from "./onboarding-potential";
+import { ONBOARDING_FEATURES, type SportId, type OnboardingFeatureId } from "@fitness-battle/shared";
 import { AppHeading, AppParagraph } from "@/ui/section";
 
 /** Static product examples: never pretend the guest has a crew, a rank, or health data. */
 export function OnboardingFeatureTour({ sport }: { sport: SportId }) {
-  const [selected, setSelected] = useState<OnboardingFeatureId>("crews");
-  const [board, setBoard] = useState<"weekly" | "all-time">("weekly");
+  const [selected, setSelected] = useState<OnboardingFeatureId>("growth");
   const feature = ONBOARDING_FEATURES.find(item => item.id === selected)!;
-  const selectedSport = SPORTS.find(item => item.id === sport)?.name ?? "Running";
-  const sampleRows = sport === "cycling" ? ["46.2 km", "43.8 km", "39.5 km"] : sport === "walking" ? ["45,000 steps", "42,200 steps", "39,100 steps"] : sport === "strength" ? ["210 min", "185 min", "170 min"] : ["12.4 km", "11.9 km", "10.1 km"];
   const goal = sport === "cycling" ? ["Ride 150 km together", "108 / 150 km"] : sport === "walking" ? ["Walk 120,000 steps together", "86,400 / 120,000 steps"] : sport === "strength" ? ["Train 360 minutes together", "259 / 360 min"] : ["Move 40 km together", "28.8 / 40 km"];
   return <div className="fb-stack onboarding-features">
-    <AppParagraph>There's more to Overtaek than your own workouts. Explore what you can do.</AppParagraph>
     <div className="onboarding-feature-tabs" aria-label="Explore Overtaek features">
       {ONBOARDING_FEATURES.map(item => <button type="button" key={item.id}
         aria-pressed={selected === item.id} onClick={() => setSelected(item.id)}>
         {item.label}
       </button>)}
     </div>
-    <AppHeading>{feature.title}</AppHeading>
-    <AppParagraph>{feature.description}</AppParagraph>
+    {selected === "growth" ? <OnboardingPotential /> : <>
+      <AppHeading>{feature.title}</AppHeading>
+      <AppParagraph>{feature.description}</AppParagraph>
+    </>}
 
     {selected === "crews" && <section className="fb-card fb-stack onboarding-feature-demo">
       <AppParagraph typographyRole="caption">WEEKLY CREW GOAL</AppParagraph>
@@ -30,27 +29,6 @@ export function OnboardingFeatureTour({ sport }: { sport: SportId }) {
       <div className="onboarding-split"><strong>{goal[1]}</strong><small>72% of crew goal</small></div>
       <div className="onboarding-crew-row"><span>A</span><span>Y</span><span>S</span><p>Support each other's progress.</p></div>
       <div className="onboarding-feature-note"><strong>Crew Derby</strong><p>Compete alongside your crew against another team.</p></div>
-    </section>}
-
-    {selected === "leaderboards" && <section className="fb-card fb-stack onboarding-feature-demo">
-      <div className="onboarding-feature-tabs" aria-label="Leaderboard timeframe">
-        <button type="button" aria-pressed={board === "weekly"} onClick={() => setBoard("weekly")}>This week</button>
-        <button type="button" aria-pressed={board === "all-time"} onClick={() => setBoard("all-time")}>All time</button>
-      </div>
-      {board === "weekly" ? <>
-        <AppParagraph typographyRole="caption">WEEKLY {selectedSport.toUpperCase()} FIELD</AppParagraph>
-        {[["1", "Alex", sampleRows[0]!], ["2", "You", sampleRows[1]!], ["3", "Sam", sampleRows[2]!]].map(([place, athlete, value]) =>
-          <div className="onboarding-board-row" data-you={athlete === "You"} key={place}>
-            <strong>#{place}</strong><span>{athlete}</span><strong>{value}</strong>
-          </div>)}
-        <AppParagraph typographyRole="caption">Every week is a fresh field with athletes at a similar level.</AppParagraph>
-      </> : <>
-        <AppParagraph typographyRole="caption">LIFETIME BENCHMARK</AppParagraph>
-        <strong className="onboarding-percentile">Top 25%</strong>
-        <AppParagraph>See how your performance compares with broader results.</AppParagraph>
-        <div className="onboarding-meter"><span style={{ width: "75%" }}/></div>
-        <AppParagraph typographyRole="caption">Compare your progress over time.</AppParagraph>
-      </>}
     </section>}
 
     {selected === "vitals" && <section className="fb-stack onboarding-vitals-demo">
@@ -68,6 +46,5 @@ export function OnboardingFeatureTour({ sport }: { sport: SportId }) {
       <div className="onboarding-health-metrics"><span>Sleep</span><span>HRV</span><span>Resting HR</span></div>
       <p>Connect health data to explore your own metrics.</p>
     </section>}
-    <AppParagraph typographyRole="caption">Build your crew, find your field and understand your body.</AppParagraph>
   </div>;
 }

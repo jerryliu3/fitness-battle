@@ -39,9 +39,9 @@ describe("weekly volume integration", () => {
     expect(ONBOARDING_GROWTH.scores).toEqual([...ONBOARDING_GROWTH.scores].sort((a, b) => a - b));
     expect(ONBOARDING_GROWTH.pointLabels).toHaveLength(ONBOARDING_GROWTH.scores.length);
   });
-  it("keeps the same six onboarding stages and feature previews on both clients", () => {
-    expect(ONBOARDING_STEPS).toEqual(["sport", "overtake", "growth", "features", "athlete", "account"]);
-    expect(ONBOARDING_FEATURES.map(feature => feature.id)).toEqual(["crews", "leaderboards", "vitals"]);
+  it("keeps the same five onboarding stages and feature previews on both clients", () => {
+    expect(ONBOARDING_STEPS).toEqual(["sport", "overtake", "growth", "athlete", "account"]);
+    expect(ONBOARDING_FEATURES.map(feature => feature.id)).toEqual(["growth", "crews", "vitals"]);
   });
 });
 

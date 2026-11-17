@@ -15,7 +15,6 @@ import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { AthleteCrest } from "@/features/athlete-card/athlete-crest";
 import { OnboardingOvertake } from "@/features/club/onboarding-overtake";
-import { OnboardingPotential } from "@/features/club/onboarding-potential";
 import { readGuestIntroDraft } from "@/lib/guest-intro";
 import { CountryCombobox } from "@/ui/country-combobox";
 import { SportActivityIcon } from "@/ui/sport-activity-icon";
@@ -112,8 +111,7 @@ function Welcome({ preview }: { preview: boolean }) {
       <AppParagraph>{ONBOARDING_OVERTAKE_COPY}</AppParagraph>
       <OnboardingOvertake sport={draft.sport} name={draft.name} onComplete={() => void next()} onBack={() => setStep("sport")} />
     </>}
-    {step === "growth" && <OnboardingPotential />}
-    {step === "features" && <OnboardingFeatureTour sport={draft.sport} />}
+    {step === "growth" && <OnboardingFeatureTour sport={draft.sport} />}
     {step === "athlete" && <div className="onboarding-athlete">
       <AthleteCrest model={card} />
       <div className="fb-stack">
@@ -138,7 +136,7 @@ function Welcome({ preview }: { preview: boolean }) {
     </>}
     {error && <AppParagraph role="alert">{error}</AppParagraph>}
     {step !== "account" && step !== "overtake" && <div className="onboarding-actions">
-      {back}<button className="fb-btn" type="button" disabled={step === "athlete" && !draft.name.trim()} onClick={() => void next()}>{step === "features" ? "Create my athlete" : "Continue"}</button>
+      {back}<button className="fb-btn" type="button" disabled={step === "athlete" && !draft.name.trim()} onClick={() => void next()}>{step === "growth" ? "Create my athlete" : "Continue"}</button>
     </div>}
     {step === "sport" && !authenticatedIntro && <Link className="fb-btn-ghost" prefetch href={preview ? "/login?from=onboarding&preview=1" : "/login?from=onboarding"}>I already have an account</Link>}
   </section>;

@@ -10,7 +10,6 @@ import {
 } from "@fitness-battle/shared";
 import { AthleteCrest } from "../src/features/athlete-crest";
 import { OnboardingOvertake } from "../src/features/onboarding-overtake";
-import { OnboardingPotential } from "../src/features/onboarding-potential";
 import { LegalLinks } from "../src/features/legal-links";
 import { SearchableCountryPicker } from "../src/ui/searchable-country-picker";
 import { SportIcon } from "../src/ui/sport-icon";
@@ -123,8 +122,7 @@ export default function Welcome() {
           </Pressable>)}
         </View>
       </>}
-      {step === "growth" && <OnboardingPotential />}
-    {step === "features" && <OnboardingFeatureTour sport={draft.sport} />}
+      {step === "growth" && <OnboardingFeatureTour sport={draft.sport} />}
       {(step === "athlete" || step === "account") && <AthleteCrest model={card} onInteractionChange={setCardHeld} />}
       {step === "athlete" && <>
         <AppText role="label">Display name</AppText>
@@ -148,7 +146,7 @@ export default function Welcome() {
       {step === "account" ? <>
         {actions(busy ? "Creating…" : "Create account", () => void createAccount(), busy || confirmation || !email.trim() || password.length < 6)}
         <LegalLinks />
-      </> : actions(step === "features" ? "Create my athlete" : "Continue", () => void next(), step === "athlete" && !draft.name.trim())}
+      </> : actions(step === "growth" ? "Create my athlete" : "Continue", () => void next(), step === "athlete" && !draft.name.trim())}
       {step === "sport" && !user && <FocusButton secondary label="I already have an account" onPress={() => void signIn()} />}
     </ScrollView>
   </SafeAreaView>;
