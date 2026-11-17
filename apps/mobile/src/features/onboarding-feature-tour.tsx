@@ -13,7 +13,7 @@ export function OnboardingFeatureTour({ draft, selected, onSelect, onScoreChange
   const [gender, setGender] = useState<"female" | "male">("female");
   return <View style={{ flex: 1 }}>
     <View style={{ width: 214, marginTop: 20, gap: 8 }}>
-      <FocusSegments label="Discover" compact pill options={ONBOARDING_FEATURES.map(item => ({ value: item.id, label: item.label }))} value={selected} onChange={onSelect} />
+      <FocusSegments label="Discover" compact pill options={ONBOARDING_FEATURES.map(item => ({ value: item.id, label: item.id === "vitals" ? "Vitals" : item.label }))} value={selected} onChange={onSelect} />
       {selected === "vitals" && <FocusSegments label="Body model" compact pill options={[{ value: "female", label: "Female" }, { value: "male", label: "Male" }]} value={gender} onChange={setGender} />}
     </View>
     <View style={{ position: "absolute", top: 126, left: 0, right: 0, bottom: 0 }}>

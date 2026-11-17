@@ -4,6 +4,11 @@ import UIKit
 public class AnchoredChoiceModule: Module {
   public func definition() -> ModuleDefinition {
     Name("AnchoredChoice")
+    View(MaterialPanel.self) {
+      Prop("dark") { (view: MaterialPanel, dark: Bool) in
+        view.overrideUserInterfaceStyle = dark ? .dark : .light
+      }
+    }
     View(AnchoredChoiceView.self) {
       Events("onSelect")
       Prop("backButton") { (view: AnchoredChoiceView, enabled: Bool) in
@@ -71,5 +76,16 @@ final class AnchoredChoiceView: ExpoView {
         self?.onSelect(["value": key])
       }
     })
+  }
+}
+
+final class MaterialPanel: ExpoView {
+  required init(appContext: AppContext? = nil) {
+    super.init(appContext: appContext)
+    let material = UIVisualEffectView(effect: UIBlurEffect(style: .systemThinMaterial))
+    material.frame = bounds
+    material.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    material.isUserInteractionEnabled = false
+    addSubview(material)
   }
 }

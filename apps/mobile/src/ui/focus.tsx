@@ -419,7 +419,7 @@ const f=useThemedStyles(fThemes);
         disabled && { opacity: 0.4 },
       ]}
     >
-      <Text numberOfLines={fit ? 1 : undefined} adjustsFontSizeToFit={fit} maxFontSizeMultiplier={fit ? 1.2 : undefined} minimumFontScale={fit ? 1 : undefined} style={[f.buttonText, secondary && { color: c.ink }, fit && { fontSize: 18, lineHeight: 24 }]}>{label}</Text>
+      <Text numberOfLines={fit ? 1 : undefined} adjustsFontSizeToFit={fit} maxFontSizeMultiplier={fit ? 1.2 : undefined} minimumFontScale={fit ? 1 : undefined} style={[f.buttonText, secondary && { color: c.ink }, fit && { fontSize: 22, lineHeight: 28 }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -719,7 +719,8 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
     textAlign: "center",
   },
   segmentTextCompact: {
-    ...textStyle("caption"),
+    ...textStyle("label"),
+    fontSize: 16,
   },
   textButton: {
     minHeight: 44,

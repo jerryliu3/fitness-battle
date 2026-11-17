@@ -1,3 +1,4 @@
+import { MaterialPanel } from "../src/ui/material-panel";
 import { OnboardingFeatureTour } from "../src/features/onboarding-feature-tour";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
@@ -139,10 +140,16 @@ export default function Welcome() {
       <KeyboardAvoidingView pointerEvents="box-none" style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <OnboardingCanvas height={ONBOARDING_CANVAS.height}>
           <OnboardingAthlete model={card} step={step} onInteractionChange={setCardHeld} />
-          {step !== "growth" && <View pointerEvents="none" style={{ ...box(8, 48), right: step === "overtake" ? 120 : 16 }}>
-            <AppText role={step === "overtake" ? "heading" : "display"} accessibilityRole="header" style={{ flex: 1 }} maxFontSizeMultiplier={1.2} numberOfLines={2} adjustsFontSizeToFit>{step === "athlete" ? `Welcome ${draft.name.trim() || "athlete"}!` : ONBOARDING_TITLES[step]}</AppText>
+          {step !== "growth" && step !== "overtake" && <View pointerEvents="none" style={{ ...box(8, 48), right: 16 }}>
+            <AppText role="display" accessibilityRole="header" style={{ flex: 1 }} maxFontSizeMultiplier={1.2} numberOfLines={2} adjustsFontSizeToFit>{step === "athlete" ? `Welcome ${draft.name.trim() || "athlete"}!` : ONBOARDING_TITLES[step]}</AppText>
           </View>}
-          {step === "overtake" && <View pointerEvents="none" style={{ ...box(64, 60), right: 124 }}><AppText role="caption" numberOfLines={3}>Race your level. Chase a friendly rival and make the next overtake yours.</AppText></View>}
+          {step === "overtake" && <View pointerEvents="none" style={{ ...box(8, 124), right: 122, borderRadius: 18, overflow: "hidden" }}>
+            <MaterialPanel style={{ position: "absolute", inset: 0 }} />
+            <View style={{ padding: 12, gap: 4 }}>
+              <AppText role="heading" style={{ fontSize: 22, lineHeight: 26 }} maxFontSizeMultiplier={1.2}>Make training fun.</AppText>
+              <AppText role="caption" style={{ fontSize: 13, lineHeight: 17 }} maxFontSizeMultiplier={1.2}>Race your level. Chase a friendly rival and make the next overtake yours.</AppText>
+            </View>
+          </View>}
           {step === "sport" && <>
             <View style={box(64, 48)}><AppText secondary style={{ flex: 1 }} numberOfLines={2} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>Choose your sport. You can add more later.</AppText></View>
             <View style={{ ...box(126, 380), flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
