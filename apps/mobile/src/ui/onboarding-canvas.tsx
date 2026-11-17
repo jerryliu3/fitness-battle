@@ -10,9 +10,9 @@ export function OnboardingCanvas({ children, height }: { children: ReactNode; he
   const baseline = useRef(viewport);
   const offset = useRef(0);
   const [shift, setShift] = useState(0);
-  function revealField(keyboardTop = Keyboard.metrics()?.screenY) {
+  function revealField(keyboardTop = Keyboard.metrics?.()?.screenY) {
     if (keyboardTop === undefined) return;
-    TextInput.State.currentlyFocusedInput()?.measureInWindow((_x, y, _width, fieldHeight) => {
+    TextInput.State.currentlyFocusedInput?.()?.measureInWindow((_x, y, _width, fieldHeight) => {
       const next = Math.min(0, keyboardTop - 12 - (y + fieldHeight - offset.current));
       offset.current = next; setShift(next);
     });
@@ -27,7 +27,7 @@ export function OnboardingCanvas({ children, height }: { children: ReactNode; he
   const { scale } = fitOnboardingCanvas(viewport.width, viewport.height, height ?? contentHeight);
   return <View pointerEvents="box-none" style={{ flex: 1, overflow: "hidden" }} onTouchEnd={() => requestAnimationFrame(() => revealField())} onLayout={e => {
     const next = e.nativeEvent.layout;
-    const typing = Boolean(TextInput.State.currentlyFocusedInput());
+    const typing = Boolean(TextInput.State.currentlyFocusedInput?.());
     // Android may resize the root before its keyboard event arrives.
     if (next.width === baseline.current.width && next.height < baseline.current.height && (typing || Keyboard.isVisible())) return;
     baseline.current = next; setViewport(next);

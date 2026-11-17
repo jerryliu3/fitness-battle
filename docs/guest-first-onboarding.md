@@ -14,13 +14,13 @@ into this journey; the website's marketing page links into it too.
    and photo. Running/Cycling start in geographic 3D; Walking/Strength start in
    Timeline. A compact athlete card floats at the top-right and the
    pass result reads “You passed Alex!” without a large summary.
-4. **Your story is just starting** — Growth, Crew and Health Lab tabs share one page.
+4. **Discover** — Growth, Crew and Vitals tabs share one page, headed See progress, Work together or Monitor health.
    Growth opens first with the 500 → 2,000 trajectory; these points are never earned
    account facts. The single score reading and card score animate from 500 to 2,000 on every
    appearance. Crew uses its product relay graphic with Play and a scrubber.
-   Health Lab includes a male/female model selector.
+   Vitals includes a male/female model selector.
 5. **Make it official** — the large Crest returns above email and password, with
-   Create account and Terms/Privacy links. City, country and other preferences
+   account creation and Terms/Privacy links. City, country and other preferences
    remain after signup. Existing-account sign-in stays on the first screen only.
 
 One athlete-card renderer remains mounted throughout the introduction. Its loaded
@@ -33,13 +33,14 @@ score update this presentation model without entering account facts.
 
 Mobile uses a 360×640 composition fitted to the available safe-area viewport. Its
 controls, visuals and card scale together. There is no page ScrollView, wordmark,
-progress-bar row, card caption, or explanatory copy around Discover. Keyboard
-avoidance can resize the fitted composition. Post-signup screens use a measured
+card caption, or explanatory copy around Discover. A thin progress-pill row remains above
+the canvas. Keyboard avoidance preserves its scale and shifts only to reveal the focused
+field. Post-signup screens use a measured
 content canvas; the long preferences form is divided into identity, event selection
 and training-volume groups to keep each page usable without scrolling.
 
 Crew discovery reuses the product CrewRelay graphic with the guest’s name/photo.
-Health Lab reuses the product scan experience with in-memory preview readings;
+Vitals reuses the product scan experience with in-memory preview readings;
 neither preview activity nor health readings enter account or health state.
 
 Back is a compact icon beside the primary action; the sign-in page puts it beside
@@ -70,7 +71,7 @@ registration, activity, score, rank, awards or tracker permissions. Parsing disc
 extra fields and invalid sports.
 
 Photos stay device-local before signup. On explicit setup completion, a matching
-guest photo uploads to the existing account-owned avatar path and the existing
+guest photo replaces any existing avatar at the account-owned avatar path and the existing
 `set-avatar` action persists it. A failed upload retains the draft for retry; account
 switches cannot apply its result to another user.
 
@@ -97,7 +98,7 @@ Native `/onboarding` and web `/app/onboarding` have three stages:
    to metres/seconds/steps and sent through the existing `declare-effort` action
    only on explicit completion; the scorer retains its caps and verified-history
    protections.
-3. Review choices and explicitly **Finish setup & register** for the next wave.
+3. Review choices and explicitly continue to register for the next wave.
 
 Ordinary signup remains available outside this journey. An incomplete account
 without an account-matched completed introduction starts at sport selection.
@@ -106,7 +107,7 @@ without creating another account. Completed accounts are never forced back into
 the introduction. The completion marker is device-local; another device may
 repeat the introduction before completing setup. Restored sessions
 continue setup, allowing tracker callback destinations. Completing setup clears its
-account draft and the imported guest draft. Web return paths cannot loop back into
+account draft and the imported guest draft. Web preserves the requested return path through the introduction and setup; return paths cannot loop back into
 onboarding or welcome. Tracker connections and competition registration remain in post-account setup.
 
 ## Local review
@@ -125,7 +126,7 @@ For a fresh native build, first check Mapbox credentials in `apps/mobile/.env`
 and `~/.netrc`, then `cd apps/mobile && pnpm ios --port 8089`.
 Use the existing development client if native dependencies are unchanged.
 
-Review all four sports, narrow screens, large text, keyboard scrolling, dark mode,
+Review all four sports, narrow screens, large text, keyboard field visibility, dark mode,
 Reduced Motion, Back, replay, card rotation and card failure fallback. Check signup
 with immediate sessions and email confirmation, failed signup, another account's
 sign-in, skipping trackers, sleep-only setup, explicit registration and completed

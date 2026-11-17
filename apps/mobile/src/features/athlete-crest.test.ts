@@ -62,14 +62,13 @@ it("holds model updates during card interaction and sends only the latest change
   expect(scene.inject).toHaveBeenCalledTimes(sent + 1);
 });
 
-it("renders the compact card as the same interactive transparent scene", async () => {
+it("keeps the full card scene interactive with a transparent background", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const interaction = vi.fn();
-  await act(async () => { renderer = create(createElement(AthleteCrest, { model, compact: true, onInteractionChange: interaction })); });
+  await act(async () => { renderer = create(createElement(AthleteCrest, { model, transparent: true, onInteractionChange: interaction })); });
   const web = renderer.root.findByType("WebView" as never);
-  expect(web.props.style).toMatchObject({ height: 180, backgroundColor: "transparent" });
+  expect(web.props.style).toMatchObject({ height: 430, backgroundColor: "transparent" });
   await act(async () => web.props.onMessage({ nativeEvent: { data: '{"type":"athlete-card-ready"}' } }));
-  expect(scene.inject).toHaveBeenLastCalledWith(expect.stringContaining('"compact":true'));
   await act(async () => web.props.onTouchStart());
   expect(interaction).toHaveBeenLastCalledWith(true);
 });

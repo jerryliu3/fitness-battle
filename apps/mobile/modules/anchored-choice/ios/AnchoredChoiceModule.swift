@@ -4,11 +4,6 @@ import UIKit
 public class AnchoredChoiceModule: Module {
   public func definition() -> ModuleDefinition {
     Name("AnchoredChoice")
-    View(MaterialPanel.self) {
-      Prop("dark") { (view: MaterialPanel, dark: Bool) in
-        view.overrideUserInterfaceStyle = dark ? .dark : .light
-      }
-    }
     View(AnchoredChoiceView.self) {
       Events("onSelect")
       Prop("backButton") { (view: AnchoredChoiceView, enabled: Bool) in
@@ -25,6 +20,11 @@ public class AnchoredChoiceModule: Module {
       Prop("label") { (view: AnchoredChoiceView, label: String) in
         view.label = label
         view.updateMenu()
+      }
+    }
+    View(MaterialPanel.self) {
+      Prop("dark") { (view: MaterialPanel, dark: Bool) in
+        view.overrideUserInterfaceStyle = dark ? .dark : .light
       }
     }
   }

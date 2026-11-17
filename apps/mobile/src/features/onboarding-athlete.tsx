@@ -31,7 +31,7 @@ export function OnboardingAthlete({ model, step, onInteractionChange }: {
     animation.start();
     return () => animation.stop();
   }, [target, reduced, x, y, scale]);
-  return <Animated.View pointerEvents={step === "sport" ? "none" : "auto"} accessibilityElementsHidden={step === "sport"}
+  return <Animated.View pointerEvents={step === "sport" ? "none" : "auto"} aria-hidden={step === "sport"} accessibilityElementsHidden={step === "sport"}
     importantForAccessibility={step === "sport" ? "no-hide-descendants" : "auto"}
     style={{ position: "absolute", left: 0, top: 0, width: 320, height: 430, zIndex: 20,
       opacity: step === "sport" ? 0 : 1, transformOrigin: "top left", transform: [{ translateX: x }, { translateY: y }, { scale }] }}>

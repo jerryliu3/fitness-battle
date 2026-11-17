@@ -2,29 +2,27 @@ vi.mock("../lib/avatar-upload", () => ({ uploadNativeProfileAvatar: vi.fn() }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-import { freshState } from "@fitness-battle/shared";
-const mock=vi.hoisted(()=>({preview:undefined as string|undefined,dispatch:vi.fn(),replace:vi.fn(),back:vi.fn(),storage:vi.fn(async()=>{})}));
+import { uploadNativeProfileAvatar } from "../lib/avatar-upload";
+import { freshState, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY } from "@fitness-battle/shared";
+const mock=vi.hoisted(()=>({preview:undefined as string|undefined,dispatch:vi.fn(),replace:vi.fn(),back:vi.fn(),values: new Map<string,string>(),storage:vi.fn(async()=>{})}));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
-vi.mock("react-native",()=>({useColorScheme: () => "light", KeyboardAvoidingView:"KeyboardAvoidingView",Platform:{OS:"ios"},Modal:"Modal",ScrollView:"ScrollView",TextInput:"TextInput",View:"View"}));
+vi.mock("react-native",()=>({useColorScheme: () => "light", Modal:"Modal",TextInput:"TextInput",View:"View"}));
 vi.mock("react-native-svg",()=>({default:"Svg",Rect:"Rect",Text:"SvgText"}));
 vi.mock("react-native-safe-area-context",()=>({SafeAreaProvider:"SafeAreaProvider",SafeAreaView:"SafeAreaView"}));
-vi.mock("@react-native-async-storage/async-storage",()=>({default:{getItem:async()=>null,setItem:mock.storage,removeItem:vi.fn(async()=>{}),multiRemove:vi.fn(async()=>{})}}));
+vi.mock("@react-native-async-storage/async-storage",()=>({default:{getItem:async(key:string)=>mock.values.get(key)??null,setItem:mock.storage,removeItem:vi.fn(async()=>{}),multiRemove:vi.fn(async()=>{})}}));
 vi.mock("expo-router",()=>({useLocalSearchParams:()=>({preview:mock.preview}),useRouter:()=>({replace:mock.replace,back:mock.back,canGoBack:()=>true})}));
-vi.mock("../lib/auth",()=>({useAuth:()=>({user:{id:"a",displayName:"Jamie"}})}));
+vi.mock("../lib/auth",()=>({useAuth:()=>({user:{id:"a",displayName:"Jamie",email:"taylor@example.com"}})}));
 const state=freshState();
 vi.mock("../lib/compete-store",()=>({useCompeteStore:()=>({state,canWrite:true,dispatch:mock.dispatch})}));
 vi.mock("../ui/icon-button",()=>({IconButton:"IconButton"}));
 vi.mock("../ui/section",()=>({AppText:"AppText",chartTextProps:()=>({})}));
 vi.mock("../ui/motion-step",()=>({MotionStep:"MotionStep"}));
-vi.mock("../ui/mascot/animated-ember",()=>({AnimatedEmber:"AnimatedEmber"}));
 vi.mock("../ui/choice-picker",()=>({ChoicePicker:"ChoicePicker"}));
 vi.mock("../ui/searchable-country-picker",()=>({SearchableCountryPicker:"SearchableCountryPicker"}));
 vi.mock("../ui/chip",()=>({Chip:"Chip"}));
-vi.mock("../ui/focus",()=>((()=>{const mock={FocusButton:"FocusButton",FocusSegments:"FocusSegments",f:{}};return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
-vi.mock("./onboarding-visuals",()=>({OnboardingFade:"OnboardingFade",OnboardingOutlook:"OnboardingOutlook",OnboardingSummary:"OnboardingSummary"}));
-vi.mock("./profile-photo",()=>({ProfilePhoto:"ProfilePhoto"}));
+vi.mock("../ui/focus",()=>({FocusButton:"FocusButton",FocusSegments:"FocusSegments",useFocusStyles:()=>({})}));
+vi.mock("./onboarding-visuals",()=>({OnboardingSummary:"OnboardingSummary"}));
 vi.mock("../../app/athlete",()=>({TrackerConnections:"TrackerConnections"}));
-vi.mock("./onboarding-overtake",()=>({OnboardingOvertake:"OnboardingOvertake"}));
 vi.mock("../ui/onboarding-canvas", () => ({ OnboardingCanvas: ({ children }: { children: unknown }) => children }));
 import Onboarding from "../../app/onboarding";
 
@@ -48,7 +46,7 @@ it.each([false,true])("walks all setup steps and only saves a real completion (p
   return matches;
  };
  const advance=async(label="Continue")=>act(async()=>button(label).props.onPress());
- await advance("Skip for now");
+ await advance("Continue");
  await completeIdentityStep(r);
  await advance();
  await act(async()=>r.root.findAllByType("Chip" as never).find(n=>n.props.label==="Running")!.props.onPress());
@@ -57,7 +55,7 @@ it.each([false,true])("walks all setup steps and only saves a real completion (p
  expect(mock.dispatch).not.toHaveBeenCalled();
  await advance();
  expect(mock.dispatch).not.toHaveBeenCalled();
- await advance("Enter events");
+ await advance("Continue");
  if(preview){
    expect(mock.dispatch).not.toHaveBeenCalled();
    expect(mock.storage).not.toHaveBeenCalled();
@@ -76,14 +74,14 @@ it("validates the combined selection on Continue and supports sleep without a sp
  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.clearAllMocks();mock.preview=undefined;
  let r!:ReactTestRenderer;await act(async()=>{r=create(createElement(Onboarding));});
  const press=async(label:string)=>act(async()=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label===label)!.props.onPress());
- await press("Skip for now");
+ await press("Continue");
  await completeIdentityStep(r);
  await press("Continue");
  const chip=(label:string)=>r.root.findAllByType("Chip" as never).find(n=>n.props.label===label)!;
  await press("Continue");
  expect(r.root.findAllByType("AppText" as never).some(n=>n.props.children==="Choose at least one sport or sleep tracking to continue.")).toBe(true);
  await act(async()=>chip("Sleep tracking").props.onPress());await press("Continue");
- await press("Enter events");
+ await press("Continue");
  expect(mock.dispatch).toHaveBeenCalledWith({type:"opt-in-health",metric:"sleep"});
  expect(mock.dispatch.mock.calls.some(([a])=>a.type==="opt-in"||a.type==="set-primary")).toBe(false);
  await act(async()=>r.unmount());
@@ -94,7 +92,7 @@ it("uses the top safe area and a primary dropdown only for multiple sports", asy
  let r!:ReactTestRenderer;await act(async()=>{r=create(createElement(Onboarding));});
  expect(r.root.findByType("SafeAreaView" as never).props.edges).toEqual(["top","bottom"]);
  const next=async()=>act(async()=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label==="Continue")!.props.onPress());
- await act(async()=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label==="Skip for now")!.props.onPress());
+ await act(async()=>r.root.findAllByType("FocusButton" as never).find(n=>n.props.label==="Continue")!.props.onPress());
  await completeIdentityStep(r);
  await next();
  expect(r.root.findAllByType("ChoicePicker" as never).some(n=>n.props.label==="Primary sport")).toBe(false);
@@ -111,4 +109,20 @@ it("uses the top safe area and a primary dropdown only for multiple sports", asy
       .find((n) => n.props.label === "Primary sport")!.props.value,
   ).toBe("cycling");
  await act(async()=>r.unmount());
+});
+
+it("saves the chosen intro photo even when the account already has an avatar", async () => {
+ vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); vi.clearAllMocks(); mock.preview=undefined;
+ state.avatarUrl = "https://example.com/old.jpg";
+ mock.values.set(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ sport: "walking", name: "Taylor", photo: "data:image/jpeg;base64,/9j/", introCompleted: true }));
+ mock.values.set(GUEST_SIGNUP_PENDING_KEY, "taylor@example.com");
+ vi.mocked(uploadNativeProfileAvatar).mockResolvedValueOnce("https://example.com/new.jpg");
+ let r!: ReactTestRenderer;
+ await act(async()=>{r=create(createElement(Onboarding));});
+ const next=async()=>act(async()=>r.root.findByType("FocusButton" as never).props.onPress());
+ for(let i=0;i<5;i++) await next();
+ expect(uploadNativeProfileAvatar).toHaveBeenCalledWith(expect.any(ArrayBuffer), "a");
+ expect(mock.dispatch).toHaveBeenCalledWith({type:"set-avatar",avatarUrl:"https://example.com/new.jpg",accountId:"a"});
+ await act(async()=>r.unmount());
+ state.avatarUrl = null; mock.values.clear();
 });

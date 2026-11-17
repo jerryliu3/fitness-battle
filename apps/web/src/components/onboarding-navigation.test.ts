@@ -44,3 +44,16 @@ it.each(["/app/welcome", "/app/onboarding"])("keeps %s previews read-only and on
   expect(mock.replace).not.toHaveBeenCalled();
   await act(async () => r.unmount());
 });
+
+it("preserves the requested destination through the introduction and setup", async () => {
+  mock.params = new URLSearchParams("next=%2Fapp%2Farena%3Finvite%3Dcrew");
+  let r!: ReactTestRenderer;
+  await act(async () => { r = create(createElement(OnboardingNavigation)); });
+  expect(mock.replace).toHaveBeenLastCalledWith("/app/welcome?next=%2Fapp%2Farena%3Finvite%3Dcrew");
+  mock.path = "/app/welcome";
+  mock.storage.set(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ sport: "running", name: "Taylor", introCompleted: true }));
+  mock.storage.set(GUEST_SIGNUP_PENDING_KEY, "taylor@example.com");
+  await act(async () => r.update(createElement(OnboardingNavigation)));
+  expect(mock.replace).toHaveBeenLastCalledWith("/app/onboarding?next=%2Fapp%2Farena%3Finvite%3Dcrew");
+  await act(async () => r.unmount());
+});

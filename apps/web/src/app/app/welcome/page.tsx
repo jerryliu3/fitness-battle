@@ -1,8 +1,6 @@
 "use client";
 
 import { OnboardingFeatureTour } from "@/features/club/onboarding-feature-tour";
-
-
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -16,6 +14,7 @@ import { useCompete } from "@/components/compete-context";
 import { OnboardingAthlete } from "@/features/club/onboarding-athlete";
 import { uploadWebProfileAvatar } from "@/lib/profile/avatar-upload";
 import { OnboardingOvertake } from "@/features/club/onboarding-overtake";
+import { resolveSafePostLoginPath } from "@/lib/auth/login-redirect";
 import { readGuestIntroDraft } from "@/lib/guest-intro";
 import { SportActivityIcon } from "@/ui/sport-activity-icon";
 import { BackButton } from "@/ui/back-button";
@@ -26,7 +25,12 @@ function Welcome({ preview }: { preview: boolean }) {
   const { user, loading, signUp } = useAuth();
   const { state } = useCompete();
   const router = useRouter();
+  const nextPath = useSearchParams().get("next");
+  const nextQuery = nextPath ? `next=${encodeURIComponent(resolveSafePostLoginPath(nextPath))}` : "";
+  const setupHref = `/app/onboarding${nextQuery ? `?${nextQuery}` : ""}`;
   const top = useRef<HTMLElement>(null);
+  const accountId = preview ? undefined : user?.id;
+  const waitingForProfile = !preview && (loading || Boolean(user && !state));
   const [ready, setReady] = useState(false);
   const [step, setStep] = useState<OnboardingStep>("sport");
   const [draft, setDraft] = useState<GuestIntroDraft>(EMPTY_GUEST_INTRO);
@@ -48,7 +52,7 @@ function Welcome({ preview }: { preview: boolean }) {
     return () => clearTimeout(timer);
   }, [draft]);
   useEffect(() => {
-    if (!preview && (loading || (user && !state))) return;
+    if (waitingForProfile) return;
     let saved = preview ? null : readGuestIntroDraft();
     if (user && !preview && state) {
       let pending: string | null = null;
@@ -58,7 +62,7 @@ function Welcome({ preview }: { preview: boolean }) {
       };
     }
     setDraft(saved ?? EMPTY_GUEST_INTRO); setCardDraft(saved ?? EMPTY_GUEST_INTRO); setReady(true);
-  }, [preview, loading, user?.id, Boolean(state)]);
+  }, [preview, accountId, waitingForProfile]);
   useEffect(() => {
     if (!ready || preview || loading || state?.onboardingCompleted) return;
     const timer = setTimeout(() => { try { localStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify(draft)); } catch {} }, 600);
@@ -79,7 +83,7 @@ function Welcome({ preview }: { preview: boolean }) {
     setCardDraft(draft);
     if (step === "growth") {
       if (authenticatedIntro && user) {
-        try { saveCompletedIntro(user.email); router.replace("/app/onboarding"); }
+        try { saveCompletedIntro(user.email); router.replace(setupHref); }
         catch { setError("Could not save setup on this device. Please try again."); }
         return;
       }
@@ -97,7 +101,7 @@ function Welcome({ preview }: { preview: boolean }) {
       if (result.error) { localStorage.removeItem(GUEST_SIGNUP_PENDING_KEY); setError(result.error); return; }
       setPassword("");
       if (result.needsEmailConfirm) { setConfirmation(true); return; }
-      router.replace("/app/onboarding");
+      router.replace(setupHref);
     } catch (err) {
       try { localStorage.removeItem(GUEST_SIGNUP_PENDING_KEY); } catch {}
       setError(err instanceof Error ? err.message : "Could not create your account.");
@@ -157,7 +161,7 @@ function Welcome({ preview }: { preview: boolean }) {
     {step !== "account" && step !== "overtake" && <div className="onboarding-actions">
       {back}<button className="fb-btn" type="button" disabled={photoBusy || (step === "athlete" && !draft.name.trim())} onClick={() => void next()}>{step === "athlete" ? "See yourself compete" : step === "growth" ? "Make it official" : "Continue"}</button>
     </div>}
-    {step === "sport" && !authenticatedIntro && <Link className="fb-btn-ghost" prefetch href={preview ? "/login?from=onboarding&preview=1" : "/login?from=onboarding"}>I already have an account</Link>}
+    {step === "sport" && !authenticatedIntro && <Link className="fb-btn-ghost" prefetch href={`/login?from=onboarding${preview ? "&preview=1" : ""}${nextQuery ? `&${nextQuery}` : ""}`}>I already have an account</Link>}
   </section>;
 }
 function Entry() { return <Welcome preview={useSearchParams().get("preview") === "1"} />; }

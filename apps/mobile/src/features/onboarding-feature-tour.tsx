@@ -13,7 +13,7 @@ export function OnboardingFeatureTour({ draft, selected, onSelect, onScoreChange
 }) {
   const [gender, setGender] = useState<"female" | "male">("female");
   return <View style={{ flex: 1 }}>
-    <View style={{ width: 214, marginTop: 8, gap: 8 }}>
+    <View style={{ width: 228, marginTop: 8, gap: 8 }}>
       <AppText accessibilityRole="header" role="heading" style={{ fontSize: 22, lineHeight: 26 }}>{ONBOARDING_FEATURES.find(item => item.id === selected)!.heading}</AppText>
       <FocusSegments label="Discover" compact pill options={ONBOARDING_FEATURES.map(item => ({ value: item.id, label: item.label }))} value={selected} onChange={onSelect} />
       {selected === "vitals" && <FocusSegments label="Body model" compact pill options={[{ value: "female", label: "Female" }, { value: "male", label: "Male" }]} value={gender} onChange={setGender} />}
@@ -23,9 +23,7 @@ export function OnboardingFeatureTour({ draft, selected, onSelect, onScoreChange
         <View style={{ paddingHorizontal: 16, gap: 12 }}>
           {selected === "growth" && <OnboardingPotential onScoreChange={onScoreChange} />}
           {selected === "crews" && <OnboardingCrew draft={draft} />}
-          {selected === "vitals" && <>
-            <VitalsLabPanel metrics={ONBOARDING_VITALS_METRICS} gender={gender} height={370} />
-          </>}
+          {selected === "vitals" && <VitalsLabPanel metrics={ONBOARDING_VITALS_METRICS} gender={gender} height={370} />}
         </View>
       </OnboardingCanvas>
     </View>

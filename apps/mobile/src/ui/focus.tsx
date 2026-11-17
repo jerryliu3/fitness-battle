@@ -414,6 +414,7 @@ const f=useThemedStyles(fThemes);
       }}
       style={({ pressed }) => [
         f.button,
+        fit && { height: 52, minHeight: 52, paddingVertical: 0 },
         secondary && f.secondary,
         pressed && !disabled && { opacity: 0.78 },
         disabled && { opacity: 0.4 },

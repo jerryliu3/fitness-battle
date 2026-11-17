@@ -14,6 +14,7 @@ vi.mock("react-native", () => ({
   },
   TextInput: { State: { currentlyFocusedInput: () => ({ measureInWindow: (callback: (...args: number[]) => void) => callback(0, keyboard.bottom - 46, 200, 46) }) } },
 }));
+import { Keyboard, TextInput } from "react-native";
 import { OnboardingCanvas } from "./onboarding-canvas";
 it("keeps the composition size while revealing a field above the keyboard", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -39,4 +40,20 @@ it("keeps the composition size while revealing a field above the keyboard", asyn
   await act(async () => keyboard.listeners.keyboardDidHide({}));
   expect(views()[1].props.style.top).toBe(original.top);
   await act(async () => renderer.unmount());
+});
+
+it("renders in Expo web where native keyboard measurement APIs are unavailable", async () => {
+  const keyboardApi = Keyboard;
+  const inputApi = TextInput.State;
+  const metrics = keyboardApi.metrics, focused = inputApi.currentlyFocusedInput;
+  Reflect.set(keyboardApi, "metrics", undefined); Reflect.set(inputApi, "currentlyFocusedInput", undefined);
+  let renderer!: ReactTestRenderer;
+  try {
+    await act(async () => { renderer = create(createElement(OnboardingCanvas, { height: 640, children: null })); });
+    const canvas = renderer.root.findAllByType("View" as never)[0];
+    await act(async () => canvas.props.onLayout({ nativeEvent: { layout: { width: 360, height: 640 } } }));
+    await act(async () => canvas.props.onTouchEnd());
+    expect(renderer.root.findAllByType("View" as never)[1].props.style.opacity).toBe(1);
+    await act(async () => renderer.unmount());
+  } finally { Reflect.set(keyboardApi, "metrics", metrics); Reflect.set(inputApi, "currentlyFocusedInput", focused); }
 });

@@ -14,7 +14,6 @@ import { AppHeading, AppParagraph } from "@/ui/section";
 import { AuthGate } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
-import { ProfilePhoto } from "@/features/you/profile-photo";
 import { OnboardingSummary, OnboardingUnits } from "@/features/club/onboarding-visuals";
 import { resolvePostOnboardingPath } from "@/lib/auth/login-redirect";
 import { createClient } from "@/lib/supabase/client";
@@ -94,9 +93,9 @@ function Setup({ preview }: { preview: boolean }) {
     setSaving(true); setSaveError(null);
     try {
       const guest = guestIntroForAccount(readGuestIntroDraft(), localStorage.getItem(GUEST_SIGNUP_PENDING_KEY), user.email);
-      if (guest?.photo && !state.avatarUrl) {
+      if (guest?.photo) {
         const blob = await (await fetch(guest.photo)).blob();
-        const avatarUrl = offlineMode ? guest.photo : await uploadWebProfileAvatar({ file: new File([blob], "athlete.jpg", { type: "image/jpeg" }), userId: user.id, supabase: createClient(), requireStorage: true });
+        const avatarUrl = offlineMode ? guest.photo : await uploadWebProfileAvatar({ file: new File([blob], "athlete.jpg", { type: "image/jpeg" }), userId: user.id, previousAvatarUrl: state.avatarUrl, supabase: createClient(), requireStorage: true });
         if (owner.current !== user.id) return;
         dispatch({ type: "set-avatar", avatarUrl, accountId: user.id });
       }
@@ -136,7 +135,6 @@ function Setup({ preview }: { preview: boolean }) {
       {!preview && <TrackerConnections />}
     </>}
     {step === 1 && <>
-      {!preview && <ProfilePhoto state={state} email={user?.email} />}
       <label className="fb-field">Name<input value={name} onChange={e => setName(e.target.value)} maxLength={80} /></label>
       <label className="fb-field">City (optional)<input value={city} onChange={e => setCity(e.target.value)} maxLength={80} /></label>
       <CountryCombobox label="Country (optional)" value={countryCode} onChange={setCountryCode} />

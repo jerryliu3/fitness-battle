@@ -16,8 +16,11 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const fromOnboarding = searchParams.get("from") === "onboarding";
-  const onboardingHref = searchParams.get("preview") === "1" ? "/app/welcome?preview=1" : "/app/welcome";
   const next = resolveSafePostLoginPath(searchParams.get("next"));
+  const returnParams = new URLSearchParams();
+  if (searchParams.get("preview") === "1") returnParams.set("preview", "1");
+  if (searchParams.has("next")) returnParams.set("next", next);
+  const onboardingHref = `/app/welcome${returnParams.size ? `?${returnParams}` : ""}`;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);

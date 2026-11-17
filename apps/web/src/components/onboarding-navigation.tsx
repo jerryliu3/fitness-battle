@@ -1,5 +1,6 @@
 "use client";
 import { GUEST_SIGNUP_PENDING_KEY, hasCompletedOnboardingIntro } from "@fitness-battle/shared";
+import { resolveSafePostLoginPath } from "@/lib/auth/login-redirect";
 import { readGuestIntroDraft } from "@/lib/guest-intro";
 import { useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -12,6 +13,7 @@ export function OnboardingNavigation() {
   const { state, loadStatus } = useCompete();
   const path = usePathname(), params = useSearchParams(), router = useRouter();
   const connecting = path === "/app/athlete" && (params.get("panel") === "connections" || params.has("tracker") || params.has("provider"));
+  const next = params.get("next");
   const preview = (path === "/app/welcome" || path === "/app/onboarding") && params.get("preview") === "1";
   useEffect(() => {
     if (preview) return;
@@ -25,8 +27,8 @@ export function OnboardingNavigation() {
     try { pending = localStorage.getItem(GUEST_SIGNUP_PENDING_KEY); } catch {}
     const introDone = hasCompletedOnboardingIntro(readGuestIntroDraft(), pending, user.email);
     const target = introDone ? "/app/onboarding" : "/app/welcome";
-    if (path !== target) router.replace(target);
+    if (path !== target) router.replace(next ? `${target}?next=${encodeURIComponent(resolveSafePostLoginPath(next))}` : target);
 
-  }, [loading, user, state?.onboardingCompleted, loadStatus, path, connecting, preview, router]);
+  }, [loading, user, state?.onboardingCompleted, loadStatus, path, connecting, preview, next, router]);
   return null;
 }

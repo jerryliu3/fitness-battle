@@ -9,12 +9,13 @@ import {
   resolveSafePostLoginPath,
 } from "@/lib/auth/login-redirect";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useState } from "react";
 
 function SignupForm() {
   const { signUp, user, loading } = useAuth();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const next = resolveSafePostLoginPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,14 +26,16 @@ function SignupForm() {
 
   useEffect(() => { setDisplayName(readGuestIntroDraft()?.name ?? ""); }, []);
 
+  const setupHref = `/app/onboarding?next=${encodeURIComponent(next)}`;
+  const welcomeHref = `/app/welcome?next=${encodeURIComponent(next)}`;
   useEffect(() => {
-    if (!loading && user) {
-      window.location.assign(readGuestIntroDraft()?.introCompleted ? `/app/onboarding?next=${encodeURIComponent(next)}` : "/app/welcome");
-    }
-  }, [loading, user, next]);
+    if (loading || !user || busy) return;
+    router.replace(setupHref);
+  }, [loading, user, busy, setupHref, router]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError(null);
     setMessage(null);
@@ -54,11 +57,7 @@ function SignupForm() {
         setBusy(false);
         return;
       }
-      const dest =
-        next && next !== "/today" && next !== "/"
-          ? `/onboarding?next=${encodeURIComponent(next)}`
-          : "/onboarding";
-      window.location.assign(guest?.introCompleted ? dest : "/app/welcome");
+      router.replace(guest?.introCompleted ? setupHref : welcomeHref);
     } catch (err) {
       try { localStorage.removeItem(GUEST_SIGNUP_PENDING_KEY); } catch {}
       setError(err instanceof Error ? err.message : "Could not create the account.");

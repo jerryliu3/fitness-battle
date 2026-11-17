@@ -1,24 +1,22 @@
+vi.mock("./vitals-lab/vitals-lab-canvas-prefetch", () => ({ VitalsLabCanvasPrefetch: "VitalsLabCanvasPrefetch" }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 import { freshState, GUEST_INTRO_DRAFT_KEY } from "@fitness-battle/shared";
-const mock = vi.hoisted(() => ({ replace: vi.fn(), push: vi.fn(), signUp: vi.fn(async () => ({})), pick: vi.fn(async () => ({ canceled: false, assets: [{ base64: "/9j/" }] })), save: vi.fn(async (_key: string, _value: string) => {}) }));
-vi.mock("react-native", () => ({ useColorScheme: () => "light", KeyboardAvoidingView: "KeyboardAvoidingView", Platform: { OS: "ios" }, Pressable: "Pressable", ScrollView: "ScrollView", TextInput: "TextInput", View: "View" }));
+const mock = vi.hoisted(() => ({ storeReady: true, replace: vi.fn(), push: vi.fn(), signUp: vi.fn(async () => ({})), pick: vi.fn(async () => ({ canceled: false, assets: [{ base64: "/9j/" }] })), save: vi.fn(async (_key: string, _value: string) => {}) }));
+vi.mock("react-native", () => ({ useColorScheme: () => "light", Pressable: "Pressable", TextInput: "TextInput", Text: "Text", View: "View" }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
 vi.mock("@react-native-async-storage/async-storage", () => ({ default: { getItem: async () => null, setItem: mock.save, removeItem: vi.fn(async () => {}) } }));
 vi.mock("expo-router", () => ({ useLocalSearchParams: () => ({}), useRouter: () => ({ replace: mock.replace, push: mock.push }), Redirect: "Redirect" }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: null, loading: false, signUp: mock.signUp }) }));
 const state = freshState();
-vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state }) }));
+vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: mock.storeReady ? state : null }) }));
 vi.mock("../ui/section", () => ({ AppText: "AppText" }));
 vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton", useFocusStyles: () => ({}) }));
 vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
-vi.mock("../ui/searchable-country-picker", () => ({ SearchableCountryPicker: "Country" }));
-vi.mock("../ui/sport-icon", () => ({ SportIcon: "SportIcon" }));
 vi.mock("./onboarding-athlete", () => ({ OnboardingAthlete: "OnboardingAthlete" }));
 vi.mock("expo-image-picker", () => ({ launchImageLibraryAsync: mock.pick }));
 vi.mock("./onboarding-overtake", () => ({ OnboardingOvertake: "OnboardingOvertake" }));
-vi.mock("./onboarding-potential", () => ({ OnboardingPotential: "OnboardingPotential" }));
 vi.mock("./legal-links", () => ({ LegalLinks: "LegalLinks" }));
 vi.mock("./onboarding-feature-tour", () => ({ OnboardingFeatureTour: "OnboardingFeatureTour" }));
 vi.mock("../ui/onboarding-canvas", () => ({ OnboardingCanvas: ({ children }: { children: unknown }) => children, ONBOARDING_CANVAS: { width: 360, height: 640 } }));
@@ -40,7 +38,7 @@ it("keeps the replay immersive, commits the card on editing end, then creates th
   expect(r.root.findByType("OnboardingAthlete" as never).props.model.name).toBe("Taylor");
   await press("Add photo");
   expect(r.root.findByType("OnboardingAthlete" as never).props.model.avatarUrl).toBe("data:image/jpeg;base64,/9j/");
-  await press("See yourself compete");
+  await press("Continue");
   const replay = r.root.findByType("OnboardingOvertake" as never);
   expect(replay.props.photo).toBe("data:image/jpeg;base64,/9j/");
   expect(replay.props.sport).toBe("cycling"); expect(replay.props.fill).toBe(true);
@@ -51,12 +49,12 @@ it("keeps the replay immersive, commits the card on editing end, then creates th
   await act(async () => r.root.findByType("OnboardingFeatureTour" as never).props.onScoreChange(1250));
   expect(r.root.findByType("OnboardingAthlete" as never)).toBe(persistentCard);
   expect(persistentCard.props.model.score).toBe(1250);
-  await press("Make it official");
+  await press("Continue");
   expect(r.root.findAllByType("FocusButton" as never).some(n => n.props.label === "Sign in")).toBe(false);
   const field = (label: string) => r.root.findAllByType("TextInput" as never).find(n => n.props.accessibilityLabel === label)!;
   await act(async () => field("Email").props.onChangeText("taylor@example.com"));
   await act(async () => field("Password").props.onChangeText("password"));
-  await press("Create account");
+  await press("Continue");
   expect(mock.signUp).toHaveBeenCalledWith({ email: "taylor@example.com", password: "password", displayName: "Taylor" });
   expect(mock.replace).toHaveBeenCalledWith("/onboarding");
   expect(mock.save.mock.calls.some(([, raw]) => raw.includes('"introCompleted":true'))).toBe(true);
@@ -64,5 +62,18 @@ it("keeps the replay immersive, commits the card on editing end, then creates th
     expect(JSON.parse(raw)).not.toHaveProperty("score");
     expect(JSON.parse(raw)).not.toHaveProperty("overtakes");
   }
+  await act(async () => r.unmount());
+});
+
+it("retains edits when the signed-out account store finishes loading", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); mock.storeReady = false;
+  let r!: ReactTestRenderer;
+  await act(async () => { r = create(createElement(Welcome)); });
+  await act(async () => r.root.findAllByType("FocusButton" as never).find(n => n.props.label === "Continue")!.props.onPress());
+  const field = () => r.root.findByType("TextInput" as never);
+  await act(async () => field().props.onChangeText("Taylor"));
+  mock.storeReady = true;
+  await act(async () => r.update(createElement(Welcome)));
+  expect(field().props.value).toBe("Taylor");
   await act(async () => r.unmount());
 });

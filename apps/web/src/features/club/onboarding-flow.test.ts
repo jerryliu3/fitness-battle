@@ -13,13 +13,13 @@ vi.mock("@/ui/back-button",()=>({BackButton:"BackButton"}));
 vi.mock("@/ui/section", () => ({ AppHeading: "h2", AppParagraph: "p" }));
 vi.mock("@/ui/country-combobox", () => ({ CountryCombobox: "CountryCombobox" }));
 vi.mock("@/ui/timezone-combobox", () => ({ TimezoneCombobox: "TimezoneCombobox" }));
-vi.mock("@/features/you/profile-photo", () => ({ ProfilePhoto: "ProfilePhoto" }));
 vi.mock("@/features/you/you-route", () => ({ TrackerConnections: "TrackerConnections" }));
 vi.mock("./onboarding-visuals", () => ({ OnboardingSummary: "OnboardingSummary", OnboardingUnits: "OnboardingUnits" }));
 vi.mock("@/lib/profile/avatar-upload", () => ({ uploadWebProfileAvatar: mock.upload }));
 import Onboarding from "@/app/app/onboarding/page";
 
 beforeEach(() => {
+  state.avatarUrl = null;
   vi.clearAllMocks(); mock.storage.clear(); mock.params = new URLSearchParams();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const storage = { getItem: (key: string) => mock.storage.get(key) ?? null, setItem: (key: string, value: string) => mock.storage.set(key, value), removeItem: (key: string) => mock.storage.delete(key) };
@@ -59,7 +59,8 @@ it("keeps debug navigation read-only with the same button copy", async () => {
   await act(async () => r.unmount());
 });
 
-it.each([false, true])("uploads the guest photo on explicit completion and retains it on failure (failure=%s)", async failure => {
+it.each([false, true])("uploads the guest photo over an existing avatar and retains it on failure (failure=%s)", async failure => {
+  state.avatarUrl = "https://example.com/old-avatar.jpg";
   mock.storage.set(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ sport: "walking", name: "Taylor", city: "", countryCode: "", photo: "data:image/jpeg;base64,/9j/" }));
   mock.storage.set(GUEST_SIGNUP_PENDING_KEY, "taylor@example.com");
   vi.stubGlobal("fetch", vi.fn(async () => ({ blob: async () => new Blob(["photo"], { type: "image/jpeg" }) })));
@@ -72,7 +73,7 @@ it.each([false, true])("uploads the guest photo on explicit completion and retai
   await press("Skip for now"); await press("Continue");
   expect(mock.upload).not.toHaveBeenCalled();
   await press("Enter events");
-  expect(mock.upload).toHaveBeenCalledWith(expect.objectContaining({ userId: "a", requireStorage: true }));
+  expect(mock.upload).toHaveBeenCalledWith(expect.objectContaining({ userId: "a", previousAvatarUrl: "https://example.com/old-avatar.jpg", requireStorage: true }));
   if (failure) {
     expect(mock.dispatch).not.toHaveBeenCalled();
     expect(mock.storage.has(GUEST_INTRO_DRAFT_KEY)).toBe(true);

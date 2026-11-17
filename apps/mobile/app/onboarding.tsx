@@ -58,6 +58,7 @@ export default function Onboarding() {
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(timer); }, []);
 
   useEffect(() => {
+    if (!state) return;
     let alive = true;
     setReady(false);
     void (async () => {
@@ -129,7 +130,7 @@ export default function Onboarding() {
     setSaving(true); setSaveError(null);
     try {
       const guest = guestIntroForAccount(await readGuestIntroDraft(), await AsyncStorage.getItem(GUEST_SIGNUP_PENDING_KEY), user.email);
-      if (guest?.photo && !state.avatarUrl) {
+      if (guest?.photo) {
         const avatarUrl = offlineMode ? guest.photo : await uploadNativeProfileAvatar(decodePhoto(guest.photo.split(",")[1]!), user.id);
         if (owner.current !== user.id) return;
         dispatch({ type: "set-avatar", avatarUrl, accountId: user.id });
@@ -218,7 +219,7 @@ export default function Onboarding() {
           <View style={{ flexDirection: "row", gap: 12 }}>
             {step > 0 && <IconButton icon="back" label="Back" disabled={saving} onPress={back} />}
             <View style={{ flex: 1 }}><FocusButton
-              label={saving ? "Saving…" : step === 2 ? "Enter events" : step === 0 && !state.links.some(link => link.status === "connected") ? "Skip for now" : "Continue"}
+              label={saving ? "Saving…" : "Continue"}
               disabled={saving || (step === 2 && !preview && !canWrite)}
               onPress={() => step < 2 ? advance() : finish()} /></View>
           </View>

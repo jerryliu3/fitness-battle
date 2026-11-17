@@ -37,6 +37,8 @@ export default function Welcome() {
   const router = useRouter();
   const preview = useLocalSearchParams<{ preview?: string }>().preview === "1";
   const colors = useThemeColors(), f = useFocusStyles();
+  const accountId = preview ? undefined : user?.id;
+  const waitingForProfile = !preview && (loading || Boolean(user && !state));
   const [ready, setReady] = useState(false), [step, setStep] = useState<OnboardingStep>("sport");
   const [draft, setDraft] = useState<GuestIntroDraft>(EMPTY_GUEST_INTRO);
   const [feature, setFeature] = useState<OnboardingFeatureId>("growth");
@@ -62,7 +64,7 @@ export default function Welcome() {
     return () => clearTimeout(timer);
   }, [ready, loading, draft, preview, state?.onboardingCompleted]);
   useEffect(() => {
-    if (loading || (user && !state)) return;
+    if (waitingForProfile) return;
     let alive = true;
     void Promise.all([readGuestIntroDraft(), AsyncStorage.getItem(GUEST_SIGNUP_PENDING_KEY)]).then(([saved, pending]) => {
       if (!alive) return;
@@ -72,7 +74,7 @@ export default function Welcome() {
       setDraft(initial); setCardDraft(initial); setReady(true);
     }).catch(() => { if (alive) setReady(true); });
     return () => { alive = false; };
-  }, [loading, preview, user?.id, Boolean(state)]);
+  }, [preview, accountId, waitingForProfile]);
   if (!preview && user && state?.onboardingCompleted) return <Redirect href="/today" />;
   if (loading || !ready) return <View style={{ flex: 1, backgroundColor: colors.paper }} />;
   const index = steps.indexOf(step);
@@ -169,9 +171,9 @@ export default function Welcome() {
             {(!user || preview) && <View style={box(520, 48)}><FocusButton fit secondary label="I already have an account" onPress={() => void signIn()} /></View>}
           </>}
           {step === "athlete" && <>
-            <View style={box(450, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Athlete name" placeholder="Athlete name" value={draft.name} maxLength={80} style={field}
+            <View style={box(438, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Athlete name" placeholder="Athlete name" value={draft.name} maxLength={80} style={field}
               onChangeText={name => setDraft(d => ({ ...d, name }))} onEndEditing={() => setCardDraft(draft)} /></View>
-            <View style={{ ...box(514, 52), flexDirection: "row", gap: 16, alignItems: "center" }}>
+            <View style={{ ...box(492, 52), flexDirection: "row", gap: 16, alignItems: "center" }}>
               <View style={{ flex: 1 }}><FocusButton fit secondary label={photoBusy ? "Reading photo…" : draft.photo ? "Change photo" : "Add photo"} disabled={photoBusy} onPress={() => void choosePhoto()} /></View>
               {draft.photo && <Pressable accessibilityRole="button" onPress={() => { setDraft(d => ({ ...d, photo: undefined })); setCardDraft(d => ({ ...d, photo: undefined })); }} style={{ minHeight: 44, justifyContent: "center" }}><AppText numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>Remove photo</AppText></Pressable>}
             </View>
@@ -184,7 +186,7 @@ export default function Welcome() {
             <View style={box(448, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Password" placeholder="Password" style={field} value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoComplete="new-password" editable={!confirmation} /></View>
             <View style={box(510, 38)}><LegalLinks /></View>
           </>}
-          {(error || confirmation) && <View style={box(528, 46)}><AppText role="caption" accessibilityRole="alert" numberOfLines={3} adjustsFontSizeToFit>{error ?? "Check your email to confirm your account and continue setup."}</AppText></View>}
+          {(error || confirmation) && <View style={box(548, 36)}><AppText role="caption" accessibilityRole="alert" numberOfLines={2} adjustsFontSizeToFit>{error ?? "Check your email to confirm your account and continue setup."}</AppText></View>}
           {step !== "overtake" && <View style={box(584, 52)}>
             {step === "account" ? actions(busy ? "Creating…" : "Continue", () => void createAccount(), busy || confirmation || !email.trim() || password.length < 6)
               : actions("Continue", () => void next(), photoBusy || (step === "athlete" && !draft.name.trim()))}
