@@ -54,6 +54,20 @@ function courseOverviewCoordinates(
   return athletes.length ? [[west, south], [east, north]] : [];
 }
 
+function courseLaneSpacing(lanes: readonly ArenaSceneLane[]) {
+  return lanes.some((lane) => lane.mystery) ? Math.max(RACE_LANE_SPACING_METRES, 8) : RACE_LANE_SPACING_METRES;
+}
+
+/** Symmetric lateral offsets for multiple athletes sharing the route start (0 m along-route). */
+function startLineLateralOffsets(roster: readonly { id: string; metres: number }[], spacing: number) {
+  const offsets = new Map(roster.map((lane) => [lane.id, 0]));
+  const atStart = roster.filter((lane) => lane.metres === 0);
+  if (atStart.length < 2) return offsets;
+  const ids = atStart.map((lane) => lane.id).sort();
+  ids.forEach((id, index) => offsets.set(id, (index - (ids.length - 1) / 2) * spacing));
+  return offsets;
+}
+
 function buildCourseGeometry(course: RaceCourse, lanes: readonly ArenaSceneLane[], unit: string, spacing: number, anchorId: string) {
   const roster = lanes.filter(lane => !lane.ghost);
   const ids = roster.map(lane => lane.id).sort();
@@ -87,18 +101,21 @@ function buildSharedProfileLaneGeometry(
 ) {
   const roster = lanes.filter((lane) => !lane.ghost);
   const leaderValue = Math.max(...roster.map((lane) => lane.value));
-  const athletes = roster
+  const prepared = roster
     .map((lane) => {
       const metres = raceEffortMetres(lane.value, unit);
-      return metres === null
-        ? null
-        : {
-            ...lane,
-            ...raceCourseRacerPosition(course, metres, 0),
-            leader: lane.value >= leaderValue,
-          };
+      return metres === null ? null : { lane, metres };
     })
-    .filter((athlete) => athlete !== null);
+    .filter((entry): entry is { lane: ArenaSceneLane; metres: number } => entry !== null);
+  const offsets = startLineLateralOffsets(
+    prepared.map(({ lane, metres }) => ({ id: lane.id, metres })),
+    courseLaneSpacing(roster),
+  );
+  const athletes = prepared.map(({ lane, metres }) => ({
+    ...lane,
+    ...raceCourseRacerPosition(course, metres, offsets.get(lane.id) ?? 0),
+    leader: lane.value >= leaderValue,
+  }));
   const selected =
     athletes.find((lane) => lane.id === selectedId) ??
     athletes.find((lane) => lane.you) ??
@@ -117,7 +134,7 @@ function buildSharedProfileLaneGeometry(
               },
               geometry: {
                 type: "LineString" as const,
-                coordinates: raceCourseTrail(course, selected.metres, 0),
+                coordinates: raceCourseTrail(course, selected.metres, selected.lateralMetres),
               },
             },
           ]
@@ -165,7 +182,7 @@ export function raceCourseScene(
           course,
           lanes,
           unit,
-          lanes.some((lane) => lane.mystery) ? Math.max(RACE_LANE_SPACING_METRES, 8) : RACE_LANE_SPACING_METRES,
+          courseLaneSpacing(lanes),
           anchor,
         );
     cached = {

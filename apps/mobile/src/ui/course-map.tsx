@@ -62,7 +62,14 @@ const appearanceColors = useThemeColors();
   const clampedTarget = distanceTarget ? Math.max(0, Math.min(distanceTarget.value, earnedDistance)) : undefined;
   const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, sharedLane), [course, lanes, unit, selectedId, sharedLane]);
   const visibleTrails = useMemo(() => hiddenIds.length ? { ...scene.trails, features: scene.trails.features.filter(feature => !hiddenIds.includes(String(feature.id))) } : scene.trails, [scene.trails, hiddenIds]);
-  const visibleMarkers = useMemo(() => hiddenIds.length ? { ...scene.markers, features: scene.markers.features.filter(feature => !hiddenIds.includes(String(feature.id))) } : scene.markers, [scene.markers, hiddenIds]);
+  const visibleMarkers = useMemo(() => {
+    const features = scene.markers.features.filter((feature) => {
+      if (hiddenIds.includes(String(feature.id))) return false;
+      if (!sharedLane && feature.properties?.mystery) return false;
+      return true;
+    });
+    return features.length === scene.markers.features.length && !hiddenIds.length ? scene.markers : { ...scene.markers, features };
+  }, [scene.markers, hiddenIds, sharedLane]);
   const fallbackCenter = scene.selected?.coordinate ?? course.coordinates[0];
   const pose = useRef<CourseCameraPose>(restored.current ?? { center: fallbackCenter, zoom: courseInitialZoom(fallbackCenter[1], dimensions.height, initialFlat ? 0 : 60), pitch: initialFlat ? 0 : 60, bearing: 0 });
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(restored.current ? restored.current.pitch === 0 : initialFlat);
@@ -260,7 +267,7 @@ const appearanceColors = useThemeColors();
       }) : null}
       {!overlaysHidden ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id) && !dismissed.includes(lane.id)).map(lane => {
         const detail = courseAthleteDetail(lanes, lane, unit);
-        if (!sharedLane) {
+        if (!sharedLane && !lane.mystery) {
           return <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: lane.callout.left ? 1 : 0, y: lane.callout.originY / lane.callout.height }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
             <View collapsable={false} pointerEvents="box-none" style={{ width: 170, height: lane.callout.height }}>
               <Svg width={170} height={lane.callout.height} viewBox={`0 0 170 ${lane.callout.height}`} pointerEvents="none"><G transform={`translate(${lane.callout.originX} ${lane.callout.originY})`}>
