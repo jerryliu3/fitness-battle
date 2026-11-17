@@ -180,7 +180,7 @@ export function EventRegistration({
                   </div>
                   <TicketStub status="READY TO CLAIM" barcode={barcode} />
                   <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  {onBack && <BackButton disabled={claimPending} onClick={onBack} />}
+                  {onBack && <BackButton disabled={busy || claimPending} onClick={onBack} />}
                   <button
                     type="button"
                     className="fb-btn" style={{ flex: 1 }}
@@ -213,8 +213,8 @@ export function EventRegistration({
                   </div>
                   <TicketStub status="CONFIRMED" barcode={barcode} />
                   <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  {onBack && <BackButton disabled={claimPending} onClick={onBack} />}
-                  <button type="button" className="fb-btn" style={{ flex: 1 }} onClick={onView}>
+                  {onBack && <BackButton disabled={busy || claimPending} onClick={onBack} />}
+                  <button type="button" className="fb-btn" style={{ flex: 1 }} disabled={busy} onClick={onView}>
                     {ticketOnly ? "Continue" : `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →`}
                   </button></div>
                 </div>

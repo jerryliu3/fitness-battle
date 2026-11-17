@@ -166,7 +166,7 @@ export function EventRegistration({
   const [claiming, setClaiming] = useState(false);
   const [ticketHeight, setTicketHeight] = useState(0);
   const [stageHeight, setStageHeight] = useState(0);
-  const rotation = useRef(new Animated.Value(registered ? 180 : 0)).current;
+  const rotation = useRef(new Animated.Value(registered && !ticketOnly ? 180 : 0)).current;
   const stamp = useRef(new Animated.Value(registered ? 1 : 0)).current;
   const entry = useRef(new Animated.Value(0)).current;
   const stepProgress = useRef(new Animated.Value(registered ? 1 : 0)).current;
@@ -351,10 +351,10 @@ export function EventRegistration({
           </View>
 
           <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
-          {onBack && <IconButton icon="back" label="Back" disabled={claimPending} onPress={onBack} />}
+          {onBack && <IconButton icon="back" label="Back" disabled={busy || claimPending} onPress={onBack} />}
           <View style={{ flex: 1 }}><FocusButton
             label={ticketOnly ? "Continue" : back ? `View ${Date.parse(detail.start) > now.getTime() ? "upcoming race" : "race"} →` : claimPending ? "Claiming your spot…" : "Claim your spot"}
-            disabled={claimPending}
+            disabled={busy || claimPending}
             onPress={back ? onView : () => {
               setClaiming(true);
               requestAnimationFrame(() => {

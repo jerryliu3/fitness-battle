@@ -26,7 +26,7 @@ beforeEach(() => {
   vi.stubGlobal("localStorage", storage); vi.stubGlobal("sessionStorage", storage);
 });
 const next = (r: ReactTestRenderer) => act(async () => r.root.findByType("button").props.onClick());
-it.each([false, true])("uses one event with weekly volume on the starting line and a separate confirmation (preview=%s)", async preview => {
+it.each([false, true])("uses one event with weekly volume on the starting line and immediate confirmation (preview=%s)", async preview => {
   if (preview) mock.params = new URLSearchParams("preview=1");
   else {
     mock.storage.set(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ sport: "walking", name: "Taylor", introCompleted: true }));
@@ -37,10 +37,11 @@ it.each([false, true])("uses one event with weekly volume on the starting line a
   expect(r.root.findAllByType("input")).toHaveLength(1);
   expect(r.root.findByType("select").props.value).toBe("");
   await next(r); await next(r);
+  await act(async () => r.root.findByType("EventRegistration" as never).props.onBack());
+  expect(r.root.findAllByType("TrackerConnections" as never)).toHaveLength(preview ? 0 : 1);
+  await next(r);
   const sport = preview ? "running" : "walking";
   await act(async () => r.root.findByType("input").props.onChange({ target: { value: "28000" } }));
-  expect(mock.dispatch).not.toHaveBeenCalled();
-  await act(async () => r.root.findByType("EventRegistration" as never).props.onClaim());
   const ticket = r.root.findByType("EventRegistration" as never);
   expect(ticket.props).toMatchObject({ event: sport, registered: true, ticketOnly: true });
   expect(mock.dispatch.mock.calls.some(([a]) => a.type === "complete-onboarding")).toBe(false);
@@ -54,7 +55,7 @@ it.each([false, true])("uses one event with weekly volume on the starting line a
   }
   await act(async () => r.unmount());
 });
-it.each([false, true])("uploads the selected photo before registration and retains it on failure (failure=%s)", async failure => {
+it.each([false, true])("saves the selected photo on Continue and retains it on failure (failure=%s)", async failure => {
   state.avatarUrl = "https://example.com/old-avatar.jpg";
   mock.storage.set(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ sport: "walking", name: "Taylor", photo: "data:image/jpeg;base64,/9j/", introCompleted: true }));
   mock.storage.set(GUEST_SIGNUP_PENDING_KEY, "taylor@example.com");
@@ -63,10 +64,10 @@ it.each([false, true])("uploads the selected photo before registration and retai
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Onboarding)); });
   await next(r); await next(r);
-  await act(async () => r.root.findByType("EventRegistration" as never).props.onClaim());
+  await act(async () => r.root.findByType("EventRegistration" as never).props.onView());
   expect(mock.upload).toHaveBeenCalledWith(expect.objectContaining({ userId: "a", previousAvatarUrl: state.avatarUrl, requireStorage: true }));
   if (failure) {
-    expect(mock.dispatch).not.toHaveBeenCalled();
+    expect(mock.dispatch.mock.calls.some(([action]) => action.type === "complete-onboarding")).toBe(false);
     expect(mock.storage.has(GUEST_INTRO_DRAFT_KEY)).toBe(true);
   } else expect(r.root.findByType("EventRegistration" as never).props.event).toBe("walking");
   await act(async () => r.unmount());

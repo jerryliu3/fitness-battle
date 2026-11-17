@@ -7,7 +7,7 @@ import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import {
   detectDeviceTimeZone, guestIntroForAccount, SPORTS, hasOnboardingTrainingHistory,
   type ProfileGender, type SportId, type UnitSystem,
-  parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, onboardingWeeklyVolumeUnit, type OnboardingWeeklyVolumes,
+  onboardingWeeklyVolumeInput, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, onboardingWeeklyVolumeUnit, type OnboardingWeeklyVolumes,
 } from "@fitness-battle/shared";
 import { TrackerConnections } from "./athlete";
 import { GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft } from "../src/lib/guest-intro";
@@ -26,7 +26,7 @@ import { useReducedMotion } from "../src/ui/use-reduced-motion";
 import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
 
-const titles = ["Almost there! Final details", "Bring your training along.", "Your starting line is here."];
+const titles = ["Almost there! Final details", "Bring your training along.", "Your first event"];
 
 export default function Onboarding() {
   const f = useFocusStyles();
@@ -74,7 +74,7 @@ export default function Onboarding() {
       finished.current = false;
       const savedStep = Math.max(0, Math.min(2, Math.trunc(Number(saved?.step) || 0)));
       setStep(savedStep);
-      setRegistered(!preview && state.ratings.some(r => r.sport === initialSport && r.optedIn));
+      setRegistered(false);
       setName(typeof saved?.name === "string" ? saved.name : imported ? imported.name : user?.displayName ?? state?.name ?? "");
       setCity(typeof saved?.city === "string" ? saved.city : imported ? imported.city : state?.city ?? "");
       setGender(saved?.gender === "male" || saved?.gender === "female" || saved?.gender === "other" ? saved.gender : state?.gender ?? "");
@@ -101,17 +101,25 @@ export default function Onboarding() {
     void AsyncStorage.setItem(key, JSON.stringify({ step, name, city, gender, countryCode, units, timezone, weeklyVolume })).catch(() => {});
   }, [ready, loadedKey, preview, key, step, name, city, gender, countryCode, units, timezone, weeklyVolume]);
 
+  useEffect(() => {
+    if (step !== 2 || registered || !state || !ready || loadedKey !== key || (!preview && (!user || !canWrite))) return;
+    if (!preview && user) {
+      if (!state.ratings.some(r => r.sport === sport && r.optedIn)) dispatch({ type: "opt-in", sport, accountId: user.id });
+      dispatch({ type: "set-primary", sport });
+    }
+    setRegistered(true);
+  }, [step, registered, state, ready, loadedKey, key, preview, user, canWrite, sport, dispatch]);
+
   if (!preview && state?.onboardingCompleted) return <Redirect href="/today" />;
   if (!state || !ready) return <AppText>Loading setup…</AppText>;
   const sportName = SPORTS.find(item => item.id === sport)!.name;
   const hasHistory = hasOnboardingTrainingHistory(state, sport);
-  const needsVolume = !registered && !hasHistory;
-  const finalTitle = needsVolume ? sport === "strength" ? "Typical weekly training" : sport === "walking" ? "Typical weekly steps" : "Typical weekly distance" : "Your starting line is here.";
+  const needsVolume = !hasHistory;
   function advance() { setStep(Math.min(2, step + 1)); }
   function back() { setStep(Math.max(0, step - 1)); }
 
   async function finish() {
-    if (preview) { setRegistered(true); return; }
+    if (preview) { complete(); return; }
     if (!user || !state || !canWrite || finished.current) return;
     finished.current = true;
     setSaving(true); setSaveError(null);
@@ -134,11 +142,9 @@ export default function Onboarding() {
     if (countryCode.length === 2) dispatch({ type: "set-country", countryCode });
     dispatch({ type: "set-units", units });
     dispatch({ type: "set-timezone", timezone });
-    const declaredWeeklyVolume = onboardingDeclaredVolume(sport, weeklyVolume[sport], units);
+    const declaredWeeklyVolume = onboardingDeclaredVolume(sport, weeklyVolume[sport] ?? "0", units);
     if (!hasHistory && declaredWeeklyVolume !== undefined) dispatch({ type: "declare-effort", sport, declaredWeeklyVolume });
-    dispatch({ type: "opt-in", sport, accountId: user.id });
-    dispatch({ type: "set-primary", sport });
-    setRegistered(true);
+    complete();
   }
   function complete() {
     if (preview) { router.replace("/arena"); return; }
@@ -153,7 +159,7 @@ export default function Onboarding() {
         <OnboardingProgress index={step} count={3} />
         <OnboardingCanvas>
         <View style={{ padding: 16 }}><MotionStep identity={`${step}`}>
-          <AppText role="display" accessibilityRole="header">{step === 2 ? finalTitle : titles[step]}</AppText>
+          <AppText role="display" accessibilityRole="header">{titles[step]}</AppText>
           {step === 0 && <>
             <View style={{ flexDirection: "row", gap: 12 }}>
               <View style={{ flex: 1, gap: 8 }}><AppText role="label">City (optional)</AppText>
@@ -175,14 +181,14 @@ export default function Onboarding() {
             {!preview && <TrackerConnections />}
           </>}
           {step === 2 && <>
-            {needsVolume && <>
-              <AppText role="label">{sportName} ({onboardingWeeklyVolumeUnit(sport, units)})</AppText>
-              <TextInput style={f.input} keyboardType="decimal-pad" accessibilityLabel={`Typical weekly ${sport}`}
-                placeholder="Optional · 0 if just starting" value={weeklyVolume[sport] ?? ""}
-                onChangeText={value => setWeeklyVolume(current => ({ ...current, [sport]: value }))} />
-            </>}
-            <AppText secondary>{registered ? "You’re registered." : "Your chosen event registers for the next wave."} You can register for more events in the app.</AppText>
-            <EventRegistration state={state} event={sport} registered={registered} ticketOnly busy={saving || (!preview && !canWrite)} error={saveError ?? undefined} onBack={registered ? undefined : back} onClaim={() => void finish()} onView={complete} />
+            <AppText secondary>Your chosen event registers for the next wave. You can register for more events in the app.</AppText>
+            {needsVolume && <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <AppText role="caption" style={{ flex: 1 }}>Typical weekly {sport === "strength" ? "training" : sport === "walking" ? "steps" : "distance"} ({onboardingWeeklyVolumeUnit(sport, units)}) · {sportName}</AppText>
+              <TextInput style={[f.input, { width: 80, textAlign: "center" }]} keyboardType="decimal-pad" accessibilityLabel={`Typical weekly ${sport}`}
+                value={weeklyVolume[sport] ?? "0"}
+                onChangeText={value => setWeeklyVolume(current => ({ ...current, [sport]: onboardingWeeklyVolumeInput(sport, value) }))} />
+            </View>}
+            <EventRegistration state={state} event={sport} registered={registered} ticketOnly busy={saving || (!preview && !canWrite)} error={saveError ?? undefined} onBack={back} onClaim={() => void finish()} onView={() => void finish()} />
           </>}
           {step < 2 && <View style={{ flexDirection: "row", gap: 12 }}>
             {step > 0 && <IconButton icon="back" label="Back" disabled={saving} onPress={back} />}

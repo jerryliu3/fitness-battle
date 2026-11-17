@@ -28,7 +28,7 @@ beforeEach(() => {
   Object.assign(state, freshState()); mock.upload.mockResolvedValue("https://example.com/new.jpg");
 });
 const next = (r: ReactTestRenderer) => act(async () => r.root.findByType("FocusButton" as never).props.onPress());
-it.each([false, true])("collects details first, registers one sport, then waits on the real confirmation card (preview=%s)", async preview => {
+it.each([false, true])("collects details first, registers one sport, shows a claimed card immediately (preview=%s)", async preview => {
   mock.preview = preview;
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Onboarding)); });
@@ -38,17 +38,18 @@ it.each([false, true])("collects details first, registers one sport, then waits 
   await next(r);
   expect(r.root.findAllByType("TrackerConnections" as never)).toHaveLength(preview ? 0 : 1);
   await next(r);
+  await act(async () => r.root.findByType("EventRegistration" as never).props.onBack());
+  expect(r.root.findAllByType("TrackerConnections" as never)).toHaveLength(preview ? 0 : 1);
+  await next(r);
   await act(async () => r.root.findByType("TextInput" as never).props.onChangeText("7"));
-  expect(mock.dispatch).not.toHaveBeenCalled();
-  await act(async () => r.root.findByType("EventRegistration" as never).props.onClaim());
   const ticket = r.root.findByType("EventRegistration" as never);
   expect(ticket.props).toMatchObject({ event: "running", registered: true, ticketOnly: true });
   expect(mock.dispatch.mock.calls.some(([action]) => action.type === "complete-onboarding")).toBe(false);
+  await act(async () => ticket.props.onView());
   if (!preview) {
     expect(mock.dispatch).toHaveBeenCalledWith({ type: "declare-effort", sport: "running", declaredWeeklyVolume: 11265.408 });
     expect(mock.dispatch.mock.calls.filter(([action]) => action.type === "opt-in")).toHaveLength(1);
   }
-  await act(async () => ticket.props.onView());
   if (preview) { expect(mock.dispatch).not.toHaveBeenCalled(); expect(mock.save).not.toHaveBeenCalled(); }
   else expect(mock.dispatch).toHaveBeenCalledWith({ type: "complete-onboarding" });
   expect(mock.replace).toHaveBeenCalledWith(preview ? "/arena" : "/today");
@@ -62,10 +63,10 @@ it.each([false, true])("preserves the chosen photo and sport through registratio
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Onboarding)); });
   await next(r); await next(r);
-  await act(async () => r.root.findByType("EventRegistration" as never).props.onClaim());
+  await act(async () => r.root.findByType("EventRegistration" as never).props.onView());
   expect(mock.upload).toHaveBeenCalledWith(expect.any(ArrayBuffer), "a");
   if (failure) {
-    expect(mock.dispatch).not.toHaveBeenCalled();
+    expect(mock.dispatch.mock.calls.some(([action]) => action.type === "complete-onboarding")).toBe(false);
     expect(r.root.findByType("EventRegistration" as never).props.error).toBe("Upload failed");
   } else {
     expect(mock.dispatch).toHaveBeenCalledWith({ type: "set-avatar", avatarUrl: "https://example.com/new.jpg", accountId: "a" });
@@ -73,11 +74,11 @@ it.each([false, true])("preserves the chosen photo and sport through registratio
   }
   await act(async () => r.unmount());
 });
-it("does not restore a confirmation when the event is not registered", async () => {
+it("registers immediately when restoring the final step", async () => {
   mock.values.set("onboarding-draft:v7:a", JSON.stringify({ step: 3 }));
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Onboarding)); });
-  expect(r.root.findByType("EventRegistration" as never).props.registered).toBe(false);
+  expect(r.root.findByType("EventRegistration" as never).props.registered).toBe(true);
   expect(r.root.findByType("TextInput" as never).props.accessibilityLabel).toBe("Typical weekly running");
   await act(async () => r.unmount());
 });
@@ -89,9 +90,9 @@ it("omits the weekly-volume field and declaration when synced training exists", 
   await next(r); await next(r);
   expect(r.root.findAllByType("TextInput" as never)).toHaveLength(0);
   const ticket = r.root.findByType("EventRegistration" as never);
-  expect(ticket.props.registered).toBe(false);
+  expect(ticket.props.registered).toBe(true);
   expect(ticket.props.onBack).toBeTypeOf("function");
-  await act(async () => ticket.props.onClaim());
+  await act(async () => ticket.props.onView());
   expect(mock.dispatch.mock.calls.some(([action]) => action.type === "declare-effort")).toBe(false);
   expect(r.root.findByType("EventRegistration" as never).props.registered).toBe(true);
   await act(async () => r.unmount());

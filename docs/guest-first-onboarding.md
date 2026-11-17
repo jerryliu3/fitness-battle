@@ -99,11 +99,13 @@ Native `/onboarding` and web `/app/onboarding` have three pages:
    Onboarding omits recap previews, file imports and the separate calibration action.
    First device and cloud syncs request up to 90 days of workouts after authorization;
    the existing sync flow has no separate history-range chooser. Provider/OS limits apply.
-3. **Starting line** — optional weekly volume for the selected sport above a compact
+3. **Your first event** — the event explanation and compact weekly-volume row above an automatically claimed
    entry ticket. This question is omitted when accepted, real synced workouts exist
    for that sport. A connection with no workouts does not suppress it. Back returns
-   to trackers before registration. Continue registers the event and flips the same
-   ticket to its confirmed face; the final Continue enters the app. No fourth page.
+   to trackers while retaining the registration. Opening this page registers the event
+   and animates the ticket to its confirmed face; Continue saves final details and
+   enters the app. Distance defaults to 0 and is capped at 100 miles/km; steps and
+   training minutes retain their native ranges. No fourth page.
 
 Practice rivals use the same stock portrait URLs already used by Goalmaxxing:
 Alex uses its male portrait and Maya its female portrait. The guest’s own chosen
