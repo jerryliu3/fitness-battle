@@ -483,7 +483,7 @@ export function PerformanceSpace({
                     ))}
 
 
-                    {/* Step path with right-side dimming when selected */}
+                    {/* Linear path with right-side dimming when selected */}
                     {prChartData.path ? (
                       activePRPoint ? (
                         <>

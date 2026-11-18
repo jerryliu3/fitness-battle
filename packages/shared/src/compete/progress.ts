@@ -169,7 +169,7 @@ export function personalRecordChart(
   }));
   const path = points.length <= 1
     ? ""
-    : points.map((p, i) => (i ? `H ${p.x} V ${p.y}` : `M ${p.x} ${p.y}`)).join(" ");
+    : points.map((p, i) => (i ? `L ${p.x} ${p.y}` : `M ${p.x} ${p.y}`)).join(" ");
   const ticks = [max, (min + max) / 2, min].map((seconds) => ({
     seconds: Math.round(seconds),
     y: y(seconds),
