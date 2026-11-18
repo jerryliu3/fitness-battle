@@ -1,3 +1,4 @@
+import { useCompetitionSheetHeight } from "./competition-sheet-height";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MapAttribution } from "./map-attribution";
 import { useThemeColors } from "../theme";
@@ -39,6 +40,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
 }) {
 const appearanceColors = useThemeColors();
   const insets = useSafeAreaInsets();
+  const { minimum: sheetMinimum } = useCompetitionSheetHeight();
   const dimensions = useWindowDimensions();
   const sceneActive = useSceneActive();
   const active = sceneActive && presentationActive;
@@ -230,8 +232,8 @@ const appearanceColors = useThemeColors();
       onTouchEnd={endMapUserGesture}
       onTouchCancel={endMapUserGesture}
       logoPosition={{ top: 8, right: 34 }} attributionPosition={{ top: 8, right: 8 }}
-      scaleBarEnabled={optionsTop == null && !replay}
-      scaleBarPosition={{ bottom: controlsBottom + 100, left: 8 }}
+      scaleBarEnabled={!onSnapshot}
+      scaleBarPosition={{ bottom: Math.max(insets.bottom, sheetMinimum) + 8, left: 8 }}
       onDidFinishLoadingMap={() => {
         setReady(true);
         setError("");

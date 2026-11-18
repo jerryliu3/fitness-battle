@@ -59,11 +59,13 @@ function courseLaneSpacing(lanes: readonly ArenaSceneLane[]) {
 }
 
 /** Symmetric lateral offsets for multiple athletes sharing the route start (0 m along-route). */
-function startLineLateralOffsets(roster: readonly { id: string; metres: number }[], spacing: number) {
+function startLineLateralOffsets(roster: readonly { id: string; metres: number; you?: boolean }[], spacing: number) {
   const offsets = new Map(roster.map((lane) => [lane.id, 0]));
   const atStart = roster.filter((lane) => lane.metres === 0);
   if (atStart.length < 2) return offsets;
   const ids = atStart.map((lane) => lane.id).sort();
+  const you = atStart.find(lane => lane.you)?.id;
+  if (you) { ids.splice(ids.indexOf(you), 1); ids.splice(Math.floor(ids.length / 2), 0, you); }
   ids.forEach((id, index) => offsets.set(id, (index - (ids.length - 1) / 2) * spacing));
   return offsets;
 }
@@ -108,7 +110,7 @@ function buildSharedProfileLaneGeometry(
     })
     .filter((entry): entry is { lane: ArenaSceneLane; metres: number } => entry !== null);
   const offsets = startLineLateralOffsets(
-    prepared.map(({ lane, metres }) => ({ id: lane.id, metres })),
+    prepared.map(({ lane, metres }) => ({ id: lane.id, metres, you: lane.you })),
     courseLaneSpacing(roster),
   );
   const athletes = prepared.map(({ lane, metres }) => ({

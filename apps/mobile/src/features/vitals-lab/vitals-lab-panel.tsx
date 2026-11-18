@@ -189,5 +189,5 @@ const panelThemes = createThemedStyles(() => ({
     paddingBottom: 8,
   },
   hudSpacer: { flex: 1 },
-  metricCol: { gap: 6, zIndex: 2 },
+  metricCol: { gap: 14, zIndex: 2 },
 }));

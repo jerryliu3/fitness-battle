@@ -38,6 +38,10 @@ export const AthleteCrest = memo(function AthleteCrest({ model, onInteractionCha
   }
   function fail() { ready.current = false; unavailable.current = true; setLoaded(false); setFailed(true); onInteractionChange?.(false); }
   useEffect(inject, [model, active, mode]);
+  // A retained scene can recover from network/process failures on the next visit.
+  useEffect(() => {
+    if (active && unavailable.current) { unavailable.current = false; ready.current = false; sent.current = null; setFailed(false); }
+  }, [active]);
   useEffect(() => { if (!active) { held.current = false; onInteractionChange?.(false); } return () => onInteractionChange?.(false); }, [active, onInteractionChange]);
   useEffect(() => {
     if (!active || loaded || failed) return;

@@ -785,3 +785,12 @@ it("defers presenting SyncReview / overtake replay until BootOpenedContext is tr
   const review = renderer.root.findByType("SyncReview" as never);
   expect(review.props.moment?.id).toBe(moment.id);
 });
+
+it("rejects debug events in release builds", async () => {
+  vi.stubGlobal("__DEV__", false);
+  try {
+    await mount();
+    expect(api.triggerDebugEvent?.("overtake")).toBeNull();
+    expect(api.debugActive).toBe(false);
+  } finally { vi.stubGlobal("__DEV__", true); }
+});

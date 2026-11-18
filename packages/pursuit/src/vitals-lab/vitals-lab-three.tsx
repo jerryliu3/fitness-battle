@@ -1267,7 +1267,7 @@ export function VitalsLabThreeViewport({
       cameraGoalRef.current.rotY += dx * 0.011;
       if (cameraGoalRef.current.zoom > 1.02) {
         cameraGoalRef.current.panY = clampPanY(
-          cameraGoalRef.current.panY - dy * 0.0022,
+          cameraGoalRef.current.panY + dy * 0.0022,
         );
       }
     };

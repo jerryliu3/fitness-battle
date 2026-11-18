@@ -1,10 +1,9 @@
-import { useReducedMotion } from "../ui/use-reduced-motion";
 import { useEffect, useRef, useState } from "react";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useCompetitionCourse } from "./use-competition-course";
 import { GeographicCourse } from "./geographic-course";
 import { useCompeteStore } from "../lib/compete-store";
-import { Animated, Image, Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { Image, Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { competeEventCarouselPageIndex, formatActivityAge, competitionCourseWindow, coursePreviewLanes, initialsFromName, type ArenaSceneLane, buildArenaModel, competitionQueue, competitionTrack, competeNow, isMetricCompete, ordinalPlace, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppText, textStyle } from "../ui/section";
 import { useThemeColors } from "../theme";
@@ -59,7 +58,7 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
         <AppText role="label">{SPORTS.find(item => item.id === sport)?.name}</AppText>
         {updateText ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            {showLiveIndicator ? <LiveIndicator active={active && Boolean(liveUpdateText)} /> : null}
+            {showLiveIndicator ? <LiveIndicator /> : null}
             <AppText role="support" secondary style={{ flexShrink: 1 }}>{updateText}</AppText>
           </View>
         ) : null}
@@ -136,18 +135,7 @@ function SnapshotPreview({ cacheKey, course, lanes, unit }: { cacheKey: string; 
   </View>;
 }
 
-function LiveIndicator({ active }: { active: boolean }) {
+function LiveIndicator() {
   const c = useThemeColors();
-  const reduced = useReducedMotion();
-  const opacity = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    if (reduced || !active) { opacity.setValue(1); return; }
-    const pulse = Animated.loop(Animated.sequence([
-      Animated.timing(opacity, { toValue: 0.35, duration: 900, useNativeDriver: true }),
-      Animated.timing(opacity, { toValue: 1, duration: 900, useNativeDriver: true }),
-    ]));
-    pulse.start();
-    return () => pulse.stop();
-  }, [active, reduced, opacity]);
-  return <Animated.View accessible={false} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.statusSuccess, opacity }} />;
+  return <View accessible={false} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.statusSuccess }} />;
 }

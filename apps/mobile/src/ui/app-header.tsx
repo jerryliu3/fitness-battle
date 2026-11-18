@@ -63,7 +63,7 @@ const s=useThemedStyles(sThemes);
             <Text style={s.debugBtnText}>{streak.count}</Text>
           </View>}
         </View>
-        <Pressable
+        {__DEV__ && <Pressable
           accessibilityRole="button"
           accessibilityLabel="Debug event triggers"
           accessibilityState={{ expanded: debugOpen }}
@@ -71,9 +71,9 @@ const s=useThemedStyles(sThemes);
           style={[s.debugBtn, debugActive && s.debugBtnActive]}
         >
           <Text style={s.debugBtnText}>Debug {debugOpen ? "▴" : "▾"}</Text>
-        </Pressable>
+        </Pressable>}
       </View>
-      {debugOpen ? (
+      {__DEV__ && debugOpen ? (
         <View style={s.debugMenu} accessibilityLabel="Trigger UI events">
           <Text style={s.debugKicker}>TEST UI EVENTS</Text>
           <Pressable accessibilityRole="button" accessibilityLabel="Preview onboarding" onPress={() => { setDebugOpen(false); router.push("/onboarding?preview=1"); }} style={s.debugItem}><Text style={s.debugItemTitle}>Onboarding · full setup</Text><Text style={s.debugItemDetail}>Replay every step without saving preferences</Text></Pressable>

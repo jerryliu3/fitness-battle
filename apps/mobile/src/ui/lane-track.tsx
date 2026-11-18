@@ -350,7 +350,7 @@ const c=useThemeColors();
                   <G transform={`translate(${xx} ${yy})`} pointerEvents="none">
                     {l.mystery ? (
                       <G transform={`scale(${scale})`}>
-                        <Circle cx={0} cy={0} r={20} fill={c.card} stroke={c.muted} strokeWidth={2} strokeDasharray="3 3"/>
+                        <Circle cx={0} cy={0} r={16} fill={c.card} stroke={c.muted} strokeWidth={2} strokeDasharray="3 3"/>
                         <SvgText {...chartTextProps()} x={0} y={4} textAnchor="middle" fill={c.ink}>?</SvgText>
                       </G>
                     ) : edge ? (

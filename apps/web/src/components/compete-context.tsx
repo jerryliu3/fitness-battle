@@ -655,6 +655,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   );
 
   const triggerDebugEvent = useCallback((event: DebugEventId): DebugEventResult | null => {
+    if (process.env.NODE_ENV !== "development") return null;
     const accountKey = userIdRef.current ?? "guest";
     const current = stateRef.current ?? rollClock(freshState());
     if (!preDebugRef.current) preDebugRef.current = { state: stateRef.current, status: statusRef.current };

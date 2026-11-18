@@ -1096,6 +1096,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   const lastPreviewEvent=useRef<DebugEventId|null>(null);
   const triggerDebugEvent = useCallback(
     (event: DebugEventId): DebugEventResult | null => {
+      if (!__DEV__) return null;
       lastPreviewEvent.current=event;
       const accountKey = accountRef.current ?? "guest";
       const current = stateRef.current ?? rollClock(freshState());

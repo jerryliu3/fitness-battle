@@ -26,3 +26,16 @@ it("keeps stops ordered and body heights nonnegative on short screens", async ()
     expect(sheet().props.style.transform[0].translateY.value).toBe(0);
   } finally { await act(async () => tree.unmount()); vi.unstubAllGlobals(); }
 });
+
+import { CompetitionSheetHeight, useCompetitionSheetHeight } from "./competition-sheet-height";
+it("publishes only the collapsed height when the sheet expands", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const Probe = () => createElement("Height", { value: useCompetitionSheetHeight().minimum });
+  let tree!: ReturnType<typeof create>;
+  try {
+    await act(async () => { tree = create(createElement(CompetitionSheetHeight, { children: [createElement(Probe, { key: "probe" }), createElement(CompeteSheet, { key: "sheet", active: true, expandRequest: 0, overview: "Timeline", children: "Standings" })] })); });
+    expect(tree.root.findByType("Height" as never).props.value).toBe(154);
+    await act(async () => tree.root.findByProps({ accessibilityRole: "adjustable" }).props.onAccessibilityAction({ nativeEvent: { actionName: "increment" } }));
+    expect(tree.root.findByType("Height" as never).props.value).toBe(154);
+  } finally { if (tree) await act(async () => tree.unmount()); vi.unstubAllGlobals(); }
+});

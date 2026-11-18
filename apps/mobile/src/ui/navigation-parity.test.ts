@@ -120,3 +120,11 @@ describe("mobile navigation parity", () => {
   await act(async () => buttons[0]!.props.onPress());
   expect(mock.navigate).toHaveBeenCalledWith("/athlete");
  });
+
+it("hides native debug controls in release builds", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.stubGlobal("__DEV__", false);
+  await act(async () => { renderer = create(createElement(AppHeader)); });
+  expect(renderer.root.findAllByProps({ accessibilityLabel: "Debug event triggers" })).toHaveLength(0);
+  expect(renderer.root.findAllByProps({ accessibilityLabel: "Trigger UI events" })).toHaveLength(0);
+});
