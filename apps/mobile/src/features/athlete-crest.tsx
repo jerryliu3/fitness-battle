@@ -5,6 +5,7 @@ import type { AthleteCardModel } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { useSceneActive } from "../ui/use-scene-active";
 import { useAppTheme } from "../theme";
+import { AppText } from "../ui/section";
 import { AthleteProfileCard } from "./athlete-profile-card";
 
 export const AthleteCrest = memo(function AthleteCrest({ model, onInteractionChange, active: suppliedActive = true, transparent = false, bundled = false, height = 430 }: { model: AthleteCardModel; bundled?: boolean; active?: boolean; transparent?: boolean; height?: number; onInteractionChange?: (held: boolean) => void }) {
@@ -50,7 +51,7 @@ export const AthleteCrest = memo(function AthleteCrest({ model, onInteractionCha
     return () => clearTimeout(timer);
   }, [active, loaded, failed]);
   return <View style={{ minHeight: height, backgroundColor: transparent ? "transparent" : c.paper }}>
-    {!loaded && <View style={{ position: "absolute", inset: 0, justifyContent: "center" }}>
+    {!bundled && !loaded && <View style={{ position: "absolute", inset: 0, justifyContent: "center" }}>
       <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />
     </View>}
     {!failed && <WebView ref={web} source={source} originWhitelist={bundled ? ["*"] : [origin]} javaScriptEnabled scrollEnabled={false} bounces={false}
@@ -68,5 +69,8 @@ export const AthleteCrest = memo(function AthleteCrest({ model, onInteractionCha
         if (message.type === "athlete-card-rendered" && ready.current) setLoaded(true);
       } catch { /* Ignore malformed bridge messages. */ } }} />}
 
+    {bundled && failed && <View style={{ position: "absolute", inset: 0, justifyContent: "center", alignItems: "center" }}>
+      <AppText role="body" secondary accessibilityRole="alert">Could not load your athlete card.</AppText>
+    </View>}
   </View>;
 });

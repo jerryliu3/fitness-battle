@@ -9,7 +9,7 @@ import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
-import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceCourseRacerPosition, raceCourseStartCoordinate, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { CourseOptions } from "./course-options";
 import { FieldFollowChip } from "./field-follow-chip";
@@ -21,6 +21,13 @@ import { useReducedMotion } from "./use-reduced-motion";
 import { useSceneActive } from "./use-scene-active";
 
 const START_NODE_RADIUS = 14;
+const START_FIELD_METRES = 20;
+// Mapbox uses a 512-point Mercator world at zoom zero.
+const MERCATOR_METRES_PER_POINT = 78271.516964;
+const startMetresPerPoint = START_FIELD_METRES / (
+  athleteNodeDiameter(START_NODE_RADIUS, false, true)
+  + 7 * athleteNodeDiameter(START_NODE_RADIUS, true, false)
+);
 
 const rememberedProgress = new Map<string, number>();
 const rememberedCameras = new Map<string, CourseCameraPose>();
@@ -87,10 +94,31 @@ const appearanceColors = useThemeColors();
   }
   const startMarkers = startLine.map(lane => {
     const selected = !lane.mystery && lane.id === selectedId;
-    return { lane, selected, width: athleteNodeDiameter(START_NODE_RADIUS, lane.mystery, selected) + 1 };
+    return { lane, selected, width: athleteNodeDiameter(START_NODE_RADIUS, lane.mystery, selected) };
   });
   const startHeight = Math.max(0, ...startMarkers.map(marker => marker.width)) + 2;
-  const pose = useRef<CourseCameraPose>(restored.current ?? { center: fallbackCenter, zoom: courseInitialZoom(fallbackCenter[1], dimensions.height, initialFlat ? 0 : 60), pitch: initialFlat ? 0 : 60, bearing: 0 });
+  const initialPitch = initialFlat ? 0 : 60;
+  const startZoom = Math.log2(MERCATOR_METRES_PER_POINT * Math.cos(course.coordinates[0][1] * Math.PI / 180) / startMetresPerPoint);
+  const startPose = queuedStart ? raceCourseRacerPosition(course, 0) : null;
+  const pose = useRef<CourseCameraPose>(restored.current ?? {
+    center: fallbackCenter,
+    zoom: queuedStart ? Math.min(20, startZoom) : courseInitialZoom(fallbackCenter[1], dimensions.height, initialPitch),
+    pitch: initialPitch,
+    bearing: initialFlat ? 0 : startPose?.heading ?? 0,
+  });
+  const queuedCameraDefaults = useRef({
+    centerCoordinate: pose.current.center,
+    zoomLevel: pose.current.zoom,
+    pitch: pose.current.pitch,
+    heading: pose.current.bearing,
+  });
+  const [queuedZoom, setQueuedZoom] = useState(() => pose.current.zoom);
+  const zoomFromFullSize = queuedZoom - startZoom;
+  // Keep the full-size portraits shoulder to shoulder when zooming in further.
+  // Below that zoom the lineup keeps its 20 m footprint while the portraits shrink.
+  const startSpacing = startMetresPerPoint * 2 ** -Math.max(0, zoomFromFullSize);
+  const startScale = Math.max(0.12, Math.min(1, 2 ** (0.75 * zoomFromFullSize)));
+  let startX = -startMarkers.reduce((total, marker) => total + marker.width, 0) / 2;
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(restored.current ? restored.current.pitch === 0 : initialFlat);
   const flatRef = useRef(flat);
   flatRef.current = flat;
@@ -240,7 +268,7 @@ const appearanceColors = useThemeColors();
     return () => onOptionsChange(null);
   }, [onMapChromeChange, onOptionsChange, flat, sharedLane, mapFollowing, followAthleteName, Boolean(onReplay), Boolean(onChoose2D), onFollowChipPress != null]);
   return <View style={{ flex: 1, minHeight: 0 }} onLayout={({ nativeEvent }) => {
-    if (initialized.current || restored.current || replay || mapUserGesture.current) return;
+    if (queuedStart || initialized.current || restored.current || replay || mapUserGesture.current) return;
     pose.current.zoom = courseInitialZoom(pose.current.center[1], nativeEvent.layout.height, pose.current.pitch);
     if (ready) ref.current?.setCamera({ centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing, animationDuration: 0 });
   }}>
@@ -262,13 +290,14 @@ const appearanceColors = useThemeColors();
       onMapLoadingError={event => setError(ready && event?.type !== "style" ? "Some map scenery could not load. Check your connection." : "The map could not load. Check your connection and Mapbox access.")}
       onMapIdle={() => { if (ready && onSnapshot && mapRef.current && !snapshotTaken.current && !snapshotPending.current) { snapshotPending.current = true; void mapRef.current.takeSnap(true).then(uri => { if (uri) { snapshotTaken.current = true; onSnapshot(uri); } }).catch(() => {}).finally(() => { snapshotPending.current = false; }); } if (ready && (initialized.current || replay) && !reported.current) { reported.current = true; onReady?.(); } }}
     >
-      <Camera minZoomLevel={0} maxZoomLevel={20} ref={ref} defaultSettings={{ centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing }} />
+      <Camera minZoomLevel={0} maxZoomLevel={20} ref={ref} defaultSettings={queuedStart ? queuedCameraDefaults.current : { centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing }} />
       <CameraGestureObserver onCameraChanged={({ nativeEvent }) => {
         const p = nativeEvent.properties;
         if (!p || !p.center || !Array.isArray(p.center)) return;
         if ((Math.abs(p.center[0]) < 1e-6 && Math.abs(p.center[1]) < 1e-6) || Number.isNaN(p.center[0]) || Number.isNaN(p.center[1])) return;
-        if (typeof p.zoom === "number" && p.zoom <= 0.1) return;
+        if (!Number.isFinite(p.zoom) || p.zoom < 0) return;
         pose.current = { center: [p.center[0], p.center[1]], zoom: p.zoom, pitch: p.pitch, bearing: p.heading };
+        if (queuedStart) setQueuedZoom(p.zoom);
         if (!replay && !onSnapshot) { rememberedCameras.set(cameraKey, pose.current); if (controller.courseMetres !== null) rememberedProgress.set(cameraKey, controller.courseMetres); else rememberedProgress.delete(cameraKey); }
         if (replay && p.isUserInteraction && mapUserGesture.current) replayZoom.current = p.zoom;
         if (!replay && p.isUserInteraction && controller.following && mapUserGesture.current) {
@@ -287,22 +316,24 @@ const appearanceColors = useThemeColors();
         const lane = scene.callouts.find(lane => lane.id === pass.id);
         return lane ? <MarkerView key={`pass-${pass.id}`} coordinate={lane.coordinate} anchor={{x:.5,y:.5}} allowOverlap allowOverlapWithPuck><View pointerEvents="none" style={{width:100,height:100,alignItems:"center",justifyContent:"center"}}><View style={{width:32+64*(1-pass.strength),height:32+64*(1-pass.strength),borderRadius:60,borderWidth:4,borderColor:appearanceColors.actionPrimary,backgroundColor:"#f7c94833",opacity:pass.strength}}/></View></MarkerView> : null;
       }) : null}
-      {startLine.length > 0 && (
-        <MarkerView coordinate={course.coordinates[0]} anchor={{ x: 0.5, y: 0.5 }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
-          <View collapsable={false} style={{ width: startMarkers.reduce((total, marker) => total + marker.width, 0), flexDirection: "row", alignItems: "center", height: startHeight }}>
-            {startMarkers.map(({ lane, selected, width }) => (
-              <Pressable key={lane.id} accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ width, height: startHeight }}>
-                <Svg width={width} height={startHeight} pointerEvents="none">
-                  <G transform={`translate(${width / 2} ${startHeight / 2})`}>
-                    <AthleteNode lane={lane} x={0} y={0} detail="" nodeRadius={START_NODE_RADIUS} selected={selected} prefix={`${prefix}-${lane.id}`} />
-                  </G>
-                </Svg>
-              </Pressable>
-            ))}
+      {startMarkers.map(({ lane, selected, width }) => {
+        const offset = (startX + width / 2) * startSpacing;
+        startX += width;
+        const coordinate = raceCourseStartCoordinate(course, offset);
+        return <MarkerView key={lane.id} coordinate={coordinate} anchor={{ x: 0.5, y: 0.5 }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
+          <View collapsable={false} style={{ width, height: startHeight }}>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ width, height: startHeight, transform: [{ scale: startScale }] }}>
+              <Svg width={width} height={startHeight} pointerEvents="none">
+                <G transform={`translate(${width / 2} ${startHeight / 2})`}>
+                  <AthleteNode lane={lane} x={0} y={0} detail="" nodeRadius={START_NODE_RADIUS} selected={selected} prefix={`${prefix}-${lane.id}`} />
+                </G>
+              </Svg>
+            </Pressable>
           </View>
-        </MarkerView>
-      )}
-      {!queuedStart && !overlaysHidden ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id) && !dismissed.includes(lane.id)).map(lane => {
+        </MarkerView>;
+      })}
+      {!queuedStart ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id) && !dismissed.includes(lane.id)
+        && (!overlaysHidden || (replay && (lane.id === selectedId || lane.id === replay.nearestId)))).map(lane => {
         const detail = courseAthleteDetail(lanes, lane, unit);
         if (!sharedLane && !lane.mystery) {
           return <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: lane.callout.left ? 1 : 0, y: lane.callout.originY / lane.callout.height }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
@@ -317,18 +348,19 @@ const appearanceColors = useThemeColors();
         }
         const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
         const subdetail = courseAthleteSubdetail(lanes, lane, unit);
-        const selected = lane.id === selectedId && !dismissed.includes(lane.id);
+        const selected = lane.id === selectedId;
+        const expanded = selected || lane.id === replay?.nearestId;
         const pad = 30, boxWidth = 170 + pad * 2, boxHeight = lane.callout.height + pad * 2;
         const nodeX = lane.callout.originX + pad, nodeY = lane.callout.originY + pad;
         const cardX = nodeX + (lane.callout.left ? -140 : 12), cardY = lane.callout.cardTop + pad;
         return <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: nodeX / boxWidth, y: nodeY / boxHeight }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
           <View collapsable={false} pointerEvents="box-none" style={{ width: boxWidth, height: boxHeight }}>
             <Svg width={boxWidth} height={boxHeight} pointerEvents="none"><G transform={`translate(${nodeX} ${nodeY})`}>
-              <AthleteNode lane={lane} x={lane.callout.left ? -140 : 12} y={lane.callout.y} detail={detail} subdetail={subdetail} expanded={selected} selected={selected} gold={rank === 1} prefix={`${prefix}-${lane.id}`} />
+              <AthleteNode lane={lane} x={lane.callout.left ? -140 : 12} y={lane.callout.y} detail={detail} subdetail={subdetail} expanded={expanded} selected={selected} gold={rank === 1} prefix={`${prefix}-${lane.id}`} />
             </G></Svg>
-            {selected ? <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: cardX, top: cardY, width: 128, height: subdetail ? 44 : 30 }} /> : null}
+            {expanded ? <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: cardX, top: cardY, width: 128, height: subdetail ? 44 : 30 }} /> : null}
             <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: nodeX - 26, top: nodeY - 26, width: 52, height: 52, borderRadius: 26 }} />
-            {!onSnapshot && selected ? <Pressable accessibilityRole="button" accessibilityLabel={`Close ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={10} style={{ position: "absolute", left: cardX + 128 - 22, top: cardY + 4, width: 18, height: 18, alignItems: "center", justifyContent: "center" }}><AppText role="caption" secondary>×</AppText></Pressable> : null}
+            {!onSnapshot && !replay && selected ? <Pressable accessibilityRole="button" accessibilityLabel={`Close ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={10} style={{ position: "absolute", left: cardX + 128 - 22, top: cardY + 4, width: 18, height: 18, alignItems: "center", justifyContent: "center" }}><AppText role="caption" secondary>×</AppText></Pressable> : null}
           </View>
         </MarkerView>;
       }) : null}

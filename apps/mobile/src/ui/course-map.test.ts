@@ -219,7 +219,7 @@ it("frames both racers during slow motion and pulses only visible passed athlete
   vi.stubGlobal("requestAnimationFrame", (callback: () => void) => { nextFrame = callback; return 1; });
   vi.stubGlobal("cancelAnimationFrame", vi.fn());
   const advance = (frames = 1) => { for (let i = 0; i < frames; i++) { time += 16; nextFrame?.(); } };
-  const props = { course: createRaceCourse("Finish", [[0,0],[.02,0]]), lanes: [{id:"you",name:"You",initials:"Y",you:true,value:.51},{id:"peer",name:"Peer",initials:"P",value:.5}], unit:"km", selectedId:"you", focusRequest:0, onSelect:vi.fn(), replay:{nearestId:"peer",focus:1,passEffects:[{id:"peer",strength:.8}]} };
+  const props = { course: createRaceCourse("Finish", [[0,0],[.02,0]]), lanes: [{id:"you",name:"You",initials:"Y",you:true,value:.51},{id:"peer",name:"Peer",initials:"P",value:.5}], overlaysHidden:true, unit:"km", selectedId:"you", focusRequest:0, onSelect:vi.fn(), replay:{nearestId:"peer",focus:1,passEffects:[{id:"peer",strength:.8}]} };
   await act(async () => { renderer = create(createElement(CourseMap, props), {createNodeMock: element => element.type === "Camera" ? calls : null}); });
   await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
   advance();
@@ -233,6 +233,7 @@ it("frames both racers during slow motion and pulses only visible passed athlete
   expect(markers).toHaveLength(3);
   const callouts = markers.filter(marker => marker.props.anchor.x !== .5);
   expect(callouts).toHaveLength(2);
+  expect(renderer.root.findAllByType("AthleteNode" as never).filter(node => node.props.expanded).map(node => node.props.lane.id)).toEqual(["you", "peer"]);
   await act(async () => renderer.update(createElement(CourseMap, {...props,hiddenIds:["peer"]})));
   expect(renderer.root.findAllByType("MarkerView" as never)).toHaveLength(1);
   await act(async () => renderer.update(createElement(CourseMap, {...props,replay:{...props.replay,focus:0,passEffects:[]}})));
@@ -346,4 +347,51 @@ it("allows pinch zoom during replay without fighting the gesture or resetting it
   await act(async () => { map.props.onTouchEnd(); vi.advanceTimersByTime(200); tick(); });
   expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBe(14);
   vi.useRealTimers();
+});
+
+it("anchors the queued row across the course and scales it from a 20 m start line", async () => {
+  const course = createRaceCourse("Queue", [[.1, .1], [.12, .1]]);
+  const lanes = [
+    { id: "you", name: "You", initials: "Y", you: true, value: 0 },
+    ...Array.from({ length: 7 }, (_, i) => ({ id: `peer-${i}`, name: `Athlete ${i + 2}`, initials: "?", mystery: true, value: 0 })),
+  ];
+  await act(async () => { renderer = create(createElement(CourseMap, { course, lanes, unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn() })); });
+  const coordinates = () => renderer.root.findAllByType("MarkerView" as never).map(node => node.props.coordinate as [number, number]);
+  const marker = () => renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Focus Athlete 2")!;
+  const defaults = () => renderer.root.findByType("Camera" as never).props.defaultSettings;
+  const initialDefaults = defaults();
+  const zoom = initialDefaults.zoomLevel;
+  const initial = coordinates();
+  expect(initial).toHaveLength(8);
+  expect(new Set(initial.map(point => point[1])).size).toBe(8);
+  for (const [longitude] of initial) expect(longitude).toBeCloseTo(.1, 7);
+  const edgeToEdgeMetres = Math.abs(initial.at(-1)![1] - initial[0][1]) * 111195;
+  expect(edgeToEdgeMetres).toBeGreaterThan(17);
+  expect(edgeToEdgeMetres).toBeLessThan(20);
+  expect(marker().props.style.transform[0].scale).toBe(1);
+  const moveCamera = (level: number) => act(async () => renderer.root.findByType("Observer" as never).props.onCameraChanged({
+    nativeEvent: { properties: { center: [.1, .1], zoom: level, pitch: 60, heading: 180 } },
+  }));
+  await moveCamera(zoom + 0.01);
+  const firstClose = coordinates();
+  await moveCamera(zoom + 0.02);
+  expect(coordinates()).not.toEqual(firstClose);
+  expect(defaults()).toBe(initialDefaults);
+
+  await moveCamera(20);
+  const close = coordinates();
+  const closeSpan = Math.abs(close.at(-1)![1] - close[0][1]) * 111195;
+  expect(closeSpan * 2 ** (20 - zoom)).toBeCloseTo(edgeToEdgeMetres, 4);
+  for (const [longitude] of close) expect(longitude).toBeCloseTo(.1, 7);
+  expect(marker().props.style.transform[0].scale).toBe(1);
+
+  await moveCamera(zoom - 0.01);
+  const firstScale = marker().props.style.transform[0].scale;
+  expect(firstScale).toBeLessThan(1);
+  await moveCamera(zoom - 0.02);
+  expect(marker().props.style.transform[0].scale).toBeLessThan(firstScale);
+
+  await moveCamera(zoom - 2);
+  expect(coordinates()).toEqual(initial);
+  expect(marker().props.style.transform[0].scale).toBeLessThan(0.5);
 });

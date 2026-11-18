@@ -75,7 +75,7 @@ type AthletePanel =
   | "scoring"
   | "account";
 
-function AthleteContent({ inlineConnections = false }: { inlineConnections?: boolean }) {
+function AthleteContent({ inlineConnections = false, trackerPreview = false }: { inlineConnections?: boolean; trackerPreview?: boolean }) {
 const appearanceColors = useThemeColors();
 
 const SHELL_COLORS=useThemeColors();
@@ -167,7 +167,7 @@ const styles=useThemedStyles(stylesThemes);
     const trackerProvider =
       typeof params.provider === "string" ? params.provider : "strava";
     const key = `${tracker}:${trackerProvider}`;
-    if (!state || !tracker || appliedTracker.current === key) return;
+    if (trackerPreview || !state || !tracker || appliedTracker.current === key) return;
     appliedTracker.current = key;
     if (!isCloudOAuthProvider(trackerProvider)) return;
     if (!params.panel) {
@@ -200,7 +200,7 @@ const styles=useThemedStyles(stylesThemes);
       void AsyncStorage.removeItem(`onboarding-connect-return:${user.id}`);
       router.replace("/onboarding");
     }).catch(() => {});
-  }, [dispatch, params.panel, params.provider, params.tracker, router, state]);
+  }, [dispatch, params.panel, params.provider, params.tracker, router, state, trackerPreview]);
 
   if (!state || authLoading) {
     return (
@@ -400,7 +400,7 @@ const styles=useThemedStyles(stylesThemes);
     }
   }
 
-  if (!signedIn) {
+  if (!signedIn && !trackerPreview) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
         {pageHeader}
@@ -489,10 +489,7 @@ const styles=useThemedStyles(stylesThemes);
     );
   }
 
-  if (!user) return null;
-  const account = user;
-
-  if (panel === "account") {
+  if (panel === "account" && user) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
         {pageHeader}
@@ -533,7 +530,7 @@ const styles=useThemedStyles(stylesThemes);
     );
   }
 
-  if (panel === "connections") {
+  if (panel === "connections" && (signedIn || trackerPreview)) {
     const providers = providersForDevice();
     const content = (<SectionStack divided={false}>
           {!inlineConnections && !state.onboardingCompleted && <FocusButton label="Continue setup →" onPress={() => router.push("/onboarding")}/>}
@@ -551,7 +548,7 @@ const styles=useThemedStyles(stylesThemes);
             );
             const isDevice = isDeviceProvider(provider.id);
             const isCloud = isCloudOAuthProvider(provider.id);
-            const connected = Boolean(link?.linked && link.status !== "disconnected");
+            const connected = !trackerPreview && Boolean(link?.linked && link.status !== "disconnected");
             const connecting = isDevice ? syncBusy : busyProvider === provider.id;
             if (!isDevice && !isCloud) {
               return (
@@ -576,12 +573,12 @@ const styles=useThemedStyles(stylesThemes);
                     <FocusButton
                       secondary
                       label={connecting ? (isDevice ? "Connecting…" : "Authorizing…") : "Connect"}
-                      disabled={rowBusy}
-                      onPress={() =>
-                        isDevice
-                          ? void syncDevice(provider.id as "apple_health" | "google_health")
-                          : void connectCloud(provider.id)
-                      }
+                      disabled={trackerPreview || rowBusy}
+                      onPress={() => {
+                        if (trackerPreview) return;
+                        if (isDevice) void syncDevice(provider.id as "apple_health" | "google_health");
+                        else void connectCloud(provider.id);
+                      }}
                     />
                   </View>
                 )}
@@ -591,7 +588,7 @@ const styles=useThemedStyles(stylesThemes);
           </View>
           <Toast message={note ?? ""} onDismiss={() => setNote(null)} />
           {!inlineConnections && <DataSyncActions />}
-          <FitnessHistoryImport offer={historyOffer} onDismiss={dismissHistory} showSettings={!inlineConnections} />
+          {!trackerPreview && <FitnessHistoryImport offer={historyOffer} onDismiss={dismissHistory} showSettings={!inlineConnections} />}
         </SectionStack>);
     if (inlineConnections) return content;
     return (
@@ -607,6 +604,8 @@ const styles=useThemedStyles(stylesThemes);
       </SafeAreaView>
     );
   }
+
+  if (!user) return null;
 
   if (panel === "scoring") {
     return (
@@ -1059,5 +1058,5 @@ const stylesThemes = createThemedStyles(themeColors=>{const SHELL_COLORS=themeCo
 };});
 
 
-export function TrackerConnections() { return <AthleteContent inlineConnections/>; }
+export function TrackerConnections({ preview = false }: { preview?: boolean }) { return <AthleteContent inlineConnections trackerPreview={preview} />; }
 export default function AthleteScreen() { return <AthleteContent/>; }

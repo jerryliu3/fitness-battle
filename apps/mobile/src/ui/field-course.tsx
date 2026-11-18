@@ -2,7 +2,7 @@ import { useFocusStyles } from "./focus";
 import { useThemeColors } from "../theme";
 import { AppText } from "./section";
 
-import { createElement, useEffect, useRef, useState, type ComponentType } from "react";
+import { createElement, useCallback, useEffect, useRef, useState, type ComponentType } from "react";
 import { PanResponder, Pressable, Text, View } from "react-native";
 import { Circle, ClipPath, Defs, Ellipse, G, Line, LinearGradient, Mask, Path, Pattern, Rect, Stop, Text as SvgText } from "react-native-svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -24,11 +24,11 @@ export function useFieldAppearance(account: string, sport: string) {
     return () => { canceled = true; };
   }, [key]);
   const value = saved?.key === key ? saved.value : defaultFieldAppearance;
-  const update = (next: FieldAppearance) => {
+  const update = useCallback((next: FieldAppearance) => {
     generation.current++;
     setSaved({ key, value: next });
     void AsyncStorage.setItem(key, JSON.stringify(next)).catch(() => { /* Keep in-memory choice. */ });
-  };
+  }, [key]);
   return [value, update] as const;
 }
 export function FieldGroundPicker({ appearance, onChange }: { appearance: FieldAppearance; onChange: (value: FieldAppearance) => void }) {

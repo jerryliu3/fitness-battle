@@ -288,3 +288,21 @@ it("keeps onboarding tracker connections free of file-import and recap actions",
   await act(async () => { renderer = create(createElement(TrackerConnections)); });
   expect(renderer.root.findAllByType("DataSyncActions" as never).some(node => !node.props.provider)).toBe(false);
 });
+
+it("lists the same providers in a signed-out onboarding preview without offering a connection", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mock.user = null;
+  mock.params = {};
+  providersMock.list = [{ id: "strava", name: "Strava" }];
+  try {
+    await act(async () => { renderer = create(createElement(TrackerConnections, { preview: true })); });
+    expect(renderer.root.findByType("IntegrationIcon" as never).props.provider).toBe("strava");
+    const connect = renderer.root.findAllByType("Button" as never).find(node => node.props.label === "Connect")!;
+    expect(connect.props.disabled).toBe(true);
+    await act(async () => connect.props.onPress());
+    expect(mock.dispatch).not.toHaveBeenCalled();
+    expect(mock.replace).not.toHaveBeenCalled();
+  } finally {
+    providersMock.list = [];
+  }
+});

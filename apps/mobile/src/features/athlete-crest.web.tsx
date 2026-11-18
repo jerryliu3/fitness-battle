@@ -3,6 +3,7 @@ import { View } from "react-native";
 import type { AthleteCardModel } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { useSceneActive } from "../ui/use-scene-active";
+import { AppText } from "../ui/section";
 import { AthleteProfileCard } from "./athlete-profile-card";
 import { useAppTheme } from "../theme";
 
@@ -34,8 +35,11 @@ export const AthleteCrest = memo(function AthleteCrest({ model, active: supplied
   }, [active, loaded, failed]);
   return <View style={{ minHeight: height, backgroundColor: transparent ? "transparent" : colors.paper }}>
     {!failed && createElement("iframe", { ref: frame, title: `${model.name} athlete card`, ...source, onError: () => { setLoaded(false); setFailed(true); }, style: { width: "100%", height, border: 0, opacity: loaded ? 1 : 0 } })}
-    {!loaded && <View style={{ position: "absolute", inset: 0 }}>
+    {!bundled && !loaded && <View style={{ position: "absolute", inset: 0 }}>
       <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />
+    </View>}
+    {bundled && failed && <View style={{ position: "absolute", inset: 0, justifyContent: "center", alignItems: "center" }}>
+      <AppText role="body" secondary accessibilityRole="alert">Could not load your athlete card.</AppText>
     </View>}
   </View>;
 });

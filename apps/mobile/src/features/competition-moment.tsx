@@ -1,3 +1,5 @@
+import { FieldGroundSwitcher } from "../ui/field-ground-switcher";
+import { FieldArenaChromeStack } from "../ui/field-arena-chrome-stack";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { startActivePlayback } from "../ui/active-playback";
 import { useCompetitionCourse } from "./use-competition-course";
@@ -76,7 +78,7 @@ export function CompetitionMoment({
   const period = state ? competePeriodWindow(state, undefined, moment.sport) : null;
   const { blocks } = useAthleteBlocks();
   const hiddenIds = useMemo(() => blocks.map((block) => block.id), [blocks]);
-  const [appearance] = useFieldAppearance(accountKey, moment.sport);
+  const [appearance, setAppearance] = useFieldAppearance(accountKey, moment.sport);
   const insets = useSafeAreaInsets();
   const [height, setHeight] = useState(0);
   const reduced = useReducedMotion();
@@ -232,14 +234,12 @@ export function CompetitionMoment({
     </View>
   );
 
-  const overlayControls =
-    courseOptions ?? (
-      <FieldViewSwitcher
-        value={viewDimension}
-        event={moment.sport}
-        onChange={chooseView}
-      />
-    );
+  const overlayControls = (viewDimension === "4d" && courseOptions) || (
+    <FieldArenaChromeStack slots={{
+      view: <FieldViewSwitcher value={viewDimension} event={moment.sport} onChange={chooseView} />,
+      options: viewDimension === "2d" ? <FieldGroundSwitcher appearance={appearance} onChangeAppearance={setAppearance} /> : null,
+    }} />
+  );
 
   return (
     <View style={{ flex: 1 }}>
