@@ -234,7 +234,7 @@ describe("athlete profile navigation and layout", () => {
     expect(rendered).toContain("Settings");
   });
 
-  it("opens edit profile as a routed panel with crest and editor", async () => {
+  it("opens edit profile as a routed panel with the identity editor", async () => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     mock.params = { panel: "profile" };
     await act(async () => {
@@ -243,7 +243,7 @@ describe("athlete profile navigation and layout", () => {
     const screenHeader = renderer.root.findByType("ScreenHeader" as never);
     expect(screenHeader.props.title).toBe("Edit profile");
     const rendered = JSON.stringify(renderer.toJSON());
-    expect(rendered).toContain("AthleteCrest");
+    expect(rendered).not.toContain("AthleteCrest");
     expect(rendered).toContain("Identity");
   });
 

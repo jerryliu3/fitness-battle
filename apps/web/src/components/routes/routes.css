@@ -22,7 +22,7 @@
 .route-controls input[type="range"]::-moz-range-track { height: 6px; border-radius: 999px; background: linear-gradient(to right, var(--app-action-primary) var(--route-progress), rgb(255 255 255 / 20%) var(--route-progress)); }
 .route-controls input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--app-action-primary); }
 
-.route-recorded-metrics { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:4px 2px 10px;border-bottom:1px solid color-mix(in srgb, var(--app-surface-card) 12.55%, transparent); }
+.route-recorded-metrics { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 12px;padding:8px 16px 12px;border-bottom:1px solid color-mix(in srgb, var(--app-surface-card) 12.55%, transparent); }
 .route-recorded-metrics span { display:grid;gap:4px;min-width:0; }
 .route-recorded-metrics small { font:var(--type-caption);opacity:.7; }
 .route-recorded-metrics b { font:var(--type-label);font-variant-numeric:tabular-nums;overflow-wrap:anywhere; }

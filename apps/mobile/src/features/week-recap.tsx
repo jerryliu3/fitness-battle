@@ -326,7 +326,7 @@ function Training({ state, target, reduced }: { state: CompeteState; target: Wee
     });
     anim.start();
     return () => anim.stop();
-  }, [reduced, activeMode, series.values, draw]);
+  }, [reduced, activeMode, draw]);
 
   return (
     <View style={s.trainingWrap}>
