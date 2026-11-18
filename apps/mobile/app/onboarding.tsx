@@ -175,7 +175,7 @@ export default function Onboarding() {
           </>}
           {step === 1 && <>
             <AppText secondary>Sync your tracker to bring up to 90 days of workouts. You can also connect later.</AppText>
-            {!preview && <TrackerConnections />}
+            <TrackerConnections preview={preview} />
           </>}
           {step === 2 && <>
             <AppText secondary>Your chosen event registers for the next wave. You can register for more events in the app.</AppText>
