@@ -1,4 +1,3 @@
-import { AthleteCardSlot, type AthleteCardSlotHandle } from "../src/features/retained-athlete-card";
 import { useFocusStyles } from "../src/ui/focus";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../src/theme";
 import { Toast } from "../src/ui/toast";
@@ -29,7 +28,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
-import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Clipboard, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AccountActions } from "../src/features/account-actions";
@@ -56,10 +55,7 @@ import {
 import { SHELL_RADIUS } from "../src/theme";
 import { FocusButton, FocusSheet, FocusSidePanel } from "../src/ui/focus";
 import { AthleteCrest } from "../src/features/athlete-crest";
-import {
-  AthleteProfileEditor,
-  type AthleteProfileDraft,
-} from "../src/features/athlete-edit-panel";
+import { AthleteProfileEditor } from "../src/features/athlete-edit-panel";
 import { RankSymbol } from "../src/ui/rank-symbol";
 import { Achievements } from "../src/features/club-achievements";
 import { AwardShelf } from "../src/ui/award-shelf";
@@ -97,8 +93,6 @@ const styles=useThemedStyles(stylesThemes);
     signOut,
     legacyBackup,
   } = useAuth();
-  const cardSlot = useRef<AthleteCardSlotHandle>(null);
-  const cardViewport = useRef<ComponentRef<typeof ScrollView>>(null);
   const currentUser = useRef(user?.id);
   currentUser.current = user?.id;
   const router = useRouter();
@@ -121,7 +115,6 @@ const styles=useThemedStyles(stylesThemes);
   const [authNote, setAuthNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(params.edit === "1");
-  const [editDraft, setEditDraft] = useState<AthleteProfileDraft | null>(null);
   const [cardDragging, setCardDragging] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const panel = inlineConnections ? "connections" : params.panel ?? null;
@@ -165,7 +158,6 @@ const styles=useThemedStyles(stylesThemes);
   useEffect(() => {
     setNote(null);
     setConfirmFreeze(false);
-    setEditDraft(null);
     setHistoryOffer(null);
   }, [user?.id]);
 
@@ -661,10 +653,7 @@ const styles=useThemedStyles(stylesThemes);
   }
 
   if (panel === "profile") {
-    const closeProfile = () => {
-      setEditDraft(null);
-      exitAthletePanel();
-    };
+    const closeProfile = exitAthletePanel;
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
         {pageHeader}
@@ -677,10 +666,8 @@ const styles=useThemedStyles(stylesThemes);
             <AthleteProfileEditor
               state={state}
               dispatch={dispatch}
-              onDraftChange={setEditDraft}
               onCancel={closeProfile}
               onSaved={(msg) => {
-                setEditDraft(null);
                 setNote(msg);
                 closeProfile();
               }}
@@ -733,6 +720,8 @@ const styles=useThemedStyles(stylesThemes);
   }
 
   const now = competeNow(state);
+  const memberSince = user.createdAt ? formatMemberSince(user.createdAt) : null;
+  const cardModel = { ...athleteCardModel(state, now), memberSince };
   const season = clubLifetimeTotals(state);
   const unit = distanceUnitLabel(state.units);
   const records = personalRecordHistory(state, now);
@@ -763,9 +752,6 @@ const styles=useThemedStyles(stylesThemes);
       <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
         {pageHeader}
       <ScrollView
-        ref={cardViewport}
-        onScroll={() => cardSlot.current?.measure()}
-        scrollEventThrottle={16}
         automaticallyAdjustKeyboardInsets
         scrollEnabled={!cardDragging}
         contentContainerStyle={f.content}
@@ -773,32 +759,13 @@ const styles=useThemedStyles(stylesThemes);
       >
 <SectionStack divided={false}>
 
-        <View
-          style={{
-            position: "relative",
-            zIndex: cardDragging ? 200 : 50,
-            elevation: cardDragging ? 200 : 50,
-            overflow: "visible",
-          }}
-        >
-          {Platform.OS === "web" ? (() => {
-            const base = athleteCardModel(state, now);
-            const memberSince = user.createdAt ? formatMemberSince(user.createdAt) : null;
-            return (
-              <AthleteCrest
-                model={memberSince ? { ...base, memberSince } : base}
-                onInteractionChange={setCardDragging}
-              />
-            );
-          })() : (
-            <AthleteCardSlot
-              ref={cardSlot}
-              viewport={cardViewport}
-              active={!settingsOpen && !editDraft}
-              onInteractionChange={setCardDragging}
-            />
-          )}
-        </View>
+        <AthleteCrest
+          key={user.id}
+          model={cardModel}
+          bundled
+          active={!settingsOpen}
+          onInteractionChange={setCardDragging}
+        />
 
         <View
           style={{

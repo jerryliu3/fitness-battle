@@ -108,3 +108,12 @@ it("retries a failed retained scene on the next visit", async () => {
   await act(async () => renderer.update(createElement(AthleteCrest, { model, active: true })));
   expect(renderer.root.findAllByType("WebView" as never)).toHaveLength(1);
 });
+
+it("loads the profile crest from the bundled scene without a server URL", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  await act(async () => { renderer = create(createElement(AthleteCrest, { model, bundled: true })); });
+  const web = renderer.root.findByType("WebView" as never);
+  expect(web.props.source.uri).toBeUndefined();
+  expect(web.props.source.html).toContain('id="root"');
+  expect(web.props.onShouldStartLoadWithRequest({ url: "https://example.test/athlete-card-scene" })).toBe(false);
+});

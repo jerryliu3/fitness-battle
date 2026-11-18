@@ -1,5 +1,4 @@
 import { NavigationAppearance } from "../src/ui/navigation-appearance";
-import { RetainedAthleteCard } from "../src/features/retained-athlete-card";
 import { AppearanceSync } from "../src/ui/appearance-sync";
 import { useThemeColors } from "../src/theme";
 import { AppThemeProvider, useAppTheme } from "../src/appearance";
@@ -189,13 +188,13 @@ const SHELL_COLORS=useThemeColors();
                         <NavigationWarmup />
                         <OnboardingNavigation />
                         <StatusBar style={mode === "dark" ? "light" : "dark"} />
-                        <RetainedAthleteCard><Stack
+                        <Stack
                           screenOptions={{
                             headerShown: false,
                             contentStyle: { backgroundColor: SHELL_COLORS.paper },
                             animation: reduced ? "none" : Platform.OS === "ios" ? "default" : "slide_from_right",
                           }}
-                        /></RetainedAthleteCard>
+                        />
                       </BlockPrivacyGate>
                     </BootGate>
                   </CompeteProvider>

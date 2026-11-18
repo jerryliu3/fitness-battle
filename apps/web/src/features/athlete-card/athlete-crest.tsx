@@ -17,7 +17,7 @@ const WREATH_FRAME = {
 };
 const POINTS = [[24, 0], [296, 0], [320, 28], [320, 284], [300, 338], [160, 408], [20, 338], [0, 284], [0, 28]];
 const CLIP = `polygon(${POINTS.map(([x, y]) => `${x / WIDTH * 100}% ${y / HEIGHT * 100}%`).join(",")})`;
-function BrandMark() { return <img className={styles.logo} src="/brand/overtaek/mark-transparent.png" alt="Overtaek" draggable={false} />; }
+function BrandMark({ src }: { src: string }) { return <img className={styles.logo} src={src} alt="Overtaek" draggable={false} />; }
 function Stat({ value, label, dim = false }: { value: string | number; label: string; dim?: boolean }) {
   return <div className={styles.stat} data-dim={dim}><strong>{value}</strong><span>{label}</span></div>;
 }
@@ -26,7 +26,7 @@ function RecordDate({ date, timeZone }: { date: string; timeZone: string }) {
 }
 
 /** The selected Crest composition, with Goalmaxxing's actual alloy optics. */
-export const AthleteCrest = memo(function AthleteCrest({ model, active = true }: { model: AthleteCardModel; active?: boolean }) {
+export const AthleteCrest = memo(function AthleteCrest({ model, active = true, assets }: { model: AthleteCardModel; active?: boolean; assets?: Record<string, string> }) {
   const still = Boolean(useReducedMotion()) || !active;
   const rotation = useCardRotation(still);
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
@@ -34,6 +34,8 @@ export const AthleteCrest = memo(function AthleteCrest({ model, active = true }:
   const photo = model.avatarUrl && model.avatarUrl !== failedPhoto;
   const flag = countryFlagEmoji(model.countryCode);
   const personalBests = model.personalBests ?? [];
+  const brand = assets?.brand ?? "/brand/overtaek/mark-transparent.png";
+  const rank = rankSymbolForRankName(model.rank);
   return <section className={styles.crest} aria-label="Athlete card" data-still={still}>
     <div ref={rotation.stage} className={styles.stage} style={cardOptics(REST_POSE) as CSSProperties} {...rotation.stageHandlers}>
       <div className={styles.shadow} aria-hidden="true" />
@@ -50,13 +52,13 @@ export const AthleteCrest = memo(function AthleteCrest({ model, active = true }:
           {flag ? <span className={styles.flag} role="img" aria-label={countryName(model.countryCode) ?? model.countryCode!}>{flag}</span> : null}
           {model.memberSince ? <span className={styles.since}>{model.memberSince}</span> : null}
           <div className={styles.portrait}>{photo ? <img className={styles.photo} src={model.avatarUrl!} alt="" draggable={false} onError={() => setFailedPhoto(model.avatarUrl)} /> : <span aria-hidden="true">{model.initials}</span>}
-            <img className={styles.wreath} src={`/rank-symbols/${rankSymbolForRankName(model.rank)}.png`} alt="" draggable={false} style={WREATH_FRAME} />
+            <img className={styles.wreath} src={assets?.[rank] ?? `/rank-symbols/${rank}.png`} alt="" draggable={false} style={WREATH_FRAME} />
           </div>
           <div className={styles.identity} data-long-name={model.name.length > 18}><h2 title={model.name}>{model.name}</h2></div>
           <div className={styles.stats}>
             {model.records.length ? <div className={styles.records} style={{ gridTemplateColumns: `repeat(${Math.min(3, model.records.length)}, 1fr)` }}>{model.records.slice(0, 3).map(r => <Stat key={r.id ?? r.label} value={r.value} label={!r.kind || r.kind === "record" ? `${r.label} PB` : r.label} />)}</div> : <p className={styles.noRecords}>No highlights selected</p>}
           </div>
-          <div className={styles.brand}><BrandMark /></div>
+          <div className={styles.brand}><BrandMark src={brand} /></div>
         </div>
         <div className={`${styles.face} ${styles.back}`} aria-hidden={!details} inert={!details}>
           <div className={styles.reverse}>
@@ -68,7 +70,7 @@ export const AthleteCrest = memo(function AthleteCrest({ model, active = true }:
             <section className={styles.detailSection}><h3>Competition</h3><div className={`${styles.totals} ${styles.competition}`}><Stat value={model.overtakes} label="Overtakes" /><Stat value={model.rounds} label="Rounds" /><Stat value={model.streak} label="Week streak" dim={!model.streakActive} /><Stat value={model.podiums ?? "—"} label="Podiums" /></div></section>
             {model.lifetime ? <section className={styles.detailSection}><h3>Lifetime</h3><div className={styles.totals}><Stat value={model.lifetime.distance} label="Distance" /><Stat value={model.lifetime.activities} label="Activities" /><Stat value={model.lifetime.time} label="Moving time" /></div></section> : null}
           </div>
-          <div className={styles.brand}><BrandMark /></div>
+          <div className={styles.brand}><BrandMark src={brand} /></div>
         </div>
       </div>
     </div>
