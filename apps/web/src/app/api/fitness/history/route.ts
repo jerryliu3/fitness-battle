@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   const userId = await resolveRequestUserId(request);
   if (!userId) return NextResponse.json({ error: "authentication_required" }, { status: 401 });
   const body = await request.json().catch(() => ({}));
-  if (!providers.has(body.provider) || !Number.isInteger(body.days) || body.days < 1 || body.days > 90) return NextResponse.json({ error: "invalid_history_import" }, { status: 400 });
+  if (!body || !providers.has(body.provider) || !Number.isInteger(body.days) || body.days < 1 || body.days > 90) return NextResponse.json({ error: "invalid_history_import" }, { status: 400 });
   try {
     return NextResponse.json(await beginFitnessHistory(userId, body.provider, body.days));
   } catch (error) { return failure(error); }
@@ -34,7 +34,7 @@ export async function DELETE(request: Request) {
   const userId = await resolveRequestUserId(request);
   if (!userId) return NextResponse.json({ error: "authentication_required" }, { status: 401 });
   const body = await request.json().catch(() => ({}));
-  if (typeof body.lease !== "string") return NextResponse.json({ error: "invalid_history_import" }, { status: 400 });
+  if (!body || typeof body.lease !== "string") return NextResponse.json({ error: "invalid_history_import" }, { status: 400 });
   try {
     await finishFitnessHistory(userId, body.lease, false);
     return NextResponse.json({ released: true });

@@ -13,11 +13,14 @@ import { AppText, SectionHeader } from "../ui/section";
 
 const supported = new Set(["apple_health", "google_health", "strava", "whoop", "oura"]);
 
-export function FitnessHistoryImport({ offer, onDismiss, showSettings = true }: {
-  offer: ProviderId | null;
-  onDismiss: () => void;
-  showSettings?: boolean;
-}) {
+type HistoryImportProps = { offer: ProviderId | null; onDismiss: () => void; showSettings?: boolean };
+
+export function FitnessHistoryImport(props: HistoryImportProps) {
+  const { user } = useAuth();
+  return <AccountHistoryImport key={user?.id ?? "guest"} {...props} />;
+}
+
+function AccountHistoryImport({ offer, onDismiss, showSettings = true }: HistoryImportProps) {
   const { user, accessToken, offlineMode } = useAuth();
   const { state, dispatch } = useCompeteStore();
   const [status, setStatus] = useState<FitnessHistoryStatus | null>(null);
@@ -25,8 +28,6 @@ export function FitnessHistoryImport({ offer, onDismiss, showSettings = true }: 
   const [days, setDays] = useState("90");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const owner = useRef(user?.id);
-  owner.current = user?.id;
   const flight = useRef(false);
   const afterClose = useRef<(() => void) | null>(null);
   const mounted = useRef(true);
@@ -38,29 +39,24 @@ export function FitnessHistoryImport({ offer, onDismiss, showSettings = true }: 
   const providers = providersForDevice().filter(p => supported.has(p.id) && state?.links.some(l => l.provider === p.id && l.status === "connected"));
 
   useEffect(() => {
-    let alive = true;
-    setStatus(null); setProvider(null); setError(""); setBusy(false); afterClose.current = null;
-    if (live) void requestApi<FitnessHistoryStatus>(mobileEnv.apiUrl, accessToken, "/api/fitness/history").then(result => {
-      if (alive) setStatus(current => current?.completed ? current : result);
-    }).catch(() => { if (alive) setError("Could not check history import. Please try again."); });
-    return () => { alive = false; };
-  }, [user?.id, live]);
-
-  useEffect(() => {
-    if (!offer || !live) return;
+    if (!live) return;
+    if (offer && !supported.has(offer)) { dismiss.current(); return; }
     let alive = true;
     void requestApi<FitnessHistoryStatus>(mobileEnv.apiUrl, accessToken, "/api/fitness/history").then(result => {
       if (!alive) return;
       setStatus(current => current?.completed ? current : result);
-      if (!result.completed && !state?.calibrated && supported.has(offer)) { setDays("90"); setError(""); setProvider(offer); }
-      else dismiss.current();
-    }).catch(() => { if (alive) { setProvider(offer); setError("Could not check history import. Please try again."); } });
+      if (!offer || flight.current) return;
+      if (result.completed || state?.calibrated) dismiss.current();
+      else { setDays("90"); setError(""); setProvider(offer); }
+    }).catch(() => {
+      if (alive) { setError("Could not check history import. Please try again."); if (offer) setProvider(offer); }
+    });
     return () => { alive = false; };
-  }, [offer, live, user?.id, state?.calibrated]);
+  }, [live, offer, state?.calibrated]);
 
   function close() {
     if (flight.current) return;
-    afterClose.current = () => dismiss.current();
+    afterClose.current = () => { if (mounted.current) dismiss.current(); };
     setProvider(null); setError("");
   }
 
@@ -72,7 +68,7 @@ export function FitnessHistoryImport({ offer, onDismiss, showSettings = true }: 
     let ticket: FitnessHistoryTicket | undefined;
     try {
       ticket = await requestApi<FitnessHistoryTicket>(mobileEnv.apiUrl, token, "/api/fitness/history", { body: { provider, days: Number(days) } });
-      if (!mounted.current || owner.current !== id) return;
+      if (!mounted.current) return;
       let activities: ActivitySample[] = [], readiness: ReadinessSample[] = [];
       if (provider === "apple_health" || provider === "google_health") {
         const deps = { syncRange: ticket, historyLease: ticket.lease, getAccessToken: async () => ({ token: token ?? undefined, userId: id }) };
@@ -85,12 +81,12 @@ export function FitnessHistoryImport({ offer, onDismiss, showSettings = true }: 
         const result = await requestApi<{ activities?: ActivitySample[]; readiness?: ReadinessSample[] }>(mobileEnv.apiUrl, token, "/api/fitness/sync", { body: { provider, historyLease: ticket.lease } });
         activities = result.activities ?? []; readiness = result.readiness ?? [];
       }
-      if (!mounted.current || owner.current !== id) return;
+      if (!mounted.current) return;
       // Lock the settings action immediately, independently of the sync receipt.
       setStatus({ completed: true, provider, days: Number(days) });
       setProvider(null);
       afterClose.current = () => {
-        if (!mounted.current || owner.current !== id) return;
+        if (!mounted.current) return;
         dispatch({ type: "apply-sync", accountId: id, provider, linkStatus: "connected", activities: activities.flatMap(sample => {
           const activity = activityFromSample(sample, "recorded"); return activity ? [activity] : [];
         }), readiness: readiness.filter(r => r.provider === provider).map(r => ({ id: r.id, provider, day: r.day, score: r.score })) });
@@ -98,11 +94,11 @@ export function FitnessHistoryImport({ offer, onDismiss, showSettings = true }: 
       };
       ticket = undefined;
     } catch (e) {
-      if (mounted.current && owner.current === id) setError(e instanceof Error ? e.message : "History import failed. Please try again.");
+      if (mounted.current) setError(e instanceof Error ? e.message : "History import failed. Please try again.");
     } finally {
       if (ticket) await requestApi(mobileEnv.apiUrl, token, "/api/fitness/history", { method: "DELETE", body: { lease: ticket.lease } }).catch(() => {});
       flight.current = false;
-      if (mounted.current && owner.current === id) setBusy(false);
+      if (mounted.current) setBusy(false);
     }
   }
 
@@ -116,9 +112,8 @@ export function FitnessHistoryImport({ offer, onDismiss, showSettings = true }: 
       {error && !provider ? <>
         <AppText secondary>{error}</AppText>
         <FocusButton secondary label="Retry" onPress={() => {
-          const id = user?.id;
           void requestApi<FitnessHistoryStatus>(mobileEnv.apiUrl, accessToken, "/api/fitness/history").then(result => {
-            if (mounted.current && owner.current === id) { setStatus(result); setError(""); }
+            if (mounted.current) { setStatus(result); setError(""); }
           }).catch(() => {});
         }} />
       </> : null}

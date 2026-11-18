@@ -20,10 +20,14 @@ export async function beginFitnessHistory(userId: string, provider: FitnessProvi
   return { lease, ...await fitnessSyncWindow(userId, provider, lease) };
 }
 
-export async function fitnessSyncWindow(userId: string, provider: FitnessProviderId, lease?: string): Promise<{ since: string; until: string }> {
+export async function fitnessSyncWindow(userId: string, provider: FitnessProviderId, lease?: string, options: { incremental?: boolean } = {}): Promise<{ since: string; until: string }> {
   if (!lease) {
     const connection = await createProviderStore(provider)?.getConnection(userId);
-    return trackerSyncWindow(connection ?? {});
+    // Uploads can overlap another sync. Validate against connection time, not
+    // a cursor that may have advanced since the device started reading.
+    return trackerSyncWindow(options.incremental === false
+      ? { connectedAt: connection?.connectedAt ?? connection?.lastSyncAt }
+      : connection ?? {});
   }
   const db = serviceDb();
   if (!db) throw new Error("store_unavailable");

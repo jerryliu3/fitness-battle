@@ -1,4 +1,4 @@
-import { decodePolyline, normalizeRouteReplay } from "@fitness-battle/shared";
+import { dayKey, decodePolyline, normalizeRouteReplay } from "@fitness-battle/shared";
 import { persistDailyHealth } from "@/lib/daily-health-store";
 import { persistSleepNight } from "@/lib/garmin-record-store";
 import type { SyncResult, SleepNight } from "@fitness-battle/shared";
@@ -81,11 +81,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "device_provider_required" }, { status: 400 });
   }
   let window: { since: string; until: string };
-  try { window = await fitnessSyncWindow(userId, body.provider, body.historyLease); }
+  try { window = await fitnessSyncWindow(userId, body.provider, body.historyLease, { incremental: false }); }
   catch { return NextResponse.json({ error: "history_unavailable" }, { status: 409 }); }
   if ((body.activities?.length ?? 0) > 2000) return NextResponse.json({ error: "too_many_activities" }, { status: 400 });
   const inWindow = (at: string) => at >= window.since && at <= window.until;
-  const inDayWindow = (day: string) => day >= window.since.slice(0, 10) && day <= window.until.slice(0, 10);
+  const inDayWindow = (day: string) => day >= dayKey(new Date(window.since)) && day <= dayKey(new Date(window.until));
   const activities = (body.activities ?? [])
     .map((item) => activityFromBody(body.provider!, item))
     .filter((item): item is ActivitySample => item != null && inWindow(item.startedAt));

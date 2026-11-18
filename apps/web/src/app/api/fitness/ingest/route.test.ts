@@ -18,7 +18,7 @@ beforeEach(() => {
 it("filters device history to the server-approved range before persisting", async () => {
   const response = await POST(request({ historyLease: "ticket", activities: [sample("old", "2026-10-01T12:00:00Z"), sample("selected", "2026-11-01T12:00:00Z")] }));
   expect(response.status).toBe(200);
-  expect(mock.window).toHaveBeenCalledWith("owner", "apple_health", "ticket");
+  expect(mock.window).toHaveBeenCalledWith("owner", "apple_health", "ticket", { incremental: false });
   expect(mock.activities.mock.calls[0][1].map((a: { externalId: string }) => a.externalId)).toEqual(["selected"]);
   expect(mock.finish).toHaveBeenCalledWith("owner", "ticket", true);
   expect((await response.json()).historyImported).toBe(true);

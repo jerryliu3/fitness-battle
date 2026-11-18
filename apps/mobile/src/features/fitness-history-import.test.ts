@@ -33,6 +33,7 @@ beforeEach(() => {
 afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); });
 it("offers 90 days after connection and Later leaves import available in settings", async () => {
   await act(async () => { renderer = create(createElement(FitnessHistoryImport, { offer: "apple_health", onDismiss: mock.dismiss })); });
+  expect(mock.request).toHaveBeenCalledTimes(1);
   expect(renderer.root.findByType(NumberPicker).props.value).toBe("90");
   await act(async () => button("Later").props.onPress());
   expect(mock.device).not.toHaveBeenCalled();
@@ -76,6 +77,21 @@ it("does not apply a late import to a different account", async () => {
   await act(async () => { renderer = create(createElement(FitnessHistoryImport, { offer: "apple_health", onDismiss: mock.dismiss })); });
   await act(async () => button("Import 90 days").props.onPress());
   mock.user = { id: "bob" };
+  await act(async () => renderer.update(createElement(FitnessHistoryImport, { offer: null, onDismiss: mock.dismiss })));
+  await act(async () => resolve({ ok: true, activities: [] }));
+  expect(mock.dispatch).not.toHaveBeenCalled();
+  expect(button("Import fitness history").props.disabled).toBe(false);
+});
+
+
+it("ignores an old import even after switching away and back to the same account", async () => {
+  let resolve!: (value: unknown) => void;
+  mock.device.mockReturnValue(new Promise(r => { resolve = r; }));
+  await act(async () => { renderer = create(createElement(FitnessHistoryImport, { offer: "apple_health", onDismiss: mock.dismiss })); });
+  await act(async () => button("Import 90 days").props.onPress());
+  mock.user = { id: "bob" };
+  await act(async () => renderer.update(createElement(FitnessHistoryImport, { offer: null, onDismiss: mock.dismiss })));
+  mock.user = { id: "alice" };
   await act(async () => renderer.update(createElement(FitnessHistoryImport, { offer: null, onDismiss: mock.dismiss })));
   await act(async () => resolve({ ok: true, activities: [] }));
   expect(mock.dispatch).not.toHaveBeenCalled();
