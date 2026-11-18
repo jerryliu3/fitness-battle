@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  ONBOARDING_SPORT_TILES as sportTiles, EMPTY_GUEST_INTRO, ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId,
+  ONBOARDING_SPORT_TILES as sportTiles, ONBOARDING_SPORT_EMOJI_SCALE, EMPTY_GUEST_INTRO, ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId,
   onboardingAthleteCard, guestIntroForAccount, sportById, SPORTS, type OnboardingStep,
 } from "@fitness-battle/shared";
 import { prefetchOnboardingCourseFromApi } from "../src/lib/onboarding-course";
@@ -59,7 +59,7 @@ export default function Welcome() {
     return () => clearTimeout(timer);
   }, [ready, loading, draft, preview, state?.onboardingCompleted]);
   useEffect(() => {
-    if (!ready || !sportById(draft.sport).gps) return;
+    if (!ready || !draft.sport || !sportById(draft.sport).gps) return;
     void prefetchOnboardingCourseFromApi().then(course => { if (course) setOnboardingCourseRevision(value => value + 1); });
   }, [ready, draft.sport]);
   useEffect(() => {
@@ -165,7 +165,9 @@ export default function Welcome() {
                   allowFontScaling={false}
                   role="display"
                   style={{ textAlign: "center", includeFontPadding: false,
-                    transform: sportTiles[sport.id].mirror ? [{ scale: 4.5 * scale }, { scaleX: -1 }] : [{ scale: 4.5 * scale }] }}
+                    transform: sportTiles[sport.id].mirror
+                      ? [{ scale: ONBOARDING_SPORT_EMOJI_SCALE * scale }, { scaleX: -1 }]
+                      : [{ scale: ONBOARDING_SPORT_EMOJI_SCALE * scale }] }}
                 >
                   {sportTiles[sport.id].emoji}
                 </AppText>

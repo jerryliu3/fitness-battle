@@ -30,14 +30,15 @@ export const ONBOARDING_TITLES: Record<OnboardingStep, string> = {
 };
 
 export type GuestIntroDraft = {
-  sport: SportId;
+  sport?: SportId;
   name: string;
   city: string;
   countryCode: string;
   introCompleted?: boolean;
   photo?: string;
 };
-export const EMPTY_GUEST_INTRO: GuestIntroDraft = { sport: "running", name: "", city: "", countryCode: "" };
+export const EMPTY_GUEST_INTRO: GuestIntroDraft = { name: "", city: "", countryCode: "" };
+export const ONBOARDING_SPORT_EMOJI_SCALE = 4.5 * 0.7 * 0.8 * 0.925;
 
 export function isGuestPhoto(value: unknown): value is string {
   return typeof value === "string" && value.length <= 1_500_000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
@@ -50,9 +51,9 @@ export function parseGuestIntroDraft(raw: string | null): GuestIntroDraft | null
     const value: unknown = JSON.parse(raw);
     if (!value || typeof value !== "object") return null;
     const draft = value as Partial<GuestIntroDraft>;
-    if (!SPORT_IDS.includes(draft.sport as SportId)) return null;
+    if (draft.sport !== undefined && !SPORT_IDS.includes(draft.sport as SportId)) return null;
     return {
-      sport: draft.sport as SportId,
+      ...(SPORT_IDS.includes(draft.sport as SportId) ? { sport: draft.sport as SportId } : {}),
       name: typeof draft.name === "string" ? draft.name.slice(0, 80) : "",
       ...(isGuestPhoto(draft.photo) ? { photo: draft.photo } : {}),
       city: typeof draft.city === "string" ? draft.city.slice(0, 80) : "",
@@ -98,7 +99,12 @@ export function hasCompletedOnboardingIntro(draft: GuestIntroDraft | null, pendi
 
 export function onboardingAthleteCard(draft: GuestIntroDraft): AthleteCardModel {
   return {
-    ...athleteCardModelForPeer({ name: draft.name.trim() || "Athlete", city: draft.city, avatarUrl: draft.photo, sport: SPORTS.find(s => s.id === draft.sport)!.name }),
+    ...athleteCardModelForPeer({
+      name: draft.name.trim() || "Athlete",
+      city: draft.city,
+      avatarUrl: draft.photo,
+      sport: draft.sport ? SPORTS.find(s => s.id === draft.sport)!.name : undefined,
+    }),
     personalBests: [],
     lifetime: { distance: "—", activities: "—", time: "—" },
     countryCode: draft.countryCode || null,
@@ -121,10 +127,11 @@ export const ONBOARDING_FEATURES = [
 export type OnboardingFeatureId = typeof ONBOARDING_FEATURES[number]["id"];
 
 export function onboardingCrewPreview(draft: GuestIntroDraft): CrewWeekRelayInput {
-  const distance = draft.sport === "cycling" ? 18000 : draft.sport === "walking" ? 4000 : 6000;
+  const sport = draft.sport ?? "running";
+  const distance = sport === "cycling" ? 18000 : sport === "walking" ? 4000 : 6000;
   return {
-    sport: draft.sport, format: "relay", targetSessions: 12,
-    contract: draft.sport === "strength" ? { metric: "moving_sec", target: 18000 } : { metric: "distance_m", target: distance * 5 },
+    sport, format: "relay", targetSessions: 12,
+    contract: sport === "strength" ? { metric: "moving_sec", target: 18000 } : { metric: "distance_m", target: distance * 5 },
     members: [
       { user_id: "you", display_name: draft.name.trim() || "Athlete", avatar_url: draft.photo ?? null },
       { user_id: "alex", display_name: "Alex", avatar_url: ONBOARDING_PORTRAITS.alex }, { user_id: "maya", display_name: "Maya", avatar_url: ONBOARDING_PORTRAITS.maya },
@@ -168,9 +175,10 @@ export function fitOnboardingCanvas(width: number, height: number, contentHeight
 }
 
 export function onboardingCrewGoal(draft: GuestIntroDraft, progress: number) {
+  const sport = draft.sport ?? "running";
   const relay = crewWeekRelay(onboardingCrewReplay(draft, progress));
-  const format = (value: number) => (value / (draft.sport === "walking" ? 1 : draft.sport === "strength" ? 3600 : 1000)).toLocaleString("en-US", { maximumFractionDigits: draft.sport === "walking" ? 0 : 1 });
-  const unit = draft.sport === "walking" ? "steps" : draft.sport === "strength" ? "hrs" : "km";
+  const format = (value: number) => (value / (sport === "walking" ? 1 : sport === "strength" ? 3600 : 1000)).toLocaleString("en-US", { maximumFractionDigits: sport === "walking" ? 0 : 1 });
+  const unit = sport === "walking" ? "steps" : sport === "strength" ? "hrs" : "km";
   return `Weekly goal: ${format(relay.model.total)}/${format(relay.target ?? 0)} ${unit}`;
 }
 
