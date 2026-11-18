@@ -3,10 +3,10 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 import { defaultFieldAppearance } from "@fitness-battle/shared";
 vi.mock("react-native", () => ({useColorScheme: () => "light",  View: "View", Text: "Text", Pressable: "Pressable", ScrollView: "ScrollView" }));
-vi.mock("./anchored-menu", () => ({
-  AnchoredMenu: ({ children }: { children: unknown }) => children,
-  useAnchoredMenu: () => ({ open: true, close: vi.fn(), toggle: vi.fn(), anchorRef: { current: null }, menuLayout: null }),
+vi.mock("./course-options", () => ({
+  LayersMenu: ({ children }: { children: (context: { close: () => void }) => unknown }) => children({ close: vi.fn() }),
 }));
+vi.mock("./anchored-menu", () => ({ AnchoredMenuItem: "AnchoredMenuItem" }));
 vi.mock("./section", () => ({ textStyle: () => ({}) }));
 vi.mock("../lib/haptics", () => ({ playCue: () => {} }));
 import { FieldGroundSwitcher } from "./field-ground-switcher";
@@ -19,10 +19,10 @@ it("renders current ground and switches ground on press", async () => {
     await act(async () => {
       renderer = create(createElement(FieldGroundSwitcher, { appearance: defaultFieldAppearance, onChangeAppearance }));
     });
-    const buttons = renderer.root.findAllByType("Pressable" as never);
-    expect(buttons.length).toBeGreaterThan(1);
-    await act(async () => buttons[1].props.onPress());
-    expect(onChangeAppearance).toHaveBeenCalled();
+    const choices = renderer.root.findAllByType("AnchoredMenuItem" as never);
+    expect(choices.find(node => node.props.selected)?.props.label).toBe("Meadow Trail");
+    await act(async () => choices.find(node => node.props.label === "Night Meet")!.props.onPress());
+    expect(onChangeAppearance).toHaveBeenCalledWith({ ...defaultFieldAppearance, ground: "night" });
   } finally {
     if (renderer) await act(async () => renderer.unmount());
     vi.unstubAllGlobals();

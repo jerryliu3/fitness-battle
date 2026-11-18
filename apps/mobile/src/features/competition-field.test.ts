@@ -39,7 +39,8 @@ vi.mock("../ui/lane-track", () => ({ LaneTrack: "LaneTrack" }));
 vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("../ui/polished-racer", () => ({ PolishedRacer: "PolishedRacer" }));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
-vi.mock("../ui/field-course", () => ({ FieldOverview: "FieldOverview", useFieldAppearance: () => [defaultFieldAppearance, vi.fn()] }));
+const stableSetAppearance = vi.hoisted(() => vi.fn());
+vi.mock("../ui/field-course", () => ({ FieldOverview: "FieldOverview", useFieldAppearance: () => [defaultFieldAppearance, stableSetAppearance] }));
 vi.mock("../ui/focus", () => ((()=>{const mock={ f: {} };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 vi.mock("../lib/haptics", () => ({ playCue() {} }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: fieldState, accountKey: "test" }) }));
@@ -280,7 +281,7 @@ it("keeps the new vertical chrome and clears map controls when switching to lane
   expect(slots().options.type).toBe("MapOptions");
   expect(slots().follow.type).toBe("FollowChip");
   await act(async () => slots().view.props.onChange("2d"));
-  expect(slots().options).toBeNull();
+  expect(slots().options.type).toBe("FieldGroundSwitcher");
   expect(slots().follow).toBeNull();
   expect(field()).toBeDefined();
 });

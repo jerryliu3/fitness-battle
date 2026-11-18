@@ -9,7 +9,7 @@ import { AnchoredMenu, useAnchoredMenu } from "./anchored-menu";
 import { textStyle } from "./section";
 import { playCue } from "../lib/haptics";
 
-function LayersMenu({
+export function LayersMenu({
   label,
   closeLabel,
   estimatedHeight,

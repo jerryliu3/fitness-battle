@@ -13,6 +13,7 @@ vi.mock("../ui/focus", () => ((() => { const mock = { FocusButton: "FocusButton"
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn(), playPattern: vi.fn(() => vi.fn()), cancelHaptics: vi.fn() }));
 vi.mock("../ui/field-course", () => ({ useFieldAppearance: () => [defaultFieldAppearance] }));
 vi.mock("../ui/lane-track", () => ({ LaneTrack: "LaneTrack" }));
+vi.mock("../ui/field-ground-switcher", () => ({ FieldGroundSwitcher: "FieldGroundSwitcher" }));
 vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
 vi.mock("../ui/compete-time-series-chart", () => ({ CompeteTimeSeriesChart: "CompeteTimeSeriesChart" }));
 vi.mock("./competition-panel", () => ({

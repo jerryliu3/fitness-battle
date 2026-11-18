@@ -145,12 +145,13 @@ const f=useFocusStyles();
           view: <FieldViewSwitcher value={sceneDimension} event={presentationEvent} onChange={value => chooseViewRef.current(value)} />,
           options: sceneDimension === "graph" && onChartViewChange
             ? <GraphOptions eventView={(chartView ?? "event") === "event"} onToggleEventView={() => onChartViewChange((chartView ?? "event") === "event" ? "trajectory" : "event")} />
-            : sceneDimension === "4d" ? mapChromeRef.current.options : null,
+            : sceneDimension === "4d" ? mapChromeRef.current.options
+              : sceneDimension === "2d" ? <FieldGroundSwitcher appearance={appearance} onChangeAppearance={setAppearance} /> : null,
           follow: sceneDimension === "4d" ? mapChromeRef.current.follow : null,
         }}
       />,
     );
-  }, [onOptionsChange, sceneDimension, presentationEvent, chartView, onChartViewChange]);
+  }, [onOptionsChange, sceneDimension, presentationEvent, chartView, onChartViewChange, appearance, setAppearance]);
   useEffect(() => {
     if (!onOptionsChange) return;
     publishArenaOptions();
@@ -409,6 +410,11 @@ const f=useFocusStyles();
     </View>
   );
 
+  const viewControls = <FieldArenaChromeStack slots={{
+    view: <FieldViewSwitcher value={sceneDimension} event={presentationEvent} onChange={chooseView} />,
+    options: sceneDimension === "2d" ? <FieldGroundSwitcher appearance={appearance} onChangeAppearance={setAppearance} /> : null,
+  }} />;
+
   return (
     <View style={persistent ? { flex: 1 } : { gap: 14, position: "relative" }}>
       {!expanded && !standingsOnly ? (
@@ -418,23 +424,9 @@ const f=useFocusStyles();
             left: 12,
             top: 12,
             zIndex: 10,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-            flexWrap: "wrap",
           }}
         >
-          <FieldViewSwitcher
-            value={sceneDimension}
-            event={presentationEvent}
-            onChange={chooseView}
-          />
-          {sceneDimension === "2d" ? (
-            <FieldGroundSwitcher
-              appearance={appearance}
-              onChangeAppearance={setAppearance}
-            />
-          ) : null}
+          {viewControls}
         </View>
       ) : null}
       {standingsOnly ? null : expanded ? (
@@ -478,7 +470,7 @@ const f=useFocusStyles();
                 />
               </View>}
               {!backgroundMode && onDetails ? <Pressable accessibilityRole="button" accessibilityLabel={backgroundMode ? "Expand standings" : "Events & standings"} onPress={onDetails} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.72)" }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{backgroundMode ? `${sport.charAt(0).toUpperCase()}${sport.slice(1)}` : "Events & standings"}</Text></Pressable> : null}
-              {!onOptionsChange && !(backgroundMode && sceneDimension === "4d") && <FieldViewSwitcher value={sceneDimension} event={presentationEvent} onChange={chooseView} />}
+              {!onOptionsChange && !(backgroundMode && sceneDimension === "4d") && viewControls}
             </FieldOverlayView>
 
             {!queued && sceneDimension !== "graph" && (sceneDimension !== "4d" || course) ? <>
