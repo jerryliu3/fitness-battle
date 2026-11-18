@@ -160,11 +160,12 @@ export default function Welcome() {
                 style={{ width: 158 * scale, height: 182 * scale, alignItems: "center", justifyContent: "center", borderRadius: 26,
                   borderWidth: 2, borderColor: draft.sport === sport.id ? "#082637" : "transparent",
                   backgroundColor: sportTiles[sport.id].background }}>
+                {/* Reserve glyph overhang before mirroring; display tracking narrows the measured text box. */}
                 <AppText
                   accessible={false}
                   allowFontScaling={false}
                   role="display"
-                  style={{ textAlign: "center", includeFontPadding: false,
+                  style={{ textAlign: "center", includeFontPadding: false, paddingHorizontal: 4,
                     transform: sportTiles[sport.id].mirror
                       ? [{ scale: ONBOARDING_SPORT_EMOJI_SCALE * scale }, { scaleX: -1 }]
                       : [{ scale: ONBOARDING_SPORT_EMOJI_SCALE * scale }] }}
