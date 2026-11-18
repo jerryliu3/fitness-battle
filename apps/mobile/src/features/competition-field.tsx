@@ -28,6 +28,7 @@ import {
   clampCourseCenter,
   competeNow,
   competePeriodWindow,
+  competitionCourseWindow,
   defaultCompeteFieldView,
   buildCompeteTimeSeriesModel,
   fieldDefaultSpan,
@@ -206,7 +207,8 @@ const f=useFocusStyles();
     [state, track, sport],
   );
   const period = periodOverride ?? (state ? competePeriodWindow(state, competeNow(state), sport) : null);
-  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(sport, period?.startsAt.toISOString() ?? "", period?.endsAt.toISOString() ?? "", debugActive, !standingsOnly && sceneDimension === "4d" && (persistent || isFocused));
+  const coursePeriod = periodOverride ?? (state ? competitionCourseWindow(state, competeNow(state), sport) : null);
+  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(sport, coursePeriod?.startsAt.toISOString() ?? "", coursePeriod?.endsAt.toISOString() ?? "", debugActive, !standingsOnly && sceneDimension === "4d" && (persistent || isFocused));
   useEffect(() => setCourseTarget(null), [accountKey, sport, period?.startsAt.getTime(), liveArena?.unit]);
   const sharedTimeline = useCompetitionTimeline();
   const localTimeline = useFieldTimeline(!backgroundMode && !standingsOnly ? state ?? undefined : undefined, {

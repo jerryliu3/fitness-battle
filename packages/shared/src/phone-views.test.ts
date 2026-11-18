@@ -6,6 +6,7 @@ import {
   awardCards,
   buildArenaModel,
   competePeriodWindow,
+  competitionCourseWindow,
   countedPrimarySessionsInPeriod,
   primaryFreezePeriodStart,
   resolveArenaSelectedId,
@@ -356,6 +357,10 @@ it("does not let upcoming future waves advance the current period window", () =>
     autoEnrollNext: true,
     crewId: null,
   }];
+  const course = competitionCourseWindow(state, sunday, "running");
+  expect(course.startsAt.toISOString()).toBe(state.enrollments[0]!.waveStart);
+  expect(course.endsAt.toISOString()).toBe(state.enrollments[0]!.weekEnd);
+  expect(competitionCourseWindow(state, sunday, "cycling")).toEqual(competePeriodWindow(state, sunday, "cycling"));
   const window = competePeriodWindow(state, sunday, "running");
   expect(window.startsAt.toISOString()).toBe("2026-11-02T05:00:00.000Z");
   expect(window.endsAt.toISOString()).toBe("2026-11-09T05:00:00.000Z");

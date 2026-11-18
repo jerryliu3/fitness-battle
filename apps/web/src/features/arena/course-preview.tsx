@@ -1,7 +1,7 @@
 "use client";
 import { typographyStyle } from "@/ui/section";
 import { useState } from "react";
-import { coursePreviewLanes, initialsFromName, type ArenaSceneLane, buildArenaModel, competitionTrack, competePeriodWindow, competeNow, isMetricCompete, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { coursePreviewLanes, initialsFromName, type ArenaSceneLane, buildArenaModel, competitionTrack, competitionCourseWindow, competeNow, isMetricCompete, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { useCompetitionCourse } from "@/features/course/use-competition-course";
 import { GeographicCourse } from "@/features/course/geographic-course";
 import { useAuth } from "@/components/auth-context";
@@ -11,7 +11,7 @@ const snapshotCache = new Map<string, string>();
 export function CoursePreview({ sport, queued, state }: { sport: SportId; queued: boolean; state: CompeteState }) {
   const { user } = useAuth();
   const { debugActive } = useCompete();
-  const period = competePeriodWindow(state, competeNow(state), sport);
+  const period = competitionCourseWindow(state, competeNow(state), sport);
   const { course } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, true);
   const model = buildArenaModel(state, undefined, competitionTrack(sport), sport), lane = model?.lanes.find(lane => lane.you);
 

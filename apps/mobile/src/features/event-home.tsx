@@ -5,7 +5,7 @@ import { useCompetitionCourse } from "./use-competition-course";
 import { GeographicCourse } from "./geographic-course";
 import { useCompeteStore } from "../lib/compete-store";
 import { Animated, Image, Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
-import { competeEventCarouselPageIndex, formatActivityAge, competePeriodWindow, coursePreviewLanes, initialsFromName, type ArenaSceneLane, buildArenaModel, competitionQueue, competitionTrack, competeNow, isMetricCompete, ordinalPlace, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { competeEventCarouselPageIndex, formatActivityAge, competitionCourseWindow, coursePreviewLanes, initialsFromName, type ArenaSceneLane, buildArenaModel, competitionQueue, competitionTrack, competeNow, isMetricCompete, ordinalPlace, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppText, textStyle } from "../ui/section";
 import { useThemeColors } from "../theme";
 import { AppIcon } from "../ui/app-icon";
@@ -87,7 +87,7 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
 export function CoursePreview({ state, sport, queued }: { state: CompeteState; sport: SportId; queued: boolean }) {
   const { blocks } = useAthleteBlocks();
   const c = useThemeColors();
-  const period = competePeriodWindow(state, competeNow(state), sport);
+  const period = competitionCourseWindow(state, competeNow(state), sport);
   const { debugActive, accountKey } = useCompeteStore();
   const { course } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, true);
   const model = buildArenaModel(state, undefined, competitionTrack(sport), sport);
