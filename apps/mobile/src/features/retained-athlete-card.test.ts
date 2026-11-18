@@ -5,6 +5,7 @@ import { freshState } from "@fitness-battle/shared";
 const mock = vi.hoisted(() => ({ pathname: "/today", accountKey: "one", mounts: 0 }));
 const state = freshState(new Date("2026-11-18T12:00:00Z"));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state, accountKey: mock.accountKey }) }));
+vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { createdAt: "2024-05-01T00:00:00Z" } }) }));
 vi.mock("expo-router", () => ({ usePathname: () => mock.pathname, useFocusEffect: (effect: () => void | (() => void)) => useEffect(effect, [effect]) }));
 vi.mock("react-native", () => ({ Platform: { OS: "ios" }, View: "View" }));
 vi.mock("./athlete-crest", () => ({ AthleteCrest: (props: object) => { useEffect(() => { mock.mounts++; }, []); return createElement("Scene", props); } }));
