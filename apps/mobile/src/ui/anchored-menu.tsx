@@ -187,7 +187,7 @@ const sThemes = createThemedStyles(themeColors=>{return {
     backgroundColor: themeColors.overlay,
   },
   dropdown: {
-    backgroundColor: `${themeColors.card}f0`,
+    backgroundColor: themeColors.card,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: themeColors.line,
