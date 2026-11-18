@@ -33,7 +33,7 @@ const f=useFocusStyles();
             </View>
             <View style={{ flex: 1 }}>
               <FocusButton
-                label="Yes, cancel registration"
+                label="Cancel"
                 onPress={() => {
                   setConfirmCancel(false);
                   onCancel();
