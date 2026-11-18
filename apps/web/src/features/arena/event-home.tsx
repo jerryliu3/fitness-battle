@@ -23,7 +23,7 @@ export function EventHome({ state, onEnter, onRecovery, onRegister, active: enab
   return <>
     <section className="compete-home-section" aria-label="Your events">
       <div className="compete-section-heading"><AppHeading>Your events</AppHeading><AppText role="caption" secondary>{active.length + Number(sleep)} registered</AppText></div>
-      <div className="compete-carousel compete-races" tabIndex={0} aria-label="Registered events carousel" onScroll={event => { const el = event.currentTarget; const width = el.firstElementChild?.getBoundingClientRect().width ?? 0; setPage(competeEventCarouselPageIndex(el.scrollLeft, width + 12, count)); }}>
+      <div className={`compete-carousel compete-races${count === 1 ? " is-single" : ""}`} tabIndex={0} aria-label="Registered events carousel" onScroll={event => { const el = event.currentTarget; const width = el.firstElementChild?.getBoundingClientRect().width ?? 0; setPage(competeEventCarouselPageIndex(el.scrollLeft, width + 12, count)); }}>
         {active.map(rating => <RegisteredEventCard key={rating.sport} state={state} sport={rating.sport} active={enabled} onEnter={() => onEnter(rating.sport)} />)}
         {sleep && <button type="button" className="compete-recovery-card" onClick={onRecovery}><EventArt event="sleep" /><CompeteIcon name="sleep" /><AppHeading>Recovery</AppHeading><AppText secondary>Sleep competition</AppText><AppText role="label">View event →</AppText></button>}
       </div>

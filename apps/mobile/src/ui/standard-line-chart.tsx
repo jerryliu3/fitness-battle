@@ -1,5 +1,5 @@
 import { useThemeColors } from "../theme";
-import { buildStandardChartGeometry, dottedCircleDasharray, trendLabelPosition } from "@fitness-battle/shared";
+import { buildStandardChartGeometry, dottedCircleDasharray } from "@fitness-battle/shared";
 import { chartTextProps } from "./section";
 import { ChartScrubber, type ChartDatum } from "./chart-scrubber";
 import { useId, useState } from "react";
@@ -148,11 +148,7 @@ const stroke=suppliedstroke ?? c.tennis;
    ) : (
      <>
        {showArea && geo.areaPath ? <Path d={geo.areaPath} fill={`url(#${clipId}-area)`} /> : null}
-       {showTrend && !!geo.trendPolyline && (() => {
-         const avgLabel = trendLabelPosition(geo.trendPolyline, 340);
-         return (
-           <>
-             <Polyline
+       {showTrend && !!geo.trendPolyline && (<Polyline
                points={geo.trendPolyline}
                fill="none"
                stroke={c.secondary}
@@ -160,15 +156,7 @@ const stroke=suppliedstroke ?? c.tennis;
                strokeDasharray="3 3"
                strokeLinecap="round"
                strokeLinejoin="round"
-             />
-             {avgLabel && (
-               <SvgText {...chartTextProps()} x={avgLabel.x} y={avgLabel.y} textAnchor="middle" fill={c.secondary}>
-                 Avg
-               </SvgText>
-             )}
-           </>
-         );
-       })()}
+             />)}
        {activePoint ? (
          <>
            <G clipPath={`url(#${clipId}-left)`}>

@@ -3,7 +3,7 @@ import { colors as c } from "@/theme/app-colors";
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
-import { interpolateOpenLineModel, trendLabelPosition, type OpenLineModel, type OpenLineRange } from "@fitness-battle/shared";
+import { interpolateOpenLineModel, type OpenLineModel, type OpenLineRange } from "@fitness-battle/shared";
 import { OpenLineRangeToggle } from "@/features/progress/chart-range-toggle";
 import { ChartScrubber } from "./chart-scrubber";
 import "./open-line-chart.css";
@@ -19,7 +19,6 @@ export function OpenLineChart({ chart: targetChart, label, unit, range, onRangeC
   const [selected, setSelected] = useState(false);
   useEffect(() => { setSelected(false); }, [range]);
   const end = chart.points.at(-1);
-  const avgLabel = trendLabelPosition(chart.trendLine, chart.width);
   return <div className="open-line-chart">
     <ChartScrubber points={targetChart.points} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} label={label} onSelectionChange={point => setSelected(!!point)}
       renderSummary={point => <div className="open-line-reading" style={{ minHeight: point || showDateRange ? 92 : 64 }}>{(point || showDateRange) && <span>{point?.label ?? chart.date}</span>}<strong>{point?.value ?? chart.value}<small> {unit}</small></strong></div>}>
@@ -31,7 +30,6 @@ export function OpenLineChart({ chart: targetChart, label, unit, range, onRangeC
         </g>}
         {chart.trendLine && !hideTrendLine && <>
           <polyline points={chart.trendLine} fill="none" stroke={c.secondary} strokeWidth="1.75" strokeDasharray="3 3" strokeLinecap="round" strokeLinejoin="round" />
-          {avgLabel && <ChartText x={avgLabel.x} y={avgLabel.y} textAnchor="middle" fill={c.secondary}>Avg</ChartText>}
         </>}
         {chart.bridges?.map((line, index) => <polyline key={`bridge-${index}`} points={line} fill="none" stroke={c.tennis} strokeWidth="2.5" />)}
         {chart.segments.map((line, i) => {

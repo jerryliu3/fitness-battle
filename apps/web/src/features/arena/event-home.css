@@ -143,3 +143,6 @@
 .event-registration[data-compact="true"] .registration-ticket-art-copy h2 { font:var(--type-heading); }
 .event-registration[data-compact="true"] .registration-ticket-body { padding:14px; gap:10px; }
 .event-registration[data-compact="true"] .registration-barcode { height:20px; }
+
+.compete-races.is-single{overflow-x:hidden}
+.compete-races.is-single>*{flex:1 0 100%;min-width:0}

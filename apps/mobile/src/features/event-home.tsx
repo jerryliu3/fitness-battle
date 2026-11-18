@@ -19,11 +19,12 @@ export function EventHome({ state, accountKey, onEnter, onRecovery, active }: { 
   const c = useThemeColors();
   const { width } = useWindowDimensions();
   const [page, setPage] = useState(0);
-  const cardWidth = Math.min(360, width - 64);
+  const [availableWidth, setAvailableWidth] = useState(width - 40);
   const count = state.ratings.filter(r => r.optedIn).length + Number(state.healthRatings.some(r => r.optedIn));
-  return <View style={{ gap: 14 }}>
+  const cardWidth = count === 1 ? availableWidth : Math.min(360, availableWidth - 24);
+  return <View onLayout={event => setAvailableWidth(event.nativeEvent.layout.width)} style={{ gap: 14 }}>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><AppText role="heading" accessibilityRole="header">Your events</AppText><AppText role="caption" secondary>{count} registered</AppText></View>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={cardWidth + 12} decelerationRate="fast" onScroll={event => setPage(competeEventCarouselPageIndex(event.nativeEvent.contentOffset.x, cardWidth + 12, count))} scrollEventThrottle={100} contentContainerStyle={{ gap: 12, paddingRight: 20 }}>
+    <ScrollView horizontal scrollEnabled={count > 1} showsHorizontalScrollIndicator={false} snapToInterval={cardWidth + 12} decelerationRate="fast" onScroll={event => setPage(competeEventCarouselPageIndex(event.nativeEvent.contentOffset.x, cardWidth + 12, count))} scrollEventThrottle={100} contentContainerStyle={{ gap: 12, paddingRight: count === 1 ? 0 : 20 }}>
     {state.ratings.filter(r => r.optedIn).map(rating => <RegisteredEventCard key={rating.sport} state={state} sport={rating.sport} active={active} cardWidth={cardWidth} onEnter={() => onEnter(accountKey, rating.sport)} />)}
     {state.healthRatings.some(r => r.optedIn) ? <Pressable accessibilityRole="button" accessibilityLabel="Open Recovery" onPress={onRecovery} style={{ width: cardWidth, padding: 20, gap: 12, backgroundColor: c.accentSecondarySoft, borderRadius: 20, borderWidth: 1, borderColor: c.line, overflow: "hidden" }}><EventArt event="sleep" feature /><CompeteIcon name="sleep" /><AppText role="heading">Recovery</AppText><AppText role="body" secondary>Sleep competition</AppText><View style={{ flex: 1, minHeight: 120 }} /><AppText role="label">View event →</AppText></Pressable> : null}
     </ScrollView>

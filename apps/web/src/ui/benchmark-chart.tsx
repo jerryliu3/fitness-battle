@@ -30,7 +30,6 @@ export function BenchmarkChart({ buckets, now, dateLabel, displayTimeZone, visib
       </g>)}
       <line x1={chart.left} x2={chart.right} y1={chart.averageY} y2={chart.averageY} stroke="var(--muted)" strokeDasharray="2 4" />
       <rect x={chart.right - 32} y={chart.averageY - 9} width={32} height={18} rx={2} fill="var(--card)" />
-      <ChartText x={chart.right - 16} y={chart.averageY + 4} textAnchor="middle" fill="var(--muted)">Avg</ChartText>
     </ChartSvg>
   </ChartScrubber></div>;
 }

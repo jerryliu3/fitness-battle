@@ -4,7 +4,7 @@ import { competeNow } from "./compete/engine";
 import type { CompeteState } from "./compete/sports";
 import { APP_TIMEZONE, accountTimeZone, dayKey, shiftAppDay, shiftZonedDay, startOfZonedDay, weeklyPeriodBounds } from "./period";
 import type { ChartDatum } from "./chart-scrubber";
-import type { TrainingBucket } from "./training-view";
+import { earliestDataDate, type TrainingBucket } from "./training-view";
 
 export type OpenLineRange = "week" | "fourWeeks" | "year";
 export type EffortHistoryRange = OpenLineRange | "twelveWeeks" | "twentyFourWeeks";
@@ -132,12 +132,12 @@ export function openLineModel(
 }
 
 /** Current account-calendar training week (Monday–Monday), optionally preceded by three complete weeks. */
-export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks" = "week", now = competeNow(state), _createdAt?: string | null) {
+export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks" = "week", now = competeNow(state), createdAt?: string | null) {
   const displayTz = accountTimeZone(state);
   const period = weeklyPeriodBounds(now, displayTz), days = range === "week" ? 7 : 28;
   const start = shiftZonedDay(period.startsAt, -(days - 7), displayTz);
-  // Today training line always spans the full calendar window (flat lead-in is OK).
-  const clampedStart = start;
+  const available = earliestDataDate(state, now, createdAt) ?? now;
+  const clampedStart = new Date(Math.max(start.getTime(), startOfZonedDay(available, displayTz).getTime()));
   const eligible = state.activities.filter(activity => countsForTraining(activity) && Date.parse(activity.startedAt) <= now.getTime());
   const byDay = new Map<string, number>();
   for (const activity of eligible) {
@@ -170,39 +170,28 @@ export function homeTrainingLine(state: CompeteState, range: "week" | "fourWeeks
       }
       return rows;
     };
-    const end = shiftZonedDay(start, 7, displayTz);
+    const end = shiftZonedDay(clampedStart, 7, displayTz);
     const effectiveFrom = new Date(Math.max(start.getTime(), clampedStart.getTime()));
     const chart = openLineModel(
       now < effectiveFrom ? [] : events(effectiveFrom, new Date(Math.min(now.getTime(), end.getTime()))),
       value => value.toFixed(1),
       7,
-      { start, end, showTime: true, zeroMin: true },
+      { start: clampedStart, end, showTime: true, zeroMin: true, timeZone: displayTz },
     );
     return { ...chart, xTicks: Array.from({ length: 7 }, (_, i) => ({
       x: chart.left + (i + 0.5) / 7 * (chart.right - chart.left),
-      label: shiftZonedDay(start, i, displayTz).toLocaleDateString("en-US", { weekday: "short", timeZone: displayTz }),
+      label: shiftZonedDay(clampedStart, i, displayTz).toLocaleDateString("en-US", { weekday: "short", timeZone: displayTz }),
       anchor: "middle" as const,
     })) };
   }
-  const windowDays = Math.max(
-    2,
-    Array.from({ length: days }, (_, i) => shiftZonedDay(start, i, displayTz)).filter(
-      (at) => dayKey(at, displayTz) >= dayKey(clampedStart, displayTz),
-    ).length,
-  );
   const cumRows: { id: string; date: string; value: number; inspectable?: boolean }[] = cumulative(clampedStart, elapsed);
   if (cumRows.length === 1) {
     cumRows.unshift({ id: `start:${clampedStart.toISOString()}`, date: clampedStart.toISOString(), value: 0, inspectable: false });
   }
-  const fourWeeksTimeline = clampedStart.getTime() > start.getTime()
-    ? {
-        start: clampedStart,
-        end: shiftZonedDay(clampedStart, days, displayTz),
-        zeroMin: true,
-        timeZone: displayTz,
-      }
-    : undefined;
-  return openLineModel(cumRows, value => value.toFixed(1), windowDays, fourWeeksTimeline, true);
+  return openLineModel(cumRows, value => value.toFixed(1), days, {
+    start: clampedStart, end: shiftZonedDay(clampedStart, days, displayTz),
+    zeroMin: true, timeZone: displayTz,
+  }, true);
 }
 
 /** Shared zero-based bars and average, excluding future buckets on both platforms. */
@@ -282,17 +271,10 @@ function effortScoreEvents(state: CompeteState, track: "open" | "verified", now:
 export function effortScoreLine(state: CompeteState, track: "open" | "verified", range: EffortHistoryRange, now = competeNow(state), createdAt?: string | null) {
   const displayTz = accountTimeZone(state);
   const start = shiftZonedDay(now, -effortScoreLookbackDays(range), displayTz);
-  const end = shiftZonedDay(startOfZonedDay(now, displayTz), 1, displayTz);
-  const createdMs = createdAt ? Date.parse(createdAt) : NaN;
-  const accountStart = Number.isFinite(createdMs) && createdMs <= now.getTime()
-    ? startOfZonedDay(new Date(createdMs), displayTz)
-    : null;
-  const clampedToAccount = Boolean(accountStart && accountStart.getTime() > start.getTime());
-  const effectiveStart = clampedToAccount ? accountStart! : start;
-  const timelineStart = clampedToAccount ? effectiveStart : start;
-  const timelineEnd = clampedToAccount
-    ? shiftZonedDay(timelineStart, effortScoreLookbackDays(range) + 1, displayTz)
-    : end;
+  const available = earliestDataDate(state, now, createdAt) ?? now;
+  const effectiveStart = new Date(Math.max(start.getTime(), startOfZonedDay(available, displayTz).getTime()));
+  const timelineStart = effectiveStart;
+  const timelineEnd = shiftZonedDay(timelineStart, effortScoreLookbackDays(range) + 1, displayTz);
   const events = effortScoreEvents(state, track, now);
   const rows: { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean }[] = [];
   const rating = state.ratings.find(r => r.sport === state.primary);

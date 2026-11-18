@@ -4,7 +4,7 @@ import { View } from "react-native";
 import Svg, { Circle, ClipPath, Defs, G, Line, Path, Rect, Text as SvgText } from "react-native-svg";
 import {
   APP_TIMEZONE,
-  accountTimeZone, competeNow, computeNiceAxisTicks, sportById, trendLabelPosition, type Activity, type CompeteState, type UnitSystem,
+  accountTimeZone, competeNow, computeNiceAxisTicks, sportById, type Activity, type CompeteState, type UnitSystem,
   activityContextConstellation as constellation, activityContextDateLabel as dateLabel,
   activityContextFitHistory as fitHistory, activityContextFormatMetric as formatMetric,
   activityContextMetricValue as metricValue,
@@ -250,18 +250,7 @@ function Trajectory({ current, history, units, timeZone }: { current: Activity; 
         ) : null}
         <AxesGrid yTicks={yTicks} yFormat={value => metric === "pace" ? formatMetric(value, metric, units).split("/")[0]! : `${Math.round(value)}`} xTicks={xTicks} />
         {metric === "efficiency" ? <Line x1={LEFT} x2={RIGHT} y1={y(100)} y2={y(100)} stroke={c.secondary} strokeDasharray="4 5" opacity={0.5} /> : null}
-        {trendPath ? (() => {
-          const lastAvg = averages.at(-1);
-          const avgLabel = lastAvg && lastAvg.average != null
-            ? trendLabelPosition(`${x(lastAvg.time)},${y(lastAvg.average)}`, W)
-            : null;
-          return (
-            <>
-              <Path d={trendPath} stroke={c.secondary} fill="none" strokeWidth={1.75} strokeDasharray="3 3" strokeLinecap="round" strokeLinejoin="round" />
-              {avgLabel ? <SvgText x={avgLabel.x} y={avgLabel.y} textAnchor="middle" fill={c.secondary} {...chartTextProps()}>Avg</SvgText> : null}
-            </>
-          );
-        })() : null}
+        {trendPath ? (<Path d={trendPath} stroke={c.secondary} fill="none" strokeWidth={1.75} strokeDasharray="3 3" strokeLinecap="round" strokeLinejoin="round" />) : null}
         {rows.length > 1 ? (
           scrubbed ? <>
             <G clipPath={`url(#${clipId}-left)`}>

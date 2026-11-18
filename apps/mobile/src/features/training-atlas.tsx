@@ -142,7 +142,7 @@ const colors = [
         buckets={buckets}
         now={barAsOf}
         displayTimeZone={displayTz}
-        visibleFrom={createdAt ? earliest : undefined}
+        visibleFrom={earliest ?? now}
         dateLabel={range === "week" ? formatWeeklyCompetitionRange(anchor, displayTz) : anchor.toLocaleDateString("en-US", { timeZone: displayTz, ...(range === "year" ? { year: "numeric" } : { month: "long", year: "numeric" }) })}
       />
       <FocusDisclosure title="Daily activity">
