@@ -3,7 +3,7 @@ import { ChartSvg, ChartText } from "../ui/chart-text";
 
 import { useId, useState } from "react";
 import { View } from "react-native";
-import { Circle, ClipPath, Defs, G, Line, Path, Polyline, Rect } from "react-native-svg";
+import { Circle, ClipPath, Defs, G, Line, Path, Rect } from "react-native-svg";
 import {
   formatClockTime,
   personalRecordChart,
@@ -90,15 +90,7 @@ const clubColors=useThemeColors();
             </ChartText>
           </G>
         ))}
-        {!!chart.trendPolyline && (<Polyline
-                points={chart.trendPolyline}
-                fill="none"
-                stroke={clubColors.secondary}
-                strokeWidth={1.75}
-                strokeDasharray="3 3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />)}
+
         {activePoint ? (
           <>
             <G clipPath={`url(#${clipId}-left)`}>
