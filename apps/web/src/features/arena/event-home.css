@@ -66,9 +66,6 @@
 
 .compete-last-update{display:flex;align-items:center;gap:6px}
 .compete-live-dot{flex:none;width:6px;height:6px;border-radius:50%;background:var(--app-status-success)}
-.compete-live-dot[data-active="true"]{animation:compete-live-pulse 1.8s ease-in-out infinite}
-@keyframes compete-live-pulse{50%{opacity:.35}}
-@media(prefers-reduced-motion:reduce){.compete-live-dot[data-active="true"]{animation:none}}
 
 .compete-special-badge{align-self:start;justify-self:start;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;border:1px solid var(--app-podium-gold);background:var(--action-soft)}
 .compete-sport-card{background:var(--card)}
@@ -146,3 +143,6 @@
 .event-registration[data-compact="true"] .registration-ticket-art-copy h2 { font:var(--type-heading); }
 .event-registration[data-compact="true"] .registration-ticket-body { padding:14px; gap:10px; }
 .event-registration[data-compact="true"] .registration-barcode { height:20px; }
+
+.compete-races.is-single{overflow-x:hidden}
+.compete-races.is-single>*{flex:1 0 100%;min-width:0}

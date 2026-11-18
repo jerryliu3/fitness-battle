@@ -1,7 +1,11 @@
 import { createRaceCourse } from "./race-course";
-import type { CompetitionMoment } from "./competition-moments";
+import type { CompetitionMoment, CompetitionReplayTuning } from "./competition-moments";
 import { ONBOARDING_PORTRAITS } from "./onboarding-journey";
 import type { SportId } from "./compete/sports";
+
+export const ONBOARDING_REPLAY_TUNING = {
+  durationMs: 8000, slowdownWeight: 6, zoomBoost: .6,
+} as const satisfies CompetitionReplayTuning;
 
 /** An illustrative public course and two fictional racers; never applied to account state. */
 export const onboardingOvertakeCourse = createRaceCourse("First overtake", [[-73.974,40.764],[-73.970,40.770],[-73.965,40.773]]);

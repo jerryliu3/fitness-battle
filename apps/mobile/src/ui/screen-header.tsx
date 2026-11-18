@@ -43,7 +43,7 @@ export function GlassDismissButton({
         borderRadius: 22,
         borderWidth: 1,
         borderColor: c.line,
-        backgroundColor: "#ffffffdc",
+        backgroundColor: c.card,
         alignItems: "center",
         justifyContent: "center",
         opacity: pressed ? 0.65 : 1,

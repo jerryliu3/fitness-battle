@@ -101,7 +101,7 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   useEffect(() => {
     if (!ready || !replay || !scene.selected) return;
     const rival = scene.callouts.find(lane => lane.id === replay.nearestId);
-    const next = courseReplayPose(course, scene.selected, rival, reduced.current ? 0 : replay.focus);
+    const next = courseReplayPose(course, scene.selected, rival, reduced.current ? 0 : replay.focus, replay.zoomBoost);
     map.current?.jumpTo({ center: next.center, zoom: next.zoom, pitch: next.pitch, bearing: next.bearing });
   }, [ready, course, scene, replay]);
   useEffect(() => {

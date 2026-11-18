@@ -1,3 +1,5 @@
+import { NavigationAppearance } from "../src/ui/navigation-appearance";
+import { RetainedAthleteCard } from "../src/features/retained-athlete-card";
 import { AppearanceSync } from "../src/ui/appearance-sync";
 import { useThemeColors } from "../src/theme";
 import { AppThemeProvider, useAppTheme } from "../src/appearance";
@@ -52,7 +54,7 @@ const SHELL_COLORS=useThemeColors();
   if (!error) return <View style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }} />;
   return <View style={{ flex: 1, padding: 24, justifyContent: "center", gap: 16 }}>
     <AppText role="body">{error}</AppText>
-    {error ? <><Text accessibilityRole="button" onPress={() => void reload()} style={textStyle("label")}>Retry</Text><Text accessibilityRole="button" onPress={() => void signOut()} style={textStyle("label")}>Sign out</Text></> : null}
+    {error ? <><Text accessibilityRole="button" onPress={() => void reload()} style={{ ...textStyle("label"), color: SHELL_COLORS.ink }}>Retry</Text><Text accessibilityRole="button" onPress={() => void signOut()} style={{ ...textStyle("label"), color: SHELL_COLORS.ink }}>Sign out</Text></> : null}
   </View>;
 }
 
@@ -101,7 +103,7 @@ function NotificationNavigation() {
 }
 
 export default function RootLayout() {
-  return <AppThemeProvider><AppearanceSync /><RootContent /></AppThemeProvider>;
+  return <AppThemeProvider><AppearanceSync /><NavigationAppearance><RootContent /></NavigationAppearance></AppThemeProvider>;
 }
 
 function RootContent() {
@@ -187,13 +189,13 @@ const SHELL_COLORS=useThemeColors();
                         <NavigationWarmup />
                         <OnboardingNavigation />
                         <StatusBar style={mode === "dark" ? "light" : "dark"} />
-                        <Stack
+                        <RetainedAthleteCard><Stack
                           screenOptions={{
                             headerShown: false,
                             contentStyle: { backgroundColor: SHELL_COLORS.paper },
                             animation: reduced ? "none" : Platform.OS === "ios" ? "default" : "slide_from_right",
                           }}
-                        />
+                        /></RetainedAthleteCard>
                       </BlockPrivacyGate>
                     </BootGate>
                   </CompeteProvider>

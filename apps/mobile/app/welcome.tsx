@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  ONBOARDING_SPORT_TILES as sportTiles, EMPTY_GUEST_INTRO, ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId,
+  ONBOARDING_SPORT_TILES as sportTiles, ONBOARDING_SPORT_EMOJI_SCALE, EMPTY_GUEST_INTRO, ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId,
   onboardingAthleteCard, guestIntroForAccount, sportById, SPORTS, type OnboardingStep,
 } from "@fitness-battle/shared";
 import { prefetchOnboardingCourseFromApi } from "../src/lib/onboarding-course";
@@ -23,7 +23,6 @@ import { useCompeteStore } from "../src/lib/compete-store";
 import { useThemeColors } from "../src/theme";
 import { FocusButton, useFocusStyles } from "../src/ui/focus";
 import { AppText } from "../src/ui/section";
-const SPORT_EMOJI_STYLE = { textAlign: "center" as const, transform: [{ scale: 4.5 }], includeFontPadding: false };
 
 
 export default function Welcome() {
@@ -60,7 +59,7 @@ export default function Welcome() {
     return () => clearTimeout(timer);
   }, [ready, loading, draft, preview, state?.onboardingCompleted]);
   useEffect(() => {
-    if (!ready || !sportById(draft.sport).gps) return;
+    if (!ready || !draft.sport || !sportById(draft.sport).gps) return;
     void prefetchOnboardingCourseFromApi().then(course => { if (course) setOnboardingCourseRevision(value => value + 1); });
   }, [ready, draft.sport]);
   useEffect(() => {
@@ -131,8 +130,6 @@ export default function Welcome() {
   const actions = (label: string, onPress: () => void, disabled = false) => <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
     {back}<View style={{ flex: 1 }}><FocusButton fit label={label} disabled={disabled} onPress={onPress} /></View>
   </View>;
-  const field = { ...f.input, minHeight: 0, height: 46, paddingVertical: 8 };
-  const box = (top: number, height: number) => ({ position: "absolute" as const, left: 16, right: 16, top, height });
   return <View style={{ flex: 1, backgroundColor: colors.paper, overflow: "hidden" }}>
     {step === "overtake" && <View style={{ position: "absolute", inset: 0 }}>
       <OnboardingOvertake key={`${onboardingCourseRevision}:${draft.sport}`} sport={draft.sport} name={draft.name} photo={draft.photo} onOvertakeCountChange={setPreviewPasses}
@@ -140,35 +137,42 @@ export default function Welcome() {
     </View>}
     <SafeAreaView pointerEvents="box-none" style={{ flex: 1 }} edges={["top", "bottom"]}>
         <OnboardingProgress index={index} count={steps.length} />
-        <OnboardingCanvas height={ONBOARDING_CANVAS.height}>
-          <OnboardingAthlete model={card} step={step} onInteractionChange={setCardHeld} />
-          {step !== "growth" && step !== "overtake" && <View pointerEvents="none" style={{ ...box(8, 48), right: 16 }}>
+        <OnboardingCanvas height={ONBOARDING_CANVAS.height} pointerEvents={step === "overtake" ? "none" : "box-none"}>{scale => {
+          const field = { ...f.input, minHeight: 0, height: 46 * scale, paddingVertical: 8 * scale };
+          const box = (top: number, height: number) => ({ position: "absolute" as const, left: 16 * scale, right: 16 * scale, top: top * scale, height: height * scale });
+          return <>
+          <OnboardingAthlete layoutScale={scale} model={card} step={step} onInteractionChange={setCardHeld} />
+          {step !== "growth" && step !== "overtake" && <View pointerEvents="none" style={{ ...box(8, 48) }}>
             <AppText role="display" accessibilityRole="header" style={{ flex: 1 }} maxFontSizeMultiplier={1.2} numberOfLines={2} adjustsFontSizeToFit>{step === "athlete" ? `Welcome ${draft.name.trim() || "athlete"}!` : ONBOARDING_TITLES[step]}</AppText>
           </View>}
-          {step === "overtake" && <View pointerEvents="none" style={{ ...box(8, 124), right: 122, borderRadius: 18, overflow: "hidden" }}>
+          {step === "overtake" && <View pointerEvents="none" style={{ position: "absolute", top: 8 * scale, left: 16 * scale, right: 122 * scale, borderRadius: 18, overflow: "hidden" }}>
             <MaterialPanel style={{ position: "absolute", inset: 0 }} />
-            <View style={{ padding: 12, gap: 4 }}>
+            <View style={{ padding: 10, gap: 4 }}>
               <AppText role="heading" maxFontSizeMultiplier={1.2}>Make training fun.</AppText>
               <AppText role="caption" maxFontSizeMultiplier={1.2}>Race your level. Chase a friendly rival and make the next overtake yours.</AppText>
             </View>
           </View>}
           {step === "sport" && <>
             <View style={box(64, 48)}><AppText secondary style={{ flex: 1 }} numberOfLines={2} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>Choose your sport. You can add more later.</AppText></View>
-            <View style={{ ...box(126, 380), flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+            <View style={{ ...box(126, 380), flexDirection: "row", flexWrap: "wrap", gap: 12 * scale }}>
               {SPORTS.map(sport => <Pressable key={sport.id} accessibilityRole="button" accessibilityLabel={sport.name}
                 accessibilityState={{ selected: draft.sport === sport.id }} onPress={() => { setDraft(d => ({ ...d, sport: sport.id })); setStep("athlete"); }}
-                style={{ width: 158, height: 182, alignItems: "center", justifyContent: "center", borderRadius: 26,
+                style={{ width: 158 * scale, height: 182 * scale, alignItems: "center", justifyContent: "center", borderRadius: 26,
                   borderWidth: 2, borderColor: draft.sport === sport.id ? "#082637" : "transparent",
                   backgroundColor: sportTiles[sport.id].background }}>
+                {/* Reserve glyph overhang before mirroring; display tracking narrows the measured text box. */}
                 <AppText
                   accessible={false}
                   allowFontScaling={false}
                   role="display"
-                  style={{ ...SPORT_EMOJI_STYLE, transform: sportTiles[sport.id].mirror ? [{ scale: 4.5 }, { scaleX: -1 }] : [{ scale: 4.5 }] }}
+                  style={{ textAlign: "center", includeFontPadding: false, paddingHorizontal: 4,
+                    transform: sportTiles[sport.id].mirror
+                      ? [{ scale: ONBOARDING_SPORT_EMOJI_SCALE * scale }, { scaleX: -1 }]
+                      : [{ scale: ONBOARDING_SPORT_EMOJI_SCALE * scale }] }}
                 >
                   {sportTiles[sport.id].emoji}
                 </AppText>
-                <AppText role="label" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2} style={{ color: "#082637", alignSelf: "stretch", paddingHorizontal: 16 }}>{sport.name}</AppText>
+                <AppText role="label" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2} style={{ color: "#082637", position: "absolute", bottom: 8 * scale, left: 0, right: 0, textAlign: "center", paddingHorizontal: 16 * scale }}>{sport.name}</AppText>
                 {draft.sport === sport.id && <View pointerEvents="none" style={{ position: "absolute", top: 10, right: 10, width: 25, height: 25, borderRadius: 13, backgroundColor: "#082637", alignItems: "center", justifyContent: "center" }}>
                   <AppText accessible={false} allowFontScaling={false} role="label" style={{ color: "#ffffff" }}>✓</AppText>
                 </View>}
@@ -185,7 +189,7 @@ export default function Welcome() {
             </View>
           </>}
           {step === "growth" && <View style={{ ...box(12, 548) }}>
-            <OnboardingFeatureTour draft={draft} selected={feature} onSelect={setFeature} onScoreChange={showScore} />
+            <OnboardingFeatureTour layoutScale={scale} draft={draft} selected={feature} onSelect={setFeature} onScoreChange={showScore} />
           </View>}
           {step === "account" && <>
             <View style={box(430, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Email" placeholder="Email" style={field} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" editable={!confirmation} /></View>
@@ -197,7 +201,8 @@ export default function Welcome() {
             {step === "account" ? actions(busy ? "Creating…" : "Continue", () => void createAccount(), busy || confirmation || !email.trim() || password.length < 6)
               : actions("Continue", () => void next(), photoBusy || (step === "athlete" && !draft.name.trim()))}
           </View>}
-        </OnboardingCanvas>
+          </>;
+        }}</OnboardingCanvas>
     </SafeAreaView>
   </View>;
 }

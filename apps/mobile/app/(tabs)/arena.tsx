@@ -1,3 +1,4 @@
+import { CompetitionSheetHeight } from "../../src/ui/competition-sheet-height";
 import { PointsTimeline } from "../../src/features/points-timeline";
 import { CompetitionPanel } from "../../src/features/competition-panel";
 import { CompetitionTimelineProvider, CompetitionTimelineControls } from "../../src/features/competition-timeline-context";
@@ -230,13 +231,13 @@ const f=useFocusStyles();
     </SafeAreaView>
   );
   return (
-    <CompetitionTimelineProvider state={state} selection={{ sport: selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary, track, periodStart: headerPeriod.startsAt.toISOString(), periodEnd: headerPeriod.endsAt.toISOString() }} enabled={persistent && Boolean(selectedSport) && !metricImmersive && !queued} active={focused && experience.immersive}>
+    <CompetitionSheetHeight><CompetitionTimelineProvider state={state} selection={{ sport: selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary, track, periodStart: headerPeriod.startsAt.toISOString(), periodEnd: headerPeriod.endsAt.toISOString() }} enabled={persistent && Boolean(selectedSport) && !metricImmersive && !queued} active={focused && experience.immersive}>
       {scopedPointsTheme ? (
         <ScopedThemeProvider mode={pointsMode} onChangeMode={setPointsThemeOverride}>
           {content}
         </ScopedThemeProvider>
       ) : content}
-    </CompetitionTimelineProvider>
+    </CompetitionTimelineProvider></CompetitionSheetHeight>
   );
 }
 

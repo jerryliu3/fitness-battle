@@ -14,10 +14,10 @@ it("keeps axes outside the animated plot clipping region", async () => {
  await act(async()=>{r=create(createElement(StandardLineChart,{showAxes:true,values:[1000,1040,1080],xLabels:["Week 1","Week 4","Week 7"],revealProgress:{interpolate} as never}));});
  expect(r.root.findByType("Svg" as never).props.preserveAspectRatio).toBe("none");
  expect(r.root.findAllByType("Line" as never)).toHaveLength(6);
- expect(r.root.findAllByType("SvgText" as never)).toHaveLength(8);
- expect(r.root.findAllByType("SvgText" as never).map((t) => t.props.children)).toContain("Avg");
+ expect(r.root.findAllByType("SvgText" as never)).toHaveLength(7);
+ expect(r.root.findAllByType("SvgText" as never).map((t) => t.props.children)).not.toContain("Avg");
  expect(r.root.findByType("AnimatedRect" as never).props.width).toBe(123);
- expect(r.root.findAllByType("G" as never).find(n=>n.props.clipPath)!.findAllByType("SvgText" as never).map((t) => t.props.children)).toEqual(["Avg"]);
+ expect(r.root.findAllByType("G" as never).find(n=>n.props.clipPath)!.findAllByType("SvgText" as never).map((t) => t.props.children)).toEqual([]);
  expect(interpolate).toHaveBeenCalledWith({inputRange:[0,1],outputRange:[0,282]});
  await act(async()=>r.unmount());vi.unstubAllGlobals();
 });

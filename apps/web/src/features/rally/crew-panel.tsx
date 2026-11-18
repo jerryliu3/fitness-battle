@@ -711,7 +711,7 @@ export function CrewPanel() {
             style={{
               background: "var(--red, #b83a38)",
               borderColor: "var(--red, #b83a38)",
-              color: appearanceColors.white,
+              color: appearanceColors.textOnError,
             }}
             disabled={busy || !crew?.id}
             onClick={() => {

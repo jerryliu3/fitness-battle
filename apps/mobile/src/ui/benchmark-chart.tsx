@@ -33,7 +33,6 @@ const s=useThemedStyles(sThemes);
         {(i % tickStep === 0 || i === chart.bars.length - 1) && <ChartText x={bar.x} y={chart.height - 24} textAnchor="middle" fill={c.muted}>{bar.label}</ChartText>}
       </G>)}
       <Line x1={chart.left} x2={chart.right} y1={chart.averageY} y2={chart.averageY} stroke={c.muted} strokeDasharray="2 4" />
-      <ChartText x={chart.right - 16} y={chart.averageY + 4} textAnchor="middle" fill={c.muted}>Avg</ChartText>
     </ChartSvg>
   </ChartScrubber>;
 }

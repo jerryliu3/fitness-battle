@@ -85,3 +85,26 @@ it("retains the portrait in the scene while updating the score in memory", async
   expect(update).toContain('"score":1250');
   expect(update).not.toContain("portrait-payload");
 });
+
+it("resizes the existing WebView to its displayed height without reloading the scene", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  await act(async () => { renderer = create(createElement(AthleteCrest, { model, height: 376.25 })); });
+  const web = renderer.root.findByType("WebView" as never);
+  await act(async () => web.props.onMessage({ nativeEvent: { data: '{"type":"athlete-card-ready"}' } }));
+  await act(async () => web.props.onMessage({ nativeEvent: { data: '{"type":"athlete-card-rendered"}' } }));
+  const sends = scene.inject.mock.calls.length;
+  await act(async () => renderer.update(createElement(AthleteCrest, { model, height: 134.375 })));
+  expect(renderer.root.findByType("WebView" as never)).toBe(web);
+  expect(web.props.style).toMatchObject({ height: 134.375, opacity: 1 });
+  expect(scene.inject).toHaveBeenCalledTimes(sends);
+});
+
+it("retries a failed retained scene on the next visit", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  await act(async () => { renderer = create(createElement(AthleteCrest, { model })); });
+  await act(async () => renderer.root.findByType("WebView" as never).props.onContentProcessDidTerminate());
+  expect(renderer.root.findAllByType("WebView" as never)).toHaveLength(0);
+  await act(async () => renderer.update(createElement(AthleteCrest, { model, active: false })));
+  await act(async () => renderer.update(createElement(AthleteCrest, { model, active: true })));
+  expect(renderer.root.findAllByType("WebView" as never)).toHaveLength(1);
+});

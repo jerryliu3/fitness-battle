@@ -1,3 +1,4 @@
+import { useCompetitionSheetHeight } from "./competition-sheet-height";
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Animated, PanResponder, ScrollView, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,6 +19,8 @@ export function CompeteSheet({ children, expandRequest, active, overview, scroll
   const [controlsHeight, setControlsHeight] = useState(76);
   const headingHeight = 44 + (overview ? controlsHeight : 0);
   const minimum = Math.min(maximum, headingHeight + insets.bottom);
+  const { setMinimum } = useCompetitionSheetHeight();
+  useEffect(() => { if (active) setMinimum(minimum); }, [active, minimum, setMinimum]);
   const middle = Math.max(minimum, maximum * .42);
   const stops = [minimum, middle, maximum];
   const [index, setIndex] = useState(0);

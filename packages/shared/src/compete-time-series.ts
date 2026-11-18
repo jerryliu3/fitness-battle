@@ -43,6 +43,7 @@ export interface CompeteTimeSeriesPreparedBase {
   now: Date;
   nowFraction: number;
   daysShown: number;
+  dayFractions: number[];
   xSpanFraction: number;
   unit: string;
   view: CompeteTimeSeriesView;
@@ -337,10 +338,12 @@ function prepareTimeSeriesBase(input: {
     ]),
   );
   const yMax = niceAxisCeiling(peak, input.unit);
-  const nowDayIndex = Math.min(6, Math.floor(nowFraction * 6.999));
-  const daysShown = nowDayIndex + 1;
-  /** Plot grows through the week; ticks mark each day’s midnight (start). */
-  const xSpanFraction = daysShown / 7;
+  const dayFractions: number[] = [];
+  for (let at = input.periodStart; at.getTime() < endMs; at = shiftAppDay(at, 1)) {
+    dayFractions.push((at.getTime() - startMs) / spanMs);
+  }
+  const daysShown = Math.max(1, dayFractions.filter(t => t <= nowFraction).length);
+  const xSpanFraction = dayFractions[daysShown] ?? 1;
   const dayTickLabels = Array.from({ length: daysShown }, (_, i) => `Day ${i + 1}`);
   return {
     periodStart: input.periodStart,
@@ -351,6 +354,7 @@ function prepareTimeSeriesBase(input: {
     now: input.now,
     nowFraction,
     daysShown,
+    dayFractions,
     xSpanFraction,
     unit: input.unit,
     view,
@@ -370,7 +374,7 @@ export function evaluateCompeteTimeSeriesModel(
     startMs,
     spanMs,
     nowFraction,
-    daysShown,
+    dayFractions,
     xSpanFraction,
     unit,
     view,
@@ -391,7 +395,6 @@ export function evaluateCompeteTimeSeriesModel(
   const cursorFraction = isScrubbing
     ? clamp(0, nowFraction, options!.scrubFraction!)
     : nowFraction;
-  const nowDayIndex = Math.min(6, Math.floor(nowFraction * 6.999));
 
   const xForT = (t: number) =>
     PLOT_LEFT + clamp(0, 1, t / xSpanFraction) * (PLOT_RIGHT - PLOT_LEFT);
@@ -491,14 +494,14 @@ export function evaluateCompeteTimeSeriesModel(
 
   const cursorDate = new Date(startMs + cursorFraction * spanMs);
   const subjectPart = `${selectedAthlete.firstName}’s trajectory`;
-  const activeDayIndex = Math.min(6, Math.floor(cursorFraction * 6.999));
+  const activeDayIndex = Math.max(0, dayFractions.filter(t => t <= cursorFraction).length - 1);
   const datePart = `Day ${activeDayIndex + 1}`;
   const timeLabel = `${datePart} · ${isScrubbing ? "Inspected" : "Live"} · ${subjectPart}`;
 
   const dayTicks: CompeteTimeSeriesDayTick[] = dayTickLabels.map((label, i) => ({
     index: i,
     label,
-    x: xForT(i / 7),
+    x: xForT(dayFractions[i]!),
     future: false,
     active: i === activeDayIndex,
   }));
@@ -801,7 +804,8 @@ export function prepareCompeteTimeSeriesBase(
   options?: Pick<CompeteTimeSeriesOptions, "hiddenIds" | "view">,
 ): CompeteTimeSeriesPreparedBase {
   const unit = competeChartUnit(sport, state.units);
-  const period = competePeriodWindow(state, now, sport);
+  const registration = state.enrollments.find(item => item.sport === sport);
+  const period = registration ? { startsAt: new Date(registration.waveStart), endsAt: new Date(registration.weekEnd) } : competePeriodWindow(state, now, sport);
   const startMs = period.startsAt.getTime();
   const endMs = period.endsAt.getTime();
   const spanMs = Math.max(1, endMs - startMs);
@@ -832,7 +836,7 @@ export function prepareCompeteTimeSeriesBase(
         ];
 
   const rawAthletes = rows.map((row) => {
-    const liveValue = competeVolumeFromTotals(sport, row, state.units);
+    const liveValue = now.getTime() < startMs ? 0 : competeVolumeFromTotals(sport, row, state.units);
     const historyAvailable = row.you || Boolean(findSynthetic(sport, row.id));
     const vertices = row.you
       ? buildYouVertices(
@@ -1052,8 +1056,9 @@ export function buildSleepTimeSeriesModel(
 /** Fit the last day and every current position inside a labeled plot. */
 export function competeChartPreview(model: CompeteTimeSeriesModel) {
   const width = 320, height = 300, left = 42, right = 296, top = 30, bottom = 258;
-  const tEnd = Math.max(1e-4, model.nowFraction);
-  const tStart = Math.max(0, tEnd - 1 / 7);
+  const tEnd = model.nowFraction;
+  const dayFraction = 86_400_000 / model.spanMs;
+  const tStart = Math.max(0, tEnd - dayFraction);
   const tSpan = Math.max(1e-4, tEnd - tStart);
   const x = (t: number) => left + clamp(0, 1, (t - tStart) / tSpan) * (right - left);
   const y = (v: number) => bottom - (clamp(0, model.yMax, v) / Math.max(1, model.yMax)) * (bottom - top);
@@ -1061,7 +1066,7 @@ export function competeChartPreview(model: CompeteTimeSeriesModel) {
   return {
     width, height, left, right, top, bottom,
     yTicks: model.yTicks.map(tick => ({ ...tick, y: y(tick.value) })),
-    xTicks: [{ x: left, label: model.nowFraction > 1 / 7 ? "24h ago" : "Start" }, { x: right, label: "Now" }],
+    xTicks: [{ x: left, label: model.nowFraction > dayFraction ? "24h ago" : "Start" }, { x: right, label: "Now" }],
     athletes: [...model.athletes].sort((a, b) => Number(a.selected) - Number(b.selected)).map(athlete => {
       const pts: [number, number][] = [];
       const vStart = interpolateTimeSeriesAt(athlete.vertices, tStart);
@@ -1072,7 +1077,8 @@ export function competeChartPreview(model: CompeteTimeSeriesModel) {
         }
       }
       const vEnd = interpolateTimeSeriesAt(athlete.vertices, tEnd);
-      pts.push([right, y(vEnd)]);
+      const endX = x(tEnd);
+      pts.push([endX, y(vEnd)]);
       return {
         id: athlete.id,
         name: athlete.name,
@@ -1082,7 +1088,7 @@ export function competeChartPreview(model: CompeteTimeSeriesModel) {
         placeAtCursor: athlete.placeAtCursor,
         selected: athlete.selected,
         points: pts.map(([px, py]) => `${px.toFixed(1)},${py.toFixed(1)}`).join(" "),
-        x: right,
+        x: endX,
         y: y(vEnd),
       };
     }),

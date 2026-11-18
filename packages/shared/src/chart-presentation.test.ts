@@ -274,13 +274,13 @@ it("aligns account creation date at the left of effortScoreLine and extends into
   expect(chart.xTicks.at(-1)?.label).toMatch(/^Dec [23]$/);
 });
 
-it("keeps the Home fourWeeks line on the full calendar window when the account is new", () => {
+it("starts the Home fourWeeks line at account creation when the account is new", () => {
   const now = new Date("2026-11-09T15:00:00Z");
   const createdAt = "2026-11-06T15:00:00Z";
   const state = freshState(now);
   state.activities = [];
   const chart = homeTrainingLine(state, "fourWeeks", now, createdAt);
-  expect(chart.points[0]?.label.startsWith("Oct")).toBe(true);
+  expect(chart.points[0]?.label).toBe("Nov 6");
   expect(chart.value).toBe("0.0");
 });
 

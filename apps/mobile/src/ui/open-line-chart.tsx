@@ -2,7 +2,7 @@ import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Animated, Easing, Text, View } from "react-native";
 import { Circle, ClipPath, Defs, G, Line, Polyline, Rect } from "react-native-svg";
-import { interpolateOpenLineModel, trendLabelPosition, type ChartDatum, type EffortHistoryRange, type OpenLineModel, type OpenLineRange } from "@fitness-battle/shared";
+import { interpolateOpenLineModel, type ChartDatum, type EffortHistoryRange, type OpenLineModel, type OpenLineRange } from "@fitness-battle/shared";
 import { OpenLineRangeToggle } from "../features/chart-range-toggle";
 import { ChartSvg, ChartText } from "./chart-text";
 import { AppText, textStyle } from "./section";
@@ -41,7 +41,6 @@ const s=useThemedStyles(sThemes);
     return () => animation.stop();
   }, [live, selected, pulse, reduceMotion, active]);
   const end = chart.points.at(-1);
-  const avgLabel = trendLabelPosition(chart.trendLine, chart.width);
   const showRangeInHeader = !hideRangeToggle && (range === "week" || range === "fourWeeks" || range === "year");
   const dotBorderColor = openHero ? c.paper : c.card;
 
@@ -112,11 +111,6 @@ const s=useThemedStyles(sThemes);
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-            {avgLabel && (
-              <ChartText x={avgLabel.x} y={avgLabel.y} textAnchor="middle" fill={c.secondary}>
-                Avg
-              </ChartText>
-            )}
           </>
         )}
         {selectedPoint ? (

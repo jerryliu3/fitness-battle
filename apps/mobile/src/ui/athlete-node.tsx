@@ -56,7 +56,7 @@ export function AthleteNode({
   const c = useThemeColors();
   const isActive = expanded || selected;
   const r = nodeRadius;
-  const effectiveScale = nodeScale * (isActive ? 1.16 : 1);
+  const effectiveScale = nodeScale * (l.mystery ? 0.8 : isActive ? 1.16 : 1);
   const accent = gold ? c.tennis : c.secondary;
   const initials = resolveInitials(l.name, l.initials, l.mystery);
   const cleanSubdetail = subdetail?.replace(/\s+vs\s+you\b/gi, "").replace(/\byou['’]re\s+/gi, "");

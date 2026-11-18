@@ -3,7 +3,7 @@ vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [],
 import { createElement, type ReactNode } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-import { defaultFieldAppearance, applyDebugEvent, competitionMoments, freshState, momentStorageKey } from "@fitness-battle/shared";
+import { createOnboardingOvertakeMoment, ONBOARDING_REPLAY_TUNING, defaultFieldAppearance, applyDebugEvent, competitionMoments, freshState, momentStorageKey } from "@fitness-battle/shared";
 const preferences = vi.hoisted(() => ({ reduced: true }));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => preferences.reduced }));
 vi.mock("react-native", () => ({ useColorScheme: () => "light", AppState: { currentState: "active", addEventListener: () => ({ remove() {} }) }, Pressable: "Pressable", View: "View", Text: "Text", StyleSheet: { absoluteFill: {}, create: (value: unknown) => value } }));
@@ -127,6 +127,30 @@ it("can play in 2D with view switcher and continue immediately when remaining > 
     expect(done).toHaveBeenCalledOnce();
   } finally {
     await act(async () => renderer.unmount());
+    preferences.reduced = true; vi.restoreAllMocks(); vi.unstubAllGlobals();
+  }
+});
+
+
+it("uses the onboarding presentation clock and finishes in eight seconds", async () => {
+  preferences.reduced = false;
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  let tick: (() => void) | undefined, now = 0;
+  vi.stubGlobal("requestAnimationFrame", (callback: () => void) => { tick = callback; return 1; });
+  vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  vi.spyOn(Date, "now").mockImplementation(() => now);
+  let renderer!: ReactTestRenderer;
+  try {
+    await act(async () => { renderer = create(createElement(CompetitionMoment, { moment: createOnboardingOvertakeMoment("You", "cycling"), embedded: true, practice: true, remaining: 1, onConfirm: vi.fn(), replayTuning: ONBOARDING_REPLAY_TUNING })); });
+    const map = () => renderer.root.findByType("GeographicCourse" as never);
+    await act(async () => map().props.onReady());
+    await act(async () => { now = 4300; tick?.(); });
+    expect(map().props.replay).toMatchObject({ count: 1, done: false, zoomBoost: .6 });
+    await act(async () => { now = 8000; tick?.(); });
+    expect(map().props.replay).toMatchObject({ count: 1, done: true });
+    expect(renderer.root.findByProps({ accessibilityLabel: "Replay" })).toBeTruthy();
+  } finally {
+    if (renderer) await act(async () => renderer.unmount());
     preferences.reduced = true; vi.restoreAllMocks(); vi.unstubAllGlobals();
   }
 });

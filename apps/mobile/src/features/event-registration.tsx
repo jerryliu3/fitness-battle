@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useEffect, useRef, useState } from "react";
 import { Animated, Easing, Keyboard, Pressable, View } from "react-native";
 import {
   COMPETE_ART_COLORS,
@@ -166,8 +166,8 @@ export function EventRegistration({
   const [claiming, setClaiming] = useState(false);
   const [ticketHeight, setTicketHeight] = useState(0);
   const [stageHeight, setStageHeight] = useState(0);
-  const rotation = useRef(new Animated.Value(registered && !ticketOnly ? 180 : 0)).current;
-  const stamp = useRef(new Animated.Value(registered ? 1 : 0)).current;
+  const rotation = useRef(new Animated.Value(registered ? 180 : 0)).current;
+  const stamp = useRef(new Animated.Value(0)).current;
   const entry = useRef(new Animated.Value(0)).current;
   const stepProgress = useRef(new Animated.Value(registered ? 1 : 0)).current;
   const claimed = registered;
@@ -207,7 +207,7 @@ export function EventRegistration({
     if (registered || error) setClaiming(false);
   }, [registered, error]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if ((!ticketOnly && step !== 1) || !claimed) {
       if (!claimed) {
         rotation.setValue(0);
@@ -215,6 +215,7 @@ export function EventRegistration({
       }
       return;
     }
+    if (reduced) { rotation.setValue(180); stamp.setValue(1); return; }
     stamp.setValue(0);
     const flipNeeded = (rotation as any)._value < 90;
     const animations: Animated.CompositeAnimation[] = [];

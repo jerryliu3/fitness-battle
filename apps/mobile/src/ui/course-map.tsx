@@ -1,3 +1,4 @@
+import { useCompetitionSheetHeight } from "./competition-sheet-height";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MapAttribution } from "./map-attribution";
 import { useThemeColors } from "../theme";
@@ -39,6 +40,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
 }) {
 const appearanceColors = useThemeColors();
   const insets = useSafeAreaInsets();
+  const { minimum: sheetMinimum } = useCompetitionSheetHeight();
   const dimensions = useWindowDimensions();
   const sceneActive = useSceneActive();
   const active = sceneActive && presentationActive;
@@ -141,7 +143,7 @@ const appearanceColors = useThemeColors();
   }, [active, ready, controller, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres, replay]);
   const replayTarget = useRef<CourseCameraPose | null>(null);
   replayTarget.current = replay && scene.selected
-    ? courseReplayPose(course, scene.selected, scene.callouts.find(lane => lane.id === replay.nearestId), reduced ? 0 : replay.focus)
+    ? courseReplayPose(course, scene.selected, scene.callouts.find(lane => lane.id === replay.nearestId), reduced ? 0 : replay.focus, replay.zoomBoost)
     : null;
   const replayActive = Boolean(replay);
   useEffect(() => {
@@ -230,8 +232,8 @@ const appearanceColors = useThemeColors();
       onTouchEnd={endMapUserGesture}
       onTouchCancel={endMapUserGesture}
       logoPosition={{ top: 8, right: 34 }} attributionPosition={{ top: 8, right: 8 }}
-      scaleBarEnabled={optionsTop == null && !replay}
-      scaleBarPosition={{ bottom: controlsBottom + 100, left: 8 }}
+      scaleBarEnabled={!onSnapshot}
+      scaleBarPosition={{ bottom: Math.max(insets.bottom, sheetMinimum) + 8, left: 8 }}
       onDidFinishLoadingMap={() => {
         setReady(true);
         setError("");
@@ -300,7 +302,7 @@ const appearanceColors = useThemeColors();
       }) : null}
     </MapView>
     {!onSnapshot ? <MapAttribution top={insets.top + 9} /> : null}
-    {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), position: "absolute", left: 8, right: 8, bottom: controlsBottom + 136, padding: 12, borderRadius: 12, backgroundColor: appearanceColors.surfaceCard }}>{error}</Text> : null}
+    {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), color: appearanceColors.ink, position: "absolute", left: 8, right: 8, bottom: controlsBottom + 136, padding: 12, borderRadius: 12, backgroundColor: appearanceColors.surfaceCard }}>{error}</Text> : null}
     {!onOptionsChange && optionsTop != null ? <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()} style={{ position: "absolute", top: optionsTop, right: 12 }}>
       {publishedOptions}
     </FieldOverlayView> : null}

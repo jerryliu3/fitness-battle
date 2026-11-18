@@ -146,7 +146,7 @@ export function StandardLineChart({ animateReveal = false, revealDuration = 850,
  ))}
  </g>
  {leadingDot ? (
-   <circle cx={leadingDot.x} cy={leadingDot.y} r={4.2} fill={stroke} stroke="#ffffff" strokeWidth={1.6} />
+   <circle cx={leadingDot.x} cy={leadingDot.y} r={4.2} fill={stroke} stroke={c.card} strokeWidth={1.6} />
  ) : !isAnimatingReveal && geo.points.map((p) => {
    const isSelected = safeSelectedIdx !== undefined && p.index === safeSelectedIdx;
    const isOutOfBand = corridor && (p.val < corridor.low[p.index]! || p.val > corridor.high[p.index]!);
@@ -156,7 +156,7 @@ export function StandardLineChart({ animateReveal = false, revealDuration = 850,
        cx={p.x}
        cy={p.y}
        r={isSelected ? 5 : 3.5}
-       fill={isOutOfBand ? (p.val < corridor!.low[p.index]! ? c.gold : stroke) : (isSelected ? stroke : "#ffffff")}
+       fill={isOutOfBand ? (p.val < corridor!.low[p.index]! ? c.gold : stroke) : (isSelected ? stroke : c.card)}
        stroke={stroke}
        strokeWidth={isSelected ? 2.5 : 1.5}
      />

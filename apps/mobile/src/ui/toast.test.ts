@@ -7,6 +7,8 @@ vi.mock("react-native", () => ({useColorScheme: () => "light",  Platform: platfo
   Animated: { View: "AnimatedView", Value: class { constructor(public value: number) {} setValue(v: number) { this.value = v; } interpolate() { return 0; } }, timing: () => ({ start: (cb?: () => void) => cb?.(), stop: () => {} }), loop: () => ({ start: () => {}, stop: () => {} }) } }));
 vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => platform.insets }));
 vi.mock("./section", () => ({ AppText: "AppText" }));
+import { ScopedThemeProvider } from "../appearance";
+import { getAppColors } from "@fitness-battle/shared";
 import { Toast, ToastProvider } from "./toast";
 let renderer: ReactTestRenderer;
 const retry = vi.fn(), dismissed = vi.fn();
@@ -76,4 +78,11 @@ it("retains the five-second lifetime and swipe dismissal for ordinary native fee
   const card = renderer.root.findAllByType("View" as never).find(node => node.props.onPanResponderRelease);
   await act(async () => card!.props.onPanResponderRelease(null, { dy: -50, vy: 0 }));
   expect(dismissed).toHaveBeenCalledTimes(2);
+});
+
+
+it.each(["light", "dark"] as const)("uses the action foreground on yellow toast actions in %s", async mode => {
+  await act(async () => { renderer = create(createElement(ScopedThemeProvider, { mode, children: notice("Save failed", false, true) })); });
+  const label = renderer.root.findAllByType("AppText" as never).find(node => node.props.children === "Reload account")!;
+  expect(label.props.style.color).toBe(getAppColors(mode).textOnAction);
 });

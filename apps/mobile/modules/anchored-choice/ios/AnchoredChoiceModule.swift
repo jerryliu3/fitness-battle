@@ -9,6 +9,9 @@ public class AnchoredChoiceModule: Module {
       Prop("backButton") { (view: AnchoredChoiceView, enabled: Bool) in
         if enabled { view.configureBack() }
       }
+      Prop("dark") { (view: AnchoredChoiceView, dark: Bool) in
+        view.overrideUserInterfaceStyle = dark ? .dark : .light
+      }
       Prop("options") { (view: AnchoredChoiceView, options: [[String: String]]) in
         view.options = options
         view.updateMenu()
@@ -53,8 +56,8 @@ final class AnchoredChoiceView: ExpoView {
     var configuration: UIButton.Configuration
     if #available(iOS 26.0, *) { configuration = .glass() }
     else { configuration = .plain(); configuration.background.backgroundColor = UIColor.secondarySystemBackground.withAlphaComponent(0.7) }
-    configuration.background.backgroundColor = UIColor.white.withAlphaComponent(0.24)
-    configuration.baseForegroundColor = UIColor(red: 20/255, green: 43/255, blue: 59/255, alpha: 1)
+    configuration.baseForegroundColor = .label
+    button.tintColor = .label
     configuration.image = UIImage(systemName: "chevron.backward")
     configuration.cornerStyle = .capsule
     button.configuration = configuration
@@ -82,7 +85,8 @@ final class AnchoredChoiceView: ExpoView {
 final class MaterialPanel: ExpoView {
   required init(appContext: AppContext? = nil) {
     super.init(appContext: appContext)
-    let material = UIVisualEffectView(effect: UIBlurEffect(style: .systemThinMaterial))
+    backgroundColor = .clear
+    let material = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
     material.frame = bounds
     material.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     material.isUserInteractionEnabled = false

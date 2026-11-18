@@ -1,12 +1,13 @@
 import { requireNativeView, requireOptionalNativeModule } from "expo";
 import { Pressable, Text, type ViewProps } from "react-native";
-import { useThemeColors } from "../theme";
+import { useAppTheme, useThemeColors } from "../theme";
 import { IconButton } from "./icon-button";
 import { textStyle } from "./section";
 const NativeBack = requireOptionalNativeModule("AnchoredChoice")
-  ? requireNativeView<ViewProps & { backButton: boolean; onSelect(): void }>("AnchoredChoice") : null;
+  ? requireNativeView<ViewProps & { backButton: boolean; dark: boolean; onSelect(): void }>("AnchoredChoice") : null;
 export function MaterialBack({ onPress, label = "Back to events" }: { onPress(): void; label?: string }) {
-  return NativeBack ? <NativeBack accessibilityLabel={label} backButton onSelect={onPress} style={{ width: 44, height: 44 }} />
+  const { mode } = useAppTheme();
+  return NativeBack ? <NativeBack accessibilityLabel={label} backButton dark={mode === "dark"} onSelect={onPress} style={{ width: 44, height: 44 }} />
     : <IconButton icon="back" label={label} onPress={onPress} />;
 }
 

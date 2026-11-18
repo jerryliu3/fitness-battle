@@ -25,7 +25,6 @@ import {
   sportById,
   trainingBuckets,
   trainingComparison,
-  trendLabelPosition,
   type Activity,
   type ChartDatum,
   type CompeteState,
@@ -320,7 +319,7 @@ export function PerformanceSpace({
             buckets={volumeBuckets}
             now={now}
             displayTimeZone={displayTz}
-            visibleFrom={user?.createdAt ? volumeVisibleFrom : undefined}
+            visibleFrom={volumeVisibleFrom ?? now}
             dateLabel={volumeRange}
             hideSummary={true}
             onSelectionChange={setInspectedVolume}
@@ -484,11 +483,7 @@ export function PerformanceSpace({
                     ))}
 
                     {/* Rolling 30-day average trendline */}
-                    {prChartData.trendPolyline ? (() => {
-                      const avgLabel = trendLabelPosition(prChartData.trendPolyline, prChartData.width);
-                      return (
-                        <>
-                          <Polyline
+                    {prChartData.trendPolyline ? (<Polyline
                             points={prChartData.trendPolyline}
                             fill="none"
                             stroke={c.secondary}
@@ -496,15 +491,7 @@ export function PerformanceSpace({
                             strokeDasharray="3 3"
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                          />
-                          {avgLabel ? (
-                            <ChartText x={avgLabel.x} y={avgLabel.y} textAnchor="middle" fill={c.secondary}>
-                              Avg
-                            </ChartText>
-                          ) : null}
-                        </>
-                      );
-                    })() : null}
+                          />) : null}
 
                     {/* Step path with right-side dimming when selected */}
                     {prChartData.path ? (

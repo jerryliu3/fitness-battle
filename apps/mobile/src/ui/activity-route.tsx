@@ -205,7 +205,7 @@ const s=useThemedStyles(sThemes);
         <SafeAreaView style={s.fullRoot}>
           <View style={s.fullHeader}>
             <IconButton icon="back" label="Exit full screen" onPress={() => setFullScreen(false)} />
-            <Text style={[textStyle("heading"), { flex: 1, textAlign: "center" }]}>Your route</Text>
+            <AppText role="heading" style={{ flex: 1, textAlign: "center" }}>Your route</AppText>
             <View style={{ width: 130 }}>
               <FocusSegments
                 label="Replay mode"

@@ -1,5 +1,5 @@
 import { useFocusStyles } from "./focus";
-import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
+import { createThemedStyles, useThemedStyles, useThemeColors, useAppTheme } from "../theme";
 import { SystemChoice } from "./system-choice";
 import { textStyle } from "./section";
 import { useAnchoredMenu, AnchoredMenu } from "./anchored-menu";
@@ -51,7 +51,7 @@ export function ChoicePicker<T extends string>({
   placeholder?: string;
   systemMenu?: boolean;
 }) {
-const c=useThemeColors();
+const { mode, colors: c } = useAppTheme();
 const f=useFocusStyles();
 const s=useThemedStyles(sThemes);
 
@@ -64,10 +64,10 @@ const s=useThemedStyles(sThemes);
   if (systemMenu && SystemChoice) {
     return <View style={[s.trigger, { position: "relative", flexShrink: 1 }]}>
       <View pointerEvents="none" accessibilityElementsHidden style={[f.row, { flexShrink: 1 }]}>
-        <Text style={[textStyle("label"), { flexShrink: 1 }]}>{options[selected]?.label ?? placeholder}</Text>
+        <Text style={[textStyle("label"), { flexShrink: 1, color: c.ink }]}>{options[selected]?.label ?? placeholder}</Text>
         <ChevronDown />
       </View>
-      <SystemChoice label={label} value={value} options={options} style={StyleSheet.absoluteFill}
+      <SystemChoice dark={mode === "dark"} label={label} value={value} options={options} style={StyleSheet.absoluteFill}
         onSelect={event => {
           const choice = options.find(option => option.value === event.nativeEvent.value);
           if (choice) { void playCue("selection"); onChange(choice.value); }
@@ -85,7 +85,7 @@ const s=useThemedStyles(sThemes);
           onPress={toggle}
           style={({ pressed }) => [s.trigger, open && s.triggerOpen, pressed && { opacity: 0.7 }]}
         >
-          <Text style={[textStyle("label"), { flexShrink: 1 }]}>
+          <Text style={[textStyle("label"), { flexShrink: 1, color: c.ink }]}>
             {options[selected]?.label ?? placeholder}
           </Text>
           <ChevronDown />
@@ -125,8 +125,7 @@ const s=useThemedStyles(sThemes);
                 <Text
                   style={[
                     isSelected ? textStyle("label") : textStyle("body"),
-                    { flexShrink: 1 },
-                    isSelected && { color: c.ink },
+                    { flexShrink: 1, color: c.ink },
                   ]}
                 >
                   {option.label}
@@ -163,13 +162,13 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
     alignItems: "center",
     justifyContent: "space-between",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(0, 0, 0, 0.06)",
+    borderBottomColor: c.line,
   },
   optionSelected: {
-    backgroundColor: "rgba(0, 0, 0, 0.04)",
+    backgroundColor: c.soft,
   },
   optionPressed: {
-    backgroundColor: "rgba(0, 16, 27, 0.06)",
+    backgroundColor: c.soft,
   },
   optionLast: {
     borderBottomWidth: 0,

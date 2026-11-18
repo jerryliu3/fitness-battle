@@ -335,7 +335,7 @@ export function ArenaLanes({
               </g>
               {l.mystery ? (
                 <g data-mystery-marker="true" transform={`scale(${markerScale})`}>
-                  <circle cx={xx} cy={yy} r={20} fill="white" stroke={appearanceColors.textSecondary} strokeWidth={2} strokeDasharray="3 3"/>
+                  <circle cx={xx} cy={yy} r={16} fill="white" stroke={appearanceColors.textSecondary} strokeWidth={2} strokeDasharray="3 3"/>
                   <text x={xx} y={yy+5} textAnchor="middle" fill={appearanceColors.textSecondary} style={typographyStyle("label")}>?</text>
                 </g>
               ) : !standings && edge ? (

@@ -148,6 +148,18 @@ export function competePeriodWindow(
   return currentPeriodBounds(state.clock.kind, now);
 }
 
+/** Course access follows the registered wave, including its queued start. */
+export function competitionCourseWindow(
+  state: CompeteState,
+  now: Date = competeNow(state),
+  sport: SportId = state.primary,
+) {
+  const enrollment = state.enrollments.find(item => item.sport === sport);
+  return enrollment
+    ? { startsAt: new Date(enrollment.waveStart), endsAt: new Date(enrollment.weekEnd) }
+    : competePeriodWindow(state, now, sport);
+}
+
 /** Freeze key must match `reduceCompete` (`enrollment.waveStart ?? clock.periodStart`). */
 export function primaryFreezePeriodStart(state: CompeteState): string {
   const enrollment = state.enrollments.find(

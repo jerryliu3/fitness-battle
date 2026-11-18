@@ -32,3 +32,12 @@ it("allows tracker authorization to return without replaying the introduction", 
   expect(mock.replace).not.toHaveBeenCalled();
   await act(async () => r.unmount());
 });
+
+
+it("allows the explicit replay-tuning preview without advancing onboarding", async () => {
+  mock.path = "/replay-tuning"; mock.params = { preview: "1" };
+  let r!: ReactTestRenderer;
+  await act(async () => { r = create(createElement(OnboardingNavigation)); });
+  expect(mock.replace).not.toHaveBeenCalled();
+  await act(async () => r.unmount());
+});

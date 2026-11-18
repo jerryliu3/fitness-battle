@@ -68,7 +68,7 @@ export function AthletePreferencesFields({
             <Switch
               style={{ alignSelf: "center", marginVertical: 0 }}
               trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }}
-              thumbColor="#ffffff"
+              thumbColor={active ? SHELL_COLORS.card : SHELL_COLORS.ink}
               ios_backgroundColor={SHELL_COLORS.line}
               accessibilityLabel={`Toggle ${sport.name} active status`}
               value={active}
@@ -98,7 +98,7 @@ export function AthletePreferencesFields({
             <Switch
               style={{ alignSelf: "center", marginVertical: 0 }}
               trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }}
-              thumbColor="#ffffff"
+              thumbColor={sleepActive ? SHELL_COLORS.card : SHELL_COLORS.ink}
               ios_backgroundColor={SHELL_COLORS.line}
               accessibilityLabel="Toggle Recovery / Sleep active status"
               value={sleepActive}

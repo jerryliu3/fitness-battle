@@ -257,7 +257,7 @@ const styles=useThemedStyles(stylesThemes);
               disabled={busy}
               onValueChange={(value) => void toggleMaster(value)}
               trackColor={{ false: colors.line, true: colors.ink }}
-              thumbColor="#ffffff"
+              thumbColor={prefs.enabled ? colors.card : colors.ink}
               ios_backgroundColor={colors.line}
             />
           </View>
@@ -289,7 +289,7 @@ const styles=useThemedStyles(stylesThemes);
                     void toggleCategory(category.id, value)
                   }
                   trackColor={{ false: colors.line, true: colors.ink }}
-                  thumbColor="#ffffff"
+                  thumbColor={prefs.categories[category.id] ? colors.card : colors.ink}
                   ios_backgroundColor={colors.line}
                 />
               </View>

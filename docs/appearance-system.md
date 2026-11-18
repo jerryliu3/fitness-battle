@@ -27,3 +27,9 @@ Filter triggers, analytics time-range toggles and selected chips use the quiet s
 Chart-series roles (including the legacy `fieldTeal` alias) are for data marks, not control fills. Time-range selectors use the neutral control treatment in both apps, independently of the chart palette.
 
 Navigation selections, replay controls, avatar fallbacks, rank badges and result containers use neutral surfaces and primary text on both platforms. Reserve filled yellow for primary actions; charts and progress retain the primary yellow series.
+
+The [November 17 audit](reviews/appearance-audit/README.md) covers shared choice
+controls, system pickers, switch thumbs, action/error foregrounds and web chart
+controls. Native Appearance follows the saved preference; System clears the
+native override. Filled error actions use `textOnError` with `statusError`, while
+error text on a neutral surface continues to use `statusError`.

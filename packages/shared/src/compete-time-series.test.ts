@@ -7,7 +7,6 @@ import {
   interpolateTimeSeriesAt,
 } from "./compete-time-series";
 import { demoSleepNight, freshState, reduceCompete } from "./compete";
-import { competePeriodWindow } from "./phone-views";
 
 describe("compete-time-series", () => {
   it("keeps the current position inside a finite, close preview even at the start of a wave", () => {
@@ -218,7 +217,8 @@ it("enables scrub as soon as the wave clock is running", () => {
     sport: "strength",
     now: start.toISOString(),
   });
-  const period = competePeriodWindow(state, start, "strength");
+  const enrollment = state.enrollments.find(item => item.sport === "strength")!;
+  const period = { startsAt: new Date(enrollment.waveStart) };
   const atStart = buildCompeteTimeSeriesModel(
     state,
     "strength",
@@ -324,4 +324,29 @@ it("keeps captured moment chart values, ranks and paths aligned with every repla
       expect(athlete.polyline.endsWith(`${athlete.cursorX.toFixed(1)},${athlete.cursorY.toFixed(1)}`)).toBe(true);
     }
   }
+});
+
+it("pins queued events to Day 1 and counts a shortened event from its own start", () => {
+  const now = new Date("2026-11-18T15:00:00Z");
+  const state = freshState(now);
+  state.enrollments = [{ sport: "strength", waveStart: "2026-11-19T05:00:00Z", weekEnd: "2026-11-23T05:00:00Z", peerIds: [], syntheticIds: [], capacity: 8, autoEnrollNext: true }];
+  const queued = buildCompeteTimeSeriesModel(state, "strength", "open", now);
+  expect(queued.nowFraction).toBe(0);
+  expect(queued.dayTicks.map(tick => tick.label)).toEqual(["Day 1"]);
+  expect(queued.athletes.every(athlete => athlete.cursorX === queued.left && athlete.valueAtCursor === 0)).toBe(true);
+  const preview = competeChartPreview(queued);
+  expect(preview.athletes.every(athlete => athlete.x === preview.left)).toBe(true);
+  const started = buildCompeteTimeSeriesModel(state, "strength", "open", new Date("2026-11-20T17:00:00Z"));
+  expect(started.dayTicks.map(tick => tick.label)).toEqual(["Day 1", "Day 2"]);
+  const ended = buildCompeteTimeSeriesModel(state, "strength", "open", new Date("2026-11-23T05:00:00Z"));
+  expect(ended.dayTicks.map(tick => tick.label)).toEqual(["Day 1", "Day 2", "Day 3", "Day 4"]);
+});
+
+it("keeps seven event days across the daylight saving boundary", () => {
+  const now = new Date("2026-11-01T18:00:00Z");
+  const state = freshState(now);
+  state.enrollments = [{ sport: "strength", waveStart: "2026-10-26T04:00:00Z", weekEnd: "2026-11-02T05:00:00Z", peerIds: [], syntheticIds: [], capacity: 8, autoEnrollNext: true }];
+  const model = buildCompeteTimeSeriesModel(state, "strength", "open", now);
+  expect(model.dayTicks.map(tick => tick.label)).toEqual(["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6", "Day 7"]);
+  expect(model.timeLabel).toMatch(/^Day 7/);
 });

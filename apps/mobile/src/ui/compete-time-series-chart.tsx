@@ -25,7 +25,6 @@ import { AppIcon } from "./app-icon";
 import { AthleteNode } from "./athlete-node";
 import { chartTextProps, textStyle } from "./section";
 import { UserAvatar } from "./user-avatar";
-import { useReducedMotion } from "./use-reduced-motion";
 function svgTag<K extends keyof typeof SvgModule>(
   key: K,
   fallback: string,
@@ -91,7 +90,6 @@ export function CompeteTimeSeriesChart({
   active?: boolean;
 }) {
   const c = useThemeColors();
-  const reduceMotion = useReducedMotion();
   const { blocks } = useAthleteBlocks();
   const excludedIds = useMemo(() => [...new Set([...(hiddenIds ?? []), ...blocks.map(block => block.id)])], [hiddenIds, blocks]);
   const { height: screenHeight } = RN.useWindowDimensions();
@@ -112,21 +110,6 @@ export function CompeteTimeSeriesChart({
   const plotRef = useRef<ComponentRef<typeof View>>(null);
   const plotPageXRef = useRef(0);
   const [plotWidth, setPlotWidth] = useState(0);
-  const [foreground, setForeground] = useState(
-    () => !RN.AppState?.currentState || RN.AppState.currentState === "active",
-  );
-  useEffect(() => {
-    if (!RN.AppState?.addEventListener) return;
-    const subscription = RN.AppState.addEventListener("change", (status) => {
-      setForeground(status === "active");
-    });
-    return () => subscription?.remove?.();
-  }, []);
-  const pulseValueRef = useRef(
-    typeof RN.Animated?.Value === "function"
-      ? new RN.Animated.Value(0)
-      : null,
-  );
   const lastDayBucketRef = useRef<number | null>(null);
   const directionRef = useRef<"horizontal" | "vertical" | null>(null);
 
@@ -285,25 +268,6 @@ export function CompeteTimeSeriesChart({
   const placeColor = (place: number) => (place === 1 ? c.tennis : c.secondary);
   const selectedLeads = model.selectedAthlete.placeAtCursor === 1;
   const unselectedAthletes = model.athletes.filter((a) => !a.selected);
-  const showLivePulse = !compact && !model.isScrubbing && !reduceMotion && active && foreground;
-
-  useEffect(() => {
-    const pulse = pulseValueRef.current;
-    if (!pulse || typeof RN.Animated?.loop !== "function" || typeof RN.Animated?.timing !== "function") return;
-    pulse.setValue(0);
-    if (!showLivePulse) return;
-    const animation = RN.Animated.loop(
-      RN.Animated.timing(pulse, {
-        toValue: 1,
-        duration: 1800,
-        easing: RN.Easing?.inOut ? RN.Easing.inOut(RN.Easing.ease) : undefined,
-        useNativeDriver: true,
-        isInteraction: false,
-      }),
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [showLivePulse]);
 
   if (compact) {
     const preview = competeChartPreview(model);
@@ -626,43 +590,6 @@ export function CompeteTimeSeriesChart({
             />
           </G>
         </Svg>
-        {(() => {
-          const pulse = pulseValueRef.current;
-          const AnimatedView = RN.Animated?.View;
-          if (!showLivePulse || plotWidth <= 0 || !pulse || !AnimatedView) return null;
-          const scale = Math.min(plotWidth / model.width, 1);
-          const offsetX = (plotWidth - model.width * scale) / 2;
-          const offsetY = (model.height - model.height * scale) / 2;
-          const dotLeft = offsetX + model.selectedAthlete.cursorX * scale;
-          const dotTop = offsetY + model.selectedAthlete.cursorY * scale;
-          return (
-            <View
-              pointerEvents="none"
-              style={{
-                position: "absolute",
-                left: dotLeft - 14,
-                top: dotTop - 14,
-                width: 28,
-                height: 28,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <AnimatedView
-                style={{
-                  position: "absolute",
-                  width: 28,
-                  height: 28,
-                  borderRadius: 14,
-                  borderWidth: 2,
-                  borderColor: model.selectedAthlete.you ? c.fieldTeal : c.podiumGold,
-                  opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] }),
-                  transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.8] }) }],
-                }}
-              />
-            </View>
-          );
-        })()}
         {plotWidth > 0
           ? model.athletes.map((athlete) => {
               const scale = Math.min(plotWidth / model.width, 1);

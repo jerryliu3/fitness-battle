@@ -70,7 +70,7 @@ function Welcome({ preview }: { preview: boolean }) {
   }, [ready, draft, preview, loading, state?.onboardingCompleted]);
   useEffect(() => { top.current?.scrollIntoView({ block: "start" }); }, [step]);
   useEffect(() => {
-    if (!ready || !sportById(draft.sport).gps) return;
+    if (!ready || !draft.sport || !sportById(draft.sport).gps) return;
     void fetch("/api/routes/onboarding-course", { cache: "force-cache" })
       .then(response => (response.ok ? response.json() : Promise.reject()))
       .then(body => import("@fitness-battle/shared").then(({ prefetchOnboardingCourse }) => prefetchOnboardingCourse(async () => body)))

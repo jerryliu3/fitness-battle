@@ -6,7 +6,7 @@ import { useReducedMotion } from "../ui/use-reduced-motion";
 import { AppText } from "../ui/section";
 import { StandardLineChart } from "../ui/standard-line-chart";
 
-export function OnboardingPotential({ onScoreChange }: { onScoreChange?: (score: number) => void }) {
+export function OnboardingPotential({ onScoreChange, chartHeight = 234 }: { chartHeight?: number; onScoreChange?: (score: number) => void }) {
   const c = useThemeColors(), reduced = useReducedMotion();
   const progress = useRef(new Animated.Value(0)).current;
   const [score, setScore] = useState(500);
@@ -27,7 +27,7 @@ export function OnboardingPotential({ onScoreChange }: { onScoreChange?: (score:
   return <View style={{ backgroundColor: c.card, borderRadius: 24, padding: 16, gap: 12 }}>
     <AppText role="caption">Effort Score</AppText>
     <AppText role="hero">{score.toLocaleString("en-US")}</AppText>
-    <StandardLineChart height={234} values={ONBOARDING_GROWTH.scores} xLabels={ONBOARDING_GROWTH.labels} pointLabels={ONBOARDING_GROWTH.pointLabels}
+    <StandardLineChart height={chartHeight} values={ONBOARDING_GROWTH.scores} xLabels={ONBOARDING_GROWTH.labels} pointLabels={ONBOARDING_GROWTH.pointLabels}
       revealProgress={progress} followRevealDot showAxes showTrend={false} accessibilityLabel="Potential Effort Score growth" />
   </View>;
 }

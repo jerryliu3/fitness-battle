@@ -46,6 +46,8 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   expect(renderer.root.findAllByType("ShapeSource" as never).some(node => node.props.id === "course")).toBe(false);
   calls.setCamera.mockClear();
   const map = renderer.root.findByType("Map" as never);
+  expect(map.props.scaleBarEnabled).toBe(true);
+  expect(map.props.scaleBarPosition).toEqual({ bottom: 42, left: 8 });
   await act(async () => { map.props.onTouchStart(); renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [.005, 0], zoom: 15, pitch: 30, heading: 20, isUserInteraction: true } } }); });
   expect(calls.setCamera).not.toHaveBeenCalled();
   calls.setCamera.mockClear();

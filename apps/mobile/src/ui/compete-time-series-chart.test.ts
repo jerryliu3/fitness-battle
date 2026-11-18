@@ -66,13 +66,13 @@ it("uses solid backgrounds without a live pulse on the selected athlete", async 
   const styles = Object.assign({}, ...(Array.isArray(root.props.style) ? root.props.style.filter(Boolean) : [root.props.style]));
   expect(styles.backgroundColor).toBeTruthy();
   expect(styles.backgroundColor).not.toBe("transparent");
-  expect(mocks.loopStart).toHaveBeenCalled();
+  expect(mocks.loopStart).not.toHaveBeenCalled();
 
   const plot = renderer.root.find((node) => typeof node.props.onLayout === "function");
   await act(async () => {
     plot.props.onLayout({ nativeEvent: { layout: { width: 358, height: 464 } } });
   });
-  expect(renderer.root.findAllByType("AnimatedView" as never).length).toBeGreaterThan(0);
+  expect(renderer.root.findAllByType("AnimatedView" as never)).toHaveLength(0);
 });
 
 it("renders the streamlined athlete header in immersive mode and switches between Trajectory and Event views", async () => {

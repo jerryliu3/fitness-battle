@@ -45,6 +45,7 @@ function savedAccountStateFromBody(
   return state;
 }
 beforeEach(() => {
+ vi.stubEnv("NODE_ENV", "development");
  vi.useFakeTimers();
  vi.setSystemTime(new Date("2026-10-22T16:00:00Z"));
  values.clear(); auth.user.mode = "supabase"; auth.user.dataOrigin = "recorded";
@@ -53,7 +54,7 @@ beforeEach(() => {
  vi.stubGlobal("window", { addEventListener: vi.fn(), removeEventListener: vi.fn() });
  vi.stubGlobal("document", { visibilityState: "visible", addEventListener: vi.fn(), removeEventListener: vi.fn() });
 });
-afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); vi.useRealTimers(); vi.unstubAllGlobals(); });
+afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); vi.useRealTimers(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 describe("web account revision handling", () => {
  it("loads and saves authenticated synthetic accounts regardless of the legacy mode label", async () => {
   auth.user.mode = "demo"; auth.user.dataOrigin = "synthetic";
@@ -255,4 +256,12 @@ it("defers presenting SyncReview / overtake replay until ApplicationBootGate unm
   await act(async () => { renderer.update(tree(false)); await flush(); });
   const review = renderer.root.findByType("SyncReview" as never);
   expect(review.props.receipt.activities).toHaveLength(2);
+});
+
+it("rejects debug event actions outside development", async () => {
+  vi.stubEnv("NODE_ENV", "production");
+  vi.stubGlobal("fetch", vi.fn(async () => Response.json({ state: freshState(), updatedAt: "revision-1" })));
+  await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
+  expect(api.triggerDebugEvent?.("overtake")).toBeNull();
+  expect(api.debugActive).toBe(false);
 });

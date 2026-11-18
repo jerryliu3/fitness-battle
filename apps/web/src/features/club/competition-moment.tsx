@@ -32,6 +32,7 @@ import {
   rankSymbolForScore,
   weeklyBoard,
   type RaceCourse,
+  type CompetitionReplayTuning,
   type CompetitionMoment as Moment,
 } from "@fitness-battle/shared";
 import { ArenaLanes } from "@/features/focus/arena-lanes";
@@ -53,6 +54,7 @@ export function CompetitionMoment({
   dimension = defaultCompeteFieldView(moment.sport),
   course = null,
   autoStart = true,
+  replayTuning,
 }: {
   moment: Moment;
   remaining: number;
@@ -65,6 +67,7 @@ export function CompetitionMoment({
   dimension?: FieldViewDimension;
   course?: RaceCourse | null;
   autoStart?: boolean;
+  replayTuning?: CompetitionReplayTuning;
 }) {
   const { user } = useAuth();
   const { state } = useCompete();
@@ -120,7 +123,7 @@ export function CompetitionMoment({
     let raf = 0;
     const from = progressRef.current;
     const start = performance.now();
-    const duration = ((6500 + count * 2200) * (embedded ? 1.5 : 1) * (1 - from)) / speed;
+    const duration = ((replayTuning?.durationMs ?? (6500 + count * 2200) * (embedded ? 1.5 : 1)) * (1 - from)) / speed;
     const tick = (now: number) => {
       const p = from + (1 - from) * Math.min(1, (now - start) / Math.max(duration, 1));
       setProgress(p);
@@ -128,9 +131,9 @@ export function CompetitionMoment({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [moment.id, reduced, count, playing, speed, embedded, viewDimension, sceneReady, replayGeneration]);
+  }, [moment.id, reduced, count, playing, speed, embedded, viewDimension, sceneReady, replayGeneration, replayTuning?.durationMs]);
 
-  const frame = competitionMomentScene(moment, progress);
+  const frame = competitionMomentScene(moment, progress, replayTuning);
   const summary = competitionMomentProgressSummary(moment, frame);
   useEffect(() => { onOvertakeCountChange?.(frame.count); }, [frame.count, onOvertakeCountChange]);
 

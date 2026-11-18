@@ -1,3 +1,4 @@
+import { useThemeColors } from "../theme";
 import { useFocusStyles } from "../ui/focus";
 import { playCue } from "../lib/haptics";
 import { AppText } from "../ui/section";
@@ -19,6 +20,7 @@ export function AccountActions({
   footer?: (openDelete: () => void) => ReactNode;
 }) {
 const f=useFocusStyles();
+const c=useThemeColors();
 
   const { user, offlineMode, accessToken, signOut } = useAuth();
   const { clearAccountData } = useCompeteStore();
@@ -108,7 +110,7 @@ const f=useFocusStyles();
             setConfirmation("");
             setPanel("delete");
           }}
-        ><Text style={[f.buttonText, { color: "#b42318" }]}>Delete account</Text></Pressable>
+        ><Text style={[f.buttonText, { color: c.statusError }]}>Delete account</Text></Pressable>
       ) : null}
       {footer ? footer(() => {
         setError("");

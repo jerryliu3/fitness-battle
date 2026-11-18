@@ -27,6 +27,7 @@ import {
   weeklyBoard,
   type ArenaLane,
   type RaceCourse,
+  type CompetitionReplayTuning,
   type CompetitionMoment as Moment,
 } from "@fitness-battle/shared";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
@@ -53,6 +54,7 @@ export function CompetitionMoment({
   dimension = defaultCompeteFieldView(moment.sport),
   course = null,
   autoStart = true,
+  replayTuning,
 }: {
   moment: Moment;
   remaining: number;
@@ -65,6 +67,7 @@ export function CompetitionMoment({
   dimension?: FieldViewDimension;
   course?: RaceCourse | null;
   autoStart?: boolean;
+  replayTuning?: CompetitionReplayTuning;
 }) {
   const c = useThemeColors();
   const f = useFocusStyles();
@@ -119,13 +122,13 @@ export function CompetitionMoment({
     }
     if (!playing || progressRef.current >= 1 || (viewDimension === "4d" && !sceneReady)) return;
     const from = progressRef.current;
-    const duration = ((6500 + count * 2200) * (embedded ? 1.5 : 1)) / speed;
+    const duration = (replayTuning?.durationMs ?? (6500 + count * 2200) * (embedded ? 1.5 : 1)) / speed;
     return startActivePlayback(duration * (1 - from), (next) => setProgress(from + (1 - from) * next));
-  }, [moment.id, reduced, count, playing, speed, embedded, viewDimension, sceneReady, replayGeneration]);
+  }, [moment.id, reduced, count, playing, speed, embedded, viewDimension, sceneReady, replayGeneration, replayTuning?.durationMs]);
 
   const stopHaptics = useRef<() => void>(() => {});
   useEffect(() => () => stopHaptics.current(), [moment.id]);
-  const frame = competitionMomentScene(moment, progress);
+  const frame = competitionMomentScene(moment, progress, replayTuning);
   const summary = competitionMomentProgressSummary(moment, frame);
   useEffect(() => { onOvertakeCountChange?.(frame.count); }, [frame.count, onOvertakeCountChange]);
   useEffect(() => {

@@ -7,5 +7,5 @@ const NativePanel = anchoredChoice?.ViewPrototypes?.AnchoredChoice_MaterialPanel
   ? requireNativeView<ViewProps & { dark: boolean }>("AnchoredChoice", "MaterialPanel") : null;
 export function MaterialPanel({ style, ...props }: ViewProps) {
   const { mode, colors } = useAppTheme();
-  return NativePanel ? <NativePanel {...props} dark={mode === "dark"} style={style} /> : <View {...props} style={[{ backgroundColor: colors.card }, style]} />;
+  return NativePanel ? <NativePanel {...props} dark={mode === "dark"} style={style} /> : <View {...props} style={[{ backgroundColor: `${colors.card}66` }, style]} />;
 }

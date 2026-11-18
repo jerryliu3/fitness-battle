@@ -1,11 +1,10 @@
-import { useReducedMotion } from "../ui/use-reduced-motion";
 import { useEffect, useRef, useState } from "react";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useCompetitionCourse } from "./use-competition-course";
 import { GeographicCourse } from "./geographic-course";
 import { useCompeteStore } from "../lib/compete-store";
-import { Animated, Image, Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
-import { competeEventCarouselPageIndex, formatActivityAge, competePeriodWindow, coursePreviewLanes, initialsFromName, type ArenaSceneLane, buildArenaModel, competitionQueue, competitionTrack, competeNow, isMetricCompete, ordinalPlace, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { Image, Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { competeEventCarouselPageIndex, formatActivityAge, competitionCourseWindow, coursePreviewLanes, initialsFromName, type ArenaSceneLane, buildArenaModel, competitionQueue, competitionTrack, competeNow, isMetricCompete, ordinalPlace, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppText, textStyle } from "../ui/section";
 import { useThemeColors } from "../theme";
 import { AppIcon } from "../ui/app-icon";
@@ -20,11 +19,12 @@ export function EventHome({ state, accountKey, onEnter, onRecovery, active }: { 
   const c = useThemeColors();
   const { width } = useWindowDimensions();
   const [page, setPage] = useState(0);
-  const cardWidth = Math.min(360, width - 64);
+  const [availableWidth, setAvailableWidth] = useState(width - 40);
   const count = state.ratings.filter(r => r.optedIn).length + Number(state.healthRatings.some(r => r.optedIn));
-  return <View style={{ gap: 14 }}>
+  const cardWidth = count === 1 ? availableWidth : Math.min(360, availableWidth - 24);
+  return <View onLayout={event => setAvailableWidth(event.nativeEvent.layout.width)} style={{ gap: 14 }}>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><AppText role="heading" accessibilityRole="header">Your events</AppText><AppText role="caption" secondary>{count} registered</AppText></View>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={cardWidth + 12} decelerationRate="fast" onScroll={event => setPage(competeEventCarouselPageIndex(event.nativeEvent.contentOffset.x, cardWidth + 12, count))} scrollEventThrottle={100} contentContainerStyle={{ gap: 12, paddingRight: 20 }}>
+    <ScrollView horizontal scrollEnabled={count > 1} showsHorizontalScrollIndicator={false} snapToInterval={cardWidth + 12} decelerationRate="fast" onScroll={event => setPage(competeEventCarouselPageIndex(event.nativeEvent.contentOffset.x, cardWidth + 12, count))} scrollEventThrottle={100} contentContainerStyle={{ gap: 12, paddingRight: count === 1 ? 0 : 20 }}>
     {state.ratings.filter(r => r.optedIn).map(rating => <RegisteredEventCard key={rating.sport} state={state} sport={rating.sport} active={active} cardWidth={cardWidth} onEnter={() => onEnter(accountKey, rating.sport)} />)}
     {state.healthRatings.some(r => r.optedIn) ? <Pressable accessibilityRole="button" accessibilityLabel="Open Recovery" onPress={onRecovery} style={{ width: cardWidth, padding: 20, gap: 12, backgroundColor: c.accentSecondarySoft, borderRadius: 20, borderWidth: 1, borderColor: c.line, overflow: "hidden" }}><EventArt event="sleep" feature /><CompeteIcon name="sleep" /><AppText role="heading">Recovery</AppText><AppText role="body" secondary>Sleep competition</AppText><View style={{ flex: 1, minHeight: 120 }} /><AppText role="label">View event →</AppText></Pressable> : null}
     </ScrollView>
@@ -59,7 +59,7 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
         <AppText role="label">{SPORTS.find(item => item.id === sport)?.name}</AppText>
         {updateText ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            {showLiveIndicator ? <LiveIndicator active={active && Boolean(liveUpdateText)} /> : null}
+            {showLiveIndicator ? <LiveIndicator /> : null}
             <AppText role="support" secondary style={{ flexShrink: 1 }}>{updateText}</AppText>
           </View>
         ) : null}
@@ -69,11 +69,11 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
           paddingHorizontal: 8,
           paddingVertical: 3,
           borderRadius: 99,
-          backgroundColor: place === 1 ? c.podiumGold : place === 2 ? c.podiumSilver : place === 3 ? c.podiumBronze : c.card,
+          backgroundColor: c.soft,
           borderWidth: 1,
-          borderColor: place <= 3 ? "transparent" : c.line,
+          borderColor: c.line,
         }}>
-          <AppText role="caption" style={{ color: place <= 3 ? c.ink : undefined }} secondary={place > 3}>{`${ordinalPlace(place)} place`}</AppText>
+          <AppText role="caption" >{`${ordinalPlace(place)} place`}</AppText>
         </View>
       )}
     </View>
@@ -87,7 +87,7 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
 export function CoursePreview({ state, sport, queued }: { state: CompeteState; sport: SportId; queued: boolean }) {
   const { blocks } = useAthleteBlocks();
   const c = useThemeColors();
-  const period = competePeriodWindow(state, competeNow(state), sport);
+  const period = competitionCourseWindow(state, competeNow(state), sport);
   const { debugActive, accountKey } = useCompeteStore();
   const { course } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, true);
   const model = buildArenaModel(state, undefined, competitionTrack(sport), sport);
@@ -136,18 +136,7 @@ function SnapshotPreview({ cacheKey, course, lanes, unit }: { cacheKey: string; 
   </View>;
 }
 
-function LiveIndicator({ active }: { active: boolean }) {
+function LiveIndicator() {
   const c = useThemeColors();
-  const reduced = useReducedMotion();
-  const opacity = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    if (reduced || !active) { opacity.setValue(1); return; }
-    const pulse = Animated.loop(Animated.sequence([
-      Animated.timing(opacity, { toValue: 0.35, duration: 900, useNativeDriver: true }),
-      Animated.timing(opacity, { toValue: 1, duration: 900, useNativeDriver: true }),
-    ]));
-    pulse.start();
-    return () => pulse.stop();
-  }, [active, reduced, opacity]);
-  return <Animated.View accessible={false} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.statusSuccess, opacity }} />;
+  return <View accessible={false} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.statusSuccess }} />;
 }

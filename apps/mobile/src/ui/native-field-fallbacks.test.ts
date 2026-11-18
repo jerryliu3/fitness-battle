@@ -5,7 +5,7 @@ const nativeView = vi.hoisted(() => vi.fn());
 vi.mock("expo", () => ({ requireOptionalNativeModule: () => null, requireNativeView: nativeView }));
 vi.mock("react-native", () => ({ NativeModules: {}, Text: "Text", View: "View" }));
 vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
-vi.mock("./section", () => ({ textStyle: () => ({}) }));
+vi.mock("./section", () => ({ textStyle: () => ({}), AppText: "Text" }));
 import { MaterialBack } from "./material-back.ios";
 import { DeferredCourseMap } from "../features/deferred-course-map";
 it("keeps back navigation usable when the installed binary lacks AnchoredChoice", async () => {

@@ -8,6 +8,7 @@ describe("guest profile handoff", () => {
     expect(parseGuestIntroDraft("null")).toBeNull();
     expect(parseGuestIntroDraft("broken")).toBeNull();
     expect(parseGuestIntroDraft(JSON.stringify({ ...draft, sport: "swimming" }))).toBeNull();
+    expect(parseGuestIntroDraft(JSON.stringify({ name: "Taylor", city: "", countryCode: "" }))).toEqual({ name: "Taylor", city: "", countryCode: "" });
     expect(parseGuestIntroDraft(JSON.stringify({ ...draft, name: "x".repeat(100), countryCode: "invalid" }))).toEqual({ ...draft, name: "x".repeat(80), countryCode: "" });
   });
   it("imports only for the intended signup account", () => {
