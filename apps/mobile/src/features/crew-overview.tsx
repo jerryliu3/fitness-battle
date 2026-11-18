@@ -1,3 +1,4 @@
+import { pageCarouselStyles } from "../ui/carousel-styles";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Pressable, ScrollView, View } from "react-native";
 import { useFocusEffect } from "expo-router";
@@ -126,7 +127,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
         <AppText role="heading" accessibilityRole="header">Crew mates</AppText>
         {input.members.length > 4 && <Pressable accessibilityRole="button" onPress={onViewMembers} style={{ minHeight: 44, justifyContent: "center" }}><AppText role="label">View all</AppText></Pressable>}
       </View>
-      <ScrollView horizontal scrollEnabled={input.members.length > 4} showsHorizontalScrollIndicator={false} snapToInterval={cardWidth + 8} decelerationRate="fast" style={input.members.length > 4 ? { marginRight: -20 } : undefined} contentContainerStyle={{ gap: 8, paddingRight: input.members.length > 4 ? 20 : 0 }}>
+      <ScrollView horizontal scrollEnabled={input.members.length > 4} showsHorizontalScrollIndicator={false} snapToInterval={cardWidth + 8} decelerationRate="fast" style={pageCarouselStyles.viewport} contentContainerStyle={[pageCarouselStyles.content, { gap: 8 }]}>
         {full.lineup.map(m => hiddenIds.includes(m.user_id) ? <View key={m.user_id} style={{ width: cardWidth }} /> : <Pressable key={m.user_id} accessibilityRole="button" accessibilityLabel={`Compare ${m.display_name}'s contribution`} onPress={() => onSelectMember(m.user_id)} style={{ width: cardWidth, alignItems: "center", gap: 8, paddingVertical: 14, paddingHorizontal: 4, borderWidth: 1, borderColor: c.line, borderRadius: 16, backgroundColor: c.card }}>
           <View style={{ borderWidth: 2, borderColor: crewMemberRelayColor(m.user_id, input.members.map(member => member.user_id), view.relay.model), borderRadius: 30, padding: 3 }}><UserAvatar src={m.avatar_url} name={m.display_name} size={40} /></View>
           <AppText role="label" numberOfLines={1}>{m.display_name.split(" ")[0]}</AppText>

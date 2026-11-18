@@ -1,3 +1,4 @@
+import { pageCarouselStyles } from "../ui/carousel-styles";
 import { useId } from "react";
 import { Platform, ScrollView, Pressable, View, useWindowDimensions } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect, Path } from "react-native-svg";
@@ -52,7 +53,7 @@ export function ExploreEvents({ onChoose, state }: { onChoose(event: CompeteEven
         <CompeteIcon name={category.id} size={22} />
         <AppText role="label">{category.title}</AppText>
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 20 }}>
+      <ScrollView style={pageCarouselStyles.viewport} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[pageCarouselStyles.content, { gap: 12 }]}>
         {category.events.map(event => <Pressable key={event} accessibilityRole="button" accessibilityLabel={`Explore ${event}`} onPress={() => onChoose(event)} style={({ pressed }) => ({ width: 158, minHeight: 104, padding: 14, gap: 8, borderWidth: 1, borderColor: c.line, borderRadius: 20, backgroundColor: c.card, overflow: "hidden", opacity: pressed ? 0.7 : 1 })}>
           <EventTint event={event} />
           <EventArt event={event} />
@@ -88,7 +89,7 @@ export function CrewEvents({ onChoose }: { onChoose(sport: SportId): void }) {
   const c = useThemeColors();
   const { width } = useWindowDimensions();
   const bannerWidth = Math.min(560, width - 48);
-  return <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={bannerWidth + 12} decelerationRate="fast" accessibilityLabel="Crew events carousel" contentContainerStyle={{ gap: 12, paddingRight: 20 }}>
+  return <ScrollView style={pageCarouselStyles.viewport} horizontal showsHorizontalScrollIndicator={false} snapToInterval={bannerWidth + 12} decelerationRate="fast" accessibilityLabel="Crew events carousel" contentContainerStyle={[pageCarouselStyles.content, { gap: 12 }]}>
     {SPORTS.map(sport => <Pressable key={sport.id} accessibilityRole="button" accessibilityLabel={`${sport.name} with your crew`} onPress={() => onChoose(sport.id)} style={({ pressed }) => ({ width: bannerWidth, minHeight: 112, padding: 16, flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: c.actionSoft, borderWidth: 1, borderColor: c.line, borderRadius: 20, overflow: "hidden", opacity: pressed ? 0.7 : 1 })}>
       <MetallicFill />
       <EventArt event="running" feature gold />
