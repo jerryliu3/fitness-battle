@@ -128,37 +128,6 @@ export function AthleteOverview({
                   </select>
                 </label>
                 <CountryCombobox value={countryCode} onChange={setCountryCode} />
-                <div style={{ marginBottom: 12 }}>
-                  <div className="fb-row" style={{ justifyContent: "space-between", marginBottom: 6 }}>
-                    <AppText role="field">Card highlights ({activeHighlightIds.length}/{ATHLETE_CARD_HIGHLIGHT_LIMIT})</AppText>
-                    {cardHighlights !== undefined ? (
-                      <button
-                        type="button"
-                        className="fb-btn-line"
-                        style={{ ...typographyStyle("caption"), padding: "2px 8px" }}
-                        onClick={() => saveHighlights(undefined)}
-                      >
-                        Reset to PBs
-                      </button>
-                    ) : null}
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 6 }}>
-                    {highlightCatalog.map((item) => {
-                      const selected = activeHighlightIds.includes(item.id);
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          className={selected ? "fb-btn" : "fb-btn-line"}
-                          style={{ ...typographyStyle("caption"), padding: "6px 8px", textAlign: "left" }}
-                          onClick={() => toggleHighlight(item.id)}
-                        >
-                          {item.label}: {item.value}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
                 {profileError ? (
                   <AppParagraph typographyRole="body" className="fb-error" role="alert" style={{ ...typographyStyle("body"), marginBottom: 8 }}>
                     {profileError}
@@ -202,6 +171,38 @@ export function AthleteOverview({
                     Cancel
                   </button>
                 </div>
+                <div style={{ marginBottom: 12 }}>
+                  <div className="fb-row" style={{ justifyContent: "space-between", marginBottom: 6 }}>
+                    <AppText role="field">Card highlights ({activeHighlightIds.length}/{ATHLETE_CARD_HIGHLIGHT_LIMIT})</AppText>
+                    {cardHighlights !== undefined ? (
+                      <button
+                        type="button"
+                        className="fb-btn-line"
+                        style={{ ...typographyStyle("caption"), padding: "2px 8px" }}
+                        onClick={() => saveHighlights(undefined)}
+                      >
+                        Reset to PBs
+                      </button>
+                    ) : null}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 6 }}>
+                    {highlightCatalog.map((item) => {
+                      const selected = activeHighlightIds.includes(item.id);
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={selected ? "fb-btn" : "fb-btn-line"}
+                          style={{ ...typographyStyle("caption"), padding: "6px 8px", textAlign: "left" }}
+                          onClick={() => toggleHighlight(item.id)}
+                        >
+                          {item.label}: {item.value}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
               </div>
             </section>
           ) : (

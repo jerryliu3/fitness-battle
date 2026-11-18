@@ -143,7 +143,6 @@ export function AthleteProfileEditor({
   return (
     <View style={{ gap: 18 }}>
       <View style={{ gap: 12 }}>
-        <SectionHeader title="Identity" />
         <View style={[f.row, { gap: 14, alignItems: "center" }]}>
           <ProfilePhoto state={state} editSize={100} />
           <View style={{ flex: 1, gap: 8 }}>
@@ -185,6 +184,15 @@ export function AthleteProfileEditor({
             {error}
           </AppText>
         ) : null}
+      </View>
+
+      <View style={[f.row, { gap: 10, paddingTop: 4 }]}>
+        <View style={{ flex: 1 }}>
+          <FocusButton label="Cancel" secondary onPress={onCancel} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <FocusButton label={dirty ? "Save" : "Done"} onPress={dirty ? commitAndClose : onCancel} />
+        </View>
       </View>
 
       <View style={{ gap: 10 }}>
@@ -269,14 +277,7 @@ export function AthleteProfileEditor({
         </View>
       </View>
 
-      <View style={[f.row, { gap: 10, paddingTop: 4 }]}>
-        <View style={{ flex: 1 }}>
-          <FocusButton label="Cancel" secondary onPress={onCancel} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <FocusButton label={dirty ? "Save" : "Done"} onPress={dirty ? commitAndClose : onCancel} />
-        </View>
-      </View>
+
     </View>
   );
 }

@@ -245,7 +245,7 @@ describe("athlete profile navigation and layout", () => {
     expect(screenHeader.props.title).toBe("Edit profile");
     const rendered = JSON.stringify(renderer.toJSON());
     expect(rendered).not.toContain("AthleteCrest");
-    expect(rendered).toContain("Identity");
+    expect(rendered).not.toContain("Identity");
   });
 
   it("renders signed out athlete page with updated copy and signedOut flag for metrics", async () => {
