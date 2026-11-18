@@ -15,7 +15,7 @@ import {
   isUnsaveableBatchError,
   runAccountSaveSteps,
   serializeCompeteIntent,
-  serializeCompeteSyncAction,
+  serializeCompeteSyncActions,
   arenaBaselineStorageKey,
   countedActivityIds,
   FIELD_REFRESH_MS,
@@ -935,7 +935,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       });
       if (JSON.stringify(next) === JSON.stringify(before)) return;
       if (isCompeteSyncAction(action)) {
-        pendingActionsRef.current.push(serializeCompeteSyncAction(action));
+        pendingActionsRef.current.push(...serializeCompeteSyncActions(action));
       } else if (isCompeteAccountIntentAction(action)) {
         pendingActionsRef.current.push(serializeCompeteIntent(action));
       }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   evidenceFromConnection,
   syncWindow,
+  trackerSyncWindow,
 } from "./sync-window";
 
 describe("sync window", () => {
@@ -48,5 +49,23 @@ describe("sync window", () => {
         lastSyncAt: "2026-10-12T00:00:00.000Z",
       }),
     ).toBe("stub");
+  });
+});
+
+
+describe("trackerSyncWindow", () => {
+  const now = new Date("2026-11-17T18:00:00Z");
+  it("does not import history when first connecting or choosing Later", () => {
+    expect(trackerSyncWindow({}, now).since).toBe(now.toISOString());
+    expect(trackerSyncWindow({ connectedAt: "2026-11-17T17:00:00Z" }, now).since).toBe("2026-11-17T17:00:00.000Z");
+  });
+  it("never widens a confirmed history range through incremental overlap", () => {
+    const range = trackerSyncWindow({ connectedAt: "2026-11-16T17:00:00Z", lastSyncAt: "2026-11-16T18:00:00Z" }, now);
+    expect(range.since).toBe("2026-11-16T17:00:00.000Z");
+  });
+  it("still covers gaps after connection", () => {
+    const range = trackerSyncWindow({ connectedAt: "2026-10-01T17:00:00Z", lastSyncAt: "2026-10-17T18:00:00Z" }, now);
+    expect(range.since).toBe("2026-10-16T18:00:00.000Z");
+    expect(trackerSyncWindow({ lastSyncAt: "2026-10-17T18:00:00Z" }, now).since).toBe("2026-10-17T18:00:00.000Z");
   });
 });

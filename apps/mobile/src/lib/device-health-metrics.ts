@@ -191,6 +191,7 @@ export async function appleHealthExtra(
 export async function androidHealthExtra(
   native: Record<string, unknown>,
   existingGrants?: { recordType: string; accessType: string }[],
+  range?: { since: string; until: string },
 ): Promise<DeviceHealthExtra> {
   const result = empty();
   const permission = native.requestPermission as
@@ -216,8 +217,9 @@ export async function androidHealthExtra(
 
   const allowed = (type: string) => grants.some((p) => p.recordType === type && p.accessType === "read");
 
-  for (let i = 6; i >= 0; i--) {
-    const start = startOfZonedDay(shiftAppDay(new Date(), -i));
+  const lastDay = new Date(range?.until ?? Date.now());
+  const firstDay = range ? startOfZonedDay(new Date(range.since)) : startOfZonedDay(shiftAppDay(lastDay, -6));
+  for (let start = firstDay; start <= lastDay; start = startOfZonedDay(shiftAppDay(start, 1))) {
     const end = startOfZonedDay(shiftAppDay(start, 1));
     const timeRangeFilter = { operator: "between", startTime: start.toISOString(), endTime: end.toISOString() };
     const row: NonNullable<SyncResult["dailyHealth"]>[number] = {

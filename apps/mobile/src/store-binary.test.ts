@@ -56,6 +56,7 @@ describe("store binary config", () => {
       "android.permission.health.READ_RESTING_HEART_RATE",
       "android.permission.health.READ_HEART_RATE_VARIABILITY",
       "android.permission.health.READ_SLEEP",
+      "android.permission.health.READ_HEALTH_DATA_HISTORY",
     ]);
     for (const blocked of [
       "android.permission.ACCESS_FINE_LOCATION",

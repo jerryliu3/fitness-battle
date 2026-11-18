@@ -86,3 +86,11 @@ describe("device health metrics", () => {
  expect(appleSleepNights(records)).toMatchObject([{durationMin:390,awakeMin:30}]);
  expect(appleSleepNights(records.filter(r=>r.value==="AWAKE"))).toEqual([]);
  });
+
+
+it("reads Health Connect metrics across the chosen history range", async () => {
+  const result = await androidHealthExtra({}, [], { since: "2026-10-01T04:00:00.000Z", until: "2026-10-30T12:00:00.000Z" });
+  expect(result.dailyHealth).toHaveLength(30);
+  expect(result.dailyHealth[0]?.day).toBe("2026-10-01");
+  expect(result.dailyHealth.at(-1)?.day).toBe("2026-10-30");
+});

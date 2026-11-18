@@ -1198,3 +1198,14 @@ Waiting details replace standings/activity inside the same bottom sheet, includi
 Recap keeps its legacy workout-intensity curve under Workout effort, including
 tooltips and accessibility text. It is distinct from the official weekly Effort
 Score and its Training/History/Competition breakdown.
+
+
+### Tracker history import — November 17
+
+After a successful tracker connection, offer a compact history-import sheet with
+90 days selected by default and a 1–90 day range. Explain that import is once per
+account, including across tracker changes. Later dismisses without consuming it;
+Settings → Data Sync opens the same sheet. Successful import immediately disables
+the settings action with History imported. Keep failures retryable and preserve
+the existing activity review flow. Garmin push connections do not promise a
+historical pull.

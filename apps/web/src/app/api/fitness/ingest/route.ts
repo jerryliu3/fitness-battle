@@ -1,4 +1,4 @@
-import { decodePolyline, normalizeRouteReplay } from "@fitness-battle/shared";
+import { dayKey, decodePolyline, normalizeRouteReplay } from "@fitness-battle/shared";
 import { persistDailyHealth } from "@/lib/daily-health-store";
 import { persistSleepNight } from "@/lib/garmin-record-store";
 import type { SyncResult, SleepNight } from "@fitness-battle/shared";
@@ -9,6 +9,7 @@ import type {
   FitnessProviderId,
   ReadinessSample,
 } from "@fitness-battle/shared";
+import { fitnessSyncWindow, finishFitnessHistory } from "@/lib/fitness-history";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import {
   createProviderStore,
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
     readiness?: Partial<ReadinessSample>[];
     dailyHealth?: SyncResult["dailyHealth"];
     sleepNights?: SleepNight[];
+    historyLease?: string;
   };
   const userId = await resolveRequestUserId(request, body.userId);
   if (!userId) {
@@ -78,19 +80,24 @@ export async function POST(request: Request) {
   if (!body.provider || !DEVICE_PROVIDERS.has(body.provider)) {
     return NextResponse.json({ error: "device_provider_required" }, { status: 400 });
   }
+  let window: { since: string; until: string };
+  try { window = await fitnessSyncWindow(userId, body.provider, body.historyLease, { incremental: false }); }
+  catch { return NextResponse.json({ error: "history_unavailable" }, { status: 409 }); }
+  if ((body.activities?.length ?? 0) > 2000) return NextResponse.json({ error: "too_many_activities" }, { status: 400 });
+  const inWindow = (at: string) => at >= window.since && at <= window.until;
+  const inDayWindow = (day: string) => day >= dayKey(new Date(window.since)) && day <= dayKey(new Date(window.until));
   const activities = (body.activities ?? [])
-    .slice(0, 200)
     .map((item) => activityFromBody(body.provider!, item))
-    .filter((item): item is ActivitySample => item != null);
+    .filter((item): item is ActivitySample => item != null && inWindow(item.startedAt));
   const readiness = (body.readiness ?? [])
     .slice(0, 200)
     .map((item) => readinessFromBody(body.provider!, item))
-    .filter((item): item is ReadinessSample => item != null);
+    .filter((item): item is ReadinessSample => item != null && inDayWindow(item.day));
 
   let persisted = false;
   try {
     const dailyHealth = Array.isArray(body.dailyHealth)
-      ? body.dailyHealth.slice(0, 200).map((r) => ({ ...r, provider: body.provider! }))
+      ? body.dailyHealth.slice(0, 200).filter(r => inDayWindow(r.day)).map((r) => ({ ...r, provider: body.provider! }))
       : [];
     await persistDailyHealth(userId, dailyHealth);
     const sleeps = (Array.isArray(body.sleepNights) ? body.sleepNights : [])
@@ -100,6 +107,7 @@ export async function POST(request: Request) {
           typeof r.id === "string" &&
           r.id.length < 200 &&
           /^\d{4}-\d{2}-\d{2}$/.test(r.day) &&
+          inDayWindow(r.day) &&
           Number.isFinite(r.durationMin) &&
           r.durationMin > 0 &&
           r.durationMin <= 1440 &&
@@ -121,22 +129,28 @@ export async function POST(request: Request) {
     }
     const storedActivities = await persistSyncedActivities(userId, activities);
     const storedReady = await persistReadiness(userId, readiness);
-    persisted = storedActivities || storedReady || dailyHealth.length>0 || sleeps.length>0;
+    persisted = (activities.length === 0 || storedActivities) && (readiness.length === 0 || storedReady);
     const store = createProviderStore(body.provider);
-    if (store && (activities.length > 0 || readiness.length > 0 || dailyHealth.length>0 || sleeps.length>0)) {
+    if (!store || !persisted) throw new Error("store_unavailable");
+    {
+      const connection = await store.getConnection(userId);
       const newest = activities.map((item) => item.startedAt).sort().at(-1) ?? null;
       await store.setConnection({
         userId,
         provider: body.provider,
-        connectedAt: new Date().toISOString(),
+        connectedAt: connection?.connectedAt ?? new Date().toISOString(),
         status: "connected",
         lastSyncAt: new Date().toISOString(),
-        lastActivityAt: newest,
+        lastActivityAt: newest ?? connection?.lastActivityAt ?? null,
       });
     }
+    if (body.historyLease) await finishFitnessHistory(userId, body.historyLease, true);
   } catch {
     persisted = false;
+  } finally {
+    if (body.historyLease) await finishFitnessHistory(userId, body.historyLease, false).catch(() => {});
   }
+  if (!persisted) return NextResponse.json({ error: "sync_persistence_failed", persisted: false }, { status: 503 });
 
   return NextResponse.json({
     provider: body.provider,
@@ -144,5 +158,6 @@ export async function POST(request: Request) {
     readiness,
     persisted,
     usedMock: false,
+    historyImported: Boolean(body.historyLease),
   });
 }

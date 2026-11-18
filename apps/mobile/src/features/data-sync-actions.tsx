@@ -1,7 +1,7 @@
 import { useFocusStyles } from "../ui/focus";
 import { Toast } from "../ui/toast";
 import { playCue } from "../lib/haptics";
-import { SectionHeader, AppText } from "../ui/section";
+import { AppText } from "../ui/section";
 import {
   activityFromSample,
   type ActivitySample,
@@ -232,22 +232,7 @@ const f=useFocusStyles();
                 />
               </View>
             ))}
-          <SectionHeader title="Import fitness history"/>
-          <AppText role="body" secondary >
-            {state.calibrated
-              ? "History is locked in. This one-time calibration cannot run again."
-              : "Calibrate your starting effort score from your training history. Imported history stays excluded from competition."}
-          </AppText>
-          <FocusButton
-            secondary
-            label={
-              state.calibrated
-                ? "History calibrated"
-                : "Import fitness history"
-            }
-            disabled={busy || state.calibrated}
-            onPress={() => dispatch({ type: "import-history" })}
-          />
+
         </>
       ) : null}
       <Toast message={note} onDismiss={() => setNote("")} />

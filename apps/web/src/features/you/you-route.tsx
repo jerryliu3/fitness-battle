@@ -1,4 +1,5 @@
 "use client";
+import { FitnessHistoryImport } from "./fitness-history-import";
 import { colors as appearanceColors } from "@/theme/app-colors";
 
 import { AppearanceControl } from "@/theme/appearance-provider";
@@ -86,6 +87,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
   const [settingsPresent, setSettingsPresent] = useState(false);
   const [settingsScrollRoot, setSettingsScrollRoot] =
     useState<HTMLElement | null>(null);
+  const [historyOffer, setHistoryOffer] = useState<ProviderId | null>(null);
   const [syncNote, setSyncNote] = useState<string | null>(null);
   const [authPrompt, setAuthPrompt] = useState<{ open: boolean; reason: string } | null>(null);
   const [connectingProvider, setConnectingProvider] = useState<ProviderId | null>(null);
@@ -214,6 +216,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
     if (accountBound.current === accountKey) return;
     accountBound.current = accountKey;
     appliedTracker.current = null;
+    setHistoryOffer(null);
   }, [accountKey, loadStatus, state]);
 
   useLayoutEffect(() => {
@@ -247,7 +250,8 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
         activities: [],
         linkStatus: "connected",
       });
-      setSyncNote(`${provider} connected. Sync to pull activities.`);
+      setSyncNote(`${provider} connected.`);
+      setHistoryOffer(provider);
     } else if (tracker === "stub") {
       dispatch({ type: "link", provider });
       setSyncNote("This tracker is not connected.");
@@ -258,7 +262,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
         "That tracker did not connect. Sign in and try the link again.",
       );
     }
-    if (user && sessionStorage.getItem(`onboarding-connect-return:${user.id}`)) {
+    if (tracker !== "connected" && user && sessionStorage.getItem(`onboarding-connect-return:${user.id}`)) {
       sessionStorage.removeItem(`onboarding-connect-return:${user.id}`);
       router.replace("/onboarding");
     }
@@ -411,6 +415,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
         return;
       }
       applyRemote({ ...body, provider: providerId });
+      if (!body.usedMock) setHistoryOffer(providerId);
     } catch {
       if (offlineMode) {
         dispatch({ type: "sync", provider: providerId, allowSample: true });
@@ -657,34 +662,18 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
                   <AppParagraph typographyRole="caption" className="fb-note">{syncNote}</AppParagraph>
                 ) : null}
               </Section>
-              {!inlineConnections && <section className="fb-card">
-                {(offlineMode) && previewSyncReview ? (
-                  <button className="fb-btn-line" onClick={previewSyncReview}>
-                    Preview today’s sync recap
-                  </button>
-                ) : null}
-                <SectionHeader title="Import fitness history"/>
-                {state.calibrated ? (
-                  <AppParagraph typographyRole="body" className="fb-copy">
-                    History is locked in. This one-time calibration cannot run
-                    again.
-                  </AppParagraph>
-                ) : (
-                  <>
-                    <AppParagraph typographyRole="body" className="fb-copy">
-                      Import your recent activity history to calibrate your starting effort score
-                      and leave the baseline.
-                    </AppParagraph>
-                    <button
-                      type="button"
-                      className="fb-btn"
-                      onClick={() => dispatch({ type: "import-history" })}
-                    >
-                      Import fitness history
-                    </button>
-                  </>
-                )}
-              </section>}
+              {!inlineConnections && offlineMode && previewSyncReview ? <section className="fb-card">
+                <button className="fb-btn-line" onClick={previewSyncReview}>
+                  Preview today’s sync recap
+                </button>
+              </section> : null}
+              <FitnessHistoryImport offer={historyOffer} showSettings={!inlineConnections} onDismiss={() => {
+                setHistoryOffer(null);
+                if (user && sessionStorage.getItem(`onboarding-connect-return:${user.id}`)) {
+                  sessionStorage.removeItem(`onboarding-connect-return:${user.id}`);
+                  if (!inlineConnections) router.replace("/onboarding");
+                }
+              }} />
             </>);
   if (inlineConnections) return connectionsContent;
 

@@ -17,6 +17,7 @@ vi.mock("./supabase", () => ({
   },
 }));
 
+import { syncWindow } from "@fitness-battle/shared";
 import { createHealthConnectDeps, syncHealthConnect } from "./device-health";
 
 function mockHealthModule(
@@ -62,7 +63,7 @@ describe("syncHealthConnect", () => {
   it("keeps demo/local-only syncs on-device without calling ingest", async () => {
     const fetchFn = vi.fn(async () => ({
       ok: true,
-      json: async () => ({}),
+      json: async () => ({ persisted: true }),
     })) as unknown as typeof fetch;
     const result = await syncHealthConnect(
       createHealthConnectDeps({
@@ -83,6 +84,7 @@ describe("syncHealthConnect", () => {
     const result = await syncHealthConnect(
       createHealthConnectDeps({
         platform: "android",
+        syncRange: syncWindow({ lastSyncAt: new Date().toISOString() }),
         fetchFn,
         healthModule: mockHealthModule({ granted: [] }),
       }),
@@ -116,11 +118,12 @@ describe("syncHealthConnect", () => {
   it("uploads with the caller-provided bearer token", async () => {
     const fetchFn = vi.fn(async () => ({
       ok: true,
-      json: async () => ({}),
+      json: async () => ({ persisted: true }),
     })) as unknown as typeof fetch;
     const result = await syncHealthConnect(
       createHealthConnectDeps({
         platform: "android",
+        syncRange: syncWindow({ lastSyncAt: new Date().toISOString() }),
         fetchFn,
         getAccessToken: async () => ({ token: "live-token", userId: "user-2" }),
         healthModule: mockHealthModule(),
@@ -173,12 +176,13 @@ describe("syncHealthConnect", () => {
     });
     const fetchFn = vi.fn(async () => ({
       ok: true,
-      json: async () => ({}),
+      json: async () => ({ persisted: true }),
     })) as unknown as typeof fetch;
     const recentSync = new Date(Date.now() - 2 * 86_400_000).toISOString();
     const result = await syncHealthConnect(
       createHealthConnectDeps({
         platform: "android",
+        syncRange: syncWindow({ lastSyncAt: new Date().toISOString() }),
         fetchFn,
         lastSyncAt: recentSync,
         getAccessToken: async () => ({ token: "live-token", userId: "user-2" }),
@@ -195,4 +199,49 @@ describe("syncHealthConnect", () => {
       Date.now() - 5 * 86_400_000,
     );
   });
+});
+
+it("requires history permission before consuming an import longer than 30 days", async () => {
+  const health = mockHealthModule();
+  const fetchFn = vi.fn();
+  const result = await syncHealthConnect(createHealthConnectDeps({
+    platform: "android", healthModule: health, fetchFn,
+    historyLease: "ticket", syncRange: { since: "2026-08-19T18:00:00Z", until: "2026-11-17T18:00:00Z" },
+  }));
+  expect(result.ok).toBe(false);
+  expect(result.message).toContain("30 days or fewer");
+  expect(health.requestPermission).toHaveBeenCalledWith(expect.arrayContaining([{ accessType: "read", recordType: "ReadHealthDataHistory" }]));
+  expect(health.readRecords).not.toHaveBeenCalled();
+  expect(fetchFn).not.toHaveBeenCalled();
+});
+
+it("reads 90 days when the additional history permission is granted", async () => {
+  const health = mockHealthModule({ granted: [
+    { accessType: "read", recordType: "ExerciseSession" },
+    { accessType: "read", recordType: "Distance" },
+    { accessType: "read", recordType: "ReadHealthDataHistory" },
+  ] });
+  const fetchFn = vi.fn(async () => ({ ok: true, json: async () => ({ persisted: true }) })) as unknown as typeof fetch;
+  const result = await syncHealthConnect(createHealthConnectDeps({
+    platform: "android", healthModule: health, fetchFn,
+    getAccessToken: async () => ({ token: "token", userId: "owner" }),
+    historyLease: "ticket", syncRange: { since: "2026-08-19T18:00:00Z", until: "2026-11-17T18:00:00Z" },
+  }));
+  expect(result.ok).toBe(true);
+  expect(fetchFn).toHaveBeenCalledWith("https://example.test/api/fitness/ingest", expect.objectContaining({ body: expect.stringContaining('"historyLease":"ticket"') }));
+});
+
+it("follows Health Connect pages for the selected history window", async () => {
+  const health = mockHealthModule();
+  const readRecords = vi.fn(async (type: string, options: { pageToken?: string }) => type === "Distance" ? { records: [] } : {
+    records: [{ metadata: { id: options.pageToken ? "second" : "first" }, startTime: options.pageToken ? "2026-11-02T12:00:00Z" : "2026-11-01T12:00:00Z", endTime: options.pageToken ? "2026-11-02T12:30:00Z" : "2026-11-01T12:30:00Z", exerciseType: 56 }],
+    pageToken: options.pageToken ? "" : "next",
+  });
+  const result = await syncHealthConnect(createHealthConnectDeps({
+    platform: "android", healthModule: { ...health, readRecords }, localOnly: true,
+    syncRange: { since: "2026-10-18T18:00:00Z", until: "2026-11-17T18:00:00Z" },
+  }));
+  expect(result.ok).toBe(true);
+  expect(result.activities?.map(a => a.externalId)).toEqual(["first", "second"]);
+  expect(readRecords).toHaveBeenCalledWith("ExerciseSession", expect.objectContaining({ pageToken: "next" }));
 });

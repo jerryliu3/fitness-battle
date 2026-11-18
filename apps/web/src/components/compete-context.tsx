@@ -35,7 +35,7 @@ import {
   isUnsaveableBatchError,
   runAccountSaveSteps,
   serializeCompeteIntent,
-  serializeCompeteSyncAction,
+  serializeCompeteSyncActions,
   type Action,
   type Activity,
   type CompeteState,
@@ -747,7 +747,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         const next = reduceCompete(before, withAccount);
         if (JSON.stringify(next) === JSON.stringify(before)) return;
         if (isCompeteSyncAction(withAccount)) {
-          pendingActionsRef.current.push(serializeCompeteSyncAction(withAccount));
+          pendingActionsRef.current.push(...serializeCompeteSyncActions(withAccount));
         } else if (isCompeteAccountIntentAction(withAccount)) {
           pendingActionsRef.current.push(serializeCompeteIntent(withAccount));
         }
