@@ -111,7 +111,7 @@ function buildSharedProfileLaneGeometry(
     .filter((entry): entry is { lane: ArenaSceneLane; metres: number } => entry !== null);
   const offsets = startLineLateralOffsets(
     prepared.map(({ lane, metres }) => ({ id: lane.id, metres, you: lane.you })),
-    courseLaneSpacing(roster),
+    Math.max(courseLaneSpacing(roster), 8),
   );
   const athletes = prepared.map(({ lane, metres }) => ({
     ...lane,
