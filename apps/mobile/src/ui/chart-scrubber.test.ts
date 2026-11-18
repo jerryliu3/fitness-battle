@@ -130,3 +130,25 @@ it("keeps floating top label coupled to right-edge vertical line and omits dot w
   expect(renderer.root.findAllByType("Line" as never)).toHaveLength(1);
   expect(renderer.root.findAllByType("Circle" as never)).toHaveLength(0);
 });
+
+it("uses the centered plot for touch selection and the overlay when the chart letterboxes", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const select = vi.fn();
+  const dates = [
+    { id: "nov16", x: 75, y: 80, label: "Nov 16", value: "100" },
+    { id: "nov17", x: 90, y: 35, label: "Nov 17", value: "120" },
+  ];
+  await act(async () => {
+    renderer = create(createElement(ChartScrubber, {
+      points: dates, width: 100, height: 120, plotTop: 20, plotBottom: 100,
+      label: "Effort", uniformAspect: true, children: null, onSelect: select,
+    }));
+  });
+  const surface = () => renderer.root.findByProps({ accessibilityRole: "adjustable" });
+  await act(async () => surface().props.onLayout({ nativeEvent: { layout: { width: 200 } } }));
+  // The plot is centered with a 50 px inset. Nov 17 renders at 50 + 90.
+  await act(async () => surface().props.onTouchStart({ nativeEvent: { pageX: 160, pageY: 35, locationX: 140 } }));
+  expect(select).toHaveBeenCalledExactlyOnceWith("nov17");
+  expect(renderer.root.findByType("Svg" as never).props.preserveAspectRatio).toBe("xMidYMid meet");
+  expect(renderer.root.findByType("Circle" as never).props).toMatchObject({ cx: 90, cy: 35 });
+});

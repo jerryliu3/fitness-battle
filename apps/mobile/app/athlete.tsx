@@ -230,7 +230,7 @@ const styles=useThemedStyles(stylesThemes);
   };
   const pageHeader = (
     <ScreenHeader
-      localBack={Boolean(panel) || fromOnboarding}
+      localBack
       hidden={!panel && settingsOpen}
       nativeBar={!panel && !fromOnboarding}
       title={panel ? titles[panel] : fromOnboarding ? (authMode === "signup" ? "Create account" : "Sign in") : "Athlete"}

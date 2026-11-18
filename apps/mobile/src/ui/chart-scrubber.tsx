@@ -14,7 +14,7 @@ const DIRECTION_LOCK_PX = 4;
 /** One touch surface, shared by line and bar charts. Vertical drags yield to the page. */
 export function ChartScrubber({
   points, width, height, plotTop, plotBottom, children, onSelect, label, summaryOnSelection = false, hideSummary = false, renderSummary, onSelectionChange, selectedPointId,
-  dotColor, dotBorderColor, isSelectedHollow = false, hideSelectionDot = false, showTopLabel = true,
+  dotColor, dotBorderColor, isSelectedHollow = false, hideSelectionDot = false, showTopLabel = true, uniformAspect = false,
 }: {
   points: readonly ChartDatum[];
   width: number;
@@ -34,22 +34,26 @@ export function ChartScrubber({
   isSelectedHollow?: boolean;
   hideSelectionDot?: boolean;
   showTopLabel?: boolean;
+  uniformAspect?: boolean;
 }) {
 const c=useThemeColors();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const measuredWidth = useRef(1);
   const [layoutWidth, setLayoutWidth] = useState(0);
   const [labelWidth, setLabelWidth] = useState(0);
   const lastId = useRef<string | null>(null);
   const touchStart = useRef<{ x: number; y: number; locationX: number } | null>(null);
   const direction = useRef<"horizontal" | "vertical" | null>(null);
   const selected = points.find(point => point.id === (selectedId ?? selectedPointId));
-  const latest = useRef({ points, width, onSelect, onSelectionChange });
-  latest.current = { points, width, onSelect, onSelectionChange };
+  const scale = uniformAspect ? Math.min(layoutWidth / width, 1) : layoutWidth / width;
+  const plotTopPx = uniformAspect ? (height - height * scale) / 2 + plotTop * scale : plotTop;
+  const viewport = { left: (layoutWidth - width * scale) / 2, width: width * scale };
+  const latest = useRef({ points, width, viewport, onSelect, onSelectionChange });
+  latest.current = { points, width, viewport, onSelect, onSelectionChange };
   const inspect = (locationX: number, feedback = true) => {
     const current = latest.current;
-    const modelX = chartClientXToModel(locationX, { left: 0, width: measuredWidth.current }, current.width);
+    if (!current.viewport.width) return;
+    const modelX = chartClientXToModel(locationX, current.viewport, current.width);
     const point = nearestChartDatum(current.points, modelX);
     if (!point || lastId.current === point.id) return;
     lastId.current = point.id;
@@ -91,7 +95,7 @@ const c=useThemeColors();
   const move = (step: number) => {
     const index = points.findIndex(point => point.id === (selectedPointId ?? selectedId));
     const point = points[Math.max(0, Math.min(points.length - 1, (index < 0 ? points.length - 1 : index) + step))];
-    if (point) inspect(point.x / width * measuredWidth.current);
+    if (point) inspect(viewport.left + point.x * scale);
   };
   return <View style={{ gap: 8 }}>
     {!hideSummary && (
@@ -121,11 +125,7 @@ const c=useThemeColors();
         touchStart.current = null;
         clearSelection();
       }}
-      onLayout={event => {
-        const w = Math.max(1, event.nativeEvent.layout.width);
-        measuredWidth.current = w;
-        setLayoutWidth(w);
-      }}
+      onLayout={event => setLayoutWidth(event.nativeEvent.layout.width)}
       accessible
       accessibilityRole="adjustable"
       accessibilityLabel={label}
@@ -137,12 +137,11 @@ const c=useThemeColors();
       <View pointerEvents="none">{children}</View>
       {selected && <>
         {showTopLabel && !!selected.label && (() => {
-          const activeWidth = layoutWidth > 1 ? layoutWidth : measuredWidth.current;
-          const centerPx = activeWidth > 1 ? (selected.x / Math.max(1, width)) * activeWidth : 0;
-          const fallbackWidth = Math.min(activeWidth, Math.max(40, selected.label.length * 6.5));
-          const effectiveLabelWidth = labelWidth > 0 ? Math.min(labelWidth, activeWidth) : fallbackWidth;
-          const leftPx = activeWidth > 1
-            ? Math.max(0, Math.min(activeWidth - effectiveLabelWidth, centerPx - effectiveLabelWidth / 2))
+          const centerPx = viewport.left + selected.x * scale;
+          const fallbackWidth = Math.min(layoutWidth, Math.max(40, selected.label.length * 6.5));
+          const effectiveLabelWidth = labelWidth > 0 ? Math.min(labelWidth, layoutWidth) : fallbackWidth;
+          const leftPx = layoutWidth > 1
+            ? Math.max(0, Math.min(layoutWidth - effectiveLabelWidth, centerPx - effectiveLabelWidth / 2))
             : 0;
           return (
             <View
@@ -153,7 +152,7 @@ const c=useThemeColors();
               }}
               style={{
                 position: "absolute",
-                top: Math.max(0, plotTop - 18),
+                top: Math.max(0, plotTopPx - 18),
                 left: leftPx,
               }}
             >
@@ -161,7 +160,7 @@ const c=useThemeColors();
             </View>
           );
         })()}
-        <Svg pointerEvents="none" width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ position: "absolute", top: 0, left: 0 }}>
+        <Svg pointerEvents="none" width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio={uniformAspect ? "xMidYMid meet" : "none"} style={{ position: "absolute", top: 0, left: 0 }}>
           <Line x1={selected.x} x2={selected.x} y1={plotTop} y2={plotBottom} stroke={c.muted} strokeWidth={1} />
           {!hideSelectionDot && (
             <Circle

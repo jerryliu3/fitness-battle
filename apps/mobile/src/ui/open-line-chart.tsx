@@ -21,10 +21,12 @@ const s=useThemedStyles(sThemes);
 
   const clipId = useId();
   const reduceMotion = useReducedMotion();
-  const chart = useChartTween(targetChart, String(range), interpolateOpenLineModel, reduceMotion);
-  const [selectedPoint, setSelectedPoint] = useState<ChartDatum | undefined>(undefined);
-  useEffect(() => { setSelectedPoint(undefined); }, [range]);
+  const animatedChart = useChartTween(targetChart, String(range), interpolateOpenLineModel, reduceMotion);
+  const [selectedId, setSelectedId] = useState<string>();
+  useEffect(() => { setSelectedId(undefined); }, [range]);
+  const selectedPoint = targetChart.points.find(point => point.id === selectedId);
   const selected = !!selectedPoint;
+  const chart = selected ? targetChart : animatedChart;
   const active = useSceneActive();
   const [plotWidth, setPlotWidth] = useState(0);
   const pulse = useRef(new Animated.Value(0)).current;
@@ -64,12 +66,13 @@ const s=useThemedStyles(sThemes);
       points={targetChart.points}
       width={chart.width}
       height={chart.height}
+      uniformAspect={uniformAspect}
       plotTop={chart.top}
       plotBottom={chart.bottom}
       dotColor={c.tennis}
       dotBorderColor={dotBorderColor}
       label={label}
-      onSelectionChange={point => { setSelectedPoint(point); onSelectionChange?.(point); }}
+      onSelectionChange={point => { setSelectedId(point?.id); onSelectionChange?.(point); }}
       hideSummary={hideSummary}
       renderSummary={hideSummary ? undefined : point => (
         <View style={s.headerRow}>

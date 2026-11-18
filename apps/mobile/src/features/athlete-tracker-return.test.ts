@@ -217,6 +217,7 @@ describe("athlete profile navigation and layout", () => {
     });
     const rendered = JSON.stringify(renderer.toJSON());
     expect(rendered).toContain("AthleteCrest");
+    expect(renderer.root.findByType("ScreenHeader" as never).props.localBack).toBe(true);
     expect(rendered).toContain("Achievements");
     expect(rendered).not.toContain("Primary sport");
   });
