@@ -65,7 +65,7 @@ describe("native earned progress flows",()=>{
  });
  it("switches the chart between week, month and year without manufacturing future sessions",async()=>{
   const state={...mock.state!,activities:[recorded("today",3600)]};
-  await act(async()=>{renderer=create(createElement(TrainingAtlas,{state}));});
+  await act(async()=>{renderer=create(createElement(TrainingAtlas,{state,createdAt:"2026-01-01T05:00:00Z"}));});
   const range=(label:string)=>renderer.root.findAllByType("Pressable" as never).find(n=>n.props.accessibilityLabel===label)!;
   await act(async()=>range("One year").props.onPress());
   const months=renderer.root.findByType(BenchmarkChart).props.buckets;

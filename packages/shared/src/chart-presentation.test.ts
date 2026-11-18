@@ -131,7 +131,7 @@ it("shows every recorded score change, filters sport/track/future, makes every d
   const now = new Date("2026-10-22T22:00:00Z"), state = freshState(now);
   state.ratings[0]!.openElo = 1002;
   state.effortMilestones = [{ sport: "running", track: "open", periodStart: "2026-10-19T04:00:00Z", periodEnd: "2026-10-26T04:00:00Z", step: 1609.344, earned: 2 }];
-  const baselineOnly = effortScoreLine(state, "open", "week", now);
+  const baselineOnly = effortScoreLine(state, "open", "week", now, "2026-10-16T04:00:00Z");
   expect(baselineOnly.points.map(p => p.id)).toEqual([
     "day:2026-10-16",
     "day:2026-10-17",
@@ -149,7 +149,7 @@ it("shows every recorded score change, filters sport/track/future, makes every d
     { id: "4", sport: "cycling", track: "open", occurredAt: "2026-10-22T21:00:00Z", scoreBefore: 1000, scoreAfter: 1005 },
     { id: "5", sport: "running", track: "open", occurredAt: "2026-10-23T12:00:00Z", scoreBefore: 1002, scoreAfter: 1003 },
   ];
-  const chart = effortScoreLine(state, "open", "week", now);
+  const chart = effortScoreLine(state, "open", "week", now, "2026-10-16T04:00:00Z");
   expect(chart.points.map(p => p.id)).toEqual([
     "day:2026-10-16",
     "day:2026-10-17",
@@ -192,7 +192,7 @@ it("leaves gaps where old milestone award times are unknown", () => {
    { id: "second", sport: "running", track: "open", periodEnd: "2026-10-20T04:00:00Z", eloBefore: 1035, eloAfter: 1060 },
  ] as typeof state.periodResults;
  state.ratings[0]!.openElo = 1062;
- const chart = effortScoreLine(state, "open", "week", now);
+ const chart = effortScoreLine(state, "open", "week", now, "2026-10-16T04:00:00Z");
  expect(chart.segments).toHaveLength(3); // two known settlement changes and a standalone current reading
  expect(chart.points.map(p => p.value)).toEqual(["1000", "1000", "1000", "1030", "1060", "1060", "1062"]);
 });
@@ -241,7 +241,7 @@ it("grounds the Home week chart on Monday and includes non-competing activities 
     },
   ] as typeof state.activities;
 
-  const model = homeTrainingLine(state, "week", now);
+  const model = homeTrainingLine(state, "week", now, "2026-10-19T04:00:00Z");
   // Must start on Monday (Oct 19)
   expect(model.points[0]?.label).toContain("Oct 19");
   // Must include Tuesday's non-competing activity as well as Friday's run
