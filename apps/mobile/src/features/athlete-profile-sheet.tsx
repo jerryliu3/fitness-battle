@@ -1,8 +1,8 @@
 import { useFocusStyles } from "../ui/focus";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
-import { useRouter } from "expo-router";
-import { SPORTS, athleteCardModel, athleteCardModelForPeer, formatMemberSince } from "@fitness-battle/shared";
+import { usePathname, useRouter } from "expo-router";
+import { SPORTS, athleteCardModel, athleteCardModelForPeer, formatMemberSince, shellTabFromPath } from "@fitness-battle/shared";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
@@ -34,12 +34,20 @@ type PublicProfile = {
 };
 const isAccountId = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
+function athleteProfileReturnTo(pathname: string): string {
+  const tab = shellTabFromPath(pathname);
+  if (tab) return `/${tab.id}`;
+  if (pathname === "/crew-members" || pathname.startsWith("/crew-members/")) return "/field";
+  return "/today";
+}
+
 export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProfileSelection | null; onClose: () => void }) {
   const f = useFocusStyles();
 
   const { user, accessToken, offlineMode } = useAuth();
   const { state } = useCompeteStore();
   const router = useRouter();
+  const pathname = usePathname();
   const { blocks, ready: blocksReady, setBlocked } = useAthleteBlocks();
   const [confirmBlock, setConfirmBlock] = useState(false);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
@@ -146,6 +154,7 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
         ...(athlete.contextLabel ? { contextLabel: athlete.contextLabel } : {}),
         ...(athlete.contextValue ? { contextValue: athlete.contextValue } : {}),
         ...(athlete.contextDetail ? { contextDetail: athlete.contextDetail } : {}),
+        returnTo: athleteProfileReturnTo(pathname),
       }
     : null;
   return (
@@ -186,7 +195,7 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
           ) : null}
           {athlete.contextValue ? (
             <View style={f.section}>
-              <SectionHeader title={athlete.contextLabel ?? "This week"} />
+              <SectionHeader title={athlete.contextLabel ?? "Summary"} />
               <AppText role="display">{athlete.contextValue}</AppText>
               {athlete.contextDetail ? <AppText role="body" secondary>{athlete.contextDetail}</AppText> : null}
             </View>

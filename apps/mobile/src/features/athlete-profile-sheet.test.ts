@@ -3,9 +3,20 @@ import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { beforeEach, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ lookup: vi.fn(), navigate: vi.fn(), close: vi.fn(), request: vi.fn(), setBlocked: vi.fn(), blocks: [] as { id: string; name: string }[] }));
+const mocks = vi.hoisted(() => ({
+  lookup: vi.fn(),
+  navigate: vi.fn(),
+  close: vi.fn(),
+  request: vi.fn(),
+  setBlocked: vi.fn(),
+  blocks: [] as { id: string; name: string }[],
+  pathname: "/arena",
+}));
 vi.mock("react-native", () => ({useColorScheme: () => "light",  View: "View", TextInput: "TextInput", Pressable: "Pressable" }));
-vi.mock("expo-router", () => ({ useRouter: () => ({ navigate: mocks.navigate, push: mocks.navigate }) }));
+vi.mock("expo-router", () => ({
+  useRouter: () => ({ navigate: mocks.navigate, push: mocks.navigate }),
+  usePathname: () => mocks.pathname,
+}));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "owner", createdAt: "2024-05-01T00:00:00Z" }, accessToken: "token", offlineMode: false }) }));
 vi.mock("../lib/api", () => ({ requestApi: mocks.request }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "https://example.test" } }));
@@ -48,13 +59,45 @@ it("shows own details and navigates only after the sheet closes", async () => {
 });
 
 it("opens the full profile route after the preview sheet closes", async () => {
+  mocks.pathname = "/arena";
   await act(async () => { renderer = create(createElement(AthleteProfileSheet, { athlete: { id, name: "Peer", score: 1100, contextValue: "5.0 km" }, onClose: mocks.close })); });
   await act(async () => renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "View full profile")!.props.onPress());
   expect(mocks.close).toHaveBeenCalled();
   await act(async () => renderer.root.findByType("FocusSheet" as never).props.onClosed());
   expect(mocks.navigate).toHaveBeenCalledWith({
     pathname: "/athlete-profile",
-    params: { id, name: "Peer", score: "1100", contextValue: "5.0 km" },
+    params: { id, name: "Peer", score: "1100", contextValue: "5.0 km", returnTo: "/arena" },
+  });
+});
+
+it("returns to Crew after opening a profile from the field tab", async () => {
+  mocks.pathname = "/field";
+  await act(async () => {
+    renderer = create(createElement(AthleteProfileSheet, {
+      athlete: {
+        id,
+        name: "Crewmate",
+        score: 980,
+        contextLabel: "This week's crew contribution",
+        contextValue: "12.4 km",
+        contextDetail: "River Runners · 28% of crew total",
+      },
+      onClose: mocks.close,
+    }));
+  });
+  await act(async () => renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "View full profile")!.props.onPress());
+  await act(async () => renderer.root.findByType("FocusSheet" as never).props.onClosed());
+  expect(mocks.navigate).toHaveBeenCalledWith({
+    pathname: "/athlete-profile",
+    params: {
+      id,
+      name: "Crewmate",
+      score: "980",
+      contextLabel: "This week's crew contribution",
+      contextValue: "12.4 km",
+      contextDetail: "River Runners · 28% of crew total",
+      returnTo: "/field",
+    },
   });
 });
 it("treats every other profile as an account, including seeded field athletes", async () => {

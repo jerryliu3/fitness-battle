@@ -23,7 +23,6 @@ import { AwardShelf } from "../ui/award-shelf";
 import { useAuth } from "../lib/auth";
 import { mobileEnv } from "../lib/env";
 import { requestApi } from "../lib/api";
-import { useCompeteStore } from "../lib/compete-store";
 import { supabase } from "../lib/supabase";
 
 type PublicProfilePayload = {
@@ -53,7 +52,6 @@ export function AthletePublicProfileScreen() {
   const achievementTileStyle = useAchievementTileStyle();
   const router = useRouter();
   const { user, accessToken, offlineMode } = useAuth();
-  const { state: ownState } = useCompeteStore();
   const params = useLocalSearchParams<{
     id?: string;
     name?: string;
@@ -62,6 +60,7 @@ export function AthletePublicProfileScreen() {
     contextLabel?: string;
     contextValue?: string;
     contextDetail?: string;
+    returnTo?: string;
   }>();
 
   const athleteId = typeof params.id === "string" ? params.id : "";
@@ -138,7 +137,17 @@ export function AthletePublicProfileScreen() {
   const units = remote?.units ?? "us";
   const proudMoments = remote?.proudMoments ?? [];
 
-  if (isSelf && ownState) return null;
+  if (isSelf) return null;
+
+  const exitProfile = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    const fallback =
+      typeof params.returnTo === "string" && params.returnTo.startsWith("/") ? params.returnTo : "/today";
+    router.replace(fallback as "/today");
+  };
 
   if (!athleteId) {
     return (
@@ -158,14 +167,14 @@ export function AthletePublicProfileScreen() {
       <ScreenHeader
         localBack
         title={cardModel.name}
-        onBack={() => (router.canGoBack() ? router.back() : router.replace("/today"))}
+        onBack={exitProfile}
       />
       <ScrollView contentContainerStyle={f.content} showsVerticalScrollIndicator={false}>
         <SectionStack divided={false}>
           <AthleteCrest model={cardModel} />
           {params.contextValue ? (
             <View style={f.section}>
-              <SectionHeader title={params.contextLabel ?? "This week"} />
+              <SectionHeader title={params.contextLabel ?? "Summary"} />
               <AppText role="display">{params.contextValue}</AppText>
               {params.contextDetail ? (
                 <AppText role="body" secondary>
