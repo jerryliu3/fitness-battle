@@ -6,6 +6,8 @@ vi.mock("react-native", () => ({useColorScheme: () => "light",  StyleSheet: { cr
 vi.mock("@react-native-community/datetimepicker", () => ({ default: "DateTimePicker" }));
 vi.mock("@react-native-picker/picker", async () => { const { createElement } = await import("react"); return { Picker: Object.assign((props: object) => createElement("Picker", props), { Item: "PickerItem" }) }; });
 vi.mock("./focus", () => ((()=>{const mock={ f: {} };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
+import { ScopedThemeProvider } from "../appearance";
+import { getAppColors } from "@fitness-battle/shared";
 import { NumberPicker, DateTimeField } from "./form-picker.native";
 let renderer: ReactTestRenderer;
 afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); });
@@ -46,4 +48,17 @@ it("allows an optional time to return to current time without clearing required 
   expect(renderer.root.findAllByType("Pressable" as never)).toHaveLength(1);
   await act(async () => renderer.update(createElement(DateTimeField, { label: "Session time", mode: "time", value: "08:00", onChange: change })));
   expect(renderer.root.findAllByType("Pressable" as never)).toHaveLength(1);
+});
+
+
+it.each(["light", "dark"] as const)("renders the date spinner and number wheel with the %s appearance", async mode => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const colors = getAppColors(mode);
+  await act(async () => { renderer = create(createElement(ScopedThemeProvider, { mode, children: createElement(DateTimeField, { label: "Date", value: "2026-11-17", mode: "date", onChange: vi.fn() }) })); });
+  await act(async () => renderer.root.findByType("Pressable" as never).props.onPress());
+  expect(renderer.root.findByType("DateTimePicker" as never).props).toMatchObject({ themeVariant: mode, textColor: colors.ink, accentColor: colors.ink });
+  await act(async () => renderer.update(createElement(ScopedThemeProvider, { mode, children: createElement(NumberPicker, { label: "Minutes", value: "30", unit: "min", onChange: vi.fn() }) })));
+  await act(async () => renderer.root.findByType("Pressable" as never).props.onPress());
+  const wheel = renderer.root.findByType("Picker" as never);
+  expect(wheel.props.itemStyle).toContainEqual({ color: colors.ink });
 });

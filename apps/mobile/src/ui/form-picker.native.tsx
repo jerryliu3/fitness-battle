@@ -1,5 +1,5 @@
 import { useFocusStyles } from "./focus";
-import { useThemeColors } from "../theme";
+import { useAppTheme, useThemeColors } from "../theme";
 import { AppText, textStyle } from "./section";
 import { dayKey } from "@fitness-battle/shared";
 import { useState } from "react";
@@ -14,7 +14,7 @@ const c=useThemeColors();
 const f=useFocusStyles();
 
   return <Modal transparent animationType="fade" onRequestClose={close}>
-    <View style={{ flex: 1, backgroundColor: "#142b3b66", justifyContent: "center", padding: 24 }} accessibilityViewIsModal>
+    <View style={{ flex: 1, backgroundColor: c.overlay, justifyContent: "center", padding: 24 }} accessibilityViewIsModal>
       <View style={[f.card, { backgroundColor: c.card }]}>
         <AppText accessibilityRole="header" role="heading">{label}</AppText>{children}
         <View style={f.row}><Pressable accessibilityRole="button" onPress={close} style={{ padding: 12 }}><AppText role="label">Cancel</AppText></Pressable>
@@ -36,10 +36,10 @@ const f=useFocusStyles();
     <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value || "Choose"} ${unit}`} style={f.input} onPress={() => { setDraft(value || "0"); setOpen(true); }}><AppText role="label">{value ? `${value} ${unit}` : `Choose ${label.toLowerCase()}`}</AppText></Pressable>
     {open && <PickerSurface label={label} close={() => setOpen(false)} done={() => { onChange(draft); setOpen(false); }}>
       <View style={{ flexDirection: "row" }}>
-        <Picker itemStyle={textStyle("body")} accessibilityLabel={label} selectedValue={String(whole)} onValueChange={item => setDraft(String(Number(item) + (fractional && Number(item) < max ? tenth / 10 : 0)))} style={{ color: c.ink, flex: 1 }}>
+        <Picker itemStyle={[textStyle("body"), { color: c.ink }]} accessibilityLabel={label} selectedValue={String(whole)} onValueChange={item => setDraft(String(Number(item) + (fractional && Number(item) < max ? tenth / 10 : 0)))} style={{ color: c.ink, flex: 1 }}>
           {options.map(option => <Picker.Item key={option} label={`${option} ${unit}`} value={option} color={c.ink} />)}
         </Picker>
-        {fractional && <Picker itemStyle={textStyle("body")} accessibilityLabel={`${label} tenths`} selectedValue={tenth} onValueChange={item => setDraft(String(Math.min(max, whole + Number(item) / 10)))} style={{ color: c.ink, flex: 1 }}>
+        {fractional && <Picker itemStyle={[textStyle("body"), { color: c.ink }]} accessibilityLabel={`${label} tenths`} selectedValue={tenth} onValueChange={item => setDraft(String(Math.min(max, whole + Number(item) / 10)))} style={{ color: c.ink, flex: 1 }}>
           {Array.from({ length: whole >= max ? 1 : 10 }, (_, i) => <Picker.Item key={i} label={`.${i}`} value={i} color={c.ink} />)}
         </Picker>}
       </View>
@@ -49,11 +49,12 @@ const f=useFocusStyles();
 /** Values are wall-clock strings. Existing Eastern validators resolve instants and reject DST gaps. */
 export function DateTimeField({ label, value, mode, onChange, clearLabel }: { label: string; value: string; mode: "date" | "time"; onChange: (value: string) => void; clearLabel?: string }) {
 const f=useFocusStyles();
+  const { mode: appearance, colors: c } = useAppTheme();
 
   const [open, setOpen] = useState(false), [draft, setDraft] = useState(new Date());
   const serialize = (date: Date) => mode === "date" ? date.toISOString().slice(0, 10) : date.toISOString().slice(11, 16);
   const accept = (date: Date) => { onChange(serialize(date)); setOpen(false); };
-  const picker = <DateTimePicker accessibilityLabel={label} value={draft} mode={mode} timeZoneName="UTC" themeVariant="light"
+  const picker = <DateTimePicker accessibilityLabel={label} value={draft} mode={mode} timeZoneName="UTC" themeVariant={appearance} textColor={c.ink} accentColor={c.ink}
     display={Platform.OS === "ios" ? "spinner" : "default"} onDismiss={() => setOpen(false)}
     onValueChange={(_, date) => Platform.OS === "android" ? accept(date) : setDraft(date)} />;
   return <>

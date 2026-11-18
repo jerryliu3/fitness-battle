@@ -12,7 +12,7 @@ const light = {
   borderSubtle: "#e3e9e7", divider: "#d0dad7",
   chartSeries: "#f7c948", chartComparison: "#637482", progressFill: "#f7c948",
   statusSuccess: "#24765c", statusSuccessSoft: "#e9f5ee", statusError: "#b93c3c",
-  statusErrorSoft: "#fbeceb", overlay: "#142b3b80", shadow: "#000000",
+  statusErrorSoft: "#fbeceb", textOnError: "#ffffff", overlay: "#142b3b80", shadow: "#000000",
   focusRing: "#637580", white: "#ffffff",
 };
 
@@ -27,7 +27,7 @@ const dark: SemanticColors = {
   borderSubtle: "#324954", divider: "#3c515c",
   chartSeries: "#f7c948", chartComparison: "#8c9ea8", progressFill: "#f7c948",
   statusSuccess: "#8ccdab", statusSuccessSoft: "#203d33", statusError: "#f09c98",
-  statusErrorSoft: "#462d32", overlay: "#00000099", shadow: "#000000",
+  statusErrorSoft: "#462d32", textOnError: "#142b3b", overlay: "#00000099", shadow: "#000000",
   focusRing: "#b7c7d4", white: "#ffffff",
 };
 

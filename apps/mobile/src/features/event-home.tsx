@@ -69,11 +69,11 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
           paddingHorizontal: 8,
           paddingVertical: 3,
           borderRadius: 99,
-          backgroundColor: place === 1 ? c.podiumGold : place === 2 ? c.podiumSilver : place === 3 ? c.podiumBronze : c.card,
+          backgroundColor: c.soft,
           borderWidth: 1,
-          borderColor: place <= 3 ? "transparent" : c.line,
+          borderColor: c.line,
         }}>
-          <AppText role="caption" style={{ color: place <= 3 ? c.ink : undefined }} secondary={place > 3}>{`${ordinalPlace(place)} place`}</AppText>
+          <AppText role="caption" >{`${ordinalPlace(place)} place`}</AppText>
         </View>
       )}
     </View>

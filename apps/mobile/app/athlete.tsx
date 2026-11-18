@@ -702,7 +702,7 @@ const styles=useThemedStyles(stylesThemes);
           {false && (
             <View style={[f.row, { minHeight: 48, alignItems: "center" }]}>
               <View style={f.grow}><AppText role="label" >Freeze this week</AppText><AppText role="body" secondary >{state?.freezesLeft ?? 0} remaining</AppText></View>
-              <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }} thumbColor="#ffffff" ios_backgroundColor={SHELL_COLORS.line} accessibilityLabel="Freeze this week" value={frozen} disabled={!frozen && (state?.freezesLeft ?? 0) <= 0}
+              <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }} thumbColor={frozen ? SHELL_COLORS.card : SHELL_COLORS.ink} ios_backgroundColor={SHELL_COLORS.line} accessibilityLabel="Freeze this week" value={frozen} disabled={!frozen && (state?.freezesLeft ?? 0) <= 0}
                 onValueChange={enabled => enabled ? setConfirmFreeze(true) : dispatch({ type: "unfreeze" })} />
             </View>
           )}

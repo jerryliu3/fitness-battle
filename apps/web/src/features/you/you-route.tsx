@@ -194,7 +194,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
           style={{
             background: "var(--red, #b83a38)",
             borderColor: "var(--red, #b83a38)",
-            color: appearanceColors.white,
+            color: appearanceColors.textOnError,
           }}
           disabled={deletingAccount}
           onClick={() => void handleDeleteAccount()}

@@ -67,13 +67,14 @@ function TelemetryPageContent() {
               key={l.id}
               type="button"
               onClick={() => setTimeLens(l.id)}
+              aria-pressed={isActive}
               style={{
                 ...typographyStyle("label"),
                 padding: "6px 14px",
                 borderRadius: 99,
-                border: `1px solid ${isActive ? c.fieldTeal : c.line}`,
-                backgroundColor: isActive ? c.fieldTeal : c.card,
-                color: isActive ? "#ffffff" : c.ink,
+                border: `1px solid ${isActive ? c.ink : c.line}`,
+                backgroundColor: isActive ? c.soft : c.card,
+                color: c.ink,
                 cursor: "pointer",
                 transition: "all 0.15s ease",
               }}

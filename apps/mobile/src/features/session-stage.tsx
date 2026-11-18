@@ -280,7 +280,7 @@ export function ActivityDetailView({
                       <AppText role="label">Cancel</AppText>
                     </Pressable>
                     <Pressable accessibilityRole="button" accessibilityLabel="Delete session" style={s.deleteBtn} onPress={() => { setConfirming(false); onRemove(activity.id); }}>
-                      <AppText role="label" style={{ color: c.white }}>Delete</AppText>
+                      <AppText role="label" style={{ color: c.textOnError }}>Delete</AppText>
                     </Pressable>
                   </View>
                 </View>
@@ -343,10 +343,10 @@ const sThemes = createThemedStyles(themeColors => {
     },
     footer: { gap: 8, borderTopWidth: 1, borderColor: c.line, paddingTop: 14 },
     disclosure: { minHeight: 40, justifyContent: "center", alignSelf: "flex-start", paddingVertical: 4 },
-    modalBackdrop: { flex: 1, backgroundColor: "rgba(10, 15, 20, 0.45)", justifyContent: "center", alignItems: "center", padding: 24 },
+    modalBackdrop: { flex: 1, backgroundColor: c.overlay, justifyContent: "center", alignItems: "center", padding: 24 },
     glassCard: {
       width: "100%", maxWidth: 300, backgroundColor: `${themeColors.card}f0`, borderRadius: 20,
-      borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.6)", padding: 20,
+      borderWidth: 1, borderColor: c.line, padding: 20,
       shadowColor: themeColors.shadow, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 12,
     },
     dialogContent: { gap: 12, alignItems: "center" },

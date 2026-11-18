@@ -1983,7 +1983,7 @@
   padding: 16px;
   border: 0;
   border-radius: 18px;
-  background: var(--ink);
+  background: var(--app-surface-inverse);
   color: var(--app-white);
   text-align: left;
   cursor: pointer;

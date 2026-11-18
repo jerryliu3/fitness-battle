@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Appearance, Platform } from "react-native";
 import { Uniwind } from "uniwind";
 import { APP_COLORS, type AppColors } from "@fitness-battle/shared";
 import { useAppTheme } from "../appearance";
@@ -13,7 +14,7 @@ function controlVariables(c: AppColors) {
     "--field-background": c.card, "--field-foreground": c.ink,
     "--field-placeholder": c.muted, "--field-border": c.line,
     "--success": c.statusSuccess, "--warning": c.tennis, "--warning-foreground": c.textOnAction,
-    "--danger": c.statusError, "--segment": c.card, "--segment-foreground": c.ink,
+    "--danger": c.statusError, "--danger-foreground": c.textOnError, "--segment": c.card, "--segment-foreground": c.ink,
     "--border": c.line, "--separator": c.line, "--focus": c.focusRing, "--link": c.ink };
 }
 export function AppearanceSync() {
@@ -22,6 +23,7 @@ export function AppearanceSync() {
     Uniwind.updateCSSVariables("light", controlVariables(APP_COLORS.light));
     Uniwind.updateCSSVariables("dark", controlVariables(APP_COLORS.dark));
     Uniwind.setTheme(preference);
+    if (Platform.OS !== "web") Appearance.setColorScheme(preference === "system" ? "auto" : preference);
   }, [preference]);
   return null;
 }

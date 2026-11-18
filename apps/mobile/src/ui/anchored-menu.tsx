@@ -166,6 +166,7 @@ export function AnchoredMenuItem({
           numberOfLines={1}
           style={[
             textStyle(selected ? "label" : "body"),
+            { color: c.ink },
             destructive ? { color: c.statusError } : null,
           ]}
         >
@@ -183,13 +184,13 @@ export function AnchoredMenuItem({
 
 const sThemes = createThemedStyles(themeColors=>{return {
   backdrop: {
-    backgroundColor: "rgba(10, 15, 20, 0.2)",
+    backgroundColor: themeColors.overlay,
   },
   dropdown: {
     backgroundColor: `${themeColors.card}f0`,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.65)",
+    borderColor: themeColors.line,
     overflow: "hidden",
     shadowColor: themeColors.shadow,
     shadowOffset: { width: 0, height: 12 },

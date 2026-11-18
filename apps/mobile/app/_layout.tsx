@@ -53,7 +53,7 @@ const SHELL_COLORS=useThemeColors();
   if (!error) return <View style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }} />;
   return <View style={{ flex: 1, padding: 24, justifyContent: "center", gap: 16 }}>
     <AppText role="body">{error}</AppText>
-    {error ? <><Text accessibilityRole="button" onPress={() => void reload()} style={textStyle("label")}>Retry</Text><Text accessibilityRole="button" onPress={() => void signOut()} style={textStyle("label")}>Sign out</Text></> : null}
+    {error ? <><Text accessibilityRole="button" onPress={() => void reload()} style={{ ...textStyle("label"), color: SHELL_COLORS.ink }}>Retry</Text><Text accessibilityRole="button" onPress={() => void signOut()} style={{ ...textStyle("label"), color: SHELL_COLORS.ink }}>Sign out</Text></> : null}
   </View>;
 }
 
