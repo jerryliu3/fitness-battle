@@ -1,6 +1,6 @@
-import { createContext, forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState, type ComponentRef, type ReactNode, type RefObject } from "react";
+import { createContext, forwardRef, useCallback, useContext, useImperativeHandle, useMemo, useRef, useState, type ComponentRef, type ReactNode, type RefObject } from "react";
 import { Platform, ScrollView, View } from "react-native";
-import { usePathname } from "expo-router";
+import { useFocusEffect, usePathname } from "expo-router";
 import { athleteCardModel, competeNow } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
 import { AthleteCrest } from "./athlete-crest";
@@ -25,7 +25,7 @@ export function RetainedAthleteCard({ children }: { children: ReactNode }) {
     <View ref={root} style={{ flex: 1 }} onLayout={() => root.current?.measureInWindow((x, y) => setOrigin({ x, y }))}>
       {children}
       {Platform.OS !== "web" && model && <View pointerEvents={visible ? "auto" : "none"} accessibilityElementsHidden={!visible} importantForAccessibility={visible ? "auto" : "no-hide-descendants"}
-        style={{ position: "absolute", left: visible && frame ? frame.x - origin.x : -10000, top: top - origin.y, width: frame?.width ?? 320, height: Math.max(0, bottom - top), overflow: "hidden" }}>
+        style={{ position: "absolute", left: visible && frame ? frame.x - origin.x : -10000, top: top - origin.y, width: frame?.width ?? 320, height: Math.max(0, bottom - top), opacity: visible ? 1 : 0, overflow: "hidden" }}>
         <View style={{ marginTop: frame ? frame.y - top : 0 }}>
           <AthleteCrest key={accountKey} model={model} active={visible} height={frame?.height ?? 430} onInteractionChange={visible ? placement?.onInteractionChange : undefined} />
         </View>
@@ -35,11 +35,12 @@ export function RetainedAthleteCard({ children }: { children: ReactNode }) {
 }
 
 export type AthleteCardSlotHandle = { measure(): void };
-export const AthleteCardSlot = forwardRef<AthleteCardSlotHandle, { viewport: RefObject<ComponentRef<typeof ScrollView> | null>; onInteractionChange?: (held: boolean) => void }>(function AthleteCardSlot({ viewport, onInteractionChange }, ref) {
+export const AthleteCardSlot = forwardRef<AthleteCardSlotHandle, { viewport: RefObject<ComponentRef<typeof ScrollView> | null>; active?: boolean; onInteractionChange?: (held: boolean) => void }>(function AthleteCardSlot({ viewport, active = true, onInteractionChange }, ref) {
   const place = useContext(PlacementContext);
   const slot = useRef<ComponentRef<typeof View>>(null);
   const mounted = useRef(false);
   const measure = useCallback(() => {
+    if (!mounted.current) return;
     slot.current?.measureInWindow((x, y, width, height) => {
       viewport.current?.measureInWindow((_x, clipTop, _width, clipHeight) => {
         if (!mounted.current) return;
@@ -48,6 +49,11 @@ export const AthleteCardSlot = forwardRef<AthleteCardSlotHandle, { viewport: Ref
     });
   }, [place, viewport, onInteractionChange]);
   useImperativeHandle(ref, () => ({ measure }), [measure]);
-  useEffect(() => { mounted.current = true; measure(); return () => { mounted.current = false; place?.(null); }; }, [measure, place]);
+  useFocusEffect(useCallback(() => {
+    if (!active) return;
+    mounted.current = true;
+    measure();
+    return () => { mounted.current = false; place?.(null); };
+  }, [active, measure, place]));
   return <View ref={slot} collapsable={false} onLayout={measure} style={{ height: 430 }} />;
 });

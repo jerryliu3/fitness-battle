@@ -780,7 +780,7 @@ const styles=useThemedStyles(stylesThemes);
             overflow: "visible",
           }}
         >
-          {Platform.OS === "web" ? <AthleteCrest model={athleteCardModel(state, now)} onInteractionChange={setCardDragging} /> : <AthleteCardSlot ref={cardSlot} viewport={cardViewport} onInteractionChange={setCardDragging} />}
+          {Platform.OS === "web" ? <AthleteCrest model={athleteCardModel(state, now)} onInteractionChange={setCardDragging} /> : <AthleteCardSlot ref={cardSlot} viewport={cardViewport} active={!settingsOpen && !editDraft} onInteractionChange={setCardDragging} />}
         </View>
 
         <View
