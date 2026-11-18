@@ -186,14 +186,14 @@ export function AthleteProfileEditor({
         ) : null}
       </View>
 
-      <View style={[f.row, { gap: 10, paddingTop: 4 }]}>
+      {dirty && <View style={[f.row, { gap: 10, paddingTop: 4 }]}>
         <View style={{ flex: 1 }}>
           <FocusButton label="Cancel" secondary onPress={onCancel} />
         </View>
         <View style={{ flex: 1 }}>
-          <FocusButton label={dirty ? "Save" : "Done"} onPress={dirty ? commitAndClose : onCancel} />
+          <FocusButton label="Save" onPress={commitAndClose} />
         </View>
-      </View>
+      </View>}
 
       <View style={{ gap: 10 }}>
         <View style={[f.row, { justifyContent: "space-between", alignItems: "center" }]}>
