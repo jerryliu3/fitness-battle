@@ -216,11 +216,7 @@ export function PerformanceSpace({
                 </View>
               )}
             </View>
-            {scoreComparison && !inspectedEffort && (
-              <AppText role="caption" secondary>
-                {`vs. start of ${EFFORT_RANGES.find(r => r.value === effortRange)?.label ?? "range"}`}
-              </AppText>
-            )}
+
           </View>
           <View style={s.compactControls}>
             <FocusSegments
