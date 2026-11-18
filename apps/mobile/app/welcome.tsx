@@ -31,6 +31,7 @@ export default function Welcome() {
   const router = useRouter();
   const { preview: previewParam, invite } = useLocalSearchParams<{ preview?: string; invite?: string }>();
   const preview = previewParam === "1";
+  const setupRoute = invite ? { pathname: "/onboarding" as const, params: { invite } } : "/onboarding";
   const colors = useThemeColors(), f = useFocusStyles();
   const accountId = preview ? undefined : user?.id;
   const waitingForProfile = !preview && (loading || Boolean(user && !state));
@@ -89,7 +90,7 @@ export default function Welcome() {
     setCardDraft(draft);
     if (step === "growth") {
       if (user && !preview) {
-        try { await saveCompletedIntro(user.email); router.replace({ pathname: "/onboarding", params: { invite } }); }
+        try { await saveCompletedIntro(user.email); router.replace(setupRoute); }
         catch { setError("Could not save setup on this device. Please try again."); }
         return;
       }
@@ -106,7 +107,7 @@ export default function Welcome() {
       if (result.error) { await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY); setError(result.error); return; }
       setPassword("");
       if (result.needsEmailConfirm) { setConfirmation(true); return; }
-      router.replace({ pathname: "/onboarding", params: { invite } });
+      router.replace(setupRoute);
     } catch (err) {
       void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
       setError(err instanceof Error ? err.message : "Could not create your account.");
