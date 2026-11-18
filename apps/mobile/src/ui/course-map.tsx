@@ -4,7 +4,7 @@ import { MapAttribution } from "./map-attribution";
 import { useThemeColors } from "../theme";
 import { useAuth } from "../lib/auth";
 import Svg, { G } from "react-native-svg";
-import { AthleteNode } from "./athlete-node";
+import { AthleteNode, athleteNodeDiameter } from "./athlete-node";
 import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import { View, Text, Pressable, useWindowDimensions } from "react-native";
@@ -19,6 +19,8 @@ import { FieldOverlayView } from "./field-overlay-motion";
 import { AppText, textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
 import { useSceneActive } from "./use-scene-active";
+
+const START_NODE_RADIUS = 14;
 
 const rememberedProgress = new Map<string, number>();
 const rememberedCameras = new Map<string, CourseCameraPose>();
@@ -50,7 +52,8 @@ const appearanceColors = useThemeColors();
   const mapRef = useRef<ComponentRef<typeof MapView>>(null);
   const reported = useRef(false);
   const { user } = useAuth();
-  const cameraKey = `${user?.id ?? "guest"}:${course.name}:${course.length}:${course.coordinates[0].join(",")}:${unit}`;
+  const queuedStart = lanes.some(lane => lane.mystery) && lanes.every(lane => lane.ghost || lane.value === 0);
+  const cameraKey = `${user?.id ?? "guest"}:${course.name}:${course.length}:${course.coordinates[0].join(",")}:${unit}:${queuedStart}`;
   const cachedPose = replay || onSnapshot ? undefined : rememberedCameras.get(cameraKey);
   const restored = useRef(isValidPose(cachedPose) ? cachedPose : undefined);
   const [dismissed, setDismissed] = useState<string[]>([]);
@@ -72,7 +75,21 @@ const appearanceColors = useThemeColors();
     });
     return features.length === scene.markers.features.length && !hiddenIds.length ? scene.markers : { ...scene.markers, features };
   }, [scene.markers, hiddenIds, sharedLane]);
-  const fallbackCenter = scene.selected?.coordinate ?? course.coordinates[0];
+  const fallbackCenter = queuedStart ? course.coordinates[0] : scene.selected?.coordinate ?? course.coordinates[0];
+  const selectedOffset = queuedStart ? 0 : scene.selected?.lateralMetres;
+  const startLine = queuedStart && !overlaysHidden
+    ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id)).sort((a, b) => a.id.localeCompare(b.id))
+    : [];
+  const viewer = startLine.findIndex(lane => lane.you);
+  if (viewer >= 0) {
+    const [lane] = startLine.splice(viewer, 1);
+    startLine.splice(Math.floor(startLine.length / 2), 0, lane);
+  }
+  const startMarkers = startLine.map(lane => {
+    const selected = !lane.mystery && lane.id === selectedId;
+    return { lane, selected, width: athleteNodeDiameter(START_NODE_RADIUS, lane.mystery, selected) + 1 };
+  });
+  const startHeight = Math.max(0, ...startMarkers.map(marker => marker.width)) + 2;
   const pose = useRef<CourseCameraPose>(restored.current ?? { center: fallbackCenter, zoom: courseInitialZoom(fallbackCenter[1], dimensions.height, initialFlat ? 0 : 60), pitch: initialFlat ? 0 : 60, bearing: 0 });
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(restored.current ? restored.current.pitch === 0 : initialFlat);
   const flatRef = useRef(flat);
@@ -115,14 +132,14 @@ const appearanceColors = useThemeColors();
   useEffect(() => { if (!active) controller.stopMotion(); return () => controller.stopMotion(); }, [controller, active]);
   useEffect(() => controller.setReducedMotion(Boolean(reduced)), [controller, reduced]);
   useEffect(() => { if (!followAthlete && controller.following) controller.interrupt(false); }, [controller, followAthlete, reduced]);
-  const focus = () => { if (scene.selected) { controller.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); } };
+  const focus = () => { if (scene.selected) { controller.focus(course, scene.selected.metres, false, selectedOffset); } };
   const lastFocus = useRef<{ course: RaceCourse; id: string; request: number; following: boolean; session?: string | number | boolean; metres?: number } | null>(null);
   useEffect(() => {
     if ((!active && initialized.current) || !ready || !scene.selected || replay) return;
     if (restored.current) {
       const savedMetres = rememberedProgress.get(cameraKey);
       const anchorMetres = followAthlete ? scene.selected.metres : (savedMetres ?? scene.selected.metres);
-      controller.anchor(course, anchorMetres, scene.selected.lateralMetres);
+      controller.anchor(course, anchorMetres, selectedOffset);
       initialized.current = true;
       lastFocus.current = { course, id: selectedId, request: focusRequest, following: followAthlete, session: cardSessionKey, metres: scene.selected.metres };
       restored.current = undefined;
@@ -138,9 +155,9 @@ const appearanceColors = useThemeColors();
     if (!followAthlete) return;
     // Tab focus alone must never move a prepared camera.
     if (previous && !explicit && previous.metres === scene.selected.metres) return;
-    controller.focus(course, scene.selected.metres, !explicit, scene.selected.lateralMetres);
+    controller.focus(course, scene.selected.metres, !explicit, selectedOffset);
     initialized.current = true;
-  }, [active, ready, controller, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres, replay]);
+  }, [active, ready, controller, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, selectedOffset, replay]);
   const replayTarget = useRef<CourseCameraPose | null>(null);
   replayTarget.current = replay && scene.selected
     ? courseReplayPose(course, scene.selected, scene.callouts.find(lane => lane.id === replay.nearestId), reduced ? 0 : replay.focus, replay.zoomBoost)
@@ -252,7 +269,7 @@ const appearanceColors = useThemeColors();
         if ((Math.abs(p.center[0]) < 1e-6 && Math.abs(p.center[1]) < 1e-6) || Number.isNaN(p.center[0]) || Number.isNaN(p.center[1])) return;
         if (typeof p.zoom === "number" && p.zoom <= 0.1) return;
         pose.current = { center: [p.center[0], p.center[1]], zoom: p.zoom, pitch: p.pitch, bearing: p.heading };
-        if (!replay) { rememberedCameras.set(cameraKey, pose.current); if (controller.courseMetres !== null) rememberedProgress.set(cameraKey, controller.courseMetres); else rememberedProgress.delete(cameraKey); }
+        if (!replay && !onSnapshot) { rememberedCameras.set(cameraKey, pose.current); if (controller.courseMetres !== null) rememberedProgress.set(cameraKey, controller.courseMetres); else rememberedProgress.delete(cameraKey); }
         if (replay && p.isUserInteraction && mapUserGesture.current) replayZoom.current = p.zoom;
         if (!replay && p.isUserInteraction && controller.following && mapUserGesture.current) {
           if (mapUserGestureTimer.current) clearTimeout(mapUserGestureTimer.current);
@@ -263,14 +280,29 @@ const appearanceColors = useThemeColors();
         }
       }} />
       <ShapeSource id="completed" shape={visibleTrails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineSortKey: ["get", "priority"], lineWidth: sharedLane ? RACE_OVERLAY_WIDTH_PIXELS : RACE_SEPARATE_WIDTH_PIXELS, lineCap: "round", lineJoin: "round" }} /></ShapeSource>
-      {!sharedLane ? <ShapeSource id="athletes" shape={visibleMarkers} onPress={event => { const id = event.features[0]?.properties?.id; if (typeof id === "string") onSelect(id); }}>
+      {!sharedLane && !queuedStart ? <ShapeSource id="athletes" shape={visibleMarkers} onPress={event => { const id = event.features[0]?.properties?.id; if (typeof id === "string") onSelect(id); }}>
         <CircleLayer id="athlete-dots" slot="top" style={{ circleSortKey: ["case", ["get", "selected"], 2, ["get", "you"], 1, 0], circleRadius: ["case", ["get", "selected"], RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS], circleColor: ["get", "color"], circleStrokeColor: "#ffffff", circleStrokeWidth: 1 }} />
       </ShapeSource> : null}
       {!reduced && replay ? replay.passEffects.filter(pass => !hiddenIds.includes(pass.id)).map(pass => {
         const lane = scene.callouts.find(lane => lane.id === pass.id);
         return lane ? <MarkerView key={`pass-${pass.id}`} coordinate={lane.coordinate} anchor={{x:.5,y:.5}} allowOverlap allowOverlapWithPuck><View pointerEvents="none" style={{width:100,height:100,alignItems:"center",justifyContent:"center"}}><View style={{width:32+64*(1-pass.strength),height:32+64*(1-pass.strength),borderRadius:60,borderWidth:4,borderColor:appearanceColors.actionPrimary,backgroundColor:"#f7c94833",opacity:pass.strength}}/></View></MarkerView> : null;
       }) : null}
-      {!overlaysHidden ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id) && !dismissed.includes(lane.id)).map(lane => {
+      {startLine.length > 0 && (
+        <MarkerView coordinate={course.coordinates[0]} anchor={{ x: 0.5, y: 0.5 }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
+          <View collapsable={false} style={{ width: startMarkers.reduce((total, marker) => total + marker.width, 0), flexDirection: "row", alignItems: "center", height: startHeight }}>
+            {startMarkers.map(({ lane, selected, width }) => (
+              <Pressable key={lane.id} accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ width, height: startHeight }}>
+                <Svg width={width} height={startHeight} pointerEvents="none">
+                  <G transform={`translate(${width / 2} ${startHeight / 2})`}>
+                    <AthleteNode lane={lane} x={0} y={0} detail="" nodeRadius={START_NODE_RADIUS} selected={selected} prefix={`${prefix}-${lane.id}`} />
+                  </G>
+                </Svg>
+              </Pressable>
+            ))}
+          </View>
+        </MarkerView>
+      )}
+      {!queuedStart && !overlaysHidden ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id) && !dismissed.includes(lane.id)).map(lane => {
         const detail = courseAthleteDetail(lanes, lane, unit);
         if (!sharedLane && !lane.mystery) {
           return <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: lane.callout.left ? 1 : 0, y: lane.callout.originY / lane.callout.height }} allowOverlap allowOverlapWithPuck allowZElevate={false}>

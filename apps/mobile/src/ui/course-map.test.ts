@@ -12,7 +12,7 @@ import { createRaceCourse, raceCoursePosition, raceEffortMetres } from "@fitness
 const calls = vi.hoisted(() => ({ setCamera: vi.fn() }));
 vi.mock("react-native", () => ({ useWindowDimensions: () => ({ width: 390, height: 844 }),useColorScheme: () => "light",  View: "View", Text: "Text", Pressable: "Pressable", ScrollView: "ScrollView", Switch: "Switch", Platform: { OS: "ios" }, Modal: ({ visible, ...props }: { visible: boolean }) => visible ? createElement("Modal", { visible, ...props }) : null, Dimensions: { get: () => ({ width: 390, height: 844 }) }, StyleSheet: { create: (value: unknown) => value } }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
-vi.mock("./athlete-node", () => ({ AthleteNode: "AthleteNode" }));
+vi.mock("./athlete-node", async importOriginal => ({ ...await importOriginal<typeof import("./athlete-node")>(), AthleteNode: "AthleteNode" }));
 vi.mock("./athlete-pennant", () => ({ AthletePennant: "AthletePennant" }));
 vi.mock("react-native-svg", () => ({ default: "Svg", G: "G" }));
 vi.mock("./field-overlay-motion", () => ({ FieldOverlayView: "FieldOverlayView" }));

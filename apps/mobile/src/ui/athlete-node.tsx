@@ -28,6 +28,15 @@ export interface AthleteNodeProps {
   gold?: boolean;
 }
 
+const nodeScaleForState = (mystery: boolean | undefined, selected: boolean) => mystery ? 0.8 : selected ? 1.16 : 1;
+const SELECTED_HALO = 4;
+const NODE_STROKE = 1.6;
+
+export function athleteNodeDiameter(radius: number, mystery: boolean | undefined, selected: boolean) {
+  const outsideRadius = radius + (selected ? SELECTED_HALO : NODE_STROKE / 2);
+  return Math.ceil(2 * outsideRadius * nodeScaleForState(mystery, selected));
+}
+
 function resolveInitials(name: string, explicit?: string, mystery?: boolean): string {
   if (mystery) return "?";
   const candidate = (explicit && explicit.trim().toUpperCase() !== "YOU" ? explicit : initialsFromName(name)).trim().toUpperCase();
@@ -56,7 +65,7 @@ export function AthleteNode({
   const c = useThemeColors();
   const isActive = expanded || selected;
   const r = nodeRadius;
-  const effectiveScale = nodeScale * (l.mystery ? 0.8 : isActive ? 1.16 : 1);
+  const effectiveScale = nodeScale * nodeScaleForState(l.mystery, isActive);
   const accent = gold ? c.tennis : c.secondary;
   const initials = resolveInitials(l.name, l.initials, l.mystery);
   const cleanSubdetail = subdetail?.replace(/\s+vs\s+you\b/gi, "").replace(/\byou['’]re\s+/gi, "");
@@ -114,7 +123,7 @@ export function AthleteNode({
       ) : null}
       {showNode ? (
         <G transform={`scale(${effectiveScale})`}>
-          {isActive ? <Circle cx={0} cy={0} r={r + 4} fill={accent} opacity={0.28} /> : null}
+          {isActive ? <Circle cx={0} cy={0} r={r + SELECTED_HALO} fill={accent} opacity={0.28} /> : null}
           <Circle cx={0} cy={1.5} r={r} fill={c.ink} opacity={0.2} />
           <Circle cx={0} cy={0} r={r} fill={c.card} />
           {!l.mystery && l.avatarUrl ? (
@@ -145,7 +154,7 @@ export function AthleteNode({
             r={r}
             fill="none"
             stroke={isActive ? accent : c.line}
-            strokeWidth={isActive && r >= 14 ? 2.4 : 1.6}
+            strokeWidth={isActive && r >= 14 ? 2.4 : NODE_STROKE}
             strokeDasharray={l.mystery || l.ghost ? "3 3" : undefined}
           />
         </G>
