@@ -15,9 +15,15 @@ import {
   sportById,
   type CompeteState,
 } from "./compete";
-import { accountTimeZone } from "./timezone";
+import { APP_TIMEZONE, accountTimeZone } from "./timezone";
 import { weeklyPeriodBounds } from "./period";
 import { weeklyActivityStreak } from "./weekly-streak";
+
+export function formatMemberSince(iso: string, timeZone = APP_TIMEZONE): string | null {
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return null;
+  return new Date(ms).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone });
+}
 
 export const ATHLETE_CARD_HIGHLIGHT_LIMIT = 3;
 
@@ -43,6 +49,8 @@ export interface AthleteCardModel {
   city: string;
   location: string;
   countryCode: string | null;
+  /** Short membership label for the card face, e.g. "Jun 2026". */
+  memberSince?: string | null;
   /** IANA zone for formatting record dates on the card (from profile). */
   displayTimeZone?: string;
   initials: string;
@@ -227,24 +235,29 @@ export function athleteCardHighlightCatalog(
 export function athleteCardModelForPeer(input: {
   name: string;
   city?: string | null;
+  countryCode?: string | null;
   avatarUrl?: string | null;
   score?: number | null;
   sport?: string | null;
+  overtakes?: number | null;
+  memberSince?: string | null;
 }): AthleteCardModel {
   const score = input.score ?? null;
-  const countryCode = null;
+  const countryCode = input.countryCode ?? null;
+  const overtakes = input.overtakes ?? 0;
   return {
     name: input.name,
     city: input.city?.trim() || "—",
     location: athleteLocationLine(input.city, countryCode),
     countryCode,
+    memberSince: input.memberSince ?? null,
     initials: initialsFromName(input.name),
     avatarUrl: input.avatarUrl ?? null,
     sport: input.sport?.trim() || "Athlete",
     score,
     rank: score === null ? null : rankForElo(score).name,
     records: [],
-    overtakes: 0,
+    overtakes,
     rounds: 0,
     streak: 0,
     streakActive: false,
@@ -294,6 +307,7 @@ export function parseAthleteCardMessage(value: unknown): { model: AthleteCardMod
     ![m.name, m.city, m.initials, m.sport].every(s => typeof s === "string") ||
     !(m.location === undefined || typeof m.location === "string") ||
     !(m.countryCode === undefined || m.countryCode === null || typeof m.countryCode === "string") ||
+    !(m.memberSince === undefined || m.memberSince === null || typeof m.memberSince === "string") ||
     !(m.avatarUrl === null || typeof m.avatarUrl === "string") ||
     !(m.score === null || (typeof m.score === "number" && Number.isFinite(m.score))) ||
     !(m.rank === null || typeof m.rank === "string") || typeof m.streakActive !== "boolean" ||

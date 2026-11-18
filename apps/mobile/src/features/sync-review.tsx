@@ -165,6 +165,7 @@ const c=useThemeColors();
     <View style={{ gap: 12 }}>
       <ScrollView
         ref={cardScroll}
+        style={{ marginHorizontal: -16 }}
         horizontal
         scrollEnabled={activities.length > 1}
         showsHorizontalScrollIndicator={false}
@@ -172,7 +173,7 @@ const c=useThemeColors();
         snapToInterval={cardWidth + cardGap}
         contentContainerStyle={{
           ...(activities.length === 1 ? { flexGrow: 1, justifyContent: "center" } : {}),
-          paddingHorizontal: 2,
+          paddingHorizontal: 16,
           gap: cardGap,
         }}
         onScroll={(e) => {

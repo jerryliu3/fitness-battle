@@ -23,6 +23,7 @@
 .rating strong, .sport strong { display: block; font: 400 8cqi/1 var(--font-display),sans-serif; letter-spacing: -.025em; text-transform: uppercase; }
 .rating > span, .sport > span { display: block; margin-top: 1cqi; font: 700 3.2cqi/1.2 var(--font-body),sans-serif; letter-spacing: .03em; text-transform: uppercase; }
 .flag { position: absolute; top: 39cqi; left: 11cqi; font-size: 7cqi; line-height: 1; }
+.since { position: absolute; top: 39.5cqi; right: 11cqi; max-width: 36cqi; font: 700 4.8cqi/1.1 var(--font-body),sans-serif; letter-spacing: .02em; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .88; }
 .portrait { position: absolute; top: 26cqi; left: 50%; width: 30cqi; height: 30cqi; margin-left: -15cqi; overflow: visible; background: transparent; }
 .photo, .portrait > span { width: 100%; height: 100%; border-radius: 50%; background: #c5d4d9; }
 .photo { display: block; object-fit: cover; pointer-events: none; }

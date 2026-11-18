@@ -15,6 +15,7 @@ import {
   sportById,
   primaryFreezePeriodStart,
   competeNow,
+  formatMemberSince,
   clubLifetimeTotals,
   formatDistanceM,
   distanceUnitLabel,
@@ -780,7 +781,23 @@ const styles=useThemedStyles(stylesThemes);
             overflow: "visible",
           }}
         >
-          {Platform.OS === "web" ? <AthleteCrest model={athleteCardModel(state, now)} onInteractionChange={setCardDragging} /> : <AthleteCardSlot ref={cardSlot} viewport={cardViewport} onInteractionChange={setCardDragging} />}
+          {Platform.OS === "web" ? (() => {
+            const base = athleteCardModel(state, now);
+            const memberSince = user.createdAt ? formatMemberSince(user.createdAt) : null;
+            return (
+              <AthleteCrest
+                model={memberSince ? { ...base, memberSince } : base}
+                onInteractionChange={setCardDragging}
+              />
+            );
+          })() : (
+            <AthleteCardSlot
+              ref={cardSlot}
+              viewport={cardViewport}
+              active={!settingsOpen && !editDraft}
+              onInteractionChange={setCardDragging}
+            />
+          )}
         </View>
 
         <View
@@ -861,15 +878,20 @@ const styles=useThemedStyles(stylesThemes);
         {/* Awards Shelf under Athlete Crest */}
         {awards.length > 0 && (
           <View style={f.section}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <SectionHeader title="Podium & Awards" subtitle="Season awards and battle honors" />
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => router.push("/progress-achievements")}
-              >
-                <AppText role="caption" secondary>View all →</AppText>
-              </Pressable>
-            </View>
+            <SectionHeader
+              title="Podium & Awards"
+              subtitle="Season awards and battle honors"
+              action={
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="View all podiums and awards"
+                  onPress={() => router.push("/progress-achievements")}
+                  style={{ minHeight: 44, justifyContent: "center", maxWidth: "100%" }}
+                >
+                  <AppText role="caption" secondary>View all →</AppText>
+                </Pressable>
+              }
+            />
             <AwardShelf cards={awards} />
           </View>
         )}

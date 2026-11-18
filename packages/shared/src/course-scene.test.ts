@@ -23,19 +23,19 @@ it("gives each real racer a covered trail ending at its dot, without exposing fu
   expect(lanes[0].value).toBe(.5);
 });
 
-it("fans shared-lane markers symmetrically at the start line only", () => {
+it.each([false, true])("fans shared-lane markers equally at live and queued starts (mystery=%s)", (mystery) => {
   const course = createRaceCourse("Street", [[0, 0], [.01, 0]]);
   const lanes = [
     { id: "you", name: "You", initials: "Y", you: true, value: 0 },
-    { id: "mystery-0", name: "Athlete #1", initials: "?", mystery: true, value: 0 },
-    { id: "mystery-1", name: "Athlete #2", initials: "?", mystery: true, value: 0 },
+    { id: "mystery-0", name: "Athlete #1", initials: "?", mystery, value: 0 },
+    { id: "mystery-1", name: "Athlete #2", initials: "?", mystery, value: 0 },
   ];
   const scene = raceCourseScene(course, lanes, "km", "you");
   const coordinates = scene.markers.features.map((marker) => marker.geometry.coordinates);
   expect(new Set(coordinates.map((coordinate) => coordinate.join(","))).size).toBe(3);
   const laterals = scene.callouts.map((lane) => lane.lateralMetres);
   expect(laterals[0] + laterals[1] + laterals[2]).toBeCloseTo(0, 5);
-  expect(laterals.every((lateral) => Math.abs(lateral) <= 8)).toBe(true);
+  expect([...laterals].sort((a, b) => a - b)).toEqual([-8, 0, 8]);
   const midRace = raceCourseScene(course, lanes.map((lane) => ({ ...lane, value: .5 })), "km", "you");
   for (const marker of midRace.markers.features) {
     expect(marker.geometry.coordinates).toEqual(raceCoursePosition(course, 500).coordinate);
@@ -143,7 +143,7 @@ it("keeps you in a center start position regardless of ID sorting or selected ri
     const lanes = Array.from({ length: count }, (_, i) => ({ id: i === 0 ? "z-you" : `a-${i}`, name: "Athlete", initials: "A", you: i === 0, value: 0 }));
     const scene = raceCourseScene(course, lanes, "km", "a-1");
     const you = scene.callouts.find(lane => lane.you)!;
-    expect(Math.abs(you.lateralMetres)).toBeCloseTo(count % 2 ? 0 : .21);
+    expect(Math.abs(you.lateralMetres)).toBeCloseTo(count % 2 ? 0 : 4);
     expect(new Set(scene.callouts.map(lane => lane.lateralMetres)).size).toBe(count);
   }
 });

@@ -74,7 +74,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, ...input }
         <AppHeading level={2} role="heading">{contract.title}</AppHeading>
         <div className="crew-week-value">
           <AppText role="hero">{view.reading}</AppText><AppText role="body">{view.targetReading != null ? `/ ${view.targetReading} ` : ""}{view.unit}</AppText></div>
-        {input.previousDistanceM != null && view.relay.metric === "distance_m" && <AppText role="caption" className="crew-ghost">Crew Ghost · {view.volume(input.previousDistanceM)} last week</AppText>}
+
         <CrewRelay {...overviewInput} entries={view.entries} model={view.relay.model} compact onSelectMember={onSelectMember} />
         <div className="crew-replay">
           <button type="button" className="crew-play" disabled={!events.length} aria-label={playing ? "Pause replay" : "Replay this week"} aria-pressed={playing} onClick={() => { if (!playing && frame === 1) setFrame(0); setPlaying(!playing); }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS[playing ? "pause" : "play"]} /></svg></button>

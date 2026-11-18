@@ -323,19 +323,19 @@ export function JourneySpace({
           {/* Week Quick Stats */}
           <View style={s.atlasStatsRow}>
             <View style={s.statBox}>
-              <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
+              <AppText role="value" style={{ fontVariant: ["tabular-nums"] }} numberOfLines={1} adjustsFontSizeToFit>
                 {weekSummary.count}
               </AppText>
               <AppText role="caption" secondary>Workouts</AppText>
             </View>
             <View style={s.statBox}>
-              <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
+              <AppText role="value" style={{ fontVariant: ["tabular-nums"] }} numberOfLines={1} adjustsFontSizeToFit>
                 {weekSummary.hours}
               </AppText>
               <AppText role="caption" secondary>Hours</AppText>
             </View>
             <View style={s.statBox}>
-              <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
+              <AppText role="value" style={{ fontVariant: ["tabular-nums"] }} numberOfLines={1} adjustsFontSizeToFit>
                 {weekSummary.effort}
               </AppText>
               <AppText role="caption" secondary>Training XP</AppText>
@@ -463,19 +463,19 @@ export function JourneySpace({
           {/* Month Quick Stats */}
           <View style={s.atlasStatsRow}>
             <View style={s.statBox}>
-              <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
+              <AppText role="value" style={{ fontVariant: ["tabular-nums"] }} numberOfLines={1} adjustsFontSizeToFit>
                 {monthSummary.sessions}
               </AppText>
               <AppText role="caption" secondary>Sessions</AppText>
             </View>
             <View style={s.statBox}>
-              <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
+              <AppText role="value" style={{ fontVariant: ["tabular-nums"] }} numberOfLines={1} adjustsFontSizeToFit>
                 {monthSummary.hours}
               </AppText>
               <AppText role="caption" secondary>Hours</AppText>
             </View>
             <View style={s.statBox}>
-              <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
+              <AppText role="value" style={{ fontVariant: ["tabular-nums"] }} numberOfLines={1} adjustsFontSizeToFit>
                 {monthSummary.effort}
               </AppText>
               <AppText role="caption" secondary>Training XP</AppText>
@@ -545,25 +545,25 @@ export function JourneySpace({
           {/* Annual Atlas Overview Stats */}
           <View style={s.atlasStatsRow}>
             <View style={s.statBox}>
-              <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
+              <AppText role="value" style={{ fontVariant: ["tabular-nums"] }} numberOfLines={1} adjustsFontSizeToFit>
                 {yearSummary.activities}
               </AppText>
               <AppText role="caption" secondary>Activities</AppText>
             </View>
             <View style={s.statBox}>
-              <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
+              <AppText role="value" style={{ fontVariant: ["tabular-nums"] }} numberOfLines={1} adjustsFontSizeToFit>
                 {yearSummary.hours}
               </AppText>
               <AppText role="caption" secondary>Hours</AppText>
             </View>
             <View style={s.statBox}>
-              <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
+              <AppText role="value" style={{ fontVariant: ["tabular-nums"] }} numberOfLines={1} adjustsFontSizeToFit>
                 {yearSummary.battles}
               </AppText>
-              <AppText role="caption" secondary>Battles</AppText>
+              <AppText role="caption" secondary>Events</AppText>
             </View>
             <View style={s.statBox}>
-              <AppText role="hero" style={{ fontVariant: ["tabular-nums"] }}>
+              <AppText role="value" style={{ fontVariant: ["tabular-nums"] }} numberOfLines={1} adjustsFontSizeToFit>
                 {yearSummary.effort}
               </AppText>
               <AppText role="caption" secondary>Training XP</AppText>
@@ -754,6 +754,8 @@ const sThemes = createThemedStyles((themeColors) => {
       borderTopColor: c.line,
     },
     statBox: {
+      flex: 1,
+      minWidth: 0,
       alignItems: "center",
       gap: 2,
     },

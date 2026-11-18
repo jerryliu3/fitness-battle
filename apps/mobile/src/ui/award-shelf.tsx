@@ -1,3 +1,4 @@
+import { pageCarouselStyles } from "./carousel-styles";
 import { createThemedStyles, useThemedStyles } from "../theme";
 import { textStyle, AppText  } from "./section";
 import type { AwardCardModel } from "@fitness-battle/shared";
@@ -19,8 +20,9 @@ const styles=useThemedStyles(stylesThemes);
   return (
     <ScrollView
       horizontal
+      style={pageCarouselStyles.viewport}
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}
+      contentContainerStyle={[pageCarouselStyles.content, styles.row]}
       accessibilityLabel="Week awards"
     >
       {cards.map((card) => (

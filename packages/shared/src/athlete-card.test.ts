@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { freshState, type Activity } from "./compete";
-import { athleteCardModel, athleteCardModelForPeer, athleteCardHighlightCatalog, defaultAthleteCardHighlightIds, parseAthleteCardMessage } from "./athlete-card";
+import { athleteCardModel, athleteCardModelForPeer, athleteCardHighlightCatalog, defaultAthleteCardHighlightIds, formatMemberSince, parseAthleteCardMessage } from "./athlete-card";
 
 const now = new Date("2026-11-08T12:00:00Z");
 function run(id: string, startedAt: string, seconds: number, distanceM = 5000): Activity {
@@ -40,6 +40,10 @@ it("builds a minimal peer card model for foreign athlete profiles", () => {
   expect(model.score).toBe(1090);
   expect(model.records).toEqual([]);
   expect(parseAthleteCardMessage({ type: "athlete-card", model, active: true })).toEqual({ model, active: true, appearance: "light" });
+});
+
+it("formats membership month labels in Eastern time", () => {
+  expect(formatMemberSince("2026-06-15T12:00:00Z")).toBe("Jun 2026");
 });
 
 it("validates the card bridge and rejects malformed nested values", () => {

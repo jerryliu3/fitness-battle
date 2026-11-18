@@ -100,22 +100,22 @@ export function AthleteProfileEditor({
     name.trim() !== state.name ||
     city.trim() !== state.city ||
     gender !== (state.gender ?? null) ||
-    (countryCode || null) !== (state.countryCode ?? null) ||
-    JSON.stringify(highlights ?? null) !== JSON.stringify(state.cardHighlights ?? null);
+    (countryCode || null) !== (state.countryCode ?? null);
+
+  function saveHighlights(next: string[] | undefined) {
+    setHighlights(next);
+    dispatch({ type: "set-card-highlights", cardHighlights: next });
+  }
 
   function toggleHighlight(id: string) {
     setLimitHint(false);
-    setHighlights((prev) => {
-      const current = prev ?? activeIds;
-      if (current.includes(id)) {
-        return current.filter((item) => item !== id);
-      }
-      if (current.length >= ATHLETE_CARD_HIGHLIGHT_LIMIT) {
-        setLimitHint(true);
-        return current;
-      }
-      return [...current, id];
-    });
+    if (activeIds.includes(id)) {
+      saveHighlights(activeIds.filter((item) => item !== id));
+    } else if (activeIds.length >= ATHLETE_CARD_HIGHLIGHT_LIMIT) {
+      setLimitHint(true);
+    } else {
+      saveHighlights([...activeIds, id]);
+    }
   }
 
   function commitAndClose() {
@@ -137,16 +137,12 @@ export function AthleteProfileEditor({
     if ((countryCode || null) !== (state.countryCode ?? null)) {
       dispatch({ type: "set-country", countryCode: countryCode || null });
     }
-    if (JSON.stringify(highlights ?? null) !== JSON.stringify(state.cardHighlights ?? null)) {
-      dispatch({ type: "set-card-highlights", cardHighlights: highlights });
-    }
     onSaved?.("Profile updated.");
   }
 
   return (
     <View style={{ gap: 18 }}>
       <View style={{ gap: 12 }}>
-        <SectionHeader title="Identity" />
         <View style={[f.row, { gap: 14, alignItems: "center" }]}>
           <ProfilePhoto state={state} editSize={100} />
           <View style={{ flex: 1, gap: 8 }}>
@@ -190,6 +186,15 @@ export function AthleteProfileEditor({
         ) : null}
       </View>
 
+      <View style={[f.row, { gap: 10, paddingTop: 4 }]}>
+        <View style={{ flex: 1 }}>
+          <FocusButton label="Cancel" secondary onPress={onCancel} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <FocusButton label={dirty ? "Save" : "Done"} onPress={dirty ? commitAndClose : onCancel} />
+        </View>
+      </View>
+
       <View style={{ gap: 10 }}>
         <View style={[f.row, { justifyContent: "space-between", alignItems: "center" }]}>
           <View style={{ flex: 1 }}>
@@ -199,7 +204,7 @@ export function AthleteProfileEditor({
             />
           </View>
           {highlights !== undefined ? (
-            <Pressable accessibilityRole="button" onPress={() => setHighlights(undefined)}>
+            <Pressable accessibilityRole="button" onPress={() => saveHighlights(undefined)}>
               <AppText role="caption" secondary>
                 Reset to PBs
               </AppText>
@@ -272,14 +277,7 @@ export function AthleteProfileEditor({
         </View>
       </View>
 
-      <View style={[f.row, { gap: 10, paddingTop: 4 }]}>
-        <View style={{ flex: 1 }}>
-          <FocusButton label="Cancel" secondary onPress={onCancel} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <FocusButton label={dirty ? "Save" : "Done"} onPress={dirty ? commitAndClose : onCancel} />
-        </View>
-      </View>
+
     </View>
   );
 }

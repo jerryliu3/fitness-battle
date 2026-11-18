@@ -54,9 +54,6 @@ export function CrewRelay(props: Props) {
   }, []);
 
   const volume = view.volume;
-  const ghostFraction = !relay.sessions && props.previousDistanceM != null
-    ? Math.min(1, props.previousDistanceM / (relay.target && relay.model.finish ? relay.target / relay.model.finish : Math.max(1, relay.model.total, relay.target ?? 0) * 1.2)) : null;
-  const ghost = ghostFraction == null ? null : { x: 16 + ghostFraction * Math.max(180, view.width - 52), y: 174 - (props.compact ? 34 : 0) - ghostFraction * 30 };
 
 
   return (
@@ -84,7 +81,6 @@ export function CrewRelay(props: Props) {
               <g key={s.id}>{s.nodes.map(drawFieldNodeDom)}</g>
             ))}
             {view.scene.finish.map(drawFieldNodeDom)}
-            {ghost && <line x1={ghost.x} y1={ghost.y + 18} x2={ghost.x + 24} y2={ghost.y - 46} stroke={appearanceColors.ink} strokeWidth={2} strokeDasharray="4 4" />}
             {!props.compact && view.target ? (
               <text
                 style={typographyStyle("caption")}

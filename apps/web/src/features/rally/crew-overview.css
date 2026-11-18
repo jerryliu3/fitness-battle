@@ -62,12 +62,6 @@
   flex-wrap:wrap;
   margin:12px 0
 }
-.crew-ghost {
-  display:block;
-  border:1px solid color-mix(in srgb,var(--ink) 12%,transparent);
-  border-radius:10px;
-  padding:10px 12px
-}
 .crew-week-hero .crew-dimensional-relay {
   margin:0
 }

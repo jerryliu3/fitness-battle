@@ -49,22 +49,27 @@ export function AthleteOverview({
     setCity(state.city);
     setGender(state.gender ?? "");
     setCountryCode(state.countryCode ?? "");
-    setCardHighlights(state.cardHighlights);
     setEditing(true);
-  }, [openProfileEdit, state.name, state.city, state.gender, state.countryCode, state.cardHighlights]);
+  }, [openProfileEdit, state.name, state.city, state.gender, state.countryCode]);
 
   const season = clubLifetimeTotals(state);
   const unit = distanceUnitLabel(state.units);
   const highlightCatalog = athleteCardHighlightCatalog(state);
   const activeHighlightIds = cardHighlights ?? defaultAthleteCardHighlightIds(state);
 
+  useEffect(() => setCardHighlights(state.cardHighlights), [state.cardHighlights]);
+
+  function saveHighlights(next: string[] | undefined) {
+    setCardHighlights(next);
+    dispatch({ type: "set-card-highlights", cardHighlights: next });
+  }
+
   function toggleHighlight(id: string) {
-    setCardHighlights((prev) => {
-      const current = prev ?? activeHighlightIds;
-      if (current.includes(id)) return current.filter((item) => item !== id);
-      if (current.length >= ATHLETE_CARD_HIGHLIGHT_LIMIT) return current;
-      return [...current, id];
-    });
+    if (activeHighlightIds.includes(id)) {
+      saveHighlights(activeHighlightIds.filter((item) => item !== id));
+    } else if (activeHighlightIds.length < ATHLETE_CARD_HIGHLIGHT_LIMIT) {
+      saveHighlights([...activeHighlightIds, id]);
+    }
   }
 
   const showProfile = sections === "profile";
@@ -123,37 +128,6 @@ export function AthleteOverview({
                   </select>
                 </label>
                 <CountryCombobox value={countryCode} onChange={setCountryCode} />
-                <div style={{ marginBottom: 12 }}>
-                  <div className="fb-row" style={{ justifyContent: "space-between", marginBottom: 6 }}>
-                    <AppText role="field">Card highlights ({activeHighlightIds.length}/{ATHLETE_CARD_HIGHLIGHT_LIMIT})</AppText>
-                    {cardHighlights !== undefined ? (
-                      <button
-                        type="button"
-                        className="fb-btn-line"
-                        style={{ ...typographyStyle("caption"), padding: "2px 8px" }}
-                        onClick={() => setCardHighlights(undefined)}
-                      >
-                        Reset to PBs
-                      </button>
-                    ) : null}
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 6 }}>
-                    {highlightCatalog.map((item) => {
-                      const selected = activeHighlightIds.includes(item.id);
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          className={selected ? "fb-btn" : "fb-btn-line"}
-                          style={{ ...typographyStyle("caption"), padding: "6px 8px", textAlign: "left" }}
-                          onClick={() => toggleHighlight(item.id)}
-                        >
-                          {item.label}: {item.value}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
                 {profileError ? (
                   <AppParagraph typographyRole="body" className="fb-error" role="alert" style={{ ...typographyStyle("body"), marginBottom: 8 }}>
                     {profileError}
@@ -175,7 +149,6 @@ export function AthleteOverview({
                       dispatch({ type: "set-city", city: city.trim() });
                       dispatch({ type: "set-gender", gender: gender || null });
                       dispatch({ type: "set-country", countryCode: countryCode || null });
-                      dispatch({ type: "set-card-highlights", cardHighlights });
                       setEditing(false);
                     }}
                   >
@@ -198,6 +171,38 @@ export function AthleteOverview({
                     Cancel
                   </button>
                 </div>
+                <div style={{ marginBottom: 12 }}>
+                  <div className="fb-row" style={{ justifyContent: "space-between", marginBottom: 6 }}>
+                    <AppText role="field">Card highlights ({activeHighlightIds.length}/{ATHLETE_CARD_HIGHLIGHT_LIMIT})</AppText>
+                    {cardHighlights !== undefined ? (
+                      <button
+                        type="button"
+                        className="fb-btn-line"
+                        style={{ ...typographyStyle("caption"), padding: "2px 8px" }}
+                        onClick={() => saveHighlights(undefined)}
+                      >
+                        Reset to PBs
+                      </button>
+                    ) : null}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 6 }}>
+                    {highlightCatalog.map((item) => {
+                      const selected = activeHighlightIds.includes(item.id);
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={selected ? "fb-btn" : "fb-btn-line"}
+                          style={{ ...typographyStyle("caption"), padding: "6px 8px", textAlign: "left" }}
+                          onClick={() => toggleHighlight(item.id)}
+                        >
+                          {item.label}: {item.value}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
               </div>
             </section>
           ) : (

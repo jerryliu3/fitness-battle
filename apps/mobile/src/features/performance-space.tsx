@@ -10,7 +10,7 @@ import { useScoreTrackLens } from "../lib/score-track-lens";
 import { useAuth } from "../lib/auth";
 import { useId, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { ClipPath, Defs, G, Line, Path, Polyline, Rect, Circle } from "react-native-svg";
+import { ClipPath, Defs, G, Line, Path, Rect, Circle } from "react-native-svg";
 import {
   accountTimeZone,
   RECORD_DISTANCES,
@@ -216,11 +216,7 @@ export function PerformanceSpace({
                 </View>
               )}
             </View>
-            {scoreComparison && !inspectedEffort && (
-              <AppText role="caption" secondary>
-                {`vs. start of ${EFFORT_RANGES.find(r => r.value === effortRange)?.label ?? "range"}`}
-              </AppText>
-            )}
+
           </View>
           <View style={s.compactControls}>
             <FocusSegments
@@ -482,18 +478,8 @@ export function PerformanceSpace({
                       </ChartText>
                     ))}
 
-                    {/* Rolling 30-day average trendline */}
-                    {prChartData.trendPolyline ? (<Polyline
-                            points={prChartData.trendPolyline}
-                            fill="none"
-                            stroke={c.secondary}
-                            strokeWidth={1.75}
-                            strokeDasharray="3 3"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />) : null}
 
-                    {/* Step path with right-side dimming when selected */}
+                    {/* Linear path with right-side dimming when selected */}
                     {prChartData.path ? (
                       activePRPoint ? (
                         <>
