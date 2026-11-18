@@ -15,6 +15,7 @@ import {
   sportById,
   primaryFreezePeriodStart,
   competeNow,
+  formatMemberSince,
   clubLifetimeTotals,
   formatDistanceM,
   distanceUnitLabel,
@@ -780,7 +781,23 @@ const styles=useThemedStyles(stylesThemes);
             overflow: "visible",
           }}
         >
-          {Platform.OS === "web" ? <AthleteCrest model={athleteCardModel(state, now)} onInteractionChange={setCardDragging} /> : <AthleteCardSlot ref={cardSlot} viewport={cardViewport} active={!settingsOpen && !editDraft} onInteractionChange={setCardDragging} />}
+          {Platform.OS === "web" ? (() => {
+            const base = athleteCardModel(state, now);
+            const memberSince = user.createdAt ? formatMemberSince(user.createdAt) : null;
+            return (
+              <AthleteCrest
+                model={memberSince ? { ...base, memberSince } : base}
+                onInteractionChange={setCardDragging}
+              />
+            );
+          })() : (
+            <AthleteCardSlot
+              ref={cardSlot}
+              viewport={cardViewport}
+              active={!settingsOpen && !editDraft}
+              onInteractionChange={setCardDragging}
+            />
+          )}
         </View>
 
         <View

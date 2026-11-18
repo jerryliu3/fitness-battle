@@ -1,0 +1,1 @@
+export { AthletePublicProfileScreen as default } from "../src/features/athlete-public-profile";

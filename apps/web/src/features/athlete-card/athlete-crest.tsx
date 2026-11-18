@@ -48,6 +48,7 @@ export const AthleteCrest = memo(function AthleteCrest({ model, active = true }:
           <div className={styles.rating}><strong>{model.score === null ? "—" : model.score.toLocaleString("en-US")}</strong><span>Effort Score</span></div>
           <div className={styles.sport}><strong>{model.sport}</strong><span>Primary sport</span></div>
           {flag ? <span className={styles.flag} role="img" aria-label={countryName(model.countryCode) ?? model.countryCode!}>{flag}</span> : null}
+          {model.memberSince ? <span className={styles.since}>{model.memberSince}</span> : null}
           <div className={styles.portrait}>{photo ? <img className={styles.photo} src={model.avatarUrl!} alt="" draggable={false} onError={() => setFailedPhoto(model.avatarUrl)} /> : <span aria-hidden="true">{model.initials}</span>}
             <img className={styles.wreath} src={`/rank-symbols/${rankSymbolForRankName(model.rank)}.png`} alt="" draggable={false} style={WREATH_FRAME} />
           </div>

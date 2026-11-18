@@ -1,8 +1,9 @@
 import { createContext, forwardRef, useCallback, useContext, useImperativeHandle, useMemo, useRef, useState, type ComponentRef, type ReactNode, type RefObject } from "react";
 import { Platform, ScrollView, View } from "react-native";
 import { useFocusEffect, usePathname } from "expo-router";
-import { athleteCardModel, competeNow } from "@fitness-battle/shared";
+import { athleteCardModel, competeNow, formatMemberSince } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
+import { useAuth } from "../lib/auth";
 import { AthleteCrest } from "./athlete-crest";
 
 type Frame = { x: number; y: number; width: number; height: number; clipTop: number; clipBottom: number };
@@ -12,11 +13,17 @@ const PlacementContext = createContext<((placement: Placement | null) => void) |
 /** One warmed WebView per account; navigation only changes its visible placement. */
 export function RetainedAthleteCard({ children }: { children: ReactNode }) {
   const { state, accountKey } = useCompeteStore();
+  const { user } = useAuth();
   const pathname = usePathname();
   const root = useRef<ComponentRef<typeof View>>(null);
   const [placement, setPlacement] = useState<Placement | null>(null);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
-  const model = useMemo(() => state ? athleteCardModel(state, competeNow(state)) : null, [state]);
+  const model = useMemo(() => {
+    if (!state) return null;
+    const base = athleteCardModel(state, competeNow(state));
+    const memberSince = user?.createdAt ? formatMemberSince(user.createdAt) : null;
+    return memberSince ? { ...base, memberSince } : base;
+  }, [state, user?.createdAt]);
   const frame = placement?.frame;
   const top = frame ? Math.max(frame.y, frame.clipTop) : 0;
   const bottom = frame ? Math.min(frame.y + frame.height, frame.clipBottom) : 0;
