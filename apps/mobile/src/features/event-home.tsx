@@ -5,7 +5,7 @@ import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useCompetitionCourse } from "./use-competition-course";
 import { GeographicCourse } from "./geographic-course";
 import { useCompeteStore } from "../lib/compete-store";
-import { Image, Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { type GestureResponderEvent, Image, Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { competeEventCarouselPageIndex, formatActivityAge, competitionCourseWindow, coursePreviewLanes, initialsFromName, type ArenaSceneLane, buildArenaModel, competitionQueue, competitionTrack, competeNow, isMetricCompete, ordinalPlace, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppText, textStyle } from "../ui/section";
 import { useThemeColors } from "../theme";
@@ -14,6 +14,7 @@ import { useEventActivity } from "./use-event-activity";
 import { CompeteIcon, EventArt } from "./compete-home-sections";
 import { CompeteTimeSeriesChart } from "../ui/compete-time-series-chart";
 
+const TAP_SLOP = 10;
 const snapshotCache = new Map<string, string>();
 
 /** Read-only event previews; entering is an explicit presentation action. */
@@ -21,18 +22,37 @@ export function EventHome({ state, accountKey, onEnter, onRecovery, active }: { 
   const c = useThemeColors();
   const { width } = useWindowDimensions();
   const [page, setPage] = useState(0);
+  const touch = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  const startTap = ({ nativeEvent: { pageX, pageY } }: GestureResponderEvent) => {
+    touch.current = { x: pageX, y: pageY, moved: false };
+  };
+  const checkTap = ({ nativeEvent: { pageX, pageY } }: GestureResponderEvent) => {
+    const start = touch.current;
+    if (start && Math.hypot(pageX - start.x, pageY - start.y) > TAP_SLOP) start.moved = true;
+  };
   const [availableWidth, setAvailableWidth] = useState(width - 40);
+  const clearTap = () => {
+    const ended = touch.current;
+    requestAnimationFrame(() => { if (touch.current === ended) touch.current = null; });
+  };
   const count = state.ratings.filter(r => r.optedIn).length + Number(state.healthRatings.some(r => r.optedIn));
   const cardWidth = count === 1 ? availableWidth : Math.min(360, availableWidth - 24);
-  return <View onLayout={event => setAvailableWidth(event.nativeEvent.layout.width)} style={{ gap: 14 }}>
+  return <View onTouchStart={startTap} onTouchMove={checkTap} onTouchEnd={clearTap} onTouchCancel={clearTap} onLayout={event => setAvailableWidth(event.nativeEvent.layout.width)} style={{ gap: 14 }}>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><AppText role="heading" accessibilityRole="header">Your events</AppText><AppText role="caption" secondary>{count} registered</AppText></View>
-    <ScrollView style={pageCarouselStyles.viewport} horizontal scrollEnabled={count > 1} showsHorizontalScrollIndicator={false} snapToInterval={cardWidth + 12} decelerationRate="fast" onScroll={event => setPage(competeEventCarouselPageIndex(event.nativeEvent.contentOffset.x, cardWidth + 12, count))} scrollEventThrottle={100} contentContainerStyle={[pageCarouselStyles.content, { gap: 12 }]}>
-    {state.ratings.filter(r => r.optedIn).map(rating => <RegisteredEventCard key={rating.sport} state={state} sport={rating.sport} active={active} cardWidth={cardWidth} onEnter={() => onEnter(accountKey, rating.sport)} />)}
-    {state.healthRatings.some(r => r.optedIn) ? <Pressable accessibilityRole="button" accessibilityLabel="Open Recovery" onPress={onRecovery} style={{ width: cardWidth, padding: 20, gap: 12, backgroundColor: c.accentSecondarySoft, borderRadius: 20, borderWidth: 1, borderColor: c.line, overflow: "hidden" }}><EventArt event="sleep" feature /><CompeteIcon name="sleep" /><AppText role="heading">Recovery</AppText><AppText role="body" secondary>Sleep competition</AppText><View style={{ flex: 1, minHeight: 120 }} /><AppText role="label">View event →</AppText></Pressable> : null}
-    </ScrollView>
+    <EventCarousel count={count} cardWidth={cardWidth} onPageChange={setPage}>
+    {state.ratings.filter(r => r.optedIn).map(rating => <RegisteredEventCard key={rating.sport} state={state} sport={rating.sport} active={active} cardWidth={cardWidth} onEnter={() => { if (!touch.current?.moved) onEnter(accountKey, rating.sport); }} />)}
+    {state.healthRatings.some(r => r.optedIn) ? <Pressable accessibilityRole="button" accessibilityLabel="Open Recovery" onPress={() => { if (!touch.current?.moved) onRecovery(); }} style={{ width: cardWidth, padding: 20, gap: 12, backgroundColor: c.accentSecondarySoft, borderRadius: 20, borderWidth: 1, borderColor: c.line, overflow: "hidden" }}><EventArt event="sleep" feature /><CompeteIcon name="sleep" /><AppText role="heading">Recovery</AppText><AppText role="body" secondary>Sleep competition</AppText><View style={{ flex: 1, minHeight: 120 }} /><AppText role="label">View event →</AppText></Pressable> : null}
+    </EventCarousel>
     {count > 1 && <View accessibilityLabel={`Event ${Math.min(page + 1, count)} of ${count}`} style={{ flexDirection: "row", justifyContent: "center", gap: 6 }}>{Array.from({ length: count }, (_, index) => <View key={index} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: index === Math.min(page, count - 1) ? c.podiumGold : c.line }} />)}</View>}
     {!count ? <AppText role="body" secondary>Explore an event below to join your first field.</AppText> : null}
   </View>;
+}
+
+function EventCarousel({ count, cardWidth, onPageChange, children }: { count: number; cardWidth: number; onPageChange(page: number): void; children: React.ReactNode }) {
+  if (count <= 1) return count === 1 ? <View>{children}</View> : null;
+  return <ScrollView style={pageCarouselStyles.viewport} horizontal showsHorizontalScrollIndicator={false} snapToInterval={cardWidth + 12} decelerationRate="fast" onScroll={event => onPageChange(competeEventCarouselPageIndex(event.nativeEvent.contentOffset.x, cardWidth + 12, count))} scrollEventThrottle={100} contentContainerStyle={[pageCarouselStyles.content, { gap: 12 }]}>
+    {children}
+  </ScrollView>;
 }
 
 function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { state: CompeteState; sport: SportId; active: boolean; cardWidth: number; onEnter(): void }) {
