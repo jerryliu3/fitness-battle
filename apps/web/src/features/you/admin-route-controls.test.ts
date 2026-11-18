@@ -37,3 +37,17 @@ it("loads inactive routes for editing and preserves the draft on a concurrent-ed
   expect(input("Name").props.value).toBe("My draft");
   expect(renderer.root.findAllByType("p").find(node => node.props.role === "status")!.children.join("")).toContain("Reload");
 });
+it("renders frozen assignment rows after loading the route overview", async () => {
+  fetcher.mockResolvedValueOnce(Response.json({
+    routes: [{ id: "alpine-chamonix-ridge", name: "Chamonix", location: "FR", is_active: true, updated_at: "2026-10-28T14:18:50.021661+00:00" }],
+    overview: {
+      surfaces: [],
+      catalog: [],
+      assignments: [{ wave_start: "2026-11-19T11:00:00+00:00", route_id: "alpine-chamonix-ridge", route_name: "Chamonix", created_at: "2026-11-18T13:42:19.527554+00:00", started: false, autoRouteId: "alpine-chamonix-ridge", matchesRotation: true }],
+      activeIds: ["alpine-chamonix-ridge"],
+    },
+  }));
+  await act(async () => button("Load route catalog").props.onClick());
+  const table = renderer.root.findAllByType("table").find(node => node.props["aria-label"] === "Competition route assignments");
+  expect(table?.findAllByType("tr").length).toBeGreaterThan(1);
+});
