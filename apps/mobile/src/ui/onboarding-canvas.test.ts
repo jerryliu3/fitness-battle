@@ -1,9 +1,15 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-const keyboard = vi.hoisted(() => ({ listeners: {} as Record<string, (event: unknown) => void>, visible: false, bottom: 600 }));
-vi.mock("react-native", () => ({
-  View: "View", ScrollView: "ScrollView", Platform: { OS: "web" },
+const keyboard = vi.hoisted(() => ({ listeners: {} as Record<string, (event: unknown) => void>, visible: false, bottom: 600, scrollToField: vi.fn() }));
+vi.mock("react-native", async () => {
+  const { createElement, forwardRef, useImperativeHandle } = await import("react");
+  const input = { measureInWindow: (callback: (...args: number[]) => void) => callback(0, keyboard.bottom - 46, 200, 46) };
+  return ({
+  View: "View", ScrollView: forwardRef((props: object, ref) => {
+    useImperativeHandle(ref, () => ({ scrollResponderScrollNativeHandleToKeyboard: keyboard.scrollToField }));
+    return createElement("ScrollView", props);
+  }), Platform: { OS: "web" },
   Keyboard: {
     metrics: () => keyboard.visible ? { screenY: 350 } : undefined,
     isVisible: () => keyboard.visible,
@@ -12,8 +18,8 @@ vi.mock("react-native", () => ({
       return { remove: () => delete keyboard.listeners[name] };
     },
   },
-  TextInput: { State: { currentlyFocusedInput: () => ({ measureInWindow: (callback: (...args: number[]) => void) => callback(0, keyboard.bottom - 46, 200, 46) }) } },
-}));
+  TextInput: { State: { currentlyFocusedInput: () => input } },
+}); });
 import { Keyboard, Platform, TextInput } from "react-native";
 import { OnboardingCanvas } from "./onboarding-canvas";
 it("keeps the composition size while revealing a field above the keyboard", async () => {
@@ -93,6 +99,32 @@ it("fits native component dimensions to the viewport without a screen transform"
       expect(renderer.root.findByType("card" as never).props.width).toBeCloseTo(280 * scale);
     }
   } finally {
+    if (renderer) await act(async () => renderer.unmount());
+    Reflect.set(Platform, "OS", "web");
+  }
+});
+
+
+it("keeps native scrolling available with the keyboard without snapping after each drag", async () => {
+  Reflect.set(Platform, "OS", "ios");
+  vi.stubGlobal("requestAnimationFrame", (callback: () => void) => callback());
+  keyboard.scrollToField.mockClear();
+  let renderer!: ReactTestRenderer;
+  try {
+    await act(async () => { renderer = create(createElement(OnboardingCanvas, { height: 640, children: null })); });
+    const views = () => renderer.root.findAllByType("View" as never);
+    await act(async () => views()[0].props.onLayout({ nativeEvent: { layout: { width: 375, height: 650 } } }));
+    const scroll = renderer.root.findByType("ScrollView" as never);
+    expect(scroll.props).toMatchObject({ automaticallyAdjustKeyboardInsets: true, keyboardDismissMode: "none", keyboardShouldPersistTaps: "handled" });
+    keyboard.visible = true;
+    await act(async () => keyboard.listeners.keyboardDidShow({ endCoordinates: { screenY: 350 } }));
+    expect(keyboard.scrollToField).toHaveBeenCalledWith(TextInput.State.currentlyFocusedInput(), 12, true);
+    expect(views()[1].props.style.top).toBeUndefined();
+    await act(async () => views()[0].props.onTouchEnd());
+    await act(async () => views()[0].props.onTouchEnd());
+    expect(keyboard.scrollToField).toHaveBeenCalledOnce();
+  } finally {
+    keyboard.visible = false;
     if (renderer) await act(async () => renderer.unmount());
     Reflect.set(Platform, "OS", "web");
   }
