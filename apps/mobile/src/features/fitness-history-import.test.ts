@@ -49,7 +49,7 @@ it("passes the selected range and locks settings immediately without waiting for
   await act(async () => button("Import 30 days").props.onPress());
   expect(mock.request).toHaveBeenCalledWith("https://example.test", "alice-token", "/api/fitness/history", { body: { provider: "apple_health", days: 30 } });
   expect(mock.device).toHaveBeenCalledWith(expect.objectContaining({ historyLease: "ticket", syncRange: expect.objectContaining({ since: "2026-10-18T18:00:00Z" }) }));
-  expect(button("History imported").props.disabled).toBe(true);
+  expect(button("Import fitness history")).toBeUndefined();
   expect(mock.dispatch).not.toHaveBeenCalled();
   await act(async () => renderer.root.findByType(FocusSheet).props.onClosed());
   expect(mock.dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "apply-sync", accountId: "alice" }));
@@ -65,7 +65,7 @@ it("keeps failed imports retryable", async () => {
 it("keeps a completed account locked after reopening settings", async () => {
   mock.request.mockResolvedValue({ completed: true, provider: "strava", days: 14 });
   await act(async () => { renderer = create(createElement(FitnessHistoryImport, { offer: "apple_health", onDismiss: mock.dismiss })); });
-  expect(button("History imported").props.disabled).toBe(true);
+  expect(button("Import fitness history")).toBeUndefined();
   expect(renderer.root.findByType(FocusSheet).props.open).toBe(false);
   expect(mock.dismiss).toHaveBeenCalled();
 });
