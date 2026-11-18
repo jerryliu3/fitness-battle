@@ -103,17 +103,18 @@ export type CourseDimension = "2d" | "3d";
 export interface CourseCameraPose { center: LngLat; zoom: number; pitch: number; bearing: number }
 /** Presentation frame shared by native and browser overtake maps. */
 export interface CourseReplayFrame {
+  zoomBoost?: number;
   nearestId?: string;
   focus: number;
   passEffects: { id: string; strength: number }[];
 }
 /** Frame both racers; tighten the camera as the photo-finish timeline slows. */
-export function courseReplayPose(course: RaceCourse, you: { metres: number; lateralMetres: number }, rival: { metres: number; lateralMetres: number } | undefined, focus: number): CourseCameraPose {
+export function courseReplayPose(course: RaceCourse, you: { metres: number; lateralMetres: number }, rival: { metres: number; lateralMetres: number } | undefined, focus: number, zoomBoost = 0): CourseCameraPose {
   const a = raceCourseRacerPosition(course, you.metres, you.lateralMetres).coordinate;
   const b = rival ? raceCourseRacerPosition(course, rival.metres, rival.lateralMetres).coordinate : a;
   const gap = distance(a, b, { units: "meters" });
   const center = gap > .01 ? destination(point(a), gap / 2, bearing(a, b), { units: "meters" }).geometry.coordinates as LngLat : a;
-  return { center, zoom: Math.min(17 + 2.3 * Math.max(0, Math.min(1, focus)), 19.3 - Math.log2(Math.max(1, gap / 65))), pitch: 60, bearing: raceCoursePosition(course, you.metres).heading };
+  return { center, zoom: Math.min(20, 17 + (2.3 + zoomBoost) * Math.max(0, Math.min(1, focus)), 19.3 + zoomBoost * focus - Math.log2(Math.max(1, gap / 65))), pitch: 60, bearing: raceCoursePosition(course, you.metres).heading };
 }
 /** Average the forward race tangent across nearby points, so bends are anticipated. */
 function courseForwardHeading(course: RaceCourse, metres: number) {

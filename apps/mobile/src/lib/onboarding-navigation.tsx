@@ -24,7 +24,7 @@ export function OnboardingNavigation() {
   const params = useGlobalSearchParams<{ panel?: string; tracker?: string; provider?: string; preview?: string }>();
   const connecting = (path === "/athlete" || path === "/athlete-settings") && (params.panel === "connections" || params.tracker !== undefined || params.provider !== undefined);
   useEffect(() => {
-    if (params.preview === "1" && (path === "/welcome" || path === "/onboarding")) return;
+    if (params.preview === "1" && (path === "/welcome" || path === "/onboarding" || path === "/replay-tuning")) return;
     if (!required || !bootOpened || connecting) return;
     let alive = true;
     void Promise.all([readGuestIntroDraft(), AsyncStorage.getItem(GUEST_SIGNUP_PENDING_KEY)]).then(([draft, pending]) => {

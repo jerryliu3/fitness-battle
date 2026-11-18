@@ -141,7 +141,7 @@ const appearanceColors = useThemeColors();
   }, [active, ready, controller, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres, replay]);
   const replayTarget = useRef<CourseCameraPose | null>(null);
   replayTarget.current = replay && scene.selected
-    ? courseReplayPose(course, scene.selected, scene.callouts.find(lane => lane.id === replay.nearestId), reduced ? 0 : replay.focus)
+    ? courseReplayPose(course, scene.selected, scene.callouts.find(lane => lane.id === replay.nearestId), reduced ? 0 : replay.focus, replay.zoomBoost)
     : null;
   const replayActive = Boolean(replay);
   useEffect(() => {

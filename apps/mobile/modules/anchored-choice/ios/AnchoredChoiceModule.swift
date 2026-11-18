@@ -85,7 +85,8 @@ final class AnchoredChoiceView: ExpoView {
 final class MaterialPanel: ExpoView {
   required init(appContext: AppContext? = nil) {
     super.init(appContext: appContext)
-    let material = UIVisualEffectView(effect: UIBlurEffect(style: .systemThinMaterial))
+    backgroundColor = .clear
+    let material = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
     material.frame = bounds
     material.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     material.isUserInteractionEnabled = false

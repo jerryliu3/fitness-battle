@@ -137,7 +137,7 @@ export default function Welcome() {
     </View>}
     <SafeAreaView pointerEvents="box-none" style={{ flex: 1 }} edges={["top", "bottom"]}>
         <OnboardingProgress index={index} count={steps.length} />
-        <OnboardingCanvas height={ONBOARDING_CANVAS.height}>{scale => {
+        <OnboardingCanvas height={ONBOARDING_CANVAS.height} pointerEvents={step === "overtake" ? "none" : "box-none"}>{scale => {
           const field = { ...f.input, minHeight: 0, height: 46 * scale, paddingVertical: 8 * scale };
           const box = (top: number, height: number) => ({ position: "absolute" as const, left: 16 * scale, right: 16 * scale, top: top * scale, height: height * scale });
           return <>
@@ -145,9 +145,9 @@ export default function Welcome() {
           {step !== "growth" && step !== "overtake" && <View pointerEvents="none" style={{ ...box(8, 48) }}>
             <AppText role="display" accessibilityRole="header" style={{ flex: 1 }} maxFontSizeMultiplier={1.2} numberOfLines={2} adjustsFontSizeToFit>{step === "athlete" ? `Welcome ${draft.name.trim() || "athlete"}!` : ONBOARDING_TITLES[step]}</AppText>
           </View>}
-          {step === "overtake" && <View pointerEvents="none" style={{ ...box(8, 124), right: 122 * scale, borderRadius: 18, overflow: "hidden" }}>
+          {step === "overtake" && <View pointerEvents="none" style={{ position: "absolute", top: 8 * scale, left: 16 * scale, right: 122 * scale, borderRadius: 18, overflow: "hidden" }}>
             <MaterialPanel style={{ position: "absolute", inset: 0 }} />
-            <View style={{ padding: 12, gap: 4 }}>
+            <View style={{ padding: 10, gap: 4 }}>
               <AppText role="heading" maxFontSizeMultiplier={1.2}>Make training fun.</AppText>
               <AppText role="caption" maxFontSizeMultiplier={1.2}>Race your level. Chase a friendly rival and make the next overtake yours.</AppText>
             </View>

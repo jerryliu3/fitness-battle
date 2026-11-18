@@ -98,6 +98,9 @@ it("zooms into the pair at a pass, backs out for distant rivals and frames acros
   const wide = courseReplayPose(course,you,peer,0), close = courseReplayPose(course,you,peer,1);
   expect(close.zoom).toBeGreaterThan(wide.zoom + 2);
   expect(close.center).toEqual(wide.center);
+  expect(courseReplayPose(course, you, peer, 1, .6).zoom).toBeGreaterThan(close.zoom);
+  expect(courseReplayPose(course, you, peer, 0, .6)).toEqual(wide);
+  expect(courseReplayPose(course, you, peer, 1, 2).zoom).toBeLessThanOrEqual(20);
   expect(courseReplayPose(course,you,{...peer,metres:300},1).zoom).toBeLessThan(close.zoom);
   const dateLine = createRaceCourse("Date line", [[179.99,0],[-179.99,0]]);
   expect(Math.abs(courseReplayPose(dateLine,{metres:1050,lateralMetres:0},{metres:1200,lateralMetres:0},1).center[0])).toBeGreaterThan(179.9);

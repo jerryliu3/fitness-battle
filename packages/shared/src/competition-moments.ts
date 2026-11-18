@@ -16,6 +16,13 @@ export interface CompetitionMoment {
   plan: ArenaOvertakePlan;
 }
 
+/** Presentation only; never changes accepted volume, rankings or receipts. */
+export interface CompetitionReplayTuning {
+  durationMs?: number;
+  slowdownWeight?: number;
+  zoomBoost?: number;
+}
+
 /** Separate from the browsable field: visiting a tab must never consume an event. */
 /** v2: lane baselines use hrs/steps volumes instead of legacy effort points. */
 export const momentStorageKey = (arenaKey: string) => `moment:v2:${arenaKey}`;
@@ -69,7 +76,7 @@ export function selectedSyncActions(actions: Action[], selected: readonly string
 }
 
 /** Slow down around every crossing, independent of how many peers were passed. */
-export function photoFinishFrame(moment: CompetitionMoment, progress: number) {
+export function photoFinishFrame(moment: CompetitionMoment, progress: number, slowdownWeight = 18) {
   const p = Math.max(0, Math.min(1, progress));
   const { plan } = moment;
   const peers = Object.values(plan.rivals).filter(r => r.overtaken || r.passedYou);
@@ -81,7 +88,7 @@ export function photoFinishFrame(moment: CompetitionMoment, progress: number) {
   // Integrate a low speed near each pass and invert its cumulative timeline.
   const weights = Array.from({ length: 240 }, (_, i) => {
     const t = (i + .5) / 240;
-    return 1 + crossings.reduce((n, c) => n + 18 * Math.exp(-Math.pow((t - c) / .045, 2)), 0);
+    return 1 + crossings.reduce((n, c) => n + slowdownWeight * Math.exp(-Math.pow((t - c) / .045, 2)), 0);
   });
   const total = weights.reduce((n, w) => n + w, 0);
   const target = Math.max(0, Math.min(1, (p - .1) / .8)) * total;
@@ -109,8 +116,8 @@ export function photoFinishFrame(moment: CompetitionMoment, progress: number) {
 }
 
 /** Replay the complete captured field using the production lane geometry. */
-export function competitionMomentScene(moment: CompetitionMoment, progress: number) {
-  const frame = photoFinishFrame(moment, progress);
+export function competitionMomentScene(moment: CompetitionMoment, progress: number, tuning: CompetitionReplayTuning = {}) {
+  const frame = photoFinishFrame(moment, progress, tuning.slowdownWeight);
   const lanes = moment.lanes.map(lane => ({ ...lane, value: frame.values[lane.id] ?? lane.value }));
   const standings = [...lanes].sort((a, b) => b.value - a.value).map(lane => ({
     ...lane, place: 1 + lanes.filter(peer => peer.value > lane.value).length,
@@ -119,9 +126,9 @@ export function competitionMomentScene(moment: CompetitionMoment, progress: numb
   const start = Math.max(0, Math.min(ownIndex - 1, standings.length - 3));
   const rival = frame.nearestId ? frame.values[frame.nearestId] : frame.youValue;
   const replayFocusIds = [moment.plan.youId, ...(frame.nearestId ? [frame.nearestId] : [])];
-  return { ...frame, lanes, replayFocusIds, ranked: standings, standings: standings.slice(start, start + 3), view: {
+  return { ...frame, zoomBoost: tuning.zoomBoost ?? 0, lanes, replayFocusIds, ranked: standings, standings: standings.slice(start, start + 3), view: {
     center: (frame.youValue+rival)/2,
-    span: Math.max(fieldDefaultSpan(moment.unit) * (1 - frame.focus * .18),Math.abs(frame.youValue-rival)*3),
+    span: Math.max(fieldDefaultSpan(moment.unit) * (1 - frame.focus * .18) / 2 ** ((tuning.zoomBoost ?? 0) * frame.focus),Math.abs(frame.youValue-rival)*3),
   } };
 }
 

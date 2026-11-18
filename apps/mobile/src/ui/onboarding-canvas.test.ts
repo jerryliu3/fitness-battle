@@ -7,7 +7,7 @@ vi.mock("react-native", async () => {
   const input = { measureInWindow: (callback: (...args: number[]) => void) => callback(0, keyboard.bottom - 46, 200, 46) };
   return ({
   View: "View", ScrollView: forwardRef((props: object, ref) => {
-    useImperativeHandle(ref, () => ({ scrollResponderScrollNativeHandleToKeyboard: keyboard.scrollToField }));
+    useImperativeHandle(ref, () => ({ scrollTo: keyboard.scrollToField }));
     return createElement("ScrollView", props);
   }), Platform: { OS: "web" },
   Keyboard: {
@@ -117,11 +117,17 @@ it("keeps native scrolling available with the keyboard without snapping after ea
     const scroll = renderer.root.findByType("ScrollView" as never);
     expect(scroll.props).toMatchObject({ automaticallyAdjustKeyboardInsets: true, keyboardDismissMode: "none", keyboardShouldPersistTaps: "handled" });
     keyboard.visible = true;
+    keyboard.bottom = 600;
+    await act(async () => scroll.props.onScroll({ nativeEvent: { contentOffset: { y: 80 } } }));
     await act(async () => keyboard.listeners.keyboardDidShow({ endCoordinates: { screenY: 350 } }));
-    expect(keyboard.scrollToField).toHaveBeenCalledWith(TextInput.State.currentlyFocusedInput(), 12, true);
+    expect(keyboard.scrollToField).toHaveBeenCalledWith({ y: 342, animated: true });
     expect(views()[1].props.style.top).toBeUndefined();
     await act(async () => views()[0].props.onTouchEnd());
     await act(async () => views()[0].props.onTouchEnd());
+    expect(keyboard.scrollToField).toHaveBeenCalledOnce();
+    // An already visible field stays put, even when the keyboard frame changes.
+    keyboard.bottom = 250;
+    await act(async () => keyboard.listeners.keyboardDidChangeFrame({ endCoordinates: { screenY: 350 } }));
     expect(keyboard.scrollToField).toHaveBeenCalledOnce();
   } finally {
     keyboard.visible = false;
