@@ -3,7 +3,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 const keyboard = vi.hoisted(() => ({ listeners: {} as Record<string, (event: unknown) => void>, visible: false, bottom: 600 }));
 vi.mock("react-native", () => ({
-  View: "View",
+  View: "View", ScrollView: "ScrollView", Platform: { OS: "web" },
   Keyboard: {
     metrics: () => keyboard.visible ? { screenY: 350 } : undefined,
     isVisible: () => keyboard.visible,
@@ -14,7 +14,7 @@ vi.mock("react-native", () => ({
   },
   TextInput: { State: { currentlyFocusedInput: () => ({ measureInWindow: (callback: (...args: number[]) => void) => callback(0, keyboard.bottom - 46, 200, 46) }) } },
 }));
-import { Keyboard, TextInput } from "react-native";
+import { Keyboard, Platform, TextInput } from "react-native";
 import { OnboardingCanvas } from "./onboarding-canvas";
 it("keeps the composition size while revealing a field above the keyboard", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -56,4 +56,44 @@ it("renders in Expo web where native keyboard measurement APIs are unavailable",
     expect(renderer.root.findAllByType("View" as never)[1].props.style.opacity).toBe(1);
     await act(async () => renderer.unmount());
   } finally { Reflect.set(keyboardApi, "metrics", metrics); Reflect.set(inputApi, "currentlyFocusedInput", focused); }
+});
+
+
+it("lays native content out without scaling and scrolls short viewports", async () => {
+  Reflect.set(Platform, "OS", "ios");
+  let renderer!: ReactTestRenderer;
+  try {
+    await act(async () => { renderer = create(createElement(OnboardingCanvas, { height: 640, children: null })); });
+    const views = () => renderer.root.findAllByType("View" as never);
+    for (const [width, height] of [[430, 800], [375, 500]]) {
+      await act(async () => views()[0].props.onLayout({ nativeEvent: { layout: { width, height } } }));
+      expect(views()[1].props.style).toMatchObject({ width: 360, height: 640 });
+      expect(views()[1].props.style.transform).toBeUndefined();
+      expect(renderer.root.findByType("ScrollView" as never).props.contentContainerStyle.flexGrow).toBe(1);
+    }
+  } finally {
+    if (renderer) await act(async () => renderer.unmount());
+    Reflect.set(Platform, "OS", "web");
+  }
+});
+
+
+it("fits native component dimensions to the viewport without a screen transform", async () => {
+  Reflect.set(Platform, "OS", "ios");
+  let renderer!: ReactTestRenderer;
+  const render = vi.fn((scale: number) => createElement("card", { width: 280 * scale }));
+  try {
+    await act(async () => { renderer = create(createElement(OnboardingCanvas, { height: 640, children: render })); });
+    const views = () => renderer.root.findAllByType("View" as never);
+    for (const [width, height, scale] of [[375, 500, 44 / 52], [320, 700, 320 / 360]]) {
+      await act(async () => views()[0].props.onLayout({ nativeEvent: { layout: { width, height } } }));
+      expect(views()[1].props.style.width).toBeCloseTo(360 * scale);
+      expect(views()[1].props.style.height).toBeCloseTo(640 * scale);
+      expect(views()[1].props.style.transform).toBeUndefined();
+      expect(renderer.root.findByType("card" as never).props.width).toBeCloseTo(280 * scale);
+    }
+  } finally {
+    if (renderer) await act(async () => renderer.unmount());
+    Reflect.set(Platform, "OS", "web");
+  }
 });

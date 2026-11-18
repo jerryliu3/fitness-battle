@@ -7,7 +7,7 @@ import { useSceneActive } from "../ui/use-scene-active";
 import { useAppTheme } from "../theme";
 import { AthleteProfileCard } from "./athlete-profile-card";
 
-export const AthleteCrest = memo(function AthleteCrest({ model, onInteractionChange, active: suppliedActive = true, transparent = false }: { model: AthleteCardModel; active?: boolean; transparent?: boolean; onInteractionChange?: (held: boolean) => void }) {
+export const AthleteCrest = memo(function AthleteCrest({ model, onInteractionChange, active: suppliedActive = true, transparent = false, height = 430 }: { model: AthleteCardModel; active?: boolean; transparent?: boolean; height?: number; onInteractionChange?: (held: boolean) => void }) {
   const active = useSceneActive() && suppliedActive;
   const { mode, colors: c } = useAppTheme();
   const web = useRef<WebView<object>>(null);
@@ -44,13 +44,13 @@ export const AthleteCrest = memo(function AthleteCrest({ model, onInteractionCha
     const timer = setTimeout(fail, 12000);
     return () => clearTimeout(timer);
   }, [active, loaded, failed]);
-  return <View style={{ minHeight: 430, backgroundColor: transparent ? "transparent" : c.paper }}>
+  return <View style={{ minHeight: height, backgroundColor: transparent ? "transparent" : c.paper }}>
     {!loaded && <View style={{ position: "absolute", inset: 0, justifyContent: "center" }}>
       <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />
     </View>}
     {!failed && <WebView ref={web} source={{ uri }} originWhitelist={[origin]} javaScriptEnabled scrollEnabled={false} bounces={false}
       onTouchStart={() => interaction(true)} onTouchEnd={() => interaction(false)} onTouchCancel={() => interaction(false)}
-      style={{ height: 430, backgroundColor: transparent ? "transparent" : c.paper, opacity: loaded ? 1 : 0 }}
+      style={{ height, backgroundColor: transparent ? "transparent" : c.paper, opacity: loaded ? 1 : 0 }}
       onShouldStartLoadWithRequest={(request: { url: string }) => {
         if (request.url === "about:blank") return true;
         try { const url = new URL(request.url); return url.origin === origin && url.pathname === "/athlete-card-scene"; } catch { return false; }

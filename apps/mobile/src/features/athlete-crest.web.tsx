@@ -7,7 +7,7 @@ import { AthleteProfileCard } from "./athlete-profile-card";
 import { useAppTheme } from "../theme";
 
 /** Expo web uses the same host and model; native uses a WebView. */
-export const AthleteCrest = memo(function AthleteCrest({ model, active: suppliedActive = true, transparent = false }: { model: AthleteCardModel; active?: boolean; transparent?: boolean; onInteractionChange?: (held: boolean) => void }) {
+export const AthleteCrest = memo(function AthleteCrest({ model, active: suppliedActive = true, transparent = false, height = 390 }: { model: AthleteCardModel; active?: boolean; transparent?: boolean; height?: number; onInteractionChange?: (held: boolean) => void }) {
   const active = useSceneActive() && suppliedActive;
   const { mode, colors } = useAppTheme();
   const frame = useRef<HTMLIFrameElement>(null);
@@ -31,8 +31,8 @@ export const AthleteCrest = memo(function AthleteCrest({ model, active: supplied
     const timer = setTimeout(() => setFailed(true), 12000);
     return () => clearTimeout(timer);
   }, [active, loaded, failed]);
-  return <View style={{ minHeight: 390, backgroundColor: transparent ? "transparent" : colors.paper }}>
-    {!failed && createElement("iframe", { ref: frame, title: `${model.name} athlete card`, src: uri, onError: () => { setLoaded(false); setFailed(true); }, style: { width: "100%", height: 390, border: 0, opacity: loaded ? 1 : 0 } })}
+  return <View style={{ minHeight: height, backgroundColor: transparent ? "transparent" : colors.paper }}>
+    {!failed && createElement("iframe", { ref: frame, title: `${model.name} athlete card`, src: uri, onError: () => { setLoaded(false); setFailed(true); }, style: { width: "100%", height, border: 0, opacity: loaded ? 1 : 0 } })}
     {!loaded && <View style={{ position: "absolute", inset: 0 }}>
       <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />
     </View>}

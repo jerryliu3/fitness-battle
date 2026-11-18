@@ -12,8 +12,8 @@ const c=useThemeColors();
   return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled}
     accessibilityState={{ disabled }} onPress={() => { if (disabled) return; if (haptic) void playCue("light"); onPress(); }}
     style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, borderWidth: 1,
-      borderColor: c.line, backgroundColor: primary ? c.tennis : "#ffffffdc", alignItems: "center", justifyContent: "center",
+      borderColor: c.line, backgroundColor: primary ? c.tennis : c.card, alignItems: "center", justifyContent: "center",
       opacity: disabled ? 0.4 : pressed ? 0.65 : 1 })}>
-    <AppIcon name={icon} size={22} />
+    <AppIcon name={icon} size={22} color={primary ? c.textOnAction : c.ink} />
   </Pressable>;
 }

@@ -19,7 +19,7 @@ vi.mock("./onboarding-overtake", () => ({ OnboardingOvertake: "OnboardingOvertak
 vi.mock("../lib/onboarding-course", () => ({ prefetchOnboardingCourseFromApi: vi.fn(async () => null) }));
 vi.mock("./legal-links", () => ({ LegalLinks: "LegalLinks" }));
 vi.mock("./onboarding-feature-tour", () => ({ OnboardingFeatureTour: "OnboardingFeatureTour" }));
-vi.mock("../ui/onboarding-canvas", () => ({ OnboardingCanvas: ({ children }: { children: unknown }) => children, ONBOARDING_CANVAS: { width: 360, height: 640 } }));
+vi.mock("../ui/onboarding-canvas", () => ({ OnboardingCanvas: ({ children }: { children: unknown }) => typeof children === "function" ? children(1) : children, ONBOARDING_CANVAS: { width: 360, height: 640 } }));
 import Welcome from "../../app/welcome";
 it("keeps the replay immersive, commits the card on editing end, then creates the account inline", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
