@@ -28,7 +28,7 @@ import {
 } from "@fitness-battle/shared";
 import { Chip, ChipRow } from "../ui/chip";
 import { NumberStepper } from "../ui/number-stepper";
-import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImageBackground, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
@@ -108,7 +108,7 @@ function crewError(error: unknown): string {
 }
 function inviteLink(code: string): string {
   const base = "https://overtaek.xyz";
-  return `${base}/field?invite=${encodeURIComponent(code)}`;
+  return `${base}/invite?invite=${encodeURIComponent(code)}`;
 }
 
 export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: boolean; crewId?: string } = {}) {
@@ -126,7 +126,7 @@ const f=useFocusStyles();
   const { blocks } = useAthleteBlocks();
   const hiddenIds = blocks.map(item => item.id);
   const router = useRouter();
-  const params = useGlobalSearchParams<{ invite?: string | string[] }>();
+  const params = useLocalSearchParams<{ invite?: string | string[] }>();
   const api = useCrewApi();
   const [selected, setSelected] = useState(crewId);
   const switcherMenu = useAnchoredMenu({ minWidth: 220, estimatedHeight: 240 });

@@ -91,6 +91,9 @@ function redirectToDenied(request: NextRequest, sessionResponse: NextResponse, r
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (pathname === "/.well-known/apple-app-site-association" || pathname === "/.well-known/assetlinks.json") {
+    return NextResponse.next();
+  }
 
   const aliasTarget = LEGACY_TAB_ALIASES[pathname];
   if (aliasTarget) {

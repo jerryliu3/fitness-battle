@@ -109,6 +109,7 @@ const styles=useThemedStyles(stylesThemes);
     edit?: string;
     auth?: AuthMode;
     from?: string;
+    invite?: string;
   }>();
   const [note, setNote] = useState<string | null>(null);
   const [syncBusy, setSyncBusy] = useState(false);
@@ -257,7 +258,7 @@ const styles=useThemedStyles(stylesThemes);
         }
         setPassword("");
         setAuthNote(null);
-        if (params.from === "onboarding") router.replace("/onboarding");
+        if (params.from === "onboarding") router.replace({ pathname: "/onboarding", params: { invite: params.invite } });
         return;
       }
       // Mark the intended new account before signup can trigger auth navigation.
@@ -289,7 +290,7 @@ const styles=useThemedStyles(stylesThemes);
       }
       setPassword("");
       setAuthNote(null);
-      router.replace(guest?.introCompleted ? "/onboarding" : "/welcome");
+      router.replace({ pathname: guest?.introCompleted ? "/onboarding" : "/welcome", params: { invite: params.invite } });
     } catch (error) {
       if (authMode === "signup") void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
       setAuthNote(error instanceof Error ? error.message : "Could not access your account.");

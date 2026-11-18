@@ -21,7 +21,7 @@ export function OnboardingNavigation() {
   const { user } = useAuth();
   const bootOpened = useBootOpened();
   const path = usePathname();
-  const params = useGlobalSearchParams<{ panel?: string; tracker?: string; provider?: string; preview?: string }>();
+  const params = useGlobalSearchParams<{ panel?: string; tracker?: string; provider?: string; preview?: string; invite?: string }>();
   const connecting = (path === "/athlete" || path === "/athlete-settings") && (params.panel === "connections" || params.tracker !== undefined || params.provider !== undefined);
   useEffect(() => {
     if (params.preview === "1" && (path === "/welcome" || path === "/onboarding" || path === "/replay-tuning")) return;
@@ -30,9 +30,9 @@ export function OnboardingNavigation() {
     void Promise.all([readGuestIntroDraft(), AsyncStorage.getItem(GUEST_SIGNUP_PENDING_KEY)]).then(([draft, pending]) => {
       if (!alive) return;
       const target = hasCompletedOnboardingIntro(draft, pending, user?.email) ? "/onboarding" : "/welcome";
-      if (path !== target) router.replace(target);
-    }).catch(() => { if (alive && path !== "/welcome") router.replace("/welcome"); });
+      if (path !== target) router.replace({ pathname: target, params: { invite: params.invite } });
+    }).catch(() => { if (alive && path !== "/welcome") router.replace({ pathname: "/welcome", params: { invite: params.invite } }); });
     return () => { alive = false; };
-  }, [required, bootOpened, path, connecting, user?.id, user?.email, params.preview]);
+  }, [required, bootOpened, path, connecting, user?.id, user?.email, params.preview, params.invite]);
   return null;
 }
