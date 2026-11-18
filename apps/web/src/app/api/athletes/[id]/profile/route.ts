@@ -92,7 +92,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
   if (topRecord) {
     proudMoments.push({
-      id: topRecord.id,
+      id: `${topRecord.sport}:${topRecord.distanceId}:${topRecord.activityId}`,
       label: "A new best",
       detail: `${formatClockTime(topRecord.seconds)} · Fastest ${
         RECORD_DISTANCES[topRecord.sport]?.find((d) => d.id === topRecord.distanceId)?.label ??
