@@ -22,7 +22,7 @@ import { weeklyActivityStreak } from "./weekly-streak";
 export function formatMemberSince(iso: string, timeZone = APP_TIMEZONE): string | null {
   const ms = Date.parse(iso);
   if (!Number.isFinite(ms)) return null;
-  return new Date(ms).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone });
+  return `Since ${new Date(ms).toLocaleDateString("en-US", { month: "numeric", year: "2-digit", timeZone })}`;
 }
 
 export const ATHLETE_CARD_HIGHLIGHT_LIMIT = 3;
