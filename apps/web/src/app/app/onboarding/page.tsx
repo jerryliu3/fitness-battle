@@ -97,8 +97,9 @@ function Setup({ preview }: { preview: boolean }) {
 
   if (!state || loadedKey !== key) return <AppParagraph>Loading setup…</AppParagraph>;
   const sportName = SPORTS.find(item => item.id === sport)!.name;
+  const accountReady = loadStatus === "ready" || loadStatus === "local";
   const hasHistory = hasOnboardingTrainingHistory(state, sport);
-  const needsVolume = !hasHistory;
+  const needsVolume = accountReady && !hasHistory;
   function advance() { setStep(Math.min(2, step + 1)); }
   async function finish() {
     if (preview) { router.replace("/app/arena"); return; }

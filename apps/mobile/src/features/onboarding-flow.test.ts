@@ -9,7 +9,7 @@ vi.mock("@react-native-async-storage/async-storage", () => ({ default: { getItem
 vi.mock("expo-router", () => ({ useLocalSearchParams: () => ({ preview: mock.preview ? "1" : undefined }), useRouter: () => ({ replace: mock.replace }) }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "a", displayName: "Taylor", email: "taylor@example.com" } }) }));
 const state = freshState();
-vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state, canWrite: true, dispatch: mock.dispatch }) }));
+vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state, canWrite: true, loadStatus: "ready", dispatch: mock.dispatch }) }));
 vi.mock("../lib/avatar-upload", () => ({ uploadNativeProfileAvatar: mock.upload }));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
 vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));

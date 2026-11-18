@@ -87,7 +87,7 @@ export function AthleteOverview({
     <>
       {showProfile ? (
         <>
-          <AthleteCrest key={email ?? "guest"} model={previewModel} />
+          {!editing ? <AthleteCrest key={email ?? "guest"} model={previewModel} /> : null}
           {editing ? (
             <section
               className="focus-profile-card is-editing"

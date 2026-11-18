@@ -657,17 +657,6 @@ const styles=useThemedStyles(stylesThemes);
   }
 
   if (panel === "profile") {
-    const profilePreview =
-      editDraft
-        ? {
-            ...state,
-            name: editDraft.name,
-            city: editDraft.city,
-            cardHighlights: editDraft.cardHighlights,
-            gender: editDraft.gender !== undefined ? editDraft.gender : state.gender,
-            countryCode: editDraft.countryCode !== undefined ? editDraft.countryCode : state.countryCode,
-          }
-        : state;
     const closeProfile = () => {
       setEditDraft(null);
       exitAthletePanel();
@@ -681,11 +670,6 @@ const styles=useThemedStyles(stylesThemes);
           keyboardShouldPersistTaps="handled"
         >
           <SectionStack divided={false}>
-            <AthleteCrest
-              key={user?.id ?? "guest"}
-              model={athleteCardModel(profilePreview, competeNow(state))}
-              onInteractionChange={setCardDragging}
-            />
             <AthleteProfileEditor
               state={state}
               dispatch={dispatch}

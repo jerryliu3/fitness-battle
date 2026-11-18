@@ -29,7 +29,7 @@ import { useCompeteStore } from "../src/lib/compete-store";
 export default function Onboarding() {
   const f = useFocusStyles();
   const reduced = useReducedMotion();
-  const { state, canWrite, dispatch } = useCompeteStore();
+  const { state, canWrite, dispatch, loadStatus } = useCompeteStore();
   const { user, offlineMode } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ preview?: string; sport?: string }>();
@@ -117,8 +117,9 @@ export default function Onboarding() {
   if (!preview && state?.onboardingCompleted) return <Redirect href="/today" />;
   if (!state || !ready) return <AppText>Loading setup…</AppText>;
   const sportName = SPORTS.find(item => item.id === sport)!.name;
+  const accountReady = loadStatus !== "loading";
   const hasHistory = hasOnboardingTrainingHistory(state, sport);
-  const needsVolume = !hasHistory;
+  const needsVolume = accountReady && !hasHistory;
   function advance() { setStep(Math.min(2, step + 1)); }
   function back() { setRegistered(false); setStep(Math.max(0, step - 1)); }
 

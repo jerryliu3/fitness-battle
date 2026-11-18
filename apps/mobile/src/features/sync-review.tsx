@@ -224,36 +224,45 @@ const c=useThemeColors();
 
               <View style={{ padding: 12, gap: 8 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                  <Pressable
-                    accessibilityRole="checkbox"
-                    accessibilityLabel={`Count ${sportById(a.sport).name} activity ${a.id}`}
-                    accessibilityState={{ checked: isCounted, disabled: saving }}
-                    accessibilityHint="Deselected activities stay saved, excluded from competition."
-                    disabled={saving}
-                    onPress={() => {
-                      if (saving) return;
-                      void playCue("selection");
-                      setExcluded(ids => ids.includes(a.id) ? ids.filter(id => id !== a.id) : [...ids, a.id]);
-                      setProgress(0);
-                    }}
-                    style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}
-                  >
-                    <View
-                      style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: 7,
-                        backgroundColor: isCounted ? c.surfaceInverse : c.card,
-                        borderWidth: 1.5,
-                        borderColor: isCounted ? c.surfaceInverse : c.line,
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                    <Pressable
+                      accessibilityRole="checkbox"
+                      accessibilityLabel={`Count ${sportById(a.sport).name} activity ${a.id}`}
+                      accessibilityState={{ checked: isCounted, disabled: saving }}
+                      accessibilityHint="Deselected activities stay saved, excluded from competition."
+                      disabled={saving}
+                      hitSlop={4}
+                      onPress={() => {
+                        if (saving) return;
+                        void playCue("selection");
+                        setExcluded(ids => ids.includes(a.id) ? ids.filter(id => id !== a.id) : [...ids, a.id]);
+                        setProgress(0);
+                      }}
+                      style={({ pressed }) => ({
+                        width: 44,
+                        height: 44,
                         alignItems: "center",
                         justifyContent: "center",
-                      }}
+                        opacity: saving ? 0.5 : pressed ? 0.7 : 1,
+                      })}
                     >
-                      <Text style={{ ...textStyle("caption"), color: c.textOnInverse }}>
-                        {isCounted ? "✓" : ""}
-                      </Text>
-                    </View>
+                      <View
+                        style={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: 7,
+                          backgroundColor: isCounted ? c.surfaceInverse : c.card,
+                          borderWidth: 1.5,
+                          borderColor: isCounted ? c.surfaceInverse : c.line,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Text style={{ ...textStyle("caption"), color: c.textOnInverse }}>
+                          {isCounted ? "✓" : ""}
+                        </Text>
+                      </View>
+                    </Pressable>
                     <View style={{ flex: 1 }}>
                       <Text style={{ ...textStyle("label"), color: c.ink }}>
                         {sportById(a.sport).name}
@@ -262,7 +271,7 @@ const c=useThemeColors();
                         {new Date(a.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: accountTimeZone(state) })} · {new Date(a.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: accountTimeZone(state) })}
                       </Text>
                     </View>
-                  </Pressable>
+                  </View>
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`View ${sportById(a.sport).name} activity details`}
