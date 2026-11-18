@@ -367,7 +367,7 @@ const appearanceColors = useThemeColors();
     </MapView>
     {!onSnapshot ? <MapAttribution top={insets.top + 9} /> : null}
     {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), color: appearanceColors.ink, position: "absolute", left: 8, right: 8, bottom: controlsBottom + 136, padding: 12, borderRadius: 12, backgroundColor: appearanceColors.surfaceCard }}>{error}</Text> : null}
-    {!onOptionsChange && optionsTop != null ? <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()} style={{ position: "absolute", top: optionsTop, right: 12 }}>
+    {!onMapChromeChange && !onOptionsChange && optionsTop != null ? <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()} style={{ position: "absolute", top: optionsTop, right: 12 }}>
       {publishedOptions}
     </FieldOverlayView> : null}
   </View>;
