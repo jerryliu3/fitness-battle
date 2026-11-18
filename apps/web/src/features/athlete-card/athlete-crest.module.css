@@ -22,8 +22,8 @@
 .sport { right: 8cqi; text-align: right; }
 .rating strong, .sport strong { display: block; font: 400 8cqi/1 var(--font-display),sans-serif; letter-spacing: -.025em; text-transform: uppercase; }
 .rating > span, .sport > span { display: block; margin-top: 1cqi; font: 700 3.2cqi/1.2 var(--font-body),sans-serif; letter-spacing: .03em; text-transform: uppercase; }
-.flag { position: absolute; top: 39cqi; left: 11cqi; font-size: 7cqi; line-height: 1; }
-.since { position: absolute; top: 47cqi; left: 11cqi; font: 700 3.2cqi/1.2 var(--font-body),sans-serif; letter-spacing: .03em; text-transform: uppercase; }
+.flag { position: absolute; top: 39cqi; left: 11cqi; width: 10cqi; text-align: center; font-size: 7cqi; line-height: 1; }
+.since { position: absolute; top: 47cqi; left: 11cqi; width: 10cqi; text-align: center; font: 700 2.7cqi/1.2 var(--font-body),sans-serif; letter-spacing: .03em; text-transform: uppercase; }
 .portrait { position: absolute; top: 26cqi; left: 50%; width: 30cqi; height: 30cqi; margin-left: -15cqi; overflow: visible; background: transparent; }
 .photo, .portrait > span { width: 100%; height: 100%; border-radius: 50%; background: #c5d4d9; }
 .photo { display: block; object-fit: cover; pointer-events: none; }
@@ -37,7 +37,7 @@
 .totals { margin-top: 2cqi; }
 .competition { grid-template-columns: repeat(4,1fr); }
 .stat { min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1.5cqi; }
-.stat strong { font: 700 6.4cqi/1.1 var(--font-form),sans-serif; letter-spacing: -.05em; font-variant-numeric: tabular-nums; max-width: 100%; overflow-wrap: anywhere; flex-shrink: 0; }
+.stat strong { font: 700 7.6cqi/1.1 var(--font-form, var(--font-body)),sans-serif; letter-spacing: -.05em; font-variant-numeric: tabular-nums; max-width: 100%; overflow-wrap: anywhere; flex-shrink: 0; }
 .stat > span { font-size: 3.6cqi; font-weight: 600; max-width: 100%; overflow-wrap: anywhere; }
 .stat[data-dim="true"] strong { opacity: .5; }
 .noRecords { margin: 0; min-height: 8cqi; display: grid; place-items: center; font-size: 3cqi; }
@@ -45,7 +45,7 @@
 .logo { display: block; width: 12cqi; height: 12cqi; object-fit: contain; pointer-events: none; }
 .reverse .stat { gap: 1cqi; }
 .reverse .totals { margin-top: 1cqi; }
-.reverse .stat strong { font-size: 5.5cqi; }
+.reverse .stat strong { font-size: 6.4cqi; }
 .reverse .stat > span { font-size: 3.2cqi; }
 .reverse { position: absolute; inset: 7cqi 10cqi 16cqi; }
 .crest .reverse h2 { font-family: var(--font-display),sans-serif; font-size: 7.5cqi; text-transform: uppercase; line-height: 1.1; letter-spacing: -.05em; margin: 0 0 1cqi; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -59,5 +59,5 @@
 .reverse dl > div { display: flex; justify-content: space-between; align-items: center; gap: 3cqi; padding: .3cqi 0; }
 .reverse dt { min-width: 0; overflow-wrap: anywhere; font-size: 4cqi; font-weight: 700; }
 .reverse time { display: block; font-size: 3.1cqi; font-weight: 400; margin-top: .5cqi; }
-.reverse dd { font: 600 6.4cqi var(--font-form),sans-serif; letter-spacing: -.04em; margin: 0; white-space: nowrap; }
+.reverse dd { font: 600 7.6cqi/1.05 var(--font-form, var(--font-body)),sans-serif; letter-spacing: -.04em; margin: 0; white-space: nowrap; }
 @media (forced-colors: active) { .edge,.shadow,.face::after { display: none; } .face { background: Canvas; color: CanvasText; } }
