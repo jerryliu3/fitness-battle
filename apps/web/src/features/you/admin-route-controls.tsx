@@ -31,7 +31,7 @@ function previewPoints(coordinates: LngLat[]) {
 }
 
 function formatWhen(value: string) {
-  return new Date(value).toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "medium", timeStyle: "short", timeZoneName: "short" });
+  return new Date(value).toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "medium", timeStyle: "short" });
 }
 
 export function AdminRouteControls() {
