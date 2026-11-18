@@ -97,9 +97,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
         <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
           <AppText role="hero">{view.reading}</AppText><AppText role="body">{view.targetReading != null ? `/ ${view.targetReading} ` : ""}{view.unit}</AppText>
         </View>
-        {input.previousDistanceM != null && view.relay.metric === "distance_m" && <View style={{ padding: 10, borderWidth: 1, borderColor: c.line, borderRadius: 10 }}>
-          <AppText role="caption">Crew Ghost · {view.volume(input.previousDistanceM)} last week</AppText>
-        </View>}
+
         <View>
           <CrewRelay {...overviewInput} entries={view.entries} model={view.relay.model} compact hiddenIds={hiddenIds} onSelectMember={onSelectMember} />
         </View>

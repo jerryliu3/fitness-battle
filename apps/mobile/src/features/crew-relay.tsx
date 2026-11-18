@@ -4,7 +4,7 @@ import { UserAvatar } from "../ui/user-avatar";
 import { chartTextProps, AppText } from "../ui/section";
 import { useEffect, useId, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import Svg, { G, Line, Text as SvgText } from "react-native-svg";
+import Svg, { G, Text as SvgText } from "react-native-svg";
 import {
   buildCrewRelayViewState,
   crewWeekRelay,
@@ -60,9 +60,6 @@ const s=useThemedStyles(sThemes);
   }, [view.segmentKey, selected, view.model.segments]);
 
   const volume = view.volume;
-  const ghostFraction = !relay.sessions && props.previousDistanceM != null
-    ? Math.min(1, props.previousDistanceM / (relay.target && relay.model.finish ? relay.target / relay.model.finish : Math.max(1, relay.model.total, relay.target ?? 0) * 1.2)) : null;
-  const ghost = ghostFraction == null ? null : { x: 16 + ghostFraction * Math.max(180, view.width - 52), y: 174 - (props.compact ? 34 : 0) - ghostFraction * 30 };
 
 
   return (
@@ -96,7 +93,6 @@ const s=useThemedStyles(sThemes);
               <G key={s.id}>{s.nodes.map(drawFieldNode)}</G>
             ))}
             {view.scene.finish.map(drawFieldNode)}
-            {ghost && <Line x1={ghost.x} y1={ghost.y + 18} x2={ghost.x + 24} y2={ghost.y - 46} stroke={c.ink} strokeWidth={2} strokeDasharray="4 4" />}
             {!props.compact && view.target ? (
               <SvgText
                 {...chartTextProps()}
