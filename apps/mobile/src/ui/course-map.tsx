@@ -332,7 +332,8 @@ const appearanceColors = useThemeColors();
           </View>
         </MarkerView>;
       })}
-      {!queuedStart && !overlaysHidden ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id) && !dismissed.includes(lane.id)).map(lane => {
+      {!queuedStart ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id) && !dismissed.includes(lane.id)
+        && (!overlaysHidden || (replay && (lane.id === selectedId || lane.id === replay.nearestId)))).map(lane => {
         const detail = courseAthleteDetail(lanes, lane, unit);
         if (!sharedLane && !lane.mystery) {
           return <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: lane.callout.left ? 1 : 0, y: lane.callout.originY / lane.callout.height }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
@@ -347,18 +348,19 @@ const appearanceColors = useThemeColors();
         }
         const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
         const subdetail = courseAthleteSubdetail(lanes, lane, unit);
-        const selected = lane.id === selectedId && !dismissed.includes(lane.id);
+        const selected = lane.id === selectedId;
+        const expanded = selected || lane.id === replay?.nearestId;
         const pad = 30, boxWidth = 170 + pad * 2, boxHeight = lane.callout.height + pad * 2;
         const nodeX = lane.callout.originX + pad, nodeY = lane.callout.originY + pad;
         const cardX = nodeX + (lane.callout.left ? -140 : 12), cardY = lane.callout.cardTop + pad;
         return <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: nodeX / boxWidth, y: nodeY / boxHeight }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
           <View collapsable={false} pointerEvents="box-none" style={{ width: boxWidth, height: boxHeight }}>
             <Svg width={boxWidth} height={boxHeight} pointerEvents="none"><G transform={`translate(${nodeX} ${nodeY})`}>
-              <AthleteNode lane={lane} x={lane.callout.left ? -140 : 12} y={lane.callout.y} detail={detail} subdetail={subdetail} expanded={selected} selected={selected} gold={rank === 1} prefix={`${prefix}-${lane.id}`} />
+              <AthleteNode lane={lane} x={lane.callout.left ? -140 : 12} y={lane.callout.y} detail={detail} subdetail={subdetail} expanded={expanded} selected={selected} gold={rank === 1} prefix={`${prefix}-${lane.id}`} />
             </G></Svg>
-            {selected ? <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: cardX, top: cardY, width: 128, height: subdetail ? 44 : 30 }} /> : null}
+            {expanded ? <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: cardX, top: cardY, width: 128, height: subdetail ? 44 : 30 }} /> : null}
             <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: nodeX - 26, top: nodeY - 26, width: 52, height: 52, borderRadius: 26 }} />
-            {!onSnapshot && selected ? <Pressable accessibilityRole="button" accessibilityLabel={`Close ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={10} style={{ position: "absolute", left: cardX + 128 - 22, top: cardY + 4, width: 18, height: 18, alignItems: "center", justifyContent: "center" }}><AppText role="caption" secondary>×</AppText></Pressable> : null}
+            {!onSnapshot && !replay && selected ? <Pressable accessibilityRole="button" accessibilityLabel={`Close ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={10} style={{ position: "absolute", left: cardX + 128 - 22, top: cardY + 4, width: 18, height: 18, alignItems: "center", justifyContent: "center" }}><AppText role="caption" secondary>×</AppText></Pressable> : null}
           </View>
         </MarkerView>;
       }) : null}

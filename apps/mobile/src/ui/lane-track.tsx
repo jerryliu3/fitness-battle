@@ -301,7 +301,7 @@ const c=useThemeColors();
                   (overtakeFrame?.laneValues[peer.id] ?? peer.values[index]) > value,
               );
               const isSelected = selectedId === l.id;
-              const isExpanded = expandedId === l.id;
+              const isExpanded = replayFocusIds?.includes(l.id) ?? expandedId === l.id;
               const youVal = overtakeFrame?.youValue ?? me?.values[index] ?? 0;
               const deltaToYou = value - youVal;
               const subdetail = ordered.some(peer => peer.mystery)
@@ -452,7 +452,7 @@ const c=useThemeColors();
           const y = athletePennantOffset(point.y, course.point(me?.values[index] ?? 0, Math.max(0, ordered.findIndex(l => l.you)), 0, true).y, lane.you, height);
           const edge = !course.oval && arenaPosition(value, v).edge;
           if (edge && overlaysHidden) return [];
-          const isExpanded = expandedId === lane.id;
+          const isExpanded = replayFocusIds?.includes(lane.id) ?? expandedId === lane.id;
           const handlePress = () => {
             setExpandedId(prev => prev === lane.id ? null : lane.id);
             onSelect(lane);

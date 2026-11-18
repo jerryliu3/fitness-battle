@@ -219,7 +219,7 @@ it("frames both racers during slow motion and pulses only visible passed athlete
   vi.stubGlobal("requestAnimationFrame", (callback: () => void) => { nextFrame = callback; return 1; });
   vi.stubGlobal("cancelAnimationFrame", vi.fn());
   const advance = (frames = 1) => { for (let i = 0; i < frames; i++) { time += 16; nextFrame?.(); } };
-  const props = { course: createRaceCourse("Finish", [[0,0],[.02,0]]), lanes: [{id:"you",name:"You",initials:"Y",you:true,value:.51},{id:"peer",name:"Peer",initials:"P",value:.5}], unit:"km", selectedId:"you", focusRequest:0, onSelect:vi.fn(), replay:{nearestId:"peer",focus:1,passEffects:[{id:"peer",strength:.8}]} };
+  const props = { course: createRaceCourse("Finish", [[0,0],[.02,0]]), lanes: [{id:"you",name:"You",initials:"Y",you:true,value:.51},{id:"peer",name:"Peer",initials:"P",value:.5}], overlaysHidden:true, unit:"km", selectedId:"you", focusRequest:0, onSelect:vi.fn(), replay:{nearestId:"peer",focus:1,passEffects:[{id:"peer",strength:.8}]} };
   await act(async () => { renderer = create(createElement(CourseMap, props), {createNodeMock: element => element.type === "Camera" ? calls : null}); });
   await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
   advance();
@@ -233,6 +233,7 @@ it("frames both racers during slow motion and pulses only visible passed athlete
   expect(markers).toHaveLength(3);
   const callouts = markers.filter(marker => marker.props.anchor.x !== .5);
   expect(callouts).toHaveLength(2);
+  expect(renderer.root.findAllByType("AthleteNode" as never).filter(node => node.props.expanded).map(node => node.props.lane.id)).toEqual(["you", "peer"]);
   await act(async () => renderer.update(createElement(CourseMap, {...props,hiddenIds:["peer"]})));
   expect(renderer.root.findAllByType("MarkerView" as never)).toHaveLength(1);
   await act(async () => renderer.update(createElement(CourseMap, {...props,replay:{...props.replay,focus:0,passEffects:[]}})));
