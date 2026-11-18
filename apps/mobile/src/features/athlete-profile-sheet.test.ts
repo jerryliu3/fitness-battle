@@ -42,7 +42,7 @@ beforeEach(() => {
 });
 it("loads public identity and shows the selected standings context", async () => {
   await act(async () => { renderer = create(createElement(AthleteProfileSheet, { athlete: { id, name: "Peer", score: 1100, contextValue: "5.0 km", contextDetail: "Place 2" }, onClose: mocks.close })); });
-  expect(renderer.root.findByType("AthleteCrest" as never).props.model).toMatchObject({ name: "Peer", city: "Toronto", score: 1100, memberSince: "Feb 2025" });
+  expect(renderer.root.findByType("AthleteCrest" as never).props.model).toMatchObject({ name: "Peer", city: "Toronto", score: 1100, memberSince: "Since 2/25" });
   expect(JSON.stringify(renderer.toJSON())).toContain("5.0 km");
   expect(JSON.stringify(renderer.toJSON())).toContain("View full profile");
   expect(JSON.stringify(renderer.toJSON())).not.toContain("Athlete details");
@@ -50,7 +50,7 @@ it("loads public identity and shows the selected standings context", async () =>
 it("shows own details and navigates only after the sheet closes", async () => {
   await act(async () => { renderer = create(createElement(AthleteProfileSheet, { athlete: { id: "you", name: "Me", you: true }, onClose: mocks.close })); });
   expect(mocks.lookup).not.toHaveBeenCalled();
-  expect(renderer.root.findByType("AthleteCrest" as never).props.model).toMatchObject({ city: "Boston", memberSince: "Apr 2024" });
+  expect(renderer.root.findByType("AthleteCrest" as never).props.model).toMatchObject({ city: "Boston", memberSince: "Since 4/24" });
   await act(async () => renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "Your Athlete page")!.props.onPress());
   expect(mocks.close).toHaveBeenCalled();
   expect(mocks.navigate).not.toHaveBeenCalled();

@@ -7,7 +7,7 @@ import { useSceneActive } from "../ui/use-scene-active";
 import { useAppTheme } from "../theme";
 import { AthleteProfileCard } from "./athlete-profile-card";
 
-export const AthleteCrest = memo(function AthleteCrest({ model, onInteractionChange, active: suppliedActive = true, transparent = false, height = 430 }: { model: AthleteCardModel; active?: boolean; transparent?: boolean; height?: number; onInteractionChange?: (held: boolean) => void }) {
+export const AthleteCrest = memo(function AthleteCrest({ model, onInteractionChange, active: suppliedActive = true, transparent = false, bundled = false, height = 430 }: { model: AthleteCardModel; bundled?: boolean; active?: boolean; transparent?: boolean; height?: number; onInteractionChange?: (held: boolean) => void }) {
   const active = useSceneActive() && suppliedActive;
   const { mode, colors: c } = useAppTheme();
   const web = useRef<WebView<object>>(null);
@@ -21,6 +21,7 @@ export const AthleteCrest = memo(function AthleteCrest({ model, onInteractionCha
   const [failed, setFailed] = useState(false);
   const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/athlete-card-scene`;
   const origin = new URL(uri).origin;
+  const source = bundled ? { html: require("../../assets/athlete-card-host/scene.cjs") as string } : { uri };
   function inject() {
     if (!ready.current || (held.current && active)) return;
     const previous = sent.current, next = latest.current;
@@ -38,7 +39,7 @@ export const AthleteCrest = memo(function AthleteCrest({ model, onInteractionCha
   }
   function fail() { ready.current = false; unavailable.current = true; setLoaded(false); setFailed(true); onInteractionChange?.(false); }
   useEffect(inject, [model, active, mode]);
-  // A retained scene can recover from network/process failures on the next visit.
+  // Retry after a failed load when the screen regains focus.
   useEffect(() => {
     if (active && unavailable.current) { unavailable.current = false; ready.current = false; sent.current = null; setFailed(false); }
   }, [active]);
@@ -52,11 +53,12 @@ export const AthleteCrest = memo(function AthleteCrest({ model, onInteractionCha
     {!loaded && <View style={{ position: "absolute", inset: 0, justifyContent: "center" }}>
       <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />
     </View>}
-    {!failed && <WebView ref={web} source={{ uri }} originWhitelist={[origin]} javaScriptEnabled scrollEnabled={false} bounces={false}
+    {!failed && <WebView ref={web} source={source} originWhitelist={bundled ? ["*"] : [origin]} javaScriptEnabled scrollEnabled={false} bounces={false}
       onTouchStart={() => interaction(true)} onTouchEnd={() => interaction(false)} onTouchCancel={() => interaction(false)}
       style={{ height, backgroundColor: transparent ? "transparent" : c.paper, opacity: loaded ? 1 : 0 }}
       onShouldStartLoadWithRequest={(request: { url: string }) => {
         if (request.url === "about:blank") return true;
+        if (bundled) return false;
         try { const url = new URL(request.url); return url.origin === origin && url.pathname === "/athlete-card-scene"; } catch { return false; }
       }} onError={fail} onHttpError={fail} onContentProcessDidTerminate={fail}
       onMessage={(event: WebViewMessageEvent) => { try {

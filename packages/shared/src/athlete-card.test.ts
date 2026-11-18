@@ -43,7 +43,7 @@ it("builds a minimal peer card model for foreign athlete profiles", () => {
 });
 
 it("formats membership month labels in Eastern time", () => {
-  expect(formatMemberSince("2026-06-15T12:00:00Z")).toBe("Jun 2026");
+  expect(formatMemberSince("2026-06-15T12:00:00Z")).toBe("Since 6/26");
 });
 
 it("validates the card bridge and rejects malformed nested values", () => {

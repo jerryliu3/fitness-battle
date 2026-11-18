@@ -324,7 +324,6 @@ export function PerformanceSpace({
       </View>
 
       {/* 3. PR Progression Section */}
-      {availableDistances.length > 0 && activeDistance ? (
         <View style={{ gap: 12 }}>
           <View style={s.sectionHeaderRow}>
             <AppText role="heading">PR Progression</AppText>
@@ -332,7 +331,7 @@ export function PerformanceSpace({
 
           <View style={s.prCard}>
           {/* Distance Chips */}
-          <ScrollView
+          {activeDistance && <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ gap: 8, paddingBottom: 12 }}
@@ -363,7 +362,7 @@ export function PerformanceSpace({
                 </Pressable>
               );
             })}
-          </ScrollView>
+          </ScrollView>}
 
           {/* PR Headline & Progression Summary */}
           {prSummary ? (
@@ -567,13 +566,17 @@ export function PerformanceSpace({
               )}
             </View>
           ) : (
-            <AppText role="body" secondary style={{ paddingVertical: 12 }}>
-              No record attempts recorded for this distance yet.
-            </AppText>
+            <View style={{ marginVertical: 8, justifyContent: "center" }}>
+              <ChartSvg width="100%" height={160} viewBox="0 0 320 160" preserveAspectRatio="none">
+                <Path d="M 54 16 V 126 H 306" fill="none" stroke={c.line} />
+              </ChartSvg>
+              <AppText role="caption" secondary style={{ position: "absolute", left: 60, right: 16, textAlign: "center" }}>
+                Your personal bests will appear here.
+              </AppText>
+            </View>
           )}
         </View>
       </View>
-      ) : null}
 
       {insightText ? (
       <View style={s.insightCard}>

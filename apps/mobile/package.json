@@ -9,6 +9,7 @@
     "study": "OVERTAEK_STUDY_PREVIEW=1 expo start --web --localhost --port 8081",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "build:athlete-card-host": "node ./scripts/build-athlete-card-host.mjs",
     "build:vitals-lab-host": "node ./scripts/build-vitals-lab-host.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'no lint configured'",

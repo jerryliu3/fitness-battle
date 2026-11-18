@@ -5,7 +5,7 @@ import { waveCountdown } from "@fitness-battle/shared";
 export { waveCountdown } from "@fitness-battle/shared";
 
 /** Keep the parent's competition clock intact, including debug previews. */
-export function WaveCountdown({ start, now, prominent = false }: { start: string; now: Date; prominent?: boolean }) {
+export function WaveCountdown({ start, now, prominent = false, inline = false }: { start: string; now: Date; prominent?: boolean; inline?: boolean }) {
   const baseline = now.getTime();
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
@@ -21,5 +21,6 @@ export function WaveCountdown({ start, now, prominent = false }: { start: string
     const subscription = AppState.addEventListener("change", value => resume(value === "active"));
     return () => { clearInterval(timer); subscription.remove(); };
   }, [baseline, start]);
+  if (inline) return <>Upcoming wave ({waveCountdown(start, baseline + elapsed)})</>;
   return <AppText role={prominent ? "display" : "body"} accessibilityLabel="Time until competition starts">{baseline + elapsed >= Date.parse(start) ? "Your wave has started" : `${waveCountdown(start, baseline + elapsed)}${prominent ? "" : " remaining"}`}</AppText>;
 }
