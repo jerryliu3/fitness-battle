@@ -4,7 +4,7 @@ import { OnboardingFeatureTour } from "../src/features/onboarding-feature-tour";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ONBOARDING_SPORT_TILES as sportTiles, EMPTY_GUEST_INTRO, ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId,
@@ -160,11 +160,15 @@ export default function Welcome() {
                 style={{ width: 158 * scale, height: 182 * scale, alignItems: "center", justifyContent: "center", borderRadius: 26,
                   borderWidth: 2, borderColor: draft.sport === sport.id ? "#082637" : "transparent",
                   backgroundColor: sportTiles[sport.id].background }}>
-                <Text accessible={false} allowFontScaling={false}
-                  style={{ fontSize: 144 * scale, lineHeight: 160 * scale, textAlign: "center", includeFontPadding: false,
-                    transform: sportTiles[sport.id].mirror ? [{ scaleX: -1 }] : undefined }}>
+                <AppText
+                  accessible={false}
+                  allowFontScaling={false}
+                  role="display"
+                  style={{ textAlign: "center", includeFontPadding: false,
+                    transform: sportTiles[sport.id].mirror ? [{ scale: 4.5 * scale }, { scaleX: -1 }] : [{ scale: 4.5 * scale }] }}
+                >
                   {sportTiles[sport.id].emoji}
-                </Text>
+                </AppText>
                 <AppText role="label" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2} style={{ color: "#082637", position: "absolute", bottom: 8 * scale, left: 0, right: 0, textAlign: "center", paddingHorizontal: 16 * scale }}>{sport.name}</AppText>
                 {draft.sport === sport.id && <View pointerEvents="none" style={{ position: "absolute", top: 10, right: 10, width: 25, height: 25, borderRadius: 13, backgroundColor: "#082637", alignItems: "center", justifyContent: "center" }}>
                   <AppText accessible={false} allowFontScaling={false} role="label" style={{ color: "#ffffff" }}>✓</AppText>
