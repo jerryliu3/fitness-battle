@@ -90,7 +90,15 @@ const appearanceColors = useThemeColors();
     return { lane, selected, width: athleteNodeDiameter(START_NODE_RADIUS, lane.mystery, selected) + 1 };
   });
   const startHeight = Math.max(0, ...startMarkers.map(marker => marker.width)) + 2;
-  const pose = useRef<CourseCameraPose>(restored.current ?? { center: fallbackCenter, zoom: courseInitialZoom(fallbackCenter[1], dimensions.height, initialFlat ? 0 : 60), pitch: initialFlat ? 0 : 60, bearing: 0 });
+  const initialPitch = initialFlat ? 0 : 60;
+  const startZoom = useRef(courseInitialZoom(fallbackCenter[1], dimensions.height, initialPitch));
+  const pose = useRef<CourseCameraPose>(restored.current ?? { center: fallbackCenter, zoom: startZoom.current, pitch: initialPitch, bearing: 0 });
+  const [startZoomOut, setStartZoomOut] = useState(() => Math.max(0, startZoom.current - pose.current.zoom));
+  // Geographic spacing contracts faster than the portraits as the camera pulls back.
+  const startScale = Math.max(0.12, 2 ** (-0.75 * startZoomOut));
+  const startSpacing = 2 ** (-startZoomOut);
+  const startWidth = startMarkers.reduce((total, marker) => total + marker.width, 0);
+  let startX = -startWidth / 2;
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(restored.current ? restored.current.pitch === 0 : initialFlat);
   const flatRef = useRef(flat);
   flatRef.current = flat;
@@ -240,7 +248,12 @@ const appearanceColors = useThemeColors();
     return () => onOptionsChange(null);
   }, [onMapChromeChange, onOptionsChange, flat, sharedLane, mapFollowing, followAthleteName, Boolean(onReplay), Boolean(onChoose2D), onFollowChipPress != null]);
   return <View style={{ flex: 1, minHeight: 0 }} onLayout={({ nativeEvent }) => {
-    if (initialized.current || restored.current || replay || mapUserGesture.current) return;
+    const keepPose = initialized.current || restored.current || replay || mapUserGesture.current;
+    if (queuedStart) {
+      startZoom.current = courseInitialZoom(fallbackCenter[1], nativeEvent.layout.height, initialPitch);
+      setStartZoomOut(keepPose ? Math.max(0, startZoom.current - pose.current.zoom) : 0);
+    }
+    if (keepPose) return;
     pose.current.zoom = courseInitialZoom(pose.current.center[1], nativeEvent.layout.height, pose.current.pitch);
     if (ready) ref.current?.setCamera({ centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing, animationDuration: 0 });
   }}>
@@ -267,8 +280,9 @@ const appearanceColors = useThemeColors();
         const p = nativeEvent.properties;
         if (!p || !p.center || !Array.isArray(p.center)) return;
         if ((Math.abs(p.center[0]) < 1e-6 && Math.abs(p.center[1]) < 1e-6) || Number.isNaN(p.center[0]) || Number.isNaN(p.center[1])) return;
-        if (typeof p.zoom === "number" && p.zoom <= 0.1) return;
+        if (!Number.isFinite(p.zoom) || p.zoom < 0) return;
         pose.current = { center: [p.center[0], p.center[1]], zoom: p.zoom, pitch: p.pitch, bearing: p.heading };
+        if (queuedStart) setStartZoomOut(Math.max(0, Math.round((startZoom.current - p.zoom) * 20) / 20));
         if (!replay && !onSnapshot) { rememberedCameras.set(cameraKey, pose.current); if (controller.courseMetres !== null) rememberedProgress.set(cameraKey, controller.courseMetres); else rememberedProgress.delete(cameraKey); }
         if (replay && p.isUserInteraction && mapUserGesture.current) replayZoom.current = p.zoom;
         if (!replay && p.isUserInteraction && controller.following && mapUserGesture.current) {
@@ -289,16 +303,18 @@ const appearanceColors = useThemeColors();
       }) : null}
       {startLine.length > 0 && (
         <MarkerView coordinate={course.coordinates[0]} anchor={{ x: 0.5, y: 0.5 }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
-          <View collapsable={false} style={{ width: startMarkers.reduce((total, marker) => total + marker.width, 0), flexDirection: "row", alignItems: "center", height: startHeight }}>
-            {startMarkers.map(({ lane, selected, width }) => (
-              <Pressable key={lane.id} accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ width, height: startHeight }}>
+          <View collapsable={false} style={{ width: startWidth, flexDirection: "row", alignItems: "center", height: startHeight }}>
+            {startMarkers.map(({ lane, selected, width }) => {
+              const center = startX + width / 2;
+              startX += width;
+              return <Pressable key={lane.id} accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ width, height: startHeight, transform: [{ translateX: center * (startSpacing - 1) }, { scale: startScale }] }}>
                 <Svg width={width} height={startHeight} pointerEvents="none">
                   <G transform={`translate(${width / 2} ${startHeight / 2})`}>
                     <AthleteNode lane={lane} x={0} y={0} detail="" nodeRadius={START_NODE_RADIUS} selected={selected} prefix={`${prefix}-${lane.id}`} />
                   </G>
                 </Svg>
-              </Pressable>
-            ))}
+              </Pressable>;
+            })}
           </View>
         </MarkerView>
       )}

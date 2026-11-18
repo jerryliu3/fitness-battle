@@ -347,3 +347,19 @@ it("allows pinch zoom during replay without fighting the gesture or resetting it
   expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBe(14);
   vi.useRealTimers();
 });
+
+it("shrinks and gathers queued athletes as the map zooms out", async () => {
+  const course = createRaceCourse("Queue", [[.1, .1], [.12, .1]]);
+  const lanes = [
+    { id: "you", name: "You", initials: "Y", you: true, value: 0 },
+    { id: "peer", name: "Athlete 2", initials: "?", mystery: true, value: 0 },
+  ];
+  await act(async () => { renderer = create(createElement(CourseMap, { course, lanes, unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn() })); });
+  const marker = () => renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Focus Athlete 2")!;
+  const zoom = renderer.root.findByType("Camera" as never).props.defaultSettings.zoomLevel;
+  expect(marker().props.style.transform[1].scale).toBe(1);
+  await act(async () => renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [.1, .1], zoom: zoom - 2, pitch: 60, heading: 0 } } }));
+  const [offset, size] = marker().props.style.transform;
+  expect(Math.abs(offset.translateX)).toBeGreaterThan(0);
+  expect(size.scale).toBeLessThan(0.5);
+});
