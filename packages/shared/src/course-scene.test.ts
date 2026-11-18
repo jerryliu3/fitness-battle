@@ -140,7 +140,7 @@ it.each(["km", "mi"])("includes reachable preview rivals using competition dista
 it("keeps you in a center start position regardless of ID sorting or selected rival", () => {
   const course = createRaceCourse("Street", [[0, 0], [.01, 0]]);
   for (const count of [3, 8]) {
-    const lanes = Array.from({ length: count }, (_, i) => ({ id: i === 0 ? "z-you" : `a-${i}`, name: "Athlete", you: i === 0, value: 0 }));
+    const lanes = Array.from({ length: count }, (_, i) => ({ id: i === 0 ? "z-you" : `a-${i}`, name: "Athlete", initials: "A", you: i === 0, value: 0 }));
     const scene = raceCourseScene(course, lanes, "km", "a-1");
     const you = scene.callouts.find(lane => lane.you)!;
     expect(Math.abs(you.lateralMetres)).toBeCloseTo(count % 2 ? 0 : .21);
