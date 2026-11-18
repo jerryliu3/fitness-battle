@@ -220,6 +220,12 @@ describe("week recap highlights, breakdown, hr ranges & non-race fallback", () =
       activities: [activity("2026-10-28T15:00:00Z", { id: "w1", sport: "cycling", movingSec: 2400 })],
     };
     expect(nonRaceWeekBreakdownTarget(withWorkouts)?.sport).toBe("cycling");
+    expect(nonRaceWeekBreakdownTarget(withWorkouts, "2026-11-02T14:00:00Z")).toBeNull();
+    expect(nonRaceWeekBreakdownTarget(withWorkouts, "2026-11-02T05:00:00Z")).toBeNull();
+    expect(nonRaceWeekBreakdownTarget(withWorkouts, "")).toBeNull();
+    expect(nonRaceWeekBreakdownTarget(withWorkouts, "invalid")).toBeNull();
+    expect(nonRaceWeekBreakdownTarget(withWorkouts, "2026-11-02T04:59:59Z")?.sport).toBe("cycling");
+    expect(nonRaceWeekBreakdownTarget(withWorkouts, "2026-10-26T04:00:00Z")?.sport).toBe("cycling");
     const pages = weekRecapPages([], nonRaceWeekBreakdownTarget(withWorkouts));
     expect(pages).toHaveLength(1);
     expect(pages[0]?.kind).toBe("effort");

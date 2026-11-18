@@ -55,9 +55,15 @@ export function settledWeekBreakdownTarget(state: CompeteState): { sport: SportI
 }
 
 /** Auto-trigger target for users who logged workouts last week without entering any settled race. */
-export function nonRaceWeekBreakdownTarget(state: CompeteState): { sport: SportId; periodStart: string; periodEnd: string } | null {
+export function nonRaceWeekBreakdownTarget(state: CompeteState, accountCreatedAt?: string): { sport: SportId; periodStart: string; periodEnd: string } | null {
   const target = settledWeekBreakdownTarget(state);
   if (!target) return null;
+  // Imported history can predate signup. Only interrupt after a week closes
+  // during this account's lifetime; manual history remains available.
+  if (accountCreatedAt !== undefined) {
+    const created = Date.parse(accountCreatedAt);
+    if (!Number.isFinite(created) || Date.parse(target.periodEnd) <= created) return null;
+  }
   const hasRace = state.periodResults.some(r => Date.parse(r.periodStart) === Date.parse(target.periodStart) && Date.parse(r.periodEnd) === Date.parse(target.periodEnd));
   return hasRace ? null : target;
 }

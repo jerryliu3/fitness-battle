@@ -64,7 +64,7 @@ export function WeekReveal({
       : state,
   );
   const onArena = stripWebProductPrefix(path) === "/arena";
-  const autoBreakdown = onArena && !preview && !replay && !reveal ? nonRaceWeekBreakdownTarget(state) : null;
+  const autoBreakdown = onArena && !preview && !replay && !reveal ? nonRaceWeekBreakdownTarget(state, debugActive || offlineMode ? undefined : user?.createdAt ?? "") : null;
   const manualBreakdown = breakdownRequested ? settledWeekBreakdownTarget(state) : null;
   const breakdownTarget = manualBreakdown ?? (autoBreakdown && autoBreakdown.periodStart !== dismissedBreakdown ? autoBreakdown : null);
 

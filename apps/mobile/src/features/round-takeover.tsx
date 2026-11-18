@@ -62,7 +62,7 @@ export function RoundTakeover({
         }
       : state,
   );
-  const autoBreakdown = !replay && !reveal ? nonRaceWeekBreakdownTarget(state) : null;
+  const autoBreakdown = !replay && !reveal ? nonRaceWeekBreakdownTarget(state, debugActive || offlineMode ? undefined : user?.createdAt ?? "") : null;
   const manualBreakdown = breakdownRequested ? settledWeekBreakdownTarget(state) : null;
   const breakdownTarget = manualBreakdown ?? (autoBreakdown && autoBreakdown.periodStart !== dismissedBreakdown ? autoBreakdown : null);
 
