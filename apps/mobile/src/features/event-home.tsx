@@ -1,3 +1,4 @@
+import { WaveCountdown } from "../ui/wave-countdown";
 import { pageCarouselStyles } from "../ui/carousel-styles";
 import { useEffect, useRef, useState } from "react";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
@@ -37,7 +38,8 @@ export function EventHome({ state, accountKey, onEnter, onRecovery, active }: { 
 function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { state: CompeteState; sport: SportId; active: boolean; cardWidth: number; onEnter(): void }) {
   const c = useThemeColors();
 
-  const queue = competitionQueue(state, sport, competeNow(state));
+  const now = competeNow(state);
+  const queue = competitionQueue(state, sport, now);
 
   const queued = queue?.queued || queue?.awaitingField;
   const model = buildArenaModel(state, undefined, competitionTrack(sport), sport);
@@ -61,7 +63,7 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
         {updateText ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             {showLiveIndicator ? <LiveIndicator /> : null}
-            <AppText role="support" secondary style={{ flexShrink: 1 }}>{updateText}</AppText>
+            <AppText role="support" secondary style={{ flexShrink: 1 }}>{queue?.queued ? <WaveCountdown start={queue.start} now={now} inline /> : updateText}</AppText>
           </View>
         ) : null}
       </View>
