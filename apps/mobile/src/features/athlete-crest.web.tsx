@@ -7,7 +7,7 @@ import { AthleteProfileCard } from "./athlete-profile-card";
 import { useAppTheme } from "../theme";
 
 /** Expo web uses the same host and model; native uses a WebView. */
-export const AthleteCrest = memo(function AthleteCrest({ model, active: suppliedActive = true, transparent = false, height = 390 }: { model: AthleteCardModel; active?: boolean; transparent?: boolean; height?: number; onInteractionChange?: (held: boolean) => void }) {
+export const AthleteCrest = memo(function AthleteCrest({ model, active: suppliedActive = true, transparent = false, bundled = false, height = 390 }: { model: AthleteCardModel; bundled?: boolean; active?: boolean; transparent?: boolean; height?: number; onInteractionChange?: (held: boolean) => void }) {
   const active = useSceneActive() && suppliedActive;
   const { mode, colors } = useAppTheme();
   const frame = useRef<HTMLIFrameElement>(null);
@@ -15,7 +15,8 @@ export const AthleteCrest = memo(function AthleteCrest({ model, active: supplied
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/athlete-card-scene`;
-  const origin = new URL(uri).origin;
+  const origin = bundled ? globalThis.window?.origin : new URL(uri).origin;
+  const source = bundled ? { srcDoc: require("../../assets/athlete-card-host/scene.cjs") as string } : { src: uri };
   useEffect(() => {
     const receive = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow || event.origin !== origin) return;
@@ -25,14 +26,14 @@ export const AthleteCrest = memo(function AthleteCrest({ model, active: supplied
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
   }, [origin]);
-  useEffect(() => { if (revision) frame.current?.contentWindow?.postMessage({ type: "athlete-card", model, active, appearance: mode }, origin); }, [revision, model, active, mode, origin]);
+  useEffect(() => { if (revision) frame.current?.contentWindow?.postMessage({ type: "athlete-card", model, active, appearance: mode }, origin ?? "/"); }, [revision, model, active, mode, origin]);
   useEffect(() => {
     if (!active || loaded || failed) return;
     const timer = setTimeout(() => setFailed(true), 12000);
     return () => clearTimeout(timer);
   }, [active, loaded, failed]);
   return <View style={{ minHeight: height, backgroundColor: transparent ? "transparent" : colors.paper }}>
-    {!failed && createElement("iframe", { ref: frame, title: `${model.name} athlete card`, src: uri, onError: () => { setLoaded(false); setFailed(true); }, style: { width: "100%", height, border: 0, opacity: loaded ? 1 : 0 } })}
+    {!failed && createElement("iframe", { ref: frame, title: `${model.name} athlete card`, ...source, onError: () => { setLoaded(false); setFailed(true); }, style: { width: "100%", height, border: 0, opacity: loaded ? 1 : 0 } })}
     {!loaded && <View style={{ position: "absolute", inset: 0 }}>
       <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />
     </View>}

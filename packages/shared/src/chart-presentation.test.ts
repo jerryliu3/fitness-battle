@@ -1,3 +1,4 @@
+import { initializeEffortAccounts } from "./compete/effort-account";
 import { expect, it } from "vitest";
 import { freshState } from "./compete/engine";
 import { benchmarkBars, homeTrainingLine, openLineModel, effortScoreLine, effortScoreComparison, interpolateBenchmarkBars, interpolateOpenLineModel } from "./chart-presentation";
@@ -303,4 +304,26 @@ it("interpolates line and benchmark bar models smoothly between ranges", () => {
   expect(midBars.bars).toHaveLength(monthBars.bars.length);
   expect(midBars.barWidth).toBeCloseTo((weekBars.barWidth + monthBars.barWidth) / 2, 4);
   expect(interpolateBenchmarkBars(weekBars, monthBars, 1)).toBe(monthBars);
+});
+
+it("plots workouts from a bulk sync at their own start times in the open effort week", () => {
+  const now = new Date("2026-11-18T18:00:00Z");
+  const state = initializeEffortAccounts(freshState(now), now);
+  state.primary = "running";
+  const workout = { sport: "running", source: "strava", provenance: "recorded", disposition: "counted",
+    verified: true, distanceM: 10000, movingSec: 3600, avgHr: null } as const;
+  state.activities = [
+    { ...workout, id: "wednesday", startedAt: "2026-11-18T14:00:00Z" },
+    { ...workout, id: "last-week", startedAt: "2026-11-15T14:00:00Z" },
+    { ...workout, id: "monday", startedAt: "2026-11-16T14:00:00Z" },
+  ];
+
+  const chart = effortScoreLine(state, "open", "week", now);
+  const points = chart.points.filter(point => point.id.startsWith("workout:"));
+  expect(points.map(point => point.id)).toEqual(["workout:monday", "workout:wednesday"]);
+  expect(points[0]!.x).toBeLessThan(points[1]!.x);
+  expect(Number(points[0]!.value)).toBeLessThan(Number(points[1]!.value));
+  expect(points[1]!.value).toBe(chart.value);
+  const withoutLateWorkout = { ...state, activities: state.activities.filter(activity => activity.id !== "last-week") };
+  expect(chart.value).toBe(effortScoreLine(withoutLateWorkout, "open", "week", now).value);
 });

@@ -47,14 +47,14 @@ export function FieldViewSwitcher({
             alignItems: "center",
             justifyContent: "center",
             borderRadius: 999,
-            backgroundColor: "rgba(20, 20, 19, 0.72)",
+            backgroundColor: value === "graph" ? c.card : "rgba(20, 20, 19, 0.72)",
             borderWidth: 1,
-            borderColor: "rgba(255, 255, 255, 0.2)",
+            borderColor: value === "graph" ? c.line : "rgba(255, 255, 255, 0.2)",
           },
           pressed && { opacity: 0.75 },
         ]}
       >
-        <AppIcon name={VIEW_ICONS[value]} size={22} color="#ffffff" />
+        <AppIcon name={VIEW_ICONS[value]} size={22} color={value === "graph" ? c.ink : "#ffffff"} />
       </Pressable>
       <AnchoredMenu
         open={open}
@@ -83,7 +83,7 @@ export function FieldViewSwitcher({
                   gap: 12,
                   minHeight: 48,
                   paddingHorizontal: 12,
-                  backgroundColor: selected ? "rgba(20, 20, 19, 0.08)" : "transparent",
+                  backgroundColor: selected ? c.actionSoft : "transparent",
                 },
                 pressed && Platform.OS === "ios" ? { opacity: 0.7 } : null,
               ]}

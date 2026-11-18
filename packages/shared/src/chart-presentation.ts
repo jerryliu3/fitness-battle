@@ -1,3 +1,6 @@
+import { calculateLiveEffortScore } from "./compete/effort-score";
+import { mergeActivities } from "./compete/ledger";
+import { activityTrainingXp } from "./compete/training-xp";
 import { readAccountEffort } from './compete/effort-account';
 import { countsForTraining } from "./compete/journal";
 import { competeNow } from "./compete/engine";
@@ -267,7 +270,33 @@ function effortScoreEvents(state: CompeteState, track: "open" | "verified", now:
   return [...legacy, ...recorded].sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt) || a.id.localeCompare(b.id, "en", { numeric: true }));
 }
 
-/** Score events are committed changes, not estimates from activity distance. */
+/** Reconstruct the open week's provisional changes from workout timestamps. */
+function liveWorkoutScoreRows(state: CompeteState, now: Date) {
+  const sport = state.primary;
+  const account = state.effortAccounts?.[sport];
+  const start = weeklyPeriodBounds(now).startsAt;
+  if (!account || sport === "walking" || account.nextWeek !== dayKey(start)) return [];
+
+  const workouts = mergeActivities([], state.activities)
+    .filter(activity => activity.sport === sport && Date.parse(activity.startedAt) >= start.getTime()
+      && Date.parse(activity.startedAt) <= now.getTime() && activityTrainingXp(activity) > 0)
+    .sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt) || a.id.localeCompare(b.id));
+  let day = "", trainingXpBeforeToday = 0, trainingXpToday = 0;
+  return workouts.map(activity => {
+    const at = new Date(activity.startedAt);
+    const workoutDay = dayKey(at);
+    if (workoutDay !== day) {
+      trainingXpBeforeToday += trainingXpToday;
+      trainingXpToday = 0;
+      day = workoutDay;
+    }
+    trainingXpToday += activityTrainingXp(activity);
+    const { liveScore } = calculateLiveEffortScore(sport, account.state, { now: at, trainingXpBeforeToday, trainingXpToday });
+    return { id: `workout:${activity.id}`, date: at.toISOString(), value: liveScore };
+  });
+}
+
+/** Committed score changes plus the provisional trajectory in the open week. */
 export function effortScoreLine(state: CompeteState, track: "open" | "verified", range: EffortHistoryRange, now = competeNow(state), createdAt?: string | null) {
   const displayTz = accountTimeZone(state);
   const start = shiftZonedDay(now, -effortScoreLookbackDays(range), displayTz);
@@ -280,7 +309,11 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
   const rating = state.ratings.find(r => r.sport === state.primary);
   const current = readAccountEffort(state,state.primary,now)?.liveScore ?? (track === "verified" ? rating?.verifiedElo : rating?.openElo) ?? 0;
   const eventsInWindow = events.filter(event => Date.parse(event.occurredAt) >= effectiveStart.getTime());
-  const eventDays = new Set(eventsInWindow.map(event => dayKey(new Date(event.occurredAt), displayTz)));
+  const workouts = liveWorkoutScoreRows(state, now).filter(row => Date.parse(row.date) >= effectiveStart.getTime());
+  const eventDays = new Set([
+    ...eventsInWindow.map(event => dayKey(new Date(event.occurredAt), displayTz)),
+    ...workouts.map(row => dayKey(new Date(row.date), displayTz)),
+  ]);
   const todayKey = dayKey(now, displayTz);
   const startDay = startOfZonedDay(effectiveStart, displayTz);
   const todayStart = startOfZonedDay(now, displayTz);
@@ -295,7 +328,7 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
     dailyRows.push({
       id: `day:${key}`,
       date: at.toISOString(),
-      value: effortScoreAt(events, at, current),
+      value: readAccountEffort(state, state.primary, at)?.liveScore ?? effortScoreAt(events, at, current),
     });
   }
   const timeline = [
@@ -307,12 +340,13 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
       scoreBefore: event.scoreBefore,
       kind: "event" as const,
     })),
-  ].sort((a, b) => Date.parse(a.date) - Date.parse(b.date) || (a.kind === "day" ? -1 : 1));
+    ...workouts.map(row => ({ ...row, kind: "day" as const })),
+  ].sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
   if (!timeline.length || Date.parse(timeline[0]!.date) > effectiveStart.getTime()) {
     rows.push({
       id: "baseline",
       date: effectiveStart.toISOString(),
-      value: effortScoreAt(events, effectiveStart, current),
+      value: readAccountEffort(state, state.primary, effectiveStart)?.liveScore ?? effortScoreAt(events, effectiveStart, current),
       inspectable: false,
     });
   }

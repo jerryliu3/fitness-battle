@@ -103,12 +103,12 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
   }
 
   return <>
-    {showSettings && <View style={{ gap: 12 }}>
+    {showSettings && !completed && <View style={{ gap: 12 }}>
       <SectionHeader title="Import fitness history" />
-      <AppText secondary>{completed ? "History is locked in. This one-time import cannot run again." : "Choose up to 90 days of workouts. You can import history only once for your account."}</AppText>
-      <FocusButton secondary label={completed ? "History imported" : "Import fitness history"} disabled={busy || completed || !status || !live || !providers.length}
+      <AppText secondary>Choose up to 90 days of workouts. You can import history only once for your account.</AppText>
+      <FocusButton secondary label="Import fitness history" disabled={busy || !status || !live || !providers.length}
         onPress={() => { setDays("90"); setError(""); setProvider(providers[0].id); }} />
-      {!completed && !providers.length && <AppText secondary>Connect Apple Health, Health Connect, Strava, WHOOP or Oura to import history.</AppText>}
+      {!providers.length && <AppText secondary>Connect Apple Health, Health Connect, Strava, WHOOP or Oura to import history.</AppText>}
       {error && !provider ? <>
         <AppText secondary>{error}</AppText>
         <FocusButton secondary label="Retry" onPress={() => {
