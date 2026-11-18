@@ -357,7 +357,9 @@ it("anchors the queued row across the course and scales it from a 20 m start lin
   await act(async () => { renderer = create(createElement(CourseMap, { course, lanes, unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn() })); });
   const coordinates = () => renderer.root.findAllByType("MarkerView" as never).map(node => node.props.coordinate as [number, number]);
   const marker = () => renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Focus Athlete 2")!;
-  const zoom = renderer.root.findByType("Camera" as never).props.defaultSettings.zoomLevel;
+  const defaults = () => renderer.root.findByType("Camera" as never).props.defaultSettings;
+  const initialDefaults = defaults();
+  const zoom = initialDefaults.zoomLevel;
   const initial = coordinates();
   expect(initial).toHaveLength(8);
   expect(new Set(initial.map(point => point[1])).size).toBe(8);
@@ -369,12 +371,24 @@ it("anchors the queued row across the course and scales it from a 20 m start lin
   const moveCamera = (level: number) => act(async () => renderer.root.findByType("Observer" as never).props.onCameraChanged({
     nativeEvent: { properties: { center: [.1, .1], zoom: level, pitch: 60, heading: 180 } },
   }));
+  await moveCamera(zoom + 0.01);
+  const firstClose = coordinates();
+  await moveCamera(zoom + 0.02);
+  expect(coordinates()).not.toEqual(firstClose);
+  expect(defaults()).toBe(initialDefaults);
+
   await moveCamera(20);
   const close = coordinates();
   const closeSpan = Math.abs(close.at(-1)![1] - close[0][1]) * 111195;
   expect(closeSpan * 2 ** (20 - zoom)).toBeCloseTo(edgeToEdgeMetres, 4);
   for (const [longitude] of close) expect(longitude).toBeCloseTo(.1, 7);
   expect(marker().props.style.transform[0].scale).toBe(1);
+
+  await moveCamera(zoom - 0.01);
+  const firstScale = marker().props.style.transform[0].scale;
+  expect(firstScale).toBeLessThan(1);
+  await moveCamera(zoom - 0.02);
+  expect(marker().props.style.transform[0].scale).toBeLessThan(firstScale);
 
   await moveCamera(zoom - 2);
   expect(coordinates()).toEqual(initial);

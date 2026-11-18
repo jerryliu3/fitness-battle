@@ -9,7 +9,7 @@ import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
-import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceCourseRacerPosition, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceCourseRacerPosition, raceCourseStartCoordinate, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { CourseOptions } from "./course-options";
 import { FieldFollowChip } from "./field-follow-chip";
@@ -105,6 +105,12 @@ const appearanceColors = useThemeColors();
     zoom: queuedStart ? Math.min(20, startZoom) : courseInitialZoom(fallbackCenter[1], dimensions.height, initialPitch),
     pitch: initialPitch,
     bearing: initialFlat ? 0 : startPose?.heading ?? 0,
+  });
+  const queuedCameraDefaults = useRef({
+    centerCoordinate: pose.current.center,
+    zoomLevel: pose.current.zoom,
+    pitch: pose.current.pitch,
+    heading: pose.current.bearing,
   });
   const [queuedZoom, setQueuedZoom] = useState(() => pose.current.zoom);
   const zoomFromFullSize = queuedZoom - startZoom;
@@ -284,14 +290,14 @@ const appearanceColors = useThemeColors();
       onMapLoadingError={event => setError(ready && event?.type !== "style" ? "Some map scenery could not load. Check your connection." : "The map could not load. Check your connection and Mapbox access.")}
       onMapIdle={() => { if (ready && onSnapshot && mapRef.current && !snapshotTaken.current && !snapshotPending.current) { snapshotPending.current = true; void mapRef.current.takeSnap(true).then(uri => { if (uri) { snapshotTaken.current = true; onSnapshot(uri); } }).catch(() => {}).finally(() => { snapshotPending.current = false; }); } if (ready && (initialized.current || replay) && !reported.current) { reported.current = true; onReady?.(); } }}
     >
-      <Camera minZoomLevel={0} maxZoomLevel={20} ref={ref} defaultSettings={{ centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing }} />
+      <Camera minZoomLevel={0} maxZoomLevel={20} ref={ref} defaultSettings={queuedStart ? queuedCameraDefaults.current : { centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing }} />
       <CameraGestureObserver onCameraChanged={({ nativeEvent }) => {
         const p = nativeEvent.properties;
         if (!p || !p.center || !Array.isArray(p.center)) return;
         if ((Math.abs(p.center[0]) < 1e-6 && Math.abs(p.center[1]) < 1e-6) || Number.isNaN(p.center[0]) || Number.isNaN(p.center[1])) return;
         if (!Number.isFinite(p.zoom) || p.zoom < 0) return;
         pose.current = { center: [p.center[0], p.center[1]], zoom: p.zoom, pitch: p.pitch, bearing: p.heading };
-        if (queuedStart) setQueuedZoom(Math.round(p.zoom * 20) / 20);
+        if (queuedStart) setQueuedZoom(p.zoom);
         if (!replay && !onSnapshot) { rememberedCameras.set(cameraKey, pose.current); if (controller.courseMetres !== null) rememberedProgress.set(cameraKey, controller.courseMetres); else rememberedProgress.delete(cameraKey); }
         if (replay && p.isUserInteraction && mapUserGesture.current) replayZoom.current = p.zoom;
         if (!replay && p.isUserInteraction && controller.following && mapUserGesture.current) {
@@ -313,7 +319,7 @@ const appearanceColors = useThemeColors();
       {startMarkers.map(({ lane, selected, width }) => {
         const offset = (startX + width / 2) * startSpacing;
         startX += width;
-        const { coordinate } = raceCourseRacerPosition(course, 0, offset);
+        const coordinate = raceCourseStartCoordinate(course, offset);
         return <MarkerView key={lane.id} coordinate={coordinate} anchor={{ x: 0.5, y: 0.5 }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
           <View collapsable={false} style={{ width, height: startHeight }}>
             <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ width, height: startHeight, transform: [{ scale: startScale }] }}>

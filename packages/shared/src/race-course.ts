@@ -47,13 +47,8 @@ export function raceCoursePosition(course: RaceCourse, progress: number) {
 // Geometry is cached lazily: no offset work for the unreached part of a long route.
 const laneCoordinates = new WeakMap<RaceCourse, Map<number, LngLat[]>>();
 const laneHeadings = new WeakMap<RaceCourse, number[]>();
-function laneCoordinate(course: RaceCourse, index: number, offset: number): LngLat {
+function offsetLaneCoordinate(course: RaceCourse, index: number, offset: number): LngLat {
   if (!offset) return course.coordinates[index];
-  let lanes = laneCoordinates.get(course);
-  if (!lanes) { lanes = new Map(); laneCoordinates.set(course, lanes); }
-  let coordinates = lanes.get(offset);
-  if (!coordinates) { coordinates = []; lanes.set(offset, coordinates); }
-  if (coordinates[index]) return coordinates[index];
   let headings = laneHeadings.get(course);
   if (!headings) { headings = []; laneHeadings.set(course, headings); }
   if (headings[index] === undefined) {
@@ -62,8 +57,21 @@ function laneCoordinate(course: RaceCourse, index: number, offset: number): LngL
     const after = raceCoursePosition(course, Math.min(course.length, metres + 5));
     headings[index] = bearing(before.coordinate, after.coordinate);
   }
-  return coordinates[index] = destination(point(course.coordinates[index]), Math.abs(offset), headings[index] + (offset > 0 ? 90 : -90), { units: "meters" }).geometry.coordinates as LngLat;
+  return destination(point(course.coordinates[index]), Math.abs(offset), headings[index] + (offset > 0 ? 90 : -90), { units: "meters" }).geometry.coordinates as LngLat;
 }
+function laneCoordinate(course: RaceCourse, index: number, offset: number): LngLat {
+  if (!offset) return course.coordinates[index];
+  let lanes = laneCoordinates.get(course);
+  if (!lanes) { lanes = new Map(); laneCoordinates.set(course, lanes); }
+  let coordinates = lanes.get(offset);
+  if (!coordinates) { coordinates = []; lanes.set(offset, coordinates); }
+  return coordinates[index] ??= offsetLaneCoordinate(course, index, offset);
+}
+/** Start-line markers can change offset every frame without caching those offsets. */
+export function raceCourseStartCoordinate(course: RaceCourse, lateralMetres: number): LngLat {
+  return offsetLaneCoordinate(course, 0, lateralMetres);
+}
+
 /** Markers interpolate along the very same offset polyline used by their trails. */
 export function raceCourseRacerPosition(course: RaceCourse, progress: number, lateralMetres = 0) {
   const position = raceCoursePosition(course, progress);
