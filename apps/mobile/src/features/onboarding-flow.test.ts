@@ -59,7 +59,7 @@ it.each([false, true])("collects details first, registers one sport, shows a cla
   }
   if (preview) { expect(mock.dispatch).not.toHaveBeenCalled(); expect(mock.save).not.toHaveBeenCalled(); }
   else expect(mock.dispatch).toHaveBeenCalledWith({ type: "complete-onboarding" });
-  expect(mock.replace).toHaveBeenCalledWith(preview ? "/arena" : "/today");
+  expect(mock.replace).toHaveBeenCalledWith("/today");
   await act(async () => r.unmount());
 });
 it.each([false, true])("preserves the chosen photo and sport through registration (upload fails=%s)", async failure => {

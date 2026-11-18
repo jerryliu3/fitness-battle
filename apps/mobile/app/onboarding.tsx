@@ -126,7 +126,7 @@ export default function Onboarding() {
   function back() { setRegistered(false); setStep(Math.max(0, step - 1)); }
 
   async function finish() {
-    if (preview) { router.replace("/arena"); return; }
+    if (preview) { router.replace("/today"); return; }
     if (!user || !state || !canWrite || finished.current) return;
     finished.current = true;
     setSaving(true); setSaveError(null);
