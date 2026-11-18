@@ -305,27 +305,28 @@ it("ignores [0, 0] null island camera changes and preserves camera pose across t
   expect(calls.setCamera).not.toHaveBeenCalled();
 });
 
-it("publishes working course controls to the sheet and removes the map's duplicate menu", async () => {
+it.each(["slots", "stack"] as const)("publishes working course controls as %s and removes the local duplicates", async mode => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  const onOptionsChange = vi.fn(), onChoose2D = vi.fn();
+  const publish = vi.fn(), onChoose2D = vi.fn(), onFollowChipPress = vi.fn();
   await act(async () => { renderer = create(createElement(CourseMap, {
-    course: createRaceCourse("City", [[0, 0], [.02, 0]]), lanes: [], unit: "km", selectedId: "", focusRequest: 0, onSelect() {}, onChoose2D, onOptionsChange,
+    course: createRaceCourse("City", [[0, 0], [.02, 0]]), lanes: [], unit: "km", selectedId: "", focusRequest: 0, onSelect() {}, onChoose2D, onFollowChipPress,
+    ...(mode === "slots" ? { onMapChromeChange: publish } : { onOptionsChange: publish }),
   })); });
-  const options = () => {
-    const published = onOptionsChange.mock.calls.at(-1)![0];
-    const slots = published.props?.slots as Record<string, unknown> | undefined;
-    const stackChild = slots?.options ?? published;
-    const children = Array.isArray(stackChild.props?.children) ? stackChild.props.children : [stackChild];
-    return children.find((child: { props?: { onToggleSpacing?: unknown } }) => child?.props?.onToggleSpacing) ?? stackChild;
+  const slots = () => {
+    const published = publish.mock.calls.at(-1)![0];
+    return mode === "slots" ? published : published.props.slots;
   };
-  expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Course options")).toBe(false);
-  expect(options().props.sharedLane).toBe(true);
-  await act(async () => options().props.onToggleSpacing());
-  expect(options().props.sharedLane).toBe(false);
-  await act(async () => options().props.onChoose2D());
+  expect(renderer.root.findAllByType("FieldOverlayView" as never)).toHaveLength(0);
+  expect(slots().follow.props.onPress).toBeTypeOf("function");
+  await act(async () => slots().follow.props.onPress());
+  expect(onFollowChipPress).toHaveBeenCalledOnce();
+  expect(slots().options.props.sharedLane).toBe(true);
+  await act(async () => slots().options.props.onToggleSpacing());
+  expect(slots().options.props.sharedLane).toBe(false);
+  await act(async () => slots().options.props.onChoose2D());
   expect(onChoose2D).toHaveBeenCalledOnce();
   await act(async () => renderer.unmount());
-  expect(onOptionsChange).toHaveBeenLastCalledWith(null);
+  expect(publish).toHaveBeenLastCalledWith(null);
 });
 
 it("allows pinch zoom during replay without fighting the gesture or resetting its zoom", async () => {
