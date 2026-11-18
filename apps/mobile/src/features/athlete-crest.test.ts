@@ -115,5 +115,10 @@ it("loads the profile crest from the bundled scene without a server URL", async 
   const web = renderer.root.findByType("WebView" as never);
   expect(web.props.source.uri).toBeUndefined();
   expect(web.props.source.html).toContain('id="root"');
+  expect(renderer.root.findAllByType("Fallback" as never)).toHaveLength(0);
+  expect(renderer.root.findAllByType("Text" as never)).toHaveLength(0);
   expect(web.props.onShouldStartLoadWithRequest({ url: "https://example.test/athlete-card-scene" })).toBe(false);
+  await act(async () => web.props.onError());
+  expect(renderer.root.findAllByType("Fallback" as never)).toHaveLength(0);
+  expect(renderer.root.findByType("Text" as never).props.children).toBe("Could not load your athlete card.");
 });
