@@ -1,3 +1,4 @@
+import { NavigationAppearance } from "../src/ui/navigation-appearance";
 import { AppearanceSync } from "../src/ui/appearance-sync";
 import { useThemeColors } from "../src/theme";
 import { AppThemeProvider, useAppTheme } from "../src/appearance";
@@ -101,7 +102,7 @@ function NotificationNavigation() {
 }
 
 export default function RootLayout() {
-  return <AppThemeProvider><AppearanceSync /><RootContent /></AppThemeProvider>;
+  return <AppThemeProvider><AppearanceSync /><NavigationAppearance><RootContent /></NavigationAppearance></AppThemeProvider>;
 }
 
 function RootContent() {
