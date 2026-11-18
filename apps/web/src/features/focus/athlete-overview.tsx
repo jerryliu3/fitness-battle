@@ -49,22 +49,27 @@ export function AthleteOverview({
     setCity(state.city);
     setGender(state.gender ?? "");
     setCountryCode(state.countryCode ?? "");
-    setCardHighlights(state.cardHighlights);
     setEditing(true);
-  }, [openProfileEdit, state.name, state.city, state.gender, state.countryCode, state.cardHighlights]);
+  }, [openProfileEdit, state.name, state.city, state.gender, state.countryCode]);
 
   const season = clubLifetimeTotals(state);
   const unit = distanceUnitLabel(state.units);
   const highlightCatalog = athleteCardHighlightCatalog(state);
   const activeHighlightIds = cardHighlights ?? defaultAthleteCardHighlightIds(state);
 
+  useEffect(() => setCardHighlights(state.cardHighlights), [state.cardHighlights]);
+
+  function saveHighlights(next: string[] | undefined) {
+    setCardHighlights(next);
+    dispatch({ type: "set-card-highlights", cardHighlights: next });
+  }
+
   function toggleHighlight(id: string) {
-    setCardHighlights((prev) => {
-      const current = prev ?? activeHighlightIds;
-      if (current.includes(id)) return current.filter((item) => item !== id);
-      if (current.length >= ATHLETE_CARD_HIGHLIGHT_LIMIT) return current;
-      return [...current, id];
-    });
+    if (activeHighlightIds.includes(id)) {
+      saveHighlights(activeHighlightIds.filter((item) => item !== id));
+    } else if (activeHighlightIds.length < ATHLETE_CARD_HIGHLIGHT_LIMIT) {
+      saveHighlights([...activeHighlightIds, id]);
+    }
   }
 
   const showProfile = sections === "profile";
@@ -131,7 +136,7 @@ export function AthleteOverview({
                         type="button"
                         className="fb-btn-line"
                         style={{ ...typographyStyle("caption"), padding: "2px 8px" }}
-                        onClick={() => setCardHighlights(undefined)}
+                        onClick={() => saveHighlights(undefined)}
                       >
                         Reset to PBs
                       </button>
@@ -175,7 +180,6 @@ export function AthleteOverview({
                       dispatch({ type: "set-city", city: city.trim() });
                       dispatch({ type: "set-gender", gender: gender || null });
                       dispatch({ type: "set-country", countryCode: countryCode || null });
-                      dispatch({ type: "set-card-highlights", cardHighlights });
                       setEditing(false);
                     }}
                   >

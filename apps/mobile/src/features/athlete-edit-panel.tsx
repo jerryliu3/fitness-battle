@@ -100,22 +100,22 @@ export function AthleteProfileEditor({
     name.trim() !== state.name ||
     city.trim() !== state.city ||
     gender !== (state.gender ?? null) ||
-    (countryCode || null) !== (state.countryCode ?? null) ||
-    JSON.stringify(highlights ?? null) !== JSON.stringify(state.cardHighlights ?? null);
+    (countryCode || null) !== (state.countryCode ?? null);
+
+  function saveHighlights(next: string[] | undefined) {
+    setHighlights(next);
+    dispatch({ type: "set-card-highlights", cardHighlights: next });
+  }
 
   function toggleHighlight(id: string) {
     setLimitHint(false);
-    setHighlights((prev) => {
-      const current = prev ?? activeIds;
-      if (current.includes(id)) {
-        return current.filter((item) => item !== id);
-      }
-      if (current.length >= ATHLETE_CARD_HIGHLIGHT_LIMIT) {
-        setLimitHint(true);
-        return current;
-      }
-      return [...current, id];
-    });
+    if (activeIds.includes(id)) {
+      saveHighlights(activeIds.filter((item) => item !== id));
+    } else if (activeIds.length >= ATHLETE_CARD_HIGHLIGHT_LIMIT) {
+      setLimitHint(true);
+    } else {
+      saveHighlights([...activeIds, id]);
+    }
   }
 
   function commitAndClose() {
@@ -136,9 +136,6 @@ export function AthleteProfileEditor({
     }
     if ((countryCode || null) !== (state.countryCode ?? null)) {
       dispatch({ type: "set-country", countryCode: countryCode || null });
-    }
-    if (JSON.stringify(highlights ?? null) !== JSON.stringify(state.cardHighlights ?? null)) {
-      dispatch({ type: "set-card-highlights", cardHighlights: highlights });
     }
     onSaved?.("Profile updated.");
   }
@@ -199,7 +196,7 @@ export function AthleteProfileEditor({
             />
           </View>
           {highlights !== undefined ? (
-            <Pressable accessibilityRole="button" onPress={() => setHighlights(undefined)}>
+            <Pressable accessibilityRole="button" onPress={() => saveHighlights(undefined)}>
               <AppText role="caption" secondary>
                 Reset to PBs
               </AppText>
