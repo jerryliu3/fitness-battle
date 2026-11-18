@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, type CSSProperties } from "react";
+import { memo, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { useReducedMotion } from "motion/react";
 import { APP_TIMEZONE, countryFlagEmoji, countryName, RANK_SYMBOL_GEOMETRY, rankSymbolForRankName, type AthleteCardModel } from "@fitness-battle/shared";
 import { cardOptics, REST_POSE } from "./card-optics";
@@ -18,8 +18,30 @@ const WREATH_FRAME = {
 const POINTS = [[24, 0], [296, 0], [320, 28], [320, 284], [300, 338], [160, 408], [20, 338], [0, 284], [0, 28]];
 const CLIP = `polygon(${POINTS.map(([x, y]) => `${x / WIDTH * 100}% ${y / HEIGHT * 100}%`).join(",")})`;
 function BrandMark({ src }: { src: string }) { return <img className={styles.logo} src={src} alt="Overtaek" draggable={false} />; }
+function FittedValue({ value }: { value: string | number }) {
+  const text = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const span = text.current;
+    const slot = span?.parentElement;
+    if (!span || !slot) return;
+    const fit = () => {
+      // Layout widths exclude the card’s 3D transform and the text’s own scale.
+      const natural = parseFloat(getComputedStyle(span).width);
+      const available = parseFloat(getComputedStyle(slot).width);
+      span.style.scale = natural > available ? String(available / natural) : "";
+    };
+    fit();
+    void document.fonts.ready.then(fit);
+    const observer = new ResizeObserver(fit);
+    observer.observe(slot);
+    observer.observe(span);
+    return () => observer.disconnect();
+  }, [value]);
+  return <span ref={text} className={styles.fittedValue}>{value}</span>;
+}
+
 function Stat({ value, label, dim = false }: { value: string | number; label: string; dim?: boolean }) {
-  return <div className={styles.stat} data-dim={dim}><strong>{value}</strong><span>{label}</span></div>;
+  return <div className={styles.stat} data-dim={dim}><strong><FittedValue value={value} /></strong><span>{label}</span></div>;
 }
 function RecordDate({ date, timeZone }: { date: string; timeZone: string }) {
   return <time dateTime={date}>{new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone })}</time>;
@@ -65,7 +87,7 @@ export const AthleteCrest = memo(function AthleteCrest({ model, active = true, a
             <header><h2 title={model.name}>{model.name}</h2><p className={styles.location}><span title={model.location}>{model.location}</span><span>{model.rank ?? "Athlete"}</span></p></header>
             <section className={styles.detailSection}>
               <h3>Personal bests</h3>
-              {personalBests.length ? <dl>{personalBests.map(r => <div key={r.id ?? r.label}><dt>{r.label}{r.date ? <RecordDate date={r.date} timeZone={model.displayTimeZone ?? APP_TIMEZONE} /> : null}</dt><dd>{r.value}</dd></div>)}</dl> : <p>No personal bests yet</p>}
+              {personalBests.length ? <dl>{personalBests.map(r => <div key={r.id ?? r.label}><dt>{r.label}{r.date ? <RecordDate date={r.date} timeZone={model.displayTimeZone ?? APP_TIMEZONE} /> : null}</dt><dd><FittedValue value={r.value} /></dd></div>)}</dl> : <p>No personal bests yet</p>}
             </section>
             <section className={styles.detailSection}><h3>Competition</h3><div className={`${styles.totals} ${styles.competition}`}><Stat value={model.overtakes} label="Overtakes" /><Stat value={model.rounds} label="Rounds" /><Stat value={model.streak} label="Week streak" dim={!model.streakActive} /><Stat value={model.podiums ?? "—"} label="Podiums" /></div></section>
             {model.lifetime ? <section className={styles.detailSection}><h3>Lifetime</h3><div className={styles.totals}><Stat value={model.lifetime.distance} label="Distance" /><Stat value={model.lifetime.activities} label="Activities" /><Stat value={model.lifetime.time} label="Moving time" /></div></section> : null}

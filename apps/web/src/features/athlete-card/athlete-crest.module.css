@@ -37,7 +37,8 @@
 .totals { margin-top: 2cqi; }
 .competition { grid-template-columns: repeat(4,1fr); }
 .stat { min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1.5cqi; }
-.stat strong { font: 700 7.6cqi/1.1 var(--font-form, var(--font-body)),sans-serif; letter-spacing: -.05em; font-variant-numeric: tabular-nums; max-width: 100%; overflow-wrap: anywhere; flex-shrink: 0; }
+.stat strong { font: 700 7.6cqi/1.1 var(--font-form, var(--font-body)),sans-serif; letter-spacing: -.05em; font-variant-numeric: tabular-nums; display: flex; width: 100%; justify-content: center; flex-shrink: 0; }
+.fittedValue { flex: none; width: max-content; white-space: nowrap; }
 .stat > span { font-size: 3.6cqi; font-weight: 600; max-width: 100%; overflow-wrap: anywhere; }
 .stat[data-dim="true"] strong { opacity: .5; }
 .noRecords { margin: 0; min-height: 8cqi; display: grid; place-items: center; font-size: 3cqi; }
@@ -59,5 +60,6 @@
 .reverse dl > div { display: flex; justify-content: space-between; align-items: center; gap: 3cqi; padding: .3cqi 0; }
 .reverse dt { min-width: 0; overflow-wrap: anywhere; font-size: 4cqi; font-weight: 700; }
 .reverse time { display: block; font-size: 3.1cqi; font-weight: 400; margin-top: .5cqi; }
-.reverse dd { font: 600 7.6cqi/1.05 var(--font-form, var(--font-body)),sans-serif; letter-spacing: -.04em; margin: 0; white-space: nowrap; }
+.reverse dd { font: 600 7.6cqi/1.05 var(--font-form, var(--font-body)),sans-serif; letter-spacing: -.04em; margin: 0; min-width: 0; display: flex; justify-content: flex-end; }
+.reverse dd .fittedValue { transform-origin: right center; }
 @media (forced-colors: active) { .edge,.shadow,.face::after { display: none; } .face { background: Canvas; color: CanvasText; } }
