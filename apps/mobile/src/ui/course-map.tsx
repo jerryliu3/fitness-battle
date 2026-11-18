@@ -25,8 +25,8 @@ const START_FIELD_METRES = 20;
 // Mapbox uses a 512-point Mercator world at zoom zero.
 const MERCATOR_METRES_PER_POINT = 78271.516964;
 const startMetresPerPoint = START_FIELD_METRES / (
-  athleteNodeDiameter(START_NODE_RADIUS, false, true) + 1
-  + 7 * (athleteNodeDiameter(START_NODE_RADIUS, true, false) + 1)
+  athleteNodeDiameter(START_NODE_RADIUS, false, true)
+  + 7 * athleteNodeDiameter(START_NODE_RADIUS, true, false)
 );
 
 const rememberedProgress = new Map<string, number>();
@@ -94,7 +94,7 @@ const appearanceColors = useThemeColors();
   }
   const startMarkers = startLine.map(lane => {
     const selected = !lane.mystery && lane.id === selectedId;
-    return { lane, selected, width: athleteNodeDiameter(START_NODE_RADIUS, lane.mystery, selected) + 1 };
+    return { lane, selected, width: athleteNodeDiameter(START_NODE_RADIUS, lane.mystery, selected) };
   });
   const startHeight = Math.max(0, ...startMarkers.map(marker => marker.width)) + 2;
   const initialPitch = initialFlat ? 0 : 60;
@@ -107,8 +107,11 @@ const appearanceColors = useThemeColors();
     bearing: initialFlat ? 0 : startPose?.heading ?? 0,
   });
   const [queuedZoom, setQueuedZoom] = useState(() => pose.current.zoom);
-  // World-space gaps contract faster than portraits as the camera pulls back.
-  const startScale = Math.max(0.12, Math.min(1, 2 ** (0.75 * (queuedZoom - startZoom))));
+  const zoomFromFullSize = queuedZoom - startZoom;
+  // Keep the full-size portraits shoulder to shoulder when zooming in further.
+  // Below that zoom the lineup keeps its 20 m footprint while the portraits shrink.
+  const startSpacing = startMetresPerPoint * 2 ** -Math.max(0, zoomFromFullSize);
+  const startScale = Math.max(0.12, Math.min(1, 2 ** (0.75 * zoomFromFullSize)));
   let startX = -startMarkers.reduce((total, marker) => total + marker.width, 0) / 2;
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(restored.current ? restored.current.pitch === 0 : initialFlat);
   const flatRef = useRef(flat);
@@ -308,7 +311,7 @@ const appearanceColors = useThemeColors();
         return lane ? <MarkerView key={`pass-${pass.id}`} coordinate={lane.coordinate} anchor={{x:.5,y:.5}} allowOverlap allowOverlapWithPuck><View pointerEvents="none" style={{width:100,height:100,alignItems:"center",justifyContent:"center"}}><View style={{width:32+64*(1-pass.strength),height:32+64*(1-pass.strength),borderRadius:60,borderWidth:4,borderColor:appearanceColors.actionPrimary,backgroundColor:"#f7c94833",opacity:pass.strength}}/></View></MarkerView> : null;
       }) : null}
       {startMarkers.map(({ lane, selected, width }) => {
-        const offset = (startX + width / 2) * startMetresPerPoint;
+        const offset = (startX + width / 2) * startSpacing;
         startX += width;
         const { coordinate } = raceCourseRacerPosition(course, 0, offset);
         return <MarkerView key={lane.id} coordinate={coordinate} anchor={{ x: 0.5, y: 0.5 }} allowOverlap allowOverlapWithPuck allowZElevate={false}>

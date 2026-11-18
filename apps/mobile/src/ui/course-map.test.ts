@@ -366,7 +366,17 @@ it("anchors the queued row across the course and scales it from a 20 m start lin
   expect(edgeToEdgeMetres).toBeGreaterThan(17);
   expect(edgeToEdgeMetres).toBeLessThan(20);
   expect(marker().props.style.transform[0].scale).toBe(1);
-  await act(async () => renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [.1, .1], zoom: zoom - 2, pitch: 60, heading: 180 } } }));
+  const moveCamera = (level: number) => act(async () => renderer.root.findByType("Observer" as never).props.onCameraChanged({
+    nativeEvent: { properties: { center: [.1, .1], zoom: level, pitch: 60, heading: 180 } },
+  }));
+  await moveCamera(20);
+  const close = coordinates();
+  const closeSpan = Math.abs(close.at(-1)![1] - close[0][1]) * 111195;
+  expect(closeSpan * 2 ** (20 - zoom)).toBeCloseTo(edgeToEdgeMetres, 4);
+  for (const [longitude] of close) expect(longitude).toBeCloseTo(.1, 7);
+  expect(marker().props.style.transform[0].scale).toBe(1);
+
+  await moveCamera(zoom - 2);
   expect(coordinates()).toEqual(initial);
   expect(marker().props.style.transform[0].scale).toBeLessThan(0.5);
 });
