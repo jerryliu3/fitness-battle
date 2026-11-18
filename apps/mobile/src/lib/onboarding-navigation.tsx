@@ -21,18 +21,22 @@ export function OnboardingNavigation() {
   const { user } = useAuth();
   const bootOpened = useBootOpened();
   const path = usePathname();
-  const params = useGlobalSearchParams<{ panel?: string; tracker?: string; provider?: string; preview?: string }>();
+  const params = useGlobalSearchParams<{ panel?: string; tracker?: string; provider?: string; preview?: string; invite?: string }>();
+  const { invite } = params;
   const connecting = (path === "/athlete" || path === "/athlete-settings") && (params.panel === "connections" || params.tracker !== undefined || params.provider !== undefined);
   useEffect(() => {
     if (params.preview === "1" && (path === "/welcome" || path === "/onboarding" || path === "/replay-tuning")) return;
     if (!required || !bootOpened || connecting) return;
     let alive = true;
+    function goToSetup(target: "/welcome" | "/onboarding") {
+      if (path !== target) router.replace(invite ? { pathname: target, params: { invite } } : target);
+    }
     void Promise.all([readGuestIntroDraft(), AsyncStorage.getItem(GUEST_SIGNUP_PENDING_KEY)]).then(([draft, pending]) => {
       if (!alive) return;
       const target = hasCompletedOnboardingIntro(draft, pending, user?.email) ? "/onboarding" : "/welcome";
-      if (path !== target) router.replace(target);
-    }).catch(() => { if (alive && path !== "/welcome") router.replace("/welcome"); });
+      goToSetup(target);
+    }).catch(() => { if (alive) goToSetup("/welcome"); });
     return () => { alive = false; };
-  }, [required, bootOpened, path, connecting, user?.id, user?.email, params.preview]);
+  }, [required, bootOpened, path, connecting, user?.id, user?.email, params.preview, invite]);
   return null;
 }

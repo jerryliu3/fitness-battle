@@ -20,6 +20,8 @@ export const webEnv = {
 
 /** Server-only secrets. Import only from Route Handlers / server modules. */
 export const serverEnv = {
+  inviteAppleAppId: process.env.INVITE_APPLE_APP_ID?.trim(),
+  inviteAndroidFingerprints: process.env.INVITE_ANDROID_SHA256 ?? "",
   resendApiKey: process.env.RESEND_API_KEY ?? "",
   issueReportFrom: process.env.ISSUE_REPORT_FROM ?? "",
   issueReportTo: process.env.ISSUE_REPORT_TO ?? "support@overtaek.xyz",

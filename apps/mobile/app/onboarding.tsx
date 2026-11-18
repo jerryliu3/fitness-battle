@@ -32,7 +32,7 @@ export default function Onboarding() {
   const { state, canWrite, dispatch, loadStatus } = useCompeteStore();
   const { user, offlineMode } = useAuth();
   const router = useRouter();
-  const params = useLocalSearchParams<{ preview?: string; sport?: string }>();
+  const params = useLocalSearchParams<{ preview?: string; sport?: string; invite?: string }>();
   const preview = params.preview === "1";
   const previewSport = preview ? SPORTS.find(item => item.id === params.sport)?.id : undefined;
   const key = `onboarding-draft:v7:${user?.id ?? "guest"}`;
@@ -114,7 +114,9 @@ export default function Onboarding() {
     setRegistered(true);
   }, [step, registered, state, ready, loadedKey, key, preview, user, canWrite, sport, name, city, gender, countryCode, units, timezone, dispatch]);
 
-  if (!preview && state?.onboardingCompleted) return <Redirect href="/today" />;
+  const invite = params.invite;
+  const completionRoute = invite ? { pathname: "/field" as const, params: { invite } } : "/today";
+  if (!preview && state?.onboardingCompleted) return <Redirect href={completionRoute} />;
   if (!state || !ready) return <AppText>Loading setup…</AppText>;
   const sportName = SPORTS.find(item => item.id === sport)!.name;
   const accountReady = loadStatus !== "loading";
@@ -146,7 +148,7 @@ export default function Onboarding() {
     dispatch({ type: "complete-onboarding" });
     void AsyncStorage.removeItem(key).catch(() => {});
     if (guestImported) void AsyncStorage.multiRemove([GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY]).catch(() => {});
-    router.replace("/today");
+    router.replace(completionRoute);
   }
 
   return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "fade"}>

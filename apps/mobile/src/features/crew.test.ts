@@ -54,7 +54,7 @@ vi.mock("react-native", () => ({useColorScheme: () => "light",
 }));
 vi.mock("expo-router", () => ({
   useFocusEffect() {},
-  useGlobalSearchParams: () => ({}),
+  useLocalSearchParams: () => ({}),
   useRouter: () => ({ navigate: mock.navigate, push: mock.push }),
 }));
 vi.mock("../lib/auth", () => ({

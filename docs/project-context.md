@@ -40,3 +40,19 @@ launch gate remains mounted across sign-in and foreground privacy refresh, so la
 reads do not replay startup. Account and privacy reads still gate protected content.
 
 Activity training uses shared Training XP (1,000 XP per sport reference week). Activity details, sync summaries and training totals share that input with the profile Effort Score. Session effort bars compare session volume rather than intensity. No separate XP balance is persisted.
+
+### Crew invite links
+
+Mobile shares `https://overtaek.xyz/invite?invite=CODE`. The native app routes the
+recipient to Crew with the code prefilled after account setup. The browser
+landing page offers Open in app or Continue on web with the same code.
+
+For automatic opening, deploy the web app on `overtaek.xyz` with
+`INVITE_APPLE_APP_ID` set to the signed iOS app's application identifier
+(typically `TEAMID.com.overtaek.app`) and `INVITE_ANDROID_SHA256` set to the
+colon-separated SHA-256 fingerprint of the certificate signing the installed
+Android app. For Play Store builds use the Play app signing certificate.
+Multiple fingerprints can be comma-separated. Check that both
+`/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`
+return JSON directly, then install fresh native builds and tap an invite from
+Messages with the app installed and again without it.

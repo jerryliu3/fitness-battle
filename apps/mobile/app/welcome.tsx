@@ -29,7 +29,9 @@ export default function Welcome() {
   const { user, loading, signUp } = useAuth();
   const { state } = useCompeteStore();
   const router = useRouter();
-  const preview = useLocalSearchParams<{ preview?: string }>().preview === "1";
+  const { preview: previewParam, invite } = useLocalSearchParams<{ preview?: string; invite?: string }>();
+  const preview = previewParam === "1";
+  const setupRoute = invite ? { pathname: "/onboarding" as const, params: { invite } } : "/onboarding";
   const colors = useThemeColors(), f = useFocusStyles();
   const accountId = preview ? undefined : user?.id;
   const waitingForProfile = !preview && (loading || Boolean(user && !state));
@@ -74,7 +76,7 @@ export default function Welcome() {
     }).catch(() => { if (alive) setReady(true); });
     return () => { alive = false; };
   }, [preview, accountId, waitingForProfile]);
-  if (!preview && user && state?.onboardingCompleted) return <Redirect href="/today" />;
+  if (!preview && user && state?.onboardingCompleted) return <Redirect href={invite ? { pathname: "/field", params: { invite } } : "/today"} />;
   if (loading || !ready) return <View style={{ flex: 1, backgroundColor: colors.paper }} />;
   const index = steps.indexOf(step);
   async function saveCompletedIntro(pendingEmail: string) {
@@ -88,7 +90,7 @@ export default function Welcome() {
     setCardDraft(draft);
     if (step === "growth") {
       if (user && !preview) {
-        try { await saveCompletedIntro(user.email); router.replace("/onboarding"); }
+        try { await saveCompletedIntro(user.email); router.replace(setupRoute); }
         catch { setError("Could not save setup on this device. Please try again."); }
         return;
       }
@@ -105,7 +107,7 @@ export default function Welcome() {
       if (result.error) { await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY); setError(result.error); return; }
       setPassword("");
       if (result.needsEmailConfirm) { setConfirmation(true); return; }
-      router.replace("/onboarding");
+      router.replace(setupRoute);
     } catch (err) {
       void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
       setError(err instanceof Error ? err.message : "Could not create your account.");
@@ -124,7 +126,7 @@ export default function Welcome() {
   }
   async function signIn() {
     if (!preview) await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
-    router.push({ pathname: "/athlete", params: { auth: "signin", from: "onboarding" } });
+    router.push({ pathname: "/athlete", params: { auth: "signin", from: "onboarding", invite } });
   }
   const back = index > 0 ? <IconButton icon="back" label="Back" disabled={busy || photoBusy} onPress={() => setStep(steps[index - 1]!)} /> : null;
   const actions = (label: string, onPress: () => void, disabled = false) => <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
