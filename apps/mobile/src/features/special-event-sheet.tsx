@@ -6,16 +6,20 @@ import {
   countryName,
   entryBarcode,
   extractCrewOptions,
+  formatSpecialEventVolume,
   specialEventRegistrationDetail,
+  specialEventRoundLabel,
   specialEventStatusBadge,
   type CompeteState,
   type SpecialEventEdition,
+  type SpecialEventStandings,
 } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
 import { FocusButton, useFocusStyles } from "../ui/focus";
 import { CountryPicker } from "../ui/country-picker";
 import { WaveCountdown } from "../ui/wave-countdown";
+import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useCachedApi } from "../lib/use-cached-api";
 import { CompeteIcon, EventArt } from "./compete-home-sections";
 
@@ -38,9 +42,17 @@ export function SpecialEventRegistrationSheet({
 }) {
   const c = useThemeColors();
   const f = useFocusStyles();
+  const { blocks } = useAthleteBlocks();
   const now = competeNow(state);
   const detail = specialEventRegistrationDetail(state, edition, now);
   const [expandedRule, setExpandedRule] = useState<Record<string, boolean>>({});
+  const [selectedRound, setSelectedRound] = useState<number | null>(null);
+  const [showAllHeats, setShowAllHeats] = useState(false);
+  const canViewStandings = Boolean(edition.entry && (detail.phase === "active" || detail.phase === "settled" || edition.finalizedAt));
+  const standingsApi = useCachedApi<{ standings: SpecialEventStandings }>(
+    canViewStandings ? `/api/special-events/${encodeURIComponent(edition.id)}` : null,
+  );
+  const standings = standingsApi.data?.standings ?? null;
   const [countryCode, setCountryCode] = useState(
     edition.entry?.groupSnapshot?.country_code ?? state.countryCode ?? "",
   );
@@ -51,6 +63,8 @@ export function SpecialEventRegistrationSheet({
   useEffect(() => {
     setCountryCode(edition.entry?.groupSnapshot?.country_code ?? state.countryCode ?? "");
     setCrewId(edition.entry?.requestedCrewId ?? "");
+    setSelectedRound(null);
+    setShowAllHeats(false);
   }, [edition.id, edition.entry?.requestedCrewId, edition.entry?.groupSnapshot?.country_code, state.countryCode]);
 
   const firstCrewId = crews[0]?.id ?? "";
@@ -99,6 +113,73 @@ export function SpecialEventRegistrationSheet({
           ) : null}
         </View>
       </View>
+
+      {canViewStandings ? (
+        <View style={{ padding: 14, borderRadius: 16, borderWidth: 1, borderColor: c.line, backgroundColor: c.card, gap: 10 }}>
+          {standingsApi.error ? (
+            <AppText role="caption">{standingsApi.error}</AppText>
+          ) : !standings ? (
+            <AppText role="caption" secondary>Loading live standings…</AppText>
+          ) : standings.rounds.length === 0 ? (
+            <AppText role="caption" secondary>Finalizing heat assignments…</AppText>
+          ) : (() => {
+            const totalRounds = standings.rounds.length;
+            const round = standings.rounds.find((r) => r.roundNumber === (selectedRound ?? standings.currentRound)) ?? standings.rounds[totalRounds - 1]!;
+            const heats = showAllHeats || !round.heats.some((h) => h.isMine) ? round.heats : round.heats.filter((h) => h.isMine);
+            const showCutLine = edition.config.match.kind !== "single_round";
+            return (
+              <View style={{ gap: 10 }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, alignItems: "center", justifyContent: "space-between" }}>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                    {standings.rounds.map((r) => {
+                      const active = r.roundNumber === round.roundNumber;
+                      return (
+                        <Pressable
+                          key={r.roundNumber}
+                          accessibilityRole="button"
+                          onPress={() => setSelectedRound(r.roundNumber)}
+                          style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 99, borderWidth: 1, borderColor: active ? c.podiumGold : c.line, backgroundColor: active ? c.actionSoft : c.paper }}
+                        >
+                          <AppText role="caption">{specialEventRoundLabel(edition.config, r.roundNumber, totalRounds)}</AppText>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  {round.heats.length > 1 ? (
+                    <Pressable accessibilityRole="button" onPress={() => setShowAllHeats((v) => !v)}>
+                      <AppText role="caption" secondary>{showAllHeats ? "My matchup" : `All (${round.heats.length})`}</AppText>
+                    </Pressable>
+                  ) : null}
+                </View>
+                {heats.map((heat) => (
+                  <View key={heat.id} style={{ gap: 4 }}>
+                    {round.heats.length > 1 ? <AppText role="caption" secondary>{`Matchup ${heat.heatIndex}`}</AppText> : null}
+                    {heat.sides.map((side, idx) => {
+                      const blocked = Boolean(side.userId && blocks.some((b) => b.id === side.userId));
+                      return (
+                        <View key={side.sideId}>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderColor: c.line }}>
+                            <AppText role="caption" secondary>{side.place}</AppText>
+                            <AppText role="label" style={{ flex: 1 }}>
+                              {blocked ? "Athlete" : side.displayName}{side.isYou ? " · You" : ""}
+                            </AppText>
+                            <AppText role="caption">{formatSpecialEventVolume(edition.sport, side.score, state.units)}</AppText>
+                          </View>
+                          {showCutLine && heat.sides.length > heat.advanceCount && idx + 1 === heat.advanceCount ? (
+                            <View style={{ paddingVertical: 4, borderBottomWidth: 1, borderStyle: "dashed", borderColor: c.podiumGold, alignItems: "center" }}>
+                              <AppText role="caption" secondary>Advancement cut · Top {heat.advanceCount}</AppText>
+                            </View>
+                          ) : null}
+                        </View>
+                      );
+                    })}
+                  </View>
+                ))}
+              </View>
+            );
+          })()}
+        </View>
+      ) : null}
 
       <View style={{ gap: 8 }}>
         <AppText role="label">How this event works</AppText>

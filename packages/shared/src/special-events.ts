@@ -1,4 +1,5 @@
-import { competitionTrack, competitionTrackLabel, SPORT_IDS, sportById, type CompeteState, type SportId } from "./compete/sports";
+import { competitionTrack, competitionTrackLabel, SPORT_IDS, sportById, type CompeteState, type SportId, type UnitSystem } from "./compete/sports";
+import { formatArenaVolume } from "./compete-field-view";
 import { waveTimeLabelForState } from "./compete/participation";
 import { APP_TIMEZONE, accountTimeZone, dayKey, shiftAppDay, startOfZonedDay, weeklyCompetitionLastDay, weeklyPeriodBounds } from "./period";
 import type { RegistrationRuleCard } from "./event-registration";
@@ -461,6 +462,67 @@ export function specialEventError(message: string): string {
   if (message.includes("edition_not_found")) return "This event is no longer available.";
   if (message.includes("not_registered")) return "No active registration was found to cancel.";
   if (message.includes("edition_already_started")) return "Started events keep their locked schedule and scoring rules.";
+  if (message.includes("edition_not_started")) return "Standings open when the event starts.";
   if (message.includes("authentication_required")) return "Sign in to register for special events.";
   return "Could not update special event registration. Try again.";
+}
+
+export interface SpecialEventSideStanding {
+  sideId: string;
+  displayName: string;
+  userId: string | null;
+  isYou: boolean;
+  score: number;
+  place: number;
+  advancing: boolean;
+}
+
+export interface SpecialEventHeatView {
+  id: string;
+  divisionKey: string;
+  heatIndex: number;
+  isMine: boolean;
+  advanceCount: number;
+  sides: SpecialEventSideStanding[];
+}
+
+export interface SpecialEventRoundView {
+  roundNumber: number;
+  startsAt: string;
+  endsAt: string;
+  advanceCount: number;
+  scoreMode: "round_window" | "cumulative";
+  finalizedAt: string | null;
+  settledAt: string | null;
+  heats: SpecialEventHeatView[];
+}
+
+export interface SpecialEventStandings {
+  editionId: string;
+  sport: SpecialEventSport;
+  finalizedAt: string | null;
+  settledAt: string | null;
+  currentRound: number;
+  mySideId: string | null;
+  myStatus: SpecialEventEntryStatus | null;
+  rounds: SpecialEventRoundView[];
+}
+
+export function specialEventRoundLabel(
+  config: SpecialEventConfig,
+  roundNumber: number,
+  totalRounds: number,
+): string {
+  if (config.cadence.unit === "daily") return roundNumber === totalRounds && totalRounds > 1 ? `Day ${roundNumber} · Final` : `Day ${roundNumber}`;
+  if (config.match.kind === "knockout_1v1") {
+    const remaining = totalRounds - roundNumber;
+    if (remaining === 0) return "Final";
+    if (remaining === 1) return "Semifinals";
+    if (remaining === 2) return "Quarterfinals";
+  }
+  return totalRounds === 1 ? "Standings" : `Round ${roundNumber}`;
+}
+
+export function formatSpecialEventVolume(sport: SpecialEventSport, value: number, units: UnitSystem = "us"): string {
+  return formatArenaVolume(sport, { distanceM: value, movingSec: value, effort: value }, units);
 }

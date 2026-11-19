@@ -8,10 +8,13 @@ import {
   countryName,
   entryBarcode,
   extractCrewOptions,
+  formatSpecialEventVolume,
   specialEventRegistrationDetail,
+  specialEventRoundLabel,
   specialEventStatusBadge,
   type CompeteState,
   type SpecialEventEdition,
+  type SpecialEventStandings,
 } from "@fitness-battle/shared";
 import { AppHeading, AppParagraph, AppText } from "@/ui/section";
 import { CountryCombobox } from "@/ui/country-combobox";
@@ -44,11 +47,36 @@ export function SpecialEventRegistrationSheet({
   const [crews, setCrews] = useState<{ id: string; name: string }[]>([]);
   const [crewId, setCrewId] = useState(edition.entry?.requestedCrewId ?? "");
   const [crewsLoaded, setCrewsLoaded] = useState(false);
+  const [standings, setStandings] = useState<SpecialEventStandings | null>(null);
+  const [standingsError, setStandingsError] = useState("");
+  const [selectedRound, setSelectedRound] = useState<number | null>(null);
+  const [showAllHeats, setShowAllHeats] = useState(false);
+  const canViewStandings = Boolean(edition.entry && (detail.phase === "active" || detail.phase === "settled" || edition.finalizedAt));
 
   useEffect(() => {
     setCountryCode(edition.entry?.groupSnapshot?.country_code ?? state.countryCode ?? "");
     setCrewId(edition.entry?.requestedCrewId ?? "");
+    setStandings(null);
+    setStandingsError("");
+    setSelectedRound(null);
+    setShowAllHeats(false);
   }, [edition.id, edition.entry?.requestedCrewId, edition.entry?.groupSnapshot?.country_code, state.countryCode]);
+
+  useEffect(() => {
+    if (!canViewStandings) return;
+    let cancelled = false;
+    void fetch(`/api/special-events/${encodeURIComponent(edition.id)}`, { cache: "no-store", signal: AbortSignal.timeout(15000) })
+      .then(async (res) => ({ ok: res.ok, body: await res.json().catch(() => ({})) }))
+      .then(({ ok, body }) => {
+        if (cancelled) return;
+        if (!ok) { setStandingsError(typeof body.error === "string" ? body.error : "Could not load standings."); return; }
+        const next = body.standings as SpecialEventStandings | null;
+        setStandings(next);
+        if (next) setSelectedRound((prev) => prev ?? next.currentRound);
+      })
+      .catch(() => { if (!cancelled) setStandingsError("Could not load standings."); });
+    return () => { cancelled = true; };
+  }, [canViewStandings, edition.id]);
 
   useEffect(() => {
     if (!detail.requiresCrew) return;
@@ -102,6 +130,65 @@ export function SpecialEventRegistrationSheet({
           ) : null}
         </div>
       </div>
+
+      {canViewStandings ? (
+        <section className="fb-card" style={{ padding: 14, display: "grid", gap: 12 }} aria-label="Special event standings">
+          {standingsError ? <AppText role="caption">{standingsError}</AppText> : !standings ? (
+            <AppText role="caption" secondary>Loading live standings…</AppText>
+          ) : standings.rounds.length === 0 ? (
+            <AppText role="caption" secondary>Finalizing heat assignments…</AppText>
+          ) : (() => {
+            const totalRounds = standings.rounds.length;
+            const round = standings.rounds.find((r) => r.roundNumber === selectedRound) ?? standings.rounds[totalRounds - 1]!;
+            const heats = showAllHeats || !round.heats.some((h) => h.isMine) ? round.heats : round.heats.filter((h) => h.isMine);
+            const showCutLine = edition.config.match.kind !== "single_round";
+            return (
+              <>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {standings.rounds.map((r) => (
+                      <button
+                        key={r.roundNumber}
+                        type="button"
+                        className={r.roundNumber === round.roundNumber ? "fb-btn" : "fb-btn-line"}
+                        onClick={() => setSelectedRound(r.roundNumber)}
+                      >
+                        {specialEventRoundLabel(edition.config, r.roundNumber, totalRounds)}
+                      </button>
+                    ))}
+                  </div>
+                  {round.heats.length > 1 ? (
+                    <button type="button" className="fb-btn-line" onClick={() => setShowAllHeats((v) => !v)}>
+                      {showAllHeats ? "My matchup" : `All (${round.heats.length})`}
+                    </button>
+                  ) : null}
+                </div>
+                {heats.map((heat) => (
+                  <div key={heat.id} style={{ display: "grid", gap: 6 }}>
+                    {round.heats.length > 1 ? <AppText role="caption" secondary>{`Matchup ${heat.heatIndex}`}</AppText> : null}
+                    {heat.sides.map((side, idx) => (
+                      <div key={side.sideId}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+                          <AppText role="caption" secondary>{side.place}</AppText>
+                          <AppText role="label" style={{ flex: 1 }}>
+                            {side.displayName}{side.isYou ? " · You" : ""}
+                          </AppText>
+                          <AppText role="caption">{formatSpecialEventVolume(edition.sport, side.score, state.units)}</AppText>
+                        </div>
+                        {showCutLine && heat.sides.length > heat.advanceCount && idx + 1 === heat.advanceCount ? (
+                          <div style={{ padding: "4px 0", borderBottom: "2px dashed var(--line)", textAlign: "center" }}>
+                            <AppText role="caption" secondary>Advancement cut · Top {heat.advanceCount}</AppText>
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </>
+            );
+          })()}
+        </section>
+      ) : null}
 
       <div className="registration-rules">
         <div className="registration-rules-head">

@@ -74,3 +74,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Edition was not saved. Please reload and try again." }, { status: 503 });
   }
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function PATCH(request: Request) {
+  const origin = request.headers.get("origin");
+  if (origin && origin !== new URL(request.url).origin) return NextResponse.json({ error: "invalid_origin" }, { status: 403 });
+  const actor = await authorizeAdmin(request);
+  if (!actor) return NextResponse.json({ error: "admin_required" }, { status: 403 });
+  const body = await request.json().catch(() => null);
+  if (!body || !UUID_RE.test(String(body.editionId ?? "")) || (body.action !== "finalize" && body.action !== "settle_round")) {
+    return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  }
+  const db = adminDatabase();
+  if (!db) return NextResponse.json({ error: "admin_not_configured" }, { status: 503 });
+  const { data, error } = await db.rpc("admin_advance_special_event", {
+    p_actor_id: actor, p_edition_id: body.editionId, p_action: body.action,
+  });
+  if (error) return NextResponse.json({ error: "Could not advance special event." }, { status: 503 });
+  return NextResponse.json({ edition: data }, { headers: { "Cache-Control": "private, no-store" } });
+}

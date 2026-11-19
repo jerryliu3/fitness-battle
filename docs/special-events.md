@@ -56,11 +56,14 @@ Monday closes without requiring a cron job.
 - Direct client `INSERT`, `UPDATE`, and `DELETE` are revoked on all special-event
   tables.
 - Public RPCs (`list_special_events`, `register_special_event`,
-  `cancel_special_event`) are `SECURITY DEFINER`
+  `cancel_special_event`, `special_event_standings`,
+  `acknowledge_special_event`) are `SECURITY DEFINER`
   with `SET search_path = ''` and explicit `auth.uid()` checks.
 - Admin edition creation/updates use owner-only `/api/admin/special-events` and
-  service-role `admin_save_special_event_edition`.
-- Apply `20261119160000_special_events_core.sql` before deploying the API and
-  Compete/Admin clients. Accompanying tests live in
-  `supabase/tests/special-events-core.sql`,
+  service-role `admin_save_special_event_edition` /
+  `admin_advance_special_event`.
+- Apply `20261119160000_special_events_core.sql` then
+  `20261119170000_special_events_tournaments.sql` before deploying. Accompanying
+  tests live in `supabase/tests/special-events-core.sql`,
+  `supabase/tests/special-events-tournaments.sql`,
   `packages/shared/src/special-events.test.ts`, and API route tests.

@@ -4,11 +4,13 @@ import {
   SPECIAL_EVENT_PRESETS,
   buildSpecialEventPreset,
   extractCrewOptions,
+  formatSpecialEventVolume,
   nextSpecialEventWindow,
   specialEventError,
   specialEventFormatLabel,
   specialEventPhase,
   specialEventRegistrationDetail,
+  specialEventRoundLabel,
   specialEventStatusBadge,
   validateSpecialEventConfig,
   validateSpecialEventEditionInput,
@@ -96,5 +98,14 @@ describe("special events presentation", () => {
       { id: "c2", name: "Dawn" },
     ]);
     expect(specialEventError("registration_closed")).toMatch(/full-week/);
+    expect(specialEventError("edition_not_started")).toMatch(/starts/i);
+    const survivorCfg = buildSpecialEventPreset("daily_survivor", "running").config;
+    expect(specialEventRoundLabel(survivorCfg, 1, 4)).toBe("Day 1");
+    expect(specialEventRoundLabel(survivorCfg, 4, 4)).toBe("Day 4 · Final");
+    const koCfg = buildSpecialEventPreset("weekly_knockout_1v1", "running").config;
+    expect(specialEventRoundLabel(koCfg, 1, 3)).toBe("Quarterfinals");
+    expect(specialEventRoundLabel(koCfg, 2, 3)).toBe("Semifinals");
+    expect(specialEventRoundLabel(koCfg, 3, 3)).toBe("Final");
+    expect(formatSpecialEventVolume("running", 1609.344, "us")).toBe("1 mi");
   });
 });

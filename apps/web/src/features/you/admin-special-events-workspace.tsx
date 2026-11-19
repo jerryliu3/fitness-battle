@@ -78,6 +78,22 @@ export function AdminSpecialEventsWorkspace() {
     );
   }
 
+  function advance(editionId: string, action: "finalize" | "settle_round") {
+    void perform(async (signal, current) => {
+      const response = await fetch("/api/admin/special-events", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ editionId, action }),
+        signal,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Could not advance edition.");
+      if (!current()) return;
+      setNote(action === "finalize" ? "Edition finalized." : "Round settled.");
+      load();
+    });
+  }
+
   const now = new Date();
   return (
     <div style={{ display: "grid", gap: 20 }}>
@@ -154,6 +170,11 @@ export function AdminSpecialEventsWorkspace() {
                     <button type="button" className="fb-btn-line" disabled={busy} onClick={() => save(toInput(e, !e.published), e.published ? "Edition unpublished." : "Edition published to Compete.")}>
                       {e.published ? "Unpublish" : "Publish"}
                     </button>
+                    {!e.finalizedAt ? (
+                      <button type="button" className="fb-btn-line" disabled={busy} onClick={() => advance(e.id, "finalize")}>Finalize</button>
+                    ) : !e.settledAt ? (
+                      <button type="button" className="fb-btn-line" disabled={busy} onClick={() => advance(e.id, "settle_round")}>Settle round</button>
+                    ) : null}
                   </div>
                 </td>
               </tr>

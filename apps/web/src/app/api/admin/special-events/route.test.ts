@@ -3,7 +3,7 @@ import { buildSpecialEventPreset } from "@fitness-battle/shared";
 
 const mock = vi.hoisted(() => ({ actor: "admin-1" as string | null, rpc: vi.fn(), from: vi.fn(), database: vi.fn() }));
 vi.mock("@/lib/admin-auth", () => ({ authorizeAdmin: async () => mock.actor, adminDatabase: mock.database }));
-import { GET, POST } from "./route";
+import { GET, PATCH, POST } from "./route";
 
 const draft = { ...buildSpecialEventPreset("daily_survivor", "running", new Date("2026-11-18T20:00:00.000Z")), id: null };
 const post = (body: unknown = draft) =>
@@ -68,4 +68,12 @@ it("saves editions through admin_save_special_event_edition with server actor", 
 it("maps duplicate slugs to 409 conflict", async () => {
   mock.rpc.mockResolvedValue({ data: null, error: { code: "23505", message: "duplicate key" } });
   expect((await post()).status).toBe(409);
+});
+
+it("advances editions via PATCH for admin QA", async () => {
+  const id = "00000000-0000-4000-8000-000000000099";
+  mock.rpc.mockResolvedValue({ data: { id, finalizedAt: "2026-11-23T11:00:00Z", settledAt: null }, error: null });
+  const res = await PATCH(new Request("https://test/api/admin/special-events", { method: "PATCH", body: JSON.stringify({ editionId: id, action: "finalize" }) }));
+  expect(res.status).toBe(200);
+  expect(mock.rpc).toHaveBeenCalledWith("admin_advance_special_event", { p_actor_id: "admin-1", p_edition_id: id, p_action: "finalize" });
 });
