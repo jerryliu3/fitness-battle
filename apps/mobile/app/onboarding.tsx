@@ -1,3 +1,4 @@
+import { TextField } from "../src/ui/text-field";
 import { OnboardingProgress } from "../src/ui/onboarding-progress";
 import { useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -159,8 +160,8 @@ export default function Onboarding() {
           <AppText role="display" accessibilityRole="header">{titles[step]}</AppText>
           {step === 0 && <>
             <View style={{ flexDirection: "row", gap: 12 }}>
-              <View style={{ flex: 1, gap: 8 }}><AppText role="label">City (optional)</AppText>
-                <TextInput accessibilityLabel="City" style={f.input} value={city} onChangeText={setCity} maxLength={80} />
+              <View style={{ flex: 1 }}>
+                <TextField label="City (optional)" value={city} onChangeText={setCity} maxLength={80} />
               </View>
               <View style={{ flex: 1, gap: 8 }}><AppText role="label">Country (optional)</AppText>
                 <CountryPicker value={countryCode} onChange={setCountryCode} />
