@@ -38,10 +38,10 @@ export default function RaceReplay() {
   const source=data ? raceSourceUrl(data.course.sourceUrl) : null;
   return <SafeAreaView style={f.safe} edges={["top","bottom"]}><ScreenHeader title="Race replay" onBack={()=>router.back()} /><ScrollView contentContainerStyle={f.content} onScrollBeginDrag={()=>setPlaying(false)}>
     <AppText role="caption" secondary>Estimated positions between recorded checkpoints, along a reviewed edition course. These are not runner GPS tracks or exact overtakes. Missing timing intervals are hidden.</AppText>
-    <AppText role="caption" secondary>Only saved results from this edition, category and clock can appear.</AppText>
+    <AppText role="caption" secondary>Runners appear when timing profiles are available for the selected category and clock.</AppText>
     <View style={f.chipRow}>{[{value:"all",label:"All categories"},...RACE_CATEGORIES].map(c=><Pressable key={c.value} accessibilityRole="button" accessibilityState={{selected:category===c.value}} onPress={()=>setCategory(c.value)} style={[f.chip,category===c.value && f.chipActive]}><AppText role="label">{c.label}</AppText></Pressable>)}</View>
     <View style={f.chipRow}>{[{value:"chip",label:"Chip timing"},{value:"gun",label:"Official timing"}].map(c=><Pressable key={c.value} accessibilityRole="button" accessibilityState={{selected:clock===c.value}} onPress={()=>setClock(c.value)} style={[f.chip,clock===c.value && f.chipActive]}><AppText role="label">{c.label}</AppText></Pressable>)}</View>
-    <FocusButton label="Load entire timing field" secondary disabled={busy} onPress={()=>setIds(null)} />
+    <FocusButton label="Load available runners" secondary disabled={busy} onPress={()=>setIds(null)} />
     <FocusButton label="Follow saved runners" secondary disabled={busy || !saved.ready || !saved.ids.length} onPress={()=>setIds(saved.ids.join(","))} />
     {!!params.ids && <FocusButton label="Selected runners" secondary disabled={busy} onPress={()=>setIds(params.ids ?? "")} />}
     {busy && <><ActivityIndicator /><AppText role="caption">Loading {progress.toLocaleString()} timing profiles…</AppText><FocusButton label="Cancel loading" secondary onPress={()=>{abort.current?.abort();setBusy(false);setError("Replay loading cancelled.");}} /></>}
