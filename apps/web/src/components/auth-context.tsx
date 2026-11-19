@@ -3,12 +3,16 @@ import { archiveLegacyDemo } from "@/lib/auth/legacy-demo";
 
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseConfig } from "@/lib/supabase/config";
+import { resolveSafePostLoginPath } from "@/lib/auth/login-redirect";
 
 import {
   accountDataOrigin,
   changeAccountPassword,
-  hashString,
   findDemoAccount,
+  GUEST_OAUTH_SIGNUP_PENDING,
+  GUEST_SIGNUP_PENDING_KEY,
+  hashString,
+  resolveAuthDisplayName,
 } from "@fitness-battle/shared";
 import {
   DEMO_USER_COOKIE,
@@ -37,6 +41,11 @@ export interface AuthUser {
   dataOrigin?: "synthetic" | "recorded";
 }
 
+export type OAuthSignInOptions = {
+  next?: string | null;
+  from?: "onboarding" | "signup";
+};
+
 interface AuthApi {
   user: AuthUser | null;
   loading: boolean;
@@ -54,6 +63,8 @@ interface AuthApi {
     newPassword: string,
     confirmPassword: string,
   ) => Promise<{ error?: string }>;
+  signInWithGoogle: (options?: OAuthSignInOptions) => Promise<{ error?: string }>;
+  signInWithApple: (options?: OAuthSignInOptions) => Promise<{ error?: string }>;
   /** Require auth for an action; returns false if the user must sign in first. */
   requireAuth: () => boolean;
 }
@@ -165,6 +176,18 @@ function demoUserFromEmail(email: string, displayName?: string): AuthUser {
   };
 }
 
+function bindPendingOAuthSignupEmail(email?: string | null) {
+  const normalized = email?.trim().toLowerCase();
+  if (!normalized || typeof window === "undefined") return;
+  try {
+    if (localStorage.getItem(GUEST_SIGNUP_PENDING_KEY) === GUEST_OAUTH_SIGNUP_PENDING) {
+      localStorage.setItem(GUEST_SIGNUP_PENDING_KEY, normalized);
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { configured } = getSupabaseConfig();
   const offlineMode = !configured;
@@ -192,13 +215,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (cancelled) return;
       const sessionUser = data.user;
       if (sessionUser) {
+        bindPendingOAuthSignupEmail(sessionUser.email);
         setUser({
           id: sessionUser.id,
           email: sessionUser.email ?? "",
-          displayName:
-            (sessionUser.user_metadata?.display_name as string | undefined) ??
-            sessionUser.email?.split("@")[0] ??
-            "Athlete",
+          displayName: resolveAuthDisplayName(
+            sessionUser.user_metadata,
+            sessionUser.email,
+          ),
           mode: "supabase",
           dataOrigin: accountDataOrigin(sessionUser.id),
           createdAt: sessionUser.created_at,
@@ -214,11 +238,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           return;
         }
+        bindPendingOAuthSignupEmail(next.email);
         setUser((prev) => {
-          const nextDisplayName =
-            (next.user_metadata?.display_name as string | undefined) ??
-            next.email?.split("@")[0] ??
-            "Athlete";
+          const nextDisplayName = resolveAuthDisplayName(
+            next.user_metadata,
+            next.email,
+          );
           if (
             prev &&
             prev.id === next.id &&
@@ -380,6 +405,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [offlineMode, user],
   );
 
+  const signInWithProvider = useCallback(
+    async (
+      provider: "google" | "apple",
+      options?: OAuthSignInOptions,
+    ): Promise<{ error?: string }> => {
+      if (offlineMode) {
+        return {
+          error:
+            "Google and Apple sign-in require a configured Supabase project. Use email sign-in in demo mode.",
+        };
+      }
+      try {
+        setLegacyBackup(archiveLegacyDemo());
+      } catch {
+        return {
+          error:
+            "Your on-device backup could not be saved. Free device storage and try again; your existing data is intact.",
+        };
+      }
+      const origin =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "http://localhost:3000";
+      const callbackUrl = new URL("/auth/callback", origin);
+      if (options?.next) {
+        callbackUrl.searchParams.set("next", resolveSafePostLoginPath(options.next));
+      }
+      if (options?.from) {
+        callbackUrl.searchParams.set("from", options.from);
+      }
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: callbackUrl.toString() },
+      });
+      if (error) return { error: error.message };
+      return {};
+    },
+    [offlineMode],
+  );
+
+  const signInWithGoogle = useCallback(
+    (options?: OAuthSignInOptions) => signInWithProvider("google", options),
+    [signInWithProvider],
+  );
+
+  const signInWithApple = useCallback(
+    (options?: OAuthSignInOptions) => signInWithProvider("apple", options),
+    [signInWithProvider],
+  );
+
   const requireAuth = useCallback(() => Boolean(user), [user]);
 
   const api = useMemo<AuthApi>(
@@ -392,9 +468,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signOut,
       changePassword,
+      signInWithGoogle,
+      signInWithApple,
       requireAuth,
     }),
-    [user, loading, offlineMode, legacyBackup, signIn, signUp, signOut, changePassword, requireAuth],
+    [
+      user,
+      loading,
+      offlineMode,
+      legacyBackup,
+      signIn,
+      signUp,
+      signOut,
+      changePassword,
+      signInWithGoogle,
+      signInWithApple,
+      requireAuth,
+    ],
   );
 
   return <AuthContext.Provider value={api}>{children}</AuthContext.Provider>;

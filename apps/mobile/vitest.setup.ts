@@ -3,6 +3,15 @@ import { vi } from "vitest";
 /** React Native / Expo packages expect a Metro-style global in unit tests. */
 (globalThis as typeof globalThis & { __DEV__?: boolean }).__DEV__ = true;
 
+vi.mock("expo-apple-authentication", () => ({
+  AppleAuthenticationButton: "AppleAuthenticationButton",
+  AppleAuthenticationButtonType: { CONTINUE: "continue" },
+  AppleAuthenticationButtonStyle: { BLACK: "black", WHITE: "white" },
+  AppleAuthenticationScope: { FULL_NAME: "fullName", EMAIL: "email" },
+  isAvailableAsync: vi.fn().mockResolvedValue(false),
+  signInAsync: vi.fn(),
+}));
+
 vi.mock("expo-haptics", () => ({
   selectionAsync: vi.fn().mockResolvedValue(undefined),
   impactAsync: vi.fn().mockResolvedValue(undefined),
