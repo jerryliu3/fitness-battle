@@ -90,7 +90,6 @@ export function AdminRoutesWorkspace() {
       const { coordinates: points, ...metadata } = route;
       setDraft(metadata);
       setCoordinates(JSON.stringify(points));
-      setRoutes(previous => [...previous.filter(row => row.id !== metadata.id), metadata].sort((a, b) => a.id.localeCompare(b.id)));
       setNote(metadata.updated_at ? "Route saved." : "Route added to the catalog.");
       loadCatalog();
     });
