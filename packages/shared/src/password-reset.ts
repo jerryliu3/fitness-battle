@@ -6,6 +6,36 @@ export interface PasswordChangeInput {
   confirmPassword: string;
 }
 
+export const EMPTY_PASSWORD_DRAFT: PasswordChangeInput = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+};
+
+export const PASSWORD_FIELDS = [
+  {
+    key: "currentPassword",
+    label: "Current password",
+    autoComplete: "current-password",
+    textContentType: "password",
+    minLength: undefined,
+  },
+  {
+    key: "newPassword",
+    label: "New password",
+    autoComplete: "new-password",
+    textContentType: "newPassword",
+    minLength: MIN_PASSWORD_LENGTH,
+  },
+  {
+    key: "confirmPassword",
+    label: "Confirm new password",
+    autoComplete: "new-password",
+    textContentType: "newPassword",
+    minLength: MIN_PASSWORD_LENGTH,
+  },
+] as const;
+
 export interface PasswordChangeAuthClient {
   signInWithPassword(credentials: {
     email: string;

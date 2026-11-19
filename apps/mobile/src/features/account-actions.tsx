@@ -1,6 +1,9 @@
 import {
+  EMPTY_PASSWORD_DRAFT,
   MIN_PASSWORD_LENGTH,
+  PASSWORD_FIELDS,
   validatePasswordChange,
+  type PasswordChangeInput,
 } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { useFocusStyles } from "../ui/focus";
@@ -31,9 +34,7 @@ const c=useThemeColors();
   const [panel, setPanel] = useState<"report" | "delete" | "password" | null>(null);
   const [message, setMessage] = useState("");
   const [confirmation, setConfirmation] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [draft, setDraft] = useState<PasswordChangeInput>(EMPTY_PASSWORD_DRAFT);
   const [busy, setBusy] = useState(false);
   const flight = useRef(false);
   const [error, setError] = useState("");
@@ -42,6 +43,7 @@ const c=useThemeColors();
   const ownerRef = useRef(user?.id);
   ownerRef.current = user?.id;
   const live = !!user && !offlineMode && user.mode !== "demo";
+  const passwordReady = Boolean(draft.currentPassword && draft.newPassword && draft.confirmPassword);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -50,9 +52,7 @@ const c=useThemeColors();
     };
   }, []);
   function clearPasswordDraft() {
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    setDraft(EMPTY_PASSWORD_DRAFT);
     setPasswordSaved(false);
     setError("");
   }
@@ -72,11 +72,7 @@ const c=useThemeColors();
     if (flight.current || !user) return;
     const id = user.id;
     if (panel === "password") {
-      const validationError = validatePasswordChange({
-        currentPassword,
-        newPassword,
-        confirmPassword,
-      });
+      const validationError = validatePasswordChange(draft);
       if (validationError) {
         void playCue("error");
         setError(validationError);
@@ -88,19 +84,11 @@ const c=useThemeColors();
     setError("");
     try {
       if (panel === "password") {
-        const result = await changePassword(
-          currentPassword,
-          newPassword,
-          confirmPassword,
-        );
+        const result = await changePassword(draft.currentPassword, draft.newPassword, draft.confirmPassword);
         if (!mounted.current || ownerRef.current !== id) return;
-        if (result.error) {
-          throw new Error(result.error);
-        }
+        if (result.error) throw new Error(result.error);
         void playCue("success");
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
+        setDraft(EMPTY_PASSWORD_DRAFT);
         setPasswordSaved(true);
       } else if (panel === "report") {
         const result = await requestApi<{ sent?: boolean }>(
@@ -205,53 +193,26 @@ const c=useThemeColors();
               <AppText role="body" secondary>
                 Verify your current password, then choose a new password ({MIN_PASSWORD_LENGTH}+ characters).
               </AppText>
-              <TextInput
-                accessibilityLabel="Current password"
-                placeholder="Current password"
-                placeholderTextColor={c.muted}
-                style={f.input}
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoCorrect={false}
-                textContentType="password"
-                autoComplete="current-password"
-                editable={!busy}
-              />
-              <TextInput
-                accessibilityLabel="New password"
-                placeholder={`New password (${MIN_PASSWORD_LENGTH}+ characters)`}
-                placeholderTextColor={c.muted}
-                style={f.input}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoCorrect={false}
-                textContentType="newPassword"
-                autoComplete="new-password"
-                editable={!busy}
-              />
-              <TextInput
-                accessibilityLabel="Confirm new password"
-                placeholder="Confirm new password"
-                placeholderTextColor={c.muted}
-                style={f.input}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoCorrect={false}
-                textContentType="newPassword"
-                autoComplete="new-password"
-                editable={!busy}
-              />
+              {PASSWORD_FIELDS.map((field) => (
+                <TextInput
+                  key={field.key}
+                  accessibilityLabel={field.label}
+                  placeholder={field.minLength ? `${field.label} (${field.minLength}+ characters)` : field.label}
+                  placeholderTextColor={c.muted}
+                  style={f.input}
+                  value={draft[field.key]}
+                  onChangeText={(value) => setDraft((prev) => ({ ...prev, [field.key]: value }))}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  textContentType={field.textContentType}
+                  autoComplete={field.autoComplete}
+                  editable={!busy}
+                />
+              ))}
               <FocusButton
                 label={busy ? "Updating…" : "Update password"}
-                disabled={
-                  busy || !currentPassword || !newPassword || !confirmPassword
-                }
+                disabled={busy || !passwordReady}
                 onPress={() => void submit()}
               />
             </>
