@@ -4,6 +4,7 @@ import { SHELL_SPACING, SHELL_SECTION, SHELL_RADIUS } from "@fitness-battle/shar
 import { AppText, PageHeader, textStyle } from "./section";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  ActivityIndicator,
   Animated,
   BackHandler,
   Easing,
@@ -389,6 +390,7 @@ export function FocusButton({
   onPress,
   secondary = false,
   disabled = false,
+  busy = false,
   fit = false,
 }: {
   label: string;
@@ -396,6 +398,7 @@ export function FocusButton({
   onPress: () => void;
   secondary?: boolean;
   disabled?: boolean;
+  busy?: boolean;
   fit?: boolean;
 }) {
 const c=useThemeColors();
@@ -405,10 +408,10 @@ const f=useThemedStyles(fThemes);
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      disabled={disabled}
-      accessibilityState={{ disabled }}
+      disabled={disabled || busy}
+      accessibilityState={{ disabled: disabled || busy, busy }}
       onPress={() => {
-        if (disabled) return;
+        if (disabled || busy) return;
         void playCue("light");
         onPress();
       }}
@@ -416,11 +419,14 @@ const f=useThemedStyles(fThemes);
         f.button,
         fit && { height: 52, minHeight: 52, paddingVertical: 0 },
         secondary && f.secondary,
-        pressed && !disabled && { opacity: 0.78 },
-        disabled && { opacity: 0.4 },
+        pressed && !disabled && !busy && { opacity: 0.78 },
+        disabled && !busy && { opacity: 0.4 },
       ]}
     >
-      <Text numberOfLines={fit ? 2 : undefined} adjustsFontSizeToFit={fit} maxFontSizeMultiplier={fit ? 1.2 : undefined} minimumFontScale={fit ? 1 : undefined} style={[f.buttonText, secondary && { color: c.ink }]}>{label}</Text>
+      <Text numberOfLines={fit ? 2 : undefined} adjustsFontSizeToFit={fit} maxFontSizeMultiplier={fit ? 1.2 : undefined} minimumFontScale={fit ? 1 : undefined} style={[f.buttonText, secondary && { color: c.ink }, busy && { opacity: 0 }]}>{label}</Text>
+      {busy && <View pointerEvents="none" style={[StyleSheet.absoluteFill, f.buttonSpinner]}>
+        <ActivityIndicator size="small" color={secondary ? c.ink : c.textOnAction} />
+      </View>}
     </Pressable>
   );
 }
@@ -668,12 +674,10 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
     textAlign: "center",
     color: c.textOnAction,
   },
+  buttonSpinner: { alignItems: "center", justifyContent: "center" },
   secondary: {
-    backgroundColor: c.card,
-    borderWidth: 1,
-    borderColor: c.line,
-    borderBottomWidth: 1,
-    borderBottomColor: c.line,
+    backgroundColor: c.accentSecondarySoft,
+    borderBottomColor: c.accentSecondarySoft,
   },
   segments: {
     flexDirection: "row",

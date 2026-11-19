@@ -200,19 +200,7 @@ export function CompetitionMoment({
   const actionRow = (
     <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
       {onBack && <IconButton icon="back" label="Back" onPress={onBack} />}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={playbackLabel}
-        onPress={togglePlayback}
-        style={({ pressed }) => [
-          f.button,
-          f.secondary,
-          styles.playbackButton,
-          pressed && { opacity: 0.78 },
-        ]}
-      >
-        <AppIcon name={playbackIcon} size={20} color={c.ink} />
-      </Pressable>
+      <IconButton icon={playbackIcon} label={playbackLabel} onPress={togglePlayback} haptic={false} />
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Playback speed ${speed} times`}
@@ -439,10 +427,6 @@ const stylesThemes = createThemedStyles((themeColors) => {
       borderRadius: 999,
       paddingHorizontal: 8,
       paddingVertical: 3,
-    },
-    playbackButton: {
-      width: 52,
-      paddingHorizontal: 0,
     },
     speedButton: {
       width: 56,

@@ -27,6 +27,7 @@ vi.mock("react-native", () => ({useColorScheme: () => "light",
       });
     },
   },
+  ActivityIndicator: "ActivityIndicator",
   Easing: {
     in: (value: unknown) => value,
     out: (value: unknown) => value,
@@ -51,11 +52,26 @@ vi.mock("react-native-safe-area-context", () => ({
 vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => false }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
-import { FocusSegments, FocusSheet, FocusSidePanel } from "./focus";
+import { FocusButton, FocusSegments, FocusSheet, FocusSidePanel } from "./focus";
 let renderer: ReactTestRenderer;
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
   vi.unstubAllGlobals();
+});
+
+it("retains the button label and blocks presses while busy", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const onPress = vi.fn();
+  const props = { label: "Save contract", onPress };
+  await act(async () => { renderer = create(createElement(FocusButton, { ...props, busy: true })); });
+  const button = () => renderer.root.findByType("Pressable" as never);
+  expect(button().props.accessibilityState).toEqual({ disabled: true, busy: true });
+  expect(button().findByType("Text" as never).props.children).toBe(props.label);
+  button().props.onPress();
+  expect(onPress).not.toHaveBeenCalled();
+  await act(async () => renderer.update(createElement(FocusButton, props)));
+  button().props.onPress();
+  expect(onPress).toHaveBeenCalledOnce();
 });
 
 it("moves a single selection highlight between measured segments", async () => {
