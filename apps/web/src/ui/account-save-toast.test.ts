@@ -27,12 +27,13 @@ it("uses one dismissible floating account notice with safe-area offsets and a re
   await act(async () => renderer.update(notice("Generic save failure", true)));
   expect(renderer.toJSON()).toBeNull();
 });
-it("keeps active retries visible and reopens after another failure, without clearing the error", async () => {
+it("keeps unresolved failures and active retries visible until the save recovers", async () => {
   await act(async () => { renderer = create(notice("Save failed")); });
-  await act(async () => { vi.advanceTimersByTime(8000); });
-  expect(renderer.toJSON()).toBeNull();
+  await act(async () => { vi.advanceTimersByTime(30000); });
+  expect(renderer.root.findAllByType("button")[0].props.children).toBe("Retry save");
   await act(async () => renderer.update(notice("Save failed", false, true)));
   expect(renderer.root.findAllByType("button")[0].props.disabled).toBe(true);
+  expect(renderer.root.findAllByType("button")[0].props["aria-busy"]).toBe(true);
   await act(async () => { vi.advanceTimersByTime(30000); });
   expect(renderer.toJSON()).not.toBeNull();
   await act(async () => renderer.update(notice("Save failed")));

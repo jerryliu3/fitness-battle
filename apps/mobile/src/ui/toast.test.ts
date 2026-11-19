@@ -15,7 +15,7 @@ const retry = vi.fn(), dismissed = vi.fn();
 function notice(message: string, busy = false, conflict = false) {
   return createElement(ToastProvider, null,
     createElement("Page"),
-    createElement(Toast, { message, onDismiss: dismissed, durationMs: conflict ? null : 8000, priority: 20,
+    createElement(Toast, { message, onDismiss: dismissed, durationMs: null, priority: 20,
       action: { label: busy ? "Saving…" : conflict ? "Reload account" : "Retry save", onPress: retry, disabled: busy } }),
   );
 }
@@ -45,10 +45,10 @@ it("floats account feedback above iOS navigation and sheets, inside safe areas, 
   await act(async () => renderer.update(notice("Your account changed elsewhere.", false, true)));
   expect(renderer.root.findAllByType("FullWindowOverlay" as never)).toHaveLength(0);
 });
-it("keeps a retry visible while saving and shows a repeated failure again", async () => {
+it("keeps a failed save actionable before and during a retry", async () => {
   await act(async () => { renderer = create(notice("Changes remain on this device.")); });
-  await act(async () => { vi.advanceTimersByTime(8000); });
-  expect(renderer.root.findAllByProps({ pointerEvents: "box-none" })).toHaveLength(0);
+  await act(async () => { vi.advanceTimersByTime(30000); });
+  expect(renderer.root.findAllByProps({ pointerEvents: "box-none" })).toHaveLength(1);
   await act(async () => renderer.update(notice("Changes remain on this device.", true)));
   const button = renderer.root.findAllByType("Pressable" as never)[0];
   expect(button.props.disabled).toBe(true);

@@ -815,7 +815,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         beginSyncReviewBatch: syncReview.begin,
         endSyncReviewBatch: syncReview.end,
       }}>
-    <AccountSaveToast key={`${userId ?? "guest"}:${noticeAttempt}`} message={saveError} conflict={saveConflict} saving={retryingSave} onRetry={retryLoad}/>
+    <AccountSaveToast key={`${userId ?? "guest"}:${noticeAttempt}`} message={saveError} conflict={saveConflict} saving={saving || retryingSave} onRetry={retryLoad}/>
     {children}
       {!bootCovering && (syncReview.receipt || experience.moment) && state ? (
         <Suspense fallback={<AppParagraph typographyRole="body" role="status">Opening today’s recap…</AppParagraph>}>

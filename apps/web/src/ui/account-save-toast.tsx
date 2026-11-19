@@ -25,16 +25,11 @@ export function AccountSaveToast({ message, conflict, saving, onRetry }: {
     return () => observer.disconnect();
   }, []);
   useEffect(() => { setDismissed(null); }, [event]);
-  useEffect(() => {
-    if (!message || conflict || saving || event === dismissed) return;
-    const timer = setTimeout(() => setDismissed(event), 8000);
-    return () => clearTimeout(timer);
-  }, [message, conflict, saving, event, dismissed]);
   if (!mounted || (!message && !conflict) || event === dismissed) return null;
   return createPortal(<aside role="alert" aria-label={conflict ? "Account changed" : "Account save failed"} data-account-save-toast style={{ position: host ? "absolute" : "fixed", zIndex: 1000, top: "calc(env(safe-area-inset-top, 0px) + 16px)", left: "max(16px, env(safe-area-inset-left, 0px))", right: "max(16px, env(safe-area-inset-right, 0px))", maxWidth: 560, marginInline: "auto", padding: 16, borderRadius: 20, border: "1px solid var(--line)", background: "var(--card)", color: "var(--ink)", boxShadow: "0 8px 32px #142b3b29", pointerEvents: "auto" }}>
     <AppParagraph style={{ margin: "0 0 12px" }}>{conflict ? "Your account changed elsewhere. Reload to continue. Your local draft will be kept as a recovery copy." : message}</AppParagraph>
     <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-      <button className="fb-btn" type="button" disabled={saving} onClick={onRetry}>{saving ? "Saving…" : conflict ? "Reload account" : "Retry save"}</button>
+      <button className="fb-btn" type="button" disabled={saving} aria-busy={saving} onClick={onRetry}>{saving ? "Saving…" : conflict ? "Reload account" : "Retry save"}</button>
       <button className="fb-btn-line" type="button" aria-label="Dismiss notification" onClick={() => setDismissed(event)}>Dismiss</button>
     </div>
   </aside>, host ?? document.body);

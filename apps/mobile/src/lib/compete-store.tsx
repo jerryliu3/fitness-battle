@@ -1169,7 +1169,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       <Toast key={`${owner ?? "guest"}:${noticeAttempt}`}
         message={saveConflict ? "Your account changed elsewhere. Reload to continue. Your local draft will be kept as a recovery copy." : saveError ?? ""}
         action={{ label: saving ? "Saving…" : saveConflict ? "Reload account" : "Retry save", onPress: retrySave, disabled: saving }}
-        durationMs={saveConflict ? null : 8000}
+        durationMs={null}
         priority={saveConflict ? 20 : 10}
       />
       {children}
