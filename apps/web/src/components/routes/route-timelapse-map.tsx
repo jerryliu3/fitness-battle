@@ -15,6 +15,7 @@ import {
 import { addMapboxAttribution, mapboxAttributionOptions } from "../maps/mapbox-attribution";
 import { webEnv } from "@/lib/env";
 import { RouteStaticPreview } from "./route-static-preview";
+import { RouteReplayMetrics } from "./route-replay-metrics";
 import { RouteControlsHud } from "./route-controls-hud";
 import { useRouteAnimation } from "./use-route-animation";
 import {
@@ -45,6 +46,8 @@ export interface RouteTimelapseMapProps {
   /** Array of [lng, lat] coordinates or an encoded polyline string */
   coordinates: LngLat[] | string;
   routeReplay?: RouteReplaySample[];
+  running?: boolean;
+  showModeControl?: boolean;
   hudInsets?: { top: number; bottom: number };
   /** Hide the built-in web HUD when an external native control bar drives playback. */
   hideControls?: boolean;
@@ -73,6 +76,8 @@ export interface RouteTimelapseMapProps {
 export function RouteTimelapseMap({
   coordinates,
   routeReplay,
+  running = false,
+  showModeControl = false,
   hudInsets,
   hideControls = false,
   mode: initialMode = "3d-flyover",
@@ -88,7 +93,13 @@ export function RouteTimelapseMap({
   onStateChange,
   controlRef,
 }: RouteTimelapseMapProps) {
+  const compactHeader = hideControls || showModeControl;
   const replaySamples = useMemo(() => normalizeRouteReplay(routeReplay), [routeReplay]);
+  const channels = useMemo(() => ({
+    speed: replaySamples.some(sample => sample.speedMps != null),
+    heartRate: replaySamples.some(sample => sample.heartRate != null),
+    cadence: replaySamples.some(sample => sample.cadence != null),
+  }), [replaySamples]);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const leaderMarkerRef = useRef<mapboxgl.Marker | null>(null);
@@ -381,13 +392,13 @@ export function RouteTimelapseMap({
         ],
         {
           padding: hudInsets
-            ? { top: hudInsets.top + 16, bottom: hudInsets.bottom + 20, left: 40, right: 40 }
+            ? { top: hudInsets.top + (compactHeader ? 60 : 16), bottom: hudInsets.bottom + 20, left: 40, right: 40 }
             : { top: 60, bottom: 160, left: 40, right: 40 },
           duration: 0,
         },
       );
     }
-  }, [mapLoaded, rawCoords, autoPlay, hudInsets?.top, hudInsets?.bottom]);
+  }, [mapLoaded, rawCoords, autoPlay, compactHeader, hudInsets?.top, hudInsets?.bottom]);
 
   const applyMode = useCallback((nextMode: "3d-flyover" | "2d-overview") => {
     setMode(nextMode);
@@ -508,7 +519,7 @@ export function RouteTimelapseMap({
 
   return (
     <div
-      className={`route-ui relative w-full h-[450px] sm:h-[540px] overflow-hidden rounded-2xl bg-[#142b3b] shadow-xl border border-[#e3e9e7]/30 ${className}`}
+      className={`route-ui relative w-full h-[450px] sm:h-[540px] overflow-hidden rounded-2xl bg-[#142b3b] shadow-xl border border-[#e3e9e7]/30 ${compactHeader ? "route-ui--replay-header" : ""} ${className}`}
     >
       {/* Mapbox WebGL Canvas Container */}
       <div ref={containerRef} className="h-full w-full" />
@@ -519,17 +530,18 @@ export function RouteTimelapseMap({
         </div>
       )}
 
-      {/* Floating Header Metadata HUD */}
-      {replaySamples.length > 0 ? (
-        <div className="pointer-events-none absolute top-3 left-3 right-3 z-10 flex justify-center" style={hudInsets ? { top: hudInsets.top } : undefined}>
-          <div className="route-recorded-metrics pointer-events-auto w-full rounded-2xl border border-white/10 bg-[#142b3b]/90 px-4 py-2.5 shadow-2xl backdrop-blur-md text-white" aria-label="Recorded measurements at the replay position">
-            <span><small>Recorded time</small><b>{activeSample ? `${Math.floor(activeSample.elapsedSec / 60)}:${String(Math.floor(activeSample.elapsedSec) % 60).padStart(2, "0")}` : "—"}</b></span>
-            <span><small>Speed</small><b>{activeSample?.speedMps != null ? `${(activeSample.speedMps * (units === "us" ? 2.236936 : 3.6)).toFixed(1)} ${units === "us" ? "mph" : "km/h"}` : "—"}</b></span>
-            <span><small>Heart rate</small><b>{activeSample?.heartRate != null ? `${Math.round(activeSample.heartRate)} bpm` : "—"}</b></span>
-            <span><small>Cadence</small><b>{activeSample?.cadence != null ? `${Math.round(activeSample.cadence)} ${activeSample.cadenceUnit || "spm"}` : "—"}</b></span>
-          </div>
+      {mapLoaded && showModeControl && (
+        <button type="button" className="route-mode-control" aria-label="3D flyover" aria-pressed={mode === "3d-flyover"}
+          onClick={() => applyMode(mode === "3d-flyover" ? "2d-overview" : "3d-flyover")}>
+          {mode === "3d-flyover" ? "3D" : "2D"}
+        </button>
+      )}
+
+      {mapLoaded && replaySamples.length > 0 && (
+        <div className="route-metrics-overlay" style={hudInsets ? { top: hudInsets.top } : undefined}>
+          <RouteReplayMetrics sample={activeSample} channels={channels} running={running} units={units} />
         </div>
-      ) : null}
+      )}
 
       {/* Floating Mobile Control HUD */}
       {mapLoaded && !hideControls && (
@@ -538,8 +550,6 @@ export function RouteTimelapseMap({
             isPlaying={isPlaying}
             isFinished={isFinished}
             progress={progress}
-            replaySample={activeSample}
-            hasReplaySamples={false}
             currentDistanceKm={currentDistanceKm}
             totalDistanceKm={totalDistanceKm}
             units={units}

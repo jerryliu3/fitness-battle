@@ -16,8 +16,9 @@ import { OnboardingAthlete } from "../src/features/onboarding-athlete";
 import * as ImagePicker from "expo-image-picker";
 import { OnboardingOvertake } from "../src/features/onboarding-overtake";
 import { LegalLinks } from "../src/features/legal-links";
+import { SocialAuthButtons } from "../src/features/social-auth-buttons";
 import { IconButton } from "../src/ui/icon-button";
-import { GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft, type GuestIntroDraft } from "../src/lib/guest-intro";
+import { GUEST_INTRO_DRAFT_KEY, GUEST_OAUTH_SIGNUP_PENDING, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft, type GuestIntroDraft } from "../src/lib/guest-intro";
 import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { useThemeColors } from "../src/theme";
@@ -26,11 +27,12 @@ import { AppText } from "../src/ui/section";
 
 
 export default function Welcome() {
-  const { user, loading, signUp } = useAuth();
+  const { user, loading, offlineMode, signUp, signInWithGoogle, signInWithApple } = useAuth();
   const { state } = useCompeteStore();
   const router = useRouter();
   const { preview: previewParam, invite } = useLocalSearchParams<{ preview?: string; invite?: string }>();
   const preview = previewParam === "1";
+  const socialEnabled = offlineMode === false && !preview;
   const setupRoute = invite ? { pathname: "/onboarding" as const, params: { invite } } : "/onboarding";
   const colors = useThemeColors(), f = useFocusStyles();
   const accountId = preview ? undefined : user?.id;
@@ -44,6 +46,7 @@ export default function Welcome() {
   const [photoBusy, setPhotoBusy] = useState(false);
   const [cardDraft, setCardDraft] = useState<GuestIntroDraft>(EMPTY_GUEST_INTRO);
   const [email, setEmail] = useState(""), [password, setPassword] = useState("");
+  const [emailExpanded, setEmailExpanded] = useState(false);
   const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState(false), [cardHeld, setCardHeld] = useState(false);
   const [onboardingCourseRevision, setOnboardingCourseRevision] = useState(0);
@@ -113,6 +116,31 @@ export default function Welcome() {
       setError(err instanceof Error ? err.message : "Could not create your account.");
     } finally { setBusy(false); }
   }
+  async function createSocialAccount(provider: "google" | "apple") {
+    if (busy) return;
+    setBusy(true); setError(null);
+    try {
+      const completed = { ...draft, introCompleted: true };
+      setDraft(completed);
+      await AsyncStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify(completed));
+      await AsyncStorage.setItem(GUEST_SIGNUP_PENDING_KEY, GUEST_OAUTH_SIGNUP_PENDING);
+      const action = provider === "google" ? signInWithGoogle : signInWithApple;
+      const result = await action();
+      if (result.cancelled) {
+        await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY);
+        return;
+      }
+      if (result.error) {
+        await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY);
+        setError(result.error);
+        return;
+      }
+      router.replace(setupRoute);
+    } catch (err) {
+      void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
+      setError(err instanceof Error ? err.message : "Could not create your account.");
+    } finally { setBusy(false); }
+  }
   async function choosePhoto() {
     setPhotoBusy(true); setError(null);
     try {
@@ -128,7 +156,14 @@ export default function Welcome() {
     if (!preview) await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
     router.push({ pathname: "/athlete", params: { auth: "signin", from: "onboarding", invite } });
   }
-  const back = index > 0 ? <IconButton icon="back" label="Back" disabled={busy || photoBusy} onPress={() => setStep(steps[index - 1]!)} /> : null;
+  const back = index > 0 ? <IconButton icon="back" label="Back" disabled={busy || photoBusy} onPress={() => {
+    if (step === "account" && socialEnabled && emailExpanded) {
+      setError(null);
+      setEmailExpanded(false);
+      return;
+    }
+    setStep(steps[index - 1]!);
+  }} /> : null;
   const actions = (label: string, onPress: () => void, disabled = false) => <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
     {back}<View style={{ flex: 1 }}><FocusButton fit label={label} disabled={disabled} onPress={onPress} /></View>
   </View>;
@@ -194,13 +229,33 @@ export default function Welcome() {
           {step === "growth" && <View style={{ ...box(12, 548) }}>
             <OnboardingFeatureTour layoutScale={scale} draft={draft} selected={feature} onSelect={setFeature} onScoreChange={showScore} />
           </View>}
-          {step === "account" && <>
+          {step === "account" && (socialEnabled && !emailExpanded ? <>
+            <View style={box(424, 156)}>
+              <SocialAuthButtons
+                scale={scale}
+                busy={busy}
+                onApple={() => void createSocialAccount("apple")}
+                onGoogle={() => void createSocialAccount("google")}
+                onEmail={() => { setError(null); setEmailExpanded(true); }}
+              />
+            </View>
+            <View style={{ ...box(584, 52), flexDirection: "row", gap: 12, alignItems: "center" }}>
+              {back}
+              <View style={{ flex: 1, justifyContent: "center" }}>
+                {error ? (
+                  <AppText role="caption" accessibilityRole="alert" numberOfLines={2} adjustsFontSizeToFit>{error}</AppText>
+                ) : (
+                  <LegalLinks consent />
+                )}
+              </View>
+            </View>
+          </> : <>
             <View style={box(430, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Email" placeholder="Email" style={field} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" editable={!confirmation} /></View>
             <View style={box(488, 46)}><TextInput maxFontSizeMultiplier={1.2} accessibilityLabel="Password" placeholder="Password" style={field} value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoComplete="new-password" editable={!confirmation} /></View>
-            {!error && !confirmation && <View style={box(542, 32)}><LegalLinks /></View>}
-          </>}
-          {(error || confirmation) && <View style={box(548, 36)}><AppText role="caption" accessibilityRole="alert" numberOfLines={2} adjustsFontSizeToFit>{error ?? "Check your email to confirm your account and continue setup."}</AppText></View>}
-          {step !== "sport" && step !== "overtake" && <View style={box(584, 52)}>
+            {!error && !confirmation && <View style={box(542, 32)}><LegalLinks consent /></View>}
+          </>)}
+          {(error || confirmation) && !(step === "account" && socialEnabled && !emailExpanded) && <View style={box(548, 36)}><AppText role="caption" accessibilityRole="alert" numberOfLines={2} adjustsFontSizeToFit>{error ?? "Check your email to confirm your account and continue setup."}</AppText></View>}
+          {step !== "sport" && step !== "overtake" && !(step === "account" && socialEnabled && !emailExpanded) && <View style={box(584, 52)}>
             {step === "account" ? actions(busy ? "Creating…" : "Continue", () => void createAccount(), busy || confirmation || !email.trim() || password.length < 6)
               : actions("Continue", () => void next(), photoBusy || (step === "athlete" && !draft.name.trim()))}
           </View>}

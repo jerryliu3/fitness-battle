@@ -78,7 +78,7 @@ const f=useFocusStyles();
             </StatusBadge>
           </View>
           <RecordChart rows={rows} selected={receipt} now={now} displayTimeZone={displayTz} onSelect={setReceipt} />
-          <ActivityRoute units={state.units} key={inspected.activityId} activity={state.activities.find(a => a.id === inspected.activityId)} milestone />
+          <ActivityRoute units={state.units} history={state.activities} key={inspected.activityId} activity={state.activities.find(a => a.id === inspected.activityId)} milestone />
         </Section>
       ) : null}
     </SectionStack>
