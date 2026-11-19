@@ -1,3 +1,4 @@
+import { IconButton } from "../ui/icon-button";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useAuth } from "../lib/auth";
 import { FocusSegments } from "../ui/focus";
@@ -246,29 +247,25 @@ export function JourneySpace({
       {horizon === "week" && (
         <View style={s.card}>
           <View style={s.calendarNavRow}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Previous week"
+            <IconButton
+              icon="back"
+              label="Previous week"
               disabled={!weekPrevAllowed}
               onPress={() => { setDayOffset((prev) => prev - 1); setSelectedDayKey(null); }}
-              style={[s.navBtn, !weekPrevAllowed && { opacity: 0.3 }]}
-            >
-              <AppText role="body" style={{ color: c.ink }}>←</AppText>
-            </Pressable>
+              haptic={false}
+            />
 
-            <AppText role="heading">
+            <AppText role="heading" style={s.periodLabel}>
               {formatWeeklyCompetitionRange(calendarDays.monday)}
             </AppText>
 
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Next week"
+            <IconButton
+              icon="forward"
+              label="Next week"
               onPress={() => { setDayOffset((prev) => Math.min(0, prev + 1)); setSelectedDayKey(null); }}
               disabled={dayOffset >= 0}
-              style={[s.navBtn, dayOffset >= 0 && { opacity: 0.3 }]}
-            >
-              <AppText role="body" style={{ color: c.ink }}>→</AppText>
-            </Pressable>
+              haptic={false}
+            />
           </View>
 
           {/* 7 Days Strip */}
@@ -348,17 +345,15 @@ export function JourneySpace({
       {horizon === "month" && (
         <View style={s.card}>
           <View style={s.calendarNavRow}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Previous month"
+            <IconButton
+              icon="back"
+              label="Previous month"
               disabled={!monthPrevAllowed}
               onPress={() => { setMonthOffset((prev) => prev - 1); setSelectedDayKey(null); }}
-              style={[s.navBtn, !monthPrevAllowed && { opacity: 0.3 }]}
-            >
-              <AppText role="body" style={{ color: c.ink }}>←</AppText>
-            </Pressable>
+              haptic={false}
+            />
 
-            <AppText role="heading">
+            <AppText role="heading" style={s.periodLabel}>
               {monthAnchor.toLocaleDateString("en-US", {
                 month: "long",
                 year: "numeric",
@@ -366,15 +361,13 @@ export function JourneySpace({
               })}
             </AppText>
 
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Next month"
+            <IconButton
+              icon="forward"
+              label="Next month"
               disabled={!monthNextAllowed}
               onPress={() => { setMonthOffset((prev) => prev + 1); setSelectedDayKey(null); }}
-              style={[s.navBtn, !monthNextAllowed && { opacity: 0.3 }]}
-            >
-              <AppText role="body" style={{ color: c.ink }}>→</AppText>
-            </Pressable>
+              haptic={false}
+            />
           </View>
 
           {/* Monthly Heatmap Calendar Grid */}
@@ -488,29 +481,25 @@ export function JourneySpace({
       {horizon === "year" && (
         <View style={s.card}>
           <View style={s.calendarNavRow}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Previous year"
+            <IconButton
+              icon="back"
+              label="Previous year"
               disabled={!yearPrevAllowed}
               onPress={() => setYearOffset((prev) => prev - 1)}
-              style={[s.navBtn, !yearPrevAllowed && { opacity: 0.3 }]}
-            >
-              <AppText role="body" style={{ color: c.ink }}>←</AppText>
-            </Pressable>
+              haptic={false}
+            />
 
-            <AppText role="heading">
+            <AppText role="heading" style={s.periodLabel}>
               {dayKey(yearAnchor).slice(0, 4)}
             </AppText>
 
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Next year"
+            <IconButton
+              icon="forward"
+              label="Next year"
               disabled={!yearNextAllowed}
               onPress={() => setYearOffset((prev) => prev + 1)}
-              style={[s.navBtn, !yearNextAllowed && { opacity: 0.3 }]}
-            >
-              <AppText role="body" style={{ color: c.ink }}>→</AppText>
-            </Pressable>
+              haptic={false}
+            />
           </View>
 
           {/* 12-Month Progression Bar Grid */}
@@ -656,20 +645,11 @@ const sThemes = createThemedStyles((themeColors) => {
       borderColor: c.line,
       gap: 12,
     },
+    periodLabel: { flexShrink: 1, textAlign: "center" },
     calendarNavRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-    },
-    navBtn: {
-      minWidth: 36,
-      minHeight: 36,
-      borderRadius: 18,
-      backgroundColor: c.card,
-      borderWidth: 1,
-      borderColor: c.line,
-      alignItems: "center",
-      justifyContent: "center",
     },
     stripRow: {
       flexDirection: "row",

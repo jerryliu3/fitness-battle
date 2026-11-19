@@ -1,3 +1,4 @@
+import { TextField } from "../ui/text-field";
 import { useFocusStyles } from "../ui/focus";
 import { useThemeColors } from "../theme";
 import { AthleteProfileSheet } from "./athlete-profile-sheet";
@@ -30,7 +31,7 @@ import { Chip, ChipRow } from "../ui/chip";
 import { NumberStepper } from "../ui/number-stepper";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ImageBackground, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { ImageBackground, Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
@@ -609,10 +610,8 @@ const f=useFocusStyles();
           </>
         ) : panel === "add" ? (
           <>
-            <AppText role="caption" secondary >Invite code</AppText>
-            <TextInput
-              accessibilityLabel="Invite code"
-              style={f.input}
+            <TextField
+              label="Invite code"
               value={code}
               onChangeText={setCode}
               autoCapitalize="characters"
@@ -620,10 +619,9 @@ const f=useFocusStyles();
               editable={!busy}
             />
             <Text style={f.kicker}>or start a new crew</Text>
-            <TextInput
-              accessibilityLabel="Crew name"
+            <TextField
+              label="Crew name"
               placeholder="e.g. Dawn Patrol"
-              style={f.input}
               value={name}
               onChangeText={setName}
               maxLength={60}
