@@ -98,7 +98,7 @@ export function ActivityDetailView({
   const sport = sportById(activity.sport);
   const hasRoute = Boolean(activityRoute(activity));
   const workoutSize = workoutSizeSummary(activity, state.activities);
-  const trainingXp = activityTrainingXp(activity);
+  const trainingXp = activityTrainingXp(activity, state.activities);
   const intensityXp = trainingXp - activityBaseTrainingXp(activity);
   const pace = sport.gps ? formatPace(activity.movingSec, activity.distanceM, state.units) : null;
   const date = new Date(activity.startedAt).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: displayTz });

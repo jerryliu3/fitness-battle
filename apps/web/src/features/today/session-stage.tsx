@@ -33,7 +33,7 @@ function ActivityDetails({ activity, state, onRemove }: { activity: Activity; st
   const [removing, setRemoving] = useState(false), gps = sportById(activity.sport).gps, hr = activityContextRecordedHr(activity);
   const primary = gps && activity.distanceM > 0 ? formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units) : formatClockTime(activity.movingSec);
   const metrics = clubSessionMetrics([activity], state.units).filter(metric => metric.label !== (gps ? "Distance" : "Moving time"));
-  const trainingXp = activityTrainingXp(activity);
+  const trainingXp = activityTrainingXp(activity, state.activities);
   const intensityXp = trainingXp - activityBaseTrainingXp(activity);
   return <div className="session-detail-content">
     <header className="session-overview"><b>{sportById(activity.sport).name}</b><p>{new Date(activity.startedAt).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: displayTz })} · {new Date(activity.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: displayTz })}</p>

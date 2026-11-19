@@ -298,7 +298,7 @@ const c=useThemeColors();
       />
     </View>
     <View style={{ flex: 1, justifyContent: "center", paddingVertical: 8 }}>
-      <SyncEnergyCore activities={selected} benchmarkSeconds={benchmarkSeconds} units={state.units} draining={saving} size={coreSize} active={!detail}/>
+      <SyncEnergyCore activities={selected} history={[...state.activities.filter(a => !excluded.includes(a.id)), ...selected]} benchmarkSeconds={benchmarkSeconds} units={state.units} draining={saving} size={coreSize} active={!detail}/>
     </View>
     <View style={{ paddingTop: 4, gap: 8 }}>
       <View onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ height: 66, borderRadius: 36, backgroundColor: c.surfaceInverse, justifyContent: "center", position: "relative", overflow: "hidden" }}>
