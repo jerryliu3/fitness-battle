@@ -1,7 +1,6 @@
 import { buildGoogleIdTokenAuthorizeUrl } from "@fitness-battle/shared";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAppleSignInNonce } from "./apple-sign-in";
-import { mobileEnv, publicProfileOrigin } from "./env";
 
 export type ParsedOAuthReturnUrl = {
   code: string | null;
@@ -199,6 +198,8 @@ export function supabaseProviderOAuthDeps(client: SupabaseClient): ProviderOAuth
   return {
     getRedirectUri: oauthCallbackRedirectUri,
     createGoogleOAuthUrl: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { mobileEnv, publicProfileOrigin } = require("./env") as typeof import("./env");
       const { raw, hashed } = await createAppleSignInNonce();
       const url = buildGoogleIdTokenAuthorizeUrl({
         clientId: mobileEnv.googleClientId,
