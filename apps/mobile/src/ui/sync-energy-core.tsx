@@ -74,14 +74,14 @@ function useAnimatedCoreNumbers(targets: CoreNumbers, reduced: boolean): CoreNum
   return reduced ? targets : display;
 }
 
-export function SyncEnergyCore({ activities, benchmarkSeconds, units = "metric", draining: _draining = false, size = 196, active = true }: {
-  activities: SyncReviewReceipt["activities"]; benchmarkSeconds: number; units?: CompeteState["units"]; draining?: boolean; size?: number; active?: boolean;
+export function SyncEnergyCore({ activities, history = activities, benchmarkSeconds, units = "metric", draining: _draining = false, size = 196, active = true }: {
+  activities: SyncReviewReceipt["activities"]; history?: readonly SyncReviewReceipt["activities"][number][]; benchmarkSeconds: number; units?: CompeteState["units"]; draining?: boolean; size?: number; active?: boolean;
 }) {
   const c = useThemeColors();
   const reduced = useReducedMotion();
   const id = useId().replace(/:/g, "");
   const seconds = activities.reduce((sum, a) => sum + a.movingSec, 0);
-  const xp = trainingXpInPeriod({activities}, new Date(0), new Date(Date.now()+1));
+  const xp = trainingXpInPeriod({activities}, new Date(0), new Date(Date.now()+1), undefined, history);
   const distance = activities.reduce((sum, a) => sum + a.distanceM, 0);
   const fraction = benchmarkSeconds > 0 ? Math.min(1, seconds / benchmarkSeconds) : 0;
 

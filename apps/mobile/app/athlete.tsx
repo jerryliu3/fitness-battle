@@ -34,13 +34,14 @@ import { Clipboard, Platform, Pressable, ScrollView, StyleSheet, Text, View } fr
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AccountActions } from "../src/features/account-actions";
 import { LegalLinks } from "../src/features/legal-links";
+import { SocialAuthButtons } from "../src/features/social-auth-buttons";
 import { AthleteMetrics } from "../src/features/athlete-metrics";
 import { SettingsRow } from "../src/ui/settings-row";
 import { FitnessHistoryImport } from "../src/features/fitness-history-import";
 import { DataSyncActions } from "../src/features/data-sync-actions";
 import { mobileEnv, publicProfileOrigin } from "../src/lib/env";
 import { useAuth } from "../src/lib/auth";
-import { GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft } from "../src/lib/guest-intro";
+import { GUEST_INTRO_DRAFT_KEY, GUEST_OAUTH_SIGNUP_PENDING, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft } from "../src/lib/guest-intro";
 import { useCompeteStore } from "../src/lib/compete-store";
 import {
   createAppleHealthDeps,
@@ -92,6 +93,8 @@ const styles=useThemedStyles(stylesThemes);
     signIn,
     signUp,
     signOut,
+    signInWithGoogle,
+    signInWithApple,
     legacyBackup,
   } = useAuth();
   const currentUser = useRef(user?.id);
@@ -113,6 +116,7 @@ const styles=useThemedStyles(stylesThemes);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [emailExpanded, setEmailExpanded] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [authNote, setAuthNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
@@ -292,6 +296,55 @@ const styles=useThemedStyles(stylesThemes);
     }
   }
 
+  async function submitSocial(provider: "google" | "apple") {
+    setAuthBusy(true);
+    setAuthNote(null);
+    let marked = false;
+    try {
+      const guest = authMode === "signup" ? await readGuestIntroDraft().catch(() => null) : null;
+      if (authMode === "signin" && params.from === "onboarding") {
+        await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
+      } else if (authMode === "signup" && guest?.introCompleted && guest.name.trim()) {
+        try {
+          await AsyncStorage.setItem(
+            GUEST_INTRO_DRAFT_KEY,
+            JSON.stringify({ ...guest, name: displayName.trim() || guest.name }),
+          );
+          await AsyncStorage.setItem(GUEST_SIGNUP_PENDING_KEY, GUEST_OAUTH_SIGNUP_PENDING);
+          marked = true;
+        } catch { /* Lack of local storage must not block account creation. */ }
+      }
+
+      const result =
+        provider === "google"
+          ? await signInWithGoogle()
+          : await signInWithApple();
+      if (result.cancelled) {
+        if (marked) void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
+        return;
+      }
+      if (result.error) {
+        if (marked) void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
+        setAuthNote(result.error);
+        return;
+      }
+      setAuthNote(null);
+      if (authMode === "signup") {
+        router.replace({
+          pathname: guest?.introCompleted ? "/onboarding" : "/welcome",
+          params: { invite: params.invite },
+        });
+      } else if (params.from === "onboarding") {
+        router.replace({ pathname: "/onboarding", params: { invite: params.invite } });
+      }
+    } catch (error) {
+      if (marked) void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
+      setAuthNote(error instanceof Error ? error.message : "Could not access your account.");
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
   async function syncDevice(providerId: "apple_health" | "google_health") {
     if (rowBusy) return;
     if (!user) {
@@ -448,43 +501,71 @@ const styles=useThemedStyles(stylesThemes);
             </Pressable>
           </View>
 
-          {authMode === "signup" ? (
-            <Input style={textStyle("body")}
-              value={displayName}
-              onChangeText={setDisplayName}
-              accessibilityLabel="Display name"
-              placeholder="Display name"
-              autoCapitalize="words"
+          {!offlineMode && !emailExpanded ? (
+            <SocialAuthButtons
+              busy={authBusy}
+              onApple={() => void submitSocial("apple")}
+              onGoogle={() => void submitSocial("google")}
+              onEmail={() => {
+                setAuthNote(null);
+                setEmailExpanded(true);
+              }}
             />
-          ) : null}
-          <Input style={textStyle("body")}
-            value={email}
-            onChangeText={setEmail}
-            accessibilityLabel="Email"
-            placeholder="Email"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
-          />
-          <Input style={textStyle("body")}
-            value={password}
-            onChangeText={setPassword}
-            accessibilityLabel="Password"
-            placeholder={
-              authMode === "signup" ? "Password (6+ characters)" : "Password"
-            }
-            secureTextEntry
-            autoComplete={authMode === "signup" ? "new-password" : "password"}
-          />
-          <Button onPress={() => void submitAuth()} isDisabled={authBusy}><AppText role="label">
-            {authBusy
-              ? "Working…"
-              : authMode === "signin"
-                ? "Sign in"
-                : "Create account"}
-          </AppText></Button>
+          ) : (
+            <>
+              {authMode === "signup" ? (
+                <Input style={textStyle("body")}
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  accessibilityLabel="Display name"
+                  placeholder="Display name"
+                  autoCapitalize="words"
+                />
+              ) : null}
+              <Input style={textStyle("body")}
+                value={email}
+                onChangeText={setEmail}
+                accessibilityLabel="Email"
+                placeholder="Email"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoComplete="email"
+              />
+              <Input style={textStyle("body")}
+                value={password}
+                onChangeText={setPassword}
+                accessibilityLabel="Password"
+                placeholder={
+                  authMode === "signup" ? "Password (6+ characters)" : "Password"
+                }
+                secureTextEntry
+                autoComplete={authMode === "signup" ? "new-password" : "password"}
+              />
+              <Button onPress={() => void submitAuth()} isDisabled={authBusy}><AppText role="label">
+                {authBusy
+                  ? "Working…"
+                  : authMode === "signin"
+                    ? "Sign in"
+                    : "Create account"}
+              </AppText></Button>
+              {!offlineMode ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Continue with Apple or Google"
+                  disabled={authBusy}
+                  onPress={() => {
+                    setAuthNote(null);
+                    setEmailExpanded(false);
+                  }}
+                  style={{ paddingVertical: 8, alignItems: "center" }}
+                >
+                  <Text style={styles.copy}>Continue with Apple or Google</Text>
+                </Pressable>
+              ) : null}
+            </>
+          )}
           {authNote ? <Text style={styles.copy}>{authNote}</Text> : null}
-          <LegalLinks />
+          <LegalLinks consent />
         </ScrollView>
       </SafeAreaView>
     );
@@ -970,7 +1051,7 @@ const styles=useThemedStyles(stylesThemes);
 
         <SettingsRow
           title="Account"
-          detail="Sign out, report an issue & delete account"
+          detail="Reset password, sign out & delete account"
           onPress={() => {
             setPanel("account");
           }}

@@ -204,6 +204,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const revisionRef = useRef<string | null>(null);
   const conflictRef = useRef(false);
   const [saveConflict, setSaveConflict] = useState(false);
+  const [draftBackupFailed, setDraftBackupFailed] = useState(false);
   const [noticeAttempt, setNoticeAttempt] = useState(0);
   const lifecycle = useRef(0);
   const saveChain = useRef<Promise<void>>(Promise.resolve());
@@ -220,6 +221,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   if (!loading && loadedFor !== userId) {
     lifecycle.current += 1;
     revisionRef.current = null; conflictRef.current = false; setSaveConflict(false);
+    setDraftBackupFailed(false);
     setLoadedFor(userId);
     setState(null);
     setLoadStatus("loading");
@@ -518,8 +520,15 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const retryLoad = useCallback(() => {
     const accountId = userIdRef.current;
     if (conflictRef.current && accountId) {
-      localStorage.setItem(`${storageKey(accountId)}:recovery`, JSON.stringify(stateRef.current));
-      localStorage.removeItem(deviceOnlyKey(accountId));
+      try {
+        localStorage.setItem(`${storageKey(accountId)}:recovery`, JSON.stringify(stateRef.current));
+        localStorage.removeItem(deviceOnlyKey(accountId));
+      } catch {
+        setDraftBackupFailed(true);
+        setNoticeAttempt(value => value + 1);
+        return;
+      }
+      setDraftBackupFailed(false);
       pendingActionsRef.current = [];
       pendingDocumentRef.current = false;
       conflictRef.current = false; setSaveConflict(false);
@@ -815,7 +824,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         beginSyncReviewBatch: syncReview.begin,
         endSyncReviewBatch: syncReview.end,
       }}>
-    <AccountSaveToast key={`${userId ?? "guest"}:${noticeAttempt}`} message={saveError} conflict={saveConflict} saving={saving || retryingSave} onRetry={retryLoad}/>
+    <AccountSaveToast key={`${userId ?? "guest"}:${noticeAttempt}`} message={saveError} conflict={saveConflict} draftBackupFailed={draftBackupFailed} saving={saving || retryingSave} onRetry={retryLoad}/>
     {children}
       {!bootCovering && (syncReview.receipt || experience.moment) && state ? (
         <Suspense fallback={<AppParagraph typographyRole="body" role="status">Opening today’s recap…</AppParagraph>}>

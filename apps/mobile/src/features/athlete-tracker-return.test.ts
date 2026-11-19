@@ -52,7 +52,12 @@ vi.mock("heroui-native/card", () => {
   return { Card };
 });
 vi.mock("../lib/auth", () => ({
-  useAuth: () => ({ user: mock.user, offlineMode: true }),
+  useAuth: () => ({
+    user: mock.user,
+    offlineMode: true,
+    signInWithGoogle: vi.fn(),
+    signInWithApple: vi.fn(),
+  }),
 }));
 vi.mock("../lib/compete-store", () => ({
   useCompeteStore: () => ({ state: freshState(), dispatch: mock.dispatch }),
@@ -75,6 +80,7 @@ vi.mock("../lib/tracker-connect", () => ({
 }));
 vi.mock("./account-actions", () => ({ AccountActions: "AccountActions" }));
 vi.mock("./legal-links", () => ({ LegalLinks: "LegalLinks" }));
+vi.mock("./social-auth-buttons", () => ({ SocialAuthButtons: "SocialAuthButtons" }));
 vi.mock("./athlete-metrics", () => ({ AthleteMetrics: "AthleteMetrics" }));
 vi.mock("./profile-photo", () => ({ ProfilePhoto: "ProfilePhoto" }));
 vi.mock("./athlete-crest", () => ({ AthleteCrest: "AthleteCrest" }));

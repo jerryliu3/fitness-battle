@@ -1,6 +1,6 @@
 import { calculateLiveEffortScore } from "./compete/effort-score";
 import { mergeActivities } from "./compete/ledger";
-import { activityTrainingXp } from "./compete/training-xp";
+import { activityBaseTrainingXp, activityTrainingXp } from "./compete/training-xp";
 import { readAccountEffort } from './compete/effort-account';
 import { countsForTraining } from "./compete/journal";
 import { competeNow } from "./compete/engine";
@@ -277,9 +277,10 @@ function liveWorkoutScoreRows(state: CompeteState, now: Date) {
   const start = weeklyPeriodBounds(now).startsAt;
   if (!account || sport === "walking" || account.nextWeek !== dayKey(start)) return [];
 
-  const workouts = mergeActivities([], state.activities)
+  const history = mergeActivities([], state.activities);
+  const workouts = history
     .filter(activity => activity.sport === sport && Date.parse(activity.startedAt) >= start.getTime()
-      && Date.parse(activity.startedAt) <= now.getTime() && activityTrainingXp(activity) > 0)
+      && Date.parse(activity.startedAt) <= now.getTime() && activityBaseTrainingXp(activity) > 0)
     .sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt) || a.id.localeCompare(b.id));
   let day = "", trainingXpBeforeToday = 0, trainingXpToday = 0;
   return workouts.map(activity => {
@@ -290,7 +291,7 @@ function liveWorkoutScoreRows(state: CompeteState, now: Date) {
       trainingXpToday = 0;
       day = workoutDay;
     }
-    trainingXpToday += activityTrainingXp(activity);
+    trainingXpToday += activityTrainingXp(activity, history);
     const { liveScore } = calculateLiveEffortScore(sport, account.state, { now: at, trainingXpBeforeToday, trainingXpToday });
     return { id: `workout:${activity.id}`, date: at.toISOString(), value: liveScore };
   });

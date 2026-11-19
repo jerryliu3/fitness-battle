@@ -44,7 +44,7 @@ export function ActivityListRow({
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
   const sportInfo = sportById(activity.sport);
-  const effort = formatTrainingXp(activityTrainingXp(activity));
+  const effort = formatTrainingXp(activityTrainingXp(activity, history));
 
   return (
     <Pressable

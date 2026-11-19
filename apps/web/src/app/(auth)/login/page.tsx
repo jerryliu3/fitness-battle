@@ -4,6 +4,7 @@ import { BackButton } from "@/ui/back-button";
 import { AppParagraph, AppHeading } from "@/ui/section";
 
 import { useAuth } from "@/components/auth-context";
+import { SocialAuthButtons } from "@/components/social-auth-buttons";
 import {
   buildSignupHref,
   resolveSafePostLoginPath,
@@ -13,10 +14,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useState } from "react";
 
 function LoginForm() {
-  const { signIn, user, loading } = useAuth();
+  const {
+    signIn,
+    signInWithGoogle,
+    signInWithApple,
+    offlineMode,
+    user,
+    loading,
+  } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
   const fromOnboarding = searchParams.get("from") === "onboarding";
+  const callbackError = searchParams.get("error");
   const next = resolveSafePostLoginPath(searchParams.get("next"));
   const returnParams = new URLSearchParams();
   if (searchParams.get("preview") === "1") returnParams.set("preview", "1");
@@ -24,8 +33,11 @@ function LoginForm() {
   const onboardingHref = `/app/welcome${returnParams.size ? `?${returnParams}` : ""}`;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailExpanded, setEmailExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const displayError = error ?? callbackError;
+  const socialEnabled = offlineMode === false;
 
   useEffect(() => {
     if (!loading && user && !fromOnboarding && !busy) {
@@ -53,6 +65,27 @@ function LoginForm() {
     }
   }
 
+  async function submitSocial(provider: "google" | "apple") {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      if (fromOnboarding) try { localStorage.removeItem(GUEST_SIGNUP_PENDING_KEY); } catch {}
+      const action = provider === "google" ? signInWithGoogle : signInWithApple;
+      const result = await action?.({
+        next,
+        from: fromOnboarding ? "onboarding" : undefined,
+      });
+      if (result?.error) {
+        setError(result.error);
+        setBusy(false);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not sign in.");
+      setBusy(false);
+    }
+  }
+
   return (
     <section className="fb-card fb-auth-card">
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -63,46 +96,82 @@ function LoginForm() {
       <AppParagraph typographyRole="body" className="fb-copy">
         Your weekly fields, training progress and crew are waiting.
       </AppParagraph>
-      <form className="fb-stack" onSubmit={onSubmit}>
-        <label className="fb-field">
-          Email
-          <input
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
+      {socialEnabled && !emailExpanded ? (
+        <>
+          <SocialAuthButtons
+            busy={busy}
+            onApple={() => void submitSocial("apple")}
+            onGoogle={() => void submitSocial("google")}
+            onEmail={() => {
+              setError(null);
+              setEmailExpanded(true);
+            }}
           />
-        </label>
-        <label className="fb-field">
-          Password
-          <input
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </label>
-        {error ? (
-          <AppParagraph typographyRole="body" className="fb-error" role="alert" aria-live="assertive">
-            {error}
-          </AppParagraph>
-        ) : null}
-        <button type="submit" className="fb-btn" disabled={busy}>
-          {busy ? "Signing in…" : "Sign in"}
-        </button>
-      </form>
+          {displayError ? (
+            <AppParagraph typographyRole="body" className="fb-error" role="alert" aria-live="assertive">
+              {displayError}
+            </AppParagraph>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <form className="fb-stack" onSubmit={onSubmit}>
+            <label className="fb-field">
+              Email
+              <input
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </label>
+            <label className="fb-field">
+              Password
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+            </label>
+            {displayError ? (
+              <AppParagraph typographyRole="body" className="fb-error" role="alert" aria-live="assertive">
+                {displayError}
+              </AppParagraph>
+            ) : null}
+            <button type="submit" className="fb-btn" disabled={busy}>
+              {busy ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
+          {socialEnabled ? (
+            <button
+              type="button"
+              className="fb-btn-ghost"
+              disabled={busy}
+              onClick={() => {
+                setError(null);
+                setEmailExpanded(false);
+              }}
+              style={{ width: "100%", textAlign: "center" }}
+            >
+              Continue with Apple or Google
+            </button>
+          ) : null}
+        </>
+      )}
 
       <AppParagraph typographyRole="caption" className="fb-note">
         New here?{" "}
         <Link href={fromOnboarding ? onboardingHref : buildSignupHref(next)}>Create an account</Link>
       </AppParagraph>
       <AppParagraph typographyRole="caption" className="fb-note">
+        By continuing, you agree to our{" "}
         <Link href="/terms">Terms of Service</Link>
-        {" · "}
+        {" and "}
         <Link href="/privacy">Privacy Policy</Link>
-        {" · "}
+        .{" "}
         <Link href="/support">Support</Link>
       </AppParagraph>
     </section>

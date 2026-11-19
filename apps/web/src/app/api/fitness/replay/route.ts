@@ -16,7 +16,8 @@ export async function GET(request: Request) {
   const { data, error } = await db.from("activities").select("route_replay,provider,external_id,sport,detailed_polyline").eq("user_id", owner).eq("compete_key", id).maybeSingle();
   if (error) return NextResponse.json({ error: "replay_unavailable" }, { status: 503 });
   if (!data) return NextResponse.json({ error: "activity_not_found" }, { status: 404 });
-  if (data.provider === "strava" && !data.route_replay) {
+  let samples = normalizeRouteReplay(data.route_replay);
+  if (data.provider === "strava" && samples.length === 0) {
     try {
       const route = await getServerFitnessProvider("strava").routeForActivity(
         owner,
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
           .eq("provider", "strava")
           .eq("external_id", data.external_id);
         if (!result?.error) {
-          data.route_replay = route.routeReplay;
+          samples = normalizeRouteReplay(route.routeReplay);
           data.detailed_polyline = route.detailedPolyline;
         }
       }
@@ -46,5 +47,5 @@ export async function GET(request: Request) {
       // fall through to return existing activity data without failing the request.
     }
   }
-  return NextResponse.json({ detailedPolyline:data.detailed_polyline, routeReplay: normalizeRouteReplay(data.route_replay) }, { headers: { "Cache-Control": "private, no-store" } });
+  return NextResponse.json({ detailedPolyline: data.detailed_polyline, routeReplay: samples }, { headers: { "Cache-Control": "private, no-store" } });
 }
