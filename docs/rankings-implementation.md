@@ -150,3 +150,21 @@ already have a result from a published source.
 
 RunSignup metadata discovery produces review-inbox candidates. Source approval,
 result-set selection, staged acquisition and publication remain operator steps.
+
+## Rankings query performance
+
+The rankings migration precomputes counts at exact finish times by distance,
+category, edition and result date. The leaderboard derives ranks, percentiles,
+cutoffs and histograms from those counts. Name and bib search use separate
+indexed lookups, and leaderboard display fields are fetched only for the
+selected page. Verified athlete history and individual race reports reuse the
+same counts for the relevant race field. The public API keeps its existing
+filters and payload.
+
+Publication, suppression and result edits invalidate the cached counts in
+the same transaction. Reads use the live publication-gated field while counts
+are stale. The migration builds the initial counts. After bulk changes, use
+the existing service-only `refresh_rankings_distance_stats()` procedure to
+rebuild both rankings projections. The rebuild is atomic for readers. A write
+that races with a rebuild may leave reads on the live path until the next
+refresh.
