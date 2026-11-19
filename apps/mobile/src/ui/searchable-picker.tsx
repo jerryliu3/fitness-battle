@@ -29,7 +29,7 @@ export function SearchablePicker({ label, placeholder, value, displayValue, sear
       accessibilityLabel={displayValue ? `${accessibleLabel}: ${displayValue}` : accessibleLabel}
       accessibilityState={{ expanded: open }}
       onPress={() => { setQuery(""); setOpen(true); }}
-      style={[f.input, { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }]}
+      style={[f.input, { flexShrink: 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }]}
     >
       <AppText numberOfLines={1} style={{ flexShrink: 1 }}>{displayValue || label}</AppText>
       <AppText accessibilityElementsHidden importantForAccessibility="no-hide-descendants" secondary>⌄</AppText>
