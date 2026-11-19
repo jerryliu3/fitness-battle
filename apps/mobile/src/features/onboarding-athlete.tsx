@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated } from "react-native";
+import { Animated, Platform } from "react-native";
 import type { AthleteCardModel, OnboardingStep } from "@fitness-battle/shared";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { AthleteCrest } from "./athlete-crest";
@@ -37,6 +37,6 @@ export function OnboardingAthlete({ model, step, onInteractionChange, layoutScal
     importantForAccessibility={step === "sport" ? "no-hide-descendants" : "auto"}
     style={{ position: "absolute", left: x, top: y, width, height: sceneWidth / 320 * 430, zIndex: 20,
       opacity: step === "sport" ? 0 : 1 }}>
-    <AthleteCrest height={sceneWidth / 320 * 430} transparent model={model} active={step !== "sport"} onInteractionChange={onInteractionChange} />
+    <AthleteCrest height={sceneWidth / 320 * 430} transparent bundled={Platform.OS === "android"} model={model} active={step !== "sport"} onInteractionChange={onInteractionChange} />
   </Animated.View>;
 }

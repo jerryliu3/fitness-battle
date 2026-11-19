@@ -54,7 +54,7 @@ export const AthleteCrest = memo(function AthleteCrest({ model, onInteractionCha
     {!bundled && !loaded && <View style={{ position: "absolute", inset: 0, justifyContent: "center" }}>
       <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />
     </View>}
-    {!failed && <WebView ref={web} source={source} originWhitelist={bundled ? ["*"] : [origin]} javaScriptEnabled scrollEnabled={false} bounces={false}
+    {!failed && <WebView ref={web} source={source} originWhitelist={bundled ? ["*"] : [origin]} javaScriptEnabled scrollEnabled={false} bounces={false} textZoom={100}
       onTouchStart={() => interaction(true)} onTouchEnd={() => interaction(false)} onTouchCancel={() => interaction(false)}
       style={{ height, backgroundColor: transparent ? "transparent" : c.paper, opacity: loaded ? 1 : 0 }}
       onShouldStartLoadWithRequest={(request: { url: string }) => {
