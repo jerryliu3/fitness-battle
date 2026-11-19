@@ -56,8 +56,7 @@ Monday closes without requiring a cron job.
 - Direct client `INSERT`, `UPDATE`, and `DELETE` are revoked on all special-event
   tables.
 - Public RPCs (`list_special_events`, `register_special_event`,
-  `cancel_special_event`, `special_event_standings`,
-  `acknowledge_special_event`) are `SECURITY DEFINER`
+  `cancel_special_event`, `special_event_standings`) are `SECURITY DEFINER`
   with `SET search_path = ''` and explicit `auth.uid()` checks.
 - Admin edition creation/updates use owner-only `/api/admin/special-events` and
   service-role `admin_save_special_event_edition` /

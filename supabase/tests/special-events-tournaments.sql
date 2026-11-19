@@ -65,6 +65,11 @@ begin
   if (select count(*) from public.special_event_rounds where edition_id = survivor.id) <> 3 then
     raise exception 'expected 3 adaptive daily rounds for 4 athletes';
   end if;
+  -- Since day1_start was 3 days ago, all 3 daily rounds should catch up and settle in a single call!
+  if (select count(*) from public.special_event_rounds where edition_id = survivor.id and settled_at is not null) <> 3
+    or (select settled_at from public.special_event_editions where id = survivor.id) is null then
+    raise exception 'expected multi-day catch-up settlement in a single call';
+  end if;
   if (select status from public.special_event_entries where edition_id = survivor.id and user_id = u4) <> 'eliminated'
     or (select eliminated_round from public.special_event_entries where edition_id = survivor.id and user_id = u4) <> 1 then
     raise exception 'expected u4 eliminated in Round 1';

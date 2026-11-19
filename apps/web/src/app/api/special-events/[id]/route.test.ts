@@ -3,7 +3,7 @@ vi.mock("@/lib/auth/request-user", () => ({ resolveRequestUserId: vi.fn() }));
 vi.mock("@/lib/supabase/request", () => ({ createRequestClient: vi.fn() }));
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import { createRequestClient } from "@/lib/supabase/request";
-import { GET, POST } from "./route";
+import { GET } from "./route";
 
 const editionId = "00000000-0000-4000-8000-000000000010";
 const rpc = vi.fn();
@@ -35,14 +35,4 @@ it("returns standings and maps authorization/pre-start errors cleanly", async ()
 
   rpc.mockResolvedValueOnce({ data: null, error: { message: "edition_not_started" } });
   expect((await GET(new Request(`https://test/api/special-events/${editionId}`), params())).status).toBe(409);
-});
-
-it("acknowledges special event outcomes", async () => {
-  rpc.mockResolvedValueOnce({ data: true, error: null });
-  const res = await POST(
-    new Request(`https://test/api/special-events/${editionId}`, { method: "POST", body: JSON.stringify({ action: "acknowledge" }) }),
-    params(),
-  );
-  expect(res.status).toBe(200);
-  expect(rpc).toHaveBeenCalledWith("acknowledge_special_event", { p_edition_id: editionId });
 });
