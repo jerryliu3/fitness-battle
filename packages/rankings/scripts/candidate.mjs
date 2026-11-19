@@ -12,6 +12,8 @@ const {
   upsertSourceDecisionSql,
 } = await import("../src/index.ts");
 
+const { discoveryDate, runSignupCandidates } = await import("../src/acquire/runsignup-discovery.ts");
+
 const root = dirname(fileURLToPath(import.meta.url));
 const { requireDatabaseUrl, psqlFile, psqlQuery } = await import("./psql-util.mjs");
 
@@ -62,6 +64,7 @@ if (argv.includes("--help") || argv.length === 0) {
   console.log(`Usage:
   node packages/rankings/scripts/candidate.mjs --nyc-2026
   node packages/rankings/scripts/candidate.mjs --nyc-2026-map [--approve] [--reviewer NAME]
+  node packages/rankings/scripts/candidate.mjs --discover-runsignup --name NAME --from YYYY-MM-DD --through YYYY-MM-DD
   node packages/rankings/scripts/candidate.mjs --import path/to/candidates.json
   node packages/rankings/scripts/candidate.mjs --source-review --slug nyrr_nyc_marathon --decision blocked|permitted|pending [...]
   node packages/rankings/scripts/candidate.mjs --map --population-key KEY --candidate-id ID --decision-id ID --external-event-id CODE [...]
@@ -121,6 +124,28 @@ if (argv.includes("--nyc-2026")) {
   });
   await runSql("source-nyrr-blocked", blocked);
   console.log(JSON.stringify({ candidateId: Number(candidateId), dedupeKey: NYC_DEDUPE_KEY }, null, 2));
+  process.exit(0);
+}
+
+if (argv.includes("--discover-runsignup")) {
+  const name = flag("--name")?.trim();
+  const from = discoveryDate(flag("--from") ?? "");
+  const through = discoveryDate(flag("--through") ?? "");
+  if (!name || !from || !through || from > through || through >= new Date().toISOString().slice(0, 10)) {
+    throw new Error("Provide a race name and an ordered date window ending before today.");
+  }
+  const url = new URL("https://api.runsignup.com/rest/races");
+  url.search = new URLSearchParams({
+    name, start_date: from, end_date: through, format: "json",
+    only_races_with_results: "T", include_event_days: "T", events: "F",
+    results_per_page: "100", page: "1",
+  }).toString();
+  const response = await fetch(url, { redirect: "error", signal: AbortSignal.timeout(30_000) });
+  if (!response.ok) throw new Error(`RunSignup discovery returned HTTP ${response.status}.`);
+  const payload = await response.json();
+  const candidates = runSignupCandidates(payload, from, through);
+  if (payload.races.length >= 100) throw new Error("Discovery page reached its limit. Narrow the name or date window.");
+  console.log(JSON.stringify(candidates, null, 2));
   process.exit(0);
 }
 

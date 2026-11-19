@@ -235,6 +235,7 @@ export {
   BENCHMARKS,
   paceBoard,
   yourBenchmarkSeconds,
+  recordedRaceBenchmarkSeconds,
   formatClockTime,
   type Benchmark,
   type PaceScope,

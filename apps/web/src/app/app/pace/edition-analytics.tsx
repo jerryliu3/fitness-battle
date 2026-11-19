@@ -2,10 +2,26 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { raceClock, raceEditionChart, type RaceEditionAnalytics } from "@fitness-battle/shared";
+import { BENCHMARKS, buildStandingsDistribution, raceClock, raceEditionChart, racePercentLabel, raceDistanceSlugForBenchmark, recordedRaceBenchmarkSeconds, type RaceEditionAnalytics } from "@fitness-battle/shared";
 import { AppHeading } from "@/ui/section";
+import { useAuth } from "@/components/auth-context";
+import { useCompete } from "@/components/compete-context";
 
-export function EditionAnalytics({ analytics, scope="edition" }: { analytics: RaceEditionAnalytics; scope?:"edition"|"distance" }) {
+export function EditionAnalytics({ analytics, distance, scope = "edition" }: {
+  analytics: RaceEditionAnalytics;
+  distance: string;
+  scope?: "edition" | "distance";
+}) {
+  const { user } = useAuth();
+  const { state } = useCompete();
+  const benchmark = BENCHMARKS.running.find(option => raceDistanceSlugForBenchmark("running", option.id) === distance);
+  const yourSeconds = benchmark && state && user?.mode === "supabase" && user.dataOrigin !== "synthetic"
+    ? recordedRaceBenchmarkSeconds(state, benchmark.meters)
+    : null;
+  const overlay = yourSeconds == null ? null : buildStandingsDistribution({
+    source: "published", overtaekRows: [], publishedAnalytics: analytics, yourSeconds,
+  });
+  const yourBucket = overlay?.yourBucket;
   const [selected, setSelected] = useState<number | null>(null);
   const bins = raceEditionChart(analytics);
   const active = selected === null ? null : bins[selected];
@@ -23,7 +39,10 @@ export function EditionAnalytics({ analytics, scope="edition" }: { analytics: Ra
         <div><span>Median 50%</span><strong>{raceClock(analytics.medianMs)}</strong></div>
       </div>
     </div>}
-    <div className="race-edition-chart" aria-label="Inspect finish-time ranges">{bins.map(bin => <button key={bin.bucket} type="button" aria-pressed={selected===bin.bucket} aria-label={`${bin.label}: ${bin.count.toLocaleString()} finishes`} onClick={() => setSelected(bin.bucket)}><span style={{height:`${bin.height}%`}} /></button>)}</div>
+    {overlay?.yourTimeMs != null && <p className="rankings-note"><strong>Your moving-pace estimate · {raceClock(overlay.yourTimeMs)}</strong>
+      {overlay.yourPercentile != null && ` · Estimated faster than ${racePercentLabel(overlay.yourPercentile)} of this field`}
+      <br />Based on your fastest recorded moving pace from a run covering this distance.</p>}
+    <div className="race-edition-chart" aria-label="Inspect finish-time ranges">{bins.map(bin => <button key={bin.bucket} type="button" aria-pressed={selected===bin.bucket} data-personal={yourBucket === bin.bucket ? "true" : undefined} aria-label={`${bin.label}: ${bin.count.toLocaleString()} finishes${yourBucket === bin.bucket ? " · your pace estimate" : ""}`} onClick={() => setSelected(bin.bucket)}><span style={{height:`${bin.height}%`}} /></button>)}</div>
     <div className="race-chart-axis"><span>{raceClock(analytics.minimumMs)}</span><span>{raceClock(analytics.minimumMs+bins.length*analytics.binWidthMs)}</span></div>
     <p className="race-bin-detail" aria-live="polite">{active ? `${active.label} · ${active.count.toLocaleString()} finishes` : "Select a bar to inspect its finish-time range."}</p>
     <details><summary>Distribution values</summary><ul>{bins.map(bin => <li key={bin.bucket}>{bin.label} · {bin.count.toLocaleString()} finishes</li>)}</ul></details>

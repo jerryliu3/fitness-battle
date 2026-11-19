@@ -5,6 +5,7 @@ export type AcquisitionRunStatus = "queued" | "leased" | "succeeded" | "failed" 
 
 export type CandidateInput = {
   eventName: string;
+  discoveryKey?: string;
   officialWebsite?: string | null;
   editionYear?: number | null;
   startsOn?: string | null;

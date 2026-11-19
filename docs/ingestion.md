@@ -86,3 +86,22 @@ Current product preview is unchanged: `pnpm dev:web` then `http://localhost:3000
 Readable public lists, copied in the latest run: Boston Marathon 2025 (28,404), London Marathon 2025 mass (55,226), Berlin Marathon 2025 runners (48,345), Chicago Marathon 2025 (54,109), Generali Berlin 5K 2025 (9,168), plus the OpenTrack 10 km fixture (44). Chicago's public page listed 54,315. The extra sex filter repeated people already stored, so that pass stopped.
 
 Not ingested in the October trial: New York City Marathon (script shell, no list in the HTML), Tokyo Marathon (timing host not found), Sydney Marathon (host name did not resolve). No half marathon list was on those pages. Historical extraction counts are in [ingestion-trial.json](ingestion-trial.json); these sources have not been retried as part of the extraction-safety change.
+
+## Discover RunSignup editions for review
+
+Use a known event name and a bounded historical date window. The command queries
+the [RunSignup race catalog](https://runsignup.com/API/races/GET) for races with
+results, then emits pending candidate JSON. Candidate identity uses the provider
+race ID and event-day date. A listing with results can still have an incomplete
+or preliminary field, or results for a different edition.
+
+```sh
+pnpm --silent rankings:candidate -- --discover-runsignup --name "Race name" --from 2026-01-01 --through 2026-10-31 > /tmp/race-candidates.json
+pnpm rankings:candidate -- --import /tmp/race-candidates.json
+```
+
+The first command only reads catalog metadata. The second writes to the
+configured rankings review inbox. Verify the edition, distance, final result
+set and source permissions before acquisition. RunSignup's existing ingest
+adapter still needs to be wired into the reviewed stage/publish workflow before
+it can serve as an unattended acquisition worker. Discovery is operator-run.

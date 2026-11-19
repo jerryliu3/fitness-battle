@@ -131,3 +131,22 @@ Event cards group categories into one edition/distance entry; All runners is the
 ## Follow-up: distance-wide analytics
 
 The same bounded histogram and finish benchmarks are shown for the entire distance as well as an individual edition. Aggregates use every public eligible finish in the selected category/timeframe before search and pagination, and report the number of included editions. Repeat finishes are counted as separate observations; no course normalization or athlete deduplication is implied. Additive `pace_distance_analytics` migration required.
+
+## All-time analytics baseline
+
+The public Times section browses published race results by distance, category,
+event edition and timeframe. Web adds a cross-distance finisher search and a
+two-year comparison of percentile cutoffs and cohort sizes. The event directory
+searches published editions by name or year and links to results and replay
+options. Replay availability still depends on reviewed courses and timing data.
+
+Web and native compare a signed-in athlete's own recorded moving pace against
+the selected public field inside the device or browser. This uses the fastest
+scaled moving time from a recorded run covering the distance. Its percentile is
+estimated from the published histogram. Public counts and ranks use the
+published results ledger, and the app sends no personal time to the rankings
+database. Account holders are absent from the published leaderboard unless they
+already have a result from a published source.
+
+RunSignup metadata discovery produces review-inbox candidates. Source approval,
+result-set selection, staged acquisition and publication remain operator steps.

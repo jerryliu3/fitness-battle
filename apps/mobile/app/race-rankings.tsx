@@ -30,8 +30,6 @@ export default function RaceRankings() {
 
   return (
     <AllTimeStandingsScreen
-      initialSource="published"
-      initialSport="running"
       initialDistance={DISTANCE_TO_BENCHMARK[raceSlug] ?? "marathon"}
       initialEdition={initial.editionId ? String(initial.editionId) : (params.edition ?? "")}
       initialSex={initial.sex}

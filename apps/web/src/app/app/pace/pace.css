@@ -157,7 +157,7 @@
 .race-distances a[aria-current="page"] { background:var(--ink); color:var(--paper); border-color:var(--ink); }
 .race-filters { display:grid; grid-template-columns:minmax(180px,1fr) 160px 110px auto; gap:12px; align-items:end; }
 .race-filters label { display:grid; gap:8px; font-size:12px; color:var(--muted); }
-.race-explorer input,.race-explorer select { width:100%; min-width:0; box-sizing:border-box; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:12px; padding:12px; font:inherit; font-size:16px; min-height:46px; }
+.race-explorer input:not([type="checkbox"]),.race-explorer select { width:100%; min-width:0; box-sizing:border-box; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:12px; padding:12px; font:inherit; font-size:16px; min-height:46px; }
 .race-explorer button { border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:12px; padding:12px 16px; font:inherit; font-size:14px; min-height:46px; cursor:pointer; }
 .race-filters button { background:var(--tennis, #d9f44a); color:#161a18; border-color:transparent; font-weight:600; }
 .race-explorer button:disabled { opacity:.45; cursor:default; }
@@ -259,6 +259,7 @@
 .race-edition-chart { display:flex; height:160px; gap:3px; }
 .race-edition-chart button { flex:1; min-width:0; min-height:44px; padding:0; border:0; border-radius:3px; background:transparent; display:flex; align-items:flex-end; }
 .race-edition-chart button span { width:100%; background:var(--muted); border-radius:3px 3px 0 0; }
+.race-edition-chart button[data-personal="true"] span { background:var(--tennis); min-height:2px; }
 .race-edition-chart button[aria-pressed="true"] span { background:var(--tennis); outline:1px solid var(--ink); }
 .race-bin-detail { min-height:2.8em; font-size:13px; font-variant-numeric:tabular-nums; }
 @media(max-width:500px) { .race-edition-analytics { padding:16px; } .race-edition-metrics { gap:10px; } }
