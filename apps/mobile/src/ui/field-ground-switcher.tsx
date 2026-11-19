@@ -15,12 +15,12 @@ export function FieldGroundSwitcher({ appearance, onChangeAppearance }: {
     <LayersMenu label="Lane options" closeLabel="Close lane options" estimatedHeight={MENU_HEIGHT}>
       {({ close }) => (
         <ScrollView style={{ maxHeight: MENU_HEIGHT }}>
-          {grounds.map(([ground, item], index) => (
+          {grounds.map(([ground, item]) => (
             <AnchoredMenuItem
               key={ground}
               label={item.name}
               selected={appearance.ground === ground}
-              last={index === grounds.length - 1}
+
               left={<View style={{ width: 14, height: 18, borderRadius: 4, backgroundColor: item.lane }} />}
               onPress={() => {
                 void playCue("selection");

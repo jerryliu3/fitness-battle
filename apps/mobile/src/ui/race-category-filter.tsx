@@ -20,12 +20,12 @@ export function RaceCategoryFilter({ value, onChange }: { value: string; onChang
         menuLayout={menu.menuLayout}
         accessibilityLabel="Close category dropdown"
       >
-        {RACE_CATEGORY_FILTERS.map((cat, idx) => (
+        {RACE_CATEGORY_FILTERS.map(cat => (
           <AnchoredMenuItem
             key={cat.value}
             label={cat.label}
             selected={value === cat.value}
-            last={idx === RACE_CATEGORY_FILTERS.length - 1}
+
             onPress={() => {
               onChange(cat.value);
               menu.close();

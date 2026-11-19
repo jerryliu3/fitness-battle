@@ -128,18 +128,18 @@ const s=useThemedStyles(sThemes);
 
 export function AnchoredMenuItem({
   label,
+  accessibilityLabel = label,
   selected = false,
   destructive = false,
   disabled = false,
-  last = false,
   left,
   onPress,
 }: {
   label: string;
+  accessibilityLabel?: string;
   selected?: boolean;
   destructive?: boolean;
   disabled?: boolean;
-  last?: boolean;
   left?: ReactNode;
   onPress: () => void;
 }) {
@@ -148,7 +148,7 @@ export function AnchoredMenuItem({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ selected, disabled }}
       disabled={disabled}
       onPress={onPress}
@@ -156,7 +156,6 @@ export function AnchoredMenuItem({
         s.item,
         selected && s.itemSelected,
         pressed && s.itemPressed,
-        last && s.itemLast,
         disabled && { opacity: 0.45 },
       ]}
     >
@@ -166,7 +165,7 @@ export function AnchoredMenuItem({
           numberOfLines={1}
           style={[
             textStyle(selected ? "label" : "body"),
-            { color: c.ink },
+            { color: c.ink, flexShrink: 1 },
             destructive ? { color: c.statusError } : null,
           ]}
         >
@@ -207,17 +206,12 @@ const sThemes = createThemedStyles(themeColors=>{return {
     minHeight: 44,
     paddingHorizontal: 14,
     paddingVertical: 11,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: themeColors.line,
   },
   itemSelected: {
     backgroundColor: themeColors.actionSoft,
   },
   itemPressed: {
     backgroundColor: themeColors.soft,
-  },
-  itemLast: {
-    borderBottomWidth: 0,
   },
   itemLeft: {
     flexDirection: "row",

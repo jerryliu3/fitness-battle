@@ -195,7 +195,7 @@ const c=useThemeColors();
         <AnchoredMenuItem
           label={busy ? "Updating…" : "Choose photo"}
           disabled={busy}
-          last={!state.avatarUrl}
+
           onPress={() => {
             if (!user || flight.current || pendingPickerOwner.current) return;
             // UIKit must finish dismissing our menu before presenting the picker.
@@ -208,7 +208,6 @@ const c=useThemeColors();
             label="Delete photo"
             destructive
             disabled={busy}
-            last
             onPress={() => {
               photoMenu.close();
               void change(true);
