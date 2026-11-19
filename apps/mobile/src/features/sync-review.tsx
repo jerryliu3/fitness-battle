@@ -18,13 +18,11 @@ import {
   type ScrollViewInstance,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { accountTimeZone, competeNow, syncChargeBenchmark, syncReviewMetrics, formatAccountDateTime, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewMetric, type SyncReviewReceipt } from "@fitness-battle/shared";
-import { AppIcon, type AppIconName } from "../ui/app-icon";
-import { MaterialBack, MaterialClose } from "../ui/material-back";
-import { CompeteSheet } from "../ui/compete-sheet";
-import { ActivityRoute } from "../ui/activity-route";
+import { accountTimeZone, competeNow, syncChargeBenchmark, formatAccountDateTime, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
+import { AppIcon } from "../ui/app-icon";
+import { MaterialClose } from "../ui/material-back";
+import { ActivityReplay, ActivitySummaryMetrics } from "../ui/activity-route";
 import { RouteStaticPreview } from "../ui/route-static-preview";
-import type { RoutePlaybackController, RoutePlaybackState } from "../ui/route-timelapse";
 
 import { SyncEnergyCore } from "../ui/sync-energy-core";
 import { ScreenFade } from "../ui/screen-fade";
@@ -199,16 +197,15 @@ const c=useThemeColors();
               }}
             >
               {coords ? (
-                <View style={{ height: mapHeight, overflow: "hidden", backgroundColor: "#0b242c" }}>
-                  <RouteStaticPreview
-                    coordinates={coords}
-                    width={cardWidth}
-                    height={mapHeight}
-                    strokeColor="176c75"
-                    showPlayBadge={false}
-                    onPress={() => openDetail(a.id)}
-                  />
-                </View>
+                <RouteStaticPreview
+                  coordinates={coords}
+                  width={cardWidth}
+                  height={mapHeight}
+                  strokeColor="176c75"
+                  showPlayBadge={false}
+                  style={{ height: mapHeight, borderRadius: 0, borderWidth: 0 }}
+                  onPress={() => openDetail(a.id)}
+                />
               ) : (
                 <View
                   style={{
@@ -284,7 +281,7 @@ const c=useThemeColors();
                   </Pressable>
                 </View>
 
-                <ActivityMetrics activity={a} history={metricHistory} units={state.units}/>
+                <ActivitySummaryMetrics activity={a} history={metricHistory} units={state.units}/>
               </View>
             </View>
           );
@@ -323,106 +320,18 @@ const c=useThemeColors();
     </ScrollView>
   </SafeAreaView>
     {cachedActivities.map((cachedActivity) => (
-      <CachedActivityDetail
+      <ActivityReplay
         key={cachedActivity.id}
         activity={cachedActivity}
         open={detail === cachedActivity.id}
+        backLabel="Back to activities"
+        dateLabel={formatAccountDateTime(state, cachedActivity.startedAt, { year: true })}
         history={metricHistory}
         units={state.units}
-        state={state}
-        topInset={insets.top}
         onClose={() => setDetail(null)}
       />
     ))}
   </View>;
-}
-
-function CachedActivityDetail({
-  activity,
-  open,
-  history,
-  units,
-  state,
-  topInset,
-  onClose,
-}: {
-  activity: SyncReviewReceipt["activities"][number];
-  open: boolean;
-  history: CompeteState["activities"];
-  units: CompeteState["units"];
-  state: CompeteState;
-  topInset: number;
-  onClose: () => void;
-}) {
-  const c = useThemeColors();
-  const replayController = useRef<RoutePlaybackController | null>(null);
-  const [replayState, setReplayState] = useState<RoutePlaybackState>({
-    isPlaying: false,
-    isFinished: false,
-    progress: 0,
-    currentDistanceKm: 0,
-    totalDistanceKm: 0,
-    isRecordingVideo: false,
-  });
-
-  useEffect(() => {
-    if (!open) replayController.current?.pause();
-  }, [open]);
-
-  const hasRoute = !!activityRoute(activity);
-  const headerBlock = (
-    <View style={{ gap: 4, ...(hasRoute ? { marginBottom: 14 } : {}) }}>
-      <Text accessibilityRole="header" style={[textStyle("heading"), { color: c.ink }]}>
-        {sportById(activity.sport).name}
-      </Text>
-      <Text style={[textStyle("caption"), { color: c.muted }]}>
-        {formatAccountDateTime(state, activity.startedAt, { year: true })}
-      </Text>
-    </View>
-  );
-
-  return (
-    <View
-      pointerEvents={open ? "auto" : "none"}
-      accessibilityElementsHidden={!open}
-      style={[
-        StyleSheet.absoluteFill,
-        { backgroundColor: c.paper, opacity: open ? 1 : 0, zIndex: open ? 50 : 0 },
-      ]}
-    >
-      <ActivityRoute
-        activity={activity}
-        units={units}
-        immersive
-        hideControls
-        controllerRef={replayController}
-        onPlaybackState={setReplayState}
-      />
-      <View style={{ position: "absolute", top: topInset + 8, left: 16, zIndex: 40 }}>
-        <MaterialBack onPress={onClose} label="Back to activities" />
-      </View>
-      <CompeteSheet
-        active={open}
-        expandRequest={0}
-        defaultIndex={0}
-        overview={
-          hasRoute ? (
-            <SheetReplayBar state={replayState} units={units} controller={replayController} />
-          ) : (
-            headerBlock
-          )
-        }
-      >
-        {hasRoute ? headerBlock : null}
-        <ActivityMetrics activity={activity} history={history} units={units} />
-        {!hasRoute && (
-          <Text style={[textStyle("body"), { color: c.muted, marginTop: 16 }]}>
-            No GPS route recorded
-          </Text>
-        )}
-      </CompeteSheet>
-    </View>
-  );
 }
 
 export function computeWindowStart(
@@ -569,129 +478,6 @@ const c=useThemeColors();
       ) : (
         dots
       )}
-    </View>
-  );
-}
-
-const METRIC_ICONS: Record<SyncReviewMetric["id"], AppIconName> = {
-  distance: "distance",
-  duration: "time",
-  "heart-rate": "heart",
-  elevation: "progress",
-};
-
-function ActivityMetrics({ activity, history, units }: { activity: SyncReviewReceipt["activities"][number]; history: CompeteState["activities"]; units: CompeteState["units"] }) {
-  const c = useThemeColors();
-  const metrics = syncReviewMetrics(activity, history, units);
-  return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 10, paddingTop: 2 }}>
-      {metrics.map((metric) => (
-        <View
-          key={metric.id}
-          accessible
-          accessibilityLabel={`${metric.label}: ${metric.valueLabel}. ${metric.comparisonLabel}`}
-          style={{ width: "47%", gap: 4 }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-            <AppIcon name={METRIC_ICONS[metric.id]} size={13} color={c.fieldTeal} />
-            <Text numberOfLines={1} style={{ ...textStyle("caption"), color: c.muted, flexShrink: 1 }}>
-              {metric.label}
-            </Text>
-          </View>
-          <Text style={{ ...textStyle("label"), color: c.ink, fontVariant: ["tabular-nums"] }}>
-            {metric.valueLabel}
-          </Text>
-          <View style={{ height: 5, borderRadius: 999, backgroundColor: c.line, overflow: "hidden" }}>
-            <View
-              style={{
-                height: 5,
-                borderRadius: 999,
-                width: `${Math.round((metric.fraction ?? 1) * 100)}%`,
-                backgroundColor: c.fieldTeal,
-              }}
-            />
-          </View>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-function SheetReplayBar({ state, units, controller }: {
-  state: RoutePlaybackState;
-  units: CompeteState["units"];
-  controller: { current: RoutePlaybackController | null };
-}) {
-  const c = useThemeColors();
-  const [trackWidth, setTrackWidth] = useState(120);
-  const factor = units === "us" ? 1 / 1.609344 : 1;
-  const distanceUnit = units === "us" ? "mi" : "km";
-  const seekAt = (x: number) => {
-    const p = Math.max(0, Math.min(1, x / Math.max(1, trackWidth)));
-    controller.current?.seek(p);
-  };
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 16, backgroundColor: c.surfaceCard, borderWidth: 1, borderColor: c.line }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={state.isFinished ? "Replay timelapse" : state.isPlaying ? "Pause timelapse" : "Play timelapse"}
-        disabled={state.isRecordingVideo}
-        onPress={() => {
-          if (state.isFinished) controller.current?.replay();
-          else if (state.isPlaying) controller.current?.pause();
-          else controller.current?.play();
-        }}
-        style={({ pressed }) => ({
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          backgroundColor: c.tennis,
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: state.isRecordingVideo ? 0.5 : pressed ? 0.75 : 1,
-        })}
-      >
-        <AppIcon name={state.isFinished ? "replay" : state.isPlaying ? "pause" : "play"} size={18} color={c.textOnAction} />
-      </Pressable>
-      <View
-        onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
-        onStartShouldSetResponder={() => !state.isRecordingVideo}
-        onMoveShouldSetResponder={() => !state.isRecordingVideo}
-        onResponderGrant={(e) => seekAt(e.nativeEvent.locationX)}
-        onResponderMove={(e) => seekAt(e.nativeEvent.locationX)}
-        accessibilityRole="adjustable"
-        accessibilityLabel="Route timelapse scrubber"
-        accessibilityValue={{ min: 0, max: 100, now: Math.round(state.progress * 100) }}
-        style={{ flex: 1, height: 36, justifyContent: "center" }}
-      >
-        <View style={{ height: 6, borderRadius: 999, backgroundColor: c.line, overflow: "hidden" }}>
-          <View style={{ height: 6, borderRadius: 999, width: `${Math.round(state.progress * 100)}%`, backgroundColor: c.tennis }} />
-        </View>
-        <View pointerEvents="none" style={{ position: "absolute", left: Math.max(0, Math.min(trackWidth - 16, state.progress * trackWidth - 8)), width: 16, height: 16, borderRadius: 8, backgroundColor: c.tennis, borderWidth: 2, borderColor: c.surfaceCard }} />
-      </View>
-      <Text style={{ ...textStyle("caption"), color: c.muted, fontVariant: ["tabular-nums"] }}>
-        <Text style={{ ...textStyle("field"), color: c.ink }}>{(state.currentDistanceKm * factor).toFixed(1)}</Text>
-        {` / ${(state.totalDistanceKm * factor).toFixed(1)} ${distanceUnit}`}
-      </Text>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Export Video"
-        disabled={state.isRecordingVideo}
-        onPress={() => controller.current?.exportVideo()}
-        style={({ pressed }) => ({
-          minHeight: 36,
-          paddingHorizontal: 10,
-          borderRadius: 10,
-          backgroundColor: c.soft,
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: state.isRecordingVideo ? 0.6 : pressed ? 0.75 : 1,
-        })}
-      >
-        <Text style={{ ...textStyle("field"), color: c.ink }}>
-          {state.isRecordingVideo ? `${Math.round((state.recordingProgress ?? 0) * 100)}%` : "Export"}
-        </Text>
-      </Pressable>
     </View>
   );
 }

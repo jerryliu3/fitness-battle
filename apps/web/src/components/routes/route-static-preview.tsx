@@ -34,6 +34,7 @@ export interface RouteStaticPreviewProps {
   showMarkers?: boolean;
   /** Whether to show the floating 'Play 3D Replay' pill badge overlay. Default: true */
   showPlayBadge?: boolean;
+  playLabel?: string;
   /** Optional click callback to open the interactive 3D flyover view. */
   onClick?: () => void;
   /** Optional Mapbox access token override; falls back to NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN. */
@@ -55,6 +56,7 @@ export function RouteStaticPreview({
   padding = 40,
   showMarkers = true,
   showPlayBadge = true,
+  playLabel,
   onClick,
   mapboxToken,
   alt = "GPS route thumbnail preview",
@@ -162,14 +164,14 @@ export function RouteStaticPreview({
       {/* 3. Optional "Play 3D Replay" badge overlay */}
       {showPlayBadge && (
         <div className="pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-[#142b3b]/85 px-3 py-1.5   text-white shadow-lg backdrop-blur-md transition-all group-hover:bg-[#142b3b] group-hover:scale-105" style={typographyStyle("label")}>
-          <svg
+          {!playLabel && <svg
             className="h-3.5 w-3.5 fill-[#f7c948]"
             viewBox="0 0 24 24"
             aria-hidden="true"
           >
             <path d="M8 5v14l11-7z" />
-          </svg>
-          <span>Play 3D Replay</span>
+          </svg>}
+          <span>{playLabel ? `${playLabel} →` : "Play 3D Replay"}</span>
         </div>
       )}
     </div>

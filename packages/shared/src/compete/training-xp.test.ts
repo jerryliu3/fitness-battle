@@ -7,25 +7,36 @@ import { type Activity, SPORT_IDS } from './sports';
 const start = new Date('2026-11-16T05:00:00Z'), end = new Date('2026-11-23T05:00:00Z');
 const run: Activity = { id:'run', sport:'running', startedAt:'2026-11-17T12:00:00Z', distanceM:1609.344, movingSec:600, avgHr:140, source:'strava', verified:true, provenance:'recorded', disposition:'counted' };
 describe('Training XP', () => {
- it('normalizes a reference week to 1000 XP in each sport without HR or pace bonuses', () => {
+ it('normalizes base XP across sports', () => {
   for (const sport of SPORT_IDS) expect(trainingXpForVolume(sport, SPORT_CONFIG[sport].referenceVolume)).toBe(1000);
-  expect(activityTrainingXp(run)).toBe(50);
-  expect(activityTrainingXp({...run, avgHr:190, movingSec:300})).toBe(50);
-  expect(activityTrainingXp({...run, sport:'strength', movingSec:60})).toBeCloseTo(1000/180);
-  expect(activityTrainingXp({...run, sport:'cycling', distanceM:1609.344})).toBe(10);
+  expect(activityBaseTrainingXp(run)).toBe(50);
+  expect(activityBaseTrainingXp({...run, sport:'strength', movingSec:60})).toBeCloseTo(1000/180);
+  expect(activityBaseTrainingXp({...run, sport:'cycling'})).toBe(10);
   expect(activityTrainingXp({...run, sport:'walking'})).toBe(0);
  });
- it('launches with neutral intensity for recorded HR, missing HR and manual workouts', () => {
-  for(const activity of [run,{...run,avgHr:null},{...run,avgHr:190,movingSec:300},{...run,source:'manual' as const,provenance:'manual' as const,verified:false}]) {
-   expect(activityBaseTrainingXp(activity)).toBe(50);
-   expect(activityTrainingXp(activity)).toBe(activityBaseTrainingXp(activity));
-   expect(eligibleTrainingXp({activities:[activity]},'running',start,end)).toBe(50);
-  }
+ it('credits harder equal-distance workouts and carries the same XP into weekly Effort', () => {
+  const easy = {...run, distanceM:10000, movingSec:4200, avgHr:110};
+  const faster = {...easy, movingSec:2700, avgHr:null};
+  const hard = {...faster, avgHr:180};
+  const base = activityBaseTrainingXp(easy);
+  expect(activityTrainingXp(easy)).toBe(base);
+  expect(activityTrainingXp(faster)).toBeGreaterThan(base);
+  expect(activityTrainingXp(hard)).toBeCloseTo(base * 1.12);
+  expect(eligibleTrainingXp({activities:[hard]},'running',start,end)).toBe(activityTrainingXp(hard));
+  expect(activityCompetitionVolume(hard)).toBe(activityCompetitionVolume(easy));
+ });
+ it('keeps base XP for older and manual workouts and invalid intensity inputs', () => {
+  const hard = {...run, avgHr:190, movingSec:300};
+  for (const activity of [
+   {...hard, startedAt:'2026-11-16T04:59:59Z'},
+   {...hard, source:'manual' as const, provenance:undefined},
+   {...hard, avgHr:999, movingSec:0},
+  ]) expect(activityTrainingXp(activity)).toBe(activityBaseTrainingXp(activity));
  });
  it('preserves full precision and rounds only presentation', () => {
-  const xp=activityTrainingXp({...run, distanceM:1});
+  const xp=activityTrainingXp({...run, distanceM:1, avgHr:null});
   expect(xp).toBeCloseTo(1000/SPORT_CONFIG.running.referenceVolume,15);
-  const activities=Array.from({length:10},(_,i)=>({...run,id:`run-${i}`,startedAt:new Date(start.getTime()+i*3600000).toISOString(),distanceM:1}));
+  const activities=Array.from({length:10},(_,i)=>({...run,id:`run-${i}`,startedAt:new Date(start.getTime()+i*3600000).toISOString(),distanceM:1,avgHr:null}));
   expect(eligibleTrainingXp({activities},'running',start,end)).toBeCloseTo(xp*10,14);
   expect(formatTrainingXp(1234.56789)).toBe('1,234.6');
  });
@@ -37,7 +48,7 @@ describe('Training XP', () => {
    {...run,id:'invalid',startedAt:'invalid'},
    {...run,id:'boundary',startedAt:end.toISOString()},
    {...run,id:'manual',startedAt:'2026-11-19T12:00:00Z',source:'manual',provenance:'manual',journalOnly:true}];
-  expect(eligibleTrainingXp({activities},'running',start,end)).toBe(100);
+  expect(eligibleTrainingXp({activities},'running',start,end)).toBeCloseTo(activityTrainingXp(run) + 50);
   expect(activityTrainingXp({...run,distanceM:NaN})).toBe(0);
   expect(activityTrainingXp({...run,distanceM:-1})).toBe(0);
  });
