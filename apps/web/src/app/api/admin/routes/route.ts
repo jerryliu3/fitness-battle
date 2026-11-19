@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authorizeAdmin, adminDatabase } from "@/lib/admin-auth";
 import { buildAdminRouteOverview } from "@/lib/admin-route-overview";
+import { loadAdminWaveParticipants } from "@/lib/admin-wave-participants";
 import { MAX_ADMIN_ROUTE_BYTES, ROUTE_ID, validateAdminRoute, type AdminRaceRouteSummary } from "@/lib/admin-route-input";
 
 export async function GET(request: Request) {
@@ -33,9 +34,13 @@ export async function GET(request: Request) {
       .select("surface_id,route_id,updated_at");
     if (surfaceError) throw surfaceError;
     const catalog = (routes ?? []) as AdminRaceRouteSummary[];
+    const overview = buildAdminRouteOverview(catalog, assignments ?? [], surfaceAssignments ?? []);
+    const waveParticipants = new URL(request.url).searchParams.get("waveParticipants") === "1"
+      ? await loadAdminWaveParticipants(db, overview.assignments.map(row => row.wave_start))
+      : undefined;
     return NextResponse.json({
       routes: catalog,
-      overview: buildAdminRouteOverview(catalog, assignments ?? [], surfaceAssignments ?? []),
+      overview: { ...overview, ...(waveParticipants ? { participantsByWave: waveParticipants } : {}) },
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch { return NextResponse.json({ error: "Route catalog is unavailable. Please try again." }, { status: 503 }); }
 }
