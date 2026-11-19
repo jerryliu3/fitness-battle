@@ -5,13 +5,11 @@ import {
   buildSpecialEventPreset,
   extractCrewOptions,
   nextSpecialEventWindow,
-  specialEventDailyRoundWindows,
   specialEventError,
   specialEventFormatLabel,
   specialEventPhase,
   specialEventRegistrationDetail,
   specialEventStatusBadge,
-  specialEventWeeklyRoundWindows,
   validateSpecialEventConfig,
   validateSpecialEventEditionInput,
   type SpecialEventEdition,
@@ -30,24 +28,6 @@ describe("special events scheduling & presets", () => {
     const win = nextSpecialEventWindow(new Date("2026-10-28T16:00:00.000Z"), 1);
     expect(win.startsAt.toISOString()).toBe("2026-11-02T11:00:00.000Z");
     expect(win.endsAt.toISOString()).toBe("2026-11-09T05:00:00.000Z");
-  });
-
-  it("builds 7 daily round windows starting Mon 06:00 ET and cutting at Eastern midnight", () => {
-    const win = nextSpecialEventWindow(new Date("2026-11-18T20:00:00.000Z"), 1);
-    const rounds = specialEventDailyRoundWindows(win.startsAt, win.endsAt, 7);
-    expect(rounds).toHaveLength(7);
-    expect(rounds[0]!.startsAt.toISOString()).toBe("2026-11-23T11:00:00.000Z");
-    expect(rounds[0]!.endsAt.toISOString()).toBe("2026-11-24T05:00:00.000Z");
-    expect(rounds[6]!.endsAt.toISOString()).toBe("2026-11-30T05:00:00.000Z");
-  });
-
-  it("builds 3 weekly round windows each opening Mon 06:00 ET and closing next Mon 00:00 ET", () => {
-    const win = nextSpecialEventWindow(new Date("2026-11-18T20:00:00.000Z"), 3);
-    const rounds = specialEventWeeklyRoundWindows(win.startsAt, 3);
-    expect(rounds).toHaveLength(3);
-    expect(rounds[0]!.endsAt.toISOString()).toBe("2026-11-30T05:00:00.000Z");
-    expect(rounds[1]!.startsAt.toISOString()).toBe("2026-11-30T11:00:00.000Z");
-    expect(rounds[2]!.endsAt.toISOString()).toBe("2026-12-14T05:00:00.000Z");
   });
 
   it("validates every preset and rejects solo relay or late cutoffs", () => {

@@ -1,6 +1,6 @@
 import { competitionTrack, competitionTrackLabel, SPORT_IDS, sportById, type CompeteState, type SportId } from "./compete/sports";
 import { waveTimeLabelForState } from "./compete/participation";
-import { APP_TIMEZONE, accountTimeZone, dayKey, endOfZonedDay, shiftAppDay, startOfZonedDay, weeklyCompetitionLastDay, weeklyPeriodBounds } from "./period";
+import { APP_TIMEZONE, accountTimeZone, dayKey, shiftAppDay, startOfZonedDay, weeklyCompetitionLastDay, weeklyPeriodBounds } from "./period";
 import type { RegistrationRuleCard } from "./event-registration";
 
 export type SpecialEventSport = SportId;
@@ -195,33 +195,6 @@ export function nextSpecialEventWindow(now = new Date(), weeks = 1, timeZone = A
     startsAt,
     endsAt: shiftAppDay(current.endsAt, safeWeeks * 7),
   };
-}
-
-/** Day 1 = Mon 06:00 ET → Tue 00:00 ET; subsequent days = 00:00 ET → 00:00 ET. */
-export function specialEventDailyRoundWindows(startsAt: Date, endsAt: Date, maxRounds = 7, timeZone = APP_TIMEZONE) {
-  const rounds: { roundNumber: number; startsAt: Date; endsAt: Date }[] = [];
-  let cursor = new Date(startsAt);
-  for (let roundNumber = 1; cursor.getTime() < endsAt.getTime() && roundNumber <= maxRounds; roundNumber++) {
-    const nextMidnight = endOfZonedDay(cursor, timeZone);
-    const roundEnd = nextMidnight.getTime() < endsAt.getTime() ? nextMidnight : new Date(endsAt);
-    if (roundEnd.getTime() <= cursor.getTime()) break;
-    rounds.push({ roundNumber, startsAt: cursor, endsAt: roundEnd });
-    cursor = roundEnd;
-  }
-  return rounds;
-}
-
-/** Each weekly round opens Mon 06:00 ET and closes next Mon 00:00 ET. */
-export function specialEventWeeklyRoundWindows(startsAt: Date, roundCount: number, timeZone = APP_TIMEZONE) {
-  const baseMonday = weeklyPeriodBounds(startsAt, timeZone).startsAt;
-  return Array.from({ length: Math.max(1, roundCount) }, (_, i) => {
-    const weekMonday = shiftAppDay(baseMonday, i * 7);
-    return {
-      roundNumber: i + 1,
-      startsAt: i === 0 ? new Date(startsAt) : sixAmEastern(weekMonday, timeZone),
-      endsAt: shiftAppDay(weekMonday, 7),
-    };
-  });
 }
 
 export function buildSpecialEventPreset(presetId: SpecialEventPresetId, sport: SpecialEventSport, now = new Date()) {
