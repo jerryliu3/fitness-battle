@@ -1,6 +1,7 @@
 import { trainingXpForVolume } from './effort-score';
 import { countsForTraining, maxStepsOnDay } from './journal';
 import { dayKey, shiftAppDay } from '../period';
+import { provenanceOf } from './activity-meta';
 import { mergeActivities } from './ledger';
 import { SPORT_IDS, type Activity, type CompeteState, type SportId } from './sports';
 
@@ -11,12 +12,21 @@ export function activityBaseTrainingXp(activity: Activity): number {
   return Number.isFinite(volume) ? trainingXpForVolume(activity.sport, Math.max(0, volume)) : 0;
 }
 
-/** Launch policy: neutral with or without HR. Future personalized, verified
- * intensity belongs here, so the same weighted XP reaches every score input.
- * Enabling a bonus requires benchmark recalibration; pace is not stacked on HR.
- */
-function trainingIntensityMultiplier(_activity: Activity): number {
-  return 1;
+// First Eastern training week using intensity. Older workouts retain base XP.
+const INTENSITY_START = Date.parse('2026-11-16T05:00:00Z');
+const clampFraction = (value: number) => Math.max(0, Math.min(1, value));
+
+function trainingIntensityMultiplier(activity: Activity): number {
+  if (Date.parse(activity.startedAt) < INTENSITY_START || activity.source === 'manual' || provenanceOf(activity) !== 'recorded') return 1;
+  const { avgHr, distanceM, movingSec, sport } = activity;
+  const heartRateBonus = avgHr != null && avgHr >= 20 && avgHr <= 260
+    ? 0.12 * clampFraction((avgHr - 110) / 70)
+    : 0;
+  const paceThreshold = sport === 'running' ? 6.5 : sport === 'cycling' ? 3 : 0;
+  const paceBonus = paceThreshold > 0 && distanceM > 500 && Number.isFinite(movingSec) && movingSec > 0
+    ? 0.08 * clampFraction(1 - movingSec / 60 / (distanceM / 1000) / paceThreshold)
+    : 0;
+  return 1 + Math.max(heartRateBonus, paceBonus);
 }
 
 export function activityTrainingXp(activity: Activity): number {

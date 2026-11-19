@@ -2,7 +2,7 @@ import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useState, type ReactNode } from "react";
 import { Modal, Pressable, View } from "react-native";
 import {
-  accountTimeZone, WORKOUT_SIZE_LABELS, PROVIDERS, activityComparisons, activityTrainingXp, activityRoute, competeNow, countsOnTrack,
+  accountTimeZone, WORKOUT_SIZE_LABELS, PROVIDERS, activityComparisons, activityBaseTrainingXp, activityTrainingXp, activityRoute, competeNow, countsOnTrack,
   distanceUnitLabel, formatClockTime, formatDistanceM, formatTrainingXp, formatTrainingHours,
   isJournalActivity,
   isVerifiedActivity, workoutSizeSummary, sessionStageModel, sportById,
@@ -98,7 +98,8 @@ export function ActivityDetailView({
   const sport = sportById(activity.sport);
   const hasRoute = Boolean(activityRoute(activity));
   const workoutSize = workoutSizeSummary(activity, state.activities);
-  const trainingXpText = formatTrainingXp(activityTrainingXp(activity));
+  const trainingXp = activityTrainingXp(activity);
+  const intensityXp = trainingXp - activityBaseTrainingXp(activity);
   const pace = sport.gps ? formatPace(activity.movingSec, activity.distanceM, state.units) : null;
   const date = new Date(activity.startedAt).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: displayTz });
   const time = new Date(activity.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: displayTz });
@@ -114,8 +115,8 @@ export function ActivityDetailView({
     ...(pace ? [{ label: "Avg pace", value: pace }] : []),
     {
       label: "Training XP",
-      value: `${trainingXpText} XP`,
-      detail: activity.sport === "walking" ? "Credited from daily tracker steps" : `Session effort · ${WORKOUT_SIZE_LABELS[workoutSize.tier]}`,
+      value: `${formatTrainingXp(trainingXp)} XP`,
+      detail: activity.sport === "walking" ? "Credited from daily tracker steps" : intensityXp >= 0.05 ? `Includes +${formatTrainingXp(intensityXp)} intensity XP` : `Session effort · ${WORKOUT_SIZE_LABELS[workoutSize.tier]}`,
       accent: c.podiumGold,
     },
     ...(activity.avgHr != null ? [{ label: "Avg heart rate", value: `${Math.round(activity.avgHr)} bpm`, accent: c.statusError }] : []),
@@ -161,7 +162,7 @@ export function ActivityDetailView({
     <View style={s.details}>
       {/* Top Hero Visual: interactive route when GPS exists, or Effort hero tile when non-GPS */}
       {hasRoute ? (
-        <ActivityRoute activity={activity} units={state.units} />
+        <ActivityRoute activity={activity} units={state.units} history={state.activities} dateLabel={`${date} · ${time}`} />
       ) : (
         <View style={s.workoutSizeHero}>
           <WorkoutSizeIcon bars={workoutSize.bars} size={64} />
