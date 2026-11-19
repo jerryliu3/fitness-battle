@@ -1210,32 +1210,6 @@
   gap: 12px;
   flex-wrap: wrap;
 }
-.training-atlas .chart-range-toggle {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  background: var(--accent-soft);
-  border: 1px solid var(--line);
-  border-radius: 7px;
-}
-.training-atlas .chart-range-toggle > button {
-  border: 0;
-  background: transparent;
-  min-width: 32px;
-  min-height: 32px;
-  padding: 4px 8px;
-  border-radius: 5px;
-  color: var(--muted);
-  cursor: pointer;
-  letter-spacing: normal;
-  text-transform: none;
-  font: var(--type-label);
-}
-.training-atlas .chart-range-toggle > button[aria-pressed="true"] {
-  background: var(--app-surface-card);
-  color: var(--ink);
-  box-shadow: 0 1px 3px rgba(38, 56, 45, 0.08);
-}
 .training-sport-menu {
   position: relative;
 }
