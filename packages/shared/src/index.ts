@@ -104,3 +104,4 @@ export * from "./crew-passport";
 export * from "./crew-local-program";
 export * from "./crew-derby";
 export * from "./standings";
+export * from "./special-events";

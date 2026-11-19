@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState, type CSSProperties } from "react";
-import { competeEventCarouselPageIndex, formatActivityAge, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, APP_ICON_PATHS, SPORTS, buildArenaModel, competitionQueue, competitionTrack, competeNow, competeHomeResult, ordinalPlace, type CompeteEvent, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { competeEventCarouselPageIndex, formatActivityAge, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, APP_ICON_PATHS, SPORTS, buildArenaModel, competitionQueue, competitionTrack, competeNow, competeHomeResult, ordinalPlace, specialEventFormatLabel, specialEventStatusBadge, type CompeteEvent, type CompeteState, type SpecialEventEdition, type SportId } from "@fitness-battle/shared";
 import { AppHeading, AppText } from "@/ui/section";
 import { useEventActivity } from "./use-event-activity";
 import { CoursePreview } from "./course-preview";
@@ -87,7 +87,48 @@ export function CompeteResults({ state }: { state: CompeteState }) {
   </section>;
 }
 
-export function CrewEvents({ onChoose }: { onChoose(sport: SportId): void }) {
+export function CrewEvents({
+  editions = [],
+  now = new Date(),
+  onChoose,
+  onSelectEdition,
+}: {
+  editions?: SpecialEventEdition[];
+  now?: Date;
+  onChoose(sport: SportId): void;
+  onSelectEdition?(edition: SpecialEventEdition): void;
+}) {
+  if (editions.length > 0 && onSelectEdition) {
+    return (
+      <section className="compete-home-section" aria-label="Special events">
+        <div className="compete-carousel compete-features" tabIndex={0} aria-label="Special events carousel">
+          {editions.map((edition) => {
+            const status = specialEventStatusBadge(edition, now);
+            return (
+              <button
+                type="button"
+                key={edition.id}
+                className="compete-feature-banner"
+                onClick={() => onSelectEdition(edition)}
+              >
+                <EventArt event={edition.sport} gold />
+                <CompeteIcon name={edition.sport} size={42} />
+                <div className="compete-feature-copy">
+                  <span className="compete-special-badge">
+                    <CompeteIcon name="special" size={12} />
+                    <AppText role="caption">{specialEventFormatLabel(edition.config)}</AppText>
+                  </span>
+                  <AppHeading role="label">{edition.title}</AppHeading>
+                  <AppText role="caption">{edition.subtitle || `${edition.entrantCount} registered`}</AppText>
+                </div>
+                <span className="compete-feature-arrow" aria-hidden="true">{status} →</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
   return <section className="compete-home-section" aria-label="Special events"><div className="compete-carousel compete-features" tabIndex={0} aria-label="Crew events carousel">
     {SPORTS.map(sport => <button type="button" key={sport.id} className="compete-feature-banner" onClick={() => onChoose(sport.id)}>
       <EventArt event="running" gold />
