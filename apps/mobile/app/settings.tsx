@@ -69,7 +69,7 @@ const f=useFocusStyles();
           />
           <SettingsRow
             title="Account"
-            detail="Sign out, report an issue & delete account"
+            detail="Reset password, sign out & delete account"
             onPress={() =>
               router.push({
                 pathname: "/athlete-settings",

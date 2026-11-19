@@ -13,6 +13,8 @@ const Replay = dynamic(() => import("./route-timelapse-map").then(m => m.RouteTi
   loading: () => <p role="status">Loading route…</p>,
 });
 
+const ACTIVITY_REPLAY_INSETS = { top: 16, bottom: 16 };
+
 export function ActivityRoute({ activity, milestone = false, units = "metric" }: { activity?: Activity; milestone?: boolean; units?: "us" | "metric" }) {
   const auth = useAuth();
   const [fetched, setFetched] = useState<{ id: string; owner?: string; detailedPolyline?: string; samples: RouteReplaySample[] } | null>(null);
@@ -20,7 +22,7 @@ export function ActivityRoute({ activity, milestone = false, units = "metric" }:
   const coordinates = useMemo(() => activityRoute(activity ? {...activity,detailedPolyline:fetchedLine ?? activity.detailedPolyline} : undefined), [activity?.summaryPolyline, activity?.detailedPolyline,fetchedLine]);
   const [open, setOpen] = useState(false);
   useEffect(() => {
-    if (!open || !activity || activity.routeReplay || !auth.user || auth.offlineMode) return;
+    if (!open || !activity || activity.routeReplay?.length || !auth.user || auth.offlineMode) return;
     const id = activity.id, owner = auth.user.id, controller = new AbortController();
     let alive = true;
     void fetch(`/api/fitness/replay?activityId=${encodeURIComponent(id)}`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]) }).then(async response => {
@@ -29,20 +31,26 @@ export function ActivityRoute({ activity, milestone = false, units = "metric" }:
     }).then(body => { if (alive) setFetched({ id, owner, detailedPolyline: typeof body.detailedPolyline === "string" ? body.detailedPolyline : undefined, samples: normalizeRouteReplay(body.routeReplay) }); }).catch(() => { /* Optional telemetry never prevents route playback. */ });
     return () => { alive = false; controller.abort(); };
   }, [open, activity?.id, activity?.routeReplay, auth.user?.id, auth.offlineMode]);
-  const routeReplay = activity?.routeReplay ?? (fetched?.id === activity?.id && fetched?.owner === auth.user?.id ? fetched?.samples : undefined);
+  const routeReplay = activity?.routeReplay?.length ? activity.routeReplay : (fetched?.id === activity?.id && fetched?.owner === auth.user?.id ? fetched?.samples : undefined);
   if (!coordinates || !activity) return null;
   return <div className="club-activity-route">
     {activity.id.startsWith("local-route-") && <p className="fb-note">Local file preview · original activity date · Open only</p>}
     <RouteStaticPreview coordinates={coordinates} width={600} height={260} strokeColor="176c75"
-      showPlayBadge={false} alt="Recorded GPS route. Open route overview and flyover." onClick={() => setOpen(true)} />
-    <button type="button" className="club-route-open" onClick={() => setOpen(true)}>Explore route <span>2D map · 3D flyover ↗</span></button>
+      playLabel="Explore" alt="Explore route" onClick={() => setOpen(true)} />
     <Sheet open={open} onClose={() => setOpen(false)} title="Your route" body="" fullScreen>
-      {activity.elevationGainM != null && <p className="fb-note">{activity.elevationGainM.toLocaleString()} m elevation gain</p>}
-      {milestone && <p className="fb-note">Full activity route · the record segment is not identified.</p>}
-      {open && (webEnv.mapboxAccessToken
-        ? <Replay key={activity.id} coordinates={coordinates} routeReplay={routeReplay ?? undefined} units={units} mode="2d-overview" autoPlay={false} className="club-route-player" />
-        : <><RouteStaticPreview coordinates={coordinates} showPlayBadge={false} strokeColor="f7c948" /><p className="fb-note">Route outline only. Interactive maps and flyovers are currently unavailable.</p></>)}
-      <p className="fb-note">Replay follows recorded GPS points. Playback speed is illustrative. Sensor readings appear only when recorded samples are available. Speed may be calculated from the recorded GPS interval.</p>
+      <div className="club-activity-replay">
+        {open && (webEnv.mapboxAccessToken
+          ? <Replay key={activity.id} coordinates={coordinates} routeReplay={routeReplay ?? undefined} units={units} running={activity.sport === "running"} mode="2d-overview" autoPlay={false} showModeControl hudInsets={ACTIVITY_REPLAY_INSETS} className="club-route-player" />
+          : <div className="club-route-outline"><RouteStaticPreview coordinates={coordinates} showPlayBadge={false} strokeColor="f7c948" />
+              <p className="fb-note">Route outline only. Interactive maps and flyovers are currently unavailable.</p>
+            </div>)}
+        <details className="club-route-notes">
+          <summary>About this route</summary>
+          {activity.elevationGainM != null && <p>{activity.elevationGainM.toLocaleString()} m elevation gain</p>}
+          {milestone && <p>Full activity route · the record segment is not identified.</p>}
+          <p>Replay follows recorded GPS points. Playback speed is illustrative. Speed may be calculated from the recorded GPS interval.</p>
+        </details>
+      </div>
     </Sheet>
   </div>;
 }

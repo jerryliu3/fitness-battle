@@ -4,10 +4,9 @@ import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 import { encodePolyline, freshState, type SyncReviewReceipt } from "@fitness-battle/shared";
 vi.mock("../ui/sync-energy-core", () => ({ SyncEnergyCore: "SyncEnergyCore" }));
-vi.mock("../ui/material-back", () => ({ MaterialBack: "MaterialBack", MaterialClose: "MaterialClose" }));
-vi.mock("../ui/compete-sheet", () => ({ CompeteSheet: "CompeteSheet" }));
+vi.mock("../ui/material-back", () => ({ MaterialClose: "MaterialClose" }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
-vi.mock("../ui/activity-route", () => ({ ActivityRoute: "ActivityRoute" }));
+vi.mock("../ui/activity-route", () => ({ ActivityReplay: "ActivityReplay", ActivitySummaryMetrics: "ActivitySummaryMetrics" }));
 vi.mock("../ui/route-static-preview", () => ({ RouteStaticPreview: "RouteStaticPreview" }));
 vi.mock("./competition-moment", () => ({ CompetitionMoment: "CompetitionMoment" }));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
@@ -94,12 +93,11 @@ it("a native full-screen swipe confirms the selected activities once without nav
   expect(summary.props.scrollEnabled).toBe(false);
   const details = renderer!.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "View Running activity details")!;
   await act(async () => details.props.onPress());
-  expect(renderer!.root.findByType("ActivityRoute" as never).props.immersive).toBe(true);
-  expect(renderer!.root.findByType("MaterialBack" as never).props.label).toBe("Back to activities");
-  await act(async () => renderer!.root.findByType("MaterialBack" as never).props.onPress());
-  const cachedRoute = renderer!.root.findByType("ActivityRoute" as never);
-  expect(cachedRoute.parent?.props.pointerEvents).toBe("none");
-  expect(cachedRoute.parent?.props.accessibilityElementsHidden).toBe(true);
+  const cachedReplay = renderer!.root.findByType("ActivityReplay" as never);
+  expect(cachedReplay.props.open).toBe(true);
+  expect(cachedReplay.props.backLabel).toBe("Back to activities");
+  await act(async () => cachedReplay.props.onClose());
+  expect(renderer!.root.findByType("ActivityReplay" as never).props.open).toBe(false);
   const slider = renderer!.root
     .findAllByType("View" as never)
     .find((n) => n.props.onResponderRelease)!;

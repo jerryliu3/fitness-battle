@@ -10,7 +10,8 @@ it('uses calendar volume even without an enrollment and persists an idempotent f
  expect(live.liveScore).toBeGreaterThan(0);expect(state.effortAccounts!.running!.state.calibrationSamples).toBe(0);
  const settled=settleAccountEffort(state,new Date('2026-11-23T05:00:00Z'));
  expect(settled.effortAccounts!.running!.state.calibrationSamples).toBe(1);
- expect(settled.effortAccounts!.running!.state.cumulativeNormalizedVolume).toBeCloseTo(.5);
+ const paceBonus = .08 * (1 - activity.movingSec / 60 / (activity.distanceM / 1000) / 6.5);
+ expect(settled.effortAccounts!.running!.state.cumulativeNormalizedVolume).toBeCloseTo(.5 * (1 + paceBonus), 10);
  expect(settleAccountEffort(settled,new Date('2026-11-23T05:00:00Z'))).toEqual(settled);
  expect(settleAccountEffort(settled,new Date('2026-12-07T05:00:00Z')).effortAccounts!.running!.state.calibrationSamples).toBe(3);
 });
