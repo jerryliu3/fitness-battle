@@ -33,10 +33,12 @@ function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [emailExpanded, setEmailExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const displayError = error ?? callbackError;
+  const socialEnabled = offlineMode === false;
 
   useEffect(() => { setDisplayName(readGuestIntroDraft()?.name ?? ""); }, []);
 
@@ -116,64 +118,92 @@ function SignupForm() {
       <AppParagraph typographyRole="body" className="fb-copy">
         Save your athlete, then connect your trackers and finish setup.
       </AppParagraph>
-      <form className="fb-stack" onSubmit={onSubmit}>
-        <label className="fb-field">
-          Display name
-          <input
-            value={displayName}
-            onChange={(event) => setDisplayName(event.target.value)}
-            placeholder="Alex"
-            maxLength={80}
+      {socialEnabled && !emailExpanded ? (
+        <>
+          <SocialAuthButtons
+            busy={busy}
+            onApple={() => void submitSocial("apple")}
+            onGoogle={() => void submitSocial("google")}
+            onEmail={() => {
+              setError(null);
+              setEmailExpanded(true);
+            }}
           />
-        </label>
-        <label className="fb-field">
-          Email
-          <input
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </label>
-        <label className="fb-field">
-          Password
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-            minLength={6}
-          />
-        </label>
-        {displayError ? (
-          <AppParagraph typographyRole="body" className="fb-error" role="alert" aria-live="assertive">
-            {displayError}
-          </AppParagraph>
-        ) : null}
-        {message ? (
-          <AppParagraph typographyRole="caption" className="fb-note" role="status" aria-live="polite">
-            {message}
-          </AppParagraph>
-        ) : null}
-        <button type="submit" className="fb-btn" disabled={busy}>
-          {busy ? "Creating…" : "Create account"}
-        </button>
-      </form>
-      {!offlineMode ? (
-        <SocialAuthButtons
-          busy={busy}
-          onGoogle={() => void submitSocial("google")}
-          onApple={() => void submitSocial("apple")}
-        />
-      ) : null}
+          {displayError ? (
+            <AppParagraph typographyRole="body" className="fb-error" role="alert" aria-live="assertive">
+              {displayError}
+            </AppParagraph>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <form className="fb-stack" onSubmit={onSubmit}>
+            <label className="fb-field">
+              Display name
+              <input
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
+                placeholder="Alex"
+                maxLength={80}
+              />
+            </label>
+            <label className="fb-field">
+              Email
+              <input
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </label>
+            <label className="fb-field">
+              Password
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                minLength={6}
+              />
+            </label>
+            {displayError ? (
+              <AppParagraph typographyRole="body" className="fb-error" role="alert" aria-live="assertive">
+                {displayError}
+              </AppParagraph>
+            ) : null}
+            {message ? (
+              <AppParagraph typographyRole="caption" className="fb-note" role="status" aria-live="polite">
+                {message}
+              </AppParagraph>
+            ) : null}
+            <button type="submit" className="fb-btn" disabled={busy}>
+              {busy ? "Creating…" : "Create account"}
+            </button>
+          </form>
+          {socialEnabled ? (
+            <button
+              type="button"
+              className="fb-btn-ghost"
+              disabled={busy}
+              onClick={() => {
+                setError(null);
+                setEmailExpanded(false);
+              }}
+              style={{ width: "100%", textAlign: "center" }}
+            >
+              Continue with Apple or Google
+            </button>
+          ) : null}
+        </>
+      )}
       <AppParagraph typographyRole="caption" className="fb-note">
         Already have an account?{" "}
         <Link href={buildLoginHref(next)}>Sign in</Link>
       </AppParagraph>
       <AppParagraph typographyRole="caption" className="fb-note">
-        By creating an account you agree to our{" "}
+        By continuing, you agree to our{" "}
         <Link href="/terms">Terms of Service</Link>
         {" and "}
         <Link href="/privacy">Privacy Policy</Link>

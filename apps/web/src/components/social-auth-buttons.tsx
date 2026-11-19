@@ -3,40 +3,54 @@
 type Props = {
   onGoogle: () => void;
   onApple: () => void;
+  onEmail?: () => void;
   busy?: boolean;
   disabled?: boolean;
 };
 
-export function SocialAuthButtons({ onGoogle, onApple, busy, disabled }: Props) {
+export function SocialAuthButtons({
+  onGoogle,
+  onApple,
+  onEmail,
+  busy,
+  disabled,
+}: Props) {
   const isDisabled = Boolean(busy || disabled);
+  const buttonStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    width: "100%",
+  } as const;
 
   return (
     <div className="fb-stack" style={{ marginTop: 4 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          margin: "4px 0",
-        }}
+      <button
+        type="button"
+        className="fb-btn-line"
+        disabled={isDisabled}
+        onClick={onApple}
+        style={buttonStyle}
       >
-        <span style={{ flex: 1, height: 1, background: "var(--line)" }} />
-        <span className="fb-note">or</span>
-        <span style={{ flex: 1, height: 1, background: "var(--line)" }} />
-      </div>
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01ZM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25Z" />
+        </svg>
+        <span>Continue with Apple</span>
+      </button>
 
       <button
         type="button"
         className="fb-btn-line"
         disabled={isDisabled}
         onClick={onGoogle}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 10,
-          width: "100%",
-        }}
+        style={buttonStyle}
       >
         <svg
           width="18"
@@ -65,30 +79,31 @@ export function SocialAuthButtons({ onGoogle, onApple, busy, disabled }: Props) 
         <span>Continue with Google</span>
       </button>
 
-      <button
-        type="button"
-        className="fb-btn-line"
-        disabled={isDisabled}
-        onClick={onApple}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 10,
-          width: "100%",
-        }}
-      >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          aria-hidden="true"
+      {onEmail ? (
+        <button
+          type="button"
+          className="fb-btn-line"
+          disabled={isDisabled}
+          onClick={onEmail}
+          style={buttonStyle}
         >
-          <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01ZM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25Z" />
-        </svg>
-        <span>Continue with Apple</span>
-      </button>
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <path d="m3 7 9 6 9-6" />
+          </svg>
+          <span>Continue with Email</span>
+        </button>
+      ) : null}
     </div>
   );
 }

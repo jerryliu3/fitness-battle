@@ -115,6 +115,7 @@ const styles=useThemedStyles(stylesThemes);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [emailExpanded, setEmailExpanded] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [authNote, setAuthNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
@@ -499,50 +500,71 @@ const styles=useThemedStyles(stylesThemes);
             </Pressable>
           </View>
 
-          {authMode === "signup" ? (
-            <Input style={textStyle("body")}
-              value={displayName}
-              onChangeText={setDisplayName}
-              accessibilityLabel="Display name"
-              placeholder="Display name"
-              autoCapitalize="words"
-            />
-          ) : null}
-          <Input style={textStyle("body")}
-            value={email}
-            onChangeText={setEmail}
-            accessibilityLabel="Email"
-            placeholder="Email"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
-          />
-          <Input style={textStyle("body")}
-            value={password}
-            onChangeText={setPassword}
-            accessibilityLabel="Password"
-            placeholder={
-              authMode === "signup" ? "Password (6+ characters)" : "Password"
-            }
-            secureTextEntry
-            autoComplete={authMode === "signup" ? "new-password" : "password"}
-          />
-          <Button onPress={() => void submitAuth()} isDisabled={authBusy}><AppText role="label">
-            {authBusy
-              ? "Working…"
-              : authMode === "signin"
-                ? "Sign in"
-                : "Create account"}
-          </AppText></Button>
-          {!offlineMode ? (
+          {!offlineMode && !emailExpanded ? (
             <SocialAuthButtons
               busy={authBusy}
-              onGoogle={() => void submitSocial("google")}
               onApple={() => void submitSocial("apple")}
+              onGoogle={() => void submitSocial("google")}
+              onEmail={() => {
+                setAuthNote(null);
+                setEmailExpanded(true);
+              }}
             />
-          ) : null}
+          ) : (
+            <>
+              {authMode === "signup" ? (
+                <Input style={textStyle("body")}
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  accessibilityLabel="Display name"
+                  placeholder="Display name"
+                  autoCapitalize="words"
+                />
+              ) : null}
+              <Input style={textStyle("body")}
+                value={email}
+                onChangeText={setEmail}
+                accessibilityLabel="Email"
+                placeholder="Email"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoComplete="email"
+              />
+              <Input style={textStyle("body")}
+                value={password}
+                onChangeText={setPassword}
+                accessibilityLabel="Password"
+                placeholder={
+                  authMode === "signup" ? "Password (6+ characters)" : "Password"
+                }
+                secureTextEntry
+                autoComplete={authMode === "signup" ? "new-password" : "password"}
+              />
+              <Button onPress={() => void submitAuth()} isDisabled={authBusy}><AppText role="label">
+                {authBusy
+                  ? "Working…"
+                  : authMode === "signin"
+                    ? "Sign in"
+                    : "Create account"}
+              </AppText></Button>
+              {!offlineMode ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Continue with Apple or Google"
+                  disabled={authBusy}
+                  onPress={() => {
+                    setAuthNote(null);
+                    setEmailExpanded(false);
+                  }}
+                  style={{ paddingVertical: 8, alignItems: "center" }}
+                >
+                  <Text style={styles.copy}>Continue with Apple or Google</Text>
+                </Pressable>
+              ) : null}
+            </>
+          )}
           {authNote ? <Text style={styles.copy}>{authNote}</Text> : null}
-          <LegalLinks />
+          <LegalLinks consent />
         </ScrollView>
       </SafeAreaView>
     );
