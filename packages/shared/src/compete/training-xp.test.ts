@@ -33,6 +33,30 @@ describe('Training XP', () => {
    {...hard, avgHr:999, movingSec:0},
   ]) expect(activityTrainingXp(activity)).toBe(activityBaseTrainingXp(activity));
  });
+ it('ramps personalized HR and pace and prefers reliable HR on the same workout', () => {
+  const activity = {...run, startedAt:'2026-11-23T05:00:00Z', distanceM:10000, movingSec:3600, avgHr:145, elevationGainM:80};
+  const history = Array.from({length:5}, (_, i) => ({...activity, id:`baseline-${i}`, startedAt:`2026-11-${10+i}T12:00:00Z`}));
+  const base = activityBaseTrainingXp(activity);
+  expect(activityTrainingXp({...activity, movingSec:2800}, history)).toBe(base);
+  expect(activityTrainingXp({...activity, avgHr:155}, history)).toBeCloseTo(base * 1.125);
+  expect(activityTrainingXp({...activity, avgHr:175}, history)).toBeCloseTo(base * 1.25);
+  expect(activityTrainingXp({...activity, avgHr:null, movingSec:3240}, history)).toBeCloseTo(base * 1.075);
+  const paceRun = {...activity, avgHr:null, movingSec:2800};
+  expect(activityTrainingXp(paceRun, history)).toBeCloseTo(base * 1.15);
+  const weekly = {activities:[...history, paceRun]};
+  expect(eligibleTrainingXp(weekly,'running',end,new Date('2026-11-30T05:00:00Z'))).toBeCloseTo(base * 1.15);
+  expect(trainingXpInPeriod({activities:[paceRun]},end,new Date('2026-11-30T05:00:00Z'),['running'],history)).toBeCloseTo(base * 1.15);
+ });
+ it('requires prior eligible comparable runs and recorded terrain for pace', () => {
+  const activity = {...run, startedAt:'2026-11-24T12:00:00Z', distanceM:10000, movingSec:3000, avgHr:null, elevationGainM:70};
+  const history = Array.from({length:5}, (_, i) => ({...activity, id:`prior-${i}`, movingSec:4000, startedAt:`2026-11-${10+i}T12:00:00Z`}));
+  const base = activityBaseTrainingXp(activity);
+  expect(activityTrainingXp(activity, history.slice(1))).toBe(base);
+  expect(activityTrainingXp(activity, history.map(run => ({...run, id:'same'})))).toBe(base);
+  expect(activityTrainingXp(activity, history.map(run => ({...run, elevationGainM:300})))).toBe(base);
+  expect(activityTrainingXp(activity, history.map(run => ({...run, startedAt:'2026-11-25T12:00:00Z'})))).toBe(base);
+  expect(activityTrainingXp({...activity, elevationGainM:undefined}, history)).toBe(base);
+ });
  it('preserves full precision and rounds only presentation', () => {
   const xp=activityTrainingXp({...run, distanceM:1, avgHr:null});
   expect(xp).toBeCloseTo(1000/SPORT_CONFIG.running.referenceVolume,15);

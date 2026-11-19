@@ -36,7 +36,8 @@ export function ActivitySplits({
       timeZone: displayTz,
     });
   const [openId, setOpenId] = useState<string | null>(null);
-  const total = trainingXpInPeriod({activities}, new Date(0), new Date(Date.now()+1));
+  const history = state?.activities ?? activities;
+  const total = trainingXpInPeriod({activities}, new Date(0), new Date(Date.now()+1), undefined, history);
 
   if (activities.length === 0) {
     return (
@@ -53,7 +54,7 @@ export function ActivitySplits({
   return (
     <div className="sp-splits">
       {activities.map((activity, index) => {
-        const pts = activityTrainingXp(activity);
+        const pts = activityTrainingXp(activity, history);
         const open = openId === activity.id;
         return (
           <div key={activity.id}>
