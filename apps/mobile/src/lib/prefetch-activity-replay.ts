@@ -9,13 +9,13 @@ export function prefetchActivityReplay(
   activity: Activity | undefined,
   accessToken: string | null | undefined,
 ): void {
-  if (!activity || activity.routeReplay || !accessToken || inflight.has(activity.id)) return;
+  if (!activity || activity.routeReplay?.length || !accessToken || inflight.has(activity.id)) return;
   inflight.add(activity.id);
   void requestApi(
     mobileEnv.apiUrl,
     accessToken,
     `/api/fitness/replay?activityId=${encodeURIComponent(activity.id)}`,
-  ).finally(() => {
+  ).catch(() => { /* Prefetch is optional. */ }).finally(() => {
     inflight.delete(activity.id);
   });
 }

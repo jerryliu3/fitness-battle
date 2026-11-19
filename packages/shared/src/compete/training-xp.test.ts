@@ -7,25 +7,60 @@ import { type Activity, SPORT_IDS } from './sports';
 const start = new Date('2026-11-16T05:00:00Z'), end = new Date('2026-11-23T05:00:00Z');
 const run: Activity = { id:'run', sport:'running', startedAt:'2026-11-17T12:00:00Z', distanceM:1609.344, movingSec:600, avgHr:140, source:'strava', verified:true, provenance:'recorded', disposition:'counted' };
 describe('Training XP', () => {
- it('normalizes a reference week to 1000 XP in each sport without HR or pace bonuses', () => {
+ it('normalizes base XP across sports', () => {
   for (const sport of SPORT_IDS) expect(trainingXpForVolume(sport, SPORT_CONFIG[sport].referenceVolume)).toBe(1000);
-  expect(activityTrainingXp(run)).toBe(50);
-  expect(activityTrainingXp({...run, avgHr:190, movingSec:300})).toBe(50);
-  expect(activityTrainingXp({...run, sport:'strength', movingSec:60})).toBeCloseTo(1000/180);
-  expect(activityTrainingXp({...run, sport:'cycling', distanceM:1609.344})).toBe(10);
+  expect(activityBaseTrainingXp(run)).toBe(50);
+  expect(activityBaseTrainingXp({...run, sport:'strength', movingSec:60})).toBeCloseTo(1000/180);
+  expect(activityBaseTrainingXp({...run, sport:'cycling'})).toBe(10);
   expect(activityTrainingXp({...run, sport:'walking'})).toBe(0);
  });
- it('launches with neutral intensity for recorded HR, missing HR and manual workouts', () => {
-  for(const activity of [run,{...run,avgHr:null},{...run,avgHr:190,movingSec:300},{...run,source:'manual' as const,provenance:'manual' as const,verified:false}]) {
-   expect(activityBaseTrainingXp(activity)).toBe(50);
-   expect(activityTrainingXp(activity)).toBe(activityBaseTrainingXp(activity));
-   expect(eligibleTrainingXp({activities:[activity]},'running',start,end)).toBe(50);
-  }
+ it('credits harder equal-distance workouts and carries the same XP into weekly Effort', () => {
+  const easy = {...run, distanceM:10000, movingSec:4200, avgHr:110};
+  const faster = {...easy, movingSec:2700, avgHr:null};
+  const hard = {...faster, avgHr:180};
+  const base = activityBaseTrainingXp(easy);
+  expect(activityTrainingXp(easy)).toBe(base);
+  expect(activityTrainingXp(faster)).toBeGreaterThan(base);
+  expect(activityTrainingXp(hard)).toBeCloseTo(base * 1.12);
+  expect(eligibleTrainingXp({activities:[hard]},'running',start,end)).toBe(activityTrainingXp(hard));
+  expect(activityCompetitionVolume(hard)).toBe(activityCompetitionVolume(easy));
+ });
+ it('keeps base XP for older and manual workouts and invalid intensity inputs', () => {
+  const hard = {...run, avgHr:190, movingSec:300};
+  for (const activity of [
+   {...hard, startedAt:'2026-11-16T04:59:59Z'},
+   {...hard, source:'manual' as const, provenance:undefined},
+   {...hard, avgHr:999, movingSec:0},
+  ]) expect(activityTrainingXp(activity)).toBe(activityBaseTrainingXp(activity));
+ });
+ it('ramps personalized HR and pace and prefers reliable HR on the same workout', () => {
+  const activity = {...run, startedAt:'2026-11-23T05:00:00Z', distanceM:10000, movingSec:3600, avgHr:145, elevationGainM:80};
+  const history = Array.from({length:5}, (_, i) => ({...activity, id:`baseline-${i}`, startedAt:`2026-11-${10+i}T12:00:00Z`}));
+  const base = activityBaseTrainingXp(activity);
+  expect(activityTrainingXp({...activity, movingSec:2800}, history)).toBe(base);
+  expect(activityTrainingXp({...activity, avgHr:155}, history)).toBeCloseTo(base * 1.125);
+  expect(activityTrainingXp({...activity, avgHr:175}, history)).toBeCloseTo(base * 1.25);
+  expect(activityTrainingXp({...activity, avgHr:null, movingSec:3240}, history)).toBeCloseTo(base * 1.075);
+  const paceRun = {...activity, avgHr:null, movingSec:2800};
+  expect(activityTrainingXp(paceRun, history)).toBeCloseTo(base * 1.15);
+  const weekly = {activities:[...history, paceRun]};
+  expect(eligibleTrainingXp(weekly,'running',end,new Date('2026-11-30T05:00:00Z'))).toBeCloseTo(base * 1.15);
+  expect(trainingXpInPeriod({activities:[paceRun]},end,new Date('2026-11-30T05:00:00Z'),['running'],history)).toBeCloseTo(base * 1.15);
+ });
+ it('requires prior eligible comparable runs and recorded terrain for pace', () => {
+  const activity = {...run, startedAt:'2026-11-24T12:00:00Z', distanceM:10000, movingSec:3000, avgHr:null, elevationGainM:70};
+  const history = Array.from({length:5}, (_, i) => ({...activity, id:`prior-${i}`, movingSec:4000, startedAt:`2026-11-${10+i}T12:00:00Z`}));
+  const base = activityBaseTrainingXp(activity);
+  expect(activityTrainingXp(activity, history.slice(1))).toBe(base);
+  expect(activityTrainingXp(activity, history.map(run => ({...run, id:'same'})))).toBe(base);
+  expect(activityTrainingXp(activity, history.map(run => ({...run, elevationGainM:300})))).toBe(base);
+  expect(activityTrainingXp(activity, history.map(run => ({...run, startedAt:'2026-11-25T12:00:00Z'})))).toBe(base);
+  expect(activityTrainingXp({...activity, elevationGainM:undefined}, history)).toBe(base);
  });
  it('preserves full precision and rounds only presentation', () => {
-  const xp=activityTrainingXp({...run, distanceM:1});
+  const xp=activityTrainingXp({...run, distanceM:1, avgHr:null});
   expect(xp).toBeCloseTo(1000/SPORT_CONFIG.running.referenceVolume,15);
-  const activities=Array.from({length:10},(_,i)=>({...run,id:`run-${i}`,startedAt:new Date(start.getTime()+i*3600000).toISOString(),distanceM:1}));
+  const activities=Array.from({length:10},(_,i)=>({...run,id:`run-${i}`,startedAt:new Date(start.getTime()+i*3600000).toISOString(),distanceM:1,avgHr:null}));
   expect(eligibleTrainingXp({activities},'running',start,end)).toBeCloseTo(xp*10,14);
   expect(formatTrainingXp(1234.56789)).toBe('1,234.6');
  });
@@ -37,7 +72,7 @@ describe('Training XP', () => {
    {...run,id:'invalid',startedAt:'invalid'},
    {...run,id:'boundary',startedAt:end.toISOString()},
    {...run,id:'manual',startedAt:'2026-11-19T12:00:00Z',source:'manual',provenance:'manual',journalOnly:true}];
-  expect(eligibleTrainingXp({activities},'running',start,end)).toBe(100);
+  expect(eligibleTrainingXp({activities},'running',start,end)).toBeCloseTo(activityTrainingXp(run) + 50);
   expect(activityTrainingXp({...run,distanceM:NaN})).toBe(0);
   expect(activityTrainingXp({...run,distanceM:-1})).toBe(0);
  });

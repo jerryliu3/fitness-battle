@@ -22,8 +22,53 @@
 .route-controls input[type="range"]::-moz-range-track { height: 6px; border-radius: 999px; background: linear-gradient(to right, var(--app-action-primary) var(--route-progress), rgb(255 255 255 / 20%) var(--route-progress)); }
 .route-controls input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--app-action-primary); }
 
-.route-recorded-metrics { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 12px;padding:8px 16px 12px;border-bottom:1px solid color-mix(in srgb, var(--app-surface-card) 12.55%, transparent); }
-.route-recorded-metrics span { display:grid;gap:4px;min-width:0; }
-.route-recorded-metrics small { font:var(--type-caption);opacity:.7; }
-.route-recorded-metrics b { font:var(--type-label);font-variant-numeric:tabular-nums;overflow-wrap:anywhere; }
-@media(max-width:360px) { .route-recorded-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.route-metrics-overlay {
+  position: absolute;
+  z-index: 10;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.route-ui--replay-header .route-metrics-overlay { left: 66px; right: 66px; }
+.route-recorded-metrics, .route-mode-control {
+  border: 1px solid rgb(255 255 255 / 86%);
+  background: rgb(248 249 246 / 95%);
+  box-shadow: 0 2px 10px rgb(20 43 59 / 15%);
+  color: #142b3b;
+}
+@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+  .route-recorded-metrics, .route-mode-control {
+    background: rgb(248 249 246 / 81%);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  }
+}
+.route-recorded-metrics {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 4px 6px;
+  border-radius: 16px;
+}
+.route-recorded-metrics span {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  min-width: 0;
+  padding-inline: clamp(3px, 1.4vw, 10px);
+  white-space: nowrap;
+}
+.route-recorded-metrics span + span { border-inline-start: 1px solid rgb(20 43 59 / 13%); }
+.route-recorded-metrics small { font: var(--type-caption); font-size: 10px; color: #39515d; }
+.route-recorded-metrics b { font: var(--type-label); font-size: 11px; font-variant-numeric: tabular-nums; }
+.route-mode-control { position: absolute; top: 16px; right: 16px; z-index: 10; min-width: 44px; min-height: 44px; border-radius: 50%; font: var(--type-label); }
+@media (max-width: 360px) {
+  .route-ui--replay-header .route-metrics-overlay { left: 58px; right: 58px; }
+  .route-recorded-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, auto)); }
+  .route-recorded-metrics span:nth-child(odd) { border-inline-start: 0; }
+}
