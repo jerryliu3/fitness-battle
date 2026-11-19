@@ -1,3 +1,4 @@
+import { DEFAULT_GOOGLE_WEB_CLIENT_ID } from "@fitness-battle/shared";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
 
@@ -51,4 +52,8 @@ export const mobileEnv = {
     process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN?.trim() ||
     extra.mapboxAccessToken?.trim() ||
     "",
+  googleClientId:
+    process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID?.trim() ||
+    extra.googleClientId?.trim() ||
+    DEFAULT_GOOGLE_WEB_CLIENT_ID,
 };

@@ -4,11 +4,14 @@ import { archiveLegacyDemo } from "@/lib/auth/legacy-demo";
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import { resolveSafePostLoginPath } from "@/lib/auth/login-redirect";
+import { webEnv } from "@/lib/env";
 
 import {
   accountDataOrigin,
+  buildGoogleIdTokenAuthorizeUrl,
   changeAccountPassword,
   findDemoAccount,
+  GOOGLE_NONCE_STORAGE_KEY,
   GUEST_OAUTH_SIGNUP_PENDING,
   GUEST_SIGNUP_PENDING_KEY,
   hashString,
@@ -428,6 +431,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         typeof window !== "undefined"
           ? window.location.origin
           : "http://localhost:3000";
+
+      if (
+        provider === "google" &&
+        typeof window !== "undefined" &&
+        typeof window.crypto?.randomUUID === "function" &&
+        typeof window.crypto?.subtle?.digest === "function"
+      ) {
+        const rawNonce = window.crypto.randomUUID();
+        const digest = await window.crypto.subtle.digest(
+          "SHA-256",
+          new TextEncoder().encode(rawNonce),
+        );
+        const hashedNonce = Array.from(new Uint8Array(digest), (b) =>
+          b.toString(16).padStart(2, "0"),
+        ).join("");
+        try {
+          sessionStorage.setItem(GOOGLE_NONCE_STORAGE_KEY, rawNonce);
+        } catch {
+          // Ignore sessionStorage errors
+        }
+        const authorizeUrl = buildGoogleIdTokenAuthorizeUrl({
+          clientId: webEnv.googleClientId,
+          redirectUri: `${origin}/auth/google`,
+          hashedNonce,
+          state: {
+            next: options?.next ? resolveSafePostLoginPath(options.next) : undefined,
+            from: options?.from,
+          },
+        });
+        window.location.assign(authorizeUrl);
+        return {};
+      }
+
       const callbackUrl = new URL("/auth/callback", origin);
       if (options?.next) {
         callbackUrl.searchParams.set("next", resolveSafePostLoginPath(options.next));

@@ -26,3 +26,34 @@ export function resolveAuthDisplayName(
   const emailPrefix = email?.split("@")[0]?.trim();
   return emailPrefix ? emailPrefix.slice(0, 80) : "Athlete";
 }
+
+export const DEFAULT_GOOGLE_WEB_CLIENT_ID =
+  "386925478638-2sap7j47alldo5t4dn832p109m72226j.apps.googleusercontent.com";
+
+export const GOOGLE_NONCE_STORAGE_KEY = "overtaek-google-oauth-nonce-v1";
+
+export type GoogleOAuthState = {
+  next?: string;
+  from?: "onboarding" | "signup";
+  mobile?: boolean;
+};
+
+export function buildGoogleIdTokenAuthorizeUrl(input: {
+  clientId?: string;
+  redirectUri: string;
+  hashedNonce: string;
+  state?: GoogleOAuthState;
+}): string {
+  const params = new URLSearchParams({
+    client_id: input.clientId?.trim() || DEFAULT_GOOGLE_WEB_CLIENT_ID,
+    redirect_uri: input.redirectUri,
+    response_type: "id_token",
+    scope: "openid email profile",
+    nonce: input.hashedNonce,
+    prompt: "select_account",
+  });
+  if (input.state) {
+    params.set("state", JSON.stringify(input.state));
+  }
+  return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+}

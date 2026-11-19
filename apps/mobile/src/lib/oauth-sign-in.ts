@@ -1,13 +1,16 @@
+import { buildGoogleIdTokenAuthorizeUrl } from "@fitness-battle/shared";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createAppleSignInNonce } from "./apple-sign-in";
 
 export type ParsedOAuthReturnUrl = {
   code: string | null;
+  idToken: string | null;
   accessToken: string | null;
   refreshToken: string | null;
   error: string | null;
 };
 
-/** Parse PKCE code, implicit session tokens, or OAuth error from the return URL. */
+/** Parse PKCE code, OIDC id_token, implicit session tokens, or OAuth error from the return URL. */
 export function parseOAuthReturnUrl(url: string): ParsedOAuthReturnUrl {
   try {
     const parsed = new URL(url);
@@ -23,12 +26,13 @@ export function parseOAuthReturnUrl(url: string): ParsedOAuthReturnUrl {
 
     return {
       code: get("code"),
+      idToken: get("id_token"),
       accessToken: get("access_token"),
       refreshToken: get("refresh_token"),
       error: error ?? null,
     };
   } catch {
-    return { code: null, accessToken: null, refreshToken: null, error: null };
+    return { code: null, idToken: null, accessToken: null, refreshToken: null, error: null };
   }
 }
 
@@ -40,7 +44,12 @@ export function authCodeFromOAuthReturnUrl(url: string): string | null {
 export function isOAuthCallbackUrl(url: string): boolean {
   if (!url.startsWith("overtaek:")) return false;
   const parsed = parseOAuthReturnUrl(url);
-  if (parsed.code || (parsed.accessToken && parsed.refreshToken) || parsed.error) {
+  if (
+    parsed.code ||
+    parsed.idToken ||
+    (parsed.accessToken && parsed.refreshToken) ||
+    parsed.error
+  ) {
     return true;
   }
   return url.includes("auth/callback");
@@ -52,11 +61,17 @@ export type ProviderOAuthDeps = {
     provider: "google" | "apple",
     redirectTo: string,
   ) => Promise<{ url?: string | null; error?: string | null }>;
+  createGoogleOAuthUrl?: () => Promise<{ url: string; rawNonce: string }>;
   openAuthSession: (
     url: string,
     returnUrl: string,
   ) => Promise<{ type: string; url?: string }>;
   exchangeCodeForSession: (code: string) => Promise<{ error?: string | null }>;
+  signInWithIdToken?: (
+    provider: "google" | "apple",
+    token: string,
+    rawNonce?: string,
+  ) => Promise<{ error?: string | null }>;
   setSession?: (
     accessToken: string,
     refreshToken: string,
@@ -70,8 +85,19 @@ export async function signInWithProviderOAuth(
   deps: ProviderOAuthDeps,
 ): Promise<{ error?: string; cancelled?: boolean }> {
   const redirectTo = deps.getRedirectUri();
-  const { url, error: startError } = await deps.startOAuth(provider, redirectTo);
-  if (startError) return { error: startError };
+  let url: string | null | undefined;
+  let rawNonce: string | undefined;
+
+  if (provider === "google" && deps.createGoogleOAuthUrl) {
+    const direct = await deps.createGoogleOAuthUrl();
+    url = direct.url;
+    rawNonce = direct.rawNonce;
+  } else {
+    const { url: oauthUrl, error: startError } = await deps.startOAuth(provider, redirectTo);
+    if (startError) return { error: startError };
+    url = oauthUrl;
+  }
+
   if (!url) return { error: "Could not start sign-in." };
 
   let capturedUrl: string | null = null;
@@ -124,6 +150,16 @@ export async function signInWithProviderOAuth(
   const parsed = parseOAuthReturnUrl(returnUrl);
   if (parsed.error) return { error: parsed.error };
 
+  if (parsed.idToken && deps.signInWithIdToken) {
+    const { error: idTokenError } = await deps.signInWithIdToken(
+      provider,
+      parsed.idToken,
+      rawNonce,
+    );
+    if (idTokenError) return { error: idTokenError };
+    return {};
+  }
+
   if (parsed.code) {
     const { error: exchangeError } = await deps.exchangeCodeForSession(parsed.code);
     if (exchangeError) return { error: exchangeError };
@@ -142,7 +178,7 @@ export async function signInWithProviderOAuth(
   return { error: "Missing authorization code from sign-in." };
 }
 
-/** Deep link Supabase redirects to after Google / Apple web OAuth. */
+/** Deep link the in-app browser redirects to after OAuth completes. */
 export function oauthCallbackRedirectUri(): string {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { makeRedirectUri } = require("expo-auth-session") as typeof import("expo-auth-session");
@@ -161,6 +197,18 @@ function defaultOnAppUrl(handler: (url: string) => void): () => void {
 export function supabaseProviderOAuthDeps(client: SupabaseClient): ProviderOAuthDeps {
   return {
     getRedirectUri: oauthCallbackRedirectUri,
+    createGoogleOAuthUrl: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { mobileEnv, publicProfileOrigin } = require("./env") as typeof import("./env");
+      const { raw, hashed } = await createAppleSignInNonce();
+      const url = buildGoogleIdTokenAuthorizeUrl({
+        clientId: mobileEnv.googleClientId,
+        redirectUri: `${publicProfileOrigin(mobileEnv.apiUrl)}/auth/google`,
+        hashedNonce: hashed,
+        state: { mobile: true },
+      });
+      return { url, rawNonce: raw };
+    },
     startOAuth: async (provider, redirectTo) => {
       const { data, error } = await client.auth.signInWithOAuth({
         provider,
@@ -179,6 +227,14 @@ export function supabaseProviderOAuthDeps(client: SupabaseClient): ProviderOAuth
     },
     exchangeCodeForSession: async (code) => {
       const { error } = await client.auth.exchangeCodeForSession(code);
+      return { error: error?.message ?? null };
+    },
+    signInWithIdToken: async (provider, token, rawNonce) => {
+      const { error } = await client.auth.signInWithIdToken({
+        provider,
+        token,
+        nonce: rawNonce,
+      });
       return { error: error?.message ?? null };
     },
     setSession: async (accessToken, refreshToken) => {

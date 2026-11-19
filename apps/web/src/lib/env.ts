@@ -4,6 +4,8 @@
  * in the browser and forces demo-auth fallbacks.
  */
 
+import { DEFAULT_GOOGLE_WEB_CLIENT_ID } from "@fitness-battle/shared";
+
 /** Public / isomorphic env. Safe to import from client components. */
 export const webEnv = {
   rankingsUrl: process.env.NEXT_PUBLIC_RANKINGS_SUPABASE_URL ?? "",
@@ -16,6 +18,8 @@ export const webEnv = {
     (process.env.NEXT_PUBLIC_USE_DEMO_DATA ?? "false").toLowerCase() === "true",
   appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
   mapboxAccessToken: process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? "",
+  googleClientId:
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? DEFAULT_GOOGLE_WEB_CLIENT_ID,
 };
 
 /** Server-only secrets. Import only from Route Handlers / server modules. */

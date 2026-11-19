@@ -26,8 +26,21 @@ describe("authCodeFromOAuthReturnUrl", () => {
       ),
     ).toEqual({
       code: null,
+      idToken: null,
       accessToken: "tok-1",
       refreshToken: "ref-2",
+      error: null,
+    });
+  });
+
+  it("reads OIDC id_token from hash fragment", () => {
+    expect(
+      parseOAuthReturnUrl("overtaek://auth/callback#id_token=google-jwt"),
+    ).toEqual({
+      code: null,
+      idToken: "google-jwt",
+      accessToken: null,
+      refreshToken: null,
       error: null,
     });
   });
@@ -42,12 +55,36 @@ function deps(overrides: Partial<ProviderOAuthDeps> = {}): ProviderOAuthDeps {
       url: "overtaek://auth/callback?code=session-code",
     })),
     exchangeCodeForSession: vi.fn(async () => ({})),
+    signInWithIdToken: vi.fn(async () => ({})),
     setSession: vi.fn(async () => ({})),
     ...overrides,
   };
 }
 
 describe("signInWithProviderOAuth", () => {
+  it("exchanges a direct Google OIDC id_token with its raw nonce", async () => {
+    const signInWithIdToken = vi.fn(async () => ({}));
+    const result = await signInWithProviderOAuth(
+      "google",
+      deps({
+        createGoogleOAuthUrl: vi.fn(async () => ({
+          url: "https://accounts.google.com/o/oauth2/v2/auth",
+          rawNonce: "raw-nonce-1",
+        })),
+        openAuthSession: vi.fn(async () => ({
+          type: "success",
+          url: "overtaek://auth/callback#id_token=google-id-token",
+        })),
+        signInWithIdToken,
+      }),
+    );
+    expect(result).toEqual({});
+    expect(signInWithIdToken).toHaveBeenCalledWith(
+      "google",
+      "google-id-token",
+      "raw-nonce-1",
+    );
+  });
   it("exchanges a successful session code", async () => {
     const exchange = vi.fn(async () => ({}));
     const result = await signInWithProviderOAuth(
