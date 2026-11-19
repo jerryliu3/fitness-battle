@@ -1,4 +1,4 @@
-import { useState, type Ref } from "react";
+import { useState, type ComponentRef, type Ref } from "react";
 import { TextInput, View, type TextInputProps } from "react-native";
 import { useThemeColors } from "../theme";
 import { useFocusStyles } from "./focus";
@@ -7,7 +7,7 @@ import { AppText } from "./section";
 export function TextField({ label, error, ref, style, onFocus, onBlur, ...props }: TextInputProps & {
   label: string;
   error?: string | null;
-  ref?: Ref<TextInput>;
+  ref?: Ref<ComponentRef<typeof TextInput>>;
 }) {
   const [focused, setFocused] = useState(false);
   const c = useThemeColors();

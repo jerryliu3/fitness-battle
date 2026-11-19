@@ -9,7 +9,7 @@ import {
   type ProfileGender,
 } from "@fitness-battle/shared";
 import { TextField } from "../ui/text-field";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
 import { Pressable, View, type TextInput } from "react-native";
 import { SHELL_RADIUS, useThemeColors } from "../theme";
 import { ChoicePicker } from "../ui/choice-picker";
@@ -72,7 +72,7 @@ export function AthleteProfileEditor({
   const [countryCode, setCountryCode] = useState(state.countryCode ?? "");
   const [highlights, setHighlights] = useState<string[] | undefined>(state.cardHighlights);
   const [filter, setFilter] = useState<FilterKind>("all");
-  const nameField = useRef<TextInput>(null);
+  const nameField = useRef<ComponentRef<typeof TextInput>>(null);
   const [error, setError] = useState<string | null>(null);
   const [limitHint, setLimitHint] = useState(false);
 

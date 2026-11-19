@@ -161,7 +161,7 @@ export default function Onboarding() {
           {step === 0 && <>
             <View style={{ flexDirection: "row", gap: 12 }}>
               <View style={{ flex: 1 }}>
-                <TextField label="City (optional)" value={city} onChangeText={setCity} maxLength={80} />
+                <TextField label="City (optional)" accessibilityLabel="City" value={city} onChangeText={setCity} maxLength={80} />
               </View>
               <View style={{ flex: 1, gap: 8 }}><AppText role="label">Country (optional)</AppText>
                 <CountryPicker value={countryCode} onChange={setCountryCode} />
