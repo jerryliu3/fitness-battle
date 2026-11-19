@@ -1,7 +1,7 @@
 "use client";
 
 import { listTimeZoneOptions } from "@fitness-battle/shared";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 
 export function TimezoneCombobox({
   value,
@@ -13,9 +13,10 @@ export function TimezoneCombobox({
   label?: string;
 }) {
   const options = useMemo(() => listTimeZoneOptions(), []);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState<string | null>(null);
+  const listId = useId();
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = query?.trim().toLowerCase();
     if (!q) return options;
     return options.filter(
       (row) =>
@@ -29,9 +30,10 @@ export function TimezoneCombobox({
     <label className="fb-field">
       {label}
       <input
+        type="search"
         className="fb-input"
-        list="fb-timezone-options"
-        value={query || selected?.label || value}
+        list={listId}
+        value={query ?? selected?.label ?? value}
         placeholder="Search time zones"
         onChange={(event) => {
           setQuery(event.target.value);
@@ -42,9 +44,9 @@ export function TimezoneCombobox({
           );
           if (exact) onChange(exact.value);
         }}
-        onBlur={() => setQuery("")}
+        onBlur={() => setQuery(null)}
       />
-      <datalist id="fb-timezone-options">
+      <datalist id={listId}>
         {filtered.slice(0, 200).map((row) => (
           <option key={row.value} value={row.label} />
         ))}

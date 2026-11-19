@@ -1,3 +1,4 @@
+import { SearchField } from "../src/ui/search-field";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -546,15 +547,13 @@ export function AllTimeStandingsScreen({
 
               <View style={{ gap: 8 }}>
                 <AppText role="label">Athlete or bib</AppText>
-                <TextInput
+                <SearchField
                   accessibilityLabel="Athlete name or bib"
                   value={draftQuery}
                   maxLength={100}
                   onChangeText={setDraftQuery}
                   onSubmitEditing={applySubFilters}
-                  returnKeyType="search"
                   placeholder="Search athlete or bib"
-                  style={f.input}
                 />
               </View>
             </>

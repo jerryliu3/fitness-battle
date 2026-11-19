@@ -28,6 +28,7 @@ export function CountryCombobox({
       <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
       {value && <span aria-hidden>{countryFlagEmoji(value)}</span>}
       <input
+        type="search"
         style={{ minWidth: 0, flex: 1 }}
         value={query}
         onChange={(e) => {
