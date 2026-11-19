@@ -16,8 +16,8 @@ describe("activity route entry", () => {
     let view: ReturnType<typeof create>;
     await act(async () => { view = create(createElement(ActivityRoute, { activity, milestone: true })); });
     expect(view!.root.findAllByType("replay" as never)).toHaveLength(0);
-    await act(async () => view!.root.findByProps({ className: "club-route-open" }).props.onClick());
-    expect(view!.root.findByType("replay" as never).props).toMatchObject({ mode: "2d-overview", autoPlay: false });
+    await act(async () => view!.root.findByProps({ "aria-label": "Explore route" }).props.onClick());
+    expect(view!.root.findByType("replay" as never).props).toMatchObject({ mode: "2d-overview", autoPlay: false, showModeControl: true, className: "club-route-player" });
     expect(JSON.stringify(view!.toJSON())).toContain("the record segment is not identified");
     await act(async () => view!.unmount());
   });

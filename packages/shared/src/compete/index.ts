@@ -320,5 +320,5 @@ export { liveEffortFromActivities } from './effort-volume';
 export { initializeEffortAccounts, settleAccountEffort, readAccountEffort, type EffortAccounts } from './effort-account';
 export { replayEffortHistory } from './effort-account';
 
-export { activityTrainingXp, eligibleTrainingXp, trainingXpInPeriod, formatTrainingXp } from './training-xp';
+export { activityBaseTrainingXp, activityTrainingXp, eligibleTrainingXp, trainingXpInPeriod, formatTrainingXp } from './training-xp';
 export { TRAINING_XP_PER_REFERENCE_WEEK, trainingXpForVolume, trainingVolumeForXp } from './effort-score';

@@ -202,7 +202,7 @@ Training XP replaces activity effort points: `XP = 1000 × eligible native volum
 
 Weekly settlement and live previews take XP as their canonical input and convert to the existing native-volume baseline internally. Rank curves, lifetime normalization, competition rewards, recovery and live floors are unchanged. Preserve full precision until display; no persisted XP balances or activity backfills. Activity bars describe **Session effort**, relative to recent training, not intensity. HR and pace remain activity metrics without XP bonuses. Competition placement retains native metres/steps/seconds and does not use XP.
 
-Training XP is base XP × the shared activity intensity multiplier. Launch multiplier is 1.0 for every activity, including missing HR. Preserve HR measurements and distance/time pace inputs; only the old raw-BPM/pace bonus formulas are removed. Future personalized, verified HR-zone intensity must flow through `activityTrainingXp` so weekly, lifetime and live inputs stay connected, and requires benchmark recalibration. No bonus range or HR/pace stacking policy is enabled. Session effort compares base XP/duration and remains a volume comparison when intensity is introduced.
+Training XP is base XP × the shared activity intensity multiplier. The [Effort Score spec](effort-score-v2-spec.md) defines the start date, HR and pace curves, and neutral cases. Keep weighting in `activityTrainingXp` so activity totals, weekly settlement, and live Effort use the same inputs. Competition standings use native volume. Workout-size comparisons use base XP and duration.
 
 Tracker connection and history import are separate. After a successful connection,
 mobile and web offer a one-time account-wide import of 1–90 days, defaulting to 90.

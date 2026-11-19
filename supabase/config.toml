@@ -29,6 +29,8 @@ port = 54624
 enabled = true
 site_url = "http://localhost:3000"
 additional_redirect_urls = [
+  "https://overtaek.xyz/**",
+  "https://fitness-battle-one.vercel.app/**",
   "http://localhost:3000/**",
   "http://localhost:8081/**",
   "overtaek://**",

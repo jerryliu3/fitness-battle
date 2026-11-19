@@ -5,11 +5,12 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormE
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  ONBOARDING_SPORT_TILES as sportTiles, EMPTY_GUEST_INTRO, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY,
+  ONBOARDING_SPORT_TILES as sportTiles, EMPTY_GUEST_INTRO, GUEST_INTRO_DRAFT_KEY, GUEST_OAUTH_SIGNUP_PENDING, GUEST_SIGNUP_PENDING_KEY,
   ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId, onboardingAthleteCard,
   guestIntroForAccount, sportById, SPORTS, type GuestIntroDraft, type OnboardingStep,
 } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
+import { SocialAuthButtons } from "@/components/social-auth-buttons";
 import { useCompete } from "@/components/compete-context";
 import { OnboardingAthlete } from "@/features/club/onboarding-athlete";
 import { uploadWebProfileAvatar } from "@/lib/profile/avatar-upload";
@@ -21,12 +22,13 @@ import { AppHeading, AppParagraph } from "@/ui/section";
 import "@/features/club/onboarding.css";
 
 function Welcome({ preview }: { preview: boolean }) {
-  const { user, loading, signUp } = useAuth();
+  const { user, loading, offlineMode, signUp, signInWithGoogle, signInWithApple } = useAuth();
   const { state } = useCompete();
   const router = useRouter();
   const nextPath = useSearchParams().get("next");
   const nextQuery = nextPath ? `next=${encodeURIComponent(resolveSafePostLoginPath(nextPath))}` : "";
   const setupHref = `/app/onboarding${nextQuery ? `?${nextQuery}` : ""}`;
+  const socialEnabled = offlineMode === false && !preview;
   const top = useRef<HTMLElement>(null);
   const accountId = preview ? undefined : user?.id;
   const waitingForProfile = !preview && (loading || Boolean(user && !state));
@@ -40,6 +42,7 @@ function Welcome({ preview }: { preview: boolean }) {
   const [photoBusy, setPhotoBusy] = useState(false);
   const [cardDraft, setCardDraft] = useState<GuestIntroDraft>(EMPTY_GUEST_INTRO);
   const [email, setEmail] = useState(""), [password, setPassword] = useState("");
+  const [emailExpanded, setEmailExpanded] = useState(false);
   const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState(false);
   const [onboardingCourseRevision, setOnboardingCourseRevision] = useState(0);
@@ -115,7 +118,35 @@ function Welcome({ preview }: { preview: boolean }) {
       setError(err instanceof Error ? err.message : "Could not create your account.");
     } finally { setBusy(false); }
   }
-  const back = index > 0 ? <BackButton disabled={busy || photoBusy} onClick={() => setStep(steps[index - 1]!)} /> : null;
+  async function createSocialAccount(provider: "google" | "apple") {
+    if (busy) return;
+    setBusy(true); setError(null);
+    try {
+      const completed = { ...draft, introCompleted: true };
+      setDraft(completed);
+      localStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify(completed));
+      localStorage.setItem(GUEST_SIGNUP_PENDING_KEY, GUEST_OAUTH_SIGNUP_PENDING);
+      const action = provider === "google" ? signInWithGoogle : signInWithApple;
+      const result = await action({ next: nextPath, from: "signup" });
+      if (result.error) {
+        try { localStorage.removeItem(GUEST_SIGNUP_PENDING_KEY); } catch {}
+        setError(result.error);
+        setBusy(false);
+      }
+    } catch (err) {
+      try { localStorage.removeItem(GUEST_SIGNUP_PENDING_KEY); } catch {}
+      setError(err instanceof Error ? err.message : "Could not create your account.");
+      setBusy(false);
+    }
+  }
+  const back = index > 0 ? <BackButton disabled={busy || photoBusy} onClick={() => {
+    if (step === "account" && socialEnabled && emailExpanded) {
+      setError(null);
+      setEmailExpanded(false);
+      return;
+    }
+    setStep(steps[index - 1]!);
+  }} /> : null;
   return <section ref={top} className="onboarding fb-stack">
     <div className="onboarding-progress" role="img" aria-label={`Step ${index + 1} of ${steps.length}`}>{steps.map((s, i) => <span key={s} data-complete={i <= index} />)}</div>
     <OnboardingAthlete model={card} step={step} root={top} />
@@ -157,13 +188,25 @@ function Welcome({ preview }: { preview: boolean }) {
     </>}
     {step === "account" && <>
       <div data-card-slot className="onboarding-card-slot-save" />
-      <form className="onboarding-account" onSubmit={createAccount}>
-        <label className="fb-field">Email<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} disabled={confirmation} /></label>
-        <label className="fb-field">Password<input type="password" autoComplete="new-password" minLength={6} required value={password} onChange={e => setPassword(e.target.value)} disabled={confirmation} /></label>
-        {confirmation && <AppParagraph role="status">Check your email to confirm your account and continue setup.</AppParagraph>}
-        <div className="onboarding-actions">{back}<button className="fb-btn" type="submit" disabled={busy || confirmation || !email.trim() || password.length < 6}>{busy ? "Creating…" : "Continue"}</button></div>
-      </form>
-      <AppParagraph typographyRole="caption">By creating an account you agree to our <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.</AppParagraph>
+      {socialEnabled && !emailExpanded ? (
+        <>
+          <SocialAuthButtons
+            busy={busy}
+            onApple={() => void createSocialAccount("apple")}
+            onGoogle={() => void createSocialAccount("google")}
+            onEmail={() => { setError(null); setEmailExpanded(true); }}
+          />
+          <div className="onboarding-actions">{back}</div>
+        </>
+      ) : (
+        <form className="onboarding-account" onSubmit={createAccount}>
+          <label className="fb-field">Email<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} disabled={confirmation} /></label>
+          <label className="fb-field">Password<input type="password" autoComplete="new-password" minLength={6} required value={password} onChange={e => setPassword(e.target.value)} disabled={confirmation} /></label>
+          {confirmation && <AppParagraph role="status">Check your email to confirm your account and continue setup.</AppParagraph>}
+          <div className="onboarding-actions">{back}<button className="fb-btn" type="submit" disabled={busy || confirmation || !email.trim() || password.length < 6}>{busy ? "Creating…" : "Continue"}</button></div>
+        </form>
+      )}
+      <AppParagraph typographyRole="caption">By continuing, you agree to our <Link href="/terms">Terms of Service</Link> and <Link href="/privacy">Privacy Policy</Link>.</AppParagraph>
     </>}
     {error && <AppParagraph role="alert">{error}</AppParagraph>}
     {step !== "sport" && step !== "account" && step !== "overtake" && <div className="onboarding-actions">
