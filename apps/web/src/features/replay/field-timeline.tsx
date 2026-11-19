@@ -1,11 +1,11 @@
 "use client";
 import type { FieldTimelineState } from "./use-field-timeline";
 
-export function FieldTimeline({ timeline: t }: { timeline: FieldTimelineState }) {
-  return <div className="field-timeline" aria-label="Competition time controls">
+export function FieldTimeline({ timeline: t, floating = false }: { timeline: FieldTimelineState; floating?: boolean }) {
+  return <div className={floating ? "field-timeline field-timeline-floating" : "field-timeline"} aria-label="Competition time controls">
     <div className="field-timeline-heading"><span>{t.error || (!t.ready ? "Loading timeline…" : t.label)}</span>
       {t.error ? <button type="button" onClick={t.retry}>Retry</button> : <>
-        <button type="button" disabled={!t.ready || !t.count} onClick={t.toggle} aria-label={t.playing ? "Pause replay" : "Replay competition"}>{t.playing ? "Pause" : "Replay"}</button>
+        <button type="button" className="field-timeline-play" disabled={!t.ready || !t.count} onClick={t.toggle} aria-label={t.playing ? "Pause replay" : "Replay competition"}>{t.playing ? "Pause" : "Replay"}</button>
         <button type="button" onClick={t.changeSpeed} aria-label={`Playback speed ${t.speed} times`}>{t.speed}×</button>
       </>}
       <button type="button" onClick={t.live} disabled={!t.frame || t.cursor >= t.count}>Latest</button>

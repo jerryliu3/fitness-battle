@@ -433,7 +433,6 @@ export function FocusSegments<T extends string>({
   accent = false,
   variant = "segments",
   compact = false,
-  pill = false,
 }: {
   label: string;
   options: readonly { value: T; label: string; accessibilityLabel?: string }[];
@@ -442,7 +441,6 @@ export function FocusSegments<T extends string>({
   accent?: boolean;
   variant?: "segments" | "tabs";
   compact?: boolean;
-  pill?: boolean;
 }) {
 const c=useThemeColors();
 const f=useThemedStyles(fThemes);
@@ -475,14 +473,12 @@ const f=useThemedStyles(fThemes);
       style={[
         f.segments,
         compact && f.segmentsCompact,
-        pill && { borderRadius: 999 },
         variant === "tabs" && { backgroundColor: "transparent", borderWidth: 0, borderRadius: 0, padding: 0, borderBottomWidth: 1 },
       ]}
     >
       {width > 0 && <Animated.View pointerEvents="none" style={{
         position: "absolute", left: inset, width: segmentWidth,
-        ...(variant === "tabs" ? { bottom: 0, height: 2 } : compact ? { top: 3, bottom: 3, borderRadius: 9 } : { top: 4, bottom: 4, borderRadius: 20 }),
-        ...(pill ? { borderRadius: 999 } : {}),
+        ...(variant === "tabs" ? { bottom: 0, height: 2 } : { top: compact ? 3 : 4, bottom: compact ? 3 : 4, borderRadius: SHELL_RADIUS.pill }),
         backgroundColor: variant === "tabs" || !accent ? c.ink : c.tennis,
         transform: [{ translateX: position }],
       }} />}
@@ -683,7 +679,7 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
     flexDirection: "row",
     padding: 4,
     gap: 4,
-    borderRadius: 24,
+    borderRadius: SHELL_RADIUS.pill,
     backgroundColor: c.soft,
     borderWidth: 1,
     borderColor: c.line,
@@ -691,7 +687,6 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
   segmentsCompact: {
     padding: 3,
     gap: 2,
-    borderRadius: 12,
     flexGrow: 0,
     flexShrink: 0,
   },
@@ -701,16 +696,14 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
     minHeight: 44,
     paddingHorizontal: 8,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: SHELL_RADIUS.pill,
     justifyContent: "center",
     alignItems: "center",
   },
   segmentCompact: {
-    minWidth: 38,
-    minHeight: 28,
+    minWidth: 44,
     paddingHorizontal: 7,
     paddingVertical: 4,
-    borderRadius: 9,
   },
   segmentSelected: { backgroundColor: c.ink },
   segmentText: {

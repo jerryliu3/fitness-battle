@@ -1,5 +1,6 @@
+import { AppSwitch } from "../ui/app-switch";
 import { competeNow, SPORTS, type Action, type CompeteState } from "@fitness-battle/shared";
-import { Switch, View } from "react-native";
+import { View } from "react-native";
 import { useThemeColors } from "../theme";
 import { AppIcon } from "../ui/app-icon";
 import { AppearanceControl } from "../ui/appearance-control";
@@ -65,11 +66,8 @@ export function AthletePreferencesFields({
               <SportIcon sport={sport.id} />
               <AppText role="label">{sport.name}</AppText>
             </View>
-            <Switch
+            <AppSwitch
               style={{ alignSelf: "center", marginVertical: 0 }}
-              trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }}
-              thumbColor={active ? SHELL_COLORS.card : SHELL_COLORS.ink}
-              ios_backgroundColor={SHELL_COLORS.line}
               accessibilityLabel={`Toggle ${sport.name} active status`}
               value={active}
               onValueChange={(enabled) =>
@@ -95,11 +93,8 @@ export function AthletePreferencesFields({
               <AppIcon name="sleep" size={20} color={SHELL_COLORS.ink} />
               <AppText role="label">Recovery / Sleep</AppText>
             </View>
-            <Switch
+            <AppSwitch
               style={{ alignSelf: "center", marginVertical: 0 }}
-              trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }}
-              thumbColor={sleepActive ? SHELL_COLORS.card : SHELL_COLORS.ink}
-              ios_backgroundColor={SHELL_COLORS.line}
               accessibilityLabel="Toggle Recovery / Sleep active status"
               value={sleepActive}
               onValueChange={(enabled) =>
