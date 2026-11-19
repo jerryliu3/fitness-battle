@@ -7,6 +7,7 @@ import { AppParagraph, AppText, typographyStyle, SectionHeader, Section, AppHead
 
 import { isAdminEmail } from "@/lib/auth/admin-access";
 import { ReportIssue } from "@/components/report-issue";
+import { ResetPassword } from "@/components/reset-password";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { NotificationSettings } from "@/components/notification-settings";
@@ -724,6 +725,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
                   {" · "}
                   <Link href="/terms">Terms of Service</Link>
                 </AppParagraph>
+                {user ? <ResetPassword /> : null}
                 <button type="button" className="fb-btn-line" onClick={() => void signOut()}>Sign out</button>
                 <ReportIssue />
                 {legacyBackup && <button type="button" className="fb-btn-line" onClick={() => {
@@ -859,7 +861,7 @@ function YouContent({ surface, inlineConnections = false }: { surface: "progress
             ["preferences", "Units & sports"],
             ["notifications", "Your updates, your choice"],
             ["scoring", "Levels & eligibility"],
-            ["account", "Sign out, report an issue & delete account"],
+            ["account", "Reset password, sign out & delete account"],
           ] as const
         ).map(([id, detail]) => (
           <button

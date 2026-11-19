@@ -1,5 +1,10 @@
 import { archiveLegacyDemo } from "./legacy-demo";
-import { accountDataOrigin, isSupabaseConfigured, hashString } from "@fitness-battle/shared";
+import {
+  accountDataOrigin,
+  changeAccountPassword,
+  isSupabaseConfigured,
+  hashString,
+} from "@fitness-battle/shared";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   createContext,
@@ -37,6 +42,11 @@ type AuthApi = {
     displayName: string;
   }) => Promise<{ error?: string; needsEmailConfirm?: boolean }>;
   signOut: () => Promise<void>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string,
+  ) => Promise<{ error?: string }>;
 };
 
 const AuthContext = createContext<AuthApi | null>(null);
@@ -219,6 +229,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
   }, [offlineMode]);
 
+  const changePassword = useCallback(
+    async (
+      currentPassword: string,
+      newPassword: string,
+      confirmPassword: string,
+    ) =>
+      changeAccountPassword(
+        offlineMode || !user || user.mode === "demo"
+          ? null
+          : {
+              signInWithPassword: (creds) =>
+                supabase.auth.signInWithPassword(creds),
+              updateUser: (attrs) => supabase.auth.updateUser(attrs),
+            },
+        { user, offlineMode, currentPassword, newPassword, confirmPassword },
+      ),
+    [offlineMode, user],
+  );
+
   const api = useMemo<AuthApi>(
     () => ({
       user,
@@ -229,8 +258,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signOut,
+      changePassword,
     }),
-    [user, loading, offlineMode, legacyBackup, accessToken, signIn, signUp, signOut],
+    [user, loading, offlineMode, legacyBackup, accessToken, signIn, signUp, signOut, changePassword],
   );
 
   return <AuthContext.Provider value={api}>{children}</AuthContext.Provider>;

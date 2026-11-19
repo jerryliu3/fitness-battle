@@ -4,7 +4,12 @@ import { archiveLegacyDemo } from "@/lib/auth/legacy-demo";
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
-import { accountDataOrigin, hashString, findDemoAccount } from "@fitness-battle/shared";
+import {
+  accountDataOrigin,
+  changeAccountPassword,
+  hashString,
+  findDemoAccount,
+} from "@fitness-battle/shared";
 import {
   DEMO_USER_COOKIE,
   isLocalHost,
@@ -44,6 +49,11 @@ interface AuthApi {
     displayName: string;
   }) => Promise<{ error?: string; needsEmailConfirm?: boolean }>;
   signOut: () => Promise<void>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string,
+  ) => Promise<{ error?: string }>;
   /** Require auth for an action; returns false if the user must sign in first. */
   requireAuth: () => boolean;
 }
@@ -339,6 +349,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, [offlineMode]);
 
+  const changePassword = useCallback(
+    async (
+      currentPassword: string,
+      newPassword: string,
+      confirmPassword: string,
+    ) => {
+      const client =
+        offlineMode || !user || user.mode === "demo"
+          ? null
+          : (() => {
+              const supabase = createClient();
+              return {
+                signInWithPassword: (creds: {
+                  email: string;
+                  password: string;
+                }) => supabase.auth.signInWithPassword(creds),
+                updateUser: (attrs: { password: string }) =>
+                  supabase.auth.updateUser(attrs),
+              };
+            })();
+      return changeAccountPassword(client, {
+        user,
+        offlineMode,
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+    },
+    [offlineMode, user],
+  );
+
   const requireAuth = useCallback(() => Boolean(user), [user]);
 
   const api = useMemo<AuthApi>(
@@ -350,9 +391,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signOut,
+      changePassword,
       requireAuth,
     }),
-    [user, loading, offlineMode, legacyBackup, signIn, signUp, signOut, requireAuth],
+    [user, loading, offlineMode, legacyBackup, signIn, signUp, signOut, changePassword, requireAuth],
   );
 
   return <AuthContext.Provider value={api}>{children}</AuthContext.Provider>;
