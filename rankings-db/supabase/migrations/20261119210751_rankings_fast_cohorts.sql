@@ -116,112 +116,126 @@ create or replace function public.rankings_page_scoped(
   p_distance text, p_sex text, p_year integer, p_query text, p_page integer,
   p_from date, p_until date, p_edition_id bigint, p_percentile text
 ) returns jsonb
-language sql stable security definer set search_path = '' as $$
-  with settings as (
-    select btrim(coalesce(p_query, '')) as term,
-      coalesce(p_percentile, 'all') as tier
-  ), grains as materialized (
-    select * from private.rankings_cohort_counts(p_distance, p_sex, p_year, p_from, p_until, p_edition_id)
-  ), by_time as (
-    select rank_time_ms, sum(finishes)::bigint as finishes from grains group by rank_time_ms
-  ), ranked as materialized (
-    select rank_time_ms, finishes,
-      sum(finishes) over ()::bigint as total,
-      sum(finishes) over (order by rank_time_ms)::bigint as through_time
-    from by_time
-  ), times as materialized (
-    select *, (total - through_time)::numeric / total * 100.0 as percentile
-    from ranked
-  ), field as (
-    select count(distinct event_edition_id) as edition_count,
-      coalesce(sum(chips), 0) as chip_count, coalesce(sum(guns), 0) as official_count
-    from grains
-  ), stats as (
-    select coalesce(max(total), 0) as total,
-      min(rank_time_ms) as fastest_ms, max(rank_time_ms) as slowest_ms,
-      (min(rank_time_ms) filter (where through_time >= (total + 1) / 2)::numeric
-        + min(rank_time_ms) filter (where through_time >= (total + 2) / 2)) / 2 as median_ms,
-      max(rank_time_ms) filter (where percentile >= 99) as p99_ms,
-      max(rank_time_ms) filter (where percentile >= 95) as p95_ms,
-      max(rank_time_ms) filter (where percentile >= 90) as p90_ms,
-      max(rank_time_ms) filter (where percentile >= 75) as p75_ms,
-      max(rank_time_ms) filter (where percentile >= 50) as p50_ms
-    from times
-  ), summary as materialized (
-    select stats.*, field.*, floor(fastest_ms / 1000.0) * 1000 as minimum_ms,
-      greatest(1000, ceil((slowest_ms - floor(fastest_ms / 1000.0) * 1000) / 40000.0) * 1000) as width_ms,
-      case (select tier from settings)
-        when 'all' then slowest_ms when 'top1' then p99_ms when 'top5' then p95_ms
-        when 'top10' then p90_ms when 'top25' then p75_ms when 'top50' then p50_ms
-      end as cutoff
-    from stats cross join field
-  ), bins as (
-    select floor((t.rank_time_ms - s.minimum_ms) / s.width_ms)::integer as bucket,
-      sum(t.finishes) as count
-    from by_time t cross join summary s group by 1
-  ), search_ids as (
-    select p.id from public.performances p
-    where (select term <> '' from settings)
-      and p.eligible and not p.unpublished and p.distance_slug = p_distance
-      and lower(p.athlete_name) like (select '%' || replace(replace(replace(
-        lower(left(term, 100)), chr(92), chr(92) || chr(92)), '%', chr(92) || '%'), '_', chr(92) || '_') || '%'
-        from settings)
-    union
-    select p.id from public.source_records sr join public.performances p on p.source_record_id = sr.id
-    where (select term <> '' from settings)
-      and sr.normalized_bib = (select upper(term) from settings)
-      and p.eligible and not p.unpublished and p.distance_slug = p_distance
-  ), searched as materialized (
-    select p.id, p.rank_time_ms
-    from search_ids i join private.rankings_public_finishes p using (id)
-    where p.rank_time_ms <= (select cutoff from summary)
-      and (p_sex = 'all' or p.sex = p_sex)
-      and (p_edition_id is null or p.event_edition_id = p_edition_id)
-      and (p_year is null or p.edition_year = p_year)
-      and (p_from is null or p.result_date >= p_from)
-      and (p_until is null or p.result_date < p_until)
-  ), match_count as (
-    select case when (select term = '' from settings) then
-      (select coalesce(sum(finishes), 0)::bigint from by_time where rank_time_ms <= (select cutoff from summary))
-    else (select count(*) from searched) end as total
-  ), totals as (
-    select total, greatest(1, least(greatest(1, coalesce(p_page, 1)),
-      ceil(total / 50.0)::integer)) as page from match_count
-  ), page_ids as materialized (
-    select id, rank_time_ms from (
+language plpgsql stable security definer
+set search_path = ''
+-- Scope predicates can range from a single edition to the entire ledger.
+set plan_cache_mode = 'force_custom_plan'
+as $$
+declare
+  term text := btrim(coalesce(p_query, ''));
+  tier text := coalesce(p_percentile, 'all');
+  name_pattern text := '%' || replace(replace(replace(lower(left(term, 100)),
+    chr(92), chr(92) || chr(92)), '%', chr(92) || '%'), '_', chr(92) || '_') || '%';
+begin
+  return (
+    with grains as materialized (
+      select * from private.rankings_cohort_counts(p_distance, p_sex, p_year, p_from, p_until, p_edition_id)
+    ), by_time as (
+      select rank_time_ms, sum(finishes)::bigint as finishes from grains group by rank_time_ms
+    ), ranked as materialized (
+      select rank_time_ms, finishes,
+        sum(finishes) over ()::bigint as total,
+        sum(finishes) over (order by rank_time_ms)::bigint as through_time
+      from by_time
+    ), times as materialized (
+      select *, (total - through_time)::numeric / total * 100.0 as percentile
+      from ranked
+    ), field as (
+      select count(distinct event_edition_id) as edition_count,
+        coalesce(sum(chips), 0) as chip_count, coalesce(sum(guns), 0) as official_count
+      from grains
+    ), stats as (
+      select coalesce(max(total), 0) as total,
+        min(rank_time_ms) as fastest_ms, max(rank_time_ms) as slowest_ms,
+        (min(rank_time_ms) filter (where through_time >= (total + 1) / 2)::numeric
+          + min(rank_time_ms) filter (where through_time >= (total + 2) / 2)) / 2 as median_ms,
+        max(rank_time_ms) filter (where percentile >= 99) as p99_ms,
+        max(rank_time_ms) filter (where percentile >= 95) as p95_ms,
+        max(rank_time_ms) filter (where percentile >= 90) as p90_ms,
+        max(rank_time_ms) filter (where percentile >= 75) as p75_ms,
+        max(rank_time_ms) filter (where percentile >= 50) as p50_ms
+      from times
+    ), summary as materialized (
+      select stats.*, field.*, floor(fastest_ms / 1000.0) * 1000 as minimum_ms,
+        greatest(1000, ceil((slowest_ms - floor(fastest_ms / 1000.0) * 1000) / 40000.0) * 1000) as width_ms,
+        case tier
+          when 'all' then slowest_ms when 'top1' then p99_ms when 'top5' then p95_ms
+          when 'top10' then p90_ms when 'top25' then p75_ms when 'top50' then p50_ms
+        end as cutoff
+      from stats cross join field
+    ), bins as (
+      select floor((t.rank_time_ms - s.minimum_ms) / s.width_ms)::integer as bucket,
+        sum(t.finishes) as count
+      from by_time t cross join summary s group by 1
+    ), search_ids as (
+      select p.id from public.performances p
+      where term <> ''
+        and p.eligible and not p.unpublished and p.distance_slug = p_distance
+        and lower(p.athlete_name) like name_pattern
+      union
+      select p.id from public.source_records sr join public.performances p on p.source_record_id = sr.id
+      where term <> ''
+        and sr.normalized_bib = upper(term)
+        and p.eligible and not p.unpublished and p.distance_slug = p_distance
+    ), searched as materialized (
+      select p.id, p.rank_time_ms
+      from search_ids i join private.rankings_public_finishes p using (id)
+      where p.rank_time_ms <= (select cutoff from summary)
+        and (p_sex = 'all' or p.sex = p_sex)
+        and (p_edition_id is null or p.event_edition_id = p_edition_id)
+        and (p_year is null or p.edition_year = p_year)
+        and (p_from is null or p.result_date >= p_from)
+        and (p_until is null or p.result_date < p_until)
+    ), match_count as (
+      select case when term = '' then
+        (select coalesce(sum(finishes), 0)::bigint from by_time where rank_time_ms <= (select cutoff from summary))
+      else (select count(*) from searched) end as total
+    ), totals as (
+      select total, greatest(1, least(greatest(1, coalesce(p_page, 1)),
+        ceil(total / 50.0)::integer)) as page from match_count
+    ), page_start as materialized (
+      -- Jump to the finish time containing the first requested row. Only tied
+      -- finishes at that time need an offset in the result index.
+      select t.rank_time_ms, (m.page - 1)::bigint * 50 - (t.through_time - t.finishes) as skip_ties
+      from times t cross join totals m
+      where term = '' and m.total > 0
+        and t.through_time > (m.page - 1)::bigint * 50
+      order by t.rank_time_ms limit 1
+    ), page_ids as materialized (
       (select p.id, p.rank_time_ms from private.rankings_public_finishes p
-       where (select term = '' from settings)
-         and p.rank_time_ms <= (select cutoff from summary)
+       where p.rank_time_ms between (select rank_time_ms from page_start) and (select cutoff from summary)
          and p.distance_slug = p_distance and (p_sex = 'all' or p.sex = p_sex)
          and (p_edition_id is null or p.event_edition_id = p_edition_id)
          and (p_year is null or p.edition_year = p_year)
          and (p_from is null or p.result_date >= p_from)
          and (p_until is null or p.result_date < p_until)
-       order by p.rank_time_ms, p.id
-       limit (select page::bigint * 50 from totals))
-      union all select id, rank_time_ms from searched
-    ) m order by rank_time_ms, id limit 50 offset (select (page - 1)::bigint * 50 from totals)
-  ), rows as (
-    select p.id, p.athlete_name, p.sex, p.distance_slug, p.rank_time_ms, p.rank_clock,
-      p.age_years, p.result_date, p.event_name, p.edition_year, p.attribution, p.source_url, p.bib,
-      t.through_time - t.finishes + 1 as place, t.percentile, t.total as cohort_total
-    from page_ids i join private.rankings_public_finishes p using (id)
-    join times t on t.rank_time_ms = i.rank_time_ms
-  )
-  select jsonb_build_object(
-    'rows', coalesce((select jsonb_agg(to_jsonb(r) order by r.rank_time_ms, r.id) from rows r), '[]'::jsonb),
-    'total', t.total, 'cohortTotal', s.total, 'page', t.page, 'pageSize', 50,
-    'windowFrom', p_from, 'windowUntil', p_until,
-    'analytics', case when s.total > 0 then jsonb_build_object(
-      'total', s.total, 'editionCount', s.edition_count, 'fastestMs', s.fastest_ms,
-      'slowestMs', s.slowest_ms, 'medianMs', s.median_ms, 'minimumMs', s.minimum_ms,
-      'binWidthMs', s.width_ms, 'chipCount', s.chip_count, 'officialCount', s.official_count,
-      'benchmarks', jsonb_build_object('top1Ms', s.p99_ms, 'top5Ms', s.p95_ms,
-        'top10Ms', s.p90_ms, 'top25Ms', s.p75_ms, 'medianMs', s.median_ms),
-      'bins', coalesce((select jsonb_agg(to_jsonb(b) order by b.bucket) from bins b), '[]'::jsonb)
-    ) else null end
-  )
-  from totals t cross join summary s;
+       order by p.rank_time_ms, p.id limit 50 offset (select skip_ties from page_start))
+      union all
+      (select id, rank_time_ms from searched order by rank_time_ms, id
+       limit 50 offset (select (page - 1)::bigint * 50 from totals))
+    ), rows as (
+      select p.id, p.athlete_name, p.sex, p.distance_slug, p.rank_time_ms, p.rank_clock,
+        p.age_years, p.result_date, p.event_name, p.edition_year, p.attribution, p.source_url, p.bib,
+        t.through_time - t.finishes + 1 as place, t.percentile, t.total as cohort_total
+      from page_ids i join private.rankings_public_finishes p using (id)
+      join times t on t.rank_time_ms = i.rank_time_ms
+    )
+    select jsonb_build_object(
+      'rows', coalesce((select jsonb_agg(to_jsonb(r) order by r.rank_time_ms, r.id) from rows r), '[]'::jsonb),
+      'total', t.total, 'cohortTotal', s.total, 'page', t.page, 'pageSize', 50,
+      'windowFrom', p_from, 'windowUntil', p_until,
+      'analytics', case when s.total > 0 then jsonb_build_object(
+        'total', s.total, 'editionCount', s.edition_count, 'fastestMs', s.fastest_ms,
+        'slowestMs', s.slowest_ms, 'medianMs', s.median_ms, 'minimumMs', s.minimum_ms,
+        'binWidthMs', s.width_ms, 'chipCount', s.chip_count, 'officialCount', s.official_count,
+        'benchmarks', jsonb_build_object('top1Ms', s.p99_ms, 'top5Ms', s.p95_ms,
+          'top10Ms', s.p90_ms, 'top25Ms', s.p75_ms, 'medianMs', s.median_ms),
+        'bins', coalesce((select jsonb_agg(to_jsonb(b) order by b.bucket) from bins b), '[]'::jsonb)
+      ) else null end
+    )
+    from totals t cross join summary s
+  );
+end;
 $$;
 
 create or replace function public.refresh_rankings_distance_stats()

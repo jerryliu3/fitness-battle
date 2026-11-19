@@ -18,6 +18,12 @@ begin
   if (payload->>'total')::integer <> 205 or jsonb_array_length(payload->'rows') <> 5 then
     raise exception 'full field not reachable: %',payload;
   end if;
+  payload := public.rankings_page('marathon','unknown',2099,'',2);
+  if payload->'rows'->0->>'athlete_name' is distinct from 'Runner 51'
+    or payload->'rows'->0->>'place' is distinct from '50'
+    or payload->'rows'->49->>'athlete_name' is distinct from 'Runner 100' then
+    raise exception 'Boundary within a tie skipped or duplicated a finish: %', payload;
+  end if;
   payload := public.rankings_page('marathon','unknown',2099,'205',1);
   if (payload->>'total')::integer <> 1 or (payload->'rows'->0->>'place')::integer <> 204 then
     raise exception 'search changed cohort rank: %',payload;
