@@ -96,6 +96,7 @@ it("resizes the existing WebView to its displayed height without reloading the s
   await act(async () => renderer.update(createElement(AthleteCrest, { model, height: 134.375 })));
   expect(renderer.root.findByType("WebView" as never)).toBe(web);
   expect(web.props.style).toMatchObject({ height: 134.375, opacity: 1 });
+  expect(web.props.textZoom).toBe(100);
   expect(scene.inject).toHaveBeenCalledTimes(sends);
 });
 
