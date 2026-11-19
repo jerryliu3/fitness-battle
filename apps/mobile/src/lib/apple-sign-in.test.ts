@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   signInWithAppleNative,
   type AppleNativeSignInDeps,
-} from "./apple-sign-in-flow";
+} from "./apple-sign-in";
 
 function deps(overrides: Partial<AppleNativeSignInDeps> = {}): AppleNativeSignInDeps {
   return {

@@ -4,7 +4,7 @@ import {
   parseOAuthReturnUrl,
   signInWithProviderOAuth,
   type ProviderOAuthDeps,
-} from "./oauth-sign-in-flow";
+} from "./oauth-sign-in";
 
 describe("authCodeFromOAuthReturnUrl", () => {
   it("reads code from query string", () => {

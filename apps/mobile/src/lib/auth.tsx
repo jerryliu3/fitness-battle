@@ -171,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
           }
           void bindPendingOAuthSignupEmail(nextSession.user.email).finally(() => {
+            if (cancelled) return;
             setUser(userFromSession(nextSession.user));
             setAccessToken(nextSession.access_token);
           });
@@ -298,21 +299,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {};
   }, [offlineMode]);
 
+  const finalizeLiveSignIn = useCallback(
+    async (result: { error?: string; cancelled?: boolean }) => {
+      if (!result.error && !result.cancelled) {
+        const { data } = await supabase.auth.getSession();
+        await bindPendingOAuthSignupEmail(data.session?.user?.email);
+      }
+      return result;
+    },
+    [],
+  );
+
   const signInWithGoogle = useCallback(async () => {
     const gate = await prepareLiveSignIn();
     if (gate.error) return gate;
-    return signInWithProviderOAuth("google", supabaseProviderOAuthDeps(supabase));
-  }, [prepareLiveSignIn]);
+    return finalizeLiveSignIn(
+      await signInWithProviderOAuth("google", supabaseProviderOAuthDeps(supabase)),
+    );
+  }, [prepareLiveSignIn, finalizeLiveSignIn]);
 
   const signInWithApple = useCallback(async () => {
     const gate = await prepareLiveSignIn();
     if (gate.error) return gate;
 
     if (Platform.OS === "ios" && (await AppleAuthentication.isAvailableAsync())) {
-      return signInWithAppleNative(supabaseAppleNativeDeps(supabase));
+      return finalizeLiveSignIn(
+        await signInWithAppleNative(supabaseAppleNativeDeps(supabase)),
+      );
     }
-    return signInWithProviderOAuth("apple", supabaseProviderOAuthDeps(supabase));
-  }, [prepareLiveSignIn]);
+    return finalizeLiveSignIn(
+      await signInWithProviderOAuth("apple", supabaseProviderOAuthDeps(supabase)),
+    );
+  }, [prepareLiveSignIn, finalizeLiveSignIn]);
 
   const api = useMemo<AuthApi>(
     () => ({
