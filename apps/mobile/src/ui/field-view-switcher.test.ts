@@ -2,10 +2,16 @@ vi.mock("./app-icon", () => ({ AppIcon: "AppIcon" }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-vi.mock("react-native", () => ({useColorScheme: () => "light", View: "View", Text: "Text", Pressable: "Pressable", Switch: "Switch", Platform: { OS: "ios" } }));
+vi.mock("react-native", () => ({useColorScheme: () => "light", View: "View", Text: "Text", Pressable: "Pressable", Switch: "Switch", StyleSheet: { absoluteFill: {} }, Platform: { OS: "ios" } }));
 vi.mock("./anchored-menu", () => ({
+  AnchoredMenuItem: ({ accessibilityLabel, selected, onPress }: { accessibilityLabel: string; selected: boolean; onPress: () => void }) =>
+    createElement("Pressable", { accessibilityLabel, accessibilityState: { selected }, onPress }),
   AnchoredMenu: ({ children }: { children: unknown }) => children,
   useAnchoredMenu: () => ({ open: true, close: vi.fn(), toggle: vi.fn(), anchorRef: { current: null }, menuLayout: null }),
+}));
+const native = vi.hoisted(() => ({ enabled: false }));
+vi.mock("./system-choice", () => ({
+  get SystemChoice() { return native.enabled ? "SystemChoice" : null; },
 }));
 vi.mock("./section", () => ({ textStyle: () => ({}) }));
 vi.mock("../lib/haptics", () => ({ playCue: () => {} }));
@@ -55,6 +61,26 @@ it("uses the shared Recovery policy without offering an unrelated sport view", a
     expect(choices.map(button => button.props.accessibilityLabel)).toEqual(["Select Timeline"]);
   } finally {
     if (renderer) await act(async () => renderer.unmount());
+    vi.unstubAllGlobals();
+  }
+});
+
+
+it("uses the iOS system menu when the bridge is available", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  native.enabled = true;
+  const onChange = vi.fn();
+  let renderer!: ReactTestRenderer;
+  try {
+    await act(async () => { renderer = create(createElement(FieldViewSwitcher, { value: "4d", event: "running", onChange })); });
+    const menu = renderer.root.findByType("SystemChoice" as never);
+    expect(menu.props.value).toBe("4d");
+    expect(menu.props.options.map((option: { label: string }) => option.label)).toEqual(["3D", "2D", "Timeline"]);
+    await act(async () => menu.props.onSelect({ nativeEvent: { value: "graph" } }));
+    expect(onChange).toHaveBeenCalledWith("graph");
+  } finally {
+    if (renderer) await act(async () => renderer.unmount());
+    native.enabled = false;
     vi.unstubAllGlobals();
   }
 });

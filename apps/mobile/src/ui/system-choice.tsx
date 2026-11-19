@@ -5,7 +5,7 @@ export interface SystemChoiceProps {
   dark?: boolean;
   label: string;
   value: string;
-  options: readonly { value: string; label: string }[];
+  options: readonly { value: string; label: string; symbol?: string }[];
   onSelect: (event: { nativeEvent: { value: string } }) => void;
   style?: StyleProp<ViewStyle>;
 }

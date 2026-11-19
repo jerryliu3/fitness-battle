@@ -212,6 +212,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   const pendingDocumentRef = useRef(false);
   const conflictRef = useRef(false);
   const [saveConflict, setSaveConflict] = useState(false);
+  const [draftBackupFailed, setDraftBackupFailed] = useState(false);
   const [noticeAttempt, setNoticeAttempt] = useState(0);
   const refreshFlight = useRef<Promise<boolean> | null>(null);
   const lastRefresh = useRef(0);
@@ -258,6 +259,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     setState(null);
     stateRef.current = null;
     setSaveError(null);
+    setDraftBackupFailed(false);
     setSaving(false);
     savingRef.current = false;
     setFieldNotice(null);
@@ -1008,23 +1010,33 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     if (savingRef.current) return;
     if (conflictRef.current) {
       const id = accountRef.current;
+      const generation = lifecycle.current;
       const scoped = accountStorageKeys(id);
-      void AsyncStorage.setItem(
-        `${scoped.state}:recovery`,
-        JSON.stringify(stateRef.current),
-      )
-        .then(() => AsyncStorage.removeItem(scoped.dirty))
-        .then(() => {
-          if (accountRef.current !== id) return;
-          conflictRef.current = false;
-          setSaveConflict(false);
-          unsavedRef.current = false;
-          dirtyRef.current += 1;
-          setLoadAttempt((value) => value + 1);
-        })
-        .catch(() =>
-          setSaveError("Could not preserve the local draft. Try again."),
-        );
+      const isCurrent = () => accountRef.current === id && lifecycle.current === generation;
+      savingRef.current = true;
+      setSaving(true);
+      void (async () => {
+        try {
+          await AsyncStorage.setItem(`${scoped.state}:recovery`, JSON.stringify(stateRef.current));
+          if (!isCurrent()) return;
+          await AsyncStorage.removeItem(scoped.dirty);
+        } catch {
+          if (isCurrent()) setDraftBackupFailed(true);
+          return;
+        } finally {
+          if (isCurrent()) {
+            savingRef.current = false;
+            setSaving(false);
+          }
+        }
+        if (!isCurrent()) return;
+        setDraftBackupFailed(false);
+        conflictRef.current = false;
+        setSaveConflict(false);
+        unsavedRef.current = false;
+        dirtyRef.current += 1;
+        setLoadAttempt(value => value + 1);
+      })();
       return;
     }
     if (!loadReady.current) {
@@ -1167,9 +1179,9 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       }}
     >
       <Toast key={`${owner ?? "guest"}:${noticeAttempt}`}
-        message={saveConflict ? "Your account changed elsewhere. Reload to continue. Your local draft will be kept as a recovery copy." : saveError ?? ""}
+        message={saveConflict && draftBackupFailed ? "Could not preserve the local draft. Try again." : saveConflict ? "Your account changed elsewhere. Reload to continue. Your local draft will be kept as a recovery copy." : saveError ?? ""}
         action={{ label: saving ? "Saving…" : saveConflict ? "Reload account" : "Retry save", onPress: retrySave, disabled: saving }}
-        durationMs={saveConflict ? null : 8000}
+        durationMs={null}
         priority={saveConflict ? 20 : 10}
       />
       {children}

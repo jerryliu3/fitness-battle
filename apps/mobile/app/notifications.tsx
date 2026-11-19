@@ -1,5 +1,6 @@
+import { AppSwitch } from "../src/ui/app-switch";
 import { useFocusStyles } from "../src/ui/focus";
-import { createThemedStyles, useThemedStyles, legacyColors, useLegacyColors, useThemeColors } from "../src/theme";
+import { createThemedStyles, useThemedStyles, legacyColors, useThemeColors } from "../src/theme";
 import { AppText, SectionHeader, textStyle } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { IconButton } from "../src/ui/icon-button";
@@ -14,7 +15,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   View,
 } from "react-native";
@@ -72,7 +72,6 @@ function NotificationInfoTip({
 
 export default function NotificationsScreen() {
 const f=useFocusStyles();
-const colors=useLegacyColors();
 const styles=useThemedStyles(stylesThemes);
 
   const params = useLocalSearchParams<{ returnTo?: string }>();
@@ -251,14 +250,11 @@ const styles=useThemedStyles(stylesThemes);
                 message="Turn this on to allow Overtaek alerts on your device. Individual notification types can be toggled below."
               />
             </View>
-            <Switch
+            <AppSwitch
               accessibilityLabel="Push notifications"
               value={prefs.enabled}
               disabled={busy}
               onValueChange={(value) => void toggleMaster(value)}
-              trackColor={{ false: colors.line, true: colors.ink }}
-              thumbColor={prefs.enabled ? colors.card : colors.ink}
-              ios_backgroundColor={colors.line}
             />
           </View>
         </View>
@@ -281,16 +277,13 @@ const styles=useThemedStyles(stylesThemes);
                     message={category.description}
                   />
                 </View>
-                <Switch
+                <AppSwitch
                   accessibilityLabel={category.label}
                   value={prefs.categories[category.id]}
                   disabled={!prefs.enabled || busy}
                   onValueChange={(value) =>
                     void toggleCategory(category.id, value)
                   }
-                  trackColor={{ false: colors.line, true: colors.ink }}
-                  thumbColor={prefs.categories[category.id] ? colors.card : colors.ink}
-                  ios_backgroundColor={colors.line}
                 />
               </View>
             ))}

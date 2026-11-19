@@ -216,7 +216,7 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
                   maxLength={4900}
                   editable={!busy}
                 />
-                <FocusButton label={busy ? "Sending…" : "Send report"} disabled={busy || message.trim().length < 10} onPress={() => void submitReport()} />
+                <FocusButton label="Send report" busy={busy} disabled={message.trim().length < 10} onPress={() => void submitReport()} />
                 <FocusButton label="Cancel" secondary disabled={busy} onPress={() => setReporting(false)} />
               </View>
             ) : confirmBlock ? (

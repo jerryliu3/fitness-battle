@@ -107,7 +107,7 @@ function RoundReplayBody({
           boardRows={boardRows}
         />
         <div className="compete-field-options">{courseOptions}</div>
-        <CompeteSheet scrollable active overview={<CompetitionTimelineControls />}>
+        <CompeteSheet scrollable active overview={<CompetitionTimelineControls floating />}>
           <CompetitionPanel
             active
             standings={

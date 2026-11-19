@@ -87,6 +87,16 @@ describe("web account revision handling", () => {
   await act(async () => api.dispatch({ type: "set-city", city: "Another draft" }));
   await act(async () => { vi.advanceTimersByTime(500); await flush(); });
   expect(writes()).toHaveLength(1);
+  const setItem = localStorage.setItem;
+  localStorage.setItem = (key, value) => {
+    if (key.endsWith(":recovery")) throw new Error("quota");
+    setItem(key, value);
+  };
+  await act(async () => { api.retryLoad(); await flush(); });
+  expect(api.state?.city).toBe("Another draft");
+  const alert = renderer.root.findByProps({ role: "alert" });
+  expect(alert.findByType("p").props.children).toBe("Could not preserve the local draft. Try again.");
+  localStorage.setItem = setItem;
   await act(async () => { api.retryLoad(); await flush(); });
   expect(values.has("fb-compete-v1:athlete:recovery")).toBe(true);
   expect(api.state?.city).toBe("Server city");

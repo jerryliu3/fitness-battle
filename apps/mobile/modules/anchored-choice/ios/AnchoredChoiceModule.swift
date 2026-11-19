@@ -75,7 +75,8 @@ final class AnchoredChoiceView: ExpoView {
     button.accessibilityLabel = "\(label): \(selected)"
     button.menu = UIMenu(title: label, children: options.compactMap { option -> UIAction? in
       guard let key = option["value"], let title = option["label"] else { return nil }
-      return UIAction(title: title, state: key == value ? .on : .off) { [weak self] _ in
+      let image = option["symbol"].flatMap { UIImage(systemName: $0) }
+      return UIAction(title: title, image: image, state: key == value ? .on : .off) { [weak self] _ in
         self?.onSelect(["value": key])
       }
     })

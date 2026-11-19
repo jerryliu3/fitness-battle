@@ -2,7 +2,7 @@ import { useFocusStyles } from "./focus";
 import { createThemedStyles, useThemedStyles, useThemeColors, useAppTheme } from "../theme";
 import { SystemChoice } from "./system-choice";
 import { textStyle } from "./section";
-import { useAnchoredMenu, AnchoredMenu } from "./anchored-menu";
+import { useAnchoredMenu, AnchoredMenu, AnchoredMenuItem } from "./anchored-menu";
 import {
   Pressable,
   ScrollView,
@@ -21,16 +21,6 @@ const c=useThemeColors();
   return (
     <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" style={{ marginLeft: 6 }}>
       <Path d="M6 9l6 6 6-6" stroke={c.muted} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-function CheckIcon() {
-const c=useThemeColors();
-
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-      <Path d="M5 13l4 4L19 7" stroke={c.ink} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
@@ -102,38 +92,19 @@ const s=useThemedStyles(sThemes);
           bounces={false}
           keyboardShouldPersistTaps="handled"
         >
-          {options.map((option, index) => {
-            const isSelected = option.value === value;
-            return (
-              <Pressable
-                key={option.value}
-                accessibilityRole="button"
-                accessibilityLabel={option.label}
-                accessibilityState={{ selected: isSelected }}
-                style={({ pressed }) => [
-                  s.option,
-                  isSelected && s.optionSelected,
-                  pressed && s.optionPressed,
-                  index === options.length - 1 && s.optionLast,
-                ]}
-                onPress={() => {
-                  void playCue("selection");
-                  onChange(option.value);
-                  close();
-                }}
-              >
-                <Text
-                  style={[
-                    isSelected ? textStyle("label") : textStyle("body"),
-                    { flexShrink: 1, color: c.ink },
-                  ]}
-                >
-                  {option.label}
-                </Text>
-                {isSelected ? <CheckIcon /> : null}
-              </Pressable>
-            );
-          })}
+          {options.map(option => (
+            <AnchoredMenuItem
+              key={option.value}
+              label={option.label}
+              selected={option.value === value}
+
+              onPress={() => {
+                void playCue("selection");
+                onChange(option.value);
+                close();
+              }}
+            />
+          ))}
         </ScrollView>
       </AnchoredMenu>
     </View>
@@ -154,23 +125,5 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   },
   triggerOpen: {
     borderColor: c.ink,
-  },
-  option: {
-    height: 44,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: c.line,
-  },
-  optionSelected: {
-    backgroundColor: c.soft,
-  },
-  optionPressed: {
-    backgroundColor: c.soft,
-  },
-  optionLast: {
-    borderBottomWidth: 0,
   },
 };});

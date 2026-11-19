@@ -15,8 +15,8 @@ export function OnboardingFeatureTour({ draft, selected, onSelect, onScoreChange
   return <View style={{ flex: 1 }}>
     <View style={{ width: 228 * layoutScale, marginTop: 8 * layoutScale, gap: 8 * layoutScale }}>
       <AppText accessibilityRole="header" role="heading">{ONBOARDING_FEATURES.find(item => item.id === selected)!.heading}</AppText>
-      <FocusSegments label="Discover" compact pill options={ONBOARDING_FEATURES.map(item => ({ value: item.id, label: item.label }))} value={selected} onChange={onSelect} />
-      {selected === "vitals" && <FocusSegments label="Body model" compact pill options={[{ value: "female", label: "Female" }, { value: "male", label: "Male" }]} value={gender} onChange={setGender} />}
+      <FocusSegments label="Discover" compact options={ONBOARDING_FEATURES.map(item => ({ value: item.id, label: item.label }))} value={selected} onChange={onSelect} />
+      {selected === "vitals" && <FocusSegments label="Body model" compact options={[{ value: "female", label: "Female" }, { value: "male", label: "Male" }]} value={gender} onChange={setGender} />}
     </View>
     <View style={{ flex: 1, marginTop: 12 * layoutScale }}>
       <OnboardingCanvas>

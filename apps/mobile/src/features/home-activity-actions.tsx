@@ -214,12 +214,12 @@ export function HomeActivityActions({
         menuLayout={sportMenu.menuLayout}
         accessibilityLabel="Close sport menu"
       >
-        {SPORTS.map((item, idx) => (
+        {SPORTS.map(item => (
           <AnchoredMenuItem
             key={item.id}
             label={item.name}
             left={<SportIcon sport={item.id} size={18} />}
-            last={idx === SPORTS.length - 1}
+
             onPress={() => {
               void playCue("selection");
               setSport(item.id);

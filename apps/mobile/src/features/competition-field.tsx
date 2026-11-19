@@ -703,7 +703,7 @@ const f=useFocusStyles();
               </SlidingFieldPanel>
             ) : null}
           </> : null}
-          {!backgroundMode && !queued && <FieldOverlayView hidden={overlaysHidden} style={{ position: "absolute", left: 12, right: 12, bottom: safeBottom + 8 }}><FieldTimeline timeline={timeline} /></FieldOverlayView>}
+          {!backgroundMode && !queued && <FieldOverlayView hidden={overlaysHidden} style={{ position: "absolute", left: 12, right: 12, bottom: safeBottom + 8 }}><FieldTimeline timeline={timeline} floating /></FieldOverlayView>}
           <AthleteProfileSheet athlete={profileAthlete} onClose={() => setProfileAthlete(null)} />
           </View>
         </FullscreenHost>

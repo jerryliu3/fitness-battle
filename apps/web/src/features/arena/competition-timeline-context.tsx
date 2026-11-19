@@ -9,7 +9,7 @@ export function CompetitionTimelineProvider({ state, selection, active, replay =
   const timeline = useFieldTimeline(state, selection, active, replay);
   return <Context.Provider value={timeline}>{children}</Context.Provider>;
 }
-export function CompetitionTimelineControls() {
+export function CompetitionTimelineControls({ floating = false }: { floating?: boolean } = {}) {
   const timeline = useCompetitionTimeline();
-  return timeline ? <FieldTimeline timeline={timeline} /> : null;
+  return timeline ? <FieldTimeline timeline={timeline} floating={floating} /> : null;
 }

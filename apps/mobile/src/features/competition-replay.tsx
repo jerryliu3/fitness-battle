@@ -144,7 +144,7 @@ function RoundReplayBody({
           active
           expandRequest={0}
           defaultIndex={0}
-          overview={<CompetitionTimelineControls />}
+          overview={<CompetitionTimelineControls floating />}
         >
           <CompetitionPanel
             active

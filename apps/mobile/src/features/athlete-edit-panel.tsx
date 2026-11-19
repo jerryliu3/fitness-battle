@@ -8,13 +8,13 @@ import {
   type CompeteState,
   type ProfileGender,
 } from "@fitness-battle/shared";
-import { Input } from "heroui-native/input";
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { TextField } from "../ui/text-field";
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
+import { Pressable, View, type TextInput } from "react-native";
 import { SHELL_RADIUS, useThemeColors } from "../theme";
 import { ChoicePicker } from "../ui/choice-picker";
 import { FocusButton, FocusSegments, useFocusStyles } from "../ui/focus";
-import { AppText, SectionHeader, textStyle } from "../ui/section";
+import { AppText, SectionHeader } from "../ui/section";
 import { CountryPicker } from "../ui/country-picker";
 import { ProfilePhoto } from "./profile-photo";
 
@@ -72,6 +72,7 @@ export function AthleteProfileEditor({
   const [countryCode, setCountryCode] = useState(state.countryCode ?? "");
   const [highlights, setHighlights] = useState<string[] | undefined>(state.cardHighlights);
   const [filter, setFilter] = useState<FilterKind>("all");
+  const nameField = useRef<ComponentRef<typeof TextInput>>(null);
   const [error, setError] = useState<string | null>(null);
   const [limitHint, setLimitHint] = useState(false);
 
@@ -122,6 +123,7 @@ export function AthleteProfileEditor({
     const trimmedName = name.trim();
     if (!trimmedName) {
       setError("Display name cannot be empty.");
+      nameField.current?.focus();
       return;
     }
     if (trimmedName !== state.name) {
@@ -146,22 +148,15 @@ export function AthleteProfileEditor({
         <View style={[f.row, { gap: 14, alignItems: "center" }]}>
           <ProfilePhoto state={state} editSize={100} />
           <View style={{ flex: 1, gap: 8 }}>
-            <Input
-              style={textStyle("body")}
+            <TextField
+              ref={nameField}
+              label="Name"
               value={name}
-              onChangeText={setName}
-              accessibilityLabel="Name"
+              onChangeText={value => { setName(value); setError(null); }}
               maxLength={32}
-              placeholder="Name"
+              error={error}
             />
-            <Input
-              style={textStyle("body")}
-              value={city}
-              onChangeText={setCity}
-              accessibilityLabel="City"
-              maxLength={40}
-              placeholder="City"
-            />
+            <TextField label="City (optional)" value={city} onChangeText={setCity} maxLength={40} />
             <ChoicePicker
               label="Gender (optional)"
               value={gender ?? ""}
@@ -179,11 +174,6 @@ export function AthleteProfileEditor({
             </View>
           </View>
         </View>
-        {error ? (
-          <AppText role="caption" style={{ color: c.statusError }}>
-            {error}
-          </AppText>
-        ) : null}
       </View>
 
       {dirty && <View style={[f.row, { gap: 10, paddingTop: 4 }]}>

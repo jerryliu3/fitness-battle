@@ -49,7 +49,7 @@ export function useCrewContractModal(crewId: string, input: CrewOverviewInput) {
       <AppText role="caption">Target</AppText>
       <NumberStepper label="Contract target" value={target} min={targetSpec.min} max={targetSpec.max} step={targetSpec.step} unit={targetSpec.unit} presets={targetSpec.presets} disabled={busy} onChange={setTarget} />
       <AppText role="caption" secondary>This week’s active members are included. Changing the contract replaces its objective; stamps settle at week close.</AppText>
-      <FocusButton label={busy ? "Saving…" : "Save contract"} disabled={busy || !title.trim()} onPress={submit} />
+      <FocusButton label="Save contract" busy={busy} disabled={!title.trim()} onPress={submit} />
     </View> : <View style={{ gap: 16 }}>
       {contract ? <><AppText role="display">{contract.title}</AppText><AppText role="value">{crewContractValue(contract.metric, contract.value, units)} / {crewContractValue(contract.metric, contract.target, units)}</AppText><AppText role="caption" secondary>{contract.contributors} / {contract.roster_size} teammates contributed.</AppText></> : <AppText role="body">Choose one shared objective for this week.</AppText>}
       <FocusButton label={contract ? "Change contract" : "Set contract"} onPress={editContract} />

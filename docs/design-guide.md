@@ -47,6 +47,18 @@ without this line? If there is no specific answer, omit it. Fix unclear layout o
 interaction before compensating with permanent instructions. Shortening copy
 must not simply leave oversized empty wrappers and inherited introduction gaps.
 
+### Search, text entry, and pickers
+
+Use a soft Slate pill for filtering and an opaque rounded rectangle with a
+persistent label for ordinary text entry. Clear the query
+independently of the saved value in a picker sheet. Show a no-results state
+when the search has no matches.
+
+Use the native iOS menu for short choices and native date and time controls
+where supported. Give long lists a searchable sheet. Reserve material effects
+for floating navigation and controls, where the underlying content provides
+context. Keep picker fields and result text on readable, opaque surfaces.
+
 ### Make data interpretable with the minimum useful context
 
 Lead with the selected reading and its time context. Provide real units,

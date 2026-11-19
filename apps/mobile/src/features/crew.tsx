@@ -536,7 +536,6 @@ const f=useFocusStyles();
         ))}
         <AnchoredMenuItem
           label="New crew +"
-          last
           onPress={() => {
             createAfterSwitch.current = true;
             switcherMenu.close();

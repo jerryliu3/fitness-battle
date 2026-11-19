@@ -4,6 +4,7 @@ import { SHELL_SPACING, SHELL_SECTION, SHELL_RADIUS } from "@fitness-battle/shar
 import { AppText, PageHeader, textStyle } from "./section";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  ActivityIndicator,
   Animated,
   BackHandler,
   Easing,
@@ -389,6 +390,7 @@ export function FocusButton({
   onPress,
   secondary = false,
   disabled = false,
+  busy = false,
   fit = false,
 }: {
   label: string;
@@ -396,6 +398,7 @@ export function FocusButton({
   onPress: () => void;
   secondary?: boolean;
   disabled?: boolean;
+  busy?: boolean;
   fit?: boolean;
 }) {
 const c=useThemeColors();
@@ -405,10 +408,10 @@ const f=useThemedStyles(fThemes);
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      disabled={disabled}
-      accessibilityState={{ disabled }}
+      disabled={disabled || busy}
+      accessibilityState={{ disabled: disabled || busy, busy }}
       onPress={() => {
-        if (disabled) return;
+        if (disabled || busy) return;
         void playCue("light");
         onPress();
       }}
@@ -416,11 +419,14 @@ const f=useThemedStyles(fThemes);
         f.button,
         fit && { height: 52, minHeight: 52, paddingVertical: 0 },
         secondary && f.secondary,
-        pressed && !disabled && { opacity: 0.78 },
-        disabled && { opacity: 0.4 },
+        pressed && !disabled && !busy && { opacity: 0.78 },
+        disabled && !busy && { opacity: 0.4 },
       ]}
     >
-      <Text numberOfLines={fit ? 2 : undefined} adjustsFontSizeToFit={fit} maxFontSizeMultiplier={fit ? 1.2 : undefined} minimumFontScale={fit ? 1 : undefined} style={[f.buttonText, secondary && { color: c.ink }]}>{label}</Text>
+      <Text numberOfLines={fit ? 2 : undefined} adjustsFontSizeToFit={fit} maxFontSizeMultiplier={fit ? 1.2 : undefined} minimumFontScale={fit ? 1 : undefined} style={[f.buttonText, secondary && { color: c.ink }, busy && { opacity: 0 }]}>{label}</Text>
+      {busy && <View pointerEvents="none" style={[StyleSheet.absoluteFill, f.buttonSpinner]}>
+        <ActivityIndicator size="small" color={secondary ? c.ink : c.textOnAction} />
+      </View>}
     </Pressable>
   );
 }
@@ -433,7 +439,6 @@ export function FocusSegments<T extends string>({
   accent = false,
   variant = "segments",
   compact = false,
-  pill = false,
 }: {
   label: string;
   options: readonly { value: T; label: string; accessibilityLabel?: string }[];
@@ -442,7 +447,6 @@ export function FocusSegments<T extends string>({
   accent?: boolean;
   variant?: "segments" | "tabs";
   compact?: boolean;
-  pill?: boolean;
 }) {
 const c=useThemeColors();
 const f=useThemedStyles(fThemes);
@@ -475,14 +479,12 @@ const f=useThemedStyles(fThemes);
       style={[
         f.segments,
         compact && f.segmentsCompact,
-        pill && { borderRadius: 999 },
         variant === "tabs" && { backgroundColor: "transparent", borderWidth: 0, borderRadius: 0, padding: 0, borderBottomWidth: 1 },
       ]}
     >
       {width > 0 && <Animated.View pointerEvents="none" style={{
         position: "absolute", left: inset, width: segmentWidth,
-        ...(variant === "tabs" ? { bottom: 0, height: 2 } : compact ? { top: 3, bottom: 3, borderRadius: 9 } : { top: 4, bottom: 4, borderRadius: 20 }),
-        ...(pill ? { borderRadius: 999 } : {}),
+        ...(variant === "tabs" ? { bottom: 0, height: 2 } : { top: compact ? 3 : 4, bottom: compact ? 3 : 4, borderRadius: SHELL_RADIUS.pill }),
         backgroundColor: variant === "tabs" || !accent ? c.ink : c.tennis,
         transform: [{ translateX: position }],
       }} />}
@@ -672,18 +674,16 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
     textAlign: "center",
     color: c.textOnAction,
   },
+  buttonSpinner: { alignItems: "center", justifyContent: "center" },
   secondary: {
-    backgroundColor: c.card,
-    borderWidth: 1,
-    borderColor: c.line,
-    borderBottomWidth: 1,
-    borderBottomColor: c.line,
+    backgroundColor: c.accentSecondarySoft,
+    borderBottomColor: c.accentSecondarySoft,
   },
   segments: {
     flexDirection: "row",
     padding: 4,
     gap: 4,
-    borderRadius: 24,
+    borderRadius: SHELL_RADIUS.pill,
     backgroundColor: c.soft,
     borderWidth: 1,
     borderColor: c.line,
@@ -691,7 +691,6 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
   segmentsCompact: {
     padding: 3,
     gap: 2,
-    borderRadius: 12,
     flexGrow: 0,
     flexShrink: 0,
   },
@@ -701,16 +700,14 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
     minHeight: 44,
     paddingHorizontal: 8,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: SHELL_RADIUS.pill,
     justifyContent: "center",
     alignItems: "center",
   },
   segmentCompact: {
-    minWidth: 38,
-    minHeight: 28,
+    minWidth: 44,
     paddingHorizontal: 7,
     paddingVertical: 4,
-    borderRadius: 9,
   },
   segmentSelected: { backgroundColor: c.ink },
   segmentText: {

@@ -149,12 +149,6 @@
   text-align: left;
   margin: 4px 0 20px;
 }
-.focus-segments {
-  border-radius: 24px;
-  padding: 4px;
-  background: var(--accent-soft);
-  border-color: var(--line);
-}
 .focus-segments button[aria-pressed="true"],
 .focus-elo-track-toggle button[aria-pressed="true"] {
   background: var(--ink);
@@ -548,10 +542,6 @@
   letter-spacing: normal;
   text-transform: none;
   font: var(--type-caption);
-}
-.phone-shell .focus-segments > button {
-  border-radius: 20px;
-  min-height: 44px;
 }
 .phone-shell .focus-segments > button[aria-selected="true"] {
   background: var(--ink);
@@ -2387,11 +2377,22 @@
 .field-timeline { padding: 8px 12px; background: var(--card); color: var(--ink); border-radius: 12px; }
 .field-timeline-heading { display: flex; align-items: center; gap: 8px; }
 .field-timeline-heading > span { flex: 1; min-width: 0; font: var(--type-caption); }
-.field-timeline button { min-height: 44px; padding: 4px 10px; border-radius: 12px; background: var(--paper); color: var(--ink); font: var(--type-caption); }
+.field-timeline button { min-height: 44px; padding: 4px 10px; border-radius: 999px; background: var(--soft); color: var(--ink); font: var(--type-caption); }
 .field-timeline button:disabled { opacity: .4; }
 .field-timeline input { display: block; width: 100%; min-height: 44px; margin: 0; accent-color: var(--teal, #176c75); cursor: pointer; }
 .field-timeline small { display: block; color: var(--muted); font: var(--type-caption); }
 .field-timeline-fullscreen { position: fixed; bottom: max(14px, env(safe-area-inset-bottom)); left: 14px; right: 14px; max-width: 560px; margin-inline: auto; pointer-events: auto; }
+.field-timeline button:active:not(:disabled) { filter: brightness(.9); }
+:is(.field-timeline-fullscreen .field-timeline, .field-timeline-floating) { border: 1px solid #ffffff52; border-radius: 22px; background: var(--app-surface-inverse); color: var(--app-text-on-inverse); }
+:is(.field-timeline-fullscreen .field-timeline, .field-timeline-floating) button { background: #ffffff24; color: inherit; }
+.field-timeline button.field-timeline-play, :is(.field-timeline-fullscreen .field-timeline, .field-timeline-floating) button.field-timeline-play { background: var(--app-action-primary); color: var(--app-text-on-action); }
+:is(.field-timeline-fullscreen .field-timeline, .field-timeline-floating) small { color: inherit; }
+:is(.field-timeline-fullscreen .field-timeline, .field-timeline-floating) input { accent-color: var(--app-action-primary); }
+@supports (backdrop-filter: blur(14px)) {
+  @media (prefers-reduced-transparency: no-preference) {
+    :is(.field-timeline-fullscreen .field-timeline, .field-timeline-floating) { background: color-mix(in srgb, var(--app-surface-inverse) 88%, transparent); backdrop-filter: blur(14px); }
+  }
+}
 .focus-broadcast-hud.has-timeline .focus-broadcast-overview { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 128px); }
 .focus-broadcast-hud.has-timeline .focus-broadcast-spotlight { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 184px); }
 .focus-field-expanded:has(.has-timeline) .club-perspective-group .club-distance-controls { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 348px); }
