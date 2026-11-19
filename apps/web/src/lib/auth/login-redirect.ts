@@ -50,7 +50,9 @@ function isAuthPath(path: string) {
     path === "/signup" ||
     path.startsWith("/signup/") ||
     path === "/auth/callback" ||
-    path.startsWith("/auth/callback/")
+    path.startsWith("/auth/callback/") ||
+    path === "/auth/google" ||
+    path.startsWith("/auth/google/")
   );
 }
 
