@@ -1,5 +1,6 @@
 "use client";
-import { AppParagraph, SectionHeader, AppHeading } from "@/ui/section";
+import { AppHeading, AppParagraph, SectionHeader } from "@/ui/section";
+import { AdminShell } from "@/features/you/admin-shell";
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -10,7 +11,6 @@ import { WeekReveal } from "@/features/split/components/week-reveal";
 import { isAdminEmail } from "@/lib/auth/admin-access";
 import { buildLoginHref } from "@/lib/auth/login-redirect";
 import { AdminScenarioControls } from "@/features/you/admin-scenario-controls";
-import { AdminRouteControls } from "@/features/you/admin-route-controls";
 import { AdminFieldControls } from "@/features/you/admin-field-controls";
 
 export default function AdminLab() {
@@ -58,9 +58,8 @@ export default function AdminLab() {
     return null;
   }
 
-  return <main className="fb-card" style={{ padding: 24, maxWidth: 800, margin: "auto" }}>
-    <AppHeading level={1} role="display">Round lab</AppHeading>
-    <AppParagraph typographyRole="body" className="fb-copy">Local simulation is isolated from your account. Production settlement below writes real results.</AppParagraph>
+  return <AdminShell title="Round lab">
+    <AppParagraph typographyRole="body" className="fb-copy">Local simulation is isolated from your account. Production settlement below writes real results. Route catalog and wave tools live on their own admin pages.</AppParagraph>
     <section><SectionHeader title="Local sandbox"/>
       <AppParagraph typographyRole="body">{competeNow(local).toLocaleString()} · {local.activities.length} sessions · {local.periodResults.length} results</AppParagraph>
       <div className="focus-actions">
@@ -103,7 +102,6 @@ export default function AdminLab() {
     </section>}
     {user.mode === "supabase" && <AdminScenarioControls target={target} owner={user.id} onTargetChange={(value) => { setTarget(value); setPreview(null); }}/>}
     {user.mode === "supabase" && <AdminFieldControls target={target} owner={user.id}/>}
-    {user.mode === "supabase" && <AdminRouteControls key={user.id}/>}
     {note && <AppParagraph typographyRole="body" role="status">{note}</AppParagraph>}
-  </main>;
+  </AdminShell>;
 }

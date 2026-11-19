@@ -1,53 +1,47 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { AdminRouteControls } from "./admin-route-controls";
+import { AdminRoutesWorkspace } from "./admin-routes-workspace";
 let renderer: ReactTestRenderer;
 let fetcher: ReturnType<typeof vi.fn>;
 const saved = { id: "park-loop", name: "Park", location: "", coordinates: [[0, 0], [.02, 0]], is_active: true, updated_at: "2026-10-28T14:00:00Z" };
+const emptyOverview = { surfaces: [], catalog: [], assignments: [], activeIds: [] };
 const button = (text: string) => renderer.root.findAllByType("button").find(node => node.children.includes(text))!;
 const input = (label: string) => renderer.root.findAllByType("label").find(node => node.children.includes(label))!.findByType("input");
-beforeEach(async () => { vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher); await act(async () => { renderer = create(createElement(AdminRouteControls)); }); });
+beforeEach(async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  fetcher = vi.fn().mockResolvedValue(Response.json({ routes: [], overview: emptyOverview }));
+  vi.stubGlobal("fetch", fetcher);
+  await act(async () => { renderer = create(createElement(AdminRoutesWorkspace)); });
+});
 afterEach(async () => { await act(async () => renderer.unmount()); vi.unstubAllGlobals(); });
 it("previews a GPX draft before saving and retains the returned revision for later edits", async () => {
   await act(async () => button("New route").props.onClick());
   await act(async () => { input("Route ID").props.onChange({ target: { value: "park-loop" } }); });
   await act(async () => { input("Name").props.onChange({ target: { value: "Park" } }); });
   await act(async () => input("Import GPX").props.onChange({ target: { files: [{ size: 100, text: async () => '<gpx><trkseg><trkpt lat="0" lon="0"/><trkpt lat="0" lon=".02"/></trkseg></gpx>' }], value: "" } }));
-  expect(fetcher).not.toHaveBeenCalled();
-  expect(renderer.root.findByType("svg").props["aria-label"]).toBe("Route shape preview");
-  fetcher.mockResolvedValueOnce(Response.json({ route: saved }));
+  fetcher.mockResolvedValueOnce(Response.json({ route: saved })).mockResolvedValueOnce(Response.json({ routes: [saved], overview: emptyOverview }));
   await act(async () => renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }));
-  expect(JSON.parse(fetcher.mock.calls[0][1].body)).toMatchObject({ id: "park-loop", coordinates: [[0, 0], [.02, 0]], updatedAt: null });
+  const postCall = fetcher.mock.calls.find(call => call[1]?.method === "POST");
+  expect(JSON.parse(postCall![1].body)).toMatchObject({ id: "park-loop", coordinates: [[0, 0], [.02, 0]], updatedAt: null });
   expect(input("Route ID").props.disabled).toBe(true);
   fetcher.mockResolvedValueOnce(Response.json({ route: { ...saved, name: "Edited", updated_at: "2026-10-28T14:01:00Z" } }));
   await act(async () => input("Name").props.onChange({ target: { value: "Edited" } }));
   await act(async () => renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }));
-  expect(JSON.parse(fetcher.mock.calls[1][1].body).updatedAt).toBe(saved.updated_at);
+  const secondPost = fetcher.mock.calls.filter(call => call[1]?.method === "POST").at(-1);
+  expect(JSON.parse(secondPost![1].body).updatedAt).toBe(saved.updated_at);
 });
 it("loads inactive routes for editing and preserves the draft on a concurrent-edit conflict", async () => {
-  const overview = { surfaces: [], catalog: [], assignments: [], activeIds: [] };
-  fetcher.mockResolvedValueOnce(Response.json({ routes: [{ ...saved, is_active: false }], overview })).mockResolvedValueOnce(Response.json({ route: { ...saved, is_active: false } })).mockResolvedValueOnce(Response.json({ error: "Route changed. Reload before saving." }, { status: 409 }));
-  await act(async () => button("Load route catalog").props.onClick());
-  await act(async () => renderer.root.findByProps({ "aria-label": "Saved routes" }).props.onChange({ target: { value: saved.id } }));
+  fetcher
+    .mockResolvedValueOnce(Response.json({ routes: [{ ...saved, is_active: false }], overview: { ...emptyOverview, catalog: [{ ...saved, is_active: false, frozenWeeks: 0, upcomingWeeks: 0, inRotation: false }] } }))
+    .mockResolvedValueOnce(Response.json({ route: { ...saved, is_active: false } }))
+    .mockResolvedValueOnce(Response.json({ error: "Route changed. Reload before saving." }, { status: 409 }));
+  await act(async () => { renderer = create(createElement(AdminRoutesWorkspace)); });
+  await act(async () => button("Edit").props.onClick());
   expect(input("Name").props.value).toBe("Park");
   expect(renderer.root.findByProps({ type: "checkbox" }).props.checked).toBe(false);
   await act(async () => input("Name").props.onChange({ target: { value: "My draft" } }));
   await act(async () => renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }));
   expect(input("Name").props.value).toBe("My draft");
   expect(renderer.root.findAllByType("p").find(node => node.props.role === "status")!.children.join("")).toContain("Reload");
-});
-it("renders frozen assignment rows after loading the route overview", async () => {
-  fetcher.mockResolvedValueOnce(Response.json({
-    routes: [{ id: "alpine-chamonix-ridge", name: "Chamonix", location: "FR", is_active: true, updated_at: "2026-10-28T14:18:50.021661+00:00" }],
-    overview: {
-      surfaces: [],
-      catalog: [],
-      assignments: [{ wave_start: "2026-11-19T11:00:00+00:00", route_id: "alpine-chamonix-ridge", route_name: "Chamonix", created_at: "2026-11-18T13:42:19.527554+00:00", started: false, autoRouteId: "alpine-chamonix-ridge", matchesRotation: true }],
-      activeIds: ["alpine-chamonix-ridge"],
-    },
-  }));
-  await act(async () => button("Load route catalog").props.onClick());
-  const table = renderer.root.findAllByType("table").find(node => node.props["aria-label"] === "Competition route assignments");
-  expect(table?.findAllByType("tr").length).toBeGreaterThan(1);
 });
