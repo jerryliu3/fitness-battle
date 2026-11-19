@@ -384,33 +384,6 @@ a {
   background: var(--app-surface-card);
 }
 
-.fb-search-options {
-  max-height: 220px;
-  overflow-y: auto;
-  margin: 0;
-  padding: 4px;
-  list-style: none;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--app-surface-card);
-  color: var(--app-text-primary);
-}
-
-.fb-search-options li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 44px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.fb-search-options li:is(:hover, .active) {
-  background: var(--app-accent-secondary-soft);
-}
-
 .fb-tabs {
   position: fixed;
   left: 50%;
