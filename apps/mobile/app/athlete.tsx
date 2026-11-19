@@ -33,13 +33,14 @@ import { Clipboard, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, V
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AccountActions } from "../src/features/account-actions";
 import { LegalLinks } from "../src/features/legal-links";
+import { SocialAuthButtons } from "../src/features/social-auth-buttons";
 import { AthleteMetrics } from "../src/features/athlete-metrics";
 import { SettingsRow } from "../src/ui/settings-row";
 import { FitnessHistoryImport } from "../src/features/fitness-history-import";
 import { DataSyncActions } from "../src/features/data-sync-actions";
 import { mobileEnv, publicProfileOrigin } from "../src/lib/env";
 import { useAuth } from "../src/lib/auth";
-import { GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft } from "../src/lib/guest-intro";
+import { GUEST_INTRO_DRAFT_KEY, GUEST_OAUTH_SIGNUP_PENDING, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft } from "../src/lib/guest-intro";
 import { useCompeteStore } from "../src/lib/compete-store";
 import {
   createAppleHealthDeps,
@@ -91,6 +92,8 @@ const styles=useThemedStyles(stylesThemes);
     signIn,
     signUp,
     signOut,
+    signInWithGoogle,
+    signInWithApple,
     legacyBackup,
   } = useAuth();
   const currentUser = useRef(user?.id);
@@ -291,6 +294,55 @@ const styles=useThemedStyles(stylesThemes);
     }
   }
 
+  async function submitSocial(provider: "google" | "apple") {
+    setAuthBusy(true);
+    setAuthNote(null);
+    let marked = false;
+    try {
+      const guest = authMode === "signup" ? await readGuestIntroDraft().catch(() => null) : null;
+      if (authMode === "signin" && params.from === "onboarding") {
+        await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
+      } else if (authMode === "signup" && guest?.introCompleted && guest.name.trim()) {
+        try {
+          await AsyncStorage.setItem(
+            GUEST_INTRO_DRAFT_KEY,
+            JSON.stringify({ ...guest, name: displayName.trim() || guest.name }),
+          );
+          await AsyncStorage.setItem(GUEST_SIGNUP_PENDING_KEY, GUEST_OAUTH_SIGNUP_PENDING);
+          marked = true;
+        } catch { /* Lack of local storage must not block account creation. */ }
+      }
+
+      const result =
+        provider === "google"
+          ? await signInWithGoogle()
+          : await signInWithApple();
+      if (result.cancelled) {
+        if (marked) void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
+        return;
+      }
+      if (result.error) {
+        if (marked) void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
+        setAuthNote(result.error);
+        return;
+      }
+      setAuthNote(null);
+      if (authMode === "signup") {
+        router.replace({
+          pathname: guest?.introCompleted ? "/onboarding" : "/welcome",
+          params: { invite: params.invite },
+        });
+      } else if (params.from === "onboarding") {
+        router.replace({ pathname: "/onboarding", params: { invite: params.invite } });
+      }
+    } catch (error) {
+      if (marked) void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
+      setAuthNote(error instanceof Error ? error.message : "Could not access your account.");
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
   async function syncDevice(providerId: "apple_health" | "google_health") {
     if (rowBusy) return;
     if (!user) {
@@ -482,6 +534,13 @@ const styles=useThemedStyles(stylesThemes);
                 ? "Sign in"
                 : "Create account"}
           </AppText></Button>
+          {!offlineMode ? (
+            <SocialAuthButtons
+              busy={authBusy}
+              onGoogle={() => void submitSocial("google")}
+              onApple={() => void submitSocial("apple")}
+            />
+          ) : null}
           {authNote ? <Text style={styles.copy}>{authNote}</Text> : null}
           <LegalLinks />
         </ScrollView>

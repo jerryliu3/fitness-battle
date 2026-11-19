@@ -14,3 +14,15 @@ export function isSupabaseConfigured(url: string, anonKey: string): boolean {
   }
   return url.startsWith("https://") && anonKey.length > 20;
 }
+
+export function resolveAuthDisplayName(
+  userMetadata?: Record<string, unknown> | null,
+  email?: string | null,
+): string {
+  for (const key of ["display_name", "full_name", "name"] as const) {
+    const val = userMetadata?.[key];
+    if (typeof val === "string" && val.trim()) return val.trim().slice(0, 80);
+  }
+  const emailPrefix = email?.split("@")[0]?.trim();
+  return emailPrefix ? emailPrefix.slice(0, 80) : "Athlete";
+}

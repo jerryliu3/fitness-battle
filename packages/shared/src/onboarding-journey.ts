@@ -18,6 +18,7 @@ export const ONBOARDING_SPORT_TILES = {
 
 export const GUEST_INTRO_DRAFT_KEY = "overtaek-guest-intro-draft-v1";
 export const GUEST_SIGNUP_PENDING_KEY = "overtaek-guest-signup-email-v1";
+export const GUEST_OAUTH_SIGNUP_PENDING = "__oauth_signup_pending__";
 export const ONBOARDING_SETUP_TITLES = ["Almost there! Final details", "Bring your training along.", "Your first event"] as const;
 export const ONBOARDING_STEPS = ["sport", "athlete", "overtake", "growth", "account"] as const;
 export type OnboardingStep = typeof ONBOARDING_STEPS[number];
