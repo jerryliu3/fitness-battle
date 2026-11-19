@@ -49,6 +49,7 @@ export * from "./home-deck";
 export * from "./sport-mark";
 
 export * from "./account-runtime";
+export * from "./password-reset";
 
 export * from "./legacy-demo";
 export * from "./crew-activity";

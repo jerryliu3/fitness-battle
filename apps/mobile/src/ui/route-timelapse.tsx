@@ -29,6 +29,7 @@ export interface RoutePlaybackController {
 export interface RouteTimelapseProps {
   coordinates: LngLat[] | string;
   routeReplay?: RouteReplaySample[];
+  running?: boolean;
   mode?: "3d-flyover" | "2d-overview";
   units?: "us" | "metric";
   accentColor?: string;
@@ -45,6 +46,7 @@ export interface RouteTimelapseProps {
 export function RouteTimelapse({
   coordinates,
   routeReplay,
+  running = false,
   mode = "3d-flyover",
   units = "metric",
   accentColor: suppliedaccentColor,
@@ -75,7 +77,7 @@ const styles=useThemedStyles(stylesThemes);
 
   const insetQuery = hudInsets ? `&hudTop=${Math.round(hudInsets.top)}&hudBottom=${Math.round(hudInsets.bottom)}` : "";
   const controlsQuery = hideControls ? "&controls=none" : "";
-  const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/route-scene?mode=${mode}&accent=${encodeURIComponent(accentColor)}&duration=${durationMs}&units=${units}${insetQuery}${controlsQuery}`;
+  const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/route-scene?mode=${mode}&accent=${encodeURIComponent(accentColor)}&duration=${durationMs}&units=${units}${running ? "&running=1" : ""}${insetQuery}${controlsQuery}`;
   const origin = new URL(uri).origin;
 
   function inject(message: object, queueIfNotReady = false) {
@@ -125,7 +127,6 @@ const styles=useThemedStyles(stylesThemes);
         hideControls,
         routeReplay,
         coordinates: polylineStr,
-        mode,
         accentColor,
         durationMs,
       });
@@ -155,7 +156,7 @@ const styles=useThemedStyles(stylesThemes);
             const msg = JSON.parse(event.nativeEvent.data);
             if (msg.type === "route-ready") {
               ready.current = true;
-              inject({ type: "set-route", hudInsets, hideControls, routeReplay, coordinates: polylineStr, mode, accentColor, durationMs });
+              inject({ type: "set-route", hudInsets, hideControls, routeReplay, coordinates: polylineStr, accentColor, durationMs });
               for (const next of pendingMessages.current.splice(0)) {
                 inject(next);
               }

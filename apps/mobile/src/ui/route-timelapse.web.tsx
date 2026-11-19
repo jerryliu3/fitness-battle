@@ -1,62 +1,79 @@
 import { createThemedStyles, useThemedStyles, legacyColors } from "../theme";
-import { useEffect, useRef } from "react";
-import { View, type StyleProp, type ViewStyle } from "react-native";
-import { encodePolyline, type RouteReplaySample, type LngLat } from "@fitness-battle/shared";
+import { useCallback, useEffect, useRef } from "react";
+import { View } from "react-native";
+import { encodePolyline } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { useLegacyColors } from "../theme";
-
-export interface RouteTimelapseProps {
-  coordinates: LngLat[] | string;
-  routeReplay?: RouteReplaySample[];
-  mode?: "3d-flyover" | "2d-overview";
-  units?: "us" | "metric";
-  accentColor?: string;
-  durationMs?: number;
-  onFinish?: () => void;
-  onUnavailable?: () => void;
-  style?: StyleProp<ViewStyle>;
-}
+import type { RouteTimelapseProps } from "./route-timelapse";
 
 export function RouteTimelapse({
   coordinates,
   routeReplay,
+  running = false,
   mode = "3d-flyover",
   units = "metric",
   accentColor: suppliedaccentColor,
   durationMs = 12000,
+  hideControls = false,
+  hudInsets,
+  controllerRef,
+  onStateChange,
   onFinish,
   onUnavailable,
   style,
 }: RouteTimelapseProps) {
   const colors = useLegacyColors();
   const accentColor = suppliedaccentColor ?? colors.lime;
-const styles=useThemedStyles(stylesThemes);
+  const styles = useThemedStyles(stylesThemes);
 
   const polylineStr =
     typeof coordinates === "string" ? coordinates : encodePolyline(coordinates);
 
   const ref = useRef<HTMLIFrameElement>(null);
-  const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/route-scene?mode=${mode}&accent=${encodeURIComponent(accentColor)}&duration=${durationMs}&units=${units}`;
+  const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/route-scene?mode=${mode}&accent=${encodeURIComponent(accentColor)}&duration=${durationMs}&units=${units}${running ? "&running=1" : ""}`;
   const origin = new URL(uri).origin;
-  const send = () => ref.current?.contentWindow?.postMessage({ type: "set-route", routeReplay, coordinates: polylineStr, mode, accentColor, durationMs }, origin);
+  const post = useCallback((message: object) => ref.current?.contentWindow?.postMessage(message, origin), [origin]);
+  const top = hudInsets?.top;
+  const bottom = hudInsets?.bottom;
+  const sendRoute = useCallback(() => post({
+    type: "set-route", routeReplay, coordinates: polylineStr, accentColor, durationMs, hideControls,
+    hudInsets: top != null && bottom != null ? { top, bottom } : undefined,
+  }), [post, routeReplay, polylineStr, accentColor, durationMs, hideControls, top, bottom]);
+  const callbacks = useRef({ onFinish, onUnavailable, onStateChange });
+  callbacks.current = { onFinish, onUnavailable, onStateChange };
+
   useEffect(() => {
     function receive(event: MessageEvent) {
       if (event.origin !== origin || event.source !== ref.current?.contentWindow) return;
-      if (event.data?.type === "route-ready") send();
-      if (event.data?.type === "route-finish") onFinish?.();
-      if (event.data?.type === "route-unavailable") onUnavailable?.();
+      if (event.data?.type === "route-ready") sendRoute();
+      if (event.data?.type === "route-state") callbacks.current.onStateChange?.(event.data);
+      if (event.data?.type === "route-finish") callbacks.current.onFinish?.();
+      if (event.data?.type === "route-unavailable") callbacks.current.onUnavailable?.();
     }
     window.addEventListener("message", receive);
-    send();
+    sendRoute();
     return () => window.removeEventListener("message", receive);
-  }, [polylineStr, routeReplay, mode, accentColor, durationMs, origin, onFinish, onUnavailable]);
+  }, [origin, sendRoute, uri]);
+
+  useEffect(() => {
+    if (!controllerRef) return;
+    controllerRef.current = {
+      play: () => post({ type: "play" }),
+      pause: () => post({ type: "pause" }),
+      replay: () => post({ type: "replay" }),
+      seek: progress => post({ type: "seek", progress }),
+      exportVideo: () => post({ type: "export-video" }),
+      setMode: mode => post({ type: "set-mode", mode }),
+    };
+    return () => { controllerRef.current = null; };
+  }, [controllerRef, post]);
 
   return (
     <View style={[styles.frame, style]}>
       <iframe
         ref={ref}
         src={uri}
-        onLoad={send}
+        onLoad={sendRoute}
         style={{ width: "100%", height: "100%", border: "none" }}
         title="3D Route Replay"
       />

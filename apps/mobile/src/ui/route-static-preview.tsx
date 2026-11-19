@@ -34,6 +34,7 @@ export interface MobileRouteStaticPreviewProps {
   showMarkers?: boolean;
   /** Whether to show 'Play 3D Replay' pill badge. Default: true */
   showPlayBadge?: boolean;
+  playLabel?: string;
   /** Click/tap callback (e.g. to open 3D flyover modal/sheet). */
   onPress?: () => void;
   /** Mapbox access token override; falls back to EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN. */
@@ -51,6 +52,7 @@ export function RouteStaticPreview({
   padding = 40,
   showMarkers = true,
   showPlayBadge = true,
+  playLabel,
   onPress,
   mapboxToken,
   style,
@@ -163,8 +165,8 @@ const styles=useThemedStyles(stylesThemes);
       {/* 3. 'Play 3D Replay' Badge */}
       {showPlayBadge && (
         <View style={styles.badge}>
-          <Text style={styles.badgePlayIcon}>▶</Text>
-          <Text style={styles.badgeText}>Play 3D Replay</Text>
+          {!playLabel && <Text style={styles.badgePlayIcon}>▶</Text>}
+          <Text style={styles.badgeText}>{playLabel ? `${playLabel} →` : "Play 3D Replay"}</Text>
         </View>
       )}
     </View>
@@ -176,7 +178,7 @@ const styles=useThemedStyles(stylesThemes);
         activeOpacity={0.88}
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel="Open route overview and flyover"
+        accessibilityLabel={(showPlayBadge && playLabel) || "Open route overview and flyover"}
       >
         {content}
       </TouchableOpacity>

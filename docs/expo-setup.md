@@ -123,6 +123,36 @@ Reviewer credentials and the Health / GPS walkthrough live in [store/REVIEWER_NO
 | SKU | `overtaek-ios` |
 | Expo project ID | `30807072-a0b4-44cd-bd15-ec186e40ceed` (slug `overtaek`) |
 
+## Google & Apple sign-in (Supabase)
+
+Both the mobile app and web app sign in with **Supabase Auth**:
+
+| Provider | iOS | Android | Web |
+| --- | --- | --- | --- |
+| Google | Supabase OAuth in `ASWebAuthenticationSession` (`overtaek://auth/callback`) | Supabase OAuth in Chrome Custom Tabs (`overtaek://auth/callback`) | Supabase OAuth PKCE redirect (`/auth/callback`) |
+| Apple | Native `Sign in with Apple` → `signInWithIdToken` | Supabase Apple OAuth in Chrome Custom Tabs | Supabase Apple OAuth PKCE redirect (`/auth/callback`) |
+
+**Supabase dashboard** (Authentication → Providers & URL Configuration):
+
+1. Enable **Google** and **Apple** under **Authentication → Providers**.
+2. Under **URL Configuration**, allow redirect URLs:
+   - `overtaek://**`
+   - `https://overtaek.xyz/**`
+   - `https://fitness-battle-one.vercel.app/**`
+   - `http://localhost:3000/**`
+   - `http://localhost:8081/**`
+3. **Apple (Web + Android OAuth and native iOS):**
+   - Enable **Sign in with Apple** on App ID `com.overtaek.app`.
+   - Register a **Services ID** (e.g. `com.overtaek.web`) in Apple Developer with domain `pxruixccvrykhbjzjqga.supabase.co` and Return URL `https://pxruixccvrykhbjzjqga.supabase.co/auth/v1/callback`.
+   - In Supabase Apple Provider **Client IDs**, place the Services ID first followed by the iOS bundle ID: `com.overtaek.web,com.overtaek.app`, and paste the ES256 client secret JWT generated from your Apple Sign in with Apple `.p8` key.
+4. **Google:**
+   - Create a Web Application OAuth 2.0 Client in Google Cloud Console with Authorized redirect URI `https://pxruixccvrykhbjzjqga.supabase.co/auth/v1/callback`.
+   - Paste the Web Client ID and Client Secret into Supabase's Google provider settings.
+
+**App env:** `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, and set `EXPO_PUBLIC_USE_DEMO_DATA=false` on device builds that should use live auth.
+
+Demo/offline mode keeps email-only sign-in; Google and Apple buttons stay hidden when Supabase is not configured.
+
 ## Push notifications note
 
 Push capability is on the App ID. Product path:

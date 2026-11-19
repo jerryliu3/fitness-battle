@@ -140,6 +140,7 @@ export function RouteScene() {
         <RouteTimelapseMap
           coordinates={coordinates}
           routeReplay={routeReplay}
+          running={searchParams.get("running") === "1"}
           hudInsets={hudInsets}
           hideControls={hideControls}
           controlRef={controlRef}
