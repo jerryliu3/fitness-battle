@@ -3,7 +3,7 @@
     "name": "Overtaek",
     "slug": "overtaek",
     "scheme": "overtaek",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "runtimeVersion": {
       "policy": "appVersion"
     },
