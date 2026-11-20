@@ -22,6 +22,7 @@ import { WaveCountdown } from "../ui/wave-countdown";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useCachedApi } from "../lib/use-cached-api";
 import { CompeteIcon, EventArt } from "./compete-home-sections";
+import { SpecialEventRelayPanel } from "./special-event-relay-panel";
 
 export function SpecialEventRegistrationSheet({
   state,
@@ -113,6 +114,10 @@ export function SpecialEventRegistrationSheet({
           ) : null}
         </View>
       </View>
+
+      {edition.config.scoring.mode === "relay_handoff" && (edition.entry?.requestedCrewId || crewId) ? (
+        <SpecialEventRelayPanel edition={edition} crewId={edition.entry?.requestedCrewId || crewId} units={state.units} />
+      ) : null}
 
       {canViewStandings ? (
         <View style={{ padding: 14, borderRadius: 16, borderWidth: 1, borderColor: c.line, backgroundColor: c.card, gap: 10 }}>

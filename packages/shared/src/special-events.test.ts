@@ -6,6 +6,8 @@ import {
   extractCrewOptions,
   formatSpecialEventVolume,
   nextSpecialEventWindow,
+  relayDayLabel,
+  relayDaysBetween,
   specialEventError,
   specialEventFormatLabel,
   specialEventPhase,
@@ -107,5 +109,8 @@ describe("special events presentation", () => {
     expect(specialEventRoundLabel(koCfg, 2, 3)).toBe("Semifinals");
     expect(specialEventRoundLabel(koCfg, 3, 3)).toBe("Final");
     expect(formatSpecialEventVolume("running", 1609.344, "us")).toBe("1 mi");
+    expect(relayDaysBetween("2026-11-23", "2026-11-29")).toHaveLength(7);
+    expect(relayDayLabel("2026-11-23")).toMatch(/Mon.*23/);
+    expect(specialEventError("relay_lineup_locked")).toMatch(/locked/i);
   });
 });

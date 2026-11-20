@@ -20,6 +20,7 @@ import { AppHeading, AppParagraph, AppText } from "@/ui/section";
 import { CountryCombobox } from "@/ui/country-combobox";
 import { WaveCountdown } from "@/ui/wave-countdown";
 import { CompeteIcon, EventArt } from "./event-home";
+import { SpecialEventRelayPanel } from "./special-event-relay-panel";
 
 export function SpecialEventRegistrationSheet({
   state,
@@ -130,6 +131,10 @@ export function SpecialEventRegistrationSheet({
           ) : null}
         </div>
       </div>
+
+      {edition.config.scoring.mode === "relay_handoff" && (edition.entry?.requestedCrewId || crewId) ? (
+        <SpecialEventRelayPanel edition={edition} crewId={edition.entry?.requestedCrewId || crewId} units={state.units} />
+      ) : null}
 
       {canViewStandings ? (
         <section className="fb-card" style={{ padding: 14, display: "grid", gap: 12 }} aria-label="Special event standings">

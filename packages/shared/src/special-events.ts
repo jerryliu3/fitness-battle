@@ -463,6 +463,11 @@ export function specialEventError(message: string): string {
   if (message.includes("not_registered")) return "No active registration was found to cancel.";
   if (message.includes("edition_already_started")) return "Started events keep their locked schedule and scoring rules.";
   if (message.includes("edition_not_started")) return "Standings open when the event starts.";
+  if (message.includes("relay_random_locked")) return "This relay draws daily baton-holders randomly at start.";
+  if (message.includes("relay_lineup_locked")) return "The relay lineup locked when the event started.";
+  if (message.includes("relay_day_locked")) return "Today and past relay days are locked.";
+  if (message.includes("relay_max_legs_exceeded")) return "Too many days assigned to one teammate.";
+  if (message.includes("member_not_on_roster")) return "Only active crew teammates can be assigned a baton day.";
   if (message.includes("authentication_required")) return "Sign in to register for special events.";
   return "Could not update special event registration. Try again.";
 }
@@ -525,4 +530,70 @@ export function specialEventRoundLabel(
 
 export function formatSpecialEventVolume(sport: SpecialEventSport, value: number, units: UnitSystem = "us"): string {
   return formatArenaVolume(sport, { distanceM: value, movingSec: value, effort: value }, units);
+}
+
+export interface SpecialEventRelayRosterMember {
+  userId: string;
+  displayName: string;
+  optedIn: boolean;
+}
+
+export interface SpecialEventRelayLeg {
+  legDay: string;
+  slotIndex: number;
+  userId: string;
+  displayName: string;
+  isYou: boolean;
+  isToday: boolean;
+  locked: boolean;
+  score: number;
+}
+
+export interface SpecialEventRelayLineup {
+  editionId: string;
+  crewId: string;
+  sideId: string | null;
+  startDay: string;
+  endDay: string;
+  todayDay: string;
+  legsPerDay: 1 | 2;
+  assignmentMode: "manual" | "random";
+  lockPolicy: "full_week" | "pre_day";
+  maxLegsPerMember: number | null;
+  finalized: boolean;
+  roster: SpecialEventRelayRosterMember[];
+  legs: SpecialEventRelayLeg[];
+}
+
+export function relayDayLabel(dayIso: string): string {
+  const date = new Date(`${dayIso}T12:00:00.000Z`);
+  const weekday = date.toLocaleDateString("en-US", { timeZone: "UTC", weekday: "short" });
+  return `${weekday} ${date.getUTCDate()}`;
+}
+
+export function relayDaysBetween(startDay: string, endDay: string): string[] {
+  const days: string[] = [];
+  const cursor = new Date(`${startDay}T12:00:00.000Z`);
+  const last = Date.parse(`${endDay}T12:00:00.000Z`);
+  while (cursor.getTime() <= last && days.length < 14) {
+    days.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return days;
+}
+
+export function relayDraftToLegs(draft: Record<string, string>) {
+  return Object.entries(draft)
+    .filter(([, userId]) => Boolean(userId))
+    .map(([key, userId]) => {
+      const [legDay, slot] = key.split(":");
+      return { legDay: legDay!, slotIndex: Number(slot), userId };
+    });
+}
+
+export function relayTodayHeadline(lineup: SpecialEventRelayLineup): string | null {
+  const today = lineup.legs.filter((l) => l.isToday);
+  if (!today.length) return null;
+  if (today.some((l) => l.isYou)) return "You have the baton today — your workouts count for the crew.";
+  return `${today.map((l) => l.displayName).join(" & ")} on the baton today. Off-day workouts still count toward your weekly sport.`;
 }
