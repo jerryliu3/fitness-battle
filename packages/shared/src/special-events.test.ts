@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { cityLabel, filterCities, inferCitySlug } from "./cities";
 import { freshState } from "./compete/engine";
 import {
   SPECIAL_EVENT_PRESETS,
@@ -17,6 +18,7 @@ import {
   specialEventStatusBadge,
   validateSpecialEventConfig,
   validateSpecialEventEditionInput,
+  validateSpecialEventTemplateInput,
   type SpecialEventEdition,
 } from "./special-events";
 
@@ -115,6 +117,22 @@ describe("special events presentation", () => {
     expect(specialEventError("relay_lineup_locked")).toMatch(/locked/i);
     expect(specialEventSideLabel({ displayName: "US", groupAttr: "country_code", groupValue: "US" })).toMatch(/United States$/);
     expect(specialEventSideLabel({ displayName: "US #1", groupAttr: "country_code", groupValue: "US" })).toContain("United States #1");
+    expect(specialEventSideLabel({ displayName: "us:new-york #2", groupAttr: "city_slug", groupValue: "us:new-york" })).toContain("New York #2");
     expect(specialEventSideLabel({ displayName: "Track Club", groupAttr: null, groupValue: null })).toBe("Track Club");
+
+    expect(filterCities("nyc")[0]?.slug).toBe("us:new-york");
+    expect(inferCitySlug("Brooklyn, NY", "US")).toBe("us:new-york");
+    expect(cityLabel("us:boulder")).toContain("Boulder");
+    expect(specialEventError("city_required")).toMatch(/city/i);
+
+    const cityDraft = buildSpecialEventPreset("city_squads_3v3", "running", new Date("2026-11-18T20:00:00.000Z"));
+    expect(specialEventFormatLabel(cityDraft.config)).toBe("City 3v3");
+    const tpl = validateSpecialEventTemplateInput({
+      id: null, seriesKey: cityDraft.seriesKey, sport: cityDraft.sport,
+      title: cityDraft.title, subtitle: cityDraft.subtitle, config: cityDraft.config,
+      cadenceWeeks: 2, active: true, nextStartAt: cityDraft.startsAt,
+    });
+    expect(tpl.cadenceWeeks).toBe(2);
+    expect(() => validateSpecialEventTemplateInput({ ...tpl, cadenceWeeks: 12 })).toThrow(/Cadence weeks/);
   });
 });

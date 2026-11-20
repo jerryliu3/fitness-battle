@@ -10,6 +10,7 @@ import {
   type SaveSpecialEventEditionInput,
   type SpecialEventEdition,
   type SpecialEventPresetId,
+  type SpecialEventTemplate,
   type SportId,
 } from "@fitness-battle/shared";
 import { AppParagraph, SectionHeader } from "@/ui/section";
@@ -40,8 +41,10 @@ const TEXT_FIELDS = [
 export function AdminSpecialEventsWorkspace() {
   const { busy, note, setNote, perform, read } = useAdminRouteApi();
   const [editions, setEditions] = useState<SpecialEventEdition[]>([]);
+  const [templates, setTemplates] = useState<SpecialEventTemplate[]>([]);
   const [draft, setDraft] = useState<SaveSpecialEventEditionInput>(() => newDraft());
   const [configText, setConfigText] = useState(() => JSON.stringify(newDraft().config, null, 2));
+  const [cadenceWeeks, setCadenceWeeks] = useState(1);
 
   function resetDraft(next = newDraft()) {
     setDraft(next);
@@ -51,13 +54,15 @@ export function AdminSpecialEventsWorkspace() {
   function load() {
     void perform(async (signal, current) => {
       const data = await read("/api/admin/special-events", signal);
-      if (current()) setEditions((data.editions ?? []) as SpecialEventEdition[]);
+      if (!current()) return;
+      setEditions((data.editions ?? []) as SpecialEventEdition[]);
+      setTemplates((data.templates ?? []) as SpecialEventTemplate[]);
     });
   }
 
   useEffect(() => { load(); }, []);
 
-  function save(payload: SaveSpecialEventEditionInput, message: string, clear = false) {
+  function save(payload: unknown, message: string, clear = false) {
     void perform(async (signal, current) => {
       await read("/api/admin/special-events", signal, payload);
       if (!current()) return;
@@ -67,29 +72,54 @@ export function AdminSpecialEventsWorkspace() {
     });
   }
 
+  function parseConfigJson(): SaveSpecialEventEditionInput["config"] | null {
+    try { return JSON.parse(configText) as SaveSpecialEventEditionInput["config"]; }
+    catch { setNote("Config JSON is invalid."); return null; }
+  }
+
   function saveDraft(overridePublished?: boolean) {
-    let config: unknown;
-    try { config = JSON.parse(configText); }
-    catch { setNote("Config JSON is invalid."); return; }
+    const config = parseConfigJson();
+    if (!config) return;
     save(
-      { ...draft, config: config as SaveSpecialEventEditionInput["config"], published: overridePublished ?? draft.published },
+      { ...draft, config, published: overridePublished ?? draft.published },
       draft.id ? "Special event edition updated." : "Special event edition created.",
       true,
     );
   }
 
-  function advance(editionId: string, action: "finalize" | "settle_round") {
+  function saveAsTemplate() {
+    const config = parseConfigJson();
+    if (!config) return;
+    const existing = templates.find((t) => t.seriesKey === draft.seriesKey);
+    save(
+      {
+        kind: "template",
+        id: existing?.id ?? null,
+        seriesKey: draft.seriesKey,
+        sport: draft.sport,
+        title: draft.title,
+        subtitle: draft.subtitle,
+        config,
+        cadenceWeeks,
+        active: true,
+        nextStartAt: draft.startsAt,
+      },
+      existing ? "Repeating template updated." : "Repeating template saved.",
+    );
+  }
+
+  function patchAdmin(body: Record<string, unknown>, message: (data: Record<string, unknown>) => string) {
     void perform(async (signal, current) => {
       const response = await fetch("/api/admin/special-events", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ editionId, action }),
+        body: JSON.stringify(body),
         signal,
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Could not advance edition.");
+      if (!response.ok) throw new Error(data.error || "Could not update special events.");
       if (!current()) return;
-      setNote(action === "finalize" ? "Edition finalized." : "Round settled.");
+      setNote(message(data));
       load();
     });
   }
@@ -137,9 +167,13 @@ export function AdminSpecialEventsWorkspace() {
           <textarea className="fb-input" rows={9} style={{ width: "100%" }} value={configText} disabled={busy} onChange={(e) => setConfigText(e.target.value)} />
         </label>
 
-        <div className="focus-actions">
+        <div className="focus-actions" style={{ alignItems: "center", flexWrap: "wrap" }}>
           <button type="button" className="fb-btn" disabled={busy} onClick={() => saveDraft()}>{draft.id ? "Save changes" : "Save edition"}</button>
           {!draft.published ? <button type="button" className="fb-btn-line" disabled={busy} onClick={() => saveDraft(true)}>Save & publish</button> : null}
+          <select aria-label="Repeat cadence weeks" className="fb-input" style={{ width: "auto" }} value={cadenceWeeks} disabled={busy} onChange={(e) => setCadenceWeeks(Number(e.target.value))}>
+            {[1, 2, 3, 4].map((w) => <option key={w} value={w}>Every {w} wk{w > 1 ? "s" : ""}</option>)}
+          </select>
+          <button type="button" className="fb-btn-line" disabled={busy} onClick={saveAsTemplate}>Save as repeating template</button>
         </div>
       </section>
 
@@ -171,14 +205,64 @@ export function AdminSpecialEventsWorkspace() {
                       {e.published ? "Unpublish" : "Publish"}
                     </button>
                     {!e.finalizedAt ? (
-                      <button type="button" className="fb-btn-line" disabled={busy} onClick={() => advance(e.id, "finalize")}>Finalize</button>
+                      <button type="button" className="fb-btn-line" disabled={busy} onClick={() => patchAdmin({ editionId: e.id, action: "finalize" }, () => "Edition finalized.")}>Finalize</button>
                     ) : !e.settledAt ? (
-                      <button type="button" className="fb-btn-line" disabled={busy} onClick={() => advance(e.id, "settle_round")}>Settle round</button>
+                      <button type="button" className="fb-btn-line" disabled={busy} onClick={() => patchAdmin({ editionId: e.id, action: "settle_round" }, () => "Round settled.")}>Settle round</button>
                     ) : null}
                   </div>
                 </td>
               </tr>
             )) : <tr><td colSpan={6} style={adminCell}>No special event editions scheduled yet.</td></tr>}
+          </tbody>
+        </AdminTable>
+      </section>
+
+      <section className="fb-card" style={{ padding: 16, display: "grid", gap: 12 }}>
+        <SectionHeader
+          title="Repeating templates"
+          action={
+            <button
+              type="button"
+              className="fb-btn-line"
+              disabled={busy}
+              onClick={() => patchAdmin({ action: "materialize_templates" }, (d) => `Scheduler ran · ${Number(d.created ?? 0)} edition(s) created.`)}
+            >
+              Run scheduler
+            </button>
+          }
+        />
+        <AppParagraph typographyRole="body">
+          Active templates automatically publish their next full-week edition when pre-registration opens (7 days prior).
+        </AppParagraph>
+        <AdminTable ariaLabel="Special event templates">
+          <thead>
+            <tr>
+              <th style={adminCell}>Series</th>
+              <th style={adminCell}>Format / Sport</th>
+              <th style={adminCell}>Cadence / Next start (ET)</th>
+              <th style={adminCell}>State</th>
+              <th style={adminCell}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {templates.length ? templates.map((t) => (
+              <tr key={t.id}>
+                <td style={adminCell}><strong>{t.title}</strong><br /><code className="fb-copy">{t.seriesKey}</code></td>
+                <td style={adminCell}>{specialEventFormatLabel(t.config)}<br />{t.sport}</td>
+                <td style={adminCell}>Every {t.cadenceWeeks} wk{t.cadenceWeeks > 1 ? "s" : ""}<br />{formatWaveWhen(t.nextStartAt)}</td>
+                <td style={adminCell}>{t.active ? "Active" : "Paused"}</td>
+                <td style={adminCell}>
+                  <button
+                    type="button"
+                    className="fb-btn-line"
+                    disabled={busy}
+                    onClick={() => save({ kind: "template", ...t, active: !t.active }, t.active ? "Template paused." : "Template resumed.")}
+                  >
+                    {t.active ? "Pause" : "Resume"}
+                  </button>
+                </td>
+              </tr>
+            )) : <tr><td colSpan={5} style={adminCell}>No repeating templates yet.</td></tr>}
           </tbody>
         </AdminTable>
       </section>

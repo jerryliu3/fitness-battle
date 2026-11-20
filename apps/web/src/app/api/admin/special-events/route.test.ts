@@ -77,3 +77,46 @@ it("advances editions via PATCH for admin QA", async () => {
   expect(res.status).toBe(200);
   expect(mock.rpc).toHaveBeenCalledWith("admin_advance_special_event", { p_actor_id: "admin-1", p_edition_id: id, p_action: "finalize" });
 });
+
+it("saves repeating templates and triggers template scheduler", async () => {
+  mock.rpc.mockResolvedValueOnce({
+    data: {
+      id: "00000000-0000-4000-8000-000000000077",
+      series_key: draft.seriesKey,
+      sport: draft.sport,
+      title: draft.title,
+      subtitle: draft.subtitle,
+      config: draft.config,
+      cadence_weeks: 2,
+      active: true,
+      next_start_at: draft.startsAt,
+    },
+    error: null,
+  });
+  const saveRes = await post({
+    kind: "template",
+    id: null,
+    seriesKey: draft.seriesKey,
+    sport: draft.sport,
+    title: draft.title,
+    subtitle: draft.subtitle,
+    config: draft.config,
+    cadenceWeeks: 2,
+    active: true,
+    nextStartAt: draft.startsAt,
+  });
+  expect(saveRes.status).toBe(200);
+  expect(mock.rpc).toHaveBeenCalledWith(
+    "admin_save_special_event_template",
+    expect.objectContaining({ p_actor_id: "admin-1", p_series_key: draft.seriesKey, p_cadence_weeks: 2 }),
+  );
+
+  mock.rpc.mockResolvedValueOnce({ data: 2, error: null });
+  const runRes = await PATCH(new Request("https://test/api/admin/special-events", {
+    method: "PATCH",
+    body: JSON.stringify({ action: "materialize_templates" }),
+  }));
+  expect(runRes.status).toBe(200);
+  expect(await runRes.json()).toEqual({ created: 2 });
+  expect(mock.rpc).toHaveBeenCalledWith("admin_run_special_event_templates", { p_actor_id: "admin-1" });
+});

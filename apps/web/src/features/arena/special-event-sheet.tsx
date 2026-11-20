@@ -3,12 +3,15 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import {
   COMPETE_ART_COLORS,
+  cityLabel,
   competeNow,
   countryFlagEmoji,
   countryName,
   entryBarcode,
   extractCrewOptions,
+  filterCities,
   formatSpecialEventVolume,
+  inferCitySlug,
   specialEventRegistrationDetail,
   specialEventRoundLabel,
   specialEventSideLabel,
@@ -46,6 +49,10 @@ export function SpecialEventRegistrationSheet({
   const [countryCode, setCountryCode] = useState(
     edition.entry?.groupSnapshot?.country_code ?? state.countryCode ?? "",
   );
+  const [citySlug, setCitySlug] = useState(
+    edition.entry?.groupSnapshot?.city_slug ?? inferCitySlug(state.city, state.countryCode),
+  );
+  const [cityQuery, setCityQuery] = useState("");
   const [crews, setCrews] = useState<{ id: string; name: string }[]>([]);
   const [crewId, setCrewId] = useState(edition.entry?.requestedCrewId ?? "");
   const [crewsLoaded, setCrewsLoaded] = useState(false);
@@ -57,12 +64,14 @@ export function SpecialEventRegistrationSheet({
 
   useEffect(() => {
     setCountryCode(edition.entry?.groupSnapshot?.country_code ?? state.countryCode ?? "");
+    setCitySlug(edition.entry?.groupSnapshot?.city_slug ?? inferCitySlug(state.city, state.countryCode));
+    setCityQuery("");
     setCrewId(edition.entry?.requestedCrewId ?? "");
     setStandings(null);
     setStandingsError("");
     setSelectedRound(null);
     setShowAllHeats(false);
-  }, [edition.id, edition.entry?.requestedCrewId, edition.entry?.groupSnapshot?.country_code, state.countryCode]);
+  }, [edition.id, edition.entry?.requestedCrewId, edition.entry?.groupSnapshot?.country_code, edition.entry?.groupSnapshot?.city_slug, state.countryCode, state.city]);
 
   useEffect(() => {
     if (!canViewStandings) return;
@@ -103,6 +112,7 @@ export function SpecialEventRegistrationSheet({
   const canSubmit =
     detail.canRegister &&
     (!detail.requiresCountry || countryCode.length === 2) &&
+    (!detail.requiresCity || Boolean(citySlug)) &&
     (!detail.requiresCrew || Boolean(crewId));
 
   return (
@@ -260,6 +270,37 @@ export function SpecialEventRegistrationSheet({
         </div>
       ) : null}
 
+      {detail.canRegister && detail.requiresCity ? (
+        <div style={{ display: "grid", gap: 8 }}>
+          <label className="fb-copy">
+            Your city team
+            <input
+              className="fb-input"
+              placeholder="Search city (e.g. New York, London, Tokyo)"
+              value={cityQuery}
+              disabled={busy}
+              onChange={(e) => setCityQuery(e.target.value)}
+            />
+          </label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {filterCities(cityQuery, citySlug).slice(0, 8).map((city) => (
+              <button
+                key={city.slug}
+                type="button"
+                className={city.slug === citySlug ? "fb-btn" : "fb-btn-line"}
+                disabled={busy}
+                onClick={() => setCitySlug(city.slug)}
+              >
+                {cityLabel(city.slug)}
+              </button>
+            ))}
+          </div>
+          <AppText role="caption" secondary>
+            Locked when registration closes. Pooled with teammates from {citySlug ? cityLabel(citySlug) : "your city"}.
+          </AppText>
+        </div>
+      ) : null}
+
       {detail.canRegister && detail.requiresCrew ? (
         <div style={{ display: "grid", gap: 6 }}>
           <label className="fb-copy">
@@ -309,7 +350,7 @@ export function SpecialEventRegistrationSheet({
             disabled={busy || !canSubmit}
             onClick={() => onRegister({
               crewId: detail.requiresCrew ? crewId : null,
-              groupValue: detail.requiresCountry ? countryCode : null,
+              groupValue: detail.requiresCountry ? countryCode : detail.requiresCity ? citySlug : null,
             })}
           >
             {busy ? "Registering…" : "Claim full-week entry"}

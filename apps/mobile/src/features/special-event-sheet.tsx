@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
 import {
+  cityLabel,
   competeNow,
   countryFlagEmoji,
   countryName,
   entryBarcode,
   extractCrewOptions,
+  filterCities,
   formatSpecialEventVolume,
+  inferCitySlug,
   specialEventRegistrationDetail,
   specialEventRoundLabel,
   specialEventSideLabel,
@@ -58,16 +61,22 @@ export function SpecialEventRegistrationSheet({
   const [countryCode, setCountryCode] = useState(
     edition.entry?.groupSnapshot?.country_code ?? state.countryCode ?? "",
   );
+  const [citySlug, setCitySlug] = useState(
+    edition.entry?.groupSnapshot?.city_slug ?? inferCitySlug(state.city, state.countryCode),
+  );
+  const [cityQuery, setCityQuery] = useState("");
   const [crewId, setCrewId] = useState(edition.entry?.requestedCrewId ?? "");
   const crewsApi = useCachedApi<{ crews: unknown }>(detail.requiresCrew ? "/api/crews" : null);
   const crews = extractCrewOptions(crewsApi.data?.crews);
 
   useEffect(() => {
     setCountryCode(edition.entry?.groupSnapshot?.country_code ?? state.countryCode ?? "");
+    setCitySlug(edition.entry?.groupSnapshot?.city_slug ?? inferCitySlug(state.city, state.countryCode));
+    setCityQuery("");
     setCrewId(edition.entry?.requestedCrewId ?? "");
     setSelectedRound(null);
     setShowAllHeats(false);
-  }, [edition.id, edition.entry?.requestedCrewId, edition.entry?.groupSnapshot?.country_code, state.countryCode]);
+  }, [edition.id, edition.entry?.requestedCrewId, edition.entry?.groupSnapshot?.country_code, edition.entry?.groupSnapshot?.city_slug, state.countryCode, state.city]);
 
   const firstCrewId = crews[0]?.id ?? "";
   useEffect(() => {
@@ -80,6 +89,7 @@ export function SpecialEventRegistrationSheet({
   const canSubmit =
     detail.canRegister &&
     (!detail.requiresCountry || countryCode.length === 2) &&
+    (!detail.requiresCity || Boolean(citySlug)) &&
     (!detail.requiresCrew || Boolean(crewId));
 
   return (
@@ -247,6 +257,39 @@ export function SpecialEventRegistrationSheet({
         </View>
       ) : null}
 
+      {detail.canRegister && detail.requiresCity ? (
+        <View style={{ gap: 8 }}>
+          <AppText role="label">Your city team</AppText>
+          <TextInput
+            accessibilityLabel="Search city"
+            placeholder="Search city (e.g. New York, London, Tokyo)"
+            value={cityQuery}
+            onChangeText={setCityQuery}
+            style={f.input}
+            autoCorrect={false}
+          />
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+            {filterCities(cityQuery, citySlug).slice(0, 8).map((city) => (
+              <Pressable
+                key={city.slug}
+                accessibilityRole="button"
+                accessibilityState={{ selected: city.slug === citySlug }}
+                onPress={() => setCitySlug(city.slug)}
+                style={[
+                  f.chip,
+                  { borderColor: city.slug === citySlug ? c.podiumGold : c.line, backgroundColor: city.slug === citySlug ? c.actionSoft : c.card },
+                ]}
+              >
+                <AppText role="caption">{cityLabel(city.slug)}</AppText>
+              </Pressable>
+            ))}
+          </View>
+          <AppText role="caption" secondary>
+            Locked when registration closes. Pooled with teammates from {citySlug ? cityLabel(citySlug) : "your city"}.
+          </AppText>
+        </View>
+      ) : null}
+
       {detail.canRegister && detail.requiresCrew ? (
         <View style={{ gap: 8 }}>
           <AppText role="label">Choose your crew</AppText>
@@ -304,7 +347,7 @@ export function SpecialEventRegistrationSheet({
             disabled={busy || !canSubmit}
             onPress={() => onRegister({
               crewId: detail.requiresCrew ? crewId : null,
-              groupValue: detail.requiresCountry ? countryCode : null,
+              groupValue: detail.requiresCountry ? countryCode : detail.requiresCity ? citySlug : null,
             })}
           />
         ) : null}

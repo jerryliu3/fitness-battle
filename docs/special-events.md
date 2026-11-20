@@ -11,7 +11,7 @@ Every edition is described by a versioned `config` jsonb across four orthogonal 
 
 1. **Grouping (`grouping`)**: `solo`, `crew` (opt-in active crew members), or
    `profile_attr` (equal-size squads grouped by a profile attribute such as
-   `country_code`, `random`, or future canonical `city_slug`).
+   `country_code`, canonical `city_slug`, or `random`).
 2. **Match format (`match`)**: `single_round`, `survivor_heat` (e.g. 8-side heat
    eliminating 1+/round), or `knockout_1v1` (head-to-head bracket).
 3. **Round cadence (`cadence`)**: `single_week`, `daily` (Eastern midnight
@@ -37,6 +37,7 @@ Seven additive relational tables live alongside weekly waves without mutating
 | `special_event_entries` | Athlete registration, frozen `side_id` or `spectate_heat_id` (when unseated under `leftoverPolicy = 'spectate'`), cancellation before cutoff, and reveal receipt. |
 | `special_event_relay_legs` | Daily baton assignments (`side_id`, Eastern `leg_day`, `slot_index`, `user_id`). |
 | `special_event_receipts` | Durable outcome/trophy receipts (`UNIQUE(edition_id, user_id, code)`). |
+| `special_event_templates` | Repeating series definitions (`series_key`, `cadence_weeks`, `active`, `next_start_at`) lazily materialized on pre-registration open without a cron job. |
 
 ### Scoring & mid-week deadline locks
 
@@ -59,12 +60,14 @@ Monday closes without requiring a cron job.
   `cancel_special_event`, `special_event_standings`,
   `special_event_relay_lineup`, `set_special_event_relay_legs`) are
   `SECURITY DEFINER` with `SET search_path = ''` and explicit `auth.uid()` checks.
-- Admin edition creation/updates use owner-only `/api/admin/special-events` and
-  service-role `admin_save_special_event_edition` /
-  `admin_advance_special_event`.
+- Admin edition/template management uses owner-only `/api/admin/special-events`
+  and service-role `admin_save_special_event_edition`,
+  `admin_advance_special_event`, `admin_save_special_event_template`, and
+  `admin_run_special_event_templates`.
 - Apply `20261119160000_special_events_core.sql`,
   `20261119170000_special_events_tournaments.sql`,
-  `20261119180000_special_events_relay.sql`, and
-  `20261119190000_special_events_squads.sql` in order before deploying.
+  `20261119180000_special_events_relay.sql`,
+  `20261119190000_special_events_squads.sql`, and
+  `20261119200000_special_events_cities_templates.sql` in order before deploying.
   Accompanying tests live in `supabase/tests/special-events-*.sql`,
   `packages/shared/src/special-events.test.ts`, and API route tests.

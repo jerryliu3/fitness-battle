@@ -1,4 +1,5 @@
 import { competitionTrack, competitionTrackLabel, SPORT_IDS, sportById, type CompeteState, type SportId, type UnitSystem } from "./compete/sports";
+import { cityLabel } from "./cities";
 import { countryFlagEmoji, countryName } from "./countries";
 import { formatArenaVolume } from "./compete-field-view";
 import { waveTimeLabelForState } from "./compete/participation";
@@ -99,12 +100,37 @@ export interface SaveSpecialEventEditionInput {
   published: boolean;
 }
 
+export interface SpecialEventTemplate {
+  id: string;
+  seriesKey: string;
+  sport: SpecialEventSport;
+  title: string;
+  subtitle: string;
+  config: SpecialEventConfig;
+  cadenceWeeks: number;
+  active: boolean;
+  nextStartAt: string;
+}
+
+export interface SaveSpecialEventTemplateInput {
+  id: string | null;
+  seriesKey: string;
+  sport: SpecialEventSport;
+  title: string;
+  subtitle: string;
+  config: SpecialEventConfig;
+  cadenceWeeks: number;
+  active: boolean;
+  nextStartAt: string;
+}
+
 export type SpecialEventPresetId =
   | "daily_survivor"
   | "weekly_knockout_1v1"
   | "crew_relay_locked"
   | "crew_relay_random"
   | "country_squads_3v3"
+  | "city_squads_3v3"
   | "random_squads_2v2";
 
 export interface SpecialEventPresetMeta {
@@ -167,6 +193,14 @@ export const SPECIAL_EVENT_PRESETS: readonly SpecialEventPresetMeta[] = [
     defaultTitle: "Nations 3v3", defaultSubtitle: "Pool scores with 2 teammates from your country",
     config: baseConfig({
       grouping: { kind: "profile_attr", attr: "country_code", targetSquadSize: 3, minSquadSize: 2, leftoverPolicy: "spectate" },
+      match: { kind: "single_round", targetHeatSize: 4, minHeatSize: 2 },
+    }),
+  },
+  {
+    id: "city_squads_3v3", label: "City 3v3 Squads", weeks: 1, seriesKey: "city-squads",
+    defaultTitle: "Metro 3v3", defaultSubtitle: "Pool scores with 2 teammates from your city",
+    config: baseConfig({
+      grouping: { kind: "profile_attr", attr: "city_slug", targetSquadSize: 3, minSquadSize: 2, leftoverPolicy: "spectate" },
       match: { kind: "single_round", targetHeatSize: 4, minHeatSize: 2 },
     }),
   },
@@ -291,13 +325,9 @@ export function validateSpecialEventConfig(input: unknown): SpecialEventConfig {
   return { version: 1, grouping, match, cadence: { unit: c.unit, roundCount, scoreMode: c.scoreMode }, scoring, divisionMode: r.divisionMode };
 }
 
-export function validateSpecialEventEditionInput(input: unknown): SaveSpecialEventEditionInput {
-  if (!input || typeof input !== "object") throw new Error("Invalid edition payload.");
-  const raw = input as Record<string, unknown>;
+function parseEventMeta(raw: Record<string, unknown>, idLabel: string) {
   const id = raw.id == null || raw.id === "" ? null : String(raw.id);
-  if (id !== null && !UUID_RE.test(id)) throw new Error("Invalid edition ID.");
-  const slug = String(raw.slug ?? "").trim().toLowerCase();
-  if (!SLUG_RE.test(slug)) throw new Error("Slug must be 3–80 lowercase letters, numbers, or hyphens.");
+  if (id !== null && !UUID_RE.test(id)) throw new Error(`Invalid ${idLabel} ID.`);
   const seriesKey = String(raw.seriesKey ?? "").trim().toLowerCase();
   if (!SERIES_RE.test(seriesKey)) throw new Error("Series key must be 2–64 lowercase letters, numbers, or hyphens.");
   const sport = raw.sport as SpecialEventSport;
@@ -306,19 +336,43 @@ export function validateSpecialEventEditionInput(input: unknown): SaveSpecialEve
   if (title.length < 2 || title.length > 80) throw new Error("Title must be 2–80 characters.");
   const subtitle = String(raw.subtitle ?? "").trim();
   if (subtitle.length > 160) throw new Error("Subtitle must be 160 characters or fewer.");
+  return { id, seriesKey, sport, title, subtitle, config: validateSpecialEventConfig(raw.config) };
+}
+
+export function validateSpecialEventEditionInput(input: unknown): SaveSpecialEventEditionInput {
+  if (!input || typeof input !== "object") throw new Error("Invalid edition payload.");
+  const raw = input as Record<string, unknown>;
+  const slug = String(raw.slug ?? "").trim().toLowerCase();
+  if (!SLUG_RE.test(slug)) throw new Error("Slug must be 3–80 lowercase letters, numbers, or hyphens.");
+  const meta = parseEventMeta(raw, "edition");
 
   const [regOpen, regClose, starts, ends] = [raw.registrationOpensAt, raw.registrationClosesAt, raw.startsAt, raw.endsAt].map((v) => Date.parse(String(v ?? "")));
   if (![regOpen, regClose, starts, ends].every(Number.isFinite)) throw new Error("Provide valid ISO timestamps.");
   if (!(regOpen! < regClose! && regClose! <= starts! && starts! < ends!)) throw new Error("Timestamps must satisfy registration open < close <= start < end.");
 
   return {
-    id, slug, seriesKey, sport, title, subtitle,
-    config: validateSpecialEventConfig(raw.config),
+    ...meta,
+    slug,
     registrationOpensAt: new Date(regOpen!).toISOString(),
     registrationClosesAt: new Date(regClose!).toISOString(),
     startsAt: new Date(starts!).toISOString(),
     endsAt: new Date(ends!).toISOString(),
     published: Boolean(raw.published),
+  };
+}
+
+export function validateSpecialEventTemplateInput(input: unknown): SaveSpecialEventTemplateInput {
+  if (!input || typeof input !== "object") throw new Error("Invalid template payload.");
+  const raw = input as Record<string, unknown>;
+  const meta = parseEventMeta(raw, "template");
+  const cadenceWeeks = intIn(raw.cadenceWeeks ?? 1, 1, 8, "Cadence weeks");
+  const nextStart = Date.parse(String(raw.nextStartAt ?? ""));
+  if (!Number.isFinite(nextStart)) throw new Error("Provide a valid next start ISO timestamp.");
+  return {
+    ...meta,
+    cadenceWeeks,
+    active: raw.active !== false,
+    nextStartAt: new Date(nextStart).toISOString(),
   };
 }
 
@@ -448,6 +502,7 @@ export function specialEventRegistrationDetail(state: CompeteState, edition: Spe
     canCancel: phase === "registering" && isRegistered,
     requiresCrew: config.grouping.kind === "crew",
     requiresCountry: config.grouping.kind === "profile_attr" && config.grouping.attr === "country_code",
+    requiresCity: config.grouping.kind === "profile_attr" && config.grouping.attr === "city_slug",
     ruleCards,
     ticketRows,
   };
@@ -459,6 +514,7 @@ export function specialEventError(message: string): string {
   if (message.includes("crew_required")) return "Choose a crew to enter this event.";
   if (message.includes("not_a_crew_member")) return "You must be an active member of that crew.";
   if (message.includes("country_required")) return "Select your country before registering.";
+  if (message.includes("city_required")) return "Select your city before registering.";
   if (message.includes("profile_attribute_required")) return "Complete your profile info before registering.";
   if (message.includes("edition_not_found")) return "This event is no longer available.";
   if (message.includes("not_registered")) return "No active registration was found to cancel.";
@@ -525,11 +581,14 @@ export interface SpecialEventStandings {
 }
 
 export function specialEventSideLabel(side: Pick<SpecialEventSideStanding, "displayName" | "groupAttr" | "groupValue">): string {
+  const suffix = side.displayName.match(/#\d+$/)?.[0];
   if (side.groupAttr === "country_code" && side.groupValue && side.groupValue.length === 2) {
     const flag = countryFlagEmoji(side.groupValue);
     const name = countryName(side.groupValue) ?? side.groupValue;
-    const suffix = side.displayName.match(/#\d+$/)?.[0];
     return `${flag ? `${flag} ` : ""}${name}${suffix ? ` ${suffix}` : ""}`;
+  }
+  if (side.groupAttr === "city_slug" && side.groupValue) {
+    return `${cityLabel(side.groupValue) ?? side.groupValue}${suffix ? ` ${suffix}` : ""}`;
   }
   return side.displayName;
 }

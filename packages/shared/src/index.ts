@@ -2,6 +2,7 @@ export * from "./arena-bridge";
 export * from "./arena-view";
 export * from "./brand";
 export * from "./countries";
+export * from "./cities";
 export * from "./polished-identity";
 export * from "./compete";
 export * from "./demo-data";
