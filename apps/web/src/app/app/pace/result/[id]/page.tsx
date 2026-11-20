@@ -25,6 +25,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
     <p className="rankings-kicker">{r.event_name} · {r.edition_year}</p><AppHeading level={1} role="display" className="race-athlete-name">{r.athlete_name}</AppHeading>
     <div className="race-report-hero"><strong>{raceClock(r.rank_time_ms)}</strong><span>{r.rank_clock === "chip" ? "Chip time" : "Official time"} · {RACE_CATEGORIES.find(c => c.value === r.sex)?.label}{r.bib ? ` · #${r.bib}` : ""}</span></div>
     {report.athleteId ? <p><Link href={`/pace/athlete/${report.athleteId}`}>View athlete history →</Link></p> : <p><Link href={`/app/pace/search?${new URLSearchParams({q:r.athlete_name})}`}>Find finishes with this name →</Link></p>}
+    {report.splits && <div className="pace-result-feature"><div><span className="rankings-kicker">REWATCH THE RACE</span><strong>Go beyond the finish time.</strong><p>Follow {r.athlete_name} on the course, jump between estimated overtakes, and relive their split-by-split progress.</p></div><Link href={`/pace/replay?edition=${r.event_edition_id}&distance=${distance?.slug}&sex=all&clock=${report.splits.clock}&ids=${r.id}`}>Replay this athlete →</Link></div>}
     <SaveRaceResult id={r.id} />
     <p><Link href="/pace/saved">Saved results →</Link></p>
     <section className="race-report-metrics" aria-label="Result context">
