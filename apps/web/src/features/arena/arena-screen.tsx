@@ -3,6 +3,7 @@ import { PointsTimeline } from "./points-timeline";
 import { CompetitionTimelineProvider, CompetitionTimelineControls } from "./competition-timeline-context";
 import { CompetitionPanel } from "./competition-panel";
 import { EventRegistration } from "./event-registration";
+import { SpecialEventFullscreen } from "./special-event-fullscreen";
 import { SpecialEventRegistrationSheet } from "./special-event-sheet";
 import { useSpecialEvents } from "./use-special-events";
 import { RaceUpdates } from "./race-updates";
@@ -63,18 +64,18 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
   const account = user?.id ?? "guest";
   const [joinBusy, setJoinBusy] = useState(false), [joinError, setJoinError] = useState("");
   const specialEvents = useSpecialEvents(tabActive && !immersive);
-  const [selectedSpecialId, setSelectedSpecialId] = useState<string | null>(null);
+  const [specialView, setSpecialView] = useState<{ id: string; mode: "register" | "fullscreen" } | null>(null);
   const [specialBusy, setSpecialBusy] = useState(false);
   const [specialError, setSpecialError] = useState("");
-  const selectedSpecial = selectedSpecialId
-    ? specialEvents.editions.find((item) => item.id === selectedSpecialId) ?? null
+  const selectedSpecial = specialView
+    ? specialEvents.editions.find((item) => item.id === specialView.id) ?? null
     : null;
   const joinFlight = useRef<object | null>(null), currentAccount = useRef(account);
   const pendingEntry = useRef<CompeteEvent | null>(null);
   currentAccount.current = account;
   const latestState = useRef(state);
   latestState.current = state;
-  useEffect(() => { setRegister(false); setRegistrationBackground(null); setSport(null); setRegistrationCrew(null); setJoinError(""); setJoinBusy(false); setSelectedSpecialId(null); setSpecialBusy(false); setSpecialError(""); joinFlight.current = null; pendingEntry.current = null; }, [account]);
+  useEffect(() => { setRegister(false); setRegistrationBackground(null); setSport(null); setRegistrationCrew(null); setJoinError(""); setJoinBusy(false); setSpecialView(null); setSpecialBusy(false); setSpecialError(""); joinFlight.current = null; pendingEntry.current = null; }, [account]);
 
   useEffect(() => {
     if (!tabActive || !state || !requestedCrew || !requestedEvent || !SPORTS.some(s => s.id === requestedEvent)) return;
@@ -208,10 +209,11 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
         {standingsStale && <AppParagraph typographyRole="caption" role="status" className="fb-note">Standings may be out of date until the next refresh.</AppParagraph>}
         <EventHome active={tabActive && !immersive} state={registrationBackground?.account === account ? registrationBackground.state : state} onEnter={enterEvent} onRecovery={() => enterEvent("sleep")} onRegister={() => openRegistration()} />
         <CrewEvents
+          state={state}
           editions={specialEvents.editions}
           now={now}
           onChoose={() => router.push("/field")}
-          onSelectEdition={(edition) => { setSpecialError(""); setSelectedSpecialId(edition.id); }}
+          onSelectEdition={(edition) => { setSpecialError(""); setSpecialView({ id: edition.id, mode: edition.entry ? "fullscreen" : "register" }); }}
         />
         <ExploreEvents state={registrationBackground?.account === account ? registrationBackground.state : state} onChoose={event => {
           if (event === "sleep" ? sleepOptedIn : active.some(r => r.sport === event)) enterEvent(event);
@@ -269,27 +271,28 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
       </Sheet>
 
       <Sheet
-        open={Boolean(selectedSpecial)}
+        open={Boolean(selectedSpecial && specialView?.mode === "register")}
         hideTitle
         minimal
         title={selectedSpecial?.title ?? "Special event"}
         body=""
-        onClose={() => { if (!specialBusy) setSelectedSpecialId(null); }}
+        onClose={() => { if (!specialBusy) setSpecialView(null); }}
       >
-        {selectedSpecial ? (
+        {selectedSpecial && specialView?.mode === "register" ? (
           <SpecialEventRegistrationSheet
             state={state}
             edition={selectedSpecial}
             busy={specialBusy}
             error={specialError}
             onRegister={async (options) => {
-              if (!user) { setSelectedSpecialId(null); setAuthOpen(true); return; }
-              if (!state.onboardingCompleted) { setSelectedSpecialId(null); router.push("/onboarding"); return; }
+              if (!user) { setSpecialView(null); setAuthOpen(true); return; }
+              if (!state.onboardingCompleted) { setSpecialView(null); router.push("/onboarding"); return; }
               setSpecialBusy(true);
               setSpecialError("");
               try {
                 await specialEvents.register(selectedSpecial.id, options);
                 void playCue("success");
+                setSpecialView({ id: selectedSpecial.id, mode: "fullscreen" });
               } catch (err) {
                 setSpecialError(err instanceof Error ? err.message : "Could not register.");
               } finally {
@@ -301,16 +304,39 @@ export function ArenaScreen({ tabActive = true, onExit }: { tabActive?: boolean;
               setSpecialError("");
               try {
                 await specialEvents.cancel(selectedSpecial.id);
+                setSpecialView(null);
               } catch (err) {
                 setSpecialError(err instanceof Error ? err.message : "Could not cancel registration.");
               } finally {
                 setSpecialBusy(false);
               }
             }}
-            onClose={() => setSelectedSpecialId(null)}
+            onClose={() => { if (!specialBusy) setSpecialView(null); }}
           />
         ) : null}
       </Sheet>
+
+      {selectedSpecial && specialView?.mode === "fullscreen" ? (
+        <SpecialEventFullscreen
+          state={state}
+          edition={selectedSpecial}
+          busy={specialBusy}
+          error={specialError}
+          onCancel={async () => {
+            setSpecialBusy(true);
+            setSpecialError("");
+            try {
+              await specialEvents.cancel(selectedSpecial.id);
+              setSpecialView(null);
+            } catch (err) {
+              setSpecialError(err instanceof Error ? err.message : "Could not cancel registration.");
+            } finally {
+              setSpecialBusy(false);
+            }
+          }}
+          onClose={() => { if (!specialBusy) setSpecialView(null); }}
+        />
+      ) : null}
 
       <AuthPrompt
         open={authOpen}

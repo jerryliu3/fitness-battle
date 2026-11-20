@@ -225,8 +225,8 @@ it("frames both racers during slow motion and pulses only visible passed athlete
   await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
   advance();
   const initialZoom = calls.setCamera.mock.lastCall![0].zoomLevel;
-  expect(initialZoom).toBeGreaterThan(16);
-  expect(initialZoom).toBeLessThan(17);
+  expect(initialZoom).toBeGreaterThan(18);
+  expect(initialZoom).toBeLessThan(19);
   advance(90);
   expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBeGreaterThan(19);
   expect(calls.setCamera.mock.lastCall![0].animationDuration).toBe(0);

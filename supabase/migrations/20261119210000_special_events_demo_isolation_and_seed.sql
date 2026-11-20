@@ -617,6 +617,330 @@ end; $$;
 revoke all on function public.special_event_relay_lineup(uuid, uuid) from public, anon;
 grant execute on function public.special_event_relay_lineup(uuid, uuid) to authenticated;
 
+-- Qualify side_id inside all_volumes CTE so PL/pgSQL OUT param side_id is unambiguous.
+create or replace function private.special_event_heat_scores(p_heat_id uuid)
+returns table (
+  side_id uuid, display_name text, side_kind text, entry_rating numeric,
+  score numeric, reached_at timestamptz, best_session numeric, member_count integer
+) language plpgsql security definer set search_path = '' as $$
+declare
+  heat_rec public.special_event_heats;
+  round_rec public.special_event_rounds;
+  edition_rec public.special_event_editions;
+  score_start timestamptz;
+  score_end timestamptz;
+  is_relay boolean;
+begin
+  select * into heat_rec from public.special_event_heats where id = p_heat_id;
+  if heat_rec.id is null then return; end if;
+  select * into round_rec from public.special_event_rounds where id = heat_rec.round_id;
+  select * into edition_rec from public.special_event_editions where id = round_rec.edition_id;
+  score_start := case when round_rec.score_mode = 'cumulative' then edition_rec.starts_at else round_rec.starts_at end;
+  score_end := round_rec.ends_at;
+  is_relay := coalesce(edition_rec.config->'scoring'->>'mode', 'total_volume') = 'relay_handoff';
+
+  return query
+  with heat_sides as (
+    select s.id, s.display_name, s.side_kind, s.entry_rating
+    from unnest(heat_rec.side_ids) as sid(id)
+    join public.special_event_sides s on s.id = sid.id
+  ),
+  members as (
+    select e.side_id as m_side_id, e.user_id from public.special_event_entries e
+    join heat_sides hs on hs.id = e.side_id
+    where e.edition_id = edition_rec.id and e.status in ('active', 'eliminated', 'completed')
+  ),
+  activity_rows as (
+    select m.m_side_id, a.started_at,
+      case
+        when edition_rec.sport in ('running', 'cycling') then case when a.verified and a.provenance = 'recorded' then coalesce(a.distance_m, 0)::numeric else 0::numeric end
+        when edition_rec.sport = 'strength' then coalesce(a.moving_sec, 0)::numeric
+        else 0::numeric
+      end as vol
+    from members m
+    join lateral (
+      select activity.started_at, activity.distance_m, activity.moving_sec, activity.verified, activity.provenance
+      from private.competition_activity_rows(edition_rec.sport, score_start, score_end, m.user_id) activity
+      where edition_rec.sport <> 'walking'
+        and activity.user_id = m.user_id and activity.disposition = 'counted'
+        and activity.provenance not in ('demo', 'manual') and coalesce(activity.journal_only, false) = false
+        and coalesce(activity.source_label, activity.provider::text) <> 'history'
+        and coalesce(activity.compete_key, '') !~ '^(strava-stub-|garmin-stub-|whoop-stub-|oura-stub-|mock-)'
+        and activity.sport = edition_rec.sport
+        and activity.started_at >= score_start and activity.started_at < score_end and activity.started_at <= statement_timestamp()
+        and (not is_relay or exists (
+          select 1 from public.special_event_relay_legs l
+          where l.side_id = m.m_side_id and l.user_id = m.user_id and l.leg_day = (activity.started_at at time zone 'America/New_York')::date
+        ))
+    ) a on true
+  ),
+  walking_rows as (
+    select m.m_side_id, (d.day::timestamp at time zone 'America/New_York') as started_at, max(coalesce(d.steps, 0))::numeric as vol
+    from members m join public.daily_health_readings d on d.user_id = m.user_id
+    where edition_rec.sport = 'walking'
+      and d.day >= (timezone('America/New_York', score_start))::date
+      and d.day < (timezone('America/New_York', score_end))::date
+      and d.day <= (timezone('America/New_York', statement_timestamp()))::date
+      and (not is_relay or exists (
+        select 1 from public.special_event_relay_legs l where l.side_id = m.m_side_id and l.user_id = m.user_id and l.leg_day = d.day
+      ))
+    group by m.m_side_id, m.user_id, d.day
+  ),
+  all_volumes as (
+    select ar.m_side_id, ar.started_at, ar.vol from activity_rows ar where ar.vol > 0
+    union all
+    select wr.m_side_id, wr.started_at, wr.vol from walking_rows wr where wr.vol > 0
+  ),
+  agg as (
+    select v.m_side_id, coalesce(sum(v.vol), 0)::numeric as total_vol, max(v.started_at) as last_at, coalesce(max(v.vol), 0)::numeric as top_vol
+    from all_volumes v group by v.m_side_id
+  ),
+  counts as (select m.m_side_id, count(*)::integer as cnt from members m group by m.m_side_id)
+  select
+    hs.id, hs.display_name, hs.side_kind, hs.entry_rating,
+    coalesce(agg.total_vol, 0)::numeric, agg.last_at, coalesce(agg.top_vol, 0)::numeric, coalesce(counts.cnt, 0)::integer
+  from heat_sides hs
+  left join agg on agg.m_side_id = hs.id
+  left join counts on counts.m_side_id = hs.id
+  order by coalesce(agg.total_vol, 0) desc, agg.last_at asc nulls last, coalesce(agg.top_vol, 0) desc, hs.entry_rating desc, md5(p_heat_id::text || hs.id::text);
+end; $$;
+revoke all on function private.special_event_heat_scores(uuid) from public, anon, authenticated;
+
+-- Avoid PL/pgSQL variable shadowing with special_event_sides.group_attr in finalize_special_event.
+create or replace function private.finalize_special_event(p_edition_id uuid, p_force boolean default false)
+returns boolean language plpgsql security definer set search_path = '' as $$
+declare
+  edition public.special_event_editions;
+  now_at timestamptz := clock_timestamp();
+  grouping_kind text;
+  min_roster integer;
+  max_roster integer;
+  v_group_attr text;
+  target_squad integer;
+  min_squad integer;
+  leftover_policy text;
+  min_heat integer;
+  chosen_sz integer := 0;
+  try_sz integer;
+  full_squads integer;
+  ent record;
+  crew_rec record;
+  grp record;
+  new_side_id uuid;
+  side_ids uuid[] := '{}'::uuid[];
+  seated_entries uuid[];
+  first_heat_id uuid;
+  squad_num integer;
+  squad_cnt integer;
+  avg_elo numeric;
+  base_label text;
+  wild_entries uuid[];
+begin
+  perform pg_advisory_xact_lock(hashtextextended('special-event:' || p_edition_id::text, 71001));
+  select * into edition from public.special_event_editions where id = p_edition_id;
+  if edition.id is null or edition.finalized_at is not null then return false; end if;
+  if not p_force and edition.starts_at > now_at then return false; end if;
+
+  grouping_kind := coalesce(edition.config->'grouping'->>'kind', 'solo');
+
+  if grouping_kind = 'solo' then
+    for ent in
+      select e.id as entry_id, e.entry_rating, coalesce(nullif(trim(p.display_name), ''), 'Athlete') as display_name
+      from public.special_event_entries e
+      join public.profiles p on p.id = e.user_id
+      where e.edition_id = edition.id and e.status = 'registered'
+      order by e.entry_rating desc, e.registered_at asc, e.user_id
+    loop
+      insert into public.special_event_sides(edition_id, side_kind, display_name, entry_rating, roster_locked_at)
+      values (edition.id, 'solo', ent.display_name, ent.entry_rating, now_at)
+      returning id into new_side_id;
+      update public.special_event_entries set side_id = new_side_id, status = 'active' where id = ent.entry_id;
+      side_ids := side_ids || new_side_id;
+    end loop;
+
+    perform private.seed_special_event_rounds(edition, side_ids);
+    return true;
+  end if;
+
+  if grouping_kind = 'crew' then
+    min_roster := greatest(2, coalesce((edition.config->'grouping'->>'minRoster')::integer, 2));
+    max_roster := greatest(min_roster, coalesce((edition.config->'grouping'->>'maxRoster')::integer, 8));
+
+    for crew_rec in
+      select e.requested_crew_id as crew_id, c.name as crew_name,
+        avg(e.entry_rating) as avg_rating,
+        array_agg(e.id order by e.registered_at asc, e.user_id) as entry_ids
+      from public.special_event_entries e
+      join public.crews c on c.id = e.requested_crew_id
+      join public.crew_members cm on cm.crew_id = e.requested_crew_id and cm.user_id = e.user_id and cm.status = 'active'
+      where e.edition_id = edition.id and e.status = 'registered'
+      group by e.requested_crew_id, c.name
+      having count(*) >= min_roster
+      order by avg(e.entry_rating) desc, min(e.registered_at) asc, e.requested_crew_id
+    loop
+      select id into new_side_id from public.special_event_sides
+      where edition_id = edition.id and crew_id = crew_rec.crew_id limit 1;
+
+      if new_side_id is null then
+        insert into public.special_event_sides(edition_id, side_kind, crew_id, display_name, entry_rating, roster_locked_at)
+        values (edition.id, 'crew', crew_rec.crew_id, crew_rec.crew_name, coalesce(crew_rec.avg_rating, 0), now_at)
+        returning id into new_side_id;
+      else
+        update public.special_event_sides
+        set display_name = crew_rec.crew_name, entry_rating = coalesce(crew_rec.avg_rating, 0), roster_locked_at = now_at
+        where id = new_side_id;
+      end if;
+
+      seated_entries := crew_rec.entry_ids[1 : least(cardinality(crew_rec.entry_ids), max_roster)];
+      update public.special_event_entries set side_id = new_side_id, status = 'active' where id = any(seated_entries);
+
+      if coalesce(edition.config->'scoring'->>'mode', 'total_volume') = 'relay_handoff' then
+        perform private.assign_relay_legs(new_side_id, edition);
+      end if;
+      side_ids := side_ids || new_side_id;
+    end loop;
+
+    delete from public.special_event_sides where edition_id = edition.id and roster_locked_at is null;
+    perform private.seed_special_event_rounds(edition, side_ids);
+
+    select h.id into first_heat_id
+    from public.special_event_heats h
+    join public.special_event_rounds r on r.id = h.round_id
+    where r.edition_id = edition.id and r.round_number = 1
+    order by h.heat_index asc limit 1;
+
+    update public.special_event_entries e
+    set status = case when first_heat_id is not null then 'spectating' else 'completed' end,
+        side_id = null,
+        spectate_heat_id = case when first_heat_id is null then null else coalesce((
+          select h.id from public.special_event_heats h
+          join public.special_event_rounds r on r.id = h.round_id
+          join public.special_event_sides s on s.id = any(h.side_ids)
+          where r.edition_id = edition.id and r.round_number = 1 and s.crew_id = e.requested_crew_id
+          limit 1
+        ), first_heat_id) end
+    where e.edition_id = edition.id and e.status = 'registered';
+
+    return true;
+  end if;
+
+  if grouping_kind = 'profile_attr' then
+    v_group_attr := coalesce(edition.config->'grouping'->>'attr', 'country_code');
+    target_squad := greatest(2, coalesce((edition.config->'grouping'->>'targetSquadSize')::integer, 3));
+    min_squad := greatest(2, least(target_squad, coalesce((edition.config->'grouping'->>'minSquadSize')::integer, 2)));
+    leftover_policy := coalesce(edition.config->'grouping'->>'leftoverPolicy', 'spectate');
+    min_heat := greatest(2, coalesce(
+      (edition.config->'match'->>'minHeatSize')::integer,
+      (edition.config->'match'->>'minBracketSize')::integer,
+      2
+    ));
+
+    for try_sz in reverse target_squad..min_squad loop
+      if leftover_policy = 'wildcard' then
+        select floor(count(*)::numeric / try_sz)::integer into full_squads
+        from public.special_event_entries e
+        where e.edition_id = edition.id and e.status = 'registered';
+      else
+        select coalesce(sum(floor(cnt::numeric / try_sz)::integer), 0)
+        into full_squads
+        from (
+          select coalesce(nullif(e.group_snapshot->>v_group_attr, ''), 'random') as gval, count(*) as cnt
+          from public.special_event_entries e
+          where e.edition_id = edition.id and e.status = 'registered'
+          group by 1
+        ) buckets;
+      end if;
+
+      if full_squads >= min_heat then
+        chosen_sz := try_sz;
+        exit;
+      end if;
+    end loop;
+
+    if chosen_sz >= 2 then
+      for grp in
+        select coalesce(nullif(e.group_snapshot->>v_group_attr, ''), 'random') as gval,
+          array_agg(e.id order by e.entry_rating desc, e.registered_at asc, e.user_id) as entry_ids
+        from public.special_event_entries e
+        where e.edition_id = edition.id and e.status = 'registered'
+        group by 1
+        order by 1
+      loop
+        squad_cnt := floor(cardinality(grp.entry_ids)::numeric / chosen_sz)::integer;
+        base_label := case when v_group_attr = 'random' then 'Squad' else grp.gval end;
+        for squad_num in 1..squad_cnt loop
+          seated_entries := grp.entry_ids[((squad_num - 1) * chosen_sz + 1) : (squad_num * chosen_sz)];
+          select coalesce(avg(entry_rating), 0) into avg_elo from public.special_event_entries where id = any(seated_entries);
+
+          insert into public.special_event_sides(edition_id, side_kind, group_attr, group_value, display_name, entry_rating, roster_locked_at)
+          values (
+            edition.id, 'profile_group', v_group_attr, grp.gval,
+            case when squad_cnt > 1 or v_group_attr = 'random' then base_label || ' #' || squad_num::text else base_label end,
+            avg_elo, now_at
+          )
+          returning id into new_side_id;
+
+          update public.special_event_entries set side_id = new_side_id, status = 'active' where id = any(seated_entries);
+          if coalesce(edition.config->'scoring'->>'mode', 'total_volume') = 'relay_handoff' then
+            perform private.assign_relay_legs(new_side_id, edition);
+          end if;
+        end loop;
+      end loop;
+
+      if leftover_policy = 'wildcard' then
+        select coalesce(array_agg(id order by entry_rating desc, registered_at asc, user_id), '{}'::uuid[])
+        into wild_entries
+        from public.special_event_entries
+        where edition_id = edition.id and status = 'registered';
+
+        squad_cnt := floor(coalesce(cardinality(wild_entries), 0)::numeric / chosen_sz)::integer;
+        for squad_num in 1..squad_cnt loop
+          seated_entries := wild_entries[((squad_num - 1) * chosen_sz + 1) : (squad_num * chosen_sz)];
+          select coalesce(avg(entry_rating), 0) into avg_elo from public.special_event_entries where id = any(seated_entries);
+          insert into public.special_event_sides(edition_id, side_kind, group_attr, group_value, display_name, entry_rating, roster_locked_at)
+          values (edition.id, 'profile_group', 'wildcard', 'wildcard', 'Wildcard #' || squad_num::text, avg_elo, now_at)
+          returning id into new_side_id;
+          update public.special_event_entries set side_id = new_side_id, status = 'active' where id = any(seated_entries);
+          if coalesce(edition.config->'scoring'->>'mode', 'total_volume') = 'relay_handoff' then
+            perform private.assign_relay_legs(new_side_id, edition);
+          end if;
+        end loop;
+      end if;
+
+      select coalesce(array_agg(id order by entry_rating desc, created_at asc, id), '{}'::uuid[])
+      into side_ids
+      from public.special_event_sides
+      where edition_id = edition.id and roster_locked_at is not null;
+    end if;
+
+    perform private.seed_special_event_rounds(edition, side_ids);
+
+    select h.id into first_heat_id
+    from public.special_event_heats h
+    join public.special_event_rounds r on r.id = h.round_id
+    where r.edition_id = edition.id and r.round_number = 1
+    order by h.heat_index asc limit 1;
+
+    update public.special_event_entries e
+    set status = case when first_heat_id is not null then 'spectating' else 'completed' end,
+        side_id = null,
+        spectate_heat_id = case when first_heat_id is null then null else coalesce((
+          select h.id from public.special_event_heats h
+          join public.special_event_rounds r on r.id = h.round_id
+          join public.special_event_sides s on s.id = any(h.side_ids)
+          where r.edition_id = edition.id and r.round_number = 1
+            and s.group_value = coalesce(nullif(e.group_snapshot->>v_group_attr, ''), 'random')
+          limit 1
+        ), first_heat_id) end
+    where e.edition_id = edition.id and e.status = 'registered';
+
+    return true;
+  end if;
+
+  return false;
+end; $$;
+revoke all on function private.finalize_special_event(uuid, boolean) from public, anon, authenticated;
+
 -- ============================================================================
 -- Seed demo-only Special Events participation for all 8 demo accounts
 -- (test@test.com, alice, bob, carla, dana, elena, marcus, priya).

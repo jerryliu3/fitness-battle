@@ -679,6 +679,10 @@ export function relayTodayHeadline(lineup: SpecialEventRelayLineup): string | nu
   return `${today.map((l) => l.displayName).join(" & ")} on the baton today. Off-day workouts still count toward your weekly sport.`;
 }
 
+export function sortSpecialEvents(editions: readonly SpecialEventEdition[]): SpecialEventEdition[] {
+  return [...editions].sort((a, b) => Number(Boolean(b.entry)) - Number(Boolean(a.entry)));
+}
+
 /** Pick the active or registering crew relay edition relevant to a specific crew card. */
 export function findCrewRelayEdition(
   editions: readonly SpecialEventEdition[],

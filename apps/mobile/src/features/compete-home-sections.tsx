@@ -2,10 +2,12 @@ import { pageCarouselStyles } from "../ui/carousel-styles";
 import { useId } from "react";
 import { Platform, ScrollView, Pressable, View, useWindowDimensions } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect, Path } from "react-native-svg";
-import { SPORTS, sportById, type SportId, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, APP_ICON_PATHS, competeHomeResult, specialEventFormatLabel, specialEventStatusBadge, type CompeteEvent, type CompeteState, type SpecialEventEdition } from "@fitness-battle/shared";
+import { SPORTS, sportById, type SportId, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, APP_ICON_PATHS, competeHomeResult, sortSpecialEvents, specialEventFormatLabel, specialEventPhase, specialEventStatusBadge, type CompeteEvent, type CompeteState, type SpecialEventEdition } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
+import { WaveCountdown } from "../ui/wave-countdown";
+import { CoursePreview } from "./event-home";
 
 export function CompeteIcon({ name, size = 26, gold = false, color }: { name: keyof typeof COMPETE_ICONS | CompeteEvent; size?: number; gold?: boolean; color?: string }) {
   const c = useThemeColors();
@@ -86,11 +88,13 @@ export function CompeteResults({ state, onHistory, onRankings }: { state: Compet
 }
 
 export function CrewEvents({
+  state,
   editions = [],
   now = new Date(),
   onChoose,
   onSelectEdition,
 }: {
+  state?: CompeteState;
   editions?: SpecialEventEdition[];
   now?: Date;
   onChoose(sport: SportId): void;
@@ -99,19 +103,65 @@ export function CrewEvents({
   const c = useThemeColors();
   const { width } = useWindowDimensions();
   const bannerWidth = Math.min(560, width - 48);
+  const registeredCardWidth = Math.min(340, width - 64);
   if (editions.length > 0 && onSelectEdition) {
+    const ordered = sortSpecialEvents(editions);
     return (
       <ScrollView
         style={pageCarouselStyles.viewport}
         horizontal
         showsHorizontalScrollIndicator={false}
-        snapToInterval={bannerWidth + 12}
         decelerationRate="fast"
         accessibilityLabel="Special events carousel"
-        contentContainerStyle={[pageCarouselStyles.content, { gap: 12 }]}
+        contentContainerStyle={[pageCarouselStyles.content, { gap: 12, alignItems: "flex-start" }]}
       >
-        {editions.map((edition) => {
+        {ordered.map((edition) => {
           const status = specialEventStatusBadge(edition, now);
+          const phase = specialEventPhase(edition, now);
+          if (edition.entry && state) {
+            return (
+              <View
+                key={edition.id}
+                style={{
+                  width: registeredCardWidth,
+                  padding: 12,
+                  gap: 12,
+                  borderRadius: 20,
+                  backgroundColor: c.card,
+                  borderWidth: 1,
+                  borderColor: c.line,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <View style={{ padding: 9, borderRadius: 12, backgroundColor: c.actionSoft }}>
+                    <CompeteIcon name={edition.sport} size={22} gold />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <AppText role="label" numberOfLines={1}>{edition.title}</AppText>
+                    <AppText role="support" secondary numberOfLines={1}>
+                      {phase === "registering" ? <WaveCountdown start={edition.startsAt} now={now} inline /> : specialEventFormatLabel(edition.config)}
+                    </AppText>
+                  </View>
+                  <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: c.actionSoft, borderWidth: 1, borderColor: c.podiumGold }}>
+                    <AppText role="caption">{status}</AppText>
+                  </View>
+                </View>
+                <Pressable accessibilityRole="button" accessibilityLabel={`Open ${edition.title}`} onPress={() => onSelectEdition(edition)}>
+                  <CoursePreview state={state} sport={edition.sport} queued={phase !== "active"} />
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Enter ${edition.title}`}
+                  onPress={() => onSelectEdition(edition)}
+                  hitSlop={{ top: 6, bottom: 6 }}
+                  style={({ pressed }) => ({ minHeight: 32, marginTop: -8, marginBottom: -8, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 4, opacity: pressed ? 0.6 : 1 })}
+                >
+                  <AppText role="label">See event</AppText>
+                  <AppIcon name="chevron" size={20} />
+                </Pressable>
+              </View>
+            );
+          }
           return (
             <Pressable
               key={edition.id}
@@ -119,7 +169,7 @@ export function CrewEvents({
               accessibilityLabel={`${edition.title}, ${status}`}
               onPress={() => onSelectEdition(edition)}
               style={({ pressed }) => ({
-                width: bannerWidth,
+                width: Math.min(320, bannerWidth),
                 minHeight: 112,
                 padding: 16,
                 flexDirection: "row",

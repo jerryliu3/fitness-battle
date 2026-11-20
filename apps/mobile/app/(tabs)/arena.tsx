@@ -3,6 +3,7 @@ import { PointsTimeline } from "../../src/features/points-timeline";
 import { CompetitionPanel } from "../../src/features/competition-panel";
 import { CompetitionTimelineProvider, CompetitionTimelineControls } from "../../src/features/competition-timeline-context";
 import { EventRegistration } from "../../src/features/event-registration";
+import { SpecialEventFullscreen } from "../../src/features/special-event-fullscreen";
 import { SpecialEventRegistrationSheet } from "../../src/features/special-event-sheet";
 import { useSpecialEvents } from "../../src/features/use-special-events";
 import { useCompeteExperience } from "../../src/features/compete-experience";
@@ -84,15 +85,15 @@ const f=useFocusStyles();
   useEffect(()=>{if(requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:accountKey,sport:requestedEvent as SportId});},[requestedEvent,accountKey]);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const specialEvents = useSpecialEvents(!persistent && focused && !experience.immersive);
-  const [selectedSpecialId, setSelectedSpecialId] = useState<string | null>(null);
+  const [specialView, setSpecialView] = useState<{ id: string; mode: "register" | "fullscreen" } | null>(null);
   const [specialBusy, setSpecialBusy] = useState(false);
   const [specialError, setSpecialError] = useState("");
-  const selectedSpecial = selectedSpecialId
-    ? specialEvents.editions.find(item => item.id === selectedSpecialId) ?? null
+  const selectedSpecial = specialView
+    ? specialEvents.editions.find(item => item.id === specialView.id) ?? null
     : null;
   const joinFlight = useRef<object | null>(null);
   const pendingEntry = useRef<CompeteEvent | null>(null);
-  useEffect(() => { setRegister(false); setRegistrationBackground(null); setSport(null); setRegistrationCrew(null); setJoinError(""); setSelectedSpecialId(null); setSpecialBusy(false); setSpecialError(""); joinFlight.current = null; pendingEntry.current = null; }, [accountKey]);
+  useEffect(() => { setRegister(false); setRegistrationBackground(null); setSport(null); setRegistrationCrew(null); setJoinError(""); setSpecialView(null); setSpecialBusy(false); setSpecialError(""); joinFlight.current = null; pendingEntry.current = null; }, [accountKey]);
   const currentAccount = useRef(accountKey);
   currentAccount.current = accountKey;
   const latestState = useRef(state);
@@ -215,7 +216,7 @@ const f=useFocusStyles();
           <EventHome active={focused && !experience.immersive} state={registrationBackground?.account === accountKey ? registrationBackground.state : state} accountKey={accountKey} onEnter={experience.enter} onRecovery={() => experience.enter(accountKey, "sleep")} />
 
         </>}
-        {!persistent && <CrewEvents editions={specialEvents.editions} now={now} onChoose={() => router.navigate("/field")} onSelectEdition={edition => { setSpecialError(""); setSelectedSpecialId(edition.id); }} />}
+        {!persistent && <CrewEvents state={state} editions={specialEvents.editions} now={now} onChoose={() => router.navigate("/field")} onSelectEdition={edition => { setSpecialError(""); setSpecialView({ id: edition.id, mode: edition.entry ? "fullscreen" : "register" }); }} />}
         {!persistent && <ExploreEvents state={registrationBackground?.account === accountKey ? registrationBackground.state : state} onChoose={event => {
           if (event === "sleep" && sleepOptedIn) experience.enter(accountKey, "sleep");
           else if (event !== "sleep" && active.some(r => r.sport === event)) experience.enter(accountKey, event);
@@ -237,8 +238,8 @@ const f=useFocusStyles();
           })}
         </View>}
       </FocusSheet>
-      {selectedSpecial ? (
-        <FocusSheet open hideTitle title={selectedSpecial.title} onClose={() => { if (!specialBusy) setSelectedSpecialId(null); }}>
+      {selectedSpecial && specialView?.mode === "register" ? (
+        <FocusSheet open hideTitle title={selectedSpecial.title} onClose={() => { if (!specialBusy) setSpecialView(null); }}>
           <SpecialEventRegistrationSheet
             state={state}
             edition={selectedSpecial}
@@ -246,7 +247,7 @@ const f=useFocusStyles();
             error={specialError}
             onRegister={async options => {
               if (!user || !state.onboardingCompleted) {
-                setSelectedSpecialId(null);
+                setSpecialView(null);
                 router.navigate(user ? "/onboarding" : "/athlete");
                 return;
               }
@@ -254,6 +255,7 @@ const f=useFocusStyles();
               setSpecialError("");
               try {
                 await specialEvents.register(selectedSpecial.id, options);
+                setSpecialView({ id: selectedSpecial.id, mode: "fullscreen" });
               } catch (err) {
                 setSpecialError(err instanceof Error ? err.message : "Could not register.");
               } finally {
@@ -265,15 +267,37 @@ const f=useFocusStyles();
               setSpecialError("");
               try {
                 await specialEvents.cancel(selectedSpecial.id);
+                setSpecialView(null);
               } catch (err) {
                 setSpecialError(err instanceof Error ? err.message : "Could not cancel registration.");
               } finally {
                 setSpecialBusy(false);
               }
             }}
-            onClose={() => setSelectedSpecialId(null)}
+            onClose={() => { if (!specialBusy) setSpecialView(null); }}
           />
         </FocusSheet>
+      ) : null}
+      {selectedSpecial && specialView?.mode === "fullscreen" ? (
+        <SpecialEventFullscreen
+          state={state}
+          edition={selectedSpecial}
+          busy={specialBusy}
+          error={specialError}
+          onCancel={async () => {
+            setSpecialBusy(true);
+            setSpecialError("");
+            try {
+              await specialEvents.cancel(selectedSpecial.id);
+              setSpecialView(null);
+            } catch (err) {
+              setSpecialError(err instanceof Error ? err.message : "Could not cancel registration.");
+            } finally {
+              setSpecialBusy(false);
+            }
+          }}
+          onClose={() => { if (!specialBusy) setSpecialView(null); }}
+        />
       ) : null}
     </SafeAreaView>
   );
