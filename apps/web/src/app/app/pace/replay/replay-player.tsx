@@ -2,16 +2,15 @@
 import {useEffect,useMemo,useRef,useState} from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import {getAppColors,resolveColorMode,RACE_CATEGORIES,RACE_DISTANCES,compileReplayRunner,loadReplayField,raceClock,raceSourceUrl,replayFeatures,replayTimeline,validateReplayCourse,type ReplayData,type ReplayPage} from "@fitness-battle/shared";
+import {getAppColors,RACE_CATEGORIES,RACE_DISTANCES,compileReplayRunner,loadReplayField,raceClock,raceSourceUrl,replayFeatures,replayTimeline,validateReplayCourse,type ReplayData,type ReplayPage} from "@fitness-battle/shared";
 import {webEnv} from "@/lib/env";
 import {addMapboxAttribution,mapboxAttributionOptions} from "@/components/maps/mapbox-attribution";
-import {useAppearance} from "@/theme/appearance-provider";
+import {useAppearanceMode} from "@/theme/appearance-provider";
 import {useRaceFavorites} from "../favorites";
 
 export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:string;sex:string;clock:string};initialIds:string}) {
-  const {preference}=useAppearance();
-  const [systemDark,setSystemDark]=useState(false);
-  const colors=useMemo(()=>getAppColors(resolveColorMode(preference,systemDark ? "dark" : "light")),[preference,systemDark]);
+  const mode=useAppearanceMode();
+  const colors=useMemo(()=>getAppColors(mode),[mode]);
   const saved=useRaceFavorites(),[ids,setIds]=useState<string|null>(initialIds),[attempt,setAttempt]=useState(0);
   const [data,setData]=useState<ReplayData|null>(null),[busy,setBusy]=useState(false),[progress,setProgress]=useState(0),[error,setError]=useState("");
   const [time,setTime]=useState(0),[playing,setPlaying]=useState(false),[speed,setSpeed]=useState(128),[wall,setWall]=useState(false),[reduced,setReduced]=useState(true),[mapError,setMapError]=useState("");
@@ -30,7 +29,6 @@ export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:
   const timeline=useMemo(()=>replayTimeline(runners,wall),[runners,wall]);
   const features=useMemo(()=>data ? replayFeatures(data.course,runners,time,timeline.origin) : null,[data,runners,time,timeline.origin]);
   const latest=useRef(features);latest.current=features;
-  useEffect(()=>{const media=window.matchMedia("(prefers-color-scheme: dark)");const changed=()=>setSystemDark(media.matches);changed();media.addEventListener("change",changed);return ()=>media.removeEventListener("change",changed);},[]);
   useEffect(()=>{const preference=window.matchMedia("(prefers-reduced-motion: reduce)");const changed=()=>{setReduced(preference.matches);if(preference.matches) setPlaying(false);};changed();preference.addEventListener("change",changed);return ()=>preference.removeEventListener("change",changed);},[]);
   useEffect(()=>{const hidden=()=>{if(document.hidden) setPlaying(false);};document.addEventListener("visibilitychange",hidden);return ()=>document.removeEventListener("visibilitychange",hidden);},[]);
   useEffect(()=>{if(!playing || reduced) return;let previous=performance.now();const timer=window.setInterval(()=>{const now=performance.now(),delta=Math.min(now-previous,1000)*speed;previous=now;setTime(value=>Math.min(timeline.duration,value+delta));},runners.length>1000 ? 500 : 200);return ()=>clearInterval(timer);},[playing,reduced,speed,timeline.duration,runners.length]);
@@ -51,6 +49,7 @@ export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:
     const observer=new IntersectionObserver(entries=>{if(!entries[0]?.isIntersecting) setPlaying(false);});observer.observe(container.current);
     return ()=>{observer.disconnect();instance.remove();map.current=null;};
   },[data,mapAttempt]);
+  useEffect(()=>{if(ready) map.current?.setConfigProperty("basemap","lightPreset",mode==="dark" ? "night" : "day");},[mode,ready]);
   useEffect(()=>{if(ready && features) (map.current?.getSource("runners") as mapboxgl.GeoJSONSource | undefined)?.setData(features);},[ready,features]);
   useEffect(()=>{if(ready){map.current?.setPaintProperty("runners","circle-color",["case",["==",["get","id"],focused ?? -1],colors.tennis,colors.muted]);map.current?.setPaintProperty("runners","circle-stroke-color",colors.ink);map.current?.setPaintProperty("course","line-color",colors.muted);}},[ready,focused,colors]);
   const focusedRunner=useMemo(()=>runners.find(r=>r.id===focused),[runners,focused]),source=data ? raceSourceUrl(data.course.sourceUrl) : null;

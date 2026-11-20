@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { View } from "react-native";
 import { encodePolyline } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
-import { useLegacyColors } from "../theme";
+import { useAppTheme, useLegacyColors } from "../theme";
 import type { RouteTimelapseProps } from "./route-timelapse";
 
 export function RouteTimelapse({
@@ -30,7 +30,8 @@ export function RouteTimelapse({
     typeof coordinates === "string" ? coordinates : encodePolyline(coordinates);
 
   const ref = useRef<HTMLIFrameElement>(null);
-  const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/route-scene?mode=${mode}&accent=${encodeURIComponent(accentColor)}&duration=${durationMs}&units=${units}${running ? "&running=1" : ""}`;
+  const { mode: appearance } = useAppTheme();
+  const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/route-scene?mode=${mode}&appearance=${appearance}&accent=${encodeURIComponent(accentColor)}&duration=${durationMs}&units=${units}${running ? "&running=1" : ""}`;
   const origin = new URL(uri).origin;
   const post = useCallback((message: object) => ref.current?.contentWindow?.postMessage(message, origin), [origin]);
   const top = hudInsets?.top;

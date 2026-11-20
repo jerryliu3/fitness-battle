@@ -32,6 +32,7 @@ export function RouteScene() {
   // Only render the supplied recorded route.
   const paramPolyline = searchParams.get("polyline") || searchParams.get("route");
   const paramMode = (searchParams.get("mode") as "3d-flyover" | "2d-overview") || "3d-flyover";
+  const appearance = searchParams.get("appearance");
   const paramAccent = searchParams.get("accent") || "#f7c948";
   const paramToken = searchParams.get("token") || undefined;
 
@@ -139,6 +140,7 @@ export function RouteScene() {
       {coordinates.length > 0 ? (
         <RouteTimelapseMap
           coordinates={coordinates}
+          appearanceMode={appearance === "light" || appearance === "dark" ? appearance : undefined}
           routeReplay={routeReplay}
           running={searchParams.get("running") === "1"}
           hudInsets={hudInsets}

@@ -5,7 +5,7 @@ import { View, type StyleProp, type ViewStyle } from "react-native";
 import WebView, { type WebViewMessageEvent } from "react-native-webview";
 import { encodePolyline, type RouteReplaySample, type LngLat } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
-import { useLegacyColors } from "../theme";
+import { useAppTheme, useLegacyColors } from "../theme";
 
 export interface RoutePlaybackState {
   isPlaying: boolean;
@@ -77,7 +77,8 @@ const styles=useThemedStyles(stylesThemes);
 
   const insetQuery = hudInsets ? `&hudTop=${Math.round(hudInsets.top)}&hudBottom=${Math.round(hudInsets.bottom)}` : "";
   const controlsQuery = hideControls ? "&controls=none" : "";
-  const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/route-scene?mode=${mode}&accent=${encodeURIComponent(accentColor)}&duration=${durationMs}&units=${units}${running ? "&running=1" : ""}${insetQuery}${controlsQuery}`;
+  const { mode: appearance } = useAppTheme();
+  const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/route-scene?mode=${mode}&appearance=${appearance}&accent=${encodeURIComponent(accentColor)}&duration=${durationMs}&units=${units}${running ? "&running=1" : ""}${insetQuery}${controlsQuery}`;
   const origin = new URL(uri).origin;
 
   function inject(message: object, queueIfNotReady = false) {

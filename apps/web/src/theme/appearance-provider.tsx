@@ -21,6 +21,19 @@ export function AppearanceProvider({ initialAppearance, children }: { initialApp
 }
 export function useAppearance() { return useContext(AppearanceContext); }
 
+export function useAppearanceMode() {
+  const { preference } = useAppearance();
+  const [systemDark, setSystemDark] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const update = () => setSystemDark(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  return resolveColorMode(preference, systemDark ? "dark" : "light");
+}
+
 
 /** Reusable control for screens adopting the appearance contract. */
 export function AppearanceControl() {

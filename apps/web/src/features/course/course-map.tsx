@@ -5,6 +5,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { CourseCallout } from "./course-callout";
 import { addMapboxAttribution, mapboxAttributionOptions } from "@/components/maps/mapbox-attribution";
+import { useAppearanceMode } from "@/theme/appearance-provider";
 import { webEnv } from "@/lib/env";
 
 export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatChange, onFollowChange, followAthlete = true, onReady, onSnapshot, replay, course, lanes, unit, selectedId, focusRequest, onSelect, controlsBottom = 8, extraControls, distanceTarget, onResumeFollow }: {
@@ -18,6 +19,10 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   useEffect(() => { setDismissed(ids => ids.filter(id => id !== selectedId)); }, [selectedId, focusRequest]);
   const container = useRef<HTMLDivElement>(null), map = useRef<mapboxgl.Map | null>(null);
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(initialFlat), [following, setFollowing] = useState(true);
+  const mode = useAppearanceMode();
+  useEffect(() => {
+    if (ready) map.current?.setConfigProperty("basemap", "lightPreset", mode === "dark" ? "night" : "day");
+  }, [mode, ready]);
   const [sharedLane, setSharedLane] = useState(true);
   const earnedDistance = Math.max(0, ...lanes.filter(lane => !lane.ghost).map(lane => lane.value));
   const clampedTarget = distanceTarget ? Math.max(0, Math.min(distanceTarget.value, earnedDistance)) : undefined;

@@ -1,14 +1,14 @@
 import { useCompetitionSheetHeight } from "./competition-sheet-height";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MapAttribution } from "./map-attribution";
-import { useThemeColors } from "../theme";
+import { useAppTheme } from "../theme";
 import { useAuth } from "../lib/auth";
 import Svg, { G } from "react-native-svg";
 import { AthleteNode, athleteNodeDiameter } from "./athlete-node";
 import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import { View, Text, Pressable, useWindowDimensions } from "react-native";
-import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
+import Mapbox, { MapView, Camera, StyleImport, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
 import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceCourseRacerPosition, raceCourseStartCoordinate, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { CourseOptions } from "./course-options";
@@ -47,7 +47,7 @@ export default function CourseMap({ presentationActive = true, cardSessionKey, i
   onMapChromeChange?: (slots: Partial<Record<FieldMapChromeSlot, ReactNode>> | null) => void;
   overlaysHidden?: boolean;
 }) {
-const appearanceColors = useThemeColors();
+const { colors: appearanceColors, mode } = useAppTheme();
   const insets = useSafeAreaInsets();
   const { minimum: sheetMinimum } = useCompetitionSheetHeight();
   const dimensions = useWindowDimensions();
@@ -290,6 +290,7 @@ const appearanceColors = useThemeColors();
       onMapLoadingError={event => setError(ready && event?.type !== "style" ? "Some map scenery could not load. Check your connection." : "The map could not load. Check your connection and Mapbox access.")}
       onMapIdle={() => { if (ready && onSnapshot && mapRef.current && !snapshotTaken.current && !snapshotPending.current) { snapshotPending.current = true; void mapRef.current.takeSnap(true).then(uri => { if (uri) { snapshotTaken.current = true; onSnapshot(uri); } }).catch(() => {}).finally(() => { snapshotPending.current = false; }); } if (ready && (initialized.current || replay) && !reported.current) { reported.current = true; onReady?.(); } }}
     >
+      <StyleImport id="basemap" existing config={{ lightPreset: mode === "dark" ? "night" : "day" }} />
       <Camera minZoomLevel={0} maxZoomLevel={20} ref={ref} defaultSettings={queuedStart ? queuedCameraDefaults.current : { centerCoordinate: pose.current.center, zoomLevel: pose.current.zoom, pitch: pose.current.pitch, heading: pose.current.bearing }} />
       <CameraGestureObserver onCameraChanged={({ nativeEvent }) => {
         const p = nativeEvent.properties;
