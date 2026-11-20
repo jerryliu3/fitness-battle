@@ -7,6 +7,7 @@ import {APP_ICON_PATHS,APP_ICON_VIEW_BOX,getAppColors,RACE_CATEGORIES,RACE_DISTA
 import {webEnv} from "@/lib/env";
 import {addMapboxAttribution,mapboxAttributionOptions} from "@/components/maps/mapbox-attribution";
 import {useAppearance,useAppearanceMode} from "@/theme/appearance-provider";
+import {AppHeading} from "@/ui/section";
 import {useRaceFavorites} from "../favorites";
 
 function MapIcon({name}:{name:keyof typeof APP_ICON_PATHS}) {
@@ -210,7 +211,7 @@ export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:
   }
   return <div className={`race-replay-player${immersive ? " race-replay-immersive" : ""}`}>
     <header className="replay-toolbar">
-      <h1>{data?.course.attribution.replace(/ Course(?: \(.*\))?$/, "") || "Race replay"}</h1>
+      <AppHeading level={1} role="display">{data?.course.attribution.replace(/ Course(?: \(.*\))?$/, "") || "Race replay"}</AppHeading>
       <div className="replay-header-tools">
           <button aria-label="Runners" title="Runners" aria-expanded={picker} onClick={()=>setPicker(value=>!value)}><MapIcon name="crew" /><span>Runners</span></button>
           <button type="button" onClick={()=>setPreference(nextMode)}>{nextMode==="dark" ? "Dark mode" : "Light mode"}</button>
@@ -219,7 +220,7 @@ export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:
     </header>
     <div className="replay-workspace" data-picker={picker || undefined}>
       {picker && <aside className="replay-runner-panel" aria-label="Replay runners">
-        <h3>Runners</h3>
+        <AppHeading level={2}>Runners</AppHeading>
         <div className="replay-runner-filters">
           <label>Category<select value={category} onChange={e=>{setCategory(e.target.value);trackSaved.current=false;setIds("");setTracked([]);}}><option value="all">All categories</option>{RACE_CATEGORIES.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}</select></label>
           <label>Timing<select value={clock} onChange={e=>{setClock(e.target.value);trackSaved.current=false;setIds("");setTracked([]);}}><option value="chip">Chip</option><option value="gun">Official</option></select></label>

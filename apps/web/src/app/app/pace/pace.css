@@ -288,7 +288,7 @@
 .race-replay-player { display:grid; gap:16px; margin-top:12px; }
 .replay-toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .replay-toolbar { justify-content:space-between; }
-.rankings-shell .replay-toolbar h1 { font:600 clamp(23px,3vw,36px)/1.15 var(--font-body),sans-serif; margin:0; text-transform:none; }
+.rankings-shell .replay-toolbar h1 { margin:0; }
 .replay-workspace { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; min-height:0; }
 .race-replay-immersive .replay-workspace { grid-template-rows:minmax(0,1fr); }
 .race-replay-immersive .replay-workspace[data-picker] { grid-template-rows:auto minmax(430px,1fr); overflow:auto; }
@@ -304,7 +304,7 @@
 .race-explorer .replay-play { background:var(--action-primary); color:#161a18; display:grid; place-items:center; width:36px; min-height:36px; padding:0; border-color:transparent; border-radius:9px; }
 .race-explorer .replay-transport input { padding:0; margin:0; min-height:24px; accent-color:var(--action-primary); }
 .replay-runner-panel { min-height:0; overflow:auto; padding:16px; border:1px solid var(--line); border-radius:18px; background:var(--card); }
-.replay-runner-panel h3 { margin:0 0 14px; }
+.replay-runner-panel h2 { margin:0 0 14px; }
 .replay-runner-filters,.replay-roster-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
 .replay-roster { max-height:148px; overflow:auto; }
 .replay-runner-panel .replay-roster label { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:8px; min-height:44px; border-top:1px solid var(--line); color:var(--ink); font-size:14px; }
