@@ -367,3 +367,46 @@
 .race-explorer .replay-runner-popup .replay-map-profile button { color:var(--ink); }
 .replay-telemetry-heading { display:flex; align-items:center; justify-content:space-between; gap:4px; }
 .race-explorer .replay-telemetry-heading button:last-child { flex:none; justify-content:center; width:30px; font-size:18px; }
+
+
+/* Replay moments: a compact editorial layer above the transport, not another modal. */
+.replay-overtake-studio {
+  display:grid; gap:8px; padding:13px 15px 10px; border:1px solid var(--line);
+  border-radius:17px; color:var(--ink);
+  background:color-mix(in srgb,var(--card) 94%,transparent);
+  backdrop-filter:blur(18px); box-shadow:0 12px 38px rgba(0,0,0,.11);
+}
+.replay-overtake-head { display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.replay-overtake-head > div { display:grid; gap:3px; min-width:0; }
+.replay-eyebrow { color:var(--muted); font-size:10px; font-weight:750; letter-spacing:.1em; text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.replay-overtake-head strong { display:flex; align-items:baseline; gap:8px; font-size:15px; letter-spacing:-.02em; }
+.replay-overtake-number { font-size:clamp(26px,3vw,38px); letter-spacing:-.06em; font-variant-numeric:tabular-nums; line-height:1; }
+.replay-overtake-head small,.replay-moment-disclaimer { color:var(--muted); font-size:11px; line-height:1.35; }
+.race-explorer .replay-next-moment { display:grid; gap:2px; flex:none; min-height:42px; padding:8px 12px; border-radius:12px; font-weight:700; background:var(--action-primary); color:#171914; border:0; }
+.replay-next-moment span { font-size:11px; font-variant-numeric:tabular-nums; }
+.replay-moments { display:flex; align-items:stretch; gap:6px; overflow-x:auto; overscroll-behavior-inline:contain; scrollbar-width:thin; }
+.race-explorer .replay-moments button { flex:0 0 auto; min-width:115px; max-width:175px; display:grid; justify-items:start; gap:3px; padding:8px 10px; min-height:0; border-radius:10px; border:1px solid var(--line); background:var(--paper); text-align:left; transition:transform .18s ease,border-color .18s ease; }
+.race-explorer .replay-moments button:hover { transform:translateY(-2px); border-color:var(--ink); }
+.replay-moments button > span { width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; font-weight:650; }
+.replay-moments button > strong { font-size:13px; font-variant-numeric:tabular-nums; }
+.replay-moments button > small { font-size:10px; color:var(--muted); }
+.race-explorer .replay-moments button.replay-moment-past { opacity:.65; }
+.replay-moment-disclaimer { margin:0; }
+.replay-timeline-track { position:relative; min-width:0; display:flex; align-items:center; }
+.replay-timeline-track input { width:100%; position:relative; z-index:1; }
+.replay-moment-ticks { position:absolute; inset:0 8px; pointer-events:none; }
+.replay-moment-ticks span { position:absolute; width:2px; height:6px; bottom:0; border-radius:2px; background:var(--ink); opacity:.5; transform:translateX(-50%); }
+@media(max-width:740px) {
+  .replay-overtake-studio { padding:9px 10px; gap:6px; }
+  .replay-overtake-head strong { font-size:12px; }
+  .replay-overtake-number { font-size:24px; }
+  .replay-moments { max-height:65px; }
+  .replay-moments button { min-width:96px !important; }
+  .replay-moment-disclaimer { font-size:9px; }
+  .race-explorer .replay-next-moment { font-size:11px; padding:6px 8px; }
+  .replay-transport-top { grid-template-columns:auto auto minmax(36px,1fr); }
+  .replay-transport-top label { display:none; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .race-explorer .replay-moments button { transition:none; }
+}
