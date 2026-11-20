@@ -11,6 +11,7 @@ import {
   formatSpecialEventVolume,
   specialEventRegistrationDetail,
   specialEventRoundLabel,
+  specialEventSideLabel,
   specialEventStatusBadge,
   type CompeteState,
   type SpecialEventEdition,
@@ -176,7 +177,7 @@ export function SpecialEventRegistrationSheet({
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
                           <AppText role="caption" secondary>{side.place}</AppText>
                           <AppText role="label" style={{ flex: 1 }}>
-                            {side.displayName}{side.isYou ? " · You" : ""}
+                            {specialEventSideLabel(side)}{side.isYou ? " · You" : ""}
                           </AppText>
                           <AppText role="caption">{formatSpecialEventVolume(edition.sport, side.score, state.units)}</AppText>
                         </div>
@@ -189,6 +190,20 @@ export function SpecialEventRegistrationSheet({
                     ))}
                   </div>
                 ))}
+                {standings.myStatus === "spectating" ? (
+                  <AppText role="caption" secondary>Watching live — equal-size squads were matched for this heat.</AppText>
+                ) : null}
+                {standings.mySquad && standings.mySquad.length > 0 ? (
+                  <div style={{ display: "grid", gap: 6, paddingTop: 6 }}>
+                    <AppText role="label">Your squad</AppText>
+                    {standings.mySquad.map((m) => (
+                      <div key={m.userId} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "6px 0", borderBottom: "1px solid var(--line)" }}>
+                        <AppText role="caption">{m.displayName}{m.isYou ? " · You" : ""}</AppText>
+                        <AppText role="caption">{formatSpecialEventVolume(edition.sport, m.score, state.units)}</AppText>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </>
             );
           })()}

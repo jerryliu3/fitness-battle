@@ -13,6 +13,7 @@ import {
   specialEventPhase,
   specialEventRegistrationDetail,
   specialEventRoundLabel,
+  specialEventSideLabel,
   specialEventStatusBadge,
   validateSpecialEventConfig,
   validateSpecialEventEditionInput,
@@ -112,5 +113,8 @@ describe("special events presentation", () => {
     expect(relayDaysBetween("2026-11-23", "2026-11-29")).toHaveLength(7);
     expect(relayDayLabel("2026-11-23")).toMatch(/Mon.*23/);
     expect(specialEventError("relay_lineup_locked")).toMatch(/locked/i);
+    expect(specialEventSideLabel({ displayName: "US", groupAttr: "country_code", groupValue: "US" })).toMatch(/United States$/);
+    expect(specialEventSideLabel({ displayName: "US #1", groupAttr: "country_code", groupValue: "US" })).toContain("United States #1");
+    expect(specialEventSideLabel({ displayName: "Track Club", groupAttr: null, groupValue: null })).toBe("Track Club");
   });
 });

@@ -9,6 +9,7 @@ import {
   formatSpecialEventVolume,
   specialEventRegistrationDetail,
   specialEventRoundLabel,
+  specialEventSideLabel,
   specialEventStatusBadge,
   type CompeteState,
   type SpecialEventEdition,
@@ -166,7 +167,7 @@ export function SpecialEventRegistrationSheet({
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderColor: c.line }}>
                             <AppText role="caption" secondary>{side.place}</AppText>
                             <AppText role="label" style={{ flex: 1 }}>
-                              {blocked ? "Athlete" : side.displayName}{side.isYou ? " · You" : ""}
+                              {blocked ? "Athlete" : specialEventSideLabel(side)}{side.isYou ? " · You" : ""}
                             </AppText>
                             <AppText role="caption">{formatSpecialEventVolume(edition.sport, side.score, state.units)}</AppText>
                           </View>
@@ -180,6 +181,23 @@ export function SpecialEventRegistrationSheet({
                     })}
                   </View>
                 ))}
+                {standings.myStatus === "spectating" ? (
+                  <AppText role="caption" secondary>Watching live — equal-size squads were matched for this heat.</AppText>
+                ) : null}
+                {standings.mySquad && standings.mySquad.length > 0 ? (
+                  <View style={{ gap: 4, paddingTop: 6 }}>
+                    <AppText role="label">Your squad</AppText>
+                    {standings.mySquad.map((m) => {
+                      const memberBlocked = blocks.some((b) => b.id === m.userId);
+                      return (
+                        <View key={m.userId} style={{ flexDirection: "row", justifyContent: "space-between", gap: 10, paddingVertical: 6, borderBottomWidth: 1, borderColor: c.line }}>
+                          <AppText role="caption">{memberBlocked ? "Athlete" : m.displayName}{m.isYou ? " · You" : ""}</AppText>
+                          <AppText role="caption">{formatSpecialEventVolume(edition.sport, m.score, state.units)}</AppText>
+                        </View>
+                      );
+                    })}
+                  </View>
+                ) : null}
               </View>
             );
           })()}

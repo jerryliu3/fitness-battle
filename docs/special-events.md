@@ -63,7 +63,8 @@ Monday closes without requiring a cron job.
   service-role `admin_save_special_event_edition` /
   `admin_advance_special_event`.
 - Apply `20261119160000_special_events_core.sql`,
-  `20261119170000_special_events_tournaments.sql`, and
-  `20261119180000_special_events_relay.sql` in order before deploying.
+  `20261119170000_special_events_tournaments.sql`,
+  `20261119180000_special_events_relay.sql`, and
+  `20261119190000_special_events_squads.sql` in order before deploying.
   Accompanying tests live in `supabase/tests/special-events-*.sql`,
   `packages/shared/src/special-events.test.ts`, and API route tests.

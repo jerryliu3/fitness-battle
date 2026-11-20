@@ -1,4 +1,5 @@
 import { competitionTrack, competitionTrackLabel, SPORT_IDS, sportById, type CompeteState, type SportId, type UnitSystem } from "./compete/sports";
+import { countryFlagEmoji, countryName } from "./countries";
 import { formatArenaVolume } from "./compete-field-view";
 import { waveTimeLabelForState } from "./compete/participation";
 import { APP_TIMEZONE, accountTimeZone, dayKey, shiftAppDay, startOfZonedDay, weeklyCompetitionLastDay, weeklyPeriodBounds } from "./period";
@@ -475,11 +476,20 @@ export function specialEventError(message: string): string {
 export interface SpecialEventSideStanding {
   sideId: string;
   displayName: string;
+  groupAttr?: string | null;
+  groupValue?: string | null;
   userId: string | null;
   isYou: boolean;
   score: number;
   place: number;
   advancing: boolean;
+}
+
+export interface SpecialEventSquadMember {
+  userId: string;
+  displayName: string;
+  isYou: boolean;
+  score: number;
 }
 
 export interface SpecialEventHeatView {
@@ -510,7 +520,18 @@ export interface SpecialEventStandings {
   currentRound: number;
   mySideId: string | null;
   myStatus: SpecialEventEntryStatus | null;
+  mySquad?: SpecialEventSquadMember[];
   rounds: SpecialEventRoundView[];
+}
+
+export function specialEventSideLabel(side: Pick<SpecialEventSideStanding, "displayName" | "groupAttr" | "groupValue">): string {
+  if (side.groupAttr === "country_code" && side.groupValue && side.groupValue.length === 2) {
+    const flag = countryFlagEmoji(side.groupValue);
+    const name = countryName(side.groupValue) ?? side.groupValue;
+    const suffix = side.displayName.match(/#\d+$/)?.[0];
+    return `${flag ? `${flag} ` : ""}${name}${suffix ? ` ${suffix}` : ""}`;
+  }
+  return side.displayName;
 }
 
 export function specialEventRoundLabel(
