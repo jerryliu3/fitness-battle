@@ -410,3 +410,27 @@
 @media(prefers-reduced-motion:reduce) {
   .race-explorer .replay-moments button { transition:none; }
 }
+
+
+/* Public discovery is a navigable editorial surface, not a sign-in gate. */
+.pace-discovery { display:grid; grid-template-columns:minmax(210px,.85fr) minmax(0,2fr); gap:24px; padding:23px; margin:22px 0; border-radius:22px; border:1px solid var(--line); background:var(--card); }
+.pace-discovery-intro { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:9px; }
+.pace-discovery-intro > strong { font-size:clamp(21px,2.4vw,32px); line-height:1.1; letter-spacing:-.045em; }
+.pace-discovery-intro p,.pace-result-feature p { font-size:13px; line-height:1.5; color:var(--muted); margin:0; }
+.pace-discovery-links { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+.pace-discovery-links a { display:grid; align-content:center; gap:7px; min-height:105px; padding:16px; color:var(--ink); text-decoration:none; border:1px solid var(--line); border-radius:15px; background:var(--paper); transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease; }
+.pace-discovery-links a:hover { transform:translateY(-3px); border-color:var(--ink); box-shadow:0 9px 25px rgba(0,0,0,.06); }
+.pace-discovery-links a > span { color:var(--muted); letter-spacing:.09em; font-size:10px; font-weight:750; }
+.pace-discovery-links a > strong { font-size:15px; letter-spacing:-.025em; }
+.pace-discovery-links a > small { color:var(--muted); font-size:11px; }
+.pace-result-feature { display:flex; align-items:center; justify-content:space-between; gap:20px; margin:16px 0 24px; padding:22px; border-radius:18px; border:1px solid var(--line); background:var(--card); }
+.pace-result-feature > div { display:grid; gap:8px; }
+.pace-result-feature strong { font-size:21px; letter-spacing:-.035em; }
+.pace-result-feature a { display:inline-flex; align-items:center; justify-content:center; flex:none; border-radius:11px; padding:13px 17px; background:var(--action-primary); color:#151713; text-decoration:none; font-size:13px; font-weight:750; }
+@media(max-width:740px) {
+ .pace-discovery { grid-template-columns:1fr; gap:16px; padding:16px; }
+ .pace-discovery-links a { min-height:90px; padding:12px; }
+ .pace-discovery-links a > strong { font-size:13px; }
+ .pace-result-feature { align-items:stretch; flex-direction:column; padding:16px; }
+}
+@media(prefers-reduced-motion:reduce) { .pace-discovery-links a { transition:none; } }
