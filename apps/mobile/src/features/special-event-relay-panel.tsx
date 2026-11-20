@@ -52,6 +52,7 @@ export function SpecialEventRelayPanel({
     );
   }
 
+  const canEdit = lineup.assignmentMode === "manual" && (!lineup.finalized || lineup.lockPolicy === "pre_day");
   const todayHeadline = relayTodayHeadline(lineup);
 
   function cycleMember(key: string) {
@@ -67,9 +68,10 @@ export function SpecialEventRelayPanel({
     setSaving(true);
     setNote("");
     try {
+      const legs = relayDraftToLegs(draft, lineup.finalized ? lineup.todayDay : undefined);
       await requestApi(mobileEnv.apiUrl, accessToken, `/api/special-events/${encodeURIComponent(edition.id)}/relay`, {
         method: "PUT",
-        body: { crewId, legs: relayDraftToLegs(draft) },
+        body: { crewId, legs },
       });
       await api.reload({ silent: true });
       setNote("Baton lineup saved.");
@@ -85,7 +87,7 @@ export function SpecialEventRelayPanel({
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
         <AppText role="label">Daily baton schedule</AppText>
         <AppText role="caption" secondary>
-          {lineup.assignmentMode === "random" ? "Random draw" : lineup.finalized ? "Locked" : "Locks Mon 6 AM ET"}
+          {lineup.assignmentMode === "random" ? "Random draw" : lineup.finalized ? (canEdit ? "Locks midnight ET" : "Locked") : "Locks Mon 6 AM ET"}
         </AppText>
       </View>
 
@@ -93,7 +95,7 @@ export function SpecialEventRelayPanel({
         <AppText role="caption" secondary>
           Baton days are drawn randomly across opted-in crewmates when the event starts Monday 6:00 AM ET.
         </AppText>
-      ) : lineup.finalized ? (
+      ) : lineup.finalized && !canEdit ? (
         <View style={{ gap: 6 }}>
           {todayHeadline ? <AppText role="caption">{todayHeadline}</AppText> : null}
           {lineup.legs.map((leg) => (
@@ -119,14 +121,28 @@ export function SpecialEventRelayPanel({
         </View>
       ) : (
         <View style={{ gap: 8 }}>
+          {todayHeadline ? <AppText role="caption">{todayHeadline}</AppText> : null}
           <AppText role="caption" secondary>
-            Tap a day to assign a teammate (empty slots auto-fill at start).
+            {lineup.finalized
+              ? "Past and today’s legs are locked; tap future days to reassign before midnight ET."
+              : "Tap a day to assign a teammate (empty slots auto-fill at start)."}
             {lineup.maxLegsPerMember ? ` Max ${lineup.maxLegsPerMember} days each.` : ""}
           </AppText>
           {relayDaysBetween(lineup.startDay, lineup.endDay).map((day) =>
             Array.from({ length: lineup.legsPerDay }, (_, idx) => {
               const slot = idx + 1;
               const key = `${day}:${slot}`;
+              const leg = lineup.legs.find((l) => l.legDay === day && l.slotIndex === slot);
+              const dayLocked = Boolean(lineup.finalized && (leg?.locked || day <= lineup.todayDay));
+              if (dayLocked && leg) {
+                return (
+                  <View key={key} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6, paddingHorizontal: 8, borderRadius: 10, backgroundColor: leg.isToday ? c.actionSoft : undefined, borderBottomWidth: 1, borderColor: c.line }}>
+                    <AppText role="caption" secondary>{relayDayLabel(day)}{lineup.legsPerDay > 1 ? ` #${slot}` : ""}</AppText>
+                    <AppText role="label" style={{ flex: 1 }}>{leg.displayName}{leg.isYou ? " · You" : ""}</AppText>
+                    <AppText role="caption">{formatSpecialEventVolume(edition.sport, leg.score, units)}</AppText>
+                  </View>
+                );
+              }
               const assigned = lineup.roster.find((m) => m.userId === draft[key]);
               return (
                 <Pressable

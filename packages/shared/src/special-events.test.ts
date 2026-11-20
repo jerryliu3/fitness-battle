@@ -5,10 +5,12 @@ import {
   SPECIAL_EVENT_PRESETS,
   buildSpecialEventPreset,
   extractCrewOptions,
+  findCrewRelayEdition,
   formatSpecialEventVolume,
   nextSpecialEventWindow,
   relayDayLabel,
   relayDaysBetween,
+  relayDraftToLegs,
   specialEventError,
   specialEventFormatLabel,
   specialEventPhase,
@@ -134,5 +136,12 @@ describe("special events presentation", () => {
     });
     expect(tpl.cadenceWeeks).toBe(2);
     expect(() => validateSpecialEventTemplateInput({ ...tpl, cadenceWeeks: 12 })).toThrow(/Cadence weeks/);
+
+    const runRelay: SpecialEventEdition = { ...edition, id: "r1", sport: "running", config: buildSpecialEventPreset("crew_relay_locked", "running").config };
+    expect(findCrewRelayEdition([runRelay], "c1", "cycling", duringReg)).toBeNull();
+    expect(findCrewRelayEdition([runRelay], "c1", "running", duringReg)?.id).toBe("r1");
+    expect(relayDraftToLegs({ "2026-11-23:1": "u1", "2026-11-24:1": "u2" }, "2026-11-23")).toEqual([
+      { legDay: "2026-11-24", slotIndex: 1, userId: "u2" },
+    ]);
   });
 });

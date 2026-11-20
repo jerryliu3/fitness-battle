@@ -64,10 +64,14 @@ Monday closes without requiring a cron job.
   and service-role `admin_save_special_event_edition`,
   `admin_advance_special_event`, `admin_save_special_event_template`, and
   `admin_run_special_event_templates`.
+- Seeded demo editions are isolated in the data layer via `special_event_editions.demo_only = true`
+  and `private.is_demo_athlete(auth.uid())`, so real production athletes see zero UI changes until
+  an admin publishes a non-demo edition or activates a repeating template.
 - Apply `20261119160000_special_events_core.sql`,
   `20261119170000_special_events_tournaments.sql`,
   `20261119180000_special_events_relay.sql`,
-  `20261119190000_special_events_squads.sql`, and
-  `20261119200000_special_events_cities_templates.sql` in order before deploying.
+  `20261119190000_special_events_squads.sql`,
+  `20261119200000_special_events_cities_templates.sql`, and
+  `20261119210000_special_events_demo_isolation_and_seed.sql` in order before deploying.
   Accompanying tests live in `supabase/tests/special-events-*.sql`,
   `packages/shared/src/special-events.test.ts`, and API route tests.

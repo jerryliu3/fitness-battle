@@ -662,13 +662,14 @@ export function relayDaysBetween(startDay: string, endDay: string): string[] {
   return days;
 }
 
-export function relayDraftToLegs(draft: Record<string, string>) {
+export function relayDraftToLegs(draft: Record<string, string>, afterDay?: string) {
   return Object.entries(draft)
     .filter(([, userId]) => Boolean(userId))
     .map(([key, userId]) => {
       const [legDay, slot] = key.split(":");
       return { legDay: legDay!, slotIndex: Number(slot), userId };
-    });
+    })
+    .filter((leg) => !afterDay || leg.legDay > afterDay);
 }
 
 export function relayTodayHeadline(lineup: SpecialEventRelayLineup): string | null {
@@ -676,4 +677,24 @@ export function relayTodayHeadline(lineup: SpecialEventRelayLineup): string | nu
   if (!today.length) return null;
   if (today.some((l) => l.isYou)) return "You have the baton today — your workouts count for the crew.";
   return `${today.map((l) => l.displayName).join(" & ")} on the baton today. Off-day workouts still count toward your weekly sport.`;
+}
+
+/** Pick the active or registering crew relay edition relevant to a specific crew card. */
+export function findCrewRelayEdition(
+  editions: readonly SpecialEventEdition[],
+  crewId: string,
+  sport?: string,
+  now = new Date(),
+): SpecialEventEdition | null {
+  const open = editions.filter(
+    (e) =>
+      e.config.grouping.kind === "crew" &&
+      e.config.scoring.mode === "relay_handoff" &&
+      specialEventPhase(e, now) !== "settled",
+  );
+  return (
+    open.find((e) => e.entry?.requestedCrewId === crewId) ??
+    open.find((e) => !e.entry && (!sport || e.sport === sport)) ??
+    null
+  );
 }

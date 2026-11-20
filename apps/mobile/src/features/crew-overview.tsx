@@ -153,6 +153,6 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
       </View>
     </View>}
 
-    <CrewDerbyCard crewId={crewId} units={input.units} />
+    <CrewDerbyCard crewId={crewId} sport={input.sport} units={input.units} />
   </View>{contractUi.sheet}</>;
 }

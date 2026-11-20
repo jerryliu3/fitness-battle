@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { useRouter } from "expo-router";
-import { crewDerbyOpponent, crewDerbyScore, specialEventPhase, specialEventStatusBadge, weeklyCompetitionLastDay, APP_TIMEZONE, type CrewDerby, type SpecialEventEdition, type UnitSystem } from "@fitness-battle/shared";
+import { crewDerbyOpponent, crewDerbyScore, findCrewRelayEdition, specialEventStatusBadge, weeklyCompetitionLastDay, APP_TIMEZONE, type CrewDerby, type SpecialEventEdition, type UnitSystem } from "@fitness-battle/shared";
 import { useCachedApi } from "../lib/use-cached-api";
 import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
 import { FocusSheet, FocusButton, useFocusStyles } from "../ui/focus";
 import { SpecialEventRelayPanel } from "./special-event-relay-panel";
 
-export function CrewDerbyCard({ crewId, units }: { crewId: string; units?: UnitSystem }) {
+export function CrewDerbyCard({ crewId, sport, units }: { crewId: string; sport?: string; units?: UnitSystem }) {
   const c = useThemeColors(), f = useFocusStyles(), router = useRouter();
   const api = useCachedApi<{ derby: CrewDerby | null }>(`/api/crews/derby?crewId=${encodeURIComponent(crewId)}`);
   const specialApi = useCachedApi<{ editions: SpecialEventEdition[] }>("/api/special-events");
@@ -19,7 +19,7 @@ export function CrewDerbyCard({ crewId, units }: { crewId: string; units?: UnitS
   const own = derby?.teams.find(team => team.crew_id === crewId);
   const opponent = derby && crewDerbyOpponent(derby, crewId);
   const now = new Date();
-  const relay = (specialApi.data?.editions ?? []).find(e => e.config.grouping.kind === "crew" && e.config.scoring.mode === "relay_handoff" && specialEventPhase(e, now) !== "settled") ?? null;
+  const relay = findCrewRelayEdition(specialApi.data?.editions ?? [], crewId, sport, now);
   const relayCard = relay ? <>
     <Pressable accessibilityRole="button" accessibilityLabel={`Open ${relay.title}`} onPress={() => setRelayOpen(true)} style={[f.card, { backgroundColor: c.surfaceInverse, gap: 8 }]}>
       <AppText role="caption" style={{ color: c.tennis }}>{relay.title} · {specialEventStatusBadge(relay, now)}</AppText>

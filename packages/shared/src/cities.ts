@@ -9,10 +9,8 @@ export interface CityOption {
   lng: number;
 }
 
-export const CITY_SLUG_RE = /^[a-z]{2}:[a-z0-9-]{2,60}$/;
-
 export const CITY_OPTIONS: readonly CityOption[] = [
-  { slug: "us:new-york", name: "New York", countryCode: "US", aliases: ["nyc", "manhattan", "brooklyn", "queens"], lat: 40.7128, lng: -74.006 },
+  { slug: "us:new-york", name: "New York", countryCode: "US", aliases: ["nyc", "manhattan", "brooklyn", "queens", "jersey city"], lat: 40.7128, lng: -74.006 },
   { slug: "us:los-angeles", name: "Los Angeles", countryCode: "US", aliases: ["la", "santa monica"], lat: 34.0522, lng: -118.2437 },
   { slug: "us:san-francisco", name: "San Francisco", countryCode: "US", aliases: ["sf", "bay area", "oakland"], lat: 37.7749, lng: -122.4194 },
   { slug: "us:chicago", name: "Chicago", countryCode: "US", aliases: ["chi"], lat: 41.8781, lng: -87.6298 },

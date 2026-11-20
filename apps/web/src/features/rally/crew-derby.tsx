@@ -1,13 +1,13 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { crewDerbyOpponent, crewDerbyScore, specialEventPhase, specialEventStatusBadge, weeklyCompetitionLastDay, APP_TIMEZONE, type CrewDerby, type SpecialEventEdition, type UnitSystem } from "@fitness-battle/shared";
+import { crewDerbyOpponent, crewDerbyScore, findCrewRelayEdition, specialEventStatusBadge, weeklyCompetitionLastDay, APP_TIMEZONE, type CrewDerby, type SpecialEventEdition, type UnitSystem } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { SpecialEventRelayPanel } from "@/features/arena/special-event-relay-panel";
 import { AppHeading, AppText } from "@/ui/section";
 import { Sheet } from "@/ui/sheet";
 
-export function CrewDerbyCard({ crewId, units }: { crewId: string; units?: UnitSystem }) {
+export function CrewDerbyCard({ crewId, sport, units }: { crewId: string; sport?: string; units?: UnitSystem }) {
   const { user, offlineMode } = useAuth();
   const [derby, setDerby] = useState<CrewDerby | null>(null);
   const [relay, setRelay] = useState<SpecialEventEdition | null>(null);
@@ -28,16 +28,14 @@ export function CrewDerbyCard({ crewId, units }: { crewId: string; units?: UnitS
       .then((res) => (res.ok ? res.json() : { editions: [] }))
       .then((data) => {
         if (controller.signal.aborted) return;
-        const now = new Date();
         const list = (Array.isArray(data.editions) ? data.editions : []) as SpecialEventEdition[];
-        const found = list.find((e) => e.config.grouping.kind === "crew" && e.config.scoring.mode === "relay_handoff" && specialEventPhase(e, now) !== "settled");
-        setRelay(found ?? null);
+        setRelay(findCrewRelayEdition(list, crewId, sport));
       })
       .catch(() => {});
     const refresh = () => { if (!document.hidden) void reload(controller.signal).catch(() => setError("Crew Derby could not refresh.")); };
     window.addEventListener("focus", refresh);
     return () => { controller.abort(); window.removeEventListener("focus", refresh); };
-  }, [user?.id, offlineMode, reload]);
+  }, [user?.id, offlineMode, reload, crewId, sport]);
   const own = derby?.teams.find(team => team.crew_id === crewId);
   const opponent = derby && crewDerbyOpponent(derby, crewId);
   const relayCard = relay ? <>
