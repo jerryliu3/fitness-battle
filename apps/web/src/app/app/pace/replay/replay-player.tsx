@@ -3,10 +3,10 @@ import {useEffect,useMemo,useRef,useState} from "react";
 import {createPortal} from "react-dom";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import {APP_ICON_PATHS,APP_ICON_VIEW_BOX,getAppColors,resolveColorMode,RACE_CATEGORIES,RACE_DISTANCES,compileReplayRunner,loadReplayField,raceClock,raceSourceUrl,replayCourseBearing,replayFeatures,replayFrameInterval,replayTelemetry,replayTimeline,validateReplayCourse,type ReplayData,type ReplayPage} from "@fitness-battle/shared";
+import {APP_ICON_PATHS,APP_ICON_VIEW_BOX,getAppColors,RACE_CATEGORIES,RACE_DISTANCES,compileReplayRunner,loadReplayField,raceClock,raceSourceUrl,replayCourseBearing,replayFeatures,replayFrameInterval,replayTelemetry,replayTimeline,validateReplayCourse,type ReplayData,type ReplayPage} from "@fitness-battle/shared";
 import {webEnv} from "@/lib/env";
 import {addMapboxAttribution,mapboxAttributionOptions} from "@/components/maps/mapbox-attribution";
-import {useAppearance} from "@/theme/appearance-provider";
+import {useAppearance,useAppearanceMode} from "@/theme/appearance-provider";
 import {useRaceFavorites} from "../favorites";
 
 function MapIcon({name}:{name:keyof typeof APP_ICON_PATHS}) {
@@ -14,9 +14,8 @@ function MapIcon({name}:{name:keyof typeof APP_ICON_PATHS}) {
 }
 
 export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:string;sex:string;clock:string};initialIds:string}) {
-  const {preference,setPreference}=useAppearance();
-  const [systemDark,setSystemDark]=useState(false);
-  const mode=resolveColorMode(preference,systemDark ? "dark" : "light");
+  const {setPreference}=useAppearance();
+  const mode=useAppearanceMode();
   const nextMode=mode==="dark" ? "light" : "dark";
   const colors=useMemo(()=>getAppColors(mode),[mode]);
   const saved=useRaceFavorites(),[ids,setIds]=useState<string|null>(initialIds),[attempt,setAttempt]=useState(0);
@@ -63,7 +62,6 @@ export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:
   },[course]);
   const features=useMemo(()=>data ? replayFeatures(data.course,runners,time,timeline.origin) : null,[data,runners,time,timeline.origin]);
   const latest=useRef(features);latest.current=features;
-  useEffect(()=>{const media=window.matchMedia("(prefers-color-scheme: dark)");const changed=()=>setSystemDark(media.matches);changed();media.addEventListener("change",changed);return ()=>media.removeEventListener("change",changed);},[]);
   useEffect(()=>{const preference=window.matchMedia("(prefers-reduced-motion: reduce)");const changed=()=>{setReduced(preference.matches);if(preference.matches) setPlaying(false);};changed();preference.addEventListener("change",changed);return ()=>preference.removeEventListener("change",changed);},[]);
   useEffect(()=>{const hidden=()=>{if(document.hidden) setPlaying(false);};document.addEventListener("visibilitychange",hidden);return ()=>document.removeEventListener("visibilitychange",hidden);},[]);
   useEffect(()=>{

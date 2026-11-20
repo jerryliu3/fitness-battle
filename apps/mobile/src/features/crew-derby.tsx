@@ -1,22 +1,40 @@
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { useRouter } from "expo-router";
-import { crewDerbyOpponent, crewDerbyScore, weeklyCompetitionLastDay, APP_TIMEZONE, type CrewDerby, type UnitSystem } from "@fitness-battle/shared";
+import { crewDerbyOpponent, crewDerbyScore, findCrewRelayEdition, specialEventStatusBadge, weeklyCompetitionLastDay, APP_TIMEZONE, type CrewDerby, type SpecialEventEdition, type UnitSystem } from "@fitness-battle/shared";
 import { useCachedApi } from "../lib/use-cached-api";
 import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
 import { FocusSheet, FocusButton, useFocusStyles } from "../ui/focus";
+import { SpecialEventRelayPanel } from "./special-event-relay-panel";
 
-export function CrewDerbyCard({ crewId, units }: { crewId: string; units?: UnitSystem }) {
+export function CrewDerbyCard({ crewId, sport, units }: { crewId: string; sport?: string; units?: UnitSystem }) {
   const c = useThemeColors(), f = useFocusStyles(), router = useRouter();
   const api = useCachedApi<{ derby: CrewDerby | null }>(`/api/crews/derby?crewId=${encodeURIComponent(crewId)}`);
+  const specialApi = useCachedApi<{ editions: SpecialEventEdition[] }>("/api/special-events");
   const [open, setOpen] = useState(false);
+  const [relayOpen, setRelayOpen] = useState(false);
   const [navigate, setNavigate] = useState(false);
   const derby = api.data?.derby;
   const own = derby?.teams.find(team => team.crew_id === crewId);
   const opponent = derby && crewDerbyOpponent(derby, crewId);
-  if (!derby || !own || !opponent) return null;
+  const now = new Date();
+  const relay = findCrewRelayEdition(specialApi.data?.editions ?? [], crewId, sport, now);
+  const relayCard = relay ? <>
+    <Pressable accessibilityRole="button" accessibilityLabel={`Open ${relay.title}`} onPress={() => setRelayOpen(true)} style={[f.card, { backgroundColor: c.surfaceInverse, gap: 8 }]}>
+      <AppText role="caption" style={{ color: c.tennis }}>{relay.title} · {specialEventStatusBadge(relay, now)}</AppText>
+      <AppText role="row" style={{ color: c.textOnInverse }}>{relay.subtitle || "Daily crew baton relay"}</AppText>
+    </Pressable>
+    {relayOpen ? (
+      <FocusSheet open title={relay.title} minimal onClose={() => setRelayOpen(false)}>
+        <SpecialEventRelayPanel edition={relay} crewId={crewId} units={units ?? "us"} />
+        <FocusButton label="Open on Compete" onPress={() => { setRelayOpen(false); router.navigate("/arena"); }} />
+      </FocusSheet>
+    ) : null}
+  </> : null;
+  if (!derby || !own || !opponent) return relayCard;
   return <>
+    {relayCard}
     <Pressable accessibilityRole="button" accessibilityLabel="Open Crew Derby standings" onPress={() => { setOpen(true); void api.reload(); }} style={[f.card, { backgroundColor: c.surfaceInverse, gap: 16 }]}>
       <AppText role="caption" style={{ color: c.textOnInverse }}>Crew Derby</AppText>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>

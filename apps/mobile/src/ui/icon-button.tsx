@@ -5,7 +5,7 @@ import { AppIcon } from "./app-icon";
 
 
 export function IconButton({ icon, label, onPress, disabled = false, haptic = true, primary = false }: {
-  icon: "back" | "plus" | "sync" | "expand" | "edit" | "play" | "pause" | "replay"; label: string; onPress: () => void; disabled?: boolean; haptic?: boolean; primary?: boolean;
+  icon: "back" | "forward" | "plus" | "sync" | "expand" | "edit" | "play" | "pause" | "replay"; label: string; onPress: () => void; disabled?: boolean; haptic?: boolean; primary?: boolean;
 }) {
 const c=useThemeColors();
 

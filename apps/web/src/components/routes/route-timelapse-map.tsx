@@ -13,6 +13,7 @@ import {
   type LngLat,
 } from "@fitness-battle/shared";
 import { addMapboxAttribution, mapboxAttributionOptions } from "../maps/mapbox-attribution";
+import { useAppearanceMode } from "@/theme/appearance-provider";
 import { webEnv } from "@/lib/env";
 import { RouteStaticPreview } from "./route-static-preview";
 import { RouteReplayMetrics } from "./route-replay-metrics";
@@ -61,6 +62,7 @@ export interface RouteTimelapseMapProps {
   autoPlay?: boolean;
   /** Mapbox style URL or identifier. Default: 'mapbox://styles/mapbox/outdoors-v12' */
   mapStyle?: string;
+  appearanceMode?: "light" | "dark";
   /** Optional token override; defaults to NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN */
   mapboxToken?: string;
   /** Container styling */
@@ -84,7 +86,8 @@ export function RouteTimelapseMap({
   durationMs = 12000,
   accentColor = "#f7c948",
   autoPlay = true,
-  mapStyle = "mapbox://styles/mapbox/outdoors-v12",
+  mapStyle,
+  appearanceMode,
   mapboxToken,
   className = "",
   onFinish,
@@ -93,6 +96,10 @@ export function RouteTimelapseMap({
   onStateChange,
   controlRef,
 }: RouteTimelapseMapProps) {
+  const appMode = useAppearanceMode();
+  const style = mapStyle ?? ((appearanceMode ?? appMode) === "dark"
+    ? "mapbox://styles/mapbox/dark-v11"
+    : "mapbox://styles/mapbox/outdoors-v12");
   const compactHeader = hideControls || showModeControl;
   const replaySamples = useMemo(() => normalizeRouteReplay(routeReplay), [routeReplay]);
   const channels = useMemo(() => ({
@@ -169,7 +176,7 @@ export function RouteTimelapseMap({
     try {
       map = new mapboxgl.Map({
         container: containerRef.current,
-        style: mapStyle,
+        style,
         center: startCoord,
         zoom: 14.5,
         pitch: mode === "3d-flyover" ? 52 : 0,
@@ -350,7 +357,7 @@ export function RouteTimelapseMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [activeToken, mapStyle]);
+  }, [activeToken, style]);
 
   // Dynamically update route geometry on active map without destroying WebGL context
   useEffect(() => {

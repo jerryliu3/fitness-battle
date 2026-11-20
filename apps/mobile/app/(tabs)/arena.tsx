@@ -3,6 +3,8 @@ import { PointsTimeline } from "../../src/features/points-timeline";
 import { CompetitionPanel } from "../../src/features/competition-panel";
 import { CompetitionTimelineProvider, CompetitionTimelineControls } from "../../src/features/competition-timeline-context";
 import { EventRegistration } from "../../src/features/event-registration";
+import { SpecialEventRegistrationSheet } from "../../src/features/special-event-sheet";
+import { useSpecialEvents } from "../../src/features/use-special-events";
 import { useCompeteExperience } from "../../src/features/compete-experience";
 import { RaceUpdates } from "../../src/features/race-updates";
 import { EventHome } from "../../src/features/event-home";
@@ -81,9 +83,16 @@ const f=useFocusStyles();
   const [selection,setSelection]=useState<{account:string;sport:SportId|"sleep"}|null>(null);
   useEffect(()=>{if(requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:accountKey,sport:requestedEvent as SportId});},[requestedEvent,accountKey]);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
+  const specialEvents = useSpecialEvents(!persistent && focused && !experience.immersive);
+  const [selectedSpecialId, setSelectedSpecialId] = useState<string | null>(null);
+  const [specialBusy, setSpecialBusy] = useState(false);
+  const [specialError, setSpecialError] = useState("");
+  const selectedSpecial = selectedSpecialId
+    ? specialEvents.editions.find(item => item.id === selectedSpecialId) ?? null
+    : null;
   const joinFlight = useRef<object | null>(null);
   const pendingEntry = useRef<CompeteEvent | null>(null);
-  useEffect(() => { setRegister(false); setRegistrationBackground(null); setSport(null); setRegistrationCrew(null); setJoinError(""); joinFlight.current = null; pendingEntry.current = null; }, [accountKey]);
+  useEffect(() => { setRegister(false); setRegistrationBackground(null); setSport(null); setRegistrationCrew(null); setJoinError(""); setSelectedSpecialId(null); setSpecialBusy(false); setSpecialError(""); joinFlight.current = null; pendingEntry.current = null; }, [accountKey]);
   const currentAccount = useRef(accountKey);
   currentAccount.current = accountKey;
   const latestState = useRef(state);
@@ -206,7 +215,7 @@ const f=useFocusStyles();
           <EventHome active={focused && !experience.immersive} state={registrationBackground?.account === accountKey ? registrationBackground.state : state} accountKey={accountKey} onEnter={experience.enter} onRecovery={() => experience.enter(accountKey, "sleep")} />
 
         </>}
-        {!persistent && <CrewEvents onChoose={() => router.navigate("/field")} />}
+        {!persistent && <CrewEvents editions={specialEvents.editions} now={now} onChoose={() => router.navigate("/field")} onSelectEdition={edition => { setSpecialError(""); setSelectedSpecialId(edition.id); }} />}
         {!persistent && <ExploreEvents state={registrationBackground?.account === accountKey ? registrationBackground.state : state} onChoose={event => {
           if (event === "sleep" && sleepOptedIn) experience.enter(accountKey, "sleep");
           else if (event !== "sleep" && active.some(r => r.sport === event)) experience.enter(accountKey, event);
@@ -228,6 +237,44 @@ const f=useFocusStyles();
           })}
         </View>}
       </FocusSheet>
+      {selectedSpecial ? (
+        <FocusSheet open hideTitle title={selectedSpecial.title} onClose={() => { if (!specialBusy) setSelectedSpecialId(null); }}>
+          <SpecialEventRegistrationSheet
+            state={state}
+            edition={selectedSpecial}
+            busy={specialBusy}
+            error={specialError}
+            onRegister={async options => {
+              if (!user || !state.onboardingCompleted) {
+                setSelectedSpecialId(null);
+                router.navigate(user ? "/onboarding" : "/athlete");
+                return;
+              }
+              setSpecialBusy(true);
+              setSpecialError("");
+              try {
+                await specialEvents.register(selectedSpecial.id, options);
+              } catch (err) {
+                setSpecialError(err instanceof Error ? err.message : "Could not register.");
+              } finally {
+                setSpecialBusy(false);
+              }
+            }}
+            onCancel={async () => {
+              setSpecialBusy(true);
+              setSpecialError("");
+              try {
+                await specialEvents.cancel(selectedSpecial.id);
+              } catch (err) {
+                setSpecialError(err instanceof Error ? err.message : "Could not cancel registration.");
+              } finally {
+                setSpecialBusy(false);
+              }
+            }}
+            onClose={() => setSelectedSpecialId(null)}
+          />
+        </FocusSheet>
+      ) : null}
     </SafeAreaView>
   );
   return (

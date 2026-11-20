@@ -6,9 +6,9 @@
 .open-line-reading small{font:var(--type-body);letter-spacing:normal;color:var(--muted);margin-left:6px}
 .open-line-chart .chart-scrubber-plot>svg{display:block;width:100%;height:190px;overflow:visible}
 .open-line-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.open-line-ranges{display:flex;gap:4px}
-.open-line-ranges>button{border:0;background:transparent;min-width:44px;min-height:44px;border-radius:8px;padding:8px 12px;font:var(--type-label);color:var(--muted);cursor:pointer}
-.open-line-ranges>button[aria-pressed=true]{background:transparent;color:var(--ink)}
+.open-line-ranges{display:flex;width:fit-content;max-width:100%;gap:4px;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--accent-soft)}
+.open-line-ranges>button{border:0;background:transparent;min-width:44px;min-height:44px;border-radius:999px;padding:8px 12px;font:var(--type-label);color:var(--muted);cursor:pointer}
+.open-line-ranges>button[aria-pressed=true]{background:var(--ink);color:var(--app-surface-card)}
 
 
 .open-line-chart .chart-scrubber-plot{position:relative}

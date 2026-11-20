@@ -13,6 +13,7 @@ const NAV = [
   { href: "/app/admin", label: "Round lab", match: (path: string) => path === "/app/admin" },
   { href: "/app/admin/routes", label: "Routes", match: (path: string) => path.startsWith("/app/admin/routes") },
   { href: "/app/admin/waves", label: "Waves", match: (path: string) => path.startsWith("/app/admin/waves") },
+  { href: "/app/admin/special-events", label: "Special events", match: (path: string) => path.startsWith("/app/admin/special-events") },
 ] as const;
 
 export function AdminShell({ title, children }: { title: string; children: ReactNode }) {
