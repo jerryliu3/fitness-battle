@@ -19,7 +19,7 @@ vi.mock("./field-overlay-motion", () => ({ FieldOverlayView: "FieldOverlayView" 
 vi.mock("./section", () => ({ AppText: "AppText", textStyle: () => ({}) }));
 vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => false }));
 vi.mock("../lib/env", () => ({ mobileEnv: { mapboxAccessToken: "public-test-token" } }));
-vi.mock("@rnmapbox/maps", () => ({ default: { setAccessToken: vi.fn() }, MapView: "Map", Camera: "Camera", ShapeSource: "ShapeSource", LineLayer: "Line", CircleLayer: "Circle", MarkerView: "MarkerView", CameraGestureObserver: "Observer" }));
+vi.mock("@rnmapbox/maps", () => ({ default: { setAccessToken: vi.fn() }, MapView: "Map", Camera: "Camera", StyleImport: "StyleImport", ShapeSource: "ShapeSource", LineLayer: "Line", CircleLayer: "Circle", MarkerView: "MarkerView", CameraGestureObserver: "Observer" }));
 import CourseMap from "./course-map";
 let renderer: ReactTestRenderer;
 type TestFrame = (time: number) => void;
@@ -46,6 +46,7 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   expect(renderer.root.findAllByType("ShapeSource" as never).some(node => node.props.id === "course")).toBe(false);
   calls.setCamera.mockClear();
   const map = renderer.root.findByType("Map" as never);
+  expect(renderer.root.findByType("StyleImport" as never).props).toMatchObject({ id: "basemap", existing: true, config: { lightPreset: "day" } });
   expect(map.props.scaleBarEnabled).toBe(true);
   expect(map.props.scaleBarPosition).toEqual({ bottom: 42, left: 8 });
   await act(async () => { map.props.onTouchStart(); renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [.005, 0], zoom: 15, pitch: 30, heading: 20, isUserInteraction: true } } }); });
