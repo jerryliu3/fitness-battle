@@ -8,7 +8,7 @@ export const RACE_OVERLAY_WIDTH_PIXELS = 8;
 export const RACE_SEPARATE_WIDTH_PIXELS = 4;
 export const RACE_SELECTED_RADIUS_PIXELS = 9;
 export const RACE_ATHLETE_RADIUS_PIXELS = 7;
-export const RACE_LOCAL_RADIUS_METRES = 1000;
+export const RACE_LOCAL_RADIUS_METRES = 250;
 
 /** Initial local ground span, independent of field totals. Perspective/terrain can
  * show more distant scenery; this estimates the flat-ground viewport footprint
