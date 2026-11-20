@@ -85,6 +85,15 @@ export function RaceExplorer({ distance, initial, query, coverage, chartFilter }
   return <div className="race-explorer" aria-busy={pending}>
     <nav className="race-distances" aria-label="Race distance">{RACE_DISTANCES.map(d => <Link aria-current={distance === d.slug ? "page" : undefined} key={d.slug} href={`/pace?distance=${d.slug}&${serializeFilterParams({ page: 1, edition: "" })}`}>{d.label}</Link>)}</nav>
     <p><Link href="/pace/coverage">Browse events</Link> · <Link href={`/pace/search?${new URLSearchParams({q: query.query, sex: query.sex})}`}>Search all distances</Link> · <Link href={`/app/pace/trends?${new URLSearchParams({distance, sex:query.sex})}`}>Percentiles over time</Link> · <Link href="/pace/saved">Saved results</Link></p>
+    <section className="pace-discovery" aria-label="Explore race stories">
+      <div className="pace-discovery-intro"><span className="rankings-kicker">BEYOND THE FINISH LINE</span><strong>Every result has a story.</strong><p>Find a race, follow a finisher, or explore how the field changed across miles and years.</p></div>
+      <div className="pace-discovery-links">
+        <Link href={`/pace/coverage?distance=${distance}`}><span>01 / THE FIELD</span><strong>Explore race editions ↗</strong><small>Find the race you remember</small></Link>
+        <Link href={`/pace/search?sex=${sex}`}><span>02 / THE PEOPLE</span><strong>Find an athlete ↗</strong><small>Follow their race history</small></Link>
+        <Link href={`/pace/trends?distance=${distance}&sex=${sex}`}><span>03 / THE NUMBERS</span><strong>Explore pace trends ↗</strong><small>Discover finish-time patterns</small></Link>
+        <Link href={query.editionId ? `/pace/replay?edition=${query.editionId}&distance=${distance}&sex=${sex}` : `/pace/coverage?distance=${distance}`}><span>04 / THE MOMENTS</span><strong>{query.editionId ? "Watch race replay ↗" : "Choose a race to replay ↗"}</strong><small>Follow estimated passes and splits</small></Link>
+      </div>
+    </section>
     {coverage === null && <p className="rankings-note">Event selection is unavailable. <button onClick={() => startTransition(() => router.refresh())}>Retry</button></p>}
     <form className="race-filters" onSubmit={event => { event.preventDefault(); navigateFilters(); }}>
       <label className="race-search">Athlete or bib<input name="q" value={search} onChange={e => setSearch(e.target.value)} placeholder="Find a finisher…" maxLength={100} /></label>
