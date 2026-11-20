@@ -96,3 +96,47 @@ export async function loadReplayField(fetchPage:(after:number)=>Promise<ReplayPa
     if(page.next<=after || page.next!==page.runners.at(-1)?.id) throw new Error("Invalid replay cursor");after=page.next;
   }
 }
+
+/**
+ * Estimate passes from split interpolation, not GPS observations.
+ * Each pair of continuous timing segments is compared in the same replay clock.
+ * A pass is counted only when the selected athlete goes from behind to ahead
+ * while both athletes are actively racing (not standing at the finish).
+ */
+export type ReplayOvertake={timeMs:number;distanceM:number;otherId:number;otherName:string};
+export function replayOvertakes(selected:CompiledReplayRunner,field:CompiledReplayRunner[],origin:number|null):ReplayOvertake[] {
+  const offset=(runner:CompiledReplayRunner)=>origin===null ? 0 : runner.startMs-origin;
+  const selectedOffset=offset(selected);
+  if(!Number.isFinite(selectedOffset)) return [];
+  const events:ReplayOvertake[]=[];
+  for(const other of field) {
+    if(other.id===selected.id) continue;
+    const otherOffset=offset(other);
+    if(!Number.isFinite(otherOffset)) continue;
+    for(let a=1;a<selected.points.length;a++) {
+      const start=selected.points[a-1],end=selected.points[a];
+      if(end.ordinal!==start.ordinal+1 || end.elapsedMs<=start.elapsedMs) continue;
+      const av=(end.distanceM-start.distanceM)/(end.elapsedMs-start.elapsedMs);
+      for(let b=1;b<other.points.length;b++) {
+        const peerStart=other.points[b-1],peerEnd=other.points[b];
+        if(peerEnd.ordinal!==peerStart.ordinal+1 || peerEnd.elapsedMs<=peerStart.elapsedMs) continue;
+        const bv=(peerEnd.distanceM-peerStart.distanceM)/(peerEnd.elapsedMs-peerStart.elapsedMs);
+        if(av<=bv) continue;
+        const left=Math.max(start.elapsedMs+selectedOffset,peerStart.elapsedMs+otherOffset);
+        const right=Math.min(end.elapsedMs+selectedOffset,peerEnd.elapsedMs+otherOffset);
+        if(left>=right) continue;
+        const selectedAtLeft=start.distanceM+av*(left-selectedOffset-start.elapsedMs);
+        const otherAtLeft=peerStart.distanceM+bv*(left-otherOffset-peerStart.elapsedMs);
+        const difference=selectedAtLeft-otherAtLeft;
+        const crossing=left-difference/(av-bv);
+        // Require a genuine behind-to-ahead crossing inside both active segments.
+        if(difference < -0.001 && crossing>left && crossing<=right &&
+          crossing<selected.splits.finishMs+selectedOffset &&
+          crossing<other.splits.finishMs+otherOffset) {
+          events.push({timeMs:crossing,distanceM:selectedAtLeft+av*(crossing-left),otherId:other.id,otherName:other.name});
+        }
+      }
+    }
+  }
+  return events.sort((a,b)=>a.timeMs-b.timeMs);
+}
