@@ -196,10 +196,14 @@ export function raceEditionChart(analytics: RaceEditionAnalytics) {
 }
 
 /** Edition cards combine stored categories; category selection remains a filter. */
-export function raceEventGroups(coverage:RaceCoverage[],sex="all") {
+export function raceEventGroups(coverage:RaceCoverage[],sex="all",search="") {
+  const terms = search.trim().toLowerCase().slice(0, 100).split(/\s+/).filter(Boolean);
   const groups=new Map<string,{edition_id:number;event_name:string;edition_year:number;distance_slug:string;published_count:number;undated_count:number;categoryCount:number;reviewedCount:number;evidenceUrls:string[]}>();
   for(const row of coverage) {
     if(sex!=="all" && row.sex!==sex) continue;
+    const distance = RACE_DISTANCES.find(option => option.stored === row.distance_slug);
+    const description = `${row.event_name} ${row.edition_year} ${distance?.label ?? ""}`.toLowerCase();
+    if (!terms.every(term => description.includes(term))) continue;
     const key=`${row.edition_id}:${row.distance_slug}`;
     const group=groups.get(key) ?? {edition_id:row.edition_id,event_name:row.event_name,edition_year:row.edition_year,distance_slug:row.distance_slug,published_count:0,undated_count:0,categoryCount:0,reviewedCount:0,evidenceUrls:[]};
     group.published_count+=row.published_count;group.undated_count+=row.undated_count;group.categoryCount++;group.reviewedCount+=Number(row.complete);

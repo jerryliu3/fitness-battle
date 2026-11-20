@@ -1,3 +1,4 @@
+import { bearing } from "@turf/turf";
 import {analyzeRaceSplits,RACE_METERS,type RaceTimingSplits} from "./race-splits";
 export type ReplayCourse={points:[number,number,number][];sourceUrl:string;attribution:string};
 export type ReplayRunner={id:number;name:string;startAt:string|null;splits:RaceTimingSplits};
@@ -20,18 +21,32 @@ export function replayCoordinate(course:ReplayCourse,metres:number):[number,numb
   let delta=b[0]-a[0];if(delta>180) delta-=360;if(delta< -180) delta+=360;
   return [((a[0]+fraction*delta+540)%360)-180,a[1]+fraction*(b[1]-a[1])];
 }
+/** Course tangent, averaged over a short window so every small vertex doesn't turn the camera. */
+export function replayCourseBearing(course: ReplayCourse, metres: number) {
+  const before = replayCoordinate(course, metres - 15);
+  const after = replayCoordinate(course, metres + 15);
+  return bearing(before, after);
+}
 export function compileReplayRunner(runner:ReplayRunner,distance:string) {
   const analysis=analyzeRaceSplits(runner.splits,distance);
   if(analysis.status!=="ready") return null;
   return {...runner,startMs:runner.splits.clock==="chip" && runner.startAt ? Date.parse(runner.startAt) : NaN,points:[{distanceM:0,elapsedMs:0,ordinal:-1},...analysis.rows.flatMap((row,ordinal)=>row.elapsedMs===null ? [] : [{distanceM:row.distanceM,elapsedMs:row.elapsedMs,ordinal}])]};
 }
 export type CompiledReplayRunner=NonNullable<ReturnType<typeof compileReplayRunner>>;
+function replaySegment(points: CompiledReplayRunner["points"], time: number) {
+  let low = 0, high = points.length - 1;
+  while (low + 1 < high) {
+    const middle = (low + high) >>> 1;
+    if (points[middle].elapsedMs <= time) low = middle;
+    else high = middle;
+  }
+  return [points[low], points[high]] as const;
+}
+
 export function replayDistance(runner:CompiledReplayRunner,time:number) {
   const points=runner.points;if(time<0 || !Number.isFinite(time)) return null;
   if(time>=runner.splits.finishMs) return points[points.length-1].distanceM;
-  let low=0,high=points.length-1;
-  while(low+1<high){const middle=(low+high)>>>1;if(points[middle].elapsedMs<=time) low=middle;else high=middle;}
-  const a=points[low],b=points[high];
+  const [a,b]=replaySegment(points,time);
   if(time===a.elapsedMs) return a.distanceM;
   if(time===b.elapsedMs) return b.distanceM;
   if(b.ordinal!==a.ordinal+1) return null;
@@ -43,10 +58,27 @@ export function replayTimeline(runners:CompiledReplayRunner[],wall:boolean) {
   const origin=wall && wallAvailable ? starts.reduce((minimum,value)=>Math.min(minimum,value),Infinity) : null;
   return {wallAvailable,origin,duration:runners.reduce((maximum,r,i)=>Math.max(maximum,r.splits.finishMs+(origin!==null ? starts[i]-origin : 0)),0)};
 }
+export function replayTelemetry(runner: CompiledReplayRunner, time: number, origin: number | null) {
+  const elapsed = time - (origin === null ? 0 : runner.startMs - origin);
+  const distanceM = replayDistance(runner, elapsed);
+  if (distanceM === null) return null;
+  const elapsedMs = Math.min(elapsed, runner.splits.finishMs);
+  const [start, end] = replaySegment(runner.points, elapsedMs);
+  const currentPaceMsPerKm = elapsed < runner.splits.finishMs && end.ordinal === start.ordinal + 1
+    ? (end.elapsedMs - start.elapsedMs) * 1000 / (end.distanceM - start.distanceM)
+    : null;
+  return { distanceM, elapsedMs, currentPaceMsPerKm };
+}
+
+/** Cap map updates as the field grows, while the playhead follows real elapsed time. */
+export function replayFrameInterval(fieldSize: number) {
+  return fieldSize <= 32 ? 1000 / 30 : fieldSize <= 250 ? 50 : fieldSize <= 1000 ? 100 : 200;
+}
+
 export function replayFeatures(course:ReplayCourse,runners:CompiledReplayRunner[],time:number,origin:number|null=null) {
-  const features:{type:"Feature";id:number;properties:{id:number};geometry:{type:"Point";coordinates:[number,number]}}[]=[];
+  const features:{type:"Feature";id:number;properties:{id:number;distanceM:number};geometry:{type:"Point";coordinates:[number,number]}}[]=[];
   for(const runner of runners){const metres=replayDistance(runner,time-(origin!==null && Number.isFinite(runner.startMs) ? runner.startMs-origin : 0));
-    if(metres!==null) features.push({type:"Feature",id:runner.id,properties:{id:runner.id},geometry:{type:"Point",coordinates:replayCoordinate(course,metres)}});
+    if(metres!==null) features.push({type:"Feature",id:runner.id,properties:{id:runner.id,distanceM:metres},geometry:{type:"Point",coordinates:replayCoordinate(course,metres)}});
   }
   return {type:"FeatureCollection" as const,features};
 }

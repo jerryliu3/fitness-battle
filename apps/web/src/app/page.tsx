@@ -17,6 +17,7 @@ export default function MarketingHomePage() {
           overtaek
         </Link>
         <nav className="fb-legal-nav" aria-label="Site">
+          <Link href="/app/pace">Race results</Link>
           <Link href="/support">Support</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/login">Sign in</Link>

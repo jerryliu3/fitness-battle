@@ -75,7 +75,7 @@ export function StandingsDistributionChart({
       ) : !distribution ? (
         <View style={s.emptyBox}>
           <AppText role="body" secondary>
-            Sync an activity covering this distance to plot your mark.
+            No published finishes in this field.
           </AppText>
         </View>
       ) : (
@@ -93,7 +93,7 @@ export function StandingsDistributionChart({
             </View>
             <View style={s.statDivider} />
             <View style={s.statCell}>
-              <AppText role="caption" secondary>Your best</AppText>
+              <AppText role="caption" secondary>Your pace estimate</AppText>
               <AppText role="label" style={[s.tabular, distribution.yourTimeMs != null ? { color: c.tennis } : null]}>
                 {distribution.yourTimeMs != null ? raceClock(distribution.yourTimeMs) : "—"}
               </AppText>
@@ -102,7 +102,7 @@ export function StandingsDistributionChart({
               <>
                 <View style={s.statDivider} />
                 <View style={s.statCell}>
-                  <AppText role="caption" secondary>Faster than</AppText>
+                  <AppText role="caption" secondary>Est. faster than</AppText>
                   <AppText role="label" style={[s.tabular, { color: c.green }]}>
                     {racePercentLabel(distribution.yourPercentile)}
                   </AppText>
@@ -126,7 +126,7 @@ export function StandingsDistributionChart({
                     key={bin.bucket}
                     accessibilityRole="button"
                     accessibilityState={{ selected: isSelected }}
-                    accessibilityLabel={`${bin.label}: ${bin.count.toLocaleString()} ${bin.containsUser ? "(includes your best)" : ""}`}
+                    accessibilityLabel={`${bin.label}: ${bin.count.toLocaleString()} ${bin.containsUser ? "(your pace estimate)" : ""}`}
                     onPress={() => setSelected(isSelected ? null : bin.bucket)}
                     style={s.barCol}
                   >
@@ -158,9 +158,9 @@ export function StandingsDistributionChart({
           <View style={s.readoutRow}>
             <AppText role="caption" secondary style={{ flex: 1 }} accessibilityLiveRegion="polite">
               {activeBin
-                ? `${activeBin.label} · ${activeBin.count.toLocaleString()} ${activeBin.count === 1 ? "finish" : "finishes"}${activeBin.containsUser ? " · includes your best" : ""}`
+                ? `${activeBin.label} · ${activeBin.count.toLocaleString()} ${activeBin.count === 1 ? "finish" : "finishes"}${activeBin.containsUser ? " · your pace estimate" : ""}`
                 : distribution.yourTimeMs != null
-                  ? "Highlighted bar marks your best · tap any bar to inspect"
+                  ? "Highlighted bar compares your all-time moving pace with published finish times."
                   : "Tap any bar to inspect finish-time range"}
             </AppText>
           </View>

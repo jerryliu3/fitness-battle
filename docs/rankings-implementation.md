@@ -131,3 +131,40 @@ Event cards group categories into one edition/distance entry; All runners is the
 ## Follow-up: distance-wide analytics
 
 The same bounded histogram and finish benchmarks are shown for the entire distance as well as an individual edition. Aggregates use every public eligible finish in the selected category/timeframe before search and pagination, and report the number of included editions. Repeat finishes are counted as separate observations; no course normalization or athlete deduplication is implied. Additive `pace_distance_analytics` migration required.
+
+## All-time analytics baseline
+
+The public Times section browses published race results by distance, category,
+event edition and timeframe. Web adds a cross-distance finisher search and a
+two-year comparison of percentile cutoffs and cohort sizes. The event directory
+searches published editions by name or year and links to results and replay
+options. Replay availability still depends on reviewed courses and timing data.
+
+Web and native compare a signed-in athlete's own recorded moving pace against
+the selected public field inside the device or browser. This uses the fastest
+scaled moving time from a recorded run covering the distance. Its percentile is
+estimated from the published histogram. Public counts and ranks use the
+published results ledger, and the app sends no personal time to the rankings
+database. Account holders are absent from the published leaderboard unless they
+already have a result from a published source.
+
+RunSignup metadata discovery produces review-inbox candidates. Source approval,
+result-set selection, staged acquisition and publication remain operator steps.
+
+## Rankings query performance
+
+The rankings migration precomputes counts at exact finish times by distance,
+category, edition and result date. The leaderboard derives ranks, percentiles,
+cutoffs and histograms from those counts. Name and bib search use separate
+indexed lookups. Unsearched leaderboard pages seek to the first finish time
+for that page and fetch display fields for the selected rows. Verified athlete
+history and individual race reports reuse the same counts for the relevant
+race field. The public API keeps its existing filters and payload.
+
+Publication, suppression and result edits invalidate the cached counts in
+the same transaction. Reads use the live publication-gated field while counts
+are stale. The migration builds the initial counts. After bulk changes, use
+the existing service-only `refresh_rankings_distance_stats()` function to
+rebuild both rankings projections. The rebuild is atomic for readers. A write
+that races with a rebuild may leave reads on the live path until the next
+refresh.

@@ -33,7 +33,7 @@ export interface PaceRow {
 
 /** Fastest time at or beyond the distance, scaled back to the benchmark. */
 export function yourBenchmarkSeconds(
-  state: CompeteState,
+  state: Pick<CompeteState, "activities">,
   sport: SportId,
   meters: number,
 ): number | null {
@@ -45,6 +45,17 @@ export function yourBenchmarkSeconds(
     if (best == null || seconds < best) best = seconds;
   }
   return best;
+}
+
+/** A private moving-pace estimate from recorded running sessions. */
+export function recordedRaceBenchmarkSeconds(state: Pick<CompeteState, "activities">, meters: number) {
+  const activities = state.activities.filter(activity =>
+    activity.verified && activity.source !== "history" && activity.source !== "manual" &&
+    (activity.provenance == null || activity.provenance === "recorded") &&
+    (activity.disposition == null || activity.disposition === "counted") && !activity.journalOnly &&
+    Number.isFinite(activity.distanceM) && Number.isFinite(activity.movingSec),
+  );
+  return yourBenchmarkSeconds({ activities }, "running", meters);
 }
 
 export function paceBoard(

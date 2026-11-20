@@ -16,7 +16,7 @@ function textArray(values: string[]): string {
 }
 
 export function upsertCandidateSql(input: CandidateInput): string {
-  const dedupe = candidateDedupeKey({
+  const dedupe = input.discoveryKey ?? candidateDedupeKey({
     eventName: input.eventName,
     editionYear: input.editionYear ?? null,
     resultsUrls: input.resultsUrls,
@@ -42,7 +42,7 @@ insert into public.acquisition_candidates (
   ${quote(dedupe)},
   now()
 )
-on conflict (dedupe_key) do update set
+on conflict (dedupe_key) ${input.discoveryKey ? "do nothing" : `do update set
   event_name = excluded.event_name,
   official_website = coalesce(excluded.official_website, public.acquisition_candidates.official_website),
   edition_year = coalesce(excluded.edition_year, public.acquisition_candidates.edition_year),
@@ -54,7 +54,7 @@ on conflict (dedupe_key) do update set
   discovery_source = excluded.discovery_source,
   discovered_at = excluded.discovered_at,
   unresolved_fields = excluded.unresolved_fields,
-  updated_at = now()
+  updated_at = now()`}
 returning id;
 `.trim();
 }

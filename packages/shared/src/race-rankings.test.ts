@@ -46,6 +46,8 @@ describe("edition distribution presentation", () => {
 
 it("combines event cards and retains dropdown filtering",()=>{
  const row:RaceCoverage={edition_id:1,event_name:"Race",edition_year:2025,distance_slug:"marathon",sex:"female",published_count:10,undated_count:0,expected_eligible_count:null,reviewed_at:null,evidence_url:null,complete:false};
+ expect(raceEventGroups([row, {...row, edition_id:2, edition_year:2024}], "all", "MARATHON race 2025")).toMatchObject([{edition_id:1}]);
+ expect(raceEventGroups([row], "all", "2024")).toEqual([]);
  expect(raceQuery(new URLSearchParams()).sex).toBe("all");
  expect(raceQuery(new URLSearchParams("sex=all")).sex).toBe("all");
  expect(raceEventGroups([row,{...row,sex:"male",published_count:20}])).toMatchObject([{published_count:30,categoryCount:2}]);

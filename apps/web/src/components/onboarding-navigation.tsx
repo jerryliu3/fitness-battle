@@ -16,7 +16,7 @@ export function OnboardingNavigation() {
   const next = params.get("next");
   const preview = (path === "/app/welcome" || path === "/app/onboarding") && params.get("preview") === "1";
   useEffect(() => {
-    if (preview) return;
+    if (preview || path === "/app/pace" || path.startsWith("/app/pace/")) return;
     if (loading || !user || !state || (loadStatus !== "ready" && loadStatus !== "local")) return;
     if (state.onboardingCompleted) {
       if (path === "/app/welcome" || path === "/app") router.replace(resolvePostOnboardingPath(next));

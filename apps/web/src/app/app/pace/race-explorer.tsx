@@ -9,9 +9,10 @@ import { RACE_CATEGORY_FILTERS, RACE_DISTANCES, RACE_PERCENTILE_FILTERS, RACE_TI
 import { EditionAnalytics } from "./edition-analytics";
 
 type Query = ReturnType<typeof raceQuery>;
-export function RaceExplorer({ distance, initial, query, coverage }: { distance: string; initial: RaceResultsPage | null; query: Query; coverage: RaceCoverage[] | null }) {
+export function RaceExplorer({ distance, initial, query, coverage, chartFilter }: { distance: string; initial: RaceResultsPage | null; query: Query; coverage: RaceCoverage[] | null; chartFilter: boolean }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [compared, setCompared] = useState<number[]>([]);
   const [edition, setEdition] = useState(query.editionId?.toString() ?? "");
   const editions = raceEditionOptions(coverage ?? [], RACE_DISTANCES.find(d => d.slug === distance)!.stored);
   const selectedEdition = editions.find(e => e.edition_id === query.editionId);
@@ -75,13 +76,15 @@ export function RaceExplorer({ distance, initial, query, coverage }: { distance:
   }
 
   function navigatePage(targetPage: number) {
-    navigate(serializeFilterParams({ page: targetPage }));
+    const params = serializeFilterParams({ page: targetPage });
+    if (chartFilter) params.set("chart", "1");
+    navigate(params);
   }
 
   const data = initial;
   return <div className="race-explorer" aria-busy={pending}>
-    <nav className="race-distances" aria-label="Race distance">{RACE_DISTANCES.map(d => <Link aria-current={distance === d.slug ? "page" : undefined} key={d.slug} href={`/pace?distance=${d.slug}&${new URLSearchParams({sex:query.sex,timeframe:query.timeframe,...(query.percentile && query.percentile !== "all" ? {percentile:query.percentile} : {}),...(query.year ? {year:String(query.year)} : {}),...(query.timeframe === "custom" ? {from:query.from,through:query.through} : {})})}`}>{d.label}</Link>)}</nav>
-    <p><Link href="/pace/saved">Saved results →</Link> · <Link href="/pace/coverage">Results coverage</Link></p>
+    <nav className="race-distances" aria-label="Race distance">{RACE_DISTANCES.map(d => <Link aria-current={distance === d.slug ? "page" : undefined} key={d.slug} href={`/pace?distance=${d.slug}&${serializeFilterParams({ page: 1, edition: "" })}`}>{d.label}</Link>)}</nav>
+    <p><Link href="/pace/coverage">Browse events</Link> · <Link href={`/pace/search?${new URLSearchParams({q: query.query, sex: query.sex})}`}>Search all distances</Link> · <Link href={`/app/pace/trends?${new URLSearchParams({distance, sex:query.sex})}`}>Percentiles over time</Link> · <Link href="/pace/saved">Saved results</Link></p>
     {coverage === null && <p className="rankings-note">Event selection is unavailable. <button onClick={() => startTransition(() => router.refresh())}>Retry</button></p>}
     <form className="race-filters" onSubmit={event => { event.preventDefault(); navigateFilters(); }}>
       <label className="race-search">Athlete or bib<input name="q" value={search} onChange={e => setSearch(e.target.value)} placeholder="Find a finisher…" maxLength={100} /></label>
@@ -97,13 +100,28 @@ export function RaceExplorer({ distance, initial, query, coverage }: { distance:
     {!data ? <div className="race-empty" role="alert"><AppHeading level={2} role="heading">{query.editionError ? "Check the event edition" : query.dateError ? "Check the timeframe" : "Results are unavailable"}</AppHeading><p>{query.editionError ?? query.dateError ?? "Please try again in a moment."}</p><button onClick={() => startTransition(() => router.refresh())}>Retry</button></div> : <>
       <div className="race-summary" aria-live="polite"><div><strong>{data.total.toLocaleString()}</strong><span>{query.query ? "matching results" : "published results"}</span></div><p>{query.timeframe === "year" ? query.year : RACE_TIMEFRAMES.find(t => t.value === query.timeframe)?.label} · {RACE_CATEGORY_FILTERS.find(c => c.value === query.sex)?.label}{query.percentile && query.percentile !== "all" ? ` · ${RACE_PERCENTILE_FILTERS.find(p => p.value === query.percentile)?.label}` : ""}<br/>Chip time where available, otherwise official time</p></div>
       {data.windowFrom && data.windowUntil && <p className="rankings-note">{raceWindowCaption(data)} · Undated results excluded.</p>}
-      {data.analytics && <EditionAnalytics analytics={data.analytics} scope={query.editionId ? "edition" : "distance"} />}
+      {data.analytics && <EditionAnalytics analytics={data.analytics} distance={distance} scope={query.editionId ? "edition" : "distance"}
+        percentile={query.percentile ?? "all"} chartFilter={chartFilter}
+        onPercentile={tier => {
+          const params = serializeFilterParams({ page: 1, percentile: tier });
+          if (tier !== "all") params.set("chart", "1");
+          navigate(params);
+        }} />}
       {data.rows.length === 0 ? <div className="race-empty"><AppHeading level={2} role="heading">{query.query ? "No matching finishers" : "No results in this field"}</AppHeading><p>Try another name, category or year.</p></div> : <>
         <div className="race-table" role="region" aria-label="Race results" tabIndex={0}>
-          <table><caption className="sr-only">Rank within {data.cohortTotal.toLocaleString()} published results in the selected category and timeframe</caption><thead><tr><th scope="col">Rank</th><th scope="col">Athlete</th><th scope="col">Finish</th><th scope="col">Percentile</th><th scope="col" className="race-event-column">Event</th></tr></thead><tbody>
-            {data.rows.map(row => <tr key={row.id}><td className="race-place">{row.place.toLocaleString()}</td><td><Link className="race-result-link" href={`/pace/result/${row.id}`}>{row.athlete_name}</Link><span className="race-mobile-event">{row.event_name}</span>{row.bib && <small>#{row.bib}</small>}</td><td className="race-time">{raceClock(row.rank_time_ms)}<small>{row.rank_clock === "chip" ? "Chip" : "Official"}</small></td><td className="race-percentile-cell">{row.percentile != null ? <span className="race-percentile-pill" title={`Faster than ${row.percentile}% of finishers`}>{racePercentileBadge(row.percentile)}</span> : "—"}</td><td className="race-event-column">{row.event_name}<small>{row.edition_year}</small></td></tr>)}
+          <table><caption className="sr-only">Rank within {data.cohortTotal.toLocaleString()} published results in the selected category and timeframe</caption><thead><tr><th scope="col"><span className="sr-only">Compare</span></th><th scope="col">Rank</th><th scope="col">Athlete</th><th scope="col">Finish</th><th scope="col">Percentile</th><th scope="col" className="race-event-column">Event</th></tr></thead><tbody>
+            {data.rows.map(row => <tr key={row.id}><td><input type="checkbox" className="race-compare-check"
+              aria-label={`Compare ${row.athlete_name}, ${row.event_name}, rank ${row.place}`}
+              checked={compared.includes(row.id)}
+              disabled={compared.length >= 2 && !compared.includes(row.id)}
+              onChange={event => { const checked = event.target.checked; setCompared(previous => checked ? [...previous, row.id] : previous.filter(id => id !== row.id)); }}
+            /></td><td className="race-place">{row.place.toLocaleString()}</td><td><Link className="race-result-link" href={`/pace/result/${row.id}`}>{row.athlete_name}</Link><span className="race-mobile-event">{row.event_name}</span>{row.bib && <small>#{row.bib}</small>}</td><td className="race-time">{raceClock(row.rank_time_ms)}<small>{row.rank_clock === "chip" ? "Chip" : "Official"}</small></td><td className="race-percentile-cell">{row.percentile != null ? <span className="race-percentile-pill" title={`Faster than ${row.percentile}% of finishers`}>{racePercentileBadge(row.percentile)}</span> : "—"}</td><td className="race-event-column">{row.event_name}<small>{row.edition_year}</small></td></tr>)}
           </tbody></table>
         </div>
+        {compared.length > 0 && <div className="race-compare-tray">
+          <p aria-live="polite">{compared.length} of 2 results selected</p>
+          {compared.length === 2 && <Link href={`/app/pace/compare?first=${compared[0]}&second=${compared[1]}`}>Compare results →</Link>}
+        </div>}
         <nav className="race-pagination" aria-label="Results pages"><button disabled={pending || data.page <= 1} onClick={() => navigatePage(data.page - 1)}>← Previous</button><span>{((data.page - 1) * data.pageSize + 1).toLocaleString()}–{Math.min(data.page * data.pageSize, data.total).toLocaleString()} of {data.total.toLocaleString()}</span><button disabled={pending || data.page * data.pageSize >= data.total} onClick={() => navigatePage(data.page + 1)}>Next →</button></nav>
         <form className="race-jump" onSubmit={e => { e.preventDefault(); const value = new FormData(e.currentTarget).get("page"); navigatePage(Number(value)); }}><label>Go to page <input type="number" name="page" min="1" max={Math.ceil(data.total / data.pageSize)} required defaultValue={data.page} /></label><button disabled={pending}>Go</button></form>
         <p className="rankings-source">{[...new Set(data.rows.map(r => r.attribution))].join(" · ")}</p>

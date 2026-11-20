@@ -17,6 +17,7 @@ import "@/ui/product-typography.css";
 
 function PlayChrome({ children }: { children: ReactNode }) {
   const path = usePathname();
+  if (path === "/app/pace" || path.startsWith("/app/pace/")) return children;
   // The guest journey does not need the account shell's startup animation or tab warmup.
   if (path === "/app/welcome") {
     return <div className="phone-frame"><div className="phone-shell" style={{ overflowY: "auto" }}>
