@@ -193,6 +193,7 @@ export function AllTimeStandingsScreen({
     <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
       <ScreenHeader
         title="All-time standings"
+        nativeBar={false}
         onBack={() => (router.canGoBack() ? router.back() : router.replace("/arena"))}
       />
 

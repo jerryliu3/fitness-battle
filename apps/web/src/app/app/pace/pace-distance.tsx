@@ -26,6 +26,6 @@ export default async function PaceDistance({ params, searchParams, home = false 
     <header className="rankings-top">{!home && <Link href="/pace">← Times</Link>}<span className="rankings-kicker">Public race results</span></header>
     <AppHeading level={1} role="display">{home ? "Times" : selected.label}</AppHeading>
     {home && <p className="rankings-lede">Explore published race finishes, complete fields and recorded performance analytics.</p>}
-    <RaceExplorer key={`${distance}:${JSON.stringify(query)}`} distance={distance} initial={data} query={query} coverage={coverage} />
+    <RaceExplorer key={`${distance}:${JSON.stringify(query)}`} distance={distance} initial={data} query={query} coverage={coverage} chartFilter={raw.chart === "1" && query.percentile !== "all"} />
   </main>;
 }

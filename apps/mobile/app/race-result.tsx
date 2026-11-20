@@ -35,7 +35,7 @@ export default function RaceResult() {
   const source = r ? raceSourceUrl(r.source_url) : null;
   const peak = Math.max(...(report?.bins.map(b => b.count) ?? []), 1);
   return <SafeAreaView style={f.safe} edges={["top","bottom"]}>
-    <ScreenHeader title="Race report" onBack={() => router.back()} />
+    <ScreenHeader title="Race report" nativeBar={false} onBack={() => router.canGoBack() ? router.back() : router.replace("/race-coverage")} />
     <ScrollView contentContainerStyle={f.content}>
       {!report ? error ? <View style={{gap:16}}><AppText role="body">{error}</AppText><FocusButton label="Retry" onPress={() => setRetry(n => n+1)} /></View> : <ActivityIndicator accessibilityLabel="Loading result" /> : <View style={{gap:24}}>
         <View style={{gap:12}}><AppText role="caption" secondary>{report.result.event_name} · {report.result.edition_year}</AppText><AppText role="display">{report.result.athlete_name}</AppText><AppText role="display" style={{fontVariant:["tabular-nums"]}}>{raceClock(report.result.rank_time_ms)}</AppText><AppText role="caption" secondary>{report.result.rank_clock === "chip" ? "Chip time" : "Official time"}</AppText></View>

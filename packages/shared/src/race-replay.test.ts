@@ -1,5 +1,5 @@
 import {describe,expect,it} from "vitest";
-import {compileReplayRunner,loadReplayField,replayCoordinate,replayDistance,replayFeatures,replayTimeline,validateReplayCourse,type ReplayCourse,type ReplayPage,type ReplayRunner} from "./race-replay";
+import {compileReplayRunner,loadReplayField,replayCoordinate,replayCourseBearing,replayDistance,replayFeatures,replayTelemetry,replayTimeline,validateReplayCourse,type ReplayCourse,type ReplayPage,type ReplayRunner} from "./race-replay";
 const course:ReplayCourse={points:[[0,0,0],[.02,0,2000],[.04,0,4000],[.05,0,5000]],sourceUrl:"https://example.test/course",attribution:"Course"};
 const runner:ReplayRunner={id:1,name:"Runner",startAt:null,splits:{clock:"chip",finishMs:1500000,sourceUrl:"https://example.test/results",checkpoints:[{distanceM:2000,elapsedMs:600000},{distanceM:4000,elapsedMs:1200000}]}};
 const compiled=compileReplayRunner(runner,"5k")!;
@@ -14,6 +14,12 @@ describe("edition course replay",()=>{
     expect(replayCoordinate(loop,3750)[0]).toBeCloseTo(.5);
     expect(replayCoordinate({...course,points:[[179,0,0],[-179,0,5000]]},2500)[0]).toBe(-180);
   });
+  it("turns the camera with the course and retains the finish approach",()=>{
+    const turn:ReplayCourse={...course,points:[[0,0,0],[.02,0,2000],[.02,.03,5000]]};
+    expect(replayCourseBearing(turn,250)).toBeCloseTo(90);
+    expect(replayCourseBearing(turn,2500)).toBeCloseTo(0);
+    expect(replayCourseBearing(turn,5000)).toBeCloseTo(0);
+  });
   it("interpolates only adjacent recorded checkpoints and holds the observed finish",()=>{
     expect(replayDistance(compiled,300000)).toBe(1000);
     expect(replayDistance(compiled,-1)).toBeNull();
@@ -22,6 +28,22 @@ describe("edition course replay",()=>{
     expect(replayDistance(missing,600000)).toBeNull();
     expect(replayDistance(missing,1200000)).toBe(4000);
     expect(replayDistance(missing,1350000)).toBe(4500);
+  });
+  it("reports athlete elapsed time, distance and pace without extrapolating",()=>{
+    expect(replayTelemetry(compiled,300000,null)).toEqual({distanceM:1000,elapsedMs:300000,currentPaceMsPerKm:300000});
+    expect(replayTelemetry(compiled,9999999,null)).toEqual({distanceM:5000,elapsedMs:1500000,currentPaceMsPerKm:null});
+    const delayed={...compiled,startMs:120000};
+    expect(replayTelemetry(delayed,10000,0)).toBeNull();
+    expect(replayTelemetry(delayed,120000,0)?.currentPaceMsPerKm).toBe(300000);
+    expect(replayTelemetry(delayed,420000,0)?.elapsedMs).toBe(300000);
+  });
+  it("changes current pace at a checkpoint and withholds it across missing splits",()=>{
+    const varied=compileReplayRunner({...runner,splits:{...runner.splits,checkpoints:[{distanceM:2000,elapsedMs:400000},{distanceM:4000,elapsedMs:1000000}]}},"5k")!;
+    expect(replayTelemetry(varied,399999,null)?.currentPaceMsPerKm).toBe(200000);
+    expect(replayTelemetry(varied,400000,null)?.currentPaceMsPerKm).toBe(300000);
+    const gap=compileReplayRunner({...runner,splits:{...runner.splits,checkpoints:[{distanceM:2000,elapsedMs:600000},{distanceM:4000,elapsedMs:null}]}},"5k")!;
+    expect(replayTelemetry(gap,600000,null)?.currentPaceMsPerKm).toBeNull();
+    expect(replayTelemetry(gap,900000,null)).toBeNull();
   });
   it("requires every actual start for race-day replay",()=>{
     expect(replayTimeline([compiled],true).wallAvailable).toBe(false);

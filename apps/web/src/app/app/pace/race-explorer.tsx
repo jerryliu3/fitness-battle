@@ -9,7 +9,7 @@ import { RACE_CATEGORY_FILTERS, RACE_DISTANCES, RACE_PERCENTILE_FILTERS, RACE_TI
 import { EditionAnalytics } from "./edition-analytics";
 
 type Query = ReturnType<typeof raceQuery>;
-export function RaceExplorer({ distance, initial, query, coverage }: { distance: string; initial: RaceResultsPage | null; query: Query; coverage: RaceCoverage[] | null }) {
+export function RaceExplorer({ distance, initial, query, coverage, chartFilter }: { distance: string; initial: RaceResultsPage | null; query: Query; coverage: RaceCoverage[] | null; chartFilter: boolean }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [compared, setCompared] = useState<number[]>([]);
@@ -76,7 +76,9 @@ export function RaceExplorer({ distance, initial, query, coverage }: { distance:
   }
 
   function navigatePage(targetPage: number) {
-    navigate(serializeFilterParams({ page: targetPage }));
+    const params = serializeFilterParams({ page: targetPage });
+    if (chartFilter) params.set("chart", "1");
+    navigate(params);
   }
 
   const data = initial;
@@ -98,7 +100,13 @@ export function RaceExplorer({ distance, initial, query, coverage }: { distance:
     {!data ? <div className="race-empty" role="alert"><AppHeading level={2} role="heading">{query.editionError ? "Check the event edition" : query.dateError ? "Check the timeframe" : "Results are unavailable"}</AppHeading><p>{query.editionError ?? query.dateError ?? "Please try again in a moment."}</p><button onClick={() => startTransition(() => router.refresh())}>Retry</button></div> : <>
       <div className="race-summary" aria-live="polite"><div><strong>{data.total.toLocaleString()}</strong><span>{query.query ? "matching results" : "published results"}</span></div><p>{query.timeframe === "year" ? query.year : RACE_TIMEFRAMES.find(t => t.value === query.timeframe)?.label} · {RACE_CATEGORY_FILTERS.find(c => c.value === query.sex)?.label}{query.percentile && query.percentile !== "all" ? ` · ${RACE_PERCENTILE_FILTERS.find(p => p.value === query.percentile)?.label}` : ""}<br/>Chip time where available, otherwise official time</p></div>
       {data.windowFrom && data.windowUntil && <p className="rankings-note">{raceWindowCaption(data)} · Undated results excluded.</p>}
-      {data.analytics && <EditionAnalytics analytics={data.analytics} distance={distance} scope={query.editionId ? "edition" : "distance"} />}
+      {data.analytics && <EditionAnalytics analytics={data.analytics} distance={distance} scope={query.editionId ? "edition" : "distance"}
+        percentile={query.percentile ?? "all"} chartFilter={chartFilter}
+        onPercentile={tier => {
+          const params = serializeFilterParams({ page: 1, percentile: tier });
+          if (tier !== "all") params.set("chart", "1");
+          navigate(params);
+        }} />}
       {data.rows.length === 0 ? <div className="race-empty"><AppHeading level={2} role="heading">{query.query ? "No matching finishers" : "No results in this field"}</AppHeading><p>Try another name, category or year.</p></div> : <>
         <div className="race-table" role="region" aria-label="Race results" tabIndex={0}>
           <table><caption className="sr-only">Rank within {data.cohortTotal.toLocaleString()} published results in the selected category and timeframe</caption><thead><tr><th scope="col"><span className="sr-only">Compare</span></th><th scope="col">Rank</th><th scope="col">Athlete</th><th scope="col">Finish</th><th scope="col">Percentile</th><th scope="col" className="race-event-column">Event</th></tr></thead><tbody>
