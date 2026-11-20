@@ -3,7 +3,7 @@ import {useEffect,useMemo,useRef,useState} from "react";
 import {createPortal} from "react-dom";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import {APP_ICON_PATHS,APP_ICON_VIEW_BOX,getAppColors,RACE_CATEGORIES,RACE_DISTANCES,compileReplayRunner,loadReplayField,raceClock,raceSourceUrl,replayCourseBearing,replayFeatures,replayFrameInterval,replayTelemetry,replayTimeline,validateReplayCourse,type ReplayData,type ReplayPage} from "@fitness-battle/shared";
+import {APP_ICON_PATHS,APP_ICON_VIEW_BOX,getAppColors,RACE_CATEGORIES,RACE_DISTANCES,compileReplayRunner,loadReplayField,raceClock,raceSourceUrl,replayCourseBearing,replayFeatures,replayFrameInterval,replayOvertakes,replayTelemetry,replayTimeline,validateReplayCourse,type ReplayData,type ReplayPage} from "@fitness-battle/shared";
 import {webEnv} from "@/lib/env";
 import {addMapboxAttribution,mapboxAttributionOptions} from "@/components/maps/mapbox-attribution";
 import {useAppearance,useAppearanceMode} from "@/theme/appearance-provider";
@@ -157,6 +157,15 @@ export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:
   const source=data ? raceSourceUrl(data.course.sourceUrl) : null;
   const visibleRunners=useMemo(()=>runners.filter(r=>r.name.toLowerCase().includes(search.trim().toLowerCase())).slice(0,100),[runners,search]);
   const trackedRunners=useMemo(()=>tracked.flatMap(id=>runners.find(r=>r.id===id) ?? []),[runners,tracked]);
+  const activeRunner=runners.find(runner=>runner.id===focused) ?? trackedRunners[0] ?? null;
+  const overtakes=useMemo(()=>activeRunner ? replayOvertakes(activeRunner,runners,timeline.origin) : [],[activeRunner,runners,timeline.origin]);
+  const passedCount=useMemo(()=>overtakes.filter(event=>event.timeMs<=time).length,[overtakes,time]);
+  const nextPass=overtakes.find(event=>event.timeMs>time);
+  const recentPasses=useMemo(()=>{
+    const first=overtakes.findIndex(event=>event.timeMs>=time-1000);
+    return overtakes.slice(Math.max(0,first<0 ? overtakes.length-5 : first-2),Math.max(0,first<0 ? overtakes.length-5 : first-2)+5);
+  },[overtakes,time]);
+  const jumpToPass=(moment:number)=>{setPlaying(false);setTime(Math.max(0,Math.min(timeline.duration,moment)));};
   const cameraRunner=runners.find(runner=>runner.id===focused) ?? trackedRunners[0] ?? runners[0];
   const cameraFeature=following && cameraRunner ? features?.features.find(feature=>feature.id===cameraRunner.id) : undefined;
   const cameraTarget=course && cameraFeature ? {
@@ -261,6 +270,19 @@ export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:
           <span>{profileMetrics ? `${raceClock(profileMetrics.elapsedMs)} elapsed · ${(profileMetrics.distanceM/1000).toFixed(2)} km` : "Position unavailable"}</span>
         </section>,popupContent)}
         <div className="replay-map-dock">
+        {activeRunner && <section className="replay-overtake-studio" aria-label="Estimated overtake moments">
+          <div className="replay-overtake-head">
+            <div><span className="replay-eyebrow">RACE MOMENTS · {activeRunner.name}</span><strong><span className="replay-overtake-number">{passedCount.toLocaleString()}</span> estimated overtakes</strong><small>Through {raceClock(time)} · {overtakes.length.toLocaleString()} across this loaded field</small></div>
+            {nextPass && <button type="button" className="replay-next-moment" onClick={()=>jumpToPass(nextPass.timeMs)}>Next pass <span>{raceClock(nextPass.timeMs)} →</span></button>}
+          </div>
+          <div className="replay-moments" aria-label="Nearby estimated passing moments">
+            {recentPasses.map((event,index)=><button type="button" key={`${event.otherId}-${index}-${event.timeMs}`} onClick={()=>jumpToPass(event.timeMs)} className={event.timeMs<=time ? "replay-moment-past" : ""}>
+              <span>↗ {event.otherName}</span><strong>{raceClock(event.timeMs)}</strong><small>{(event.distanceM/1000).toFixed(1)} km</small>
+            </button>)}
+            {!overtakes.length && <span className="rankings-note">No passing moments inferred from the loaded splits. Load the field for broader coverage.</span>}
+          </div>
+          <p className="replay-moment-disclaimer">Estimated from split times and interpolated pace, not observed GPS passes. Counts depend on loaded runners and timing clock.</p>
+        </section>}
     {trackedRunners.length>0 && <section aria-label="Tracked runner metrics" className="replay-telemetry">
       {trackedRunners.map(r=>{
         const metrics=replayTelemetry(r,time,timeline.origin);
@@ -274,7 +296,10 @@ export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:
           <div className="replay-transport-top">
             <strong className="replay-time-counter">{timeline.origin!==null ? new Date(timeline.origin+time).toLocaleTimeString() : raceClock(time)}</strong>
             <button className="replay-play" disabled={reduced || !runners.length} onClick={()=>{if(time>=timeline.duration) setTime(0);setPlaying(v=>!v);}} aria-label={playing ? "Pause" : "Play"} title={playing ? "Pause" : "Play"}><MapIcon name={playing ? "pause" : "play"} /></button>
-            <input aria-label="Replay time" type="range" min={0} max={Math.max(timeline.duration,1)} step="any" value={time} disabled={!runners.length} onChange={e=>{setPlaying(false);setTime(Number(e.target.value));}} />
+            <div className="replay-timeline-track">
+              <input aria-label="Replay time" type="range" min={0} max={Math.max(timeline.duration,1)} step="any" value={time} disabled={!runners.length} onChange={e=>{setPlaying(false);setTime(Number(e.target.value));}} />
+              <div className="replay-moment-ticks" aria-hidden="true">{overtakes.filter((_,i)=>i%Math.max(1,Math.ceil(overtakes.length/90))===0).map((event,index)=><span key={index} style={{left:`${100*event.timeMs/Math.max(timeline.duration,1)}%`}} />)}</div>
+            </div>
             <label>Speed<select value={speed} onChange={e=>setSpeed(Number(e.target.value))}>{[1,4,16,32,64,128,256].map(value=><option key={value} value={value}>{value}×</option>)}</select></label>
             <label>Clock<select value={wall ? "wall" : "elapsed"} onChange={e=>{setWall(e.target.value==="wall");setTime(0);setPlaying(false);}}><option value="elapsed">{clock==="chip" ? "Chip elapsed" : "Official elapsed"}</option><option value="wall" disabled={!timeline.wallAvailable}>Race-day time</option></select></label>
           </div>
