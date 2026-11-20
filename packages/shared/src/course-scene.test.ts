@@ -116,7 +116,7 @@ it("labels every real racer independently of selection", () => {
 
 it("keeps the initial ground span stable across viewport sizes and latitudes", () => {
   const zoom = courseInitialZoom(0, 600, 0);
-  expect(78271.516964 / 2 ** zoom * 600).toBeCloseTo(2000);
+  expect(78271.516964 / 2 ** zoom * 600).toBeCloseTo(500);
   expect(courseInitialZoom(0, 1200, 0)).toBeCloseTo(zoom + 1);
   expect(courseInitialZoom(60, 600, 0)).toBeCloseTo(zoom - 1);
   expect(courseInitialZoom(0, 600, 60)).toBeCloseTo(zoom + Math.log2(3));
@@ -127,9 +127,9 @@ it.each(["km", "mi"])("includes reachable preview rivals using competition dista
   const metresPerUnit = unit === "mi" ? 1609.344 : 1000;
   const lanes = [
     { id: "you", you: true, metres: 5000 },
-    { id: "ahead", metres: 5900 },
-    { id: "behind", metres: 4100 },
-    { id: "far", metres: 15000 },
+    { id: "ahead", metres: 5200 },
+    { id: "behind", metres: 4800 },
+    { id: "far", metres: 5900 },
     { id: "past", ghost: true, metres: 5000 },
   ].map(lane => ({ ...lane, name: lane.id, initials: "", value: lane.metres / metresPerUnit }));
   expect(coursePreviewLanes(lanes, unit).map(lane => lane.id)).toEqual(["you", "ahead", "behind"]);
