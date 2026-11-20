@@ -31,6 +31,7 @@ export function SpecialEventRegistrationSheet({
   edition,
   busy,
   error,
+  fullscreen = false,
   onRegister,
   onCancel,
   onClose,
@@ -39,6 +40,7 @@ export function SpecialEventRegistrationSheet({
   edition: SpecialEventEdition;
   busy: boolean;
   error: string;
+  fullscreen?: boolean;
   onRegister(options: { crewId?: string | null; groupValue?: string | null }): void;
   onCancel(): void;
   onClose(): void;
@@ -363,7 +365,7 @@ export function SpecialEventRegistrationSheet({
           </button>
         ) : null}
 
-        {!detail.canRegister ? (
+        {!fullscreen && !detail.canRegister ? (
           <button type="button" className="fb-btn" onClick={onClose}>Done</button>
         ) : null}
       </div>

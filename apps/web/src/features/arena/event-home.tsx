@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState, type CSSProperties } from "react";
-import { competeEventCarouselPageIndex, formatActivityAge, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, APP_ICON_PATHS, SPORTS, buildArenaModel, competitionQueue, competitionTrack, competeNow, competeHomeResult, ordinalPlace, specialEventFormatLabel, specialEventStatusBadge, type CompeteEvent, type CompeteState, type SpecialEventEdition, type SportId } from "@fitness-battle/shared";
+import { competeEventCarouselPageIndex, formatActivityAge, COMPETE_ART, COMPETE_ART_COLORS, COMPETE_CATEGORIES, competeHomeRank, COMPETE_ICONS, SPORT_ICON_PATHS, APP_ICON_PATHS, SPORTS, buildArenaModel, competitionQueue, competitionTrack, competeNow, competeHomeResult, ordinalPlace, sortSpecialEvents, specialEventFormatLabel, specialEventPhase, specialEventStatusBadge, type CompeteEvent, type CompeteState, type SpecialEventEdition, type SportId } from "@fitness-battle/shared";
 import { AppHeading, AppText } from "@/ui/section";
 import { useEventActivity } from "./use-event-activity";
 import { CoursePreview } from "./course-preview";
@@ -88,22 +88,52 @@ export function CompeteResults({ state }: { state: CompeteState }) {
 }
 
 export function CrewEvents({
+  state,
   editions = [],
   now = new Date(),
   onChoose,
   onSelectEdition,
 }: {
+  state?: CompeteState;
   editions?: SpecialEventEdition[];
   now?: Date;
   onChoose(sport: SportId): void;
   onSelectEdition?(edition: SpecialEventEdition): void;
 }) {
   if (editions.length > 0 && onSelectEdition) {
+    const ordered = sortSpecialEvents(editions);
     return (
       <section className="compete-home-section" aria-label="Special events">
-        <div className="compete-carousel compete-features" tabIndex={0} aria-label="Special events carousel">
-          {editions.map((edition) => {
+        <div className="compete-carousel compete-features" tabIndex={0} aria-label="Special events carousel" style={{ alignItems: "flex-start" }}>
+          {ordered.map((edition) => {
             const status = specialEventStatusBadge(edition, now);
+            const phase = specialEventPhase(edition, now);
+            if (edition.entry && state) {
+              return (
+                <article key={edition.id} className="compete-race-card" style={{ minWidth: 300, maxWidth: 360 }}>
+                  <div className="compete-race-heading">
+                    <span className="compete-sport-icon"><CompeteIcon name={edition.sport} /></span>
+                    <div>
+                      <AppText role="label">{edition.title}</AppText>
+                      <AppText role="support" secondary>{specialEventFormatLabel(edition.config)}</AppText>
+                    </div>
+                    <span className="compete-place-badge"><AppText role="caption" secondary>{status}</AppText></span>
+                  </div>
+                  <div style={{ position: "relative" }}>
+                    <CoursePreview sport={edition.sport} queued={phase !== "active"} state={state} />
+                    <button
+                      type="button"
+                      aria-label={`Open ${edition.title} fullscreen`}
+                      onClick={() => onSelectEdition(edition)}
+                      style={{ position: "absolute", inset: 0, zIndex: 1, padding: 0, border: 0, background: "transparent", cursor: "pointer" }}
+                    />
+                  </div>
+                  <button type="button" className="compete-race-entry" aria-label={`Enter ${edition.title}`} onClick={() => onSelectEdition(edition)}>
+                    <AppText role="label">See event</AppText><span aria-hidden="true">→</span>
+                  </button>
+                </article>
+              );
+            }
             return (
               <button
                 type="button"

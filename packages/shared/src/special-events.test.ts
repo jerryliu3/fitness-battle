@@ -18,6 +18,7 @@ import {
   specialEventRoundLabel,
   specialEventSideLabel,
   specialEventStatusBadge,
+  sortSpecialEvents,
   validateSpecialEventConfig,
   validateSpecialEventEditionInput,
   validateSpecialEventTemplateInput,
@@ -143,5 +144,6 @@ describe("special events presentation", () => {
     expect(relayDraftToLegs({ "2026-11-23:1": "u1", "2026-11-24:1": "u2" }, "2026-11-23")).toEqual([
       { legDay: "2026-11-24", slotIndex: 1, userId: "u2" },
     ]);
+    expect(sortSpecialEvents([edition, spectating]).map((e) => e.id)).toEqual([spectating.id, edition.id]);
   });
 });

@@ -33,6 +33,7 @@ export function SpecialEventRegistrationSheet({
   edition,
   busy,
   error,
+  fullscreen = false,
   onRegister,
   onCancel,
   onClose,
@@ -41,6 +42,7 @@ export function SpecialEventRegistrationSheet({
   edition: SpecialEventEdition;
   busy: boolean;
   error?: string;
+  fullscreen?: boolean;
   onRegister(options: { crewId?: string | null; groupValue?: string | null }): void;
   onCancel(): void;
   onClose(): void;
@@ -359,7 +361,7 @@ export function SpecialEventRegistrationSheet({
             onPress={onCancel}
           />
         ) : null}
-        {!detail.canRegister ? <FocusButton label="Done" onPress={onClose} /> : null}
+        {!fullscreen && !detail.canRegister ? <FocusButton label="Done" onPress={onClose} /> : null}
       </View>
     </View>
   );
