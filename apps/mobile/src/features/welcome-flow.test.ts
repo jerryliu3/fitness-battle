@@ -3,7 +3,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 import { freshState, GUEST_INTRO_DRAFT_KEY } from "@fitness-battle/shared";
 const mock = vi.hoisted(() => ({ storeReady: true, replace: vi.fn(), push: vi.fn(), signUp: vi.fn(async () => ({})), pick: vi.fn(async () => ({ canceled: false, assets: [{ base64: "/9j/" }] })), save: vi.fn(async (_key: string, _value: string) => {}) }));
-vi.mock("react-native", () => ({ Platform: { OS: "android" }, useColorScheme: () => "light", Pressable: "Pressable", TextInput: "TextInput", Text: "Text", View: "View" }));
+vi.mock("react-native", () => ({ Platform: { OS: "ios" }, useColorScheme: () => "light", Pressable: "Pressable", TextInput: "TextInput", Text: "Text", View: "View" }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView" }));
 vi.mock("@react-native-async-storage/async-storage", () => ({ default: { getItem: async () => null, setItem: mock.save, removeItem: vi.fn(async () => {}) } }));
 vi.mock("expo-router", () => ({ useLocalSearchParams: () => ({}), useRouter: () => ({ replace: mock.replace, push: mock.push }), Redirect: "Redirect" }));
