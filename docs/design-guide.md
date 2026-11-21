@@ -286,7 +286,7 @@ The palette is defined in `packages/shared/src/shell.ts`, consumed by native `sr
 | Action soft | `#fff5d1` | Selected navigation and milestone backgrounds |
 | Field teal / deep | `#176c75` / `#103e46` | Charts and alpine competition scenery |
 
-Manrope, bold readable page titles, 20px cards, 12px controls, 24px sheets, 44px minimum controls, teal keyboard focus and reduced-motion support. Primary actions use yellow with dark labels; navigation rows use quiet text and a directional affordance. Radix manages web dialogs; native sheets preserve the parent and system Back. Full component decisions are in [component guidelines](design/component-guidelines.md).
+Urbanist (Proposal A — Crisp Athletic: 500–800 weights, 700 display titles, 800 hero figures, relaxed geometric tracking), bold readable page titles, 20px cards, 12px controls, 24px sheets, 44px minimum controls, teal keyboard focus and reduced-motion support. Primary actions use yellow with dark labels; navigation rows use quiet text and a directional affordance. Radix manages web dialogs; native sheets preserve the parent and system Back. Full component decisions are in [component guidelines](design/component-guidelines.md).
 
 Home leads with a personal greeting, weekly chart and real next-rival preview, then latest activity, effort progress and a weekly recap. The activity journey expands on demand. Progress leads with week/month/year training, then basic session/effort achievements and records; effort score and season history have separate views. Achievements are read-only milestones derived from currently available counted activity and the primary sport's Open rating, without reward entitlements or new scoring writes.
 

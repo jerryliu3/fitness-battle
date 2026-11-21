@@ -87,24 +87,24 @@ export const WEEK_RECAP_COLORS = {
 } as const;
 
 export const SHELL_TYPE = {
-  display: "Manrope",
-  body: "Manrope",
+  display: "Urbanist",
+  body: "Urbanist",
 } as const;
 
 /** Logical pixels; tracking is in em. Adapters preserve native font scaling. */
 export const SHELL_TYPOGRAPHY = {
-  display: { size: 32, lineHeight: 38, weight: 800, tracking: -0.035 },
-  heading: { size: 20, lineHeight: 26, weight: 700, tracking: -0.02 },
-  body: { size: 16, lineHeight: 24, weight: 400, tracking: 0 },
-  label: { size: 14, lineHeight: 20, weight: 600, tracking: 0 },
-  caption: { size: 13, lineHeight: 18, weight: 500, tracking: 0 },
-  hero: { size: 48, lineHeight: 54, weight: 800, tracking: -0.04 },
-  metric: { size: 28, lineHeight: 34, weight: 700, tracking: -0.025 },
-  row: { size: 17, lineHeight: 24, weight: 600, tracking: -0.015 },
-  value: { size: 20, lineHeight: 26, weight: 700, tracking: -0.02 },
-  support: { size: 14, lineHeight: 20, weight: 400, tracking: 0 },
-  field: { size: 13, lineHeight: 18, weight: 600, tracking: 0 },
-  nav: { size: 12, lineHeight: 18, weight: 500, tracking: 0 },
+  display: { size: 32, lineHeight: 38, weight: 700, tracking: -0.025 },
+  heading: { size: 20, lineHeight: 26, weight: 700, tracking: -0.015 },
+  body: { size: 16, lineHeight: 24, weight: 500, tracking: 0 },
+  label: { size: 14, lineHeight: 20, weight: 600, tracking: 0.005 },
+  caption: { size: 13, lineHeight: 18, weight: 500, tracking: 0.01 },
+  hero: { size: 48, lineHeight: 54, weight: 800, tracking: -0.03 },
+  metric: { size: 28, lineHeight: 34, weight: 700, tracking: -0.02 },
+  row: { size: 17, lineHeight: 24, weight: 600, tracking: -0.01 },
+  value: { size: 20, lineHeight: 26, weight: 700, tracking: -0.015 },
+  support: { size: 14, lineHeight: 20, weight: 500, tracking: 0 },
+  field: { size: 13, lineHeight: 18, weight: 600, tracking: 0.01 },
+  nav: { size: 12, lineHeight: 18, weight: 600, tracking: 0.01 },
 } as const;
 export type TypographyRole = keyof typeof SHELL_TYPOGRAPHY;
 export const SHELL_SECTION = { subtitleGap: 4, contentGap: 12, beforeDivider: 16, afterDivider: 12, dividerWidth: 1, dividerColor: "#d0dad7" } as const;

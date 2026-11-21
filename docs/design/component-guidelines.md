@@ -110,6 +110,17 @@ error content, focus and screen-reader names. The gallery's state examples are
 illustrative; they do not replace validation on the live pilot routes. Native
 keeps the light Everyday Club palette under either system appearance.
 
+## Urbanist hierarchy — November 21, 2026
+
+Urbanist replaces Manrope as the product typeface across web and mobile while
+retaining the 12-role `SHELL_TYPOGRAPHY` contract (`display`, `heading`, `body`,
+`label`, `caption`, `hero`, `metric`, `row`, `value`, `support`, `field`, `nav`).
+Body and supporting copy step to weight `500` for optical parity, `display` uses
+`700`, `hero` retains `800`, and geometric tracking is tuned per role. Urbanist
+is bundled on both platforms (`next/font/local` variable TTF on web,
+`@expo-google-fonts/urbanist` 500–800 on native); the racing identity retains
+Nunito Sans Black.
+
 ## Manrope hierarchy — October 25, 2026
 
 The approved full hierarchy supersedes the earlier five-recipe limit. The shared

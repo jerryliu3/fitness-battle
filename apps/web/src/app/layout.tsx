@@ -13,7 +13,7 @@ const display = localFont({ src: "fonts/bebasneue/BebasNeue-Regular.woff2",
   variable: "--font-display",
 });
 
-const body = localFont({ src: "fonts/manrope/Manrope[wght].ttf", weight: "200 800",
+const body = localFont({ src: "fonts/urbanist/Urbanist[wght].ttf", weight: "100 900",
   variable: "--font-body",
 });
 

@@ -1495,9 +1495,9 @@
 /* Root event experiences cover app chrome and retain one surface across stages. */
 .club-fullscreen-sheet:has(.sync-review-step), .club-fullscreen-sheet:has(.moment-step) { width: 100vw; max-width: none; padding: max(20px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); background: var(--club-canvas, var(--app-surface-canvas)); }
 .sync-review-step, .moment-step { max-width: 620px; width: 100%; margin: 30px auto 0; display: flex; flex-direction: column; gap: 20px; color: var(--app-text-primary); }
-.sync-review-step h1, .moment-step h1 { margin: 0; font-family: var(--font-body), "Manrope", sans-serif; font-size: var(--type-display-size); line-height: var(--type-display-leading); font-weight: var(--type-display-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
+.sync-review-step h1, .moment-step h1 { margin: 0; font-family: var(--font-body), "Urbanist", sans-serif; font-size: var(--type-display-size); line-height: var(--type-display-leading); font-weight: var(--type-display-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
 .sync-review-total {
-  font-family: var(--font-body), "Manrope", sans-serif;
+  font-family: var(--font-body), "Urbanist", sans-serif;
   font-size: var(--type-label-size);
   line-height: var(--type-label-leading);
   font-weight: var(--type-label-weight);
@@ -1548,19 +1548,19 @@
 .sync-review-swipe:focus-visible { outline: 3px solid var(--app-chart-series); outline-offset: 4px; }
 .moment-counter { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .moment-counter > strong {
-  font-family: var(--font-body), "Manrope", sans-serif;
+  font-family: var(--font-body), "Urbanist", sans-serif;
   font-size: var(--type-display-size);
   line-height: var(--type-display-leading);
   font-weight: var(--type-display-weight);
   letter-spacing: normal;
   text-transform: none;
   font-style: normal; }
-.moment-counter > span { color: var(--app-text-secondary); font-family: var(--font-body), "Manrope", sans-serif; font-size: var(--type-heading-size); line-height: var(--type-heading-leading); font-weight: var(--type-heading-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
-.moment-counter > b { background: var(--app-soft); border-radius: 20px; padding: 8px 14px; font-family: var(--font-body), "Manrope", sans-serif; font-size: var(--type-body-size); line-height: var(--type-body-leading); font-weight: var(--type-body-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
+.moment-counter > span { color: var(--app-text-secondary); font-family: var(--font-body), "Urbanist", sans-serif; font-size: var(--type-heading-size); line-height: var(--type-heading-leading); font-weight: var(--type-heading-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
+.moment-counter > b { background: var(--app-soft); border-radius: 20px; padding: 8px 14px; font-family: var(--font-body), "Urbanist", sans-serif; font-size: var(--type-body-size); line-height: var(--type-body-leading); font-weight: var(--type-body-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
 .moment-scene { display: block; width: 100%; border-radius: 24px; overflow: hidden; }
 .moment-result { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .moment-result > strong {
-  font-family: var(--font-body), "Manrope", sans-serif;
+  font-family: var(--font-body), "Urbanist", sans-serif;
   font-size: var(--type-display-size);
   line-height: var(--type-display-leading);
   font-weight: var(--type-display-weight);
