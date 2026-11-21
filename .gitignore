@@ -32,3 +32,4 @@ apps/mobile/src/uniwind-types.d.ts
 # Generated native projects for local Expo build verification
 apps/mobile/ios/
 apps/mobile/android/
+apps/mobile/modules/*/android/build/
