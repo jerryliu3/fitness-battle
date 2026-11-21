@@ -39,15 +39,15 @@ try {
   const css = result.outputFiles.find(file => file.path.endsWith(".css")).text;
   const fonts = join(web, "src/app/fonts");
   const display = dataUrl(join(fonts, "bebasneue/BebasNeue-Regular.woff2"), "font/woff2");
-  const body = dataUrl(join(fonts, "manrope/Manrope[wght].woff2"), "font/woff2");
+  const body = dataUrl(join(fonts, "urbanist/Urbanist[wght].ttf"), "font/ttf");
   const form = dataUrl(join(fonts, "spacegrotesk/SpaceGrotesk[wght].woff2"), "font/woff2");
   const html = `<!doctype html><html lang="en"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 @font-face{font-family:Bebas;src:url(${display})}
-@font-face{font-family:Manrope;src:url(${body});font-weight:200 800}
+@font-face{font-family:Urbanist;src:url(${body});font-weight:100 900}
 @font-face{font-family:SpaceGrotesk;src:url(${form});font-weight:300 700}
-:root{--font-display:Bebas;--font-body:Manrope;--font-form:SpaceGrotesk}
+:root{--font-display:Bebas;--font-body:Urbanist;--font-form:SpaceGrotesk}
 *{box-sizing:border-box}
 body{margin:0;padding:0 2.5%;overflow:hidden}
 h2,h3,p,dl,dd{margin:0}

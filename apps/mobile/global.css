@@ -5,10 +5,10 @@
 @source "./node_modules/heroui-native/lib";
 
 @theme {
-  --font-normal: "Manrope_400Regular";
-  --font-medium: "Manrope_500Medium";
-  --font-semibold: "Manrope_600SemiBold";
-  --font-bold: "Manrope_700Bold";
+  --font-normal: "Urbanist_500Medium";
+  --font-medium: "Urbanist_500Medium";
+  --font-semibold: "Urbanist_600SemiBold";
+  --font-bold: "Urbanist_700Bold";
   --radius: 14px;
 }
 

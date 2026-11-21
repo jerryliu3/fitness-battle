@@ -1,4 +1,4 @@
-.lab{container-type:inline-size;--ink:var(--app-text-primary);--muted:var(--app-text-secondary);--yellow:var(--app-action-primary);--soft:var(--app-action-soft);--line:var(--app-border-subtle);--teal:var(--app-chart-series);--card:var(--app-surface-card);box-sizing:border-box;color:var(--ink);background:var(--app-surface-canvas);min-height:100%;font-family:var(--font-body), "Manrope", sans-serif;padding:24px 32px 44px}
+.lab{container-type:inline-size;--ink:var(--app-text-primary);--muted:var(--app-text-secondary);--yellow:var(--app-action-primary);--soft:var(--app-action-soft);--line:var(--app-border-subtle);--teal:var(--app-chart-series);--card:var(--app-surface-card);box-sizing:border-box;color:var(--ink);background:var(--app-surface-canvas);min-height:100%;font-family:var(--font-body), "Urbanist", sans-serif;padding:24px 32px 44px}
 .lab *{box-sizing:border-box}
 .lab button,.lab input,.lab a{font:inherit;color:inherit}
 .lab button{cursor:pointer}

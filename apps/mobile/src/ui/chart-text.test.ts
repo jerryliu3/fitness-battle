@@ -18,7 +18,7 @@ it("counteracts plot stretching while respecting the user's text scale", async (
   const text = renderer!.root.findByType("SvgText" as never);
   expect(text.props.transform).toBe("translate(36 20) scale(4 1) translate(-36 -20)");
   expect(text.props.fontSize).toBe(13);
-  expect(text.props.fontFamily).toBe("Manrope_500Medium");
+  expect(text.props.fontFamily).toBe("Urbanist_500Medium");
   for (const [width, height, correction] of [[340, 150, "2 2"], [680, 75, "1 4"], [170, 300, "4 1"]] as const) {
     await act(async () => renderer!.root.findByType("View" as never).props.onLayout({ nativeEvent: { layout: { width, height } } }));
     expect(text.props.transform).toBe(`translate(36 20) scale(${correction}) translate(-36 -20)`);

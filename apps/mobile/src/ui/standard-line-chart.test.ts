@@ -3,7 +3,7 @@ import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 vi.mock("react-native", () => ({useColorScheme: () => "light", View: "View", useWindowDimensions: () => ({ fontScale: 1 }), Animated: { createAnimatedComponent: () => "AnimatedRect" } }));
 vi.mock("react-native-svg", () => ({ default: "Svg", Polyline: "Polyline", Path: "Path", Line: "Line", Text: "SvgText", Defs: "Defs", ClipPath: "ClipPath", Rect: "Rect", G: "G", Circle: "Circle" }));
-vi.mock("./section", () => ({ chartTextProps: () => ({ fontFamily: "Manrope_500Medium", fontSize: 12, fontWeight: "500" }) }));
+vi.mock("./section", () => ({ chartTextProps: () => ({ fontFamily: "Urbanist_500Medium", fontSize: 12, fontWeight: "500" }) }));
 vi.mock("./chart-scrubber", () => ({ ChartScrubber: "Scrubber" }));
 import { dottedCircleDasharray } from "@fitness-battle/shared";
 import { StandardLineChart } from "./standard-line-chart";

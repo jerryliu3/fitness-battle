@@ -4,7 +4,7 @@ import { Children, Fragment, useEffect, useState, type ReactNode } from "react";
 import { Pressable, Text, View, type TextProps, type TextStyle, type ViewProps, useWindowDimensions } from "react-native";
 import { SHELL_RADIUS, SHELL_SECTION as geometry, SHELL_SPACING, SHELL_TYPOGRAPHY, type TypographyRole } from "@fitness-battle/shared";
 
-const families = { 400: "Manrope_400Regular", 500: "Manrope_500Medium", 600: "Manrope_600SemiBold", 700: "Manrope_700Bold", 800: "Manrope_800ExtraBold" } as const;
+const families = { 500: "Urbanist_500Medium", 600: "Urbanist_600SemiBold", 700: "Urbanist_700Bold", 800: "Urbanist_800ExtraBold" } as const;
 export function textStyle(role: TypographyRole): TextStyle {
   const token = SHELL_TYPOGRAPHY[role];
   return { fontFamily: families[token.weight], fontSize: token.size, lineHeight: token.lineHeight, letterSpacing: token.tracking * token.size, textTransform: "none", fontStyle: "normal" };

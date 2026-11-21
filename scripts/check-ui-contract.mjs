@@ -39,7 +39,7 @@ for (const file of cssFiles) {
     let valid = true;
     if (decl.prop === "font") valid = decl.value === "inherit" || new RegExp(`^var\\(--type-${roles}\\)$`).test(decl.value);
     if (/^font-(size|weight)$|^line-height$/.test(decl.prop)) valid = new RegExp(`^var\\(--type-${roles}-(size|weight|leading)\\)$`).test(decl.value) || decl.value === "inherit";
-    if (decl.prop === "font-family") valid = decl.value === 'var(--font-body), "Manrope", sans-serif' || decl.value === "inherit";
+    if (decl.prop === "font-family") valid = decl.value === 'var(--font-body), "Urbanist", sans-serif' || decl.value === "inherit";
     if (decl.prop === "letter-spacing") valid = ["normal", "0", "inherit"].includes(decl.value) || new RegExp(`^var\\(--type-${roles}-tracking\\)$`).test(decl.value);
     if (decl.prop === "text-transform") valid = ["none", "inherit"].includes(decl.value);
     if (decl.prop === "font-style") valid = ["normal", "inherit"].includes(decl.value);

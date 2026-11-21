@@ -23,9 +23,9 @@ export const colors = {
 };
 
 export const fonts = {
-  body: "Manrope_400Regular",
-  bodyMedium: "Manrope_500Medium",
-  bodyBold: "Manrope_700Bold",
+  body: "Urbanist_500Medium",
+  bodyMedium: "Urbanist_500Medium",
+  bodyBold: "Urbanist_700Bold",
 };
 
 export {
