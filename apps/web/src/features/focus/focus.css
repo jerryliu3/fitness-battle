@@ -758,7 +758,7 @@
   width: 86px;
   height: 86px;
   background: var(--ink);
-  color: var(--lime);
+  color: light-dark(var(--lime), var(--paper));
   border-radius: 50%;
   display: grid;
   place-items: center;
