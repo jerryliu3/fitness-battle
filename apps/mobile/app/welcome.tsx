@@ -4,7 +4,7 @@ import { OnboardingFeatureTour } from "../src/features/onboarding-feature-tour";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Platform, Pressable, TextInput, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ONBOARDING_SPORT_TILES as sportTiles, ONBOARDING_SPORT_EMOJI_SCALE, EMPTY_GUEST_INTRO, ONBOARDING_STEPS, ONBOARDING_TITLES, isGuestPhoto, type OnboardingFeatureId,
@@ -191,13 +191,13 @@ export default function Welcome() {
           </View>}
           {step === "sport" && <>
             <View style={box(64, 48)}><AppText secondary style={{ flex: 1 }} numberOfLines={2} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>Choose your sport. You can add more later.</AppText></View>
-            <View style={Platform.OS === "android" ? box(126, 380) : { ...box(126, 380), flexDirection: "row", flexWrap: "wrap", gap: 12 * scale }}>
+            <View style={box(126, 380)}>
               {SPORTS.map((sport, index) => <Pressable key={sport.id} accessibilityRole="button" accessibilityLabel={sport.name}
                 accessibilityState={{ selected: draft.sport === sport.id }} onPress={() => { setDraft(d => ({ ...d, sport: sport.id })); setStep("athlete"); }}
                 style={{ width: 158 * scale, height: 182 * scale, alignItems: "center", justifyContent: "center", borderRadius: 26,
                   borderWidth: 2, borderColor: draft.sport === sport.id ? "#082637" : "transparent",
                   backgroundColor: sportTiles[sport.id].background,
-                  ...(Platform.OS === "android" && { position: "absolute", start: (index % 2) * 170 * scale, top: Math.floor(index / 2) * 194 * scale }) }}>
+                  position: "absolute", start: (index % 2) * 170 * scale, top: Math.floor(index / 2) * 194 * scale }}>
                 {/* Reserve glyph overhang before mirroring; display tracking narrows the measured text box. */}
                 <AppText
                   accessible={false}
