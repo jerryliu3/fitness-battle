@@ -1,16 +1,28 @@
+import medalGold from "./brand-gold.json";
+
+export const MEDAL_GOLD = Object.freeze({
+  srgb: medalGold.srgb,
+  displayP3: `color(display-p3 ${medalGold.displayP3.join(" ")})`,
+  iosColorName: medalGold.iosColorName,
+});
+
 /** Platform-independent semantic color contract. Components never select palette names. */
 export type ColorMode = "light" | "dark";
 export type AppearancePreference = ColorMode | "system";
 
+const goldOnLight = "#8a5b00";
+const brandFill = { actionPrimary: MEDAL_GOLD.srgb, progressFill: MEDAL_GOLD.srgb };
+
 const light = {
+  ...brandFill,
   textPrimary: "#142b3b", textSecondary: "#637482", textOnAction: "#142b3b",
-  actionPrimary: "#f7c948", actionPressed: "#dfb237", actionSoft: "#fff5d1",
+  actionPressed: "#e3a400", actionSoft: "#fff5d1",
   accentSecondary: "#637580", accentSecondarySoft: "#e9eff2",
   surfaceCanvas: "#f8f9f6", surfaceCard: "#ffffff", surfaceNavigation: "#ffffff",
   surfaceFeature: "#637580", textOnFeature: "#ffffff", textOnFeatureMuted: "#ffffff",
   surfaceInverse: "#142b3b", textOnInverse: "#ffffff",
   borderSubtle: "#e3e9e7", divider: "#d0dad7",
-  chartSeries: "#f7c948", chartComparison: "#637482", progressFill: "#f7c948",
+  brandMark: goldOnLight, chartSeries: goldOnLight, chartComparison: "#637482",
   statusSuccess: "#24765c", statusSuccessSoft: "#e9f5ee", statusError: "#b93c3c",
   statusErrorSoft: "#fbeceb", textOnError: "#ffffff", overlay: "#142b3b80", shadow: "#000000",
   focusRing: "#637580", white: "#ffffff",
@@ -18,14 +30,15 @@ const light = {
 
 type SemanticColors = { readonly [K in keyof typeof light]: string };
 const dark: SemanticColors = {
+  ...brandFill,
   textPrimary: "#f7faf8", textSecondary: "#bbccd0", textOnAction: "#142b3b",
-  actionPrimary: "#f7c948", actionPressed: "#dfb237", actionSoft: "#4a4128",
+  actionPressed: "#e3a400", actionSoft: "#4a4128",
   accentSecondary: "#b7c7d4", accentSecondarySoft: "#33424a",
   surfaceCanvas: "#111f29", surfaceCard: "#1c2e38", surfaceNavigation: "#111f29",
   surfaceFeature: "#33424e", textOnFeature: "#ffffff", textOnFeatureMuted: "#d7e9ea",
   surfaceInverse: "#142b3b", textOnInverse: "#ffffff",
   borderSubtle: "#324954", divider: "#3c515c",
-  chartSeries: "#f7c948", chartComparison: "#8c9ea8", progressFill: "#f7c948",
+  brandMark: MEDAL_GOLD.srgb, chartSeries: MEDAL_GOLD.srgb, chartComparison: "#8c9ea8",
   statusSuccess: "#8ccdab", statusSuccessSoft: "#203d33", statusError: "#f09c98",
   statusErrorSoft: "#462d32", textOnError: "#142b3b", overlay: "#00000099", shadow: "#000000",
   focusRing: "#b7c7d4", white: "#ffffff",

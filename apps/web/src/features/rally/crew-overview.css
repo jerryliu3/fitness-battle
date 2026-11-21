@@ -227,7 +227,7 @@
 .crew-stamps {
   display:flex;
   gap:6px;
-  color:var(--action-primary)
+  color:var(--app-brand-mark)
 }
 .crew-stamps span {
   border:1px solid currentColor;
@@ -263,6 +263,6 @@
 .crew-derby-pair { display: flex; align-items: center; gap: 12px; }
 .crew-derby-pair > span:not(:nth-child(2)) { display: grid; gap: 8px; flex: 1; min-width: 0; }
 .crew-derby-pair strong { font: var(--type-row); }
-.crew-derby-pair > span:not(:nth-child(2)) > :last-child { color: var(--action-primary); }
+.crew-derby-pair > span:not(:nth-child(2)) > :last-child { color: var(--app-brand-mark); }
 .crew-derby-standing { display: flex; align-items: center; gap: 12px; padding-block: 16px; border-bottom: 1px solid var(--line); }
 .crew-derby-standing > :nth-child(2) { flex: 1; }

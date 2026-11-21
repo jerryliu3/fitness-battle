@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SHELL_COLORS } from "./shell";
-import { APP_COLORS, appColorVariables, getAppColors, resolveColorMode } from "./appearance";
+import { APP_COLORS, MEDAL_GOLD, appColorVariables, getAppColors, resolveColorMode } from "./appearance";
 
 describe("appearance foundation", () => {
   it("derives the compatibility palette from the canonical light appearance", () => {
@@ -11,7 +11,8 @@ describe("appearance foundation", () => {
   });
   it("uses primary charts and Slate accents with matching compatibility aliases in both modes", () => {
     for (const c of Object.values(APP_COLORS)) {
-      expect(c.chartSeries).toBe(c.actionPrimary);
+      expect(c.actionPrimary).toBe(MEDAL_GOLD.srgb);
+      expect(c.chartSeries).toBe(c.brandMark);
       expect(c.progressFill).toBe(c.actionPrimary);
       expect(c.fieldTeal).toBe(c.chartSeries);
       expect(c.fieldDeep).toBe(c.surfaceFeature);
@@ -43,7 +44,7 @@ it("keeps shared control foregrounds readable in both appearances", () => {
     return r!*.2126 + g!*.7152 + b!*.0722;
   };
   for (const c of Object.values(APP_COLORS)) {
-    for (const [foreground, background] of [[c.card,c.textPrimary], [c.textOnAction,c.actionPrimary], [c.textOnError,c.statusError], [c.textPrimary,c.surfaceCard], [c.textPrimary,c.accentSecondarySoft], [c.textSecondary,c.surfaceCanvas], [c.textOnFeature,c.surfaceFeature]]) {
+    for (const [foreground, background] of [[c.card,c.textPrimary], [c.textOnAction,c.actionPrimary], [c.brandMark,c.surfaceCard], [c.textOnError,c.statusError], [c.textPrimary,c.surfaceCard], [c.textPrimary,c.accentSecondarySoft], [c.textSecondary,c.surfaceCanvas], [c.textOnFeature,c.surfaceFeature]]) {
       const [a,b] = [luminance(foreground!),luminance(background!)].sort((a,b)=>b-a);
       expect((a!+.05)/(b!+.05)).toBeGreaterThanOrEqual(4.5);
     }

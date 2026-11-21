@@ -13,7 +13,7 @@ function controlVariables(c: AppColors) {
     "--accent": c.tennis, "--accent-foreground": c.textOnAction,
     "--field-background": c.card, "--field-foreground": c.ink,
     "--field-placeholder": c.muted, "--field-border": c.line,
-    "--success": c.statusSuccess, "--warning": c.tennis, "--warning-foreground": c.textOnAction,
+    "--success": c.statusSuccess, "--warning": "#f7c948", "--warning-foreground": c.textOnAction,
     "--danger": c.statusError, "--danger-foreground": c.textOnError, "--segment": c.card, "--segment-foreground": c.ink,
     "--border": c.line, "--separator": c.line, "--focus": c.focusRing, "--link": c.ink };
 }

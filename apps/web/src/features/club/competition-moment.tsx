@@ -298,7 +298,7 @@ export function CompetitionMoment({
             left: "50%",
             transform: "translateX(-50%)",
             ...typographyStyle("hero"),
-            color: appearanceColors.actionPrimary,
+            color: appearanceColors.brandMark,
             opacity: Math.max(...frame.passEffects.map((pass) => pass.strength)),
             pointerEvents: "none",
           }}

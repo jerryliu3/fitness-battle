@@ -36,7 +36,7 @@ const f=useFocusStyles();
             </View>
             {location || city ? <AppText role="caption" style={{ color: c.textOnFeatureMuted }}>{location ?? city}</AppText> : null}
             <View style={[f.row, { justifyContent: "space-between", alignItems: "center", marginTop: 4 }]}>
-              {score != null && Number.isFinite(score) ? <AppText role="caption" style={{ color: c.tennis }}>{score} · {rank ?? rankForElo(score).name}</AppText> : <View />}
+              {score != null && Number.isFinite(score) ? <AppText role="caption" style={{ color: c.textOnFeature }}>{score} · {rank ?? rankForElo(score).name}</AppText> : <View />}
               {action}
             </View>
           </View>

@@ -135,7 +135,7 @@ export function HealthLabSpace({
 
       <View style={s.insightCard}>
         <View style={s.insightIcon}>
-          <AppText role="value" style={{ color: c.tennis }}>✦</AppText>
+          <AppText role="value" style={{ color: c.brandMark }}>✦</AppText>
         </View>
         <View style={{ flex: 1, gap: 4 }}>
           <AppText role="label">Health Insight</AppText>

@@ -39,7 +39,7 @@ async function goldPixels(svg: string, top: number, bottom: number, left = 0, ri
 
 describe("production capsule visibility", () => {
   it("rings the selected leader in gold before any trail is earned", () => {
-    expect(render("lanes", 0)).toMatch(/stroke="var\(--app-tennis, #f7c948\)" stroke-width="2.4"/);
+    expect(render("lanes", 0)).toMatch(/stroke="var\(--app-tennis, #FFB800\)" stroke-width="2.4"/);
   });
   it.each([3, 6])("renders the gold head at value %s, including field edges", async value => {
     // A 300 m head is compact in a 6 km overview, but remains painted at either edge.

@@ -8,7 +8,7 @@ module.exports = ({ config }) => {
   }
   return ({
   ...config,
-  plugins: [...(config.plugins ?? []), "./plugins/withOptionalPortraitAndroid.js"],
+  plugins: [...(config.plugins ?? []), "./plugins/withOptionalPortraitAndroid.js", "./plugins/withMedalGold.js"],
   ios: { ...config.ios, infoPlist: { ...config.ios?.infoPlist, MGLMapboxMetricsEnabledSettingShownInApp: true } },
   extra: { ...config.extra, ...(mapboxAccessToken ? { mapboxAccessToken } : {}) },
   web: {

@@ -128,8 +128,8 @@ export function SyncEnergyCore({ activities, history = activities, benchmarkSeco
         <Defs>
           <LinearGradient id={`${id}fill`} x1="0%" y1="0%" x2="0%" y2="100%">
             <Stop offset="0" stopColor="#dca21c" stopOpacity={isLight ? 1 : 0.36}/>
-            <Stop offset=".45" stopColor={isLight ? "#ffe178" : "#f7c948"} stopOpacity={isLight ? 1 : 0.24}/>
-            <Stop offset="1" stopColor={isLight ? "#fffdf0" : "#f7c948"} stopOpacity={isLight ? 1 : 0.08}/>
+            <Stop offset=".45" stopColor={isLight ? "#ffe178" : c.tennis} stopOpacity={isLight ? 1 : 0.24}/>
+            <Stop offset="1" stopColor={isLight ? "#fffdf0" : c.tennis} stopOpacity={isLight ? 1 : 0.08}/>
           </LinearGradient>
           <ClipPath id={`${id}clip`}><Circle cx="112" cy="112" r="82"/></ClipPath>
         </Defs>

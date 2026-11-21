@@ -1,3 +1,4 @@
+import { nativeMedalGold } from "../../src/ui/medal-gold";
 import { useReducedMotion } from "../../src/ui/use-reduced-motion";
 import { CompeteExperienceProvider } from "../../src/features/compete-experience";
 import type { CompeteEvent } from "@fitness-battle/shared";
@@ -36,7 +37,7 @@ export default function TabLayout() {
   if (pending) return <View style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }} />;
   if (required) return <Redirect href="/onboarding" />;
   if (Platform.OS === "ios") return <CompeteExperienceProvider value={experience}><View style={{ flex: 1 }}><View style={{ flex: 1 }} accessibilityElementsHidden={experience.immersive} importantForAccessibility={experience.immersive ? "no-hide-descendants" : "auto"}>
-    <NativeTabs tintColor={SHELL_COLORS.ink} blurEffect={mode === "dark" ? "systemUltraThinMaterialDark" : "systemUltraThinMaterialLight"} backgroundColor={SHELL_COLORS.surfaceNavigation} disableTransparentOnScrollEdge>
+    <NativeTabs iconColor={{ default: SHELL_COLORS.muted, selected: mode === "dark" ? nativeMedalGold : SHELL_COLORS.brandMark }} labelStyle={{ color: SHELL_COLORS.ink }} blurEffect={mode === "dark" ? "systemUltraThinMaterialDark" : "systemUltraThinMaterialLight"} backgroundColor={SHELL_COLORS.surfaceNavigation} disableTransparentOnScrollEdge>
       <NativeTabs.Trigger name="today" accessibilityLabel="Home"><NativeTabs.Trigger.Icon src={require("../../assets/icons/phosphor/home.png")} renderingMode="template" /><NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="arena" accessibilityLabel="Compete"><NativeTabs.Trigger.Icon src={require("../../assets/icons/phosphor/compete.png")} renderingMode="template" /><NativeTabs.Trigger.Label>Compete</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="you" accessibilityLabel="Progress"><NativeTabs.Trigger.Icon src={require("../../assets/icons/phosphor/progress.png")} renderingMode="template" /><NativeTabs.Trigger.Label>Progress</NativeTabs.Trigger.Label></NativeTabs.Trigger>

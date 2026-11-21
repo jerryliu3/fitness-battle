@@ -73,6 +73,6 @@ it("keeps the visible solid route when the start is offscreen and has no native 
   expect(renderer.root.findAllByType("ScrollView" as never)).toHaveLength(0);
   const route = renderer.root.findAllByType("SvgPath" as never).find(n => n.props.strokeLinecap === "round")!;
   expect(route.props.d).toContain("L");
-  expect(route.props.stroke).toBe("#f7c948");
+  expect(route.props.stroke).toBe("#FFB800");
   expect(renderer.root.findAllByType("SvgCircle" as never).length).toBeGreaterThan(0);
 });

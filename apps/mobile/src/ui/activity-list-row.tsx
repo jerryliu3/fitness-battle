@@ -73,7 +73,7 @@ export function ActivityListRow({
         <AppText role="value" style={s.tabular}>
           {formatClockTime(activity.movingSec)}
         </AppText>
-        <AppText role="label" style={{ color: c.tennis }}>
+        <AppText role="label" style={{ color: c.brandMark }}>
           {effort} XP
         </AppText>
       </View>

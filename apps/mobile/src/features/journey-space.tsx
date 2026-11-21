@@ -577,7 +577,7 @@ export function JourneySpace({
                 onPress={() => setSelectedDayKey(null)}
                 style={s.textLink}
               >
-                <AppText role="label" style={{ color: c.tennis }}>
+                <AppText role="label" style={{ color: c.brandMark }}>
                   Clear filter
                 </AppText>
               </Pressable>

@@ -51,7 +51,7 @@ export function RouteControlsHud({
           onClick={isFinished ? onReplay : onTogglePlay}
           disabled={isRecordingVideo}
           aria-label={isFinished ? "Replay timelapse" : isPlaying ? "Pause timelapse" : "Play timelapse"}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f7c948] text-[#142b3b] shadow transition-transform active:scale-95 hover:bg-[#ffe380] disabled:opacity-50"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--app-action-primary)] text-[#142b3b] shadow transition-transform active:scale-95 hover:bg-[var(--app-action-pressed)] disabled:opacity-50"
         >
           {isFinished ? (
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -81,14 +81,14 @@ export function RouteControlsHud({
             disabled={isRecordingVideo}
             onChange={(e) => onSeek(parseFloat(e.target.value))}
             aria-label="Route timelapse scrubber"
-            className="w-full h-2 cursor-pointer appearance-none rounded-lg bg-white/20 accent-[#f7c948] disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+            className="w-full h-2 cursor-pointer appearance-none rounded-lg bg-white/20 accent-[var(--app-action-primary)] disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
             style={{ "--route-progress": `${percent}%` } as React.CSSProperties}
           />
         </div>
 
         {/* Distance metric */}
         <div className="shrink-0 text-right text-white/90 tabular-nums" style={typographyStyle("caption")}>
-          <span className="text-[#f7c948]" style={typographyStyle("label")}>
+          <span className="text-[var(--app-action-primary)]" style={typographyStyle("label")}>
             {(currentDistanceKm * factor).toFixed(1)}
           </span>
           <span className="text-white/50"> / {(totalDistanceKm * factor).toFixed(1)} {distanceUnit}</span>
@@ -117,7 +117,7 @@ export function RouteControlsHud({
           ) : (
             <>
               <svg
-                className="h-3.5 w-3.5 text-[#f7c948]"
+                className="h-3.5 w-3.5 text-[var(--app-action-primary)]"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"

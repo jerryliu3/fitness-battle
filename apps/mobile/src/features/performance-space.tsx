@@ -208,7 +208,7 @@ export function PerformanceSpace({
               </AppText>
               {scoreComparison && !inspectedEffort && (
                 <View style={s.trendPill}>
-                  <AppText role="label" style={{ color: c.tennis }}>
+                  <AppText role="label" style={{ color: c.brandMark }}>
                     {scoreComparison.pct > 0 ? "↑ " : scoreComparison.pct < 0 ? "↓ " : ""}
                     {scoreComparison.pct > 0 ? "+" : ""}
                     {scoreComparison.pct.toFixed(0)}%
@@ -379,7 +379,7 @@ export function PerformanceSpace({
                   <View style={{ alignItems: "flex-end", gap: 2 }}>
                     <AppText role="caption" secondary>Improvement</AppText>
                     <View style={s.gainPill}>
-                      <AppText role="label" style={{ color: c.tennis }}>
+                      <AppText role="label" style={{ color: c.brandMark }}>
                         -{formatClockTime(prSummary.dropSeconds)} (-{prSummary.pct.toFixed(1)}%)
                       </AppText>
                     </View>
@@ -581,7 +581,7 @@ export function PerformanceSpace({
       {insightText ? (
       <View style={s.insightCard}>
         <View style={s.insightIcon}>
-          <AppText role="value" style={{ color: c.tennis }}>✦</AppText>
+          <AppText role="value" style={{ color: c.brandMark }}>✦</AppText>
         </View>
         <View style={{ flex: 1, gap: 4 }}>
           <AppText role="label">Training Insight</AppText>

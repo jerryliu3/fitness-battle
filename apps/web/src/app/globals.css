@@ -1,3 +1,9 @@
+@supports (color: color(display-p3 1 0 0)) {
+  @media (color-gamut: p3) {
+    :root { --overtaek-brand-gold: var(--overtaek-brand-gold-p3); }
+  }
+}
+
 :root {
   --ink: #12141a;
   --muted: #5c6578;

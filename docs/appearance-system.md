@@ -1,6 +1,6 @@
 # Appearance foundation
 
-This replaces the abandoned color-study integration with a small foundation based on current main. Yellow owns actions, primary chart series and progress; Slate owns secondary accents and historical chart comparisons. `SHELL_COLORS` is a compatibility view of the canonical light appearance, not a second palette. Experimental alternate themes, diagnostic outlines and study pages are excluded.
+This replaces the abandoned color-study integration with a small foundation based on current main. Medal Gold owns actions, primary chart series and progress; Slate owns secondary accents and historical chart comparisons. `SHELL_COLORS` is a compatibility view of the canonical light appearance, not a second palette. Experimental alternate themes, diagnostic outlines and study pages are excluded.
 
 ## Contract
 
@@ -26,10 +26,27 @@ Filter triggers, analytics time-range toggles and selected chips use the quiet s
 
 Chart-series roles (including the legacy `fieldTeal` alias) are for data marks, not control fills. Time-range selectors use the neutral control treatment in both apps, independently of the chart palette.
 
-Navigation selections, replay controls, avatar fallbacks, rank badges and result containers use neutral surfaces and primary text on both platforms. Reserve filled yellow for primary actions; charts and progress retain the primary yellow series.
+Navigation keeps neutral surfaces and labels, with the selected icon using the appearance-aware gold mark. Replay, avatar, rank and result surfaces retain their existing roles. Filled primary actions and progress use Medal Gold.
 
 The [November 17 audit](reviews/appearance-audit/README.md) covers shared choice
 controls, system pickers, switch thumbs, action/error foregrounds and web chart
 controls. Native Appearance follows the saved preference; System clears the
 native override. Filled error actions use `textOnError` with `statusError`, while
 error text on a neutral surface continues to use `statusError`.
+
+## Medal Gold
+
+`packages/shared/src/brand-gold.json` defines Medal Gold Max Pop P3 as
+`color(display-p3 1 0.735 0)` and its explicit sRGB fallback as `#FFB800`.
+`#FFBB00` is the approximate P3 channel hex used in a P3-profiled design file.
+The web shell selects P3 with CSS syntax and gamut queries before hydration.
+Light-mode text, selected tab icons and primary chart traces use the stronger
+`#8A5B00` mark. Gold-filled actions use `#142B3B` text in both appearances.
+
+The iOS config plugin generates a named UIKit color with sRGB and Display P3
+variants. The shared native primary button, primary icon button, effort rail,
+field timeline and dark selected tab icon use it. A fresh iOS binary is needed
+to include the color catalog. Existing binaries fall back through
+`PlatformColor`. Android, Expo web, native charts and map SDK inputs use sRGB
+in this migration. Website CSS and SVG use the browser color path. See the
+[secondary color audit](reviews/medal-gold/secondary-colors.md).

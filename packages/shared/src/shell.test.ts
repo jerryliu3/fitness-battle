@@ -31,8 +31,8 @@ describe("phone shell", () => {
 
   it("keeps the Everyday Club navy, yellow, canvas, and Ember tokens", () => {
     expect(SHELL_COLORS.plum).toBe("#142b3b");
-    expect(SHELL_COLORS.tennis).toBe("#f7c948");
+    expect(SHELL_COLORS.tennis).toBe("#FFB800");
     expect(SHELL_COLORS.paper).toBe("#f8f9f6");
-    expect(SHELL_COLORS.starEmber).toBe("#f7c948");
+    expect(SHELL_COLORS.starEmber).toBe("#FFB800");
   });
 });
