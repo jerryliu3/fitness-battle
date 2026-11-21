@@ -2,6 +2,7 @@ import medalGold from "./brand-gold.json";
 
 export const MEDAL_GOLD = Object.freeze({
   srgb: medalGold.srgb,
+  displayP3Channels: Object.freeze(medalGold.displayP3),
   displayP3: `color(display-p3 ${medalGold.displayP3.join(" ")})`,
   iosColorName: medalGold.iosColorName,
 });

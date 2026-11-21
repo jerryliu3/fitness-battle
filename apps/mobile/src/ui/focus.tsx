@@ -1,3 +1,4 @@
+import { MedalGoldFill } from "./medal-gold-fill";
 import { nativeMedalGold } from "./medal-gold";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { ToastProvider } from "./toast";
@@ -424,6 +425,7 @@ const f=useThemedStyles(fThemes);
         disabled && !busy && { opacity: 0.4 },
       ]}
     >
+      {!secondary && <MedalGoldFill radius={SHELL_RADIUS.pill} />}
       <Text numberOfLines={fit ? 2 : undefined} adjustsFontSizeToFit={fit} maxFontSizeMultiplier={fit ? 1.2 : undefined} minimumFontScale={fit ? 1 : undefined} style={[f.buttonText, secondary && { color: c.ink }, busy && { opacity: 0 }]}>{label}</Text>
       {busy && <View pointerEvents="none" style={[StyleSheet.absoluteFill, f.buttonSpinner]}>
         <ActivityIndicator size="small" color={secondary ? c.ink : c.textOnAction} />

@@ -12,6 +12,7 @@ import { useId, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { ClipPath, Defs, G, Line, Path, Rect, Circle } from "react-native-svg";
 import {
+  MEDAL_GOLD,
   accountTimeZone,
   RECORD_DISTANCES,
   competeNow,
@@ -650,7 +651,7 @@ const sThemes = createThemedStyles((themeColors) => {
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: 99,
-      backgroundColor: `${c.tennis}22`,
+      backgroundColor: `${MEDAL_GOLD.srgb}22`,
       alignSelf: "center",
     },
     chartBody: {
@@ -699,7 +700,7 @@ const sThemes = createThemedStyles((themeColors) => {
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 10,
-      backgroundColor: `${c.tennis}22`,
+      backgroundColor: `${MEDAL_GOLD.srgb}22`,
     },
     inspectedPRBox: {
       marginTop: 8,
@@ -732,7 +733,7 @@ const sThemes = createThemedStyles((themeColors) => {
       width: 28,
       height: 28,
       borderRadius: 14,
-      backgroundColor: `${c.tennis}22`,
+      backgroundColor: `${MEDAL_GOLD.srgb}22`,
       alignItems: "center",
       justifyContent: "center",
       marginTop: 2,

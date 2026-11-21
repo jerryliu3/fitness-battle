@@ -1,3 +1,4 @@
+import { MedalGoldStyles } from "../src/ui/medal-gold-styles";
 import { NavigationAppearance } from "../src/ui/navigation-appearance";
 import { AppearanceSync } from "../src/ui/appearance-sync";
 import { useThemeColors } from "../src/theme";
@@ -102,7 +103,7 @@ function NotificationNavigation() {
 }
 
 export default function RootLayout() {
-  return <AppThemeProvider><AppearanceSync /><NavigationAppearance><RootContent /></NavigationAppearance></AppThemeProvider>;
+  return <AppThemeProvider><MedalGoldStyles /><AppearanceSync /><NavigationAppearance><RootContent /></NavigationAppearance></AppThemeProvider>;
 }
 
 function RootContent() {

@@ -47,6 +47,14 @@ The iOS config plugin generates a named UIKit color with sRGB and Display P3
 variants. The shared native primary button, primary icon button, effort rail,
 field timeline and dark selected tab icon use it. A fresh iOS binary is needed
 to include the color catalog. Existing binaries fall back through
-`PlatformColor`. Android, Expo web, native charts and map SDK inputs use sRGB
-in this migration. Website CSS and SVG use the browser color path. See the
+`PlatformColor`. Website CSS and SVG use the browser color path. See the
 [secondary color audit](reviews/medal-gold/secondary-colors.md).
+
+Expo web applies the same P3 syntax and gamut checks to its app palette.
+On Android 10 and later, a rebuilt app opts into a wide-gamut window, and
+its shared primary button, primary icon button, effort rail and field
+timeline draw the Display P3 fill with a color-space-aware Android paint.
+The sRGB fill stays underneath for older builds and unsupported displays.
+The dark Home line chart uses the named color on iOS and CSS on web.
+Android SVG, Mapbox layers and native components that accept only packed
+sRGB color values continue to use the shared sRGB fallback.

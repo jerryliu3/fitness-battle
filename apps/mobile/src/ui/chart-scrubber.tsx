@@ -1,7 +1,7 @@
 import { useThemeColors } from "../theme";
 import { AppText, textStyle } from "./section";
 import { useMemo, useRef, useState, type ReactNode } from "react";
-import { PanResponder, Text, View } from "react-native";
+import { PanResponder, Text, View, type ColorValue } from "react-native";
 import Svg, { Circle, Line } from "react-native-svg";
 import { chartClientXToModel, dottedCircleDasharray, nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
 import { playCue } from "../lib/haptics";
@@ -29,7 +29,7 @@ export function ChartScrubber({
   renderSummary?: (point: ChartDatum | undefined) => ReactNode;
   selectedPointId?: string;
   onSelectionChange?: (point: ChartDatum | undefined) => void;
-  dotColor?: string;
+  dotColor?: ColorValue;
   dotBorderColor?: string;
   isSelectedHollow?: boolean;
   hideSelectionDot?: boolean;

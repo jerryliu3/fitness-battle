@@ -1,6 +1,6 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
-const { IOSConfig, withDangerousMod } = require("expo/config-plugins");
+const { AndroidConfig, IOSConfig, withAndroidManifest, withDangerousMod } = require("expo/config-plugins");
 const gold = require("../../../packages/shared/src/brand-gold.json");
 
 function color(colorSpace, [red, green, blue]) {
@@ -11,6 +11,12 @@ function color(colorSpace, [red, green, blue]) {
 }
 
 module.exports = function withMedalGold(config) {
+  config = withAndroidManifest(config, (config) => {
+    const activity = AndroidConfig.Manifest.getMainActivityOrThrow(config.modResults);
+    activity.$["android:colorMode"] = "wideColorGamut";
+    return config;
+  });
+
   return withDangerousMod(config, ["ios", async (config) => {
     const { projectRoot, platformProjectRoot } = config.modRequest;
     const projectName = IOSConfig.XcodeUtils.getProjectName(projectRoot);

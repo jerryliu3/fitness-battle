@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { Appearance, Platform } from "react-native";
 import { Uniwind } from "uniwind";
-import { APP_COLORS, type AppColors } from "@fitness-battle/shared";
+import { type AppColors } from "@fitness-battle/shared";
+import { APP_COLORS } from "../appearance-colors";
 import { useAppTheme } from "../appearance";
 function controlVariables(c: AppColors) {
   return { "--background": c.paper, "--foreground": c.ink,

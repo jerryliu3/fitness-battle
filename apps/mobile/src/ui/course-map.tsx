@@ -9,7 +9,7 @@ import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import Mapbox, { MapView, Camera, StyleImport, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
-import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceCourseRacerPosition, raceCourseStartCoordinate, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { MEDAL_GOLD, courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceCourseRacerPosition, raceCourseStartCoordinate, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { CourseOptions } from "./course-options";
 import { FieldFollowChip } from "./field-follow-chip";
@@ -315,7 +315,7 @@ const { colors: appearanceColors, mode } = useAppTheme();
       </ShapeSource> : null}
       {!reduced && replay ? replay.passEffects.filter(pass => !hiddenIds.includes(pass.id)).map(pass => {
         const lane = scene.callouts.find(lane => lane.id === pass.id);
-        return lane ? <MarkerView key={`pass-${pass.id}`} coordinate={lane.coordinate} anchor={{x:.5,y:.5}} allowOverlap allowOverlapWithPuck><View pointerEvents="none" style={{width:100,height:100,alignItems:"center",justifyContent:"center"}}><View style={{width:32+64*(1-pass.strength),height:32+64*(1-pass.strength),borderRadius:60,borderWidth:4,borderColor:appearanceColors.actionPrimary,backgroundColor:`${appearanceColors.actionPrimary}33`,opacity:pass.strength}}/></View></MarkerView> : null;
+        return lane ? <MarkerView key={`pass-${pass.id}`} coordinate={lane.coordinate} anchor={{x:.5,y:.5}} allowOverlap allowOverlapWithPuck><View pointerEvents="none" style={{width:100,height:100,alignItems:"center",justifyContent:"center"}}><View style={{width:32+64*(1-pass.strength),height:32+64*(1-pass.strength),borderRadius:60,borderWidth:4,borderColor:appearanceColors.actionPrimary,backgroundColor:`${MEDAL_GOLD.srgb}33`,opacity:pass.strength}}/></View></MarkerView> : null;
       }) : null}
       {startMarkers.map(({ lane, selected, width }) => {
         const offset = (startX + width / 2) * startSpacing;

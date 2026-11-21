@@ -1,4 +1,5 @@
-import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
+import { nativeMedalGold } from "./medal-gold";
+import { createThemedStyles, useThemedStyles, useAppTheme } from "../theme";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Animated, Easing, Text, View } from "react-native";
 import { Circle, ClipPath, Defs, G, Line, Polyline, Rect } from "react-native-svg";
@@ -16,8 +17,9 @@ export function OpenLineChart({ chart: targetChart, label, unit, range, onRangeC
   onRangeChange: (range: OpenLineRange) => void; includeYear?: boolean; live?: boolean; openHero?: boolean; footerAction?: ReactNode;
   hideSummary?: boolean; hideRangeToggle?: boolean; hideTrendLine?: boolean; uniformAspect?: boolean; onSelectionChange?: (point: ChartDatum | undefined) => void;
 }) {
-const c=useThemeColors();
-const s=useThemedStyles(sThemes);
+  const { colors: c, mode } = useAppTheme();
+  const stroke = mode === "dark" ? nativeMedalGold : c.chartSeries;
+  const s = useThemedStyles(sThemes);
 
   const clipId = useId();
   const reduceMotion = useReducedMotion();
@@ -48,10 +50,10 @@ const s=useThemedStyles(sThemes);
 
   const renderLines = (keyPrefix: string) => (
     <>
-      {chart.bridges?.map((line, index) => <Polyline key={`${keyPrefix}-bridge-${index}`} points={line} fill="none" stroke={c.tennis} strokeWidth={2.5} />)}
+      {chart.bridges?.map((line, index) => <Polyline key={`${keyPrefix}-bridge-${index}`} points={line} fill="none" stroke={stroke} strokeWidth={2.5} />)}
       {chart.segments.map((line, i) => {
         if (!line || !line.includes(" ")) return null;
-        return <Polyline key={`${keyPrefix}-seg-${i}`} points={line} fill="none" stroke={c.tennis} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />;
+        return <Polyline key={`${keyPrefix}-seg-${i}`} points={line} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />;
       })}
     </>
   );
@@ -69,7 +71,7 @@ const s=useThemedStyles(sThemes);
       uniformAspect={uniformAspect}
       plotTop={chart.top}
       plotBottom={chart.bottom}
-      dotColor={c.tennis}
+      dotColor={stroke}
       dotBorderColor={dotBorderColor}
       label={label}
       onSelectionChange={point => { setSelectedId(point?.id); onSelectionChange?.(point); }}
@@ -123,7 +125,7 @@ const s=useThemedStyles(sThemes);
           </>
         ) : renderLines("all")}
         {!selected && end && (
-          <Circle cx={end.x} cy={end.y} r={4} fill={c.tennis} stroke={dotBorderColor} strokeWidth={2} />
+          <Circle cx={end.x} cy={end.y} r={4} fill={stroke} stroke={dotBorderColor} strokeWidth={2} />
         )}
       </ChartSvg>
       {live && !selected && !reduceMotion && active && end && plotWidth > 0 && (() => {
