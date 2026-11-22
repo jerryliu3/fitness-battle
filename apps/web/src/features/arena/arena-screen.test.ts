@@ -111,9 +111,9 @@ it("keeps queued metric fields behind the waiting sheet", async () => {
   let renderer!: ReactTestRenderer;
   await act(async () => { renderer = create(createElement(ArenaScreen)); });
   try {
-    await act(async () => renderer.root.findByProps({ "aria-label": "Enter Walking field" }).props.onClick());
+    await act(async () => renderer.root.findByProps({ "aria-label": "Enter Steps field" }).props.onClick());
     const destination = renderer.root;
-    expect(renderer.root.findAllByProps({ "data-active-field": "Walking" })).toHaveLength(1);
+    expect(renderer.root.findAllByProps({ "data-active-field": "Steps" })).toHaveLength(1);
     const cancel = destination.findAllByType("button").find(node => node.children.includes("Cancel registration"));
     expect(cancel).toBeDefined();
     await act(async () => cancel!.props.onClick());

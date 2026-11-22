@@ -56,7 +56,7 @@ export function ExploreEvents({ onChoose, state }: { onChoose(event: CompeteEven
         <AppText role="label">{category.title}</AppText>
       </View>
       <ScrollView style={pageCarouselStyles.viewport} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[pageCarouselStyles.content, { gap: 12 }]}>
-        {category.events.map(event => <Pressable key={event} accessibilityRole="button" accessibilityLabel={`Explore ${event}`} onPress={() => onChoose(event)} style={({ pressed }) => ({ width: 158, minHeight: 104, padding: 14, gap: 8, borderWidth: 1, borderColor: c.line, borderRadius: 20, backgroundColor: c.card, overflow: "hidden", opacity: pressed ? 0.7 : 1 })}>
+        {category.events.map(event => <Pressable key={event} accessibilityRole="button" accessibilityLabel={`Explore ${event === "sleep" ? "Sleep" : sportById(event).name}`} onPress={() => onChoose(event)} style={({ pressed }) => ({ width: 158, minHeight: 104, padding: 14, gap: 8, borderWidth: 1, borderColor: c.line, borderRadius: 20, backgroundColor: c.card, overflow: "hidden", opacity: pressed ? 0.7 : 1 })}>
           <EventTint event={event} />
           <EventArt event={event} />
           <View style={{ alignSelf: "flex-start" }}><CompeteIcon name={event} size={28} /></View>
