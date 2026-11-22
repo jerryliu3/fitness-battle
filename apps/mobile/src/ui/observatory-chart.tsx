@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState } from "react";
+import { memo, useId, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Rect, Stop, Text as SvgText } from "react-native-svg";
@@ -8,7 +8,6 @@ import {
   estimateAtTimeMs,
   gaussianSmooth,
   raceClock,
-  racePercentLabel,
   type RaceEditionAnalytics,
 } from "@fitness-battle/shared";
 import { createThemedStyles, useThemedStyles } from "../theme";
@@ -36,7 +35,7 @@ const R = 346;
 const T = 52;
 const B = 198;
 
-export function ObservatoryChart({
+export const ObservatoryChart = memo(function ObservatoryChart({
   cohortTotal,
   editionScoped,
   analytics,
@@ -433,37 +432,9 @@ export function ObservatoryChart({
         </View>
       ) : null}
 
-      {/* Footer readout + removable comparison chips */}
-      <View style={s.footer}>
-        <View style={s.readout}>
-          <View style={s.goldDot} />
-          {inspectTimeMs !== null && inspectStats ? (
-            <View style={{ flex: 1 }}>
-              <AppText role="label" style={s.tabular}>
-                {raceClock(inspectTimeMs)} · Faster than {racePercentLabel(inspectStats.fasterThan)}
-              </AppText>
-              <AppText role="caption" secondary>
-                Est. #{inspectStats.rank.toLocaleString()} · Tap bar again to clear
-              </AppText>
-            </View>
-          ) : isRunningSport && analytics ? (
-            <View style={{ flex: 1 }}>
-              <AppText role="label" style={s.tabular}>
-                {raceClock(analytics.medianMs)} · Median finish
-              </AppText>
-              <AppText role="caption" secondary>
-                Fastest {raceClock(analytics.fastestMs)}
-                {analytics.benchmarks?.top10Ms ? ` · Top 10% ${raceClock(analytics.benchmarks.top10Ms)}` : ""} · Pinch to zoom or tap bar
-              </AppText>
-            </View>
-          ) : (
-            <AppText role="label">
-              {isRunningSport ? "Inspect a time on the chart" : `${sportLabel} distribution`}
-            </AppText>
-          )}
-        </View>
-
-        {isRunningSport && !editionScoped && overlayIds.length > 0 ? (
+      {/* Removable comparison chips (when comparing race editions) */}
+      {isRunningSport && !editionScoped && overlayIds.length > 0 ? (
+        <View style={s.footer}>
           <View style={s.overlayWrap}>
             {overlayIds.map((edId, idx) => {
               const ov = overlayData[String(edId)];
@@ -486,11 +457,11 @@ export function ObservatoryChart({
               );
             })}
           </View>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
     </View>
   );
-}
+});
 
 const sThemes = createThemedStyles(c => ({
   surface: {
@@ -569,20 +540,8 @@ const sThemes = createThemedStyles(c => ({
     borderTopWidth: 1,
     borderColor: c.line,
     paddingHorizontal: 14,
-    paddingVertical: 11,
+    paddingVertical: 10,
     backgroundColor: "#ffffff",
-    gap: 8,
-  },
-  readout: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  goldDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: "#FFB800",
   },
   overlayWrap: {
     flexDirection: "row",

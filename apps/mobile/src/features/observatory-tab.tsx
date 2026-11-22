@@ -42,7 +42,7 @@ const SAVED_EDITIONS_KEY = "overtaek:saved-editions:v1";
 const clientResultsCache = new Map<string, RaceResultsPage>();
 const rowSplitsMemoryCache = new Map<number, RaceTimingSplits | null>();
 const reportMemoryCache = new Map<number, RaceResultReport>();
-let splitDictionaryLoaded = false;
+const MOBILE_PAGE_SIZE = 10;
 
 export function ObservatoryTab({
   initialDistance = "marathon",
@@ -153,29 +153,10 @@ export function ObservatoryTab({
     }
   }, [user?.mode]);
 
-  // Fetch split dictionary once from lightweight Chicago replay endpoint
-  useEffect(() => {
-    if (splitDictionaryLoaded) return;
-    splitDictionaryLoaded = true;
-    fetch(`${mobileEnv.apiUrl}/api/rankings/replay?edition=6&distance=marathon&sex=all&clock=chip`)
-      .then(r => (r.ok ? r.json() : null))
-      .then((payload: { runners?: Array<{ id: number; splits?: RaceTimingSplits }> } | null) => {
-        if (!Array.isArray(payload?.runners)) return;
-        const batch: Record<number, RaceTimingSplits | null> = {};
-        for (const r of payload.runners) {
-          if (!r.splits) continue;
-          rowSplitsMemoryCache.set(r.id, r.splits);
-          batch[r.id] = r.splits;
-        }
-        setRowSplits(prev => ({ ...prev, ...batch }));
-      })
-      .catch(() => {});
-  }, []);
-
-  // Load rankings data with in-memory cache
+  // Load rankings data with in-memory cache (10 rows per mobile page)
   useEffect(() => {
     if (!isRunningSport) return;
-    const cacheKey = `${distance}|${edition}|${sex}|all|${search.trim()}|${page}`;
+    const cacheKey = `${distance}|${edition}|${sex}|all|${search.trim()}|${page}|${MOBILE_PAGE_SIZE}`;
     const cached = clientResultsCache.get(cacheKey);
     if (cached) {
       setData(cached);
@@ -186,7 +167,13 @@ export function ObservatoryTab({
 
     const controller = new AbortController();
     setLoading(true);
-    const params = new URLSearchParams({ distance, sex, timeframe: "all", page: String(page) });
+    const params = new URLSearchParams({
+      distance,
+      sex,
+      timeframe: "all",
+      page: String(page),
+      pageSize: String(MOBILE_PAGE_SIZE),
+    });
     if (edition) params.set("edition", edition);
     if (search.trim()) params.set("q", search.trim());
 
@@ -534,7 +521,7 @@ export function ObservatoryTab({
               const fasterApprox = analytics.bins
                 .filter(b => b.bucket < bucket)
                 .reduce((acc, b) => acc + b.count, 0);
-              const pageSize = data?.pageSize ?? 50;
+              const pageSize = data?.pageSize ?? MOBILE_PAGE_SIZE;
               const targetPage = Math.max(1, Math.floor(fasterApprox / pageSize) + 1);
               setSearch("");
               setDraftSearch("");
@@ -764,32 +751,13 @@ export function ObservatoryTab({
                       <AppText role="caption" secondary style={[s.placeCol, s.tabular]}>
                         #{row.place.toLocaleString()}
                       </AppText>
-                      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                        <AppText role="label" numberOfLines={1}>
-                          {row.athlete_name}
-                          {reportBusyId === row.id ? " …" : ""}
-                        </AppText>
-                        <AppText role="caption" secondary numberOfLines={1}>
-                          {formatEditionDisplay(row.event_name, row.edition_year)}
-                        </AppText>
-                      </View>
-                      <View style={{ alignItems: "flex-end", gap: 3 }}>
-                        <AppText role="label" style={s.tabular}>
-                          {raceClock(row.rank_time_ms)}
-                        </AppText>
-                        {row.percentile != null ? (
-                          <View style={s.rankPill}>
-                            <AppText role="nav">
-                              {racePercentileBadge(row.percentile)}
-                            </AppText>
-                          </View>
-                        ) : null}
-                      </View>
-                    </View>
-
-                    <View style={s.rowSub}>
-                      <SplitSparklineNative splits={rowSplits[row.id]} distanceSlug={row.distance_slug} />
-                      <View style={{ flex: 1 }} />
+                      <AppText role="label" numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>
+                        {row.athlete_name}
+                        {reportBusyId === row.id ? " …" : ""}
+                      </AppText>
+                      <AppText role="label" style={s.tabular}>
+                        {raceClock(row.rank_time_ms)}
+                      </AppText>
                       <Pressable
                         onPress={ev => {
                           ev.stopPropagation();
@@ -798,7 +766,7 @@ export function ObservatoryTab({
                         style={[s.miniPinBtn, isPinned && s.miniPinBtnActive]}
                       >
                         <AppText role="nav" style={{ color: c.ink }}>
-                          {isPinned ? "✓ On chart" : "Pin"}
+                          {isPinned ? "✓ Pin" : "Pin"}
                         </AppText>
                       </Pressable>
                       <Pressable
@@ -828,7 +796,12 @@ export function ObservatoryTab({
                         {detailReport
                           ? `Rank #${detailReport.place.toLocaleString()} of ${detailReport.total.toLocaleString()}`
                           : `Rank #${row.place.toLocaleString()}`}
+                        {row.percentile != null ? ` · ${racePercentileBadge(row.percentile)}` : ""}
                       </AppText>
+
+                      {detailSplits ? (
+                        <SplitSparklineNative splits={detailSplits} distanceSlug={row.distance_slug} />
+                      ) : null}
 
                       {splitAnalysis?.status === "ready" ? (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
@@ -1165,23 +1138,11 @@ const sThemes = createThemedStyles(c => ({
   rowMain: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-  },
-  rowSub: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingLeft: 42,
+    gap: 8,
   },
   placeCol: {
     ...textStyle("nav"),
     width: 34,
-  },
-  rankPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 999,
-    backgroundColor: "#e9eff2",
   },
   miniPinBtn: {
     paddingHorizontal: 10,

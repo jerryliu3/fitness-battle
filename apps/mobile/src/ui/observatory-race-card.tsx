@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import Svg, { Circle, G, Path } from "react-native-svg";
 import {
@@ -10,7 +10,7 @@ import {
 } from "@fitness-battle/shared";
 import { AppText, textStyle } from "./section";
 
-export function SplitSparklineNative({
+export const SplitSparklineNative = memo(function SplitSparklineNative({
   splits,
   distanceSlug,
 }: {
@@ -73,9 +73,9 @@ export function SplitSparklineNative({
       ) : null}
     </View>
   );
-}
+});
 
-export function RaceRouteArtNative({
+export const RaceRouteArtNative = memo(function RaceRouteArtNative({
   eventName,
   year,
   coursePoints,
@@ -135,7 +135,7 @@ export function RaceRouteArtNative({
       </AppText>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   splitRow: {

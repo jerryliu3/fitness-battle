@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 import Svg, { Line, Path, Text as SvgText } from "react-native-svg";
 import {
   OBSERVATORY_SPORTS,
   RACE_DISTANCES,
   RACE_METERS,
-  compileReplayRunner,
   formatEditionDisplay,
-  loadReplayField,
   raceClock,
   raceEventGroups,
   replayDistance,
@@ -18,12 +18,18 @@ import {
   type ObservatorySportId,
   type RaceCoverage,
   type ReplayData,
-  type ReplayPage,
 } from "@fitness-battle/shared";
+import { useAppTheme } from "../appearance";
 import { useAuth } from "../lib/auth";
-import { mobileEnv } from "../lib/env";
+import {
+  getCachedReplayField,
+  loadAndCompileReplayField,
+  replayScopeCacheKey,
+} from "../lib/observatory-replay-cache";
 import { useRaceFavorites } from "../lib/race-favorites";
 import { createThemedStyles, useThemeColors, useThemedStyles } from "../theme";
+import { CompeteSheet } from "../ui/compete-sheet";
+import { CompetitionSheetHeight, useCompetitionSheetHeight } from "../ui/competition-sheet-height";
 import { FocusSegments, FocusSheet } from "../ui/focus";
 import { RaceRouteArtNative, SplitSparklineNative } from "../ui/observatory-race-card";
 import { ObservatorySportBar } from "../ui/observatory-sport-bar";
@@ -32,8 +38,6 @@ import { SearchField } from "../ui/search-field";
 import { AppText, chartTextProps, textStyle } from "../ui/section";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { useSceneActive } from "../ui/use-scene-active";
-
-const replayDataMemoryCache = new Map<string, ReplayData>();
 
 type RunnerWithDistance = {
   runner: CompiledReplayRunner;
@@ -218,6 +222,138 @@ const duelStyles = StyleSheet.create({
   },
 });
 
+function FullScreenReplayStage({
+  data,
+  features,
+  pinnedIds,
+  cameraTargetId,
+  cameraTargetEntry,
+  cameraMode,
+  timelineOrigin,
+  time,
+  runnersCount,
+  wall,
+  timelineWallAvailable,
+  onSelectRunner,
+  onToggleWall,
+  onCycleCamera,
+  onClose,
+  onError,
+  pinnedStrip,
+  scrubberBar,
+  sheetBody,
+}: {
+  data: ReplayData;
+  features: ReturnType<typeof replayFeatures>;
+  pinnedIds: number[];
+  cameraTargetId: number | null;
+  cameraTargetEntry: RunnerWithDistance | null;
+  cameraMode: "field" | "follow" | "chase3d";
+  timelineOrigin: number | null;
+  time: number;
+  runnersCount: number;
+  wall: boolean;
+  timelineWallAvailable: boolean;
+  onSelectRunner: (id: number) => void;
+  onToggleWall: (nextWall: boolean) => void;
+  onCycleCamera: () => void;
+  onClose: () => void;
+  onError: () => void;
+  pinnedStrip: React.ReactNode;
+  scrubberBar: React.ReactNode;
+  sheetBody: React.ReactNode;
+}) {
+  const s = useThemedStyles(sThemes);
+  const insets = useSafeAreaInsets();
+  const { minimum: sheetMin } = useCompetitionSheetHeight();
+  const pinnedBottom = Math.max(insets.bottom + 18, sheetMin) + 10;
+
+  return (
+    <SafeAreaView pointerEvents="box-none" style={s.fullScreenRoot} edges={[]}>
+      <ReplayMap
+        course={data.course}
+        features={features}
+        tracked={pinnedIds}
+        focused={cameraTargetId}
+        profileId={null}
+        profile={null}
+        followId={cameraMode !== "field" ? cameraTargetEntry?.runner.id ?? null : null}
+        tilted={cameraMode === "chase3d"}
+        overlayTop={insets.top + 86}
+        overlayBottom={pinnedIds.length > 0 ? pinnedBottom + 66 : Math.max(insets.bottom + 24, sheetMin) + 12}
+        onSelect={onSelectRunner}
+        onError={onError}
+      />
+
+      {/* Top Floating Clock & Controls Overlay */}
+      <View style={[s.fullTopBar, { top: insets.top + 10 }]} pointerEvents="box-none">
+        <View style={s.mapBadge} pointerEvents="none">
+          <AppText role="caption" style={s.mapBadgeLabel}>
+            {timelineOrigin !== null ? "TIME OF DAY" : "CHIP TIME"}
+          </AppText>
+          <AppText role="heading" style={s.mapBadgeTime}>
+            {timelineOrigin !== null ? new Date(timelineOrigin + time).toLocaleTimeString() : raceClock(time)}
+          </AppText>
+          <AppText role="caption" style={s.mapBadgeSub} numberOfLines={1}>
+            {cameraTargetEntry
+              ? `${(cameraTargetEntry.distM / 1000).toFixed(2)} km · ${cameraTargetEntry.runner.name}`
+              : `${runnersCount} athletes`}
+          </AppText>
+        </View>
+
+        <View style={s.fullTopRight}>
+          <View style={s.clockToggle}>
+            <Pressable
+              onPress={() => onToggleWall(false)}
+              style={[s.clockToggleBtn, !wall && s.clockToggleBtnOn]}
+            >
+              <AppText role="caption" style={[s.clockToggleText, !wall && s.clockToggleTextOn]}>
+                Chip
+              </AppText>
+            </Pressable>
+            <Pressable
+              disabled={!timelineWallAvailable}
+              onPress={() => onToggleWall(true)}
+              style={[s.clockToggleBtn, wall && s.clockToggleBtnOn, !timelineWallAvailable && { opacity: 0.38 }]}
+            >
+              <AppText role="caption" style={[s.clockToggleText, wall && s.clockToggleTextOn]}>
+                Clock
+              </AppText>
+            </Pressable>
+          </View>
+
+          <View style={s.fullTopBtns}>
+            <Pressable
+              onPress={onCycleCamera}
+              style={[s.mapActionBtn, cameraMode !== "field" && s.mapActionBtnActive]}
+            >
+              <AppText role="caption" style={[s.mapActionText, cameraMode !== "field" && s.mapActionTextActive]}>
+                {cameraMode === "field" ? "◉ Field" : cameraMode === "follow" ? "◎ Follow" : "◈ 3D"}
+              </AppText>
+            </Pressable>
+            <Pressable onPress={onClose} style={s.mapActionBtn} accessibilityLabel="Exit full-screen replay">
+              <AppText role="caption" style={s.mapActionText}>
+                ⤡ Exit
+              </AppText>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+
+      {/* Pinned Athlete Overlay Strip Anchored Above CompeteSheet */}
+      {pinnedStrip ? (
+        <View style={[s.fullPinnedAnchor, { bottom: pinnedBottom }]} pointerEvents="box-none">
+          {pinnedStrip}
+        </View>
+      ) : null}
+
+      <CompeteSheet scrollable active expandRequest={0} defaultIndex={0} overview={scrubberBar}>
+        {sheetBody}
+      </CompeteSheet>
+    </SafeAreaView>
+  );
+}
+
 export function ReplayStudioView({
   initialEdition = "6",
   initialDistance = "marathon",
@@ -238,6 +374,7 @@ export function ReplayStudioView({
   onRequireAuth: (action: "save" | "pin", target?: string) => void;
 }) {
   const c = useThemeColors();
+  const { mode: themeMode } = useAppTheme();
   const s = useThemedStyles(sThemes);
   const { user } = useAuth();
   const saved = useRaceFavorites();
@@ -271,7 +408,6 @@ export function ReplayStudioView({
     [distanceSlug],
   );
   const storedDistance = distanceObj.stored;
-  const totalMeters = RACE_METERS[storedDistance] ?? 42195;
 
   const allRaceEditions = useMemo(() => raceEventGroups(coverage ?? [], "all"), [coverage]);
   const visibleRaceEditions = useMemo(
@@ -287,18 +423,22 @@ export function ReplayStudioView({
   );
 
   const [data, setData] = useState<ReplayData | null>(null);
+  const [runners, setRunners] = useState<CompiledReplayRunner[]>([]);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
   const abort = useRef<AbortController | null>(null);
 
   const [time, setTime] = useState(0);
+  const [rankTime, setRankTime] = useState(0);
   const timeRef = useRef(0);
+  const lastRankSyncRef = useRef(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(256);
   const [wall, setWall] = useState(false);
   const [mapExpanded, setMapExpanded] = useState(false);
   const [seekWidth, setSeekWidth] = useState(200);
+  const [expandedRunnerId, setExpandedRunnerId] = useState<number | null>(null);
 
   // Multi-athlete pinning + camera focus among pinned athletes
   const [cameraMode, setCameraMode] = useState<"field" | "follow" | "chase3d">("field");
@@ -312,7 +452,7 @@ export function ReplayStudioView({
   const [runnerSearch, setRunnerSearch] = useState("");
   const [page, setPage] = useState(0);
   const [jumpText, setJumpText] = useState("1");
-  const pageSize = 9;
+  const pageSize = 10;
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
@@ -323,24 +463,14 @@ export function ReplayStudioView({
     }
   }, [active, sceneActive, reduced, playing]);
 
-  const scopeKey = useMemo(
-    () =>
-      new URLSearchParams({
-        edition: String(editionId),
-        distance: distanceSlug,
-        sex: category,
-        clock: "chip",
-      }).toString(),
-    [editionId, distanceSlug, category],
-  );
-
-  // Fetch replay field with memory cache
+  // Fetch & precompile replay field with shared cache
   useEffect(() => {
     if (!isRunningSport) return;
-    const cacheKey = `${scopeKey}|${ids ?? ""}`;
-    const cached = replayDataMemoryCache.get(cacheKey);
-    if (cached) {
-      setData(cached);
+    const cacheKey = replayScopeCacheKey(editionId, distanceSlug, category, ids);
+    const cached = getCachedReplayField(cacheKey);
+    if (cached && validateReplayCourse(cached.data.course, storedDistance)) {
+      setData(cached.data);
+      setRunners(cached.compiled);
       setBusy(false);
       setError("");
       return;
@@ -350,38 +480,31 @@ export function ReplayStudioView({
     abort.current = controller;
     setBusy(true);
     setData(null);
+    setRunners([]);
     setError("");
     setProgress(0);
     timeRef.current = 0;
+    lastRankSyncRef.current = 0;
     setTime(0);
+    setRankTime(0);
     setPlaying(false);
     setWall(false);
 
-    void loadReplayField(
-      async after => {
-        const params = new URLSearchParams(scopeKey);
-        params.set("after", String(after));
-        if (ids !== null && ids.trim() !== "") params.set("ids", ids);
-        const res = await fetch(`${mobileEnv.apiUrl}/api/rankings/replay?${params}`, { signal: controller.signal });
-        if (!res.ok) {
-          throw new Error(
-            res.status === 404
-              ? "Reviewed course and checkpoint timing profiles are not yet available for this race edition."
-              : "Replay could not load.",
-          );
-        }
-        return (await res.json()) as ReplayPage;
-      },
-      () => controller.signal.aborted,
-      setProgress,
-    )
+    void loadAndCompileReplayField({
+      editionId,
+      distanceSlug,
+      sex: category,
+      ids,
+      signal: controller.signal,
+      onProgress: setProgress,
+    })
       .then(value => {
         if (!controller.signal.aborted) {
-          if (!validateReplayCourse(value.course, storedDistance)) {
+          if (!validateReplayCourse(value.data.course, storedDistance)) {
             throw new Error("Course alignment needs review.");
           }
-          replayDataMemoryCache.set(cacheKey, value);
-          setData(value);
+          setData(value.data);
+          setRunners(value.compiled);
         }
       })
       .catch(e => {
@@ -394,16 +517,7 @@ export function ReplayStudioView({
       });
 
     return () => controller.abort();
-  }, [isRunningSport, scopeKey, ids, attempt, storedDistance]);
-
-  const runners = useMemo(
-    () =>
-      data?.runners.flatMap(r => {
-        const compiled = compileReplayRunner(r, storedDistance);
-        return compiled ? [compiled] : [];
-      }) ?? [],
-    [data, storedDistance],
-  );
+  }, [isRunningSport, editionId, distanceSlug, category, ids, attempt, storedDistance]);
 
   useEffect(() => {
     if (!runners.length) {
@@ -429,19 +543,29 @@ export function ReplayStudioView({
     [data, runners, time, timeline.origin],
   );
 
-  // Smooth 60fps requestAnimationFrame gliding loop
+  // Decoupled playback loop: smooth ~30-60fps map gliding + 4Hz leaderboard sorting
   useEffect(() => {
     if (!playing || !active || !sceneActive || reduced || timeline.duration <= 0) return;
     let rafId = 0;
     let previous = performance.now();
+    let lastMapEmit = previous;
+    const minMapFrameMs = runners.length > 120 ? 33 : 16;
 
     const tick = (now: number) => {
       const dt = Math.min(now - previous, 100);
       previous = now;
       const nextTime = Math.min(timeline.duration, timeRef.current + dt * speed);
       timeRef.current = nextTime;
-      setTime(nextTime);
-      if (nextTime >= timeline.duration) {
+      const finished = nextTime >= timeline.duration;
+      if (finished || now - lastMapEmit >= minMapFrameMs) {
+        lastMapEmit = now;
+        setTime(nextTime);
+      }
+      if (finished || now - lastRankSyncRef.current >= 250) {
+        lastRankSyncRef.current = now;
+        setRankTime(nextTime);
+      }
+      if (finished) {
         setPlaying(false);
         return;
       }
@@ -450,17 +574,17 @@ export function ReplayStudioView({
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [playing, active, sceneActive, reduced, speed, timeline.duration]);
+  }, [playing, active, sceneActive, reduced, speed, timeline.duration, runners.length]);
 
   const runnersWithDistance = useMemo<RunnerWithDistance[]>(() => {
     return runners.map(r => {
       const effectiveTime =
-        time - (timeline.origin !== null && Number.isFinite(r.startMs) ? r.startMs - timeline.origin : 0);
+        rankTime - (timeline.origin !== null && Number.isFinite(r.startMs) ? r.startMs - timeline.origin : 0);
       const distM = replayDistance(r, Math.max(0, effectiveTime)) ?? 0;
       const finished = effectiveTime >= r.splits.finishMs;
       return { runner: r, distM, finished, finishMs: r.splits.finishMs };
     });
-  }, [runners, time, timeline.origin]);
+  }, [runners, rankTime, timeline.origin]);
 
   const pinnedEntries = useMemo(
     () =>
@@ -599,13 +723,384 @@ export function ReplayStudioView({
     return { N, gapsM, peak };
   }, [duelPrimaryEntry?.runner, peerEntry?.runner, timeline.duration]);
 
-  const seekToFraction = (locX: number) => {
+  const seekToFraction = useCallback((locX: number) => {
     const frac = Math.max(0, Math.min(1, locX / Math.max(1, seekWidth)));
     const next = frac * timeline.duration;
     setPlaying(false);
     timeRef.current = next;
+    lastRankSyncRef.current = performance.now();
     setTime(next);
+    setRankTime(next);
+  }, [seekWidth, timeline.duration]);
+
+  const handleToggleWall = (nextWall: boolean) => {
+    if (nextWall && !timeline.wallAvailable) return;
+    if (nextWall === wall) return;
+    setWall(nextWall);
+    timeRef.current = 0;
+    lastRankSyncRef.current = 0;
+    setTime(0);
+    setRankTime(0);
+    setPlaying(false);
   };
+
+  const pinnedStripEl =
+    pinnedEntries.length > 0 ? (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 8, paddingRight: 16 }}
+      >
+        {pinnedEntries.map(entry => {
+          const isCamTarget = entry.runner.id === cameraTargetId;
+          return (
+            <Pressable
+              key={entry.runner.id}
+              onPress={() => {
+                setCameraTargetId(entry.runner.id);
+                if (cameraMode === "field") setCameraMode("follow");
+              }}
+              style={[s.pinnedCard, isCamTarget && s.pinnedCardFocused]}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                <AppText role="nav" numberOfLines={1} style={{ color: "#f7faf8", flex: 1 }}>
+                  {entry.runner.name}
+                </AppText>
+                <Pressable
+                  onPress={ev => {
+                    ev.stopPropagation();
+                    togglePinRunner(entry.runner.id);
+                  }}
+                  hitSlop={6}
+                  style={s.pinnedClose}
+                >
+                  <AppText role="nav" style={{ color: "#bbccd0" }}>×</AppText>
+                </Pressable>
+              </View>
+              <AppText role="nav" style={{ color: "#bbccd0", fontVariant: ["tabular-nums"] }}>
+                {entry.finished ? `Finished · ${raceClock(entry.finishMs)}` : `${(entry.distM / 1000).toFixed(2)} km`}
+                {isCamTarget && cameraMode !== "field" ? " · ◎ Camera" : ""}
+              </AppText>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    ) : null;
+
+  const renderScrubberBar = (roundedLight = false) => (
+    <View style={[s.scrubberBar, roundedLight && s.scrubberBarSheet]}>
+      <Pressable
+        disabled={reduced || !runners.length}
+        onPress={() => {
+          if (timeRef.current >= timeline.duration) {
+            timeRef.current = 0;
+            lastRankSyncRef.current = 0;
+            setTime(0);
+            setRankTime(0);
+          }
+          setPlaying(v => !v);
+        }}
+        style={[s.playBtn, (reduced || !runners.length) && { opacity: 0.4 }]}
+        accessibilityLabel={playing ? "Pause replay" : "Play replay"}
+      >
+        <AppText role="nav" style={{ color: "#142b3b" }}>
+          {playing ? "Ⅱ" : "▶"}
+        </AppText>
+      </Pressable>
+
+      <AppText role="caption" style={s.scrubTime}>{raceClock(time)}</AppText>
+
+      <View
+        onLayout={ev => setSeekWidth(Math.max(1, ev.nativeEvent.layout.width))}
+        onStartShouldSetResponder={() => runners.length > 0}
+        onResponderGrant={ev => seekToFraction(ev.nativeEvent.locationX)}
+        onResponderMove={ev => seekToFraction(ev.nativeEvent.locationX)}
+        style={s.scrubTouch}
+      >
+        <View pointerEvents="none" style={s.scrubTrack}>
+          <View
+            style={[
+              s.scrubFill,
+              { width: `${timeline.duration > 0 ? (time / timeline.duration) * 100 : 0}%` },
+            ]}
+          />
+        </View>
+      </View>
+
+      <AppText role="caption" style={s.scrubTime}>{raceClock(timeline.duration)}</AppText>
+
+      <Pressable
+        onPress={() => setSpeed(sp => (sp === 64 ? 128 : sp === 128 ? 256 : sp === 256 ? 512 : 64))}
+        style={s.speedBtn}
+      >
+        <AppText role="nav" style={{ color: "#f7faf8" }}>
+          {speed}×
+        </AppText>
+      </Pressable>
+    </View>
+  );
+
+  const leaderboardBodyEl =
+    data && runners.length > 0 ? (
+      <View style={!mapExpanded ? s.panelCard : undefined}>
+        <View style={[s.panelTop, mapExpanded && s.panelTopSheet]}>
+          <FocusSegments
+            compact
+            label="Replay leaderboard mode"
+            value={replayMode}
+            options={[
+              { value: "field", label: "Live order" },
+              { value: "finish", label: "Finish order" },
+              { value: "duel", label: "Head-to-head" },
+            ]}
+            onChange={nextMode => {
+              if (nextMode === "duel") {
+                if (duelPrimaryId === null && pinnedIds.length >= 1) setDuelPrimaryId(pinnedIds[0]);
+                if (peerId === null && pinnedIds.length >= 2) setPeerId(pinnedIds[1]);
+              } else {
+                setPage(0);
+              }
+              setReplayMode(nextMode);
+            }}
+          />
+
+          {replayMode !== "duel" ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <View style={{ flex: 1 }}>
+                <SearchField
+                  accessibilityLabel="Find runner or bib in replay"
+                  placeholder="Find runner or bib…"
+                  value={runnerSearch}
+                  onChangeText={t => {
+                    setRunnerSearch(t);
+                    setPage(0);
+                  }}
+                />
+              </View>
+              <Pressable
+                onPress={toggleSavedResultsPinned}
+                style={[s.subtleChip, allSavedPinned && s.subtleChipActive]}
+              >
+                <AppText role="nav" style={{ color: allSavedPinned ? "#ffffff" : c.muted }}>
+                  {allSavedPinned ? "★ Saved pinned" : "☆ Saved results"}
+                </AppText>
+              </Pressable>
+            </View>
+          ) : null}
+        </View>
+
+        {replayMode !== "duel" ? (
+          <View>
+            {pageSlice.map((entry, idx) => {
+              const rank = safePage * pageSize + idx + 1;
+              const isPinned = pinnedIds.includes(entry.runner.id);
+              const isExpanded = expandedRunnerId === entry.runner.id;
+              const gapM = Math.max(0, leaderDistM - entry.distM);
+              const gapLabel =
+                rankTime > 0
+                  ? entry.finished
+                    ? entry.finishMs === fastestFinishMs
+                      ? "Leader"
+                      : `+${raceClock(entry.finishMs - fastestFinishMs)}`
+                    : gapM < 5
+                      ? "Leader"
+                      : `−${Math.round(gapM).toLocaleString()} m`
+                  : "";
+              return (
+                <View
+                  key={entry.runner.id}
+                  style={[
+                    s.boardRow,
+                    idx < pageSlice.length - 1 && !isExpanded && s.rowDivider,
+                    isPinned && s.rowGoldAccent,
+                  ]}
+                >
+                  <Pressable
+                    onPress={() => setExpandedRunnerId(curr => (curr === entry.runner.id ? null : entry.runner.id))}
+                    style={s.rowMain}
+                  >
+                    <AppText role="caption" secondary style={[s.placeCol, s.tabular]}>
+                      {replayMode === "field" && rankTime === 0 ? "—" : `#${rank}`}
+                    </AppText>
+                    <AppText role="label" numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>
+                      {entry.runner.name}
+                    </AppText>
+                    <AppText role="caption" secondary style={s.tabular}>
+                      {entry.finished ? raceClock(entry.finishMs) : `${(entry.distM / 1000).toFixed(1)}k`}
+                    </AppText>
+                    <Pressable
+                      onPress={ev => {
+                        ev.stopPropagation();
+                        togglePinRunner(entry.runner.id);
+                      }}
+                      style={[s.miniBtn, isPinned && s.miniBtnActive]}
+                    >
+                      <AppText role="nav" style={{ color: c.ink }}>
+                        {isPinned ? "✓ Pin" : "Pin"}
+                      </AppText>
+                    </Pressable>
+                    <Pressable
+                      onPress={ev => {
+                        ev.stopPropagation();
+                        if (duelPrimaryId === null) {
+                          setDuelPrimaryId(entry.runner.id);
+                        } else if (duelPrimaryId !== entry.runner.id) {
+                          setPeerId(entry.runner.id);
+                        }
+                        setReplayMode("duel");
+                      }}
+                      style={s.miniBtn}
+                    >
+                      <AppText role="nav" style={{ color: c.ink }}>
+                        Duel
+                      </AppText>
+                    </Pressable>
+                  </Pressable>
+
+                  {isExpanded ? (
+                    <View style={s.runnerDrawer}>
+                      <AppText role="caption" secondary style={s.tabular}>
+                        {entry.finished ? `Finished · ${raceClock(entry.finishMs)}` : `${(entry.distM / 1000).toFixed(2)} km`}
+                        {gapLabel ? ` · ${gapLabel}` : ""}
+                        {entry.runner.bib ? ` · Bib #${entry.runner.bib}` : ""}
+                      </AppText>
+                      <SplitSparklineNative splits={entry.runner.splits} distanceSlug={storedDistance} />
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })}
+
+            <View style={s.paginationRow}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Pressable
+                  disabled={safePage === 0}
+                  onPress={() => setPage(p => Math.max(0, p - 1))}
+                  style={[s.pageBtn, safePage === 0 && { opacity: 0.4 }]}
+                >
+                  <AppText role="nav">‹</AppText>
+                </Pressable>
+                <AppText role="caption" secondary style={s.tabular}>
+                  {safePage + 1} / {totalPages}
+                </AppText>
+                <Pressable
+                  disabled={safePage >= totalPages - 1}
+                  onPress={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                  style={[s.pageBtn, safePage >= totalPages - 1 && { opacity: 0.4 }]}
+                >
+                  <AppText role="nav">›</AppText>
+                </Pressable>
+              </View>
+
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <TextInput
+                  value={jumpText}
+                  onChangeText={setJumpText}
+                  keyboardType="number-pad"
+                  style={s.jumpInput}
+                  accessibilityLabel="Jump to replay page"
+                />
+                <Pressable
+                  onPress={() => {
+                    const raw = Number(jumpText);
+                    if (Number.isFinite(raw)) {
+                      const nextP = Math.max(0, Math.min(totalPages - 1, Math.floor(raw) - 1));
+                      setPage(nextP);
+                      setJumpText(String(nextP + 1));
+                    }
+                  }}
+                  style={s.pageBtn}
+                >
+                  <AppText role="nav">Go</AppText>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View style={s.duelBody}>
+            <DuelAthleteCardNative
+              roleLabel="Focus"
+              roleColor="#C88A00"
+              entry={duelPrimaryEntry}
+              runners={runners}
+              excludeId={peerId}
+              onSelect={id => setDuelPrimaryId(id)}
+              onClear={() => setDuelPrimaryId(null)}
+            />
+
+            <DuelAthleteCardNative
+              roleLabel="Challenger"
+              roleColor="#637482"
+              entry={peerEntry}
+              runners={runners}
+              excludeId={duelPrimaryId}
+              onSelect={id => setPeerId(id)}
+              onClear={() => setPeerId(null)}
+            />
+
+            {duelPrimaryEntry && peerEntry && duelSeries ? (
+              <>
+                <View style={s.duelChartBox}>
+                  {(() => {
+                    const Lx = 18;
+                    const Rx = 322;
+                    const Ty = 22;
+                    const By = 128;
+                    const midY = 75;
+                    const xAt = (i: number) => Lx + ((Rx - Lx) * i) / (duelSeries.N - 1);
+                    const yAt = (v: number) => midY - (v / duelSeries.peak) * (By - Ty) * 0.45;
+                    const pathD = duelSeries.gapsM
+                      .map((v, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)} ${yAt(v).toFixed(1)}`)
+                      .join(" ");
+                    const cursorX =
+                      Lx + ((Rx - Lx) * Math.max(0, Math.min(timeline.duration, time))) / Math.max(1, timeline.duration);
+                    return (
+                      <Svg width="100%" height={154} viewBox="0 0 340 154">
+                        <Path d={`M${Lx} ${midY}H${Rx}`} stroke="#d0dad7" strokeWidth={1.3} strokeDasharray="4 4" />
+                        <Path d={pathD} fill="none" stroke="#FFB800" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+                        <Line x1={cursorX} x2={cursorX} y1={18} y2={132} stroke="#142b3b" strokeDasharray="3 3" strokeWidth={1.6} />
+                        <SvgText x={Lx} y={14} fill="#637482" {...chartTextProps("nav")}>
+                          Estimated advantage · {duelPrimaryEntry.runner.name} vs {peerEntry.runner.name}
+                        </SvgText>
+                        <SvgText x={Lx} y={146} fill="#637482" {...chartTextProps("nav")}>Start</SvgText>
+                        <SvgText x={Rx} y={146} fill="#637482" {...chartTextProps("nav")} textAnchor="end">Finish</SvgText>
+                      </Svg>
+                    );
+                  })()}
+                </View>
+
+                {(() => {
+                  const gapM = duelPrimaryEntry.distM - peerEntry.distM;
+                  const aheadRunner = gapM >= 0 ? duelPrimaryEntry.runner : peerEntry.runner;
+                  return (
+                    <View style={s.duelMomentRow}>
+                      <View style={{ flex: 1 }}>
+                        <AppText role="label" style={s.tabular}>
+                          {Math.abs(Math.round(gapM)).toLocaleString()} m
+                        </AppText>
+                        <AppText role="caption" secondary>
+                          {Math.abs(gapM) < 2 ? "Estimated even right now" : `${aheadRunner.name} ahead (est.)`}
+                        </AppText>
+                      </View>
+                      <Pressable
+                        onPress={() => {
+                          const f = duelPrimaryEntry.runner.id;
+                          setDuelPrimaryId(peerEntry.runner.id);
+                          setPeerId(f);
+                        }}
+                        style={s.miniBtn}
+                      >
+                        <AppText role="nav">⇄ Swap</AppText>
+                      </Pressable>
+                    </View>
+                  );
+                })()}
+              </>
+            ) : null}
+          </View>
+        )}
+      </View>
+    ) : null;
 
   return (
     <ScrollView contentContainerStyle={s.scrollContent} keyboardShouldPersistTaps="handled">
@@ -731,13 +1226,7 @@ export function ReplayStudioView({
               </AppText>
               <View style={s.clockToggle}>
                 <Pressable
-                  onPress={() => {
-                    if (!wall) return;
-                    setWall(false);
-                    timeRef.current = 0;
-                    setTime(0);
-                    setPlaying(false);
-                  }}
+                  onPress={() => handleToggleWall(false)}
                   style={[s.clockToggleBtn, !wall && s.clockToggleBtnOn]}
                 >
                   <AppText role="caption" style={[s.clockToggleText, !wall && s.clockToggleTextOn]}>
@@ -746,13 +1235,7 @@ export function ReplayStudioView({
                 </Pressable>
                 <Pressable
                   disabled={!timeline.wallAvailable}
-                  onPress={() => {
-                    if (wall || !timeline.wallAvailable) return;
-                    setWall(true);
-                    timeRef.current = 0;
-                    setTime(0);
-                    setPlaying(false);
-                  }}
+                  onPress={() => handleToggleWall(true)}
                   style={[s.clockToggleBtn, wall && s.clockToggleBtnOn, !timeline.wallAvailable && { opacity: 0.38 }]}
                 >
                   <AppText role="caption" style={[s.clockToggleText, wall && s.clockToggleTextOn]}>
@@ -762,9 +1245,9 @@ export function ReplayStudioView({
               </View>
             </View>
 
-            {/* Map Stage */}
-            <View style={[s.mapStage, { height: mapExpanded ? 540 : 370 }]}>
-              {data ? (
+            {/* Map Stage (rendered in modal when expanded so only 1 Mapbox view stays active) */}
+            <View style={[s.mapStage, { height: 370 }]}>
+              {data && !mapExpanded ? (
                 <ReplayMap
                   course={data.course}
                   features={features}
@@ -779,7 +1262,7 @@ export function ReplayStudioView({
                   onSelect={togglePinRunner}
                   onError={() => setPlaying(false)}
                 />
-              ) : (
+              ) : !data ? (
                 <View style={s.mapStatus}>
                   {busy ? (
                     <>
@@ -799,7 +1282,7 @@ export function ReplayStudioView({
                     </>
                   )}
                 </View>
-              )}
+              ) : null}
 
               {/* Floating Top-Left Clock + Athlete Readout */}
               {data ? (
@@ -818,7 +1301,7 @@ export function ReplayStudioView({
                 </View>
               ) : null}
 
-              {/* Floating Top-Right Camera & Expand Controls */}
+              {/* Floating Top-Right Camera & Full-Screen Expand Controls */}
               {data ? (
                 <View style={s.mapActions}>
                   <Pressable
@@ -830,360 +1313,62 @@ export function ReplayStudioView({
                     </AppText>
                   </Pressable>
                   <Pressable
-                    onPress={() => setMapExpanded(v => !v)}
-                    style={[s.mapActionBtn, mapExpanded && s.mapActionBtnActive]}
+                    onPress={() => setMapExpanded(true)}
+                    style={s.mapActionBtn}
+                    accessibilityLabel="Expand map to full screen"
                   >
-                    <AppText role="caption" style={[s.mapActionText, mapExpanded && s.mapActionTextActive]}>
-                      {mapExpanded ? "⤡ Compact" : "⤢ Expand"}
+                    <AppText role="caption" style={s.mapActionText}>
+                      ⤢ Expand
                     </AppText>
                   </Pressable>
                 </View>
               ) : null}
 
               {/* Horizontal Pinned Athlete Overlay Cards */}
-              {pinnedEntries.length > 0 ? (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={s.pinnedStrip}
-                  contentContainerStyle={{ gap: 8, paddingRight: 16 }}
-                >
-                  {pinnedEntries.map(entry => {
-                    const isCamTarget = entry.runner.id === cameraTargetId;
-                    return (
-                      <Pressable
-                        key={entry.runner.id}
-                        onPress={() => {
-                          setCameraTargetId(entry.runner.id);
-                          if (cameraMode === "field") setCameraMode("follow");
-                        }}
-                        style={[s.pinnedCard, isCamTarget && s.pinnedCardFocused]}
-                      >
-                        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
-                          <AppText role="nav" numberOfLines={1} style={{ color: "#f7faf8", flex: 1 }}>
-                            {entry.runner.name}
-                          </AppText>
-                          <Pressable
-                            onPress={ev => {
-                              ev.stopPropagation();
-                              togglePinRunner(entry.runner.id);
-                            }}
-                            hitSlop={6}
-                            style={s.pinnedClose}
-                          >
-                            <AppText role="nav" style={{ color: "#bbccd0" }}>×</AppText>
-                          </Pressable>
-                        </View>
-                        <AppText role="nav" style={{ color: "#bbccd0", fontVariant: ["tabular-nums"] }}>
-                          {entry.finished ? `Finished · ${raceClock(entry.finishMs)}` : `${(entry.distM / 1000).toFixed(2)} km`}
-                          {isCamTarget && cameraMode !== "field" ? " · ◎ Camera" : ""}
-                        </AppText>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              ) : null}
+              {pinnedStripEl ? <View style={s.pinnedStrip}>{pinnedStripEl}</View> : null}
             </View>
 
-            {/* Thin Single-Line Playback Scrubber Bar */}
-            <View style={s.scrubberBar}>
-              <Pressable
-                disabled={reduced || !runners.length}
-                onPress={() => {
-                  if (timeRef.current >= timeline.duration) {
-                    timeRef.current = 0;
-                    setTime(0);
-                  }
-                  setPlaying(v => !v);
-                }}
-                style={[s.playBtn, (reduced || !runners.length) && { opacity: 0.4 }]}
-                accessibilityLabel={playing ? "Pause replay" : "Play replay"}
-              >
-                <AppText role="nav" style={{ color: "#142b3b" }}>
-                  {playing ? "Ⅱ" : "▶"}
-                </AppText>
-              </Pressable>
-
-              <AppText role="caption" style={s.scrubTime}>{raceClock(time)}</AppText>
-
-              <View
-                onLayout={ev => setSeekWidth(Math.max(1, ev.nativeEvent.layout.width))}
-                onStartShouldSetResponder={() => runners.length > 0}
-                onResponderGrant={ev => seekToFraction(ev.nativeEvent.locationX)}
-                onResponderMove={ev => seekToFraction(ev.nativeEvent.locationX)}
-                style={s.scrubTouch}
-              >
-                <View pointerEvents="none" style={s.scrubTrack}>
-                  <View
-                    style={[
-                      s.scrubFill,
-                      { width: `${timeline.duration > 0 ? (time / timeline.duration) * 100 : 0}%` },
-                    ]}
-                  />
-                </View>
-              </View>
-
-              <AppText role="caption" style={s.scrubTime}>{raceClock(timeline.duration)}</AppText>
-
-              <Pressable
-                onPress={() => setSpeed(sp => (sp === 64 ? 128 : sp === 128 ? 256 : sp === 256 ? 512 : 64))}
-                style={s.speedBtn}
-              >
-                <AppText role="nav" style={{ color: "#f7faf8" }}>
-                  {speed}×
-                </AppText>
-              </Pressable>
-            </View>
+            {renderScrubberBar(false)}
           </View>
 
-          {/* Leaderboard & Head-to-Head Panel */}
-          {data && runners.length > 0 ? (
-            <View style={s.panelCard}>
-              <View style={s.panelTop}>
-                <FocusSegments
-                  compact
-                  label="Replay leaderboard mode"
-                  value={replayMode}
-                  options={[
-                    { value: "field", label: "Live order" },
-                    { value: "finish", label: "Finish order" },
-                    { value: "duel", label: "Head-to-head" },
-                  ]}
-                  onChange={nextMode => {
-                    if (nextMode === "duel") {
-                      if (duelPrimaryId === null && pinnedIds.length >= 1) setDuelPrimaryId(pinnedIds[0]);
-                      if (peerId === null && pinnedIds.length >= 2) setPeerId(pinnedIds[1]);
-                    } else {
-                      setPage(0);
-                    }
-                    setReplayMode(nextMode);
-                  }}
-                />
+          {!mapExpanded ? leaderboardBodyEl : null}
 
-                {replayMode !== "duel" ? (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <View style={{ flex: 1 }}>
-                      <SearchField
-                        accessibilityLabel="Find runner or bib in replay"
-                        placeholder="Find runner or bib…"
-                        value={runnerSearch}
-                        onChangeText={t => {
-                          setRunnerSearch(t);
-                          setPage(0);
-                        }}
-                      />
-                    </View>
-                    <Pressable
-                      onPress={toggleSavedResultsPinned}
-                      style={[s.subtleChip, allSavedPinned && s.subtleChipActive]}
-                    >
-                      <AppText role="nav" style={{ color: allSavedPinned ? "#ffffff" : c.muted }}>
-                        {allSavedPinned ? "★ Saved pinned" : "☆ Saved results"}
-                      </AppText>
-                    </Pressable>
-                  </View>
+          {/* Full-Screen Modal reusing CompeteSheet + Floating Overlays */}
+          <Modal
+            visible={mapExpanded && data !== null}
+            animationType={reduced ? "none" : "fade"}
+            presentationStyle="fullScreen"
+            onRequestClose={() => setMapExpanded(false)}
+          >
+            <CompetitionSheetHeight>
+              <SafeAreaProvider>
+                <StatusBar style={themeMode === "dark" ? "light" : "dark"} />
+                {data ? (
+                  <FullScreenReplayStage
+                    data={data}
+                    features={features}
+                    pinnedIds={pinnedIds}
+                    cameraTargetId={cameraTargetId}
+                    cameraTargetEntry={cameraTargetEntry}
+                    cameraMode={cameraMode}
+                    timelineOrigin={timeline.origin}
+                    time={time}
+                    runnersCount={runners.length}
+                    wall={wall}
+                    timelineWallAvailable={timeline.wallAvailable}
+                    onSelectRunner={togglePinRunner}
+                    onToggleWall={handleToggleWall}
+                    onCycleCamera={cycleCameraMode}
+                    onClose={() => setMapExpanded(false)}
+                    onError={() => setPlaying(false)}
+                    pinnedStrip={pinnedStripEl}
+                    scrubberBar={renderScrubberBar(true)}
+                    sheetBody={leaderboardBodyEl}
+                  />
                 ) : null}
-              </View>
-
-              {replayMode !== "duel" ? (
-                <View>
-                  {pageSlice.map((entry, idx) => {
-                    const rank = safePage * pageSize + idx + 1;
-                    const isPinned = pinnedIds.includes(entry.runner.id);
-                    const gapM = Math.max(0, leaderDistM - entry.distM);
-                    return (
-                      <View
-                        key={entry.runner.id}
-                        style={[
-                          s.boardRow,
-                          idx < pageSlice.length - 1 && s.rowDivider,
-                          isPinned && s.rowGoldAccent,
-                        ]}
-                      >
-                        <View style={s.rowMain}>
-                          <AppText role="caption" secondary style={[s.placeCol, s.tabular]}>
-                            {replayMode === "field" && time === 0 ? "—" : `#${rank}`}
-                          </AppText>
-                          <Pressable onPress={() => togglePinRunner(entry.runner.id)} style={{ flex: 1, minWidth: 0 }}>
-                            <AppText role="label" numberOfLines={1}>{entry.runner.name}</AppText>
-                            <AppText role="caption" secondary style={s.tabular}>
-                              {entry.finished ? `Finished · ${raceClock(entry.finishMs)}` : `${(entry.distM / 1000).toFixed(2)} km`}
-                              {time > 0
-                                ? ` · ${
-                                    entry.finished
-                                      ? entry.finishMs === fastestFinishMs
-                                        ? "Leader"
-                                        : `+${raceClock(entry.finishMs - fastestFinishMs)}`
-                                      : gapM < 5
-                                        ? "Leader"
-                                        : `−${Math.round(gapM).toLocaleString()} m`
-                                  }`
-                                : ""}
-                            </AppText>
-                          </Pressable>
-                        </View>
-
-                        <View style={s.rowSub}>
-                          <SplitSparklineNative splits={entry.runner.splits} distanceSlug={storedDistance} />
-                          <View style={{ flex: 1 }} />
-                          <Pressable
-                            onPress={() => togglePinRunner(entry.runner.id)}
-                            style={[s.miniBtn, isPinned && s.miniBtnActive]}
-                          >
-                            <AppText role="nav" style={{ color: c.ink }}>
-                              {isPinned ? "✓ Pinned" : "Pin"}
-                            </AppText>
-                          </Pressable>
-                          <Pressable
-                            onPress={() => {
-                              if (duelPrimaryId === null) {
-                                setDuelPrimaryId(entry.runner.id);
-                              } else if (duelPrimaryId !== entry.runner.id) {
-                                setPeerId(entry.runner.id);
-                              }
-                              setReplayMode("duel");
-                            }}
-                            style={s.miniBtn}
-                          >
-                            <AppText role="nav" style={{ color: c.ink }}>
-                              Duel
-                            </AppText>
-                          </Pressable>
-                        </View>
-                      </View>
-                    );
-                  })}
-
-                  <View style={s.paginationRow}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                      <Pressable
-                        disabled={safePage === 0}
-                        onPress={() => setPage(p => Math.max(0, p - 1))}
-                        style={[s.pageBtn, safePage === 0 && { opacity: 0.4 }]}
-                      >
-                        <AppText role="nav">‹</AppText>
-                      </Pressable>
-                      <AppText role="caption" secondary style={s.tabular}>
-                        {safePage + 1} / {totalPages}
-                      </AppText>
-                      <Pressable
-                        disabled={safePage >= totalPages - 1}
-                        onPress={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                        style={[s.pageBtn, safePage >= totalPages - 1 && { opacity: 0.4 }]}
-                      >
-                        <AppText role="nav">›</AppText>
-                      </Pressable>
-                    </View>
-
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                      <TextInput
-                        value={jumpText}
-                        onChangeText={setJumpText}
-                        keyboardType="number-pad"
-                        style={s.jumpInput}
-                        accessibilityLabel="Jump to replay page"
-                      />
-                      <Pressable
-                        onPress={() => {
-                          const raw = Number(jumpText);
-                          if (Number.isFinite(raw)) {
-                            const nextP = Math.max(0, Math.min(totalPages - 1, Math.floor(raw) - 1));
-                            setPage(nextP);
-                            setJumpText(String(nextP + 1));
-                          }
-                        }}
-                        style={s.pageBtn}
-                      >
-                        <AppText role="nav">Go</AppText>
-                      </Pressable>
-                    </View>
-                  </View>
-                </View>
-              ) : (
-                <View style={s.duelBody}>
-                  <DuelAthleteCardNative
-                    roleLabel="Focus"
-                    roleColor="#C88A00"
-                    entry={duelPrimaryEntry}
-                    runners={runners}
-                    excludeId={peerId}
-                    onSelect={id => setDuelPrimaryId(id)}
-                    onClear={() => setDuelPrimaryId(null)}
-                  />
-
-                  <DuelAthleteCardNative
-                    roleLabel="Challenger"
-                    roleColor="#637482"
-                    entry={peerEntry}
-                    runners={runners}
-                    excludeId={duelPrimaryId}
-                    onSelect={id => setPeerId(id)}
-                    onClear={() => setPeerId(null)}
-                  />
-
-                  {duelPrimaryEntry && peerEntry && duelSeries ? (
-                    <>
-                      <View style={s.duelChartBox}>
-                        {(() => {
-                          const Lx = 18;
-                          const Rx = 322;
-                          const Ty = 22;
-                          const By = 128;
-                          const midY = 75;
-                          const xAt = (i: number) => Lx + ((Rx - Lx) * i) / (duelSeries.N - 1);
-                          const yAt = (v: number) => midY - (v / duelSeries.peak) * (By - Ty) * 0.45;
-                          const pathD = duelSeries.gapsM
-                            .map((v, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)} ${yAt(v).toFixed(1)}`)
-                            .join(" ");
-                          const cursorX =
-                            Lx + ((Rx - Lx) * Math.max(0, Math.min(timeline.duration, time))) / Math.max(1, timeline.duration);
-                          return (
-                            <Svg width="100%" height={154} viewBox="0 0 340 154">
-                              <Path d={`M${Lx} ${midY}H${Rx}`} stroke="#d0dad7" strokeWidth={1.3} strokeDasharray="4 4" />
-                              <Path d={pathD} fill="none" stroke="#FFB800" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
-                              <Line x1={cursorX} x2={cursorX} y1={18} y2={132} stroke="#142b3b" strokeDasharray="3 3" strokeWidth={1.6} />
-                              <SvgText x={Lx} y={14} fill="#637482" {...chartTextProps("nav")}>
-                                Estimated advantage · {duelPrimaryEntry.runner.name} vs {peerEntry.runner.name}
-                              </SvgText>
-                              <SvgText x={Lx} y={146} fill="#637482" {...chartTextProps("nav")}>Start</SvgText>
-                              <SvgText x={Rx} y={146} fill="#637482" {...chartTextProps("nav")} textAnchor="end">Finish</SvgText>
-                            </Svg>
-                          );
-                        })()}
-                      </View>
-
-                      {(() => {
-                        const gapM = duelPrimaryEntry.distM - peerEntry.distM;
-                        const aheadRunner = gapM >= 0 ? duelPrimaryEntry.runner : peerEntry.runner;
-                        return (
-                          <View style={s.duelMomentRow}>
-                            <View style={{ flex: 1 }}>
-                              <AppText role="label" style={s.tabular}>
-                                {Math.abs(Math.round(gapM)).toLocaleString()} m
-                              </AppText>
-                              <AppText role="caption" secondary>
-                                {Math.abs(gapM) < 2 ? "Estimated even right now" : `${aheadRunner.name} ahead (est.)`}
-                              </AppText>
-                            </View>
-                            <Pressable
-                              onPress={() => {
-                                const f = duelPrimaryEntry.runner.id;
-                                setDuelPrimaryId(peerEntry.runner.id);
-                                setPeerId(f);
-                              }}
-                              style={s.miniBtn}
-                            >
-                              <AppText role="nav">⇄ Swap</AppText>
-                            </Pressable>
-                          </View>
-                        );
-                      })()}
-                    </>
-                  ) : null}
-                </View>
-              )}
-            </View>
-          ) : null}
+              </SafeAreaProvider>
+            </CompetitionSheetHeight>
+          </Modal>
         </>
       )}
 
@@ -1558,13 +1743,7 @@ const sThemes = createThemedStyles(c => ({
   rowMain: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-  },
-  rowSub: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingLeft: 42,
+    gap: 8,
   },
   placeCol: {
     ...textStyle("nav"),
@@ -1642,6 +1821,51 @@ const sThemes = createThemedStyles(c => ({
   modalRowActive: {
     backgroundColor: "#FFF9E6",
     borderColor: "#FFB800",
+  },
+  fullScreenRoot: {
+    flex: 1,
+    backgroundColor: "#142b3b",
+  },
+  fullTopBar: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 8,
+    zIndex: 20,
+  },
+  fullTopRight: {
+    alignItems: "flex-end",
+    gap: 6,
+  },
+  fullTopBtns: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  fullPinnedAnchor: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    zIndex: 20,
+  },
+  scrubberBarSheet: {
+    borderRadius: 16,
+    borderTopWidth: 0,
+  },
+  panelTopSheet: {
+    backgroundColor: "transparent",
+    paddingHorizontal: 0,
+    paddingTop: 0,
+  },
+  runnerDrawer: {
+    marginTop: 6,
+    paddingTop: 8,
+    paddingLeft: 42,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: "#eef2f1",
+    gap: 6,
   },
   tabular: {
     fontVariant: ["tabular-nums"],

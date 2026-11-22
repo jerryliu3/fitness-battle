@@ -3,17 +3,27 @@ import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import type { RaceCoverage } from "@fitness-battle/shared";
-import { useAuth } from "../lib/auth";
-import { mobileEnv } from "../lib/env";
-import { useRaceFavorites } from "../lib/race-favorites";
+import {
+  getCachedCoursePreviews,
+  getCachedCoverage,
+  loadAndCompileReplayField,
+  loadCoursePreviewsCached,
+  loadCoverageCached,
+} from "../lib/observatory-replay-cache";
 import { createThemedStyles, useThemeColors, useThemedStyles } from "../theme";
-import { FocusButton, FocusSheet } from "../ui/focus";
+import { FocusButton, FocusSegments, FocusSheet } from "../ui/focus";
 import { AppText } from "../ui/section";
+import { MyResultsTab } from "./my-results-tab";
 import { ObservatoryTab } from "./observatory-tab";
 import { ReplayStudioView } from "./replay-studio-view";
 
-let coverageMemoryCache: RaceCoverage[] | null = null;
-let coursePreviewsMemoryCache: Record<string, [number, number][]> = {};
+type ShellTab = "observatory" | "replay" | "my_results";
+
+const SHELL_TABS: readonly { value: ShellTab; label: string }[] = [
+  { value: "observatory", label: "Observatory" },
+  { value: "replay", label: "Replay Studio" },
+  { value: "my_results", label: "My Results" },
+];
 
 export function ObservatoryReplayShell({
   initialTab = "observatory",
@@ -33,11 +43,10 @@ export function ObservatoryReplayShell({
   const c = useThemeColors();
   const s = useThemedStyles(sThemes);
   const router = useRouter();
-  const { user } = useAuth();
-  const saved = useRaceFavorites();
 
-  const [activeTab, setActiveTab] = useState<"observatory" | "replay">(initialTab);
+  const [activeTab, setActiveTab] = useState<ShellTab>(initialTab);
   const [replayMounted, setReplayMounted] = useState<boolean>(initialTab === "replay");
+  const [myResultsMounted, setMyResultsMounted] = useState<boolean>(false);
   const [replayScope, setReplayScope] = useState<{
     edition: string;
     distance: string;
@@ -50,103 +59,67 @@ export function ObservatoryReplayShell({
     ids: initialIds || "",
   });
 
-  const [coverage, setCoverage] = useState<RaceCoverage[] | null>(coverageMemoryCache);
-  const [coursePreviews, setCoursePreviews] = useState<Record<string, [number, number][]>>(coursePreviewsMemoryCache);
+  const [coverage, setCoverage] = useState<RaceCoverage[] | null>(() => getCachedCoverage());
+  const [coursePreviews, setCoursePreviews] = useState<Record<string, [number, number][]>>(() =>
+    getCachedCoursePreviews(),
+  );
   const [authPrompt, setAuthPrompt] = useState<{ action: "save" | "pin"; target?: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    if (!coverageMemoryCache) {
-      fetch(`${mobileEnv.apiUrl}/api/rankings/coverage`)
-        .then(r => (r.ok ? (r.json() as Promise<RaceCoverage[]>) : null))
-        .then(list => {
-          if (!cancelled && Array.isArray(list)) {
-            coverageMemoryCache = list;
-            setCoverage(list);
-          }
-        })
-        .catch(() => {});
-    }
-    if (Object.keys(coursePreviewsMemoryCache).length === 0) {
-      fetch(`${mobileEnv.apiUrl}/api/rankings/courses`)
-        .then(r => (r.ok ? (r.json() as Promise<Record<string, [number, number][]>>) : null))
-        .then(map => {
-          if (!cancelled && map && typeof map === "object") {
-            coursePreviewsMemoryCache = map;
-            setCoursePreviews(map);
-          }
-        })
-        .catch(() => {});
-    }
+    void loadCoverageCached().then(list => {
+      if (!cancelled && list) setCoverage(list);
+    });
+    void loadCoursePreviewsCached().then(map => {
+      if (!cancelled && map) setCoursePreviews(map);
+    });
+    // Idle-warm the default Replay field so switching tabs feels instantaneous
+    const timer = setTimeout(() => {
+      void loadAndCompileReplayField({
+        editionId: Number(initialEdition || 6),
+        distanceSlug: initialDistance || "marathon",
+        sex: initialSex || "all",
+        ids: initialIds || null,
+      }).catch(() => {});
+    }, 150);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
-  }, []);
-
-  const isSignedIn = user?.mode === "supabase";
-  const savedCount = isSignedIn && saved.ready ? saved.ids.length : 0;
+  }, [initialDistance, initialEdition, initialIds, initialSex]);
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: c.paper }]} edges={["top", "bottom"]}>
-      {/* Connected Masthead with Back, Observatory | Replay Studio Switcher & Saved Pill */}
+      {/* Progress-style Underline Tabs Masthead */}
       <View style={s.mast}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          onPress={() => (router.canGoBack() ? router.back() : router.replace("/arena"))}
-          style={s.backBtn}
-        >
-          <AppText role="body">←</AppText>
-        </Pressable>
-
-        <View style={s.navTrack} accessibilityRole="tablist">
+        <View style={s.headerTop}>
           <Pressable
-            accessibilityRole="tab"
-            accessibilityState={{ selected: activeTab === "observatory" }}
-            onPress={() => setActiveTab("observatory")}
-            style={[s.navTab, activeTab === "observatory" && s.navTabActive]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            onPress={() => (router.canGoBack() ? router.back() : router.replace("/arena"))}
+            style={s.backBtn}
           >
-            <AppText
-              role="label"
-              style={[s.navTabText, activeTab === "observatory" && s.navTabTextActive]}
-            >
-              Observatory
-            </AppText>
+            <AppText role="body">←</AppText>
           </Pressable>
-          <Pressable
-            accessibilityRole="tab"
-            accessibilityState={{ selected: activeTab === "replay" }}
-            onPress={() => {
-              setReplayMounted(true);
-              setActiveTab("replay");
-            }}
-            style={[s.navTab, activeTab === "replay" && s.navTabActive]}
-          >
-            <AppText
-              role="label"
-              style={[s.navTabText, activeTab === "replay" && s.navTabTextActive]}
-            >
-              ▶ Replay Studio
-            </AppText>
-          </Pressable>
+          <AppText role="heading" style={{ flex: 1 }}>
+            Rankings & Replay
+          </AppText>
         </View>
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Saved race results"
-          onPress={() => {
-            if (isSignedIn) router.push("/saved-race-results");
-            else setAuthPrompt({ action: "save", target: "your saved results list" });
+        <FocusSegments
+          variant="tabs"
+          label="Observatory, Replay Studio, and My Results"
+          value={activeTab}
+          options={SHELL_TABS}
+          onChange={next => {
+            if (next === "replay") setReplayMounted(true);
+            if (next === "my_results") setMyResultsMounted(true);
+            setActiveTab(next);
           }}
-          style={s.savedPill}
-        >
-          <AppText role="field" style={{ color: c.ink }}>
-            {savedCount > 0 ? `★ ${savedCount}` : "☆ Saved"}
-          </AppText>
-        </Pressable>
+        />
       </View>
 
-      {/* Keep both tabs mounted in memory once visited for instant switching */}
+      {/* Keep visited tabs mounted in memory for zero-lag switching */}
       <View style={{ flex: 1 }}>
         <View style={{ flex: 1, display: activeTab === "observatory" ? "flex" : "none" }}>
           <ObservatoryTab
@@ -184,6 +157,15 @@ export function ObservatoryReplayShell({
             />
           </View>
         ) : null}
+
+        {myResultsMounted ? (
+          <View style={{ flex: 1, display: activeTab === "my_results" ? "flex" : "none" }}>
+            <MyResultsTab
+              onExploreDistance={() => setActiveTab("observatory")}
+              onCreateAccount={() => router.push("/welcome")}
+            />
+          </View>
+        ) : null}
       </View>
 
       {/* Signed-Out Account Creation Popup Sheet */}
@@ -205,11 +187,7 @@ export function ObservatoryReplayShell({
                 router.push("/welcome");
               }}
             />
-            <FocusButton
-              label="Cancel"
-              secondary
-              onPress={() => setAuthPrompt(null)}
-            />
+            <FocusButton label="Cancel" secondary onPress={() => setAuthPrompt(null)} />
           </View>
         </View>
       </FocusSheet>
@@ -222,59 +200,21 @@ const sThemes = createThemedStyles(c => ({
     flex: 1,
   },
   mast: {
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 14,
+    paddingTop: 6,
+    gap: 2,
+  },
+  headerTop: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: "#ffffff",
-    borderBottomWidth: 1,
-    borderColor: c.line,
+    gap: 10,
   },
   backBtn: {
     width: 34,
     height: 34,
     borderRadius: 999,
     backgroundColor: c.paper,
-    borderWidth: 1,
-    borderColor: c.line,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  navTrack: {
-    flex: 1,
-    flexDirection: "row",
-    borderRadius: 999,
-    backgroundColor: "#e9eff2",
-    padding: 3,
-    gap: 3,
-  },
-  navTab: {
-    flex: 1,
-    height: 32,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  navTabActive: {
-    backgroundColor: "#ffffff",
-    shadowColor: "#142b3b",
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-  },
-  navTabText: {
-    color: c.muted,
-  },
-  navTabTextActive: {
-    color: c.ink,
-  },
-  savedPill: {
-    height: 34,
-    paddingHorizontal: 11,
-    borderRadius: 999,
-    backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: c.line,
     alignItems: "center",
