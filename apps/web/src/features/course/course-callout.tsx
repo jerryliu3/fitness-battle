@@ -104,6 +104,7 @@ export function CourseCallout({
         <g transform={`translate(${placement.originX} ${placement.originY})`}>
           {profileNodes ? (
             <AthleteNode
+              mapOverlay
               lane={lane}
               x={placement.left ? -140 : 12}
               y={placement.y}

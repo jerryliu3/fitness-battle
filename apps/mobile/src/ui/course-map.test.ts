@@ -397,3 +397,37 @@ it("anchors the queued row across the course and scales it from a 20 m start lin
   expect(coordinates()).toEqual(initial);
   expect(marker().props.style.transform[0].scale).toBeLessThan(0.5);
 });
+
+it("keeps the shared-lane athlete bubble visible when dismissing its card and restores on tap", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
+  const onSelect = vi.fn();
+  const props = {
+    course,
+    lanes: [{ id: "alice", name: "Alice", initials: "AL", you: true, value: 1 }],
+    unit: "km",
+    selectedId: "alice",
+    focusRequest: 0,
+    onSelect,
+  };
+  await act(async () => {
+    renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "Camera" ? calls : null });
+  });
+  await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
+
+  const closeCard = renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Close Alice card")!;
+  expect(closeCard).toBeDefined();
+  await act(async () => closeCard.props.onPress());
+
+  // Bubble stays rendered while card is collapsed.
+  const nodes = renderer.root.findAllByType("AthleteNode" as never);
+  expect(nodes).toHaveLength(1);
+  expect(nodes[0]!.props.expanded).toBe(false);
+  expect(nodes[0]!.props.selected).toBe(false);
+
+  // Tapping the bubble restores the card even without a focusRequest increment.
+  const focusBubble = renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel?.startsWith("Focus Alice"))!;
+  await act(async () => focusBubble.props.onPress());
+  expect(onSelect).toHaveBeenCalledWith("alice");
+  expect(renderer.root.findByType("AthleteNode" as never).props.expanded).toBe(true);
+});

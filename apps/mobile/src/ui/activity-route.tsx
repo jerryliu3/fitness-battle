@@ -6,6 +6,7 @@ import { Modal, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions
 import { activityRoute, normalizeRouteReplay, sportById, syncReviewMetrics, type SyncReviewMetric, type RouteReplaySample, type Activity } from "@fitness-battle/shared";
 import { AnchoredMenu, useAnchoredMenu } from "./anchored-menu";
 import { AppIcon, type AppIconName } from "./app-icon";
+import { MapHudBackdrop, useMapHud } from "./map-hud";
 import { MaterialBack } from "./material-back";
 import { CompeteSheet } from "./compete-sheet";
 import { RouteStaticPreview } from "./route-static-preview";
@@ -115,6 +116,7 @@ function ActivityReplayMap({ activity, units, onPlaybackState, controllerRef, un
   onUnavailable: () => void;
 }) {
   const s = useThemedStyles(sThemes);
+  const hud = useMapHud();
   const auth = useAuth();
   const insets = useSafeAreaInsets();
   const window = useWindowDimensions();
@@ -218,12 +220,13 @@ function ActivityReplayMap({ activity, units, onPlaybackState, controllerRef, un
             alignItems: "center",
             justifyContent: "center",
             borderRadius: 999,
-            backgroundColor: "rgba(248, 249, 246, 0.84)",
+            backgroundColor: hud.chrome?.backgroundColor ?? "rgba(20, 20, 19, 0.72)",
             borderWidth: 1,
-            borderColor: "rgba(255, 255, 255, 0.72)",
+            borderColor: hud.chrome?.borderColor ?? "rgba(255, 255, 255, 0.2)",
           }, pressed && { opacity: 0.75 }]}
         >
-          <AppIcon name="layers" size={22} color="#142b3b" />
+          <MapHudBackdrop radius={22} />
+          <AppIcon name="layers" size={22} color={hud.ink} />
         </Pressable>
         <AnchoredMenu open={layerMenuOpen} onClose={closeLayerMenu} onDismiss={finishPendingMode} menuLayout={layerMenuLayout} style={{ width: layerMenuLayout?.width ?? 200 }} accessibilityLabel="Close map layers">
           <SettingsToggleRow label="3D view" value={mode === "3d-flyover"} onChange={switchImmersiveMode} />

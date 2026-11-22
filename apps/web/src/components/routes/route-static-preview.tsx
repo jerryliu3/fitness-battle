@@ -163,7 +163,7 @@ export function RouteStaticPreview({
 
       {/* 3. Optional "Play 3D Replay" badge overlay */}
       {showPlayBadge && (
-        <div className="pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-[#142b3b]/85 px-3 py-1.5   text-white shadow-lg backdrop-blur-md transition-all group-hover:bg-[#142b3b] group-hover:scale-105" style={typographyStyle("label")}>
+        <div className="route-preview-badge pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-[#142b3b]/85 px-3 py-1.5 text-white shadow-lg backdrop-blur-md transition-all group-hover:bg-[#142b3b] group-hover:scale-105" style={typographyStyle("label")}>
           {!playLabel && <svg
             className="h-3.5 w-3.5 fill-[var(--app-action-primary)]"
             viewBox="0 0 24 24"
@@ -277,7 +277,7 @@ function FallbackSvgRoute({
         )}
       </svg>
       {hasNoToken && (
-        <div className="absolute top-2.5 left-2.5 rounded bg-black/50 px-2 py-0.5    text-white/80 backdrop-blur-sm" style={typographyStyle("label")}>
+        <div className="route-preview-status absolute top-2.5 left-2.5 rounded bg-black/50 px-2 py-0.5 text-white/80 backdrop-blur-sm" style={typographyStyle("label")}>
           Route outline · map unavailable
         </div>
       )}

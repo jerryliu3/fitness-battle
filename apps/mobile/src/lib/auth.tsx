@@ -244,6 +244,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
       if (error) return { error: error.message };
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        return { error: "User already registered" };
+      }
       if (!data.session) return { needsEmailConfirm: true };
       return {};
     },

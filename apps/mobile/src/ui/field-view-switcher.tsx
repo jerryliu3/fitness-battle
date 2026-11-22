@@ -1,3 +1,4 @@
+import { MapHudBackdrop, useMapHud } from "./map-hud";
 import { competeFieldSwitcherOptions, type CompeteArenaEvent, type FieldViewDimension } from "@fitness-battle/shared";
 import { AppIcon, type AppIconName } from "./app-icon";
 import { useAppTheme } from "../theme";
@@ -25,6 +26,7 @@ export function FieldViewSwitcher({
   onChange(value: FieldView): void;
 }) {
   const { mode, colors: c } = useAppTheme();
+  const hud = useMapHud();
   const options = competeFieldSwitcherOptions(event);
   const active = options.find((option) => option.value === value) ?? options[0]!;
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
@@ -36,8 +38,9 @@ export function FieldViewSwitcher({
     width: 44, height: 44, alignItems: "center", justifyContent: "center",
     borderRadius: 999, backgroundColor: value === "graph" ? c.card : "rgba(20, 20, 19, 0.72)",
     borderWidth: 1, borderColor: value === "graph" ? c.line : "rgba(255, 255, 255, 0.2)",
+    ...(value !== "graph" ? hud.chrome : undefined),
   } as const;
-  const icon = <AppIcon name={VIEW_ICONS[value]} size={22} color={value === "graph" ? c.ink : "#ffffff"} />;
+  const icon = <AppIcon name={VIEW_ICONS[value]} size={22} color={value === "graph" ? c.ink : hud.ink} />;
   const choose = (next: FieldView) => {
     void playCue("selection");
     onChange(next);
@@ -45,6 +48,7 @@ export function FieldViewSwitcher({
 
   if (SystemChoice) {
     return <View style={trigger}>
+      {value !== "graph" && <MapHudBackdrop radius={22} />}
       <View pointerEvents="none" accessibilityElementsHidden>{icon}</View>
       <SystemChoice
         dark={mode === "dark"}
@@ -73,6 +77,7 @@ export function FieldViewSwitcher({
         onPress={toggle}
         style={({ pressed }) => [trigger, pressed && { opacity: 0.75 }]}
       >
+        {value !== "graph" && <MapHudBackdrop radius={22} />}
         {icon}
       </Pressable>
       <AnchoredMenu

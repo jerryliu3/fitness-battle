@@ -47,14 +47,19 @@ const c=useThemeColors();
   const availableHeight = windowDimensions.height - insets.top - insets.bottom;
   const mapHeight = Math.round(Math.max(72, Math.min(160, availableHeight * .18)));
   const preferredCoreSize = Math.round(Math.max(132, Math.min(216, availableHeight * .26, windowDimensions.width * .56)));
-  const [bodyHeight, setBodyHeight] = useState<number | null>(null);
-  const [reviewHeight, setReviewHeight] = useState<number | null>(null);
-  const energySpace = bodyHeight === null || reviewHeight === null
-    ? Infinity
-    : bodyHeight - reviewHeight - 48;
   const textScale = windowDimensions.fontScale;
   const footerHeight = Math.max(66, Math.ceil(SHELL_TYPOGRAPHY.label.lineHeight * textScale * 2 + 12));
   const summaryHeight = 14 + Math.ceil((SHELL_TYPOGRAPHY.label.lineHeight + SHELL_TYPOGRAPHY.caption.lineHeight) * textScale);
+  const estimatedBodyHeight = Math.max(0, availableHeight - footerHeight - 12);
+  const metricCellHeight = Math.ceil((SHELL_TYPOGRAPHY.caption.lineHeight + SHELL_TYPOGRAPHY.label.lineHeight) * textScale) + 19;
+  const estimatedReviewHeight =
+    44 + 12
+    + Math.ceil(SHELL_TYPOGRAPHY.label.lineHeight * textScale) + 12
+    + mapHeight + 24 + 44 + 8 + metricCellHeight * 2 + 10 + 2
+    + (receipt.activities.length > 1 ? 26 : 0);
+  const [bodyHeight, setBodyHeight] = useState<number | null>(null);
+  const [reviewHeight, setReviewHeight] = useState<number | null>(null);
+  const energySpace = (bodyHeight ?? estimatedBodyHeight) - (reviewHeight ?? estimatedReviewHeight) - 48;
   const sideMetricWidth = Math.ceil(76 * textScale);
   const sideCoreWidth = windowDimensions.width - insets.left - insets.right - 32 - 16 - sideMetricWidth * 2;
   const sideTotals = energySpace < preferredCoreSize + summaryHeight && sideCoreWidth >= 132;
@@ -62,7 +67,9 @@ const c=useThemeColors();
     preferredCoreSize,
     sideTotals ? Math.min(energySpace, sideCoreWidth) : energySpace - summaryHeight,
   )));
+  const viewportWidth = Math.max(320, (windowDimensions.width || 375) - insets.left - insets.right);
   const cardWidth = Math.max(260, Math.min(360, Math.round((windowDimensions.width || 375) - 48)));
+  const carouselSidePadding = Math.max(16, Math.round((viewportWidth - cardWidth) / 2));
   const cardGap = 12;
   const cardScroll = useRef<ScrollViewInstance | null>(null);
   const reduced = useReducedMotion();
@@ -193,7 +200,7 @@ const c=useThemeColors();
         snapToInterval={cardWidth + cardGap}
         contentContainerStyle={{
           ...(activities.length === 1 ? { flexGrow: 1, justifyContent: "center" } : {}),
-          paddingHorizontal: 16,
+          paddingHorizontal: carouselSidePadding,
           gap: cardGap,
         }}
         onScroll={(e) => {
@@ -320,7 +327,7 @@ const c=useThemeColors();
       />
     </View>
     </View>
-    <View style={{ flexGrow: 1, justifyContent: "center", paddingTop: 16 }}>
+    <View style={{ flexGrow: 1, justifyContent: "center", alignItems: "center", width: "100%", paddingTop: 16 }}>
       <SyncEnergyCore activities={selected} history={[...state.activities.filter(a => !excluded.includes(a.id)), ...selected]} benchmarkSeconds={benchmarkSeconds} units={state.units} draining={saving} size={coreSize} sideTotals={sideTotals} active={!detail}/>
     </View>
     </ScrollView>

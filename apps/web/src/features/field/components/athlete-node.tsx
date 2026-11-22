@@ -4,6 +4,7 @@ import { initialsFromName, type ArenaSceneLane } from "@fitness-battle/shared";
 import { typographyStyle } from "@/ui/section";
 
 export interface AthleteNodeProps {
+  mapOverlay?: boolean;
   lane: Pick<ArenaSceneLane, "name" | "you" | "avatarUrl"> & {
     initials?: string;
     mystery?: boolean;
@@ -52,6 +53,7 @@ export function AthleteNode({
   nodeRadius = 20,
   nodeScale = 1,
   gold = false,
+  mapOverlay = false,
 }: AthleteNodeProps) {
   const isActive = expanded || selected;
   const r = nodeRadius;
@@ -83,8 +85,8 @@ export function AthleteNode({
             width={cardW}
             height={cardH}
             rx={12}
-            fill={appearanceColors.card}
-            stroke={appearanceColors.line}
+            fill={mapOverlay ? `var(--map-hud-fill, ${appearanceColors.card})` : appearanceColors.card}
+            stroke={mapOverlay ? `var(--map-hud-edge, ${appearanceColors.line})` : appearanceColors.line}
             strokeWidth={1.1}
           />
           {detail ? (
@@ -104,7 +106,7 @@ export function AthleteNode({
               x={x + cardW / 2}
               y={y + 33}
               textAnchor="middle"
-              fill={appearanceColors.fieldTeal}
+              fill={mapOverlay ? `var(--map-hud-muted, ${appearanceColors.fieldTeal})` : appearanceColors.fieldTeal}
             >
               {cleanSubdetail.length > 18 ? `${cleanSubdetail.slice(0, 17)}…` : cleanSubdetail}
             </text>

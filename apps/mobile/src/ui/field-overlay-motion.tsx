@@ -1,3 +1,4 @@
+import { MapHudBackdrop, useMapHud } from "./map-hud";
 import { playCue } from "../lib/haptics";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Animated, Easing, Pressable, View, type ViewProps, type ViewStyle } from "react-native";
@@ -42,6 +43,7 @@ export function SlidingFieldPanel({ label, collapsed, onToggle, collapsible = tr
   onHeightChange?: (height: number) => void;
   children: ReactNode;
 }) {
+  const hud = useMapHud();
   const reduced = useReducedMotion();
   const [width, setWidth] = useState(0);
   const progress = useRef(new Animated.Value(collapsed ? 1 : 0)).current;
@@ -75,8 +77,9 @@ export function SlidingFieldPanel({ label, collapsed, onToggle, collapsible = tr
           onPress={() => { void playCue("selection"); onToggle(); }}
           style={{ position: "absolute", right: 0, top: "50%", marginTop: -32, width: 44, height: 64, justifyContent: "center", zIndex: 1 }}
         >
-          <View pointerEvents="none" style={{ width: 18, height: 52, borderTopRightRadius: 10, borderBottomRightRadius: 10, backgroundColor: "rgba(20,20,19,.78)", alignItems: "center", justifyContent: "center" }}>
-            <View style={{ width: 3, height: 22, borderRadius: 2, backgroundColor: "rgba(255,255,255,.7)" }} />
+          <View pointerEvents="none" style={{ width: 18, height: 52, borderTopRightRadius: 10, borderBottomRightRadius: 10, backgroundColor: "rgba(20,20,19,.78)", ...hud.chrome, alignItems: "center", justifyContent: "center" }}>
+            <MapHudBackdrop radius={10} />
+            <View style={{ width: 3, height: 22, borderRadius: 2, backgroundColor: hud.light ? hud.muted : "rgba(255,255,255,.7)" }} />
           </View>
         </Pressable>
       ) : null}

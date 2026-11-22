@@ -45,6 +45,7 @@ const light = {
   chartComparison: "#79838d",
   statusSuccess: "#24765c", statusSuccessSoft: "#e9f5ee", statusError: "#b93c3c",
   statusErrorSoft: "#fbeceb", textOnError: "#ffffff", overlay: "#142b3b80", shadow: "#000000",
+  mapHudSurface: "#ffffffbf", mapHudBorder: "#ffffffef", mapHudMuted: "#354a57",
   focusRing: "#626a74", white: "#ffffff",
 };
 
@@ -61,6 +62,7 @@ const dark: SemanticColors = {
   chartComparison: "#acbfcc",
   statusSuccess: "#8ccdab", statusSuccessSoft: "#203d33", statusError: "#f09c98",
   statusErrorSoft: "#462d32", textOnError: "#142b3b", overlay: "#00000099", shadow: "#000000",
+  mapHudSurface: "#141413b8", mapHudBorder: "#ffffff33", mapHudMuted: "#ffffffbf",
   focusRing: "#d7e3ec", white: "#ffffff",
 };
 

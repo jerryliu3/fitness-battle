@@ -1,3 +1,4 @@
+import { MapHudBackdrop, useMapHud } from "./map-hud";
 import { useFocusStyles } from "./focus";
 import { useThemeColors } from "../theme";
 import { useRef, type ReactNode } from "react";
@@ -29,6 +30,7 @@ export function GlassDismissButton({
   onPress: () => void;
 }) {
   const c = useThemeColors();
+  const hud = useMapHud();
   return (
     <Pressable
       accessibilityRole="button"
@@ -44,11 +46,13 @@ export function GlassDismissButton({
         borderWidth: 1,
         borderColor: c.line,
         backgroundColor: c.card,
+        ...hud.chrome,
         alignItems: "center",
         justifyContent: "center",
         opacity: pressed ? 0.65 : 1,
       })}
     >
+      <MapHudBackdrop radius={22} />
       <AppText role="label">×</AppText>
     </Pressable>
   );

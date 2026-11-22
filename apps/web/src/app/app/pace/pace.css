@@ -309,12 +309,12 @@
 .replay-roster { max-height:148px; overflow:auto; }
 .replay-runner-panel .replay-roster label { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:8px; min-height:44px; border-top:1px solid var(--line); color:var(--ink); font-size:14px; }
 .replay-telemetry { display:flex; gap:10px; overflow:auto; padding:2px 0; }
-.replay-telemetry article { flex:1 0 245px; min-width:0; border:1px solid var(--line); border-radius:14px; background:var(--card); padding:12px; }
+.replay-telemetry article { flex:1 0 245px; min-width:0; border:1px solid var(--map-hud-edge,var(--line)); border-radius:14px; background:var(--card); padding:12px; }
 .replay-telemetry article[data-focused] { border-color:var(--ink); }
 .race-explorer .replay-telemetry button { display:flex; align-items:center; gap:8px; min-height:36px; padding:0; border:0; text-align:left; font-weight:700; }
 .replay-telemetry i { display:block; flex:0 0 10px; height:10px; border-radius:50%; border:1px solid var(--ink); }
 .replay-telemetry dl { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:6px 0 0; }
-.replay-telemetry dt { color:var(--muted); font-size:12px; white-space:nowrap; }
+.replay-telemetry dt { color:var(--map-hud-muted,var(--muted)); font-size:12px; white-space:nowrap; }
 .replay-telemetry dd { margin:4px 0 0; font-weight:650; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .race-replay-immersive { position:fixed; inset:0; z-index:100; margin:0; padding:12px max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)); background:var(--paper); grid-template-rows:auto minmax(0,1fr) auto; overflow:auto; }
 .race-replay-immersive .race-replay-map { flex:1 1 auto; height:auto; min-height:180px; }
@@ -333,19 +333,22 @@
 .replay-stage .race-replay-map { height:clamp(430px,70dvh,760px); }
 .replay-map-tools { position:absolute; right:12px; top:70px; display:grid; gap:3px; }
 .race-explorer .replay-map-tools button { display:grid; place-items:center; width:42px; min-height:41px; padding:0; font-weight:700; }
-.replay-map-profile,.replay-transport,.replay-telemetry article,.replay-map-tools button {
-  background:color-mix(in srgb,var(--card) 92%,transparent);
-  backdrop-filter:blur(12px);
+.replay-map-profile,.replay-map-dock .replay-transport,.replay-map-dock .replay-telemetry article,.race-explorer .replay-map-tools button {
+  background:var(--map-hud-fill,color-mix(in srgb,var(--card) 92%,transparent));
+  border-color:var(--map-hud-edge,var(--line));
+  backdrop-filter:var(--map-hud-blur,blur(12px));
 }
-.replay-map-profile { position:absolute; left:12px; top:12px; max-width:calc(100% - 78px); padding:6px 10px 10px; border:1px solid var(--line); border-radius:14px; }
+.replay-map-profile { position:absolute; left:12px; top:12px; max-width:calc(100% - 78px); padding:6px 10px 10px; border:1px solid var(--map-hud-edge,var(--line)); border-radius:14px; }
 .replay-map-profile > div { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .race-explorer .replay-map-profile button { min-width:36px; min-height:36px; padding:0; border:0; background:transparent; font-size:20px; }
-.replay-map-profile > span { font-size:13px; color:var(--muted); }
+.replay-map-profile > span { font-size:13px; color:var(--map-hud-muted,var(--muted)); }
 .replay-map-dock { position:absolute; bottom:10px; left:10px; right:66px; display:grid; gap:6px; pointer-events:none; }
 .replay-map-dock > * { pointer-events:auto; }
-.replay-map-dock .replay-transport { border:1px solid var(--line); border-radius:15px; }
+.replay-map-dock .replay-transport { border:1px solid var(--map-hud-edge,var(--line)); border-radius:15px; }
+.replay-map-dock .replay-transport label { color:var(--map-hud-muted,var(--muted)); }
 .replay-map-dock .replay-telemetry { padding:0; }
 .replay-map-dock .replay-telemetry article { flex:0 0 246px; padding:8px 10px; }
+.replay-map-dock .replay-telemetry article[data-focused] { border-color:var(--ink); }
 .race-replay-immersive { grid-template-rows:auto minmax(0,1fr); }
 .race-replay-immersive .replay-stage .race-replay-map { height:100%; min-height:430px; }
 .race-explorer .replay-map-tools button[aria-pressed="true"] { background:var(--action-primary); color:var(--app-text-on-action); }
@@ -361,9 +364,9 @@
 }
 .replay-header-tools { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
 .race-explorer .replay-header-tools button { display:flex; align-items:center; gap:8px; }
-.replay-runner-popup .mapboxgl-popup-content { background:var(--card); border-radius:12px; padding:0; color:var(--ink); }
-.replay-runner-popup .mapboxgl-popup-tip { border-top-color:var(--card); border-bottom-color:var(--card); }
-.replay-runner-popup .replay-map-profile { position:static; max-width:none; min-width:156px; }
+.replay-runner-popup .mapboxgl-popup-content { background:var(--map-hud-popup-base,var(--card)); border-radius:12px; padding:0; color:var(--ink); }
+.replay-runner-popup .mapboxgl-popup-tip { border-top-color:var(--map-hud-fill,var(--card)); border-bottom-color:var(--map-hud-fill,var(--card)); }
+.replay-runner-popup .replay-map-profile { position:static; max-width:none; min-width:156px; border-color:var(--map-hud-edge,var(--line)); }
 .race-explorer .replay-runner-popup .replay-map-profile button { color:var(--ink); }
 .replay-telemetry-heading { display:flex; align-items:center; justify-content:space-between; gap:4px; }
 .race-explorer .replay-telemetry-heading button:last-child { flex:none; justify-content:center; width:30px; font-size:18px; }

@@ -1,3 +1,4 @@
+import { MapHudBackdrop, useMapHud } from "./map-hud";
 import { APP_ICON_PATHS } from "@fitness-battle/shared";
 import { Pressable } from "react-native";
 import Svg, { Path } from "react-native-svg";
@@ -23,6 +24,7 @@ export function FieldFollowChip({
   athleteName: string;
   onPress(): void;
 }) {
+  const hud = useMapHud();
   const label = following ? "Following selected athlete" : `Follow ${athleteName}`;
   return (
     <Pressable
@@ -34,13 +36,14 @@ export function FieldFollowChip({
         void playCue(following ? "light" : "selection");
         onPress();
       }}
-      style={({ pressed }) => [mapChipStyle, pressed && { opacity: 0.75 }]}
+      style={({ pressed }) => [mapChipStyle, hud.chrome, pressed && { opacity: 0.75 }]}
     >
+      <MapHudBackdrop radius={22} />
       <Svg width={22} height={22} viewBox="0 0 256 256" accessible={false}>
         <Path
           d={following ? APP_ICON_PATHS.navigationArrowFill : APP_ICON_PATHS.navigationArrow}
-          fill={following ? "#ffffff" : "none"}
-          stroke={following ? "none" : "#ffffff"}
+          fill={following ? hud.ink : "none"}
+          stroke={following ? "none" : hud.ink}
           strokeWidth={following ? 0 : 18}
           strokeLinejoin="round"
           fillRule={following ? "nonzero" : "evenodd"}

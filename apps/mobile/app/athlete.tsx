@@ -35,13 +35,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AccountActions } from "../src/features/account-actions";
 import { LegalLinks } from "../src/features/legal-links";
 import { SocialAuthButtons } from "../src/features/social-auth-buttons";
-import { AthleteMetrics } from "../src/features/athlete-metrics";
 import { SettingsRow } from "../src/ui/settings-row";
 import { FitnessHistoryImport } from "../src/features/fitness-history-import";
 import { DataSyncActions } from "../src/features/data-sync-actions";
 import { mobileEnv, publicProfileOrigin } from "../src/lib/env";
 import { useAuth } from "../src/lib/auth";
-import { GUEST_INTRO_DRAFT_KEY, GUEST_OAUTH_SIGNUP_PENDING, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft } from "../src/lib/guest-intro";
+import { GUEST_OAUTH_SIGNUP_PENDING, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft } from "../src/lib/guest-intro";
 import { useCompeteStore } from "../src/lib/compete-store";
 import {
   createAppleHealthDeps,
@@ -69,7 +68,6 @@ function isDeviceProvider(
   return id === "apple_health" || id === "google_health";
 }
 
-type AuthMode = "signin" | "signup";
 type AthletePanel =
   | "profile"
   | "connections"
@@ -105,17 +103,14 @@ const styles=useThemedStyles(stylesThemes);
     provider?: string;
     panel?: AthletePanel;
     edit?: string;
-    auth?: AuthMode;
     from?: string;
     invite?: string;
   }>();
   const [note, setNote] = useState<string | null>(null);
   const [syncBusy, setSyncBusy] = useState(false);
   const [busyProvider, setBusyProvider] = useState<string | null>(null);
-  const [authMode, setAuthMode] = useState<AuthMode>(params.auth === "signup" ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [emailExpanded, setEmailExpanded] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [authNote, setAuthNote] = useState<string | null>(null);
@@ -144,18 +139,6 @@ const styles=useThemedStyles(stylesThemes);
       if (!inlineConnections) router.replace("/onboarding");
     }).catch(() => {});
   }
-
-  useEffect(() => {
-    if (!user && (params.auth === "signup" || params.auth === "signin")) {
-      setAuthMode(params.auth);
-      if (params.auth !== "signup") return;
-      let alive = true;
-      void readGuestIntroDraft().then(guest => {
-        if (alive && guest?.name) setDisplayName(current => current || guest.name);
-      }).catch(() => {});
-      return () => { alive = false; };
-    }
-  }, [params.auth, user?.id]);
 
   useEffect(() => {
     if (params.edit === "1") setSettingsOpen(true);
@@ -238,7 +221,7 @@ const styles=useThemedStyles(stylesThemes);
       localBack
       hidden={!panel && settingsOpen}
       nativeBar={!panel && !fromOnboarding}
-      title={panel ? titles[panel] : fromOnboarding ? (authMode === "signup" ? "Create account" : "Sign in") : "Athlete"}
+      title={panel ? titles[panel] : fromOnboarding ? "Sign in" : "Athlete"}
       onBack={exitAthletePanel}
     />
   );
@@ -246,50 +229,49 @@ const styles=useThemedStyles(stylesThemes);
   async function submitAuth() {
     setAuthBusy(true);
     setAuthNote(null);
+    let marked = false;
     try {
-      if (authMode === "signin") {
-        const result = await signIn(email, password);
-        if (result.error) {
-          setAuthNote(result.error);
-          return;
-        }
+      const signInResult = await signIn(email, password);
+      if (!signInResult.error) {
         setPassword("");
         setAuthNote(null);
         if (params.from === "onboarding") router.replace({ pathname: "/onboarding", params: { invite: params.invite } });
         return;
       }
-      // Mark the intended new account before signup can trigger auth navigation.
-      // Existing sign-ins never import a guest athlete profile by accident.
+      if (offlineMode) {
+        setAuthNote(signInResult.error);
+        return;
+      }
+      // Try creating an account automatically if sign-in failed because no account exists yet.
       const guest = await readGuestIntroDraft().catch(() => null);
       const normalizedEmail = email.trim().toLowerCase();
-      let marked = false;
       if (guest?.introCompleted && guest.name.trim()) {
         try {
-          await AsyncStorage.setItem(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ ...guest, name: displayName.trim() || guest.name }));
           await AsyncStorage.setItem(GUEST_SIGNUP_PENDING_KEY, normalizedEmail);
           marked = true;
         } catch { /* Lack of local storage must not block account creation. */ }
       }
-      const result = await signUp({
+      const signUpResult = await signUp({
         email,
         password,
-        displayName: displayName.trim() || guest?.name.trim() || email.split("@")[0] || "Athlete",
+        displayName: guest?.name.trim() || email.split("@")[0] || "Athlete",
       });
-      if (result.error) {
+      if (signUpResult.error) {
         if (marked) void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
-        setAuthNote(result.error);
+        const alreadyExists = /already\s*(?:registered|exists)/i.test(signUpResult.error);
+        setAuthNote(alreadyExists ? signInResult.error : signUpResult.error);
         return;
       }
-      if (result.needsEmailConfirm) {
+      if (signUpResult.needsEmailConfirm) {
+        setPassword("");
         setAuthNote("Check your email to confirm, then sign in.");
-        setAuthMode("signin");
         return;
       }
       setPassword("");
       setAuthNote(null);
       router.replace({ pathname: guest?.introCompleted ? "/onboarding" : "/welcome", params: { invite: params.invite } });
     } catch (error) {
-      if (authMode === "signup") void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
+      if (marked) void AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
       setAuthNote(error instanceof Error ? error.message : "Could not access your account.");
     } finally {
       setAuthBusy(false);
@@ -301,18 +283,14 @@ const styles=useThemedStyles(stylesThemes);
     setAuthNote(null);
     let marked = false;
     try {
-      const guest = authMode === "signup" ? await readGuestIntroDraft().catch(() => null) : null;
-      if (authMode === "signin" && params.from === "onboarding") {
-        await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
-      } else if (authMode === "signup" && guest?.introCompleted && guest.name.trim()) {
+      const guest = fromOnboarding ? null : await readGuestIntroDraft().catch(() => null);
+      if (guest?.introCompleted && guest.name.trim()) {
         try {
-          await AsyncStorage.setItem(
-            GUEST_INTRO_DRAFT_KEY,
-            JSON.stringify({ ...guest, name: displayName.trim() || guest.name }),
-          );
           await AsyncStorage.setItem(GUEST_SIGNUP_PENDING_KEY, GUEST_OAUTH_SIGNUP_PENDING);
           marked = true;
         } catch { /* Lack of local storage must not block account creation. */ }
+      } else {
+        await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
       }
 
       const result =
@@ -329,12 +307,7 @@ const styles=useThemedStyles(stylesThemes);
         return;
       }
       setAuthNote(null);
-      if (authMode === "signup") {
-        router.replace({
-          pathname: guest?.introCompleted ? "/onboarding" : "/welcome",
-          params: { invite: params.invite },
-        });
-      } else if (params.from === "onboarding") {
+      if (params.from === "onboarding" || guest?.introCompleted) {
         router.replace({ pathname: "/onboarding", params: { invite: params.invite } });
       }
     } catch (error) {
@@ -463,43 +436,11 @@ const styles=useThemedStyles(stylesThemes);
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          {!fromOnboarding && <AthleteMetrics state={state} sections="profile" signedOut={!signedIn} />}
-          <Text style={styles.kicker}>Account</Text>
-
           <Text style={styles.name}>Sign in to Overtaek</Text>
           <Text style={styles.copy}>
-            Create an account or sign in to sync Apple Health, connect trackers,
+            Sign in or create an account to sync Apple Health, connect trackers,
             and join events.
           </Text>
-
-          <View style={styles.authToggle}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                setAuthMode("signin");
-                setAuthNote(null);
-              }}
-              style={[
-                styles.authTab,
-                authMode === "signin" ? styles.authTabOn : null,
-              ]}
-            >
-              <Text style={styles.authTabText}>Sign in</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                setAuthMode("signup");
-                setAuthNote(null);
-              }}
-              style={[
-                styles.authTab,
-                authMode === "signup" ? styles.authTabOn : null,
-              ]}
-            >
-              <Text style={styles.authTabText}>Create account</Text>
-            </Pressable>
-          </View>
 
           {!offlineMode && !emailExpanded ? (
             <SocialAuthButtons
@@ -513,15 +454,6 @@ const styles=useThemedStyles(stylesThemes);
             />
           ) : (
             <>
-              {authMode === "signup" ? (
-                <Input style={textStyle("body")}
-                  value={displayName}
-                  onChangeText={setDisplayName}
-                  accessibilityLabel="Display name"
-                  placeholder="Display name"
-                  autoCapitalize="words"
-                />
-              ) : null}
               <Input style={textStyle("body")}
                 value={email}
                 onChangeText={setEmail}
@@ -535,31 +467,25 @@ const styles=useThemedStyles(stylesThemes);
                 value={password}
                 onChangeText={setPassword}
                 accessibilityLabel="Password"
-                placeholder={
-                  authMode === "signup" ? "Password (6+ characters)" : "Password"
-                }
+                placeholder="Password"
                 secureTextEntry
-                autoComplete={authMode === "signup" ? "new-password" : "password"}
+                autoComplete="password"
               />
               <Button onPress={() => void submitAuth()} isDisabled={authBusy}><AppText role="label">
-                {authBusy
-                  ? "Working…"
-                  : authMode === "signin"
-                    ? "Sign in"
-                    : "Create account"}
+                {authBusy ? "Working…" : "Continue"}
               </AppText></Button>
               {!offlineMode ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Continue with Apple or Google"
+                  accessibilityLabel="Back"
                   disabled={authBusy}
                   onPress={() => {
                     setAuthNote(null);
                     setEmailExpanded(false);
                   }}
-                  style={{ paddingVertical: 8, alignItems: "center" }}
+                  style={{ minHeight: 44, paddingVertical: 8, alignItems: "center", justifyContent: "center" }}
                 >
-                  <Text style={styles.copy}>Continue with Apple or Google</Text>
+                  <Text style={styles.copy}>Back</Text>
                 </Pressable>
               ) : null}
             </>
@@ -1118,24 +1044,6 @@ const stylesThemes = createThemedStyles(themeColors=>{const SHELL_COLORS=themeCo
   copy: {
     ...textStyle("body"),
     color: SHELL_COLORS.muted
-},
-  authToggle: { flexDirection: "row", gap: 8 },
-  authTab: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 12,
-    borderRadius: SHELL_RADIUS.control,
-    borderWidth: 1,
-    borderColor: SHELL_COLORS.line,
-    backgroundColor: SHELL_COLORS.card,
-  },
-  authTabOn: {
-    borderColor: SHELL_COLORS.ink,
-    backgroundColor: SHELL_COLORS.greenSoft,
-  },
-  authTabText: {
-    ...textStyle("label"),
-    color: SHELL_COLORS.ink
 },
 };});
 

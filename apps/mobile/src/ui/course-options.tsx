@@ -1,3 +1,4 @@
+import { MapHudBackdrop, useMapHud } from "./map-hud";
 import { SettingsToggleRow } from "./settings-toggle-row";
 import { AppIcon } from "./app-icon";
 import { useAppTheme } from "../appearance";
@@ -14,9 +15,9 @@ export function LayersMenu({
   closeLabel,
   estimatedHeight,
   minWidth = 220,
-  buttonBackgroundColor = "rgba(20, 20, 19, 0.72)",
-  buttonBorderColor = "rgba(255, 255, 255, 0.2)",
-  iconColor = "#ffffff",
+  buttonBackgroundColor,
+  buttonBorderColor,
+  iconColor,
   children,
 }: {
   label: string;
@@ -28,6 +29,7 @@ export function LayersMenu({
   iconColor?: string;
   children: (ctx: { close: () => void; runAfterDismiss: (action: () => void) => void }) => ReactNode;
 }) {
+  const hud = useMapHud();
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({ minWidth, estimatedHeight });
   const pendingAction = useRef<(() => void) | null>(null);
   const finishPendingAction = () => {
@@ -55,12 +57,13 @@ export function LayersMenu({
           paddingHorizontal: 0,
           justifyContent: "center",
           borderRadius: 999,
-          backgroundColor: buttonBackgroundColor,
+          backgroundColor: buttonBackgroundColor ?? hud.chrome?.backgroundColor ?? "rgba(20, 20, 19, 0.72)",
           borderWidth: 1,
-          borderColor: buttonBorderColor,
+          borderColor: buttonBorderColor ?? hud.chrome?.borderColor ?? "rgba(255, 255, 255, 0.2)",
         }, pressed && { opacity: 0.75 }]}
       >
-        <AppIcon name="layers" size={22} color={iconColor} />
+        {buttonBackgroundColor === undefined && <MapHudBackdrop radius={22} />}
+        <AppIcon name="layers" size={22} color={iconColor ?? hud.ink} />
       </Pressable>
       <AnchoredMenu
         open={open}

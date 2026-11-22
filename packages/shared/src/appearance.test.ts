@@ -67,4 +67,17 @@ it("keeps shared control foregrounds readable in both appearances", () => {
       expect((a!+.05)/(b!+.05)).toBeGreaterThanOrEqual(4.5);
     }
   }
+  // Clear Glass map HUD (#ffffffbf) maintains AA contrast for ink and mapHudMuted over dark or light terrain.
+  const compositeOver = (fgHex: string, bgRgb: [number, number, number]) => {
+    const a = parseInt(fgHex.slice(7, 9) || "ff", 16) / 255;
+    const rgb = [1, 3, 5].map((i, idx) => Math.round(parseInt(fgHex.slice(i, i + 2), 16) * a + bgRgb[idx]! * (1 - a)));
+    return `#${rgb.map(v => v.toString(16).padStart(2, "0")).join("")}`;
+  };
+  for (const backdrop of [[0, 0, 0], [255, 255, 255]] as [number, number, number][]) {
+    const surface = compositeOver(APP_COLORS.light.mapHudSurface, backdrop);
+    for (const fg of [APP_COLORS.light.textPrimary, APP_COLORS.light.mapHudMuted]) {
+      const [a, b] = [luminance(fg), luminance(surface)].sort((a, b) => b - a);
+      expect((a! + 0.05) / (b! + 0.05)).toBeGreaterThanOrEqual(4.5);
+    }
+  }
 });

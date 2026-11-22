@@ -1,5 +1,6 @@
 import { MedalGoldFill } from "../ui/medal-gold-fill";
 import { IconButton } from "../ui/icon-button";
+import { MapHudBackdrop, useMapHud } from "../ui/map-hud";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { MaterialPanel } from "../ui/material-panel";
 import { textStyle } from "../ui/section";
@@ -9,7 +10,8 @@ import type { FieldTimelineState } from "./use-field-timeline";
 
 export function FieldTimeline({ timeline: t, compact = false, floating = false }: { timeline: FieldTimelineState; compact?: boolean; floating?: boolean }) {
   const c = useThemeColors();
-  const foreground = floating ? c.textOnInverse : c.ink;
+  const hud = useMapHud();
+  const foreground = floating ? hud.ink : c.ink;
   const action = (label: string, onPress: () => void, disabled = false, accessibilityLabel = label, fixedWidth = false, primary = false) => (
     <Pressable
       accessibilityRole="button"
@@ -21,7 +23,7 @@ export function FieldTimeline({ timeline: t, compact = false, floating = false }
         minHeight: 44, paddingHorizontal: 10, borderRadius: 999,
         ...(fixedWidth ? { width: 48, paddingHorizontal: 0, flexShrink: 0 } : {}),
         justifyContent: "center", alignItems: "center",
-        backgroundColor: primary ? undefined : floating ? "#ffffff24" : c.soft,
+        backgroundColor: primary ? undefined : floating && !hud.light ? "#ffffff24" : c.soft,
         opacity: disabled ? .4 : pressed ? .78 : 1,
       })}
     >
@@ -29,13 +31,13 @@ export function FieldTimeline({ timeline: t, compact = false, floating = false }
       <Text style={{ ...textStyle("label"), color: primary ? c.textOnAction : foreground, fontVariant: ["tabular-nums"] }}>{label}</Text>
     </Pressable>
   );
-  const material = floating ? (
+  const material = floating && hud.light ? <MapHudBackdrop radius={22} /> : floating ? (
     <View pointerEvents="none" accessible={false} style={StyleSheet.absoluteFill}>
         <MaterialPanel style={StyleSheet.absoluteFill} fallbackColor={c.surfaceInverse} />
         <View style={[StyleSheet.absoluteFill, { backgroundColor: `${c.surfaceInverse}e0`, borderRadius: 22, borderColor: "#ffffff52", borderWidth: 1 }]} />
       </View>
   ) : null;
-  if (compact) return <View onTouchStart={event => event.stopPropagation()} style={floating ? { borderRadius: 22, overflow: "hidden", padding: 8 } : undefined}>
+  if (compact) return <View onTouchStart={event => event.stopPropagation()} style={floating ? { borderRadius: 22, overflow: "hidden", padding: 8, ...hud.chrome } : undefined}>
     {material}
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
       <IconButton icon={t.playing ? "pause" : "play"} label={t.playing ? "Pause replay" : "Play replay"} disabled={!t.ready || !t.count} onPress={t.toggle} primary haptic={false} />
@@ -48,7 +50,7 @@ export function FieldTimeline({ timeline: t, compact = false, floating = false }
       {t.error && action("Retry", t.retry)}
     </View>
   </View>;
-  return <View onTouchStart={event => event.stopPropagation()} style={{ backgroundColor: floating ? "transparent" : c.paper, borderRadius: floating ? 22 : 12, overflow: "hidden", paddingHorizontal: 12, paddingVertical: 4 }}>
+  return <View onTouchStart={event => event.stopPropagation()} style={{ backgroundColor: floating ? "transparent" : c.paper, borderRadius: floating ? 22 : 12, overflow: "hidden", paddingHorizontal: 12, paddingVertical: 4, ...(floating ? hud.chrome : undefined) }}>
     {material}
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
       <Text style={{ ...textStyle("caption"), color: foreground, flex: 1 }}>{t.error || (!t.ready ? "Loading timeline…" : t.label)}</Text>

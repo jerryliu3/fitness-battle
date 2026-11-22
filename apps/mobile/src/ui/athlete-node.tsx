@@ -1,9 +1,11 @@
+import { useMapHud } from "./map-hud";
 import { useThemeColors } from "../theme";
 import { Circle, Defs, ClipPath, Image as SvgImage, G, Path, Rect, Text as SvgText } from "react-native-svg";
 import { initialsFromName, type ArenaSceneLane } from "@fitness-battle/shared";
 import { chartTextProps } from "./section";
 
 export interface AthleteNodeProps {
+  mapOverlay?: boolean;
   lane: Pick<ArenaSceneLane, "name" | "you" | "avatarUrl"> & {
     initials?: string;
     mystery?: boolean;
@@ -61,8 +63,11 @@ export function AthleteNode({
   nodeRadius = 20,
   nodeScale = 1,
   gold = false,
+  mapOverlay = false,
 }: AthleteNodeProps) {
   const c = useThemeColors();
+  const hud = useMapHud();
+  const mapSurface = mapOverlay ? hud.surface : undefined;
   const isActive = expanded || selected;
   const r = nodeRadius;
   const effectiveScale = nodeScale * nodeScaleForState(l.mystery, isActive);
@@ -93,8 +98,8 @@ export function AthleteNode({
             width={cardW}
             height={cardH}
             rx={12}
-            fill={c.card}
-            stroke={c.line}
+            fill={mapSurface?.backgroundColor ?? c.card}
+            stroke={mapSurface?.borderColor ?? c.line}
             strokeWidth={1.1}
           />
           {detail ? (
@@ -114,7 +119,7 @@ export function AthleteNode({
               x={x + cardW / 2}
               y={y + 33}
               textAnchor="middle"
-              fill={c.fieldTeal}
+              fill={mapSurface ? hud.muted : c.fieldTeal}
             >
               {cleanSubdetail.length > 18 ? `${cleanSubdetail.slice(0, 17)}…` : cleanSubdetail}
             </SvgText>
