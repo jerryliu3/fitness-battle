@@ -11,16 +11,8 @@ export type CrewOverviewInput = Omit<CrewWeekRelayInput, "entries"> & {
   units?: UnitSystem;
   now: string;
   replayEntries?: CrewOverviewInput["entries"];
-  /** Account calendar for feed / replay labels (defaults to Eastern). */
+  /** Account calendar for replay labels (defaults to Eastern). */
   displayTimeZone?: string;
-};
-
-export type CrewHighlight = {
-  id: string;
-  icon: "trophy" | "crew";
-  title: string;
-  detail: string;
-  at: string;
 };
 
 export function crewLineup<T extends { user_id: string; display_name: string }>(
@@ -104,53 +96,10 @@ export function crewOverview(input: CrewOverviewInput, progress = 1, events: Cre
   const reading = crewMetricReading(relay.metric, relay.model.total, input.units);
   const targetReading = relay.target == null ? null : crewMetricReading(relay.metric, relay.target, input.units);
   const unit = crewMetricUnit(relay.metric, input.units);
-  const fullTargetReading = full.target == null ? null : crewMetricReading(full.metric, full.target, input.units);
-  const fullUnit = crewMetricUnit(full.metric, input.units);
-  const timeline = crewReplayEvents(input, events.length ? events : input.entries);
-  const entryValue = (e: CrewOverviewInput["entries"][number]) =>
-    full.metric === "sessions"
-      ? Number(e.session_count ?? 1)
-      : full.metric === "moving_sec"
-        ? Number(e.moving_sec || 0)
-        : Number(e.distance_m);
-  const actorName = (userId?: string) => input.members.find((m) => m.user_id === userId)?.display_name.split(" ")[0];
-  const fallbackAt = timeline[timeline.length - 1]?.started_at ?? input.now;
-  let runningTotal = 0;
-  const targetMembers = new Set<string>();
-  const targetEvent = complete
-    ? timeline.find((e) => {
-        if (full.metric === "contributors") {
-          if (Number(e.session_count ?? 1) > 0) targetMembers.add(e.user_id);
-          return targetMembers.size >= (full.target ?? 0);
-        }
-        runningTotal += entryValue(e);
-        return runningTotal >= (full.target ?? 0);
-      })
-    : undefined;
-  const activeMembers = new Set<string>();
-  const fullCrewEvent = fullCrew ? timeline.find((e) => { if (entryValue(e) > 0) activeMembers.add(e.user_id); return activeMembers.size === input.members.length; }) : undefined;
-  const highlightItems: CrewHighlight[] = [
-    complete ? {
-      id: "target-reached",
-      icon: "trophy",
-      title: "Shared target reached",
-      detail: `${fullTargetReading ? `${fullTargetReading} ${fullUnit}` : "Weekly goal"}${actorName(targetEvent?.user_id) ? ` · ${actorName(targetEvent?.user_id)} sealed it` : ""}`,
-      at: targetEvent?.started_at ?? fallbackAt,
-    } : null,
-    fullCrew ? {
-      id: "full-crew",
-      icon: "crew",
-      title: "Every teammate contributed",
-      detail: `${input.members.length} of ${input.members.length} teammates active${actorName(fullCrewEvent?.user_id) ? ` · ${actorName(fullCrewEvent?.user_id)} checked in` : ""}`,
-      at: fullCrewEvent?.started_at ?? fallbackAt,
-    } : null,
-  ].filter((h): h is CrewHighlight => h !== null).sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
   return { relay, entries, volume, contributors, complete, fullCrew, lineup, replayLabel,
     reading,
     targetReading,
     unit,
-    highlights: highlightItems.map((h) => h.title),
-    highlightItems,
   };
 }
 

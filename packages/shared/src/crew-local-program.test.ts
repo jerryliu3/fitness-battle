@@ -20,3 +20,17 @@ it("rejects lost contract updates and overlapping season windows", () => {
   const withSeason = mutateLocalCrewProgram(state, input, { action: "season", crewId: "crew", title: "Season", startsAt: "2026-11-09T05:00:00Z", endsAt: "2026-11-23T05:00:00Z" }, "season");
   expect(() => mutateLocalCrewProgram(withSeason, input, { action: "season", crewId: "crew", title: "Overlap", startsAt: "2026-11-16T05:00:00Z", endsAt: "2026-11-30T05:00:00Z" }, "overlap")).toThrow(/overlap/);
 });
+it("settles participation badges across consecutive weeks without setting a season or contract", () => {
+  const members = [...input.members, { user_id: "ben", display_name: "Ben" }];
+  let state = emptyCrewProgram();
+  for (const day of [10, 17, 24]) {
+    const now = `2026-11-${day}T18:00:00Z`;
+    state = readLocalCrewProgram(state, { ...input, now, members, entries: members.map(member => ({
+      user_id: member.user_id, started_at: now, distance_m: 1000, moving_sec: 600,
+    })) });
+  }
+  const close = { ...input, now: "2026-11-30T05:00:00Z", entries: [] };
+  state = readLocalCrewProgram(state, close);
+  expect(state.passport.badges?.map(badge => badge.code)).toEqual(["first_week", "full_crew", "three_week_streak"]);
+  expect(readLocalCrewProgram(state, close).passport.badges).toEqual(state.passport.badges);
+});

@@ -37,5 +37,14 @@ it("reads only the authorized crew snapshot with no shared cache", async () => {
   rpc.mockResolvedValue({ data: { contract: null, seasons: [], stamps: [] }, error: null });
   const response = await GET(new Request(`https://test/api/crews/passport?crewId=${crewId}`));
   expect(response.headers.get("Cache-Control")).toBe("private, no-store");
-  expect(rpc).toHaveBeenCalledWith("crew_passport", { p_crew_id: crewId });
+  expect(rpc).toHaveBeenCalledWith("crew_passport_collection", { p_crew_id: crewId });
+});
+
+it("retains the contract response when the collection migration is pending", async () => {
+  const legacy = { contract: null, seasons: [], stamps: [] };
+  rpc.mockResolvedValueOnce({ data: null, error: { code: "PGRST202", message: "function missing" } })
+    .mockResolvedValueOnce({ data: legacy, error: null });
+  const response = await GET(new Request(`https://test/api/crews/passport?crewId=${crewId}`));
+  expect(await response.json()).toEqual(legacy);
+  expect(rpc).toHaveBeenLastCalledWith("crew_passport", { p_crew_id: crewId });
 });

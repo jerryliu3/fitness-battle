@@ -9,7 +9,10 @@ export async function GET(request: Request) {
   const crewId = new URL(request.url).searchParams.get("crewId");
   if (!uuid(crewId)) return NextResponse.json({ error: "invalid_crew" }, { status: 400 });
   const db = await createRequestClient(request);
-  const { data, error } = await db.rpc("crew_passport", { p_crew_id: crewId });
+  let { data, error } = await db.rpc("crew_passport_collection", { p_crew_id: crewId });
+  if (error && ["PGRST202", "42883"].includes(error.code)) {
+    ({ data, error } = await db.rpc("crew_passport", { p_crew_id: crewId }));
+  }
   if (error) {
     const missing = ["PGRST202", "42883", "42P01"].includes(error.code);
     return NextResponse.json({ error: missing ? "Crew programs are not available on this server yet." : "Could not load crew programs. Try again." }, { status: error.message.includes("not_a_member") ? 403 : 503 });

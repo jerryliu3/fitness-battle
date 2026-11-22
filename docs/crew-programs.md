@@ -116,3 +116,24 @@ Apply `20261111152749_crew_derby_event_standings.sql` after the program migratio
 before deploying Derby. The SQL regression cases cover parity with normal GPS
 and strength scores, excluded inputs, ties, cohort isolation, membership checks
 and private-reader permissions. They have not been run.
+
+## Crew Passport collection
+
+The Crew overview shows four stamp slots and opens a fullscreen collection. The
+collection replaces the standalone Crew Highlights list. The table shows the
+first earned receipt for each badge with its recorded result.
+
+| Badge | Earn condition |
+| --- | --- |
+| First week together | Two members of the closing roster contribute in the same week. |
+| Full crew | Every member of a closing roster of at least two contributes. An eligible existing Full crew receipt also counts. |
+| Shared finish | A settled Weekly Contract meets its target. A season is optional. |
+| Three-week streak | At least two members contribute in each of three consecutive Eastern weeks. |
+
+The authorized Passport read settles missed weeks from the first observed
+roster through the last closed week. The first partial week starts at the
+first roster observation. Contributions come from the existing accepted-fact
+ledger, scoped to the crew sport, and settled weekly counts are immutable.
+Membership history supports settlement internally. Passport only displays
+achievements. Offline crews settle from the last weekly result observed on the
+device and count consecutive observed weeks for the streak.

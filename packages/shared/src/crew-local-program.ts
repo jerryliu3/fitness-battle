@@ -1,18 +1,50 @@
-import { weeklyPeriodBounds, APP_TIMEZONE } from "./period";
+import { weeklyPeriodBounds, shiftAppDay, APP_TIMEZONE } from "./period";
 import { crewEntryTotals } from "./compete/crew-relay";
-import { crewPassportError, type CrewPassport, type CrewPassportMutation } from "./crew-passport";
+import { crewPassportError, type CrewBadgeReceipt, type CrewPassport, type CrewPassportMutation } from "./crew-passport";
 import type { CrewOverviewInput } from "./crew-overview";
 
 /** Device-local programs stay isolated from authenticated RPCs and global awards. */
-export interface LocalCrewProgram { passport: CrewPassport; memberIds: string[] }
+export interface LocalCrewProgram {
+  passport: CrewPassport;
+  memberIds: string[];
+  badgeWeek?: { endsAt: string; rosterSize: number; contributors: number; priorStreak: number };
+}
 export function emptyCrewProgram(): LocalCrewProgram {
   return { passport: { contract: null, seasons: [], stamps: [] }, memberIds: [] };
 }
 export function readLocalCrewProgram(saved: LocalCrewProgram, input: CrewOverviewInput): LocalCrewProgram {
   const passport = { ...saved.passport, contract: saved.passport.contract ? { ...saved.passport.contract } : null, seasons: [...saved.passport.seasons], stamps: [...saved.passport.stamps] };
+  const badges = [...(passport.badges ?? [])];
+  passport.badges = badges;
+  function earn(badge: CrewBadgeReceipt) {
+    if (!badges.some(item => item.code === badge.code)) badges.push(badge);
+  }
+  const now = new Date(input.now);
+  const week = weeklyPeriodBounds(now);
+  const previous = saved.badgeWeek;
+  let priorStreak = previous?.priorStreak ?? 0;
+  if (previous && Date.parse(previous.endsAt) <= now.getTime()) {
+    const result = { earned_at: previous.endsAt, contributors: previous.contributors, roster_size: previous.rosterSize };
+    const streak = previous.contributors >= 2 ? previous.priorStreak + 1 : 0;
+    if (previous.contributors >= 2) earn({ ...result, code: "first_week" });
+    if (previous.rosterSize >= 2 && previous.contributors === previous.rosterSize) earn({ ...result, code: "full_crew" });
+    if (streak >= 3) earn({ ...result, code: "three_week_streak" });
+    priorStreak = shiftAppDay(new Date(previous.endsAt), 7).getTime() === week.endsAt.getTime() ? streak : 0;
+  }
+  const roster = new Set(input.members.map(member => member.user_id));
+  const weeklyEntries = input.entries.filter(entry => roster.has(entry.user_id) && Date.parse(entry.started_at) >= week.startsAt.getTime() && Date.parse(entry.started_at) <= now.getTime());
+  const badgeWeek = {
+    endsAt: week.endsAt.toISOString(),
+    rosterSize: roster.size,
+    contributors: [...crewEntryTotals(weeklyEntries).values()].filter(total => total.sessions > 0).length,
+    priorStreak,
+  };
   const contract = passport.contract;
-  if (!contract) return { ...saved, passport };
+  if (!contract) return { ...saved, passport, badgeWeek };
   if (Date.parse(contract.ends_at) <= Date.parse(input.now)) {
+    if (contract.value >= contract.target)
+      earn({ code: "contract_finish", earned_at: contract.ends_at, contributors: contract.contributors,
+        roster_size: contract.roster_size, metric: contract.metric, value: contract.value, target: contract.target });
     if (contract.season_id && contract.value >= contract.target) {
       const codes = ["contract_finish", ...(contract.contributors === contract.roster_size ? ["full_crew"] : [])];
       for (const code of codes) if (!passport.stamps.some(s => s.contract_id === contract.id && s.code === code))
@@ -25,7 +57,7 @@ export function readLocalCrewProgram(saved: LocalCrewProgram, input: CrewOvervie
     contract.contributors = totals.filter(t => t.sessions > 0).length;
     contract.value = contract.metric === "contributors" ? contract.contributors : contract.metric === "sessions" ? totals.reduce((s, t) => s + t.sessions, 0) : entries.reduce((s, e) => s + Number(contract.metric === "distance_m" ? e.distance_m : e.moving_sec), 0);
   }
-  return { ...saved, passport };
+  return { ...saved, passport, badgeWeek };
 }
 export function mutateLocalCrewProgram(saved: LocalCrewProgram, input: CrewOverviewInput, body: CrewPassportMutation, id: string): LocalCrewProgram {
   const next = readLocalCrewProgram(saved, input), passport = next.passport;
