@@ -85,6 +85,7 @@ vi.mock("./athlete-metrics", () => ({ AthleteMetrics: "AthleteMetrics" }));
 vi.mock("./profile-photo", () => ({ ProfilePhoto: "ProfilePhoto" }));
 vi.mock("./athlete-crest", () => ({ AthleteCrest: "AthleteCrest" }));
 vi.mock("./data-sync-actions", () => ({ DataSyncActions: "DataSyncActions" }));
+vi.mock("./sync-review", () => ({ SyncReview: "SyncReview" }));
 vi.mock("../ui/toast", () => ({ Toast: (props: any) => props.message ? createElement("Toast", props, props.message) : null }));
 vi.mock("../ui/screen-header", () => ({ ScreenHeader: "ScreenHeader", GlassDismissButton: "GlassDismissButton" }));
 vi.mock("../ui/sport-icon", () => ({ SportIcon: "SportIcon" }));
