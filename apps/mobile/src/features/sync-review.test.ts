@@ -26,7 +26,7 @@ vi.mock("react-native", () => ({useColorScheme: () => "light",
   ActivityIndicator: "ActivityIndicator",
   StyleSheet: { create: (v: unknown) => v, absoluteFill: {} },
   PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) },
-  useWindowDimensions: () => ({ width: 390, height: 844 }),
+  useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   Platform: { OS: "ios" },
   LayoutAnimation: { configureNext: vi.fn(), Presets: { easeInEaseOut: {} } },
   Animated: {
@@ -83,6 +83,24 @@ it("a native full-screen swipe confirms the selected activities once without nav
       }),
     );
   });
+  const energy = () => renderer!.root.findByType("SyncEnergyCore" as never).props;
+  const viewport = renderer!.root.findAllByType("ScrollView" as never).find(node => !node.props.horizontal)!;
+  const review = viewport.findAllByType("View" as never).find(node => node.props.onLayout)!;
+  const layout = (height: number) => ({ nativeEvent: { layout: { height } } });
+  await act(async () => {
+    viewport.props.onLayout(layout(720));
+    review.props.onLayout(layout(398));
+  });
+  expect(energy().sideTotals).toBe(false);
+  const preferredSize = energy().size;
+  await act(async () => viewport.props.onLayout(layout(680)));
+  expect(energy().sideTotals).toBe(true);
+  const compactSize = energy().size;
+  expect(compactSize).toBeLessThanOrEqual(preferredSize);
+  await act(async () => viewport.props.onLayout(layout(620)));
+  expect(energy().size).toBeLessThan(compactSize);
+  expect(viewport.findAll(node => !!node.props.onResponderRelease)).toHaveLength(0);
+
   const map = renderer!.root.findByType("RouteStaticPreview" as never);
   expect(map.props.width).toBe(342);
   expect(map.props.height).toBe(135);
@@ -90,7 +108,7 @@ it("a native full-screen swipe confirms the selected activities once without nav
   expect(carousel.props.scrollEnabled).toBe(false);
   expect(carousel.props.contentContainerStyle).toEqual(expect.objectContaining({ justifyContent: "center" }));
   const summary = renderer!.root.findAllByType("ScrollView" as never).find(node => !node.props.horizontal)!;
-  expect(summary.props.scrollEnabled).toBe(false);
+  expect(summary.props.scrollEnabled).not.toBe(false);
   const details = renderer!.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "View Running activity details")!;
   await act(async () => details.props.onPress());
   const cachedReplay = renderer!.root.findByType("ActivityReplay" as never);

@@ -18,7 +18,7 @@ import {
   type ScrollViewInstance,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { accountTimeZone, competeNow, syncChargeBenchmark, formatAccountDateTime, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
+import { accountTimeZone, competeNow, syncChargeBenchmark, formatAccountDateTime, sportById, activityRoute, SHELL_TYPOGRAPHY, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { AppIcon } from "../ui/app-icon";
 import { MaterialClose } from "../ui/material-back";
 import { ActivityReplay, ActivitySummaryMetrics } from "../ui/activity-route";
@@ -46,7 +46,22 @@ const c=useThemeColors();
   const insets = useSafeAreaInsets();
   const availableHeight = windowDimensions.height - insets.top - insets.bottom;
   const mapHeight = Math.round(Math.max(72, Math.min(160, availableHeight * .18)));
-  const coreSize = Math.round(Math.max(132, Math.min(216, availableHeight * .26, windowDimensions.width * .56)));
+  const preferredCoreSize = Math.round(Math.max(132, Math.min(216, availableHeight * .26, windowDimensions.width * .56)));
+  const [bodyHeight, setBodyHeight] = useState<number | null>(null);
+  const [reviewHeight, setReviewHeight] = useState<number | null>(null);
+  const energySpace = bodyHeight === null || reviewHeight === null
+    ? Infinity
+    : bodyHeight - reviewHeight - 48;
+  const textScale = windowDimensions.fontScale;
+  const footerHeight = Math.max(66, Math.ceil(SHELL_TYPOGRAPHY.label.lineHeight * textScale * 2 + 12));
+  const summaryHeight = 14 + Math.ceil((SHELL_TYPOGRAPHY.label.lineHeight + SHELL_TYPOGRAPHY.caption.lineHeight) * textScale);
+  const sideMetricWidth = Math.ceil(76 * textScale);
+  const sideCoreWidth = windowDimensions.width - insets.left - insets.right - 32 - 16 - sideMetricWidth * 2;
+  const sideTotals = energySpace < preferredCoreSize + summaryHeight && sideCoreWidth >= 132;
+  const coreSize = Math.max(132, Math.floor(Math.min(
+    preferredCoreSize,
+    sideTotals ? Math.min(energySpace, sideCoreWidth) : energySpace - summaryHeight,
+  )));
   const cardWidth = Math.max(260, Math.min(360, Math.round((windowDimensions.width || 375) - 48)));
   const cardGap = 12;
   const cardScroll = useRef<ScrollViewInstance | null>(null);
@@ -124,12 +139,18 @@ const c=useThemeColors();
     .map((id) => activities.find((item) => item.id === id))
     .filter((item): item is SyncReviewReceipt["activities"][number] => Boolean(item));
   return <View style={{ flex: 1, backgroundColor: c.paper }}>
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.paper, zIndex: 1 }} edges={["top", "bottom"]}>
-    <ScrollView scrollEnabled={windowDimensions.fontScale > 1.2 || availableHeight < 650} contentContainerStyle={{ flexGrow: 1, padding: 16, gap: availableHeight < 650 ? 8 : 12 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.paper, zIndex: 1 }} edges={["top", "bottom", "left", "right"]}>
+    <ScrollView
+      style={{ flex: 1 }}
+      bounces={false}
+      onLayout={event => setBodyHeight(event.nativeEvent.layout.height)}
+      contentContainerStyle={{ flexGrow: 1, padding: 16 }}
+    >
+    <View onLayout={event => setReviewHeight(event.nativeEvent.layout.height)} style={{ gap: 12 }}>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+      <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12 }}>
         <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.tennis, alignItems: "center", justifyContent: "center" }}><Text style={[textStyle("heading"), { color: c.textOnAction }]}>✓</Text></View>
-        <Text accessibilityRole="header" style={[textStyle("heading"), { color: c.ink }]}>{receipt.confirmBeforeSave ? "Review activities" : "Activities synced"}</Text>
+        <Text accessibilityRole="header" style={[textStyle("heading"), { color: c.ink, flexShrink: 1 }]}>{receipt.confirmBeforeSave ? "Review activities" : "Activities synced"}</Text>
       </View>
       <MaterialClose disabled={saving} label={receipt.confirmBeforeSave ? "Cancel import" : "Dismiss review"} onPress={closeReview} />
     </View>
@@ -298,13 +319,15 @@ const c=useThemeColors();
         }}
       />
     </View>
-    <View style={{ flex: 1, justifyContent: "center", paddingVertical: 8 }}>
-      <SyncEnergyCore activities={selected} history={[...state.activities.filter(a => !excluded.includes(a.id)), ...selected]} benchmarkSeconds={benchmarkSeconds} units={state.units} draining={saving} size={coreSize} active={!detail}/>
     </View>
-    <View style={{ paddingTop: 4, gap: 8 }}>
-      <View onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ height: 66, borderRadius: 36, backgroundColor: c.surfaceInverse, justifyContent: "center", position: "relative", overflow: "hidden" }}>
+    <View style={{ flexGrow: 1, justifyContent: "center", paddingTop: 16 }}>
+      <SyncEnergyCore activities={selected} history={[...state.activities.filter(a => !excluded.includes(a.id)), ...selected]} benchmarkSeconds={benchmarkSeconds} units={state.units} draining={saving} size={coreSize} sideTotals={sideTotals} active={!detail}/>
+    </View>
+    </ScrollView>
+    <View style={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 }}>
+      <View onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ height: footerHeight, borderRadius: 36, backgroundColor: c.surfaceInverse, justifyContent: "center", position: "relative", overflow: "hidden" }}>
         <View pointerEvents="none" style={{ position: "absolute", left: progress * width, right: 0, top: 0, bottom: 0, overflow: "hidden", justifyContent: "center" }}>
-          <Text style={[textStyle("label"), { color: c.textOnInverse, textAlign: "center", width, marginLeft: -progress * width }]}>Swipe to save</Text>
+          <Text style={[textStyle("label"), { color: c.textOnInverse, textAlign: "center", width, paddingHorizontal: 60, marginLeft: -progress * width }]}>Swipe to save</Text>
         </View>
         <View accessible accessibilityRole="adjustable" accessibilityLabel="Swipe to confirm synced activities" accessibilityState={{ busy: saving }} accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }} accessibilityActions={[{ name: "increment", label: "Confirm activities" }]} onAccessibilityAction={finish} style={StyleSheet.absoluteFill}
           onStartShouldSetResponder={e => !saving && e.nativeEvent.locationX <= 64}
@@ -314,11 +337,10 @@ const c=useThemeColors();
           onResponderMove={e => { if (saving) return; dragDistance.current = Math.max(0, e.nativeEvent.pageX - dragStart.current); updateSwipe(dragDistance.current); }}
           onResponderRelease={e => { if (saving) return; const distance = Math.max(0, e.nativeEvent.pageX - dragStart.current); dragging.current = false; if (distance / travel >= .85) finish(); else setProgress(0); }}
           onResponderTerminate={() => { dragging.current = false; if (!saving) setProgress(0); }}>
-          <View pointerEvents="none" style={{ position: "absolute", top: 5, left: 4, width: 56, height: 56, borderRadius: 28, backgroundColor: c.tennis, justifyContent: "center", alignItems: "center", transform: [{ translateX: progress * travel }] }}>{saving ? <ActivityIndicator color={c.textOnAction} /> : <Text style={{ ...textStyle("heading"), color: c.textOnAction }}>→</Text>}</View>
+          <View pointerEvents="none" style={{ position: "absolute", top: (footerHeight - 56) / 2, left: 4, width: 56, height: 56, borderRadius: 28, backgroundColor: c.tennis, justifyContent: "center", alignItems: "center", transform: [{ translateX: progress * travel }] }}>{saving ? <ActivityIndicator color={c.textOnAction} /> : <Text style={{ ...textStyle("heading"), color: c.textOnAction }}>→</Text>}</View>
         </View>
       </View>
     </View>
-    </ScrollView>
   </SafeAreaView>
     {cachedActivities.map((cachedActivity) => (
       <ActivityReplay

@@ -493,6 +493,8 @@ onboarding, notifications, authentication, history, awards, sleep/recovery,
 rankings and supporting sheets. Shared divided boundaries use #d0dad7 at one
 logical unit, with 16 before and 12 after; mobile page gutters remain 20.
 
+Native layouts should respect system text sizing. Let action labels wrap and use minimum heights for touch targets. For full-screen flows with a required action, keep the action in the safe-area footer and give the body its own scroll viewport. Use measured content and viewport space to choose compact layouts. Font scale can guide reflow, but overflow must remain scrollable at every font scale. Check short and narrow phones with standard and large text, including the largest supported accessibility sizes.
+
 The rendered-screen follow-up makes Home, Compete and Progress screen titles explicit display roles via `SectionHeader` / `Section` `titleRole`; subordinate sections retain heading. Achievement quantities use metric with separate caption units, personal-record heroes use hero, record receipts use value plus caption date, and standings use row names with value totals. See [rendered audit](reviews/typography-rendered-audit/README.md) for measured coverage and limitations.
 
 ## Full-screen activity and competition moments — October 24
