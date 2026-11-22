@@ -1,32 +1,33 @@
-import { createContext, useCallback, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useMemo, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { BootOpenedContext } from "./boot-readiness";
 import { BootSplash } from "./boot-splash";
 
-// Providers and screens mount only after the moving part of startup finishes.
-// Keep the same splash mounted so its final frame survives that expensive mount.
-export const LaunchReadyContext = createContext<(() => void) | null>(null);
+// Mount providers and screens immediately in the background while keeping the
+// launch animation running smoothly on top until both animation and data finish.
+export const LaunchReadyContext = createContext<{ animationDone: boolean; reveal: () => void } | null>(null);
 
-export function LaunchGate({ children }: { children: ReactNode }) {
+export function LaunchGate({
+  children,
+  splashReady = true,
+  fallback = null,
+}: {
+  children: ReactNode;
+  splashReady?: boolean;
+  fallback?: ReactNode;
+}) {
   const [animationDone, setAnimationDone] = useState(false);
-  const [mountApp, setMountApp] = useState(false);
   const [ready, setReady] = useState(false);
   const reveal = useCallback(() => setReady(true), []);
-  useEffect(() => {
-    if (!animationDone) return;
-    // Let the final logo and spinner paint before mounting expensive providers.
-    let second = 0;
-    const first = requestAnimationFrame(() => {
-      second = requestAnimationFrame(() => setMountApp(true));
-    });
-    return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
-  }, [animationDone]);
+  const launch = useMemo(() => ({ animationDone, reveal }), [animationDone, reveal]);
   return <BootOpenedContext.Provider value={ready}>
-    <LaunchReadyContext.Provider value={reveal}>
+    <LaunchReadyContext.Provider value={launch}>
       <View style={{ flex: 1 }}>
-        {mountApp ? children : null}
+        {children}
         {!ready && <View style={StyleSheet.absoluteFill}>
-          <BootSplash waiting={animationDone} onAnimationComplete={() => setAnimationDone(true)} />
+          {splashReady ? (
+            <BootSplash waiting={animationDone} onAnimationComplete={() => setAnimationDone(true)} />
+          ) : fallback}
         </View>}
       </View>
     </LaunchReadyContext.Provider>

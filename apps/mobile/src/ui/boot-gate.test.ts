@@ -46,7 +46,7 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 describe("native boot gate", () => {
-  it("defers provider and screen work until animation completion, then keeps the same splash until ready", async () => {
+  it("mounts providers and screens immediately in the background and waits for both animation and data", async () => {
     mock.state = null;
     mock.privacyReady = false;
     let providerMounts = 0;
@@ -56,27 +56,20 @@ describe("native boot gate", () => {
     }
     const launch = () => createElement(LaunchGate, null, createElement(Providers));
     await act(async () => { renderer = create(launch()); });
-    expect(providerMounts).toBe(0);
-    expect(mounts).toBe(0);
-    const splash = renderer.root.find(node => (node.type as unknown) === "splash");
-    await act(async () => { mock.complete?.(); });
-    expect(providerMounts).toBe(0);
-    await frames();
     expect(providerMounts).toBe(1);
     expect(mounts).toBe(1);
-    expect(renderer.root.find(node => (node.type as unknown) === "splash")).toBe(splash);
-    // Outer cover plus BootGate's root/content views.
+    const splash = renderer.root.find(node => (node.type as unknown) === "splash");
     await act(async () => {
       renderer.root.findAll(node => (node.type as unknown) === "View" && Boolean(node.props.onLayout))[0].props.onLayout();
     });
-    await frames();
-    expect(covered()).toBe(true);
     mock.state = {};
-    await act(async () => renderer.update(launch()));
-    await frames();
-    expect(covered()).toBe(true);
     mock.privacyReady = true;
     await act(async () => renderer.update(launch()));
+    await frames();
+    // Even after background loading finishes, the splash stays up until the full animation completes.
+    expect(covered()).toBe(true);
+    expect(renderer.root.find(node => (node.type as unknown) === "splash")).toBe(splash);
+    await act(async () => { mock.complete?.(); });
     await frames();
     expect(covered()).toBe(false);
     mock.privacyReady = false;
@@ -84,19 +77,24 @@ describe("native boot gate", () => {
     expect(covered()).toBe(false);
     expect(providerMounts).toBe(1);
   });
-  it("cancels deferred startup if the launch gate unmounts before its paint frames", async () => {
-    mock.state = {};
-    await act(async () => {
-      renderer = create(createElement(LaunchGate, null, createElement(Screen)));
-    });
+  it("keeps the same splash with waiting state when animation finishes before background data", async () => {
+    mock.state = null;
+    mock.privacyReady = false;
+    const launch = () => createElement(LaunchGate, null, createElement(BootGate, null, createElement(Screen)));
+    await act(async () => { renderer = create(launch()); });
+    const splash = renderer.root.find(node => (node.type as unknown) === "splash");
     await act(async () => { mock.complete?.(); });
-    expect(mounts).toBe(0);
-    await act(async () => { await vi.advanceTimersByTimeAsync(16); });
-    expect(mounts).toBe(0);
-    await act(async () => renderer.unmount());
     await frames();
-    expect(mounts).toBe(0);
-    expect(vi.getTimerCount()).toBe(0);
+    expect(covered()).toBe(true);
+    expect(renderer.root.find(node => (node.type as unknown) === "splash")).toBe(splash);
+    await act(async () => {
+      renderer.root.findAll(node => (node.type as unknown) === "View" && Boolean(node.props.onLayout))[0].props.onLayout();
+    });
+    mock.state = {};
+    mock.privacyReady = true;
+    await act(async () => renderer.update(launch()));
+    await frames();
+    expect(covered()).toBe(false);
   });
   it("keeps ready content covered until the full launch animation completes", async () => {
     mock.state = {};

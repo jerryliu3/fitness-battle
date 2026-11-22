@@ -2,7 +2,7 @@
 import { colors as c } from "@/theme/app-colors";
 
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { clamp, LOGO_RACE_DURATION_MS, logoRaceWords } from "@fitness-battle/shared/boot";
 
 import "./logo-race-boot-splash.css";
@@ -13,15 +13,33 @@ export function LogoRaceBootSplash({ waiting = false, onAnimationComplete, progr
   progress?: number;
 }) {
   const [position, setPosition] = useState(0);
+  const latestPosition = useRef(0);
+  const groupRefs = useRef<(SVGGElement | null)[]>([]);
   const onComplete = useRef(onAnimationComplete);
   onComplete.current = onAnimationComplete;
   const completed = useRef(false);
+  function applyFrame(p: number) {
+    latestPosition.current = p;
+    const frame = logoRaceWords(p);
+    for (let i = 0; i < frame.length; i++) {
+      const node = groupRefs.current[i];
+      const word = frame[i];
+      if (!node || !word) continue;
+      node.setAttribute("transform", `translate(${word.x} ${word.y}) skewX(${-word.lean})`);
+      node.setAttribute("opacity", String(word.opacity));
+    }
+  }
+  useLayoutEffect(() => {
+    if (progress === undefined && !completed.current) applyFrame(latestPosition.current);
+  });
   useEffect(() => {
     if (progress !== undefined) return;
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     let disposed = false, raf = 0, elapsed = 0, last: number | null = null;
     let fontsReady = false;
     function finish() {
+      cancelAnimationFrame(raf);
+      applyFrame(1);
       setPosition(1);
       if (!disposed && !completed.current) {
         completed.current = true;
@@ -30,10 +48,10 @@ export function LogoRaceBootSplash({ waiting = false, onAnimationComplete, progr
     }
     function tick(now: number) {
       if (disposed || document.hidden) return;
-      if (last !== null) elapsed += now - last;
+      if (last !== null) elapsed += Math.min(now - last, 36);
       last = now;
       const next = clamp(elapsed / LOGO_RACE_DURATION_MS);
-      setPosition(next);
+      applyFrame(next);
       if (next === 1) finish(); else raf = requestAnimationFrame(tick);
     }
     function resume() {
@@ -56,7 +74,7 @@ export function LogoRaceBootSplash({ waiting = false, onAnimationComplete, progr
   const words = logoRaceWords(progress ?? position);
   return <div className="logo-race-splash" style={{ backgroundColor: c.paper, color: c.ink }} role="status" aria-label="Loading Overtaek" aria-busy="true">
     <svg viewBox="0 100 760 240" className="logo-race-splash-mark" role="img" aria-label="Overtaek">
-      {words.map((word, i) => <g key={i} transform={`translate(${word.x} ${word.y}) skewX(${-word.lean})`} opacity={word.opacity} aria-hidden="true">
+      {words.map((word, i) => <g key={i} ref={el => { groupRefs.current[i] = el; }} transform={`translate(${word.x} ${word.y}) skewX(${-word.lean})`} opacity={word.opacity} aria-hidden="true">
         <text x="0" y="0" fill={word.echo ? c.tennis : c.ink} fontFamily="var(--font-overtaek), sans-serif" fontWeight="900" fontSize="124" letterSpacing="-5" textLength={word.width} lengthAdjust="spacingAndGlyphs">{word.word}</text>
       </g>)}
     </svg>

@@ -30,10 +30,13 @@ The owner wants FIT and health-source metrics imported, retained and displayed f
 
 ## Native startup loading
 
-Startup shows the canvas while bundled fonts load, followed by the launch animation.
-Native auth, privacy and compete providers, navigation, and screen requests mount
-only after the animation completes. The same splash holds its final frame with a
-spinner until account/privacy readiness, screen requests, images and layout settle.
+Startup shows the canvas while bundled fonts load, followed by the launch animation
+running on the UI thread. Native auth, privacy and compete providers mount immediately,
+and navigation and screen requests mount underneath the cover right after the initial
+splash frame paints so loading happens in the background without stalling the animation.
+The splash must still finish its full race animation before revealing the home screen,
+holding its final frame with a spinner if account/privacy readiness, screen requests,
+images or layout are still settling.
 The blocked-athlete privacy read stays behind that cover; ordinary loading never
 shows safety-settings copy. Privacy failures still expose Retry and Sign out. The
 launch gate remains mounted across sign-in and foreground privacy refresh, so later
