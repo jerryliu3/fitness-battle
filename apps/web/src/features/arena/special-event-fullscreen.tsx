@@ -7,6 +7,7 @@ import {
   formatSpecialEventVolume,
   specialEventCourseUnit,
   specialEventFormatLabel,
+  specialEventPendingCeremony,
   specialEventPhase,
   specialEventSceneLanes,
   specialEventSideCode,
@@ -23,6 +24,7 @@ import { useCompetitionCourse } from "@/features/course/use-competition-course";
 import { AppHeading, AppText } from "@/ui/section";
 import { CoursePreview } from "./course-preview";
 import { CompeteIcon } from "./event-home";
+import { SpecialEventCeremony } from "./special-event-ceremony";
 import { SpecialEventRegistrationSheet } from "./special-event-sheet";
 
 export function SpecialEventFullscreen({
@@ -52,6 +54,8 @@ export function SpecialEventFullscreen({
   const [standingsError, setStandingsError] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [focusRequest, setFocusRequest] = useState(0);
+  const [ceremonyDismissed, setCeremonyDismissed] = useState(false);
+  const [replayCeremony, setReplayCeremony] = useState(false);
 
   const canViewStandings = Boolean(phase === "active" || phase === "settled" || edition.finalizedAt);
   useEffect(() => {
@@ -82,6 +86,22 @@ export function SpecialEventFullscreen({
   const hero = standings ? specialEventStatusHero(standings, edition, state.units) : null;
   const activeRound = standings?.rounds.find((r) => r.roundNumber === standings.currentRound) ?? standings?.rounds[standings.rounds.length - 1];
   const activeHeat = activeRound?.heats.find((h) => h.isMine) ?? activeRound?.heats[0];
+  const ceremony = !ceremonyDismissed
+    ? specialEventPendingCeremony(standings, edition, state.units, replayCeremony)
+    : replayCeremony
+      ? specialEventPendingCeremony(standings, edition, state.units, true)
+      : null;
+  const replayable = Boolean(standings && specialEventPendingCeremony(standings, edition, state.units, true));
+
+  function finishCeremony(roundNumber: number) {
+    setReplayCeremony(false);
+    setCeremonyDismissed(true);
+    void fetch("/api/special-events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "acknowledge", editionId: edition.id, roundNumber }),
+    }).catch(() => {});
+  }
 
   return (
     <div
@@ -118,6 +138,15 @@ export function SpecialEventFullscreen({
             {specialEventFormatLabel(edition.config)} · {status}
           </AppText>
         </div>
+        {replayable ? (
+          <button
+            type="button"
+            className="fb-btn-line"
+            onClick={() => { setCeremonyDismissed(false); setReplayCeremony(true); }}
+          >
+            Replay recap
+          </button>
+        ) : null}
         {activeHeat ? (
           <button
             type="button"
@@ -219,6 +248,14 @@ export function SpecialEventFullscreen({
           onClose={onClose}
         />
       </main>
+      {ceremony ? (
+        <SpecialEventCeremony
+          ceremony={ceremony}
+          sport={edition.sport}
+          units={state.units}
+          onDone={() => finishCeremony(ceremony.roundNumber)}
+        />
+      ) : null}
     </div>
   );
 }

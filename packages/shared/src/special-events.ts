@@ -58,6 +58,7 @@ export interface SpecialEventEntrySummary {
   finalPlace: number | null;
   finalScore: number | null;
   acknowledgedAt: string | null;
+  acknowledgedRound?: number;
 }
 
 export interface SpecialEventReceipt {
@@ -787,6 +788,81 @@ export function specialEventStatusHero(
     tone: ahead ? "lime" : "gold",
     headline: ahead && second ? `Leading by ${gap}` : ahead ? "1st place" : `${gap} off ${specialEventSideLabel(leader)}`,
     detail: `${specialEventSideLabel(mine)} · ${formatSpecialEventVolume(edition.sport, mine.score, units)}`,
+  };
+}
+
+export interface SpecialEventCeremonyData {
+  roundNumber: number;
+  advanceCount: number;
+  isCutFormat: boolean;
+  badge: string;
+  headline: string;
+  detail: string;
+  ctaLabel: string;
+  tone: "lime" | "danger" | "gold";
+  sides: SpecialEventSideStanding[];
+}
+
+export function specialEventPendingCeremony(
+  standings: SpecialEventStandings | null,
+  edition: SpecialEventEdition,
+  units: UnitSystem = "us",
+  forceLatest = false,
+): SpecialEventCeremonyData | null {
+  if (!standings?.rounds.length) return null;
+  const settled = standings.rounds.filter((r) => Boolean(r.settledAt));
+  if (!settled.length) return null;
+  const latest = settled[settled.length - 1]!;
+  if (!forceLatest && (edition.entry?.acknowledgedRound ?? 0) >= latest.roundNumber) return null;
+  const heat = latest.heats.find((h) => h.isMine) ?? latest.heats[0];
+  if (!heat?.sides.length) return null;
+
+  const isCutFormat = edition.config.match.kind !== "single_round";
+  const mine = heat.sides.find((s) => s.isYou);
+  const label = specialEventRoundLabel(edition.config, latest.roundNumber, standings.rounds.length);
+  const isFinal = latest.roundNumber === standings.rounds.length && Boolean(standings.settledAt);
+
+  if (!mine) {
+    const winner = heat.sides[0]!;
+    return {
+      roundNumber: latest.roundNumber,
+      advanceCount: heat.advanceCount,
+      isCutFormat,
+      badge: `${label.toUpperCase()} VERDICT`,
+      headline: `${specialEventSideLabel(winner)} took #1`,
+      detail: `Closed at ${formatSpecialEventVolume(edition.sport, winner.score, units)}. Keep watching the heat unfold.`,
+      ctaLabel: isFinal ? "View final standings →" : "Keep watching →",
+      tone: "gold",
+      sides: heat.sides,
+    };
+  }
+
+  const outHere = edition.entry?.status === "eliminated" && edition.entry?.eliminatedRound === latest.roundNumber;
+  const won = isFinal && mine.place === 1;
+  const advanced = mine.advancing && !isFinal;
+
+  return {
+    roundNumber: latest.roundNumber,
+    advanceCount: heat.advanceCount,
+    isCutFormat,
+    badge: `${label.toUpperCase()} VERDICT`,
+    headline: won
+      ? "CHAMPION"
+      : outHere
+        ? `ELIMINATED · #${mine.place}`
+        : advanced
+          ? edition.config.match.kind === "survivor_heat"
+            ? "YOU SURVIVED"
+            : "ADVANCING"
+          : `FINISHED #${mine.place}`,
+    detail: outHere
+      ? `Finished #${mine.place} with ${formatSpecialEventVolume(edition.sport, mine.score, units)}. Stay in the stadium as your heat finishes.`
+      : advanced
+        ? `Finished #${mine.place} (${formatSpecialEventVolume(edition.sport, mine.score, units)}) to clear the cut.`
+        : `Closed ${label} with ${formatSpecialEventVolume(edition.sport, mine.score, units)}.`,
+    ctaLabel: outHere ? "Watch the rest of the heat →" : isFinal ? "Done →" : "Enter next round →",
+    tone: outHere ? "danger" : won || advanced ? "lime" : "gold",
+    sides: heat.sides,
   };
 }
 

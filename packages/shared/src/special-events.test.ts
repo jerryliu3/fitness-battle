@@ -14,6 +14,7 @@ import {
   specialEventError,
   specialEventFormatLabel,
   specialEventPhase,
+  specialEventPendingCeremony,
   specialEventRegistrationDetail,
   specialEventRoundLabel,
   specialEventSceneLanes,
@@ -188,5 +189,25 @@ describe("special events presentation", () => {
     expect(hero?.badge).toBe("ABOVE CUT LINE");
     expect(hero?.tone).toBe("lime");
     expect(hero?.headline).toContain("+1 mi");
+
+    const settledStandings = {
+      ...sampleStandings,
+      rounds: [{
+        ...sampleStandings.rounds[0]!,
+        settledAt: "2026-11-24T05:00:00Z",
+        heats: [{
+          ...sampleStandings.rounds[0]!.heats[0]!,
+          sides: [
+            { sideId: "s1", displayName: "Carla", userId: "u1", isYou: false, score: 6437.376, place: 1, advancing: true },
+            { sideId: "s2", displayName: "You", userId: "u2", isYou: true, score: 4828.032, place: 2, advancing: true },
+            { sideId: "s3", displayName: "Dana", userId: "u3", isYou: false, score: 3218.688, place: 3, advancing: false },
+          ],
+        }],
+      }, { ...sampleStandings.rounds[0]!, roundNumber: 2, settledAt: null }],
+    };
+    const ceremony = specialEventPendingCeremony(settledStandings, { ...survivorEd, entry: { ...spectating.entry!, status: "active", acknowledgedRound: 0 } }, "us");
+    expect(ceremony?.headline).toBe("YOU SURVIVED");
+    expect(ceremony?.roundNumber).toBe(1);
+    expect(specialEventPendingCeremony(settledStandings, { ...survivorEd, entry: { ...spectating.entry!, status: "active", acknowledgedRound: 1 } }, "us")).toBeNull();
   });
 });

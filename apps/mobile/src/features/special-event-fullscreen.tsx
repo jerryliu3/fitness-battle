@@ -7,6 +7,7 @@ import {
   formatSpecialEventVolume,
   specialEventCourseUnit,
   specialEventFormatLabel,
+  specialEventPendingCeremony,
   specialEventPhase,
   specialEventSceneLanes,
   specialEventSideCode,
@@ -17,14 +18,18 @@ import {
   type SpecialEventEdition,
   type SpecialEventStandings,
 } from "@fitness-battle/shared";
+import { requestApi } from "../lib/api";
+import { useAuth } from "../lib/auth";
 import { useCachedApi } from "../lib/use-cached-api";
 import { useCompeteStore } from "../lib/compete-store";
+import { mobileEnv } from "../lib/env";
 import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 import { CoursePreview } from "./event-home";
 import { CompeteIcon } from "./compete-home-sections";
 import { GeographicCourse } from "./geographic-course";
+import { SpecialEventCeremony } from "./special-event-ceremony";
 import { SpecialEventRegistrationSheet } from "./special-event-sheet";
 import { useCompetitionCourse } from "./use-competition-course";
 
@@ -44,6 +49,7 @@ export function SpecialEventFullscreen({
   onClose(): void;
 }) {
   const c = useThemeColors();
+  const { accessToken } = useAuth();
   const { debugActive } = useCompeteStore();
   const now = competeNow(state);
   const phase = specialEventPhase(edition, now);
@@ -54,10 +60,14 @@ export function SpecialEventFullscreen({
   const [viewDim, setViewDim] = useState<"3d" | "2d">(supports3D ? "3d" : "2d");
   const [selectedId, setSelectedId] = useState("");
   const [focusRequest, setFocusRequest] = useState(0);
+  const [ceremonyDismissed, setCeremonyDismissed] = useState(false);
+  const [replayCeremony, setReplayCeremony] = useState(false);
 
   useEffect(() => {
     setSelectedId("");
     setViewDim(supports3D ? "3d" : "2d");
+    setCeremonyDismissed(false);
+    setReplayCeremony(false);
   }, [edition.id, supports3D]);
 
   const canViewStandings = Boolean(phase === "active" || phase === "settled" || edition.finalizedAt);
@@ -76,6 +86,21 @@ export function SpecialEventFullscreen({
   const hero = standings ? specialEventStatusHero(standings, edition, state.units) : null;
   const activeRound = standings?.rounds.find((r) => r.roundNumber === standings.currentRound) ?? standings?.rounds[standings.rounds.length - 1];
   const activeHeat = activeRound?.heats.find((h) => h.isMine) ?? activeRound?.heats[0];
+  const ceremony = !ceremonyDismissed
+    ? specialEventPendingCeremony(standings, edition, state.units, replayCeremony)
+    : replayCeremony
+      ? specialEventPendingCeremony(standings, edition, state.units, true)
+      : null;
+  const replayable = Boolean(standings && specialEventPendingCeremony(standings, edition, state.units, true));
+
+  function finishCeremony(roundNumber: number) {
+    setReplayCeremony(false);
+    setCeremonyDismissed(true);
+    if (!accessToken) return;
+    void requestApi(mobileEnv.apiUrl, accessToken, "/api/special-events", {
+      body: { action: "acknowledge", editionId: edition.id, roundNumber },
+    }).catch(() => {});
+  }
 
   return (
     <Modal visible animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
@@ -108,6 +133,15 @@ export function SpecialEventFullscreen({
               {specialEventFormatLabel(edition.config)} · {status}
             </AppText>
           </View>
+          {replayable ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => { setCeremonyDismissed(false); setReplayCeremony(true); }}
+              style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 99, borderWidth: 1, borderColor: c.line, backgroundColor: c.card }}
+            >
+              <AppText role="caption">Recap</AppText>
+            </Pressable>
+          ) : null}
           {activeHeat ? (
             <Pressable
               accessibilityRole="button"
@@ -199,6 +233,14 @@ export function SpecialEventFullscreen({
           />
         </ScrollView>
       </SafeAreaView>
+      {ceremony ? (
+        <SpecialEventCeremony
+          ceremony={ceremony}
+          sport={edition.sport}
+          units={state.units}
+          onDone={() => finishCeremony(ceremony.roundNumber)}
+        />
+      ) : null}
     </Modal>
   );
 }

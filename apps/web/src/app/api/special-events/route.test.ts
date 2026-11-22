@@ -54,4 +54,12 @@ it("delegates registration and reports closed cutoffs as 409 conflicts", async (
   const closed = await post({ action: "cancel", editionId });
   expect(closed.status).toBe(409);
   expect((await closed.json()).error).toMatch(/full-week/);
+
+  rpc.mockResolvedValueOnce({ data: { id: "entry-1", acknowledgedRound: 2 }, error: null });
+  const ack = await post({ action: "acknowledge", editionId, roundNumber: 2 });
+  expect(ack.status).toBe(200);
+  expect(rpc).toHaveBeenCalledWith("acknowledge_special_event", {
+    p_edition_id: editionId,
+    p_round_number: 2,
+  });
 });
