@@ -404,7 +404,7 @@ export function createStravaProvider(
         }));
         const syncedAt = new Date().toISOString();
         const existing = await store.getConnection(userId);
-        if (existing) {
+        if (existing && options?.advanceCursor !== false) {
           await store.setConnection({
             ...existing,
             lastSyncAt: syncedAt,
@@ -444,11 +444,13 @@ export function createStravaProvider(
       }
       const syncedAt = new Date().toISOString();
       const lastActivityAt = newestStartedAt(activities) ?? connection.lastActivityAt;
-      await store.setConnection({
-        ...connection,
-        lastSyncAt: syncedAt,
-        lastActivityAt: lastActivityAt ?? null,
-      });
+      if (options?.advanceCursor !== false) {
+        await store.setConnection({
+          ...connection,
+          lastSyncAt: syncedAt,
+          lastActivityAt: lastActivityAt ?? null,
+        });
+      }
       return {
         provider: "strava",
         activities,

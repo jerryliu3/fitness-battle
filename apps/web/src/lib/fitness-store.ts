@@ -221,6 +221,7 @@ export async function persistSyncedActivities(
   userId: string,
   activities: ActivitySample[],
   provenance: "recorded" | "imported" = "recorded",
+  historyReviewLease?: string,
 ): Promise<boolean> {
   const db = serviceDb();
   if (!db || !isUuid(userId) || activities.length === 0) return false;
@@ -301,6 +302,15 @@ export async function persistSyncedActivities(
     ];
   });
   if (rows.length === 0) return false;
+
+  if (historyReviewLease) {
+    const { data, error } = await db.rpc("confirm_fitness_history_review", {
+      p_user: userId, p_lease: historyReviewLease, p_rows: rows,
+    });
+    if (error) throw new Error(error.message);
+    if (data) await recomputeMemberships(db, userId).catch(console.error);
+    return data === true;
+  }
 
   const { error } = await db.from("activities").upsert(rows, {
     onConflict: "user_id,provider,external_id",

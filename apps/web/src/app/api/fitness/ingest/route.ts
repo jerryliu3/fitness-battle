@@ -9,7 +9,7 @@ import type {
   FitnessProviderId,
   ReadinessSample,
 } from "@fitness-battle/shared";
-import { fitnessSyncWindow, finishFitnessHistory } from "@/lib/fitness-history";
+import { fitnessSyncWindow, finishFitnessHistory, stageFitnessHistoryReview } from "@/lib/fitness-history";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import {
   createProviderStore,
@@ -72,6 +72,7 @@ export async function POST(request: Request) {
     dailyHealth?: SyncResult["dailyHealth"];
     sleepNights?: SleepNight[];
     historyLease?: string;
+    reviewHistory?: boolean;
   };
   const userId = await resolveRequestUserId(request, body.userId);
   if (!userId) {
@@ -80,26 +81,30 @@ export async function POST(request: Request) {
   if (!body.provider || !DEVICE_PROVIDERS.has(body.provider)) {
     return NextResponse.json({ error: "device_provider_required" }, { status: 400 });
   }
+  const provider = body.provider;
+  if (body.reviewHistory && typeof body.historyLease !== "string") {
+    return NextResponse.json({ error: "invalid_history_import" }, { status: 400 });
+  }
   let window: { since: string; until: string };
-  try { window = await fitnessSyncWindow(userId, body.provider, body.historyLease, { incremental: false }); }
+  try { window = await fitnessSyncWindow(userId, provider, body.historyLease, { incremental: false }); }
   catch { return NextResponse.json({ error: "history_unavailable" }, { status: 409 }); }
   if ((body.activities?.length ?? 0) > 2000) return NextResponse.json({ error: "too_many_activities" }, { status: 400 });
   const inWindow = (at: string) => at >= window.since && at <= window.until;
   const inDayWindow = (day: string) => day >= dayKey(new Date(window.since)) && day <= dayKey(new Date(window.until));
   const activities = (body.activities ?? [])
-    .map((item) => activityFromBody(body.provider!, item))
+    .map((item) => activityFromBody(provider, item))
     .filter((item): item is ActivitySample => item != null && inWindow(item.startedAt));
   const readiness = (body.readiness ?? [])
     .slice(0, 200)
-    .map((item) => readinessFromBody(body.provider!, item))
+    .map((item) => readinessFromBody(provider, item))
     .filter((item): item is ReadinessSample => item != null && inDayWindow(item.day));
 
   let persisted = false;
+  let staged = false;
   try {
     const dailyHealth = Array.isArray(body.dailyHealth)
-      ? body.dailyHealth.slice(0, 200).filter(r => inDayWindow(r.day)).map((r) => ({ ...r, provider: body.provider! }))
+      ? body.dailyHealth.slice(0, 200).filter(r => inDayWindow(r.day)).map((r) => ({ ...r, provider }))
       : [];
-    await persistDailyHealth(userId, dailyHealth);
     const sleeps = (Array.isArray(body.sleepNights) ? body.sleepNights : [])
       .slice(0, 200)
       .filter(
@@ -115,29 +120,37 @@ export async function POST(request: Request) {
           r.score >= 0 &&
           r.score <= 100,
       );
-    for (const night of sleeps) {
+    const sleepNights = sleeps.map(night => {
       const sleepId =
-        night.id.startsWith(body.provider) || night.id.startsWith("apple-health-") || night.id.startsWith("health-connect-")
+        night.id.startsWith(provider) || night.id.startsWith("apple-health-") || night.id.startsWith("health-connect-")
           ? night.id
-          : `${body.provider}-sleep-${night.id}`;
-      await persistSleepNight(userId, {
+          : `${provider}-sleep-${night.id}`;
+      return {
         ...night,
         id: sleepId,
-        source: body.provider as "apple_health" | "google_health",
+        source: provider as "apple_health" | "google_health",
         verified: true,
+      };
+    });
+    if (body.reviewHistory) {
+      staged = await stageFitnessHistoryReview(userId, provider, body.historyLease!, {
+        activities, readiness, dailyHealth, sleepNights,
       });
+      return NextResponse.json({ activities, reviewHistory: true });
     }
+    await persistDailyHealth(userId, dailyHealth);
+    for (const night of sleepNights) await persistSleepNight(userId, night);
     const storedActivities = await persistSyncedActivities(userId, activities);
     const storedReady = await persistReadiness(userId, readiness);
     persisted = (activities.length === 0 || storedActivities) && (readiness.length === 0 || storedReady);
-    const store = createProviderStore(body.provider);
+    const store = createProviderStore(provider);
     if (!store || !persisted) throw new Error("store_unavailable");
     {
       const connection = await store.getConnection(userId);
       const newest = activities.map((item) => item.startedAt).sort().at(-1) ?? null;
       await store.setConnection({
         userId,
-        provider: body.provider,
+        provider,
         connectedAt: connection?.connectedAt ?? new Date().toISOString(),
         status: "connected",
         lastSyncAt: new Date().toISOString(),
@@ -148,12 +161,12 @@ export async function POST(request: Request) {
   } catch {
     persisted = false;
   } finally {
-    if (body.historyLease) await finishFitnessHistory(userId, body.historyLease, false).catch(() => {});
+    if (body.historyLease && !staged) await finishFitnessHistory(userId, body.historyLease, false).catch(() => {});
   }
   if (!persisted) return NextResponse.json({ error: "sync_persistence_failed", persisted: false }, { status: 503 });
 
   return NextResponse.json({
-    provider: body.provider,
+    provider,
     activities,
     readiness,
     persisted,

@@ -81,7 +81,7 @@ interface CompeteApi {
   standingsStale: boolean;
   retryLoad: () => void;
   dismissFieldNotice: () => void;
-  refresh: () => Promise<boolean>;
+  refresh: (options?: { skipSyncReview?: boolean }) => Promise<boolean>;
   debugActive?: boolean;
   lastDebugEvent?: { id: DebugEventId; nonce: number } | null;
   triggerDebugEvent?: (event: DebugEventId) => DebugEventResult | null;
@@ -544,7 +544,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     setAttempt((value) => value + 1);
   }, [scheduleSave]);
 
-  const refresh = useCallback(async (): Promise<boolean> => {
+  const refresh = useCallback(async (options?: { skipSyncReview?: boolean }): Promise<boolean> => {
     if (syncReviewBlocked.current) return false;
     const accountId = userIdRef.current;
     if (!accountId || offlineRef.current || debugActiveRef.current || statusRef.current !== "ready") return true;
@@ -583,7 +583,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           const savedAt = dirty
             ? new Date().toISOString()
             : (body.updatedAt ?? new Date().toISOString());
-          publish(accountId, holdRemoteRef.current(next), savedAt, "ready", false);
+          publish(accountId, options?.skipSyncReview ? next : holdRemoteRef.current(next), savedAt, "ready", false);
         }
         setStandingsStale(false);
         return true;

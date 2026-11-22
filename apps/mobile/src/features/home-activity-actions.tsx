@@ -78,6 +78,7 @@ export function HomeActivityActions({
     beginSyncReviewBatch?.(id);
     setNote("");
     let successes = 0, failures = 0;
+    let limitMessage: string | undefined;
     try {
       for (const link of links) {
         if (owner.current !== id) return;
@@ -156,11 +157,14 @@ export function HomeActivityActions({
             });
             if (body.usedMock) failures += 1; else successes += 1;
           }
-        } catch { failures += 1; }
+        } catch (error) {
+          failures += 1;
+          if (error instanceof Error && "code" in error && error.code === "sync_manual_limit") limitMessage = error.message;
+        }
       }
       if (owner.current === id) {
         if (!successes) void playCue("error");
-        setNote(successes ? failures ? "Activities synced. Check your data sync settings for integrations that need attention." : "Sync completed." : "Sync could not finish. Check your data sync settings.");
+        setNote(limitMessage ?? (successes ? failures ? "Activities synced. Check your data sync settings for integrations that need attention." : "Sync completed." : "Sync could not finish. Check your data sync settings."));
       }
     } catch {
       if (owner.current === id) { void playCue("error"); setNote("Sync could not finish. Check your data sync settings."); }

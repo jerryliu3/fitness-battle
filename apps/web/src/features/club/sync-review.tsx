@@ -11,7 +11,7 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
   receipt: SyncReviewReceipt | null; state: CompeteState; debug?: boolean; moment?: CompetitionMoment | null; remaining?: number;
   onComplete: (selected?: readonly string[], quiet?: boolean) => unknown; onAcknowledge?: () => void;
 }) {
-  const title = receipt ? "Sync completed" : moment?.plan.hasOvertake ? "Your overtakes" : moment && moment.plan.youAfter > moment.plan.youBefore ? "Your progress" : "Your field changed";
+  const title = receipt ? (receipt.confirmBeforeSave ? "Review activities" : "Sync completed") : moment?.plan.hasOvertake ? "Your overtakes" : moment && moment.plan.youAfter > moment.plan.youBefore ? "Your progress" : "Your field changed";
   return <Sheet open hideTitle={Boolean(receipt)} title={title} body="" fullScreen minimal={!receipt} scrollResetKey={receipt ? "review" : moment?.id} onClose={() => { if (receipt) onComplete(undefined, true); }}>
     {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete}/> : moment ? <Moment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : null}
   </Sheet>;
@@ -66,7 +66,7 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
     <ActivityMetricBars activity={activity} history={[...receipt.activities, ...state.activities]} units={state.units}/>
   </div>;
   return <div ref={step} className="sync-review-step">
-    <AppHeading level={1} role="display">Sync completed</AppHeading>
+    <AppHeading level={1} role="display">{receipt.confirmBeforeSave ? "Review activities" : "Sync completed"}</AppHeading>
     <div className="sync-review-total">{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</div>
     <div className="sync-review-selection-bar">
       <p className="fb-copy">{selected.length} of {activities.length} activities selected.</p>
@@ -96,7 +96,7 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
       <button type="button" disabled={saving} onClick={() => openDetail(a.id)}><span><b>{sportById(a.sport).name}</b><small>{new Date(a.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: accountTimeZone(state) })}</small></span><span aria-hidden="true">↗</span></button>
       <ActivityMetricBars activity={a} history={[...receipt.activities, ...state.activities]} units={state.units}/>
     </div>)}</div>
-    {!receipt.preview && excluded.length > 0 && <p className="fb-note">Deselected activities stay saved, excluded from competition.</p>}
+    {!receipt.preview && excluded.length > 0 && <p className="fb-note">{receipt.confirmBeforeSave ? "Only selected activities will be imported." : "Deselected activities stay saved, excluded from competition."}</p>}
     <div className="sync-review-footer">
       <div className={saving ? "club-sync-swipe sync-review-swipe is-saving" : "club-sync-swipe sync-review-swipe"} role="slider" tabIndex={0} aria-busy={saving} aria-label="Swipe to confirm synced activities" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-valuetext={saving ? "Saving" : progress >= .85 ? "Ready to confirm" : "Slide right to confirm; Enter also confirms"}
         onKeyDown={e => { if (["Enter", " ", "End"].includes(e.key)) { e.preventDefault(); finish(); } }}
@@ -104,7 +104,7 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
         onPointerMove={e => { if (saving || !e.currentTarget.hasPointerCapture(e.pointerId)) return; setProgress(Math.max(0, Math.min(1, (e.clientX - start.current) / Math.max(1, e.currentTarget.clientWidth - 60)))); }}
         onPointerUp={e => { if (saving || !e.currentTarget.hasPointerCapture(e.pointerId)) return; const distance = (e.clientX - start.current) / Math.max(1, e.currentTarget.clientWidth - 60); e.currentTarget.releasePointerCapture(e.pointerId); if (distance >= .85) finish(); else setProgress(0); }}
         onPointerCancel={() => { if (!saving) setProgress(0); }}>
-        <span className="sync-review-swipe-label" style={{ clipPath: `inset(0 0 0 ${Math.round(progress * 100)}%)` }}>{selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</span><i style={{ left: `calc(${progress * 100}% - ${progress * 56}px)` }} aria-hidden="true">{saving ? <span className="sync-review-swipe-spin" /> : "→"}</i>
+        <span className="sync-review-swipe-label" style={{ clipPath: `inset(0 0 0 ${Math.round(progress * 100)}%)` }}>{receipt.confirmBeforeSave ? "Swipe to save" : selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</span><i style={{ left: `calc(${progress * 100}% - ${progress * 56}px)` }} aria-hidden="true">{saving ? <span className="sync-review-swipe-spin" /> : "→"}</i>
       </div>
     </div>
   </div>;

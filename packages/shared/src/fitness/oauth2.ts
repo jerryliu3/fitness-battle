@@ -236,7 +236,7 @@ export function createOAuth2Provider(
         }));
         const syncedAt = new Date().toISOString();
         const existing = await store.getConnection(userId);
-        if (existing) {
+        if (existing && options?.advanceCursor !== false) {
           await store.setConnection({ ...existing, lastSyncAt: syncedAt });
         }
         const result: SyncResult = {
@@ -269,14 +269,16 @@ export function createOAuth2Provider(
         );
       }
       const syncedAt = new Date().toISOString();
-      await store.setConnection({
-        ...connection,
-        lastSyncAt: syncedAt,
-        lastActivityAt:
-          activities.map((item) => item.startedAt).sort().at(-1) ??
-          connection.lastActivityAt ??
-          null,
-      });
+      if (options?.advanceCursor !== false) {
+        await store.setConnection({
+          ...connection,
+          lastSyncAt: syncedAt,
+          lastActivityAt:
+            activities.map((item) => item.startedAt).sort().at(-1) ??
+            connection.lastActivityAt ??
+            null,
+        });
+      }
       return {
         provider: spec.id,
         activities,

@@ -1,12 +1,12 @@
 import { beforeEach, expect, it, vi } from "vitest";
-const mock = vi.hoisted(() => ({ window: vi.fn(), finish: vi.fn(), sync: vi.fn(), connection: vi.fn(), setConnection: vi.fn(), activities: vi.fn(), rpc: vi.fn() }));
+const mock = vi.hoisted(() => ({ stage: vi.fn(), read: vi.fn(), window: vi.fn(), finish: vi.fn(), sync: vi.fn(), connection: vi.fn(), setConnection: vi.fn(), activities: vi.fn(), rpc: vi.fn() }));
 vi.mock("@/lib/auth/request-user", () => ({ resolveRequestUserId: async () => "owner" }));
-vi.mock("@/lib/fitness-history", () => ({ fitnessSyncWindow: mock.window, finishFitnessHistory: mock.finish }));
-vi.mock("@/lib/fitness", () => ({ isOAuthProvider: (p: string) => p === "strava", getServerFitnessProvider: () => ({ getConnection: mock.connection, syncActivities: mock.sync }) }));
+vi.mock("@/lib/fitness-history", () => ({ fitnessSyncWindow: mock.window, finishFitnessHistory: mock.finish, stageFitnessHistoryReview: mock.stage, readFitnessHistoryReview: mock.read }));
+vi.mock("@/lib/fitness", () => ({ isOAuthProvider: (p: string) => p === "strava" || p === "whoop" || p === "oura", getServerFitnessProvider: () => ({ getConnection: mock.connection, syncActivities: mock.sync }) }));
 vi.mock("@/lib/fitness-store", () => ({ serviceDb: () => ({ rpc: mock.rpc }), createProviderStore: () => ({ setConnection: mock.setConnection }), persistSyncedActivities: mock.activities, persistReadiness: async () => true }));
 vi.mock("@/lib/daily-health-store", () => ({ persistDailyHealth: async () => {} }));
 vi.mock("@/lib/garmin-record-store", () => ({ persistSleepNight: async () => {} }));
-import { POST } from "./route";
+import { PATCH, POST } from "./route";
 
 function request(extra = {}) { return new Request("http://localhost/api/fitness/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider: "strava", ...extra }) }); }
 beforeEach(() => {
@@ -38,4 +38,43 @@ it("releases history when persistence fails", async () => {
 it("rejects the old unconfirmed backfill override", async () => {
   expect((await POST(request({ backfill: true }))).status).toBe(400);
   expect(mock.sync).not.toHaveBeenCalled();
+});
+
+it("explains the manual limit without conflating it with an active sync", async () => {
+  mock.rpc.mockResolvedValue({ error: { code: "PT429", details: "185" } });
+  const response = await POST(request());
+  expect(response.status).toBe(429);
+  expect(await response.json()).toMatchObject({
+    error: "sync_manual_limit",
+    message: "You’ve reached 10 syncs in the past hour. Try again in 4 minutes.",
+  });
+  expect(response.headers.get("Retry-After")).toBe("185");
+  expect(mock.sync).not.toHaveBeenCalled();
+});
+
+it.each(["strava", "whoop", "oura"])("stages %s history without advancing the cursor or completing the import", async provider => {
+  const activities = [{ id: "a" }];
+  mock.stage.mockResolvedValue(true);
+  mock.sync.mockResolvedValue({ activities, usedMock: false });
+
+  const response = await POST(request({ provider, historyLease: "ticket", reviewHistory: true }));
+  expect(await response.json()).toEqual({ activities });
+  expect(mock.sync).toHaveBeenCalledWith("owner", expect.objectContaining({ advanceCursor: false }));
+  expect(mock.stage).toHaveBeenCalledWith("owner", provider, "ticket", expect.objectContaining({ activities }));
+  expect(mock.activities).not.toHaveBeenCalled();
+  expect(mock.finish).not.toHaveBeenCalled();
+});
+
+it("commits only selected, server-staged activities", async () => {
+  mock.read.mockResolvedValue({ activities: [{ id: "a" }, { id: "b" }] });
+  mock.activities.mockResolvedValue(true);
+  const response = await PATCH(request({ historyLease: "ticket", selected: ["b"] }));
+  expect(response.status).toBe(200);
+  expect(mock.activities).toHaveBeenCalledWith("owner", [{ id: "b" }], "recorded", "ticket");
+  expect(mock.sync).not.toHaveBeenCalled();
+});
+
+it("rejects confirmation with an empty selection", async () => {
+  expect((await PATCH(request({ historyLease: "ticket", selected: [] }))).status).toBe(400);
+  expect(mock.activities).not.toHaveBeenCalled();
 });
