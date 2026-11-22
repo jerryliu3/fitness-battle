@@ -1,5 +1,6 @@
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: vi.fn() }) }));
 vi.mock("./athlete-profile-sheet", () => ({ AthleteProfileSheet: "AthleteProfileSheet" }));
+vi.mock("./special-event-ceremony", () => ({ SpecialEventCeremonyModal: "SpecialEventCeremonyModal" }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("../ui/club-art",()=>({alpineTrail:1}));
 import { createElement } from "react";
@@ -19,6 +20,7 @@ const mock = vi.hoisted(() => ({
   data: null as unknown,
   user: null as unknown,
 }));
+vi.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView", useSafeAreaInsets: () => ({ top: 44, bottom: 34 }) }));
 vi.mock("@react-native-async-storage/async-storage", () => ({
   default: { getItem: vi.fn(async () => null), setItem: vi.fn(async () => {}) },
 }));
@@ -36,6 +38,8 @@ vi.mock("react-native-svg", () => ({
   Text: "SvgText",
 }));
 vi.mock("react-native", () => ({useColorScheme: () => "light",
+  Animated: { createAnimatedComponent: (c: unknown) => c },
+  NativeModules: {},
   Dimensions: { get: () => ({ width: 390, height: 844 }) },
   Modal: "Modal",
   Platform: { OS: "ios" },
