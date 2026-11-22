@@ -27,7 +27,7 @@ export default async function PaceDistance({ params, searchParams }: {
     <main className="rankings-wrap ovt-observatory-main">
       <div className="ovt-heading">
         <div>
-          <span className="ovt-kicker">OBSERVATORY</span>
+          <span className="ovt-kicker">OVERVIEW</span>
           <AppHeading level={1} role="display">Every finish. One perspective.</AppHeading>
         </div>
       </div>

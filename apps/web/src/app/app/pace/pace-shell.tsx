@@ -133,14 +133,14 @@ function PaceShellInner({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        <nav className="ovt-topnav" aria-label="Observatory and Replay destinations">
+        <nav className="ovt-topnav" aria-label="Overview and Replay destinations">
           <button
             type="button"
             className={`ovt-nav-tab ${!isSubPage && activeTab === "observatory" ? "active" : ""}`}
             aria-current={!isSubPage && activeTab === "observatory" ? "page" : undefined}
             onClick={() => switchTab("observatory")}
           >
-            Observatory
+            Overview
           </button>
           <button
             type="button"
@@ -241,7 +241,7 @@ function PaceShellInner({ children }: { children: ReactNode }) {
             <div className="ovt-modal-head">
               <div>
                 <span className="ovt-kicker">
-                  {authPrompt.action === "pin" ? "PIN TO OBSERVATORY" : "SAVE TO OVERTAEK"}
+                  {authPrompt.action === "pin" ? "PIN TO OVERVIEW" : "SAVE TO OVERTAEK"}
                 </span>
                 <AppHeading id="ovt-auth-modal-title" level={2} role="heading">
                   {authPrompt.action === "pin"
@@ -262,7 +262,7 @@ function PaceShellInner({ children }: { children: ReactNode }) {
             <p className="ovt-auth-lead">
               Create a free Overtaek account to unlock{" "}
               {authPrompt.target ? <b>{authPrompt.target}</b> : authPrompt.action === "pin" ? "pinned chart comparisons" : "saved finishes and race watchlists"}{" "}
-              across Observatory and Replay Studio.
+              across Overview and Replay Studio.
             </p>
 
             <ul className="ovt-auth-perks">

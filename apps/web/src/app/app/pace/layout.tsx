@@ -4,7 +4,7 @@ import { PaceShell } from "./pace-shell";
 import "./pace.css";
 
 export const metadata: Metadata = {
-  title: "Overtaek — Observatory & Replay Studio",
+  title: "Overtaek — Overview & Replay Studio",
   description: "Explore published race distributions, cumulative fields, and interactive course replays.",
 };
 

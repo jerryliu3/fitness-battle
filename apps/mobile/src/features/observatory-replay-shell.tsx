@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import type { RaceCoverage } from "@fitness-battle/shared";
@@ -12,6 +12,7 @@ import {
 } from "../lib/observatory-replay-cache";
 import { createThemedStyles, useThemeColors, useThemedStyles } from "../theme";
 import { FocusButton, FocusSegments, FocusSheet } from "../ui/focus";
+import { IconButton } from "../ui/icon-button";
 import { AppText } from "../ui/section";
 import { MyResultsTab } from "./my-results-tab";
 import { ObservatoryTab } from "./observatory-tab";
@@ -20,7 +21,7 @@ import { ReplayStudioView } from "./replay-studio-view";
 type ShellTab = "observatory" | "replay" | "my_results";
 
 const SHELL_TABS: readonly { value: ShellTab; label: string }[] = [
-  { value: "observatory", label: "Observatory" },
+  { value: "observatory", label: "Overview" },
   { value: "replay", label: "Replay Studio" },
   { value: "my_results", label: "My Results" },
 ];
@@ -73,7 +74,6 @@ export function ObservatoryReplayShell({
     void loadCoursePreviewsCached().then(map => {
       if (!cancelled && map) setCoursePreviews(map);
     });
-    // Idle-warm the default Replay field so switching tabs feels instantaneous
     const timer = setTimeout(() => {
       void loadAndCompileReplayField({
         editionId: Number(initialEdition || 6),
@@ -93,14 +93,11 @@ export function ObservatoryReplayShell({
       {/* Progress-style Underline Tabs Masthead */}
       <View style={s.mast}>
         <View style={s.headerTop}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
+          <IconButton
+            icon="back"
+            label="Go back"
             onPress={() => (router.canGoBack() ? router.back() : router.replace("/arena"))}
-            style={s.backBtn}
-          >
-            <AppText role="body">←</AppText>
-          </Pressable>
+          />
           <AppText role="heading" style={{ flex: 1 }}>
             Rankings & Replay
           </AppText>
@@ -108,7 +105,7 @@ export function ObservatoryReplayShell({
 
         <FocusSegments
           variant="tabs"
-          label="Observatory, Replay Studio, and My Results"
+          label="Overview, Replay Studio, and My Results"
           value={activeTab}
           options={SHELL_TABS}
           onChange={next => {
@@ -171,13 +168,13 @@ export function ObservatoryReplayShell({
       {/* Signed-Out Account Creation Popup Sheet */}
       <FocusSheet
         open={authPrompt !== null}
-        title={authPrompt?.action === "pin" ? "Pin to Observatory" : "Save to Overtaek"}
+        title={authPrompt?.action === "pin" ? "Pin to Overview" : "Save to Overtaek"}
         onClose={() => setAuthPrompt(null)}
       >
         <View style={{ gap: 14 }}>
           <AppText role="body" secondary>
             Create a free Overtaek account to unlock{" "}
-            <AppText role="label">{authPrompt?.target ?? "saved results and race watchlists"}</AppText> across Observatory and Replay Studio.
+            <AppText role="label">{authPrompt?.target ?? "saved results and race watchlists"}</AppText> across Overview and Replay Studio.
           </AppText>
           <View style={{ gap: 10 }}>
             <FocusButton
@@ -200,7 +197,7 @@ const sThemes = createThemedStyles(c => ({
     flex: 1,
   },
   mast: {
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     paddingHorizontal: 14,
     paddingTop: 6,
     gap: 2,
@@ -209,15 +206,5 @@ const sThemes = createThemedStyles(c => ({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-  },
-  backBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 999,
-    backgroundColor: c.paper,
-    borderWidth: 1,
-    borderColor: c.line,
-    alignItems: "center",
-    justifyContent: "center",
   },
 }));

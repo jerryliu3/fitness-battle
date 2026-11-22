@@ -158,7 +158,7 @@ export function MyResultsTab({
         ) : rows.length === 0 ? (
           <View style={s.card}>
             <AppText role="body" secondary>
-              Tap ☆ on any athlete in the Observatory index or a race report to save results here for comparison and quick pinning.
+              Tap the star on any athlete in Overview or a race report to save results here for comparison and quick pinning.
             </AppText>
           </View>
         ) : (
@@ -235,21 +235,21 @@ const sThemes = createThemedStyles(c => ({
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: "#FFF5D1",
+    backgroundColor: c.statusSuccessSoft,
     borderWidth: 1,
-    borderColor: "#FFB800",
+    borderColor: c.tennis,
   },
   card: {
     padding: 16,
     borderRadius: 18,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     borderWidth: 1,
     borderColor: c.line,
     gap: 10,
   },
   listCard: {
     borderRadius: 18,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     borderWidth: 1,
     borderColor: c.line,
     overflow: "hidden",
@@ -263,27 +263,27 @@ const sThemes = createThemedStyles(c => ({
   },
   rowDivider: {
     borderBottomWidth: 1,
-    borderColor: "#eef2f1",
+    borderColor: c.line,
   },
   checkBox: {
     width: 22,
     height: 22,
     borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: "#cbd5dc",
+    borderColor: c.line,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
   },
   checkBoxOn: {
-    backgroundColor: "#FFB800",
-    borderColor: "#E5A400",
+    backgroundColor: c.tennis,
+    borderColor: c.tennis,
   },
   goldBtn: {
     height: 30,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: "#FFB800",
+    backgroundColor: c.tennis,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -291,7 +291,7 @@ const sThemes = createThemedStyles(c => ({
     width: 28,
     height: 28,
     borderRadius: 999,
-    backgroundColor: "#f4f7f8",
+    backgroundColor: c.soft,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -28,9 +28,12 @@ import {
 } from "../lib/observatory-replay-cache";
 import { useRaceFavorites } from "../lib/race-favorites";
 import { createThemedStyles, useThemeColors, useThemedStyles } from "../theme";
+import { AppIcon } from "../ui/app-icon";
 import { CompeteSheet } from "../ui/compete-sheet";
 import { CompetitionSheetHeight, useCompetitionSheetHeight } from "../ui/competition-sheet-height";
 import { FocusSegments, FocusSheet } from "../ui/focus";
+import { IconButton } from "../ui/icon-button";
+import { MapHudBackdrop, useMapHud } from "../ui/map-hud";
 import { RaceRouteArtNative, SplitSparklineNative } from "../ui/observatory-race-card";
 import { ObservatorySportBar } from "../ui/observatory-sport-bar";
 import { ReplayMap } from "../ui/race-replay-map";
@@ -86,9 +89,9 @@ function DuelAthleteCardNative({
       style={[
         duelStyles.card,
         {
-          borderColor: entry ? c.line : "#cbd5dc",
+          borderColor: c.line,
           borderStyle: entry ? "solid" : "dashed",
-          backgroundColor: entry ? c.paper : "#ffffff",
+          backgroundColor: entry ? c.paper : c.card,
         },
       ]}
     >
@@ -103,7 +106,7 @@ function DuelAthleteCardNative({
               setQuery("");
             }}
             hitSlop={8}
-            style={duelStyles.clearBtn}
+            style={[duelStyles.clearBtn, { backgroundColor: c.soft }]}
             accessibilityLabel={`Clear ${roleLabel}`}
           >
             <AppText role="nav">×</AppText>
@@ -136,11 +139,11 @@ function DuelAthleteCardNative({
         }}
         placeholder={entry ? "Search name or bib to switch…" : `Search ${roleLabel.toLowerCase()} by name or bib…`}
         placeholderTextColor={c.muted}
-        style={[duelStyles.input, { borderColor: c.line, color: c.ink }]}
+        style={[duelStyles.input, { borderColor: c.line, color: c.ink, backgroundColor: c.card }]}
       />
 
       {open ? (
-        <View style={[duelStyles.dropdown, { borderColor: c.line }]}>
+        <View style={[duelStyles.dropdown, { borderColor: c.line, backgroundColor: c.card }]}>
           {filtered.length === 0 ? (
             <AppText role="caption" secondary style={{ padding: 10, textAlign: "center" }}>
               No matching athletes
@@ -155,7 +158,7 @@ function DuelAthleteCardNative({
                     setQuery("");
                     setOpen(false);
                   }}
-                  style={duelStyles.option}
+                  style={[duelStyles.option, { borderColor: c.line }]}
                 >
                   <AppText role="caption" style={{ flex: 1 }} numberOfLines={1}>
                     {r.name}
@@ -222,7 +225,20 @@ const duelStyles = StyleSheet.create({
   },
 });
 
+function cameraIconFor(mode: "field" | "follow" | "chase3d") {
+  if (mode === "follow") return "navigationArrowFill" as const;
+  if (mode === "chase3d") return "cubeFocus" as const;
+  return "layers" as const;
+}
+
+function cameraLabelFor(mode: "field" | "follow" | "chase3d") {
+  if (mode === "follow") return "Follow";
+  if (mode === "chase3d") return "3D";
+  return "Field";
+}
+
 function FullScreenReplayStage({
+  editionKey,
   data,
   features,
   pinnedIds,
@@ -243,6 +259,7 @@ function FullScreenReplayStage({
   scrubberBar,
   sheetBody,
 }: {
+  editionKey: string;
   data: ReplayData;
   features: ReturnType<typeof replayFeatures>;
   pinnedIds: number[];
@@ -263,6 +280,8 @@ function FullScreenReplayStage({
   scrubberBar: React.ReactNode;
   sheetBody: React.ReactNode;
 }) {
+  const c = useThemeColors();
+  const hud = useMapHud();
   const s = useThemedStyles(sThemes);
   const insets = useSafeAreaInsets();
   const { minimum: sheetMin } = useCompetitionSheetHeight();
@@ -271,6 +290,7 @@ function FullScreenReplayStage({
   return (
     <SafeAreaView pointerEvents="box-none" style={s.fullScreenRoot} edges={[]}>
       <ReplayMap
+        key={`full-${editionKey}`}
         course={data.course}
         features={features}
         tracked={pinnedIds}
@@ -279,62 +299,70 @@ function FullScreenReplayStage({
         profile={null}
         followId={cameraMode !== "field" ? cameraTargetEntry?.runner.id ?? null : null}
         tilted={cameraMode === "chase3d"}
-        overlayTop={insets.top + 86}
+        overlayTop={insets.top + 112}
         overlayBottom={pinnedIds.length > 0 ? pinnedBottom + 66 : Math.max(insets.bottom + 24, sheetMin) + 12}
         onSelect={onSelectRunner}
         onError={onError}
       />
 
-      {/* Top Floating Clock & Controls Overlay */}
-      <View style={[s.fullTopBar, { top: insets.top + 10 }]} pointerEvents="box-none">
-        <View style={s.mapBadge} pointerEvents="none">
-          <AppText role="caption" style={s.mapBadgeLabel}>
-            {timelineOrigin !== null ? "TIME OF DAY" : "CHIP TIME"}
-          </AppText>
-          <AppText role="heading" style={s.mapBadgeTime}>
-            {timelineOrigin !== null ? new Date(timelineOrigin + time).toLocaleTimeString() : raceClock(time)}
-          </AppText>
-          <AppText role="caption" style={s.mapBadgeSub} numberOfLines={1}>
-            {cameraTargetEntry
-              ? `${(cameraTargetEntry.distM / 1000).toFixed(2)} km · ${cameraTargetEntry.runner.name}`
-              : `${runnersCount} athletes`}
-          </AppText>
-        </View>
+      {/* Top HUD: Back button top-left, Clock & controls right-aligned */}
+      <View style={[s.fullTopBar, { top: insets.top + 8 }]} pointerEvents="box-none">
+        <IconButton glass icon="back" label="Close full screen replay" onPress={onClose} />
 
-        <View style={s.fullTopRight}>
-          <View style={s.clockToggle}>
-            <Pressable
-              onPress={() => onToggleWall(false)}
-              style={[s.clockToggleBtn, !wall && s.clockToggleBtnOn]}
-            >
-              <AppText role="caption" style={[s.clockToggleText, !wall && s.clockToggleTextOn]}>
-                Chip
-              </AppText>
-            </Pressable>
-            <Pressable
-              disabled={!timelineWallAvailable}
-              onPress={() => onToggleWall(true)}
-              style={[s.clockToggleBtn, wall && s.clockToggleBtnOn, !timelineWallAvailable && { opacity: 0.38 }]}
-            >
-              <AppText role="caption" style={[s.clockToggleText, wall && s.clockToggleTextOn]}>
-                Clock
-              </AppText>
-            </Pressable>
+        <View style={s.fullTopRight} pointerEvents="box-none">
+          <View style={[s.mapBadgeBase, hud.chrome]} pointerEvents="none">
+            <MapHudBackdrop radius={12} />
+            <AppText role="nav" style={{ color: hud.muted }}>
+              {timelineOrigin !== null ? "TIME OF DAY" : "CHIP TIME"}
+            </AppText>
+            <AppText role="heading" style={{ color: hud.ink, fontVariant: ["tabular-nums"] }}>
+              {timelineOrigin !== null ? new Date(timelineOrigin + time).toLocaleTimeString() : raceClock(time)}
+            </AppText>
+            <AppText role="nav" style={{ color: hud.muted }} numberOfLines={1}>
+              {cameraTargetEntry
+                ? `${(cameraTargetEntry.distM / 1000).toFixed(2)} km · ${cameraTargetEntry.runner.name}`
+                : `${runnersCount} athletes`}
+            </AppText>
           </View>
 
           <View style={s.fullTopBtns}>
+            <View style={[s.hudToggleWrap, hud.chrome]}>
+              <MapHudBackdrop radius={999} />
+              <Pressable
+                onPress={() => onToggleWall(false)}
+                style={[s.clockToggleBtn, !wall && s.clockToggleBtnOn]}
+              >
+                <AppText role="nav" style={{ color: !wall ? c.textOnAction : hud.ink }}>
+                  Chip
+                </AppText>
+              </Pressable>
+              <Pressable
+                disabled={!timelineWallAvailable}
+                onPress={() => onToggleWall(true)}
+                style={[s.clockToggleBtn, wall && s.clockToggleBtnOn, !timelineWallAvailable && { opacity: 0.38 }]}
+              >
+                <AppText role="nav" style={{ color: wall ? c.textOnAction : hud.ink }}>
+                  Clock
+                </AppText>
+              </Pressable>
+            </View>
+
             <Pressable
               onPress={onCycleCamera}
-              style={[s.mapActionBtn, cameraMode !== "field" && s.mapActionBtnActive]}
+              style={[s.mapActionBtn, hud.chrome, cameraMode !== "field" && s.mapActionBtnActive]}
+              accessibilityLabel={`Camera mode ${cameraLabelFor(cameraMode)}`}
             >
-              <AppText role="caption" style={[s.mapActionText, cameraMode !== "field" && s.mapActionTextActive]}>
-                {cameraMode === "field" ? "◉ Field" : cameraMode === "follow" ? "◎ Follow" : "◈ 3D"}
-              </AppText>
-            </Pressable>
-            <Pressable onPress={onClose} style={s.mapActionBtn} accessibilityLabel="Exit full-screen replay">
-              <AppText role="caption" style={s.mapActionText}>
-                ⤡ Exit
-              </AppText>
+              {cameraMode === "field" ? <MapHudBackdrop radius={999} /> : null}
+              <View style={s.inlineIconRow}>
+                <AppIcon
+                  name={cameraIconFor(cameraMode)}
+                  size={14}
+                  color={cameraMode !== "field" ? c.textOnAction : hud.ink}
+                />
+                <AppText role="nav" style={{ color: cameraMode !== "field" ? c.textOnAction : hud.ink }}>
+                  {cameraLabelFor(cameraMode)}
+                </AppText>
+              </View>
             </Pressable>
           </View>
         </View>
@@ -375,6 +403,7 @@ export function ReplayStudioView({
 }) {
   const c = useThemeColors();
   const { mode: themeMode } = useAppTheme();
+  const hud = useMapHud();
   const s = useThemedStyles(sThemes);
   const { user } = useAuth();
   const saved = useRaceFavorites();
@@ -760,10 +789,11 @@ export function ReplayStudioView({
                 setCameraTargetId(entry.runner.id);
                 if (cameraMode === "field") setCameraMode("follow");
               }}
-              style={[s.pinnedCard, isCamTarget && s.pinnedCardFocused]}
+              style={[s.pinnedCard, hud.chrome, isCamTarget && s.pinnedCardFocused]}
             >
+              <MapHudBackdrop radius={12} />
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
-                <AppText role="nav" numberOfLines={1} style={{ color: "#f7faf8", flex: 1 }}>
+                <AppText role="nav" numberOfLines={1} style={{ color: hud.ink, flex: 1 }}>
                   {entry.runner.name}
                 </AppText>
                 <Pressable
@@ -774,12 +804,12 @@ export function ReplayStudioView({
                   hitSlop={6}
                   style={s.pinnedClose}
                 >
-                  <AppText role="nav" style={{ color: "#bbccd0" }}>×</AppText>
+                  <AppText role="nav" style={{ color: hud.muted }}>×</AppText>
                 </Pressable>
               </View>
-              <AppText role="nav" style={{ color: "#bbccd0", fontVariant: ["tabular-nums"] }}>
+              <AppText role="nav" style={{ color: hud.muted, fontVariant: ["tabular-nums"] }}>
                 {entry.finished ? `Finished · ${raceClock(entry.finishMs)}` : `${(entry.distM / 1000).toFixed(2)} km`}
-                {isCamTarget && cameraMode !== "field" ? " · ◎ Camera" : ""}
+                {isCamTarget && cameraMode !== "field" ? " · Camera" : ""}
               </AppText>
             </Pressable>
           );
@@ -789,8 +819,12 @@ export function ReplayStudioView({
 
   const renderScrubberBar = (roundedLight = false) => (
     <View style={[s.scrubberBar, roundedLight && s.scrubberBarSheet]}>
-      <Pressable
+      <IconButton
+        icon={playing ? "pause" : "play"}
+        label={playing ? "Pause replay" : "Play replay"}
         disabled={reduced || !runners.length}
+        primary
+        haptic={false}
         onPress={() => {
           if (timeRef.current >= timeline.duration) {
             timeRef.current = 0;
@@ -800,13 +834,7 @@ export function ReplayStudioView({
           }
           setPlaying(v => !v);
         }}
-        style={[s.playBtn, (reduced || !runners.length) && { opacity: 0.4 }]}
-        accessibilityLabel={playing ? "Pause replay" : "Play replay"}
-      >
-        <AppText role="nav" style={{ color: "#142b3b" }}>
-          {playing ? "Ⅱ" : "▶"}
-        </AppText>
-      </Pressable>
+      />
 
       <AppText role="caption" style={s.scrubTime}>{raceClock(time)}</AppText>
 
@@ -833,7 +861,7 @@ export function ReplayStudioView({
         onPress={() => setSpeed(sp => (sp === 64 ? 128 : sp === 128 ? 256 : sp === 256 ? 512 : 64))}
         style={s.speedBtn}
       >
-        <AppText role="nav" style={{ color: "#f7faf8" }}>
+        <AppText role="nav" style={{ color: c.ink, fontVariant: ["tabular-nums"] }}>
           {speed}×
         </AppText>
       </Pressable>
@@ -881,9 +909,12 @@ export function ReplayStudioView({
                 onPress={toggleSavedResultsPinned}
                 style={[s.subtleChip, allSavedPinned && s.subtleChipActive]}
               >
-                <AppText role="nav" style={{ color: allSavedPinned ? "#ffffff" : c.muted }}>
-                  {allSavedPinned ? "★ Saved pinned" : "☆ Saved results"}
-                </AppText>
+                <View style={s.inlineIconRow}>
+                  <AppIcon name="special" size={13} color={allSavedPinned ? c.card : c.muted} />
+                  <AppText role="nav" style={{ color: allSavedPinned ? c.card : c.muted }}>
+                    {allSavedPinned ? "Saved pinned" : "Saved results"}
+                  </AppText>
+                </View>
               </Pressable>
             </View>
           ) : null}
@@ -935,8 +966,8 @@ export function ReplayStudioView({
                       }}
                       style={[s.miniBtn, isPinned && s.miniBtnActive]}
                     >
-                      <AppText role="nav" style={{ color: c.ink }}>
-                        {isPinned ? "✓ Pin" : "Pin"}
+                      <AppText role="nav" style={{ color: isPinned ? c.textOnAction : c.ink }}>
+                        {isPinned ? "Pinned" : "Pin"}
                       </AppText>
                     </Pressable>
                     <Pressable
@@ -1207,9 +1238,14 @@ export function ReplayStudioView({
                           <AppText role="caption" secondary>{distLabel}</AppText>
                         </View>
                         <View style={[s.watchPill, isActive && s.watchPillActive]}>
-                          <AppText role="nav" style={{ color: isActive ? "#142b3b" : c.ink }}>
-                            {!hasGps ? "No GPS map" : isActive ? "● Watching" : "▶ Watch"}
-                          </AppText>
+                          <View style={s.inlineIconRow}>
+                            {hasGps ? (
+                              <AppIcon name="play" size={11} color={isActive ? c.textOnAction : c.ink} />
+                            ) : null}
+                            <AppText role="nav" style={{ color: isActive ? c.textOnAction : c.ink }}>
+                              {!hasGps ? "No GPS map" : isActive ? "Watching" : "Watch"}
+                            </AppText>
+                          </View>
                         </View>
                       </View>
                     </Pressable>
@@ -1218,7 +1254,7 @@ export function ReplayStudioView({
             </ScrollView>
           </View>
 
-          {/* Dark Immersive Replay Map Shell */}
+          {/* Theme-matched Replay Map Shell */}
           <View style={s.replayShell}>
             <View style={s.replayHead}>
               <AppText role="label" numberOfLines={1} style={s.replayTitle}>
@@ -1249,6 +1285,7 @@ export function ReplayStudioView({
             <View style={[s.mapStage, { height: 370 }]}>
               {data && !mapExpanded ? (
                 <ReplayMap
+                  key={`inline-${editionId}-${storedDistance}`}
                   course={data.course}
                   features={features}
                   tracked={pinnedIds}
@@ -1257,7 +1294,7 @@ export function ReplayStudioView({
                   profile={null}
                   followId={cameraMode !== "field" ? cameraTargetEntry?.runner.id ?? null : null}
                   tilted={cameraMode === "chase3d"}
-                  overlayTop={54}
+                  overlayTop={74}
                   overlayBottom={pinnedEntries.length > 0 ? 78 : 18}
                   onSelect={togglePinRunner}
                   onError={() => setPlaying(false)}
@@ -1266,18 +1303,18 @@ export function ReplayStudioView({
                 <View style={s.mapStatus}>
                   {busy ? (
                     <>
-                      <ActivityIndicator color="#FFB800" />
-                      <AppText role="caption" style={{ color: "#f7faf8" }}>
+                      <ActivityIndicator color={c.tennis} />
+                      <AppText role="caption" secondary>
                         Loading {progress.toLocaleString()} timing profiles…
                       </AppText>
                     </>
                   ) : (
                     <>
-                      <AppText role="body" style={{ color: "#f7faf8", textAlign: "center" }}>
+                      <AppText role="body" style={{ textAlign: "center" }}>
                         {error || "Course unavailable"}
                       </AppText>
                       <Pressable onPress={() => setAttempt(n => n + 1)} style={s.watchPillActive}>
-                        <AppText role="nav" style={{ color: "#142b3b" }}>Retry</AppText>
+                        <AppText role="nav" style={{ color: c.textOnAction }}>Retry</AppText>
                       </Pressable>
                     </>
                   )}
@@ -1286,14 +1323,15 @@ export function ReplayStudioView({
 
               {/* Floating Top-Left Clock + Athlete Readout */}
               {data ? (
-                <View style={s.mapBadge} pointerEvents="none">
-                  <AppText role="caption" style={s.mapBadgeLabel}>
+                <View style={[s.inlineMapBadge, hud.chrome]} pointerEvents="none">
+                  <MapHudBackdrop radius={10} />
+                  <AppText role="nav" style={{ color: hud.muted }}>
                     {timeline.origin !== null ? "TIME OF DAY" : "CHIP TIME"}
                   </AppText>
-                  <AppText role="heading" style={s.mapBadgeTime}>
+                  <AppText role="heading" style={{ color: hud.ink, fontVariant: ["tabular-nums"] }}>
                     {timeline.origin !== null ? new Date(timeline.origin + time).toLocaleTimeString() : raceClock(time)}
                   </AppText>
-                  <AppText role="caption" style={s.mapBadgeSub} numberOfLines={1}>
+                  <AppText role="nav" style={{ color: hud.muted }} numberOfLines={1}>
                     {cameraTargetEntry
                       ? `${(cameraTargetEntry.distM / 1000).toFixed(2)} km · ${cameraTargetEntry.runner.name}`
                       : `${runners.length} athletes`}
@@ -1306,21 +1344,27 @@ export function ReplayStudioView({
                 <View style={s.mapActions}>
                   <Pressable
                     onPress={cycleCameraMode}
-                    style={[s.mapActionBtn, cameraMode !== "field" && s.mapActionBtnActive]}
+                    style={[s.mapActionBtn, hud.chrome, cameraMode !== "field" && s.mapActionBtnActive]}
+                    accessibilityLabel={`Camera mode ${cameraLabelFor(cameraMode)}`}
                   >
-                    <AppText role="caption" style={[s.mapActionText, cameraMode !== "field" && s.mapActionTextActive]}>
-                      {cameraMode === "field" ? "◉ Field" : cameraMode === "follow" ? "◎ Follow" : "◈ 3D"}
-                    </AppText>
+                    {cameraMode === "field" ? <MapHudBackdrop radius={999} /> : null}
+                    <View style={s.inlineIconRow}>
+                      <AppIcon
+                        name={cameraIconFor(cameraMode)}
+                        size={14}
+                        color={cameraMode !== "field" ? c.textOnAction : hud.ink}
+                      />
+                      <AppText role="nav" style={{ color: cameraMode !== "field" ? c.textOnAction : hud.ink }}>
+                        {cameraLabelFor(cameraMode)}
+                      </AppText>
+                    </View>
                   </Pressable>
-                  <Pressable
+                  <IconButton
+                    glass
+                    icon="expand"
+                    label="Expand map to full screen"
                     onPress={() => setMapExpanded(true)}
-                    style={s.mapActionBtn}
-                    accessibilityLabel="Expand map to full screen"
-                  >
-                    <AppText role="caption" style={s.mapActionText}>
-                      ⤢ Expand
-                    </AppText>
-                  </Pressable>
+                  />
                 </View>
               ) : null}
 
@@ -1345,6 +1389,7 @@ export function ReplayStudioView({
                 <StatusBar style={themeMode === "dark" ? "light" : "dark"} />
                 {data ? (
                   <FullScreenReplayStage
+                    editionKey={`${editionId}-${storedDistance}`}
                     data={data}
                     features={features}
                     pinnedIds={pinnedIds}
@@ -1406,9 +1451,14 @@ export function ReplayStudioView({
                     onPress={() => selectRaceEdition(ed.edition_id, ed.distance_slug)}
                     style={[s.watchPill, isActive && s.watchPillActive, !hasGps && { opacity: 0.45 }]}
                   >
-                    <AppText role="nav" style={{ color: isActive ? "#142b3b" : c.ink }}>
-                      {!hasGps ? "No GPS map" : isActive ? "● Watching" : "▶ Replay"}
-                    </AppText>
+                    <View style={s.inlineIconRow}>
+                      {hasGps ? (
+                        <AppIcon name="play" size={11} color={isActive ? c.textOnAction : c.ink} />
+                      ) : null}
+                      <AppText role="nav" style={{ color: isActive ? c.textOnAction : c.ink }}>
+                        {!hasGps ? "No GPS map" : isActive ? "Watching" : "Replay"}
+                      </AppText>
+                    </View>
                   </Pressable>
                 </View>
               );
@@ -1447,6 +1497,11 @@ const sThemes = createThemedStyles(c => ({
     justifyContent: "space-between",
     paddingHorizontal: 2,
   },
+  inlineIconRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
   checkbox: {
     width: 16,
     height: 16,
@@ -1455,11 +1510,11 @@ const sThemes = createThemedStyles(c => ({
     borderColor: c.muted,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
   },
   checkboxChecked: {
-    backgroundColor: "#142b3b",
-    borderColor: "#142b3b",
+    backgroundColor: c.ink,
+    borderColor: c.ink,
   },
   carousel: {
     gap: 12,
@@ -1468,14 +1523,14 @@ const sThemes = createThemedStyles(c => ({
   raceCard: {
     width: 246,
     borderRadius: 18,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     borderWidth: 1.5,
     borderColor: c.line,
     overflow: "hidden",
   },
   raceCardActive: {
-    borderColor: "#FFB800",
-    shadowColor: "#FFB800",
+    borderColor: c.tennis,
+    shadowColor: c.tennis,
     shadowOpacity: 0.25,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
@@ -1493,7 +1548,7 @@ const sThemes = createThemedStyles(c => ({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: c.line,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1501,17 +1556,17 @@ const sThemes = createThemedStyles(c => ({
     height: 30,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: "#FFB800",
+    backgroundColor: c.tennis,
     borderWidth: 1,
-    borderColor: "#E5A400",
+    borderColor: c.tennis,
     alignItems: "center",
     justifyContent: "center",
   },
   replayShell: {
-    backgroundColor: "#111f29",
+    backgroundColor: c.card,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#243845",
+    borderColor: c.line,
     overflow: "hidden",
   },
   replayHead: {
@@ -1522,21 +1577,32 @@ const sThemes = createThemedStyles(c => ({
     paddingHorizontal: 14,
     paddingVertical: 11,
     borderBottomWidth: 1,
-    borderColor: "#243845",
+    borderColor: c.line,
+    backgroundColor: c.card,
   },
   replayTitle: {
     ...textStyle("label"),
-    color: "#f7faf8",
+    color: c.ink,
     flex: 1,
   },
   clockToggle: {
     flexDirection: "row",
-    backgroundColor: "#1c2e38",
+    backgroundColor: c.soft,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#324954",
+    borderColor: c.line,
     padding: 2,
     gap: 2,
+  },
+  hudToggleWrap: {
+    flexDirection: "row",
+    borderRadius: 999,
+    backgroundColor: "rgba(20, 20, 19, 0.72)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.16)",
+    padding: 3,
+    gap: 2,
+    overflow: "hidden",
   },
   clockToggleBtn: {
     height: 28,
@@ -1546,18 +1612,18 @@ const sThemes = createThemedStyles(c => ({
     justifyContent: "center",
   },
   clockToggleBtnOn: {
-    backgroundColor: "#FFB800",
+    backgroundColor: c.tennis,
   },
   clockToggleText: {
     ...textStyle("nav"),
-    color: "#9fa5af",
+    color: c.muted,
   },
   clockToggleTextOn: {
-    color: "#142b3b",
+    color: c.textOnAction,
   },
   mapStage: {
     width: "100%",
-    backgroundColor: "#142b3b",
+    backgroundColor: c.paper,
     position: "relative",
     overflow: "hidden",
   },
@@ -1568,58 +1634,52 @@ const sThemes = createThemedStyles(c => ({
     gap: 10,
     padding: 20,
   },
-  mapBadge: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    backgroundColor: "rgba(17, 31, 41, 0.88)",
-    borderRadius: 10,
+  mapBadgeBase: {
+    borderRadius: 12,
+    backgroundColor: "rgba(20, 20, 19, 0.72)",
     borderWidth: 1,
-    borderColor: "rgba(159, 165, 175, 0.28)",
+    borderColor: "rgba(255, 255, 255, 0.16)",
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    maxWidth: 210,
+    alignItems: "flex-end",
+    overflow: "hidden",
+  },
+  inlineMapBadge: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    borderRadius: 10,
+    backgroundColor: "rgba(20, 20, 19, 0.72)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.16)",
     paddingHorizontal: 10,
     paddingVertical: 7,
-    maxWidth: 180,
-  },
-  mapBadgeLabel: {
-    ...textStyle("nav"),
-    color: "#9fa5af",
-  },
-  mapBadgeTime: {
-    ...textStyle("heading"),
-    color: "#f7faf8",
-    fontVariant: ["tabular-nums"],
-  },
-  mapBadgeSub: {
-    ...textStyle("nav"),
-    color: "#bbccd0",
+    maxWidth: 185,
+    overflow: "hidden",
   },
   mapActions: {
     position: "absolute",
-    top: 12,
-    right: 12,
+    top: 10,
+    right: 10,
     flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   mapActionBtn: {
-    height: 32,
-    paddingHorizontal: 11,
+    height: 36,
+    paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: "rgba(17, 31, 41, 0.88)",
+    backgroundColor: "rgba(20, 20, 19, 0.72)",
     borderWidth: 1,
-    borderColor: "rgba(159, 165, 175, 0.35)",
+    borderColor: "rgba(255, 255, 255, 0.16)",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   mapActionBtnActive: {
-    backgroundColor: "#FFB800",
-    borderColor: "#FFB800",
-  },
-  mapActionText: {
-    ...textStyle("nav"),
-    color: "#f7faf8",
-  },
-  mapActionTextActive: {
-    color: "#142b3b",
+    backgroundColor: c.tennis,
+    borderColor: c.tennis,
   },
   pinnedStrip: {
     position: "absolute",
@@ -1631,21 +1691,22 @@ const sThemes = createThemedStyles(c => ({
   pinnedCard: {
     width: 156,
     borderRadius: 12,
-    backgroundColor: "rgba(17, 31, 41, 0.92)",
+    backgroundColor: "rgba(20, 20, 19, 0.76)",
     borderWidth: 1,
-    borderColor: "rgba(159, 165, 175, 0.35)",
+    borderColor: "rgba(255, 255, 255, 0.18)",
     paddingHorizontal: 10,
     paddingVertical: 7,
     gap: 2,
+    overflow: "hidden",
   },
   pinnedCardFocused: {
-    borderColor: "#FFB800",
+    borderColor: c.tennis,
   },
   pinnedClose: {
     width: 18,
     height: 18,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    backgroundColor: c.soft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1654,53 +1715,45 @@ const sThemes = createThemedStyles(c => ({
     alignItems: "center",
     gap: 8,
     paddingHorizontal: 12,
-    paddingVertical: 9,
-    backgroundColor: "#142530",
+    paddingVertical: 8,
+    backgroundColor: c.card,
     borderTopWidth: 1,
-    borderColor: "#243845",
-  },
-  playBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 999,
-    backgroundColor: "#FFB800",
-    alignItems: "center",
-    justifyContent: "center",
+    borderColor: c.line,
   },
   scrubTime: {
     ...textStyle("nav"),
-    color: "#bbccd0",
+    color: c.muted,
     fontVariant: ["tabular-nums"],
   },
   scrubTouch: {
     flex: 1,
-    height: 28,
+    height: 32,
     justifyContent: "center",
   },
   scrubTrack: {
-    height: 4,
+    height: 5,
     borderRadius: 999,
-    backgroundColor: "#2b414f",
+    backgroundColor: c.line,
     overflow: "hidden",
   },
   scrubFill: {
-    height: 4,
+    height: 5,
     borderRadius: 999,
-    backgroundColor: "#FFB800",
+    backgroundColor: c.tennis,
   },
   speedBtn: {
-    height: 26,
+    height: 30,
     paddingHorizontal: 10,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#324954",
-    backgroundColor: "#1c2e38",
+    borderColor: c.line,
+    backgroundColor: c.soft,
     alignItems: "center",
     justifyContent: "center",
   },
   panelCard: {
     borderRadius: 18,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     borderWidth: 1,
     borderColor: c.line,
     overflow: "hidden",
@@ -1716,29 +1769,29 @@ const sThemes = createThemedStyles(c => ({
     height: 34,
     paddingHorizontal: 11,
     borderRadius: 999,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     borderWidth: 1,
     borderColor: c.line,
     alignItems: "center",
     justifyContent: "center",
   },
   subtleChipActive: {
-    backgroundColor: "#142b3b",
-    borderColor: "#142b3b",
+    backgroundColor: c.ink,
+    borderColor: c.ink,
   },
   boardRow: {
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     paddingHorizontal: 14,
     paddingVertical: 10,
     gap: 6,
   },
   rowDivider: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: "#eef2f1",
+    borderColor: c.line,
   },
   rowGoldAccent: {
     borderLeftWidth: 3,
-    borderLeftColor: "#FFB800",
+    borderLeftColor: c.tennis,
   },
   rowMain: {
     flexDirection: "row",
@@ -1755,11 +1808,11 @@ const sThemes = createThemedStyles(c => ({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: c.line,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
   },
   miniBtnActive: {
-    backgroundColor: "#FFB800",
-    borderColor: "#E5A400",
+    backgroundColor: c.tennis,
+    borderColor: c.tennis,
   },
   paginationRow: {
     flexDirection: "row",
@@ -1776,7 +1829,7 @@ const sThemes = createThemedStyles(c => ({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: c.line,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1787,7 +1840,7 @@ const sThemes = createThemedStyles(c => ({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: c.line,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     textAlign: "center",
     color: c.ink,
   },
@@ -1799,7 +1852,7 @@ const sThemes = createThemedStyles(c => ({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: c.line,
-    backgroundColor: "#fafcfb",
+    backgroundColor: c.soft,
     overflow: "hidden",
     paddingVertical: 4,
   },
@@ -1816,15 +1869,15 @@ const sThemes = createThemedStyles(c => ({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: c.line,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
   },
   modalRowActive: {
-    backgroundColor: "#FFF9E6",
-    borderColor: "#FFB800",
+    backgroundColor: c.soft,
+    borderColor: c.tennis,
   },
   fullScreenRoot: {
     flex: 1,
-    backgroundColor: "#142b3b",
+    backgroundColor: c.paper,
   },
   fullTopBar: {
     position: "absolute",
@@ -1837,11 +1890,13 @@ const sThemes = createThemedStyles(c => ({
     zIndex: 20,
   },
   fullTopRight: {
+    flex: 1,
     alignItems: "flex-end",
     gap: 6,
   },
   fullTopBtns: {
     flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   fullPinnedAnchor: {
@@ -1852,7 +1907,7 @@ const sThemes = createThemedStyles(c => ({
   },
   scrubberBarSheet: {
     borderRadius: 16,
-    borderTopWidth: 0,
+    borderWidth: 1,
   },
   panelTopSheet: {
     backgroundColor: "transparent",
@@ -1864,7 +1919,7 @@ const sThemes = createThemedStyles(c => ({
     paddingTop: 8,
     paddingLeft: 42,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderColor: "#eef2f1",
+    borderColor: c.line,
     gap: 6,
   },
   tabular: {

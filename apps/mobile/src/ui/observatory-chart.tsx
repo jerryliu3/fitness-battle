@@ -8,9 +8,10 @@ import {
   estimateAtTimeMs,
   gaussianSmooth,
   raceClock,
+  racePercentLabel,
   type RaceEditionAnalytics,
 } from "@fitness-battle/shared";
-import { createThemedStyles, useThemedStyles } from "../theme";
+import { createThemedStyles, useThemeColors, useThemedStyles } from "../theme";
 import { AppText, chartTextProps, textStyle } from "./section";
 
 export type ObservatoryPinnedRecord = {
@@ -70,12 +71,14 @@ export const ObservatoryChart = memo(function ObservatoryChart({
   overlayData: Record<string, ObservatoryOverlayDataset>;
   onRemoveOverlay: (editionId: number) => void;
 }) {
+  const c = useThemeColors();
   const gradId = useId();
   const s = useThemedStyles(sThemes);
   const [plotWidth, setPlotWidth] = useState(340);
+  const [scrubTimeMs, setScrubTimeMs] = useState<number | null>(null);
 
   const pinchStartRef = useRef<[number, number]>(zoomRange);
-  const panStartRef = useRef<[number, number]>(zoomRange);
+  const scrubCommitRef = useRef<{ ms: number; bucket: number } | null>(null);
 
   const chartModel = useMemo(() => {
     if (!analytics || !analytics.bins.length || analytics.total <= 0) return null;
@@ -122,16 +125,27 @@ export const ObservatoryChart = memo(function ObservatoryChart({
     return { startBin, numBins, minMs, maxMs, densities, smoothed, activeOverlays, maxDensity };
   }, [analytics, overlayIds, overlayData, editionScoped, zoomRange]);
 
+  const activeInspectMs = scrubTimeMs ?? inspectTimeMs;
   const inspectStats = useMemo(
-    () => (inspectTimeMs !== null ? estimateAtTimeMs(analytics, inspectTimeMs) : null),
-    [analytics, inspectTimeMs],
+    () => (activeInspectMs !== null ? estimateAtTimeMs(analytics, activeInspectMs) : null),
+    [analytics, activeInspectMs],
   );
 
-  // Mobile-first Gestures: Pinch to zoom X-axis, horizontal Pan to scrub window, Tap to inspect/select bar
+  // Mobile-first Gestures: Pinch zooms X-axis, single-finger drag OR tap scrubs & selects like web hover/click
   const composedGesture = useMemo(() => {
+    const inspectAtX = (xPx: number) => {
+      if (!chartModel || !analytics) return null;
+      const svgX = (xPx / Math.max(1, plotWidth)) * SVG_W;
+      const q = Math.max(0, Math.min(1, (svgX - L) / (R - L)));
+      const targetMs = Math.round(chartModel.minMs + q * (chartModel.maxMs - chartModel.minMs));
+      const stats = estimateAtTimeMs(analytics, targetMs);
+      return stats ? { ms: targetMs, bucket: stats.bucket } : null;
+    };
+
     const pinch = Gesture.Pinch()
       .runOnJS(true)
       .onStart(() => {
+        setScrubTimeMs(null);
         pinchStartRef.current = zoomRange;
       })
       .onUpdate(ev => {
@@ -146,31 +160,37 @@ export const ObservatoryChart = memo(function ObservatoryChart({
 
     const pan = Gesture.Pan()
       .runOnJS(true)
-      .activeOffsetX([-12, 12])
-      .failOffsetY([-10, 10])
-      .onStart(() => {
-        panStartRef.current = zoomRange;
+      .activeOffsetX([-5, 5])
+      .failOffsetY([-14, 14])
+      .onStart(ev => {
+        const hit = inspectAtX(ev.x);
+        scrubCommitRef.current = hit;
+        if (hit) setScrubTimeMs(hit.ms);
       })
       .onUpdate(ev => {
-        const [sLo, sHi] = panStartRef.current;
-        const span = sHi - sLo;
-        if (span >= 0.995) return;
-        const deltaFrac = -(ev.translationX / Math.max(120, plotWidth)) * span;
-        const nextLo = Math.max(0, Math.min(1 - span, sLo + deltaFrac));
-        onZoomChange([Number(nextLo.toFixed(3)), Number((nextLo + span).toFixed(3))]);
+        const hit = inspectAtX(ev.x);
+        scrubCommitRef.current = hit;
+        if (hit) setScrubTimeMs(hit.ms);
+      })
+      .onEnd(() => {
+        const hit = scrubCommitRef.current;
+        scrubCommitRef.current = null;
+        setScrubTimeMs(null);
+        if (hit) onSelectTimeMs(hit.ms, hit.bucket);
+      })
+      .onFinalize(() => {
+        scrubCommitRef.current = null;
+        setScrubTimeMs(null);
       });
 
     const tap = Gesture.Tap()
       .runOnJS(true)
       .onEnd(ev => {
-        if (!chartModel || !analytics) return;
-        const svgX = (ev.x / Math.max(1, plotWidth)) * SVG_W;
-        const q = Math.max(0, Math.min(1, (svgX - L) / (R - L)));
-        const targetMs = Math.round(chartModel.minMs + q * (chartModel.maxMs - chartModel.minMs));
-        const stats = estimateAtTimeMs(analytics, targetMs);
-        if (!stats) return;
-        const nextBucket = selectedBucket === stats.bucket ? null : stats.bucket;
-        onSelectTimeMs(nextBucket === null ? null : targetMs, nextBucket);
+        const hit = inspectAtX(ev.x);
+        if (!hit) return;
+        const nextBucket = selectedBucket === hit.bucket ? null : hit.bucket;
+        setScrubTimeMs(null);
+        onSelectTimeMs(nextBucket === null ? null : hit.ms, nextBucket);
       });
 
     return Gesture.Race(pinch, pan, tap);
@@ -262,7 +282,7 @@ export const ObservatoryChart = memo(function ObservatoryChart({
                 {/* Horizontal reference grid */}
                 <G>
                   {[T, T + (B - T) * 0.33, T + (B - T) * 0.66, B].map((yVal, idx) => (
-                    <Path key={idx} d={`M${L} ${yVal.toFixed(1)}H${R}`} stroke="#e7ecea" strokeWidth={1} />
+                    <Path key={idx} d={`M${L} ${yVal.toFixed(1)}H${R}`} stroke={c.line} strokeWidth={1} />
                   ))}
                 </G>
 
@@ -329,7 +349,7 @@ export const ObservatoryChart = memo(function ObservatoryChart({
                   );
                 })}
 
-                {/* Pinned athlete markers + staggered white pill nametags */}
+                {/* Pinned athlete markers + staggered pill nametags */}
                 {laidOutPins.map(item => (
                   <G key={`pin-line-${item.id}`}>
                     <Line
@@ -337,11 +357,11 @@ export const ObservatoryChart = memo(function ObservatoryChart({
                       x2={item.xx}
                       y1={item.badgeY + item.badgeH}
                       y2={Math.max(item.badgeY + item.badgeH, item.yy - 4)}
-                      stroke="#142b3b"
+                      stroke={c.ink}
                       strokeWidth={1.3}
                       strokeDasharray="2.5 2.5"
                     />
-                    <Circle cx={item.xx} cy={item.yy} r={4.2} fill="#FFB800" stroke="#142b3b" strokeWidth={1.6} />
+                    <Circle cx={item.xx} cy={item.yy} r={4.2} fill={c.tennis} stroke={c.ink} strokeWidth={1.6} />
                   </G>
                 ))}
                 {laidOutPins.map(item => (
@@ -352,14 +372,14 @@ export const ObservatoryChart = memo(function ObservatoryChart({
                       width={item.badgeW}
                       height={item.badgeH}
                       rx={10}
-                      fill="#ffffff"
-                      stroke="#cbd5dc"
+                      fill={c.card}
+                      stroke={c.line}
                       strokeWidth={1.1}
                     />
                     <SvgText
                       x={item.badgeX + item.badgeW / 2}
                       y={item.badgeY + 13.5}
-                      fill="#142b3b"
+                      fill={c.ink}
                       {...chartTextProps("nav")}
                       textAnchor="middle"
                     >
@@ -368,19 +388,35 @@ export const ObservatoryChart = memo(function ObservatoryChart({
                   </G>
                 ))}
 
-                {/* Active inspected bar marker */}
-                {inspectTimeMs !== null &&
-                  inspectTimeMs >= chartModel.minMs &&
-                  inspectTimeMs <= chartModel.maxMs &&
+                {/* Active inspected / hovered bar marker + floating callout tooltip */}
+                {activeInspectMs !== null &&
+                  inspectStats &&
+                  activeInspectMs >= chartModel.minMs &&
+                  activeInspectMs <= chartModel.maxMs &&
                   (() => {
-                    const q = (inspectTimeMs - chartModel.minMs) / Math.max(1, chartModel.maxMs - chartModel.minMs);
+                    const q = (activeInspectMs - chartModel.minMs) / Math.max(1, chartModel.maxMs - chartModel.minMs);
                     const xx = L + q * (R - L);
                     const binIdx = Math.min(chartModel.numBins - 1, Math.max(0, Math.floor(q * chartModel.numBins)));
                     const yy = B - (chartModel.densities[binIdx] / chartModel.maxDensity) * (B - T);
+                    const calloutText = `${raceClock(activeInspectMs)} · Faster than ${racePercentLabel(inspectStats.fasterThan)} · #${inspectStats.rank.toLocaleString()}`;
+                    const boxW = Math.min(SVG_W - 12, Math.max(176, calloutText.length * 5.8 + 18));
+                    const boxH = 24;
+                    const boxX = Math.max(6, Math.min(SVG_W - 6 - boxW, xx - boxW / 2));
+                    const boxY = 6;
                     return (
                       <G>
-                        <Line x1={xx} x2={xx} y1={T} y2={B} stroke="#D49400" strokeWidth={1.3} strokeDasharray="2.5 2.5" />
-                        <Circle cx={xx} cy={yy} r={4.5} fill="#FFB800" stroke="#142b3b" strokeWidth={1.6} />
+                        <Line x1={xx} x2={xx} y1={boxY + boxH} y2={B} stroke={c.tennis} strokeWidth={1.6} strokeDasharray="3 2.5" />
+                        <Circle cx={xx} cy={yy} r={5} fill={c.tennis} stroke={c.ink} strokeWidth={1.8} />
+                        <Rect x={boxX} y={boxY} width={boxW} height={boxH} rx={12} fill={c.ink} />
+                        <SvgText
+                          x={boxX + boxW / 2}
+                          y={boxY + 15.5}
+                          fill={c.card}
+                          {...chartTextProps("nav")}
+                          textAnchor="middle"
+                        >
+                          {calloutText}
+                        </SvgText>
                       </G>
                     );
                   })()}
@@ -391,7 +427,7 @@ export const ObservatoryChart = memo(function ObservatoryChart({
                     key={j}
                     x={L + ((R - L) * j) / 4}
                     y={SVG_H - 8}
-                    fill="#637482"
+                    fill={c.muted}
                     {...chartTextProps("nav")}
                     textAnchor={j === 0 ? "start" : j === 4 ? "end" : "middle"}
                   >
@@ -498,7 +534,7 @@ const sThemes = createThemedStyles(c => ({
     gap: 10,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: "#f4f7f8",
+    backgroundColor: c.soft,
     borderTopWidth: 1,
     borderColor: c.line,
   },
@@ -511,7 +547,7 @@ const sThemes = createThemedStyles(c => ({
     flex: 1,
     height: 8,
     borderRadius: 999,
-    backgroundColor: "#e2e8ec",
+    backgroundColor: c.line,
     overflow: "hidden",
     position: "relative",
   },
@@ -520,7 +556,7 @@ const sThemes = createThemedStyles(c => ({
     top: 0,
     bottom: 0,
     borderRadius: 999,
-    backgroundColor: "#FFB800",
+    backgroundColor: c.tennis,
   },
   zoomBtns: {
     flexDirection: "row",
@@ -532,7 +568,7 @@ const sThemes = createThemedStyles(c => ({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: c.line,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -541,7 +577,7 @@ const sThemes = createThemedStyles(c => ({
     borderColor: c.line,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
   },
   overlayWrap: {
     flexDirection: "row",

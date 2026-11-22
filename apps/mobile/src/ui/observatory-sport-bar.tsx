@@ -154,8 +154,8 @@ const sThemes = createThemedStyles(c => ({
     justifyContent: "center",
   },
   chipActive: {
-    backgroundColor: "#FFB800",
-    borderColor: "#E5A400",
+    backgroundColor: c.tennis,
+    borderColor: c.tennis,
   },
   chipText: {
     ...textStyle("caption"),
@@ -163,7 +163,7 @@ const sThemes = createThemedStyles(c => ({
   },
   chipTextActive: {
     ...textStyle("field"),
-    color: "#142b3b",
+    color: c.textOnAction,
   },
   pillSelect: {
     height: 32,
@@ -176,8 +176,8 @@ const sThemes = createThemedStyles(c => ({
     justifyContent: "center",
   },
   pillSelectActive: {
-    borderColor: "#FFB800",
-    backgroundColor: "#FFF9E6",
+    borderColor: c.tennis,
+    backgroundColor: c.soft,
   },
   pillSelectText: {
     ...textStyle("caption"),

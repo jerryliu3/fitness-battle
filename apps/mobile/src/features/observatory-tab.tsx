@@ -25,6 +25,7 @@ import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
 import { useRaceFavorites } from "../lib/race-favorites";
 import { createThemedStyles, useThemeColors, useThemedStyles } from "../theme";
+import { AppIcon } from "../ui/app-icon";
 import { FocusButton, FocusSheet } from "../ui/focus";
 import {
   ObservatoryChart,
@@ -457,9 +458,12 @@ export function ObservatoryTab({
               }}
               style={[s.goldBtn, (!isRunningSport || Boolean(edition)) && { opacity: 0.45 }]}
             >
-              <AppText role="nav" style={{ color: "#142b3b" }}>
-                ＋ Compare
-              </AppText>
+              <View style={s.inlineIconRow}>
+                <AppIcon name="plus" size={13} color={c.textOnAction} />
+                <AppText role="nav" style={{ color: c.textOnAction }}>
+                  Compare
+                </AppText>
+              </View>
             </Pressable>
           }
           extraRow2={
@@ -470,14 +474,17 @@ export function ObservatoryTab({
                 onPress={toggleSavedResultsPinned}
                 style={[s.subtleChip, allSavedPinned && s.subtleChipActive]}
               >
-                <AppText role="label" style={[s.subtleChipText, allSavedPinned && s.subtleChipTextActive]}>
-                  {allSavedPinned ? "★ Saved pinned" : "☆ Saved results"}
-                </AppText>
+                <View style={s.inlineIconRow}>
+                  <AppIcon name="special" size={13} color={allSavedPinned ? c.card : c.muted} />
+                  <AppText role="label" style={[s.subtleChipText, allSavedPinned && s.subtleChipTextActive]}>
+                    {allSavedPinned ? "Saved pinned" : "Saved results"}
+                  </AppText>
+                </View>
               </Pressable>
 
               {isRunningSport && edition ? (
                 <Pressable onPress={() => selectScopeEdition(null)} style={s.goldChip}>
-                  <AppText role="nav" style={{ color: "#142b3b" }}>
+                  <AppText role="nav" style={{ color: c.ink }}>
                     ← {selectedEditionMeta ? formatEditionDisplay(selectedEditionMeta.event_name, selectedEditionMeta.edition_year) : "Selected race"} ×
                   </AppText>
                 </Pressable>
@@ -492,7 +499,7 @@ export function ObservatoryTab({
                   }}
                   style={s.goldChip}
                 >
-                  <AppText role="nav" style={{ color: "#142b3b" }}>
+                  <AppText role="nav" style={{ color: c.ink }}>
                     Band: {raceClock(analytics.minimumMs + selectedBucket * analytics.binWidthMs)}–
                     {raceClock(analytics.minimumMs + (selectedBucket + 1) * analytics.binWidthMs)} ×
                   </AppText>
@@ -542,7 +549,7 @@ export function ObservatoryTab({
       {isRunningSport && personalEfforts.length > 0 ? (
         <View style={s.personalStrip}>
           <View style={s.goldChip}>
-            <AppText role="nav" style={{ color: "#142b3b" }}>
+            <AppText role="nav" style={{ color: c.ink }}>
               Your results
             </AppText>
           </View>
@@ -622,27 +629,30 @@ export function ObservatoryTab({
                     <View style={s.raceCardActions}>
                       <Pressable
                         onPress={() => selectScopeEdition(isSelected ? null : ed.edition_id)}
-                        style={[s.cardActionPrimary, isSelected && { backgroundColor: "#FFB800" }]}
+                        style={[s.cardActionPrimary, isSelected && { backgroundColor: c.tennis }]}
                       >
-                        <AppText role="nav" style={{ color: "#142b3b" }}>
-                          {isSelected ? "✓ Exploring" : "Explore"}
+                        <AppText role="nav" style={{ color: isSelected ? c.textOnAction : c.ink }}>
+                          {isSelected ? "Exploring" : "Explore"}
                         </AppText>
                       </Pressable>
                       <Pressable
                         onPress={() => toggleOverlayEdition(ed.edition_id)}
                         style={[s.cardActionBtn, isComparing && s.cardActionGold]}
                       >
-                        <AppText role="nav" style={{ color: "#142b3b" }}>
-                          {isComparing ? "✓ Compare" : "＋"}
-                        </AppText>
+                        {isComparing ? (
+                          <AppText role="nav" style={{ color: c.textOnAction }}>
+                            Compare
+                          </AppText>
+                        ) : (
+                          <AppIcon name="plus" size={14} color={c.ink} />
+                        )}
                       </Pressable>
                       <Pressable
                         onPress={() => toggleSavedEdition(ed.edition_id, formatEditionDisplay(ed.event_name, ed.edition_year))}
-                        style={s.cardIconBtn}
+                        style={[s.cardIconBtn, isSavedEdition && s.cardActionGold]}
+                        accessibilityLabel={isSavedEdition ? "Unsave race" : "Save race"}
                       >
-                        <AppText role="field">
-                          {isSavedEdition ? "★" : "☆"}
-                        </AppText>
+                        <AppIcon name="special" size={14} color={isSavedEdition ? c.textOnAction : c.muted} />
                       </Pressable>
                       <Pressable
                         disabled={!hasGps}
@@ -654,10 +664,9 @@ export function ObservatoryTab({
                           })
                         }
                         style={[s.cardIconBtn, !hasGps && { opacity: 0.35 }]}
+                        accessibilityLabel={`Replay ${ed.event_name}`}
                       >
-                        <AppText role="nav">
-                          ▶
-                        </AppText>
+                        <AppIcon name="play" size={13} color={c.ink} />
                       </Pressable>
                     </View>
                   </View>
@@ -695,7 +704,7 @@ export function ObservatoryTab({
             }}
             style={s.goldBtn}
           >
-            <AppText role="field" style={{ color: "#142b3b" }}>
+            <AppText role="field" style={{ color: c.textOnAction }}>
               Search
             </AppText>
           </Pressable>
@@ -765,8 +774,8 @@ export function ObservatoryTab({
                         }}
                         style={[s.miniPinBtn, isPinned && s.miniPinBtnActive]}
                       >
-                        <AppText role="nav" style={{ color: c.ink }}>
-                          {isPinned ? "✓ Pin" : "Pin"}
+                        <AppText role="nav" style={{ color: isPinned ? c.textOnAction : c.ink }}>
+                          {isPinned ? "Pinned" : "Pin"}
                         </AppText>
                       </Pressable>
                       <Pressable
@@ -778,11 +787,14 @@ export function ObservatoryTab({
                           }
                           void saved.toggle(row.id);
                         }}
-                        style={s.miniIconBtn}
+                        style={[s.miniIconBtn, user?.mode === "supabase" && isSaved && s.miniPinBtnActive]}
+                        accessibilityLabel={isSaved ? "Remove saved result" : "Save result"}
                       >
-                        <AppText role="field">
-                          {user?.mode === "supabase" && isSaved ? "★" : "☆"}
-                        </AppText>
+                        <AppIcon
+                          name="special"
+                          size={13}
+                          color={user?.mode === "supabase" && isSaved ? c.textOnAction : c.muted}
+                        />
                       </Pressable>
                     </View>
                   </Pressable>
@@ -833,9 +845,12 @@ export function ObservatoryTab({
                             }
                             style={s.goldBtn}
                           >
-                            <AppText role="nav" style={{ color: "#142b3b" }}>
-                              ▶ Replay performance
-                            </AppText>
+                            <View style={s.inlineIconRow}>
+                              <AppIcon name="play" size={12} color={c.textOnAction} />
+                              <AppText role="nav" style={{ color: c.textOnAction }}>
+                                Replay performance
+                              </AppText>
+                            </View>
                           </Pressable>
                         ) : null}
                         <Pressable
@@ -939,7 +954,7 @@ export function ObservatoryTab({
                   ) : (
                     <View style={{ flexDirection: "row", gap: 6 }}>
                       <Pressable onPress={() => selectScopeEdition(ed.edition_id)} style={s.goldBtn}>
-                        <AppText role="nav" style={{ color: "#142b3b" }}>Explore</AppText>
+                        <AppText role="nav" style={{ color: c.textOnAction }}>Explore</AppText>
                       </Pressable>
                       <Pressable
                         disabled={!hasGps}
@@ -948,8 +963,9 @@ export function ObservatoryTab({
                           onOpenReplay({ editionId: ed.edition_id, distanceSlug: distance, sex });
                         }}
                         style={[s.cardIconBtn, !hasGps && { opacity: 0.35 }]}
+                        accessibilityLabel={`Replay ${ed.event_name}`}
                       >
-                        <AppText role="nav">▶</AppText>
+                        <AppIcon name="play" size={13} color={c.ink} />
                       </Pressable>
                     </View>
                   )}
@@ -976,13 +992,18 @@ const sThemes = createThemedStyles(c => ({
     borderColor: c.line,
     overflow: "hidden",
   },
+  inlineIconRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
   goldBtn: {
     height: 32,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: "#FFB800",
+    backgroundColor: c.tennis,
     borderWidth: 1,
-    borderColor: "#E5A400",
+    borderColor: c.tennis,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -990,9 +1011,9 @@ const sThemes = createThemedStyles(c => ({
     height: 32,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: "#FFF5D1",
+    backgroundColor: c.soft,
     borderWidth: 1,
-    borderColor: "#FFB800",
+    borderColor: c.tennis,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1000,19 +1021,19 @@ const sThemes = createThemedStyles(c => ({
     height: 32,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: "#f4f7f8",
+    backgroundColor: c.soft,
     alignItems: "center",
     justifyContent: "center",
   },
   subtleChipActive: {
-    backgroundColor: "#142b3b",
+    backgroundColor: c.ink,
   },
   subtleChipText: {
     ...textStyle("caption"),
     color: c.muted,
   },
   subtleChipTextActive: {
-    color: "#ffffff",
+    color: c.card,
   },
   personalStrip: {
     flexDirection: "row",
@@ -1020,9 +1041,9 @@ const sThemes = createThemedStyles(c => ({
     gap: 8,
     padding: 10,
     borderRadius: 16,
-    backgroundColor: "#FFF5D1",
+    backgroundColor: c.soft,
     borderWidth: 1,
-    borderColor: "#f0d78a",
+    borderColor: c.tennis,
   },
   effortPill: {
     flexDirection: "row",
@@ -1031,9 +1052,9 @@ const sThemes = createThemedStyles(c => ({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     borderWidth: 1,
-    borderColor: "#ecd68c",
+    borderColor: c.line,
   },
   sectionHead: {
     flexDirection: "row",
@@ -1048,14 +1069,14 @@ const sThemes = createThemedStyles(c => ({
   raceCard: {
     width: 264,
     borderRadius: 18,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     borderWidth: 1.5,
     borderColor: c.line,
     overflow: "hidden",
   },
   raceCardSelected: {
-    borderColor: "#FFB800",
-    shadowColor: "#FFB800",
+    borderColor: c.tennis,
+    shadowColor: c.tennis,
     shadowOpacity: 0.25,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
@@ -1074,9 +1095,9 @@ const sThemes = createThemedStyles(c => ({
     flex: 1,
     height: 32,
     borderRadius: 999,
-    backgroundColor: "#FFF5D1",
+    backgroundColor: c.soft,
     borderWidth: 1,
-    borderColor: "#E5A400",
+    borderColor: c.tennis,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1086,13 +1107,13 @@ const sThemes = createThemedStyles(c => ({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: c.line,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     alignItems: "center",
     justifyContent: "center",
   },
   cardActionGold: {
-    backgroundColor: "#FFB800",
-    borderColor: "#E5A400",
+    backgroundColor: c.tennis,
+    borderColor: c.tennis,
   },
   cardIconBtn: {
     width: 32,
@@ -1100,7 +1121,7 @@ const sThemes = createThemedStyles(c => ({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: c.line,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1115,25 +1136,25 @@ const sThemes = createThemedStyles(c => ({
   },
   tableCard: {
     borderRadius: 18,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     borderWidth: 1,
     borderColor: c.line,
     overflow: "hidden",
     minHeight: 360,
   },
   tableRow: {
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     paddingHorizontal: 14,
     paddingVertical: 11,
     gap: 6,
   },
   rowDivider: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: "#eef2f1",
+    borderColor: c.line,
   },
   rowGoldAccent: {
     borderLeftWidth: 3,
-    borderLeftColor: "#FFB800",
+    borderLeftColor: c.tennis,
   },
   rowMain: {
     flexDirection: "row",
@@ -1150,11 +1171,11 @@ const sThemes = createThemedStyles(c => ({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: c.line,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
   },
   miniPinBtnActive: {
-    backgroundColor: "#FFB800",
-    borderColor: "#E5A400",
+    backgroundColor: c.tennis,
+    borderColor: c.tennis,
   },
   miniIconBtn: {
     width: 30,
@@ -1162,12 +1183,12 @@ const sThemes = createThemedStyles(c => ({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: c.line,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     alignItems: "center",
     justifyContent: "center",
   },
   detailDrawer: {
-    backgroundColor: "#f8fafb",
+    backgroundColor: c.soft,
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 9,
@@ -1179,7 +1200,7 @@ const sThemes = createThemedStyles(c => ({
     paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     borderWidth: 1,
     borderColor: c.line,
   },
@@ -1195,7 +1216,7 @@ const sThemes = createThemedStyles(c => ({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: c.line,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1206,7 +1227,7 @@ const sThemes = createThemedStyles(c => ({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: c.line,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     textAlign: "center",
     color: c.ink,
   },
@@ -1218,11 +1239,11 @@ const sThemes = createThemedStyles(c => ({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: c.line,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
   },
   modalRowActive: {
-    backgroundColor: "#FFF9E6",
-    borderColor: "#FFB800",
+    backgroundColor: c.soft,
+    borderColor: c.tennis,
   },
   tabular: {
     fontVariant: ["tabular-nums"],
