@@ -30,7 +30,7 @@ export default function Page() {
               height: 32,
               borderRadius: "50%",
               border: "3px solid rgba(255,255,255,0.2)",
-              borderTopColor: "#f7c948",
+              borderTopColor: appearanceColors.actionPrimary,
             }}
           />
         </div>

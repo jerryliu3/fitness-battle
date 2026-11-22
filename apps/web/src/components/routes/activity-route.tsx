@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { activityRoute, normalizeRouteReplay, type RouteReplaySample, type Activity } from "@fitness-battle/shared";
+import { MEDAL_GOLD, activityRoute, normalizeRouteReplay, type RouteReplaySample, type Activity } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { Sheet } from "@/ui/sheet";
 import { webEnv } from "@/lib/env";
@@ -41,7 +41,7 @@ export function ActivityRoute({ activity, milestone = false, units = "metric" }:
       <div className="club-activity-replay">
         {open && (webEnv.mapboxAccessToken
           ? <Replay key={activity.id} coordinates={coordinates} routeReplay={routeReplay ?? undefined} units={units} running={activity.sport === "running"} mode="2d-overview" autoPlay={false} showModeControl hudInsets={ACTIVITY_REPLAY_INSETS} className="club-route-player" />
-          : <div className="club-route-outline"><RouteStaticPreview coordinates={coordinates} showPlayBadge={false} strokeColor="f7c948" />
+          : <div className="club-route-outline"><RouteStaticPreview coordinates={coordinates} showPlayBadge={false} strokeColor={MEDAL_GOLD.srgbHex} />
               <p className="fb-note">Route outline only. Interactive maps and flyovers are currently unavailable.</p>
             </div>)}
         <details className="club-route-notes">

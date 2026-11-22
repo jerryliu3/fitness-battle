@@ -5,7 +5,7 @@ import { colors as appearanceColors } from "@/theme/app-colors";
 import { useEffect, useState, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { normalizeRouteReplay, type RouteReplaySample, type LngLat } from "@fitness-battle/shared";
+import { MEDAL_GOLD, normalizeRouteReplay, type RouteReplaySample, type LngLat } from "@fitness-battle/shared";
 import { webEnv } from "@/lib/env";
 import type { RouteTimelapseController, RouteTimelapseMapProps, RouteTimelapseState } from "@/components/routes";
 
@@ -33,7 +33,7 @@ export function RouteScene() {
   const paramPolyline = searchParams.get("polyline") || searchParams.get("route");
   const paramMode = (searchParams.get("mode") as "3d-flyover" | "2d-overview") || "3d-flyover";
   const appearance = searchParams.get("appearance");
-  const paramAccent = searchParams.get("accent") || "#f7c948";
+  const paramAccent = searchParams.get("accent") || MEDAL_GOLD.srgb;
   const paramToken = searchParams.get("token") || undefined;
 
   const [coordinates, setCoordinates] = useState<LngLat[] | string>(
@@ -159,7 +159,7 @@ export function RouteScene() {
         />
       ) : (
         <div role="status" className="flex h-full w-full flex-col items-center justify-center gap-3 bg-[#142b3b] text-white">
-          <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-white/20 border-t-[#f7c948]" />
+          <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-white/20 border-t-[var(--app-action-primary)]" />
           <span className="text-sm font-semibold tracking-wide text-white/90">Preparing your route…</span>
         </div>
       )}

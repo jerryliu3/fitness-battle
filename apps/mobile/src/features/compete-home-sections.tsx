@@ -6,6 +6,7 @@ import { SPORTS, sportById, type SportId, COMPETE_ART, COMPETE_ART_COLORS, COMPE
 import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
+import { MedalGoldFill } from "../ui/medal-gold-fill";
 import { WaveCountdown } from "../ui/wave-countdown";
 import { CoursePreview } from "./event-home";
 
@@ -14,6 +15,16 @@ export function CompeteIcon({ name, size = 26, gold = false, color }: { name: ke
   const path = name in COMPETE_ICONS ? COMPETE_ICONS[name as keyof typeof COMPETE_ICONS] : SPORT_ICON_PATHS[name as keyof typeof SPORT_ICON_PATHS];
   const resolved = color ?? (gold ? c.podiumGold : c.ink);
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={resolved} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" accessible={Platform.OS === "web" ? undefined : false} aria-hidden={Platform.OS === "web" ? true : undefined}><Path d={path} fill={(name in SPORT_ICON_PATHS || name in APP_ICON_PATHS) ? resolved : "none"} stroke={(name in SPORT_ICON_PATHS || name in APP_ICON_PATHS) ? "none" : undefined} /></Svg>;
+}
+
+export function CompeteSportBadge({ name, size }: { name: keyof typeof COMPETE_ICONS | CompeteEvent; size?: number }) {
+  const c = useThemeColors();
+  return (
+    <View style={{ padding: 9, borderRadius: 12 }}>
+      <MedalGoldFill radius={12} />
+      <CompeteIcon name={name} size={size} color={c.textOnAction} />
+    </View>
+  );
 }
 
 function MetallicFill({ silver = false }: { silver?: boolean }) {
@@ -133,9 +144,7 @@ export function CrewEvents({
                 }}
               >
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                  <View style={{ padding: 9, borderRadius: 12, backgroundColor: c.actionSoft }}>
-                    <CompeteIcon name={edition.sport} size={22} gold />
-                  </View>
+                  <CompeteSportBadge name={edition.sport} size={22} />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <AppText role="label" numberOfLines={1}>{edition.title}</AppText>
                     <AppText role="support" secondary numberOfLines={1}>

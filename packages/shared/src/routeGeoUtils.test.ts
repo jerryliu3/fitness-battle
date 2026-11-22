@@ -181,7 +181,7 @@ describe("routeGeoUtils", () => {
       expect(url).toContain("https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/static/");
       expect(url).toContain("path-4+f7c948-0.9(");
       expect(url).toContain("pin-s-a+142b3b(");
-      expect(url).toContain("pin-s-b+f7c948(");
+      expect(url).toContain("pin-s-b+FFB800(");
       expect(url).toContain("/auto/600x400@2x");
       expect(url).toContain("access_token=pk.test-token-12345");
       expect(url).toContain("padding=40");

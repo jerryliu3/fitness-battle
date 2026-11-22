@@ -831,7 +831,7 @@ const sThemes = createThemedStyles((themeColors) => {
     backgroundColor: c.soft,
   },
   placeBadgeLeader: {
-    backgroundColor: "rgba(247, 201, 72, 0.24)",
+    backgroundColor: c.actionHighlight,
   },
   placeBadgeText: {
     ...textStyle("caption"),

@@ -7,7 +7,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import "./routes.css";
 import {
-  normalizeRouteReplay, routeReplayAt, type RouteReplaySample,
+  MEDAL_GOLD, normalizeRouteReplay, routeReplayAt, type RouteReplaySample,
   calculateRouteBounds,
   decodePolyline,
   type LngLat,
@@ -56,7 +56,7 @@ export interface RouteTimelapseMapProps {
   mode?: "3d-flyover" | "2d-overview";
   /** Animation duration in milliseconds. Default: 12000 (12s) */
   durationMs?: number;
-  /** Primary accent color for active line and GPS dot. Default: '#f7c948' (Focus Gold) */
+  /** Primary accent color for active line and GPS dot. Defaults to Medal Gold in sRGB */
   accentColor?: string;
   /** Whether to start flyover animation immediately on map load. Default: true */
   autoPlay?: boolean;
@@ -84,7 +84,7 @@ export function RouteTimelapseMap({
   hideControls = false,
   mode: initialMode = "3d-flyover",
   durationMs = 12000,
-  accentColor = "#f7c948",
+  accentColor = MEDAL_GOLD.srgb,
   autoPlay = true,
   mapStyle,
   appearanceMode,
@@ -532,7 +532,7 @@ export function RouteTimelapseMap({
       <div ref={containerRef} className="h-full w-full" />
       {!mapLoaded && !tokenError && (
         <div role="status" className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-[#142b3b] text-white">
-          <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-white/20 border-t-[#f7c948]" />
+          <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-white/20 border-t-[var(--app-action-primary)]" />
           <span className="text-white/90" style={typographyStyle("label")}>Loading route map…</span>
         </div>
       )}
@@ -571,7 +571,7 @@ export function RouteTimelapseMap({
       )}
 
       {tokenError && <div className="absolute inset-0 bg-[#142b3b]">
-        <RouteStaticPreview coordinates={rawCoords} showPlayBadge={false} mapboxToken="" strokeColor="f7c948" className="h-full" />
+        <RouteStaticPreview coordinates={rawCoords} showPlayBadge={false} mapboxToken="" strokeColor={MEDAL_GOLD.srgbHex} className="h-full" />
         <p role="status" className="absolute top-4 left-4 right-4 rounded-xl bg-[#142b3b] p-3  text-white" style={typographyStyle("caption")}>Route outline only. Interactive maps and flyovers are currently unavailable.</p>
       </div>}
     </div>

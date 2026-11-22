@@ -420,7 +420,7 @@ export function CompeteTimeSeriesChart({
                   ...typographyStyle("caption"),
                   padding: "2px 8px",
                   borderRadius: 6,
-                  background: selectedLeads ? "rgba(247, 201, 72, 0.24)" : c.soft,
+                  background: selectedLeads ? c.actionHighlight : c.soft,
                   color: c.ink,
                 }}
               >

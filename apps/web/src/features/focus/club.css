@@ -1386,6 +1386,7 @@
 .club-history-preview { text-decoration: none; color: inherit; }
 .club-achievements-catalog { display: grid; gap: 18px; }
 .club-icon-button { display: inline-flex; width: 44px; height: 44px; flex: none; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid var(--line); background: color-mix(in srgb, var(--app-surface-card) 85.1%, transparent); color: var(--ink); text-decoration: none; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); letter-spacing: normal; text-transform: none; font: var(--type-label); }
+.club-icon-button-primary { background: var(--app-action-primary); color: var(--app-text-on-action); }
 .club-icon-button:disabled { opacity: .4; }
 .club-preferences { display: grid; gap: 0; }
 .club-preference-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; min-height: 64px; padding-block: 10px; border-bottom: 1px solid var(--line); }

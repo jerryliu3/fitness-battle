@@ -1,3 +1,4 @@
+import { MedalGoldFill } from "./medal-gold-fill";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { ToastProvider } from "./toast";
 import { SHELL_SPACING, SHELL_SECTION, SHELL_RADIUS } from "@fitness-battle/shared";
@@ -423,6 +424,7 @@ const f=useThemedStyles(fThemes);
         disabled && !busy && { opacity: 0.4 },
       ]}
     >
+      {!secondary && <MedalGoldFill radius={SHELL_RADIUS.pill} />}
       <Text numberOfLines={fit ? 2 : undefined} adjustsFontSizeToFit={fit} maxFontSizeMultiplier={fit ? 1.2 : undefined} minimumFontScale={fit ? 1 : undefined} style={[f.buttonText, secondary && { color: c.ink }, busy && { opacity: 0 }]}>{label}</Text>
       {busy && <View pointerEvents="none" style={[StyleSheet.absoluteFill, f.buttonSpinner]}>
         <ActivityIndicator size="small" color={secondary ? c.ink : c.textOnAction} />
@@ -656,7 +658,6 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
     gap: 13,
   },
   button: {
-    backgroundColor: c.actionPrimary,
     borderBottomWidth: 1,
     borderBottomColor: c.actionPrimary,
     borderRadius: SHELL_RADIUS.pill,

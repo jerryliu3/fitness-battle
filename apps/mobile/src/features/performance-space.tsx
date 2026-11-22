@@ -650,7 +650,7 @@ const sThemes = createThemedStyles((themeColors) => {
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: 99,
-      backgroundColor: `${c.tennis}22`,
+      backgroundColor: c.actionTint,
       alignSelf: "center",
     },
     chartBody: {
@@ -699,7 +699,7 @@ const sThemes = createThemedStyles((themeColors) => {
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 10,
-      backgroundColor: `${c.tennis}22`,
+      backgroundColor: c.actionTint,
     },
     inspectedPRBox: {
       marginTop: 8,
@@ -732,7 +732,7 @@ const sThemes = createThemedStyles((themeColors) => {
       width: 28,
       height: 28,
       borderRadius: 14,
-      backgroundColor: `${c.tennis}22`,
+      backgroundColor: c.actionTint,
       alignItems: "center",
       justifyContent: "center",
       marginTop: 2,

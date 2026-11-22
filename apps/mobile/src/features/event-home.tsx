@@ -11,7 +11,7 @@ import { AppText, textStyle } from "../ui/section";
 import { useThemeColors } from "../theme";
 import { AppIcon } from "../ui/app-icon";
 import { useEventActivity } from "./use-event-activity";
-import { CompeteIcon, EventArt } from "./compete-home-sections";
+import { CompeteIcon, CompeteSportBadge, EventArt } from "./compete-home-sections";
 import { CompeteTimeSeriesChart } from "../ui/compete-time-series-chart";
 
 const TAP_SLOP = 10;
@@ -77,7 +77,7 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
   const showLiveIndicator = !queued && Boolean(cachedUpdate.current);
   return <View style={{ width: cardWidth, padding: 12, gap: 12, borderRadius: 20, backgroundColor: c.card, borderWidth: 1, borderColor: c.line }}>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-      <View style={{ padding: 9, borderRadius: 12, backgroundColor: c.actionSoft }}><CompeteIcon name={sport} /></View>
+      <CompeteSportBadge name={sport} />
       <View style={{ flex: 1 }}>
         <AppText role="label">{SPORTS.find(item => item.id === sport)?.name}</AppText>
         {updateText ? (

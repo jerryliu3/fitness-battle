@@ -273,12 +273,13 @@ leaves the track empty, and missing measurements omit the metric. These bars
 describe recorded values, not fitness or competition credit. GPS/Open badges
 are omitted from this receipt.
 
-The palette is defined in `packages/shared/src/shell.ts`, consumed by native `src/theme.ts` and mirrored in web `features/focus/club.css` and HeroUI variables. Legacy plum/tennis keys remain compatibility aliases.
+The palette is defined in `packages/shared/src/appearance.ts`, consumed by native `src/theme.ts` and mirrored in web `features/focus/club.css` and HeroUI variables. Legacy plum/tennis keys remain compatibility aliases.
 
 | Semantic role | Value | Usage |
 | --- | --- | --- |
 | Text primary / ink | `#142b3b` | Navy typography and selected segments |
-| Action primary / tennis | `#f7c948` | Yellow primary buttons and personal progress |
+| Action primary / tennis | Medal Gold in Display P3, `#FFB800` sRGB | Primary buttons and personal progress |
+| Secondary accent | `#626A74` light, `#D7E3EC` dark | Polished Silver |
 | Canvas / paper | `#f8f9f6` | Neutral page canvas |
 | Card | `#ffffff` | Grouped surfaces and sheets |
 | Text secondary | `#637482` | Supporting copy |

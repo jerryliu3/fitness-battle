@@ -41,9 +41,9 @@ export function ReplayMap({course,features,focused,tracked,followId,tilted,overl
     onDidFinishLoadingStyle={()=>setReady(true)} styleURL="mapbox://styles/mapbox/standard" attributionEnabled={false} logoEnabled logoPosition={{left:12,bottom:overlayBottom+8}} onMapLoadingError={()=>{setFailed(true);onError();}}>
     <Camera ref={camera} defaultSettings={{bounds,animationDuration:0}} />
     <StyleImport id="basemap" existing config={{lightPreset:mode==="dark" ? "night" : "day"}} />
-    <ShapeSource id="race-course" shape={route}><LineLayer id="race-course-outline" slot="top" style={{lineColor:mode==="dark" ? colors.textOnAction : colors.white,lineWidth:6,lineEmissiveStrength:1}} /><LineLayer id="race-course-line" slot="top" style={{lineColor:mode==="dark" ? colors.tennis : colors.textOnAction,lineWidth:3,lineEmissiveStrength:1}} /></ShapeSource>
+    <ShapeSource id="race-course" shape={route}><LineLayer id="race-course-outline" slot="top" style={{lineColor:mode==="dark" ? colors.textOnAction : colors.white,lineWidth:6,lineEmissiveStrength:1}} /><LineLayer id="race-course-line" slot="top" style={{lineColor:mode==="dark" ? colors.actionPrimary : colors.textOnAction,lineWidth:3,lineEmissiveStrength:1}} /></ShapeSource>
     <ShapeSource id="race-runners" shape={features} hitbox={{width:44,height:44}} onPress={event=>{const id=Number(event.features[0]?.properties?.id);if(Number.isSafeInteger(id)) onSelect(id);}}><CircleLayer id="race-runner-points" slot="top" style={{circleEmissiveStrength:1,circleRadius:["case",["==",["get","id"],focused ?? -1],6,4],
-      circleColor:"#ffffff",circleStrokeColor:["case",["==",["get","id"],tracked[0] ?? -1],colors.tennis,
+      circleColor:"#ffffff",circleStrokeColor:["case",["==",["get","id"],tracked[0] ?? -1],colors.actionPrimary,
         ["==",["get","id"],tracked[1] ?? -1],"#4ed1fc",
         ["==",["get","id"],tracked[2] ?? -1],"#fc8d66",
         ["==",["get","id"],tracked[3] ?? -1],"#dba9ff",colors.muted],circleStrokeWidth:["case",["==",["get","id"],focused ?? -1],3,2]}} /></ShapeSource>

@@ -1,34 +1,67 @@
+import medalGold from "./brand-gold.json";
+
+export const MEDAL_GOLD = Object.freeze({
+  srgb: medalGold.srgb,
+  srgbHex: medalGold.srgb.slice(1),
+  displayP3Channels: Object.freeze(medalGold.displayP3),
+  displayP3: `color(display-p3 ${medalGold.displayP3.join(" ")})`,
+  iosColorName: medalGold.iosColorName,
+  cssVar: "--overtaek-brand-gold",
+  cssValue: `var(--overtaek-brand-gold, ${medalGold.srgb})`,
+});
+
+/** Derive an alpha-tinted color string that works in both native sRGB and web CSS var/P3 modes. */
+export function withColorOpacity(color: string, opacity: number): string {
+  const clamped = Math.max(0, Math.min(1, opacity));
+  if (/^#[0-9a-f]{6}$/i.test(color)) {
+    return `${color}${Math.round(clamped * 255).toString(16).padStart(2, "0")}`;
+  }
+  return `color-mix(in srgb, ${color} ${Math.round(clamped * 100)}%, transparent)`;
+}
+
 /** Platform-independent semantic color contract. Components never select palette names. */
 export type ColorMode = "light" | "dark";
 export type AppearancePreference = ColorMode | "system";
 
+function medalGoldRoles(gold: string) {
+  return {
+    actionPrimary: gold,
+    chartSeries: gold,
+    progressFill: gold,
+    actionTint: withColorOpacity(gold, 0.14),
+    actionHighlight: withColorOpacity(gold, 0.24),
+  };
+}
+
 const light = {
+  ...medalGoldRoles(MEDAL_GOLD.srgb),
   textPrimary: "#142b3b", textSecondary: "#637482", textOnAction: "#142b3b",
-  actionPrimary: "#f7c948", actionPressed: "#dfb237", actionSoft: "#fff5d1",
-  accentSecondary: "#637580", accentSecondarySoft: "#e9eff2",
+  actionPressed: "#dfb237", actionSoft: "#fff5d1",
+  accentSecondary: "#626a74", accentSecondarySoft: "#e9eff2",
   surfaceCanvas: "#f8f9f6", surfaceCard: "#ffffff", surfaceNavigation: "#ffffff",
   surfaceFeature: "#637580", textOnFeature: "#ffffff", textOnFeatureMuted: "#ffffff",
   surfaceInverse: "#142b3b", textOnInverse: "#ffffff",
   borderSubtle: "#e3e9e7", divider: "#d0dad7",
-  chartSeries: "#f7c948", chartComparison: "#637482", progressFill: "#f7c948",
+  chartComparison: "#79838d",
   statusSuccess: "#24765c", statusSuccessSoft: "#e9f5ee", statusError: "#b93c3c",
   statusErrorSoft: "#fbeceb", textOnError: "#ffffff", overlay: "#142b3b80", shadow: "#000000",
-  focusRing: "#637580", white: "#ffffff",
+  focusRing: "#626a74", white: "#ffffff",
 };
 
 type SemanticColors = { readonly [K in keyof typeof light]: string };
 const dark: SemanticColors = {
+  ...medalGoldRoles(MEDAL_GOLD.srgb),
   textPrimary: "#f7faf8", textSecondary: "#bbccd0", textOnAction: "#142b3b",
-  actionPrimary: "#f7c948", actionPressed: "#dfb237", actionSoft: "#4a4128",
-  accentSecondary: "#b7c7d4", accentSecondarySoft: "#33424a",
+  actionPressed: "#dfb237", actionSoft: "#4a4128",
+  accentSecondary: "#d7e3ec", accentSecondarySoft: "#33424a",
   surfaceCanvas: "#111f29", surfaceCard: "#1c2e38", surfaceNavigation: "#111f29",
   surfaceFeature: "#33424e", textOnFeature: "#ffffff", textOnFeatureMuted: "#d7e9ea",
   surfaceInverse: "#142b3b", textOnInverse: "#ffffff",
   borderSubtle: "#324954", divider: "#3c515c",
-  chartSeries: "#f7c948", chartComparison: "#8c9ea8", progressFill: "#f7c948",
+  chartComparison: "#acbfcc",
   statusSuccess: "#8ccdab", statusSuccessSoft: "#203d33", statusError: "#f09c98",
   statusErrorSoft: "#462d32", textOnError: "#142b3b", overlay: "#00000099", shadow: "#000000",
-  focusRing: "#b7c7d4", white: "#ffffff",
+  focusRing: "#d7e3ec", white: "#ffffff",
 };
 
 function withCompatibility(c: SemanticColors) {
@@ -48,15 +81,18 @@ export type AppColors = typeof APP_COLORS.light;
 export function resolveColorMode(preference: AppearancePreference, system: ColorMode | null | undefined): ColorMode {
   return preference === "system" ? system ?? "light" : preference;
 }
-export function getAppColors(mode: ColorMode = "light"): AppColors { return APP_COLORS[mode]; }
+export function getAppColors(mode: ColorMode = "light", medalGold?: string): AppColors {
+  if (medalGold === undefined) return APP_COLORS[mode];
+  return withCompatibility({ ...(mode === "dark" ? dark : light), ...medalGoldRoles(medalGold) });
+}
 export function homeHealthColors(c: AppColors) {
   return { background: c.paper, tile: c.card, border: c.line, text: c.ink,
     secondary: c.muted, accent: c.chartSeries, comparison: c.chartComparison };
 }
 
 /** Web publishes this mapping from shared tokens; no parallel CSS palette to maintain. */
-export function appColorVariables(mode: ColorMode): Record<string, string> {
-  const c = getAppColors(mode);
+export function appColorVariables(mode: ColorMode, medalGold?: string): Record<string, string> {
+  const c = getAppColors(mode, medalGold);
   const variables = Object.fromEntries(Object.entries(c).map(([name, value]) => [
     `--app-${name.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)}`, value,
   ]));

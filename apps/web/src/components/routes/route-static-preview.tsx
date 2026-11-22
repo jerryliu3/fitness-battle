@@ -132,7 +132,7 @@ export function RouteStaticPreview({
       {/* 1. Subtle loading skeleton */}
       {imageUrl && !loaded && !hasError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#f8f9f6] animate-pulse">
-          <div className="w-12 h-12 rounded-full border-2 border-[#142b3b]/10 border-t-[#f7c948] animate-spin" />
+          <div className="w-12 h-12 rounded-full border-2 border-[#142b3b]/10 border-t-[var(--app-action-primary)] animate-spin" />
           <span className="mt-2   text-[#637482]" style={typographyStyle("label")}>Loading map…</span>
         </div>
       )}
@@ -165,7 +165,7 @@ export function RouteStaticPreview({
       {showPlayBadge && (
         <div className="pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-[#142b3b]/85 px-3 py-1.5   text-white shadow-lg backdrop-blur-md transition-all group-hover:bg-[#142b3b] group-hover:scale-105" style={typographyStyle("label")}>
           {!playLabel && <svg
-            className="h-3.5 w-3.5 fill-[#f7c948]"
+            className="h-3.5 w-3.5 fill-[var(--app-action-primary)]"
             viewBox="0 0 24 24"
             aria-hidden="true"
           >

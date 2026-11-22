@@ -60,13 +60,13 @@ export const WORKOUT_SIZE_LABELS: Record<WorkoutSizeTier, string> = {
   "very-large": "All out",
 };
 
-/** Three layered podium colors across the 5 ascending workout size bars: bronze -> silver -> gold. */
+/** Progress from bronze and silver to Medal Gold for the highest effort tier. */
 export const WORKOUT_SIZE_BAR_COLOR_ROLES = [
   "podiumBronze",
   "podiumBronze",
   "podiumSilver",
   "podiumSilver",
-  "podiumGold",
+  "actionPrimary",
 ] as const;
 
 const THIRTY_DAYS_MS = 30 * 86_400_000;

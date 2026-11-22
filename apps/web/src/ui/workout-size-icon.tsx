@@ -1,16 +1,12 @@
 import { WORKOUT_SIZE_BAR_COLOR_ROLES, WORKOUT_SIZE_BAR_HEIGHT_RATIOS, type WorkoutSizeBarCount } from "@fitness-battle/shared";
 
-const ROLE_CSS_VAR = {
-  podiumBronze: "var(--app-podium-bronze)",
-  podiumSilver: "var(--app-podium-silver)",
-  podiumGold: "var(--app-podium-gold)",
-} as const;
+import { colors } from "../theme/app-colors";
 
 export function WorkoutSizeIcon({ bars, size = 64 }: { bars: WorkoutSizeBarCount; size?: number }) {
   const maxBarHeight = Math.round(size * 0.72);
   const barWidth = Math.max(4, Math.round(size * 0.12));
   const gap = Math.max(2, Math.round(size * 0.06));
-  const activeColor = ROLE_CSS_VAR[WORKOUT_SIZE_BAR_COLOR_ROLES[Math.max(0, bars - 1)]!];
+  const activeColor = colors[WORKOUT_SIZE_BAR_COLOR_ROLES[Math.max(0, bars - 1)]!];
   return (
     <span
       role="img"
@@ -28,7 +24,7 @@ export function WorkoutSizeIcon({ bars, size = 64 }: { bars: WorkoutSizeBarCount
     >
       {WORKOUT_SIZE_BAR_HEIGHT_RATIOS.map((ratio, index) => {
         const active = index < bars;
-        const fill = active ? activeColor : "var(--app-divider)";
+        const fill = active ? activeColor : colors.divider;
         return (
           <span
             key={index}

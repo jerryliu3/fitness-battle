@@ -1,6 +1,7 @@
 import { View, type StyleProp, type ViewStyle } from "react-native";
 import { WORKOUT_SIZE_BAR_COLOR_ROLES, WORKOUT_SIZE_BAR_HEIGHT_RATIOS, type WorkoutSizeBarCount } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
+import { MedalGoldFill } from "./medal-gold-fill";
 
 export function WorkoutSizeIcon({
   bars,
@@ -15,7 +16,10 @@ export function WorkoutSizeIcon({
   const maxBarHeight = Math.round(size * 0.72);
   const barWidth = Math.max(4, Math.round(size * 0.12));
   const gap = Math.max(2, Math.round(size * 0.06));
-  const activeColor = c[WORKOUT_SIZE_BAR_COLOR_ROLES[Math.max(0, bars - 1)]!];
+  const activeRole = WORKOUT_SIZE_BAR_COLOR_ROLES[Math.max(0, bars - 1)]!;
+  const medalGold = activeRole === "actionPrimary";
+  const activeColor = medalGold ? undefined : c[activeRole];
+  const radius = Math.ceil(barWidth / 2);
 
   return (
     <View
@@ -43,11 +47,13 @@ export function WorkoutSizeIcon({
             style={{
               width: barWidth,
               height: Math.max(5, Math.round(maxBarHeight * ratio)),
-              borderRadius: Math.ceil(barWidth / 2),
+              borderRadius: radius,
               backgroundColor: fill,
               opacity: active ? 1 : 0.45,
             }}
-          />
+          >
+            {active && medalGold && <MedalGoldFill radius={radius} />}
+          </View>
         );
       })}
     </View>

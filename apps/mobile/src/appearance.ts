@@ -1,7 +1,9 @@
 import { createContext, createElement, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, useColorScheme, type TextStyle, type ViewStyle, type ImageStyle } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { APP_COLORS, getAppColors, resolveColorMode, type AppColors, type AppearancePreference } from "@fitness-battle/shared";
+import { resolveColorMode, type AppColors, type AppearancePreference } from "@fitness-battle/shared";
+
+import { APP_COLORS, getAppColors } from "./appearance-colors";
 
 const preferenceKey = "overtaek.appearance";
 type AppearanceState = {

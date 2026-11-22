@@ -210,7 +210,7 @@ const sThemes = createThemedStyles((themeColors) => {
       width: 28,
       height: 28,
       borderRadius: 14,
-      backgroundColor: `${c.tennis}22`,
+      backgroundColor: c.actionTint,
       alignItems: "center",
       justifyContent: "center",
       marginTop: 2,

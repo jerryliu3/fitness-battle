@@ -1,4 +1,5 @@
 import * as turf from "@turf/turf";
+import { MEDAL_GOLD } from "./appearance";
 
 /**
  * Coordinate in GeoJSON / Turf / Mapbox format: [longitude, latitude].
@@ -298,7 +299,7 @@ export interface StaticMapUrlOptions {
   width?: number; // default 600
   height?: number; // default 400
   mapStyle?: string; // e.g. 'mapbox/outdoors-v12'
-  strokeColor?: string; // hex without # e.g. 'f7c948'
+  strokeColor?: string; // hex without # e.g. 'FFB800'
   strokeWidth?: number; // default 4
   strokeOpacity?: number; // default 0.9
   padding?: number; // default 40
@@ -316,7 +317,7 @@ export function buildMapboxStaticImageUrl(options: StaticMapUrlOptions): string 
     width = 600,
     height = 400,
     mapStyle = "mapbox/outdoors-v12",
-    strokeColor = "f7c948",
+    strokeColor = MEDAL_GOLD.srgbHex,
     strokeWidth = 4,
     strokeOpacity = 0.9,
     padding = 40,
@@ -361,7 +362,7 @@ export function buildMapboxStaticImageUrl(options: StaticMapUrlOptions): string 
     const endLat = Number(end[1].toFixed(5));
 
     overlays.push(`pin-s-a+142b3b(${startLng},${startLat})`);
-    overlays.push(`pin-s-b+f7c948(${endLng},${endLat})`);
+    overlays.push(`pin-s-b+${MEDAL_GOLD.srgbHex}(${endLng},${endLat})`);
   }
 
   const overlayString = overlays.join(",");

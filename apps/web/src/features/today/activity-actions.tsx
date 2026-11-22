@@ -74,7 +74,7 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
     >
       <button
         type="button"
-        className={compact ? "club-icon-button" : "fb-btn-line"}
+        className={compact ? "club-icon-button club-icon-button-primary" : "fb-btn-line"}
         aria-label={busy ? "Syncing activities" : "Sync activities"}
         disabled={!ready || busy}
         onClick={() => void sync()}
