@@ -6,6 +6,6 @@ export async function GET(request:Request) {
   const raw=params.get("ids"),ids=raw===null ? null : raw==="" ? [] : raw.split(",").map(Number),after=Number(params.get("after") ?? 0);
   if(!distance || !query.editionId || query.editionError || !["chip","gun"].includes(clock) || !Number.isSafeInteger(after) || after<0
     || (ids && (ids.length>100 || ids.some(id=>!Number.isSafeInteger(id) || id<1)))) return NextResponse.json({error:"Invalid replay scope"},{status:400});
-  try {const data=await loadReplayPage(query.editionId,distance.stored,params.get("sex")==="all" ? "all" : query.sex,clock,ids,after);return NextResponse.json(data ?? {error:"Reviewed course and timing profiles unavailable"},{status:data ? 200 : 404,headers:{"Cache-Control":"no-store"}});}
+  try {const data=await loadReplayPage(query.editionId,distance.stored,params.get("sex")==="all" ? "all" : query.sex,clock,ids,after);return NextResponse.json(data ?? {error:"Reviewed course and timing profiles unavailable"},{status:data ? 200 : 404,headers:{"Cache-Control":"public, max-age=300, stale-while-revalidate=600"}});}
   catch {return NextResponse.json({error:"Replay unavailable"},{status:503});}
 }

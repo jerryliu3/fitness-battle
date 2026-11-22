@@ -1,288 +1,1763 @@
 "use client";
-import {useEffect,useMemo,useRef,useState} from "react";
-import {createPortal} from "react-dom";
+
+import { AppHeading, AppText, typographyStyle } from "@/ui/section";
+import { useEffect, useMemo, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import {APP_ICON_PATHS,APP_ICON_VIEW_BOX,getAppColors,RACE_CATEGORIES,RACE_DISTANCES,compileReplayRunner,loadReplayField,raceClock,raceSourceUrl,replayCourseBearing,replayFeatures,replayFrameInterval,replayTelemetry,replayTimeline,validateReplayCourse,type ReplayData,type ReplayPage} from "@fitness-battle/shared";
-import {webEnv} from "@/lib/env";
-import {addMapboxAttribution,mapboxAttributionOptions} from "@/components/maps/mapbox-attribution";
-import {useAppearance,useAppearanceMode} from "@/theme/appearance-provider";
-import {AppHeading} from "@/ui/section";
-import {useRaceFavorites} from "../favorites";
+import {
+  analyzeRaceSplits,
+  compileReplayRunner,
+  loadReplayField,
+  RACE_DISTANCES,
+  RACE_METERS,
+  raceClock,
+  raceEventGroups,
+  raceSourceUrl,
+  replayCoordinate,
+  replayDistance,
+  replayFeatures,
+  replayTimeline,
+  validateReplayCourse,
+  type CompiledReplayRunner,
+  type RaceCoverage,
+  type ReplayData,
+  type ReplayPage,
+} from "@fitness-battle/shared";
+import { webEnv } from "@/lib/env";
+import { useAuth } from "@/components/auth-context";
+import { addMapboxAttribution, mapboxAttributionOptions } from "@/components/maps/mapbox-attribution";
+import { useRaceFavorites } from "../favorites";
+import { coursePreviewsMemoryCache, formatEditionDisplay, RaceRouteArt } from "../race-explorer";
+import { computeSplitMetrics, SportFilterBar, SPORTS, type SportId } from "../sport-filter-bar";
 
-function MapIcon({name}:{name:keyof typeof APP_ICON_PATHS}) {
-  return <svg width="21" height="21" viewBox={APP_ICON_VIEW_BOX[name] ?? "0 0 24 24"} aria-hidden="true"><path d={APP_ICON_PATHS[name]} fill="currentColor" fillRule="evenodd" /></svg>;
+const replayDataMemoryCache = new Map<string, ReplayData>();
+
+function computeCourseBearing(course: ReplayData["course"], metres: number): number {
+  const before = replayCoordinate(course, Math.max(0, metres - 40));
+  const after = replayCoordinate(course, metres + 40);
+  const dLon = ((after[0] - before[0]) * Math.PI) / 180;
+  const lat1 = (before[1] * Math.PI) / 180;
+  const lat2 = (after[1] * Math.PI) / 180;
+  const y = Math.sin(dLon) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+  const brng = (Math.atan2(y, x) * 180) / Math.PI;
+  return Number.isFinite(brng) ? (brng + 360) % 360 : 0;
 }
 
-export function ReplayPlayer({scope,initialIds}:{scope:{edition:string;distance:string;sex:string;clock:string};initialIds:string}) {
-  const {setPreference}=useAppearance();
-  const mode=useAppearanceMode();
-  const nextMode=mode==="dark" ? "light" : "dark";
-  const colors=useMemo(()=>getAppColors(mode),[mode]);
-  const saved=useRaceFavorites(),[ids,setIds]=useState<string|null>(initialIds),[attempt,setAttempt]=useState(0);
-  const [data,setData]=useState<ReplayData|null>(null),[busy,setBusy]=useState(false),[progress,setProgress]=useState(0),[error,setError]=useState("");
-  const [time,setTime]=useState(0),[playing,setPlaying]=useState(false),[speed,setSpeed]=useState(64),[wall,setWall]=useState(false),[reduced,setReduced]=useState(true),[mapError,setMapError]=useState("");
-  const abort=useRef<AbortController|null>(null),container=useRef<HTMLDivElement>(null),map=useRef<mapboxgl.Map|null>(null);
-  const [mapAttempt,setMapAttempt]=useState(0),[ready,setReady]=useState(false),[focused,setFocused]=useState<number|null>(null);
-  const [following,setFollowing]=useState(false);
-  const [tilted,setTilted]=useState(false);
-  const [profileId,setProfileId]=useState<number|null>(null);
-  const latestCameraTarget=useRef<{center:[number,number];bearing:number}|undefined>(undefined);
-  const popup=useRef<mapboxgl.Popup|null>(null);
-  const [popupContent,setPopupContent]=useState<HTMLDivElement|null>(null);
-  const cameraRunnerId=useRef<number|null>(null);
-  const [immersive,setImmersive]=useState(false),[picker,setPicker]=useState(!initialIds),[search,setSearch]=useState("");
-  const trackSaved=useRef(false);
-  const [tracked,setTracked]=useState(() => initialIds.split(",").filter(Boolean).map(Number).slice(0,4));
-  const [category,setCategory]=useState(scope.sex),[clock,setClock]=useState(scope.clock);
-  const scopeKey=new URLSearchParams({...scope,sex:category,clock}).toString(),distance=RACE_DISTANCES.find(d=>d.slug===scope.distance)!.stored;
-  useEffect(()=>{setData(null);setTime(0);setWall(false);setFocused(null);setFollowing(false);setProfileId(null);},[scopeKey]);
-  useEffect(()=>{const controller=new AbortController();abort.current=controller;setBusy(true);setError("");setProgress(0);setPlaying(false);
-    void loadReplayField(async after=>{const params=new URLSearchParams(scopeKey);params.set("after",String(after));if(ids) params.set("ids",ids);
-      const response=await fetch(`/api/rankings/replay?${params}`,{signal:controller.signal});if(!response.ok) throw new Error(response.status===404 ? "Reviewed course and timing profiles are not available for this field." : "Replay could not load.");const page=await response.json() as ReplayPage;
-      return ids==="" ? {...page,next:null} : page;
-    },()=>controller.signal.aborted,setProgress).then(value=>{if(!controller.signal.aborted){if(!validateReplayCourse(value.course,distance)) throw new Error("Course alignment needs review.");setData(previous=>previous?.version===value.version ? {...value,course:previous.course} : value);
-      const available=new Set(value.runners.map(runner=>runner.id));
-      if(trackSaved.current) {
-        trackSaved.current=false;
-        setTracked((ids ?? "").split(",").map(Number).filter(id=>available.has(id)).slice(0,4));
-      } else {
-        setTracked(current=>current.filter(id=>available.has(id)));
-      }}})
-      .catch(e=>{if(!controller.signal.aborted) setError(e instanceof Error ? e.message : "Replay unavailable.");}).finally(()=>{if(!controller.signal.aborted) setBusy(false);});
-    return ()=>controller.abort();
-  },[scopeKey,ids,attempt,distance]);
-  const runners=useMemo(()=>data?.runners.flatMap(r=>{const compiled=compileReplayRunner(r,distance);return compiled ? [compiled] : [];}) ?? [],[data,distance]);
-  const timeline=useMemo(()=>replayTimeline(runners,wall),[runners,wall]);
-  const course=data?.course;
-  const bounds=useMemo(()=>{
-    if(!course) return null;
-    const result=new mapboxgl.LngLatBounds();
-    for(const [lng,lat] of course.points) result.extend([lng,lat]);
-    return result;
-  },[course]);
-  const features=useMemo(()=>data ? replayFeatures(data.course,runners,time,timeline.origin) : null,[data,runners,time,timeline.origin]);
-  const latest=useRef(features);latest.current=features;
-  useEffect(()=>{const preference=window.matchMedia("(prefers-reduced-motion: reduce)");const changed=()=>{setReduced(preference.matches);if(preference.matches) setPlaying(false);};changed();preference.addEventListener("change",changed);return ()=>preference.removeEventListener("change",changed);},[]);
-  useEffect(()=>{const hidden=()=>{if(document.hidden) setPlaying(false);};document.addEventListener("visibilitychange",hidden);return ()=>document.removeEventListener("visibilitychange",hidden);},[]);
-  useEffect(()=>{
-    if(!playing || reduced) return;
-    let previous=performance.now(), lastPaint=previous, elapsed=0, frame=0;
-    const interval=replayFrameInterval(runners.length);
-    function advance(now:number) {
-      elapsed+=Math.max(0,Math.min(now-previous,250))*speed;
-      previous=now;
-      if(now-lastPaint>=interval) {
-        const delta=elapsed;
-        setTime(value=>Math.min(timeline.duration,value+delta));
-        elapsed=0;lastPaint=now;
-      }
-      frame=requestAnimationFrame(advance);
-    }
-    frame=requestAnimationFrame(advance);
-    return ()=>cancelAnimationFrame(frame);
-  },[playing,reduced,speed,timeline.duration,runners.length]);
-  useEffect(()=>{
-    if(!immersive) return;
-    const previous=document.body.style.overflow;
-    document.body.style.overflow="hidden";
-    function exit(event:KeyboardEvent){if(event.key==="Escape") setImmersive(false);}
-    window.addEventListener("keydown",exit);
-    return ()=>{document.body.style.overflow=previous;window.removeEventListener("keydown",exit);};
-  },[immersive]);
-  useEffect(()=>{
-    const frame=requestAnimationFrame(()=>map.current?.resize());
-    return ()=>cancelAnimationFrame(frame);
-  },[immersive,picker]);
-  useEffect(()=>{
-    if(time>=timeline.duration) setPlaying(false);
-    if(data && time>timeline.duration) setTime(timeline.duration);
-  },[data,time,timeline.duration]);
-  useEffect(()=>{
-    if(!course || !container.current || !webEnv.mapboxAccessToken) return;setReady(false);setMapError("");let instance:mapboxgl.Map;
-    try {instance=new mapboxgl.Map({container:container.current,accessToken:webEnv.mapboxAccessToken,style:"mapbox://styles/mapbox/standard",center:course.points[0].slice(0,2) as [number,number],zoom:11,...mapboxAttributionOptions});}
-    catch {setMapError("This browser could not start the map.");return;}
-    map.current=instance;addMapboxAttribution(instance);
-    instance.addControl(new mapboxgl.NavigationControl({showCompass:false}),"bottom-right");
+function applyRunnerLayerPaint(
+  instance: mapboxgl.Map,
+  pinnedIds: number[],
+  cameraTargetId: number | null,
+  challengerId: number,
+) {
+  const focusId = cameraTargetId ?? -1;
+  const pinnedList = pinnedIds.length > 0 ? pinnedIds : [-1];
+  if (instance.getLayer("runners-halo")) {
+    instance.setPaintProperty("runners-halo", "circle-radius", [
+      "case",
+      ["==", ["get", "id"], focusId],
+      16,
+      ["in", ["get", "id"], ["literal", pinnedList]],
+      13,
+      ["==", ["get", "id"], challengerId],
+      12,
+      0,
+    ]);
+    instance.setPaintProperty("runners-halo", "circle-color", [
+      "case",
+      ["==", ["get", "id"], focusId],
+      "#FFB800",
+      ["in", ["get", "id"], ["literal", pinnedList]],
+      "#FFB800",
+      "#142b3b",
+    ]);
+  }
+  if (instance.getLayer("runners")) {
+    instance.setPaintProperty("runners", "circle-radius", [
+      "case",
+      ["==", ["get", "id"], focusId],
+      9.5,
+      ["in", ["get", "id"], ["literal", pinnedList]],
+      8,
+      ["==", ["get", "id"], challengerId],
+      7.5,
+      5,
+    ]);
+    instance.setPaintProperty("runners", "circle-color", [
+      "case",
+      ["==", ["get", "id"], focusId],
+      "#FFB800",
+      ["in", ["get", "id"], ["literal", pinnedList]],
+      "#FFB800",
+      ["==", ["get", "id"], challengerId],
+      "#142b3b",
+      "#9fa5af",
+    ]);
+    instance.setPaintProperty("runners", "circle-stroke-width", [
+      "case",
+      ["==", ["get", "id"], focusId],
+      3,
+      ["in", ["get", "id"], ["literal", pinnedList]],
+      2.2,
+      1.5,
+    ]);
+    instance.setPaintProperty("runners", "circle-stroke-color", [
+      "case",
+      ["==", ["get", "id"], focusId],
+      "#ffffff",
+      ["==", ["get", "id"], challengerId],
+      "#ffffff",
+      "#142b3b",
+    ]);
+  }
+}
 
-    instance.on("dragstart",event=>{
-      if(instance.isZooming() || ("originalEvent" in event && typeof TouchEvent !== "undefined" &&
-        event.originalEvent instanceof TouchEvent && event.originalEvent.touches.length>1)) return;
-      latestCameraTarget.current=undefined;
-      setFollowing(false);
-    });
-    instance.on("zoomend",()=>{if(latestCameraTarget.current) instance.jumpTo(latestCameraTarget.current);});
-    instance.on("error",()=>{setMapError("Some map data could not load. Check your connection and Mapbox access.");setPlaying(false);});
-    instance.on("load",()=>{instance.addSource("course",{type:"geojson",data:{type:"Feature",properties:{},geometry:{type:"LineString",coordinates:course.points.map(p=>p.slice(0,2))}}});
-      instance.addLayer({id:"course-outline",type:"line",source:"course",slot:"top",paint:{"line-color":colors.white,"line-width":6,"line-emissive-strength":1}});
-      instance.addLayer({id:"course",type:"line",source:"course",slot:"top",paint:{"line-color":colors.textOnAction,"line-width":3,"line-emissive-strength":1}});
-      instance.addSource("runners",{type:"geojson",data:latest.current ?? {type:"FeatureCollection",features:[]}});
-      instance.addLayer({id:"runners",type:"circle",source:"runners",slot:"top",paint:{"circle-radius":4,"circle-emissive-strength":1,"circle-color":"#fff","circle-stroke-width":2,"circle-stroke-color":colors.ink}});
-      if(bounds) instance.fitBounds(bounds,{padding:40,duration:0});
-      setReady(true);
-    });
-    instance.on("click",event=>{
-      if(!instance.getLayer("runners")) return;
-      const id=instance.queryRenderedFeatures([
-        [event.point.x-12,event.point.y-12],[event.point.x+12,event.point.y+12],
-      ],{layers:["runners"]})[0]?.id;
-      if(typeof id === "number") {setFocused(id);setProfileId(id);}
-      else setProfileId(null);
-    });
-    const observer=new IntersectionObserver(entries=>{if(!entries[0]?.isIntersecting) setPlaying(false);});observer.observe(container.current);
-    return ()=>{observer.disconnect();instance.remove();map.current=null;};
-  },[bounds,course,mapAttempt]);
-  useEffect(()=>{if(ready && features) (map.current?.getSource("runners") as mapboxgl.GeoJSONSource | undefined)?.setData(features);},[ready,features]);
-  useEffect(()=>{
-    if(!ready) return;
-    const instance=map.current;
-    instance?.setConfigProperty("basemap","lightPreset",mode==="dark" ? "night" : "day");
-    instance?.setPaintProperty("course","line-color",mode==="dark" ? colors.tennis : colors.textOnAction);
-    instance?.setPaintProperty("course-outline","line-color",mode==="dark" ? colors.textOnAction : colors.white);
-  },[colors,mode,ready]);
-  useEffect(()=>{
-    if(ready) map.current?.setPitch(tilted ? 55 : 0);
-  },[ready,tilted]);
-  const accentColors=[colors.tennis,"#4ed1fc","#fc8d66","#dba9ff"];
-  useEffect(()=>{
-    if(!ready) return;
-    const palette=[colors.tennis,"#4ed1fc","#fc8d66","#dba9ff"];
-    const markerColor:mapboxgl.ExpressionSpecification=["match",["get","id"],
-      ...tracked.flatMap((id,index)=>[id,palette[index]]),colors.muted] as mapboxgl.ExpressionSpecification;
-    map.current?.setPaintProperty("runners","circle-color","#fff");
-    map.current?.setPaintProperty("runners","circle-stroke-color",tracked.length ? markerColor : colors.muted);
-    map.current?.setPaintProperty("runners","circle-stroke-width",["case",["==",["get","id"],focused ?? -1],3,2]);
-    map.current?.setPaintProperty("runners","circle-radius",["case",["==",["get","id"],focused ?? -1],6,4]);
-  },[ready,focused,tracked,colors]);
-  const source=data ? raceSourceUrl(data.course.sourceUrl) : null;
-  const visibleRunners=useMemo(()=>runners.filter(r=>r.name.toLowerCase().includes(search.trim().toLowerCase())).slice(0,100),[runners,search]);
-  const trackedRunners=useMemo(()=>tracked.flatMap(id=>runners.find(r=>r.id===id) ?? []),[runners,tracked]);
-  const cameraRunner=runners.find(runner=>runner.id===focused) ?? trackedRunners[0] ?? runners[0];
-  const cameraFeature=following && cameraRunner ? features?.features.find(feature=>feature.id===cameraRunner.id) : undefined;
-  const cameraTarget=course && cameraFeature ? {
-    center:cameraFeature.geometry.coordinates,bearing:replayCourseBearing(course,cameraFeature.properties.distanceM),
-  } : undefined;
-  useEffect(()=>{
-    latestCameraTarget.current=cameraTarget;
-    const instance=map.current;
-    if(!ready || !instance || !following || !cameraRunner) { cameraRunnerId.current=null; return; }
-    if(!cameraTarget || instance.isZooming()) return;
-    if(cameraRunnerId.current!==cameraRunner.id) {
-      instance.jumpTo({...cameraTarget,zoom:Math.max(14,instance.getZoom())});
-      cameraRunnerId.current=cameraRunner.id;
-    } else {
-      instance.jumpTo(cameraTarget);
+function ProgressiveSplitSignature({
+  runner,
+  distanceSlug,
+  currentDistM,
+  totalDistM,
+  active,
+}: {
+  runner: CompiledReplayRunner;
+  distanceSlug: string;
+  currentDistM: number;
+  totalDistM: number;
+  active: boolean;
+}) {
+  const analysis = useMemo(() => analyzeRaceSplits(runner.splits, distanceSlug), [runner.splits, distanceSlug]);
+  if (analysis.status !== "ready") return <span className="ovt-hint">—</span>;
+  const validRows = analysis.rows.filter(r => r.paceMsPerKm !== null && Number.isFinite(r.paceMsPerKm));
+  if (validRows.length < 2) return <span className="ovt-hint">—</span>;
+
+  const paces = validRows.map(r => r.paceMsPerKm!);
+  const mean = paces.reduce((a, b) => a + b, 0) / paces.length;
+  const minP = Math.min(...paces, mean * 0.91);
+  const maxP = Math.max(...paces, mean * 1.09);
+  const span = Math.max(1, maxP - minP);
+
+  const pts: [number, number][] = [
+    { distanceM: 0, pace: paces[0] },
+    ...validRows.map(r => ({ distanceM: r.distanceM, pace: r.paceMsPerKm! })),
+  ].map(pt => [
+    5 + (Math.max(0, Math.min(totalDistM, pt.distanceM)) / Math.max(1, totalDistM)) * 100,
+    4 + ((pt.pace - minP) / span) * 16,
+  ]);
+
+  const path = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
+  const frac = totalDistM > 0 ? Math.max(0, Math.min(1, currentDistM / totalDistM)) : 0;
+  const clipWidth = 5 + frac * 100;
+
+  let dotY = pts[0][1];
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1];
+    const b = pts[i];
+    if (clipWidth <= b[0] || i === pts.length - 1) {
+      const w = b[0] > a[0] ? Math.max(0, Math.min(1, (clipWidth - a[0]) / (b[0] - a[0]))) : 0;
+      dotY = a[1] + (b[1] - a[1]) * w;
+      break;
     }
-  },[cameraRunner,cameraTarget,following,ready]);
-  function deselectRunner(id:number) {
-    setTracked(current=>current.filter(value=>value!==id));
-    if(focused===id) setFocused(null);
-    if(profileId===id) setProfileId(null);
-    if(cameraRunner?.id===id) setFollowing(false);
   }
-  const profileRunner=runners.find(runner=>runner.id===profileId);
-  const profileMetrics=profileRunner ? replayTelemetry(profileRunner,time,timeline.origin) : null;
-  const profileCoordinate=features?.features.find(feature=>feature.id===profileId)?.geometry.coordinates;
-  useEffect(()=>{
-    if(!ready || profileId===null || !map.current) return;
-    const element=document.createElement("div");
-    const next=new mapboxgl.Popup({closeButton:false,closeOnClick:false,closeOnMove:false,focusAfterOpen:false,offset:12,className:"replay-runner-popup"})
-      .setDOMContent(element);
-    popup.current=next;
-    setPopupContent(element);
-    return ()=>{next.remove();popup.current=null;setPopupContent(null);};
-  },[ready,profileId,course]);
-  useEffect(()=>{
-    const current=popup.current,instance=map.current;
-    if(!current || !instance) return;
-    if(!profileCoordinate) { current.remove(); return; }
-    current.setLngLat(profileCoordinate);
-    if(!current.isOpen()) current.addTo(instance);
-  },[popupContent,profileCoordinate]);
-  function toggleTrack(id:number) {
-    setTracked(current=>current.includes(id) ? current.filter(value=>value!==id) : current.length<4 ? [...current,id] : current);
-    setFocused(id);
-  }
-  function loadField() {
-    setPicker(true);
-    if(data && data.runners.length>=data.totalAvailable) return;
-    trackSaved.current=false;
-    setIds(null);
-  }
-  return <div className={`race-replay-player${immersive ? " race-replay-immersive" : ""}`}>
-    <header className="replay-toolbar">
-      <AppHeading level={1} role="display">{data?.course.attribution.replace(/ Course(?: \(.*\))?$/, "") || "Race replay"}</AppHeading>
-      <div className="replay-header-tools">
-          <button aria-label="Runners" title="Runners" aria-expanded={picker} onClick={()=>setPicker(value=>!value)}><MapIcon name="crew" /><span>Runners</span></button>
-          <button type="button" onClick={()=>setPreference(nextMode)}>{nextMode==="dark" ? "Dark mode" : "Light mode"}</button>
-          <button aria-label={immersive ? "Exit full screen" : "Full screen"} title={immersive ? "Exit full screen" : "Full screen"} onClick={()=>setImmersive(value=>!value)}><MapIcon name="expand" /><span>{immersive ? "Exit full screen" : "Full screen"}</span></button>
+
+  const clipId = `replay-sig-${runner.id}`;
+  const { stroke, badge, tone } = computeSplitMetrics(analysis, runner.splits.finishMs);
+  return (
+    <span className="ovt-split-cell" title={tone === "negative" ? `Negative split (${badge})` : tone === "positive" ? `Positive split (${badge})` : "Even split"}>
+      <svg
+        className="ovt-replay-micro"
+        viewBox="0 0 110 25"
+        aria-label="Recorded split pace signature progressively revealed with elapsed time"
+      >
+        <defs>
+          <clipPath id={clipId}>
+            <rect x="0" y="0" width={clipWidth.toFixed(2)} height="25" />
+          </clipPath>
+        </defs>
+        <path d={path} fill="none" stroke="#d0dad7" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d={path}
+          fill="none"
+          stroke={stroke}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          clipPath={`url(#${clipId})`}
+        />
+        <circle
+          cx={clipWidth.toFixed(2)}
+          cy={dotY.toFixed(2)}
+          r="2.9"
+          fill={stroke}
+          stroke="#142b3b"
+          strokeWidth="1.2"
+          opacity={active ? 1 : 0}
+        />
+      </svg>
+      {badge && <span className={`ovt-split-badge ${tone}`}>{badge}</span>}
+    </span>
+  );
+}
+
+type RunnerWithDistance = {
+  runner: CompiledReplayRunner;
+  distM: number;
+  finished: boolean;
+  finishMs: number;
+};
+
+function DuelAthleteCard({
+  roleLabel,
+  roleColor,
+  entry,
+  runners,
+  excludeId,
+  onSelect,
+  onClear,
+}: {
+  roleLabel: string;
+  roleColor: string;
+  entry: RunnerWithDistance | null;
+  runners: CompiledReplayRunner[];
+  excludeId: number | null;
+  onSelect: (id: number) => void;
+  onClear: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const cardRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: MouseEvent) {
+      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [open]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase().replace(/^#/, "");
+    return runners
+      .filter(r => r.id !== excludeId)
+      .filter(r => {
+        if (!q) return true;
+        if (r.name.toLowerCase().includes(q)) return true;
+        if (r.bib && r.bib.toLowerCase().includes(q)) return true;
+        if (raceClock(r.splits.finishMs).includes(q)) return true;
+        return false;
+      });
+  }, [runners, excludeId, query]);
+
+  return (
+    <div ref={cardRef} className={`ovt-duel-side ${entry ? "" : "is-empty"}`}>
+      <div className="ovt-duel-card-head">
+        <AppText role="label" as="small" style={{ color: roleColor }}>● {roleLabel}</AppText>
+        {entry && (
+          <button
+            type="button"
+            className="ovt-duel-clear"
+            onClick={() => {
+              onClear();
+              setQuery("");
+            }}
+            aria-label={`Clear ${roleLabel} athlete`}
+            title={`Clear ${roleLabel}`}
+          >
+            ×
+          </button>
+        )}
       </div>
-    </header>
-    <div className="replay-workspace" data-picker={picker || undefined}>
-      {picker && <aside className="replay-runner-panel" aria-label="Replay runners">
-        <AppHeading level={2}>Runners</AppHeading>
-        <div className="replay-runner-filters">
-          <label>Category<select value={category} onChange={e=>{setCategory(e.target.value);trackSaved.current=false;setIds("");setTracked([]);}}><option value="all">All categories</option>{RACE_CATEGORIES.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}</select></label>
-          <label>Timing<select value={clock} onChange={e=>{setClock(e.target.value);trackSaved.current=false;setIds("");setTracked([]);}}><option value="chip">Chip</option><option value="gun">Official</option></select></label>
-        </div>
-        <div className="replay-roster-actions">
-          {(!data || data.runners.length<data.totalAvailable) && <button disabled={busy} onClick={loadField}>Load timed field</button>}
-          {!!saved.ids.length && <button disabled={busy || !saved.ready} onClick={()=>{const selection=saved.ids.join(",");
-          if(ids===selection && data) {
-            const available=new Set(data.runners.map(runner=>runner.id));
-            setTracked(saved.ids.filter(id=>available.has(id)).slice(0,4));
-          } else {
-            trackSaved.current=true;
-            setIds(selection);
-          }}}>Load saved in this race</button>}
-        </div>
-        <label>Find a loaded runner<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by name" /></label>
-        <p className="rankings-note">Track up to four runners. {runners.length.toLocaleString()} loaded{data ? ` of ${data.totalAvailable.toLocaleString()}` : ""}.</p>
-        <div className="replay-roster">
-          {visibleRunners.map(r=><label key={r.id}><input type="checkbox" checked={tracked.includes(r.id)} disabled={!tracked.includes(r.id) && tracked.length>=4} onChange={()=>toggleTrack(r.id)} /><span>{r.name}</span><small>{raceClock(r.splits.finishMs)}</small></label>)}
-          {!visibleRunners.length && <p className="rankings-note">{search ? "No loaded runners match." : "Load the timed field to browse runners."}</p>}
-          {visibleRunners.length===100 && <p className="rankings-note">Search by name to narrow the list.</p>}
-        </div>
-      </aside>}
-      <div className="replay-stage">
-        {data && webEnv.mapboxAccessToken ? <div ref={container} className="race-replay-map" aria-label="Estimated race positions" /> :
-          <div className="race-replay-map replay-map-placeholder" role="status">{busy ? "Loading course…" : data ? "Map access is not configured." : "Course unavailable"}</div>}
-        {mapError && <p role="alert">{mapError} <button onClick={()=>setMapAttempt(n=>n+1)}>Retry map</button></p>}
-        {busy && <p role="status">Loading {progress.toLocaleString()} timing profiles… <button onClick={()=>{abort.current?.abort();setBusy(false);setError("Replay loading cancelled.");}}>Cancel</button></p>}
-        {error && <p role="alert">{error} <button onClick={()=>setAttempt(n=>n+1)}>Retry</button></p>}
-        <div className="replay-map-tools" role="group" aria-label="Map controls">
-          <button aria-label="Fit course" title="Fit course" disabled={!ready || !bounds} onClick={()=>{latestCameraTarget.current=undefined;setFollowing(false);if(bounds) map.current?.fitBounds(bounds,{padding:40,duration:0});}}><MapIcon name="distance" /></button>
-          <button aria-label="Follow runner" title={cameraRunner ? `Follow ${cameraRunner.name}` : "Follow runner"} disabled={!ready || !cameraRunner} aria-pressed={following}
-            onClick={()=>setFollowing(value=>!value)}><MapIcon name={following ? "navigationArrowFill" : "navigationArrow"} /></button>
-          <button aria-label="3D map" title="3D map" disabled={!ready} aria-pressed={tilted} onClick={()=>setTilted(value=>!value)}>3D</button>
-        </div>
-        {profileRunner && popupContent && createPortal(<section className="replay-map-profile" aria-label="Selected runner">
-          <div><strong>{profileRunner.name}</strong><button type="button" aria-label={`Deselect ${profileRunner.name}`} onClick={()=>deselectRunner(profileRunner.id)}>×</button></div>
-          <span>{profileMetrics ? `${raceClock(profileMetrics.elapsedMs)} elapsed · ${(profileMetrics.distanceM/1000).toFixed(2)} km` : "Position unavailable"}</span>
-        </section>,popupContent)}
-        <div className="replay-map-dock">
-    {trackedRunners.length>0 && <section aria-label="Tracked runner metrics" className="replay-telemetry">
-      {trackedRunners.map(r=>{
-        const metrics=replayTelemetry(r,time,timeline.origin);
-        return <article key={r.id} data-focused={focused===r.id || undefined}>
-          <div className="replay-telemetry-heading"><button onClick={()=>setFocused(r.id)} aria-pressed={focused===r.id}><i style={{background:accentColors[tracked.indexOf(r.id)]}} />{r.name}</button><button type="button" aria-label={`Deselect ${r.name}`} onClick={()=>deselectRunner(r.id)}>×</button></div>
-          <dl><div><dt>Elapsed</dt><dd>{metrics ? raceClock(metrics.elapsedMs) : "—"}</dd></div><div><dt>Distance</dt><dd>{metrics ? `${(metrics.distanceM/1000).toFixed(2)} km` : "—"}</dd></div><div><dt>Current pace</dt><dd>{metrics?.currentPaceMsPerKm!=null ? `${raceClock(metrics.currentPaceMsPerKm)}/km` : "—"}</dd></div></dl>
-        </article>;
-      })}
-    </section>}
-        <div className="replay-transport">
-          <div className="replay-transport-top">
-            <strong className="replay-time-counter">{timeline.origin!==null ? new Date(timeline.origin+time).toLocaleTimeString() : raceClock(time)}</strong>
-            <button className="replay-play" disabled={reduced || !runners.length} onClick={()=>{if(time>=timeline.duration) setTime(0);setPlaying(v=>!v);}} aria-label={playing ? "Pause" : "Play"} title={playing ? "Pause" : "Play"}><MapIcon name={playing ? "pause" : "play"} /></button>
-            <input aria-label="Replay time" type="range" min={0} max={Math.max(timeline.duration,1)} step="any" value={time} disabled={!runners.length} onChange={e=>{setPlaying(false);setTime(Number(e.target.value));}} />
-            <label>Speed<select value={speed} onChange={e=>setSpeed(Number(e.target.value))}>{[1,4,16,32,64,128,256].map(value=><option key={value} value={value}>{value}×</option>)}</select></label>
-            <label>Clock<select value={wall ? "wall" : "elapsed"} onChange={e=>{setWall(e.target.value==="wall");setTime(0);setPlaying(false);}}><option value="elapsed">{clock==="chip" ? "Chip elapsed" : "Official elapsed"}</option><option value="wall" disabled={!timeline.wallAvailable}>Race-day time</option></select></label>
+
+      {entry ? (
+        <>
+          <b>
+            {entry.runner.name}
+            {entry.runner.bib ? ` · #${entry.runner.bib}` : ""}
+          </b>
+          <small>
+            {(entry.distM / 1000).toFixed(2)} km (est.) · Finish {raceClock(entry.finishMs)}
+          </small>
+        </>
+      ) : (
+        <span className="ovt-duel-empty-title">No athlete selected</span>
+      )}
+
+      <div className="ovt-duel-search-wrap">
+        <input
+          type="search"
+          className="ovt-duel-search-input"
+          placeholder={entry ? "Search name or bib to switch…" : `Search ${roleLabel.toLowerCase()} by name or bib…`}
+          aria-label={`Search ${roleLabel} athlete by name or bib`}
+          value={query}
+          onFocus={() => setOpen(true)}
+          onChange={e => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
+        />
+        {open && (
+          <div className="ovt-duel-search-results" role="listbox" aria-label={`${roleLabel} athlete results`}>
+            {filtered.length === 0 ? (
+              <div className="ovt-duel-search-empty">No matching athletes</div>
+            ) : (
+              filtered.map(r => {
+                const isSelected = entry?.runner.id === r.id;
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    className={`ovt-pill-option ${isSelected ? "is-selected" : ""}`}
+                    onClick={() => {
+                      onSelect(r.id);
+                      setQuery("");
+                      setOpen(false);
+                    }}
+                  >
+                    <span className="ovt-pill-option-text">
+                      <span>
+                        {r.name}
+                        {r.bib ? ` (#${r.bib})` : ""}
+                      </span>
+                      <small>{raceClock(r.splits.finishMs)}</small>
+                    </span>
+                    {isSelected && <span className="ovt-pill-check">✓</span>}
+                  </button>
+                );
+              })
+            )}
           </div>
-          {reduced && <small>Use the timeline to inspect positions with Reduced Motion on.</small>}
-        </div>
-        </div>
+        )}
       </div>
     </div>
-    {!immersive && <p className="rankings-note">Current pace comes from the active timing split.{data && <> {data.course.attribution}{source && <> · <a href={source} target="_blank" rel="noreferrer">Course source</a></>}</>}</p>}
-  </div>;
+  );
+}
+
+export function ReplayPlayer({
+  scope,
+  initialIds,
+  initialCoverage = null,
+  initialCoursePreviews,
+  active = true,
+}: {
+  scope: { edition: string; distance: string; sex: string; clock: string };
+  initialIds: string;
+  initialCoverage?: RaceCoverage[] | null;
+  initialCoursePreviews?: Record<string, [number, number][]>;
+  active?: boolean;
+}) {
+  const { user } = useAuth();
+  const saved = useRaceFavorites();
+
+  const [coverage, setCoverage] = useState<RaceCoverage[] | null>(initialCoverage);
+  useEffect(() => {
+    if (coverage !== null) return;
+    fetch("/api/rankings/coverage")
+      .then(r => (r.ok ? r.json() : null))
+      .then((c: RaceCoverage[] | null) => {
+        if (Array.isArray(c)) setCoverage(c);
+      })
+      .catch(() => {});
+  }, [coverage]);
+
+  const [coursePreviews, setCoursePreviews] = useState<Record<string, [number, number][]> | null>(() => {
+    if (initialCoursePreviews) {
+      coursePreviewsMemoryCache.data = initialCoursePreviews;
+      return initialCoursePreviews;
+    }
+    return coursePreviewsMemoryCache.data;
+  });
+  const [hideIneligible, setHideIneligible] = useState(false);
+
+  useEffect(() => {
+    if (coursePreviews !== null) return;
+    fetch("/api/rankings/courses")
+      .then(r => (r.ok ? r.json() : null))
+      .then((p: Record<string, [number, number][]> | null) => {
+        if (p && typeof p === "object") {
+          coursePreviewsMemoryCache.data = p;
+          setCoursePreviews(p);
+        }
+      })
+      .catch(() => {});
+  }, [coursePreviews]);
+
+  const [sport, setSport] = useState<SportId>("running");
+  const [sportFormat, setSportFormat] = useState<string>(scope.distance || "marathon");
+  const [editionId, setEditionId] = useState<number>(Number(scope.edition) || 6);
+  const [distanceSlug, setDistanceSlug] = useState<string>(scope.distance || "marathon");
+  const [category, setCategory] = useState(scope.sex);
+  const clock = "chip";
+  const [ids, setIds] = useState<string | null>(initialIds ? initialIds : null);
+  const [attempt, setAttempt] = useState(0);
+  const [runnerSearch, setRunnerSearch] = useState("");
+
+  const activeSportObj = SPORTS.find(s => s.id === sport) ?? SPORTS[0];
+  const isRunningSport = sport === "running";
+
+  useEffect(() => {
+    const nextEd = Number(scope.edition) || 6;
+    if (nextEd !== editionId) setEditionId(nextEd);
+    if (scope.distance && scope.distance !== distanceSlug) setDistanceSlug(scope.distance);
+    if (initialIds) setIds(initialIds);
+  }, [scope.edition, scope.distance, initialIds]);
+
+  const [data, setData] = useState<ReplayData | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState("");
+
+  const [time, setTime] = useState(0);
+  const timeRef = useRef(0);
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(256);
+  const [wall, setWall] = useState(false);
+  const [reduced, setReduced] = useState(false);
+  const [mapError, setMapError] = useState("");
+  const [mapAttempt, setMapAttempt] = useState(0);
+  const [ready, setReady] = useState(false);
+  const [mapExpanded, setMapExpanded] = useState(false);
+
+  // Multi-athlete pinning + single camera focus target among pinned athletes
+  const [cameraMode, setCameraMode] = useState<"field" | "follow" | "chase3d">("field");
+  const [pinnedIds, setPinnedIds] = useState<number[]>([]);
+  const [cameraTargetId, setCameraTargetId] = useState<number | null>(null);
+
+  // Head-to-head duel slots (both empty by default unless athletes are pinned or sent from Duel)
+  const [duelPrimaryId, setDuelPrimaryId] = useState<number | null>(null);
+  const [peerId, setPeerId] = useState<number | null>(null);
+
+  const [replayMode, setReplayMode] = useState<"field" | "finish" | "duel">("field");
+  const [page, setPage] = useState(0);
+  const pageSize = 9;
+
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState("");
+
+  const abort = useRef<AbortController | null>(null);
+  const container = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+
+  const distanceObj = useMemo(
+    () => RACE_DISTANCES.find(d => d.slug === distanceSlug) ?? RACE_DISTANCES[3],
+    [distanceSlug],
+  );
+  const storedDistance = distanceObj.stored;
+  const totalMeters = RACE_METERS[storedDistance] ?? 42195;
+
+  const allRaceEditions = useMemo(() => raceEventGroups(coverage ?? [], "all"), [coverage]);
+
+  const activeRaceMeta = useMemo(
+    () =>
+      allRaceEditions.find(g => g.edition_id === editionId && g.distance_slug === storedDistance) ??
+      allRaceEditions.find(g => g.edition_id === editionId) ??
+      null,
+    [allRaceEditions, editionId, storedDistance],
+  );
+
+  function selectRaceEdition(nextEditionId: number, nextDistanceStored?: string) {
+    const distObj = nextDistanceStored
+      ? (RACE_DISTANCES.find(d => d.stored === nextDistanceStored) ?? distanceObj)
+      : distanceObj;
+    setEditionId(nextEditionId);
+    setDistanceSlug(distObj.slug);
+    setIds(null);
+    setPage(0);
+    setPickerOpen(false);
+  }
+
+  function togglePinRunner(id: number) {
+    setPinnedIds(prev => {
+      const exists = prev.includes(id);
+      if (exists) {
+        const next = prev.filter(x => x !== id);
+        setCameraTargetId(curr => (curr === id ? (next[0] ?? null) : curr));
+        if (next.length === 0) setCameraMode("field");
+        return next;
+      }
+      const next = [...prev, id];
+      setCameraTargetId(curr => curr ?? id);
+      return next;
+    });
+  }
+
+  const scopeKey = useMemo(
+    () =>
+      new URLSearchParams({
+        edition: String(editionId),
+        distance: distanceSlug,
+        sex: category,
+        clock,
+      }).toString(),
+    [editionId, distanceSlug, category, clock],
+  );
+
+  useEffect(() => {
+    if (active && map.current) {
+      requestAnimationFrame(() => map.current?.resize());
+    } else if (!active && playing) {
+      setPlaying(false);
+    }
+  }, [active, playing, mapExpanded]);
+
+  useEffect(() => {
+    const cacheKey = `${scopeKey}|${ids ?? ""}`;
+    const cached = replayDataMemoryCache.get(cacheKey);
+    if (cached) {
+      setData(cached);
+      setBusy(false);
+      setError("");
+      return;
+    }
+
+    const controller = new AbortController();
+    abort.current = controller;
+    setBusy(true);
+    setData(null);
+    setError("");
+    setProgress(0);
+    timeRef.current = 0;
+    setTime(0);
+    setPlaying(false);
+    setWall(false);
+    void loadReplayField(
+      async after => {
+        const params = new URLSearchParams(scopeKey);
+        params.set("after", String(after));
+        if (ids !== null && ids.trim() !== "") params.set("ids", ids);
+        const response = await fetch(`/api/rankings/replay?${params}`, { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(
+            response.status === 404
+              ? "Reviewed course and checkpoint timing profiles are not yet available for this race edition."
+              : "Replay could not load.",
+          );
+        }
+        return response.json() as Promise<ReplayPage>;
+      },
+      () => controller.signal.aborted,
+      setProgress,
+    )
+      .then(value => {
+        if (!controller.signal.aborted) {
+          if (!validateReplayCourse(value.course, storedDistance)) {
+            throw new Error("Course alignment needs review.");
+          }
+          replayDataMemoryCache.set(cacheKey, value);
+          setData(value);
+        }
+      })
+      .catch(e => {
+        if (!controller.signal.aborted) {
+          setError(e instanceof Error ? e.message : "Replay unavailable.");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setBusy(false);
+      });
+    return () => controller.abort();
+  }, [scopeKey, ids, attempt, storedDistance]);
+
+  const runners = useMemo(
+    () =>
+      data?.runners.flatMap(r => {
+        const compiled = compileReplayRunner(r, storedDistance);
+        return compiled ? [compiled] : [];
+      }) ?? [],
+    [data, storedDistance],
+  );
+
+  // Preserve valid selections on field change, never auto-select default athletes
+  useEffect(() => {
+    if (!runners.length) {
+      setPinnedIds([]);
+      setCameraTargetId(null);
+      setDuelPrimaryId(null);
+      setPeerId(null);
+      return;
+    }
+    const idSet = new Set(runners.map(r => r.id));
+    setPinnedIds(prev => prev.filter(id => idSet.has(id)));
+    setCameraTargetId(prev => (prev !== null && idSet.has(prev) ? prev : null));
+    setDuelPrimaryId(prev => (prev !== null && idSet.has(prev) ? prev : null));
+    setPeerId(prev => (prev !== null && idSet.has(prev) ? prev : null));
+  }, [runners]);
+
+  const savedInFieldIds = useMemo(() => {
+    const idSet = new Set(runners.map(r => r.id));
+    return saved.ids.filter(id => idSet.has(id));
+  }, [runners, saved.ids]);
+
+  const allSavedPinnedInReplay = useMemo(
+    () => savedInFieldIds.length > 0 && savedInFieldIds.every(id => pinnedIds.includes(id)),
+    [savedInFieldIds, pinnedIds],
+  );
+
+  function toggleSavedAthletesPinned() {
+    if (!user) {
+      window.dispatchEvent(
+        new CustomEvent("ovt:require-auth", {
+          detail: { action: "save", target: "your saved results" },
+        }),
+      );
+      return;
+    }
+    if (!savedInFieldIds.length) return;
+    setPinnedIds(prev => {
+      if (allSavedPinnedInReplay) {
+        const removeSet = new Set(savedInFieldIds);
+        const next = prev.filter(id => !removeSet.has(id));
+        setCameraTargetId(curr => (curr !== null && removeSet.has(curr) ? (next[0] ?? null) : curr));
+        if (next.length === 0) setCameraMode("field");
+        return next;
+      }
+      const next = Array.from(new Set([...prev, ...savedInFieldIds]));
+      setCameraTargetId(curr => curr ?? savedInFieldIds[0] ?? null);
+      return next;
+    });
+  }
+
+  const timeline = useMemo(() => replayTimeline(runners, wall), [runners, wall]);
+  const features = useMemo(
+    () => (data ? replayFeatures(data.course, runners, time, timeline.origin) : null),
+    [data, runners, time, timeline.origin],
+  );
+  const latest = useRef(features);
+  latest.current = features;
+
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const changed = () => {
+      setReduced(preference.matches);
+      if (preference.matches) setPlaying(false);
+    };
+    changed();
+    preference.addEventListener("change", changed);
+    return () => preference.removeEventListener("change", changed);
+  }, []);
+
+  useEffect(() => {
+    const hidden = () => {
+      if (document.hidden) setPlaying(false);
+    };
+    document.addEventListener("visibilitychange", hidden);
+    return () => document.removeEventListener("visibilitychange", hidden);
+  }, []);
+
+  // 60–120fps requestAnimationFrame gliding loop for smooth athlete & camera movement
+  useEffect(() => {
+    if (!playing || reduced || !data || timeline.duration <= 0) return;
+    let rafId = 0;
+    let previous = performance.now();
+    let lastReactSync = previous;
+
+    const tick = (now: number) => {
+      const dt = Math.min(now - previous, 100);
+      previous = now;
+      const nextTime = Math.min(timeline.duration, timeRef.current + dt * speed);
+      timeRef.current = nextTime;
+
+      if (ready && map.current) {
+        const frameFeatures = replayFeatures(data.course, runners, nextTime, timeline.origin);
+        latest.current = frameFeatures;
+        (map.current.getSource("runners") as mapboxgl.GeoJSONSource | undefined)?.setData(frameFeatures);
+
+        if (cameraMode !== "field" && cameraTargetId !== null) {
+          const r = runners.find(item => item.id === cameraTargetId);
+          if (r) {
+            const effectiveTime =
+              nextTime - (timeline.origin !== null && Number.isFinite(r.startMs) ? r.startMs - timeline.origin : 0);
+            const distM = replayDistance(r, Math.max(0, effectiveTime)) ?? 0;
+            const coord = replayCoordinate(data.course, distM);
+            if (cameraMode === "follow") {
+              map.current.jumpTo({
+                center: coord,
+                zoom: Math.max(map.current.getZoom(), 13.8),
+                pitch: 0,
+                bearing: 0,
+              });
+            } else if (cameraMode === "chase3d") {
+              map.current.jumpTo({
+                center: coord,
+                zoom: 15.2,
+                pitch: 58,
+                bearing: computeCourseBearing(data.course, distM),
+              });
+            }
+          }
+        }
+      }
+
+      if (nextTime >= timeline.duration) {
+        setTime(nextTime);
+        setPlaying(false);
+        return;
+      }
+
+      if (now - lastReactSync >= 32) {
+        lastReactSync = now;
+        setTime(nextTime);
+      }
+
+      rafId = requestAnimationFrame(tick);
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [playing, reduced, speed, data, runners, timeline.duration, timeline.origin, ready, cameraMode, cameraTargetId]);
+
+  useEffect(() => {
+    if (!data || !container.current || !webEnv.mapboxAccessToken) return;
+    setReady(false);
+    setMapError("");
+    let instance: mapboxgl.Map;
+    try {
+      instance = new mapboxgl.Map({
+        container: container.current,
+        accessToken: webEnv.mapboxAccessToken,
+        style: "mapbox://styles/mapbox/standard",
+        center: data.course.points[0].slice(0, 2) as [number, number],
+        zoom: 11.5,
+        ...mapboxAttributionOptions,
+        logoPosition: "bottom-left",
+      });
+    } catch {
+      setMapError("This browser could not start the map.");
+      return;
+    }
+    map.current = instance;
+    addMapboxAttribution(instance);
+    instance.on("error", () => {
+      setMapError("Some map data could not load. Check your connection and Mapbox access.");
+      setPlaying(false);
+    });
+    instance.on("load", () => {
+      const coords = data.course.points.map(p => p.slice(0, 2) as [number, number]);
+      instance.addSource("course", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          properties: {},
+          geometry: { type: "LineString", coordinates: coords },
+        },
+      });
+      instance.addLayer({
+        id: "course-casing",
+        type: "line",
+        source: "course",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": "#142b3b", "line-width": 7, "line-opacity": 0.45 },
+      });
+      instance.addLayer({
+        id: "course",
+        type: "line",
+        source: "course",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": "#637482", "line-width": 4, "line-opacity": 0.9 },
+      });
+      instance.addSource("runners", {
+        type: "geojson",
+        data: latest.current ?? { type: "FeatureCollection", features: [] },
+      });
+      instance.addLayer({
+        id: "runners-halo",
+        type: "circle",
+        source: "runners",
+        paint: { "circle-opacity": 0.3 },
+      });
+      instance.addLayer({
+        id: "runners",
+        type: "circle",
+        source: "runners",
+      });
+      applyRunnerLayerPaint(instance, pinnedIds, cameraTargetId, replayMode === "duel" ? (peerId ?? -1) : -1);
+      const bounds = new mapboxgl.LngLatBounds();
+      for (const point of data.course.points) bounds.extend([point[0], point[1]]);
+      instance.fitBounds(bounds, { padding: 56, duration: 0 });
+      setReady(true);
+    });
+    instance.on("click", "runners", event => {
+      const id = Number(event.features?.[0]?.properties?.id);
+      if (Number.isSafeInteger(id)) togglePinRunner(id);
+    });
+
+    const visObserver = new IntersectionObserver(entries => {
+      if (!entries[0]?.isIntersecting) setPlaying(false);
+    });
+    visObserver.observe(container.current);
+
+    const resizeObserver = new ResizeObserver(() => {
+      instance.resize();
+    });
+    resizeObserver.observe(container.current);
+
+    return () => {
+      visObserver.disconnect();
+      resizeObserver.disconnect();
+      instance.remove();
+      map.current = null;
+    };
+  }, [data, mapAttempt]);
+
+  useEffect(() => {
+    if (ready && features && !playing) {
+      (map.current?.getSource("runners") as mapboxgl.GeoJSONSource | undefined)?.setData(features);
+    }
+  }, [ready, features, playing]);
+
+  const runnersWithDistance = useMemo<RunnerWithDistance[]>(() => {
+    return runners.map(r => {
+      const effectiveTime =
+        time - (timeline.origin !== null && Number.isFinite(r.startMs) ? r.startMs - timeline.origin : 0);
+      const distM = replayDistance(r, Math.max(0, effectiveTime)) ?? 0;
+      const finished = effectiveTime >= r.splits.finishMs;
+      return { runner: r, distM, finished, finishMs: r.splits.finishMs };
+    });
+  }, [runners, time, timeline.origin]);
+
+  const pinnedEntries = useMemo(
+    () =>
+      pinnedIds
+        .map(id => runnersWithDistance.find(e => e.runner.id === id))
+        .filter((e): e is RunnerWithDistance => Boolean(e)),
+    [pinnedIds, runnersWithDistance],
+  );
+
+  const cameraTargetEntry = useMemo(
+    () => (cameraTargetId !== null ? runnersWithDistance.find(e => e.runner.id === cameraTargetId) ?? null : null),
+    [runnersWithDistance, cameraTargetId],
+  );
+
+  const duelPrimaryEntry = useMemo(
+    () => (duelPrimaryId !== null ? runnersWithDistance.find(e => e.runner.id === duelPrimaryId) ?? null : null),
+    [runnersWithDistance, duelPrimaryId],
+  );
+
+  const peerEntry = useMemo(
+    () => (peerId !== null ? runnersWithDistance.find(e => e.runner.id === peerId) ?? null : null),
+    [runnersWithDistance, peerId],
+  );
+
+  const liveRanked = useMemo(
+    () => [...runnersWithDistance].sort((a, b) => b.distM - a.distM || a.finishMs - b.finishMs || a.runner.id - b.runner.id),
+    [runnersWithDistance],
+  );
+
+  const finishRanked = useMemo(
+    () => [...runnersWithDistance].sort((a, b) => a.finishMs - b.finishMs || a.runner.id - b.runner.id),
+    [runnersWithDistance],
+  );
+
+  useEffect(() => {
+    if (!ready || !map.current) return;
+    const highlightPinned =
+      replayMode === "duel" ? (duelPrimaryId !== null ? [duelPrimaryId] : []) : pinnedIds;
+    const activeFocus = replayMode === "duel" ? duelPrimaryId : cameraTargetId;
+    const pId = replayMode === "duel" ? (peerId ?? -1) : -1;
+    applyRunnerLayerPaint(map.current, highlightPinned, activeFocus, pId);
+  }, [ready, pinnedIds, cameraTargetId, duelPrimaryId, peerId, replayMode]);
+
+  useEffect(() => {
+    if (!ready || !map.current || !data || playing || cameraMode === "field" || !cameraTargetEntry) return;
+    const coord = replayCoordinate(data.course, cameraTargetEntry.distM);
+    if (cameraMode === "follow") {
+      map.current.easeTo({
+        center: coord,
+        zoom: Math.max(map.current.getZoom(), 13.8),
+        pitch: 0,
+        bearing: 0,
+        duration: 450,
+      });
+    } else if (cameraMode === "chase3d") {
+      map.current.easeTo({
+        center: coord,
+        zoom: 15.2,
+        pitch: 58,
+        bearing: computeCourseBearing(data.course, cameraTargetEntry.distM),
+        duration: 500,
+      });
+    }
+  }, [ready, data, cameraMode, cameraTargetEntry?.distM, cameraTargetEntry?.runner.id, playing]);
+
+  function cycleCameraMode() {
+    if (!ready || !map.current || !data) return;
+    if (cameraMode === "field") {
+      if (cameraTargetId === null) {
+        const firstTarget = pinnedIds[0] ?? liveRanked[0]?.runner.id ?? null;
+        if (firstTarget !== null) {
+          setCameraTargetId(firstTarget);
+          if (!pinnedIds.includes(firstTarget)) setPinnedIds(prev => [...prev, firstTarget]);
+        }
+      }
+      setCameraMode("follow");
+    } else if (cameraMode === "follow") {
+      setCameraMode("chase3d");
+    } else {
+      setCameraMode("field");
+      const bounds = new mapboxgl.LngLatBounds();
+      for (const point of data.course.points) bounds.extend([point[0], point[1]]);
+      map.current.fitBounds(bounds, { padding: 56, pitch: 0, bearing: 0, duration: 650 });
+    }
+  }
+
+  const baseRanking = replayMode === "finish" ? finishRanked : liveRanked;
+  const activeRanking = useMemo(() => {
+    const q = runnerSearch.trim().toLowerCase().replace(/^#/, "");
+    if (!q) return baseRanking;
+    return baseRanking.filter(
+      e =>
+        e.runner.name.toLowerCase().includes(q) ||
+        (e.runner.bib && e.runner.bib.toLowerCase().includes(q)),
+    );
+  }, [baseRanking, runnerSearch]);
+  const totalRunners = activeRanking.length;
+  const totalPages = Math.max(1, Math.ceil(totalRunners / pageSize));
+  const safePage = Math.max(0, Math.min(page, totalPages - 1));
+  const pageSlice = activeRanking.slice(safePage * pageSize, (safePage + 1) * pageSize);
+
+  const visibleRaceEditions = useMemo(
+    () => (isRunningSport ? allRaceEditions.filter(ed => ed.distance_slug === storedDistance) : []),
+    [isRunningSport, allRaceEditions, storedDistance],
+  );
+
+  const leaderDistM = useMemo(
+    () => Math.max(0, ...runnersWithDistance.map(r => r.distM)),
+    [runnersWithDistance],
+  );
+  const fastestFinishMs = useMemo(
+    () => (runners.length ? Math.min(...runners.map(r => r.splits.finishMs)) : 0),
+    [runners],
+  );
+
+  const duelSeries = useMemo(() => {
+    if (!duelPrimaryEntry || !peerEntry || timeline.duration <= 0) return null;
+    const N = 88;
+    const gapsM = Array.from({ length: N }, (_, idx) => {
+      const t = (timeline.duration * idx) / (N - 1);
+      return (replayDistance(duelPrimaryEntry.runner, t) ?? 0) - (replayDistance(peerEntry.runner, t) ?? 0);
+    });
+    const peak = Math.max(50, ...gapsM.map(Math.abs)) * 1.12;
+    return { N, gapsM, peak };
+  }, [duelPrimaryEntry?.runner, peerEntry?.runner, timeline.duration]);
+
+  const source = data ? raceSourceUrl(data.course.sourceUrl) : null;
+
+  return (
+    <div className="ovt-replay-studio">
+      <div className="ovt-replay-filter-card">
+        <SportFilterBar
+          sport={sport}
+          onSportChange={nextSport => {
+            if (nextSport === sport) return;
+            const targetObj = SPORTS.find(s => s.id === nextSport) ?? SPORTS[0];
+            setSport(nextSport);
+            setSportFormat(nextSport === "running" ? distanceSlug : targetObj.formats[0].value);
+          }}
+          format={isRunningSport ? distanceSlug : sportFormat}
+          onFormatChange={nextVal => {
+            if (isRunningSport) {
+              if (nextVal === distanceSlug) return;
+              setDistanceSlug(nextVal);
+              setSportFormat(nextVal);
+              const nextStored = RACE_DISTANCES.find(d => d.slug === nextVal)?.stored;
+              const match = allRaceEditions.find(ed => ed.distance_slug === nextStored);
+              if (match) setEditionId(match.edition_id);
+              setIds(null);
+              setPage(0);
+            } else {
+              setSportFormat(nextVal);
+            }
+          }}
+          sex={category}
+          onSexChange={nextSex => {
+            setCategory(nextSex);
+            setPage(0);
+          }}
+        />
+      </div>
+
+      {!isRunningSport ? (
+        <div className="race-empty">
+          <AppHeading level={2} role="heading">No published {activeSportObj.label} replays yet</AppHeading>
+          <p>Select Running to watch published marathon, half marathon, 10K, and 5K course replays.</p>
+        </div>
+      ) : (
+        <>
+          <section className="ovt-replay-races" aria-label="Choose a race edition to replay">
+            <div className="ovt-mini-title">
+              <AppHeading level={2} role="heading">Choose a race</AppHeading>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                <label className="ovt-inline-check">
+                  <input
+                    type="checkbox"
+                    checked={hideIneligible}
+                    onChange={e => setHideIneligible(e.target.checked)}
+                  />
+                  <span>Hide ineligible races</span>
+                </label>
+                <button
+                  type="button"
+                  className="ovt-btn quiet"
+                  onClick={() => {
+                    setPickerSearch("");
+                    setPickerOpen(true);
+                  }}
+                >
+                  View all races ↗
+                </button>
+              </div>
+            </div>
+            <div className="ovt-replay-race-shelf">
+              {(visibleRaceEditions.length > 0 ? visibleRaceEditions : allRaceEditions)
+                .filter(ed => {
+                  if (!hideIneligible || coursePreviews === null) return true;
+                  const pts = coursePreviews[`${ed.edition_id}:${ed.distance_slug}`];
+                  return Boolean(pts && pts.length >= 2);
+                })
+                .map(ed => {
+                  const isActive = ed.edition_id === editionId && ed.distance_slug === storedDistance;
+                  const distLabel = RACE_DISTANCES.find(d => d.stored === ed.distance_slug)?.label ?? ed.distance_slug;
+                  const coursePts = coursePreviews ? (coursePreviews[`${ed.edition_id}:${ed.distance_slug}`] ?? null) : null;
+                  const hasReplayMap = coursePreviews === null ? true : Boolean(coursePts && coursePts.length >= 2);
+                  return (
+                    <article
+                      key={`${ed.edition_id}:${ed.distance_slug}`}
+                      className={`ovt-replay-race-card ${isActive ? "active" : ""} ${!hasReplayMap ? "is-ineligible" : ""}`}
+                      aria-disabled={!hasReplayMap}
+                      onClick={() => {
+                        if (hasReplayMap) selectRaceEdition(ed.edition_id, ed.distance_slug);
+                      }}
+                    >
+                      <RaceRouteArt eventName={ed.event_name} year={ed.edition_year} coursePoints={coursePts} />
+                      <div className="ovt-replay-race-card-foot">
+                        <div>
+                          <strong>{formatEditionDisplay(ed.event_name, ed.edition_year)}</strong>
+                          <small>{distLabel}</small>
+                        </div>
+                        <button
+                          type="button"
+                          className={`ovt-btn ${isActive ? "gold" : ""}`}
+                          disabled={!hasReplayMap}
+                          onClick={e => {
+                            e.stopPropagation();
+                            if (hasReplayMap) selectRaceEdition(ed.edition_id, ed.distance_slug);
+                          }}
+                        >
+                          {!hasReplayMap ? "No GPS map" : isActive ? "● Watching" : "▶ Watch"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+            </div>
+          </section>
+
+          <section className="ovt-replay-shell" aria-label="Course map and playback controls">
+            <div className="ovt-replay-head">
+              <div className="title">
+                <strong>
+                  {activeRaceMeta ? formatEditionDisplay(activeRaceMeta.event_name, activeRaceMeta.edition_year) : `Edition #${editionId}`} · {distanceObj.label}
+                </strong>
+              </div>
+              <div className="ovt-replay-head-controls">
+                <div className="ovt-seg is-dark" role="tablist" aria-label="Start clock alignment">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={!wall}
+                    className={!wall ? "on" : ""}
+                    title="All athletes start together at 0:00 chip time"
+                    onClick={() => {
+                      if (!wall) return;
+                      setWall(false);
+                      timeRef.current = 0;
+                      setTime(0);
+                      setPlaying(false);
+                    }}
+                  >
+                    Chip time
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={wall}
+                    className={wall ? "on" : ""}
+                    disabled={!timeline.wallAvailable}
+                    title={
+                      timeline.wallAvailable
+                        ? "Replay actual time-of-day wave starts"
+                        : "Time-of-day wave start times are not available for this edition"
+                    }
+                    onClick={() => {
+                      if (wall || !timeline.wallAvailable) return;
+                      setWall(true);
+                      timeRef.current = 0;
+                      setTime(0);
+                      setPlaying(false);
+                    }}
+                  >
+                    Time of day
+                  </button>
+                </div>
+              </div>
+            </div>
+
+        <div className={`ovt-replay-map-stage ${mapExpanded ? "is-expanded" : ""}`}>
+          {data && (
+            <>
+              <div className="ovt-map-top-actions">
+                <button
+                  type="button"
+                  className={`ovt-camera-toggle ${cameraMode !== "field" ? "active" : ""}`}
+                  onClick={cycleCameraMode}
+                >
+                  {cameraMode === "field"
+                    ? "◉ Field camera"
+                    : cameraMode === "follow"
+                      ? "◎ Following athlete"
+                      : "◈ 3D Chase POV"}
+                </button>
+                <button
+                  type="button"
+                  className={`ovt-camera-toggle ${mapExpanded ? "active" : ""}`}
+                  onClick={() => setMapExpanded(v => !v)}
+                  aria-pressed={mapExpanded}
+                  title={mapExpanded ? "Restore default map height" : "Expand map window"}
+                >
+                  {mapExpanded ? "⤡ Compact map" : "⤢ Expand map"}
+                </button>
+              </div>
+              <div className="ovt-map-head">
+                <span>{timeline.origin !== null ? "Time of day" : "Chip time"}</span>
+                <strong>
+                  {timeline.origin !== null ? new Date(timeline.origin + time).toLocaleTimeString() : raceClock(time)}
+                </strong>
+                <span>
+                  {cameraTargetEntry
+                    ? `${(cameraTargetEntry.distM / 1000).toFixed(2)} / ${(totalMeters / 1000).toFixed(1)} km · ${cameraTargetEntry.runner.name} (est.)`
+                    : `${runners.length} athletes`}
+                </span>
+              </div>
+
+              {/* Pinned Athlete Overlay Cards — click any card to focus the camera on that athlete */}
+              {pinnedEntries.length > 0 && (
+                <div className="ovt-pinned-cards" aria-label="Pinned athletes">
+                  {pinnedEntries.map(entry => {
+                    const isCameraTarget = entry.runner.id === cameraTargetId;
+                    return (
+                      <div
+                        key={entry.runner.id}
+                        role="button"
+                        tabIndex={0}
+                        className={`ovt-pinned-card ${isCameraTarget ? "is-focused" : ""}`}
+                        onClick={() => {
+                          setCameraTargetId(entry.runner.id);
+                          if (cameraMode === "field") setCameraMode("follow");
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setCameraTargetId(entry.runner.id);
+                            if (cameraMode === "field") setCameraMode("follow");
+                          }
+                        }}
+                        title="Click to focus camera on this pinned athlete"
+                      >
+                        <div className="ovt-pinned-card-top">
+                          <strong>{entry.runner.name}</strong>
+                          <button
+                            type="button"
+                            className="ovt-pinned-card-close"
+                            aria-label={`Unpin ${entry.runner.name}`}
+                            onClick={e => {
+                              e.stopPropagation();
+                              togglePinRunner(entry.runner.id);
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <small>
+                          {entry.finished
+                            ? `Finished · ${raceClock(entry.finishMs)}`
+                            : `${(entry.distM / 1000).toFixed(2)} km`}
+                          {isCameraTarget && cameraMode !== "field" ? " · ◎ Camera" : ""}
+                        </small>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="ovt-map-legend">
+                <span className="ovt-legend-dot" style={{ background: "#FFB800" }} /> Pinned
+                {replayMode === "duel" && (
+                  <>
+                    <span className="ovt-legend-dot" style={{ background: "#142b3b", border: "1.5px solid #fff" }} /> Challenger
+                  </>
+                )}
+                <span className="ovt-legend-dot" style={{ background: "#9fa5af" }} /> Field
+              </div>
+            </>
+          )}
+
+          {busy && (
+            <div className="ovt-map-status" role="status">
+              <p>Loading {progress.toLocaleString()} timing profiles…</p>
+              <button
+                type="button"
+                className="ovt-btn"
+                onClick={() => {
+                  abort.current?.abort();
+                  setBusy(false);
+                  setError("Replay loading cancelled.");
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
+          {error && !busy && (
+            <div className="ovt-map-status" role="alert">
+              <p>{error}</p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+                <button type="button" className="ovt-btn" onClick={() => setAttempt(n => n + 1)}>
+                  Retry
+                </button>
+                {editionId !== 6 && (
+                  <button type="button" className="ovt-btn gold" onClick={() => selectRaceEdition(6, "marathon")}>
+                    Load Chicago Marathon 2025 Replay →
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!webEnv.mapboxAccessToken ? (
+            <div className="ovt-map-status" role="alert">
+              Map access is not configured.
+            </div>
+          ) : (
+            <div
+              ref={container}
+              className="ovt-replay-mapbox-canvas"
+              aria-label="Estimated race positions along the reviewed course"
+            />
+          )}
+
+          {mapError && (
+            <div className="ovt-map-status" role="alert">
+              <p>{mapError}</p>
+              <button type="button" className="ovt-btn" onClick={() => setMapAttempt(n => n + 1)}>
+                Retry map
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="ovt-replay-controls">
+          <div className="ovt-progressrow">
+            <button
+              type="button"
+              className="ovt-replay-play"
+              disabled={reduced || !runners.length}
+              aria-label={playing ? "Pause race replay" : "Play race replay"}
+              onClick={() => {
+                if (timeRef.current >= timeline.duration) {
+                  timeRef.current = 0;
+                  setTime(0);
+                }
+                setPlaying(v => !v);
+              }}
+            >
+              {playing ? "Ⅱ" : "▶"}
+            </button>
+            <span className="time">{raceClock(time)}</span>
+            <input
+              type="range"
+              className="ovt-thin-scrubber"
+              min={0}
+              max={Math.max(timeline.duration, 1)}
+              step="any"
+              value={time}
+              aria-label="Replay elapsed race time"
+              onChange={e => {
+                const nextTime = Number(e.target.value);
+                setPlaying(false);
+                timeRef.current = nextTime;
+                setTime(nextTime);
+                if (ready && map.current && data) {
+                  const frameFeatures = replayFeatures(data.course, runners, nextTime, timeline.origin);
+                  latest.current = frameFeatures;
+                  (map.current.getSource("runners") as mapboxgl.GeoJSONSource | undefined)?.setData(frameFeatures);
+                }
+              }}
+            />
+            <span className="time">{raceClock(timeline.duration)}</span>
+            <button
+              type="button"
+              className="ovt-speed-btn"
+              onClick={() => setSpeed(s => (s === 64 ? 128 : s === 128 ? 256 : s === 256 ? 512 : 64))}
+              title="Cycle playback speed"
+            >
+              {speed}×
+            </button>
+            {ids !== null && (
+              <button type="button" className="ovt-speed-btn" disabled={busy} onClick={() => setIds(null)}>
+                All runners
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {data && runners.length > 0 && (
+        <section className="ovt-replay-panel" aria-label="Replay standings and head-to-head comparison">
+          <div className="ovt-replay-panel-top">
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <strong>
+                {replayMode === "field"
+                  ? "Live order (est.)"
+                  : replayMode === "finish"
+                    ? "Finish order"
+                    : "Head-to-head"}
+              </strong>
+              {pinnedIds.length > 0 && replayMode !== "duel" && (
+                <button
+                  type="button"
+                  className="ovt-chip gold"
+                  onClick={() => {
+                    setPinnedIds([]);
+                    setCameraTargetId(null);
+                    setCameraMode("field");
+                  }}
+                  title="Clear all pinned athletes"
+                >
+                  📌 {pinnedIds.length} pinned <span>×</span>
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {replayMode !== "duel" && (
+                <>
+                  <input
+                    type="search"
+                    className="ovt-replay-search-input"
+                    placeholder="Find runner or bib…"
+                    aria-label="Search runners in replay"
+                    value={runnerSearch}
+                    onChange={e => {
+                      setRunnerSearch(e.target.value);
+                      setPage(0);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className={`ovt-filter-chip subtle ${allSavedPinnedInReplay ? "active" : ""}`}
+                    aria-pressed={allSavedPinnedInReplay}
+                    title={allSavedPinnedInReplay ? "Unpin saved results" : "Pin your saved results in this race"}
+                    onClick={toggleSavedAthletesPinned}
+                  >
+                    {allSavedPinnedInReplay ? "★ Saved pinned" : "☆ Saved results"}
+                  </button>
+                </>
+              )}
+
+              <div className="ovt-seg" role="tablist" aria-label="Replay leaderboard mode">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={replayMode === "field"}
+                  className={replayMode === "field" ? "on" : ""}
+                  onClick={() => {
+                    setReplayMode("field");
+                    setPage(0);
+                  }}
+                >
+                  Live order
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={replayMode === "finish"}
+                  className={replayMode === "finish" ? "on" : ""}
+                  onClick={() => {
+                    setReplayMode("finish");
+                    setPage(0);
+                  }}
+                >
+                  Finish order
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={replayMode === "duel"}
+                  className={replayMode === "duel" ? "on" : ""}
+                  onClick={() => {
+                    if (duelPrimaryId === null && pinnedIds.length >= 1) setDuelPrimaryId(pinnedIds[0]);
+                    if (peerId === null && pinnedIds.length >= 2) setPeerId(pinnedIds[1]);
+                    setReplayMode("duel");
+                  }}
+                >
+                  Head-to-head
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {replayMode !== "duel" ? (
+            <>
+              <div className="ovt-tablebox" style={{ border: 0, borderRadius: 0 }}>
+                <table className="ovt-replay-table">
+                  <thead>
+                    <tr>
+                      <th>{replayMode === "finish" ? "Rank" : "Est. rank*"}</th>
+                      <th>Runner</th>
+                      <th>At {raceClock(time)}</th>
+                      <th>Est. gap</th>
+                      <th>Splits · elapsed</th>
+                      <th>Pin</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pageSlice.map((entry, idx) => {
+                      const rank = safePage * pageSize + idx + 1;
+                      const isPinned = pinnedIds.includes(entry.runner.id);
+                      const gapM = Math.max(0, leaderDistM - entry.distM);
+                      return (
+                        <tr key={entry.runner.id} className={isPinned ? "active" : ""}>
+                          <td>
+                            <b>{replayMode === "field" && time === 0 ? "—" : `#${rank}`}</b>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="ovt-namebtn"
+                              onClick={() => togglePinRunner(entry.runner.id)}
+                            >
+                              {entry.runner.name}
+                            </button>
+                          </td>
+                          <td>
+                            <b>
+                              {entry.finished
+                                ? `Finished · ${raceClock(entry.finishMs)}`
+                                : `${(entry.distM / 1000).toFixed(2)} km`}
+                            </b>
+                          </td>
+                          <td className="delta">
+                            {time === 0
+                              ? "—"
+                              : entry.finished
+                                ? entry.finishMs === fastestFinishMs
+                                  ? "Leader"
+                                  : `+${raceClock(entry.finishMs - fastestFinishMs)}`
+                                : gapM < 5
+                                  ? "Leader"
+                                  : `−${Math.round(gapM).toLocaleString()} m`}
+                          </td>
+                          <td>
+                            <ProgressiveSplitSignature
+                              runner={entry.runner}
+                              distanceSlug={storedDistance}
+                              currentDistM={entry.distM}
+                              totalDistM={totalMeters}
+                              active={time > 0}
+                            />
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <button
+                                type="button"
+                                className={`ovt-btn ${isPinned ? "gold" : ""}`}
+                                style={{ padding: "6px 12px" }}
+                                onClick={() => togglePinRunner(entry.runner.id)}
+                              >
+                                {isPinned ? "✓ Pinned" : "Pin"}
+                              </button>
+                              <button
+                                type="button"
+                                className="ovt-btn"
+                                style={{ padding: "6px 12px" }}
+                                onClick={() => {
+                                  if (duelPrimaryId === null) {
+                                    setDuelPrimaryId(entry.runner.id);
+                                  } else if (duelPrimaryId !== entry.runner.id) {
+                                    setPeerId(entry.runner.id);
+                                  }
+                                  setReplayMode("duel");
+                                }}
+                              >
+                                Duel
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="ovt-replay-pagination">
+                <span className="ovt-hint">
+                  *Positions &amp; gaps interpolated between recorded checkpoints (not live GPS)
+                  {source && (
+                    <>
+                      {" · "}
+                      <a href={source} target="_blank" rel="noreferrer">
+                        Source ↗
+                      </a>
+                    </>
+                  )}
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <nav className="ovt-replay-pages" aria-label="Leaderboard pages">
+                    <button
+                      type="button"
+                      disabled={safePage === 0}
+                      onClick={() => setPage(p => Math.max(0, p - 1))}
+                      aria-label="Previous page"
+                    >
+                      ‹
+                    </button>
+                    {Array.from({ length: totalPages }, (_, n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        className={n === safePage ? "active" : ""}
+                        aria-current={n === safePage ? "page" : undefined}
+                        onClick={() => setPage(n)}
+                      >
+                        {n + 1}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      disabled={safePage >= totalPages - 1}
+                      onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                      aria-label="Next page"
+                    >
+                      ›
+                    </button>
+                  </nav>
+
+                  <form
+                    className="race-jump"
+                    style={{ marginTop: 0 }}
+                    onSubmit={e => {
+                      e.preventDefault();
+                      const raw = Number(new FormData(e.currentTarget).get("page"));
+                      if (Number.isFinite(raw)) {
+                        setPage(Math.max(0, Math.min(totalPages - 1, Math.floor(raw) - 1)));
+                      }
+                    }}
+                  >
+                    <label>
+                      Page{" "}
+                      <input
+                        type="number"
+                        name="page"
+                        min="1"
+                        max={totalPages}
+                        required
+                        key={safePage + 1}
+                        defaultValue={safePage + 1}
+                      />
+                    </label>
+                    <button type="submit" className="ovt-btn" style={{ ...typographyStyle("caption"), padding: "5px 11px" }}>
+                      Go
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="ovt-duel">
+              <div className="ovt-duel-people">
+                <DuelAthleteCard
+                  roleLabel="Focus"
+                  roleColor="#C88A00"
+                  entry={duelPrimaryEntry}
+                  runners={runners}
+                  excludeId={peerId}
+                  onSelect={id => setDuelPrimaryId(id)}
+                  onClear={() => setDuelPrimaryId(null)}
+                />
+
+                <span className="ovt-vs">VS</span>
+
+                <DuelAthleteCard
+                  roleLabel="Challenger"
+                  roleColor="#637482"
+                  entry={peerEntry}
+                  runners={runners}
+                  excludeId={duelPrimaryId}
+                  onSelect={id => setPeerId(id)}
+                  onClear={() => setPeerId(null)}
+                />
+              </div>
+
+              {duelPrimaryEntry && peerEntry && duelSeries && (
+                <>
+                  <div className="ovt-duel-chart">
+                    {(() => {
+                      const Lx = 40;
+                      const Rx = 1070;
+                      const Ty = 24;
+                      const By = 172;
+                      const midY = 98;
+                      const xAt = (i: number) => Lx + ((Rx - Lx) * i) / (duelSeries.N - 1);
+                      const yAt = (v: number) => midY - (v / duelSeries.peak) * (By - Ty) * 0.45;
+                      const pathD = duelSeries.gapsM
+                        .map((v, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(2)} ${yAt(v).toFixed(2)}`)
+                        .join(" ");
+                      const cursorX =
+                        Lx + ((Rx - Lx) * Math.max(0, Math.min(timeline.duration, time))) / Math.max(1, timeline.duration);
+                      return (
+                        <svg
+                          viewBox="0 0 1120 215"
+                          role="img"
+                          aria-label="Estimated distance advantage over equal elapsed race time"
+                        >
+                          <path d={`M${Lx} ${midY}H${Rx}`} stroke="#d0dad7" strokeWidth="1.5" strokeDasharray="5 5" />
+                          <path
+                            d={pathD}
+                            fill="none"
+                            stroke="#FFB800"
+                            strokeWidth="3.5"
+                            strokeLinejoin="round"
+                            strokeLinecap="round"
+                          />
+                          <line
+                            x1={cursorX}
+                            x2={cursorX}
+                            y1="17"
+                            y2="184"
+                            stroke="#142b3b"
+                            strokeDasharray="4 4"
+                            strokeWidth="1.8"
+                          />
+                          <g fill="#637482" className="ovt-svg-pill-label">
+                            <text x={Lx} y="204">
+                              Start
+                            </text>
+                            <text x={Rx} y="204" textAnchor="end">
+                              Finish
+                            </text>
+                            <text x="52" y="14">
+                              Estimated distance advantage · {duelPrimaryEntry.runner.name} vs {peerEntry.runner.name}
+                            </text>
+                          </g>
+                        </svg>
+                      );
+                    })()}
+                  </div>
+
+                  {(() => {
+                    const gapM = duelPrimaryEntry.distM - peerEntry.distM;
+                    const aheadRunner = gapM >= 0 ? duelPrimaryEntry.runner : peerEntry.runner;
+                    return (
+                      <div className="ovt-duel-moment">
+                        <strong>{Math.abs(Math.round(gapM)).toLocaleString()} m</strong>
+                        <span>
+                          {Math.abs(gapM) < 2 ? "Estimated even at this moment" : `${aheadRunner.name} ahead (est.)`}
+                        </span>
+                        <span style={{ flex: 1 }} />
+                        <button
+                          type="button"
+                          className="ovt-btn"
+                          onClick={() => {
+                            const f = duelPrimaryEntry.runner.id;
+                            setDuelPrimaryId(peerEntry.runner.id);
+                            setPeerId(f);
+                          }}
+                        >
+                          ⇄ Swap
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+        </>
+      )}
+
+      {pickerOpen && (
+        <div className="ovt-scrim" onClick={e => e.target === e.currentTarget && setPickerOpen(false)}>
+          <div className="ovt-modal" role="dialog" aria-modal="true" aria-label="Choose a race to replay">
+            <div className="ovt-modal-head">
+              <div>
+                <span className="ovt-kicker">REPLAY STUDIO</span>
+                <AppHeading level={2} role="heading">Choose a race to replay</AppHeading>
+              </div>
+              <button type="button" className="ovt-btn" onClick={() => setPickerOpen(false)}>
+                ✕ Close
+              </button>
+            </div>
+            <input
+              className="ovt-modal-search"
+              type="search"
+              placeholder="Search race or year…"
+              aria-label="Search race editions"
+              value={pickerSearch}
+              onChange={e => setPickerSearch(e.target.value)}
+              autoFocus
+            />
+            <div className="ovt-race-list">
+              {allRaceEditions
+                .filter(e =>
+                  `${e.event_name} ${e.edition_year} ${e.distance_slug}`
+                    .toLowerCase()
+                    .includes(pickerSearch.trim().toLowerCase()),
+                )
+                .filter(ed => {
+                  if (!hideIneligible || coursePreviews === null) return true;
+                  const pts = coursePreviews[`${ed.edition_id}:${ed.distance_slug}`];
+                  return Boolean(pts && pts.length >= 2);
+                })
+                .map(ed => {
+                  const isActive = ed.edition_id === editionId && ed.distance_slug === storedDistance;
+                  const distLabel = RACE_DISTANCES.find(d => d.stored === ed.distance_slug)?.label ?? ed.distance_slug;
+                  const pts = coursePreviews ? (coursePreviews[`${ed.edition_id}:${ed.distance_slug}`] ?? null) : null;
+                  const hasReplayMap = coursePreviews === null ? true : Boolean(pts && pts.length >= 2);
+                  return (
+                    <div
+                      key={`${ed.edition_id}:${ed.distance_slug}`}
+                      className={`ovt-picker-row ${isActive ? "active" : ""}`}
+                    >
+                      <div>
+                        <b>{formatEditionDisplay(ed.event_name, ed.edition_year)}</b>
+                        <small>
+                          {distLabel} · {ed.published_count.toLocaleString()} finishes
+                        </small>
+                      </div>
+                      <div className="ovt-picker-actions">
+                        <button
+                          type="button"
+                          className={`ovt-btn ${isActive ? "gold" : "primary"}`}
+                          disabled={!hasReplayMap}
+                          onClick={() => selectRaceEdition(ed.edition_id, ed.distance_slug)}
+                        >
+                          {!hasReplayMap ? "No GPS map" : isActive ? "● Watching" : "▶ Replay"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

@@ -1,13 +1,12 @@
-import Link from "next/link";
-import { AppHeading } from "@/ui/section";
 import { notFound } from "next/navigation";
 import { RACE_DISTANCES, raceQuery } from "@fitness-battle/shared";
-import { loadRaceResults, loadRaceCoverage } from "@/lib/race-results";
+import { loadRaceResults, loadRaceCoverage, loadReplayCoursePreviews } from "@/lib/race-results";
+import { AppHeading } from "@/ui/section";
 import { RaceExplorer } from "./race-explorer";
 
 export const dynamic = "force-dynamic";
-export default async function PaceDistance({ params, searchParams, home = false }: {
-  home?: boolean;
+
+export default async function PaceDistance({ params, searchParams }: {
   params: Promise<{ distance: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
@@ -22,10 +21,23 @@ export default async function PaceDistance({ params, searchParams, home = false 
   ]);
   const data = results.status === "fulfilled" ? results.value : null;
   const coverage = inventory.status === "fulfilled" ? inventory.value : null;
-  return <main className="rankings-wrap">
-    <header className="rankings-top">{!home && <Link href="/pace">← Times</Link>}<span className="rankings-kicker">Public race results</span></header>
-    <AppHeading level={1} role="display">{home ? "Times" : selected.label}</AppHeading>
-    {home && <p className="rankings-lede">Explore published race finishes, complete fields and recorded performance analytics.</p>}
-    <RaceExplorer key={`${distance}:${JSON.stringify(query)}`} distance={distance} initial={data} query={query} coverage={coverage} chartFilter={raw.chart === "1" && query.percentile !== "all"} />
-  </main>;
+  const coursePreviews = coverage ? await loadReplayCoursePreviews(coverage).catch(() => ({})) : {};
+
+  return (
+    <main className="rankings-wrap ovt-observatory-main">
+      <div className="ovt-heading">
+        <div>
+          <span className="ovt-kicker">OVERVIEW</span>
+          <AppHeading level={1} role="display">Every finish. One perspective.</AppHeading>
+        </div>
+      </div>
+      <RaceExplorer
+        distance={distance}
+        initial={data}
+        query={query}
+        coverage={coverage}
+        initialCoursePreviews={coursePreviews}
+      />
+    </main>
+  );
 }

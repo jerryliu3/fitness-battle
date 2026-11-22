@@ -10,6 +10,7 @@ Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
 export function ReplayMap({course,features,focused,tracked,followId,tilted,overlayTop,overlayBottom,profileId,profile,onSelect,onError}:{course:ReplayCourse;features:ReturnType<typeof replayFeatures>;focused:number|null;tracked:number[];followId:number|null;tilted:boolean;overlayTop:number;overlayBottom:number;profileId:number|null;profile:ReactNode;onSelect:(id:number)=>void;onError:()=>void}) {
   const {mode,colors}=useAppTheme();
   const [gesturing,setGesturing]=useState(false);
+  const [layoutSize,setLayoutSize]=useState<{w:number;h:number}|null>(null);
   const [failed,setFailed]=useState(false),[ready,setReady]=useState(false);
   const camera=useRef<ComponentRef<typeof Camera>>(null);
   const lastFollow=useRef<number|null>(null);
@@ -33,11 +34,16 @@ export function ReplayMap({course,features,focused,tracked,followId,tilted,overl
   const bounds=useMemo(()=>{
     const sw=[180,85],ne=[-180,-85];for(const p of course.points){sw[0]=Math.min(sw[0],p[0]);sw[1]=Math.min(sw[1],p[1]);ne[0]=Math.max(ne[0],p[0]);ne[1]=Math.max(ne[1],p[1]);}return {sw,ne,paddingTop:overlayTop+24,paddingBottom:overlayBottom+24,paddingLeft:40,paddingRight:40};
   },[course,overlayTop,overlayBottom]);
-  if(!mobileEnv.mapboxAccessToken) return <AppText role="caption">Map access is not configured.</AppText>;
-  return <View style={StyleSheet.absoluteFill}><MapView style={{flex:1}} zoomEnabled scrollEnabled={followId===null}
+  useEffect(()=>{
+    if(!ready || followId!==null) return;
+    camera.current?.fitBounds(bounds.ne,bounds.sw,[bounds.paddingTop,bounds.paddingRight,bounds.paddingBottom,bounds.paddingLeft],0);
+  },[ready,followId,bounds]);
+  if(!mobileEnv.mapboxAccessToken) return <View style={[StyleSheet.absoluteFill,{alignItems:"center",justifyContent:"center",padding:24,backgroundColor:colors.paper}]}><AppText role="caption" secondary>Map access is not configured.</AppText></View>;
+  return <View style={StyleSheet.absoluteFill} onLayout={e=>{const {width,height}=e.nativeEvent.layout;if(width>0 && height>0) setLayoutSize({w:width,h:height});}}>{layoutSize ? <MapView style={{width:layoutSize.w,height:layoutSize.h}} zoomEnabled scrollEnabled={followId===null}
     onTouchStart={()=>setGesturing(true)}
     onTouchEnd={event=>{if(event.nativeEvent.touches.length===0) setGesturing(false);}}
     onTouchCancel={()=>setGesturing(false)}
+    onDidFinishLoadingMap={()=>setReady(true)}
     onDidFinishLoadingStyle={()=>setReady(true)} styleURL="mapbox://styles/mapbox/standard" attributionEnabled={false} logoEnabled logoPosition={{left:12,bottom:overlayBottom+8}} onMapLoadingError={()=>{setFailed(true);onError();}}>
     <Camera ref={camera} defaultSettings={{bounds,animationDuration:0}} />
     <StyleImport id="basemap" existing config={{lightPreset:mode==="dark" ? "night" : "day"}} />
@@ -50,5 +56,5 @@ export function ReplayMap({course,features,focused,tracked,followId,tilted,overl
     {profile && profileCoordinate && <MarkerView coordinate={profileCoordinate} anchor={{x:0.5,y:1}} allowOverlap allowZElevate={false}>
       <View style={{paddingBottom:12}}>{profile}</View>
     </MarkerView>}
-  </MapView><MapAttribution top={overlayTop+8} />{failed && <AppText role="caption">Some map data could not load. Check your connection and Mapbox access.</AppText>}</View>;
+  </MapView> : null}<MapAttribution top={overlayTop+8} />{failed && <AppText role="caption">Some map data could not load. Check your connection and Mapbox access.</AppText>}</View>;
 }
