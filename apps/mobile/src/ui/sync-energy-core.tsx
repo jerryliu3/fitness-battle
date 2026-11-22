@@ -74,8 +74,8 @@ function useAnimatedCoreNumbers(targets: CoreNumbers, reduced: boolean): CoreNum
   return reduced ? targets : display;
 }
 
-export function SyncEnergyCore({ activities, history = activities, benchmarkSeconds, units = "metric", draining: _draining = false, size = 196, active = true }: {
-  activities: SyncReviewReceipt["activities"]; history?: readonly SyncReviewReceipt["activities"][number][]; benchmarkSeconds: number; units?: CompeteState["units"]; draining?: boolean; size?: number; active?: boolean;
+export function SyncEnergyCore({ activities, history = activities, benchmarkSeconds, units = "metric", draining: _draining = false, size = 196, sideTotals = false, active = true }: {
+  activities: SyncReviewReceipt["activities"]; history?: readonly SyncReviewReceipt["activities"][number][]; benchmarkSeconds: number; units?: CompeteState["units"]; draining?: boolean; size?: number; sideTotals?: boolean; active?: boolean;
 }) {
   const c = useThemeColors();
   const reduced = useReducedMotion();
@@ -122,8 +122,16 @@ export function SyncEnergyCore({ activities, history = activities, benchmarkSeco
     { icon: "layers", label: "Activities", value: `${Math.round(shown.count)}` },
   ];
 
-  return <View style={{ alignItems: "center", gap: 14 }}>
-    <View accessible accessibilityLabel={`Selected activity energy, ${xpLabel} Training XP`} style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+  function sideTotal(item: (typeof summaryItems)[number]) {
+    return <View accessible accessibilityLabel={`${item.label}: ${item.value}`} style={{ flex: 1, minWidth: 0, alignItems: "center" }}>
+      <Text style={[textStyle("label"), { color: c.ink, textAlign: "center" }]}>{item.value}</Text>
+      <Text style={[textStyle("caption"), { color: c.muted, textAlign: "center" }]}>{item.label}</Text>
+    </View>;
+  }
+
+  return <View style={{ alignItems: "center", flexDirection: sideTotals ? "row" : "column", gap: sideTotals ? 8 : 14 }}>
+    {sideTotals && sideTotal(summaryItems[1]!)}
+    <View accessible accessibilityLabel={`Selected activity energy, ${xpLabel} Training XP`} style={{ width: size, height: size, flexShrink: 0, alignItems: "center", justifyContent: "center" }}>
       <Svg width={size} height={size} viewBox="0 0 224 224" style={StyleSheet.absoluteFill}>
         <Defs>
           <LinearGradient id={`${id}fill`} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -140,23 +148,23 @@ export function SyncEnergyCore({ activities, history = activities, benchmarkSeco
       </Svg>
       <View style={{ width: Math.round(size * 0.72), alignItems: "center", justifyContent: "center", gap: 1 }}>
         <Animated.View style={boltStyle}><Svg width={Math.round(size * .16)} height={Math.round(size * .2)} viewBox="0 0 32 36"><Path d="M19 2L5 21h10l-2 13 15-21H18z" fill={c.tennis} stroke="#dca21c" strokeWidth=".5"/></Svg></Animated.View>
-        <Text numberOfLines={1} style={[textStyle("metric"), { color: c.ink, fontVariant: ["tabular-nums"], textAlign: "center" }]}>{xpLabel}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit style={[textStyle("metric"), { color: c.ink, fontVariant: ["tabular-nums"], textAlign: "center" }]}>{xpLabel}</Text>
         <Text style={[textStyle("caption"), { color: c.muted }]}>Training XP</Text>
       </View>
     </View>
-    <View style={{ flexDirection: "row", alignItems: "center", width: "100%" }}>
+    {sideTotals ? sideTotal(summaryItems[2]!) : <View style={{ flexDirection: "row", alignItems: "center", width: "100%" }}>
       {summaryItems.map((item, idx) => (
         <View key={item.label} style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
           {idx > 0 && <View style={{ width: 1, height: 28, backgroundColor: c.line }} />}
           <View accessible accessibilityLabel={`${item.label}: ${item.value}`} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 4 }}>
             <AppIcon name={item.icon} size={18} color={c.ink} />
-            <View>
-              <Text numberOfLines={1} style={[textStyle("label"), { color: c.ink, fontVariant: ["tabular-nums"] }]}>{item.value}</Text>
-              <Text numberOfLines={1} style={[textStyle("caption"), { color: c.muted }]}>{item.label}</Text>
+            <View style={{ flexShrink: 1 }}>
+              <Text style={[textStyle("label"), { color: c.ink, fontVariant: ["tabular-nums"] }]}>{item.value}</Text>
+              <Text style={[textStyle("caption"), { color: c.muted }]}>{item.label}</Text>
             </View>
           </View>
         </View>
       ))}
-    </View>
+    </View>}
   </View>;
 }
