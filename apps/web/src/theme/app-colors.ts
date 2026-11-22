@@ -11,11 +11,9 @@ export function parseAppearance(value: string | null | undefined): AppearancePre
   return value === "light" || value === "dark" ? value : "system";
 }
 export function appearanceVariables(preference: AppearancePreference): CSSProperties {
-  const light = appColorVariables("light"), dark = appColorVariables("dark");
-  const brand = `var(--overtaek-brand-gold, var(--overtaek-brand-gold-srgb))`;
-  for (const role of ["action-primary", "progress-fill", "chart-series", "field-teal", "tennis", "gold", "star-ember"]) {
-    light[`--app-${role}`] = dark[`--app-${role}`] = brand;
-  }
+  const brand = "var(--overtaek-brand-gold, var(--overtaek-brand-gold-srgb))";
+  const light = appColorVariables("light", brand);
+  const dark = appColorVariables("dark", brand);
   return {
     "--overtaek-brand-gold-srgb": MEDAL_GOLD.srgb,
     "--overtaek-brand-gold-p3": MEDAL_GOLD.displayP3,

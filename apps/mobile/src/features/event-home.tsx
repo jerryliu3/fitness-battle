@@ -1,5 +1,4 @@
 import { MedalGoldFill } from "../ui/medal-gold-fill";
-import { nativeMedalGold } from "../ui/medal-gold";
 import { WaveCountdown } from "../ui/wave-countdown";
 import { pageCarouselStyles } from "../ui/carousel-styles";
 import { useEffect, useRef, useState } from "react";
@@ -79,7 +78,7 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
   const showLiveIndicator = !queued && Boolean(cachedUpdate.current);
   return <View style={{ width: cardWidth, padding: 12, gap: 12, borderRadius: 20, backgroundColor: c.card, borderWidth: 1, borderColor: c.line }}>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-      <View style={{ padding: 9, borderRadius: 12, backgroundColor: nativeMedalGold }}><MedalGoldFill radius={12} /><CompeteIcon name={sport} color={c.textOnAction} /></View>
+      <View style={{ padding: 9, borderRadius: 12 }}><MedalGoldFill radius={12} /><CompeteIcon name={sport} color={c.textOnAction} /></View>
       <View style={{ flex: 1 }}>
         <AppText role="label">{SPORTS.find(item => item.id === sport)?.name}</AppText>
         {updateText ? (

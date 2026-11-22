@@ -23,6 +23,15 @@ describe("appearance foundation", () => {
     expect(APP_COLORS.light.chartComparison).toBe("#79838d");
     expect(APP_COLORS.dark.chartComparison).toBe("#acbfcc");
   });
+  it("projects all primary roles and aliases from one wide-gamut value", () => {
+    const colors = getAppColors("dark", MEDAL_GOLD.displayP3);
+    for (const role of ["actionPrimary", "chartSeries", "progressFill", "tennis", "gold", "starEmber", "fieldTeal"] as const) {
+      expect(colors[role]).toBe(MEDAL_GOLD.displayP3);
+    }
+    expect(colors.podiumGold).toBe(APP_COLORS.dark.podiumGold);
+    expect(colors.accentSecondary).toBe(APP_COLORS.dark.accentSecondary);
+    expect(appColorVariables("dark", MEDAL_GOLD.displayP3)["--app-field-teal"]).toBe(MEDAL_GOLD.displayP3);
+  });
   it("resolves system and manual preferences with a stable fallback", () => {
     expect(resolveColorMode("system", "dark")).toBe("dark");
     expect(resolveColorMode("system", null)).toBe("light");

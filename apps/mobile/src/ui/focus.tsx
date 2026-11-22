@@ -1,5 +1,4 @@
 import { MedalGoldFill } from "./medal-gold-fill";
-import { nativeMedalGold } from "./medal-gold";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { ToastProvider } from "./toast";
 import { SHELL_SPACING, SHELL_SECTION, SHELL_RADIUS } from "@fitness-battle/shared";
@@ -659,9 +658,8 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
     gap: 13,
   },
   button: {
-    backgroundColor: nativeMedalGold,
     borderBottomWidth: 1,
-    borderBottomColor: nativeMedalGold,
+    borderBottomColor: c.actionPrimary,
     borderRadius: SHELL_RADIUS.pill,
     minHeight: 48,
     paddingVertical: 14,

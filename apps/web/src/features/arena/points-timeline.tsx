@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { buildCompeteTimeSeriesModel, buildSleepTimeSeriesModel, competeNow, competitionTrack, REPLAY_MINUTES_PER_REAL_SECOND_1X, type CompeteEvent, type CompeteState } from "@fitness-battle/shared";
+import { colors } from "@/theme/app-colors";
 import { AppText } from "@/ui/section";
 
 export function PointsTimeline({ state, event, fraction, onChange }: { state: CompeteState; event: CompeteEvent; fraction: number | null; onChange(value: number | null): void }) {
@@ -52,8 +53,8 @@ export function PointsTimeline({ state, event, fraction, onChange }: { state: Co
 
   return <div style={{ display: "grid", gap: 8 }}>
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <button type="button" onClick={toggle} disabled={!model.nowFraction} aria-label={playing ? "Pause replay" : "Play replay"} style={{ minHeight: 32, padding: "4px 12px", borderRadius: 999, border: "1px solid var(--app-border-line)", background: "var(--app-action-primary)", cursor: "pointer" }}>
-        <AppText role="label" style={{ color: "var(--app-text-on-action)" }}>{playing ? "Pause" : "Play"}</AppText>
+      <button type="button" onClick={toggle} disabled={!model.nowFraction} aria-label={playing ? "Pause replay" : "Play replay"} style={{ minHeight: 32, padding: "4px 12px", borderRadius: 999, border: "1px solid var(--app-border-line)", background: colors.actionPrimary, cursor: "pointer" }}>
+        <AppText role="label" style={{ color: colors.textOnAction }}>{playing ? "Pause" : "Play"}</AppText>
       </button>
       <div style={{ flex: 1, display: "grid", gap: 4 }}>
         <input type="range" aria-label="Competition timeline" aria-valuetext={model.cursorTimeLabel} min={0} max={model.nowFraction} step="any" value={model.cursorFraction} disabled={!model.nowFraction} onChange={e => { const value = Number(e.target.value); setPlaying(false); onChange(value >= model.nowFraction ? null : value); }} style={{ width: "100%", accentColor: "var(--app-chart-series)" }} />

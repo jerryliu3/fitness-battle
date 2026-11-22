@@ -56,6 +56,12 @@ The sRGB fill stays underneath for older builds and unsupported displays.
 Native SVG charts, Mapbox layers and native components that accept only
 packed sRGB color values use the shared sRGB fallback.
 
+The shared appearance palette derives the primary action, chart, progress,
+and compatibility roles from the same value. The web adapters supply a CSS
+color to that palette. Native filled surfaces use `MedalGoldFill`, which owns
+both the base fill and the native Display P3 layer. Screen components own
+geometry and use `textOnAction` for the foreground.
+
 ## Polished Silver
 
 Polished Silver replaces the existing secondary accent and matching focus ring

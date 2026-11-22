@@ -1,5 +1,4 @@
 import { MedalGoldFill } from "../ui/medal-gold-fill";
-import { nativeMedalGold } from "../ui/medal-gold";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import {
@@ -111,7 +110,6 @@ export function PointsTimeline({
             width: 44,
             height: 44,
             borderRadius: 22,
-            backgroundColor: nativeMedalGold,
             alignItems: "center",
             justifyContent: "center",
             opacity: count ? 1 : 0.4,
