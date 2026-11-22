@@ -129,7 +129,7 @@ export function SyncEnergyCore({ activities, history = activities, benchmarkSeco
     </View>;
   }
 
-  return <View style={{ alignItems: "center", flexDirection: sideTotals ? "row" : "column", gap: sideTotals ? 8 : 14 }}>
+  return <View style={{ width: "100%", alignItems: "center", justifyContent: "center", flexDirection: sideTotals ? "row" : "column", gap: sideTotals ? 8 : 14 }}>
     {sideTotals && sideTotal(summaryItems[1]!)}
     <View accessible accessibilityLabel={`Selected activity energy, ${xpLabel} Training XP`} style={{ width: size, height: size, flexShrink: 0, alignItems: "center", justifyContent: "center" }}>
       <Svg width={size} height={size} viewBox="0 0 224 224" style={StyleSheet.absoluteFill}>
@@ -149,22 +149,20 @@ export function SyncEnergyCore({ activities, history = activities, benchmarkSeco
       <View style={{ width: Math.round(size * 0.72), alignItems: "center", justifyContent: "center", gap: 1 }}>
         <Animated.View style={boltStyle}><Svg width={Math.round(size * .16)} height={Math.round(size * .2)} viewBox="0 0 32 36"><Path d="M19 2L5 21h10l-2 13 15-21H18z" fill={c.tennis} stroke="#dca21c" strokeWidth=".5"/></Svg></Animated.View>
         <Text numberOfLines={1} adjustsFontSizeToFit style={[textStyle("metric"), { color: c.ink, fontVariant: ["tabular-nums"], textAlign: "center" }]}>{xpLabel}</Text>
-        <Text style={[textStyle("caption"), { color: c.muted }]}>Training XP</Text>
+        <Text style={[textStyle("caption"), { color: c.muted, textAlign: "center" }]}>Training XP</Text>
       </View>
     </View>
     {sideTotals ? sideTotal(summaryItems[2]!) : <View style={{ flexDirection: "row", alignItems: "center", width: "100%" }}>
-      {summaryItems.map((item, idx) => (
-        <View key={item.label} style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
-          {idx > 0 && <View style={{ width: 1, height: 28, backgroundColor: c.line }} />}
-          <View accessible accessibilityLabel={`${item.label}: ${item.value}`} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 4 }}>
-            <AppIcon name={item.icon} size={18} color={c.ink} />
-            <View style={{ flexShrink: 1 }}>
-              <Text style={[textStyle("label"), { color: c.ink, fontVariant: ["tabular-nums"] }]}>{item.value}</Text>
-              <Text style={[textStyle("caption"), { color: c.muted }]}>{item.label}</Text>
-            </View>
+      {summaryItems.flatMap((item, idx) => [
+        ...(idx > 0 ? [<View key={`${item.label}-divider`} style={{ width: 1, height: 28, backgroundColor: c.line }} />] : []),
+        <View key={item.label} accessible accessibilityLabel={`${item.label}: ${item.value}`} style={{ flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 4 }}>
+          <AppIcon name={item.icon} size={18} color={c.ink} />
+          <View style={{ flexShrink: 1 }}>
+            <Text style={[textStyle("label"), { color: c.ink, fontVariant: ["tabular-nums"] }]}>{item.value}</Text>
+            <Text style={[textStyle("caption"), { color: c.muted }]}>{item.label}</Text>
           </View>
-        </View>
-      ))}
+        </View>,
+      ])}
     </View>}
   </View>;
 }
