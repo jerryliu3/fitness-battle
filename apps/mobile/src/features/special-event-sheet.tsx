@@ -12,6 +12,7 @@ import {
   inferCitySlug,
   specialEventRegistrationDetail,
   specialEventRoundLabel,
+  specialEventSideCode,
   specialEventSideLabel,
   specialEventStatusBadge,
   type CompeteState,
@@ -34,6 +35,8 @@ export function SpecialEventRegistrationSheet({
   busy,
   error,
   fullscreen = false,
+  standingsOverride,
+  standingsErrorOverride,
   onRegister,
   onCancel,
   onClose,
@@ -43,6 +46,8 @@ export function SpecialEventRegistrationSheet({
   busy: boolean;
   error?: string;
   fullscreen?: boolean;
+  standingsOverride?: SpecialEventStandings | null;
+  standingsErrorOverride?: string;
   onRegister(options: { crewId?: string | null; groupValue?: string | null }): void;
   onCancel(): void;
   onClose(): void;
@@ -55,11 +60,14 @@ export function SpecialEventRegistrationSheet({
   const [expandedRule, setExpandedRule] = useState<Record<string, boolean>>({});
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
   const [showAllHeats, setShowAllHeats] = useState(false);
-  const canViewStandings = Boolean(edition.entry && (detail.phase === "active" || detail.phase === "settled" || edition.finalizedAt));
+  const [squadOpen, setSquadOpen] = useState(true);
+  const canViewStandings = Boolean((edition.entry || fullscreen) && (detail.phase === "active" || detail.phase === "settled" || edition.finalizedAt));
+  const managedStandings = standingsOverride !== undefined;
   const standingsApi = useCachedApi<{ standings: SpecialEventStandings }>(
-    canViewStandings ? `/api/special-events/${encodeURIComponent(edition.id)}` : null,
+    canViewStandings && !managedStandings ? `/api/special-events/${encodeURIComponent(edition.id)}` : null,
   );
-  const standings = standingsApi.data?.standings ?? null;
+  const standings = managedStandings ? standingsOverride : (standingsApi.data?.standings ?? null);
+  const standingsError = standingsErrorOverride || standingsApi.error;
   const [countryCode, setCountryCode] = useState(
     edition.entry?.groupSnapshot?.country_code ?? state.countryCode ?? "",
   );
@@ -134,8 +142,8 @@ export function SpecialEventRegistrationSheet({
 
       {canViewStandings ? (
         <View style={{ padding: 14, borderRadius: 16, borderWidth: 1, borderColor: c.line, backgroundColor: c.card, gap: 10 }}>
-          {standingsApi.error ? (
-            <AppText role="caption">{standingsApi.error}</AppText>
+          {standingsError ? (
+            <AppText role="caption">{standingsError}</AppText>
           ) : !standings ? (
             <AppText role="caption" secondary>Loading live standings…</AppText>
           ) : standings.rounds.length === 0 ? (
@@ -176,16 +184,21 @@ export function SpecialEventRegistrationSheet({
                       const blocked = Boolean(side.userId && blocks.some((b) => b.id === side.userId));
                       return (
                         <View key={side.sideId}>
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderColor: c.line }}>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8, borderBottomWidth: 1, borderColor: c.line, opacity: showCutLine && idx + 1 > heat.advanceCount && round.settledAt ? 0.55 : 1 }}>
                             <AppText role="caption" secondary>{side.place}</AppText>
+                            {edition.config.grouping.kind !== "solo" ? (
+                              <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, borderWidth: 1, borderColor: c.line, backgroundColor: c.paper }}>
+                                <AppText role="caption">{specialEventSideCode(side)}</AppText>
+                              </View>
+                            ) : null}
                             <AppText role="label" style={{ flex: 1 }}>
                               {blocked ? "Athlete" : specialEventSideLabel(side)}{side.isYou ? " · You" : ""}
                             </AppText>
                             <AppText role="caption">{formatSpecialEventVolume(edition.sport, side.score, state.units)}</AppText>
                           </View>
                           {showCutLine && heat.sides.length > heat.advanceCount && idx + 1 === heat.advanceCount ? (
-                            <View style={{ paddingVertical: 4, borderBottomWidth: 1, borderStyle: "dashed", borderColor: c.podiumGold, alignItems: "center" }}>
-                              <AppText role="caption" secondary>Advancement cut · Top {heat.advanceCount}</AppText>
+                            <View style={{ paddingVertical: 5, borderBottomWidth: 2, borderStyle: "dashed", borderColor: c.statusError, alignItems: "center" }}>
+                              <AppText role="caption" secondary>Elimination cut · Top {heat.advanceCount} advance</AppText>
                             </View>
                           ) : null}
                         </View>
@@ -193,23 +206,39 @@ export function SpecialEventRegistrationSheet({
                     })}
                   </View>
                 ))}
-                {standings.myStatus === "spectating" ? (
-                  <AppText role="caption" secondary>Watching live — equal-size squads were matched for this heat.</AppText>
+                {standings.myStatus === "spectating" || standings.myStatus === "eliminated" ? (
+                  <AppText role="caption" secondary>
+                    {standings.myStatus === "eliminated"
+                      ? "Eliminated — staying in the stadium as your heat finishes."
+                      : "Watching live — equal-size squads were matched for this heat."}
+                  </AppText>
                 ) : null}
-                {standings.mySquad && standings.mySquad.length > 0 ? (
-                  <View style={{ gap: 4, paddingTop: 6 }}>
-                    <AppText role="label">Your squad</AppText>
-                    {standings.mySquad.map((m) => {
-                      const memberBlocked = blocks.some((b) => b.id === m.userId);
-                      return (
-                        <View key={m.userId} style={{ flexDirection: "row", justifyContent: "space-between", gap: 10, paddingVertical: 6, borderBottomWidth: 1, borderColor: c.line }}>
-                          <AppText role="caption">{memberBlocked ? "Athlete" : m.displayName}{m.isYou ? " · You" : ""}</AppText>
-                          <AppText role="caption">{formatSpecialEventVolume(edition.sport, m.score, state.units)}</AppText>
-                        </View>
-                      );
-                    })}
-                  </View>
-                ) : null}
+                {standings.mySquad && standings.mySquad.length > 0 ? (() => {
+                  const squadTotal = Math.max(1, standings.mySquad.reduce((sum, m) => sum + m.score, 0));
+                  return (
+                    <View style={{ gap: 8, paddingTop: 6 }}>
+                      <Pressable accessibilityRole="button" onPress={() => setSquadOpen(v => !v)} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                        <AppText role="label">Your squad ({standings.mySquad.length})</AppText>
+                        <AppText role="caption" secondary>{squadOpen ? "Hide" : "Show"}</AppText>
+                      </Pressable>
+                      {squadOpen ? standings.mySquad.map((m) => {
+                        const memberBlocked = blocks.some((b) => b.id === m.userId);
+                        const pct = Math.round((m.score / squadTotal) * 100);
+                        return (
+                          <View key={m.userId} style={{ gap: 4 }}>
+                            <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
+                              <AppText role="caption">{memberBlocked ? "Athlete" : m.displayName}{m.isYou ? " · You" : ""}</AppText>
+                              <AppText role="caption">{formatSpecialEventVolume(edition.sport, m.score, state.units)} ({pct}%)</AppText>
+                            </View>
+                            <View style={{ height: 6, borderRadius: 99, backgroundColor: c.paper, overflow: "hidden" }}>
+                              <View style={{ width: `${pct}%`, height: "100%", backgroundColor: m.isYou ? c.podiumGold : c.ink }} />
+                            </View>
+                          </View>
+                        );
+                      }) : null}
+                    </View>
+                  );
+                })() : null}
               </View>
             );
           })()}

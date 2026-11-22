@@ -1,5 +1,7 @@
 import { competitionTrack, competitionTrackLabel, SPORT_IDS, sportById, type CompeteState, type SportId, type UnitSystem } from "./compete/sports";
-import { cityLabel } from "./cities";
+import { initialsFromName } from "./compete/track";
+import type { ArenaSceneLane } from "./arena-view";
+import { cityBySlug, cityLabel } from "./cities";
 import { countryFlagEmoji, countryName } from "./countries";
 import { formatArenaVolume } from "./compete-field-view";
 import { waveTimeLabelForState } from "./compete/participation";
@@ -681,6 +683,111 @@ export function relayTodayHeadline(lineup: SpecialEventRelayLineup): string | nu
 
 export function sortSpecialEvents(editions: readonly SpecialEventEdition[]): SpecialEventEdition[] {
   return [...editions].sort((a, b) => Number(Boolean(b.entry)) - Number(Boolean(a.entry)));
+}
+
+/** Crisp 2–3 letter crew/city/country code for tags and 3D course pins. */
+export function specialEventSideCode(side: Pick<SpecialEventSideStanding, "displayName" | "groupAttr" | "groupValue">): string {
+  if (side.groupAttr === "country_code" && side.groupValue) return side.groupValue.slice(0, 2).toUpperCase();
+  if (side.groupAttr === "city_slug" && side.groupValue) {
+    const city = cityBySlug(side.groupValue);
+    const words = (city?.name ?? side.groupValue.split(":")[1] ?? "").replace(/[^a-zA-Z ]/g, " ").trim().split(/\s+/).filter(Boolean);
+    if (words.length >= 2) return words.map((w) => w[0]!.toUpperCase()).join("").slice(0, 3);
+    return (words[0] ?? "CTY").slice(0, 3).toUpperCase();
+  }
+  const words = side.displayName.replace(/#\d+$/, "").trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) return words.map((w) => w[0]!.toUpperCase()).join("").slice(0, 3);
+  return (words[0] ?? "TM").slice(0, 3).toUpperCase();
+}
+
+export function specialEventCourseUnit(sport: SpecialEventSport, units: UnitSystem = "us"): string {
+  if (sport === "running" || sport === "cycling") return units === "metric" ? "km" : "mi";
+  return sport === "strength" ? "hrs" : "steps";
+}
+
+function toCourseValue(sport: SpecialEventSport, rawScore: number, units: UnitSystem): number {
+  if (sport === "running" || sport === "cycling") return rawScore / (units === "metric" ? 1000 : 1609.344);
+  if (sport === "strength") return rawScore / 3600;
+  return rawScore;
+}
+
+/** Convert live Special Event standings sides directly into ArenaSceneLane markers for GeographicCourse. */
+export function specialEventSceneLanes(
+  standings: SpecialEventStandings | null,
+  units: UnitSystem = "us",
+  roundNumber?: number | null,
+): ArenaSceneLane[] {
+  if (!standings?.rounds.length) return [];
+  const round = standings.rounds.find((r) => r.roundNumber === (roundNumber ?? standings.currentRound)) ?? standings.rounds[standings.rounds.length - 1];
+  const heat = round?.heats.find((h) => h.isMine) ?? round?.heats[0];
+  if (!heat) return [];
+  return heat.sides.map((side) => ({
+    id: side.sideId,
+    name: specialEventSideLabel(side),
+    initials: side.groupAttr || side.userId === null ? specialEventSideCode(side) : initialsFromName(side.displayName),
+    value: toCourseValue(standings.sport, side.score, units),
+    you: side.isYou,
+  }));
+}
+
+export function specialEventStatusHero(
+  standings: SpecialEventStandings,
+  edition: SpecialEventEdition,
+  units: UnitSystem = "us",
+  roundNumber?: number | null,
+): { badge: string; tone: "lime" | "danger" | "gold"; headline: string; detail: string } | null {
+  const round = standings.rounds.find((r) => r.roundNumber === (roundNumber ?? standings.currentRound)) ?? standings.rounds[standings.rounds.length - 1];
+  const heat = round?.heats.find((h) => h.isMine) ?? round?.heats[0];
+  if (!round || !heat || heat.sides.length === 0) return null;
+
+  const mine = heat.sides.find((s) => s.isYou);
+  const leader = heat.sides[0]!;
+  if (!mine || standings.myStatus === "spectating" || standings.myStatus === "eliminated") {
+    const badge = standings.myStatus === "eliminated" && edition.entry?.eliminatedRound
+      ? `OUT · ROUND ${edition.entry.eliminatedRound}`
+      : "WATCHING LIVE";
+    return {
+      badge,
+      tone: "gold",
+      headline: `${specialEventSideLabel(leader)} leads (${formatSpecialEventVolume(edition.sport, leader.score, units)})`,
+      detail: round.settledAt ? `Round ${round.roundNumber} finalized` : `Round ${round.roundNumber} live · ${heat.sides.length} in heat`,
+    };
+  }
+
+  if (edition.config.match.kind === "survivor_heat" && heat.sides.length > heat.advanceCount) {
+    const cutoffSide = heat.sides[heat.advanceCount - 1]!;
+    const dropSide = heat.sides[heat.advanceCount]!;
+    const safe = mine.place <= heat.advanceCount;
+    const delta = safe ? mine.score - dropSide.score : cutoffSide.score - mine.score;
+    const gap = formatSpecialEventVolume(edition.sport, Math.max(0, delta), units);
+    return {
+      badge: safe ? "ABOVE CUT LINE" : "BELOW CUT LINE",
+      tone: safe ? "lime" : "danger",
+      headline: safe ? `+${gap} above elimination` : `${gap} behind safety`,
+      detail: `Top ${heat.advanceCount} of ${heat.sides.length} advance${edition.config.cadence.unit === "daily" ? " · Resets midnight ET" : ""}`,
+    };
+  }
+
+  if (edition.config.match.kind === "knockout_1v1" && heat.sides.length >= 2) {
+    const rival = heat.sides.find((s) => !s.isYou) ?? heat.sides[1]!;
+    const ahead = mine.score >= rival.score;
+    const gap = formatSpecialEventVolume(edition.sport, Math.abs(mine.score - rival.score), units);
+    return {
+      badge: specialEventRoundLabel(edition.config, round.roundNumber, Math.max(standings.rounds.length, edition.config.cadence.roundCount)).toUpperCase(),
+      tone: ahead ? "lime" : "danger",
+      headline: ahead ? `+${gap} ahead of ${specialEventSideLabel(rival)}` : `${gap} behind ${specialEventSideLabel(rival)}`,
+      detail: `Winner advances · ${formatSpecialEventVolume(edition.sport, mine.score, units)} vs ${formatSpecialEventVolume(edition.sport, rival.score, units)}`,
+    };
+  }
+
+  const ahead = mine.place === 1;
+  const second = heat.sides[1];
+  const gap = second ? formatSpecialEventVolume(edition.sport, Math.abs(ahead ? mine.score - second.score : leader.score - mine.score), units) : "0";
+  return {
+    badge: `#${mine.place} IN HEAT`,
+    tone: ahead ? "lime" : "gold",
+    headline: ahead && second ? `Leading by ${gap}` : ahead ? "1st place" : `${gap} off ${specialEventSideLabel(leader)}`,
+    detail: `${specialEventSideLabel(mine)} · ${formatSpecialEventVolume(edition.sport, mine.score, units)}`,
+  };
 }
 
 /** Pick the active or registering crew relay edition relevant to a specific crew card. */

@@ -1,17 +1,21 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { crewDerbyOpponent, crewDerbyScore, findCrewRelayEdition, specialEventStatusBadge, weeklyCompetitionLastDay, APP_TIMEZONE, type CrewDerby, type SpecialEventEdition, type UnitSystem } from "@fitness-battle/shared";
+import { crewDerbyOpponent, crewDerbyScore, findCrewRelayEdition, specialEventPhase, specialEventStatusBadge, weeklyCompetitionLastDay, APP_TIMEZONE, type CrewDerby, type SpecialEventEdition, type UnitSystem } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
+import { useCompete } from "@/components/compete-context";
+import { SpecialEventFullscreen } from "@/features/arena/special-event-fullscreen";
 import { SpecialEventRelayPanel } from "@/features/arena/special-event-relay-panel";
 import { AppHeading, AppText } from "@/ui/section";
 import { Sheet } from "@/ui/sheet";
 
 export function CrewDerbyCard({ crewId, sport, units }: { crewId: string; sport?: string; units?: UnitSystem }) {
   const { user, offlineMode } = useAuth();
+  const { state } = useCompete();
   const [derby, setDerby] = useState<CrewDerby | null>(null);
   const [relay, setRelay] = useState<SpecialEventEdition | null>(null);
   const [relayOpen, setRelayOpen] = useState(false);
+  const [relayFullscreen, setRelayFullscreen] = useState(false);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const reload = useCallback(async (signal?: AbortSignal) => {
@@ -46,9 +50,25 @@ export function CrewDerbyCard({ crewId, sport, units }: { crewId: string; sport?
     <Sheet open={relayOpen} title={relay.title} body="" minimal onClose={() => setRelayOpen(false)}>
       <div className="crew-editor">
         <SpecialEventRelayPanel edition={relay} crewId={crewId} units={units ?? "us"} />
-        <Link className="fb-btn" onClick={() => setRelayOpen(false)} href="/arena">Open on Compete</Link>
+        {specialEventPhase(relay, new Date()) === "active" || relay.finalizedAt ? (
+          <button type="button" className="fb-btn" onClick={() => { setRelayOpen(false); setRelayFullscreen(true); }}>
+            {relay.entry ? "Open live heat" : "Watch live heat"}
+          </button>
+        ) : (
+          <Link className="fb-btn" onClick={() => setRelayOpen(false)} href="/arena">Open on Compete</Link>
+        )}
       </div>
     </Sheet>
+    {relayFullscreen ? (
+      <SpecialEventFullscreen
+        state={state}
+        edition={relay}
+        busy={false}
+        error=""
+        onCancel={() => {}}
+        onClose={() => setRelayFullscreen(false)}
+      />
+    ) : null}
   </> : null;
   if (!derby || !own || !opponent) return relayCard;
   return <>

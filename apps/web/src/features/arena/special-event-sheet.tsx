@@ -14,6 +14,7 @@ import {
   inferCitySlug,
   specialEventRegistrationDetail,
   specialEventRoundLabel,
+  specialEventSideCode,
   specialEventSideLabel,
   specialEventStatusBadge,
   type CompeteState,
@@ -32,6 +33,8 @@ export function SpecialEventRegistrationSheet({
   busy,
   error,
   fullscreen = false,
+  standingsOverride,
+  standingsErrorOverride,
   onRegister,
   onCancel,
   onClose,
@@ -41,6 +44,8 @@ export function SpecialEventRegistrationSheet({
   busy: boolean;
   error: string;
   fullscreen?: boolean;
+  standingsOverride?: SpecialEventStandings | null;
+  standingsErrorOverride?: string;
   onRegister(options: { crewId?: string | null; groupValue?: string | null }): void;
   onCancel(): void;
   onClose(): void;
@@ -58,38 +63,42 @@ export function SpecialEventRegistrationSheet({
   const [crews, setCrews] = useState<{ id: string; name: string }[]>([]);
   const [crewId, setCrewId] = useState(edition.entry?.requestedCrewId ?? "");
   const [crewsLoaded, setCrewsLoaded] = useState(false);
-  const [standings, setStandings] = useState<SpecialEventStandings | null>(null);
-  const [standingsError, setStandingsError] = useState("");
+  const [fetchedStandings, setFetchedStandings] = useState<SpecialEventStandings | null>(null);
+  const [fetchedError, setFetchedError] = useState("");
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
   const [showAllHeats, setShowAllHeats] = useState(false);
-  const canViewStandings = Boolean(edition.entry && (detail.phase === "active" || detail.phase === "settled" || edition.finalizedAt));
+  const [squadOpen, setSquadOpen] = useState(true);
+  const canViewStandings = Boolean((edition.entry || fullscreen) && (detail.phase === "active" || detail.phase === "settled" || edition.finalizedAt));
+  const managedStandings = standingsOverride !== undefined;
+  const standings = managedStandings ? standingsOverride : fetchedStandings;
+  const standingsError = standingsErrorOverride ?? fetchedError;
 
   useEffect(() => {
     setCountryCode(edition.entry?.groupSnapshot?.country_code ?? state.countryCode ?? "");
     setCitySlug(edition.entry?.groupSnapshot?.city_slug ?? inferCitySlug(state.city, state.countryCode));
     setCityQuery("");
     setCrewId(edition.entry?.requestedCrewId ?? "");
-    setStandings(null);
-    setStandingsError("");
+    setFetchedStandings(null);
+    setFetchedError("");
     setSelectedRound(null);
     setShowAllHeats(false);
   }, [edition.id, edition.entry?.requestedCrewId, edition.entry?.groupSnapshot?.country_code, edition.entry?.groupSnapshot?.city_slug, state.countryCode, state.city]);
 
   useEffect(() => {
-    if (!canViewStandings) return;
+    if (!canViewStandings || managedStandings) return;
     let cancelled = false;
     void fetch(`/api/special-events/${encodeURIComponent(edition.id)}`, { cache: "no-store", signal: AbortSignal.timeout(15000) })
       .then(async (res) => ({ ok: res.ok, body: await res.json().catch(() => ({})) }))
       .then(({ ok, body }) => {
         if (cancelled) return;
-        if (!ok) { setStandingsError(typeof body.error === "string" ? body.error : "Could not load standings."); return; }
+        if (!ok) { setFetchedError(typeof body.error === "string" ? body.error : "Could not load standings."); return; }
         const next = body.standings as SpecialEventStandings | null;
-        setStandings(next);
+        setFetchedStandings(next);
         if (next) setSelectedRound((prev) => prev ?? next.currentRound);
       })
-      .catch(() => { if (!cancelled) setStandingsError("Could not load standings."); });
+      .catch(() => { if (!cancelled) setFetchedError("Could not load standings."); });
     return () => { cancelled = true; };
-  }, [canViewStandings, edition.id]);
+  }, [canViewStandings, managedStandings, edition.id]);
 
   useEffect(() => {
     if (!detail.requiresCrew) return;
@@ -186,36 +195,63 @@ export function SpecialEventRegistrationSheet({
                     {round.heats.length > 1 ? <AppText role="caption" secondary>{`Matchup ${heat.heatIndex}`}</AppText> : null}
                     {heat.sides.map((side, idx) => (
                       <div key={side.sideId}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "8px 0", borderBottom: "1px solid var(--line)", opacity: showCutLine && idx + 1 > heat.advanceCount && round.settledAt ? 0.55 : 1 }}>
                           <AppText role="caption" secondary>{side.place}</AppText>
+                          {edition.config.grouping.kind !== "solo" ? (
+                            <span style={{ padding: "2px 6px", borderRadius: 6, border: "1px solid var(--line)", background: "var(--accent-soft, #e8edf5)" }}>
+                              <AppText role="caption">{specialEventSideCode(side)}</AppText>
+                            </span>
+                          ) : null}
                           <AppText role="label" style={{ flex: 1 }}>
                             {specialEventSideLabel(side)}{side.isYou ? " · You" : ""}
                           </AppText>
                           <AppText role="caption">{formatSpecialEventVolume(edition.sport, side.score, state.units)}</AppText>
                         </div>
                         {showCutLine && heat.sides.length > heat.advanceCount && idx + 1 === heat.advanceCount ? (
-                          <div style={{ padding: "4px 0", borderBottom: "2px dashed var(--line)", textAlign: "center" }}>
-                            <AppText role="caption" secondary>Advancement cut · Top {heat.advanceCount}</AppText>
+                          <div style={{ padding: "5px 0", borderBottom: "2px dashed var(--danger, #b42318)", textAlign: "center" }}>
+                            <AppText role="caption" secondary>Elimination cut · Top {heat.advanceCount} advance</AppText>
                           </div>
                         ) : null}
                       </div>
                     ))}
                   </div>
                 ))}
-                {standings.myStatus === "spectating" ? (
-                  <AppText role="caption" secondary>Watching live — equal-size squads were matched for this heat.</AppText>
+                {standings.myStatus === "spectating" || standings.myStatus === "eliminated" ? (
+                  <AppText role="caption" secondary>
+                    {standings.myStatus === "eliminated"
+                      ? "Eliminated — staying in the stadium as your heat finishes."
+                      : "Watching live — equal-size squads were matched for this heat."}
+                  </AppText>
                 ) : null}
-                {standings.mySquad && standings.mySquad.length > 0 ? (
-                  <div style={{ display: "grid", gap: 6, paddingTop: 6 }}>
-                    <AppText role="label">Your squad</AppText>
-                    {standings.mySquad.map((m) => (
-                      <div key={m.userId} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "6px 0", borderBottom: "1px solid var(--line)" }}>
-                        <AppText role="caption">{m.displayName}{m.isYou ? " · You" : ""}</AppText>
-                        <AppText role="caption">{formatSpecialEventVolume(edition.sport, m.score, state.units)}</AppText>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
+                {standings.mySquad && standings.mySquad.length > 0 ? (() => {
+                  const squadTotal = Math.max(1, standings.mySquad.reduce((sum, m) => sum + m.score, 0));
+                  return (
+                    <div style={{ display: "grid", gap: 8, paddingTop: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => setSquadOpen((v) => !v)}
+                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", border: 0, background: "transparent", padding: 0, cursor: "pointer" }}
+                      >
+                        <AppText role="label">Your squad ({standings.mySquad.length})</AppText>
+                        <AppText role="caption" secondary>{squadOpen ? "Hide" : "Show"}</AppText>
+                      </button>
+                      {squadOpen ? standings.mySquad.map((m) => {
+                        const pct = Math.round((m.score / squadTotal) * 100);
+                        return (
+                          <div key={m.userId} style={{ display: "grid", gap: 4 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                              <AppText role="caption">{m.displayName}{m.isYou ? " · You" : ""}</AppText>
+                              <AppText role="caption">{formatSpecialEventVolume(edition.sport, m.score, state.units)} ({pct}%)</AppText>
+                            </div>
+                            <div style={{ height: 6, borderRadius: 99, background: "var(--paper)", overflow: "hidden" }}>
+                              <div style={{ width: `${pct}%`, height: "100%", background: m.isYou ? "var(--lime-deep, #7ab800)" : "var(--ink)" }} />
+                            </div>
+                          </div>
+                        );
+                      }) : null}
+                    </div>
+                  );
+                })() : null}
               </>
             );
           })()}
