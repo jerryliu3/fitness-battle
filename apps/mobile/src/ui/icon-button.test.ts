@@ -14,7 +14,10 @@ it.each(["light", "dark"] as const)("pairs Sync and Add activity surfaces with c
     let tree!: ReturnType<typeof create>;
     await act(async () => { tree = create(createElement(ScopedThemeProvider, { mode, children: createElement(IconButton, { icon: primary ? "sync" : "plus", label: primary ? "Sync activities" : "Add activity", onPress: vi.fn(), primary }) })); });
     const button = tree.root.findByType("Pressable" as never);
-    expect(button.props.style({ pressed: false }).backgroundColor).toBe(primary ? c.tennis : c.card);
+    const background = primary
+      ? button.findByType("View" as never).props.style.backgroundColor
+      : button.props.style({ pressed: false }).backgroundColor;
+    expect(background).toBe(primary ? c.actionPrimary : c.card);
     expect(tree.root.findByType("AppIcon" as never).props.color).toBe(primary ? c.textOnAction : c.ink);
     await act(async () => tree.unmount());
   }
