@@ -1,5 +1,6 @@
 "use client";
 
+import { colors as appearanceColors } from "../../theme/app-colors";
 import { typographyStyle } from "../../ui/section";
 
 import React from "react";
@@ -88,7 +89,7 @@ export function RouteControlsHud({
 
         {/* Distance metric */}
         <div className="shrink-0 text-right text-white/90 tabular-nums" style={typographyStyle("caption")}>
-          <span className="text-[var(--app-action-primary)]" style={typographyStyle("label")}>
+          <span style={{ ...typographyStyle("label"), color: appearanceColors.actionPrimary }}>
             {(currentDistanceKm * factor).toFixed(1)}
           </span>
           <span className="text-white/50"> / {(totalDistanceKm * factor).toFixed(1)} {distanceUnit}</span>
@@ -117,7 +118,8 @@ export function RouteControlsHud({
           ) : (
             <>
               <svg
-                className="h-3.5 w-3.5 text-[var(--app-action-primary)]"
+                className="h-3.5 w-3.5"
+                style={{ color: appearanceColors.actionPrimary }}
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
