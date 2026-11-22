@@ -59,7 +59,7 @@ export function CrewDerbyCard({ crewId, sport, units }: { crewId: string; sport?
         )}
       </div>
     </Sheet>
-    {relayFullscreen ? (
+    {relayFullscreen && state ? (
       <SpecialEventFullscreen
         state={state}
         edition={relay}
