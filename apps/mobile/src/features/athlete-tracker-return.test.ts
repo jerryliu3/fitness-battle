@@ -255,7 +255,7 @@ describe("athlete profile navigation and layout", () => {
     expect(rendered).not.toContain("Identity");
   });
 
-  it("renders signed out athlete page with updated copy and signedOut flag for metrics", async () => {
+  it("renders signed out athlete page without guest profile row, auth mode tabs, or display name input", async () => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     mock.params = {};
     mock.user = null;
@@ -266,9 +266,10 @@ describe("athlete profile navigation and layout", () => {
     expect(rendered).toContain("Sign in to Overtaek");
     expect(rendered).toContain("and join events.");
     expect(rendered).not.toContain("keep your battles on this device");
+    expect(rendered).not.toContain("Create account");
+    expect(rendered).not.toContain("Display name");
 
-    const metrics = renderer.root.findByType("AthleteMetrics" as never);
-    expect(metrics.props.signedOut).toBe(true);
+    expect(renderer.root.findAllByType("AthleteMetrics" as never)).toHaveLength(0);
   });
 });
 

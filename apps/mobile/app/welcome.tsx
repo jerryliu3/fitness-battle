@@ -27,7 +27,7 @@ import { AppText } from "../src/ui/section";
 
 
 export default function Welcome() {
-  const { user, loading, offlineMode, signUp, signInWithGoogle, signInWithApple } = useAuth();
+  const { user, loading, offlineMode, signIn: authSignIn, signUp, signInWithGoogle, signInWithApple } = useAuth();
   const { state } = useCompeteStore();
   const router = useRouter();
   const { preview: previewParam, invite } = useLocalSearchParams<{ preview?: string; invite?: string }>();
@@ -105,9 +105,21 @@ export default function Welcome() {
     if (preview) { router.replace(`/onboarding?preview=1&sport=${draft.sport}`); return; }
     setBusy(true); setError(null);
     try {
-      await saveCompletedIntro(email);
-      const result = await signUp({ email: email.trim().toLowerCase(), password, displayName: draft.name.trim() });
-      if (result.error) { await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY); setError(result.error); return; }
+      const normalized = email.trim().toLowerCase();
+      await saveCompletedIntro(normalized);
+      const result = await signUp({ email: normalized, password, displayName: draft.name.trim() });
+      if (result.error) {
+        await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY);
+        if (/already\s*(?:registered|exists)/i.test(result.error)) {
+          const existing = await authSignIn(normalized, password);
+          if (existing.error) { setError(existing.error); return; }
+          setPassword("");
+          router.replace(setupRoute);
+          return;
+        }
+        setError(result.error);
+        return;
+      }
       setPassword("");
       if (result.needsEmailConfirm) { setConfirmation(true); return; }
       router.replace(setupRoute);
@@ -154,7 +166,7 @@ export default function Welcome() {
   }
   async function signIn() {
     if (!preview) await AsyncStorage.removeItem(GUEST_SIGNUP_PENDING_KEY).catch(() => {});
-    router.push({ pathname: "/athlete", params: { auth: "signin", from: "onboarding", invite } });
+    router.push({ pathname: "/athlete", params: { from: "onboarding", invite } });
   }
   const back = index > 0 ? <IconButton icon="back" label="Back" disabled={busy || photoBusy} onPress={() => {
     if (step === "account" && socialEnabled && emailExpanded) {
