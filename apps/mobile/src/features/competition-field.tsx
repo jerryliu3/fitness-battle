@@ -1,3 +1,4 @@
+import { MapHudBackdrop, useMapHud } from "../ui/map-hud";
 import Animated, { LinearTransition } from "react-native-reanimated";
 import { useCompetitionTimeline } from "./competition-timeline-context";
 import { CoursePositionRail } from "../ui/course-position-rail";
@@ -104,7 +105,7 @@ export function CompetitionField({
   timelineFraction?: number | null;
   onTimelineChange?: (value: number | null) => void;
 }) {
-const appearanceColors = useThemeColors();
+const hud = useMapHud();
 
 const c=useThemeColors();
 const f=useFocusStyles();
@@ -358,7 +359,7 @@ const f=useFocusStyles();
           <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following && !chaseReplay} onFollowChange={setFollowing} mapFollowing={following} followAthleteName={focusedLane?.name ?? me?.name ?? "your athlete"} onFollowChipPress={expanded && !queued ? () => { if (following) setFollowing(false); else { setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } } : undefined} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={chaseReplay ? undefined : courseTarget} replay={chaseReplay} onReplay={timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onMapChromeChange={onOptionsChange ? handleMapChromeChange : undefined} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
-          <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>Tap to open full screen</Text></View>
+          <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, ...hud.chrome }}><MapHudBackdrop radius={999} /><Text style={{ ...textStyle("caption"), color: hud.ink }}>Tap to open full screen</Text></View>
         </Pressable> : null}
       </View> : null}
       {sceneDimension === "2d" ? (
@@ -455,21 +456,15 @@ const f=useFocusStyles();
                 },
               ]}
             >
-              {backgroundMode ? <MaterialBack onPress={() => onExit?.()} /> : <View
-                style={{
-                  backgroundColor: "rgba(20, 20, 19, 0.72)",
-                  borderRadius: 999,
-                  borderWidth: 1,
-                  borderColor: "rgba(255, 255, 255, 0.16)",
-                }}
-              >
+              {backgroundMode ? <MaterialBack onPress={() => onExit?.()} /> : (
                 <IconButton
+                  glass
                   icon="back"
-                  label={backgroundMode ? "Back to events" : "Close full screen field"}
+                  label="Close full screen field"
                   onPress={() => persistent ? onExit?.() : setExpanded(false)}
                 />
-              </View>}
-              {!backgroundMode && onDetails ? <Pressable accessibilityRole="button" accessibilityLabel={backgroundMode ? "Expand standings" : "Events & standings"} onPress={onDetails} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.72)" }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{backgroundMode ? `${sport.charAt(0).toUpperCase()}${sport.slice(1)}` : "Events & standings"}</Text></Pressable> : null}
+              )}
+              {!backgroundMode && onDetails ? <Pressable accessibilityRole="button" accessibilityLabel={backgroundMode ? "Expand standings" : "Events & standings"} onPress={onDetails} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.72)", ...hud.chrome }}><MapHudBackdrop radius={999} /><Text style={{ ...textStyle("caption"), color: hud.ink }}>{backgroundMode ? `${sport.charAt(0).toUpperCase()}${sport.slice(1)}` : "Events & standings"}</Text></Pressable> : null}
               {!onOptionsChange && !(backgroundMode && sceneDimension === "4d") && viewControls}
             </FieldOverlayView>
 
@@ -495,10 +490,12 @@ const f=useFocusStyles();
                 paddingHorizontal: 10,
                 borderWidth: 1,
                 borderColor: "rgba(255, 255, 255, 0.14)",
+                ...hud.chrome,
                 gap: 5,
               }}
             >
-              <Text style={{ ...textStyle("label"), color: "rgba(255,255,255,0.65)" }}>
+              <MapHudBackdrop radius={14} />
+              <Text style={{ ...textStyle("label"), color: (hud.light ? hud.muted : "rgba(255,255,255,0.65)") }}>
                 Current Leaders
               </Text>
               {coursePositionLeaders(ranked).map((peer, idx) => {
@@ -522,15 +519,19 @@ const f=useFocusStyles();
                       paddingHorizontal: 4,
                       borderRadius: 6,
                       backgroundColor: isSelected
-                        ? "rgba(200, 245, 59, 0.2)"
+                        ? (hud.light ? "rgba(247, 201, 72, 0.28)" : "rgba(200, 245, 59, 0.2)")
                         : "transparent",
                     }}
                   >
                     <Text
                       style={{
                         ...textStyle("caption"),
-                        width: 14,
-                        color: leads ? c.tennis : "rgba(255,255,255,0.7)",
+                        width: hud.light && leads ? 17 : 14,
+                        textAlign: hud.light && leads ? "center" : undefined,
+                        borderRadius: 9,
+                        overflow: "hidden",
+                        backgroundColor: hud.light && leads ? c.tennis : undefined,
+                        color: leads ? hud.accent : (hud.light ? hud.muted : "rgba(255,255,255,0.7)"),
                       }}
                     >
                       {place(peer.values[2])}
@@ -539,7 +540,7 @@ const f=useFocusStyles();
                       numberOfLines={1}
                       style={{
                         ...textStyle("caption"),
-                        color: leads ? c.tennis : "#ffffff",
+                        color: leads ? hud.accent : hud.ink,
                         flex: 1,
                       }}
                     >
@@ -548,7 +549,7 @@ const f=useFocusStyles();
                     <Text
                       style={{
                         ...textStyle("caption"),
-                        color: idx === 0 ? c.tennis : "rgba(255,255,255,0.8)",
+                        color: idx === 0 ? hud.accent : (hud.light ? hud.muted : "rgba(255,255,255,0.8)"),
                       }}
                     >
                       {idx === 0
@@ -582,9 +583,11 @@ const f=useFocusStyles();
                   paddingHorizontal: 12,
                   borderWidth: 1,
                   borderColor: "rgba(255, 255, 255, 0.16)",
+                  ...hud.chrome,
                   gap: 8,
                 }}
               >
+                <MapHudBackdrop radius={20} />
                 <View
                   style={{
                     flexDirection: "row",
@@ -597,26 +600,26 @@ const f=useFocusStyles();
                     <Text
                       style={{
                         ...textStyle("caption"),
-                        color: focusedRank === 1 ? c.tennis : "rgba(255,255,255,0.65)",
+                        color: focusedRank === 1 ? hud.accent : (hud.light ? hud.muted : "rgba(255,255,255,0.65)"),
                       }}
                     >
                       {ordinalPlace(focusedRank).toUpperCase()} PLACE
                     </Text>
                     <Text
                       numberOfLines={1}
-                      style={{ ...textStyle("label"), color: appearanceColors.white }}
+                      style={{ ...textStyle("label"), color: hud.ink }}
                     >
                       {focusedLane.name}
                     </Text>
                   </View>
                   <View style={{ alignItems: "flex-end", gap: 2 }}>
-                    <Text style={{ ...textStyle("heading"), color: c.tennis }}>
+                    <Text style={{ ...textStyle("heading"), color: hud.accent }}>
                       {focusedLane.values[2].toFixed(volumeDecimals)} {arena.unit}
                     </Text>
                     <Text
                       style={{
                         ...textStyle("caption"),
-                        color: "rgba(255,255,255,0.72)",
+                        color: (hud.light ? hud.muted : "rgba(255,255,255,0.72)"),
                       }}
                     >
                       {focusedLane.you
@@ -652,23 +655,25 @@ const f=useFocusStyles();
                           borderRadius: 999,
                           backgroundColor: activeChip
                             ? c.tennis
-                            : "rgba(255, 255, 255, 0.1)",
+                            : hud.light
+                              ? c.soft
+                              : "rgba(255, 255, 255, 0.1)",
                           borderWidth: 1,
                           borderColor: activeChip
                             ? c.tennis
                             : place(peer.values[2]) === 1
-                              ? "rgba(200, 245, 59, 0.45)"
-                              : "rgba(255, 255, 255, 0.14)",
+                              ? (hud.light ? c.tennis : "rgba(200, 245, 59, 0.45)")
+                              : (hud.light ? "rgba(20, 43, 59, 0.14)" : "rgba(255, 255, 255, 0.14)"),
                         }}
                       >
                         <Text
                           style={{
                             ...textStyle("caption"),
                             color: activeChip
-                              ? c.ink
+                              ? c.textOnAction
                               : place(peer.values[2]) === 1
-                                ? c.tennis
-                                : "rgba(255,255,255,0.7)",
+                                ? hud.accent
+                                : (hud.light ? hud.muted : "rgba(255,255,255,0.7)"),
                           }}
                         >
                           #{place(peer.values[2])}
@@ -677,7 +682,7 @@ const f=useFocusStyles();
                           numberOfLines={1}
                           style={{
                             ...textStyle("caption"),
-                            color: activeChip ? c.ink : "#ffffff",
+                            color: activeChip ? c.textOnAction : hud.ink,
                           }}
                         >
                           {peer.name.split(" ")[0]}

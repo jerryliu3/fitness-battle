@@ -1,3 +1,4 @@
+import { MapHudBackdrop, useMapHud } from "./map-hud";
 import { useThemeColors } from "../theme";
 import { createThemedStyles, useThemedStyles, legacyColors, useLegacyColors } from "../theme";
 import { textStyle } from "./section";
@@ -60,6 +61,7 @@ export function RouteStaticPreview({
 }: MobileRouteStaticPreviewProps) {
 const colors=useLegacyColors();
 const styles=useThemedStyles(stylesThemes);
+const hud = useMapHud();
 
   // Active token (explicit prop override takes priority)
   const token =
@@ -165,9 +167,10 @@ const styles=useThemedStyles(stylesThemes);
 
       {/* 3. 'Play 3D Replay' Badge */}
       {showPlayBadge && (
-        <View style={styles.badge}>
-          {!playLabel && <Text style={styles.badgePlayIcon}>▶</Text>}
-          <Text style={styles.badgeText}>{playLabel ? `${playLabel} →` : "Play 3D Replay"}</Text>
+        <View style={[styles.badge, hud.chrome]}>
+          <MapHudBackdrop radius={14} />
+          {!playLabel && <Text style={[styles.badgePlayIcon, hud.light && { color: hud.ink }]}>▶</Text>}
+          <Text style={[styles.badgeText, hud.light && { color: hud.ink }]}>{playLabel ? `${playLabel} →` : "Play 3D Replay"}</Text>
         </View>
       )}
     </View>

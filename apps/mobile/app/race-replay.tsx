@@ -1,3 +1,4 @@
+import { MapHudBackdrop, useMapHud } from "../src/ui/map-hud";
 import {useEffect,useMemo,useRef,useState} from "react";
 import {ActivityIndicator,Linking,Pressable,ScrollView,StyleSheet,View} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
@@ -85,14 +86,16 @@ export default function RaceReplay() {
   }
   const profileRunner=runners.find(runner=>runner.id===profileId);
   const profileMetrics=profileRunner ? replayTelemetry(profileRunner,time,timeline.origin) : null;
-  const glass={backgroundColor:`${colors.card}df`,borderColor:colors.line,borderWidth:1};
+  const hud = useMapHud();
+  const glass={backgroundColor:`${colors.card}df`,borderColor:colors.line,borderWidth:1,...hud.chrome};
   const profile = profileRunner && <View style={{...glass,minWidth:154,borderRadius:14,paddingLeft:12,paddingRight:4,paddingBottom:9}}>
+      <MapHudBackdrop radius={14} />
       <View style={{flexDirection:"row",alignItems:"center",gap:6}}>
         <AppText role="label" style={{flexShrink:1}}>{profileRunner.name}</AppText>
         <Pressable accessibilityRole="button" accessibilityLabel={`Deselect ${profileRunner.name}`} onPress={()=>deselectRunner(profileRunner.id)}
           style={{width:44,height:44,alignItems:"center",justifyContent:"center"}}><AppText role="label">×</AppText></Pressable>
       </View>
-      <AppText role="caption" secondary>{profileMetrics ? `${raceClock(profileMetrics.elapsedMs)} elapsed · ${(profileMetrics.distanceM/1000).toFixed(2)} km` : "Position unavailable"}</AppText>
+      <AppText role="caption" secondary style={{ color: hud.light ? hud.muted : undefined }}>{profileMetrics ? `${raceClock(profileMetrics.elapsedMs)} elapsed · ${(profileMetrics.distanceM/1000).toFixed(2)} km` : "Position unavailable"}</AppText>
     </View>;
   return <View style={{flex:1,backgroundColor:colors.paper}}>
     <View style={StyleSheet.absoluteFill}>
@@ -106,6 +109,7 @@ export default function RaceReplay() {
     <FieldOverlayView hidden={false} pointerEvents="box-none" style={{position:"absolute",left:14,right:14,top:insets.top+6,flexDirection:"row",alignItems:"center",gap:8}}>
       <GlassDismissButton label="Close race replay" onPress={()=>router.canGoBack() ? router.back() : router.replace("/race-coverage")} />
       <View pointerEvents="none" style={{...glass,borderRadius:22,paddingHorizontal:13,paddingVertical:8}}>
+        <MapHudBackdrop radius={22} />
         <AppText role="label" accessibilityRole="header">Race replay</AppText>
       </View>
 
@@ -114,10 +118,12 @@ export default function RaceReplay() {
       {cameraRunner && <FieldFollowChip following={following} athleteName={cameraRunner.name} onPress={()=>setFollowing(value=>!value)} />}
       <Pressable accessibilityRole="button" accessibilityLabel="3D map" accessibilityState={{selected:tilted}} disabled={!data}
         onPress={()=>setTilted(value=>!value)} style={{...glass,width:44,height:44,borderRadius:22,alignItems:"center",justifyContent:"center",backgroundColor:tilted ? colors.tennis : glass.backgroundColor}}>
+        {!tilted && <MapHudBackdrop radius={22} />}
         <AppText role="label" style={tilted ? {color:colors.textOnAction} : undefined}>3D</AppText>
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Replay runners" onPress={()=>{setPlaying(false);setPicker(true);}}
         style={{...glass,width:44,height:44,borderRadius:22,alignItems:"center",justifyContent:"center"}}>
+        <MapHudBackdrop radius={22} />
         <AppIcon name="crew" size={21} />
       </Pressable>
     </View>
@@ -130,7 +136,8 @@ export default function RaceReplay() {
         {trackedRunners.map(r=>{
           const metrics=replayTelemetry(r,time,timeline.origin);
           return <View key={r.id}
-            style={{padding:10,width:214,borderWidth:1,borderColor:focused===r.id ? colors.ink : colors.line,borderRadius:14,backgroundColor:glass.backgroundColor}}>
+            style={{padding:10,width:214,borderWidth:1,borderColor:focused===r.id ? colors.ink : glass.borderColor,borderRadius:14,backgroundColor:glass.backgroundColor}}>
+            <MapHudBackdrop radius={14} />
             <View style={{flexDirection:"row",alignItems:"center"}}>
             <Pressable onPress={()=>setFocused(r.id)} accessibilityRole="button" accessibilityState={{selected:focused===r.id}} style={{flex:1,flexDirection:"row",gap:7,alignItems:"center"}}>
               <View style={{width:9,height:9,borderRadius:5,backgroundColor:palette[tracked.indexOf(r.id)]}} />
@@ -138,7 +145,7 @@ export default function RaceReplay() {
             </Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel={`Deselect ${r.name}`} hitSlop={8} onPress={()=>deselectRunner(r.id)} style={{width:28,height:28,alignItems:"center",justifyContent:"center"}}><AppText role="label">×</AppText></Pressable>
             </View>
-            <AppText role="caption" secondary style={{marginTop:4}}>
+            <AppText role="caption" secondary style={{ marginTop: 4, ...(hud.light ? { color: hud.muted } : undefined) }}>
               {metrics ? `${raceClock(metrics.elapsedMs)} · ${(metrics.distanceM/1000).toFixed(2)} km` : "Position unavailable"}
               {metrics?.currentPaceMsPerKm!=null ? ` · Pace ${raceClock(metrics.currentPaceMsPerKm)}/km` : ""}
             </AppText>
@@ -147,13 +154,14 @@ export default function RaceReplay() {
       </ScrollView>
     </View>}
     <View style={{...glass,borderRadius:20,paddingHorizontal:12,paddingTop:6,gap:2}}>
+      <MapHudBackdrop radius={20} />
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}>
         <FocusButton label={playing ? "Pause" : "Play"} disabled={reduced || !runners.length} onPress={()=>{if(time>=timeline.duration) setTime(0);setPlaying(v=>!v);}} />
         <AppText role="heading">{timeline.origin!==null ? new Date(timeline.origin+time).toLocaleTimeString() : raceClock(time)}</AppText>
         <View style={{width:44}} />
       </View>
-      <View accessible accessibilityRole="adjustable" accessibilityLabel="Replay time" accessibilityValue={{min:0,max:Math.ceil(timeline.duration/1000),now:Math.floor(time/1000)}} accessibilityActions={[{name:"increment"},{name:"decrement"}]} onAccessibilityAction={e=>seek(time+(e.nativeEvent.actionName==="increment" ? 60000 : -60000))} onLayout={e=>setSeekWidth(Math.max(1,e.nativeEvent.layout.width))} onStartShouldSetResponder={()=>!!runners.length} onResponderGrant={e=>seek(e.nativeEvent.locationX/seekWidth*timeline.duration)} onResponderMove={e=>seek(e.nativeEvent.locationX/seekWidth*timeline.duration)} style={{height:44,justifyContent:"center"}}><View pointerEvents="none" style={{height:6,backgroundColor:colors.line,borderRadius:3}}><View style={{height:6,width:`${timeline.duration ? time/timeline.duration*100 : 0}%`,backgroundColor:colors.tennis,borderRadius:3}} /></View></View>
-      {reduced && <AppText role="caption" secondary>Use the timeline to inspect positions with Reduced Motion on.</AppText>}
+      <View accessible accessibilityRole="adjustable" accessibilityLabel="Replay time" accessibilityValue={{min:0,max:Math.ceil(timeline.duration/1000),now:Math.floor(time/1000)}} accessibilityActions={[{name:"increment"},{name:"decrement"}]} onAccessibilityAction={e=>seek(time+(e.nativeEvent.actionName==="increment" ? 60000 : -60000))} onLayout={e=>setSeekWidth(Math.max(1,e.nativeEvent.layout.width))} onStartShouldSetResponder={()=>!!runners.length} onResponderGrant={e=>seek(e.nativeEvent.locationX/seekWidth*timeline.duration)} onResponderMove={e=>seek(e.nativeEvent.locationX/seekWidth*timeline.duration)} style={{height:44,justifyContent:"center"}}><View pointerEvents="none" style={{height:6,backgroundColor:hud.light ? "rgba(20, 43, 59, 0.18)" : colors.line,borderRadius:3}}><View style={{height:6,width:`${timeline.duration ? time/timeline.duration*100 : 0}%`,backgroundColor:colors.tennis,borderRadius:3}} /></View></View>
+      {reduced && <AppText role="caption" secondary style={{ color: hud.light ? hud.muted : undefined }}>Use the timeline to inspect positions with Reduced Motion on.</AppText>}
     </View>
     </FieldOverlayView>
     <FocusSheet open={picker} onClose={()=>setPicker(false)} title="Replay runners">

@@ -15,6 +15,7 @@ import Svg, {
 
 import { drawFieldNode } from "./field-course";
 import { FieldOverlayGroup } from "./field-overlay-motion";
+import { MapHudBackdrop, useMapHud } from "./map-hud";
 export interface LaneAnchor { left: number; laneWidth: number; width: number; scroll: number; oval: boolean; count: number }
 
 function LaneTrackContent({
@@ -85,6 +86,7 @@ function LaneTrackContent({
   overtakePlan?: ArenaOvertakePlan | null;
 }) {
 const appearanceColors = useThemeColors();
+const hud = useMapHud();
 
 const c=useThemeColors();
 
@@ -496,9 +498,11 @@ const c=useThemeColors();
             borderRadius: 999,
             paddingHorizontal: 12,
             paddingVertical: 6,
+            ...hud.chrome,
           }}
         >
-          <Text style={{ ...textStyle("caption"), color: appearanceColors.white }}>
+          <MapHudBackdrop radius={999} />
+          <Text style={{ ...textStyle("caption"), color: hud.ink }}>
             Tap to open full screen
           </Text>
         </View>

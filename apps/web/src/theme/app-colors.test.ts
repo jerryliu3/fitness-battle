@@ -11,5 +11,9 @@ it("gives server-rendered system appearance native CSS light/dark pairs before h
   expect(variables["--app-action-primary"]).toBe("var(--overtaek-brand-gold, var(--overtaek-brand-gold-srgb))");
   expect(variables["--app-chart-series"]).toBe(variables["--app-action-primary"]);
   expect(colors.chartSeries).toContain("var(--app-chart-series,");
+  expect(variables["--map-hud-clear-surface"]).toBe(APP_COLORS.light.mapHudSurface);
+  expect(variables["--map-hud-clear-border"]).toBe(APP_COLORS.light.mapHudBorder);
+  expect(variables["--map-hud-clear-muted"]).toBe(APP_COLORS.light.mapHudMuted);
+  expect(variables["--map-hud-clear-ink"]).toBe(APP_COLORS.light.textPrimary);
   expect(parseAppearance("unknown")).toBe("system");
 });

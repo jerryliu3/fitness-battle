@@ -526,6 +526,7 @@ export function RouteTimelapseMap({
 
   return (
     <div
+      data-map-appearance={appearanceMode}
       className={`route-ui relative w-full h-[450px] sm:h-[540px] overflow-hidden rounded-2xl bg-[#142b3b] shadow-xl border border-[#e3e9e7]/30 ${compactHeader ? "route-ui--replay-header" : ""} ${className}`}
     >
       {/* Mapbox WebGL Canvas Container */}

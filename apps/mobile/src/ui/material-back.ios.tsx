@@ -2,18 +2,19 @@ import { requireNativeView, requireOptionalNativeModule } from "expo";
 import { Pressable, Text, type ViewProps } from "react-native";
 import { useAppTheme, useThemeColors } from "../theme";
 import { IconButton } from "./icon-button";
+import { MapHudBackdrop, useMapHud } from "./map-hud";
 import { textStyle } from "./section";
 const NativeBack = requireOptionalNativeModule("AnchoredChoice")
   ? requireNativeView<ViewProps & { backButton: boolean; dark: boolean; onSelect(): void }>("AnchoredChoice") : null;
 export function MaterialBack({ onPress, label = "Back to events" }: { onPress(): void; label?: string }) {
   const { mode } = useAppTheme();
   return NativeBack ? <NativeBack accessibilityLabel={label} backButton dark={mode === "dark"} onSelect={onPress} style={{ width: 44, height: 44 }} />
-    : <IconButton icon="back" label={label} onPress={onPress} />;
+    : <IconButton glass icon="back" label={label} onPress={onPress} />;
 }
 
 export function MaterialClose({ onPress, disabled = false, label = "Close" }: { onPress(): void; disabled?: boolean; label?: string }) {
   const c = useThemeColors();
-  const isLight = c.paper === "#f8f9f6";
+  const hud = useMapHud();
   return (
     <Pressable
       accessibilityRole="button"
@@ -26,8 +27,8 @@ export function MaterialClose({ onPress, disabled = false, label = "Close" }: { 
         height: 44,
         borderRadius: 22,
         borderWidth: 1,
-        borderColor: isLight ? "rgba(255, 255, 255, 0.72)" : "rgba(255, 255, 255, 0.18)",
-        backgroundColor: isLight ? "rgba(255, 255, 255, 0.68)" : "rgba(28, 46, 56, 0.72)",
+        borderColor: hud.chrome?.borderColor ?? "rgba(255, 255, 255, 0.18)",
+        backgroundColor: hud.chrome?.backgroundColor ?? "rgba(28, 46, 56, 0.72)",
         alignItems: "center",
         justifyContent: "center",
         shadowColor: c.shadow,
@@ -37,6 +38,7 @@ export function MaterialClose({ onPress, disabled = false, label = "Close" }: { 
         opacity: disabled ? 0.4 : pressed ? 0.65 : 1,
       })}
     >
+      <MapHudBackdrop radius={22} />
       <Text style={{ ...textStyle("heading"), color: c.ink }}>✕</Text>
     </Pressable>
   );

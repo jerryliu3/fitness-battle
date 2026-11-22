@@ -714,3 +714,68 @@ a {
     border-radius: 20px;
   }
 }
+
+/* Floating map chrome follows app appearance and the native route scene override. */
+@media (prefers-color-scheme: light) {
+  html[data-appearance="system"] {
+    --map-hud-fill: var(--map-hud-clear-surface);
+    --map-hud-edge: var(--map-hud-clear-border);
+    --map-hud-ink: var(--map-hud-clear-ink);
+    --map-hud-muted: var(--map-hud-clear-muted);
+    --map-hud-blur: blur(6px);
+    --map-hud-rank: var(--app-action-primary);
+    --map-hud-popup-base: transparent;
+    --map-hud-chip-fill: color-mix(in srgb, var(--map-hud-clear-ink) 8%, transparent);
+    --map-hud-chip-edge: color-mix(in srgb, var(--map-hud-clear-ink) 14%, transparent);
+    --map-hud-track: color-mix(in srgb, var(--map-hud-clear-ink) 18%, transparent);
+    --map-hud-leader-edge: var(--app-action-primary);
+  }
+}
+html[data-appearance="light"], .route-ui[data-map-appearance="light"] {
+  --map-hud-fill: var(--map-hud-clear-surface);
+  --map-hud-edge: var(--map-hud-clear-border);
+  --map-hud-ink: var(--map-hud-clear-ink);
+  --map-hud-muted: var(--map-hud-clear-muted);
+  --map-hud-blur: blur(6px);
+  --map-hud-rank: var(--app-action-primary);
+  --map-hud-popup-base: transparent;
+  --map-hud-chip-fill: color-mix(in srgb, var(--map-hud-clear-ink) 8%, transparent);
+  --map-hud-chip-edge: color-mix(in srgb, var(--map-hud-clear-ink) 14%, transparent);
+  --map-hud-track: color-mix(in srgb, var(--map-hud-clear-ink) 18%, transparent);
+  --map-hud-leader-edge: var(--app-action-primary);
+}
+@media (prefers-reduced-transparency: reduce) {
+  html[data-appearance="light"], .route-ui[data-map-appearance="light"] {
+    --map-hud-fill: var(--app-surface-card);
+    --map-hud-edge: var(--app-border-subtle);
+    --map-hud-blur: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce) and (prefers-color-scheme: light) {
+  html[data-appearance="system"] {
+    --map-hud-fill: var(--app-surface-card);
+    --map-hud-edge: var(--app-border-subtle);
+    --map-hud-blur: none;
+  }
+}
+.route-ui[data-map-appearance="dark"] {
+  --map-hud-fill: initial;
+  --map-hud-edge: initial;
+  --map-hud-ink: initial;
+  --map-hud-muted: initial;
+  --map-hud-blur: initial;
+  --map-hud-rank: initial;
+  --map-hud-popup-base: initial;
+  --map-hud-chip-fill: initial;
+  --map-hud-chip-edge: initial;
+  --map-hud-track: initial;
+  --map-hud-leader-edge: initial;
+}
+
+.map-hud-control {
+  background: var(--map-hud-fill, rgba(20, 20, 19, 0.72));
+  border: 1px solid var(--map-hud-edge, rgba(255, 255, 255, 0.2));
+  color: var(--map-hud-ink, #fff);
+  -webkit-backdrop-filter: var(--map-hud-blur, none);
+  backdrop-filter: var(--map-hud-blur, none);
+}

@@ -1,6 +1,5 @@
 "use client";
 
-import { colors as appearanceColors } from "../../theme/app-colors";
 import { typographyStyle } from "../../ui/section";
 
 import React from "react";
@@ -88,8 +87,8 @@ export function RouteControlsHud({
         </div>
 
         {/* Distance metric */}
-        <div className="shrink-0 text-right text-white/90 tabular-nums" style={typographyStyle("caption")}>
-          <span style={{ ...typographyStyle("label"), color: appearanceColors.actionPrimary }}>
+        <div className="route-controls-distance shrink-0 text-right text-white/90 tabular-nums" style={typographyStyle("caption")}>
+          <span style={typographyStyle("label")}>
             {(currentDistanceKm * factor).toFixed(1)}
           </span>
           <span className="text-white/50"> / {(totalDistanceKm * factor).toFixed(1)} {distanceUnit}</span>
@@ -101,7 +100,7 @@ export function RouteControlsHud({
           onClick={onExportVideo}
           disabled={isRecordingVideo}
           aria-label="Export Video"
-          className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl px-2.5 py-1.5 transition-all active:scale-95 ${
+          className={`route-controls-export flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl px-2.5 py-1.5 transition-all active:scale-95 ${
             isRecordingVideo
               ? "bg-red-500/90 text-white animate-pulse cursor-wait"
               : "bg-white/10 text-white hover:bg-white/20 border border-white/15"
@@ -119,7 +118,6 @@ export function RouteControlsHud({
             <>
               <svg
                 className="h-3.5 w-3.5"
-                style={{ color: appearanceColors.actionPrimary }}
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"

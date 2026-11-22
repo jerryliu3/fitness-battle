@@ -86,8 +86,9 @@
   position: absolute;
   transform: translate(-50%, -120%);
   border: none;
-  background: rgba(18, 20, 26, 0.88);
-  color: #f4f6fa;
+  background: var(--map-hud-fill, rgba(18, 20, 26, 0.88));
+  backdrop-filter: var(--map-hud-blur, none);
+  color: var(--map-hud-ink, #f4f6fa);
   border-radius: 10px;
   padding: 6px 8px;
   display: grid;
@@ -95,7 +96,7 @@
   min-width: 88px;
   cursor: pointer;
   text-align: left;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 0 0 1px var(--map-hud-edge, transparent), 0 6px 16px rgba(0, 0, 0, 0.28);
 }
 
 .fd-world-label strong {
@@ -105,7 +106,7 @@
 }
 
 .fd-world-label span {
-  color: #aeb6c7;
+  color: var(--map-hud-muted, #aeb6c7);
   letter-spacing: normal;
   text-transform: none;
   font: var(--type-caption);

@@ -357,7 +357,7 @@ const { colors: appearanceColors, mode } = useAppTheme();
         return <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: nodeX / boxWidth, y: nodeY / boxHeight }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
           <View collapsable={false} pointerEvents="box-none" style={{ width: boxWidth, height: boxHeight }}>
             <Svg width={boxWidth} height={boxHeight} pointerEvents="none"><G transform={`translate(${nodeX} ${nodeY})`}>
-              <AthleteNode lane={lane} x={lane.callout.left ? -140 : 12} y={lane.callout.y} detail={detail} subdetail={subdetail} expanded={expanded} selected={selected} gold={rank === 1} prefix={`${prefix}-${lane.id}`} />
+              <AthleteNode mapOverlay lane={lane} x={lane.callout.left ? -140 : 12} y={lane.callout.y} detail={detail} subdetail={subdetail} expanded={expanded} selected={selected} gold={rank === 1} prefix={`${prefix}-${lane.id}`} />
             </G></Svg>
             {expanded ? <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: cardX, top: cardY, width: 128, height: subdetail ? 44 : 30 }} /> : null}
             <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: nodeX - 26, top: nodeY - 26, width: 52, height: 52, borderRadius: 26 }} />

@@ -1,3 +1,4 @@
+import { useMapHud } from "./map-hud";
 import { useThemeColors } from "../theme";
 import { Circle, Defs, ClipPath, Image as SvgImage, G, Path, Rect, Text as SvgText } from "react-native-svg";
 import { APP_ICON_PATHS, type ArenaSceneLane } from "@fitness-battle/shared";
@@ -9,14 +10,15 @@ export function AthletePennant({ lane: l, x, y, detail, prefix }: {
   lane: Pick<ArenaSceneLane, "name" | "you" | "avatarUrl"> & { leader?: boolean }; x: number; y: number; detail: string; prefix: string;
 }) {
 const c=useThemeColors();
+const hud=useMapHud();
 
   return <G>
                     <Path d={`M0 0 L${x+146/2} ${y>0?y:y+46}`} fill="none" stroke={c.secondary} strokeWidth={1.2}/>
                     <Rect x={x} y={y+2} width={146} height={46} rx={12} fill={c.ink} opacity={.1}/>
-                    <Rect x={x} y={y} width={146} height={46} rx={12} fill={c.card} stroke={(l.leader ?? l.you)?c.tennis:c.line}/>
+                    <Rect x={x} y={y} width={146} height={46} rx={12} fill={hud.surface?.backgroundColor ?? c.card} stroke={(l.leader ?? l.you)?c.tennis:hud.surface?.borderColor ?? c.line}/>
                     <Circle cx={x+24} cy={y+23} r={16} fill={c.soft}/>
                     {l.avatarUrl?<><Defs><ClipPath id={`${prefix}-portrait`}><Circle cx={x+24} cy={y+23} r={16}/></ClipPath></Defs><SvgImage href={{uri:l.avatarUrl}} x={x+8} y={y+7} width={32} height={32} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${prefix}-portrait)`}/></>:<Path d={APP_ICON_PATHS.person} transform={`translate(${x+14} ${y+13}) scale(.83)`} fill={c.muted} stroke="none" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"/>}
                     <SvgText {...chartTextProps()} x={x+47} y={y+(detail ? 20 : 27)}  fill={c.ink} >{l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</SvgText>
-                    {detail && <SvgText {...chartTextProps()} x={x+47} y={y+35} fill={c.muted}>{detail}</SvgText>}
+                    {detail && <SvgText {...chartTextProps()} x={x+47} y={y+35} fill={hud.light ? hud.muted : c.muted}>{detail}</SvgText>}
   </G>;
 }

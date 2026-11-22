@@ -55,6 +55,7 @@ export function FieldViewSwitcher({
   return (
     <div ref={rootRef} style={{ position: "relative" }}>
       <button
+        className="map-hud-control"
         type="button"
         aria-label={`Field view: ${active.label}`}
         aria-expanded={open}
@@ -66,9 +67,6 @@ export function FieldViewSwitcher({
           minWidth: 44,
           minHeight: 44,
           borderRadius: 999,
-          border: "1px solid rgba(255, 255, 255, 0.2)",
-          background: "rgba(20, 20, 19, 0.72)",
-          color: "#ffffff",
           cursor: "pointer",
         }}
       >

@@ -34,6 +34,16 @@ controls. Native Appearance follows the saved preference; System clears the
 native override. Filled error actions use `textOnError` with `statusError`, while
 error text on a neutral surface continues to use `statusError`.
 
+### Floating map HUDs
+
+Light-mode map controls, replay transport, and athlete overlays share the
+Clear Glass tint and edge in `packages/shared/src/appearance.ts`. Use ink for
+icons and primary labels, the map HUD muted role for supporting text, and
+action yellow as a fill or marker with ink on top. Web uses a subtle backdrop
+blur. On iOS, use the existing material panel where a view can host it. SVG
+callouts use the tint directly, and HUD panels use a solid fallback when
+native material is unavailable or Reduce Transparency is enabled.
+
 ## Medal Gold
 
 `packages/shared/src/brand-gold.json` defines Medal Gold Max Pop P3 as
