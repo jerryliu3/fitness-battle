@@ -95,7 +95,7 @@ interface CompeteContextValue {
   fieldNotice: FieldNotice | null;
   dismissFieldNotice: () => void;
   standingsStale: boolean;
-  refresh: (options?: { ifStale?: boolean }) => Promise<boolean>;
+  refresh: (options?: { ifStale?: boolean; skipSyncReview?: boolean }) => Promise<boolean>;
   saveError: string | null;
   saving: boolean;
   retrySave: () => void;
@@ -511,7 +511,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     if (AppState.currentState === "active") remember(ids, false);
   }, [remember, state]);
 
-  const refresh = useCallback(async (options?: { ifStale?: boolean }): Promise<boolean> => {
+  const refresh = useCallback(async (options?: { ifStale?: boolean; skipSyncReview?: boolean }): Promise<boolean> => {
     if (syncReviewBlocked.current) return false;
     if (debugActiveRef.current) return true;
     if (hydrationPending.current) return false;
@@ -603,7 +603,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
           dirty,
           unitsUnsavedRef.current,
         );
-        const next = holdRemoteRef.current(snapshot);
+        const next = options?.skipSyncReview ? snapshot : holdRemoteRef.current(snapshot);
         seedArenaBaselinesFromState(
           next,
           account.userId,

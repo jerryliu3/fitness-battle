@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { activityFromSample, type ActivitySample, type FitnessHistoryStatus, type FitnessHistoryTicket, type ProviderId, type ReadinessSample } from "@fitness-battle/shared";
+import { activityFromSample, competeNow, dayKey, type SyncReviewReceipt, type ActivitySample, type FitnessHistoryStatus, type FitnessHistoryTicket, type ProviderId, type ReadinessSample } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { Sheet } from "@/ui/sheet";
 import { AppParagraph, SectionHeader } from "@/ui/section";
+
+import { SyncReview } from "../club/sync-review";
 
 const providers = [{ id: "strava", name: "Strava" }, { id: "whoop", name: "WHOOP" }, { id: "oura", name: "Oura" }] as const;
 
@@ -25,12 +27,13 @@ export function FitnessHistoryImport(props: HistoryImportProps) {
 
 function AccountHistoryImport({ offer, onDismiss, showSettings = true }: HistoryImportProps) {
   const { user, offlineMode } = useAuth();
-  const { state, dispatch } = useCompete();
+  const { state, dispatch, refresh } = useCompete();
   const [status, setStatus] = useState<FitnessHistoryStatus | null>(null);
   const [provider, setProvider] = useState<ProviderId | null>(null);
   const [days, setDays] = useState(90);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [review, setReview] = useState<{ lease: string; receipt: SyncReviewReceipt } | null>(null);
   const flight = useRef(false);
   const afterClose = useRef<(() => void) | null>(null);
   const mounted = useRef(true);
@@ -63,16 +66,57 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
     setProvider(null); setError("");
   }
 
+  async function finishReview(selected?: readonly string[], quiet?: boolean) {
+    if (!review || flight.current) return;
+    flight.current = true;
+    const confirmed = !quiet && Boolean(selected?.length);
+    try {
+      if (confirmed) {
+        await historyRequest("/api/fitness/sync", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ historyLease: review.lease, selected }) });
+        if (!mounted.current) return;
+        setStatus({ completed: true, provider: "strava", days: Number(days) });
+        void refresh({ skipSyncReview: true });
+      } else {
+        await historyRequest("/api/fitness/history", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lease: review.lease }) });
+      }
+      if (mounted.current) dismiss.current();
+    } catch (error) {
+      if (mounted.current) {
+        setError(error instanceof Error ? error.message : "Could not finish the history import.");
+        setProvider("strava");
+        await historyRequest("/api/fitness/history", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lease: review.lease }) }).catch(() => {});
+      }
+    } finally {
+      if (mounted.current) setReview(null);
+      flight.current = false;
+    }
+  }
+
   async function importHistory() {
-    if (!user || !provider || !live || flight.current) return;
+    if (!user || !provider || !live || !state || flight.current) return;
     const id = user.id;
     flight.current = true; setBusy(true); setError("");
     let ticket: FitnessHistoryTicket | undefined;
     try {
       ticket = await historyRequest<FitnessHistoryTicket>("/api/fitness/history", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, days }) });
       if (!mounted.current) return;
-      const result = await historyRequest<{ activities?: ActivitySample[]; readiness?: ReadinessSample[] }>("/api/fitness/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, historyLease: ticket.lease }) });
+      const result = await historyRequest<{ activities?: ActivitySample[]; readiness?: ReadinessSample[] }>("/api/fitness/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, historyLease: ticket.lease, ...(provider === "strava" ? { reviewHistory: true } : {}) }) });
       if (!mounted.current) return;
+      if (provider === "strava") {
+        const activitiesForReview = (result.activities ?? []).flatMap(sample => {
+          const activity = activityFromSample(sample, "recorded");
+          return activity ? [activity] : [];
+        });
+        if (!activitiesForReview.length) throw new Error("No activities found for that time range.");
+        const draft = {
+          lease: ticket.lease,
+          receipt: { account: id, day: dayKey(competeNow(state)), activities: activitiesForReview, preview: false, confirmBeforeSave: true },
+        };
+        afterClose.current = () => { if (mounted.current) setReview(draft); };
+        setProvider(null);
+        ticket = undefined;
+        return;
+      }
       setStatus({ completed: true, provider, days });
       setProvider(null);
       afterClose.current = () => {
@@ -91,6 +135,8 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
       if (mounted.current) setBusy(false);
     }
   }
+
+  if (review && state) return <SyncReview receipt={review.receipt} state={state} onComplete={finishReview} />;
 
   return <>
     {showSettings && <section className="fb-card">

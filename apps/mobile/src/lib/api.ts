@@ -1,5 +1,11 @@
 import { fetchWithTimeout } from "./fetch-with-timeout";
 import { apiReadScope, cachedApiRead, invalidateApiReads } from "./api-read-cache";
+class ApiRequestError extends Error {
+  constructor(message: string, readonly code?: string) {
+    super(message);
+  }
+}
+
 /** Bearer-authenticated transport shared by native account and crew flows. */
 export async function requestApi<T = Record<string, unknown>>(
   apiUrl: string,
@@ -30,8 +36,9 @@ export async function requestApi<T = Record<string, unknown>>(
   );
   const body = await response.json().catch(() => null);
   if (!response.ok || (body?.persisted === false && !options.allowUnpersisted))
-    throw new Error(
+    throw new ApiRequestError(
       body?.message ?? body?.error ?? "Could not reach Overtaek. Please try again.",
+      body?.error,
     );
   if (!body)
     throw new Error("Received an incomplete response. Please try again.");

@@ -128,7 +128,7 @@ const c=useThemeColors();
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
         <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.tennis, alignItems: "center", justifyContent: "center" }}><Text style={[textStyle("heading"), { color: c.textOnAction }]}>✓</Text></View>
-        <Text accessibilityRole="header" style={[textStyle("heading"), { color: c.ink }]}>Activities synced</Text>
+        <Text accessibilityRole="header" style={[textStyle("heading"), { color: c.ink }]}>{receipt.confirmBeforeSave ? "Review activities" : "Activities synced"}</Text>
       </View>
       <MaterialClose disabled={saving} label="Cancel sync" onPress={() => { if (!saving) onComplete([], true); }} />
     </View>
@@ -227,7 +227,7 @@ const c=useThemeColors();
                       accessibilityRole="checkbox"
                       accessibilityLabel={`Count ${sportById(a.sport).name} activity ${a.id}`}
                       accessibilityState={{ checked: isCounted, disabled: saving }}
-                      accessibilityHint="Deselected activities stay saved, excluded from competition."
+                      accessibilityHint={receipt.confirmBeforeSave ? "Only selected activities will be imported." : "Deselected activities stay saved, excluded from competition."}
                       disabled={saving}
                       hitSlop={4}
                       onPress={() => {

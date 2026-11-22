@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
-import { activityFromSample, type ActivitySample, type FitnessHistoryStatus, type FitnessHistoryTicket, type ProviderId, type ReadinessSample } from "@fitness-battle/shared";
+import { activityFromSample, competeNow, dayKey, type SyncReviewReceipt, type ActivitySample, type FitnessHistoryStatus, type FitnessHistoryTicket, type ProviderId, type ReadinessSample } from "@fitness-battle/shared";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { requestApi } from "../lib/api";
@@ -10,6 +10,8 @@ import { providersForDevice } from "../lib/platform-providers";
 import { FocusButton, FocusSheet } from "../ui/focus";
 import { NumberPicker } from "../ui/form-picker";
 import { AppText, SectionHeader } from "../ui/section";
+
+import { SyncReview } from "./sync-review";
 
 const supported = new Set(["apple_health", "google_health", "strava", "whoop", "oura"]);
 
@@ -22,12 +24,13 @@ export function FitnessHistoryImport(props: HistoryImportProps) {
 
 function AccountHistoryImport({ offer, onDismiss, showSettings = true }: HistoryImportProps) {
   const { user, accessToken, offlineMode } = useAuth();
-  const { state, dispatch } = useCompeteStore();
+  const { state, dispatch, refresh } = useCompeteStore();
   const [status, setStatus] = useState<FitnessHistoryStatus | null>(null);
   const [provider, setProvider] = useState<ProviderId | null>(null);
   const [days, setDays] = useState("90");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [review, setReview] = useState<{ lease: string; receipt: SyncReviewReceipt } | null>(null);
   const flight = useRef(false);
   const afterClose = useRef<(() => void) | null>(null);
   const mounted = useRef(true);
@@ -60,8 +63,34 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
     setProvider(null); setError("");
   }
 
+  async function finishReview(selected?: readonly string[], quiet?: boolean) {
+    if (!review || flight.current) return;
+    flight.current = true;
+    const confirmed = !quiet && Boolean(selected?.length);
+    try {
+      if (confirmed) {
+        await requestApi(mobileEnv.apiUrl, accessToken, "/api/fitness/sync", { method: "PATCH", body: { historyLease: review.lease, selected } });
+        if (!mounted.current) return;
+        setStatus({ completed: true, provider: "strava", days: Number(days) });
+        void refresh({ skipSyncReview: true });
+      } else {
+        await requestApi(mobileEnv.apiUrl, accessToken, "/api/fitness/history", { method: "DELETE", body: { lease: review.lease } });
+      }
+      if (mounted.current) dismiss.current();
+    } catch (error) {
+      if (mounted.current) {
+        setError(error instanceof Error ? error.message : "Could not finish the history import.");
+        setProvider("strava");
+        await requestApi(mobileEnv.apiUrl, accessToken, "/api/fitness/history", { method: "DELETE", body: { lease: review.lease } }).catch(() => {});
+      }
+    } finally {
+      if (mounted.current) setReview(null);
+      flight.current = false;
+    }
+  }
+
   async function importHistory() {
-    if (!user || !provider || !live || flight.current) return;
+    if (!user || !provider || !live || !state || flight.current) return;
     const id = user.id;
     const token = accessToken;
     flight.current = true; setBusy(true); setError("");
@@ -78,10 +107,25 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
         if (!result.ok) throw new Error(result.message);
         activities = result.activities ?? [];
       } else {
-        const result = await requestApi<{ activities?: ActivitySample[]; readiness?: ReadinessSample[] }>(mobileEnv.apiUrl, token, "/api/fitness/sync", { body: { provider, historyLease: ticket.lease } });
+        const result = await requestApi<{ activities?: ActivitySample[]; readiness?: ReadinessSample[] }>(mobileEnv.apiUrl, token, "/api/fitness/sync", { body: { provider, historyLease: ticket.lease, ...(provider === "strava" ? { reviewHistory: true } : {}) } });
         activities = result.activities ?? []; readiness = result.readiness ?? [];
       }
       if (!mounted.current) return;
+      if (provider === "strava") {
+        const activitiesForReview = activities.flatMap(sample => {
+          const activity = activityFromSample(sample, "recorded");
+          return activity ? [activity] : [];
+        });
+        if (!activitiesForReview.length) throw new Error("No activities found for that time range.");
+        const draft = {
+          lease: ticket.lease,
+          receipt: { account: id, day: dayKey(competeNow(state)), activities: activitiesForReview, preview: false, confirmBeforeSave: true },
+        };
+        afterClose.current = () => { if (mounted.current) setReview(draft); };
+        setProvider(null);
+        ticket = undefined;
+        return;
+      }
       // Lock the settings action immediately, independently of the sync receipt.
       setStatus({ completed: true, provider, days: Number(days) });
       setProvider(null);
@@ -101,6 +145,8 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
       if (mounted.current) setBusy(false);
     }
   }
+
+  if (review && state) return <SyncReview receipt={review.receipt} state={state} onComplete={finishReview} />;
 
   return <>
     {showSettings && !completed && <View style={{ gap: 12 }}>

@@ -9,6 +9,7 @@ export interface SyncReviewReceipt {
   account: string | null;
   activities: Activity[];
   preview: boolean;
+  confirmBeforeSave?: boolean;
   day: string;
 }
 const fingerprint = (a: Activity) =>

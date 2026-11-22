@@ -2,7 +2,7 @@ import { persistDailyHealth } from "@/lib/daily-health-store";
 import { persistSleepNight } from "@/lib/garmin-record-store";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import type { CategorySlug } from "@fitness-battle/shared";
+import type { ActivitySample, CategorySlug } from "@fitness-battle/shared";
 import { fitnessSyncWindow, finishFitnessHistory } from "@/lib/fitness-history";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider, isOAuthProvider } from "@/lib/fitness";
@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     backfill?: boolean;
     historyLease?: string;
     automatic?: boolean;
+    reviewHistory?: boolean;
   };
   const userId = await resolveRequestUserId(request, body.userId);
   if (!userId) {
@@ -24,6 +25,10 @@ export async function POST(request: Request) {
   }
   if (body.backfill || body.since) return NextResponse.json({ error: "history_confirmation_required" }, { status: 400 });
   const providerId = body.provider && isOAuthProvider(body.provider) ? body.provider : "strava";
+  const reviewHistory = body.reviewHistory === true;
+  if (reviewHistory && (providerId !== "strava" || typeof body.historyLease !== "string" || body.automatic)) {
+    return NextResponse.json({ error: "invalid_history_import" }, { status: 400 });
+  }
   const provider = getServerFitnessProvider(providerId);
   const connection = await provider.getConnection(userId);
   if (providerId === "garmin") return NextResponse.json({ provider: "garmin", delivery: "push", activities: [], readiness: [], persisted: true, usedMock: false, message: "Garmin sends new activities automatically after your device syncs with Garmin Connect." });
@@ -32,46 +37,108 @@ export async function POST(request: Request) {
   if (!db) return NextResponse.json({ error: "store_unavailable" }, { status: 503 });
   const lease = randomUUID();
   const { data: allowed, error: limitError } = await db.rpc("acquire_fitness_sync", { p_user: userId, p_provider: providerId, p_automatic: body.automatic === true, p_lease: lease });
+  if (limitError?.code === "PT429") {
+    const retryAfter = Number(limitError.details);
+    const minutes = Math.ceil(retryAfter / 60);
+    const retry = minutes > 0
+      ? `Try again in ${minutes} ${minutes === 1 ? "minute" : "minutes"}.`
+      : "Try again later.";
+    return NextResponse.json({
+      error: "sync_manual_limit",
+      message: `You’ve reached 10 syncs in the past hour. ${retry}`,
+    }, { status: 429, ...(minutes > 0 ? { headers: { "Retry-After": String(retryAfter) } } : {}) });
+  }
   if (limitError) return NextResponse.json({ error: "sync_unavailable" }, { status: 503 });
-  if (!allowed) return NextResponse.json({ error: "sync_cooldown", message: "Sync is already running or the hourly limit has been reached." }, { status: 429, headers: { "Retry-After": "3600" } });
+  if (!allowed) return NextResponse.json({ error: "sync_cooldown", message: "A sync is already running or a recent sync is still on cooldown." }, { status: 429 });
+  let staged = false;
   try {
-  const window = await fitnessSyncWindow(userId, providerId, body.historyLease);
+    const window = await fitnessSyncWindow(userId, providerId, body.historyLease);
 
-  const result = await provider.syncActivities(userId, {
-    categorySlug: body.categorySlug,
-    since: window.since,
-  });
+    const result = await provider.syncActivities(userId, {
+      categorySlug: body.categorySlug,
+      since: window.since,
+      ...(reviewHistory ? { advanceCursor: false } : {}),
+    });
 
-  let persisted = false;
-  if (!result.usedMock) {
-    try {
-      const activitiesStored = await persistSyncedActivities(userId, result.activities);
-      await persistDailyHealth(userId,result.dailyHealth??[]);
-      for (const night of result.sleepNights ?? []) await persistSleepNight(userId, night);
-      const readinessStored = await persistReadiness(userId, result.readiness ?? []);
-      persisted = (result.activities.length === 0 || activitiesStored) && ((result.readiness ?? []).length === 0 || readinessStored);
-    } catch {
-      persisted = false;
+    if (reviewHistory) {
+      if (result.usedMock) return NextResponse.json({ error: "provider_sync_failed" }, { status: 502 });
+      if (result.activities.length) {
+        const { data, error } = await db.from("fitness_history_imports")
+          .update({ review_samples: result.activities })
+          .eq("user_id", userId)
+          .eq("lease", body.historyLease!)
+          .gt("lease_until", new Date().toISOString())
+          .select("user_id").maybeSingle();
+        if (error || !data) throw new Error("history_unavailable");
+        staged = true;
+      }
+      return NextResponse.json({ activities: result.activities });
     }
-  }
 
-  if (!persisted) {
-    await createProviderStore(providerId)?.setConnection(connection);
-    return NextResponse.json({ error: "sync_persistence_failed" }, { status: 503 });
-  }
-  if (body.historyLease) await finishFitnessHistory(userId, body.historyLease, true);
-  return NextResponse.json({
-    ...result,
-    historyImported: Boolean(body.historyLease),
-    since: window.since,
-    persisted,
-  });
+    let persisted = false;
+    if (!result.usedMock) {
+      try {
+        const activitiesStored = await persistSyncedActivities(userId, result.activities);
+        await persistDailyHealth(userId,result.dailyHealth??[]);
+        for (const night of result.sleepNights ?? []) await persistSleepNight(userId, night);
+        const readinessStored = await persistReadiness(userId, result.readiness ?? []);
+        persisted = (result.activities.length === 0 || activitiesStored) && ((result.readiness ?? []).length === 0 || readinessStored);
+      } catch {
+        persisted = false;
+      }
+    }
+
+    if (!persisted) {
+      await createProviderStore(providerId)?.setConnection(connection);
+      return NextResponse.json({ error: "sync_persistence_failed" }, { status: 503 });
+    }
+    if (body.historyLease) await finishFitnessHistory(userId, body.historyLease, true);
+    return NextResponse.json({
+      ...result,
+      historyImported: Boolean(body.historyLease),
+      since: window.since,
+      persisted,
+    });
   } catch (error) {
-    await createProviderStore(providerId)?.setConnection(connection);
+    if (!reviewHistory) await createProviderStore(providerId)?.setConnection(connection);
     if(error instanceof Error && error.message==="whoop_reconnect_required")return NextResponse.json({error:"provider_reconnect_required",message:"Reconnect WHOOP to approve sleep access."},{status:409});
     return NextResponse.json({ error: "provider_sync_failed" }, { status: 502 });
   } finally {
-    if (body.historyLease) await finishFitnessHistory(userId, body.historyLease, false).catch(() => {});
+    if (body.historyLease && !staged) await finishFitnessHistory(userId, body.historyLease, false).catch(() => {});
     await db.rpc("release_fitness_sync", { p_user: userId, p_provider: providerId, p_lease: lease });
+  }
+}
+
+export async function PATCH(request: Request) {
+  const userId = await resolveRequestUserId(request);
+  if (!userId) return NextResponse.json({ error: "authentication_required" }, { status: 401 });
+  const body = await request.json().catch(() => null);
+  if (typeof body?.historyLease !== "string" ||
+      !Array.isArray(body.selected) || !body.selected.length ||
+      !body.selected.every((id: unknown) => typeof id === "string")) {
+    return NextResponse.json({ error: "invalid_history_selection" }, { status: 400 });
+  }
+
+  const db = serviceDb();
+  if (!db) return NextResponse.json({ error: "store_unavailable" }, { status: 503 });
+  try {
+    const { data, error } = await db.from("fitness_history_imports").select("review_samples")
+      .eq("user_id", userId).eq("provider", "strava").eq("lease", body.historyLease)
+      .gt("lease_until", new Date().toISOString()).maybeSingle();
+    if (error) throw error;
+    if (!data?.review_samples) {
+      return NextResponse.json({ error: "history_review_expired", message: "This review has expired. Start the history import again." }, { status: 409 });
+    }
+    const selected = new Set<string>(body.selected);
+    const activities = (data.review_samples as ActivitySample[]).filter(activity => selected.has(activity.id));
+    if (activities.length !== selected.size) {
+      return NextResponse.json({ error: "invalid_history_selection" }, { status: 400 });
+    }
+    if (await persistSyncedActivities(userId, activities, "recorded", body.historyLease)) {
+      return NextResponse.json({ persisted: true });
+    }
+    return NextResponse.json({ error: "history_review_expired", message: "This review has expired. Start the history import again." }, { status: 409 });
+  } catch {
+    return NextResponse.json({ error: "sync_persistence_failed", message: "Could not save your activities. Please try again." }, { status: 503 });
   }
 }

@@ -47,6 +47,6 @@ export interface FitnessProvider {
    */
   syncActivities(
     userId: string,
-    options?: { categorySlug?: CategorySlug; since?: string },
+    options?: { categorySlug?: CategorySlug; since?: string; advanceCursor?: boolean },
   ): Promise<SyncResult>;
 }
