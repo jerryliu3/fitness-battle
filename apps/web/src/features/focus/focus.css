@@ -2211,7 +2211,7 @@
   align-items: center;
   text-align: center;
   margin: 16px 0;
-  color: var(--ot-secondary);
+  color: var(--app-accent-secondary);
   letter-spacing: normal;
   text-transform: none;
   font: var(--type-caption);

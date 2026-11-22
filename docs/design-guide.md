@@ -281,12 +281,15 @@ The palette is defined in `packages/shared/src/appearance.ts`, consumed by nativ
 | Action primary / tennis | Medal Gold Max Pop P3, `#FFB800` sRGB | Primary buttons and personal progress |
 | Canvas / paper | `#f8f9f6` | Neutral page canvas |
 | Card | `#ffffff` | Grouped surfaces and sheets |
-| Text secondary | `#637482` | Supporting copy |
+| Text secondary | `#637482` light / `#9BA3B4` dark | Supporting copy |
+| Polished Silver | `#626A74` light / `#D7E3EC` dark | Secondary actions and supporting icons |
+| Comparison Silver | `#79838D` light / `#ACBFCC` dark | Supporting chart marks |
+| Whisper-Cool Obsidian | `#0B0C10` canvas / `#15171D` card / `#20232C` elevated | Dark surfaces |
 | Border subtle | `#e3e9e7` | Quiet borders and dividers |
 | Action soft | `#fff5d1` | Selected navigation and milestone backgrounds |
 | Field teal / deep | `#176c75` / `#103e46` | Charts and alpine competition scenery |
 
-Manrope, bold readable page titles, 20px cards, 12px controls, 24px sheets, 44px minimum controls, teal keyboard focus and reduced-motion support. Primary actions use yellow with dark labels; navigation rows use quiet text and a directional affordance. Radix manages web dialogs; native sheets preserve the parent and system Back. Full component decisions are in [component guidelines](design/component-guidelines.md).
+Manrope, bold readable page titles, 20px cards, 12px controls, 24px sheets, 44px minimum controls, Polished Silver keyboard focus and reduced-motion support. Primary actions use Medal Gold with dark labels; navigation rows use quiet text and a directional affordance. Radix manages web dialogs; native sheets preserve the parent and system Back. Full component decisions are in [component guidelines](design/component-guidelines.md).
 
 Home leads with a personal greeting, weekly chart and real next-rival preview, then latest activity, effort progress and a weekly recap. The activity journey expands on demand. Progress leads with week/month/year training, then basic session/effort achievements and records; effort score and season history have separate views. Achievements are read-only milestones derived from currently available counted activity and the primary sport's Open rating, without reward entitlements or new scoring writes.
 

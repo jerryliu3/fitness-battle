@@ -426,9 +426,9 @@ const f=useThemedStyles(fThemes);
       ]}
     >
       {!secondary && <MedalGoldFill radius={SHELL_RADIUS.pill} />}
-      <Text numberOfLines={fit ? 2 : undefined} adjustsFontSizeToFit={fit} maxFontSizeMultiplier={fit ? 1.2 : undefined} minimumFontScale={fit ? 1 : undefined} style={[f.buttonText, secondary && { color: c.ink }, busy && { opacity: 0 }]}>{label}</Text>
+      <Text numberOfLines={fit ? 2 : undefined} adjustsFontSizeToFit={fit} maxFontSizeMultiplier={fit ? 1.2 : undefined} minimumFontScale={fit ? 1 : undefined} style={[f.buttonText, secondary && { color: c.accentSecondary }, busy && { opacity: 0 }]}>{label}</Text>
       {busy && <View pointerEvents="none" style={[StyleSheet.absoluteFill, f.buttonSpinner]}>
-        <ActivityIndicator size="small" color={secondary ? c.ink : c.textOnAction} />
+        <ActivityIndicator size="small" color={secondary ? c.accentSecondary : c.textOnAction} />
       </View>}
     </Pressable>
   );
@@ -680,7 +680,7 @@ const fThemes = createThemedStyles(themeColors=>{const c=themeColors;const mobil
   buttonSpinner: { alignItems: "center", justifyContent: "center" },
   secondary: {
     backgroundColor: c.accentSecondarySoft,
-    borderBottomColor: c.accentSecondarySoft,
+    borderBottomColor: c.accentSecondaryBorder,
   },
   segments: {
     flexDirection: "row",

@@ -1,6 +1,6 @@
 # Appearance foundation
 
-This replaces the abandoned color-study integration with a small foundation based on current main. Medal Gold owns actions, primary chart series and progress; Slate owns secondary accents and historical chart comparisons. `SHELL_COLORS` is a compatibility view of the canonical light appearance, not a second palette. Experimental alternate themes, diagnostic outlines and study pages are excluded.
+This replaces the abandoned color-study integration with a small foundation based on current main. Medal Gold owns actions, primary chart series and progress; Polished Silver supports secondary accents, and Comparison Silver owns historical chart comparisons. `SHELL_COLORS` is a compatibility view of the canonical light appearance, not a second palette. Experimental alternate themes, diagnostic outlines and study pages are excluded.
 
 ## Contract
 
@@ -16,7 +16,7 @@ Production native routes and common UI now consume reactive palette hooks and ca
 
 Production web CSS and SVG/inline consumers resolve the shared namespaced variables and legacy aliases. Athlete Preferences exposes System/Light/Dark on both platforms, with the appearance control also available on the guest web profile. Supporting text and brand accents retain independent roles. Fixed foregrounds on artwork and yellow actions use explicit on-surface tokens.
 
-Geographic scenery, mascot artwork and categorical participant colors retain their distinct palettes. Historical design studies and native prototypes are not production routes and retain their reviewed study styling. The chosen Slate/yellow roles are shared across both appearances; experimental alternate palettes and diagnostic outlines are excluded.
+Geographic scenery, mascot artwork and categorical participant colors retain their distinct palettes. Historical design studies and native prototypes are not production routes and retain their reviewed study styling. The Gold and Silver roles are shared across both appearances; experimental alternate palettes and diagnostic outlines are excluded.
 
 Define new native styles with `createThemedStyles(colors => ({ surface: { backgroundColor: colors.surfaceCard } }))` and select them with `useThemedStyles` in the component. Read inline colors with `useThemeColors`. On web use `--app-*` variables or the CSS-variable adapter; never import static light colors into reactive product UI.
 
@@ -58,3 +58,14 @@ The sRGB fill stays underneath for older builds and unsupported displays.
 The dark Home line chart uses the named color on iOS and CSS on web.
 Android SVG, Mapbox layers and native components that accept only packed
 sRGB color values continue to use the shared sRGB fallback.
+
+
+## Polished Silver and Whisper-Cool Obsidian
+
+The shared palette defines Polished Silver for secondary actions, supporting
+icons and focus, with separate translucent tint and border roles. Comparison
+Silver is a chart role. Both use ordinary sRGB colors in each appearance.
+Dark mode uses Obsidian canvas, card and elevated surfaces with separately
+rated readable supporting text. The low-emphasis muted token is reserved for
+decorative detail. Light neutral canvas, card, navigation and text retain their
+existing values. See the [brand palette preview](reviews/brand-palette/README.md).

@@ -72,6 +72,9 @@
   border-radius: 16px;
   background: var(--app-soft);
 }
+.phone-shell .phone-tab:not([aria-current="page"]) > svg {
+  color: var(--app-accent-secondary);
+}
 .phone-shell .phone-tab[aria-current="page"] {
   color: var(--ink);
 }
@@ -95,9 +98,9 @@
   font: var(--type-label);
 }
 .phone-shell .fb-btn-line {
-  background: var(--card);
-  border-color: var(--line);
-  color: var(--ink);
+  background: var(--app-accent-secondary-soft);
+  border-color: var(--app-accent-secondary-border);
+  color: var(--app-accent-secondary);
 }
 .phone-shell .fb-btn-ghost {
   color: var(--ink);
@@ -1408,7 +1411,7 @@
 .focus-round-takeover > div { display: grid; gap: 18px; }
 .focus-round-takeover .week-next-row { padding: 20px; border-radius: 20px; background: var(--accent-soft); }
 .phone-shell .fb-chip, .phone-shell .focus-chip { border-radius: 999px; }
-.phone-shell .phone-tabs { position: absolute; width: calc(100% - 28px); max-width: 560px; left: 50%; transform: translateX(-50%); bottom: max(10px, env(safe-area-inset-bottom)); padding: 8px; border: 1px solid color-mix(in srgb, var(--app-surface-card) 80%, transparent); border-radius: 28px; background: color-mix(in srgb, var(--app-surface-card) 65.1%, transparent); box-shadow: 0 8px 32px color-mix(in srgb, var(--app-text-primary) 10.2%, transparent); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); }
+.phone-shell .phone-tabs { position: absolute; width: calc(100% - 28px); max-width: 560px; left: 50%; transform: translateX(-50%); bottom: max(10px, env(safe-area-inset-bottom)); padding: 8px; border: 1px solid color-mix(in srgb, var(--app-surface-card) 80%, transparent); border-radius: 28px; background: color-mix(in srgb, var(--app-surface-navigation) 82%, transparent); box-shadow: 0 8px 32px color-mix(in srgb, var(--app-text-primary) 10.2%, transparent); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); }
 .phone-shell .phone-tab, .phone-shell .phone-pill { border-radius: 22px; }
 .phone-shell .phone-main { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
 .phone-shell .focus-settings-stack-panel { padding-top: max(18px, env(safe-area-inset-top)); }
