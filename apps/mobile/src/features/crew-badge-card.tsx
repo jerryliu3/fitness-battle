@@ -1,10 +1,23 @@
 import { useState } from "react";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { APP_TIMEZONE, crewBadgeCollection, type CrewBadgeReceipt, type UnitSystem } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { AppIcon } from "../ui/app-icon";
 import { FocusSheet } from "../ui/focus";
 import { AppText } from "../ui/section";
+
+type Badge = ReturnType<typeof crewBadgeCollection>[number];
+
+function Seal({ badge, muted, surface, border = muted }: { badge: Badge; muted: string; surface?: string; border?: string }) {
+  const earned = Boolean(badge.receipt);
+  const { fill, edge, ink, radius } = badge.seal;
+  return <View style={[styles.seal, {
+    borderRadius: radius, borderStyle: earned ? "solid" : "dashed",
+    borderColor: earned ? edge : border, backgroundColor: earned ? fill : surface,
+  }]}>
+    <AppIcon name={badge.icon} size={21} color={earned ? ink : muted} />
+  </View>;
+}
 
 export function CrewBadgeCard({ crewName, badges, units }: {
   crewName: string;
@@ -23,11 +36,9 @@ export function CrewBadgeCard({ crewName, badges, units }: {
       onPress={() => setOpen(true)} style={({ pressed }) => [styles.cover, { opacity: pressed ? 0.85 : 1 }]}>
       <View style={styles.coverEdge} pointerEvents="none" />
       <AppText role="label" numberOfLines={1} style={{ color: "#ead891" }}>{crewName}</AppText>
-      <AppText role="display" style={{ color: "#faf5df", fontFamily: Platform.OS === "ios" ? "Georgia" : "serif" }}>Crew Passport</AppText>
+      <AppText role="display" style={{ color: "#faf5df" }}>Crew Passport</AppText>
       <View style={styles.slots} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        {collection.map(badge => <View key={badge.code} style={[styles.seal, badge.receipt && styles.earned]}>
-          <AppIcon name={badge.icon} size={21} color={badge.receipt ? "#142b3b" : "#b5c9d0"} />
-        </View>)}
+        {collection.map(badge => <Seal key={badge.code} badge={badge} muted="#b5c9d0" />)}
       </View>
       <View style={styles.coverFooter}>
         <AppText role="caption" style={{ color: "#faf5df" }}>{count} of {collection.length} earned</AppText>
@@ -39,9 +50,7 @@ export function CrewBadgeCard({ crewName, badges, units }: {
       <AppText role="caption" secondary>{count} of {collection.length} earned</AppText>
       <View style={styles.catalog}>
         {collection.map(badge => <View key={badge.code} style={[styles.badge, { borderColor: c.line, backgroundColor: c.card }]}>
-          <View style={[styles.seal, { borderColor: c.line, backgroundColor: c.soft }, badge.receipt && styles.earned]}>
-            <AppIcon name={badge.icon} size={21} color={badge.receipt ? "#142b3b" : c.ink} />
-          </View>
+          <Seal badge={badge} muted={c.ink} border={c.line} surface={c.soft} />
           <AppText role="label">{badge.name}</AppText>
           <AppText role="caption" secondary>{badge.result ?? badge.requirement}</AppText>
           {badge.receipt && <AppText role="caption" secondary>{date.format(new Date(badge.receipt.earned_at))}</AppText>}
@@ -55,8 +64,7 @@ const styles = StyleSheet.create({
   cover: { backgroundColor: "#173340", borderWidth: 1, borderColor: "#527988", borderRadius: 22, padding: 18, gap: 12 },
   coverEdge: { position: "absolute", top: 5, bottom: 5, left: 5, right: 5, borderWidth: 1, borderColor: "#ead89145", borderRadius: 17 },
   slots: { flexDirection: "row", justifyContent: "space-around", gap: 6 },
-  seal: { width: 46, height: 46, borderRadius: 23, borderWidth: 1, borderStyle: "dashed", borderColor: "#b5c9d0", alignItems: "center", justifyContent: "center" },
-  earned: { backgroundColor: "#f7c948", borderStyle: "solid", borderColor: "#ffe59a" },
+  seal: { width: 46, height: 46, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   coverFooter: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: 6, borderTopWidth: 1, borderTopColor: "#ead89145", paddingTop: 10 },
   catalog: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 14 },
   badge: { flexBasis: "47%", flexGrow: 1, minWidth: 120, borderWidth: 1, borderRadius: 14, padding: 12, gap: 7 },

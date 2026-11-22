@@ -7,7 +7,10 @@ import { Sheet } from "@/ui/sheet";
 type Badge = ReturnType<typeof crewBadgeCollection>[number];
 
 function Seal({ badge }: { badge: Badge }) {
-  return <span className="crew-passport-seal" data-earned={Boolean(badge.receipt)} aria-hidden="true">
+  const earned = Boolean(badge.receipt);
+  const { fill, edge, ink, radius } = badge.seal;
+  return <span className="crew-passport-seal" data-earned={earned} aria-hidden="true"
+    style={{ borderRadius: radius, ...(earned ? { backgroundColor: fill, borderColor: edge, color: ink } : {}) }}>
     <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS[badge.icon]} /></svg>
   </span>;
 }

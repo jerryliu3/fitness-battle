@@ -95,10 +95,10 @@ export function crewSeasonProgress(season: CrewSeason, now: string): number {
 }
 
 export const CREW_BADGES = [
-  { code: "first_week", name: "First week together", icon: "calendar", requirement: "Two teammates contribute in one week." },
-  { code: "full_crew", name: "Full crew", icon: "crew", requirement: "Everyone on a crew of at least two contributes in one week." },
-  { code: "contract_finish", name: "Shared finish", icon: "trophy", requirement: "Reach a Weekly Contract target." },
-  { code: "three_week_streak", name: "Three-week streak", icon: "special", requirement: "At least two teammates contribute each week for three weeks in a row." },
+  { code: "first_week", name: "First week together", icon: "calendar", seal: { fill: "#cce1e9", edge: "#a1c3d3", ink: "#173d54", radius: 10 }, requirement: "Two teammates contribute in one week." },
+  { code: "full_crew", name: "Full crew", icon: "crew", seal: { fill: "#c9decf", edge: "#a6cbb4", ink: "#224c3f", radius: 15 }, requirement: "Everyone on a crew of at least two contributes in one week." },
+  { code: "contract_finish", name: "Shared finish", icon: "trophy", seal: { fill: "#f7c948", edge: "#ffe59a", ink: "#142b3b", radius: 23 }, requirement: "Reach a Weekly Contract target." },
+  { code: "three_week_streak", name: "Three-week streak", icon: "special", seal: { fill: "#edcab1", edge: "#dcab86", ink: "#613a27", radius: 12 }, requirement: "At least two teammates contribute each week for three weeks in a row." },
 ] as const;
 
 export interface CrewBadgeReceipt {
