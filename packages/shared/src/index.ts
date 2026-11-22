@@ -90,6 +90,7 @@ export * from "./athlete-card";
 export * from "./competition-activity-log";
 export * from "./week-recap";
 export * from "./race-rankings";
+export * from "./race-observatory";
 export * from "./race-favorites";
 
 export * from "./race-splits";
