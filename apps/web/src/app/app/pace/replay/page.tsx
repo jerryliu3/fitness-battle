@@ -1,5 +1,6 @@
 import { RACE_DISTANCES, raceEventGroups, raceQuery } from "@fitness-battle/shared";
 import { loadRaceCoverage, loadReplayCoursePreviews } from "@/lib/race-results";
+import { AppHeading } from "@/ui/section";
 import { ReplayPlayer } from "./replay-player";
 
 export const dynamic = "force-dynamic";
@@ -45,7 +46,7 @@ export default async function ReplayPage({ searchParams }: { searchParams: Promi
       <div className="ovt-heading">
         <div>
           <span className="ovt-kicker">REPLAY STUDIO</span>
-          <h1>Watch the field unfold.</h1>
+          <AppHeading level={1} role="display">Watch the field unfold.</AppHeading>
         </div>
       </div>
       <ReplayPlayer

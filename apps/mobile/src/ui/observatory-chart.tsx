@@ -12,7 +12,7 @@ import {
   type RaceEditionAnalytics,
 } from "@fitness-battle/shared";
 import { createThemedStyles, useThemedStyles } from "../theme";
-import { AppText } from "./section";
+import { AppText, chartTextProps, textStyle } from "./section";
 
 export type ObservatoryPinnedRecord = {
   id: number;
@@ -361,8 +361,7 @@ export function ObservatoryChart({
                       x={item.badgeX + item.badgeW / 2}
                       y={item.badgeY + 13.5}
                       fill="#142b3b"
-                      fontSize={9.5}
-                      fontWeight="700"
+                      {...chartTextProps("nav")}
                       textAnchor="middle"
                     >
                       {item.labelText}
@@ -394,7 +393,7 @@ export function ObservatoryChart({
                     x={L + ((R - L) * j) / 4}
                     y={SVG_H - 8}
                     fill="#637482"
-                    fontSize={9.5}
+                    {...chartTextProps("nav")}
                     textAnchor={j === 0 ? "start" : j === 4 ? "end" : "middle"}
                   >
                     {raceClock(chartModel.minMs + ((chartModel.maxMs - chartModel.minMs) * j) / 4)}
@@ -425,10 +424,10 @@ export function ObservatoryChart({
           </View>
           <View style={s.zoomBtns}>
             <Pressable accessibilityRole="button" accessibilityLabel="Zoom in chart window" onPress={() => adjustZoom(0.75)} style={s.zoomBtn}>
-              <AppText role="label" style={{ fontSize: 12 }}>+</AppText>
+              <AppText role="nav">+</AppText>
             </Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel="Zoom out chart window" onPress={() => adjustZoom(1.33)} style={s.zoomBtn}>
-              <AppText role="label" style={{ fontSize: 12 }}>−</AppText>
+              <AppText role="nav">−</AppText>
             </Pressable>
           </View>
         </View>
@@ -479,7 +478,7 @@ export function ObservatoryChart({
                   style={s.overlayChip}
                 >
                   <View style={[s.overlayDot, { backgroundColor: color }]} />
-                  <AppText role="caption" style={{ fontWeight: "600" }} numberOfLines={1}>
+                  <AppText role="nav" numberOfLines={1}>
                     {label}
                   </AppText>
                   <AppText role="caption" secondary>×</AppText>
@@ -505,16 +504,12 @@ const sThemes = createThemedStyles(c => ({
     paddingTop: 6,
   },
   countValue: {
-    fontSize: 28,
-    lineHeight: 32,
-    fontWeight: "800",
+    ...textStyle("metric"),
     fontVariant: ["tabular-nums"],
     color: c.ink,
   },
   countLabel: {
-    fontSize: 10.5,
-    fontWeight: "700",
-    letterSpacing: 0.7,
+    ...textStyle("nav"),
     color: c.muted,
   },
   plotArea: {
@@ -537,7 +532,7 @@ const sThemes = createThemedStyles(c => ({
     borderColor: c.line,
   },
   zoomLabel: {
-    fontSize: 11.5,
+    ...textStyle("nav"),
     color: c.muted,
     fontVariant: ["tabular-nums"],
   },

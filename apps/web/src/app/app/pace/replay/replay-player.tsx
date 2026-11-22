@@ -1,5 +1,6 @@
 "use client";
 
+import { AppHeading, AppText, typographyStyle } from "@/ui/section";
 import { useEffect, useMemo, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -252,7 +253,7 @@ function DuelAthleteCard({
   return (
     <div ref={cardRef} className={`ovt-duel-side ${entry ? "" : "is-empty"}`}>
       <div className="ovt-duel-card-head">
-        <small style={{ color: roleColor, fontWeight: 700 }}>● {roleLabel}</small>
+        <AppText role="label" as="small" style={{ color: roleColor }}>● {roleLabel}</AppText>
         {entry && (
           <button
             type="button"
@@ -980,14 +981,14 @@ export function ReplayPlayer({
 
       {!isRunningSport ? (
         <div className="race-empty">
-          <h2>No published {activeSportObj.label} replays yet</h2>
+          <AppHeading level={2} role="heading">No published {activeSportObj.label} replays yet</AppHeading>
           <p>Select Running to watch published marathon, half marathon, 10K, and 5K course replays.</p>
         </div>
       ) : (
         <>
           <section className="ovt-replay-races" aria-label="Choose a race edition to replay">
             <div className="ovt-mini-title">
-              <h2>Choose a race</h2>
+              <AppHeading level={2} role="heading">Choose a race</AppHeading>
               <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                 <label className="ovt-inline-check">
                   <input
@@ -1569,7 +1570,7 @@ export function ReplayPlayer({
                         defaultValue={safePage + 1}
                       />
                     </label>
-                    <button type="submit" className="ovt-btn" style={{ padding: "5px 11px", fontSize: 12 }}>
+                    <button type="submit" className="ovt-btn" style={{ ...typographyStyle("caption"), padding: "5px 11px" }}>
                       Go
                     </button>
                   </form>
@@ -1642,7 +1643,7 @@ export function ReplayPlayer({
                             strokeDasharray="4 4"
                             strokeWidth="1.8"
                           />
-                          <g fill="#637482" fontSize="11.5">
+                          <g fill="#637482" className="ovt-svg-pill-label">
                             <text x={Lx} y="204">
                               Start
                             </text>
@@ -1697,7 +1698,7 @@ export function ReplayPlayer({
             <div className="ovt-modal-head">
               <div>
                 <span className="ovt-kicker">REPLAY STUDIO</span>
-                <h2>Choose a race to replay</h2>
+                <AppHeading level={2} role="heading">Choose a race to replay</AppHeading>
               </div>
               <button type="button" className="ovt-btn" onClick={() => setPickerOpen(false)}>
                 ✕ Close

@@ -96,7 +96,7 @@ export function ObservatoryReplayShell({
           onPress={() => (router.canGoBack() ? router.back() : router.replace("/arena"))}
           style={s.backBtn}
         >
-          <AppText role="label" style={{ fontSize: 16 }}>←</AppText>
+          <AppText role="body">←</AppText>
         </Pressable>
 
         <View style={s.navTrack} accessibilityRole="tablist">
@@ -140,7 +140,7 @@ export function ObservatoryReplayShell({
           }}
           style={s.savedPill}
         >
-          <AppText role="caption" style={{ fontWeight: "700", color: c.ink }}>
+          <AppText role="field" style={{ color: c.ink }}>
             {savedCount > 0 ? `★ ${savedCount}` : "☆ Saved"}
           </AppText>
         </Pressable>
@@ -265,9 +265,7 @@ const sThemes = createThemedStyles(c => ({
     shadowOffset: { width: 0, height: 1 },
   },
   navTabText: {
-    fontSize: 12.5,
     color: c.muted,
-    fontWeight: "700",
   },
   navTabTextActive: {
     color: c.ink,

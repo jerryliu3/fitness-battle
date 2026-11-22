@@ -7,7 +7,7 @@ import {
 } from "@fitness-battle/shared";
 import { createThemedStyles, useThemeColors, useThemedStyles } from "../theme";
 import { FocusSegments, FocusSheet } from "./focus";
-import { AppText } from "./section";
+import { AppText, textStyle } from "./section";
 
 export function ObservatorySportBar({
   sport,
@@ -158,12 +158,12 @@ const sThemes = createThemedStyles(c => ({
     borderColor: "#E5A400",
   },
   chipText: {
-    fontSize: 12.5,
+    ...textStyle("caption"),
     color: c.muted,
   },
   chipTextActive: {
+    ...textStyle("field"),
     color: "#142b3b",
-    fontWeight: "700",
   },
   pillSelect: {
     height: 32,
@@ -180,7 +180,7 @@ const sThemes = createThemedStyles(c => ({
     backgroundColor: "#FFF9E6",
   },
   pillSelectText: {
-    fontSize: 12.5,
+    ...textStyle("caption"),
     color: c.ink,
   },
   sheetOption: {

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { RACE_DISTANCES, raceQuery } from "@fitness-battle/shared";
 import { loadRaceResults, loadRaceCoverage, loadReplayCoursePreviews } from "@/lib/race-results";
+import { AppHeading } from "@/ui/section";
 import { RaceExplorer } from "./race-explorer";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +28,7 @@ export default async function PaceDistance({ params, searchParams }: {
       <div className="ovt-heading">
         <div>
           <span className="ovt-kicker">OBSERVATORY</span>
-          <h1>Every finish. One perspective.</h1>
+          <AppHeading level={1} role="display">Every finish. One perspective.</AppHeading>
         </div>
       </div>
       <RaceExplorer

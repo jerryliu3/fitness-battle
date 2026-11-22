@@ -29,7 +29,7 @@ import { RaceRouteArtNative, SplitSparklineNative } from "../ui/observatory-race
 import { ObservatorySportBar } from "../ui/observatory-sport-bar";
 import { ReplayMap } from "../ui/race-replay-map";
 import { SearchField } from "../ui/search-field";
-import { AppText } from "../ui/section";
+import { AppText, chartTextProps, textStyle } from "../ui/section";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { useSceneActive } from "../ui/use-scene-active";
 
@@ -89,7 +89,7 @@ function DuelAthleteCardNative({
       ]}
     >
       <View style={duelStyles.cardTop}>
-        <AppText role="caption" style={{ color: roleColor, fontWeight: "700" }}>
+        <AppText role="nav" style={{ color: roleColor }}>
           ● {roleLabel}
         </AppText>
         {entry ? (
@@ -102,14 +102,14 @@ function DuelAthleteCardNative({
             style={duelStyles.clearBtn}
             accessibilityLabel={`Clear ${roleLabel}`}
           >
-            <AppText role="caption" style={{ fontWeight: "700" }}>×</AppText>
+            <AppText role="nav">×</AppText>
           </Pressable>
         ) : null}
       </View>
 
       {entry ? (
         <>
-          <AppText role="label" numberOfLines={1} style={{ fontSize: 15 }}>
+          <AppText role="row" numberOfLines={1}>
             {entry.runner.name}
             {entry.runner.bib ? ` · #${entry.runner.bib}` : ""}
           </AppText>
@@ -153,7 +153,7 @@ function DuelAthleteCardNative({
                   }}
                   style={duelStyles.option}
                 >
-                  <AppText role="label" style={{ flex: 1, fontSize: 13 }} numberOfLines={1}>
+                  <AppText role="caption" style={{ flex: 1 }} numberOfLines={1}>
                     {r.name}
                     {r.bib ? ` (#${r.bib})` : ""}
                   </AppText>
@@ -191,13 +191,13 @@ const duelStyles = StyleSheet.create({
     justifyContent: "center",
   },
   input: {
+    ...textStyle("caption"),
     marginTop: 4,
     height: 36,
     borderRadius: 999,
     borderWidth: 1,
     backgroundColor: "#ffffff",
     paddingHorizontal: 14,
-    fontSize: 13,
   },
   dropdown: {
     marginTop: 4,
@@ -663,7 +663,7 @@ export function ReplayStudioView({
                   style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
                 >
                   <View style={[s.checkbox, hideIneligible && s.checkboxChecked]}>
-                    {hideIneligible ? <AppText role="caption" style={{ color: "#ffffff", fontSize: 10 }}>✓</AppText> : null}
+                    {hideIneligible ? <AppText role="nav" style={{ color: "#ffffff" }}>✓</AppText> : null}
                   </View>
                   <AppText role="caption" secondary>Hide ineligible</AppText>
                 </Pressable>
@@ -673,7 +673,7 @@ export function ReplayStudioView({
                     setPickerOpen(true);
                   }}
                 >
-                  <AppText role="label" style={{ color: c.muted, fontSize: 12.5 }}>
+                  <AppText role="field" style={{ color: c.muted }}>
                     View all ↗
                   </AppText>
                 </Pressable>
@@ -706,13 +706,13 @@ export function ReplayStudioView({
                       <RaceRouteArtNative eventName={ed.event_name} year={ed.edition_year} coursePoints={coursePts} compact />
                       <View style={s.raceCardFoot}>
                         <View style={{ flex: 1, minWidth: 0 }}>
-                          <AppText role="label" numberOfLines={1} style={{ fontSize: 13.5 }}>
+                          <AppText role="field" numberOfLines={1}>
                             {formatEditionDisplay(ed.event_name, ed.edition_year)}
                           </AppText>
                           <AppText role="caption" secondary>{distLabel}</AppText>
                         </View>
                         <View style={[s.watchPill, isActive && s.watchPillActive]}>
-                          <AppText role="caption" style={{ fontWeight: "700", color: isActive ? "#142b3b" : c.ink }}>
+                          <AppText role="nav" style={{ color: isActive ? "#142b3b" : c.ink }}>
                             {!hasGps ? "No GPS map" : isActive ? "● Watching" : "▶ Watch"}
                           </AppText>
                         </View>
@@ -794,7 +794,7 @@ export function ReplayStudioView({
                         {error || "Course unavailable"}
                       </AppText>
                       <Pressable onPress={() => setAttempt(n => n + 1)} style={s.watchPillActive}>
-                        <AppText role="label" style={{ color: "#142b3b", fontSize: 12 }}>Retry</AppText>
+                        <AppText role="nav" style={{ color: "#142b3b" }}>Retry</AppText>
                       </Pressable>
                     </>
                   )}
@@ -860,7 +860,7 @@ export function ReplayStudioView({
                         style={[s.pinnedCard, isCamTarget && s.pinnedCardFocused]}
                       >
                         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
-                          <AppText role="label" numberOfLines={1} style={{ color: "#f7faf8", fontSize: 12, flex: 1 }}>
+                          <AppText role="nav" numberOfLines={1} style={{ color: "#f7faf8", flex: 1 }}>
                             {entry.runner.name}
                           </AppText>
                           <Pressable
@@ -871,10 +871,10 @@ export function ReplayStudioView({
                             hitSlop={6}
                             style={s.pinnedClose}
                           >
-                            <AppText role="caption" style={{ color: "#bbccd0", fontSize: 11 }}>×</AppText>
+                            <AppText role="nav" style={{ color: "#bbccd0" }}>×</AppText>
                           </Pressable>
                         </View>
-                        <AppText role="caption" style={{ color: "#bbccd0", fontSize: 10.5, fontVariant: ["tabular-nums"] }}>
+                        <AppText role="nav" style={{ color: "#bbccd0", fontVariant: ["tabular-nums"] }}>
                           {entry.finished ? `Finished · ${raceClock(entry.finishMs)}` : `${(entry.distM / 1000).toFixed(2)} km`}
                           {isCamTarget && cameraMode !== "field" ? " · ◎ Camera" : ""}
                         </AppText>
@@ -899,7 +899,7 @@ export function ReplayStudioView({
                 style={[s.playBtn, (reduced || !runners.length) && { opacity: 0.4 }]}
                 accessibilityLabel={playing ? "Pause replay" : "Play replay"}
               >
-                <AppText role="caption" style={{ color: "#142b3b", fontWeight: "800", fontSize: 11 }}>
+                <AppText role="nav" style={{ color: "#142b3b" }}>
                   {playing ? "Ⅱ" : "▶"}
                 </AppText>
               </Pressable>
@@ -929,7 +929,7 @@ export function ReplayStudioView({
                 onPress={() => setSpeed(sp => (sp === 64 ? 128 : sp === 128 ? 256 : sp === 256 ? 512 : 64))}
                 style={s.speedBtn}
               >
-                <AppText role="caption" style={{ color: "#f7faf8", fontWeight: "700", fontSize: 11 }}>
+                <AppText role="nav" style={{ color: "#f7faf8" }}>
                   {speed}×
                 </AppText>
               </Pressable>
@@ -977,7 +977,7 @@ export function ReplayStudioView({
                       onPress={toggleSavedResultsPinned}
                       style={[s.subtleChip, allSavedPinned && s.subtleChipActive]}
                     >
-                      <AppText role="label" style={{ fontSize: 12, color: allSavedPinned ? "#ffffff" : c.muted }}>
+                      <AppText role="nav" style={{ color: allSavedPinned ? "#ffffff" : c.muted }}>
                         {allSavedPinned ? "★ Saved pinned" : "☆ Saved results"}
                       </AppText>
                     </Pressable>
@@ -1030,7 +1030,7 @@ export function ReplayStudioView({
                             onPress={() => togglePinRunner(entry.runner.id)}
                             style={[s.miniBtn, isPinned && s.miniBtnActive]}
                           >
-                            <AppText role="caption" style={{ fontWeight: "700", color: c.ink }}>
+                            <AppText role="nav" style={{ color: c.ink }}>
                               {isPinned ? "✓ Pinned" : "Pin"}
                             </AppText>
                           </Pressable>
@@ -1045,7 +1045,7 @@ export function ReplayStudioView({
                             }}
                             style={s.miniBtn}
                           >
-                            <AppText role="caption" style={{ fontWeight: "700", color: c.ink }}>
+                            <AppText role="nav" style={{ color: c.ink }}>
                               Duel
                             </AppText>
                           </Pressable>
@@ -1061,7 +1061,7 @@ export function ReplayStudioView({
                         onPress={() => setPage(p => Math.max(0, p - 1))}
                         style={[s.pageBtn, safePage === 0 && { opacity: 0.4 }]}
                       >
-                        <AppText role="label" style={{ fontSize: 12 }}>‹</AppText>
+                        <AppText role="nav">‹</AppText>
                       </Pressable>
                       <AppText role="caption" secondary style={s.tabular}>
                         {safePage + 1} / {totalPages}
@@ -1071,7 +1071,7 @@ export function ReplayStudioView({
                         onPress={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                         style={[s.pageBtn, safePage >= totalPages - 1 && { opacity: 0.4 }]}
                       >
-                        <AppText role="label" style={{ fontSize: 12 }}>›</AppText>
+                        <AppText role="nav">›</AppText>
                       </Pressable>
                     </View>
 
@@ -1094,7 +1094,7 @@ export function ReplayStudioView({
                         }}
                         style={s.pageBtn}
                       >
-                        <AppText role="label" style={{ fontSize: 12 }}>Go</AppText>
+                        <AppText role="nav">Go</AppText>
                       </Pressable>
                     </View>
                   </View>
@@ -1142,11 +1142,11 @@ export function ReplayStudioView({
                               <Path d={`M${Lx} ${midY}H${Rx}`} stroke="#d0dad7" strokeWidth={1.3} strokeDasharray="4 4" />
                               <Path d={pathD} fill="none" stroke="#FFB800" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
                               <Line x1={cursorX} x2={cursorX} y1={18} y2={132} stroke="#142b3b" strokeDasharray="3 3" strokeWidth={1.6} />
-                              <SvgText x={Lx} y={14} fill="#637482" fontSize={9.5}>
+                              <SvgText x={Lx} y={14} fill="#637482" {...chartTextProps("nav")}>
                                 Estimated advantage · {duelPrimaryEntry.runner.name} vs {peerEntry.runner.name}
                               </SvgText>
-                              <SvgText x={Lx} y={146} fill="#637482" fontSize={9.5}>Start</SvgText>
-                              <SvgText x={Rx} y={146} fill="#637482" fontSize={9.5} textAnchor="end">Finish</SvgText>
+                              <SvgText x={Lx} y={146} fill="#637482" {...chartTextProps("nav")}>Start</SvgText>
+                              <SvgText x={Rx} y={146} fill="#637482" {...chartTextProps("nav")} textAnchor="end">Finish</SvgText>
                             </Svg>
                           );
                         })()}
@@ -1173,7 +1173,7 @@ export function ReplayStudioView({
                               }}
                               style={s.miniBtn}
                             >
-                              <AppText role="label" style={{ fontSize: 12 }}>⇄ Swap</AppText>
+                              <AppText role="nav">⇄ Swap</AppText>
                             </Pressable>
                           </View>
                         );
@@ -1221,7 +1221,7 @@ export function ReplayStudioView({
                     onPress={() => selectRaceEdition(ed.edition_id, ed.distance_slug)}
                     style={[s.watchPill, isActive && s.watchPillActive, !hasGps && { opacity: 0.45 }]}
                   >
-                    <AppText role="caption" style={{ fontWeight: "700", color: isActive ? "#142b3b" : c.ink }}>
+                    <AppText role="nav" style={{ color: isActive ? "#142b3b" : c.ink }}>
                       {!hasGps ? "No GPS map" : isActive ? "● Watching" : "▶ Replay"}
                     </AppText>
                   </Pressable>
@@ -1340,8 +1340,8 @@ const sThemes = createThemedStyles(c => ({
     borderColor: "#243845",
   },
   replayTitle: {
+    ...textStyle("label"),
     color: "#f7faf8",
-    fontSize: 15,
     flex: 1,
   },
   clockToggle: {
@@ -1364,9 +1364,8 @@ const sThemes = createThemedStyles(c => ({
     backgroundColor: "#FFB800",
   },
   clockToggleText: {
+    ...textStyle("nav"),
     color: "#9fa5af",
-    fontSize: 11.5,
-    fontWeight: "700",
   },
   clockToggleTextOn: {
     color: "#142b3b",
@@ -1397,19 +1396,16 @@ const sThemes = createThemedStyles(c => ({
     maxWidth: 180,
   },
   mapBadgeLabel: {
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0.8,
+    ...textStyle("nav"),
     color: "#9fa5af",
   },
   mapBadgeTime: {
-    fontSize: 17,
-    lineHeight: 20,
+    ...textStyle("heading"),
     color: "#f7faf8",
     fontVariant: ["tabular-nums"],
   },
   mapBadgeSub: {
-    fontSize: 10.5,
+    ...textStyle("nav"),
     color: "#bbccd0",
   },
   mapActions: {
@@ -1434,9 +1430,8 @@ const sThemes = createThemedStyles(c => ({
     borderColor: "#FFB800",
   },
   mapActionText: {
+    ...textStyle("nav"),
     color: "#f7faf8",
-    fontSize: 11.5,
-    fontWeight: "700",
   },
   mapActionTextActive: {
     color: "#142b3b",
@@ -1488,8 +1483,8 @@ const sThemes = createThemedStyles(c => ({
     justifyContent: "center",
   },
   scrubTime: {
+    ...textStyle("nav"),
     color: "#bbccd0",
-    fontSize: 11.5,
     fontVariant: ["tabular-nums"],
   },
   scrubTouch: {
@@ -1572,8 +1567,8 @@ const sThemes = createThemedStyles(c => ({
     paddingLeft: 42,
   },
   placeCol: {
+    ...textStyle("nav"),
     width: 34,
-    fontWeight: "700",
   },
   miniBtn: {
     paddingHorizontal: 10,
@@ -1607,6 +1602,7 @@ const sThemes = createThemedStyles(c => ({
     justifyContent: "center",
   },
   jumpInput: {
+    ...textStyle("caption"),
     width: 48,
     height: 30,
     borderRadius: 8,
@@ -1614,7 +1610,6 @@ const sThemes = createThemedStyles(c => ({
     borderColor: c.line,
     backgroundColor: "#ffffff",
     textAlign: "center",
-    fontSize: 12.5,
     color: c.ink,
   },
   duelBody: {

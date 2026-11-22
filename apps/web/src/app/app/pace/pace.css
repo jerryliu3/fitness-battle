@@ -2643,3 +2643,12 @@
     transition: none !important;
   }
 }
+
+.ovt-svg-pill-label {
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.ovt-svg-axis-label {
+  font-size: 12px;
+}

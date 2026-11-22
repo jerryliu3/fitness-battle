@@ -34,7 +34,7 @@ import {
 import { RaceRouteArtNative, SplitSparklineNative } from "../ui/observatory-race-card";
 import { ObservatorySportBar } from "../ui/observatory-sport-bar";
 import { SearchField } from "../ui/search-field";
-import { AppText } from "../ui/section";
+import { AppText, textStyle } from "../ui/section";
 
 const PINNED_KEY = "overtaek:pinned-athletes:v2";
 const SAVED_EDITIONS_KEY = "overtaek:saved-editions:v1";
@@ -470,7 +470,7 @@ export function ObservatoryTab({
               }}
               style={[s.goldBtn, (!isRunningSport || Boolean(edition)) && { opacity: 0.45 }]}
             >
-              <AppText role="label" style={{ fontSize: 12, color: "#142b3b" }}>
+              <AppText role="nav" style={{ color: "#142b3b" }}>
                 ＋ Compare
               </AppText>
             </Pressable>
@@ -490,7 +490,7 @@ export function ObservatoryTab({
 
               {isRunningSport && edition ? (
                 <Pressable onPress={() => selectScopeEdition(null)} style={s.goldChip}>
-                  <AppText role="label" style={{ fontSize: 12, color: "#142b3b" }}>
+                  <AppText role="nav" style={{ color: "#142b3b" }}>
                     ← {selectedEditionMeta ? formatEditionDisplay(selectedEditionMeta.event_name, selectedEditionMeta.edition_year) : "Selected race"} ×
                   </AppText>
                 </Pressable>
@@ -505,7 +505,7 @@ export function ObservatoryTab({
                   }}
                   style={s.goldChip}
                 >
-                  <AppText role="label" style={{ fontSize: 12, color: "#142b3b" }}>
+                  <AppText role="nav" style={{ color: "#142b3b" }}>
                     Band: {raceClock(analytics.minimumMs + selectedBucket * analytics.binWidthMs)}–
                     {raceClock(analytics.minimumMs + (selectedBucket + 1) * analytics.binWidthMs)} ×
                   </AppText>
@@ -555,7 +555,7 @@ export function ObservatoryTab({
       {isRunningSport && personalEfforts.length > 0 ? (
         <View style={s.personalStrip}>
           <View style={s.goldChip}>
-            <AppText role="label" style={{ fontSize: 12, color: "#142b3b" }}>
+            <AppText role="nav" style={{ color: "#142b3b" }}>
               Your results
             </AppText>
           </View>
@@ -583,7 +583,7 @@ export function ObservatoryTab({
                     }
                     style={[s.miniPinBtn, isPinned && s.miniPinBtnActive]}
                   >
-                    <AppText role="caption" style={{ fontWeight: "700", color: c.ink }}>
+                    <AppText role="nav" style={{ color: c.ink }}>
                       {isPinned ? "✓ On chart" : "Pin"}
                     </AppText>
                   </Pressable>
@@ -605,7 +605,7 @@ export function ObservatoryTab({
                 setModalMode("races");
               }}
             >
-              <AppText role="label" style={{ color: c.muted, fontSize: 13 }}>
+              <AppText role="field" style={{ color: c.muted }}>
                 View all races ↗
               </AppText>
             </Pressable>
@@ -626,7 +626,7 @@ export function ObservatoryTab({
                 >
                   <RaceRouteArtNative eventName={ed.event_name} year={ed.edition_year} coursePoints={coursePts} />
                   <View style={s.raceCardBody}>
-                    <AppText role="label" numberOfLines={1} style={{ fontSize: 15 }}>
+                    <AppText role="row" numberOfLines={1}>
                       {formatEditionDisplay(ed.event_name, ed.edition_year)}
                     </AppText>
                     <AppText role="caption" secondary>
@@ -637,7 +637,7 @@ export function ObservatoryTab({
                         onPress={() => selectScopeEdition(isSelected ? null : ed.edition_id)}
                         style={[s.cardActionPrimary, isSelected && { backgroundColor: "#FFB800" }]}
                       >
-                        <AppText role="label" style={{ fontSize: 12, color: "#142b3b" }}>
+                        <AppText role="nav" style={{ color: "#142b3b" }}>
                           {isSelected ? "✓ Exploring" : "Explore"}
                         </AppText>
                       </Pressable>
@@ -645,7 +645,7 @@ export function ObservatoryTab({
                         onPress={() => toggleOverlayEdition(ed.edition_id)}
                         style={[s.cardActionBtn, isComparing && s.cardActionGold]}
                       >
-                        <AppText role="label" style={{ fontSize: 12, color: "#142b3b" }}>
+                        <AppText role="nav" style={{ color: "#142b3b" }}>
                           {isComparing ? "✓ Compare" : "＋"}
                         </AppText>
                       </Pressable>
@@ -653,7 +653,7 @@ export function ObservatoryTab({
                         onPress={() => toggleSavedEdition(ed.edition_id, formatEditionDisplay(ed.event_name, ed.edition_year))}
                         style={s.cardIconBtn}
                       >
-                        <AppText role="label" style={{ fontSize: 13 }}>
+                        <AppText role="field">
                           {isSavedEdition ? "★" : "☆"}
                         </AppText>
                       </Pressable>
@@ -668,7 +668,7 @@ export function ObservatoryTab({
                         }
                         style={[s.cardIconBtn, !hasGps && { opacity: 0.35 }]}
                       >
-                        <AppText role="label" style={{ fontSize: 12 }}>
+                        <AppText role="nav">
                           ▶
                         </AppText>
                       </Pressable>
@@ -708,7 +708,7 @@ export function ObservatoryTab({
             }}
             style={s.goldBtn}
           >
-            <AppText role="label" style={{ fontSize: 12.5, color: "#142b3b" }}>
+            <AppText role="field" style={{ color: "#142b3b" }}>
               Search
             </AppText>
           </Pressable>
@@ -779,7 +779,7 @@ export function ObservatoryTab({
                         </AppText>
                         {row.percentile != null ? (
                           <View style={s.rankPill}>
-                            <AppText role="caption" style={{ fontSize: 10.5, fontWeight: "600" }}>
+                            <AppText role="nav">
                               {racePercentileBadge(row.percentile)}
                             </AppText>
                           </View>
@@ -797,7 +797,7 @@ export function ObservatoryTab({
                         }}
                         style={[s.miniPinBtn, isPinned && s.miniPinBtnActive]}
                       >
-                        <AppText role="caption" style={{ fontWeight: "700", color: c.ink }}>
+                        <AppText role="nav" style={{ color: c.ink }}>
                           {isPinned ? "✓ On chart" : "Pin"}
                         </AppText>
                       </Pressable>
@@ -812,7 +812,7 @@ export function ObservatoryTab({
                         }}
                         style={s.miniIconBtn}
                       >
-                        <AppText role="caption" style={{ fontSize: 13 }}>
+                        <AppText role="field">
                           {user?.mode === "supabase" && isSaved ? "★" : "☆"}
                         </AppText>
                       </Pressable>
@@ -836,10 +836,10 @@ export function ObservatoryTab({
                             .filter(sr => sr.elapsedMs !== null)
                             .map(sr => (
                               <View key={sr.distanceM} style={s.splitPill}>
-                                <AppText role="caption" secondary style={{ fontSize: 11 }}>
+                                <AppText role="nav" secondary>
                                   {sr.label}
                                 </AppText>
-                                <AppText role="label" style={[s.tabular, { fontSize: 11.5 }]}>
+                                <AppText role="nav" style={s.tabular}>
                                   {raceClock(sr.elapsedMs!)}
                                 </AppText>
                               </View>
@@ -860,7 +860,7 @@ export function ObservatoryTab({
                             }
                             style={s.goldBtn}
                           >
-                            <AppText role="label" style={{ fontSize: 12, color: "#142b3b" }}>
+                            <AppText role="nav" style={{ color: "#142b3b" }}>
                               ▶ Replay performance
                             </AppText>
                           </Pressable>
@@ -869,7 +869,7 @@ export function ObservatoryTab({
                           onPress={() => router.push({ pathname: "/race-result", params: { id: String(row.id) } })}
                           style={s.cardActionBtn}
                         >
-                          <AppText role="label" style={{ fontSize: 12, color: c.ink }}>
+                          <AppText role="nav" style={{ color: c.ink }}>
                             Full report →
                           </AppText>
                         </Pressable>
@@ -892,7 +892,7 @@ export function ObservatoryTab({
               onPress={() => setPage(p => Math.max(1, p - 1))}
               style={[s.pageBtn, (loading || data.page <= 1) && { opacity: 0.4 }]}
             >
-              <AppText role="label" style={{ fontSize: 12 }}>← Prev</AppText>
+              <AppText role="nav">← Prev</AppText>
             </Pressable>
             <AppText role="caption" secondary style={s.tabular}>
               {data.page.toLocaleString()} / {totalPages.toLocaleString()}
@@ -902,7 +902,7 @@ export function ObservatoryTab({
               onPress={() => setPage(p => p + 1)}
               style={[s.pageBtn, (loading || data.page >= totalPages) && { opacity: 0.4 }]}
             >
-              <AppText role="label" style={{ fontSize: 12 }}>Next →</AppText>
+              <AppText role="nav">Next →</AppText>
             </Pressable>
           </View>
 
@@ -921,7 +921,7 @@ export function ObservatoryTab({
               }}
               style={s.pageBtn}
             >
-              <AppText role="label" style={{ fontSize: 12 }}>Go</AppText>
+              <AppText role="nav">Go</AppText>
             </Pressable>
           </View>
         </View>
@@ -959,14 +959,14 @@ export function ObservatoryTab({
                       onPress={() => toggleOverlayEdition(ed.edition_id)}
                       style={[s.cardActionBtn, isComparing && s.cardActionGold]}
                     >
-                      <AppText role="label" style={{ fontSize: 12 }}>
+                      <AppText role="nav">
                         {isComparing ? "✓ Added" : "＋ Add"}
                       </AppText>
                     </Pressable>
                   ) : (
                     <View style={{ flexDirection: "row", gap: 6 }}>
                       <Pressable onPress={() => selectScopeEdition(ed.edition_id)} style={s.goldBtn}>
-                        <AppText role="label" style={{ fontSize: 12, color: "#142b3b" }}>Explore</AppText>
+                        <AppText role="nav" style={{ color: "#142b3b" }}>Explore</AppText>
                       </Pressable>
                       <Pressable
                         disabled={!hasGps}
@@ -976,7 +976,7 @@ export function ObservatoryTab({
                         }}
                         style={[s.cardIconBtn, !hasGps && { opacity: 0.35 }]}
                       >
-                        <AppText role="label" style={{ fontSize: 12 }}>▶</AppText>
+                        <AppText role="nav">▶</AppText>
                       </Pressable>
                     </View>
                   )}
@@ -1035,7 +1035,7 @@ const sThemes = createThemedStyles(c => ({
     backgroundColor: "#142b3b",
   },
   subtleChipText: {
-    fontSize: 12.5,
+    ...textStyle("caption"),
     color: c.muted,
   },
   subtleChipTextActive: {
@@ -1174,8 +1174,8 @@ const sThemes = createThemedStyles(c => ({
     paddingLeft: 42,
   },
   placeCol: {
+    ...textStyle("nav"),
     width: 34,
-    fontWeight: "700",
   },
   rankPill: {
     paddingHorizontal: 8,
@@ -1239,6 +1239,7 @@ const sThemes = createThemedStyles(c => ({
     justifyContent: "center",
   },
   jumpInput: {
+    ...textStyle("caption"),
     width: 52,
     height: 32,
     borderRadius: 10,
@@ -1246,7 +1247,6 @@ const sThemes = createThemedStyles(c => ({
     borderColor: c.line,
     backgroundColor: "#ffffff",
     textAlign: "center",
-    fontSize: 13,
     color: c.ink,
   },
   modalRow: {

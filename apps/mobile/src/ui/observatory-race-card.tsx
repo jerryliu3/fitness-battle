@@ -8,7 +8,7 @@ import {
   projectCourseOutline,
   type RaceTimingSplits,
 } from "@fitness-battle/shared";
-import { AppText } from "./section";
+import { AppText, textStyle } from "./section";
 
 export function SplitSparklineNative({
   splits,
@@ -149,8 +149,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   splitBadgeText: {
-    fontSize: 10.5,
-    fontWeight: "700",
+    ...textStyle("nav"),
     fontVariant: ["tabular-nums"],
   },
   artBox: {
@@ -159,12 +158,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   artCity: {
+    ...textStyle("nav"),
     position: "absolute",
     top: 10,
     left: 12,
-    fontSize: 10.5,
-    fontWeight: "700",
-    letterSpacing: 0.9,
     color: "#FFB800",
   },
   noGpsWrap: {
@@ -177,18 +174,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   noGpsText: {
-    fontSize: 10.5,
-    fontWeight: "700",
-    letterSpacing: 0.9,
+    ...textStyle("nav"),
     color: "rgba(159, 165, 175, 0.58)",
   },
   artYear: {
+    ...textStyle("display"),
     position: "absolute",
     bottom: 2,
     right: 10,
-    fontSize: 34,
-    lineHeight: 36,
-    fontWeight: "800",
     color: "rgba(255, 255, 255, 0.08)",
   },
 });

@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
+import { AppHeading } from "@/ui/section";
 import { useRaceFavorites } from "./favorites";
 import { ReplayPlayer } from "./replay/replay-player";
 
@@ -204,7 +205,7 @@ function PaceShellInner({ children }: { children: ReactNode }) {
                     <div className="ovt-heading">
                       <div>
                         <span className="ovt-kicker">REPLAY STUDIO</span>
-                        <h1>Watch the field unfold.</h1>
+                        <AppHeading level={1} role="display">Watch the field unfold.</AppHeading>
                       </div>
                     </div>
                     <ReplayPlayer
@@ -242,11 +243,11 @@ function PaceShellInner({ children }: { children: ReactNode }) {
                 <span className="ovt-kicker">
                   {authPrompt.action === "pin" ? "PIN TO OBSERVATORY" : "SAVE TO OVERTAEK"}
                 </span>
-                <h2 id="ovt-auth-modal-title">
+                <AppHeading id="ovt-auth-modal-title" level={2} role="heading">
                   {authPrompt.action === "pin"
                     ? "Pin athletes & track your place on the curve."
                     : "Save races & finishes to your watchlist."}
-                </h2>
+                </AppHeading>
               </div>
               <button
                 type="button"

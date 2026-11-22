@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AppHeading, typographyStyle } from "@/ui/section";
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   analyzeRaceSplits,
@@ -1211,8 +1212,7 @@ export function RaceExplorer({
                               x={item.badgeX + item.badgeW / 2}
                               y={item.badgeY + 16}
                               fill="#142b3b"
-                              fontSize="11.5"
-                              fontWeight="700"
+                              className="ovt-svg-pill-label"
                               textAnchor="middle"
                             >
                               {item.labelText}
@@ -1242,7 +1242,7 @@ export function RaceExplorer({
 
               <g>
                 {[0, 1, 2, 3, 4, 5].map(j => (
-                  <text key={j} x={L + ((R - L) * j) / 5} y="358" fill="#637482" fontSize="12" textAnchor="middle">
+                  <text key={j} x={L + ((R - L) * j) / 5} y="358" fill="#637482" className="ovt-svg-axis-label" textAnchor="middle">
                     {raceClock(chartModel.minMs + ((chartModel.maxMs - chartModel.minMs) * j) / 5)}
                   </text>
                 ))}
@@ -1361,7 +1361,7 @@ export function RaceExplorer({
                   <button
                     type="button"
                     className={`ovt-btn ${isPinned ? "gold" : ""}`}
-                    style={{ padding: "4px 10px", fontSize: 12 }}
+                    style={{ ...typographyStyle("caption"), padding: "4px 10px" }}
                     onClick={() =>
                       pinRow({
                         id: eff.pinId,
@@ -1383,7 +1383,7 @@ export function RaceExplorer({
       )}
 
       <div className="ovt-mini-title">
-        <h2>Race editions</h2>
+        <AppHeading level={2} role="heading">Race editions</AppHeading>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {edition && (
             <Link href={`/pace/history?edition=${edition}&distance=${distance}&sex=${sex}`} className="ovt-btn quiet">
@@ -1419,7 +1419,7 @@ export function RaceExplorer({
               >
                 <RaceRouteArt eventName={ed.event_name} year={ed.edition_year} coursePoints={coursePts} />
                 <div className="ovt-race-info">
-                  <h3>{formatEditionDisplay(ed.event_name, ed.edition_year)}</h3>
+                  <AppHeading level={3} role="label">{formatEditionDisplay(ed.event_name, ed.edition_year)}</AppHeading>
                   <small>
                     {inferEditionDate(ed.event_name, ed.edition_year)} · {ed.published_count.toLocaleString()} finishes
                   </small>
@@ -1467,13 +1467,13 @@ export function RaceExplorer({
       )}
 
       <div className="ovt-athlete-head">
-        <h2>
+        <AppHeading level={2} role="heading">
           {edition
             ? selectedEditionMeta
               ? `${formatEditionDisplay(selectedEditionMeta.event_name, selectedEditionMeta.edition_year)} rankings`
               : "Race rankings"
             : "Athlete index"}
-        </h2>
+        </AppHeading>
 
         <form
           className="ovt-athlete-search-bar"
@@ -1515,19 +1515,19 @@ export function RaceExplorer({
       <div className={`ovt-index-results ${loading ? "is-loading" : ""}`}>
         {!isRunningSport ? (
           <div className="race-empty">
-            <h2>No published {activeSportObj.label} results yet</h2>
+            <AppHeading level={2} role="heading">No published {activeSportObj.label} results yet</AppHeading>
             <p>Select Running to explore published marathon, half marathon, 10K, and 5K fields.</p>
           </div>
         ) : !data ? (
           <div className="race-empty" role="alert">
-            <h2>Results are unavailable</h2>
+            <AppHeading level={2} role="heading">Results are unavailable</AppHeading>
             <button type="button" className="ovt-btn" onClick={() => fetchResultsClient({ page: 1 })}>
               Retry
             </button>
           </div>
         ) : visibleRows.length === 0 ? (
           <div className="race-empty">
-            <h2>No matching finishers</h2>
+            <AppHeading level={2} role="heading">No matching finishers</AppHeading>
             <p>Try another athlete name, bib, or category.</p>
           </div>
         ) : (
@@ -1755,7 +1755,7 @@ export function RaceExplorer({
             <div className="ovt-modal-head">
               <div>
                 <span className="ovt-kicker">RACE EXPLORER</span>
-                <h2>{modalMode === "compare" ? "Compare up to 3 races" : "All race editions"}</h2>
+                <AppHeading level={2} role="heading">{modalMode === "compare" ? "Compare up to 3 races" : "All race editions"}</AppHeading>
               </div>
               <button type="button" className="ovt-btn" onClick={() => setModalMode(null)}>
                 ✕ Close
