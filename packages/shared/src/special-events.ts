@@ -866,6 +866,62 @@ export function specialEventPendingCeremony(
   };
 }
 
+export type DebugSpecialEventPreviewId = "survivor-survived" | "survivor-eliminated" | "knockout-advance";
+
+export const DEBUG_SPECIAL_EVENT_PREVIEWS: readonly { id: DebugSpecialEventPreviewId; label: string; detail: string }[] = [
+  { id: "survivor-survived", label: "Special · Survivor Cut (Survived)", detail: "2.5s distance climb, cut-line draw-in, survived verdict" },
+  { id: "survivor-eliminated", label: "Special · Survivor Cut (Eliminated)", detail: "Drop below the cut line & enter spectator mode" },
+  { id: "knockout-advance", label: "Special · 1v1 Bracket Advance", detail: "Semifinal win ceremony advancing to the Final" },
+];
+
+export function buildDebugSpecialEventCeremony(
+  previewId: DebugSpecialEventPreviewId,
+  sport: SpecialEventSport = "running",
+): SpecialEventCeremonyData {
+  if (previewId === "knockout-advance") {
+    return {
+      roundNumber: 2,
+      advanceCount: 1,
+      isCutFormat: true,
+      badge: "SEMIFINALS VERDICT",
+      headline: "ADVANCING",
+      detail: `Finished #1 (${formatSpecialEventVolume(sport, 38946, "us")}) to clear the cut.`,
+      ctaLabel: "Enter next round →",
+      tone: "lime",
+      sides: [
+        { sideId: "dbg-you", displayName: "You", userId: "you", isYou: true, score: 38946, place: 1, advancing: true },
+        { sideId: "dbg-rival", displayName: "Marcus Vance", userId: "marcus", isYou: false, score: 35084, place: 2, advancing: false },
+      ],
+    };
+  }
+  const eliminated = previewId === "survivor-eliminated";
+  return {
+    roundNumber: 3,
+    advanceCount: 5,
+    isCutFormat: true,
+    badge: "DAY 3 VERDICT",
+    headline: eliminated ? "ELIMINATED · #6" : "YOU SURVIVED",
+    detail: eliminated
+      ? `Finished #6 with ${formatSpecialEventVolume(sport, 4667, "us")}. Stay in the stadium as your heat finishes.`
+      : `Finished #2 (${formatSpecialEventVolume(sport, 9334, "us")}) to clear the cut.`,
+    ctaLabel: eliminated ? "Watch the rest of the heat →" : "Enter next round →",
+    tone: eliminated ? "danger" : "lime",
+    sides: [
+      { sideId: "s1", displayName: "Carla Diaz", userId: "u1", isYou: false, score: 10300, place: 1, advancing: true },
+      ...(eliminated ? [] : [{ sideId: "s2", displayName: "You", userId: "you", isYou: true, score: 9334, place: 2, advancing: true }]),
+      { sideId: "s3", displayName: "Marcus Vance", userId: "u3", isYou: false, score: 8208, place: eliminated ? 2 : 3, advancing: true },
+      { sideId: "s4", displayName: "Elena Rostova", userId: "u4", isYou: false, score: 7886, place: eliminated ? 3 : 4, advancing: true },
+      { sideId: "s5", displayName: "Bob Chen", userId: "u5", isYou: false, score: 7403, place: eliminated ? 4 : 5, advancing: true },
+      ...(eliminated
+        ? [
+            { sideId: "s6", displayName: "Priya Patel", userId: "u6", isYou: false, score: 6920, place: 5, advancing: true },
+            { sideId: "s2", displayName: "You", userId: "you", isYou: true, score: 4667, place: 6, advancing: false },
+          ]
+        : [{ sideId: "s6", displayName: "Dana Singh", userId: "u6", isYou: false, score: 5472, place: 6, advancing: false }]),
+    ],
+  };
+}
+
 /** Pick the active or registering crew relay edition relevant to a specific crew card. */
 export function findCrewRelayEdition(
   editions: readonly SpecialEventEdition[],

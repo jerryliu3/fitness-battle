@@ -1,8 +1,9 @@
 "use client";
 
 import { useCompete } from "@/components/compete-context";
+import { SpecialEventCeremony } from "@/features/arena/special-event-ceremony";
 import { playCue } from "@/lib/haptics";
-import { DEBUG_EVENT_OPTIONS, type DebugEventId, type ShellTabId } from "@fitness-battle/shared";
+import { buildDebugSpecialEventCeremony, DEBUG_EVENT_OPTIONS, DEBUG_SPECIAL_EVENT_PREVIEWS, type DebugEventId, type DebugSpecialEventPreviewId, type ShellTabId } from "@fitness-battle/shared";
 import { useEffect, useRef, useState } from "react";
 
 export function DebugEventMenu({
@@ -12,8 +13,9 @@ export function DebugEventMenu({
   activeTab: ShellTabId | null;
   onNavigate: (href: string, tabId: ShellTabId) => void;
 }) {
-  const { debugActive, triggerDebugEvent, resetDebugState } = useCompete();
+  const { state, debugActive, triggerDebugEvent, resetDebugState } = useCompete();
   const [open, setOpen] = useState(false);
+  const [specialPreview, setSpecialPreview] = useState<DebugSpecialEventPreviewId | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,12 +63,26 @@ export function DebugEventMenu({
               <small>{item.detail}</small>
             </button>
           ))}
+          {DEBUG_SPECIAL_EVENT_PREVIEWS.map((item) => (
+            <button key={item.id} type="button" role="menuitem" className="focus-shell-debug-item" onClick={() => { setOpen(false); void playCue("selection"); setSpecialPreview(item.id); }}>
+              <b>{item.label}</b>
+              <small>{item.detail}</small>
+            </button>
+          ))}
           {debugActive ? (
             <button type="button" role="menuitem" className="focus-shell-debug-reset" onClick={() => { setOpen(false); void playCue("soft"); resetDebugState?.(); }}>
               Reset debug preview
             </button>
           ) : null}
         </div>
+      ) : null}
+      {specialPreview ? (
+        <SpecialEventCeremony
+          ceremony={buildDebugSpecialEventCeremony(specialPreview, state?.primary ?? "running")}
+          sport={state?.primary ?? "running"}
+          units={state?.units ?? "us"}
+          onDone={() => setSpecialPreview(null)}
+        />
       ) : null}
     </div>
   );
