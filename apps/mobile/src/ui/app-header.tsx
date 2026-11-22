@@ -9,7 +9,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppIcon } from "./app-icon";
-import { hasCountedActivityToday, weeklyActivityStreak, competeNow, effectiveRankSymbol, DEBUG_EVENT_OPTIONS, type DebugEventId } from "@fitness-battle/shared";
+import { hasCountedActivityToday, weeklyActivityStreak, competeNow, effectiveRankSymbol, buildDebugSpecialEventCeremony, DEBUG_EVENT_OPTIONS, DEBUG_SPECIAL_EVENT_PREVIEWS, type DebugEventId, type DebugSpecialEventPreviewId } from "@fitness-battle/shared";
+import { SpecialEventCeremony } from "../features/special-event-ceremony";
 import { useCompeteStore } from "../lib/compete-store";
 import { isAthleteSettingsPath } from "../lib/navigation";
 
@@ -21,6 +22,7 @@ const s=useThemedStyles(sThemes);
   const { state, debugActive, triggerDebugEvent, resetDebugState } = useCompeteStore();
   const imageSettled = useBootImage(state?.avatarUrl);
   const [debugOpen, setDebugOpen] = useState(false);
+  const [specialPreview, setSpecialPreview] = useState<DebugSpecialEventPreviewId | null>(null);
   const router = useRouter();
   const path = usePathname();
   const [clock, setClock] = useState(0);
@@ -83,12 +85,26 @@ const s=useThemedStyles(sThemes);
               <Text style={s.debugItemDetail}>{item.detail}</Text>
             </Pressable>
           ))}
+          {DEBUG_SPECIAL_EVENT_PREVIEWS.map((item) => (
+            <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={item.label} onPress={() => { setDebugOpen(false); setSpecialPreview(item.id); }} style={s.debugItem}>
+              <Text style={s.debugItemTitle}>{item.label}</Text>
+              <Text style={s.debugItemDetail}>{item.detail}</Text>
+            </Pressable>
+          ))}
           {debugActive ? (
             <Pressable accessibilityRole="button" accessibilityLabel="Reset debug preview" onPress={() => { setDebugOpen(false); resetDebugState?.(); }} style={s.debugReset}>
               <Text style={s.debugResetText}>Reset debug preview</Text>
             </Pressable>
           ) : null}
         </View>
+      ) : null}
+      {__DEV__ && specialPreview ? (
+        <SpecialEventCeremony
+          ceremony={buildDebugSpecialEventCeremony(specialPreview, state?.primary ?? "running")}
+          sport={state?.primary ?? "running"}
+          units={state?.units ?? "us"}
+          onDone={() => setSpecialPreview(null)}
+        />
       ) : null}
     </SafeAreaView>
   );

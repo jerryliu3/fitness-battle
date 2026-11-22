@@ -103,6 +103,26 @@ export function SpecialEventRelayPanel({
       ) : lineup.finalized && !canEdit ? (
         <>
           {todayHeadline ? <AppText role="caption">{todayHeadline}</AppText> : null}
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(7, Math.max(1, lineup.legs.length))}, minmax(0, 1fr))`, gap: 6 }}>
+            {lineup.legs.slice(0, 7).map((leg) => (
+              <div
+                key={`strip:${leg.legDay}:${leg.slotIndex}`}
+                style={{
+                  padding: "6px 4px",
+                  borderRadius: 10,
+                  border: leg.isToday ? "2px solid var(--lime-deep, #7ab800)" : "1px solid var(--line)",
+                  background: leg.isToday ? "rgba(183, 242, 85, 0.22)" : "var(--paper)",
+                  display: "grid",
+                  justifyItems: "center",
+                  gap: 2,
+                }}
+              >
+                <AppText role="caption" secondary>{relayDayLabel(leg.legDay).split(" ")[0]}</AppText>
+                <AppText role="label">{leg.displayName.split(" ")[0]}</AppText>
+                <AppText role="caption" secondary>{leg.score > 0 ? formatSpecialEventVolume(edition.sport, leg.score, units) : "—"}</AppText>
+              </div>
+            ))}
+          </div>
           <div style={{ display: "grid", gap: 4 }}>
             {lineup.legs.map((leg) => (
               <div

@@ -51,6 +51,14 @@ export async function POST(request: Request) {
     });
   } else if (body.action === "cancel") {
     result = await db.rpc("cancel_special_event", { p_edition_id: body.editionId });
+  } else if (body.action === "acknowledge") {
+    const roundNumber = typeof body.roundNumber === "number" && Number.isInteger(body.roundNumber) && body.roundNumber >= 1
+      ? body.roundNumber
+      : null;
+    result = await db.rpc("acknowledge_special_event", {
+      p_edition_id: body.editionId,
+      p_round_number: roundNumber,
+    });
   } else {
     return NextResponse.json({ error: "invalid_action" }, { status: 400 });
   }

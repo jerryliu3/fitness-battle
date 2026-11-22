@@ -1,5 +1,7 @@
 import { competitionTrack, competitionTrackLabel, SPORT_IDS, sportById, type CompeteState, type SportId, type UnitSystem } from "./compete/sports";
-import { cityLabel } from "./cities";
+import { initialsFromName } from "./compete/track";
+import type { ArenaSceneLane } from "./arena-view";
+import { cityBySlug, cityLabel } from "./cities";
 import { countryFlagEmoji, countryName } from "./countries";
 import { formatArenaVolume } from "./compete-field-view";
 import { waveTimeLabelForState } from "./compete/participation";
@@ -56,6 +58,7 @@ export interface SpecialEventEntrySummary {
   finalPlace: number | null;
   finalScore: number | null;
   acknowledgedAt: string | null;
+  acknowledgedRound?: number;
 }
 
 export interface SpecialEventReceipt {
@@ -681,6 +684,242 @@ export function relayTodayHeadline(lineup: SpecialEventRelayLineup): string | nu
 
 export function sortSpecialEvents(editions: readonly SpecialEventEdition[]): SpecialEventEdition[] {
   return [...editions].sort((a, b) => Number(Boolean(b.entry)) - Number(Boolean(a.entry)));
+}
+
+/** Crisp 2–3 letter crew/city/country code for tags and 3D course pins. */
+export function specialEventSideCode(side: Pick<SpecialEventSideStanding, "displayName" | "groupAttr" | "groupValue">): string {
+  if (side.groupAttr === "country_code" && side.groupValue) return side.groupValue.slice(0, 2).toUpperCase();
+  if (side.groupAttr === "city_slug" && side.groupValue) {
+    const city = cityBySlug(side.groupValue);
+    const words = (city?.name ?? side.groupValue.split(":")[1] ?? "").replace(/[^a-zA-Z ]/g, " ").trim().split(/\s+/).filter(Boolean);
+    if (words.length >= 2) return words.map((w) => w[0]!.toUpperCase()).join("").slice(0, 3);
+    return (words[0] ?? "CTY").slice(0, 3).toUpperCase();
+  }
+  const words = side.displayName.replace(/#\d+$/, "").trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) return words.map((w) => w[0]!.toUpperCase()).join("").slice(0, 3);
+  return (words[0] ?? "TM").slice(0, 3).toUpperCase();
+}
+
+export function specialEventCourseUnit(sport: SpecialEventSport, units: UnitSystem = "us"): string {
+  if (sport === "running" || sport === "cycling") return units === "metric" ? "km" : "mi";
+  return sport === "strength" ? "hrs" : "steps";
+}
+
+function toCourseValue(sport: SpecialEventSport, rawScore: number, units: UnitSystem): number {
+  if (sport === "running" || sport === "cycling") return rawScore / (units === "metric" ? 1000 : 1609.344);
+  if (sport === "strength") return rawScore / 3600;
+  return rawScore;
+}
+
+/** Convert live Special Event standings sides directly into ArenaSceneLane markers for GeographicCourse. */
+export function specialEventSceneLanes(
+  standings: SpecialEventStandings | null,
+  units: UnitSystem = "us",
+  roundNumber?: number | null,
+): ArenaSceneLane[] {
+  if (!standings?.rounds.length) return [];
+  const round = standings.rounds.find((r) => r.roundNumber === (roundNumber ?? standings.currentRound)) ?? standings.rounds[standings.rounds.length - 1];
+  const heat = round?.heats.find((h) => h.isMine) ?? round?.heats[0];
+  if (!heat) return [];
+  return heat.sides.map((side) => ({
+    id: side.sideId,
+    name: specialEventSideLabel(side),
+    initials: side.groupAttr || side.userId === null ? specialEventSideCode(side) : initialsFromName(side.displayName),
+    value: toCourseValue(standings.sport, side.score, units),
+    you: side.isYou,
+  }));
+}
+
+export function specialEventStatusHero(
+  standings: SpecialEventStandings,
+  edition: SpecialEventEdition,
+  units: UnitSystem = "us",
+  roundNumber?: number | null,
+): { badge: string; tone: "lime" | "danger" | "gold"; headline: string; detail: string } | null {
+  const round = standings.rounds.find((r) => r.roundNumber === (roundNumber ?? standings.currentRound)) ?? standings.rounds[standings.rounds.length - 1];
+  const heat = round?.heats.find((h) => h.isMine) ?? round?.heats[0];
+  if (!round || !heat || heat.sides.length === 0) return null;
+
+  const mine = heat.sides.find((s) => s.isYou);
+  const leader = heat.sides[0]!;
+  if (!mine || standings.myStatus === "spectating" || standings.myStatus === "eliminated") {
+    const badge = standings.myStatus === "eliminated" && edition.entry?.eliminatedRound
+      ? `OUT · ROUND ${edition.entry.eliminatedRound}`
+      : "WATCHING LIVE";
+    return {
+      badge,
+      tone: "gold",
+      headline: `${specialEventSideLabel(leader)} leads (${formatSpecialEventVolume(edition.sport, leader.score, units)})`,
+      detail: round.settledAt ? `Round ${round.roundNumber} finalized` : `Round ${round.roundNumber} live · ${heat.sides.length} in heat`,
+    };
+  }
+
+  if (edition.config.match.kind === "survivor_heat" && heat.sides.length > heat.advanceCount) {
+    const cutoffSide = heat.sides[heat.advanceCount - 1]!;
+    const dropSide = heat.sides[heat.advanceCount]!;
+    const safe = mine.place <= heat.advanceCount;
+    const delta = safe ? mine.score - dropSide.score : cutoffSide.score - mine.score;
+    const gap = formatSpecialEventVolume(edition.sport, Math.max(0, delta), units);
+    return {
+      badge: safe ? "ABOVE CUT LINE" : "BELOW CUT LINE",
+      tone: safe ? "lime" : "danger",
+      headline: safe ? `+${gap} above elimination` : `${gap} behind safety`,
+      detail: `Top ${heat.advanceCount} of ${heat.sides.length} advance${edition.config.cadence.unit === "daily" ? " · Resets midnight ET" : ""}`,
+    };
+  }
+
+  if (edition.config.match.kind === "knockout_1v1" && heat.sides.length >= 2) {
+    const rival = heat.sides.find((s) => !s.isYou) ?? heat.sides[1]!;
+    const ahead = mine.score >= rival.score;
+    const gap = formatSpecialEventVolume(edition.sport, Math.abs(mine.score - rival.score), units);
+    return {
+      badge: specialEventRoundLabel(edition.config, round.roundNumber, Math.max(standings.rounds.length, edition.config.cadence.roundCount)).toUpperCase(),
+      tone: ahead ? "lime" : "danger",
+      headline: ahead ? `+${gap} ahead of ${specialEventSideLabel(rival)}` : `${gap} behind ${specialEventSideLabel(rival)}`,
+      detail: `Winner advances · ${formatSpecialEventVolume(edition.sport, mine.score, units)} vs ${formatSpecialEventVolume(edition.sport, rival.score, units)}`,
+    };
+  }
+
+  const ahead = mine.place === 1;
+  const second = heat.sides[1];
+  const gap = second ? formatSpecialEventVolume(edition.sport, Math.abs(ahead ? mine.score - second.score : leader.score - mine.score), units) : "0";
+  return {
+    badge: `#${mine.place} IN HEAT`,
+    tone: ahead ? "lime" : "gold",
+    headline: ahead && second ? `Leading by ${gap}` : ahead ? "1st place" : `${gap} off ${specialEventSideLabel(leader)}`,
+    detail: `${specialEventSideLabel(mine)} · ${formatSpecialEventVolume(edition.sport, mine.score, units)}`,
+  };
+}
+
+export interface SpecialEventCeremonyData {
+  roundNumber: number;
+  advanceCount: number;
+  isCutFormat: boolean;
+  badge: string;
+  headline: string;
+  detail: string;
+  ctaLabel: string;
+  tone: "lime" | "danger" | "gold";
+  sides: SpecialEventSideStanding[];
+}
+
+export function specialEventPendingCeremony(
+  standings: SpecialEventStandings | null,
+  edition: SpecialEventEdition,
+  units: UnitSystem = "us",
+  forceLatest = false,
+): SpecialEventCeremonyData | null {
+  if (!standings?.rounds.length) return null;
+  const settled = standings.rounds.filter((r) => Boolean(r.settledAt));
+  if (!settled.length) return null;
+  const latest = settled[settled.length - 1]!;
+  if (!forceLatest && (edition.entry?.acknowledgedRound ?? 0) >= latest.roundNumber) return null;
+  const heat = latest.heats.find((h) => h.isMine) ?? latest.heats[0];
+  if (!heat?.sides.length) return null;
+
+  const isCutFormat = edition.config.match.kind !== "single_round";
+  const mine = heat.sides.find((s) => s.isYou);
+  const label = specialEventRoundLabel(edition.config, latest.roundNumber, standings.rounds.length);
+  const isFinal = latest.roundNumber === standings.rounds.length && Boolean(standings.settledAt);
+
+  if (!mine) {
+    const winner = heat.sides[0]!;
+    return {
+      roundNumber: latest.roundNumber,
+      advanceCount: heat.advanceCount,
+      isCutFormat,
+      badge: `${label.toUpperCase()} VERDICT`,
+      headline: `${specialEventSideLabel(winner)} took #1`,
+      detail: `Closed at ${formatSpecialEventVolume(edition.sport, winner.score, units)}. Keep watching the heat unfold.`,
+      ctaLabel: isFinal ? "View final standings →" : "Keep watching →",
+      tone: "gold",
+      sides: heat.sides,
+    };
+  }
+
+  const outHere = edition.entry?.status === "eliminated" && edition.entry?.eliminatedRound === latest.roundNumber;
+  const won = isFinal && mine.place === 1;
+  const advanced = mine.advancing && !isFinal;
+
+  return {
+    roundNumber: latest.roundNumber,
+    advanceCount: heat.advanceCount,
+    isCutFormat,
+    badge: `${label.toUpperCase()} VERDICT`,
+    headline: won
+      ? "CHAMPION"
+      : outHere
+        ? `ELIMINATED · #${mine.place}`
+        : advanced
+          ? edition.config.match.kind === "survivor_heat"
+            ? "YOU SURVIVED"
+            : "ADVANCING"
+          : `FINISHED #${mine.place}`,
+    detail: outHere
+      ? `Finished #${mine.place} with ${formatSpecialEventVolume(edition.sport, mine.score, units)}. Stay in the stadium as your heat finishes.`
+      : advanced
+        ? `Finished #${mine.place} (${formatSpecialEventVolume(edition.sport, mine.score, units)}) to clear the cut.`
+        : `Closed ${label} with ${formatSpecialEventVolume(edition.sport, mine.score, units)}.`,
+    ctaLabel: outHere ? "Watch the rest of the heat →" : isFinal ? "Done →" : "Enter next round →",
+    tone: outHere ? "danger" : won || advanced ? "lime" : "gold",
+    sides: heat.sides,
+  };
+}
+
+export type DebugSpecialEventPreviewId = "survivor-survived" | "survivor-eliminated" | "knockout-advance";
+
+export const DEBUG_SPECIAL_EVENT_PREVIEWS: readonly { id: DebugSpecialEventPreviewId; label: string; detail: string }[] = [
+  { id: "survivor-survived", label: "Special · Survivor Cut (Survived)", detail: "2.5s distance climb, cut-line draw-in, survived verdict" },
+  { id: "survivor-eliminated", label: "Special · Survivor Cut (Eliminated)", detail: "Drop below the cut line & enter spectator mode" },
+  { id: "knockout-advance", label: "Special · 1v1 Bracket Advance", detail: "Semifinal win ceremony advancing to the Final" },
+];
+
+export function buildDebugSpecialEventCeremony(
+  previewId: DebugSpecialEventPreviewId,
+  sport: SpecialEventSport = "running",
+): SpecialEventCeremonyData {
+  if (previewId === "knockout-advance") {
+    return {
+      roundNumber: 2,
+      advanceCount: 1,
+      isCutFormat: true,
+      badge: "SEMIFINALS VERDICT",
+      headline: "ADVANCING",
+      detail: `Finished #1 (${formatSpecialEventVolume(sport, 38946, "us")}) to clear the cut.`,
+      ctaLabel: "Enter next round →",
+      tone: "lime",
+      sides: [
+        { sideId: "dbg-you", displayName: "You", userId: "you", isYou: true, score: 38946, place: 1, advancing: true },
+        { sideId: "dbg-rival", displayName: "Marcus Vance", userId: "marcus", isYou: false, score: 35084, place: 2, advancing: false },
+      ],
+    };
+  }
+  const eliminated = previewId === "survivor-eliminated";
+  return {
+    roundNumber: 3,
+    advanceCount: 5,
+    isCutFormat: true,
+    badge: "DAY 3 VERDICT",
+    headline: eliminated ? "ELIMINATED · #6" : "YOU SURVIVED",
+    detail: eliminated
+      ? `Finished #6 with ${formatSpecialEventVolume(sport, 4667, "us")}. Stay in the stadium as your heat finishes.`
+      : `Finished #2 (${formatSpecialEventVolume(sport, 9334, "us")}) to clear the cut.`,
+    ctaLabel: eliminated ? "Watch the rest of the heat →" : "Enter next round →",
+    tone: eliminated ? "danger" : "lime",
+    sides: [
+      { sideId: "s1", displayName: "Carla Diaz", userId: "u1", isYou: false, score: 10300, place: 1, advancing: true },
+      ...(eliminated ? [] : [{ sideId: "s2", displayName: "You", userId: "you", isYou: true, score: 9334, place: 2, advancing: true }]),
+      { sideId: "s3", displayName: "Marcus Vance", userId: "u3", isYou: false, score: 8208, place: eliminated ? 2 : 3, advancing: true },
+      { sideId: "s4", displayName: "Elena Rostova", userId: "u4", isYou: false, score: 7886, place: eliminated ? 3 : 4, advancing: true },
+      { sideId: "s5", displayName: "Bob Chen", userId: "u5", isYou: false, score: 7403, place: eliminated ? 4 : 5, advancing: true },
+      ...(eliminated
+        ? [
+            { sideId: "s6", displayName: "Priya Patel", userId: "u6", isYou: false, score: 6920, place: 5, advancing: true },
+            { sideId: "s2", displayName: "You", userId: "you", isYou: true, score: 4667, place: 6, advancing: false },
+          ]
+        : [{ sideId: "s6", displayName: "Dana Singh", userId: "u6", isYou: false, score: 5472, place: 6, advancing: false }]),
+    ],
+  };
 }
 
 /** Pick the active or registering crew relay edition relevant to a specific crew card. */

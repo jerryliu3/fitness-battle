@@ -96,8 +96,29 @@ export function SpecialEventRelayPanel({
           Baton days are drawn randomly across opted-in crewmates when the event starts Monday 6:00 AM ET.
         </AppText>
       ) : lineup.finalized && !canEdit ? (
-        <View style={{ gap: 6 }}>
+        <View style={{ gap: 8 }}>
           {todayHeadline ? <AppText role="caption">{todayHeadline}</AppText> : null}
+          <View style={{ flexDirection: "row", gap: 4 }}>
+            {lineup.legs.slice(0, 7).map((leg) => (
+              <View
+                key={`strip:${leg.legDay}:${leg.slotIndex}`}
+                style={{
+                  flex: 1,
+                  paddingVertical: 6,
+                  paddingHorizontal: 2,
+                  borderRadius: 10,
+                  borderWidth: leg.isToday ? 2 : 1,
+                  borderColor: leg.isToday ? c.podiumGold : c.line,
+                  backgroundColor: leg.isToday ? c.actionSoft : c.paper,
+                  alignItems: "center",
+                  gap: 2,
+                }}
+              >
+                <AppText role="caption" secondary>{relayDayLabel(leg.legDay).split(" ")[0]}</AppText>
+                <AppText role="caption" numberOfLines={1}>{leg.displayName.split(" ")[0]}</AppText>
+              </View>
+            ))}
+          </View>
           {lineup.legs.map((leg) => (
             <View
               key={`${leg.legDay}:${leg.slotIndex}`}

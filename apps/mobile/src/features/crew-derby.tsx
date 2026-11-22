@@ -1,19 +1,23 @@
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { useRouter } from "expo-router";
-import { crewDerbyOpponent, crewDerbyScore, findCrewRelayEdition, specialEventStatusBadge, weeklyCompetitionLastDay, APP_TIMEZONE, type CrewDerby, type SpecialEventEdition, type UnitSystem } from "@fitness-battle/shared";
+import { crewDerbyOpponent, crewDerbyScore, findCrewRelayEdition, specialEventPhase, specialEventStatusBadge, weeklyCompetitionLastDay, APP_TIMEZONE, type CrewDerby, type SpecialEventEdition, type UnitSystem } from "@fitness-battle/shared";
 import { useCachedApi } from "../lib/use-cached-api";
+import { useCompeteStore } from "../lib/compete-store";
 import { useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
 import { FocusSheet, FocusButton, useFocusStyles } from "../ui/focus";
+import { SpecialEventFullscreen } from "./special-event-fullscreen";
 import { SpecialEventRelayPanel } from "./special-event-relay-panel";
 
 export function CrewDerbyCard({ crewId, sport, units }: { crewId: string; sport?: string; units?: UnitSystem }) {
   const c = useThemeColors(), f = useFocusStyles(), router = useRouter();
+  const { state } = useCompeteStore();
   const api = useCachedApi<{ derby: CrewDerby | null }>(`/api/crews/derby?crewId=${encodeURIComponent(crewId)}`);
   const specialApi = useCachedApi<{ editions: SpecialEventEdition[] }>("/api/special-events");
   const [open, setOpen] = useState(false);
   const [relayOpen, setRelayOpen] = useState(false);
+  const [relayFullscreen, setRelayFullscreen] = useState(false);
   const [navigate, setNavigate] = useState(false);
   const derby = api.data?.derby;
   const own = derby?.teams.find(team => team.crew_id === crewId);
@@ -28,8 +32,21 @@ export function CrewDerbyCard({ crewId, sport, units }: { crewId: string; sport?
     {relayOpen ? (
       <FocusSheet open title={relay.title} minimal onClose={() => setRelayOpen(false)}>
         <SpecialEventRelayPanel edition={relay} crewId={crewId} units={units ?? "us"} />
-        <FocusButton label="Open on Compete" onPress={() => { setRelayOpen(false); router.navigate("/arena"); }} />
+        {(specialEventPhase(relay, now) === "active" || relay.finalizedAt) && state ? (
+          <FocusButton label={relay.entry ? "Open live heat" : "Watch live heat"} onPress={() => { setRelayOpen(false); setRelayFullscreen(true); }} />
+        ) : (
+          <FocusButton label="Open on Compete" onPress={() => { setRelayOpen(false); router.navigate("/arena"); }} />
+        )}
       </FocusSheet>
+    ) : null}
+    {relayFullscreen && state ? (
+      <SpecialEventFullscreen
+        state={state}
+        edition={relay}
+        busy={false}
+        onCancel={() => {}}
+        onClose={() => setRelayFullscreen(false)}
+      />
     ) : null}
   </> : null;
   if (!derby || !own || !opponent) return relayCard;
