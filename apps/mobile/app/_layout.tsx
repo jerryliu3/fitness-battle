@@ -120,11 +120,19 @@ const SHELL_COLORS=useThemeColors();
   const [urbanistLoaded, urbanistError] = useUrbanist({ Urbanist_500Medium, Urbanist_600SemiBold, Urbanist_700Bold, Urbanist_800ExtraBold });
   const fontsLoaded = urbanistLoaded && dmLoaded && nunitoLoaded;
   const [fontLoadTimedOut, setFontLoadTimedOut] = useState(false);
+  const [screensMounted, setScreensMounted] = useState(false);
   const fontError = urbanistError ?? dmError ?? nunitoError;
 
   useEffect(() => {
     void applyExpoUpdateOnLaunch();
   }, []);
+
+  useEffect(() => {
+    if (!fontsLoaded) return;
+    // Paint frame 0 of the UI-thread splash animation before mounting heavy screens.
+    const frame = requestAnimationFrame(() => setScreensMounted(true));
+    return () => cancelAnimationFrame(frame);
+  }, [fontsLoaded]);
 
   useEffect(() => {
     if (fontsLoaded || fontError) return;
@@ -176,34 +184,36 @@ const SHELL_COLORS=useThemeColors();
       style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }}
     >
       <View style={{ flex: 1, maxWidth: 880, width: "100%", alignSelf: "center" }}>
-        {fontsLoaded ? <LaunchGate>
+        <LaunchGate splashReady={fontsLoaded} fallback={fontFallback}>
           <HeroUINativeProvider>
             <AuthProvider>
               <AthleteBlocksProvider>
                 <ToastProvider>
-                  <CompeteProvider navigationReady={fontsLoaded}>
-                    <BootGate>
-                      <NotificationNavigation />
-                      <BlockPrivacyGate>
-                        <LiveFieldRefresh />
-                        <NavigationWarmup />
-                        <OnboardingNavigation />
-                        <StatusBar style={mode === "dark" ? "light" : "dark"} />
-                        <Stack
-                          screenOptions={{
-                            headerShown: false,
-                            contentStyle: { backgroundColor: SHELL_COLORS.paper },
-                            animation: reduced ? "none" : Platform.OS === "ios" ? "default" : "slide_from_right",
-                          }}
-                        />
-                      </BlockPrivacyGate>
-                    </BootGate>
+                  <CompeteProvider navigationReady={fontsLoaded && screensMounted}>
+                    {screensMounted ? (
+                      <BootGate>
+                        <NotificationNavigation />
+                        <BlockPrivacyGate>
+                          <LiveFieldRefresh />
+                          <NavigationWarmup />
+                          <OnboardingNavigation />
+                          <StatusBar style={mode === "dark" ? "light" : "dark"} />
+                          <Stack
+                            screenOptions={{
+                              headerShown: false,
+                              contentStyle: { backgroundColor: SHELL_COLORS.paper },
+                              animation: reduced ? "none" : Platform.OS === "ios" ? "default" : "slide_from_right",
+                            }}
+                          />
+                        </BlockPrivacyGate>
+                      </BootGate>
+                    ) : null}
                   </CompeteProvider>
                 </ToastProvider>
               </AthleteBlocksProvider>
             </AuthProvider>
           </HeroUINativeProvider>
-        </LaunchGate> : fontFallback}
+        </LaunchGate>
       </View>
     </GestureHandlerRootView>
   );

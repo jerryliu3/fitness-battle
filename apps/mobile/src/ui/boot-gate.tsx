@@ -15,19 +15,20 @@ let bootAnimationCompleted = false;
  * is already available (typical on TestFlight after AsyncStorage hydrates).
  */
 export function BootGate({ children }: { children: ReactNode }) {
-  const revealLaunch = useContext(LaunchReadyContext);
+  const launch = useContext(LaunchReadyContext);
   const parentBootOpened = useBootOpened();
   const { loading: authLoading } = useAuth();
   const { state, loadStatus } = useCompeteStore();
   const { ready: privacyReady, error: privacyError } = useAthleteBlocks();
-  const [animationDone, setAnimationDone] = useState(Boolean(revealLaunch) || bootAnimationCompleted);
+  const [localAnimationDone, setLocalAnimationDone] = useState(bootAnimationCompleted);
+  const animationDone = launch ? launch.animationDone : localAnimationDone;
   const dataReady = !authLoading && (privacyReady || Boolean(privacyError)) && isCompeteDataReady(loadStatus, state);
   const [opened, setOpened] = useState(false);
   const [laidOut, setLaidOut] = useState(false);
   const { pending, report } = useBootRequests();
   useEffect(() => {
-    if (opened) revealLaunch?.();
-  }, [opened, revealLaunch]);
+    if (opened) launch?.reveal();
+  }, [opened, launch]);
   useEffect(() => {
     if (opened || !dataReady || !animationDone || !laidOut || pending) return;
     let second = 0;
@@ -38,17 +39,17 @@ export function BootGate({ children }: { children: ReactNode }) {
   }, [opened, dataReady, animationDone, laidOut, pending]);
   // Safety net if the splash animation callback never fires (still requires dataReady).
   useEffect(() => {
-    if (revealLaunch) return;
+    if (launch) return;
     const timer = setTimeout(() => {
       if (!bootAnimationCompleted) {
         bootAnimationCompleted = true;
-        setAnimationDone(true);
+        setLocalAnimationDone(true);
       }
     }, 10_000);
     return () => clearTimeout(timer);
-  }, [revealLaunch]);
+  }, [launch]);
   return <BootLoadingContext.Provider value={report}>
-    <BootOpenedContext.Provider value={revealLaunch ? parentBootOpened && opened : opened}>
+    <BootOpenedContext.Provider value={launch ? parentBootOpened && opened : opened}>
       <View style={{ flex: 1 }}>
         <View style={{ flex: 1 }} onLayout={() => setLaidOut(true)}
           pointerEvents={opened ? "auto" : "none"}
@@ -56,10 +57,10 @@ export function BootGate({ children }: { children: ReactNode }) {
           importantForAccessibility={opened ? "auto" : "no-hide-descendants"}>
           {children}
         </View>
-        {!opened && !revealLaunch && <View style={StyleSheet.absoluteFill}>
+        {!opened && !launch && <View style={StyleSheet.absoluteFill}>
           <BootSplash
             waiting={animationDone}
-            onAnimationComplete={() => { bootAnimationCompleted = true; setAnimationDone(true); }}
+            onAnimationComplete={() => { bootAnimationCompleted = true; setLocalAnimationDone(true); }}
           />
         </View>}
       </View>

@@ -850,9 +850,11 @@ camera flights on each update; explicit athlete selection retains its flight.
 
 ### Native launch and sheet dismissal — October 30
 
-Startup shows the canvas while bundled fonts load, followed by the launch animation.
-Finish the animation before mounting native account providers and screens; keep the
-same final logo frame with a spinner while that work settles underneath the cover.
+Startup shows the canvas while bundled fonts load, followed by the launch animation
+running on the UI thread. Native account providers mount immediately and screens
+preload in the background beneath the cover; the animation completes in full before
+entering the home screen, keeping the same final logo frame with a spinner if
+background work is still settling.
 The privacy read stays behind that cover; ordinary loading never shows safety-settings
 copy. Privacy failures still expose Retry and Sign out. The launch gate remains mounted
 across sign-in and foreground privacy refresh, so later reads do not replay startup.
