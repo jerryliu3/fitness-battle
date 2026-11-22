@@ -2,7 +2,7 @@ import { pageCarouselStyles } from "../ui/carousel-styles";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Pressable, ScrollView, View } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { crewMemberRelayColor, crewOverview, crewReplayEvents, formatCompetitionFeedTimestamp, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
+import { crewMemberRelayColor, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { FocusButton, useFocusStyles } from "../ui/focus";
 import { AppText } from "../ui/section";
@@ -11,13 +11,14 @@ import { UserAvatar } from "../ui/user-avatar";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { CrewRelay } from "./crew-relay";
 import { useCrewContractModal } from "./crew-passport";
+import { CrewBadgeCard } from "./crew-badge-card";
 import { CrewDerbyCard } from "./crew-derby";
 import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
 import { mobileEnv } from "../lib/env";
 
-type Props = CrewOverviewInput & { crewId: string; onSelectMember: (id: string) => void; onViewMembers: () => void; hiddenIds: readonly string[] };
-export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds, ...input }: Props) {
+type Props = CrewOverviewInput & { crewId: string; crewName: string; onSelectMember: (id: string) => void; onViewMembers: () => void; hiddenIds: readonly string[] };
+export function CrewOverview({ crewId, crewName, onSelectMember, onViewMembers, hiddenIds, ...input }: Props) {
   const c = useThemeColors();
   const f = useFocusStyles();
   const reduced = useReducedMotion();
@@ -135,23 +136,7 @@ export function CrewOverview({ crewId, onSelectMember, onViewMembers, hiddenIds,
         </Pressable>)}
       </ScrollView>
     </View>
-    {full.highlightItems.length > 0 && <View style={{ gap: 12 }}>
-      <AppText accessibilityRole="header" role="heading">Crew highlights</AppText>
-      <View style={{ borderRadius: 20, backgroundColor: c.card, overflow: "hidden" }}>
-        {full.highlightItems.map((item, i) => <View key={item.id} style={{ padding: 16, flexDirection: "row", gap: 12, alignItems: "center", borderTopWidth: i ? 1 : 0, borderColor: c.line }}>
-          <View style={{ width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: c.actionSoft }}>
-            <AppIcon name={item.icon} size={22} />
-          </View>
-          <View style={{ flex: 1, flexDirection: "row", gap: 10, alignItems: "center" }}>
-            <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
-              <AppText role="label">{item.title}</AppText>
-              <AppText role="caption" secondary>{item.detail}</AppText>
-            </View>
-            <AppText role="caption" secondary style={{ flexShrink: 0 }}>{formatCompetitionFeedTimestamp(item.at, Date.parse(input.now), input.displayTimeZone)}</AppText>
-          </View>
-        </View>)}
-      </View>
-    </View>}
+    <CrewBadgeCard crewName={crewName} badges={passport.data?.badges} units={input.units} />
 
     <CrewDerbyCard crewId={crewId} sport={input.sport} units={input.units} />
   </View>{contractUi.sheet}</>;

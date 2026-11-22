@@ -16,7 +16,7 @@ export interface CrewPassportStamp {
   id: string; crew_id: string; season_id: string; contract_id: string; code: string; earned_at: string; rule_version: number;
 }
 export interface CrewPassport {
-  contract: CrewContract | null; seasons: CrewSeason[]; stamps: CrewPassportStamp[];
+  contract: CrewContract | null; seasons: CrewSeason[]; stamps: CrewPassportStamp[]; badges?: CrewBadgeReceipt[];
 }
 export type CrewPassportMutation =
   | { action: "contract"; crewId: string; title: string; metric: CrewContractMetric; target: number; expectedId: string | null }
@@ -92,4 +92,36 @@ export function crewStampLabel(code: string): string {
 export function crewSeasonProgress(season: CrewSeason, now: string): number {
   const start = Date.parse(season.starts_at), end = Date.parse(season.ends_at);
   return Math.max(0, Math.min(100, (Date.parse(now) - start) / (end - start) * 100));
+}
+
+export const CREW_BADGES = [
+  { code: "first_week", name: "First week together", icon: "calendar", seal: { fill: "#cce1e9", edge: "#a1c3d3", ink: "#173d54", radius: 10 }, requirement: "Two teammates contribute in one week." },
+  { code: "full_crew", name: "Full crew", icon: "crew", seal: { fill: "#c9decf", edge: "#a6cbb4", ink: "#224c3f", radius: 15 }, requirement: "Everyone on a crew of at least two contributes in one week." },
+  { code: "contract_finish", name: "Shared finish", icon: "trophy", seal: { fill: "#f7c948", edge: "#ffe59a", ink: "#142b3b", radius: 23 }, requirement: "Reach a Weekly Contract target." },
+  { code: "three_week_streak", name: "Three-week streak", icon: "special", seal: { fill: "#edcab1", edge: "#dcab86", ink: "#613a27", radius: 12 }, requirement: "At least two teammates contribute each week for three weeks in a row." },
+] as const;
+
+export interface CrewBadgeReceipt {
+  code: typeof CREW_BADGES[number]["code"];
+  earned_at: string;
+  contributors: number;
+  roster_size: number;
+  metric?: CrewContractMetric | null;
+  value?: number | null;
+  target?: number | null;
+}
+
+export function crewBadgeCollection(receipts: readonly CrewBadgeReceipt[], units?: UnitSystem) {
+  return CREW_BADGES.map(badge => {
+    const receipt = receipts.find(item => item.code === badge.code);
+    let result: string | undefined;
+    if (receipt) {
+      if (badge.code === "contract_finish" && receipt.metric && receipt.value != null && receipt.target != null)
+        result = `${crewContractValue(receipt.metric, receipt.value, units)} of ${crewContractValue(receipt.metric, receipt.target, units)}`;
+      else if (badge.code === "full_crew") result = `${receipt.contributors} of ${receipt.roster_size} contributed`;
+      else if (badge.code === "first_week") result = `${receipt.contributors} teammates contributed`;
+      else if (badge.code === "three_week_streak") result = "3 consecutive weeks";
+    }
+    return { ...badge, receipt, result };
+  });
 }
