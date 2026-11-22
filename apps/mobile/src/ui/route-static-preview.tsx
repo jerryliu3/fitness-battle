@@ -8,6 +8,7 @@ import { View, Text, Image, TouchableOpacity, ActivityIndicator, type StyleProp,
 const loadedPreviewUrls = new Set<string>();
 import Svg, { Polyline, Circle } from "react-native-svg";
 import {
+  MEDAL_GOLD,
   buildMapboxStaticImageUrl,
   decodePolyline,
   type LngLat,
@@ -24,7 +25,7 @@ export interface MobileRouteStaticPreviewProps {
   height?: number;
   /** Mapbox style id. Default: 'mapbox/outdoors-v12' */
   mapStyle?: string;
-  /** Hex color without '#'. Default: 'f7c948' (Focus Gold) */
+  /** Hex color without '#'. Defaults to Medal Gold sRGB */
   strokeColor?: string;
   /** Line width in pixels. Default: 4 */
   strokeWidth?: number;
@@ -47,7 +48,7 @@ export function RouteStaticPreview({
   width = 600,
   height = 380,
   mapStyle = "mapbox/outdoors-v12",
-  strokeColor = "f7c948",
+  strokeColor = MEDAL_GOLD.srgbHex,
   strokeWidth = 4,
   padding = 40,
   showMarkers = true,

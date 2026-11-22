@@ -1,9 +1,8 @@
-import { getAppColors as getSharedColors, type ColorMode } from "@fitness-battle/shared";
-import { nativeMedalGold } from "./ui/medal-gold.web";
+import { getAppColors as getSharedColors, MEDAL_GOLD, type ColorMode } from "@fitness-battle/shared";
 
 export const APP_COLORS = {
-  light: getSharedColors("light", nativeMedalGold),
-  dark: getSharedColors("dark", nativeMedalGold),
+  light: getSharedColors("light", MEDAL_GOLD.cssValue),
+  dark: getSharedColors("dark", MEDAL_GOLD.cssValue),
 };
 
 export function getAppColors(mode: ColorMode = "light") { return APP_COLORS[mode]; }

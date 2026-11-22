@@ -11,7 +11,7 @@ export function parseAppearance(value: string | null | undefined): AppearancePre
   return value === "light" || value === "dark" ? value : "system";
 }
 export function appearanceVariables(preference: AppearancePreference): CSSProperties {
-  const brand = "var(--overtaek-brand-gold, var(--overtaek-brand-gold-srgb))";
+  const brand = `var(${MEDAL_GOLD.cssVar}, var(--overtaek-brand-gold-srgb))`;
   const light = appColorVariables("light", brand);
   const dark = appColorVariables("dark", brand);
   return {

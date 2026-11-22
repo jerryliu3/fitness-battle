@@ -71,7 +71,7 @@
 .week-recap-highlights { display: grid; gap: 8px; }
 .week-recap-highlight-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; }
 .week-recap-highlight-icon { width: 34px; height: 34px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.week-recap-highlight-icon.is-gold { background: color-mix(in srgb, var(--app-action-primary) 14%, transparent); color: var(--recap-progress); }
+.week-recap-highlight-icon.is-gold { background: var(--app-action-tint); color: var(--recap-progress); }
 .week-recap-highlight-icon.is-success { background: rgba(140, 205, 171, 0.14); color: var(--recap-success); }
 .week-recap-highlight-icon.is-muted { background: var(--recap-glass); color: var(--recap-muted); }
 .week-recap-highlight-text { display: grid; gap: 2px; min-width: 0; }

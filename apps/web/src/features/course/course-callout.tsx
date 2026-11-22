@@ -83,8 +83,8 @@ export function CourseCallout({
             height: 32 + 64 * (1 - passStrength),
             transform: "translate(-50%, -50%)",
             borderRadius: "50%",
-            border: "4px solid var(--app-action-primary)",
-            background: "color-mix(in srgb, var(--app-action-primary) 20%, transparent)",
+            border: `4px solid ${appearanceColors.actionPrimary}`,
+            background: appearanceColors.actionHighlight,
             opacity: passStrength,
             pointerEvents: "none",
           }}

@@ -9,7 +9,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import {
-  MEDAL_GOLD,
+  withColorOpacity,
   accountTimeZone,
   trainingXpInPeriod,
   startOfZonedDay,
@@ -145,7 +145,7 @@ export function JourneySpace({
   }, [state.activities, monthAnchor, now, displayTz]);
 
   const monthColors = useMemo(
-    () => [c.card, `${MEDAL_GOLD.srgb}33`, `${MEDAL_GOLD.srgb}66`, `${MEDAL_GOLD.srgb}99`, c.tennis],
+    () => [c.card, withColorOpacity(c.actionPrimary, 0.2), withColorOpacity(c.actionPrimary, 0.4), withColorOpacity(c.actionPrimary, 0.6), c.actionPrimary],
     [c],
   );
 

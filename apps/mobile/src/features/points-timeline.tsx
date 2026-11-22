@@ -1,4 +1,3 @@
-import { MedalGoldFill } from "../ui/medal-gold-fill";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import {
@@ -13,7 +12,7 @@ import {
 } from "@fitness-battle/shared";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useThemeColors } from "../theme";
-import { AppIcon } from "../ui/app-icon";
+import { IconButton } from "../ui/icon-button";
 import { AppText, textStyle } from "../ui/section";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { ReplayTimeline } from "./replay-timeline";
@@ -101,23 +100,14 @@ export function PointsTimeline({
   return (
     <View onTouchStart={(e) => e.stopPropagation()} style={{ gap: 8 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={playing ? "Pause replay" : "Play replay"}
+        <IconButton
+          icon={playing ? "pause" : "play"}
+          label={playing ? "Pause replay" : "Play replay"}
           disabled={!count}
           onPress={toggle}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: count ? 1 : 0.4,
-          }}
-        >
-          <MedalGoldFill radius={22} />
-          <AppIcon name={playing ? "pause" : "play"} size={20} color={c.textOnAction} />
-        </Pressable>
+          primary
+          haptic={false}
+        />
         <View style={{ flex: 1 }}>
           <ReplayTimeline
             timeBased

@@ -6,7 +6,6 @@ import { CompeteSheet } from "../ui/compete-sheet";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 import {
-  MEDAL_GOLD,
   competeNow,
   formatHealthNumber,
   formatSleepDuration,
@@ -211,7 +210,7 @@ const sThemes = createThemedStyles((themeColors) => {
       width: 28,
       height: 28,
       borderRadius: 14,
-      backgroundColor: `${MEDAL_GOLD.srgb}22`,
+      backgroundColor: c.actionTint,
       alignItems: "center",
       justifyContent: "center",
       marginTop: 2,

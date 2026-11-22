@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SHELL_COLORS } from "./shell";
-import { APP_COLORS, MEDAL_GOLD, appColorVariables, getAppColors, resolveColorMode } from "./appearance";
+import { APP_COLORS, MEDAL_GOLD, appColorVariables, getAppColors, resolveColorMode, withColorOpacity } from "./appearance";
 
 describe("appearance foundation", () => {
   it("derives the compatibility palette from the canonical light appearance", () => {
@@ -28,9 +28,16 @@ describe("appearance foundation", () => {
     for (const role of ["actionPrimary", "chartSeries", "progressFill", "tennis", "gold", "starEmber", "fieldTeal"] as const) {
       expect(colors[role]).toBe(MEDAL_GOLD.displayP3);
     }
+    expect(colors.actionTint).toBe(withColorOpacity(MEDAL_GOLD.displayP3, 0.14));
+    expect(colors.actionHighlight).toBe(withColorOpacity(MEDAL_GOLD.displayP3, 0.24));
+    expect(APP_COLORS.light.actionTint).toBe("#FFB80024");
+    expect(APP_COLORS.light.actionHighlight).toBe("#FFB8003d");
+    expect(MEDAL_GOLD.srgbHex).toBe("FFB800");
+    expect(MEDAL_GOLD.cssValue).toBe(`var(${MEDAL_GOLD.cssVar}, #FFB800)`);
     expect(colors.podiumGold).toBe(APP_COLORS.dark.podiumGold);
     expect(colors.accentSecondary).toBe(APP_COLORS.dark.accentSecondary);
     expect(appColorVariables("dark", MEDAL_GOLD.displayP3)["--app-field-teal"]).toBe(MEDAL_GOLD.displayP3);
+    expect(appColorVariables("dark", MEDAL_GOLD.displayP3)["--app-action-tint"]).toBe(colors.actionTint);
   });
   it("resolves system and manual preferences with a stable fallback", () => {
     expect(resolveColorMode("system", "dark")).toBe("dark");

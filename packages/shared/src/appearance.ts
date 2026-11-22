@@ -2,17 +2,35 @@ import medalGold from "./brand-gold.json";
 
 export const MEDAL_GOLD = Object.freeze({
   srgb: medalGold.srgb,
+  srgbHex: medalGold.srgb.slice(1),
   displayP3Channels: Object.freeze(medalGold.displayP3),
   displayP3: `color(display-p3 ${medalGold.displayP3.join(" ")})`,
   iosColorName: medalGold.iosColorName,
+  cssVar: "--overtaek-brand-gold",
+  cssValue: `var(--overtaek-brand-gold, ${medalGold.srgb})`,
 });
+
+/** Derive an alpha-tinted color string that works in both native sRGB and web CSS var/P3 modes. */
+export function withColorOpacity(color: string, opacity: number): string {
+  const clamped = Math.max(0, Math.min(1, opacity));
+  if (/^#[0-9a-f]{6}$/i.test(color)) {
+    return `${color}${Math.round(clamped * 255).toString(16).padStart(2, "0")}`;
+  }
+  return `color-mix(in srgb, ${color} ${Math.round(clamped * 100)}%, transparent)`;
+}
 
 /** Platform-independent semantic color contract. Components never select palette names. */
 export type ColorMode = "light" | "dark";
 export type AppearancePreference = ColorMode | "system";
 
 function medalGoldRoles(gold: string) {
-  return { actionPrimary: gold, chartSeries: gold, progressFill: gold };
+  return {
+    actionPrimary: gold,
+    chartSeries: gold,
+    progressFill: gold,
+    actionTint: withColorOpacity(gold, 0.14),
+    actionHighlight: withColorOpacity(gold, 0.24),
+  };
 }
 
 const light = {

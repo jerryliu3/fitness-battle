@@ -1,5 +1,5 @@
 import { MedalGoldFill } from "../ui/medal-gold-fill";
-import { AppIcon } from "../ui/app-icon";
+import { IconButton } from "../ui/icon-button";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { MaterialPanel } from "../ui/material-panel";
 import { textStyle } from "../ui/section";
@@ -38,7 +38,7 @@ export function FieldTimeline({ timeline: t, compact = false, floating = false }
   if (compact) return <View onTouchStart={event => event.stopPropagation()} style={floating ? { borderRadius: 22, overflow: "hidden", padding: 8 } : undefined}>
     {material}
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-      <Pressable accessibilityRole="button" accessibilityLabel={t.playing ? "Pause replay" : "Play replay"} disabled={!t.ready || !t.count} onPress={t.toggle} style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", opacity: t.ready && t.count ? 1 : .4 }}><MedalGoldFill radius={22} /><AppIcon name={t.playing ? "pause" : "play"} size={20} color={c.textOnAction} /></Pressable>
+      <IconButton icon={t.playing ? "pause" : "play"} label={t.playing ? "Pause replay" : "Play replay"} disabled={!t.ready || !t.count} onPress={t.toggle} primary haptic={false} />
       <View style={{ flex: 1 }}><ReplayTimeline label="Competition timeline" count={t.ready ? t.count : 0} cursor={t.cursor} caption={t.label} onSeek={t.seek} floating={floating} /></View>
       {action(`${t.speed}×`, t.changeSpeed, false, `Playback speed ${t.speed} times`, true)}
     </View>

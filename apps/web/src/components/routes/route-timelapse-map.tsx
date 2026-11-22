@@ -571,7 +571,7 @@ export function RouteTimelapseMap({
       )}
 
       {tokenError && <div className="absolute inset-0 bg-[#142b3b]">
-        <RouteStaticPreview coordinates={rawCoords} showPlayBadge={false} mapboxToken="" strokeColor="f7c948" className="h-full" />
+        <RouteStaticPreview coordinates={rawCoords} showPlayBadge={false} mapboxToken="" strokeColor={MEDAL_GOLD.srgbHex} className="h-full" />
         <p role="status" className="absolute top-4 left-4 right-4 rounded-xl bg-[#142b3b] p-3  text-white" style={typographyStyle("caption")}>Route outline only. Interactive maps and flyovers are currently unavailable.</p>
       </div>}
     </div>
