@@ -1,3 +1,5 @@
+import { MedalGoldFill } from "../ui/medal-gold-fill";
+import { nativeMedalGold } from "../ui/medal-gold";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import {
@@ -109,13 +111,14 @@ export function PointsTimeline({
             width: 44,
             height: 44,
             borderRadius: 22,
-            backgroundColor: c.ink,
+            backgroundColor: nativeMedalGold,
             alignItems: "center",
             justifyContent: "center",
             opacity: count ? 1 : 0.4,
           }}
         >
-          <AppIcon name={playing ? "pause" : "play"} size={20} color={c.paper} />
+          <MedalGoldFill radius={22} />
+          <AppIcon name={playing ? "pause" : "play"} size={20} color={c.textOnAction} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <ReplayTimeline

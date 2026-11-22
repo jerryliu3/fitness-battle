@@ -14,7 +14,7 @@
 .compete-race-heading{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .compete-race-heading>div{display:grid;flex:1}
 .compete-race-heading>span:last-child{margin-left:auto}
-.compete-sport-icon{padding:9px;border-radius:12px;background:var(--action-soft);display:flex}
+.compete-sport-icon{padding:9px;border-radius:12px;background:var(--app-action-primary);color:var(--app-text-on-action);display:flex}
 .compete-place-badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:99px;background:var(--accent-soft);border:1px solid var(--line)}
 .compete-live{color:var(--app-status-success)}
 .compete-race-entry{margin-top:-8px;margin-bottom:-8px;display:flex;align-items:center;justify-content:flex-end;gap:6px;min-height:44px;border:0;background:transparent;color:var(--ink);text-align:right;cursor:pointer;width:100%}

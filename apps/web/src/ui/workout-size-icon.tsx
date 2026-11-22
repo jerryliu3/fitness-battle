@@ -3,7 +3,7 @@ import { WORKOUT_SIZE_BAR_COLOR_ROLES, WORKOUT_SIZE_BAR_HEIGHT_RATIOS, type Work
 const ROLE_CSS_VAR = {
   podiumBronze: "var(--app-podium-bronze)",
   podiumSilver: "var(--app-podium-silver)",
-  podiumGold: "var(--app-podium-gold)",
+  actionPrimary: "var(--app-action-primary)",
 } as const;
 
 export function WorkoutSizeIcon({ bars, size = 64 }: { bars: WorkoutSizeBarCount; size?: number }) {
