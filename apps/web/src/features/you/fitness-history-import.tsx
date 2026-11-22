@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { activityFromSample, competeNow, dayKey, type SyncReviewReceipt, type ActivitySample, type FitnessHistoryStatus, type FitnessHistoryTicket, type ProviderId, type ReadinessSample } from "@fitness-battle/shared";
+import { activityFromSample, competeNow, dayKey, type SyncReviewReceipt, type ActivitySample, type FitnessHistoryStatus, type FitnessHistoryTicket, type ProviderId } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { Sheet } from "@/ui/sheet";
@@ -27,13 +27,13 @@ export function FitnessHistoryImport(props: HistoryImportProps) {
 
 function AccountHistoryImport({ offer, onDismiss, showSettings = true }: HistoryImportProps) {
   const { user, offlineMode } = useAuth();
-  const { state, dispatch, refresh } = useCompete();
+  const { state, refresh } = useCompete();
   const [status, setStatus] = useState<FitnessHistoryStatus | null>(null);
   const [provider, setProvider] = useState<ProviderId | null>(null);
   const [days, setDays] = useState(90);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [review, setReview] = useState<{ lease: string; receipt: SyncReviewReceipt } | null>(null);
+  const [review, setReview] = useState<{ lease: string; provider: ProviderId; receipt: SyncReviewReceipt } | null>(null);
   const flight = useRef(false);
   const afterClose = useRef<(() => void) | null>(null);
   const mounted = useRef(true);
@@ -74,7 +74,7 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
       if (confirmed) {
         await historyRequest("/api/fitness/sync", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ historyLease: review.lease, selected }) });
         if (!mounted.current) return;
-        setStatus({ completed: true, provider: "strava", days: Number(days) });
+        setStatus({ completed: true, provider: review.provider, days: Number(days) });
         void refresh({ skipSyncReview: true });
       } else {
         await historyRequest("/api/fitness/history", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lease: review.lease }) });
@@ -83,7 +83,7 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
     } catch (error) {
       if (mounted.current) {
         setError(error instanceof Error ? error.message : "Could not finish the history import.");
-        setProvider("strava");
+        setProvider(review.provider);
         await historyRequest("/api/fitness/history", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lease: review.lease }) }).catch(() => {});
       }
     } finally {
@@ -100,32 +100,20 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
     try {
       ticket = await historyRequest<FitnessHistoryTicket>("/api/fitness/history", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, days }) });
       if (!mounted.current) return;
-      const result = await historyRequest<{ activities?: ActivitySample[]; readiness?: ReadinessSample[] }>("/api/fitness/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, historyLease: ticket.lease, ...(provider === "strava" ? { reviewHistory: true } : {}) }) });
+      const result = await historyRequest<{ activities?: ActivitySample[] }>("/api/fitness/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, historyLease: ticket.lease, reviewHistory: true }) });
       if (!mounted.current) return;
-      if (provider === "strava") {
-        const activitiesForReview = (result.activities ?? []).flatMap(sample => {
-          const activity = activityFromSample(sample, "recorded");
-          return activity ? [activity] : [];
-        });
-        if (!activitiesForReview.length) throw new Error("No activities found for that time range.");
-        const draft = {
-          lease: ticket.lease,
-          receipt: { account: id, day: dayKey(competeNow(state)), activities: activitiesForReview, preview: false, confirmBeforeSave: true },
-        };
-        afterClose.current = () => { if (mounted.current) setReview(draft); };
-        setProvider(null);
-        ticket = undefined;
-        return;
-      }
-      setStatus({ completed: true, provider, days });
-      setProvider(null);
-      afterClose.current = () => {
-        if (!mounted.current) return;
-        dispatch({ type: "apply-sync", accountId: id, provider, linkStatus: "connected", activities: (result.activities ?? []).flatMap(sample => {
-          const activity = activityFromSample(sample, "recorded"); return activity ? [activity] : [];
-        }), readiness: (result.readiness ?? []).filter(r => r.provider === provider).map(r => ({ id: r.id, provider, day: r.day, score: r.score })) });
-        dismiss.current();
+      const activitiesForReview = (result.activities ?? []).flatMap(sample => {
+        const activity = activityFromSample(sample, "recorded");
+        return activity ? [activity] : [];
+      });
+      if (!activitiesForReview.length) throw new Error("No activities found for that time range.");
+      const draft = {
+        lease: ticket.lease,
+        provider,
+        receipt: { account: id, day: dayKey(competeNow(state)), activities: activitiesForReview, preview: false, confirmBeforeSave: true },
       };
+      afterClose.current = () => { if (mounted.current) setReview(draft); };
+      setProvider(null);
       ticket = undefined;
     } catch (e) {
       if (mounted.current) setError(e instanceof Error ? e.message : "History import failed. Please try again.");

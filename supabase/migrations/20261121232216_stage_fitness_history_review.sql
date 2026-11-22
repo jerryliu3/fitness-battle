@@ -16,14 +16,17 @@ create trigger clear_fitness_history_review
   for each row when (old.lease is distinct from new.lease)
   execute function public.clear_fitness_history_review();
 
-create function public.confirm_strava_history_review(p_user uuid, p_lease uuid, p_rows jsonb)
+create function public.confirm_fitness_history_review(p_user uuid, p_lease uuid, p_rows jsonb)
 returns boolean language plpgsql security invoker set search_path = '' as $$
+declare
+  review_provider public.fitness_provider;
 begin
   if auth.role() is distinct from 'service_role' then raise exception 'forbidden'; end if;
   update public.fitness_history_imports
   set completed_at = now(), lease = null, lease_until = null
-  where user_id = p_user and provider = 'strava' and lease = p_lease
-    and completed_at is null and lease_until > now() and review_samples is not null;
+  where user_id = p_user and lease = p_lease
+    and completed_at is null and lease_until > now() and review_samples is not null
+  returning provider into review_provider;
   if not found then return false; end if;
 
   insert into public.activities (
@@ -32,7 +35,7 @@ begin
     elevation_gain_m, sport, distance_m, verified, journal_only, provenance,
     disposition, disposition_reason, compete_key, source_label
   )
-  select p_user, 'strava', r.external_id, r.category_id, r.started_at, r.metric_value,
+  select p_user, review_provider, r.external_id, r.category_id, r.started_at, r.metric_value,
     r.moving_sec, r.avg_hr, r.raw_name, r.summary_polyline, r.detailed_polyline, r.route_replay,
     r.route_bounds, r.elevation_gain_m, r.sport, r.distance_m, r.verified, r.journal_only,
     r.provenance, r.disposition, r.disposition_reason, r.compete_key, r.source_label
@@ -41,5 +44,5 @@ begin
   return true;
 end $$;
 
-revoke all on function public.confirm_strava_history_review(uuid, uuid, jsonb) from public, anon, authenticated;
-grant execute on function public.confirm_strava_history_review(uuid, uuid, jsonb) to service_role;
+revoke all on function public.confirm_fitness_history_review(uuid, uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.confirm_fitness_history_review(uuid, uuid, jsonb) to service_role;

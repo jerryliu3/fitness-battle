@@ -1,9 +1,9 @@
 import { beforeEach, expect, it, vi } from "vitest";
-const mock = vi.hoisted(() => ({ from: vi.fn(), window: vi.fn(), finish: vi.fn(), sync: vi.fn(), connection: vi.fn(), setConnection: vi.fn(), activities: vi.fn(), rpc: vi.fn() }));
+const mock = vi.hoisted(() => ({ stage: vi.fn(), read: vi.fn(), window: vi.fn(), finish: vi.fn(), sync: vi.fn(), connection: vi.fn(), setConnection: vi.fn(), activities: vi.fn(), rpc: vi.fn() }));
 vi.mock("@/lib/auth/request-user", () => ({ resolveRequestUserId: async () => "owner" }));
-vi.mock("@/lib/fitness-history", () => ({ fitnessSyncWindow: mock.window, finishFitnessHistory: mock.finish }));
-vi.mock("@/lib/fitness", () => ({ isOAuthProvider: (p: string) => p === "strava", getServerFitnessProvider: () => ({ getConnection: mock.connection, syncActivities: mock.sync }) }));
-vi.mock("@/lib/fitness-store", () => ({ serviceDb: () => ({ rpc: mock.rpc, from: mock.from }), createProviderStore: () => ({ setConnection: mock.setConnection }), persistSyncedActivities: mock.activities, persistReadiness: async () => true }));
+vi.mock("@/lib/fitness-history", () => ({ fitnessSyncWindow: mock.window, finishFitnessHistory: mock.finish, stageFitnessHistoryReview: mock.stage, readFitnessHistoryReview: mock.read }));
+vi.mock("@/lib/fitness", () => ({ isOAuthProvider: (p: string) => p === "strava" || p === "whoop" || p === "oura", getServerFitnessProvider: () => ({ getConnection: mock.connection, syncActivities: mock.sync }) }));
+vi.mock("@/lib/fitness-store", () => ({ serviceDb: () => ({ rpc: mock.rpc }), createProviderStore: () => ({ setConnection: mock.setConnection }), persistSyncedActivities: mock.activities, persistReadiness: async () => true }));
 vi.mock("@/lib/daily-health-store", () => ({ persistDailyHealth: async () => {} }));
 vi.mock("@/lib/garmin-record-store", () => ({ persistSleepNight: async () => {} }));
 import { PATCH, POST } from "./route";
@@ -52,28 +52,21 @@ it("explains the manual limit without conflating it with an active sync", async 
   expect(mock.sync).not.toHaveBeenCalled();
 });
 
-it("stages history for review without advancing the cursor or completing the import", async () => {
+it.each(["strava", "whoop", "oura"])("stages %s history without advancing the cursor or completing the import", async provider => {
   const activities = [{ id: "a" }];
-  const update = vi.fn().mockReturnThis();
-  mock.from.mockReturnValue({
-    update, eq: vi.fn().mockReturnThis(), gt: vi.fn().mockReturnThis(),
-    select: vi.fn().mockReturnThis(), maybeSingle: async () => ({ data: { user_id: "owner" } }),
-  });
+  mock.stage.mockResolvedValue(true);
   mock.sync.mockResolvedValue({ activities, usedMock: false });
 
-  const response = await POST(request({ historyLease: "ticket", reviewHistory: true }));
+  const response = await POST(request({ provider, historyLease: "ticket", reviewHistory: true }));
   expect(await response.json()).toEqual({ activities });
   expect(mock.sync).toHaveBeenCalledWith("owner", expect.objectContaining({ advanceCursor: false }));
-  expect(update).toHaveBeenCalledWith({ review_samples: activities });
+  expect(mock.stage).toHaveBeenCalledWith("owner", provider, "ticket", expect.objectContaining({ activities }));
   expect(mock.activities).not.toHaveBeenCalled();
   expect(mock.finish).not.toHaveBeenCalled();
 });
 
 it("commits only selected, server-staged activities", async () => {
-  mock.from.mockReturnValue({
-    select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), gt: vi.fn().mockReturnThis(),
-    maybeSingle: async () => ({ data: { review_samples: [{ id: "a" }, { id: "b" }] } }),
-  });
+  mock.read.mockResolvedValue({ activities: [{ id: "a" }, { id: "b" }] });
   mock.activities.mockResolvedValue(true);
   const response = await PATCH(request({ historyLease: "ticket", selected: ["b"] }));
   expect(response.status).toBe(200);

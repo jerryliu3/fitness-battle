@@ -227,6 +227,12 @@ it("supports Select all and Deselect all, and omits the saved safely message", a
   expect(selectAllBtn!.props.accessibilityState?.disabled).toBe(true);
   expect(deselectAllBtn!.props.accessibilityState?.disabled).toBe(false);
 
+  await act(async () => deselectAllBtn!.props.onPress());
+  const close = renderer!.root.findByType("MaterialClose" as never);
+  expect(close.props.label).toBe("Dismiss review");
+  await act(async () => close.props.onPress());
+  expect(done).toHaveBeenCalledWith(undefined, true);
+
   await act(async () => renderer!.unmount());
 });
 

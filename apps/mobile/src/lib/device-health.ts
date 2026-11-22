@@ -51,6 +51,7 @@ export type SyncAppleHealthDeps = {
   lastSyncAt?: string | null;
   syncRange?: { since: string; until: string };
   historyLease?: FitnessHistoryTicket["lease"];
+  reviewHistory?: boolean;
 };
 
 function readReactNativeHealthPackage(): AppleHealthKitPackageExport | null {
@@ -141,7 +142,7 @@ export function sampleFromWorkout(
 async function postIngest(
   provider: "apple_health" | "google_health",
   activities: ActivitySample[],
-  deps: Pick<SyncAppleHealthDeps, "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly" | "historyLease">,
+  deps: Pick<SyncAppleHealthDeps, "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly" | "historyLease" | "reviewHistory">,
   health?:DeviceHealthExtra,
 ): Promise<DeviceSyncResult> {
   if (deps.localOnly) {
@@ -180,6 +181,7 @@ async function postIngest(
         ...health,
         userId: auth.userId,
         historyLease: deps.historyLease,
+        reviewHistory: deps.reviewHistory,
       }),
     });
   } catch (error) {
@@ -200,7 +202,7 @@ async function postIngest(
     return { ok: false, authorized: true, message, count: 0 };
   }
   const body = await response.json();
-  if (body.persisted !== true) return { ok: false, authorized: true, message: "Workouts could not be saved. Please try again.", count: 0 };
+  if (body.persisted !== true && !(deps.reviewHistory && body.reviewHistory === true)) return { ok: false, authorized: true, message: "Workouts could not be saved. Please try again.", count: 0 };
   return {
     ok: true,
     authorized: true,
@@ -352,7 +354,7 @@ function healthConnectGrantedExerciseRead(granted: HealthConnectPermission[]): b
 
 export type SyncHealthConnectDeps = Pick<
   SyncAppleHealthDeps,
-  "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly" | "lastSyncAt" | "syncRange" | "historyLease"
+  "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly" | "lastSyncAt" | "syncRange" | "historyLease" | "reviewHistory"
 > & {
   platform?: string;
   /** Injectable for tests; defaults to require("react-native-health-connect"). */
@@ -380,6 +382,7 @@ export function createHealthConnectDeps(
     lastSyncAt: base.lastSyncAt,
     syncRange: base.syncRange,
     historyLease: base.historyLease,
+    reviewHistory: base.reviewHistory,
     platform: overrides.platform ?? Platform.OS,
     healthModule: overrides.healthModule,
   };

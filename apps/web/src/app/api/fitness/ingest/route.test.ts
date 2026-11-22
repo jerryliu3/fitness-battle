@@ -1,7 +1,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
-const mock = vi.hoisted(() => ({ user: vi.fn(), window: vi.fn(), finish: vi.fn(), activities: vi.fn(), readiness: vi.fn(), health: vi.fn(), sleep: vi.fn(), getConnection: vi.fn(), setConnection: vi.fn() }));
+const mock = vi.hoisted(() => ({ stage: vi.fn(), user: vi.fn(), window: vi.fn(), finish: vi.fn(), activities: vi.fn(), readiness: vi.fn(), health: vi.fn(), sleep: vi.fn(), getConnection: vi.fn(), setConnection: vi.fn() }));
 vi.mock("@/lib/auth/request-user", () => ({ resolveRequestUserId: mock.user }));
-vi.mock("@/lib/fitness-history", () => ({ fitnessSyncWindow: mock.window, finishFitnessHistory: mock.finish }));
+vi.mock("@/lib/fitness-history", () => ({ fitnessSyncWindow: mock.window, finishFitnessHistory: mock.finish, stageFitnessHistoryReview: mock.stage }));
 vi.mock("@/lib/fitness-store", () => ({ createProviderStore: () => ({ getConnection: mock.getConnection, setConnection: mock.setConnection }), persistSyncedActivities: mock.activities, persistReadiness: mock.readiness }));
 vi.mock("@/lib/daily-health-store", () => ({ persistDailyHealth: mock.health }));
 vi.mock("@/lib/garmin-record-store", () => ({ persistSleepNight: mock.sleep }));
@@ -41,4 +41,20 @@ it("rejects an expired or previously used history ticket before writes", async (
   mock.window.mockRejectedValue(new Error("history_locked"));
   expect((await POST(request({ historyLease: "ticket" }))).status).toBe(409);
   expect(mock.activities).not.toHaveBeenCalled();
+});
+
+it.each(["apple_health", "google_health"])("stages %s history without saving workouts or advancing the cursor", async provider => {
+  mock.stage.mockResolvedValue(true);
+  const response = await POST(request({ provider, historyLease: "ticket", reviewHistory: true, activities: [
+    sample("old", "2026-10-01T12:00:00Z"), sample("selected", "2026-11-01T12:00:00Z"),
+  ] }));
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({ reviewHistory: true, activities: [{ externalId: "selected" }] });
+  expect(mock.stage).toHaveBeenCalledWith("owner", provider, "ticket", expect.objectContaining({
+    activities: [expect.objectContaining({ externalId: "selected" })],
+  }));
+  expect(mock.activities).not.toHaveBeenCalled();
+  expect(mock.health).not.toHaveBeenCalled();
+  expect(mock.setConnection).not.toHaveBeenCalled();
+  expect(mock.finish).not.toHaveBeenCalled();
 });

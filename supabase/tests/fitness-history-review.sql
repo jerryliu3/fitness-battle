@@ -8,7 +8,7 @@ declare
   selected jsonb;
 begin
   insert into auth.users(id, email) values (athlete, athlete::text || '@test.invalid');
-  insert into public.profiles(id, display_name) values (athlete, 'Strava review fixture') on conflict (id) do nothing;
+  insert into public.profiles(id, display_name) values (athlete, 'Fitness review fixture') on conflict (id) do nothing;
   perform set_config('request.jwt.claim.role', 'service_role', true);
 
   for attempt in 1..10 loop
@@ -25,7 +25,7 @@ begin
     null;
   end;
 
-  if not public.claim_fitness_history(athlete, 'strava', 90, ticket) then
+  if not public.claim_fitness_history(athlete, 'apple_health', 90, ticket) then
     raise exception 'history claim failed';
   end if;
   update public.fitness_history_imports set review_samples = '[{"id":"first-draft"}]' where user_id = athlete;
@@ -36,7 +36,7 @@ begin
   end if;
 
   ticket := gen_random_uuid();
-  if not public.claim_fitness_history(athlete, 'strava', 90, ticket) then
+  if not public.claim_fitness_history(athlete, 'apple_health', 90, ticket) then
     raise exception 'cancelled history should be claimable again';
   end if;
   update public.fitness_history_imports set review_samples = '[{"id":"confirmed-draft"}]' where user_id = athlete;
@@ -46,13 +46,13 @@ begin
     'started_at', activity_time, 'metric_value', 5000, 'moving_sec', 1800,
     'raw_name', 'Confirmed run',
     'sport', 'running', 'distance_m', 5000, 'verified', true, 'journal_only', false,
-    'provenance', 'recorded', 'disposition', 'counted', 'source_label', 'strava',
-    'compete_key', 'strava-confirmed-draft'
+    'provenance', 'recorded', 'disposition', 'counted', 'source_label', 'apple_health',
+    'compete_key', 'apple_health-confirmed-draft'
   ));
-  if not public.confirm_strava_history_review(athlete, ticket, selected) then
+  if not public.confirm_fitness_history_review(athlete, ticket, selected) then
     raise exception 'confirmation rejected a valid review';
   end if;
-  if (select count(*) from public.activities where user_id = athlete and external_id = 'confirmed-draft') <> 1 then
+  if (select count(*) from public.activities where user_id = athlete and provider = 'apple_health' and external_id = 'confirmed-draft') <> 1 then
     raise exception 'confirmation did not save the selected activity';
   end if;
   if not exists (select 1 from public.fitness_history_imports where user_id = athlete and completed_at is not null and review_samples is null) then

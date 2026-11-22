@@ -304,7 +304,7 @@ export async function persistSyncedActivities(
   if (rows.length === 0) return false;
 
   if (historyReviewLease) {
-    const { data, error } = await db.rpc("confirm_strava_history_review", {
+    const { data, error } = await db.rpc("confirm_fitness_history_review", {
       p_user: userId, p_lease: historyReviewLease, p_rows: rows,
     });
     if (error) throw new Error(error.message);

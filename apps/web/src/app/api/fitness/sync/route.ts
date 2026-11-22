@@ -2,8 +2,8 @@ import { persistDailyHealth } from "@/lib/daily-health-store";
 import { persistSleepNight } from "@/lib/garmin-record-store";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import type { ActivitySample, CategorySlug } from "@fitness-battle/shared";
-import { fitnessSyncWindow, finishFitnessHistory } from "@/lib/fitness-history";
+import type { CategorySlug } from "@fitness-battle/shared";
+import { fitnessSyncWindow, finishFitnessHistory, readFitnessHistoryReview, stageFitnessHistoryReview } from "@/lib/fitness-history";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider, isOAuthProvider } from "@/lib/fitness";
 import { createProviderStore, serviceDb, persistReadiness, persistSyncedActivities } from "@/lib/fitness-store";
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   if (body.backfill || body.since) return NextResponse.json({ error: "history_confirmation_required" }, { status: 400 });
   const providerId = body.provider && isOAuthProvider(body.provider) ? body.provider : "strava";
   const reviewHistory = body.reviewHistory === true;
-  if (reviewHistory && (providerId !== "strava" || typeof body.historyLease !== "string" || body.automatic)) {
+  if (reviewHistory && (providerId === "garmin" || typeof body.historyLease !== "string" || body.automatic)) {
     return NextResponse.json({ error: "invalid_history_import" }, { status: 400 });
   }
   const provider = getServerFitnessProvider(providerId);
@@ -62,16 +62,10 @@ export async function POST(request: Request) {
 
     if (reviewHistory) {
       if (result.usedMock) return NextResponse.json({ error: "provider_sync_failed" }, { status: 502 });
-      if (result.activities.length) {
-        const { data, error } = await db.from("fitness_history_imports")
-          .update({ review_samples: result.activities })
-          .eq("user_id", userId)
-          .eq("lease", body.historyLease!)
-          .gt("lease_until", new Date().toISOString())
-          .select("user_id").maybeSingle();
-        if (error || !data) throw new Error("history_unavailable");
-        staged = true;
-      }
+      const { activities, readiness, dailyHealth, sleepNights } = result;
+      staged = await stageFitnessHistoryReview(userId, providerId, body.historyLease!, {
+        activities, readiness, dailyHealth, sleepNights,
+      });
       return NextResponse.json({ activities: result.activities });
     }
 
@@ -122,19 +116,23 @@ export async function PATCH(request: Request) {
   const db = serviceDb();
   if (!db) return NextResponse.json({ error: "store_unavailable" }, { status: 503 });
   try {
-    const { data, error } = await db.from("fitness_history_imports").select("review_samples")
-      .eq("user_id", userId).eq("provider", "strava").eq("lease", body.historyLease)
-      .gt("lease_until", new Date().toISOString()).maybeSingle();
-    if (error) throw error;
-    if (!data?.review_samples) {
+    const samples = await readFitnessHistoryReview(userId, body.historyLease);
+    if (!samples) {
       return NextResponse.json({ error: "history_review_expired", message: "This review has expired. Start the history import again." }, { status: 409 });
     }
     const selected = new Set<string>(body.selected);
-    const activities = (data.review_samples as ActivitySample[]).filter(activity => selected.has(activity.id));
+    const activities = samples.activities.filter(activity => selected.has(activity.id));
     if (activities.length !== selected.size) {
       return NextResponse.json({ error: "invalid_history_selection" }, { status: 400 });
     }
     if (await persistSyncedActivities(userId, activities, "recorded", body.historyLease)) {
+      // The workout transaction already succeeded. Auxiliary metrics use the
+      // same idempotent stores as ordinary sync.
+      await Promise.allSettled([
+        persistDailyHealth(userId, samples.dailyHealth ?? []),
+        persistReadiness(userId, samples.readiness ?? []),
+        ...(samples.sleepNights ?? []).map(night => persistSleepNight(userId, night)),
+      ]);
       return NextResponse.json({ persisted: true });
     }
     return NextResponse.json({ error: "history_review_expired", message: "This review has expired. Start the history import again." }, { status: 409 });

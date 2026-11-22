@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { syncWindow, trackerSyncWindow, type FitnessHistoryStatus, type FitnessHistoryTicket, type FitnessProviderId } from "@fitness-battle/shared";
+import { syncWindow, trackerSyncWindow, type FitnessHistoryStatus, type FitnessHistoryTicket, type FitnessProviderId, type SyncResult } from "@fitness-battle/shared";
 import { createProviderStore, serviceDb } from "./fitness-store";
 
 export async function fitnessHistoryStatus(userId: string): Promise<FitnessHistoryStatus> {
@@ -42,4 +42,31 @@ export async function finishFitnessHistory(userId: string, lease: string, succes
   if (!db) throw new Error("store_unavailable");
   const { data, error } = await db.rpc("finish_fitness_history", { p_user: userId, p_lease: lease, p_success: success });
   if (error || success && !data) throw new Error("history_unavailable");
+}
+
+type HistoryReviewSamples = Pick<SyncResult, "activities" | "readiness" | "dailyHealth" | "sleepNights">;
+
+export async function stageFitnessHistoryReview(
+  userId: string, provider: FitnessProviderId, lease: string, samples: HistoryReviewSamples,
+): Promise<boolean> {
+  if (!samples.activities.length) return false;
+  const db = serviceDb();
+  if (!db) throw new Error("store_unavailable");
+  const { data, error } = await db.from("fitness_history_imports")
+    .update({ review_samples: samples })
+    .eq("user_id", userId).eq("provider", provider).eq("lease", lease)
+    .gt("lease_until", new Date().toISOString())
+    .select("user_id").maybeSingle();
+  if (error || !data) throw new Error("history_unavailable");
+  return true;
+}
+
+export async function readFitnessHistoryReview(userId: string, lease: string): Promise<HistoryReviewSamples | null> {
+  const db = serviceDb();
+  if (!db) throw new Error("store_unavailable");
+  const { data, error } = await db.from("fitness_history_imports").select("review_samples")
+    .eq("user_id", userId).eq("lease", lease)
+    .gt("lease_until", new Date().toISOString()).maybeSingle();
+  if (error) throw error;
+  return data?.review_samples ?? null;
 }

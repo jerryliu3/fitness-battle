@@ -46,16 +46,18 @@ it("offers 90 days after connection and Later leaves import available in setting
   await act(async () => button("Import fitness history").props.onPress());
   expect(renderer.root.findByType(NumberPicker).props.value).toBe("90");
 });
-it("passes the selected range and locks settings immediately without waiting for activity review", async () => {
+it("stages the selected Apple Health range until the user reviews their workouts", async () => {
+  mock.device.mockResolvedValue({ ok: true, activities: [
+    { id: "apple_health-a", provider: "apple_health", categorySlug: "running", startedAt: "2026-11-17T18:00:00Z", metricValue: 5000 },
+  ] });
   await act(async () => { renderer = create(createElement(FitnessHistoryImport, { offer: "apple_health", onDismiss: mock.dismiss })); });
   await act(async () => renderer.root.findByType(NumberPicker).props.onChange("30"));
   await act(async () => button("Import 30 days").props.onPress());
   expect(mock.request).toHaveBeenCalledWith("https://example.test", "alice-token", "/api/fitness/history", { body: { provider: "apple_health", days: 30 } });
-  expect(mock.device).toHaveBeenCalledWith(expect.objectContaining({ historyLease: "ticket", syncRange: expect.objectContaining({ since: "2026-10-18T18:00:00Z" }) }));
-  expect(button("Import fitness history")).toBeUndefined();
-  expect(mock.dispatch).not.toHaveBeenCalled();
+  expect(mock.device).toHaveBeenCalledWith(expect.objectContaining({ historyLease: "ticket", reviewHistory: true, syncRange: expect.objectContaining({ since: "2026-10-18T18:00:00Z" }) }));
   await act(async () => renderer.root.findByType(FocusSheet).props.onClosed());
-  expect(mock.dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "apply-sync", accountId: "alice" }));
+  expect(renderer.root.findByType(SyncReview).props.receipt.activities).toHaveLength(1);
+  expect(mock.dispatch).not.toHaveBeenCalled();
 });
 it("keeps failed imports retryable", async () => {
   mock.device.mockResolvedValue({ ok: false, message: "Upload failed" });

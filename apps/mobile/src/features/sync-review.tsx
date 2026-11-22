@@ -95,6 +95,7 @@ const c=useThemeColors();
       onComplete(ids);
     }, SYNC_REVIEW_SAVE_DELAY_MS);
   };
+  const closeReview = () => { if (!saving) onComplete(undefined, true); };
   const selectCard = (idx: number) => {
     if (idx === activeIndex) return;
     if (Platform.OS !== "web" && typeof LayoutAnimation?.configureNext === "function" && !reduced) {
@@ -130,7 +131,7 @@ const c=useThemeColors();
         <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.tennis, alignItems: "center", justifyContent: "center" }}><Text style={[textStyle("heading"), { color: c.textOnAction }]}>✓</Text></View>
         <Text accessibilityRole="header" style={[textStyle("heading"), { color: c.ink }]}>{receipt.confirmBeforeSave ? "Review activities" : "Activities synced"}</Text>
       </View>
-      <MaterialClose disabled={saving} label="Cancel sync" onPress={() => { if (!saving) onComplete([], true); }} />
+      <MaterialClose disabled={saving} label={receipt.confirmBeforeSave ? "Cancel import" : "Dismiss review"} onPress={closeReview} />
     </View>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
