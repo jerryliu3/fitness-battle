@@ -1,7 +1,7 @@
 import { bearing } from "@turf/turf";
 import {analyzeRaceSplits,RACE_METERS,type RaceTimingSplits} from "./race-splits";
 export type ReplayCourse={points:[number,number,number][];sourceUrl:string;attribution:string};
-export type ReplayRunner={id:number;name:string;startAt:string|null;splits:RaceTimingSplits};
+export type ReplayRunner={id:number;name:string;bib?:string|null;startAt:string|null;splits:RaceTimingSplits};
 export type ReplayPage={version:string;course:ReplayCourse|null;totalAvailable:number;runners:ReplayRunner[];next:number|null};
 export type ReplayData={version:string;course:ReplayCourse;totalAvailable:number;runners:ReplayRunner[]};
 export function validateReplayCourse(course:ReplayCourse,distance:string) {
