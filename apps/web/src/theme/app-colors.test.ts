@@ -9,7 +9,7 @@ it("gives server-rendered system appearance native CSS light/dark pairs before h
   expect(variables["--overtaek-brand-gold-p3"]).toBe(MEDAL_GOLD.displayP3);
   expect(variables["--overtaek-brand-gold-srgb"]).toBe("#FFB800");
   expect(variables["--app-action-primary"]).toBe("var(--overtaek-brand-gold, var(--overtaek-brand-gold-srgb))");
-  expect(variables["--app-brand-mark"]).toContain(APP_COLORS.light.brandMark);
+  expect(variables["--app-chart-series"]).toBe(variables["--app-action-primary"]);
   expect(colors.chartSeries).toContain("var(--app-chart-series,");
   expect(parseAppearance("unknown")).toBe("system");
 });

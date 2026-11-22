@@ -94,7 +94,7 @@ export function StandingsDistributionChart({
             <View style={s.statDivider} />
             <View style={s.statCell}>
               <AppText role="caption" secondary>Your pace estimate</AppText>
-              <AppText role="label" style={[s.tabular, distribution.yourTimeMs != null ? { color: c.brandMark } : null]}>
+              <AppText role="label" style={[s.tabular, distribution.yourTimeMs != null ? { color: c.tennis } : null]}>
                 {distribution.yourTimeMs != null ? raceClock(distribution.yourTimeMs) : "—"}
               </AppText>
             </View>

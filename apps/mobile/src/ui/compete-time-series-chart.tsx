@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import * as SvgModule from "react-native-svg";
 import {
   APP_COLORS,
+  MEDAL_GOLD,
   competeChartPreview,
   evaluateCompeteTimeSeriesModel,
   prepareCompeteTimeSeriesBase,
@@ -831,7 +832,7 @@ const sThemes = createThemedStyles((themeColors) => {
     backgroundColor: c.soft,
   },
   placeBadgeLeader: {
-    backgroundColor: c.actionSoft,
+    backgroundColor: `${MEDAL_GOLD.srgb}3d`,
   },
   placeBadgeText: {
     ...textStyle("caption"),

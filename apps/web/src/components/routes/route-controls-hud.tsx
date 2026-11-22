@@ -51,7 +51,7 @@ export function RouteControlsHud({
           onClick={isFinished ? onReplay : onTogglePlay}
           disabled={isRecordingVideo}
           aria-label={isFinished ? "Replay timelapse" : isPlaying ? "Pause timelapse" : "Play timelapse"}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--app-action-primary)] text-[#142b3b] shadow transition-transform active:scale-95 hover:bg-[var(--app-action-pressed)] disabled:opacity-50"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--app-action-primary)] text-[#142b3b] shadow transition-transform active:scale-95 hover:bg-[#ffe380] disabled:opacity-50"
         >
           {isFinished ? (
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

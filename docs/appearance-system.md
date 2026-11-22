@@ -26,7 +26,7 @@ Filter triggers, analytics time-range toggles and selected chips use the quiet s
 
 Chart-series roles (including the legacy `fieldTeal` alias) are for data marks, not control fills. Time-range selectors use the neutral control treatment in both apps, independently of the chart palette.
 
-Navigation keeps neutral surfaces and labels, with the selected icon using the appearance-aware gold mark. Replay, avatar, rank and result surfaces retain their existing roles. Filled primary actions and progress use Medal Gold.
+Navigation keeps neutral surfaces, icons and labels. Replay, avatar, rank and result surfaces retain their existing roles. Filled primary actions and progress use Medal Gold.
 
 The [November 17 audit](reviews/appearance-audit/README.md) covers shared choice
 controls, system pickers, switch thumbs, action/error foregrounds and web chart
@@ -40,32 +40,26 @@ error text on a neutral surface continues to use `statusError`.
 `color(display-p3 1 0.735 0)` and its explicit sRGB fallback as `#FFB800`.
 `#FFBB00` is the approximate P3 channel hex used in a P3-profiled design file.
 The web shell selects P3 with CSS syntax and gamut queries before hydration.
-Light-mode text, selected tab icons and primary chart traces use the stronger
-`#8A5B00` mark. Gold-filled actions use `#142B3B` text in both appearances.
+Primary chart traces use the same Medal Gold in both appearances. Gold-filled actions use `#142B3B` text in both appearances.
 
 The iOS config plugin generates a named UIKit color with sRGB and Display P3
 variants. The shared native primary button, primary icon button, effort rail,
-field timeline and dark selected tab icon use it. A fresh iOS binary is needed
-to include the color catalog. Existing binaries fall back through
-`PlatformColor`. Website CSS and SVG use the browser color path. See the
-[secondary color audit](reviews/medal-gold/secondary-colors.md).
+field timeline use it. A fresh iOS binary is needed
+to include the color catalog. The controls retain an sRGB base fill if the
+native named color is unavailable. Website CSS and SVG use the browser color path.
 
 Expo web applies the same P3 syntax and gamut checks to its app palette.
 On Android 10 and later, a rebuilt app opts into a wide-gamut window, and
 its shared primary button, primary icon button, effort rail and field
 timeline draw the Display P3 fill with a color-space-aware Android paint.
 The sRGB fill stays underneath for older builds and unsupported displays.
-The dark Home line chart uses the named color on iOS and CSS on web.
-Android SVG, Mapbox layers and native components that accept only packed
-sRGB color values continue to use the shared sRGB fallback.
+Native SVG charts, Mapbox layers and native components that accept only
+packed sRGB color values use the shared sRGB fallback.
 
+## Polished Silver
 
-## Polished Silver and Whisper-Cool Obsidian
-
-The shared palette defines Polished Silver for secondary actions, supporting
-icons and focus, with separate translucent tint and border roles. Comparison
-Silver is a chart role. Both use ordinary sRGB colors in each appearance.
-Dark mode uses Obsidian canvas, card and elevated surfaces with separately
-rated readable supporting text. The low-emphasis muted token is reserved for
-decorative detail. Light neutral canvas, card, navigation and text retain their
-existing values. See the [brand palette preview](reviews/brand-palette/README.md).
+Polished Silver replaces the existing secondary accent and matching focus ring
+with `#626A74` in light mode and `#D7E3EC` in dark mode. Existing comparison
+chart roles use `#79838D` in light mode and `#ACBFCC` in dark mode. Silver uses
+ordinary sRGB values. The surface and navigation treatments retain their
+previous recipes.

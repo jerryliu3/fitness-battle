@@ -148,7 +148,7 @@
   display: grid;
   gap: 3px;
 }
-.home-deck-card .home-deck-title {
+.home-deck-title {
   margin: 0;
   font: var(--type-heading);
   color: var(--deck-ink);

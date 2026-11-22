@@ -6,7 +6,7 @@ function webColors(mode: ColorMode): AppColors {
   return {
     ...colors,
     actionPrimary: gold, progressFill: gold, tennis: gold, gold, starEmber: gold,
-    ...(mode === "dark" && { brandMark: gold, chartSeries: gold, fieldTeal: gold }),
+    chartSeries: gold, fieldTeal: gold,
   };
 }
 

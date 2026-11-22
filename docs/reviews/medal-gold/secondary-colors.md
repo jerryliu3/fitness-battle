@@ -1,6 +1,6 @@
 # Overtaek secondary color audit
 
-Medal Gold remains the only brand accent. The observations below are review items for a separate change. Contrast ratios compare the solid sRGB values and omit opacity and blur unless noted.
+This audit records the palette before the Gold and Silver token swap. The surface and card observations are review items. Contrast ratios compare the solid sRGB values and omit opacity and blur unless noted.
 
 ## Surfaces and Slate
 
@@ -31,4 +31,4 @@ First, make the web recommendation title inherit the card’s intended ink. Then
 
 - Keep success `#24765C` / `#8CCDAB`, error `#B93C3C` / `#F09C98` and the current native warning amber. These convey status. Recovery coral belongs to the recommendation category.
 - Existing podium gold `#DFAD3C`, rank wreaths, app icon artwork and celebratory materials have their own roles. Review those separately if the achievement palette needs to align more closely with Medal Gold.
-- Bright `#FFB800` has about 1.7:1 contrast against white. Dark action ink on Medal Gold is about 8.4:1. Light-mode `#8A5B00` has about 5.9:1 contrast against white and works for thin chart marks and selected icons. Check these roles again if the underlying surfaces change.
+- Bright `#FFB800` has about 1.7:1 contrast against white. Dark action ink on Medal Gold is about 8.4:1. Thin gold marks on white should be reviewed if their geometry changes.

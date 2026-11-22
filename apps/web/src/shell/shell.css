@@ -209,10 +209,8 @@
 
 .phone-tab[data-state="active"],
 .phone-tab[aria-current="page"] {
-  color: var(--app-text-primary);
+  color: #f6f253;
 }
-
-.phone-tab[aria-current="page"] > svg { color: var(--app-brand-mark); }
 
 .phone-pill {
   position: absolute;
@@ -270,7 +268,7 @@
   border: 0;
   border-radius: 14px;
   background: var(--app-soft);
-  color: var(--app-text-primary);
+  color: #f6f253;
   letter-spacing: normal;
   text-transform: none;
   font: var(--type-label);

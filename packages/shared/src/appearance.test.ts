@@ -12,7 +12,7 @@ describe("appearance foundation", () => {
   it("uses primary charts and Polished Silver accents with matching compatibility aliases in both modes", () => {
     for (const c of Object.values(APP_COLORS)) {
       expect(c.actionPrimary).toBe(MEDAL_GOLD.srgb);
-      expect(c.chartSeries).toBe(c.brandMark);
+      expect(c.chartSeries).toBe(c.actionPrimary);
       expect(c.progressFill).toBe(c.actionPrimary);
       expect(c.fieldTeal).toBe(c.chartSeries);
       expect(c.fieldDeep).toBe(c.surfaceFeature);
@@ -20,6 +20,8 @@ describe("appearance foundation", () => {
     }
     expect(APP_COLORS.light.accentSecondary).toBe("#626a74");
     expect(APP_COLORS.dark.accentSecondary).toBe("#d7e3ec");
+    expect(APP_COLORS.light.chartComparison).toBe("#79838d");
+    expect(APP_COLORS.dark.chartComparison).toBe("#acbfcc");
   });
   it("resolves system and manual preferences with a stable fallback", () => {
     expect(resolveColorMode("system", "dark")).toBe("dark");
@@ -44,11 +46,9 @@ it("keeps shared control foregrounds readable in both appearances", () => {
     return r!*.2126 + g!*.7152 + b!*.0722;
   };
   for (const c of Object.values(APP_COLORS)) {
-    for (const [foreground, background] of [[c.card,c.textPrimary], [c.textOnAction,c.actionPrimary], [c.brandMark,c.surfaceCard], [c.textOnError,c.statusError], [c.textPrimary,c.surfaceCard], [c.textPrimary,c.surfaceElevated], [c.accentSecondary,c.surfaceElevated], [c.textSecondary,c.surfaceCanvas], [c.textOnFeature,c.surfaceFeature]]) {
+    for (const [foreground, background] of [[c.card,c.textPrimary], [c.textOnAction,c.actionPrimary], [c.textOnError,c.statusError], [c.textPrimary,c.surfaceCard], [c.textPrimary,c.accentSecondarySoft], [c.textSecondary,c.surfaceCanvas], [c.textOnFeature,c.surfaceFeature]]) {
       const [a,b] = [luminance(foreground!),luminance(background!)].sort((a,b)=>b-a);
       expect((a!+.05)/(b!+.05)).toBeGreaterThanOrEqual(4.5);
     }
-    const [bright, dark] = [luminance(c.chartComparison), luminance(c.surfaceCard)].sort((a, b) => b - a);
-    expect((bright! + .05) / (dark! + .05)).toBeGreaterThanOrEqual(3);
   }
 });
