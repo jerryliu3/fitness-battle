@@ -696,7 +696,7 @@ const styles=useThemedStyles(stylesThemes);
         <ScrollView contentContainerStyle={f.content}>
 <SectionStack divided={false}>
           <AppText role="body" secondary>
-            Effort Score combines recent training, accumulated activity and weekly competition results. Running and cycling use distance, walking uses steps, and strength uses workout time.
+            Effort Score combines recent training, accumulated activity and weekly competition results. Running and cycling use distance, Steps uses daily step totals, and strength uses workout time.
           </AppText>
           <AppText role="body" secondary>
             Activities can raise your live score after today’s expected training is covered. Shortfalls appear the next day. Official scores and levels finalize weekly.
