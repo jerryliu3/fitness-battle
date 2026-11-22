@@ -429,11 +429,11 @@ const styles=useThemedStyles(stylesThemes);
 
   if (!signedIn && !trackerPreview) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
+      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         {pageHeader}
         <ScrollView
           automaticallyAdjustKeyboardInsets
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={[styles.scroll, { flexGrow: 1, justifyContent: "center" }]}
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.name}>Sign in to Overtaek</Text>
