@@ -333,24 +333,26 @@ const { colors: appearanceColors, mode } = useAppTheme();
           </View>
         </MarkerView>;
       })}
-      {!queuedStart ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id) && !dismissed.includes(lane.id)
+      {!queuedStart ? scene.callouts.filter(lane => !hiddenIds.includes(lane.id)
         && (!overlaysHidden || (replay && (lane.id === selectedId || lane.id === replay.nearestId)))).map(lane => {
         const detail = courseAthleteDetail(lanes, lane, unit);
+        const isDismissed = dismissed.includes(lane.id);
         if (!sharedLane && !lane.mystery) {
+          if (isDismissed) return null;
           return <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: lane.callout.left ? 1 : 0, y: lane.callout.originY / lane.callout.height }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
             <View collapsable={false} pointerEvents="box-none" style={{ width: 170, height: lane.callout.height }}>
               <Svg width={170} height={lane.callout.height} viewBox={`0 0 170 ${lane.callout.height}`} pointerEvents="none"><G transform={`translate(${lane.callout.originX} ${lane.callout.originY})`}>
                 <AthletePennant lane={lane} x={lane.callout.left ? -158 : 12} y={lane.callout.y} detail={detail} prefix={`${prefix}-${lane.id}`} />
               </G></Svg>
               <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: 12, top: lane.callout.cardTop, width: 146, height: 46 }} />
-              {!onSnapshot && lane.id === selectedId ? <Pressable accessibilityRole="button" accessibilityLabel={`Hide ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={8} style={{ position: "absolute", right: 4, top: lane.callout.cardTop - 8, width: 28, height: 28, borderRadius: 14, backgroundColor: appearanceColors.card, alignItems: "center", justifyContent: "center" }}><AppText role="label">−</AppText></Pressable> : null}
+              {!onSnapshot && lane.id === selectedId ? <Pressable accessibilityRole="button" accessibilityLabel={`Hide ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => ids.includes(lane.id) ? ids : [...ids, lane.id])} hitSlop={8} style={{ position: "absolute", right: 4, top: lane.callout.cardTop - 8, width: 28, height: 28, borderRadius: 14, backgroundColor: appearanceColors.card, alignItems: "center", justifyContent: "center" }}><AppText role="label">−</AppText></Pressable> : null}
             </View>
           </MarkerView>;
         }
         const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
         const subdetail = courseAthleteSubdetail(lanes, lane, unit);
-        const selected = lane.id === selectedId;
-        const expanded = selected || lane.id === replay?.nearestId;
+        const selected = lane.id === selectedId && !isDismissed;
+        const expanded = selected || (lane.id === replay?.nearestId && !isDismissed);
         const pad = 30, boxWidth = 170 + pad * 2, boxHeight = lane.callout.height + pad * 2;
         const nodeX = lane.callout.originX + pad, nodeY = lane.callout.originY + pad;
         const cardX = nodeX + (lane.callout.left ? -140 : 12), cardY = lane.callout.cardTop + pad;
@@ -360,8 +362,8 @@ const { colors: appearanceColors, mode } = useAppTheme();
               <AthleteNode mapOverlay lane={lane} x={lane.callout.left ? -140 : 12} y={lane.callout.y} detail={detail} subdetail={subdetail} expanded={expanded} selected={selected} gold={rank === 1} prefix={`${prefix}-${lane.id}`} />
             </G></Svg>
             {expanded ? <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: cardX, top: cardY, width: 128, height: subdetail ? 44 : 30 }} /> : null}
-            <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: nodeX - 26, top: nodeY - 26, width: 52, height: 52, borderRadius: 26 }} />
-            {!onSnapshot && !replay && selected ? <Pressable accessibilityRole="button" accessibilityLabel={`Close ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => [...ids, lane.id])} hitSlop={10} style={{ position: "absolute", left: cardX + 128 - 22, top: cardY + 4, width: 18, height: 18, alignItems: "center", justifyContent: "center" }}><AppText role="caption" secondary>×</AppText></Pressable> : null}
+            <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => { setDismissed(ids => ids.filter(id => id !== lane.id)); onSelect(lane.id); }} style={{ position: "absolute", left: nodeX - 26, top: nodeY - 26, width: 52, height: 52, borderRadius: 26 }} />
+            {!onSnapshot && !replay && selected ? <Pressable accessibilityRole="button" accessibilityLabel={`Close ${lane.name} card`} onTouchStart={event => event.stopPropagation()} onPress={() => setDismissed(ids => ids.includes(lane.id) ? ids : [...ids, lane.id])} hitSlop={10} style={{ position: "absolute", left: cardX + 128 - 22, top: cardY + 4, width: 18, height: 18, alignItems: "center", justifyContent: "center" }}><AppText role="caption" secondary>×</AppText></Pressable> : null}
           </View>
         </MarkerView>;
       }) : null}
