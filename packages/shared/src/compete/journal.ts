@@ -12,7 +12,7 @@ import type { Activity, SportId } from "./sports";
 export function isJournalActivity(activity: Activity): boolean {
   if (isSampleActivity(activity)) return false;
   if (activity.journalOnly) return true;
-  if (provenanceOf(activity) === "manual") return true;
+  if (provenanceOf(activity) === "manual") return activity.sport !== "strength";
   if (activity.sport === "walking") {
     const p = provenanceOf(activity);
     return p === "recorded" || p === "imported";

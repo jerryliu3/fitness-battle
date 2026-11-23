@@ -1,9 +1,10 @@
 import { useFocusStyles } from "./focus";
 import { useAppTheme, useThemeColors } from "../theme";
 import { AppText, textStyle } from "./section";
+import { MaterialPanel } from "./material-panel";
 import { dayKey } from "@fitness-battle/shared";
 import { useState } from "react";
-import { Modal, Platform, Pressable, View } from "react-native";
+import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 
@@ -15,7 +16,8 @@ const f=useFocusStyles();
 
   return <Modal transparent animationType="fade" onRequestClose={close}>
     <View style={{ flex: 1, backgroundColor: c.overlay, justifyContent: "center", padding: 24 }} accessibilityViewIsModal>
-      <View style={[f.card, { backgroundColor: c.card }]}>
+      <View style={[f.card, { backgroundColor: "transparent", overflow: "hidden" }]}>
+        <MaterialPanel style={StyleSheet.absoluteFill} fallbackColor={c.card} />
         <AppText accessibilityRole="header" role="heading">{label}</AppText>{children}
         <View style={f.row}><Pressable accessibilityRole="button" onPress={close} style={{ padding: 12 }}><AppText role="label">Cancel</AppText></Pressable>
           <Pressable accessibilityRole="button" onPress={done} style={{ padding: 12 }}><AppText role="label">Done</AppText></Pressable></View>

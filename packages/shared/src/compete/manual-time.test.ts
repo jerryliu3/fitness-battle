@@ -17,6 +17,8 @@ it("rejects future times, invalid input and the spring DST gap", () => {
 });
 it("uses the earlier occurrence for a repeated Eastern hour", () => {
   expect(manualActivityInstant("01:30", new Date("2026-11-01T16:00:00Z"), APP_TIMEZONE)).toEqual({ startedAt: "2026-11-01T05:30:00.000Z", error: null });
+  expect(manualActivityInstant("08:30", new Date("2026-10-23T16:00:00Z"), APP_TIMEZONE, "2026-10-20")).toEqual({ startedAt: "2026-10-20T12:30:00.000Z", error: null });
+  expect(manualActivityInstant("08:30", new Date("2026-10-23T16:00:00Z"), APP_TIMEZONE, "2026-10-25").error).toBeTruthy();
 });
 it("converts metric distance without changing the default mile contract", () => {
   expect(parseManualActivity("running", "5", "30", "metric")).toEqual({ distanceM: 5000, movingSec: 1800, error: null });

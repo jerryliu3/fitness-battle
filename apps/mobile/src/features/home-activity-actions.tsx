@@ -53,6 +53,7 @@ export function HomeActivityActions({
   const sportMenu = useAnchoredMenu({ minWidth: 196, estimatedHeight: SPORTS.length * 46 + 12 });
   const [formError, setFormError] = useState("");
   const [sport, setSport] = useState<SportId | "">("");
+  const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [miles, setMiles] = useState(""),
     [minutes, setMinutes] = useState("");
@@ -247,6 +248,8 @@ export function HomeActivityActions({
           <NumberPicker label="Duration" unit="min" value={minutes} onChange={setMinutes} />
           {sportById(sport).gps && <><AppText role="label" >Distance ({state.units === "metric" ? "km" : "mi"})</AppText>
             <NumberPicker label="Distance" unit={state.units === "metric" ? "km" : "mi"} max={1000} step={0.1} value={miles} onChange={setMiles} /></>}
+          <AppText role="label" >Date (optional)</AppText>
+          <DateTimeField label="Date" mode="date" value={date} onChange={setDate} clearLabel="Use today" />
           <AppText role="label" >Time of day (optional)</AppText>
           <DateTimeField label="Time of day" mode="time" value={time} onChange={setTime} clearLabel="Use current time" />
         </>}
@@ -266,7 +269,7 @@ export function HomeActivityActions({
               setFormError(parsed.error);
               return;
             }
-            const when = manualActivityInstant(time, competeNow(state), accountTimeZone(state));
+            const when = manualActivityInstant(time, competeNow(state), accountTimeZone(state), date);
             if (when.error !== null) { setFormError(when.error); return; }
             const { movingSec, distanceM } = parsed;
             dispatch({
@@ -280,9 +283,10 @@ export function HomeActivityActions({
             setOpen(false);
             setMiles("");
             setMinutes("");
+            setDate("");
             setTime("");
             setSport("");
-            setNote("Activity added for today.");
+            setNote(date ? "Activity added." : "Activity added for today.");
           }}
         />
       </FocusSheet>

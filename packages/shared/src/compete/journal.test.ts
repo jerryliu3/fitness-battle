@@ -48,10 +48,11 @@ describe("journal activities", () => {
     expect(isJournalActivity({ ...run, journalOnly: true })).toBe(true);
   });
 
-  it("includes journal rows in training helpers but not compete ledger", async () => {
+  it("includes journal rows in training helpers but not compete ledger, except manual strength", async () => {
     const { countsOnTrack } = await import("./ledger");
     expect(countsForTraining(manual)).toBe(true);
     expect(countsOnTrack(manual, "open")).toBe(false);
+    expect(countsOnTrack({ ...manual, sport: "strength", distanceM: 0 }, "open")).toBe(true);
     expect(countsOnTrack(run, "open")).toBe(true);
     expect(countsOnTrack({ ...run, journalOnly: true }, "open")).toBe(false);
   });
