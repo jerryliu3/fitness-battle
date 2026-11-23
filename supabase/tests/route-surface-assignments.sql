@@ -3,7 +3,7 @@ do $$
 declare course jsonb;
 begin
   course := public.route_surface_course('onboarding-overtake');
-  if course is null or course->>'routeId' is distinct from 'onboarding-overtake' then
+  if course is null or course->>'routeId' not like 'marathon-%' then
     raise exception 'Onboarding surface route unavailable';
   end if;
   if not has_function_privilege('anon', 'public.route_surface_course(text)', 'EXECUTE') then
