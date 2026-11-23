@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AppHeading, typographyStyle } from "@/ui/section";
-import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Fragment, memo, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   analyzeRaceSplits,
   RACE_CATEGORY_FILTERS,
@@ -36,7 +36,6 @@ const OVERLAY_COLORS = ["#637482", "#142b3b", "#24765c"] as const;
 const clientResultsCache = new Map<string, RaceResultsPage>();
 const rowSplitsMemoryCache = new Map<number, RaceTimingSplits | null>();
 const reportMemoryCache = new Map<number, RaceResultReport>();
-let splitDictionaryLoaded = false;
 
 type PinnedRecord = {
   id: number;
@@ -120,7 +119,7 @@ function estimateAtTimeMs(analytics: RaceEditionAnalytics | null | undefined, ta
   return { rank, fasterThan, total: analytics.total, bucket };
 }
 
-export function SplitSparkline({ splits, distanceSlug }: { splits: RaceTimingSplits | null | undefined; distanceSlug: string }) {
+export const SplitSparkline = memo(function SplitSparkline({ splits, distanceSlug }: { splits: RaceTimingSplits | null | undefined; distanceSlug: string }) {
   const analysis = useMemo(() => analyzeRaceSplits(splits, distanceSlug), [splits, distanceSlug]);
   if (analysis.status !== "ready" || !splits) {
     return <span className="ovt-hint" title="Recorded checkpoint splits are not available for this result">—</span>;
@@ -147,11 +146,11 @@ export function SplitSparkline({ splits, distanceSlug }: { splits: RaceTimingSpl
       {badge && <span className={`ovt-split-badge ${tone}`}>{badge}</span>}
     </span>
   );
-}
+});
 
 export const coursePreviewsMemoryCache: { data: Record<string, [number, number][]> | null } = { data: null };
 
-export function RaceRouteArt({
+export const RaceRouteArt = memo(function RaceRouteArt({
   eventName,
   year,
   coursePoints,
@@ -222,7 +221,7 @@ export function RaceRouteArt({
       <span className="ovt-artyr">{year}</span>
     </div>
   );
-}
+});
 
 export function RaceExplorer({
   distance: initialDistance,
@@ -484,51 +483,29 @@ export function RaceExplorer({
     };
   }, [saved.ready, savedIdsKey]);
 
+  // Warm only the active distance/edition's sibling sex filters when idle (avoids saturating DB on load)
   useEffect(() => {
-    if (splitDictionaryLoaded) return;
-    splitDictionaryLoaded = true;
-    fetch("/api/rankings/replay?edition=6&distance=marathon&sex=all&clock=chip")
-      .then(res => (res.ok ? res.json() : null))
-      .then((payload: { runners?: Array<{ id: number; splits?: RaceTimingSplits }> } | null) => {
-        if (!Array.isArray(payload?.runners)) return;
-        const batch: Record<number, RaceTimingSplits | null> = {};
-        for (const r of payload.runners) {
-          if (!r.splits) continue;
-          rowSplitsMemoryCache.set(r.id, r.splits);
-          batch[r.id] = r.splits;
-        }
-        setRowSplits(prev => ({ ...prev, ...batch }));
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
     const timer = window.setTimeout(async () => {
-      const targets: Array<{ d: string; ed: string; sx: string }> = [
-        ...RACE_CATEGORY_FILTERS.map(c => ({ d: distance, ed: edition, sx: c.value })),
-        ...eventGroups.map(eg => ({ d: distance, ed: String(eg.edition_id), sx: sex })),
-        ...RACE_DISTANCES.map(d => ({ d: d.slug, ed: "", sx: sex })),
-      ];
-      for (const t of targets) {
-        if (cancelled) break;
-        const key = `${t.d}|${t.ed}|${t.sx}|all||1`;
+      for (const c of RACE_CATEGORY_FILTERS) {
+        if (controller.signal.aborted || c.value === sex) continue;
+        const key = `${distance}|${edition}|${c.value}|all||1`;
         if (clientResultsCache.has(key)) continue;
-        const p = new URLSearchParams({ distance: t.d, sex: t.sx, timeframe: "all", page: "1" });
-        if (t.ed) p.set("edition", t.ed);
+        const p = new URLSearchParams({ distance, sex: c.value, timeframe: "all", page: "1" });
+        if (edition) p.set("edition", edition);
         try {
-          const res = await fetch(`/api/rankings?${p.toString()}`);
+          const res = await fetch(`/api/rankings?${p.toString()}`, { signal: controller.signal });
           if (res.ok) {
             clientResultsCache.set(key, (await res.json()) as RaceResultsPage);
           }
         } catch {}
       }
-    }, 350);
+    }, 1200);
     return () => {
-      cancelled = true;
+      controller.abort();
       window.clearTimeout(timer);
     };
-  }, [distance, sex, edition, eventGroups]);
+  }, [distance, sex, edition]);
 
   useEffect(() => {
     for (const edId of overlayIds) {
@@ -824,6 +801,12 @@ export function RaceExplorer({
   const T = 84;
   const B = 330;
 
+  const hoverRafRef = useRef<number>(0);
+  const pendingHoverMsRef = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (hoverRafRef.current) cancelAnimationFrame(hoverRafRef.current);
+  }, []);
+
   function handleChartPointer(clientX: number, commit: boolean) {
     const svg = chartSvgRef.current;
     if (!svg || !chartModel || !analytics) return;
@@ -834,8 +817,19 @@ export function RaceExplorer({
     const targetMs = Math.round(chartModel.minMs + q * (chartModel.maxMs - chartModel.minMs));
 
     if (!commit) {
-      setHoverTimeMs(targetMs);
+      pendingHoverMsRef.current = targetMs;
+      if (!hoverRafRef.current) {
+        hoverRafRef.current = requestAnimationFrame(() => {
+          hoverRafRef.current = 0;
+          setHoverTimeMs(pendingHoverMsRef.current);
+        });
+      }
       return;
+    }
+
+    if (hoverRafRef.current) {
+      cancelAnimationFrame(hoverRafRef.current);
+      hoverRafRef.current = 0;
     }
 
     setInspectTimeMs(targetMs);
@@ -1066,6 +1060,10 @@ export function RaceExplorer({
                 setIsPanningChart(false);
               }}
               onPointerLeave={() => {
+                if (hoverRafRef.current) {
+                  cancelAnimationFrame(hoverRafRef.current);
+                  hoverRafRef.current = 0;
+                }
                 if (!chartPanRef.current?.active) setHoverTimeMs(null);
               }}
               className={`ovt-plot-target ${isPanningChart ? "is-panning" : ""}`}
