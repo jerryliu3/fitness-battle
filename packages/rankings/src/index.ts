@@ -77,15 +77,3 @@ export {
   fetchNyrrFinishers,
   parseNyrrFinishersPage,
 } from "./ingest/nyrr";
-export {
-  MARATHONGUIDE_RUNZY_API,
-  MARATHONGUIDE_TOKYO_2026,
-  marathonGuideApiUrl,
-  parseMarathonGuideApiPage,
-  type MarathonGuideEventConfig,
-} from "./ingest/marathonguide";
-export {
-  NYRR_RESULT_DETAILS_API,
-  nyrrResultPageUrl,
-  parseNyrrSplitResults,
-} from "./ingest/nyrr-splits";
