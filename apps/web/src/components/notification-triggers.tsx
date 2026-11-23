@@ -60,10 +60,13 @@ export function NotificationTriggers() {
     }
     if (
       state.crewBoard &&
-      place > placeBaseline.current &&
+      place !== placeBaseline.current &&
       volume !== volumeBaseline.current
     ) {
-      void requestAccountPush("rival_moves", identity, { place });
+      void requestAccountPush("rival_moves", identity, {
+        place,
+        direction: place < placeBaseline.current ? "overtook" : "overtaken",
+      });
     }
     placeBaseline.current = place;
     volumeBaseline.current = volume;

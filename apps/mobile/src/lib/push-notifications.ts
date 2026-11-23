@@ -216,7 +216,7 @@ export type DeliverResult =
       mode?: "expo" | "stub" | "local";
       message?: string;
     }
-  | { ok: false; reason: "blocked" };
+  | { ok: false; reason: string; message?: string };
 
 export async function deliverNativeNotification(
   payload: NotificationDeliveryPayload,
@@ -224,7 +224,13 @@ export async function deliverNativeNotification(
 ): Promise<DeliverResult> {
   const prefs = await loadNotificationPreferences();
   const prepared = prepareNotificationDelivery(prefs, payload);
-  if (!prepared) return { ok: false, reason: "blocked" };
+  if (!prepared) {
+    return {
+      ok: false,
+      reason: "blocked",
+      message: "Turn push notifications on and enable this category first.",
+    };
+  }
 
   if (identity && !identity.localOnly) {
     try {
@@ -237,7 +243,7 @@ export async function deliverNativeNotification(
           prefs,
         }),
       });
-      const body = (await response.json()) as {
+      const body = (await response.json().catch(() => ({}))) as {
         ok?: boolean;
         persisted?: boolean;
         mode?: "expo" | "stub";
@@ -256,10 +262,21 @@ export async function deliverNativeNotification(
       }
       return {
         ok: false,
-        reason: "blocked",
+        reason: body.reason ?? body.error ?? `http_${response.status}`,
+        message:
+          body.message ??
+          body.error ??
+          `Push delivery failed (HTTP ${response.status}).`,
       };
-    } catch {
-      return { ok: false, reason: "blocked" };
+    } catch (error) {
+      return {
+        ok: false,
+        reason: "network_error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Could not reach the notification service.",
+      };
     }
   }
 

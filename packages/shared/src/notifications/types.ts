@@ -8,6 +8,7 @@ export type NotificationPlatform = "web" | "ios" | "android";
 export type NotificationCategoryId =
   | "week_summary"
   | "rival_moves"
+  | "activity_synced"
   | "lesson_reminder"
   | "connection_alerts";
 
