@@ -52,6 +52,7 @@ function warmCommonRankingsScopes(_coverage: RaceCoverage[]) {
             percentile: "all",
             query: "",
             page: 1,
+            includeWheelchair: false,
           });
         } catch {
           // Ignore background warm-up errors
