@@ -519,3 +519,137 @@ export function selectFieldRankSlice(
   for (let i = offset; i < end; i++) indices.push(all[i]);
   return { total: count, indices };
 }
+
+/** Compact wire tuple: [id, name, bib, startEpochMs, finishMs, distancesM, elapsedMs] */
+export type ReplayCompactTuple = [
+  number,
+  string,
+  string | null,
+  number | null,
+  number,
+  number[],
+  (number | null)[],
+];
+
+export type ReplayCompactPage = {
+  version: string;
+  clock: "chip" | "gun";
+  course: ReplayCourse | null;
+  totalAvailable: number | null;
+  runners: ReplayCompactTuple[];
+  next: number | null;
+};
+
+export function compactReplayPage(page: ReplayPage, clock: "chip" | "gun" = "chip"): ReplayCompactPage {
+  return {
+    version: page.version,
+    clock: page.runners[0]?.splits.clock ?? clock,
+    course: page.course,
+    totalAvailable: page.totalAvailable,
+    runners: page.runners.map(r => {
+      const startMs = r.startAt ? Date.parse(r.startAt) : NaN;
+      return [
+        r.id,
+        r.name,
+        r.bib ?? null,
+        Number.isFinite(startMs) ? startMs : null,
+        r.splits.finishMs,
+        r.splits.checkpoints.map(c => c.distanceM),
+        r.splits.checkpoints.map(c => c.elapsedMs),
+      ];
+    }),
+    next: page.next,
+  };
+}
+
+export function expandCompactRunner(tuple: ReplayCompactTuple, clock: "chip" | "gun", sourceUrl: string): ReplayRunner {
+  const [id, name, bib, startMs, finishMs, dists, times] = tuple;
+  const checkpoints: { distanceM: number; elapsedMs: number | null }[] = new Array(dists.length);
+  for (let i = 0; i < dists.length; i++) {
+    checkpoints[i] = { distanceM: dists[i], elapsedMs: times[i] ?? null };
+  }
+  return {
+    id,
+    name,
+    bib,
+    startAt: startMs !== null && Number.isFinite(startMs) ? new Date(startMs).toISOString() : null,
+    splits: { clock, finishMs, sourceUrl, checkpoints },
+  };
+}
+
+export async function loadReplayCompactField(
+  fetchPage: (after: number) => Promise<ReplayCompactPage>,
+  cancelled: () => boolean,
+  onProgress: (count: number) => void,
+): Promise<ReplayData> {
+  let after = 0;
+  let course: ReplayCourse | null = null;
+  let version = "";
+  let totalAvailable = 0;
+  const runners: ReplayRunner[] = [];
+  while (true) {
+    if (cancelled()) throw new Error("Cancelled");
+    const page = await fetchPage(after);
+    if (cancelled()) throw new Error("Cancelled");
+    if (!course) {
+      if (!page.course) throw new Error("Course unavailable");
+      course = page.course;
+      version = page.version;
+      totalAvailable = page.totalAvailable ?? page.runners.length;
+    } else if (page.version !== version) {
+      throw new Error("Course changed; reload replay");
+    }
+    const sourceUrl = course.sourceUrl;
+    for (let i = 0; i < page.runners.length; i++) {
+      const t = page.runners[i];
+      const prevId = i > 0 ? page.runners[i - 1][0] : after;
+      if (t[0] <= prevId) throw new Error("Invalid replay page");
+      runners.push(expandCompactRunner(t, page.clock, sourceUrl));
+    }
+    onProgress(runners.length);
+    if (page.next === null) return { course, version, totalAvailable, runners };
+    const lastId = page.runners.at(-1)?.[0];
+    if (page.next <= after || page.next !== lastId) throw new Error("Invalid replay cursor");
+    after = page.next;
+  }
+}
+
+/** Finds the closest active runner within `maxRadiusPx` screen pixels of a clicked [lng, lat]. */
+export function pickNearestRunnerId(
+  courseIndex: ReplayCourseIndex,
+  field: CompiledReplayField,
+  distM: Float32Array,
+  clickLng: number,
+  clickLat: number,
+  zoom: number,
+  maxRadiusPx = 14,
+): number | null {
+  const [clickMx, clickMy] = lngLatToMercator(clickLng, clickLat);
+  const clickDx = clickMx - courseIndex.originMx;
+  const clickDy = clickMy - courseIndex.originMy;
+  const worldPx = 512 * Math.pow(2, zoom);
+  const threshold = maxRadiusPx / Math.max(1, worldPx);
+  let bestDistSq = threshold * threshold;
+  let bestId: number | null = null;
+
+  const { count, ids } = field;
+  const { totalMeters, buckets, invStep, dx, dy } = courseIndex;
+  const maxBucket = buckets - 1;
+
+  for (let i = 0; i < count; i++) {
+    const m = distM[i];
+    if (m < 0) continue;
+    const clamped = m > totalMeters ? totalMeters : m;
+    const f = clamped * invStep;
+    const b = f >= maxBucket ? maxBucket : (f | 0);
+    const frac = f - b;
+    const px = dx[b] + frac * (dx[b + 1] - dx[b]) - clickDx;
+    const py = dy[b] + frac * (dy[b + 1] - dy[b]) - clickDy;
+    const dSq = px * px + py * py;
+    if (dSq <= bestDistSq) {
+      bestDistSq = dSq;
+      bestId = ids[i];
+    }
+  }
+  return bestId;
+}

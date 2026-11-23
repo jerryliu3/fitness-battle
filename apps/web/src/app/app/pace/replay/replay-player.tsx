@@ -10,7 +10,9 @@ import {
   buildReplayCourseIndex,
   compileReplayRunner,
   evaluateFieldDistances,
-  loadReplayField,
+  fillMercatorPositions,
+  loadReplayCompactField,
+  pickNearestRunnerId,
   RACE_DISTANCES,
   RACE_METERS,
   raceClock,
@@ -19,14 +21,13 @@ import {
   replayCoordinateAt,
   replayDistance,
   replayFeatures,
-  replayFrameInterval,
   selectFieldRankSlice,
   validateReplayCourse,
   type CompiledReplayRunner,
   type RaceCoverage,
+  type ReplayCompactPage,
   type ReplayCourseIndex,
   type ReplayData,
-  type ReplayPage,
 } from "@fitness-battle/shared";
 import { webEnv } from "@/lib/env";
 import { useAuth } from "@/components/auth-context";
@@ -34,6 +35,7 @@ import { addMapboxAttribution, mapboxAttributionOptions } from "@/components/map
 import { useRaceFavorites } from "../favorites";
 import { coursePreviewsMemoryCache, formatEditionDisplay, RaceRouteArt } from "../race-explorer";
 import { computeSplitMetrics, SportFilterBar, SPORTS, type SportId } from "../sport-filter-bar";
+import { FieldWebGLLayer } from "./field-webgl-layer";
 
 const replayDataMemoryCache = new Map<string, ReplayData>();
 
@@ -577,10 +579,11 @@ export function ReplayPlayer({
     setRankTime(0);
     setPlaying(false);
     setWall(false);
-    void loadReplayField(
+    void loadReplayCompactField(
       async after => {
         const params = new URLSearchParams(scopeKey);
         params.set("after", String(after));
+        params.set("format", "compact");
         if (ids !== null && ids.trim() !== "") params.set("ids", ids);
         const response = await fetch(`/api/rankings/replay?${params}`, { signal: controller.signal });
         if (!response.ok) {
@@ -590,7 +593,7 @@ export function ReplayPlayer({
               : "Replay could not load.",
           );
         }
-        return response.json() as Promise<ReplayPage>;
+        return response.json() as Promise<ReplayCompactPage>;
       },
       () => controller.signal.aborted,
       setProgress,
@@ -680,12 +683,64 @@ export function ReplayPlayer({
     () => ({ wallAvailable: field.wallAvailable, origin: field.wallOrigin, duration: field.duration }),
     [field],
   );
-  const features = useMemo(
-    () => (data && !playing ? replayFeatures(data.course, runners, time, timeline.origin, courseIndex ?? undefined) : null),
-    [data, runners, time, timeline.origin, playing, courseIndex],
-  );
-  const latest = useRef(features);
-  if (features) latest.current = features;
+
+  // Highlighted subset (pinned / camera target / duel) rendered as crisp Mapbox circles above the WebGL field
+  const highlightedRunners = useMemo(() => {
+    const idSet = new Set<number>(pinnedIds);
+    if (cameraTargetId !== null) idSet.add(cameraTargetId);
+    if (replayMode === "duel") {
+      if (duelPrimaryId !== null) idSet.add(duelPrimaryId);
+      if (peerId !== null) idSet.add(peerId);
+    }
+    const list: CompiledReplayRunner[] = [];
+    for (const id of idSet) {
+      const idx = field.idToIndex.get(id);
+      if (idx !== undefined && runners[idx]) list.push(runners[idx]);
+    }
+    return list;
+  }, [pinnedIds, cameraTargetId, replayMode, duelPrimaryId, peerId, field, runners]);
+
+  const fieldLayerRef = useRef<FieldWebGLLayer | null>(null);
+  const fieldDistancesRef = useRef<Float32Array>(new Float32Array(0));
+  const mercatorXYRef = useRef<Float32Array>(new Float32Array(0));
+  if (fieldDistancesRef.current.length !== field.count) {
+    fieldDistancesRef.current = new Float32Array(field.count);
+    mercatorXYRef.current = new Float32Array(field.count * 2);
+  }
+
+  const pushMapFrameRef = useRef<(targetTime: number) => void>(() => {});
+  pushMapFrameRef.current = (targetTime: number) => {
+    const instance = map.current;
+    if (!instance || !data || !courseIndex) return;
+    if (fieldLayerRef.current) {
+      evaluateFieldDistances(field, targetTime, fieldDistancesRef.current);
+      const activeCount = fillMercatorPositions(
+        courseIndex,
+        field,
+        fieldDistancesRef.current,
+        mercatorXYRef.current,
+      );
+      fieldLayerRef.current.updatePositions(
+        mercatorXYRef.current,
+        activeCount,
+        courseIndex.originMx,
+        courseIndex.originMy,
+      );
+    }
+    const pinnedSrc = instance.getSource("runners") as mapboxgl.GeoJSONSource | undefined;
+    if (pinnedSrc) {
+      pinnedSrc.setData(
+        highlightedRunners.length > 0
+          ? replayFeatures(data.course, highlightedRunners, targetTime, timeline.origin, courseIndex)
+          : { type: "FeatureCollection", features: [] },
+      );
+    }
+  };
+
+  const togglePinRunnerRef = useRef(togglePinRunner);
+  togglePinRunnerRef.current = togglePinRunner;
+  const pickContextRef = useRef({ courseIndex, field });
+  pickContextRef.current = { courseIndex, field };
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -723,15 +778,13 @@ export function ReplayPlayer({
     }
   }, [time, playing]);
 
-  // Decoupled rAF playback loop: throttled GeoJSON updates + smooth camera + 4Hz leaderboard sync
+  // 60–120fps WebGL rAF playback loop: zero GeoJSON tiling on field + smooth camera + 4Hz leaderboard sync
   useEffect(() => {
     if (!playing || reduced || !data || !courseIndex || timeline.duration <= 0) return;
     let rafId = 0;
     let previous = performance.now();
-    let lastMapEmit = -Infinity;
     let lastRankSync = previous;
     let lastDuelSync = previous;
-    const mapInterval = replayFrameInterval(runners.length);
 
     const tick = (now: number) => {
       const dt = Math.min(now - previous, 100);
@@ -751,12 +804,7 @@ export function ReplayPlayer({
       }
 
       if (ready && map.current) {
-        if (now - lastMapEmit >= mapInterval || nextTime >= timeline.duration) {
-          lastMapEmit = now;
-          const frameFeatures = replayFeatures(data.course, runners, nextTime, timeline.origin, courseIndex);
-          latest.current = frameFeatures;
-          (map.current.getSource("runners") as mapboxgl.GeoJSONSource | undefined)?.setData(frameFeatures);
-        }
+        pushMapFrameRef.current(nextTime);
 
         if (cameraMode !== "field" && cameraTargetId !== null) {
           const idx = field.idToIndex.get(cameraTargetId);
@@ -883,9 +931,12 @@ export function ReplayPlayer({
           "line-opacity": 0.55,
         },
       });
+      const fieldLayer = new FieldWebGLLayer();
+      fieldLayerRef.current = fieldLayer;
+      instance.addLayer(fieldLayer);
       instance.addSource("runners", {
         type: "geojson",
-        data: latest.current ?? { type: "FeatureCollection", features: [] },
+        data: { type: "FeatureCollection", features: [] },
       });
       instance.addLayer({
         id: "runners-halo",
@@ -906,9 +957,26 @@ export function ReplayPlayer({
       instance.fitBounds(bounds, { padding: 56, duration: 0 });
       setReady(true);
     });
-    instance.on("click", "runners", event => {
-      const id = Number(event.features?.[0]?.properties?.id);
-      if (Number.isSafeInteger(id)) togglePinRunner(id);
+    instance.on("click", event => {
+      const hit = instance.queryRenderedFeatures(event.point, { layers: ["runners"] });
+      const hitId = Number(hit[0]?.properties?.id);
+      if (Number.isSafeInteger(hitId)) {
+        togglePinRunnerRef.current(hitId);
+        return;
+      }
+      const { courseIndex: idx, field: f } = pickContextRef.current;
+      if (!idx || f.count === 0) return;
+      evaluateFieldDistances(f, timeRef.current, fieldDistancesRef.current);
+      const picked = pickNearestRunnerId(
+        idx,
+        f,
+        fieldDistancesRef.current,
+        event.lngLat.lng,
+        event.lngLat.lat,
+        instance.getZoom(),
+        14,
+      );
+      if (picked !== null) togglePinRunnerRef.current(picked);
     });
 
     const visObserver = new IntersectionObserver(entries => {
@@ -924,16 +992,17 @@ export function ReplayPlayer({
     return () => {
       visObserver.disconnect();
       resizeObserver.disconnect();
+      fieldLayerRef.current = null;
       instance.remove();
       map.current = null;
     };
   }, [data, mapAttempt]);
 
   useEffect(() => {
-    if (ready && features && !playing) {
-      (map.current?.getSource("runners") as mapboxgl.GeoJSONSource | undefined)?.setData(features);
+    if (ready && !playing) {
+      pushMapFrameRef.current(time);
     }
-  }, [ready, features, playing]);
+  }, [ready, time, playing, highlightedRunners, field, courseIndex]);
 
   const { rankDistances, leaderDistM } = useMemo(() => {
     const out = new Float32Array(field.count);
@@ -1437,9 +1506,7 @@ export function ReplayPlayer({
                     timeline.origin !== null ? new Date(timeline.origin + nextTime).toLocaleTimeString() : raceClock(nextTime);
                 }
                 if (ready && map.current && data) {
-                  const frameFeatures = replayFeatures(data.course, runners, nextTime, timeline.origin, courseIndex ?? undefined);
-                  latest.current = frameFeatures;
-                  (map.current.getSource("runners") as mapboxgl.GeoJSONSource | undefined)?.setData(frameFeatures);
+                  pushMapFrameRef.current(nextTime);
                 }
               }}
             />

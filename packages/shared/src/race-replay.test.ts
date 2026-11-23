@@ -2,10 +2,13 @@ import {describe,expect,it} from "vitest";
 import {
   buildCompiledReplayField,
   buildReplayCourseIndex,
+  compactReplayPage,
   compileReplayRunner,
   evaluateFieldDistances,
   fillMercatorPositions,
+  loadReplayCompactField,
   loadReplayField,
+  pickNearestRunnerId,
   replayCoordinate,
   replayCoordinateAt,
   replayCourseBearing,
@@ -304,5 +307,44 @@ describe("edition course replay",()=>{
     const bibMatch = selectFieldRankSlice(field, dist, "field", 0, 9, "#2199");
     expect(bibMatch.total).toBe(1);
     expect(field.ids[bibMatch.indices[0]]).toBe(1200);
+  });
+
+  it("compacts and streams replay pages and picks nearest runner on click", async () => {
+    const legacyPage1: ReplayPage = {
+      version: "v1",
+      course,
+      totalAvailable: 2,
+      runners: [{ ...runner, id: 1, bib: "101", startAt: "2025-01-01T00:00:00.000Z" }],
+      next: 1,
+    };
+    const legacyPage2: ReplayPage = {
+      version: "v1",
+      course: null,
+      totalAvailable: 2,
+      runners: [{ ...runner, id: 2, name: "Runner Two", bib: "202", splits: { ...runner.splits, finishMs: 1200000, checkpoints: [{ distanceM: 2000, elapsedMs: 500000 }, { distanceM: 4000, elapsedMs: 1000000 }] } }],
+      next: null,
+    };
+
+    const compact1 = compactReplayPage(legacyPage1);
+    const compact2 = compactReplayPage(legacyPage2);
+    const loaded = await loadReplayCompactField(
+      async after => (after === 0 ? compact1 : compact2),
+      () => false,
+      () => {},
+    );
+    expect(loaded.runners).toHaveLength(2);
+    expect(loaded.runners[0].bib).toBe("101");
+    expect(loaded.runners[1].splits.sourceUrl).toBe(course.sourceUrl);
+
+    const compiledList = loaded.runners.map(r => compileReplayRunner(r, "5k")!);
+    const idx = buildReplayCourseIndex(loaded.course, 4096);
+    const field = buildCompiledReplayField(compiledList, false);
+    const dist = new Float32Array(field.count);
+    evaluateFieldDistances(field, 600000, dist);
+
+    // Runner 2 is around 2400m (.024 lng), Runner 1 is at 2000m (.020 lng)
+    expect(pickNearestRunnerId(idx, field, dist, 0.0241, 0, 12, 16)).toBe(2);
+    expect(pickNearestRunnerId(idx, field, dist, 0.0199, 0, 12, 16)).toBe(1);
+    expect(pickNearestRunnerId(idx, field, dist, 1.5, 1.5, 12, 16)).toBeNull();
   });
 });
