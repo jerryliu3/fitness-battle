@@ -17,19 +17,19 @@ import {
 import type { CheckpointSeries } from "./compete/track";
 
 describe("competeFieldView", () => {
-  it("treats GPS sports as geographic with map default", () => {
-    expect(isGeographicCompete("running")).toBe(true);
-    expect(isMetricCompete("cycling")).toBe(false);
-    expect(defaultCompeteFieldView("running")).toBe("4d");
-    expect(allowedCompeteFieldViews("cycling")).toEqual(["4d", "2d", "graph"]);
+  it("treats running, cycling, and walking as geographic with map default", () => {
+    for (const event of ["running", "cycling", "walking"] as const) {
+      expect(isGeographicCompete(event)).toBe(true);
+      expect(isMetricCompete(event)).toBe(false);
+      expect(defaultCompeteFieldView(event)).toBe("4d");
+      expect(allowedCompeteFieldViews(event)).toEqual(["4d", "2d", "graph"]);
+    }
   });
 
-  it("treats metric events as chart-first without map", () => {
-    for (const event of ["strength", "walking"] as const) {
-      expect(isMetricCompete(event)).toBe(true);
-      expect(defaultCompeteFieldView(event)).toBe("graph");
-      expect(allowedCompeteFieldViews(event)).toEqual(["graph", "2d"]);
-    }
+  it("treats strength and sleep as metric chart-first without map", () => {
+    expect(isMetricCompete("strength")).toBe(true);
+    expect(defaultCompeteFieldView("strength")).toBe("graph");
+    expect(allowedCompeteFieldViews("strength")).toEqual(["graph", "2d"]);
     expect(allowedCompeteFieldViews("sleep")).toEqual(["graph"]);
   });
 

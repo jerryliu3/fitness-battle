@@ -5,7 +5,7 @@ import { sportById, type CompeteState, type SportId } from "./compete/sports";
 export type CompeteArenaEvent = SportId | "sleep";
 
 export function isGeographicCompete(event: CompeteArenaEvent): boolean {
-  return event !== "sleep" && sportById(event).gps;
+  return event !== "sleep" && (sportById(event).gps || event === "walking");
 }
 
 export function isMetricCompete(event: CompeteArenaEvent): boolean {

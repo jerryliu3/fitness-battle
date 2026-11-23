@@ -460,7 +460,7 @@ const c=useThemeColors();
             onSelect(lane);
           };
           return [
-            <Pressable key={lane.id} accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}`} accessibilityState={{ selected: selectedId === lane.id }} onPress={handlePress} style={{ position: "absolute", left: point.x - visibleScroll - 28, top: point.y - 28, width: 56, height: 56 }} />,
+            <Pressable key={lane.id} accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}`} accessibilityState={{ selected: selectedId === lane.id }} hitSlop={8} onPress={handlePress} style={{ position: "absolute", left: point.x - visibleScroll - 32, top: point.y - 32, width: 64, height: 64 }} />,
             !overlaysHidden && !edge && isExpanded ? <Pressable key={`${lane.id}-nameplate`} accessible={false} onPress={handlePress} style={{ position: "absolute", left: point.x - visibleScroll + x, top: point.y + y, width: 128, height: 44 }} /> : null,
           ];
         })}

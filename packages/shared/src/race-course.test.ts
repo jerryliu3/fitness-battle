@@ -9,6 +9,7 @@ describe("race courses", () => {
     expect(raceCoursePosition(course, course.metres[1]).coordinate[0]).toBeCloseTo(.001);
     expect(raceCourseTrail(course, 200)).toHaveLength(3);
     expect(raceEffortMetres(1, "mi")).toBe(1609.344);
+    expect(raceEffortMetres(1200, "steps")).toBe(1200);
     expect(raceEffortMetres(10, "pts")).toBeNull();
   });
   it("retraces the course indefinitely while preserving total distance and covered trails", () => {
