@@ -41,6 +41,7 @@ import { AppText, textStyle } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 import { FocusButton, useFocusStyles } from "../ui/focus";
 import { playCue, playPattern } from "../lib/haptics";
+import { NotificationOptInStrip } from "./notification-opt-in";
 
 const ignore = () => {};
 
@@ -351,7 +352,19 @@ export function CompetitionMoment({
           active
           expandRequest={0}
           defaultIndex={0}
-          overview={actionRow}
+          overview={
+            <View>
+              {actionRow}
+              {!practice && (
+                <NotificationOptInStrip
+                  surface="competition_moment"
+                  hasOvertake={moment.plan.hasOvertake}
+                  variant="sheet"
+                  debug={debug}
+                />
+              )}
+            </View>
+          }
         >
           <CompetitionPanel
             active

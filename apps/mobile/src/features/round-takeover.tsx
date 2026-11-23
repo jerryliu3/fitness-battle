@@ -74,6 +74,7 @@ export function RoundTakeover({
         state={state}
         results={reveal.results}
         social={canLoadReplay}
+        debug={debugActive}
         dispatch={dispatch}
         hiddenIds={hiddenIds}
         loadReplay={canLoadReplay ? loadReplay : undefined}
@@ -94,6 +95,7 @@ export function RoundTakeover({
       results={[]}
       nonRaceWeek={breakdownTarget}
       social={false}
+      debug={debugActive}
       dispatch={dispatch}
       hiddenIds={hiddenIds}
       onClose={() => {

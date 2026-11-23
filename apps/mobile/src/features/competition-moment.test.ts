@@ -1,4 +1,5 @@
 vi.mock("./use-competition-course", () => ({ useCompetitionCourse: () => ({ course: null, error: "", retry: vi.fn() }) }));
+vi.mock("./notification-opt-in", () => ({ NotificationOptInStrip: "NotificationOptInStrip" }));
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: vi.fn() }) }));
 import { createElement, type ReactNode } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";

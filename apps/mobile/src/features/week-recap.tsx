@@ -21,6 +21,7 @@ import { UserAvatar } from "../ui/user-avatar";
 import { playCue, playPattern } from "../lib/haptics";
 import { AthletePreferencesFields } from "./athlete-preferences";
 import { CompetitionReplayButton } from "./competition-replay";
+import { NotificationOptInStrip } from "./notification-opt-in";
 import { ResultCard } from "./result-card";
 import { WeeklySocialActions } from "./weekly-social";
 import { WeekRecapBackground } from "./week-recap-background";
@@ -55,10 +56,11 @@ const PODIUM_STEP = {
   },
 } as const;
 
-export function WeekRecap({ state, results, nonRaceWeek, social, dispatch, onClose, loadReplay, hiddenIds = [] }: {
+export function WeekRecap({ state, results, nonRaceWeek, social, debug = false, dispatch, onClose, loadReplay, hiddenIds = [] }: {
   state: CompeteState; results: PeriodResult[];
   nonRaceWeek?: { sport: SportId; periodStart: string; periodEnd: string } | null;
   social: boolean;
+  debug?: boolean;
   dispatch?: (action: Action) => void;
   onClose: () => void;
   loadReplay?: (result: PeriodResult) => Promise<CompetitionReplay | null>; hiddenIds?: readonly string[];
@@ -143,6 +145,9 @@ export function WeekRecap({ state, results, nonRaceWeek, social, dispatch, onClo
             </WeekRecapFit>
 
             <View style={s.footer}>
+              {last && page.kind !== "arrival" && (
+                <NotificationOptInStrip surface="week_recap" variant="recap" debug={debug} />
+              )}
               {page.kind === "arrival" ? (
                 <FocusButton label={label} onPress={advance} />
               ) : page.kind === "results" ? (
