@@ -1,6 +1,11 @@
 # Publish a production Expo Update (JS bundle) without a new App Store binary.
 #
-# Requires EXPO_ACCESS_TOKEN (same as eas-ios-testflight.yml).
+# Billing: `eas update` does NOT use the Free plan's 15 iOS / 15 Android *build*
+# credits. Updates are unlimited; Free tier is capped by ~1k MAUs/month and ~100 GiB
+# bandwidth (see docs/expo-setup.md). This job only runs `eas update`, never `eas build`.
+#
+# Requires EXPO_ACCESS_TOKEN when running (repo secret or manual dispatch without it
+# will fail auth — intentional if you only publish OTA from a laptop).
 # Only devices on a binary built with eas.json → build.production.channel "production"
 # and a matching runtimeVersion (app.json version) receive the update.
 
@@ -24,7 +29,7 @@ jobs:
   publish:
     name: Publish production OTA
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: apps/mobile
@@ -55,5 +60,6 @@ jobs:
 
       - name: Publish update
         env:
+          EXPO_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
           EAS_BUILD_NO_EXPO_GO_WARNING: "true"
-        run: eas update --channel production --non-interactive --message "main ${{ github.sha }}"
+        run: eas update --channel production --environment production --non-interactive --message "main ${{ github.sha }}"

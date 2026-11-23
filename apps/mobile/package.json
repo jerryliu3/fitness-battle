@@ -16,8 +16,8 @@
     "test": "vitest run",
     "eas:build:ios": "npx eas-cli@latest build --platform ios --profile production",
     "eas:submit:ios": "npx eas-cli@latest submit --platform ios --profile production --latest",
-    "eas:update:production": "eas update --channel production --non-interactive",
-    "eas:update:preview": "eas update --channel preview --non-interactive"
+    "eas:update:production": "eas update --channel production --environment production --non-interactive",
+    "eas:update:preview": "eas update --channel preview --environment preview --non-interactive"
   },
   "dependencies": {
     "@babel/runtime": "^7.29.10",
