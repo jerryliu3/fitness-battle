@@ -29,7 +29,7 @@ begin
   payload:=public.rankings_replay_page(ed,'10k','unknown','chip',null,perf);
   if jsonb_array_length(payload->'runners') is distinct from 0 or payload->'course' is distinct from 'null'::jsonb then raise exception 'Replay cursor failed'; end if;
   payload:=public.rankings_replay_page(ed,'10k','female','chip',null,0);
-  if payload is not null then raise exception 'Replay ignored category'; end if;
+  if payload->'course' is null or (payload->>'totalAvailable')::integer <> 0 then raise exception 'Replay ignored category'; end if;
   update public.rankings_replay_courses set display_allowed=false;
   if public.rankings_replay_page(ed,'10k','unknown','chip',null,0) is not null then raise exception 'Unapproved course exposed'; end if;
   update public.rankings_replay_courses set display_allowed=true;

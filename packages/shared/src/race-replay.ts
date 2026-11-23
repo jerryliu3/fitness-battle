@@ -1,5 +1,5 @@
 import { bearing } from "@turf/turf";
-import {analyzeRaceSplits,RACE_METERS,type RaceTimingSplits} from "./race-splits";
+import { analyzeRaceSplits, RACE_METERS, type RaceTimingSplits } from "./race-splits";
 export type ReplayCourse={points:[number,number,number][];sourceUrl:string;attribution:string};
 export type ReplayRunner={id:number;name:string;bib?:string|null;startAt:string|null;splits:RaceTimingSplits};
 export type ReplayPage={version:string;course:ReplayCourse|null;totalAvailable:number;runners:ReplayRunner[];next:number|null};
@@ -27,9 +27,26 @@ export function replayCourseBearing(course: ReplayCourse, metres: number) {
   const after = replayCoordinate(course, metres + 15);
   return bearing(before, after);
 }
-export function compileReplayRunner(runner:ReplayRunner,distance:string) {
-  const analysis=analyzeRaceSplits(runner.splits,distance);
-  if(analysis.status!=="ready") return null;
+function flatTimingSplits(splits: RaceTimingSplits, distance: string): RaceTimingSplits | null {
+  const total = RACE_METERS[distance];
+  if (!total || !Number.isFinite(splits.finishMs) || splits.finishMs <= 0) return null;
+  if (splits.checkpoints.some((point) => point.elapsedMs != null && point.distanceM > 0 && point.distanceM < total)) {
+    return null;
+  }
+  return {
+    ...splits,
+    checkpoints: [{ distanceM: total, elapsedMs: splits.finishMs }],
+  };
+}
+
+/** Recorded mats when present; otherwise constant pace along the reviewed course polyline. */
+export function compileReplayRunner(runner: ReplayRunner, distance: string) {
+  let analysis = analyzeRaceSplits(runner.splits, distance);
+  if (analysis.status !== "ready") {
+    const flat = flatTimingSplits(runner.splits, distance);
+    if (flat) analysis = analyzeRaceSplits(flat, distance);
+  }
+  if (analysis.status !== "ready") return null;
   return {...runner,startMs:runner.splits.clock==="chip" && runner.startAt ? Date.parse(runner.startAt) : NaN,points:[{distanceM:0,elapsedMs:0,ordinal:-1},...analysis.rows.flatMap((row,ordinal)=>row.elapsedMs===null ? [] : [{distanceM:row.distanceM,elapsedMs:row.elapsedMs,ordinal}])]};
 }
 export type CompiledReplayRunner=NonNullable<ReturnType<typeof compileReplayRunner>>;
