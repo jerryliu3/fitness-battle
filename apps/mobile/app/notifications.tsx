@@ -289,13 +289,15 @@ const styles=useThemedStyles(stylesThemes);
             ))}
           </View>
 
-          <Pressable
-            style={[styles.line, (!prefs.enabled || busy) && styles.disabled]}
-            disabled={!prefs.enabled || busy}
-            onPress={() => void sendTest()}
-          >
-            <Text style={styles.lineText}>Send test notification</Text>
-          </Pressable>
+          {__DEV__ ? (
+            <Pressable
+              style={[styles.line, (!prefs.enabled || busy) && styles.disabled]}
+              disabled={!prefs.enabled || busy}
+              onPress={() => void sendTest()}
+            >
+              <Text style={styles.lineText}>Send test notification</Text>
+            </Pressable>
+          ) : null}
         </View>
         {note ? <Text style={styles.copy}>{note}</Text> : null}
       </ScrollView>

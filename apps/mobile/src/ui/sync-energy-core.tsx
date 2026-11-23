@@ -123,7 +123,7 @@ export function SyncEnergyCore({ activities, history = activities, benchmarkSeco
   ];
 
   function sideTotal(item: (typeof summaryItems)[number]) {
-    return <View accessible accessibilityLabel={`${item.label}: ${item.value}`} style={{ flex: 1, minWidth: 0, alignItems: "center" }}>
+    return <View accessible accessibilityLabel={`${item.label}: ${item.value}`} style={{ flex: 1, flexBasis: 0, minWidth: 0, alignItems: "center" }}>
       <Text style={[textStyle("label"), { color: c.ink, textAlign: "center" }]}>{item.value}</Text>
       <Text style={[textStyle("caption"), { color: c.muted, textAlign: "center" }]}>{item.label}</Text>
     </View>;

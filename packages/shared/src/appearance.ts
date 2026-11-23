@@ -52,13 +52,13 @@ const light = {
 type SemanticColors = { readonly [K in keyof typeof light]: string };
 const dark: SemanticColors = {
   ...medalGoldRoles(MEDAL_GOLD.srgb),
-  textPrimary: "#f7faf8", textSecondary: "#bbccd0", textOnAction: "#142b3b",
+  textPrimary: "#f4f6f9", textSecondary: "#9ba3b4", textOnAction: "#142b3b",
   actionPressed: "#dfb237", actionSoft: "#4a4128",
-  accentSecondary: "#d7e3ec", accentSecondarySoft: "#33424a",
-  surfaceCanvas: "#111f29", surfaceCard: "#1c2e38", surfaceNavigation: "#111f29",
-  surfaceFeature: "#33424e", textOnFeature: "#ffffff", textOnFeatureMuted: "#d7e9ea",
+  accentSecondary: "#d7e3ec", accentSecondarySoft: "#20232c",
+  surfaceCanvas: "#0b0c10", surfaceCard: "#15171d", surfaceNavigation: "#20232c",
+  surfaceFeature: "#20232c", textOnFeature: "#f4f6f9", textOnFeatureMuted: "#9ba3b4",
   surfaceInverse: "#142b3b", textOnInverse: "#ffffff",
-  borderSubtle: "#324954", divider: "#3c515c",
+  borderSubtle: "#272b36", divider: "#363c4b",
   chartComparison: "#acbfcc",
   statusSuccess: "#8ccdab", statusSuccessSoft: "#203d33", statusError: "#f09c98",
   statusErrorSoft: "#462d32", textOnError: "#142b3b", overlay: "#00000099", shadow: "#000000",

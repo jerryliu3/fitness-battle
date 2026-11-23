@@ -1,5 +1,5 @@
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
-import { RankAvatar } from "./rank-symbol";
+import { UserAvatar } from "./user-avatar";
 import { textStyle } from "./section";
 import { useBootImage } from "./boot-readiness";
 import { EffortRail } from "../features/effort-rail";
@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppIcon } from "./app-icon";
-import { hasCountedActivityToday, weeklyActivityStreak, competeNow, effectiveRankSymbol, buildDebugSpecialEventCeremony, DEBUG_EVENT_OPTIONS, DEBUG_SPECIAL_EVENT_PREVIEWS, type DebugEventId, type DebugSpecialEventPreviewId } from "@fitness-battle/shared";
+import { hasCountedActivityToday, weeklyActivityStreak, competeNow, buildDebugSpecialEventCeremony, DEBUG_EVENT_OPTIONS, DEBUG_SPECIAL_EVENT_PREVIEWS, type DebugEventId, type DebugSpecialEventPreviewId } from "@fitness-battle/shared";
 import { SpecialEventCeremony } from "../features/special-event-ceremony";
 import { useCompeteStore } from "../lib/compete-store";
 import { isAthleteSettingsPath } from "../lib/navigation";
@@ -45,15 +45,16 @@ const s=useThemedStyles(sThemes);
             accessibilityRole="button"
             accessibilityLabel="Open athlete settings"
             accessibilityState={{ selected: onAthlete }}
+            hitSlop={6}
             onPress={() => router.navigate("/athlete")}
-            style={[s.profile, onAthlete && s.selected]}
+            style={({ pressed }) => [s.profile, onAthlete && s.selected, pressed && { opacity: 0.78 }]}
           >
-            <RankAvatar
-              rank={effectiveRankSymbol(state)}
+            <UserAvatar
               src={state?.avatarUrl}
               name={state?.name ?? "Athlete"}
-              size={52}
-              fallback={<AppIcon name="person" size={20} color={c.muted} />}
+              size={44}
+              highlight
+              fallback={<AppIcon name="person" size={22} color={c.muted} />}
               onLoadEnd={imageSettled}
             />
           </Pressable>
