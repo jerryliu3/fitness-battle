@@ -13,6 +13,10 @@ export function notificationEvent(
     count?: number;
     direction?: "overtaken" | "overtook";
     athleteName?: string;
+    kind?: "morning" | "evening";
+    sleepMin?: number;
+    recoveryScore?: number;
+    steps?: number;
   },
 ): NotificationDeliveryPayload {
   switch (category) {
@@ -73,6 +77,31 @@ export function notificationEvent(
               : sport
                 ? `Your ${sport} is synced and on the board.`
                 : "Your latest workout is synced and on the board.",
+        path: "/today",
+      };
+    }
+    case "daily_digest": {
+      const parts: string[] = [];
+      if (detail?.kind === "evening" && detail.steps != null) {
+        parts.push(`${Math.round(detail.steps).toLocaleString("en-US")} steps today`);
+      }
+      if (detail?.sleepMin != null && detail.sleepMin > 0) {
+        const hrs = Math.floor(detail.sleepMin / 60);
+        const mins = Math.round(detail.sleepMin % 60);
+        parts.push(`${hrs}h ${mins}m sleep`);
+      }
+      if (detail?.recoveryScore != null) {
+        parts.push(`Recovery ${Math.round(detail.recoveryScore)}`);
+      }
+      return {
+        category,
+        title: detail?.kind === "evening" ? "Daily summary" : "Morning check-in",
+        body:
+          parts.length > 0
+            ? `${parts.join(" · ")}.`
+            : detail?.kind === "evening"
+              ? "Your daily steps and wellness summary are ready."
+              : "Your morning sleep and recovery check-in is ready.",
         path: "/today",
       };
     }

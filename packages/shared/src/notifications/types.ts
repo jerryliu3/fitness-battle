@@ -9,6 +9,7 @@ export type NotificationCategoryId =
   | "week_summary"
   | "rival_moves"
   | "activity_synced"
+  | "daily_digest"
   | "lesson_reminder"
   | "connection_alerts";
 

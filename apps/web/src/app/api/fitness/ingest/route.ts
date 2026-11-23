@@ -1,5 +1,6 @@
 import { dayKey, decodePolyline, normalizeRouteReplay } from "@fitness-battle/shared";
 import { persistDailyHealth } from "@/lib/daily-health-store";
+import { markRecoveryCheckedIn } from "@/lib/daily-digest-push";
 import { persistSleepNight } from "@/lib/garmin-record-store";
 import type { SyncResult, SleepNight } from "@fitness-battle/shared";
 import { NextResponse } from "next/server";
@@ -15,6 +16,7 @@ import {
   createProviderStore,
   persistReadiness,
   persistSyncedActivities,
+  serviceDb,
 } from "@/lib/fitness-store";
 
 const DEVICE_PROVIDERS = new Set<FitnessProviderId>(["apple_health", "google_health"]);
@@ -142,6 +144,10 @@ export async function POST(request: Request) {
     for (const night of sleepNights) await persistSleepNight(userId, night);
     const storedActivities = await persistSyncedActivities(userId, activities);
     const storedReady = await persistReadiness(userId, readiness);
+    if (sleepNights.length > 0 || readiness.length > 0) {
+      const db = serviceDb();
+      if (db) void markRecoveryCheckedIn(db, userId);
+    }
     persisted = (activities.length === 0 || storedActivities) && (readiness.length === 0 || storedReady);
     const store = createProviderStore(provider);
     if (!store || !persisted) throw new Error("store_unavailable");

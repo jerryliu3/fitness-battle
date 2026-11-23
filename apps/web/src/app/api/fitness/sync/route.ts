@@ -1,4 +1,5 @@
 import { persistDailyHealth } from "@/lib/daily-health-store";
+import { markRecoveryCheckedIn } from "@/lib/daily-digest-push";
 import { persistSleepNight } from "@/lib/garmin-record-store";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
@@ -76,6 +77,9 @@ export async function POST(request: Request) {
         await persistDailyHealth(userId,result.dailyHealth??[]);
         for (const night of result.sleepNights ?? []) await persistSleepNight(userId, night);
         const readinessStored = await persistReadiness(userId, result.readiness ?? []);
+        if ((result.sleepNights?.length ?? 0) > 0 || (result.readiness?.length ?? 0) > 0) {
+          void markRecoveryCheckedIn(db, userId);
+        }
         persisted = (result.activities.length === 0 || activitiesStored) && ((result.readiness ?? []).length === 0 || readinessStored);
       } catch {
         persisted = false;

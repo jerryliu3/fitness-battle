@@ -1,5 +1,9 @@
 import type { FitnessProviderId } from "@fitness-battle/shared";
 import { persistDailyHealth } from "@/lib/daily-health-store";
+import {
+  maybeSendMorningRecoveryPush,
+  runEveningDailySummaries,
+} from "@/lib/daily-digest-push";
 import { getServerFitnessProvider } from "@/lib/fitness";
 import { fitnessSyncWindow } from "@/lib/fitness-history";
 import {
@@ -64,6 +68,14 @@ export async function syncConnectedProviderForUser(
       await persistSleepNight(userId, night);
     }
     await persistReadiness(userId, result.readiness ?? []);
+
+    const db = serviceDb();
+    if (
+      db &&
+      ((result.sleepNights?.length ?? 0) > 0 || (result.readiness?.length ?? 0) > 0)
+    ) {
+      await maybeSendMorningRecoveryPush(db, userId);
+    }
 
     return {
       ok: true,
@@ -141,6 +153,8 @@ export async function runBackgroundProviderSync(
       summary.failed += 1;
     }
   }
+
+  await runEveningDailySummaries(db);
 
   return summary;
 }

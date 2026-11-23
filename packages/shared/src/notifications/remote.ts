@@ -16,6 +16,7 @@ export interface NotificationPreferencesRow {
   week_summary: boolean;
   rival_moves: boolean;
   activity_synced?: boolean;
+  daily_digest?: boolean;
   lesson_reminder: boolean;
   connection_alerts: boolean;
   updated_at: string;
@@ -43,6 +44,7 @@ export function preferencesToRow(
     week_summary: prefs.categories.week_summary,
     rival_moves: prefs.categories.rival_moves,
     activity_synced: prefs.categories.activity_synced,
+    daily_digest: prefs.categories.daily_digest,
     lesson_reminder: prefs.categories.lesson_reminder,
     connection_alerts: prefs.categories.connection_alerts,
     updated_at: prefs.updatedAt,
@@ -103,6 +105,7 @@ export function preferencesFromRemote(
         week_summary: row.week_summary,
         rival_moves: row.rival_moves,
         activity_synced: row.activity_synced ?? true,
+        daily_digest: row.daily_digest ?? true,
         lesson_reminder: row.lesson_reminder,
         connection_alerts: row.connection_alerts,
       } satisfies Record<NotificationCategoryId, boolean>,

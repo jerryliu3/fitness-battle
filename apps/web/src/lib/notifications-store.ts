@@ -39,7 +39,7 @@ export async function loadRemoteNotificationState(
     supabase
       .from("notification_preferences")
       .select(
-        "user_id, enabled, week_summary, rival_moves, activity_synced, lesson_reminder, connection_alerts, updated_at",
+        "user_id, enabled, week_summary, rival_moves, activity_synced, daily_digest, lesson_reminder, connection_alerts, updated_at",
       )
       .eq("user_id", userId)
       .maybeSingle(),

@@ -27,6 +27,11 @@ export const NOTIFICATION_CATEGORIES: NotificationCategoryMeta[] = [
     description: "When a new workout syncs from your tracker.",
   },
   {
+    id: "daily_digest",
+    label: "Daily check-in & summary",
+    description: "Morning sleep and recovery check-in, plus an 11 PM step summary.",
+  },
+  {
     id: "lesson_reminder",
     label: "Lesson reminder",
     description: "A nudge if today’s lesson is still open.",
@@ -50,6 +55,7 @@ export function defaultNotificationPreferences(
       week_summary: true,
       rival_moves: true,
       activity_synced: true,
+      daily_digest: true,
       lesson_reminder: false,
       connection_alerts: true,
     },
