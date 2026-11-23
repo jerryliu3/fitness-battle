@@ -20,12 +20,31 @@ export {
 export { formatRaceTime, parseRaceTimeMs } from "./time";
 export {
   MAJOR_EVENTS,
+  NYRR_MARATHON_2026,
   PUBLIC_LIST_REUSE,
   UNRESOLVED_MAJOR_EVENTS,
   type CatalogEvent,
 } from "./ingest/catalog";
+export {
+  CHECKPOINT_PROFILES,
+  MARATHON_BOSTON,
+  MARATHON_KM10,
+  MARATHON_NYC,
+  MARATHON_SF_MILES,
+} from "./ingest/checkpoint-profiles";
+export {
+  CHRONOTRACK_CTLIVE_ORIGIN,
+  chronotrackEntryUrl,
+  chronotrackEntryResultFromHtml,
+  chronotrackResultUrl,
+  chronotrackResultsUrl,
+  parseChronotrackResultsPage,
+} from "./ingest/chronotrack";
+export { chronotrackSplitsForProfile } from "./ingest/chronotrack-splits";
 export { parseResultsCsv } from "./ingest/csv";
 export { mikaListUrl, parseMikaTimingList } from "./ingest/mikatiming";
+export { mikaDetailUrl, mikaSplitsForProfile, parseMikaTimingDetailSplits } from "./ingest/mikatiming-splits";
+export { splitImportSql, splitImportSqlForEdition, type SplitEditionTarget, type SplitImportRow } from "./ingest/splits-sql";
 export { editionFromOpenTrack } from "./ingest/opentrack-import";
 export { fetchRunSignupResults, parseRunSignupResults, runSignupResultsUrl, runSignupResultSetsUrl } from "./ingest/runsignup";
 export { readResultPages } from "./ingest/pagination";
@@ -58,3 +77,15 @@ export {
   fetchNyrrFinishers,
   parseNyrrFinishersPage,
 } from "./ingest/nyrr";
+export {
+  MARATHONGUIDE_RUNZY_API,
+  MARATHONGUIDE_TOKYO_2026,
+  marathonGuideApiUrl,
+  parseMarathonGuideApiPage,
+  type MarathonGuideEventConfig,
+} from "./ingest/marathonguide";
+export {
+  NYRR_RESULT_DETAILS_API,
+  nyrrResultPageUrl,
+  parseNyrrSplitResults,
+} from "./ingest/nyrr-splits";

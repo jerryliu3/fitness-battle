@@ -83,6 +83,10 @@ Current product preview is unchanged: `pnpm dev:web` then `http://localhost:3000
 
 ## Major events in the catalog
 
+2026 World Marathon Majors status and operator commands: [majors-2026-acquisition.md](majors-2026-acquisition.md). MikaTiming catalog slugs `*-marathon-2026` include split profiles; checkpoint import is `pnpm rankings:splits -- --slug <slug>` after finisher SQL is applied.
+
+ChronoTrack Live (AZP) events use catalog slugs with `chronotrackEventId` / `chronotrackRaceId` (e.g. `sf-marathon-2026`, full course race `242840` on event `91608`). Finishers come from `reignite-api.athlinks.com` with an anonymous `ctlive-api` session token (`Origin: https://live.chronotrack.com`). Splits use the entry/result JSON when available; when the AZP API returns 403, the CLI falls back to SSR on `live.chronotrack.com/event/<id>/results/entry/<entryId>`. Only athletes with every checkpoint in the profile are stored (same rule as MikaTiming).
+
 Readable public lists, copied in the latest run: Boston Marathon 2025 (28,404), London Marathon 2025 mass (55,226), Berlin Marathon 2025 runners (48,345), Chicago Marathon 2025 (54,109), Generali Berlin 5K 2025 (9,168), plus the OpenTrack 10 km fixture (44). Chicago's public page listed 54,315. The extra sex filter repeated people already stored, so that pass stopped.
 
 Not ingested in the October trial: New York City Marathon (script shell, no list in the HTML), Tokyo Marathon (timing host not found), Sydney Marathon (host name did not resolve). No half marathon list was on those pages. Historical extraction counts are in [ingestion-trial.json](ingestion-trial.json); these sources have not been retried as part of the extraction-safety change.

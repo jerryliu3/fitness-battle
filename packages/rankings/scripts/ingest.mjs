@@ -11,7 +11,10 @@ const {
   UNRESOLVED_MAJOR_EVENTS,
   editionFromOpenTrack,
   editionImportSql,
+  CHRONOTRACK_CTLIVE_ORIGIN,
+  chronotrackResultsUrl,
   mikaListUrl,
+  parseChronotrackResultsPage,
   parseMikaTimingList,
   parseResultsCsv,
   fetchRunSignupResults,
@@ -48,7 +51,7 @@ function sleep(ms) {
 
 async function fetchText(url) {
   let lastError = new Error(`No response for ${url}`);
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
     const response = await fetch(url, {
       headers: {
         "user-agent": USER_AGENT,
@@ -57,9 +60,9 @@ async function fetchText(url) {
       redirect: "follow",
       signal: AbortSignal.timeout(30_000),
     });
-    if (response.status === 429 || response.status >= 500) {
+    if (response.status === 429 || response.status === 403 || response.status >= 500) {
       lastError = new Error(`${response.status} ${url}`);
-      await sleep(1000 * attempt);
+      await sleep(response.status === 403 ? 8000 * attempt : 1000 * attempt);
       continue;
     }
     if (!response.ok) {
@@ -70,12 +73,87 @@ async function fetchText(url) {
   throw lastError;
 }
 
+async function chronotrackBearerToken() {
+  const response = await fetch("https://ctlive-api.chronotrack.com/registration/createAnonymousSession", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: CHRONOTRACK_CTLIVE_ORIGIN,
+    },
+    body: JSON.stringify({ clientId: "registration" }),
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!response.ok) throw new Error(`${response.status} ChronoTrack anonymous session`);
+  const body = await response.json();
+  if (!body?.token) throw new Error("ChronoTrack anonymous session missing token.");
+  return body.token;
+}
+
+async function fetchChronotrackJson(url, token) {
+  const response = await fetch(url, {
+    headers: {
+      authorization: `Bearer ${token}`,
+      origin: CHRONOTRACK_CTLIVE_ORIGIN,
+      accept: "application/json",
+    },
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (response.status === 401) return { unauthorized: true };
+  if (!response.ok) throw new Error(`${response.status} ${url}`);
+  return { unauthorized: false, data: await response.json() };
+}
+
+async function fetchChronotrack(event) {
+  if (event.chronotrackEventId == null || event.chronotrackRaceId == null) {
+    throw new Error(`ChronoTrack ids missing for ${event.slug}`);
+  }
+  let token = await chronotrackBearerToken();
+  const pages = [];
+  const seen = new Set();
+  let from = 0;
+  while (true) {
+    await sleep(from === 0 ? 0 : 150);
+    const url = chronotrackResultsUrl({
+      eventId: event.chronotrackEventId,
+      raceId: event.chronotrackRaceId,
+      from,
+      limit: PAGE_SIZE,
+    });
+    let fetched = await fetchChronotrackJson(url, token);
+    if (fetched.unauthorized) {
+      token = await chronotrackBearerToken();
+      fetched = await fetchChronotrackJson(url, token);
+    }
+    if (fetched.unauthorized) throw new Error("ChronoTrack session rejected.");
+    const parsed = parseChronotrackResultsPage(fetched.data, {
+      distance: event.distance,
+      eventId: event.chronotrackEventId,
+      sourceUrl: event.listUrl ?? url,
+    });
+    for (const key of parsed.rowKeys) {
+      if (seen.has(key)) throw new Error("ChronoTrack results overlapped; import held for review.");
+      seen.add(key);
+    }
+    if (parsed.inputCount > 0) pages.push(parsed);
+    process.stdout.write(`\r${event.slug} from ${from} (+${parsed.inputCount})`);
+    if (parsed.skippedUnparsed > 0) {
+      throw new Error("Unparsed ChronoTrack rows; import held for review.");
+    }
+    if (parsed.inputCount === 0 || parsed.inputCount < PAGE_SIZE) break;
+    from += parsed.inputCount;
+    if (from > MAX_PAGES * PAGE_SIZE) throw new Error("ChronoTrack page cap exceeded.");
+  }
+  process.stdout.write("\n");
+  return pages;
+}
+
 async function fetchMika(event) {
   const pages = [];
   const seen = new Set();
-  for (const sex of ["M", "W", "X"]) {
+  const sexFilters = event.mikaSexFilters ?? ["M", "W", "X"];
+  for (const sex of sexFilters) {
     const categoryPages = await readResultPages(async (page) => {
-      if (page > 1) await sleep(200);
+      if (page > 1) await sleep(800);
       const url = mikaListUrl({
         listUrl: event.listUrl,
         event: event.mikaEvent,
@@ -106,7 +184,10 @@ function editionFromMika(event, pages) {
   return {
     sourceSlug: event.sourceSlug,
     sourceName: event.sourceName,
-    accessMethod: "Public results list page",
+    accessMethod:
+      event.chronotrackEventId != null && event.chronotrackRaceId != null
+        ? "ChronoTrack AZP public results JSON"
+        : "Public results list page",
     reuseNotes: event.note || PUBLIC_LIST_REUSE,
     attribution: event.attribution,
     displayAllowed: false,
@@ -123,13 +204,14 @@ function editionFromMika(event, pages) {
 
 async function getEditionPublicationState(sourceSlug, externalEventId, editionYear) {
   if (!process.env.RANKINGS_DATABASE_URL) return null;
+  const databaseUrl = process.env.RANKINGS_DATABASE_URL;
   const { spawn } = await import("node:child_process");
   const eventClause = externalEventId != null && externalEventId !== ""
     ? `e.external_event_id = '${String(externalEventId).replaceAll("'", "''")}'`
     : `e.external_event_id is null`;
   const query = `select ed.publication_state, ed.revision from public.event_editions ed join public.events e on e.id = ed.event_id join public.sources s on s.id = e.source_id where s.slug = '${sourceSlug.replaceAll("'", "''")}' and ${eventClause} and ed.edition_year = ${editionYear} limit 1;`;
   return new Promise((resolve, reject) => {
-    const child = spawn("psql", ["-X", "-d", process.env.RANKINGS_DATABASE_URL, "-t", "-A", "-F", ",", "-c", query], {
+    const child = spawn("psql", ["-X", "-d", databaseUrl, "-t", "-A", "-F", ",", "-c", query], {
       stdio: ["ignore", "pipe", "pipe"],
     });
     let output = "";
@@ -219,7 +301,10 @@ async function ingestCatalogEvent(event) {
     }
   }
   const started = Date.now();
-  const pages = await fetchMika(event);
+  const pages =
+    event.chronotrackEventId != null && event.chronotrackRaceId != null
+      ? await fetchChronotrack(event)
+      : await fetchMika(event);
   const edition = editionFromMika(event, pages);
   if (edition.results.length === 0) {
     return {
@@ -384,7 +469,9 @@ if (argv.includes("--runsignup") && !/^\d+$/.test(flag("--result-set", argv) ?? 
   throw new Error("Provide --result-set ID for one public, finalized RunSignup result set.");
 }
 const from = flag("--from", argv);
+const editionYear = flag("--edition-year", argv);
 if (from && !MAJOR_EVENTS.some((event) => event.slug === from)) throw new Error("Unknown --from catalog slug.");
+if (editionYear && !/^\d{4}$/.test(editionYear)) throw new Error("Provide --edition-year as YYYY.");
 const report = {
   generatedAt: new Date().toISOString(),
   events: [],
@@ -421,27 +508,22 @@ if (argv.includes("--csv")) {
       resultSet: flag("--result-set", argv),
     }));
 } else {
-  if (!from) await recordImport("opentrack-emv-10k-2025", ingestOpenTrackFixture);
-  const events = from
-    ? MAJOR_EVENTS.slice(MAJOR_EVENTS.findIndex((event) => event.slug === from))
-    : MAJOR_EVENTS;
+  if (!from && !editionYear) await recordImport("opentrack-emv-10k-2025", ingestOpenTrackFixture);
+  let events = from ? MAJOR_EVENTS.filter((event) => event.slug === from) : MAJOR_EVENTS;
+  if (editionYear) events = events.filter((event) => String(event.editionYear) === editionYear);
   for (const event of events) {
     await recordImport(event.slug, () => ingestCatalogEvent(event));
   }
 }
 
-if (process.env.RANKINGS_DATABASE_URL) {
-  const { spawn } = await import("node:child_process");
+try {
+  const { loadRankingsRepoEnv, psqlFile, requireDatabaseUrl } = await import("./psql-util.mjs");
+  loadRankingsRepoEnv();
+  const databaseUrl = requireDatabaseUrl();
   for (const event of report.events) {
     if (event.status !== "succeeded" || !event.sql) continue;
     try {
-      await new Promise((resolve, reject) => {
-        const child = spawn("psql", ["-X", "-d", process.env.RANKINGS_DATABASE_URL, "-v", "ON_ERROR_STOP=1", "-f", event.sql], {
-          stdio: "inherit",
-        });
-        child.on("error", reject);
-        child.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`psql exited ${code}`))));
-      });
+      await psqlFile(databaseUrl, event.sql);
       event.apply = "applied";
     } catch (error) {
       event.apply = "failed";
@@ -450,7 +532,7 @@ if (process.env.RANKINGS_DATABASE_URL) {
   }
   report.apply = report.events.some((event) => event.apply === "failed") ? "failed"
     : report.events.some((event) => event.apply === "applied") ? "applied" : "skipped";
-} else {
+} catch {
   report.apply = "skipped";
 }
 
@@ -459,7 +541,9 @@ const reportPath = join(importDir, `run-${report.generatedAt.replaceAll(/[:.]/g,
 await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
 console.log(JSON.stringify(report, null, 2));
 console.log(`Report: ${reportPath}`);
-if (!process.env.RANKINGS_DATABASE_URL && report.events.some((event) => event.sql)) {
-  console.log("SQL files were written. Set RANKINGS_DATABASE_URL to apply imports; the anon key cannot write the ledger.");
+if (report.apply === "skipped" && report.events.some((event) => event.sql)) {
+  console.log(
+    "SQL files were written. Link rankings-db (supabase link --project-ref nevwdslqilysyeaccptz) or set RANKINGS_DATABASE_URL to apply imports.",
+  );
 }
 if (report.events.some((event) => event.status === "failed" || event.apply === "failed")) process.exitCode = 1;
