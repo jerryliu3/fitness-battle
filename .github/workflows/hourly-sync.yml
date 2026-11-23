@@ -1,0 +1,15 @@
+name: Hourly Fitness Sync
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger background fitness sync
+        run: |
+          curl -fsS -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://fitness-battle-one.vercel.app/api/fitness/cron/sync"

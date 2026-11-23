@@ -32,6 +32,7 @@ export const serverEnv = {
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   stravaClientId: process.env.STRAVA_CLIENT_ID,
   stravaClientSecret: process.env.STRAVA_CLIENT_SECRET,
+  stravaWebhookVerifyToken: process.env.STRAVA_WEBHOOK_VERIFY_TOKEN ?? "",
   stravaRedirectUri:
     process.env.STRAVA_REDIRECT_URI ??
     "http://localhost:3000/api/fitness/strava/callback",
