@@ -182,6 +182,8 @@ Optional: set `EXPO_ACCESS_TOKEN` on the web server (Expo → Access tokens) for
 
 **Runtime rule:** OTA bundles apply only when `app.json` `version` matches the installed binary. Bump `version` and run a **new store build** when you change native code or want a clean runtime fence.
 
+**Env rule:** Hosted Supabase + API URLs live in `app.json` → `extra` so every OTA bundle stays signed-in capable even when CI forgets `EXPO_PUBLIC_*`. CI and local `eas update` must still use `--environment production` (see `pnpm eas:update:production`). Without Supabase in the bundle, the app falls into offline demo mode: no Google/Apple buttons and no live profile data.
+
 **One-time cutover:** TestFlight / App Store builds created *before* OTA was enabled do not participate. Run one new `eas build` (production) after merging OTA config, then submit as usual.
 
 ### Manual publish
