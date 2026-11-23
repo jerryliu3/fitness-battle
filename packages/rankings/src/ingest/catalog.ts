@@ -18,6 +18,15 @@ export type CatalogEvent = {
   chronotrackRaceId: number | null;
   /** Checkpoint alignment for detail splits. Null when splits are unavailable. */
   splitProfileId: "marathon_km10" | "marathon_boston" | "marathon_sf_miles" | null;
+  /** Startline / Race Day Timing path after `/en/races/`. */
+  racedayTimingPath: string | null;
+  /** MapMyRun route id when the organizer publishes that course. */
+  mapmyrunRouteId: number | null;
+  /** Committed GPX fixture (package-relative) for replay course import. */
+  replayCourseGpxFixture: string | null;
+  replayCourseSourceUrl: string | null;
+  replayCourseAttribution: string | null;
+  replayCourseReviewNotes: string | null;
   /** Mika list sex filters. Default M/W/X; Chicago 2026 returns duplicate idps for X. */
   mikaSexFilters?: Array<"M" | "W" | "X">;
   attribution: string;
@@ -48,6 +57,12 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     mikaEvent: "R",
     chronotrackEventId: null,
     chronotrackRaceId: null,
+    racedayTimingPath: null,
+    mapmyrunRouteId: null,
+    replayCourseGpxFixture: null,
+    replayCourseSourceUrl: null,
+    replayCourseAttribution: null,
+    replayCourseReviewNotes: null,
     splitProfileId: "marathon_boston",
     attribution: "Official results, Boston Athletic Association",
     note: PUBLIC_LIST,
@@ -65,6 +80,12 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     mikaEvent: "MAS",
     chronotrackEventId: null,
     chronotrackRaceId: null,
+    racedayTimingPath: null,
+    mapmyrunRouteId: null,
+    replayCourseGpxFixture: null,
+    replayCourseSourceUrl: null,
+    replayCourseAttribution: null,
+    replayCourseReviewNotes: null,
     splitProfileId: "marathon_km10",
     attribution: "Official results, TCS London Marathon",
     note: PUBLIC_LIST,
@@ -82,6 +103,12 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     mikaEvent: "BML_HCH3C0OH2F2",
     chronotrackEventId: null,
     chronotrackRaceId: null,
+    racedayTimingPath: null,
+    mapmyrunRouteId: null,
+    replayCourseGpxFixture: null,
+    replayCourseSourceUrl: null,
+    replayCourseAttribution: null,
+    replayCourseReviewNotes: null,
     splitProfileId: "marathon_km10",
     attribution: "Official results, BMW Berlin Marathon",
     note: PUBLIC_LIST,
@@ -99,6 +126,12 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     mikaEvent: "MAR_9TGG96381A5",
     chronotrackEventId: null,
     chronotrackRaceId: null,
+    racedayTimingPath: null,
+    mapmyrunRouteId: null,
+    replayCourseGpxFixture: null,
+    replayCourseSourceUrl: null,
+    replayCourseAttribution: null,
+    replayCourseReviewNotes: null,
     splitProfileId: "marathon_km10",
     attribution: "Official results, Bank of America Chicago Marathon",
     note: PUBLIC_LIST,
@@ -116,6 +149,12 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     mikaEvent: "5K_HCH3C0OH2EF",
     chronotrackEventId: null,
     chronotrackRaceId: null,
+    racedayTimingPath: null,
+    mapmyrunRouteId: null,
+    replayCourseGpxFixture: null,
+    replayCourseSourceUrl: null,
+    replayCourseAttribution: null,
+    replayCourseReviewNotes: null,
     splitProfileId: null,
     attribution: "Official results, Generali 5K Berlin",
     note: PUBLIC_LIST,
@@ -133,6 +172,12 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     mikaEvent: "R",
     chronotrackEventId: null,
     chronotrackRaceId: null,
+    racedayTimingPath: null,
+    mapmyrunRouteId: null,
+    replayCourseGpxFixture: null,
+    replayCourseSourceUrl: null,
+    replayCourseAttribution: null,
+    replayCourseReviewNotes: null,
     splitProfileId: "marathon_boston",
     attribution: "Official results, Boston Athletic Association",
     note: PUBLIC_LIST,
@@ -151,6 +196,12 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     mikaSexFilters: ["M", "W"],
     chronotrackEventId: null,
     chronotrackRaceId: null,
+    racedayTimingPath: null,
+    mapmyrunRouteId: null,
+    replayCourseGpxFixture: null,
+    replayCourseSourceUrl: null,
+    replayCourseAttribution: null,
+    replayCourseReviewNotes: null,
     splitProfileId: "marathon_km10",
     attribution: "Official results, TCS London Marathon",
     note: PUBLIC_LIST,
@@ -169,6 +220,12 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     mikaSexFilters: ["M", "W"],
     chronotrackEventId: null,
     chronotrackRaceId: null,
+    racedayTimingPath: null,
+    mapmyrunRouteId: null,
+    replayCourseGpxFixture: null,
+    replayCourseSourceUrl: null,
+    replayCourseAttribution: null,
+    replayCourseReviewNotes: null,
     splitProfileId: "marathon_km10",
     attribution: "Official results, BMW Berlin Marathon",
     note: PUBLIC_LIST,
@@ -187,9 +244,40 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     mikaSexFilters: ["M", "W"],
     chronotrackEventId: null,
     chronotrackRaceId: null,
+    racedayTimingPath: null,
+    mapmyrunRouteId: null,
+    replayCourseGpxFixture: null,
+    replayCourseSourceUrl: null,
+    replayCourseAttribution: null,
+    replayCourseReviewNotes: null,
     splitProfileId: "marathon_km10",
     attribution: "Official results, Bank of America Chicago Marathon",
     note: PUBLIC_LIST,
+  },
+  {
+    slug: "banff-half-2026",
+    sourceSlug: "banff_half_marathon",
+    sourceName: "Banff Half Marathon",
+    eventName: "Banff Half Marathon 2026",
+    externalEventId: "banffhalf-2026-half",
+    editionYear: 2026,
+    startsOn: "2026-06-20",
+    distance: "half_marathon",
+    listUrl: "https://www.racedaytiming.ca/en/races/2026/banffhalf/event/Half",
+    mikaEvent: null,
+    chronotrackEventId: null,
+    chronotrackRaceId: null,
+    racedayTimingPath: "2026/banffhalf/event/Half",
+    mapmyrunRouteId: 5544185092,
+    replayCourseGpxFixture: null,
+    replayCourseSourceUrl: "https://www.mapmyrun.com/routes/view/5544185092",
+    replayCourseAttribution:
+      "Banff Half Marathon course (MapMyRun; linked from banffhalf.com)",
+    replayCourseReviewNotes:
+      "Organizer-linked MapMyRun route scaled to 21.0975 km for replay checkpoint alignment.",
+    splitProfileId: null,
+    attribution: "Official results, Race Day Timing / Startline",
+    note: `${PUBLIC_LIST} Public list has chip times only (no course splits).`,
   },
   {
     slug: "sf-marathon-2026",
@@ -204,6 +292,14 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     mikaEvent: null,
     chronotrackEventId: 91608,
     chronotrackRaceId: 242840,
+    racedayTimingPath: null,
+    mapmyrunRouteId: null,
+    replayCourseGpxFixture: "fixtures/courses/sf-marathon-2026-full.gpx",
+    replayCourseSourceUrl: "https://www.thesfmarathon.com/full-marathon/",
+    replayCourseAttribution:
+      "The San Francisco Marathon 2026 full course (published course-map GPX trace)",
+    replayCourseReviewNotes:
+      "Garmin-format GPX trace aligned to the 2026 full marathon map; length scaled to 42.195 km.",
     splitProfileId: "marathon_sf_miles",
     attribution: "Official results, The San Francisco Marathon (ChronoTrack Live)",
     note: PUBLIC_LIST,
@@ -227,12 +323,6 @@ export const UNRESOLVED_MAJOR_EVENTS = [
     name: "TCS Sydney Marathon 2026",
     url: "https://sydney.r.mikatiming.com/2026/",
     reason: "The public timing page is not publishing a full finisher list yet.",
-  },
-  {
-    name: "TCS Toronto Waterfront Marathon 2025",
-    url: "https://www.torontowaterfrontmarathon.com/en/results/",
-    reason:
-      "Public mass results (~7.3k) publish via Canada Running Series / Sportstats; Mika host toronto.r.mikatiming.com/2025/ 404. Add catalog once the stable list URL is confirmed.",
   },
 ] as const;
 

@@ -15,6 +15,8 @@ const {
   chronotrackResultsUrl,
   mikaListUrl,
   parseChronotrackResultsPage,
+  parseRaceDayTimingList,
+  racedayTimingListUrl,
   parseMikaTimingList,
   parseResultsCsv,
   fetchRunSignupResults,
@@ -51,7 +53,7 @@ function sleep(ms) {
 
 async function fetchText(url) {
   let lastError = new Error(`No response for ${url}`);
-  for (let attempt = 1; attempt <= 5; attempt += 1) {
+  for (let attempt = 1; attempt <= 8; attempt += 1) {
     const response = await fetch(url, {
       headers: {
         "user-agent": USER_AGENT,
@@ -71,6 +73,20 @@ async function fetchText(url) {
     return response.text();
   }
   throw lastError;
+}
+
+async function fetchRaceDayTimingPage(url) {
+  const response = await fetch(url, {
+    headers: {
+      "user-agent": USER_AGENT,
+      accept: "text/html",
+    },
+    redirect: "manual",
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (response.status >= 300 && response.status < 400) return { redirected: true, html: "" };
+  if (!response.ok) throw new Error(`${response.status} ${url}`);
+  return { redirected: false, html: await response.text() };
 }
 
 async function chronotrackBearerToken() {
@@ -147,6 +163,33 @@ async function fetchChronotrack(event) {
   return pages;
 }
 
+const RACEDAY_BASE = "https://www.racedaytiming.ca";
+
+async function fetchRaceDayTiming(event) {
+  if (!event.racedayTimingPath) throw new Error(`Race Day Timing path missing for ${event.slug}`);
+  return readResultPages(async (page) => {
+    const url = racedayTimingListUrl(RACEDAY_BASE, event.racedayTimingPath, page);
+    await sleep(page === 1 ? 0 : 250);
+    const fetched = await fetchRaceDayTimingPage(url);
+    if (fetched.redirected) {
+      return {
+        results: [],
+        inputCount: 0,
+        rowKeys: [],
+        skippedYouth: 0,
+        skippedUnparsed: 0,
+        isExhausted: true,
+      };
+    }
+    const parsed = parseRaceDayTimingList(fetched.html, {
+      distance: event.distance,
+      sourceUrl: url,
+    });
+    process.stdout.write(`\r${event.slug} page ${page} (+${parsed.results.length})`);
+    return parsed;
+  }, MAX_PAGES);
+}
+
 async function fetchMika(event) {
   const pages = [];
   const seen = new Set();
@@ -187,7 +230,9 @@ function editionFromMika(event, pages) {
     accessMethod:
       event.chronotrackEventId != null && event.chronotrackRaceId != null
         ? "ChronoTrack AZP public results JSON"
-        : "Public results list page",
+        : event.racedayTimingPath
+          ? "Race Day Timing public results HTML"
+          : "Public results list page",
     reuseNotes: event.note || PUBLIC_LIST_REUSE,
     attribution: event.attribution,
     displayAllowed: false,
@@ -304,7 +349,9 @@ async function ingestCatalogEvent(event) {
   const pages =
     event.chronotrackEventId != null && event.chronotrackRaceId != null
       ? await fetchChronotrack(event)
-      : await fetchMika(event);
+      : event.racedayTimingPath
+        ? await fetchRaceDayTiming(event)
+        : await fetchMika(event);
   const edition = editionFromMika(event, pages);
   if (edition.results.length === 0) {
     return {

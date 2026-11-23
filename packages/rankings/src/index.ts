@@ -43,6 +43,16 @@ export {
 export { chronotrackSplitsForProfile } from "./ingest/chronotrack-splits";
 export { parseResultsCsv } from "./ingest/csv";
 export { mikaListUrl, parseMikaTimingList } from "./ingest/mikatiming";
+export { parseRaceDayTimingList, racedayTimingListUrl } from "./ingest/racedaytiming";
+export {
+  buildReplayCoursePoints,
+  parseGpxTrkpts,
+  parseMapMyRunRouteHtml,
+  replayCourseFromGpx,
+  replayCourseImportSql,
+  REPLAY_DISTANCE_METRES,
+  type ReplayCoursePoint,
+} from "./ingest/replay-course";
 export { mikaDetailUrl, mikaSplitsForProfile, parseMikaTimingDetailSplits } from "./ingest/mikatiming-splits";
 export { splitImportSql, splitImportSqlForEdition, type SplitEditionTarget, type SplitImportRow } from "./ingest/splits-sql";
 export { editionFromOpenTrack } from "./ingest/opentrack-import";
