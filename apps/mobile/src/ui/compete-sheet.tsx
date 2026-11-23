@@ -36,7 +36,10 @@ export function CompeteSheet({ children, expandRequest, active, overview, scroll
   };
   const snapRef = useRef(snap);
   snapRef.current = snap;
-  useEffect(() => { offset.setValue(maximum - [minimum, middle, maximum][indexRef.current]); }, [maximum, offset, minimum, middle]);
+  useEffect(() => {
+    offset.stopAnimation();
+    offset.setValue(maximum - [minimum, middle, maximum][indexRef.current]);
+  }, [maximum, offset, minimum, middle]);
   useEffect(() => { if (active) snapRef.current(defaultIndex); }, [active, defaultIndex]);
   useEffect(() => { if (expandRequest) snapRef.current(2); }, [expandRequest]);
   useEffect(() => () => offset.stopAnimation(), [offset]);
