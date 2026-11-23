@@ -11,7 +11,7 @@ export type MarathonRaceRouteRecord = {
   editionYear: number;
 };
 
-export const MARATHON_RACE_ROUTE_CATALOG = fixture.routes as readonly MarathonRaceRouteRecord[];
+export const MARATHON_RACE_ROUTE_CATALOG = fixture.routes as unknown as readonly MarathonRaceRouteRecord[];
 
 const sortedCatalog = [...MARATHON_RACE_ROUTE_CATALOG].sort((a, b) => a.id.localeCompare(b.id));
 
