@@ -1,4 +1,5 @@
 import type { RoadDistance } from "../fingerprint";
+import { nyrrCompetitionClassFromFinisher } from "./competition-class";
 import { buildFinish, clocksFromText, sexCode } from "./finish";
 import type { IngestedFinish } from "./types";
 import type { ResultsPage } from "./pagination";
@@ -13,6 +14,7 @@ export type NyrrRunner = {
   age?: number | string | null;
   gender?: string;
   overallTime?: string;
+  ageGradePercent?: number | string | null;
 };
 
 export type NyrrFinishersResponse = {
@@ -80,6 +82,7 @@ export function parseNyrrFinishersPage(
       gunTimeMs: clocks.gunTimeMs,
       finishStatus: clocks.finishStatus,
       sourceUrl: options.sourceUrl,
+      competitionClass: nyrrCompetitionClassFromFinisher(row),
     });
     if ("skip" in built) {
       if (built.skip === "youth") skippedYouth += 1;

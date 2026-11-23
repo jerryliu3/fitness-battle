@@ -1,4 +1,5 @@
 import type { RoadDistance, SexCategory } from "../fingerprint";
+import type { CompetitionClass } from "./competition-class";
 
 export type FinishStatus = "finished" | "dnf" | "dns" | "dq" | "unknown";
 
@@ -15,6 +16,7 @@ export type IngestedFinish = {
   gunTimeMs: number | null;
   finishStatus: FinishStatus;
   categoryKey: string;
+  competitionClass: CompetitionClass;
   sourceUrl: string;
 };
 
