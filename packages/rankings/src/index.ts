@@ -87,3 +87,26 @@ export {
   fetchNyrrFinishers,
   parseNyrrFinishersPage,
 } from "./ingest/nyrr";
+export { nyrrChildFilters, nyrrNeedsSubdivision, type NyrrQueryFilter } from "./ingest/nyrr-partition";
+export {
+  NYRR_RESULT_DETAILS_API,
+  nyrrResultPageUrl,
+  parseNyrrSplitResults,
+  type NyrrResultDetails,
+} from "./ingest/nyrr-splits";
+export {
+  MARATHONGUIDE_RUNZY_API,
+  MARATHONGUIDE_TOKYO_2026,
+  marathonGuideApiUrl,
+  parseMarathonGuideApiPage,
+  runnerDetailUrl,
+  type MarathonGuideEventConfig,
+} from "./ingest/marathonguide";
+export {
+  SPORTSTATS_RESULTS_API,
+  SPORTSTATS_TORONTO_2026,
+  parseSportstatsResultsPage,
+  sportstatsParticipantUrl,
+  sportstatsResultsUrl,
+  type SportstatsEventConfig,
+} from "./ingest/sportstats";

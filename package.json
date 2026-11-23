@@ -24,6 +24,7 @@
     "rankings:course": "node packages/rankings/scripts/course.mjs",
     "rankings:nyrr-splits": "node packages/rankings/scripts/nyrr-splits.mjs",
     "rankings:ingest-marathonguide": "node packages/rankings/scripts/ingest-marathonguide.mjs",
+    "rankings:ingest-sportstats": "node packages/rankings/scripts/ingest-sportstats.mjs",
     "rankings:candidate": "node packages/rankings/scripts/candidate.mjs",
     "rankings:acquire": "node packages/rankings/scripts/acquire.mjs",
     "rankings:schedule": "node packages/rankings/scripts/schedule.mjs",

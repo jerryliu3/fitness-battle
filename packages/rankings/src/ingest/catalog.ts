@@ -320,6 +320,12 @@ export const UNRESOLVED_MAJOR_EVENTS = [
       "Use pnpm rankings:ingest-marathonguide (Runzy API back.runzy.com; ~37k finishers). MarathonGuide HTML is Cloudflare-protected; no splits on this source. Record reuse decision before display.",
   },
   {
+    name: "Toronto Waterfront Marathon 2026 (Sportstats)",
+    url: "https://sportstats.one/event/toronto-waterfront-marathon/leaderboard/146034",
+    reason:
+      "Use pnpm rankings:ingest-sportstats (public.sportstats.one API; rid 146034). Record operator reuse decision before display.",
+  },
+  {
     name: "TCS Sydney Marathon 2026",
     url: "https://sydney.r.mikatiming.com/2026/",
     reason: "The public timing page is not publishing a full finisher list yet.",
