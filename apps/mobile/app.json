@@ -168,7 +168,11 @@
       "eas": {
         "projectId": "30807072-a0b4-44cd-bd15-ec186e40ceed"
       },
-      "supportEmail": "support@overtaek.xyz"
+      "supportEmail": "support@overtaek.xyz",
+      "apiUrl": "https://fitness-battle-one.vercel.app",
+      "supabaseUrl": "https://pxruixccvrykhbjzjqga.supabase.co",
+      "supabaseAnonKey": "sb_publishable_qDgv-txtSFPU4VatDc1CGQ_2SwG-Po9",
+      "useDemoData": "false"
     },
     "icon": "./assets/icon.png"
   }

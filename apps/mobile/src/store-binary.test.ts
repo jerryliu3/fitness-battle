@@ -97,4 +97,11 @@ describe("store binary config", () => {
     expect(app.updates.checkAutomatically).toBe("ON_LOAD");
     expect(app.updates.fallbackToCacheTimeout).toBe(0);
   });
+
+  it("ships hosted Supabase config in app.json extra so OTA cannot drop auth", () => {
+    expect(app.extra?.supabaseUrl).toMatch(/^https:\/\/.+\.supabase\.co$/);
+    expect(app.extra?.supabaseAnonKey).toMatch(/^sb_publishable_/);
+    expect(app.extra?.apiUrl).toMatch(/^https:\/\//);
+    expect(app.extra?.useDemoData).toBe("false");
+  });
 });

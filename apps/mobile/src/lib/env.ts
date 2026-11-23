@@ -43,7 +43,11 @@ export const mobileEnv = {
     extra.supabaseAnonKey ??
     "public-anon-key",
   useDemoData:
-    (process.env.EXPO_PUBLIC_USE_DEMO_DATA ?? "true").toLowerCase() !== "false",
+    (
+      process.env.EXPO_PUBLIC_USE_DEMO_DATA ??
+      extra.useDemoData ??
+      "true"
+    ).toLowerCase() !== "false",
   stravaClientId: process.env.EXPO_PUBLIC_STRAVA_CLIENT_ID,
   stravaRedirectUri:
     process.env.EXPO_PUBLIC_STRAVA_REDIRECT_URI || "overtaek://strava",
