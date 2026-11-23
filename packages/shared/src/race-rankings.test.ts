@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { raceQuery, raceClock, raceEditionOptions, raceEditionChart, raceEventGroups, raceFasterThan, racePercentileTier, racePercentileBadge, type RaceEditionAnalytics, type RaceCoverage, type RaceResultReport } from "./race-rankings";
 describe("public race query", () => {
   it("rejects invalid scopes and bounds input", () => {
-    expect(raceQuery(new URLSearchParams("sex=invalid&year=1&page=Infinity"))).toMatchObject({ sex: "all", year: null, page: 1, query: "", timeframe:"all",dateError:null, percentile: "all" });
+    expect(raceQuery(new URLSearchParams("sex=invalid&year=1&page=Infinity"))).toMatchObject({ sex: "all", year: null, page: 1, query: "", timeframe:"all",dateError:null, percentile: "all", includeWheelchair: false });
+    expect(raceQuery(new URLSearchParams("wheelchair=1")).includeWheelchair).toBe(true);
     expect(raceQuery(new URLSearchParams("page=2147483648")).page).toBe(1);
     expect(raceQuery(new URLSearchParams("sex=other&year=2025&page=401&q=Runner&percentile=top10"))).toMatchObject({ sex: "other", year: 2025, page: 401, query: "Runner",timeframe:"year",dateError:null, percentile: "top10" });
     expect(raceQuery(new URLSearchParams("percentile=invalid")).percentile).toBe("all");

@@ -28,6 +28,7 @@ function rowJson(row: IngestedFinish) {
     sex: row.sex,
     distance: row.distance,
     categoryKey: row.categoryKey,
+    competitionClass: row.competitionClass,
     ageYears: row.ageYears,
     chipTimeMs: row.chipTimeMs,
     gunTimeMs: row.gunTimeMs,
@@ -201,7 +202,8 @@ begin
       nullif(v_row->>'gunTimeMs', '')::bigint,
       v_row->>'finishStatus',
       ${starts},
-      coalesce(v_row->>'sourceUrl', '')
+      coalesce(v_row->>'sourceUrl', ''),
+      coalesce(nullif(v_row->>'competitionClass', ''), 'open')
     );
   end loop;
   ${

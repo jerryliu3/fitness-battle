@@ -87,3 +87,9 @@ export {
   fetchNyrrFinishers,
   parseNyrrFinishersPage,
 } from "./ingest/nyrr";
+export {
+  nyrrCompetitionClassFromFinisher,
+  nyrrCompetitionClassFromResultDetails,
+  NYRR_WHEELCHAIR_AGE_GRADE_MIN,
+} from "./ingest/competition-class";
+export type { CompetitionClass } from "./ingest/competition-class";

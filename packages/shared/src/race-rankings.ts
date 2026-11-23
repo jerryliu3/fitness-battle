@@ -50,6 +50,8 @@ export function raceQuery(input: { get(name: string): string | null }) {
   const year = Number(input.get("year"));
   const page = Number(input.get("page"));
   const percentile = input.get("percentile") ?? "all";
+  const wheelchairRaw = (input.get("wheelchair") ?? "").trim().toLowerCase();
+  const includeWheelchair = wheelchairRaw === "1" || wheelchairRaw === "true" || wheelchairRaw === "yes";
   const validYear = Number.isInteger(year) && year >= 1900 && year <= 2100;
   const timeframe = RACE_TIMEFRAMES.find(t => t.value === input.get("timeframe"))?.value ?? (validYear ? "year" : "all");
   const from = (input.get("from") ?? "").trim();
@@ -64,6 +66,7 @@ export function raceQuery(input: { get(name: string): string | null }) {
     dateError: timeframe === "custom" ? raceDateError(from,through) : timeframe === "year" && !validYear ? "Enter an edition year from 1900 to 2100." : null,
     query: (input.get("q") ?? "").trim().slice(0, 100),
     page: Number.isSafeInteger(page) && page > 0 && page <= 2147483647 ? page : 1,
+    includeWheelchair,
   };
 }
 export function raceClock(ms: number) {

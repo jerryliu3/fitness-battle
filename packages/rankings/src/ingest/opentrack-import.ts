@@ -21,6 +21,7 @@ export function editionFromOpenTrack(
     gunTimeMs: row.gunTimeMs,
     finishStatus: "finished",
     categoryKey: row.categoryKey,
+    competitionClass: "open",
     sourceUrl: row.sourceUrl,
   }));
   return {

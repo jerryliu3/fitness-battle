@@ -1,6 +1,7 @@
 import { categoryKey, normalizeAthleteName, normalizeBib } from "../fingerprint";
 import { parseRaceTimeMs } from "../time";
 import type { RoadDistance, SexCategory } from "../fingerprint";
+import type { CompetitionClass } from "./competition-class";
 import type { FinishStatus, IngestedFinish, IngestSkip } from "./types";
 
 export function sexCode(value: string | null | undefined): SexCategory {
@@ -33,6 +34,7 @@ export function buildFinish(input: {
   gunTimeMs: number | null;
   finishStatus: FinishStatus;
   sourceUrl: string;
+  competitionClass?: CompetitionClass;
 }): { finish: IngestedFinish } | { skip: IngestSkip } {
   if (input.ageYears != null && input.ageYears < 18) return { skip: "youth" };
   const name = input.athleteName.trim();
@@ -54,6 +56,7 @@ export function buildFinish(input: {
       gunTimeMs: input.gunTimeMs,
       finishStatus: input.finishStatus,
       categoryKey: categoryKey(input.distance, input.sex),
+      competitionClass: input.competitionClass ?? "open",
       sourceUrl: input.sourceUrl,
     },
   };

@@ -52,6 +52,7 @@ function warmCommonRankingsScopes(_coverage: RaceCoverage[]) {
             percentile: "all",
             query: "",
             page: 1,
+            includeWheelchair: false,
           });
         } catch {
           // Ignore background warm-up errors
@@ -76,6 +77,7 @@ export async function loadRaceResults(distance: string, query: ReturnType<typeof
     p_page: query.page,
     p_from: bounds.from,
     p_until: bounds.until,
+    p_include_wheelchair: query.includeWheelchair,
   };
   const cacheKey = JSON.stringify({ ...baseParams, p_percentile: percentile });
   const now = Date.now();
@@ -92,9 +94,21 @@ export async function loadRaceResults(distance: string, query: ReturnType<typeof
         ...baseParams,
         p_percentile: percentile,
       });
+      if (
+        error
+        && query.includeWheelchair
+        && (error.code === "PGRST202" || /p_include_wheelchair|schema cache/i.test(error.message))
+      ) {
+        const { p_include_wheelchair: _wc, ...legacyParams } = baseParams;
+        ({ data, error } = await client.rpc("rankings_page_scoped", {
+          ...legacyParams,
+          p_percentile: percentile,
+        }));
+      }
       // Fallback for Rankings DBs that have not yet applied 20261110060000_pace_percentiles.sql
       if (error && percentile === "all" && (error.code === "PGRST202" || /p_percentile|schema cache/i.test(error.message))) {
-        ({ data, error } = await client.rpc("rankings_page_scoped", baseParams));
+        const { p_include_wheelchair: _wc, ...legacyParams } = baseParams;
+        ({ data, error } = await client.rpc("rankings_page_scoped", legacyParams));
       }
       if (error || !data) throw new Error("Rankings unavailable");
       const page = data as RaceResultsPage;

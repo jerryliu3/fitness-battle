@@ -255,6 +255,7 @@ export function RaceExplorer({
   const [edition, setEdition] = useState(query.editionId?.toString() ?? "");
   const [search, setSearch] = useState(query.query);
   const [sex, setSex] = useState(query.sex);
+  const [includeWheelchair, setIncludeWheelchair] = useState(query.includeWheelchair);
 
   const activeSportObj = SPORTS.find(s => s.id === sport) ?? SPORTS[0];
   const isRunningSport = sport === "running";
@@ -264,7 +265,10 @@ export function RaceExplorer({
 
   useEffect(() => {
     if (initial) {
-      clientResultsCache.set(`${initialDistance}|${query.editionId ?? ""}|${query.sex}|all|${query.query}|${query.page}`, initial);
+      clientResultsCache.set(
+        `${initialDistance}|${query.editionId ?? ""}|${query.sex}|${query.includeWheelchair ? "wc" : "open"}|${query.query}|${query.page}`,
+        initial,
+      );
     }
   }, []);
 
@@ -348,6 +352,7 @@ export function RaceExplorer({
     distance?: string;
     edition?: string;
     sex?: string;
+    includeWheelchair?: boolean;
     search?: string;
     page?: number;
     preserveSelection?: boolean;
@@ -363,10 +368,12 @@ export function RaceExplorer({
       setInspectTimeMs(null);
     }
 
-    const cacheKey = `${d}|${ed}|${sx}|all|${q}|${pg}`;
+    const wc = next.includeWheelchair ?? includeWheelchair;
+    const cacheKey = `${d}|${ed}|${sx}|${wc ? "wc" : "open"}|${q}|${pg}`;
     const urlParams = new URLSearchParams({ distance: d, sex: sx, timeframe: "all", page: String(pg) });
     if (ed) urlParams.set("edition", ed);
     if (q) urlParams.set("q", q);
+    if (wc) urlParams.set("wheelchair", "1");
 
     if (typeof window !== "undefined") {
       window.history.replaceState(null, "", `/app/pace?${urlParams.toString()}`);
@@ -927,6 +934,22 @@ export function RaceExplorer({
           }
           extraRow2={
             <>
+              {isRunningSport && (
+                <label className="ovt-filter-chip subtle" style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={includeWheelchair}
+                    aria-label="Include wheelchair division"
+                    onChange={() => {
+                      const next = !includeWheelchair;
+                      setIncludeWheelchair(next);
+                      fetchResultsClient({ includeWheelchair: next, page: 1 });
+                    }}
+                  />
+                  Include wheelchair
+                </label>
+              )}
+
               <button
                 type="button"
                 className={`ovt-filter-chip subtle ${allSavedPinned ? "active" : ""}`}
