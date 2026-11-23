@@ -86,19 +86,29 @@ function applyRunnerLayerPaint(
       "#FFB800",
       ["in", ["get", "id"], ["literal", pinnedList]],
       "#FFB800",
-      "#142b3b",
+      "#24765c",
     ]);
   }
   if (instance.getLayer("runners")) {
+    instance.setLayoutProperty("runners", "circle-sort-key", [
+      "case",
+      ["==", ["get", "id"], focusId],
+      3,
+      ["in", ["get", "id"], ["literal", pinnedList]],
+      2,
+      ["==", ["get", "id"], challengerId],
+      2,
+      0,
+    ]);
     instance.setPaintProperty("runners", "circle-radius", [
       "case",
       ["==", ["get", "id"], focusId],
-      9.5,
+      8.5,
       ["in", ["get", "id"], ["literal", pinnedList]],
-      8,
+      7,
       ["==", ["get", "id"], challengerId],
-      7.5,
-      5,
+      7,
+      ["interpolate", ["linear"], ["zoom"], 10, 1.8, 12.5, 2.7, 15, 4.4],
     ]);
     instance.setPaintProperty("runners", "circle-color", [
       "case",
@@ -107,25 +117,40 @@ function applyRunnerLayerPaint(
       ["in", ["get", "id"], ["literal", pinnedList]],
       "#FFB800",
       ["==", ["get", "id"], challengerId],
-      "#142b3b",
-      "#9fa5af",
+      "#24765c",
+      "#1c3547",
+    ]);
+    instance.setPaintProperty("runners", "circle-opacity", [
+      "case",
+      ["==", ["get", "id"], focusId],
+      1,
+      ["in", ["get", "id"], ["literal", pinnedList]],
+      1,
+      ["==", ["get", "id"], challengerId],
+      1,
+      0.42,
+    ]);
+    instance.setPaintProperty("runners", "circle-blur", [
+      "case",
+      ["==", ["get", "id"], focusId],
+      0,
+      ["in", ["get", "id"], ["literal", pinnedList]],
+      0,
+      ["==", ["get", "id"], challengerId],
+      0,
+      0.15,
     ]);
     instance.setPaintProperty("runners", "circle-stroke-width", [
       "case",
       ["==", ["get", "id"], focusId],
-      3,
+      2.6,
       ["in", ["get", "id"], ["literal", pinnedList]],
       2.2,
-      1.5,
-    ]);
-    instance.setPaintProperty("runners", "circle-stroke-color", [
-      "case",
-      ["==", ["get", "id"], focusId],
-      "#ffffff",
       ["==", ["get", "id"], challengerId],
-      "#ffffff",
-      "#142b3b",
+      2.2,
+      0,
     ]);
+    instance.setPaintProperty("runners", "circle-stroke-color", "#ffffff");
   }
 }
 
@@ -793,6 +818,7 @@ export function ReplayPlayer({
         container: container.current,
         accessToken: webEnv.mapboxAccessToken,
         style: "mapbox://styles/mapbox/standard",
+        projection: "mercator",
         center: data.course.points[0].slice(0, 2) as [number, number],
         zoom: 11.5,
         ...mapboxAttributionOptions,
@@ -804,11 +830,26 @@ export function ReplayPlayer({
     }
     map.current = instance;
     addMapboxAttribution(instance);
-    instance.on("error", () => {
+    let styleLoaded = false;
+    instance.on("error", event => {
+      const err = (event as { error?: { name?: string; status?: number; message?: string } })?.error;
+      if (err?.name === "AbortError" || (err?.message && /abort/i.test(err.message))) return;
+      const isAuthFailure = err?.status === 401 || err?.status === 403;
+      if (styleLoaded && !isAuthFailure) return;
       setMapError("Some map data could not load. Check your connection and Mapbox access.");
       setPlaying(false);
     });
+    instance.on("idle", () => setMapError(""));
     instance.on("load", () => {
+      styleLoaded = true;
+      setMapError("");
+      try {
+        instance.setConfigProperty("basemap", "lightPreset", "day");
+        instance.setConfigProperty("basemap", "showPointOfInterestLabels", false);
+        instance.setConfigProperty("basemap", "showTransitLabels", false);
+      } catch {
+        // Older Mapbox style payloads may omit optional Standard config properties.
+      }
       const coords = data.course.points.map(p => p.slice(0, 2) as [number, number]);
       instance.addSource("course", {
         type: "geojson",
@@ -822,15 +863,25 @@ export function ReplayPlayer({
         id: "course-casing",
         type: "line",
         source: "course",
+        slot: "middle",
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#142b3b", "line-width": 7, "line-opacity": 0.45 },
+        paint: {
+          "line-color": "#cbd5dc",
+          "line-width": ["interpolate", ["linear"], ["zoom"], 10, 4, 15, 7],
+          "line-opacity": 0.45,
+        },
       });
       instance.addLayer({
         id: "course",
         type: "line",
         source: "course",
+        slot: "middle",
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#637482", "line-width": 4, "line-opacity": 0.9 },
+        paint: {
+          "line-color": "#637482",
+          "line-width": ["interpolate", ["linear"], ["zoom"], 10, 1.75, 15, 3],
+          "line-opacity": 0.55,
+        },
       });
       instance.addSource("runners", {
         type: "geojson",
@@ -840,12 +891,14 @@ export function ReplayPlayer({
         id: "runners-halo",
         type: "circle",
         source: "runners",
-        paint: { "circle-opacity": 0.3 },
+        slot: "top",
+        paint: { "circle-opacity": 0.28 },
       });
       instance.addLayer({
         id: "runners",
         type: "circle",
         source: "runners",
+        slot: "top",
       });
       applyRunnerLayerPaint(instance, pinnedIds, cameraTargetId, replayMode === "duel" ? (peerId ?? -1) : -1);
       const bounds = new mapboxgl.LngLatBounds();
@@ -1277,13 +1330,13 @@ export function ReplayPlayer({
               )}
 
               <div className="ovt-map-legend">
-                <span className="ovt-legend-dot" style={{ background: "#FFB800" }} /> Pinned
+                <span className="ovt-legend-dot" style={{ background: "#FFB800", border: "1.5px solid #fff" }} /> Pinned
                 {replayMode === "duel" && (
                   <>
-                    <span className="ovt-legend-dot" style={{ background: "#142b3b", border: "1.5px solid #fff" }} /> Challenger
+                    <span className="ovt-legend-dot" style={{ background: "#24765c", border: "1.5px solid #fff" }} /> Challenger
                   </>
                 )}
-                <span className="ovt-legend-dot" style={{ background: "#9fa5af" }} /> Field
+                <span className="ovt-legend-dot" style={{ background: "rgba(28, 53, 71, 0.55)" }} /> Field
               </div>
             </>
           )}
