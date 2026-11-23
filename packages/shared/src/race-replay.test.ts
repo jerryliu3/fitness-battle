@@ -1,5 +1,28 @@
 import {describe,expect,it} from "vitest";
-import {compileReplayRunner,loadReplayField,replayCoordinate,replayCourseBearing,replayDistance,replayFeatures,replayTelemetry,replayTimeline,validateReplayCourse,type ReplayCourse,type ReplayPage,type ReplayRunner} from "./race-replay";
+import {
+  buildCompiledReplayField,
+  buildReplayCourseIndex,
+  compactReplayPage,
+  compileReplayRunner,
+  evaluateFieldDistances,
+  fillMercatorPositions,
+  loadReplayCompactField,
+  loadReplayField,
+  pickNearestRunnerId,
+  replayCoordinate,
+  replayCoordinateAt,
+  replayCourseBearing,
+  replayDistance,
+  replayFeatures,
+  replayMercatorOffsetAt,
+  replayTelemetry,
+  replayTimeline,
+  selectFieldRankSlice,
+  validateReplayCourse,
+  type ReplayCourse,
+  type ReplayPage,
+  type ReplayRunner,
+} from "./race-replay";
 const course:ReplayCourse={points:[[0,0,0],[.02,0,2000],[.04,0,4000],[.05,0,5000]],sourceUrl:"https://example.test/course",attribution:"Course"};
 const runner:ReplayRunner={id:1,name:"Runner",startAt:null,splits:{clock:"chip",finishMs:1500000,sourceUrl:"https://example.test/results",checkpoints:[{distanceM:2000,elapsedMs:600000},{distanceM:4000,elapsedMs:1200000}]}};
 const compiled=compileReplayRunner(runner,"5k")!;
@@ -170,5 +193,158 @@ describe("edition course replay",()=>{
     expect(replayDistance(compiledKiplimo, 3600000)!).toBeGreaterThan(replayDistance(compiledGejia, 3600000)!);
     expect(features.features[0].geometry.coordinates[0]).toBeCloseTo(-87.636, 1);
     expect(features.features[0].geometry.coordinates[1]).toBeCloseTo(41.885, 1);
+  });
+
+  it("matches binary-search replayDistance & replayCoordinate across forward/backward scrubs with SoA + LUT", () => {
+    const idx = buildReplayCourseIndex(course, 4096);
+    for (const d of [0, 500, 2000, 3125, 4500, 5000, 9999]) {
+      const a = replayCoordinate(course, d);
+      const b = replayCoordinateAt(idx, d);
+      expect(b[0]).toBeCloseTo(a[0], 3);
+      expect(b[1]).toBeCloseTo(a[1], 3);
+    }
+
+    const r1 = compileReplayRunner(
+      { ...runner, id: 10, startAt: "2025-01-01T00:00:00Z" },
+      "5k",
+    )!;
+    const r2 = compileReplayRunner(
+      {
+        ...runner,
+        id: 20,
+        bib: "202",
+        startAt: "2025-01-01T00:05:00Z",
+        splits: {
+          ...runner.splits,
+          finishMs: 1200000,
+          checkpoints: [
+            { distanceM: 2000, elapsedMs: 500000 },
+            { distanceM: 4000, elapsedMs: 950000 },
+          ],
+        },
+      },
+      "5k",
+    )!;
+    const rGap = compileReplayRunner(
+      {
+        ...runner,
+        id: 30,
+        startAt: "2025-01-01T00:00:00Z",
+        splits: {
+          ...runner.splits,
+          checkpoints: [
+            { distanceM: 2000, elapsedMs: null },
+            { distanceM: 4000, elapsedMs: 1200000 },
+          ],
+        },
+      },
+      "5k",
+    )!;
+
+    const field = buildCompiledReplayField([r1, r2, rGap], true);
+    expect(field.wallAvailable).toBe(true);
+    expect(field.fastestFinishMs).toBe(1200000);
+    const dist = new Float32Array(field.count);
+
+    // Scrub forward then backward to exercise cursor walking in both directions
+    const sampleTimes = [0, 150000, 600000, 1200000, 1500000, 1800000, 900000, 300000, 0];
+    for (const t of sampleTimes) {
+      evaluateFieldDistances(field, t, dist);
+      for (let i = 0; i < field.count; i++) {
+        const src = [r1, r2, rGap][i];
+        const expected = replayDistance(src, t - (src.startMs - field.wallOrigin!));
+        if (expected === null) {
+          expect(dist[i]).toBe(-1);
+        } else {
+          expect(dist[i]).toBeCloseTo(expected, 3);
+        }
+      }
+    }
+
+    const outXY = new Float32Array(field.count * 2);
+    const outIdx = new Int32Array(field.count);
+    evaluateFieldDistances(field, 600000, dist);
+    const written = fillMercatorPositions(idx, field, dist, outXY, outIdx);
+    expect(written).toBe(2); // r1 and r2 active; rGap is in missing-split gap at 600s
+    const [ox, oy] = replayMercatorOffsetAt(idx, dist[0]);
+    expect(outXY[0]).toBeCloseTo(ox, 6);
+    expect(outXY[1]).toBeCloseTo(oy, 6);
+  });
+
+  it("selects top leaderboard slices accurately for large fields without full sort", () => {
+    const runners = Array.from({ length: 1200 }, (_, i) =>
+      compileReplayRunner(
+        {
+          id: i + 1,
+          name: `Runner ${i + 1}`,
+          bib: String(1000 + i),
+          startAt: null,
+          splits: {
+            clock: "chip",
+            finishMs: 2000000 - i * 500,
+            sourceUrl: "https://example.test/results",
+            checkpoints: [{ distanceM: 5000, elapsedMs: 2000000 - i * 500 }],
+          },
+        },
+        "5k",
+      )!,
+    );
+    const field = buildCompiledReplayField(runners, false);
+    const dist = new Float32Array(field.count);
+    const maxD = evaluateFieldDistances(field, 500000, dist);
+    expect(maxD).toBeGreaterThan(0);
+
+    const topPage = selectFieldRankSlice(field, dist, "field", 0, 9);
+    expect(topPage.total).toBe(1200);
+    expect(topPage.indices).toHaveLength(9);
+    // Runner index 1199 has fastest finish (2000000 - 1199*500) -> furthest at 500s
+    expect(field.ids[topPage.indices[0]]).toBe(1200);
+    expect(field.ids[topPage.indices[8]]).toBe(1192);
+
+    const finishPage = selectFieldRankSlice(field, dist, "finish", 0, 5);
+    expect(field.ids[finishPage.indices[0]]).toBe(1200);
+
+    const bibMatch = selectFieldRankSlice(field, dist, "field", 0, 9, "#2199");
+    expect(bibMatch.total).toBe(1);
+    expect(field.ids[bibMatch.indices[0]]).toBe(1200);
+  });
+
+  it("compacts and streams replay pages and picks nearest runner on click", async () => {
+    const legacyPage1: ReplayPage = {
+      version: "v1",
+      course,
+      totalAvailable: 2,
+      runners: [{ ...runner, id: 1, bib: "101", startAt: "2025-01-01T00:00:00.000Z" }],
+      next: 1,
+    };
+    const legacyPage2: ReplayPage = {
+      version: "v1",
+      course: null,
+      totalAvailable: 2,
+      runners: [{ ...runner, id: 2, name: "Runner Two", bib: "202", splits: { ...runner.splits, finishMs: 1200000, checkpoints: [{ distanceM: 2000, elapsedMs: 500000 }, { distanceM: 4000, elapsedMs: 1000000 }] } }],
+      next: null,
+    };
+
+    const compact1 = compactReplayPage(legacyPage1);
+    const compact2 = compactReplayPage(legacyPage2);
+    const loaded = await loadReplayCompactField(
+      async after => (after === 0 ? compact1 : compact2),
+      () => false,
+      () => {},
+    );
+    expect(loaded.runners).toHaveLength(2);
+    expect(loaded.runners[0].bib).toBe("101");
+    expect(loaded.runners[1].splits.sourceUrl).toBe(course.sourceUrl);
+
+    const compiledList = loaded.runners.map(r => compileReplayRunner(r, "5k")!);
+    const idx = buildReplayCourseIndex(loaded.course, 4096);
+    const field = buildCompiledReplayField(compiledList, false);
+    const dist = new Float32Array(field.count);
+    evaluateFieldDistances(field, 600000, dist);
+
+    // Runner 2 is around 2400m (.024 lng), Runner 1 is at 2000m (.020 lng)
+    expect(pickNearestRunnerId(idx, field, dist, 0.0241, 0, 12, 16)).toBe(2);
+    expect(pickNearestRunnerId(idx, field, dist, 0.0199, 0, 12, 16)).toBe(1);
+    expect(pickNearestRunnerId(idx, field, dist, 1.5, 1.5, 12, 16)).toBeNull();
   });
 });

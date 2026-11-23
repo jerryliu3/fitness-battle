@@ -6,22 +6,28 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import {
   analyzeRaceSplits,
+  buildCompiledReplayField,
+  buildReplayCourseIndex,
   compileReplayRunner,
-  loadReplayField,
+  evaluateFieldDistances,
+  fillMercatorPositions,
+  loadReplayCompactField,
+  pickNearestRunnerId,
   RACE_DISTANCES,
   RACE_METERS,
   raceClock,
   raceEventGroups,
   raceSourceUrl,
-  replayCoordinate,
+  replayCoordinateAt,
   replayDistance,
   replayFeatures,
-  replayTimeline,
+  selectFieldRankSlice,
   validateReplayCourse,
   type CompiledReplayRunner,
   type RaceCoverage,
+  type ReplayCompactPage,
+  type ReplayCourseIndex,
   type ReplayData,
-  type ReplayPage,
 } from "@fitness-battle/shared";
 import { webEnv } from "@/lib/env";
 import { useAuth } from "@/components/auth-context";
@@ -29,12 +35,13 @@ import { addMapboxAttribution, mapboxAttributionOptions } from "@/components/map
 import { useRaceFavorites } from "../favorites";
 import { coursePreviewsMemoryCache, formatEditionDisplay, RaceRouteArt } from "../race-explorer";
 import { computeSplitMetrics, SportFilterBar, SPORTS, type SportId } from "../sport-filter-bar";
+import { FieldWebGLLayer } from "./field-webgl-layer";
 
 const replayDataMemoryCache = new Map<string, ReplayData>();
 
-function computeCourseBearing(course: ReplayData["course"], metres: number): number {
-  const before = replayCoordinate(course, Math.max(0, metres - 40));
-  const after = replayCoordinate(course, metres + 40);
+function computeCourseBearing(courseIndex: ReplayCourseIndex, metres: number): number {
+  const before = replayCoordinateAt(courseIndex, Math.max(0, metres - 40));
+  const after = replayCoordinateAt(courseIndex, metres + 40);
   const dLon = ((after[0] - before[0]) * Math.PI) / 180;
   const lat1 = (before[1] * Math.PI) / 180;
   const lat2 = (after[1] * Math.PI) / 180;
@@ -42,6 +49,18 @@ function computeCourseBearing(course: ReplayData["course"], metres: number): num
   const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
   const brng = (Math.atan2(y, x) * 180) / Math.PI;
   return Number.isFinite(brng) ? (brng + 360) % 360 : 0;
+}
+
+function visiblePageWindow(current: number, total: number): Array<number | "ellipsis"> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i);
+  const pages: Array<number | "ellipsis"> = [0];
+  const start = Math.max(1, current - 1);
+  const end = Math.min(total - 2, current + 1);
+  if (start > 1) pages.push("ellipsis");
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (end < total - 2) pages.push("ellipsis");
+  pages.push(total - 1);
+  return pages;
 }
 
 function applyRunnerLayerPaint(
@@ -69,19 +88,29 @@ function applyRunnerLayerPaint(
       "#FFB800",
       ["in", ["get", "id"], ["literal", pinnedList]],
       "#FFB800",
-      "#142b3b",
+      "#24765c",
     ]);
   }
   if (instance.getLayer("runners")) {
+    instance.setLayoutProperty("runners", "circle-sort-key", [
+      "case",
+      ["==", ["get", "id"], focusId],
+      3,
+      ["in", ["get", "id"], ["literal", pinnedList]],
+      2,
+      ["==", ["get", "id"], challengerId],
+      2,
+      0,
+    ]);
     instance.setPaintProperty("runners", "circle-radius", [
       "case",
       ["==", ["get", "id"], focusId],
-      9.5,
+      8.5,
       ["in", ["get", "id"], ["literal", pinnedList]],
-      8,
+      7,
       ["==", ["get", "id"], challengerId],
-      7.5,
-      5,
+      7,
+      ["interpolate", ["linear"], ["zoom"], 10, 1.8, 12.5, 2.7, 15, 4.4],
     ]);
     instance.setPaintProperty("runners", "circle-color", [
       "case",
@@ -90,25 +119,40 @@ function applyRunnerLayerPaint(
       ["in", ["get", "id"], ["literal", pinnedList]],
       "#FFB800",
       ["==", ["get", "id"], challengerId],
-      "#142b3b",
-      "#9fa5af",
+      "#24765c",
+      "#1c3547",
+    ]);
+    instance.setPaintProperty("runners", "circle-opacity", [
+      "case",
+      ["==", ["get", "id"], focusId],
+      1,
+      ["in", ["get", "id"], ["literal", pinnedList]],
+      1,
+      ["==", ["get", "id"], challengerId],
+      1,
+      0.42,
+    ]);
+    instance.setPaintProperty("runners", "circle-blur", [
+      "case",
+      ["==", ["get", "id"], focusId],
+      0,
+      ["in", ["get", "id"], ["literal", pinnedList]],
+      0,
+      ["==", ["get", "id"], challengerId],
+      0,
+      0.15,
     ]);
     instance.setPaintProperty("runners", "circle-stroke-width", [
       "case",
       ["==", ["get", "id"], focusId],
-      3,
+      2.6,
       ["in", ["get", "id"], ["literal", pinnedList]],
       2.2,
-      1.5,
-    ]);
-    instance.setPaintProperty("runners", "circle-stroke-color", [
-      "case",
-      ["==", ["get", "id"], focusId],
-      "#ffffff",
       ["==", ["get", "id"], challengerId],
-      "#ffffff",
-      "#142b3b",
+      2.2,
+      0,
     ]);
+    instance.setPaintProperty("runners", "circle-stroke-color", "#ffffff");
   }
 }
 
@@ -238,17 +282,24 @@ function DuelAthleteCard({
   }, [open]);
 
   const filtered = useMemo(() => {
+    if (!open) return [];
     const q = query.trim().toLowerCase().replace(/^#/, "");
-    return runners
-      .filter(r => r.id !== excludeId)
-      .filter(r => {
-        if (!q) return true;
-        if (r.name.toLowerCase().includes(q)) return true;
-        if (r.bib && r.bib.toLowerCase().includes(q)) return true;
-        if (raceClock(r.splits.finishMs).includes(q)) return true;
-        return false;
-      });
-  }, [runners, excludeId, query]);
+    const out: CompiledReplayRunner[] = [];
+    for (let i = 0; i < runners.length; i++) {
+      const r = runners[i];
+      if (r.id === excludeId) continue;
+      if (
+        !q ||
+        r.name.toLowerCase().includes(q) ||
+        (r.bib && r.bib.toLowerCase().includes(q)) ||
+        raceClock(r.splits.finishMs).includes(q)
+      ) {
+        out.push(r);
+        if (out.length >= 60) break;
+      }
+    }
+    return out;
+  }, [open, runners, excludeId, query]);
 
   return (
     <div ref={cardRef} className={`ovt-duel-side ${entry ? "" : "is-empty"}`}>
@@ -411,9 +462,13 @@ export function ReplayPlayer({
   const [error, setError] = useState("");
 
   const [time, setTime] = useState(0);
+  const [rankTime, setRankTime] = useState(0);
   const timeRef = useRef(0);
+  const hudClockRef = useRef<HTMLElement | null>(null);
+  const scrubberClockRef = useRef<HTMLSpanElement | null>(null);
+  const scrubberInputRef = useRef<HTMLInputElement | null>(null);
   const [playing, setPlaying] = useState(false);
-  const [speed, setSpeed] = useState(256);
+  const [speed, setSpeed] = useState(64);
   const [wall, setWall] = useState(false);
   const [reduced, setReduced] = useState(false);
   const [mapError, setMapError] = useState("");
@@ -521,12 +576,14 @@ export function ReplayPlayer({
     setProgress(0);
     timeRef.current = 0;
     setTime(0);
+    setRankTime(0);
     setPlaying(false);
     setWall(false);
-    void loadReplayField(
+    void loadReplayCompactField(
       async after => {
         const params = new URLSearchParams(scopeKey);
         params.set("after", String(after));
+        params.set("format", "compact");
         if (ids !== null && ids.trim() !== "") params.set("ids", ids);
         const response = await fetch(`/api/rankings/replay?${params}`, { signal: controller.signal });
         if (!response.ok) {
@@ -536,7 +593,7 @@ export function ReplayPlayer({
               : "Replay could not load.",
           );
         }
-        return response.json() as Promise<ReplayPage>;
+        return response.json() as Promise<ReplayCompactPage>;
       },
       () => controller.signal.aborted,
       setProgress,
@@ -620,13 +677,70 @@ export function ReplayPlayer({
     });
   }
 
-  const timeline = useMemo(() => replayTimeline(runners, wall), [runners, wall]);
-  const features = useMemo(
-    () => (data ? replayFeatures(data.course, runners, time, timeline.origin) : null),
-    [data, runners, time, timeline.origin],
+  const courseIndex = useMemo(() => (data ? buildReplayCourseIndex(data.course) : null), [data]);
+  const field = useMemo(() => buildCompiledReplayField(runners, wall), [runners, wall]);
+  const timeline = useMemo(
+    () => ({ wallAvailable: field.wallAvailable, origin: field.wallOrigin, duration: field.duration }),
+    [field],
   );
-  const latest = useRef(features);
-  latest.current = features;
+
+  // Highlighted subset (pinned / camera target / duel) rendered as crisp Mapbox circles above the WebGL field
+  const highlightedRunners = useMemo(() => {
+    const idSet = new Set<number>(pinnedIds);
+    if (cameraTargetId !== null) idSet.add(cameraTargetId);
+    if (replayMode === "duel") {
+      if (duelPrimaryId !== null) idSet.add(duelPrimaryId);
+      if (peerId !== null) idSet.add(peerId);
+    }
+    const list: CompiledReplayRunner[] = [];
+    for (const id of idSet) {
+      const idx = field.idToIndex.get(id);
+      if (idx !== undefined && runners[idx]) list.push(runners[idx]);
+    }
+    return list;
+  }, [pinnedIds, cameraTargetId, replayMode, duelPrimaryId, peerId, field, runners]);
+
+  const fieldLayerRef = useRef<FieldWebGLLayer | null>(null);
+  const fieldDistancesRef = useRef<Float32Array>(new Float32Array(0));
+  const mercatorXYRef = useRef<Float32Array>(new Float32Array(0));
+  if (fieldDistancesRef.current.length !== field.count) {
+    fieldDistancesRef.current = new Float32Array(field.count);
+    mercatorXYRef.current = new Float32Array(field.count * 2);
+  }
+
+  const pushMapFrameRef = useRef<(targetTime: number) => void>(() => {});
+  pushMapFrameRef.current = (targetTime: number) => {
+    const instance = map.current;
+    if (!instance || !data || !courseIndex) return;
+    if (fieldLayerRef.current) {
+      evaluateFieldDistances(field, targetTime, fieldDistancesRef.current);
+      const activeCount = fillMercatorPositions(
+        courseIndex,
+        field,
+        fieldDistancesRef.current,
+        mercatorXYRef.current,
+      );
+      fieldLayerRef.current.updatePositions(
+        mercatorXYRef.current,
+        activeCount,
+        courseIndex.originMx,
+        courseIndex.originMy,
+      );
+    }
+    const pinnedSrc = instance.getSource("runners") as mapboxgl.GeoJSONSource | undefined;
+    if (pinnedSrc) {
+      pinnedSrc.setData(
+        highlightedRunners.length > 0
+          ? replayFeatures(data.course, highlightedRunners, targetTime, timeline.origin, courseIndex)
+          : { type: "FeatureCollection", features: [] },
+      );
+    }
+  };
+
+  const togglePinRunnerRef = useRef(togglePinRunner);
+  togglePinRunnerRef.current = togglePinRunner;
+  const pickContextRef = useRef({ courseIndex, field });
+  pickContextRef.current = { courseIndex, field };
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -647,12 +761,30 @@ export function ReplayPlayer({
     return () => document.removeEventListener("visibilitychange", hidden);
   }, []);
 
-  // 60–120fps requestAnimationFrame gliding loop for smooth athlete & camera movement
+  // Sync React time/rankTime when playback pauses so scrubber and leaderboard match exact stop frame
   useEffect(() => {
-    if (!playing || reduced || !data || timeline.duration <= 0) return;
+    if (!playing) {
+      setTime(timeRef.current);
+      setRankTime(timeRef.current);
+      if (scrubberInputRef.current) {
+        scrubberInputRef.current.value = String(timeRef.current);
+      }
+    }
+  }, [playing]);
+
+  useEffect(() => {
+    if (!playing && scrubberInputRef.current) {
+      scrubberInputRef.current.value = String(time);
+    }
+  }, [time, playing]);
+
+  // 60–120fps WebGL rAF playback loop: zero GeoJSON tiling on field + smooth camera + 4Hz leaderboard sync
+  useEffect(() => {
+    if (!playing || reduced || !data || !courseIndex || timeline.duration <= 0) return;
     let rafId = 0;
     let previous = performance.now();
-    let lastReactSync = previous;
+    let lastRankSync = previous;
+    let lastDuelSync = previous;
 
     const tick = (now: number) => {
       const dt = Math.min(now - previous, 100);
@@ -660,18 +792,28 @@ export function ReplayPlayer({
       const nextTime = Math.min(timeline.duration, timeRef.current + dt * speed);
       timeRef.current = nextTime;
 
+      if (scrubberInputRef.current) {
+        scrubberInputRef.current.value = String(nextTime);
+      }
+      if (scrubberClockRef.current) {
+        scrubberClockRef.current.textContent = raceClock(nextTime);
+      }
+      if (hudClockRef.current) {
+        hudClockRef.current.textContent =
+          timeline.origin !== null ? new Date(timeline.origin + nextTime).toLocaleTimeString() : raceClock(nextTime);
+      }
+
       if (ready && map.current) {
-        const frameFeatures = replayFeatures(data.course, runners, nextTime, timeline.origin);
-        latest.current = frameFeatures;
-        (map.current.getSource("runners") as mapboxgl.GeoJSONSource | undefined)?.setData(frameFeatures);
+        pushMapFrameRef.current(nextTime);
 
         if (cameraMode !== "field" && cameraTargetId !== null) {
-          const r = runners.find(item => item.id === cameraTargetId);
+          const idx = field.idToIndex.get(cameraTargetId);
+          const r = idx !== undefined ? runners[idx] : undefined;
           if (r) {
             const effectiveTime =
               nextTime - (timeline.origin !== null && Number.isFinite(r.startMs) ? r.startMs - timeline.origin : 0);
             const distM = replayDistance(r, Math.max(0, effectiveTime)) ?? 0;
-            const coord = replayCoordinate(data.course, distM);
+            const coord = replayCoordinateAt(courseIndex, distM);
             if (cameraMode === "follow") {
               map.current.jumpTo({
                 center: coord,
@@ -684,7 +826,7 @@ export function ReplayPlayer({
                 center: coord,
                 zoom: 15.2,
                 pitch: 58,
-                bearing: computeCourseBearing(data.course, distM),
+                bearing: computeCourseBearing(courseIndex, distM),
               });
             }
           }
@@ -693,13 +835,18 @@ export function ReplayPlayer({
 
       if (nextTime >= timeline.duration) {
         setTime(nextTime);
+        setRankTime(nextTime);
         setPlaying(false);
         return;
       }
 
-      if (now - lastReactSync >= 32) {
-        lastReactSync = now;
+      if (replayMode === "duel" && now - lastDuelSync >= 32) {
+        lastDuelSync = now;
         setTime(nextTime);
+      }
+      if (now - lastRankSync >= 250) {
+        lastRankSync = now;
+        setRankTime(nextTime);
       }
 
       rafId = requestAnimationFrame(tick);
@@ -707,7 +854,7 @@ export function ReplayPlayer({
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [playing, reduced, speed, data, runners, timeline.duration, timeline.origin, ready, cameraMode, cameraTargetId]);
+  }, [playing, reduced, speed, data, courseIndex, field, runners, timeline.duration, timeline.origin, ready, cameraMode, cameraTargetId, replayMode]);
 
   useEffect(() => {
     if (!data || !container.current || !webEnv.mapboxAccessToken) return;
@@ -719,6 +866,7 @@ export function ReplayPlayer({
         container: container.current,
         accessToken: webEnv.mapboxAccessToken,
         style: "mapbox://styles/mapbox/standard",
+        projection: "mercator",
         center: data.course.points[0].slice(0, 2) as [number, number],
         zoom: 11.5,
         ...mapboxAttributionOptions,
@@ -730,11 +878,26 @@ export function ReplayPlayer({
     }
     map.current = instance;
     addMapboxAttribution(instance);
-    instance.on("error", () => {
+    let styleLoaded = false;
+    instance.on("error", event => {
+      const err = (event as { error?: { name?: string; status?: number; message?: string } })?.error;
+      if (err?.name === "AbortError" || (err?.message && /abort/i.test(err.message))) return;
+      const isAuthFailure = err?.status === 401 || err?.status === 403;
+      if (styleLoaded && !isAuthFailure) return;
       setMapError("Some map data could not load. Check your connection and Mapbox access.");
       setPlaying(false);
     });
+    instance.on("idle", () => setMapError(""));
     instance.on("load", () => {
+      styleLoaded = true;
+      setMapError("");
+      try {
+        instance.setConfigProperty("basemap", "lightPreset", "day");
+        instance.setConfigProperty("basemap", "showPointOfInterestLabels", false);
+        instance.setConfigProperty("basemap", "showTransitLabels", false);
+      } catch {
+        // Older Mapbox style payloads may omit optional Standard config properties.
+      }
       const coords = data.course.points.map(p => p.slice(0, 2) as [number, number]);
       instance.addSource("course", {
         type: "geojson",
@@ -748,30 +911,45 @@ export function ReplayPlayer({
         id: "course-casing",
         type: "line",
         source: "course",
+        slot: "middle",
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#142b3b", "line-width": 7, "line-opacity": 0.45 },
+        paint: {
+          "line-color": "#cbd5dc",
+          "line-width": ["interpolate", ["linear"], ["zoom"], 10, 4, 15, 7],
+          "line-opacity": 0.45,
+        },
       });
       instance.addLayer({
         id: "course",
         type: "line",
         source: "course",
+        slot: "middle",
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#637482", "line-width": 4, "line-opacity": 0.9 },
+        paint: {
+          "line-color": "#637482",
+          "line-width": ["interpolate", ["linear"], ["zoom"], 10, 1.75, 15, 3],
+          "line-opacity": 0.55,
+        },
       });
+      const fieldLayer = new FieldWebGLLayer();
+      fieldLayerRef.current = fieldLayer;
+      instance.addLayer(fieldLayer);
       instance.addSource("runners", {
         type: "geojson",
-        data: latest.current ?? { type: "FeatureCollection", features: [] },
+        data: { type: "FeatureCollection", features: [] },
       });
       instance.addLayer({
         id: "runners-halo",
         type: "circle",
         source: "runners",
-        paint: { "circle-opacity": 0.3 },
+        slot: "top",
+        paint: { "circle-opacity": 0.28 },
       });
       instance.addLayer({
         id: "runners",
         type: "circle",
         source: "runners",
+        slot: "top",
       });
       applyRunnerLayerPaint(instance, pinnedIds, cameraTargetId, replayMode === "duel" ? (peerId ?? -1) : -1);
       const bounds = new mapboxgl.LngLatBounds();
@@ -779,9 +957,26 @@ export function ReplayPlayer({
       instance.fitBounds(bounds, { padding: 56, duration: 0 });
       setReady(true);
     });
-    instance.on("click", "runners", event => {
-      const id = Number(event.features?.[0]?.properties?.id);
-      if (Number.isSafeInteger(id)) togglePinRunner(id);
+    instance.on("click", event => {
+      const hit = instance.queryRenderedFeatures(event.point, { layers: ["runners"] });
+      const hitId = Number(hit[0]?.properties?.id);
+      if (Number.isSafeInteger(hitId)) {
+        togglePinRunnerRef.current(hitId);
+        return;
+      }
+      const { courseIndex: idx, field: f } = pickContextRef.current;
+      if (!idx || f.count === 0) return;
+      evaluateFieldDistances(f, timeRef.current, fieldDistancesRef.current);
+      const picked = pickNearestRunnerId(
+        idx,
+        f,
+        fieldDistancesRef.current,
+        event.lngLat.lng,
+        event.lngLat.lat,
+        instance.getZoom(),
+        14,
+      );
+      if (picked !== null) togglePinRunnerRef.current(picked);
     });
 
     const visObserver = new IntersectionObserver(entries => {
@@ -797,58 +992,54 @@ export function ReplayPlayer({
     return () => {
       visObserver.disconnect();
       resizeObserver.disconnect();
+      fieldLayerRef.current = null;
       instance.remove();
       map.current = null;
     };
   }, [data, mapAttempt]);
 
   useEffect(() => {
-    if (ready && features && !playing) {
-      (map.current?.getSource("runners") as mapboxgl.GeoJSONSource | undefined)?.setData(features);
+    if (ready && !playing) {
+      pushMapFrameRef.current(time);
     }
-  }, [ready, features, playing]);
+  }, [ready, time, playing, highlightedRunners, field, courseIndex]);
 
-  const runnersWithDistance = useMemo<RunnerWithDistance[]>(() => {
-    return runners.map(r => {
-      const effectiveTime =
-        time - (timeline.origin !== null && Number.isFinite(r.startMs) ? r.startMs - timeline.origin : 0);
-      const distM = replayDistance(r, Math.max(0, effectiveTime)) ?? 0;
-      const finished = effectiveTime >= r.splits.finishMs;
-      return { runner: r, distM, finished, finishMs: r.splits.finishMs };
-    });
-  }, [runners, time, timeline.origin]);
+  const { rankDistances, leaderDistM } = useMemo(() => {
+    const out = new Float32Array(field.count);
+    const maxDist = evaluateFieldDistances(field, rankTime, out);
+    return { rankDistances: out, leaderDistM: maxDist };
+  }, [field, rankTime]);
+
+  const entryForId = (id: number | null): RunnerWithDistance | null => {
+    if (id === null) return null;
+    const idx = field.idToIndex.get(id);
+    if (idx === undefined) return null;
+    const r = runners[idx];
+    if (!r) return null;
+    const raw = rankDistances[idx];
+    const distM = raw >= 0 ? raw : 0;
+    const effective = rankTime - field.startOffsetMs[idx];
+    return { runner: r, distM, finished: effective >= field.finishMs[idx], finishMs: field.finishMs[idx] };
+  };
 
   const pinnedEntries = useMemo(
-    () =>
-      pinnedIds
-        .map(id => runnersWithDistance.find(e => e.runner.id === id))
-        .filter((e): e is RunnerWithDistance => Boolean(e)),
-    [pinnedIds, runnersWithDistance],
+    () => pinnedIds.map(id => entryForId(id)).filter((e): e is RunnerWithDistance => Boolean(e)),
+    [pinnedIds, field, runners, rankDistances, rankTime],
   );
 
   const cameraTargetEntry = useMemo(
-    () => (cameraTargetId !== null ? runnersWithDistance.find(e => e.runner.id === cameraTargetId) ?? null : null),
-    [runnersWithDistance, cameraTargetId],
+    () => entryForId(cameraTargetId),
+    [cameraTargetId, field, runners, rankDistances, rankTime],
   );
 
   const duelPrimaryEntry = useMemo(
-    () => (duelPrimaryId !== null ? runnersWithDistance.find(e => e.runner.id === duelPrimaryId) ?? null : null),
-    [runnersWithDistance, duelPrimaryId],
+    () => entryForId(duelPrimaryId),
+    [duelPrimaryId, field, runners, rankDistances, rankTime],
   );
 
   const peerEntry = useMemo(
-    () => (peerId !== null ? runnersWithDistance.find(e => e.runner.id === peerId) ?? null : null),
-    [runnersWithDistance, peerId],
-  );
-
-  const liveRanked = useMemo(
-    () => [...runnersWithDistance].sort((a, b) => b.distM - a.distM || a.finishMs - b.finishMs || a.runner.id - b.runner.id),
-    [runnersWithDistance],
-  );
-
-  const finishRanked = useMemo(
-    () => [...runnersWithDistance].sort((a, b) => a.finishMs - b.finishMs || a.runner.id - b.runner.id),
-    [runnersWithDistance],
+    () => entryForId(peerId),
+    [peerId, field, runners, rankDistances, rankTime],
   );
 
   useEffect(() => {
@@ -861,8 +1052,8 @@ export function ReplayPlayer({
   }, [ready, pinnedIds, cameraTargetId, duelPrimaryId, peerId, replayMode]);
 
   useEffect(() => {
-    if (!ready || !map.current || !data || playing || cameraMode === "field" || !cameraTargetEntry) return;
-    const coord = replayCoordinate(data.course, cameraTargetEntry.distM);
+    if (!ready || !map.current || !courseIndex || playing || cameraMode === "field" || !cameraTargetEntry) return;
+    const coord = replayCoordinateAt(courseIndex, cameraTargetEntry.distM);
     if (cameraMode === "follow") {
       map.current.easeTo({
         center: coord,
@@ -876,17 +1067,19 @@ export function ReplayPlayer({
         center: coord,
         zoom: 15.2,
         pitch: 58,
-        bearing: computeCourseBearing(data.course, cameraTargetEntry.distM),
+        bearing: computeCourseBearing(courseIndex, cameraTargetEntry.distM),
         duration: 500,
       });
     }
-  }, [ready, data, cameraMode, cameraTargetEntry?.distM, cameraTargetEntry?.runner.id, playing]);
+  }, [ready, courseIndex, cameraMode, cameraTargetEntry?.distM, cameraTargetEntry?.runner.id, playing]);
 
   function cycleCameraMode() {
     if (!ready || !map.current || !data) return;
     if (cameraMode === "field") {
       if (cameraTargetId === null) {
-        const firstTarget = pinnedIds[0] ?? liveRanked[0]?.runner.id ?? null;
+        const topSlice = selectFieldRankSlice(field, rankDistances, "field", 0, 1);
+        const topId = topSlice.indices.length > 0 ? field.ids[topSlice.indices[0]] : null;
+        const firstTarget = pinnedIds[0] ?? topId;
         if (firstTarget !== null) {
           setCameraTargetId(firstTarget);
           if (!pinnedIds.includes(firstTarget)) setPinnedIds(prev => [...prev, firstTarget]);
@@ -903,34 +1096,45 @@ export function ReplayPlayer({
     }
   }
 
-  const baseRanking = replayMode === "finish" ? finishRanked : liveRanked;
-  const activeRanking = useMemo(() => {
-    const q = runnerSearch.trim().toLowerCase().replace(/^#/, "");
-    if (!q) return baseRanking;
-    return baseRanking.filter(
-      e =>
-        e.runner.name.toLowerCase().includes(q) ||
-        (e.runner.bib && e.runner.bib.toLowerCase().includes(q)),
-    );
-  }, [baseRanking, runnerSearch]);
-  const totalRunners = activeRanking.length;
+  const rankSliceResult = useMemo(() => {
+    if (replayMode === "duel") return { total: field.count, indices: [] as number[] };
+    return selectFieldRankSlice(field, rankDistances, replayMode, page * pageSize, pageSize, runnerSearch);
+  }, [replayMode, field, rankDistances, page, pageSize, runnerSearch]);
+
+  const totalRunners = rankSliceResult.total;
   const totalPages = Math.max(1, Math.ceil(totalRunners / pageSize));
   const safePage = Math.max(0, Math.min(page, totalPages - 1));
-  const pageSlice = activeRanking.slice(safePage * pageSize, (safePage + 1) * pageSize);
+  const pageSlice = useMemo<RunnerWithDistance[]>(() => {
+    const slice =
+      safePage === page
+        ? rankSliceResult.indices
+        : selectFieldRankSlice(
+            field,
+            rankDistances,
+            replayMode === "finish" ? "finish" : "field",
+            safePage * pageSize,
+            pageSize,
+            runnerSearch,
+          ).indices;
+    return slice.map(idx => {
+      const raw = rankDistances[idx];
+      const distM = raw >= 0 ? raw : 0;
+      const effective = rankTime - field.startOffsetMs[idx];
+      return {
+        runner: runners[idx],
+        distM,
+        finished: effective >= field.finishMs[idx],
+        finishMs: field.finishMs[idx],
+      };
+    });
+  }, [safePage, page, rankSliceResult.indices, field, rankDistances, replayMode, pageSize, runnerSearch, runners, rankTime]);
 
   const visibleRaceEditions = useMemo(
     () => (isRunningSport ? allRaceEditions.filter(ed => ed.distance_slug === storedDistance) : []),
     [isRunningSport, allRaceEditions, storedDistance],
   );
 
-  const leaderDistM = useMemo(
-    () => Math.max(0, ...runnersWithDistance.map(r => r.distM)),
-    [runnersWithDistance],
-  );
-  const fastestFinishMs = useMemo(
-    () => (runners.length ? Math.min(...runners.map(r => r.splits.finishMs)) : 0),
-    [runners],
-  );
+  const fastestFinishMs = field.fastestFinishMs;
 
   const duelSeries = useMemo(() => {
     if (!duelPrimaryEntry || !peerEntry || timeline.duration <= 0) return null;
@@ -1075,6 +1279,7 @@ export function ReplayPlayer({
                       setWall(false);
                       timeRef.current = 0;
                       setTime(0);
+                      setRankTime(0);
                       setPlaying(false);
                     }}
                   >
@@ -1096,6 +1301,7 @@ export function ReplayPlayer({
                       setWall(true);
                       timeRef.current = 0;
                       setTime(0);
+                      setRankTime(0);
                       setPlaying(false);
                     }}
                   >
@@ -1132,7 +1338,7 @@ export function ReplayPlayer({
               </div>
               <div className="ovt-map-head">
                 <span>{timeline.origin !== null ? "Time of day" : "Chip time"}</span>
-                <strong>
+                <strong ref={hudClockRef}>
                   {timeline.origin !== null ? new Date(timeline.origin + time).toLocaleTimeString() : raceClock(time)}
                 </strong>
                 <span>
@@ -1193,13 +1399,13 @@ export function ReplayPlayer({
               )}
 
               <div className="ovt-map-legend">
-                <span className="ovt-legend-dot" style={{ background: "#FFB800" }} /> Pinned
+                <span className="ovt-legend-dot" style={{ background: "#FFB800", border: "1.5px solid #fff" }} /> Pinned
                 {replayMode === "duel" && (
                   <>
-                    <span className="ovt-legend-dot" style={{ background: "#142b3b", border: "1.5px solid #fff" }} /> Challenger
+                    <span className="ovt-legend-dot" style={{ background: "#24765c", border: "1.5px solid #fff" }} /> Challenger
                   </>
                 )}
-                <span className="ovt-legend-dot" style={{ background: "#9fa5af" }} /> Field
+                <span className="ovt-legend-dot" style={{ background: "rgba(28, 53, 71, 0.55)" }} /> Field
               </div>
             </>
           )}
@@ -1270,30 +1476,37 @@ export function ReplayPlayer({
                 if (timeRef.current >= timeline.duration) {
                   timeRef.current = 0;
                   setTime(0);
+                  setRankTime(0);
                 }
                 setPlaying(v => !v);
               }}
             >
               {playing ? "Ⅱ" : "▶"}
             </button>
-            <span className="time">{raceClock(time)}</span>
+            <span ref={scrubberClockRef} className="time">{raceClock(time)}</span>
             <input
+              ref={scrubberInputRef}
+              key={`${scopeKey}|${wall ? "w" : "c"}|${timeline.duration}`}
               type="range"
               className="ovt-thin-scrubber"
               min={0}
               max={Math.max(timeline.duration, 1)}
               step="any"
-              value={time}
+              defaultValue={time}
               aria-label="Replay elapsed race time"
               onChange={e => {
                 const nextTime = Number(e.target.value);
                 setPlaying(false);
                 timeRef.current = nextTime;
                 setTime(nextTime);
+                setRankTime(nextTime);
+                if (scrubberClockRef.current) scrubberClockRef.current.textContent = raceClock(nextTime);
+                if (hudClockRef.current) {
+                  hudClockRef.current.textContent =
+                    timeline.origin !== null ? new Date(timeline.origin + nextTime).toLocaleTimeString() : raceClock(nextTime);
+                }
                 if (ready && map.current && data) {
-                  const frameFeatures = replayFeatures(data.course, runners, nextTime, timeline.origin);
-                  latest.current = frameFeatures;
-                  (map.current.getSource("runners") as mapboxgl.GeoJSONSource | undefined)?.setData(frameFeatures);
+                  pushMapFrameRef.current(nextTime);
                 }
               }}
             />
@@ -1418,7 +1631,7 @@ export function ReplayPlayer({
                     <tr>
                       <th>{replayMode === "finish" ? "Rank" : "Est. rank*"}</th>
                       <th>Runner</th>
-                      <th>At {raceClock(time)}</th>
+                      <th>At {raceClock(rankTime)}</th>
                       <th>Est. gap</th>
                       <th>Splits · elapsed</th>
                       <th>Pin</th>
@@ -1432,7 +1645,7 @@ export function ReplayPlayer({
                       return (
                         <tr key={entry.runner.id} className={isPinned ? "active" : ""}>
                           <td>
-                            <b>{replayMode === "field" && time === 0 ? "—" : `#${rank}`}</b>
+                            <b>{replayMode === "field" && rankTime === 0 ? "—" : `#${rank}`}</b>
                           </td>
                           <td>
                             <button
@@ -1451,7 +1664,7 @@ export function ReplayPlayer({
                             </b>
                           </td>
                           <td className="delta">
-                            {time === 0
+                            {rankTime === 0
                               ? "—"
                               : entry.finished
                                 ? entry.finishMs === fastestFinishMs
@@ -1467,7 +1680,7 @@ export function ReplayPlayer({
                               distanceSlug={storedDistance}
                               currentDistM={entry.distM}
                               totalDistM={totalMeters}
-                              active={time > 0}
+                              active={rankTime > 0}
                             />
                           </td>
                           <td>
@@ -1526,17 +1739,23 @@ export function ReplayPlayer({
                     >
                       ‹
                     </button>
-                    {Array.from({ length: totalPages }, (_, n) => (
-                      <button
-                        key={n}
-                        type="button"
-                        className={n === safePage ? "active" : ""}
-                        aria-current={n === safePage ? "page" : undefined}
-                        onClick={() => setPage(n)}
-                      >
-                        {n + 1}
-                      </button>
-                    ))}
+                    {visiblePageWindow(safePage, totalPages).map((item, idx) =>
+                      item === "ellipsis" ? (
+                        <span key={`el-${idx}`} className="ovt-hint" style={{ padding: "0 4px" }} aria-hidden="true">
+                          …
+                        </span>
+                      ) : (
+                        <button
+                          key={item}
+                          type="button"
+                          className={item === safePage ? "active" : ""}
+                          aria-current={item === safePage ? "page" : undefined}
+                          onClick={() => setPage(item)}
+                        >
+                          {item + 1}
+                        </button>
+                      ),
+                    )}
                     <button
                       type="button"
                       disabled={safePage >= totalPages - 1}

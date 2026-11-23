@@ -1,6 +1,6 @@
 import "server-only";
-import { raceDateBounds } from "@fitness-battle/shared";
-import type { RaceCoverage, RaceResultsPage, raceQuery } from "@fitness-battle/shared";
+import { compactReplayPage, raceDateBounds } from "@fitness-battle/shared";
+import type { RaceCoverage, RaceResultsPage, ReplayCompactPage, raceQuery } from "@fitness-battle/shared";
 import { createRankingsClient } from "./rankings";
 
 const RESULTS_TTL_MS = 30 * 60 * 1000;
@@ -13,6 +13,10 @@ const reportCache = new Map<number, { expiresAt: number; data: import("@fitness-
 const reportInFlight = new Map<number, Promise<import("@fitness-battle/shared").RaceResultReport | null>>();
 
 const replayCache = new Map<string, { expiresAt: number; data: import("@fitness-battle/shared").ReplayPage | null }>();
+const replayCompactCache = new Map<string, { expiresAt: number; data: ReplayCompactPage | null }>();
+const replayCompactInFlight = new Map<string, Promise<ReplayCompactPage | null>>();
+let compactRpcUnavailable = false;
+let previewsRpcUnavailable = false;
 
 let coursePreviewsCache: { expiresAt: number; data: Record<string, [number, number][]> } | null = null;
 let coursePreviewsInFlight: Promise<Record<string, [number, number][]>> | null = null;
@@ -21,45 +25,40 @@ let coverageCache: { expiresAt: number; data: RaceCoverage[] } | null = null;
 let coverageInFlight: Promise<RaceCoverage[]> | null = null;
 let backgroundWarmStarted = false;
 
-function warmCommonRankingsScopes(coverage: RaceCoverage[]) {
+function warmCommonRankingsScopes(_coverage: RaceCoverage[]) {
   if (backgroundWarmStarted) return;
   backgroundWarmStarted = true;
 
-  const editionScopes = Array.from(
-    new Map(coverage.map(c => [`${c.distance_slug}:${c.edition_id}`, { distance: c.distance_slug, editionId: c.edition_id }])).values(),
-  );
-
   const queue: Array<{ distance: string; sex: string; editionId: number | null }> = [
     { distance: "marathon", sex: "all", editionId: null },
-    { distance: "marathon", sex: "male", editionId: null },
-    { distance: "marathon", sex: "female", editionId: null },
     { distance: "10k", sex: "all", editionId: null },
     { distance: "half_marathon", sex: "all", editionId: null },
     { distance: "5k", sex: "all", editionId: null },
-    ...editionScopes.map(e => ({ distance: e.distance, sex: "all", editionId: e.editionId })),
   ];
 
-  void (async () => {
-    for (const item of queue) {
-      try {
-        await loadRaceResults(item.distance, {
-          sex: item.sex as ReturnType<typeof raceQuery>["sex"],
-          year: null,
-          editionId: item.editionId,
-          editionError: null,
-          timeframe: "all",
-          from: "",
-          through: "",
-          dateError: null,
-          percentile: "all",
-          query: "",
-          page: 1,
-        });
-      } catch {
-        // Ignore background warm-up errors
+  setTimeout(() => {
+    void (async () => {
+      for (const item of queue) {
+        try {
+          await loadRaceResults(item.distance, {
+            sex: item.sex as ReturnType<typeof raceQuery>["sex"],
+            year: null,
+            editionId: item.editionId,
+            editionError: null,
+            timeframe: "all",
+            from: "",
+            through: "",
+            dateError: null,
+            percentile: "all",
+            query: "",
+            page: 1,
+          });
+        } catch {
+          // Ignore background warm-up errors
+        }
       }
-    }
-  })();
+    })();
+  }, 2500);
 }
 
 export async function loadRaceResults(distance: string, query: ReturnType<typeof raceQuery>): Promise<RaceResultsPage> {
@@ -226,6 +225,81 @@ export async function loadReplayPage(
   return data;
 }
 
+export async function loadReplayCompactPage(
+  edition: number,
+  distance: string,
+  sex: string,
+  clock: string,
+  ids: number[] | null,
+  after: number,
+): Promise<ReplayCompactPage | null> {
+  const key = JSON.stringify({ edition, distance, sex, clock, ids, after });
+  const now = Date.now();
+  const cached = replayCompactCache.get(key);
+  if (cached && cached.expiresAt > now) return cached.data;
+  const inflight = replayCompactInFlight.get(key);
+  if (inflight) return inflight;
+
+  const task = (async () => {
+    try {
+      const client = createRankingsClient();
+      if (!client) throw new Error("Rankings unavailable");
+
+      let result: ReplayCompactPage | null = null;
+      if (!compactRpcUnavailable) {
+        const { data, error } = await client.rpc("rankings_replay_compact_page", {
+          p_edition_id: edition,
+          p_distance: distance,
+          p_sex: sex,
+          p_clock: clock,
+          p_ids: ids,
+          p_after: after,
+          p_limit: 5000,
+        });
+        if (error && (error.code === "PGRST202" || /rankings_replay_compact_page|schema cache/i.test(error.message))) {
+          compactRpcUnavailable = true;
+        } else if (error) {
+          throw new Error("Replay unavailable");
+        } else {
+          result = (data as ReplayCompactPage | null) ?? null;
+        }
+      }
+
+      if (compactRpcUnavailable) {
+        const clockTyped = clock === "gun" ? "gun" : "chip";
+        const first = await loadReplayPage(edition, distance, sex, clock, ids, after);
+        if (!first) {
+          result = null;
+        } else {
+          const combined = compactReplayPage(first, clockTyped);
+          let cursor = first.next;
+          for (let batch = 1; batch < 5 && cursor !== null; batch++) {
+            const nextPage = await loadReplayPage(edition, distance, sex, clock, ids, cursor);
+            if (!nextPage) break;
+            const compacted = compactReplayPage(nextPage, clockTyped);
+            combined.runners.push(...compacted.runners);
+            cursor = compacted.next;
+          }
+          combined.next = cursor;
+          result = combined;
+        }
+      }
+
+      if (replayCompactCache.size > 100) {
+        const firstKey = replayCompactCache.keys().next().value;
+        if (firstKey) replayCompactCache.delete(firstKey);
+      }
+      replayCompactCache.set(key, { expiresAt: Date.now() + RESULTS_TTL_MS, data: result });
+      return result;
+    } finally {
+      replayCompactInFlight.delete(key);
+    }
+  })();
+
+  replayCompactInFlight.set(key, task);
+  return task;
+}
+
 function simplifyCourseOutline(points: [number, number, number][], maxPoints = 96): [number, number][] {
   if (points.length <= maxPoints) return points.map(p => [p[0], p[1]]);
   const out: [number, number][] = [];
@@ -246,6 +320,24 @@ export async function loadReplayCoursePreviews(coverage?: RaceCoverage[] | null)
 
   coursePreviewsInFlight = (async () => {
     try {
+      const client = createRankingsClient();
+      if (client && !previewsRpcUnavailable) {
+        const { data, error } = await client.rpc("rankings_replay_course_previews");
+        if (!error && Array.isArray(data)) {
+          const previews: Record<string, [number, number][]> = {};
+          for (const row of data as Array<{ edition_id: number; distance_slug: string; points?: [number, number, number][] }>) {
+            if (Array.isArray(row.points) && row.points.length >= 2) {
+              previews[`${row.edition_id}:${row.distance_slug}`] = simplifyCourseOutline(row.points);
+            }
+          }
+          coursePreviewsCache = { expiresAt: Date.now() + COVERAGE_TTL_MS, data: previews };
+          return previews;
+        }
+        if (error && (error.code === "PGRST202" || /rankings_replay_course_previews|schema cache/i.test(error.message))) {
+          previewsRpcUnavailable = true;
+        }
+      }
+
       const list = coverage ?? (await loadRaceCoverage());
       const uniquePairs = Array.from(
         new Map(list.map(c => [`${c.edition_id}:${c.distance_slug}`, { editionId: c.edition_id, distance: c.distance_slug }])).values(),
