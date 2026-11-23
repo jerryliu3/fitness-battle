@@ -53,8 +53,8 @@ const s=useThemedStyles(sThemes);
 
   if (systemMenu && SystemChoice) {
     return <View style={[s.trigger, { position: "relative", flexShrink: 1 }]}>
-      <View pointerEvents="none" accessibilityElementsHidden style={[f.row, { flexShrink: 1 }]}>
-        <Text style={[textStyle("label"), { flexShrink: 1, color: c.ink }]}>{options[selected]?.label ?? placeholder}</Text>
+      <View pointerEvents="none" accessibilityElementsHidden style={[f.row, { flex: 1, flexShrink: 1, justifyContent: "space-between" }]}>
+        <Text style={[textStyle("body"), { flexShrink: 1, color: c.ink }]}>{options[selected]?.label ?? placeholder}</Text>
         <ChevronDown />
       </View>
       <SystemChoice dark={mode === "dark"} label={label} value={value} options={options} style={StyleSheet.absoluteFill}
@@ -75,7 +75,7 @@ const s=useThemedStyles(sThemes);
           onPress={toggle}
           style={({ pressed }) => [s.trigger, open && s.triggerOpen, pressed && { opacity: 0.7 }]}
         >
-          <Text style={[textStyle("label"), { flexShrink: 1, color: c.ink }]}>
+          <Text style={[textStyle("body"), { flexShrink: 1, color: c.ink }]}>
             {options[selected]?.label ?? placeholder}
           </Text>
           <ChevronDown />
@@ -113,9 +113,9 @@ const s=useThemedStyles(sThemes);
 
 const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   trigger: {
-    minHeight: 46,
-    paddingHorizontal: 16,
-    borderRadius: 999,
+    minHeight: 44,
+    paddingHorizontal: 14,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: c.line,
     backgroundColor: c.card,

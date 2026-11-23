@@ -486,9 +486,9 @@ describe("compete engine", () => {
     expect(sameWorkout(act1, actTwin)).toBe(true);
   });
 
-  it("starts unsigned local state as Guest with unranked effort scores", () => {
+  it("starts unsigned local state as Anonymous Athlete with unranked effort scores", () => {
     const state = freshState();
-    expect(state.name).toBe("Guest");
+    expect(state.name).toBe("Anonymous Athlete");
     expect(state.ratings.every((r) => r.openElo === 0 && r.verifiedElo === 0)).toBe(
       true,
     );

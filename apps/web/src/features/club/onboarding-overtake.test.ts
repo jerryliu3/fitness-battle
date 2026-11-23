@@ -18,15 +18,15 @@ it("leaves playback controls with the shared player and continues without remoun
   expect(complete).toHaveBeenCalledTimes(1);
   await act(async () => r.unmount());
 });
-it.each(["walking", "strength"] as const)("uses the captured %s volume on the default Timeline", async sport => {
+it.each(["walking", "strength"] as const)("uses the captured %s volume on the default view", async sport => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const complete = vi.fn();
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(OnboardingOvertake, { sport, onComplete: complete })); });
   const player = r.root.findByType("CompetitionMoment" as never);
-  expect(player.props.dimension).toBe("graph");
+  expect(player.props.dimension).toBe(sport === "walking" ? "4d" : "graph");
   expect(player.props.moment.unit).toBe(sport === "walking" ? "steps" : "hrs");
-  expect(player.props.course).toBeNull();
+  if (sport === "strength") expect(player.props.course).toBeNull();
   await act(async () => player.props.onConfirm());
   expect(complete).toHaveBeenCalledTimes(1);
   await act(async () => r.unmount());

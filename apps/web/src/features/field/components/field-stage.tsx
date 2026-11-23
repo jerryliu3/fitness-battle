@@ -406,13 +406,14 @@ export function FieldStage({
 
       {!backgroundMode && !queueOverlay && replayState && <div className="field-timeline-fullscreen"><FieldTimeline timeline={timeline} /></div>}
       {!queueOverlay && (viewDimension !== "4d" || course) ? <>
-      <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Current leaders">
+      <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Live standings">
         <button type="button" className="focus-panel-toggle" aria-label={intervalsCollapsed ? "Expand live intervals" : "Collapse live intervals"} aria-expanded={!intervalsCollapsed} onClick={() => setIntervalsCollapsed(value => !value)}><span className="focus-panel-grip" aria-hidden="true" /></button>
         <div className="focus-panel-content" inert={intervalsCollapsed} aria-hidden={intervalsCollapsed}>
-          <span className="focus-broadcast-tower-kicker">Current Leaders</span>
-          {coursePositionLeaders(ranked).map((peer, idx) => {
+          <span className="focus-broadcast-tower-kicker">Live standings</span>
+          {coursePositionLeaders(ranked).map((peer) => {
             const delta = peer.value - leaderValue;
             const isSelected = tappedId === peer.id;
+            const leads = placeOf(peer.value) === 1;
             return (
               <button
                 key={peer.id}
@@ -420,7 +421,7 @@ export function FieldStage({
                 className={
                   isSelected
                     ? "focus-broadcast-tower-row is-selected"
-                    : placeOf(peer.value) === 1
+                    : leads
                       ? "focus-broadcast-tower-row is-leader"
                       : "focus-broadcast-tower-row"
                 }
@@ -434,7 +435,7 @@ export function FieldStage({
                   {peer.name.split(" ")[0]}
                 </span>
                 <span className="focus-broadcast-tower-val">
-                  {idx === 0 ? peer.value.toFixed(1) : delta.toFixed(1)}
+                  {leads ? "Lead" : delta.toFixed(1)}
                 </span>
               </button>
             );

@@ -90,7 +90,7 @@ describe("compete-time-series", () => {
     expect(switched.selectedAthlete.you).toBe(false);
     expect(switched.athletes.filter((a) => a.selected)).toHaveLength(1);
     expect(switched.athletes.find((a) => a.you)?.selected).toBe(false);
-    expect(switched.gapLabel).toMatch(/vs Guest|Tied with Guest/);
+    expect(switched.gapLabel).toMatch(/vs Anonymous Athlete|Tied with Anonymous Athlete/);
   });
 
   it("does not invent an overtake against an account that has only a current total", () => {

@@ -103,7 +103,13 @@ export function raceCourseTrail(course: RaceCourse, progress: number, lateralMet
   return coordinates;
 }
 export function raceEffortMetres(value: number, unit: string): number | null {
-  return unit === "km" ? Math.max(0, value) * 1000 : unit === "mi" ? Math.max(0, value) * 1609.344 : null;
+  return unit === "km"
+    ? Math.max(0, value) * 1000
+    : unit === "mi"
+      ? Math.max(0, value) * 1609.344
+      : unit === "steps"
+        ? Math.max(0, value)
+        : null;
 }
 /** Explicit overview command, in the host's display units. A request can repeat the same target after panning. */
 export interface CourseDistanceTarget { value: number; request: number }

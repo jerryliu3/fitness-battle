@@ -1,6 +1,6 @@
 import { MapHudBackdrop, useMapHud } from "./map-hud";
 import { SettingsToggleRow } from "./settings-toggle-row";
-import { AppIcon } from "./app-icon";
+import { AppIcon, type AppIconName } from "./app-icon";
 import { useAppTheme } from "../appearance";
 import { useThemeColors } from "../theme";
 import type { ReactNode } from "react";
@@ -18,6 +18,7 @@ export function LayersMenu({
   buttonBackgroundColor,
   buttonBorderColor,
   iconColor,
+  icon = "layers",
   children,
 }: {
   label: string;
@@ -27,6 +28,7 @@ export function LayersMenu({
   buttonBackgroundColor?: string;
   buttonBorderColor?: string;
   iconColor?: string;
+  icon?: AppIconName;
   children: (ctx: { close: () => void; runAfterDismiss: (action: () => void) => void }) => ReactNode;
 }) {
   const hud = useMapHud();
@@ -63,7 +65,7 @@ export function LayersMenu({
         }, pressed && { opacity: 0.75 }]}
       >
         {buttonBackgroundColor === undefined && <MapHudBackdrop radius={22} />}
-        <AppIcon name="layers" size={22} color={iconColor ?? hud.ink} />
+        <AppIcon name={icon} size={22} color={iconColor ?? hud.ink} />
       </Pressable>
       <AnchoredMenu
         open={open}
@@ -123,9 +125,10 @@ export function GraphOptions({
   );
 }
 
-export function CourseOptions({ flat, sharedLane, onToggleDimension, onToggleSpacing, onOverview, onReplay, onChoose2D }: {
+export function CourseOptions({ flat, sharedLane, onToggleDimension, onToggleSpacing, onOverview, onChoose2D, onChoose3D }: {
   onReplay?: () => void;
   onChoose2D?: () => void;
+  onChoose3D?: () => void;
   flat: boolean;
   sharedLane: boolean;
   onToggleDimension(): void;
@@ -133,20 +136,22 @@ export function CourseOptions({ flat, sharedLane, onToggleDimension, onToggleSpa
   onOverview(): void;
 }) {
   const c = useThemeColors();
+  const is2D = Boolean(onChoose3D);
   return (
     <LayersMenu
       label="Course options"
       closeLabel="Close course options"
-      estimatedHeight={164 + (onReplay ? 44 : 0) + (onChoose2D ? 44 : 0)}
+      estimatedHeight={is2D ? 56 : 164 + (onChoose2D ? 44 : 0)}
     >
       {({ close, runAfterDismiss }) => {
-        const options = [
-          ...(onChoose2D ? [{ label: "3D view", value: true, action: () => { runAfterDismiss(onChoose2D); close(); } }] : []),
-          { label: "Perspective view", value: !flat, action: onToggleDimension },
-          { label: "Shared lane", value: sharedLane, action: onToggleSpacing },
-          ...(onReplay ? [{ label: "View replay", action: () => runAfterDismiss(onReplay) }] : []),
-          { label: "See overview", action: onOverview },
-        ];
+        const options = is2D
+          ? [{ label: "3D view", value: false, action: () => { runAfterDismiss(onChoose3D!); close(); } }]
+          : [
+              ...(onChoose2D ? [{ label: "3D view", value: true, action: () => { runAfterDismiss(onChoose2D); close(); } }] : []),
+              { label: "Perspective view", value: !flat, action: onToggleDimension },
+              { label: "Shared lane", value: sharedLane, action: onToggleSpacing },
+              { label: "See overview", action: onOverview },
+            ];
         return options.map((option) =>
           "value" in option ? (
             <SettingsToggleRow

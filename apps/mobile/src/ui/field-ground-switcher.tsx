@@ -12,7 +12,7 @@ export function FieldGroundSwitcher({ appearance, onChangeAppearance }: {
   onChangeAppearance(appearance: FieldAppearance): void;
 }) {
   return (
-    <LayersMenu label="Lane options" closeLabel="Close lane options" estimatedHeight={MENU_HEIGHT}>
+    <LayersMenu label="Lane options" closeLabel="Close lane options" icon="distance" estimatedHeight={MENU_HEIGHT}>
       {({ close }) => (
         <ScrollView style={{ maxHeight: MENU_HEIGHT }}>
           {grounds.map(([ground, item]) => (

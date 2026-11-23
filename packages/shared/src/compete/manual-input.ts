@@ -19,19 +19,34 @@ export function parseManualActivity(sport: SportId, mileage: string, duration: s
   return { distanceM, movingSec, error: null };
 }
 
-/** Optional local wall time in the account zone; restricted to today and never in the future. */
+/** Optional local date & wall time in the account zone; never in the future. */
 export function manualActivityInstant(
   time: string,
   now: Date,
   timeZone: string = APP_TIMEZONE,
+  date?: string,
 ): { startedAt: string; error: null } | { error: string } {
   const zone = isValidIanaTimeZone(timeZone) ? timeZone : APP_TIMEZONE;
-  if (!time.trim()) return { startedAt: now.toISOString(), error: null };
+  const trimmedDate = date?.trim() ?? "";
+  const trimmedTime = time.trim();
+  if (!trimmedDate && !trimmedTime) return { startedAt: now.toISOString(), error: null };
+  const targetDay = trimmedDate || dayKey(now, zone);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDay)) {
+    return { error: "Choose a valid date as YYYY-MM-DD." };
+  }
+  const targetTime = trimmedTime || new Intl.DateTimeFormat("en-GB", {
+    timeZone: zone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(now).replace(/^24:/, "00:");
   try {
-    const startedAt = crewSessionInstant(dayKey(now, zone), time.trim(), zone);
-    if (Date.parse(startedAt) > now.getTime()) return { error: "Choose a time earlier today." };
+    const startedAt = crewSessionInstant(targetDay, targetTime, zone);
+    if (Date.parse(startedAt) > now.getTime()) {
+      return { error: trimmedDate && trimmedDate !== dayKey(now, zone) ? "Choose a past date." : "Choose a time earlier today." };
+    }
     return { startedAt, error: null };
   } catch {
-    return { error: "Enter a valid time today as HH:MM." };
+    return { error: trimmedDate ? "Enter a valid date and time." : "Enter a valid time today as HH:MM." };
   }
 }
