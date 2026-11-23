@@ -35,7 +35,7 @@ it.each([false, true])("collects details first, registers one sport, shows a cla
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Onboarding)); });
   expect(r.root.findAllByType("TextInput" as never).map(n => n.props.accessibilityLabel)).toEqual(["City"]);
-  expect(r.root.findAllByType("ChoicePicker" as never).find(n => n.props.label === "Gender (optional)")!.props.placeholder).toBe("Gender (optional)");
+  expect(r.root.findAllByType("ChoicePicker" as never).find(n => n.props.label === "Gender (optional)")!.props.placeholder).toBe("Not specified");
   expect(r.root.findByType("FocusSegments" as never).props.label).toBe("Units");
   await next(r);
   expect(r.root.findByType("TrackerConnections" as never).props.preview).toBe(preview);
