@@ -20,7 +20,7 @@ import { StandingsList } from "./standings-list";
 import { AppText, textStyle } from "../ui/section";
 import { useFieldFlight } from "../ui/use-field-flight";
 import { FieldOverlayView, SlidingFieldPanel } from "../ui/field-overlay-motion";
-import { GraphOptions } from "../ui/course-options";
+import { GraphOptions, CourseOptions } from "../ui/course-options";
 import {
   coursePositionLeaders,
   competitionQueue,
@@ -46,6 +46,7 @@ import {
   type CompeteArenaEvent,
   type CompeteTimeSeriesView,
   type CourseDistanceTarget,
+  type FieldViewDimension,
   type ArenaSceneLane,
   type ScoreTrack,
   type SportId,
@@ -63,6 +64,9 @@ import { playCue } from "../lib/haptics";
 import { LaneTrack, type LaneAnchor } from "../ui/lane-track";
 import { FieldOverview, useFieldAppearance } from "../ui/field-course";
 import { useReducedMotion } from "../ui/use-reduced-motion";
+
+const rememberedFieldViews = new Map<string, FieldViewDimension>();
+export function forgetFieldViews() { rememberedFieldViews.clear(); }
 
 export function CompetitionField({
   sport,
@@ -124,17 +128,20 @@ const f=useFocusStyles();
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = focusedOverride ?? ((presentationActive ?? true) && shellTabFromPath(pathname)?.id === "arena");
+  const viewSessionKey = `${accountKey}:${presentationEvent}`;
   const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d" | "graph">(() =>
-    defaultCompeteFieldView(presentationEvent));
+    normalizeCompeteFieldView(presentationEvent, (persistent ? rememberedFieldViews.get(viewSessionKey) : undefined) ?? defaultCompeteFieldView(presentationEvent)));
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
 
   useEffect(() => {
-    setSceneDimension(defaultCompeteFieldView(presentationEvent));
-  }, [presentationEvent, sport, track, accountKey]);
+    setSceneDimension(normalizeCompeteFieldView(presentationEvent, (persistent ? rememberedFieldViews.get(viewSessionKey) : undefined) ?? defaultCompeteFieldView(presentationEvent)));
+  }, [presentationEvent, sport, track, accountKey, viewSessionKey]);
 
   const chooseView = (value: "2d" | "3d" | "4d" | "graph") => {
     flight.cancel();
-    setSceneDimension(normalizeCompeteFieldView(presentationEvent, value));
+    const next = normalizeCompeteFieldView(presentationEvent, value);
+    if (persistent) rememberedFieldViews.set(viewSessionKey, next);
+    setSceneDimension(next);
   };
   const chooseViewRef = useRef(chooseView); chooseViewRef.current = chooseView;
   const mapChromeRef = useRef<Partial<Record<FieldMapChromeSlot, ReactNode>>>({});
@@ -147,12 +154,15 @@ const f=useFocusStyles();
           options: sceneDimension === "graph" && onChartViewChange
             ? <GraphOptions eventView={(chartView ?? "event") === "event"} onToggleEventView={() => onChartViewChange((chartView ?? "event") === "event" ? "trajectory" : "event")} />
             : sceneDimension === "4d" ? mapChromeRef.current.options
-              : sceneDimension === "2d" ? <FieldGroundSwitcher appearance={appearance} onChangeAppearance={setAppearance} /> : null,
+              : sceneDimension === "2d" && geographic && backgroundMode
+                ? <CourseOptions flat sharedLane onChoose3D={() => chooseViewRef.current("4d")} onToggleDimension={() => chooseViewRef.current("4d")} onToggleSpacing={() => {}} onOverview={() => {}} />
+                : null,
+          ground: sceneDimension === "2d" ? <FieldGroundSwitcher appearance={appearance} onChangeAppearance={setAppearance} /> : null,
           follow: sceneDimension === "4d" ? mapChromeRef.current.follow : null,
         }}
       />,
     );
-  }, [onOptionsChange, sceneDimension, presentationEvent, chartView, onChartViewChange, appearance, setAppearance]);
+  }, [onOptionsChange, sceneDimension, presentationEvent, geographic, backgroundMode, chartView, onChartViewChange, appearance, setAppearance]);
   useEffect(() => {
     if (!onOptionsChange) return;
     publishArenaOptions();
@@ -413,7 +423,10 @@ const f=useFocusStyles();
 
   const viewControls = <FieldArenaChromeStack slots={{
     view: <FieldViewSwitcher value={sceneDimension} event={presentationEvent} onChange={chooseView} />,
-    options: sceneDimension === "2d" ? <FieldGroundSwitcher appearance={appearance} onChangeAppearance={setAppearance} /> : null,
+    options: sceneDimension === "2d" && geographic && backgroundMode
+      ? <CourseOptions flat sharedLane onChoose3D={() => chooseView("4d")} onToggleDimension={() => chooseView("4d")} onToggleSpacing={() => {}} onOverview={() => {}} />
+      : null,
+    ground: sceneDimension === "2d" ? <FieldGroundSwitcher appearance={appearance} onChangeAppearance={setAppearance} /> : null,
   }} />;
 
   return (

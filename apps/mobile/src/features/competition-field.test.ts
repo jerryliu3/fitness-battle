@@ -13,9 +13,9 @@ import { competePeriodWindow, competeNow, defaultFieldAppearance, freshState, re
 const mocks = vi.hoisted(() => ({ fly: vi.fn(), path: "/arena", appState: null as null | ((status: string) => void) }));
 vi.mock("expo-router", () => ({ usePathname: () => mocks.path }));
 vi.mock("react-native", () => ({useColorScheme: () => "light",
-  Modal: "Modal", PanResponder: { create: () => ({ panHandlers: {} }) },
+  Platform: { OS: "ios" }, Modal: "Modal", PanResponder: { create: () => ({ panHandlers: {} }) },
   Animated: { View: "View", Value: class { constructor(public value: number) {} interpolate(config: unknown) { return config; } }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
-  Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x }, Pressable: "Pressable", ScrollView: "ScrollView", Text: "Text", View: "View",
+  Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x }, Pressable: "Pressable", ScrollView: "ScrollView", Switch: "Switch", Text: "Text", View: "View",
   StyleSheet: { create: (v: unknown) => v },
   useWindowDimensions: () => ({ width: 390, height: 844 }),
   AppState: { addEventListener: (_name: string, fn: (status: string) => void) => { mocks.appState = fn; return { remove() { mocks.appState = null; } }; } },
@@ -46,7 +46,7 @@ vi.mock("../lib/haptics", () => ({ playCue() {} }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: fieldState, accountKey: "test" }) }));
 const fieldState = reduceCompete(freshState(new Date("2026-10-26T18:00:00Z")), { type: "opt-in", sport: "running", now: "2026-10-26T09:00:00Z" });
 fieldState.activities = [{ id: "counted-run", sport: "running", startedAt: "2026-10-26T16:00:00Z", distanceM: 1000, movingSec: 300, avgHr: null, verified: true, source: "strava" }];
-import { CompetitionField } from "./competition-field";
+import { CompetitionField, forgetFieldViews } from "./competition-field";
 let renderer: ReactTestRenderer;
 const field = () => renderer.root.findByType("LaneTrack" as never);
 const scene = () => renderer.root.findAllByType("View" as never).find(node => node.props.onTouchStart && node.props.onTouchEnd)!;
@@ -54,6 +54,7 @@ const root = () => renderer.root.findAllByType("View" as never).find(node => nod
 const button = (label: string) => renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === label)!;
 const touch = (x = 10) => ({ nativeEvent: { pageX: x, pageY: 20, touches: [{}] } });
 beforeEach(async () => {
+  forgetFieldViews();
   mocks.path = "/arena";
   vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-26T18:00:00Z")); vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); mocks.fly.mockClear();
   await act(async () => { renderer = create(createElement(CompetitionField, { sport: "running", track: "verified" })); });
@@ -281,7 +282,7 @@ it("keeps the new vertical chrome and clears map controls when switching to lane
   expect(slots().options.type).toBe("MapOptions");
   expect(slots().follow.type).toBe("FollowChip");
   await act(async () => slots().view.props.onChange("2d"));
-  expect(slots().options.type).toBe("FieldGroundSwitcher");
+  expect(slots().ground.type).toBe("FieldGroundSwitcher");
   expect(slots().follow).toBeNull();
   expect(field()).toBeDefined();
 });

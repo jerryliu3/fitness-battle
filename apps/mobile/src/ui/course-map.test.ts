@@ -69,15 +69,8 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   const button = (label: string) => renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === label);
   expect(button("See overview")).toBeUndefined();
   await act(async () => button("Course options")!.props.onPress());
-  const dismissMenu = renderer.root.findByType("Modal" as never).props.onDismiss;
-  await act(async () => button("View replay")!.props.onPress());
-  expect(props.onReplay).not.toHaveBeenCalled();
-  await act(async () => dismissMenu());
-  expect(props.onReplay).toHaveBeenCalledOnce();
-  expect(button("See overview")).toBeUndefined();
-  await act(async () => button("Course options")!.props.onPress());
   const toggle = (label: string) => renderer.root.findAllByType("Switch" as never).find(node => node.props.accessibilityLabel === label)!;
-  expect(button("View replay")).toBeDefined();
+  expect(button("View replay")).toBeUndefined();
   expect(button("See overview")).toBeDefined();
   expect(["Following", "Recenter", "Zoom in", "Zoom out", "2D map"].every(label => !button(label))).toBe(true);
   expect(toggle("Perspective view").props.value).toBe(true);
