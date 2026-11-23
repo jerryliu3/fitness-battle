@@ -1,19 +1,12 @@
 import { NextResponse } from "next/server";
 import {
+  isNotificationCategoryId,
   normalizeNotificationPreferences,
-  type NotificationCategoryId,
   type NotificationDeliveryPayload,
 } from "@fitness-battle/shared";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import { deliverNotificationToUser } from "@/lib/deliver-notification";
 import { createRequestClient } from "@/lib/supabase/request";
-
-const CATEGORIES = new Set<NotificationCategoryId>([
-  "week_summary",
-  "rival_moves",
-  "lesson_reminder",
-  "connection_alerts",
-]);
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as {
@@ -31,12 +24,12 @@ export async function POST(request: Request) {
   }
 
   const category = body?.payload?.category;
-  if (!category || !CATEGORIES.has(category as NotificationCategoryId)) {
+  if (!isNotificationCategoryId(category)) {
     return NextResponse.json({ error: "invalid_category" }, { status: 400 });
   }
 
   const payload: NotificationDeliveryPayload = {
-    category: category as NotificationCategoryId,
+    category,
     title:
       typeof body?.payload?.title === "string" && body.payload.title.trim()
         ? body.payload.title.trim().slice(0, 120)

@@ -15,7 +15,14 @@ import {
 export async function requestAccountPush(
   category: NotificationCategoryId,
   identity: SyncIdentity | null | undefined,
-  detail?: { place?: number; provider?: string; sport?: string },
+  detail?: {
+    place?: number;
+    provider?: string;
+    sport?: string;
+    count?: number;
+    direction?: "overtaken" | "overtook";
+    athleteName?: string;
+  },
 ): Promise<void> {
   const prefs = loadNotificationPreferences();
   if (!canDeliverNotification(prefs, category)) return;

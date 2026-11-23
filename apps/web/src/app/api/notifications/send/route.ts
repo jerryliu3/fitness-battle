@@ -1,19 +1,12 @@
 import { NextResponse } from "next/server";
 import {
+  isNotificationCategoryId,
   normalizeNotificationPreferences,
-  type NotificationCategoryId,
   type NotificationDeliveryPayload,
 } from "@fitness-battle/shared";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import { deliverNotificationToUser } from "@/lib/deliver-notification";
 import { createRequestClient } from "@/lib/supabase/request";
-
-const CATEGORIES = new Set<NotificationCategoryId>([
-  "week_summary",
-  "rival_moves",
-  "lesson_reminder",
-  "connection_alerts",
-]);
 
 const RATE_LIMIT_WINDOW_MS = 10_000;
 const MAX_REQUESTS_PER_WINDOW = 5;
@@ -55,7 +48,7 @@ export async function POST(request: Request) {
   }
 
   const category = body?.payload?.category;
-  if (!category || !CATEGORIES.has(category as NotificationCategoryId)) {
+  if (!isNotificationCategoryId(category)) {
     return NextResponse.json({ error: "invalid_category" }, { status: 400 });
   }
   if (
@@ -73,7 +66,7 @@ export async function POST(request: Request) {
   }
 
   const payload: NotificationDeliveryPayload = {
-    category: category as NotificationCategoryId,
+    category,
     title: body.payload.title.trim().slice(0, 120),
     body: body.payload.body.trim().slice(0, 500),
     path:

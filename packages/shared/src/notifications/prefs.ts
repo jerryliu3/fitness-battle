@@ -19,7 +19,17 @@ export const NOTIFICATION_CATEGORIES: NotificationCategoryMeta[] = [
   {
     id: "rival_moves",
     label: "Field moves",
-    description: "When someone nearby jumps ahead on your Arena field.",
+    description: "When you pass someone or someone overtakes you on the field.",
+  },
+  {
+    id: "activity_synced",
+    label: "Activity synced",
+    description: "When a new workout syncs from your tracker.",
+  },
+  {
+    id: "daily_digest",
+    label: "Daily check-in & summary",
+    description: "Morning sleep and recovery check-in, plus an 11 PM step summary.",
   },
   {
     id: "lesson_reminder",
@@ -44,6 +54,8 @@ export function defaultNotificationPreferences(
     categories: {
       week_summary: true,
       rival_moves: true,
+      activity_synced: true,
+      daily_digest: true,
       lesson_reminder: false,
       connection_alerts: true,
     },
@@ -53,7 +65,9 @@ export function defaultNotificationPreferences(
   };
 }
 
-function isCategoryId(value: unknown): value is NotificationCategoryId {
+export function isNotificationCategoryId(
+  value: unknown,
+): value is NotificationCategoryId {
   return (
     typeof value === "string" &&
     (CATEGORY_IDS as string[]).includes(value)
@@ -103,7 +117,7 @@ export function normalizeNotificationPreferences(
     for (const [key, value] of Object.entries(
       row.categories as Record<string, unknown>,
     )) {
-      if (isCategoryId(key) && typeof value === "boolean") {
+      if (isNotificationCategoryId(key) && typeof value === "boolean") {
         categories[key] = value;
       }
     }

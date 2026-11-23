@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { notifyCompeteOvertakes } from "./server-push";
 import {
   dispositionOf,
   initializeEffortAccounts,
@@ -254,6 +255,9 @@ export async function persistCompeteAccount(
         state.committedOvertakeMoments = [...new Map([
           ...retained.map(moment => overtakeMomentForUnits(moment, state.units)), ...committed,
         ].map(moment => [moment.id, moment])).values()].slice(-50);
+        if (committed.length > 0) {
+          void notifyCompeteOvertakes(authority.db, userId, committed);
+        }
         return data.updatedAt;
       }
       if (typeof data !== "string") throw new Error("account_not_saved");

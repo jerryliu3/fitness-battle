@@ -9,6 +9,11 @@ import type {
   StravaTokenSet,
 } from "@fitness-battle/shared";
 import { serverEnv } from "./env";
+import {
+  notifyBattleRankChanges,
+  notifySyncedActivities,
+  snapshotBattleRanks,
+} from "./server-push";
 import { getSupabaseConfig } from "./supabase/config";
 
 const UUID_RE =
@@ -209,10 +214,13 @@ async function recomputeMemberships(
     .eq("user_id", userId);
   if (memberError) throw new Error(memberError.message);
   for (const membership of memberships ?? []) {
+    const beforeRanks = await snapshotBattleRanks(db, membership.battle_id);
     const { error: scoreError } = await db.rpc("recompute_battle_standings_internal", {
       p_battle_id: membership.battle_id,
     });
     if (scoreError) throw new Error(scoreError.message);
+    const afterRanks = await snapshotBattleRanks(db, membership.battle_id);
+    await notifyBattleRankChanges(db, userId, beforeRanks, afterRanks);
   }
 }
 
@@ -317,6 +325,24 @@ export async function persistSyncedActivities(
   });
   if (error) throw new Error(error.message);
   await recomputeMemberships(db, userId);
+
+  if (provenance === "recorded") {
+    const newlySynced = rows
+      .filter(
+        (row) =>
+          row.disposition !== "excluded" &&
+          !existingByKey.has(`${row.provider}:${row.external_id}`),
+      )
+      .map((row) => ({
+        provider: row.provider,
+        sport: row.sport,
+        startedAt: row.started_at,
+        journalOnly: row.journal_only,
+      }));
+    if (newlySynced.length > 0) {
+      await notifySyncedActivities(db, userId, newlySynced);
+    }
+  }
   return true;
 }
 

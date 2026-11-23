@@ -29,6 +29,7 @@ import {
   updateNativeCategory,
   type SyncIdentity,
 } from "../src/lib/push-notifications";
+import { useAuth } from "../src/lib/auth";
 import { mobileEnv } from "../src/lib/env";
 import { supabase } from "../src/lib/supabase";
 import { FocusButton } from "../src/ui/focus";
@@ -75,6 +76,9 @@ const f=useFocusStyles();
 const styles=useThemedStyles(stylesThemes);
 
   const params = useLocalSearchParams<{ returnTo?: string }>();
+  const { user } = useAuth();
+  const showTestButton =
+    __DEV__ || user?.email?.trim().toLowerCase() === "alice@example.com";
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -172,7 +176,8 @@ const styles=useThemedStyles(stylesThemes);
       );
       if (!result.ok) {
         setNote(
-          "Could not deliver. Turn notifications on, allow permission, and use a live Expo token on a physical device when testing remote push.",
+          result.message ??
+            "Could not deliver. Turn notifications on, allow permission, and use a live Expo token on a physical device when testing remote push.",
         );
         return;
       }
@@ -289,7 +294,7 @@ const styles=useThemedStyles(stylesThemes);
             ))}
           </View>
 
-          {__DEV__ ? (
+          {showTestButton ? (
             <Pressable
               style={[styles.line, (!prefs.enabled || busy) && styles.disabled]}
               disabled={!prefs.enabled || busy}
