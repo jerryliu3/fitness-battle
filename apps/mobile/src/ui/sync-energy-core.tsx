@@ -122,15 +122,15 @@ export function SyncEnergyCore({ activities, history = activities, benchmarkSeco
     { icon: "layers", label: "Activities", value: `${Math.round(shown.count)}` },
   ];
 
-  function sideTotal(item: (typeof summaryItems)[number]) {
-    return <View accessible accessibilityLabel={`${item.label}: ${item.value}`} style={{ flex: 1, flexBasis: 0, minWidth: 0, alignItems: "center" }}>
+  function sideTotal(item: (typeof summaryItems)[number], side: "left" | "right") {
+    return <View accessible accessibilityLabel={`${item.label}: ${item.value}`} style={{ position: "absolute", top: 0, bottom: 0, [side]: 0, width: "22%", justifyContent: "center", alignItems: "center" }}>
       <Text style={[textStyle("label"), { color: c.ink, textAlign: "center" }]}>{item.value}</Text>
       <Text style={[textStyle("caption"), { color: c.muted, textAlign: "center" }]}>{item.label}</Text>
     </View>;
   }
 
-  return <View style={{ width: "100%", alignItems: "center", justifyContent: "center", flexDirection: sideTotals ? "row" : "column", gap: sideTotals ? 8 : 14 }}>
-    {sideTotals && sideTotal(summaryItems[1]!)}
+  return <View style={{ width: "100%", alignItems: "center", justifyContent: "center", gap: sideTotals ? 0 : 14, position: "relative" }}>
+    {sideTotals && sideTotal(summaryItems[1]!, "left")}
     <View accessible accessibilityLabel={`Selected activity energy, ${xpLabel} Training XP`} style={{ width: size, height: size, flexShrink: 0, alignItems: "center", justifyContent: "center" }}>
       <Svg width={size} height={size} viewBox="0 0 224 224" style={StyleSheet.absoluteFill}>
         <Defs>
@@ -152,7 +152,7 @@ export function SyncEnergyCore({ activities, history = activities, benchmarkSeco
         <Text style={[textStyle("caption"), { color: c.muted, textAlign: "center" }]}>Training XP</Text>
       </View>
     </View>
-    {sideTotals ? sideTotal(summaryItems[2]!) : <View style={{ flexDirection: "row", alignItems: "center", width: "100%" }}>
+    {sideTotals ? sideTotal(summaryItems[2]!, "right") : <View style={{ flexDirection: "row", alignItems: "center", width: "100%" }}>
       {summaryItems.flatMap((item, idx) => [
         ...(idx > 0 ? [<View key={`${item.label}-divider`} style={{ width: 1, height: 28, backgroundColor: c.line }} />] : []),
         <View key={item.label} accessible accessibilityLabel={`${item.label}: ${item.value}`} style={{ flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 4 }}>
