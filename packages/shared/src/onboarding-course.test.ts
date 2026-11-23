@@ -13,7 +13,7 @@ describe("onboarding course", () => {
   it("falls back to the bundled course when cache is empty", () => {
     clearOnboardingCourseCache();
     storeOnboardingCourseCache(bundledOnboardingCourse());
-    expect(resolveOnboardingCourse().name).toBe("First overtake");
+    expect(resolveOnboardingCourse().name).toBe(bundledOnboardingCourse().name);
     clearOnboardingCourseCache();
     expect(resolveOnboardingCourse()).toEqual(bundledOnboardingCourse());
   });

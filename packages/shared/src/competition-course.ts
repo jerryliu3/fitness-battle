@@ -1,9 +1,9 @@
 import { createRaceCourse, type RaceCourse } from "./race-course";
 import type { LngLat } from "./routeGeoUtils";
-import { DEFAULT_SAMPLE_ROUTE } from "./sampleRoute";
+import { bundledMarathonRaceCourse } from "./marathon-race-routes";
 
 /** Local preview only. Live competitions always read a stored assignment. */
-export const DEMO_RACE_COURSE = createRaceCourse(DEFAULT_SAMPLE_ROUTE.name, DEFAULT_SAMPLE_ROUTE.coordinates);
+export const DEMO_RACE_COURSE = bundledMarathonRaceCourse();
 
 /** Validate the database assignment before passing its geometry to a map. */
 export function raceCourseFromAssignment(value: unknown, periodStart: string, periodEnd: string): RaceCourse {

@@ -1,11 +1,11 @@
 import { createRaceCourse, type RaceCourse } from "./race-course";
 import type { LngLat } from "./routeGeoUtils";
-import { onboardingOvertakeCourse } from "./onboarding-overtake";
+import { bundledMarathonRaceCourse } from "./marathon-race-routes";
 
 export const ONBOARDING_OVERTAKE_SURFACE_ID = "onboarding-overtake";
 
 /** Bundled fallback; always available offline and on first paint. */
-export const bundledOnboardingCourse = (): RaceCourse => onboardingOvertakeCourse;
+export const bundledOnboardingCourse = (): RaceCourse => bundledMarathonRaceCourse();
 
 export function parseRouteSurfaceCourse(value: unknown): RaceCourse | null {
   if (!value || typeof value !== "object") return null;
