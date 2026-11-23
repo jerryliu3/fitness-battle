@@ -83,7 +83,7 @@ Current product preview is unchanged: `pnpm dev:web` then `http://localhost:3000
 
 ## Major events in the catalog
 
-2026 World Marathon Majors status and operator commands: [majors-2026-acquisition.md](majors-2026-acquisition.md). MikaTiming catalog slugs `*-marathon-2026` include split profiles; checkpoint import is `pnpm rankings:splits -- --slug <slug>` after finisher SQL is applied.
+2026 World Marathon Majors status and operator commands: [majors-2026-acquisition.md](majors-2026-acquisition.md). MikaTiming catalog slugs `*-marathon-2026` include split profiles; checkpoint import is `pnpm rankings:splits -- --slug <slug>` after finisher SQL is applied. When bulk split SQL stops on one bad row, apply remaining lines from `<slug>.splits.jsonl` with `pnpm rankings:splits-apply-pending -- --slug <slug>` (per-athlete import; aligns finish split to chip time).
 
 ChronoTrack Live (AZP) events use catalog slugs with `chronotrackEventId` / `chronotrackRaceId` (e.g. `sf-marathon-2026`, full course race `242840` on event `91608`). Finishers come from `reignite-api.athlinks.com` with an anonymous `ctlive-api` session token (`Origin: https://live.chronotrack.com`). Splits use the entry/result JSON when available; when the AZP API returns 403, the CLI falls back to SSR on `live.chronotrack.com/event/<id>/results/entry/<entryId>`. Only athletes with every checkpoint in the profile are stored (same rule as MikaTiming).
 

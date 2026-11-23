@@ -21,6 +21,7 @@
     "rankings:db:test": "bash rankings-db/scripts/run-sql-tests.sh",
     "rankings:ingest": "node packages/rankings/scripts/ingest.mjs",
     "rankings:splits": "node packages/rankings/scripts/splits.mjs",
+    "rankings:splits-apply-pending": "node packages/rankings/scripts/splits-apply-pending.mjs",
     "rankings:course": "node packages/rankings/scripts/course.mjs",
     "rankings:nyrr-splits": "node packages/rankings/scripts/nyrr-splits.mjs",
     "rankings:ingest-marathonguide": "node packages/rankings/scripts/ingest-marathonguide.mjs",
