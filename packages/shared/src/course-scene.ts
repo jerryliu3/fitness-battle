@@ -118,18 +118,14 @@ function buildSharedProfileLaneGeometry(
     ...raceCourseRacerPosition(course, metres, offsets.get(lane.id) ?? 0),
     leader: lane.value >= leaderValue,
   }));
-  const selected =
-    athletes.find((lane) => lane.id === selectedId) ??
-    athletes.find((lane) => lane.you) ??
-    athletes[0];
+  const explicitSelected = selectedId
+    ? athletes.find((lane) => lane.id === selectedId)
+    : undefined;
   const leader = athletes.reduce<typeof athletes[number] | undefined>(
     (best, lane) => (!best || lane.metres > best.metres ? lane : best),
     undefined,
   );
-  const trailTarget =
-    selected && leader && leader.metres > selected.metres
-      ? leader
-      : (selected ?? leader);
+  const trailTarget = explicitSelected ?? leader;
   const trails = {
     type: "FeatureCollection" as const,
     features:

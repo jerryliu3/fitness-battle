@@ -366,7 +366,7 @@ const f=useFocusStyles();
       ) : null}
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <View pointerEvents={expanded ? "auto" : "none"} style={{ flex: 1 }}>
-          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following && !chaseReplay} onFollowChange={setFollowing} mapFollowing={following} followAthleteName={focusedLane?.name ?? me?.name ?? "your athlete"} onFollowChipPress={expanded && !queued ? () => { if (following) setFollowing(false); else { setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } } : undefined} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={(expanded ? selectedId : null) ?? me?.id ?? ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={chaseReplay ? undefined : courseTarget} replay={chaseReplay} onReplay={timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onMapChromeChange={onOptionsChange ? handleMapChromeChange : undefined} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
+          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following && !chaseReplay} onFollowChange={setFollowing} mapFollowing={following} followAthleteName={focusedLane?.name ?? me?.name ?? "your athlete"} onFollowChipPress={expanded && !queued ? () => { if (following) setFollowing(false); else { setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } } : undefined} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={expanded ? (selectedId ?? "") : ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={chaseReplay ? undefined : courseTarget} replay={chaseReplay} onReplay={timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onMapChromeChange={onOptionsChange ? handleMapChromeChange : undefined} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
           <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, ...hud.chrome }}><MapHudBackdrop radius={999} /><Text style={{ ...textStyle("caption"), color: hud.ink }}>Tap to open full screen</Text></View>
@@ -484,7 +484,7 @@ const f=useFocusStyles();
             {!queued && sceneDimension !== "graph" && (sceneDimension !== "4d" || course) ? <>
             {/* Broadcast HUD: Left Current Positions Tower */}
             <SlidingFieldPanel
-              label="current leaders"
+              label="live standings"
               collapsible={false}
               onHeightChange={setLeadersHeight}
               collapsed={false}
@@ -509,7 +509,7 @@ const f=useFocusStyles();
             >
               <MapHudBackdrop radius={14} />
               <Text style={{ ...textStyle("label"), color: (hud.light ? hud.muted : "rgba(255,255,255,0.65)") }}>
-                Current Leaders
+                Live standings
               </Text>
               {coursePositionLeaders(ranked).map((peer, idx) => {
                 if (hiddenIds.includes(peer.id)) return <View key={peer.id} style={{ height: 24 }} />;
@@ -539,8 +539,8 @@ const f=useFocusStyles();
                     <Text
                       style={{
                         ...textStyle("caption"),
-                        width: hud.light && leads ? 17 : 14,
-                        textAlign: hud.light && leads ? "center" : undefined,
+                        width: 18,
+                        textAlign: "center",
                         borderRadius: 9,
                         overflow: "hidden",
                         backgroundColor: hud.light && leads ? c.tennis : undefined,
@@ -562,12 +562,10 @@ const f=useFocusStyles();
                     <Text
                       style={{
                         ...textStyle("caption"),
-                        color: idx === 0 ? hud.accent : (hud.light ? hud.muted : "rgba(255,255,255,0.8)"),
+                        color: leads ? hud.accent : (hud.light ? hud.muted : "rgba(255,255,255,0.8)"),
                       }}
                     >
-                      {idx === 0
-                        ? `${peer.values[2].toFixed(1)}`
-                        : `${delta.toFixed(1)}`}
+                      {leads ? "Lead" : `${delta.toFixed(1)}`}
                     </Text>
                   </Pressable>
                   </Animated.View>

@@ -159,18 +159,17 @@ export default function Onboarding() {
         <View style={{ padding: 16 }}><MotionStep identity={`${step}`}>
           <AppText role="display" accessibilityRole="header">{titles[step]}</AppText>
           {step === 0 && <>
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              <View style={{ flex: 1 }}>
-                <TextField label="City (optional)" accessibilityLabel="City" value={city} onChangeText={setCity} maxLength={80} />
-              </View>
-              <View style={{ flex: 1, gap: 8 }}><AppText role="label">Country (optional)</AppText>
-                <CountryPicker value={countryCode} onChange={setCountryCode} />
-              </View>
+            <View style={{ gap: 6 }}>
+              <AppText role="label">Country</AppText>
+              <CountryPicker value={countryCode} onChange={setCountryCode} />
             </View>
-            <ChoicePicker label="Gender (optional)" value={gender} placeholder="Gender (optional)"
-              options={[{ value: "female", label: "Female" }, { value: "male", label: "Male" }, { value: "other", label: "Other" }]}
-              onChange={value => setGender(value as ProfileGender)} />
-            <TimezonePicker label="Time zone" value={timezone} onChange={setTimezone} />
+            <TextField label="City (optional)" accessibilityLabel="City" value={city} onChangeText={setCity} maxLength={80} />
+            <View style={{ gap: 6 }}>
+              <AppText role="label">Gender (optional)</AppText>
+              <ChoicePicker label="Gender (optional)" value={gender} placeholder="Not specified"
+                options={[{ value: "female", label: "Female" }, { value: "male", label: "Male" }, { value: "other", label: "Other" }]}
+                onChange={value => setGender(value as ProfileGender)} />
+            </View>
             <AppText role="label">Units</AppText>
             <FocusSegments label="Units" options={[{ value: "us", label: "Imperial" }, { value: "metric", label: "Metric" }]} value={units} onChange={setUnits} />
           </>}
@@ -191,7 +190,7 @@ export default function Onboarding() {
           {step < 2 && <View style={{ flexDirection: "row", gap: 12 }}>
             {step > 0 && <IconButton icon="back" label="Back" disabled={saving} onPress={back} />}
             <View style={{ flex: 1 }}><FocusButton
-              label="Continue" onPress={advance} /></View>
+              label="Continue" disabled={step === 0 && !countryCode} onPress={advance} /></View>
           </View>}
         </MotionStep></View>
         </OnboardingCanvas>

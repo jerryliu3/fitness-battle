@@ -367,7 +367,7 @@ export function freshState(now: Date = new Date()): CompeteState {
   return {
     version: 1,
     name: "Anonymous Athlete",
-    city: "Toronto",
+    city: "",
     units: "us",
     timezone: APP_TIMEZONE,
     primary: "running",

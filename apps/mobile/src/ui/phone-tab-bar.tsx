@@ -93,7 +93,7 @@ const styles=useThemedStyles(stylesThemes);
             style={[styles.tab, selected ? styles.tabOn : null]}
           >
             <AppIcon name={tabIcons[tab.id]} size={22} color={selected ? SHELL_COLORS.ink : SHELL_COLORS.muted} />
-            <AppText role="caption" style={{ color: selected ? SHELL_COLORS.ink : SHELL_COLORS.muted }}>{tab.label}</AppText>
+            <AppText role="caption" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{ color: selected ? SHELL_COLORS.ink : SHELL_COLORS.muted }}>{tab.label}</AppText>
           </Pressable>
         );
       })}

@@ -53,7 +53,7 @@ const s=useThemedStyles(sThemes);
               src={state?.avatarUrl}
               name={state?.name ?? "Athlete"}
               size={44}
-              highlight
+              highlight="gold"
               fallback={<AppIcon name="person" size={22} color={c.muted} />}
               onLoadEnd={imageSettled}
             />
@@ -123,7 +123,7 @@ const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {
   },
   identity: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 10 },
   effort: { flex: 1, minWidth: 0, maxWidth: 190 },
-  streak: { flexDirection: "row", alignItems: "center", gap: 3, flexShrink: 0 },
+  streak: { flexDirection: "row", alignItems: "center", gap: 3, flexShrink: 0, marginLeft: "auto" },
   debugBtn: { flexShrink: 0, minHeight: 44, justifyContent: "center", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: c.line, backgroundColor: c.card },
   debugBtnActive: { borderColor: c.tennis, backgroundColor: themeColors.actionSoft },
   debugBtnText: { ...textStyle("caption"), color: c.ink },

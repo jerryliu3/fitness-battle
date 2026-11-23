@@ -25,7 +25,7 @@ export function WeekChart({
       <View style={s.card}>
         <View style={s.header}>
           <AppText role="display" accessibilityRole="header">
-            Your effort
+            This week
           </AppText>
           <HomeActivityActions compact />
         </View>
