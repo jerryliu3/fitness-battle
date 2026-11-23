@@ -1,5 +1,8 @@
 # Build Overtaek iOS on EAS and upload to TestFlight.
 #
+# MANUAL ONLY (workflow_dispatch) — each run uses 1 Expo Build iOS credit on the Free
+# plan (15/month). There is no push trigger; merges to main do not auto-build here.
+#
 # Secrets (repo Settings → Secrets and variables → Actions):
 #   EXPO_ACCESS_TOKEN  — Expo account access token (required)
 #

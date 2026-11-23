@@ -48,15 +48,19 @@ Confirm in the credentials summary line:
 
 If it still says `com.fitnessbattle.app`, you are not on updated `main` — fix that before uploading again.
 
-## CI: auto build → TestFlight (no laptop)
+## CI: TestFlight build (manual — uses build credits)
 
 GitHub Actions workflow: [`.github/workflows/eas-ios-testflight.yml`](../.github/workflows/eas-ios-testflight.yml).
 
-On every push to `main` that touches `apps/mobile`, `packages/shared`, or the lockfile (and on manual **Run workflow**), it:
+**Manual only** (**Run workflow** in GitHub). Pushes to `main` do **not** trigger this job. Each run consumes **one iOS Expo Build** credit (Free plan: 15 iOS + 15 Android builds per month).
+
+When you run it:
 
 1. Authenticates with Expo using the `EXPO_ACCESS_TOKEN` repo secret
 2. Runs `eas build --platform ios --profile production --non-interactive --wait`
-3. If `ASC_APP_ID` is set, runs `eas submit … --id $ASC_APP_ID` into TestFlight
+3. Runs `eas submit … --latest` (App Store Connect id from `eas.json`)
+
+To protect build quota, leave `EXPO_ACCESS_TOKEN` unset in GitHub and build from a laptop with `pnpm eas:build:ios` instead.
 
 ### Secrets (GitHub → Settings → Secrets and variables → Actions)
 
@@ -174,7 +178,7 @@ Optional: set `EXPO_ACCESS_TOKEN` on the web server (Expo → Access tokens) for
 | Client | `expo-updates` + `app.json` → `updates.url`, `runtimeVersion: { policy: "appVersion" }` |
 | Build channel | `eas.json` → `build.<profile>.channel` (`production` for TestFlight / App Store) |
 | Launch apply | `applyExpoUpdateOnLaunch()` in `app/_layout.tsx` — check, download in background; bundle applies on next cold launch |
-| CI | [`.github/workflows/eas-ota-production.yml`](../.github/workflows/eas-ota-production.yml) on `main` when `apps/mobile`, `packages/shared`, or `packages/pursuit` change |
+| CI (optional) | [`.github/workflows/eas-ota-production.yml`](../.github/workflows/eas-ota-production.yml) on `main` when mobile/shared/pursuit change — **`eas update` only, no build credit**. Or publish locally: `pnpm eas:update:production` |
 
 **Runtime rule:** OTA bundles apply only when `app.json` `version` matches the installed binary. Bump `version` and run a **new store build** when you change native code or want a clean runtime fence.
 
@@ -193,11 +197,14 @@ pnpm eas:update:preview
 
 On the **Free** plan ([expo.dev/pricing](https://expo.dev/pricing)):
 
-- **1,000 updated users / month** (unique installs that download ≥1 update in the billing month)
+- **Unlimited `eas update` publishes** — they do **not** count toward the 15 iOS / 15 Android **build** allowance
+- **1,000 MAUs / month** for Expo Update (unique installs that download ≥1 update in the billing month)
 - **100 GiB** update bandwidth
-- **No overage** — if you exceed MAUs, Expo does not bill you; updates stop until the next monthly reset or you upgrade
+- **No MAU overage billing on Free** — if you exceed MAUs, updates stop until the next monthly reset or you upgrade
 
-**Starter ($19/mo)** raises that to **3,000 MAUs**, adds build credit, and priority queues. For early TestFlight-scale Overtaek, Free is usually enough; upgrade when you approach 1k updated installs/month or need more iOS build minutes.
+**Build credits** are separate: each `eas build` (local or CI) uses one platform credit. Keep TestFlight workflow manual-only unless you intend to spend a credit.
+
+**Starter ($19/mo)** raises MAUs to **3,000**, adds build credit, and priority queues. For early TestFlight-scale Overtaek, Free is usually enough; upgrade when you approach 1k updated installs/month or need more iOS build minutes.
 
 Only users who **download** an update count toward MAU; opening the app on an already-cached bundle does not.
 
