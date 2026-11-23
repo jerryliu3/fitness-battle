@@ -198,7 +198,7 @@ const f=useFocusStyles();
   const preview: PrivateCrew = {
     id: "solo-preview",
     name:
-      state?.name && state.name !== "Guest"
+      state?.name && state.name !== "Guest" && state.name !== "Anonymous Athlete"
         ? `${state.name}’s Circle`
         : "Your Circle",
     invite_code: "",

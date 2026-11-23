@@ -334,7 +334,7 @@ describe("mobile account lifecycle", () => {
     expect(seenNames.slice(boundary)).not.toContain("Alice");
     expect(api.state?.name).toBe("Bob");
     await switchTo(null);
-    expect(api.state?.name).toBe("Guest");
+    expect(api.state?.name).toBe("Anonymous Athlete");
   });
   it("saves the latest document when several actions dispatch before a render", async () => {
     login("Alice");

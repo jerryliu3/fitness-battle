@@ -329,7 +329,7 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
     name:
       typeof parsed.name === "string" && parsed.name.trim().length > 0
         ? parsed.name.trim()
-        : "Guest",
+        : "Anonymous Athlete",
   };
 
   return migrated;
@@ -366,7 +366,7 @@ export function freshState(now: Date = new Date()): CompeteState {
   const periodStart = wave.waveStart.toISOString();
   return {
     version: 1,
-    name: "Guest",
+    name: "Anonymous Athlete",
     city: "Toronto",
     units: "us",
     timezone: APP_TIMEZONE,

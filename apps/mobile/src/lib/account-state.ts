@@ -11,16 +11,20 @@ export function accountStorageKeys(id: string | null) {
     seen: `fb-counted-seen-v2:${scope}`,
   };
 }
+const isPlaceholderName = (value: string) => {
+  const normalized = value.trim().toLowerCase();
+  return !normalized || normalized === "guest" || normalized === "anonymous athlete";
+};
 export function nameForAccount(
   saved: string,
   displayName: string,
   email: string,
 ): string {
-  if (saved.trim() && saved.trim().toLowerCase() !== "guest") return saved;
+  if (!isPlaceholderName(saved)) return saved;
   return (
-    (displayName.trim().toLowerCase() !== "guest" && displayName.trim()) ||
+    (!isPlaceholderName(displayName) && displayName.trim()) ||
     email.split("@")[0] ||
-    "Athlete"
+    "Anonymous Athlete"
   );
 }
 export function hydrateAccountIdentity(
