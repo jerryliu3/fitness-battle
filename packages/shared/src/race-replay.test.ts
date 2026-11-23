@@ -20,6 +20,18 @@ describe("edition course replay",()=>{
     expect(replayCourseBearing(turn,2500)).toBeCloseTo(0);
     expect(replayCourseBearing(turn,5000)).toBeCloseTo(0);
   });
+  it("compiles flat pacing when only the finish split is recorded", () => {
+    const flatOnly: ReplayRunner = {
+      ...runner,
+      splits: {
+        ...runner.splits,
+        checkpoints: [{ distanceM: 5000, elapsedMs: 1_500_000 }],
+      },
+    };
+    const flatCompiled = compileReplayRunner(flatOnly, "5k")!;
+    expect(replayDistance(flatCompiled, 750_000)).toBe(2500);
+    expect(replayDistance(flatCompiled, 1_500_000)).toBe(5000);
+  });
   it("interpolates only adjacent recorded checkpoints and holds the observed finish",()=>{
     expect(replayDistance(compiled,300000)).toBe(1000);
     expect(replayDistance(compiled,-1)).toBeNull();
