@@ -82,9 +82,4 @@ export interface LocalBoardRow {
 export interface DensityMatcherConfig {
   /** Target group size including the viewer. */
   capacity?: number;
-  /**
-   * Soft Elo band (half-width) when preferring nearby real peers.
-   * Random among candidates inside the band; falls back to full pool.
-   */
-  eloBand?: number;
 }
