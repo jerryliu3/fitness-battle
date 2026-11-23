@@ -626,6 +626,7 @@ export function ReplayPlayer({
       }) ?? [],
     [data, storedDistance],
   );
+  const hasCheckpointSplits = useMemo(() => runners.some(r => r.points.length > 2), [runners]);
 
   // Preserve valid selections on field change, never auto-select default athletes
   useEffect(() => {
@@ -1265,6 +1266,18 @@ export function ReplayPlayer({
                 <strong>
                   {activeRaceMeta ? formatEditionDisplay(activeRaceMeta.event_name, activeRaceMeta.edition_year) : `Edition #${editionId}`} · {distanceObj.label}
                 </strong>
+                {runners.length > 0 && (
+                  <span
+                    className={`ovt-replay-calc-badge ${hasCheckpointSplits ? "is-splits" : "is-pace"}`}
+                    title={
+                      hasCheckpointSplits
+                        ? "Positions interpolated between recorded checkpoint split times"
+                        : "Positions estimated using constant average pace from finishing times"
+                    }
+                  >
+                    {hasCheckpointSplits ? "Split times" : "Average pace"}
+                  </span>
+                )}
               </div>
               <div className="ovt-replay-head-controls">
                 <div className="ovt-seg is-dark" role="tablist" aria-label="Start clock alignment">
@@ -1719,7 +1732,9 @@ export function ReplayPlayer({
 
               <div className="ovt-replay-pagination">
                 <span className="ovt-hint">
-                  *Positions &amp; gaps interpolated between recorded checkpoints (not live GPS)
+                  {hasCheckpointSplits
+                    ? "*Positions & gaps interpolated between recorded checkpoints (not live GPS)"
+                    : "*Positions & gaps estimated from average pace (no intermediate split checkpoints)"}
                   {source && (
                     <>
                       {" · "}
