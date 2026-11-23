@@ -7,12 +7,16 @@ import {
   OBSERVATORY_SPORTS,
   RACE_DISTANCES,
   RACE_METERS,
+  buildCompiledReplayField,
+  buildReplayCourseIndex,
+  evaluateFieldDistances,
   formatEditionDisplay,
   raceClock,
   raceEventGroups,
   replayDistance,
   replayFeatures,
-  replayTimeline,
+  replayFrameInterval,
+  selectFieldRankSlice,
   validateReplayCourse,
   type CompiledReplayRunner,
   type ObservatorySportId,
@@ -463,7 +467,7 @@ export function ReplayStudioView({
   const timeRef = useRef(0);
   const lastRankSyncRef = useRef(0);
   const [playing, setPlaying] = useState(false);
-  const [speed, setSpeed] = useState(256);
+  const [speed, setSpeed] = useState(64);
   const [wall, setWall] = useState(false);
   const [mapExpanded, setMapExpanded] = useState(false);
   const [seekWidth, setSeekWidth] = useState(200);
@@ -563,22 +567,27 @@ export function ReplayStudioView({
     setPeerId(prev => (prev !== null && idSet.has(prev) ? prev : null));
   }, [runners]);
 
-  const timeline = useMemo(() => replayTimeline(runners, wall), [runners, wall]);
+  const courseIndex = useMemo(() => (data ? buildReplayCourseIndex(data.course) : null), [data]);
+  const field = useMemo(() => buildCompiledReplayField(runners, wall), [runners, wall]);
+  const timeline = useMemo(
+    () => ({ wallAvailable: field.wallAvailable, origin: field.wallOrigin, duration: field.duration }),
+    [field],
+  );
   const features = useMemo(
     () =>
       data
-        ? replayFeatures(data.course, runners, time, timeline.origin)
+        ? replayFeatures(data.course, runners, time, timeline.origin, courseIndex ?? undefined)
         : { type: "FeatureCollection" as const, features: [] },
-    [data, runners, time, timeline.origin],
+    [data, runners, time, timeline.origin, courseIndex],
   );
 
-  // Decoupled playback loop: smooth ~30-60fps map gliding + 4Hz leaderboard sorting
+  // Decoupled playback loop: throttled map updates + 4Hz leaderboard sorting
   useEffect(() => {
     if (!playing || !active || !sceneActive || reduced || timeline.duration <= 0) return;
     let rafId = 0;
     let previous = performance.now();
     let lastMapEmit = previous;
-    const minMapFrameMs = runners.length > 120 ? 33 : 16;
+    const minMapFrameMs = replayFrameInterval(runners.length);
 
     const tick = (now: number) => {
       const dt = Math.min(now - previous, 100);
@@ -605,70 +614,77 @@ export function ReplayStudioView({
     return () => cancelAnimationFrame(rafId);
   }, [playing, active, sceneActive, reduced, speed, timeline.duration, runners.length]);
 
-  const runnersWithDistance = useMemo<RunnerWithDistance[]>(() => {
-    return runners.map(r => {
-      const effectiveTime =
-        rankTime - (timeline.origin !== null && Number.isFinite(r.startMs) ? r.startMs - timeline.origin : 0);
-      const distM = replayDistance(r, Math.max(0, effectiveTime)) ?? 0;
-      const finished = effectiveTime >= r.splits.finishMs;
-      return { runner: r, distM, finished, finishMs: r.splits.finishMs };
-    });
-  }, [runners, rankTime, timeline.origin]);
+  const { rankDistances, leaderDistM } = useMemo(() => {
+    const out = new Float32Array(field.count);
+    const maxDist = evaluateFieldDistances(field, rankTime, out);
+    return { rankDistances: out, leaderDistM: maxDist };
+  }, [field, rankTime]);
+
+  const entryForId = (id: number | null): RunnerWithDistance | null => {
+    if (id === null) return null;
+    const idx = field.idToIndex.get(id);
+    if (idx === undefined) return null;
+    const r = runners[idx];
+    if (!r) return null;
+    const raw = rankDistances[idx];
+    const distM = raw >= 0 ? raw : 0;
+    const effective = rankTime - field.startOffsetMs[idx];
+    return { runner: r, distM, finished: effective >= field.finishMs[idx], finishMs: field.finishMs[idx] };
+  };
 
   const pinnedEntries = useMemo(
-    () =>
-      pinnedIds
-        .map(id => runnersWithDistance.find(e => e.runner.id === id))
-        .filter((e): e is RunnerWithDistance => Boolean(e)),
-    [pinnedIds, runnersWithDistance],
+    () => pinnedIds.map(id => entryForId(id)).filter((e): e is RunnerWithDistance => Boolean(e)),
+    [pinnedIds, field, runners, rankDistances, rankTime],
   );
 
   const cameraTargetEntry = useMemo(
-    () => (cameraTargetId !== null ? runnersWithDistance.find(e => e.runner.id === cameraTargetId) ?? null : null),
-    [runnersWithDistance, cameraTargetId],
+    () => entryForId(cameraTargetId),
+    [cameraTargetId, field, runners, rankDistances, rankTime],
   );
 
   const duelPrimaryEntry = useMemo(
-    () => (duelPrimaryId !== null ? runnersWithDistance.find(e => e.runner.id === duelPrimaryId) ?? null : null),
-    [runnersWithDistance, duelPrimaryId],
+    () => entryForId(duelPrimaryId),
+    [duelPrimaryId, field, runners, rankDistances, rankTime],
   );
 
   const peerEntry = useMemo(
-    () => (peerId !== null ? runnersWithDistance.find(e => e.runner.id === peerId) ?? null : null),
-    [runnersWithDistance, peerId],
+    () => entryForId(peerId),
+    [peerId, field, runners, rankDistances, rankTime],
   );
 
-  const liveRanked = useMemo(
-    () => [...runnersWithDistance].sort((a, b) => b.distM - a.distM || a.finishMs - b.finishMs || a.runner.id - b.runner.id),
-    [runnersWithDistance],
-  );
+  const rankSliceResult = useMemo(() => {
+    if (replayMode === "duel") return { total: field.count, indices: [] as number[] };
+    return selectFieldRankSlice(field, rankDistances, replayMode, page * pageSize, pageSize, runnerSearch);
+  }, [replayMode, field, rankDistances, page, pageSize, runnerSearch]);
 
-  const finishRanked = useMemo(
-    () => [...runnersWithDistance].sort((a, b) => a.finishMs - b.finishMs || a.runner.id - b.runner.id),
-    [runnersWithDistance],
-  );
-
-  const baseRanking = replayMode === "finish" ? finishRanked : liveRanked;
-  const activeRanking = useMemo(() => {
-    const q = runnerSearch.trim().toLowerCase().replace(/^#/, "");
-    if (!q) return baseRanking;
-    return baseRanking.filter(
-      e => e.runner.name.toLowerCase().includes(q) || (e.runner.bib && e.runner.bib.toLowerCase().includes(q)),
-    );
-  }, [baseRanking, runnerSearch]);
-
-  const totalPages = Math.max(1, Math.ceil(activeRanking.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(rankSliceResult.total / pageSize));
   const safePage = Math.max(0, Math.min(page, totalPages - 1));
-  const pageSlice = activeRanking.slice(safePage * pageSize, (safePage + 1) * pageSize);
+  const pageSlice = useMemo<RunnerWithDistance[]>(() => {
+    const slice =
+      safePage === page
+        ? rankSliceResult.indices
+        : selectFieldRankSlice(
+            field,
+            rankDistances,
+            replayMode === "finish" ? "finish" : "field",
+            safePage * pageSize,
+            pageSize,
+            runnerSearch,
+          ).indices;
+    return slice.map(idx => {
+      const raw = rankDistances[idx];
+      const distM = raw >= 0 ? raw : 0;
+      const effective = rankTime - field.startOffsetMs[idx];
+      return {
+        runner: runners[idx],
+        distM,
+        finished: effective >= field.finishMs[idx],
+        finishMs: field.finishMs[idx],
+      };
+    });
+  }, [safePage, page, rankSliceResult.indices, field, rankDistances, replayMode, pageSize, runnerSearch, runners, rankTime]);
 
-  const leaderDistM = useMemo(
-    () => Math.max(0, ...runnersWithDistance.map(r => r.distM)),
-    [runnersWithDistance],
-  );
-  const fastestFinishMs = useMemo(
-    () => (runners.length ? Math.min(...runners.map(r => r.splits.finishMs)) : 0),
-    [runners],
-  );
+  const fastestFinishMs = field.fastestFinishMs;
 
   const savedInFieldIds = useMemo(() => {
     const idSet = new Set(runners.map(r => r.id));
@@ -727,7 +743,9 @@ export function ReplayStudioView({
   function cycleCameraMode() {
     if (cameraMode === "field") {
       if (cameraTargetId === null) {
-        const firstTarget = pinnedIds[0] ?? liveRanked[0]?.runner.id ?? null;
+        const topSlice = selectFieldRankSlice(field, rankDistances, "field", 0, 1);
+        const topId = topSlice.indices.length > 0 ? field.ids[topSlice.indices[0]] : null;
+        const firstTarget = pinnedIds[0] ?? topId;
         if (firstTarget !== null) {
           setCameraTargetId(firstTarget);
           if (!pinnedIds.includes(firstTarget)) setPinnedIds(prev => [...prev, firstTarget]);
