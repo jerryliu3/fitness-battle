@@ -10,8 +10,6 @@ import type {
 import { DEFAULT_GROUP_CAPACITY } from "./types";
 import { waveWindowAt } from "./waves";
 
-const DEFAULT_ELO_BAND = 200;
-
 export interface AssignGroupInput {
   viewerId: string;
   viewerName: string;
@@ -34,8 +32,6 @@ export interface AssignGroupInput {
   seed?: string;
   capacity?: number;
   autoEnrollNext?: boolean;
-  /** Prefer peers within ±eloBand of the viewer before widening. */
-  eloBand?: number;
   /** When set, stamped onto the enrollment for shared-field audits. */
   crewId?: string | null;
 }
@@ -46,17 +42,14 @@ export interface AssignGroupInput {
  */
 export class DensityMatcher {
   readonly capacity: number;
-  readonly eloBand: number;
 
   constructor(config: DensityMatcherConfig = {}) {
     this.capacity = config.capacity ?? DEFAULT_GROUP_CAPACITY;
-    this.eloBand = config.eloBand ?? DEFAULT_ELO_BAND;
   }
 
   assignGroup(input: AssignGroupInput): GroupAssignment {
     const now = input.now ?? new Date();
     const capacity = input.capacity ?? this.capacity;
-    const eloBand = input.eloBand ?? this.eloBand;
     const window = input.window ?? waveWindowAt(now);
     const need = Math.max(0, capacity - 1);
     const seed =
@@ -81,7 +74,6 @@ export class DensityMatcher {
             waveStart: window.waveStart,
             weekEnd: window.weekEnd,
             count: remaining,
-            eloBand,
             seed,
           })
         : [];
@@ -186,7 +178,6 @@ function pickRealPeers(input: {
   waveStart: Date;
   weekEnd: Date;
   count: number;
-  eloBand: number;
   seed: string;
 }): PoolPlayer[] {
   if (input.count <= 0) return [];
@@ -205,12 +196,7 @@ function pickRealPeers(input: {
       ),
   );
 
-  const inBand = candidates.filter(
-    (player) => Math.abs(player.elo - input.viewerElo) <= input.eloBand,
-  );
-  const pool = inBand.length >= input.count ? inBand : candidates;
-
-  return pool
+  return candidates
     .map((player) => ({
       player,
       distance: Math.abs(player.elo - input.viewerElo),
