@@ -1,0 +1,85 @@
+{
+  "result": {
+    "intervals": [
+      {
+        "chipTimeInMillis": 8784650,
+        "distance": { "metersFromStart": 42195.39033599999 },
+        "full": true,
+        "name": "Full Course",
+        "type": "course"
+      },
+      {
+        "chipTimeInMillis": 682500,
+        "distance": { "metersFromStart": 3218.688 },
+        "name": "2 Mile Split",
+        "type": "course"
+      },
+      {
+        "chipTimeInMillis": 1365540,
+        "distance": { "metersFromStart": 6437.376 },
+        "name": "4 Mile Split",
+        "type": "course"
+      },
+      {
+        "chipTimeInMillis": 2031050,
+        "distance": { "metersFromStart": 9656.064 },
+        "name": "6 Mile Split",
+        "type": "course"
+      },
+      {
+        "chipTimeInMillis": 2686940,
+        "distance": { "metersFromStart": 12874.752 },
+        "name": "8 Mile Split",
+        "type": "course"
+      },
+      {
+        "chipTimeInMillis": 3346040,
+        "distance": { "metersFromStart": 16093.44 },
+        "name": "10 Mile Split",
+        "type": "course"
+      },
+      {
+        "chipTimeInMillis": 4028410,
+        "distance": { "metersFromStart": 19312 },
+        "name": "12 Mile Split",
+        "type": "course"
+      },
+      {
+        "chipTimeInMillis": 4740110,
+        "distance": { "metersFromStart": 22530.816 },
+        "name": "14 Mile Split",
+        "type": "course"
+      },
+      {
+        "chipTimeInMillis": 5273250,
+        "distance": { "metersFromStart": 25749.504 },
+        "name": "16 Mile Split",
+        "type": "course"
+      },
+      {
+        "chipTimeInMillis": 6024680,
+        "distance": { "metersFromStart": 28968.192 },
+        "name": "18 Mile Split",
+        "type": "course"
+      },
+      {
+        "chipTimeInMillis": 6678620,
+        "distance": { "metersFromStart": 32186.88 },
+        "name": "20 Mile Split",
+        "type": "course"
+      },
+      {
+        "chipTimeInMillis": 7325210,
+        "distance": { "metersFromStart": 35405.568 },
+        "name": "22 Mile Split",
+        "type": "course"
+      },
+      {
+        "chipTimeInMillis": 8002740,
+        "distance": { "metersFromStart": 38624.256 },
+        "name": "24 Mile Split",
+        "type": "course"
+      }
+    ]
+  }
+}
