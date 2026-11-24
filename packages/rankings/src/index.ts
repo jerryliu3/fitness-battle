@@ -53,7 +53,22 @@ export {
   REPLAY_DISTANCE_METRES,
   type ReplayCoursePoint,
 } from "./ingest/replay-course";
-export { mikaDetailUrl, mikaSplitsForProfile, parseMikaTimingDetailSplits } from "./ingest/mikatiming-splits";
+export {
+  mikaDetailUrl,
+  mikaSplitsForProfile,
+  parseMikaTimingDetailSplits,
+  parseMikaTimingStartSeconds,
+} from "./ingest/mikatiming-splits";
+export {
+  deriveNyrrStartAtIso,
+  gunOffsetBackfillSql,
+  localWallClockToIso,
+  parseWallClockSeconds,
+  performanceStartTimesUpdateSql,
+  type GunOffsetBackfillTarget,
+  type NyrrStartAtInput,
+  type PerformanceStartTimeRow,
+} from "./ingest/start-time";
 export { splitImportSql, splitImportSqlForEdition, type SplitEditionTarget, type SplitImportRow } from "./ingest/splits-sql";
 export { editionFromOpenTrack } from "./ingest/opentrack-import";
 export { fetchRunSignupResults, parseRunSignupResults, runSignupResultsUrl, runSignupResultSetsUrl } from "./ingest/runsignup";

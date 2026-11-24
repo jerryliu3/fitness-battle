@@ -10,6 +10,7 @@ export type SplitImportRow = {
   externalResultId: string;
   splits: ParsedMikaSplits;
   sourceUrl: string;
+  startAt?: string | null;
 };
 
 export type SplitEditionTarget = {
@@ -28,7 +29,9 @@ export function splitImportSqlForEdition(edition: SplitEditionTarget, rows: Spli
   const valueRows = rows
     .map((row) => {
       const elapsed = `array[${row.splits.elapsedMs.map((ms) => (ms == null ? "null" : String(ms))).join(", ")}]::integer[]`;
-      return `(${quote(row.externalResultId)}, ${elapsed}, ${quote(row.sourceUrl)})`;
+      const startIso = row.startAt ?? row.splits.startAt ?? null;
+      const startSql = startIso ? `${quote(startIso)}::timestamptz` : "null::timestamptz";
+      return `(${quote(row.externalResultId)}, ${elapsed}, ${quote(row.sourceUrl)}, ${startSql})`;
     })
     .join(",\n    ");
 
@@ -77,11 +80,11 @@ begin
     'chip',
     v.elapsed_ms,
     v.source_url,
-  null,
+    v.start_at,
     p.updated_at
   from (values
     ${valueRows}
-  ) as v(external_result_id, elapsed_ms, source_url)
+  ) as v(external_result_id, elapsed_ms, source_url, start_at)
   join public.source_records sr on sr.external_result_id = v.external_result_id
     and sr.event_edition_id = target_edition_id
   join public.performances p on p.source_record_id = sr.id and p.event_edition_id = target_edition_id
@@ -92,6 +95,7 @@ begin
     clock = excluded.clock,
     elapsed_ms = excluded.elapsed_ms,
     source_url = excluded.source_url,
+    start_at = coalesce(excluded.start_at, public.performance_split_times.start_at),
     performance_updated_at = excluded.performance_updated_at;
 end;
 $$;

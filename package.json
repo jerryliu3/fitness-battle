@@ -25,6 +25,7 @@
     "rankings:course": "node packages/rankings/scripts/course.mjs",
     "rankings:export-marathon-routes": "node packages/rankings/scripts/export-marathon-race-routes.mjs",
     "rankings:nyrr-splits": "node packages/rankings/scripts/nyrr-splits.mjs",
+    "rankings:backfill-start-times": "node packages/rankings/scripts/backfill-start-times.mjs",
     "rankings:ingest-marathonguide": "node packages/rankings/scripts/ingest-marathonguide.mjs",
     "rankings:candidate": "node packages/rankings/scripts/candidate.mjs",
     "rankings:acquire": "node packages/rankings/scripts/acquire.mjs",

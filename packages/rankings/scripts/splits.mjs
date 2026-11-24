@@ -169,10 +169,13 @@ async function splitForId(idp) {
   } else {
     sourceUrl = mikaDetailUrl(event.listUrl, idp);
     const html = await fetchText(sourceUrl);
-    splits = mikaSplitsForProfile(html, event.splitProfileId);
+    splits = mikaSplitsForProfile(html, event.splitProfileId, {
+      startsOn: event.startsOn,
+      timeZone: event.timeZone,
+    });
   }
   if (splits.elapsedMs.some((ms) => ms == null)) return null;
-  return { externalResultId: idp, splits, sourceUrl };
+  return { externalResultId: idp, splits, sourceUrl, startAt: splits.startAt ?? null };
 }
 
 const rows = [...existingRows];

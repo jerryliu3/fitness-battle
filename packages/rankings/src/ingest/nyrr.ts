@@ -14,6 +14,7 @@ export type NyrrRunner = {
   age?: number | string | null;
   gender?: string;
   overallTime?: string;
+  gunTime?: string | null;
   ageGradePercent?: number | string | null;
 };
 
@@ -66,7 +67,7 @@ export function parseNyrrFinishersPage(
       continue;
     }
     const athleteName = `${row.firstName ?? ""} ${row.lastName ?? ""}`.trim();
-    const clocks = clocksFromText(row.overallTime ?? null, null);
+    const clocks = clocksFromText(row.overallTime ?? null, row.gunTime ?? null);
     if ("skip" in clocks) {
       skippedUnparsed += 1;
       continue;
