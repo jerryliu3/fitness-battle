@@ -231,34 +231,39 @@ const f=useFocusStyles();
   const metricFrame = useMemo(() => !geographic && !chartSleepMode && state && timelineFraction != null
     ? buildCompeteTimeSeriesModel(state, sport, track, now, { scrubFraction: timelineFraction }) : null,
     [state, sport, track, geographic, chartSleepMode, timelineFraction]);
-  const arena = useMemo(() => metricFrame && liveArena ? {
+  const arenaBase = useMemo(() => metricFrame && liveArena ? {
     ...liveArena, lanes: liveArena.lanes.map(lane => {
       const value = metricFrame.athletes.find(athlete => athlete.id === lane.id)?.valueAtCursor ?? lane.values[2];
       return { ...lane, values: [value, value, value] as [number, number, number] };
     }),
   } : !timeline.frame || !liveArena ? liveArena : {
     ...liveArena,
-    lanes: timeline.frame.rows.map(row => {
-      const touch =
-        timeline.index && state
-          ? athleteLatestReplayContribution(
-              timeline.index,
-              row.id,
-              timeline.frame!.position,
-              state.units,
-            )
-          : undefined;
-      return {
-        ...row,
-        initials: initialsFromName(row.name),
-        ghost: false,
-        mystery: false,
-        values: [row.value, row.value, row.value] as [number, number, number],
-        lastUpdated: touch?.at,
-        lastActivityVolume: touch?.volume,
-      };
-    }),
-  }, [liveArena, timeline.frame, timeline.index, metricFrame, state?.units]);
+    lanes: timeline.frame.rows.map(row => ({
+      ...row,
+      initials: initialsFromName(row.name),
+      ghost: false,
+      mystery: false,
+      values: [row.value, row.value, row.value] as [number, number, number],
+    })),
+  }, [liveArena, timeline.frame, metricFrame]);
+  const arena = useMemo(() => {
+    if (!arenaBase || !timeline.index || !state) return arenaBase;
+    const cursor = timeline.frame?.position ?? timeline.count;
+    return {
+      ...arenaBase,
+      lanes: arenaBase.lanes.map((lane) => {
+        const touch = athleteLatestReplayContribution(
+          timeline.index,
+          lane.id,
+          cursor,
+          state.units,
+        );
+        return touch
+          ? { ...lane, lastUpdated: touch.at, lastActivityVolume: touch.volume }
+          : lane;
+      }),
+    };
+  }, [arenaBase, timeline.index, timeline.frame, timeline.count, state?.units]);
   useEffect(() => { if (externalAthleteFocus && !hiddenIds.includes(externalAthleteFocus.id)) { setSelectedId(externalAthleteFocus.id); const lane = arena?.lanes.find(item => item.id === externalAthleteFocus.id); if (lane) setCenter(lane.values[2]); setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } }, [externalAthleteFocus, hiddenIds]);
   const defaultSpan = fieldDefaultSpan(arena?.unit ?? "km");
   const viewSpan = span ?? defaultSpan;
@@ -270,31 +275,19 @@ const f=useFocusStyles();
     () =>
       (arena?.lanes ?? [])
         .filter((l) => !l.ghost)
-        .map((l) => {
-          const replayTouch =
-            timeline.index && timeline.frame && state
-              ? athleteLatestReplayContribution(
-                  timeline.index,
-                  l.id,
-                  timeline.frame.position,
-                  state.units,
-                )
-              : undefined;
-          return {
-            id: l.id,
-            name: l.name,
-            avatarUrl: l.avatarUrl,
-            initials: l.mystery ? "?" : initialsFromName(l.name),
-            mystery: l.mystery,
-            value: l.values[2],
-            you: l.you,
-            ghost: false,
-            lastUpdated: replayTouch?.at ?? ("lastUpdated" in l ? l.lastUpdated : undefined),
-            lastActivityVolume:
-              replayTouch?.volume ?? ("lastActivityVolume" in l ? l.lastActivityVolume : undefined),
-          };
-        }),
-    [arena?.lanes, timeline.index, timeline.frame, state?.units],
+        .map((l) => ({
+          id: l.id,
+          name: l.name,
+          avatarUrl: l.avatarUrl,
+          initials: l.mystery ? "?" : initialsFromName(l.name),
+          mystery: l.mystery,
+          value: l.values[2],
+          you: l.you,
+          ghost: false,
+          lastUpdated: "lastUpdated" in l ? l.lastUpdated : undefined,
+          lastActivityVolume: "lastActivityVolume" in l ? l.lastActivityVolume : undefined,
+        })),
+    [arena?.lanes],
   );
 
   const courseReplay = useMemo(() => {
