@@ -100,7 +100,7 @@ export function NotificationOptInStrip({
 }: {
   surface: NotificationPromptSurface;
   hasOvertake?: boolean;
-  variant?: "sheet" | "recap";
+  variant?: "sheet" | "recap" | "floating";
   debug?: boolean;
 }) {
   const c = useThemeColors();
@@ -111,15 +111,25 @@ export function NotificationOptInStrip({
   if (!visible) return null;
 
   const isRecap = variant === "recap";
-  const ctaBg = isRecap ? "rgba(255, 255, 255, 0.14)" : c.actionSoft;
-  const ctaBorder = isRecap ? "rgba(255, 255, 255, 0.24)" : c.line;
+  const isFloating = variant === "floating";
+  const ctaBg = isRecap ? "rgba(255, 255, 255, 0.12)" : c.actionSoft;
+  const ctaBorder = isRecap ? "rgba(255, 255, 255, 0.22)" : c.line;
   const ctaTextColor = isRecap ? WEEK_RECAP_COLORS.text : c.ink;
   const dismissTextColor = isRecap
     ? "rgba(249, 247, 236, 0.72)"
     : c.muted;
 
   return (
-    <View style={styles.row}>
+    <View
+      style={[
+        styles.row,
+        isFloating && [
+          styles.floatingBar,
+          { backgroundColor: c.card, borderColor: c.line },
+        ],
+        isRecap && styles.recapCard,
+      ]}
+    >
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={copy.ctaLabel}
@@ -171,6 +181,27 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 10,
     paddingTop: 8,
+  },
+  floatingBar: {
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingHorizontal: 10,
+    borderRadius: 18,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.14,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  recapCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    borderWidth: 1,
+    borderRadius: 18,
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingHorizontal: 12,
   },
   ctaButton: {
     flex: 1,

@@ -140,14 +140,11 @@ export function WeekRecap({ state, results, nonRaceWeek, social, debug = false, 
                   <AppText style={s.light}>Your effort added up. Let’s see where it took you.</AppText>
                 </View>
               ) : page.kind === "results" ? (
-                <ResultsView state={state} result={page.result} replay={replays[page.result.id] ?? null} hiddenIds={hiddenIds} reduced={reduced} />
+                <ResultsView state={state} result={page.result} replay={replays[page.result.id] ?? null} hiddenIds={hiddenIds} reduced={reduced} debug={debug} />
               ) : <Training state={state} target={{ sport: page.sport, periodStart: page.periodStart, periodEnd: page.periodEnd, result: page.result }} reduced={reduced} />}
             </WeekRecapFit>
 
             <View style={s.footer}>
-              {last && page.kind !== "arrival" && (
-                <NotificationOptInStrip surface="week_recap" variant="recap" debug={debug} />
-              )}
               {page.kind === "arrival" ? (
                 <FocusButton label={label} onPress={advance} />
               ) : page.kind === "results" ? (
@@ -201,10 +198,11 @@ export function WeekRecap({ state, results, nonRaceWeek, social, debug = false, 
   );
 }
 
-function ResultsView({ state, result, replay, hiddenIds, reduced }: {
-  state: CompeteState; result: PeriodResult; replay: CompetitionReplay | null; hiddenIds: readonly string[]; reduced: boolean;
+function ResultsView({ state, result, replay, hiddenIds, reduced, debug }: {
+  state: CompeteState; result: PeriodResult; replay: CompetitionReplay | null; hiddenIds: readonly string[]; reduced: boolean; debug: boolean;
 }) {
   const highlights = useMemo(() => weekRecapHighlights(replay, state, result, hiddenIds), [replay, state, result, hiddenIds]);
+  const onPodium = result.placement != null && result.placement <= 3;
   return (
     <View style={s.resultsWrap}>
       <PodiumHero replay={replay} state={state} result={result} hiddenIds={hiddenIds} reduced={reduced} />
@@ -220,6 +218,9 @@ function ResultsView({ state, result, replay, hiddenIds, reduced }: {
             </View>
           </View>
         ))}
+        {onPodium && (
+          <NotificationOptInStrip surface="week_recap" variant="recap" debug={debug} />
+        )}
       </View>
       {result.effortChange && <AppText>Training {result.effortChange.training} · History {result.effortChange.history} · Competition {result.effortChange.competition}</AppText>}
       <ResultCard result={result} units={state.units} variant="recap" replay={replay} hiddenIds={hiddenIds} account={state} />

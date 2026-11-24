@@ -7,7 +7,7 @@ import { expect, it, vi } from "vitest";
 import { createOnboardingOvertakeMoment, ONBOARDING_REPLAY_TUNING, defaultFieldAppearance, applyDebugEvent, competitionMoments, freshState, momentStorageKey } from "@fitness-battle/shared";
 const preferences = vi.hoisted(() => ({ reduced: true }));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => preferences.reduced }));
-vi.mock("react-native", () => ({ useColorScheme: () => "light", AppState: { currentState: "active", addEventListener: () => ({ remove() {} }) }, Pressable: "Pressable", View: "View", Text: "Text", StyleSheet: { absoluteFill: {}, create: (value: unknown) => value } }));
+vi.mock("react-native", () => ({ Animated: { Value: class { constructor(public v: number) {} setValue(v: number) { this.v = v; } }, timing: () => ({ start: () => {}, stop: () => {} }), View: "AnimatedView" }, useColorScheme: () => "light", AppState: { currentState: "active", addEventListener: () => ({ remove() {} }) }, Pressable: "Pressable", View: "View", Text: "Text", StyleSheet: { absoluteFill: {}, create: (value: unknown) => value } }));
 vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ top: 20, bottom: 20 }) }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ accountKey: "a", state: freshState(new Date("2026-10-24T18:00:00Z")) }) }));
 vi.mock("../ui/focus", () => ((() => { const mock = { FocusButton: "FocusButton" }; return { ...mock, useFocusStyles: () => ("f" in mock ? mock.f : {}) }; })()));
