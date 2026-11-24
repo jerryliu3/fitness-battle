@@ -36,6 +36,7 @@
       "react-native-health-connect",
       "expo-web-browser",
       "expo-apple-authentication",
+      "expo-background-fetch",
       [
         "expo-build-properties",
         {
@@ -69,7 +70,11 @@
       "usesAppleSignIn": true,
       "associatedDomains": ["applinks:overtaek.xyz"],
       "bundleIdentifier": "com.overtaek.app",
+      "entitlements": {
+        "com.apple.developer.healthkit.background-delivery": true
+      },
       "infoPlist": {
+        "UIBackgroundModes": ["fetch", "remote-notification"],
         "CFBundleDisplayName": "Overtaek",
         "NSHealthShareUsageDescription": "Overtaek reads workouts, routes, sleep, steps, resting heart rate and heart rate variability to show your training and daily health.",
         "NSHealthUpdateUsageDescription": "Overtaek does not write health data.",
@@ -139,7 +144,8 @@
         "android.permission.health.READ_RESTING_HEART_RATE",
         "android.permission.health.READ_HEART_RATE_VARIABILITY",
         "android.permission.health.READ_SLEEP",
-        "android.permission.health.READ_HEALTH_DATA_HISTORY"
+        "android.permission.health.READ_HEALTH_DATA_HISTORY",
+        "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
       ],
       "blockedPermissions": [
         "android.permission.ACCESS_FINE_LOCATION",
