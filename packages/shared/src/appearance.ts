@@ -68,7 +68,7 @@ const dark: SemanticColors = {
 
 function withCompatibility(c: SemanticColors) {
   return Object.freeze({ ...c,
-    podiumGold: MEDAL_GOLD.srgb, podiumSilver: "#9fa5af", podiumBronze: MEDAL_GOLD.srgb,
+    podiumGold: MEDAL_GOLD.srgb, podiumSilver: "#9fa5af", podiumBronze: "#cd7f32",
     ink: c.textPrimary, muted: c.textSecondary, paper: c.surfaceCanvas, card: c.surfaceCard,
     line: c.borderSubtle, soft: c.accentSecondarySoft, secondary: c.chartComparison,
     tennis: c.actionPrimary, gold: c.actionPrimary, starEmber: c.actionPrimary,
