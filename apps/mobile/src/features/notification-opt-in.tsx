@@ -96,11 +96,13 @@ export function NotificationOptInStrip({
   surface,
   hasOvertake,
   variant = "sheet",
+  compact = false,
   debug = false,
 }: {
   surface: NotificationPromptSurface;
   hasOvertake?: boolean;
   variant?: "sheet" | "recap" | "floating";
+  compact?: boolean;
   debug?: boolean;
 }) {
   const c = useThemeColors();
@@ -118,6 +120,29 @@ export function NotificationOptInStrip({
   const dismissTextColor = isRecap
     ? "rgba(249, 247, 236, 0.72)"
     : c.muted;
+
+  if (compact) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Notify me"
+        accessibilityState={{ disabled: busy }}
+        disabled={busy}
+        onPress={() => void accept()}
+        style={({ pressed }) => [
+          styles.compactButton,
+          { backgroundColor: ctaBg, borderColor: ctaBorder },
+          busy && styles.disabled,
+          pressed && styles.pressed,
+        ]}
+      >
+        <AppIcon name="notifications" size={14} color={ctaTextColor} />
+        <AppText role="caption" style={{ color: ctaTextColor }}>
+          {busy ? "Enabling…" : "Notify me"}
+        </AppText>
+      </Pressable>
+    );
+  }
 
   return (
     <View
@@ -186,13 +211,25 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 8,
     paddingHorizontal: 10,
-    borderRadius: 18,
+    borderRadius: 999,
     borderWidth: 1,
     shadowColor: "#000",
     shadowOpacity: 0.14,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
+  },
+  compactButton: {
+    alignSelf: "flex-end",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minHeight: 32,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    marginTop: 4,
   },
   recapCard: {
     backgroundColor: "rgba(255, 255, 255, 0.08)",
