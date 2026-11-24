@@ -135,7 +135,7 @@ function Setup({ preview }: { preview: boolean }) {
     </div>
     <AppHeading level={1} role="display">{titles[step]}</AppHeading>
     {step === 0 && <>
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 12 }}>
+      <div className="onboarding-profile-row">
         <label className="fb-field">City (optional)<input value={city} onChange={e => setCity(e.target.value)} maxLength={80} /></label>
         <CountryCombobox label="Country (optional)" value={countryCode} onChange={setCountryCode} />
       </div>
