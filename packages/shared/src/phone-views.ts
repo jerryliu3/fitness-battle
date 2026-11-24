@@ -359,7 +359,7 @@ export function buildArenaModel(
           now,
           state.units,
         )
-      : syntheticLatestActivity(series, sport, state.units); // offline/local only; live UI prefers competition replay ledger
+      : syntheticLatestActivity(series, sport, state.units);
     return {
       id: row.id,
       name: row.you ? state.name : row.name,

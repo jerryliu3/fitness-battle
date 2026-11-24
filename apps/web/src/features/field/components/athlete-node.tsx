@@ -60,7 +60,7 @@ export function AthleteNode({
   const effectiveScale = nodeScale * (l.mystery ? 0.8 : isActive ? 1.16 : 1);
   const accent = gold ? appearanceColors.tennis : appearanceColors.secondary;
   const initials = resolveInitials(l.name, l.initials, l.mystery);
-  const cleanSubdetail = subdetail?.replace(/\s+vs\s+you\b/gi, "").replace(/\byou['’]re\s+/gi, "");
+  const cleanSubdetail = subdetail?.trim();
   const cardW = 128;
   const cardH = cleanSubdetail ? 44 : 30;
   const attachX = x + cardW / 2;

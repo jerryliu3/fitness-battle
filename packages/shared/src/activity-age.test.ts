@@ -18,6 +18,13 @@ describe("activity update labels", () => {
       ),
     ).toBe("30 mins ago");
     expect(
+      formatActivityRecency(
+        "2026-10-18T11:00:00Z",
+        new Date("2026-10-18T12:00:00Z"),
+        true,
+      ),
+    ).toBe("1h ago");
+    expect(
       isActivityLive("2026-10-18T11:30:00Z", new Date("2026-10-18T12:00:00Z")),
     ).toBe(true);
     expect(

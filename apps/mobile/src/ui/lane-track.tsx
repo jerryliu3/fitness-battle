@@ -18,6 +18,20 @@ import { FieldOverlayGroup } from "./field-overlay-motion";
 import { MapHudBackdrop, useMapHud } from "./map-hud";
 export interface LaneAnchor { left: number; laneWidth: number; width: number; scroll: number; oval: boolean; count: number }
 
+function arenaLaneScene(peer: ArenaLane, value: number): ArenaSceneLane {
+  return {
+    id: peer.id,
+    name: peer.name,
+    initials: initialsFromName(peer.name),
+    value,
+    you: peer.you,
+    ghost: peer.ghost,
+    mystery: peer.mystery,
+    lastUpdated: peer.lastUpdated,
+    lastActivityVolume: peer.lastActivityVolume,
+  };
+}
+
 function LaneTrackContent({
   lanes,
   hiddenIds = [],
@@ -305,22 +319,11 @@ const c=useThemeColors();
               const isSelected = selectedId === l.id;
               const isExpanded = replayFocusIds?.includes(l.id) ?? expandedId === l.id;
               const youVal = overtakeFrame?.youValue ?? me?.values[index] ?? 0;
-              const laneScene = (peer: ArenaLane, peerValue: number): ArenaSceneLane => ({
-                id: peer.id,
-                name: peer.name,
-                initials: initialsFromName(peer.name),
-                value: peerValue,
-                you: peer.you,
-                ghost: peer.ghost,
-                mystery: peer.mystery,
-                lastUpdated: peer.lastUpdated,
-                lastActivityVolume: peer.lastActivityVolume,
-              });
               const sceneLanes = ordered.map((peer) =>
-                laneScene(peer, overtakeFrame?.laneValues[peer.id] ?? peer.values[index]),
+                arenaLaneScene(peer, overtakeFrame?.laneValues[peer.id] ?? peer.values[index]),
               );
               const now = new Date();
-              const sceneLane = laneScene(l, value);
+              const sceneLane = arenaLaneScene(l, value);
               const subdetail = courseAthleteSubdetail(sceneLanes, sceneLane, unit, now);
               const subdetailLive = courseAthleteSubdetailLive(sceneLane, now);
               const pennantWidth=128, visibleLeft=previous.current?.scroll??0;

@@ -232,9 +232,9 @@ export function courseAthleteSubdetail(
 ): string | undefined {
   if (_lanes.some(peer => peer.mystery) || lane.ghost) return undefined;
   const volume = lane.lastActivityVolume;
-  const recency = formatActivityRecency(lane.lastUpdated, now);
+  const recency = formatActivityRecency(lane.lastUpdated, now, true);
   if (volume === undefined || !recency) return undefined;
-  return `Last: ${volume.toFixed(1)} ${unit} • ${recency}`;
+  return `+${volume.toFixed(1)} ${unit} • ${recency}`;
 }
 
 export function courseAthleteSubdetailLive(

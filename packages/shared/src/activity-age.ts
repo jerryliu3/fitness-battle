@@ -85,35 +85,30 @@ export function formatActivityAge(
   now: Date = new Date(),
 ): string {
   if (!at) return "—";
-  const elapsed = now.getTime() - Date.parse(at);
-  if (!Number.isFinite(elapsed) || elapsed < 0) return "—";
-  const minutes = Math.floor(elapsed / 60000);
-  if (minutes < 1) return "now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  return hours < 24 ? `${hours}h ago` : `${Math.floor(hours / 24)}d ago`;
+  return formatActivityRecency(at, now, true) ?? "—";
 }
 
-/** Long-form recency for map player cards (minutes → hours → days). */
+/** Map callout recency; pass `compact` for "+2.1 km • 1h ago" labels. */
 export function formatActivityRecency(
   at: string | undefined,
   now: Date = new Date(),
+  compact = false,
 ): string | undefined {
   if (!at) return undefined;
   const elapsed = now.getTime() - Date.parse(at);
   if (!Number.isFinite(elapsed) || elapsed < 0) return undefined;
   const minutes = elapsed / 60000;
-  if (minutes < 1) return "just now";
+  if (minutes < 1) return compact ? "now" : "just now";
   if (minutes < 60) {
     const whole = Math.floor(minutes);
-    return `${whole} min${whole === 1 ? "" : "s"} ago`;
+    return compact ? `${whole}m ago` : `${whole} min${whole === 1 ? "" : "s"} ago`;
   }
   const hours = minutes / 60;
   if (hours < 24) {
     const whole = Math.floor(hours);
-    return `${whole} hour${whole === 1 ? "" : "s"} ago`;
+    return compact ? `${whole}h ago` : `${whole} hour${whole === 1 ? "" : "s"} ago`;
   }
-  const days = hours / 24;
-  const whole = Math.floor(days);
-  return `${whole} day${whole === 1 ? "" : "s"} ago`;
+  const whole = Math.floor(hours / 24);
+  return compact ? `${whole}d ago` : `${whole} day${whole === 1 ? "" : "s"} ago`;
 }
+

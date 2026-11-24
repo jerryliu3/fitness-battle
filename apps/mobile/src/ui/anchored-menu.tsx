@@ -1,3 +1,4 @@
+import { MapHudBackdrop, useMapHud } from "./map-hud";
 import { createThemedStyles, useThemeColors, useThemedStyles } from "../theme";
 import { type ComponentRef, useEffect, useRef, useState, type ReactNode } from "react";
 import {
@@ -23,6 +24,7 @@ export interface AnchoredMenuLayout {
 export function useAnchoredMenu(options?: {
   minWidth?: number;
   estimatedHeight?: number;
+  placement?: "auto" | "above" | "below";
 }) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<ComponentRef<typeof View>>(null);
@@ -42,10 +44,15 @@ export function useAnchoredMenu(options?: {
           const windowHeight = Dimensions.get("window").height || 812;
           const menuWidth = Math.max(width, minWidth);
           const clampedX = Math.max(16, Math.min(x, windowWidth - menuWidth - 16));
+          const placement = options?.placement ?? "auto";
           const posY =
-            y + height + 4 + estHeight > windowHeight && y > estHeight + 20
+            placement === "above"
               ? y - estHeight - 4
-              : y + height + 4;
+              : placement === "below"
+                ? y + height + 4
+                : y + height + 4 + estHeight > windowHeight && y > estHeight + 20
+                  ? y - estHeight - 4
+                  : y + height + 4;
           setMenuLayout({ x: clampedX, y: Math.max(54, posY), width: menuWidth });
           setOpen(true);
         },
@@ -61,6 +68,25 @@ export function useAnchoredMenu(options?: {
   return { open, close, toggle, anchorRef, menuLayout };
 }
 
+function GlassMenuSurface() {
+  const hud = useMapHud();
+  return (
+    <>
+      <MapHudBackdrop radius={16} />
+      <View
+        pointerEvents="none"
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            borderRadius: 16,
+            backgroundColor: hud.light ? hud.surface?.backgroundColor : "rgba(20, 20, 19, 0.86)",
+          },
+        ]}
+      />
+    </>
+  );
+}
+
 export function AnchoredMenu({
   open,
   onClose,
@@ -68,6 +94,8 @@ export function AnchoredMenu({
   menuLayout,
   accessibilityLabel = "Close menu",
   style,
+  variant = "card",
+  dimBackdrop = true,
   children,
 }: {
   open: boolean;
@@ -76,9 +104,11 @@ export function AnchoredMenu({
   menuLayout: AnchoredMenuLayout | null;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
+  variant?: "card" | "glass";
+  dimBackdrop?: boolean;
   children?: ReactNode;
 }) {
-const s=useThemedStyles(sThemes);
+  const s = useThemedStyles(sThemes);
   const wasOpen = useRef(open);
   useEffect(() => {
     const closing = wasOpen.current && !open;
@@ -104,11 +134,11 @@ const s=useThemedStyles(sThemes);
         accessibilityLabel={accessibilityLabel}
         onPress={onClose}
       >
-        <View style={[StyleSheet.absoluteFill, s.backdrop]} />
+        {dimBackdrop ? <View style={[StyleSheet.absoluteFill, s.backdrop]} /> : null}
       </Pressable>
       <View
         style={[
-          s.dropdown,
+          variant === "glass" ? s.dropdownGlass : s.dropdown,
           menuLayout
             ? {
                 position: "absolute",
@@ -120,6 +150,7 @@ const s=useThemedStyles(sThemes);
           style,
         ]}
       >
+        {variant === "glass" ? <GlassMenuSurface /> : null}
         {children}
       </View>
     </Modal>
@@ -196,6 +227,12 @@ const sThemes = createThemedStyles(themeColors=>{return {
     shadowOpacity: 0.18,
     shadowRadius: 24,
     elevation: 12,
+    zIndex: 9999,
+  },
+  dropdownGlass: {
+    backgroundColor: "transparent",
+    borderRadius: 16,
+    overflow: "hidden",
     zIndex: 9999,
   },
   item: {
