@@ -15,6 +15,8 @@ export interface AthleteNodeProps {
   y: number;
   detail: string;
   subdetail?: string;
+  /** Sub-hour activity: show a live dot beside the recency line. */
+  subdetailLive?: boolean;
   prefix: string;
   /** Whether the connected detail popup card + leader line is open. Defaults to false. */
   expanded?: boolean;
@@ -56,6 +58,7 @@ export function AthleteNode({
   y,
   detail,
   subdetail,
+  subdetailLive = false,
   prefix,
   expanded = false,
   showNode = true,
@@ -73,7 +76,10 @@ export function AthleteNode({
   const effectiveScale = nodeScale * nodeScaleForState(l.mystery, isActive);
   const accent = gold ? c.tennis : c.secondary;
   const initials = resolveInitials(l.name, l.initials, l.mystery);
-  const cleanSubdetail = subdetail?.replace(/\s+vs\s+you\b/gi, "").replace(/\byou['’]re\s+/gi, "");
+  const cleanSubdetail = subdetail?.trim();
+  const subdetailText =
+    cleanSubdetail && cleanSubdetail.length > 24 ? `${cleanSubdetail.slice(0, 23)}…` : cleanSubdetail;
+  const liveDotX = x + 10;
   const cardW = 128;
   const cardH = cleanSubdetail ? 44 : 30;
   const attachX = x + cardW / 2;
@@ -113,16 +119,21 @@ export function AthleteNode({
               {detail}
             </SvgText>
           ) : null}
-          {cleanSubdetail ? (
-            <SvgText
-              {...chartTextProps()}
-              x={x + cardW / 2}
-              y={y + 33}
-              textAnchor="middle"
-              fill={mapSurface ? hud.muted : c.fieldTeal}
-            >
-              {cleanSubdetail.length > 18 ? `${cleanSubdetail.slice(0, 17)}…` : cleanSubdetail}
-            </SvgText>
+          {subdetailText ? (
+            <>
+              {subdetailLive ? (
+                <Circle cx={liveDotX} cy={y + 32} r={3.2} fill={c.tennis} opacity={0.95} />
+              ) : null}
+              <SvgText
+                {...chartTextProps()}
+                x={x + cardW / 2 + (subdetailLive ? 5 : 0)}
+                y={y + 33}
+                textAnchor="middle"
+                fill={mapSurface ? hud.muted : c.fieldTeal}
+              >
+                {subdetailText}
+              </SvgText>
+            </>
           ) : null}
         </G>
       ) : null}

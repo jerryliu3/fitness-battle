@@ -1,5 +1,4 @@
 import { MapHudBackdrop, useMapHud } from "../ui/map-hud";
-import Animated, { LinearTransition } from "react-native-reanimated";
 import { useCompetitionTimeline } from "./competition-timeline-context";
 import { CoursePositionRail } from "../ui/course-position-rail";
 import { MaterialBack } from "../ui/material-back";
@@ -34,6 +33,7 @@ import {
   buildCompeteTimeSeriesModel,
   fieldDefaultSpan,
   competitionCourseReplayFrame,
+  athleteLatestReplayContribution,
   buildArenaModel,
   initialsFromName,
   isGeographicCompete,
@@ -231,7 +231,7 @@ const f=useFocusStyles();
   const metricFrame = useMemo(() => !geographic && !chartSleepMode && state && timelineFraction != null
     ? buildCompeteTimeSeriesModel(state, sport, track, now, { scrubFraction: timelineFraction }) : null,
     [state, sport, track, geographic, chartSleepMode, timelineFraction]);
-  const arena = useMemo(() => metricFrame && liveArena ? {
+  const arenaBase = useMemo(() => metricFrame && liveArena ? {
     ...liveArena, lanes: liveArena.lanes.map(lane => {
       const value = metricFrame.athletes.find(athlete => athlete.id === lane.id)?.valueAtCursor ?? lane.values[2];
       return { ...lane, values: [value, value, value] as [number, number, number] };
@@ -239,10 +239,32 @@ const f=useFocusStyles();
   } : !timeline.frame || !liveArena ? liveArena : {
     ...liveArena,
     lanes: timeline.frame.rows.map(row => ({
-      ...row, initials: initialsFromName(row.name), ghost: false, mystery: false,
+      ...row,
+      initials: initialsFromName(row.name),
+      ghost: false,
+      mystery: false,
       values: [row.value, row.value, row.value] as [number, number, number],
     })),
   }, [liveArena, timeline.frame, metricFrame]);
+  const arena = useMemo(() => {
+    const replayIndex = timeline.index;
+    if (!arenaBase || !replayIndex || !state) return arenaBase;
+    const cursor = timeline.frame?.position ?? timeline.count;
+    return {
+      ...arenaBase,
+      lanes: arenaBase.lanes.map((lane) => {
+        const touch = athleteLatestReplayContribution(
+          replayIndex,
+          lane.id,
+          cursor,
+          state.units,
+        );
+        return touch
+          ? { ...lane, lastUpdated: touch.at, lastActivityVolume: touch.volume }
+          : lane;
+      }),
+    };
+  }, [arenaBase, timeline.index, timeline.frame, timeline.count, state?.units]);
   useEffect(() => { if (externalAthleteFocus && !hiddenIds.includes(externalAthleteFocus.id)) { setSelectedId(externalAthleteFocus.id); const lane = arena?.lanes.find(item => item.id === externalAthleteFocus.id); if (lane) setCenter(lane.values[2]); setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } }, [externalAthleteFocus, hiddenIds]);
   const defaultSpan = fieldDefaultSpan(arena?.unit ?? "km");
   const viewSpan = span ?? defaultSpan;
@@ -263,6 +285,8 @@ const f=useFocusStyles();
           value: l.values[2],
           you: l.you,
           ghost: false,
+          lastUpdated: "lastUpdated" in l ? l.lastUpdated : undefined,
+          lastActivityVolume: "lastActivityVolume" in l ? l.lastActivityVolume : undefined,
         })),
     [arena?.lanes],
   );
@@ -489,13 +513,14 @@ const f=useFocusStyles();
               collapsible
               onHeightChange={setLeadersHeight}
               collapsed={leadersCollapsed}
-              onToggle={() => setLeadersCollapsed(value => !value)}
+              onToggle={() => setLeadersCollapsed(false)}
               overlaysHidden={overlaysHidden}
               style={{
                 position: "absolute",
                 top: Math.max(insets.top, 0) + 62,
                 left: 12,
                 maxWidth: 318,
+                alignSelf: "flex-start",
               }}
               surfaceStyle={{
                 backgroundColor: "rgba(20, 20, 19, 0.72)",
@@ -506,7 +531,7 @@ const f=useFocusStyles();
                 borderColor: "rgba(255, 255, 255, 0.14)",
                 ...hud.chrome,
                 gap: 5,
-                minWidth: 236,
+                alignSelf: "flex-start",
               }}
             >
               <MapHudBackdrop radius={14} />
@@ -530,7 +555,7 @@ const f=useFocusStyles();
                 const isSelected = selectedId === peer.id;
                 const leads = place(peer.values[2]) === 1;
                 return (
-                  <Animated.View key={peer.id} layout={reduceMotion ? undefined : LinearTransition.duration(240)}>
+                  <View key={peer.id}>
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Focus ${peer.name}`}
@@ -567,8 +592,7 @@ const f=useFocusStyles();
                       style={{
                         ...textStyle("caption"),
                         color: leads ? hud.accent : hud.ink,
-                        flex: 1,
-                        minWidth: 72,
+                        flexShrink: 1,
                       }}
                     >
                       {peer.name.split(" ")[0]}
@@ -577,12 +601,13 @@ const f=useFocusStyles();
                       style={{
                         ...textStyle("caption"),
                         color: leads ? hud.accent : (hud.light ? hud.muted : "rgba(255,255,255,0.8)"),
+                        flexShrink: 0,
                       }}
                     >
-                      {leads ? "Lead" : `${delta.toFixed(1)}`}
+                      {leads ? "Leader" : `${delta.toFixed(1)}`}
                     </Text>
                   </Pressable>
-                  </Animated.View>
+                  </View>
                 );
               })}
             </SlidingFieldPanel>
@@ -592,6 +617,7 @@ const f=useFocusStyles();
             {focusedLane && !backgroundMode ? (
               <SlidingFieldPanel
                 label="athlete panel"
+                collapseGrip
                 collapsed={spotlightCollapsed}
                 onToggle={() => setSpotlightCollapsed(value => !value)}
                 overlaysHidden={overlaysHidden}

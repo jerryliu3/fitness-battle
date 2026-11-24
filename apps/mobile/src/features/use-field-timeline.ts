@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  nextCompetitionReplaySpeed, competitionReplayFrame, competitionReplayDateForState, indexCompetitionReplay, localCompetitionReplay,
+  COMPETITION_REPLAY_SPEEDS,
+  competitionReplayFrame, competitionReplayDateForState, indexCompetitionReplay, localCompetitionReplay,
   competitionReplayTimeMs, competitionReplayCursorFromTimeMs, REPLAY_MINUTES_PER_REAL_SECOND_1X,
   type CompeteState, type CompetitionReplay, type CompetitionReplaySelection,
 } from "@fitness-battle/shared";
@@ -58,16 +59,17 @@ export function useFieldTimeline(state: CompeteState | undefined, selection: Com
     let raf = 0;
     const from = cursorRef.current, start = Date.now();
     const fromTimeMs = competitionReplayTimeMs(index, from);
-    let lastPaint = -Infinity;
     const tick = () => {
       const now = Date.now();
       const targetTimeMs = fromTimeMs + (now - start) * (REPLAY_MINUTES_PER_REAL_SECOND_1X * 60) * speed;
       const next = competitionReplayCursorFromTimeMs(index, targetTimeMs);
-      if (now - lastPaint >= 100 || next >= count) {
-        setCursor(next >= count ? (replay ? count : null) : reduced ? Math.floor(next) : next);
-        lastPaint = now;
+      if (next >= count) {
+        setCursor(replay ? count : null);
+        setPlaying(false);
+        return;
       }
-      if (next < count) raf = requestAnimationFrame(tick); else setPlaying(false);
+      setCursor(reduced ? Math.floor(next) : next);
+      raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
@@ -89,7 +91,8 @@ export function useFieldTimeline(state: CompeteState | undefined, selection: Com
   return {
     frame, index,
     cursor: bounded, count, playing, seek, live, toggle, error, speed,
-    changeSpeed: () => setSpeed(nextCompetitionReplaySpeed),
+    speeds: COMPETITION_REPLAY_SPEEDS,
+    setSpeed: (value: number) => setSpeed(value),
     ready: Boolean(index) && !error, retry: () => setAttempt(value => value + 1),
     latestLabel: index && state ? competitionReplayDateForState(state, index, count, true) : "",
     label: index && state ? competitionReplayDateForState(state, index, bounded, position === null) : "Loading timeline…",

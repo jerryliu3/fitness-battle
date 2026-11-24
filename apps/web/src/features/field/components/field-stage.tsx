@@ -407,7 +407,9 @@ export function FieldStage({
       {!backgroundMode && !queueOverlay && replayState && <div className="field-timeline-fullscreen"><FieldTimeline timeline={timeline} /></div>}
       {!queueOverlay && (viewDimension !== "4d" || course) ? <>
       <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Live standings">
-        <button type="button" className="focus-panel-toggle" aria-label={intervalsCollapsed ? "Expand live intervals" : "Collapse live intervals"} aria-expanded={!intervalsCollapsed} onClick={() => setIntervalsCollapsed(value => !value)}><span className="focus-panel-grip" aria-hidden="true" /></button>
+        {intervalsCollapsed ? (
+          <button type="button" className="focus-panel-toggle" aria-label="Expand live standings" aria-expanded={false} onClick={() => setIntervalsCollapsed(false)}><span className="focus-panel-grip" aria-hidden="true" /></button>
+        ) : null}
         <div className="focus-panel-content" inert={intervalsCollapsed} aria-hidden={intervalsCollapsed}>
           <div className="focus-broadcast-tower-head">
             <span className="focus-broadcast-tower-kicker">Live standings</span>
@@ -438,7 +440,7 @@ export function FieldStage({
                   {peer.name.split(" ")[0]}
                 </span>
                 <span className="focus-broadcast-tower-val">
-                  {leads ? "Lead" : delta.toFixed(1)}
+                  {leads ? "Leader" : delta.toFixed(1)}
                 </span>
               </button>
             );

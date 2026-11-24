@@ -1,5 +1,5 @@
 import { competitionQueue } from "./compete/participation";
-import { latestCountedActivityAt } from "./activity-age";
+import { latestCountedActivitySnapshot } from "./activity-age";
 /**
  * View models for the phone tabs. Plain data — no React, DOM, or native imports.
  * The checkpoint route and lane values stay here so Expo and the web column match.
@@ -19,6 +19,7 @@ import { suggestionForState, type DaySuggestion } from "./compete/suggestion";
 import {
   activityCheckpoints,
   syntheticCheckpoints,
+  syntheticLatestActivity,
   type CheckpointSeries,
 } from "./compete/track";
 import {
@@ -84,6 +85,7 @@ export interface ArenaLane {
   mystery?: boolean;
   avatarUrl?: string | null;
   lastUpdated?: string;
+  lastActivityVolume?: number;
   id: string;
   name: string;
   you: boolean;
@@ -347,22 +349,25 @@ export function buildArenaModel(
           period.endsAt,
           now,
         );
+    const lastActivity = row.you
+      ? latestCountedActivitySnapshot(
+          state.activities,
+          sport,
+          track,
+          period.startsAt,
+          period.endsAt,
+          now,
+          state.units,
+        )
+      : syntheticLatestActivity(series, sport, state.units); // offline/local only; live UI prefers competition replay ledger
     return {
       id: row.id,
       name: row.you ? state.name : row.name,
       avatarUrl: row.you ? state.avatarUrl : fieldBoard?.members.find(m=>m.id===row.id)?.avatarUrl,
       you: row.you,
       ghost: false,
-      lastUpdated: row.you
-        ? latestCountedActivityAt(
-            state.activities,
-            sport,
-            track,
-            period.startsAt,
-            period.endsAt,
-            now,
-          )
-        : undefined,
+      lastUpdated: lastActivity?.at,
+      lastActivityVolume: lastActivity?.volume,
       values: seriesValues(series, sport, state.units),
     };
   });

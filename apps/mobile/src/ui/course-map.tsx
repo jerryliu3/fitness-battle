@@ -9,7 +9,7 @@ import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import Mapbox, { MapView, Camera, StyleImport, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
-import { courseReplayPose, courseTravelFraction, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceCourseRacerPosition, raceCourseStartCoordinate, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseReplayPose, courseTravelFraction, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, courseAthleteSubdetailLive, createCourseCamera, raceCourseRacerPosition, raceCourseStartCoordinate, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { CourseOptions } from "./course-options";
 import { FieldFollowChip } from "./field-follow-chip";
@@ -202,7 +202,7 @@ const { colors: appearanceColors, mode } = useAppTheme();
       const target = replayTarget.current;
       if (!target) { raf = requestAnimationFrame(tick); return; }
       const now = Date.now();
-      const blend = reduced ? 1 : 1 - Math.exp(-Math.min(64, Math.max(1, now - previous)) / 220);
+      const blend = reduced ? 1 : 1 - Math.exp(-Math.min(64, Math.max(1, now - previous)) / 120);
       previous = now;
       const angle = (from: number, to: number) => from + (((to - from) % 360 + 540) % 360 - 180) * blend;
       current = {
@@ -351,7 +351,9 @@ const { colors: appearanceColors, mode } = useAppTheme();
           </MarkerView>;
         }
         const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
-        const subdetail = courseAthleteSubdetail(lanes, lane, unit);
+        const now = new Date();
+        const subdetail = courseAthleteSubdetail(lanes, lane, unit, now);
+        const subdetailLive = courseAthleteSubdetailLive(lane, now);
         const selected = lane.id === selectedId && !isDismissed;
         const expanded = selected || (lane.id === replay?.nearestId && !isDismissed);
         const pad = 32, boxWidth = 170 + pad * 2, boxHeight = lane.callout.height + pad * 2;
@@ -360,7 +362,7 @@ const { colors: appearanceColors, mode } = useAppTheme();
         return <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: nodeX / boxWidth, y: nodeY / boxHeight }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
           <View collapsable={false} pointerEvents="box-none" style={{ width: boxWidth, height: boxHeight }}>
             <Svg width={boxWidth} height={boxHeight} pointerEvents="none"><G transform={`translate(${nodeX} ${nodeY})`}>
-              <AthleteNode mapOverlay lane={lane} x={lane.callout.left ? -140 : 12} y={lane.callout.y} detail={detail} subdetail={subdetail} expanded={expanded} selected={selected} gold={rank === 1} prefix={`${prefix}-${lane.id}`} />
+              <AthleteNode mapOverlay lane={lane} x={lane.callout.left ? -140 : 12} y={lane.callout.y} detail={detail} subdetail={subdetail} subdetailLive={subdetailLive} expanded={expanded} selected={selected} gold={rank === 1} prefix={`${prefix}-${lane.id}`} />
             </G></Svg>
             {expanded ? <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: cardX, top: cardY, width: 128, height: subdetail ? 44 : 30 }} /> : null}
             <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${detail}`} hitSlop={8} onTouchStart={event => event.stopPropagation()} onPress={() => { setDismissed(ids => ids.filter(id => id !== lane.id)); onSelect(lane.id); }} style={{ position: "absolute", left: nodeX - 32, top: nodeY - 32, width: 64, height: 64, borderRadius: 32 }} />

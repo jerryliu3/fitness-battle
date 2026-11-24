@@ -1,4 +1,5 @@
 import { raceCourseRacerPosition, raceCourseTrail, raceEffortMetres, type RaceCourse } from "./race-course";
+import { formatActivityRecency, isActivityLive } from "./activity-age";
 import { ordinalPlace, type ArenaSceneLane } from "./arena-view";
 import { MEDAL_GOLD, getAppColors } from "./appearance";
 import type { LngLat } from "./routeGeoUtils";
@@ -224,21 +225,23 @@ export function courseAthleteDetail(lanes: readonly ArenaSceneLane[], lane: Aren
 }
 
 export function courseAthleteSubdetail(
-  lanes: readonly ArenaSceneLane[],
+  _lanes: readonly ArenaSceneLane[],
   lane: ArenaSceneLane,
   unit: string,
+  now: Date = new Date(),
 ): string | undefined {
-  if (lanes.some(peer => peer.mystery)) return undefined;
-  const leaderValue = Math.max(0, ...lanes.filter(peer => !peer.ghost).map(peer => peer.value));
-  const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
-  const youValue = lanes.find(peer => peer.you && !peer.ghost)?.value ?? 0;
-  if (lane.you) {
-    return rank === 1
-      ? "Leading the field"
-      : `${(lane.value - leaderValue).toFixed(1)} ${unit} vs #1`;
-  }
-  const delta = lane.value - youValue;
-  return `${delta > 0 ? "+" : ""}${delta.toFixed(1)} ${unit}`;
+  if (_lanes.some(peer => peer.mystery) || lane.ghost) return undefined;
+  const volume = lane.lastActivityVolume;
+  const recency = formatActivityRecency(lane.lastUpdated, now);
+  if (volume === undefined || !recency) return undefined;
+  return `Last: ${volume.toFixed(1)} ${unit} • ${recency}`;
+}
+
+export function courseAthleteSubdetailLive(
+  lane: ArenaSceneLane,
+  now: Date = new Date(),
+): boolean {
+  return isActivityLive(lane.lastUpdated, now);
 }
 
 /** Stable screen-space tiers keep tied racers' cards from stacking on one another. */

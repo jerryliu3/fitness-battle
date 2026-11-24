@@ -1,7 +1,7 @@
 import { useThemeColors } from "../theme";
 import { AthleteNode } from "./athlete-node";
 import { chartTextProps, textStyle  } from "./section";
-import { arenaValueDecimals, fieldCourse, fieldCourseScene, fieldScaleMarks, defaultFieldAppearance, type FieldAppearance, fieldZoomSpan, pinchFieldView, fieldFlightDuration, fieldFlightEase, fieldProgressTrail, arenaPosition, arenaWindow, fieldDefaultSpan, ordinalPlace, athletePennantOffset, arenaFieldHigh, clampCourseCenter, initialsFromName, orderedArenaLanes, fieldLaneMarkerScale, type ArenaLane, type ArenaOvertakeFrame, type ArenaOvertakePlan, type ArenaViewWindow } from "@fitness-battle/shared";
+import { arenaValueDecimals, courseAthleteSubdetail, courseAthleteSubdetailLive, fieldCourse, fieldCourseScene, fieldScaleMarks, defaultFieldAppearance, type FieldAppearance, fieldZoomSpan, pinchFieldView, fieldFlightDuration, fieldFlightEase, fieldProgressTrail, arenaPosition, arenaWindow, fieldDefaultSpan, ordinalPlace, athletePennantOffset, arenaFieldHigh, clampCourseCenter, initialsFromName, orderedArenaLanes, fieldLaneMarkerScale, type ArenaLane, type ArenaOvertakeFrame, type ArenaOvertakePlan, type ArenaViewWindow, type ArenaSceneLane } from "@fitness-battle/shared";
 import { memo, useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
 import { PanResponder, Pressable, Text, View } from "react-native";
 import Svg, {
@@ -305,14 +305,24 @@ const c=useThemeColors();
               const isSelected = selectedId === l.id;
               const isExpanded = replayFocusIds?.includes(l.id) ?? expandedId === l.id;
               const youVal = overtakeFrame?.youValue ?? me?.values[index] ?? 0;
-              const deltaToYou = value - youVal;
-              const subdetail = ordered.some(peer => peer.mystery)
-                ? undefined
-                : l.you
-                  ? isGold
-                    ? "Leading the field"
-                    : `${(value - fieldHigh).toFixed(valueDecimals)} ${unit} vs #1`
-                  : `${deltaToYou > 0 ? "+" : ""}${deltaToYou.toFixed(valueDecimals)} ${unit}`;
+              const laneScene = (peer: ArenaLane, peerValue: number): ArenaSceneLane => ({
+                id: peer.id,
+                name: peer.name,
+                initials: initialsFromName(peer.name),
+                value: peerValue,
+                you: peer.you,
+                ghost: peer.ghost,
+                mystery: peer.mystery,
+                lastUpdated: peer.lastUpdated,
+                lastActivityVolume: peer.lastActivityVolume,
+              });
+              const sceneLanes = ordered.map((peer) =>
+                laneScene(peer, overtakeFrame?.laneValues[peer.id] ?? peer.values[index]),
+              );
+              const now = new Date();
+              const sceneLane = laneScene(l, value);
+              const subdetail = courseAthleteSubdetail(sceneLanes, sceneLane, unit, now);
+              const subdetailLive = courseAthleteSubdetailLive(sceneLane, now);
               const pennantWidth=128, visibleLeft=previous.current?.scroll??0;
               const pennantX=Math.max(visibleLeft-xx+8,Math.min(visibleLeft+width-xx-pennantWidth-8,l.you?-pennantWidth-16:16));
               const pennantY=athletePennantOffset(yy,course.point(youVal,Math.max(0,ordered.findIndex(peer=>peer.you)),0,true).y,l.you,height);
@@ -380,6 +390,7 @@ const c=useThemeColors();
                         gold={isGold}
                         detail={`${ordered.some(peer => peer.mystery) ? "Starts at zero" : ordinalPlace(rank)} · ${value.toFixed(valueDecimals)} ${unit}`}
                         subdetail={subdetail}
+                        subdetailLive={subdetailLive}
                       />
                     )}
                   </G>

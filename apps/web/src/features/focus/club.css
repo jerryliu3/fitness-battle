@@ -1751,7 +1751,8 @@
   z-index: 80;
   display: grid;
   gap: 4px;
-  width: 248px;
+  width: max-content;
+  max-width: 318px;
   padding: 9px 10px;
   border-radius: 14px;
   background: var(--map-hud-fill, rgba(20, 20, 19, 0.76));

@@ -296,7 +296,28 @@ export function competitionCourseReplayFrame(
 export function competitionReplayDimension(sport: SportId, requested: "2d" | "3d" | "4d" | "graph" = "4d"): "2d" | "3d" | "4d" | "graph" {
   return normalizeCompeteFieldView(sport, requested);
 }
+export const COMPETITION_REPLAY_SPEEDS = [0.25, 0.5, 1, 2, 4] as const;
+
 export function nextCompetitionReplaySpeed(speed: number) {
-  const speeds = [.25, .5, 1, 2, 4];
-  return speeds[(speeds.indexOf(speed) + 1) % speeds.length]!;
+  const speeds = COMPETITION_REPLAY_SPEEDS;
+  return speeds[(speeds.indexOf(speed as (typeof speeds)[number]) + 1) % speeds.length]!;
+}
+
+/** Last fully-counted replay event for one athlete at the scrub cursor. */
+export function athleteLatestReplayContribution(
+  index: CompetitionReplayIndex,
+  athleteId: string,
+  cursor: number,
+  units: UnitSystem,
+): { at: string; volume: number } | undefined {
+  const position = Math.max(0, Math.min(index.replay.events.length, Number.isFinite(cursor) ? cursor : 0));
+  let last: CompetitionReplayEvent | undefined;
+  for (let i = 0; i < index.replay.events.length; i++) {
+    if (i >= position) break;
+    const event = index.replay.events[i]!;
+    if (event.athleteId === athleteId) last = event;
+  }
+  if (!last) return undefined;
+  const volume = competeVolumeFromTotals(index.replay.sport, last, units);
+  return volume > 0 ? { at: last.at, volume } : undefined;
 }

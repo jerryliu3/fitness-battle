@@ -6,6 +6,7 @@ import { MaterialPanel } from "../ui/material-panel";
 import { textStyle } from "../ui/section";
 import { useThemeColors } from "../theme";
 import { ReplayTimeline } from "./replay-timeline";
+import { ReplaySpeedControl } from "./replay-speed-control";
 import type { FieldTimelineState } from "./use-field-timeline";
 
 export function FieldTimeline({ timeline: t, compact = false, floating = false }: { timeline: FieldTimelineState; compact?: boolean; floating?: boolean }) {
@@ -42,7 +43,7 @@ export function FieldTimeline({ timeline: t, compact = false, floating = false }
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
       <IconButton icon={t.playing ? "pause" : "play"} label={t.playing ? "Pause replay" : "Play replay"} disabled={!t.ready || !t.count} onPress={t.toggle} primary haptic={false} />
       <View style={{ flex: 1 }}><ReplayTimeline label="Competition timeline" count={t.ready ? t.count : 0} cursor={t.cursor} caption={t.label} onSeek={t.seek} floating={floating} /></View>
-      {action(`${t.speed}×`, t.changeSpeed, false, `Playback speed ${t.speed} times`, true)}
+      <ReplaySpeedControl speed={t.speed} onSelect={t.setSpeed} floating={floating} fixedWidth />
     </View>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, paddingLeft: 62, paddingRight: 66 }}>
       <Text style={{ ...textStyle("caption"), color: floating ? foreground : c.muted, flex: 1 }}>{t.error || (!t.ready ? "Loading timeline…" : t.label)}</Text>
@@ -54,7 +55,7 @@ export function FieldTimeline({ timeline: t, compact = false, floating = false }
     {material}
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
       <Text style={{ ...textStyle("caption"), color: foreground, flex: 1 }}>{t.error || (!t.ready ? "Loading timeline…" : t.label)}</Text>
-      {t.error ? action("Retry timeline", t.retry) : <>{action(t.playing ? "Pause replay" : "Replay", t.toggle, !t.ready || !t.count, undefined, false, true)}{action(`${t.speed}×`, t.changeSpeed, false, `Playback speed ${t.speed} times`, true)}</>}{action("Latest", t.live, !t.frame)}
+      {t.error ? action("Retry timeline", t.retry) : <>{action(t.playing ? "Pause replay" : "Replay", t.toggle, !t.ready || !t.count, undefined, false, true)}<ReplaySpeedControl speed={t.speed} onSelect={t.setSpeed} floating={floating} fixedWidth /></>}{action("Latest", t.live, !t.frame)}
     </View>
     <ReplayTimeline label="Competition timeline" count={t.ready ? t.count : 0} cursor={t.cursor} caption={t.label} onSeek={t.seek} floating={floating} />
   </View>;
