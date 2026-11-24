@@ -103,12 +103,37 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     camera.current?.focus(course, scene.selected.metres, !explicit, scene.selected.lateralMetres);
     if (explicit) setFollowing(true);
   }, [ready, course, selectedId, focusRequest, cardSessionKey, followAthlete, scene.selected?.metres, scene.selected?.lateralMetres, replay]);
+  const replayTarget = useRef<CourseCameraPose | null>(null);
+  replayTarget.current = replay && scene.selected
+    ? courseReplayPose(course, scene.selected, scene.callouts.find(lane => lane.id === replay.nearestId), reduced.current ? 0 : replay.focus, replay.zoomBoost)
+  : null;
   useEffect(() => {
-    if (!ready || !replay || !scene.selected) return;
-    const rival = scene.callouts.find(lane => lane.id === replay.nearestId);
-    const next = courseReplayPose(course, scene.selected, rival, reduced.current ? 0 : replay.focus, replay.zoomBoost);
-    map.current?.jumpTo({ center: next.center, zoom: next.zoom, pitch: next.pitch, bearing: next.bearing });
-  }, [ready, course, scene, replay]);
+    const instance = map.current;
+    if (!ready || !replay || !instance) return;
+  const read = (): CourseCameraPose => ({ center: instance.getCenter().toArray() as CourseCameraPose["center"], zoom: instance.getZoom(), pitch: instance.getPitch(), bearing: instance.getBearing() });
+    let raf = 0;
+    let previous = performance.now();
+    let current = read();
+    const tick = () => {
+      const target = replayTarget.current;
+      if (!target) { raf = requestAnimationFrame(tick); return; }
+      const now = performance.now();
+      const blend = reduced.current ? 1 : 1 - Math.exp(-Math.min(64, Math.max(1, now - previous)) / 120);
+      previous = now;
+      const angle = (from: number, to: number) => from + (((to - from) % 360 + 540) % 360 - 180) * blend;
+      current = {
+        center: [angle(current.center[0], target.center[0]), current.center[1] + (target.center[1] - current.center[1]) * blend],
+        zoom: current.zoom + (target.zoom - current.zoom) * blend,
+        pitch: current.pitch + (target.pitch - current.pitch) * blend,
+        bearing: angle(current.bearing, target.bearing),
+      };
+      instance.jumpTo({ center: current.center, zoom: current.zoom, pitch: current.pitch, bearing: current.bearing });
+      raf = requestAnimationFrame(tick);
+    };
+    current = read();
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [ready, course, replay, flat]);
   useEffect(() => {
     if (!ready || !distanceTarget) return;
     const metres = raceEffortMetres(clampedTarget ?? 0, unit);

@@ -1,4 +1,5 @@
 import { raceCourseRacerPosition, raceCourseTrail, raceEffortMetres, type RaceCourse } from "./race-course";
+import { formatActivityRecency } from "./activity-age";
 import { ordinalPlace, type ArenaSceneLane } from "./arena-view";
 import { MEDAL_GOLD, getAppColors } from "./appearance";
 import type { LngLat } from "./routeGeoUtils";
@@ -227,6 +228,7 @@ export function courseAthleteSubdetail(
   lanes: readonly ArenaSceneLane[],
   lane: ArenaSceneLane,
   unit: string,
+  now: Date = new Date(),
 ): string | undefined {
   if (lanes.some(peer => peer.mystery)) return undefined;
   const leaderValue = Math.max(0, ...lanes.filter(peer => !peer.ghost).map(peer => peer.value));
@@ -238,7 +240,9 @@ export function courseAthleteSubdetail(
       : `${(lane.value - leaderValue).toFixed(1)} ${unit} vs #1`;
   }
   const delta = lane.value - youValue;
-  return `${delta > 0 ? "+" : ""}${delta.toFixed(1)} ${unit}`;
+  const gap = `${delta > 0 ? "+" : ""}${delta.toFixed(1)} ${unit} vs you`;
+  const recency = formatActivityRecency(lane.lastUpdated, now);
+  return recency ? `${gap} · ${recency}` : gap;
 }
 
 /** Stable screen-space tiers keep tied racers' cards from stacking on one another. */

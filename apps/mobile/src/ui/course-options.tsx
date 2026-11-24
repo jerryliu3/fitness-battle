@@ -141,11 +141,14 @@ export function CourseOptions({ flat, sharedLane, onToggleDimension, onToggleSpa
     <LayersMenu
       label="Course options"
       closeLabel="Close course options"
-      estimatedHeight={is2D ? 56 : 164 + (onChoose2D ? 44 : 0)}
+      estimatedHeight={is2D ? 108 : 164 + (onChoose2D ? 44 : 0)}
     >
       {({ close, runAfterDismiss }) => {
         const options = is2D
-          ? [{ label: "3D view", value: false, action: () => { runAfterDismiss(onChoose3D!); close(); } }]
+          ? [
+              { label: "3D view", value: false, action: () => { runAfterDismiss(onChoose3D!); close(); } },
+              { label: "See overview", action: onOverview },
+            ]
           : [
               ...(onChoose2D ? [{ label: "3D view", value: true, action: () => { runAfterDismiss(onChoose2D); close(); } }] : []),
               { label: "Perspective view", value: !flat, action: onToggleDimension },

@@ -202,7 +202,7 @@ const { colors: appearanceColors, mode } = useAppTheme();
       const target = replayTarget.current;
       if (!target) { raf = requestAnimationFrame(tick); return; }
       const now = Date.now();
-      const blend = reduced ? 1 : 1 - Math.exp(-Math.min(64, Math.max(1, now - previous)) / 220);
+      const blend = reduced ? 1 : 1 - Math.exp(-Math.min(64, Math.max(1, now - previous)) / 120);
       previous = now;
       const angle = (from: number, to: number) => from + (((to - from) % 360 + 540) % 360 - 180) * blend;
       current = {

@@ -1,5 +1,4 @@
 import { MapHudBackdrop, useMapHud } from "../ui/map-hud";
-import Animated, { LinearTransition } from "react-native-reanimated";
 import { useCompetitionTimeline } from "./competition-timeline-context";
 import { CoursePositionRail } from "../ui/course-position-rail";
 import { MaterialBack } from "../ui/material-back";
@@ -263,6 +262,7 @@ const f=useFocusStyles();
           value: l.values[2],
           you: l.you,
           ghost: false,
+          lastUpdated: l.lastUpdated,
         })),
     [arena?.lanes],
   );
@@ -489,13 +489,14 @@ const f=useFocusStyles();
               collapsible
               onHeightChange={setLeadersHeight}
               collapsed={leadersCollapsed}
-              onToggle={() => setLeadersCollapsed(value => !value)}
+              onToggle={() => setLeadersCollapsed(false)}
               overlaysHidden={overlaysHidden}
               style={{
                 position: "absolute",
                 top: Math.max(insets.top, 0) + 62,
                 left: 12,
                 maxWidth: 318,
+                alignSelf: "flex-start",
               }}
               surfaceStyle={{
                 backgroundColor: "rgba(20, 20, 19, 0.72)",
@@ -506,7 +507,7 @@ const f=useFocusStyles();
                 borderColor: "rgba(255, 255, 255, 0.14)",
                 ...hud.chrome,
                 gap: 5,
-                minWidth: 236,
+                alignSelf: "flex-start",
               }}
             >
               <MapHudBackdrop radius={14} />
@@ -530,7 +531,7 @@ const f=useFocusStyles();
                 const isSelected = selectedId === peer.id;
                 const leads = place(peer.values[2]) === 1;
                 return (
-                  <Animated.View key={peer.id} layout={reduceMotion ? undefined : LinearTransition.duration(240)}>
+                  <View key={peer.id}>
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Focus ${peer.name}`}
@@ -567,8 +568,7 @@ const f=useFocusStyles();
                       style={{
                         ...textStyle("caption"),
                         color: leads ? hud.accent : hud.ink,
-                        flex: 1,
-                        minWidth: 72,
+                        flexShrink: 1,
                       }}
                     >
                       {peer.name.split(" ")[0]}
@@ -577,12 +577,13 @@ const f=useFocusStyles();
                       style={{
                         ...textStyle("caption"),
                         color: leads ? hud.accent : (hud.light ? hud.muted : "rgba(255,255,255,0.8)"),
+                        flexShrink: 0,
                       }}
                     >
-                      {leads ? "Lead" : `${delta.toFixed(1)}`}
+                      {leads ? "Leader" : `${delta.toFixed(1)}`}
                     </Text>
                   </Pressable>
-                  </Animated.View>
+                  </View>
                 );
               })}
             </SlidingFieldPanel>

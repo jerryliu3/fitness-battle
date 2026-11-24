@@ -39,3 +39,27 @@ export function formatActivityAge(
   const hours = Math.floor(minutes / 60);
   return hours < 24 ? `${hours}h ago` : `${Math.floor(hours / 24)}d ago`;
 }
+
+/** Long-form recency for map player cards (minutes → hours → days). */
+export function formatActivityRecency(
+  at: string | undefined,
+  now: Date = new Date(),
+): string | undefined {
+  if (!at) return undefined;
+  const elapsed = now.getTime() - Date.parse(at);
+  if (!Number.isFinite(elapsed) || elapsed < 0) return undefined;
+  const minutes = elapsed / 60000;
+  if (minutes < 1) return "just now";
+  if (minutes < 60) {
+    const whole = Math.floor(minutes);
+    return `${whole} min${whole === 1 ? "" : "s"} ago`;
+  }
+  const hours = minutes / 60;
+  if (hours < 24) {
+    const whole = Math.floor(hours);
+    return `${whole} hour${whole === 1 ? "" : "s"} ago`;
+  }
+  const days = hours / 24;
+  const whole = Math.floor(days);
+  return `${whole} day${whole === 1 ? "" : "s"} ago`;
+}
