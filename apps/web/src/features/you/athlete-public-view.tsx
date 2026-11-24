@@ -119,7 +119,12 @@ export function AthletePublicView({ athleteId }: { athleteId: string }) {
         {remote?.season ? (
           <section className="fb-card">
             <SectionHeader title="Since the first mile" subtitle="Counted training" />
-            <motionlessStats season={remote.season} units={units} overtakes={card.overtakes} sportName={card.sport} />
+            <PublicSeasonStats
+              season={remote.season}
+              units={units}
+              overtakes={card.overtakes ?? 0}
+              sportName={card.sport}
+            />
           </section>
         ) : null}
         {remote?.proudMoments?.length ? (
@@ -148,7 +153,7 @@ export function AthletePublicView({ athleteId }: { athleteId: string }) {
   );
 }
 
-function motionlessStats({
+function PublicSeasonStats({
   season,
   units,
   overtakes,
