@@ -1,12 +1,18 @@
 "use client";
 import { AppParagraph, AppHeading } from "@/ui/section";
 
-import { awardCards, type CompeteState } from "@fitness-battle/shared";
+import { awardCards, type AwardCardModel, type CompeteState } from "@fitness-battle/shared";
 import { motion, useReducedMotion } from "motion/react";
 
-export function AwardShelf({ state }: { state: CompeteState }) {
+export function AwardShelf({
+  state,
+  cards: cardsOverride,
+}: {
+  state?: CompeteState;
+  cards?: AwardCardModel[];
+}) {
   const reduced = useReducedMotion();
-  const cards = awardCards(state);
+  const cards = cardsOverride ?? (state ? awardCards(state) : []);
   if (cards.length === 0) {
     return <AppParagraph typographyRole="body" className="fb-copy">No week awards yet.</AppParagraph>;
   }

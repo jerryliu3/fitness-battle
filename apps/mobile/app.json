@@ -111,7 +111,13 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [{ "scheme": "https", "host": "overtaek.xyz", "path": "/invite" }],
+          "data": [
+            { "scheme": "https", "host": "overtaek.xyz", "pathPrefix": "/invite" },
+            { "scheme": "https", "host": "overtaek.xyz", "pathPrefix": "/field" },
+            { "scheme": "https", "host": "overtaek.xyz", "pathPrefix": "/athlete" },
+            { "scheme": "https", "host": "overtaek.xyz", "pathPrefix": "/app/field" },
+            { "scheme": "https", "host": "overtaek.xyz", "pathPrefix": "/app/athlete" }
+          ],
           "category": ["BROWSABLE", "DEFAULT"]
         },
         {

@@ -236,7 +236,7 @@ describe("athlete profile navigation and layout", () => {
       renderer = create(createElement(AthleteScreen));
     });
     const rendered = JSON.stringify(renderer.toJSON());
-    expect(rendered).toContain("https://overtaek.xyz/app/athlete?id=alice");
+    expect(rendered).toContain("https://overtaek.xyz/athlete?id=alice");
     expect(rendered).toContain("Copy");
     expect(rendered).toContain("Edit profile");
     expect(rendered).toContain("Settings");

@@ -50,6 +50,10 @@ Mobile shares `https://overtaek.xyz/invite?invite=CODE`. The native app routes t
 recipient to Crew with the code prefilled after account setup. The browser
 landing page offers Open in app or Continue on web with the same code.
 
+Public athlete links use `https://overtaek.xyz/athlete?id=USER_ID` (web
+redirects to `/app/athlete`). Crew invite links should use
+`https://overtaek.xyz/invite?invite=CODE`, not bare `/field` URLs.
+
 For automatic opening, deploy the web app on `overtaek.xyz` with
 `INVITE_APPLE_APP_ID` set to the signed iOS app's application identifier
 (typically `TEAMID.com.overtaek.app`) and `INVITE_ANDROID_SHA256` set to the
