@@ -100,6 +100,7 @@ export function CrewInvitePreview({
         units="us"
         now={now}
         displayTimeZone={APP_TIMEZONE}
+        invitePreview
         onSelectMember={() => {}}
         onViewMembers={() => {}}
       />

@@ -50,6 +50,14 @@
   display:grid;
   gap:12px
 }
+.crew-week-placeholder {
+  border-radius:20px;
+  padding:16px 18px;
+  background:var(--card);
+  border:1px solid var(--line);
+  display:grid;
+  gap:6px
+}
 .crew-week-hero-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .crew-week-hero-title { display:inline-flex; align-items:center; gap:6px; }
 .crew-week-edit-btn { display:inline-flex; align-items:center; justify-content:center; min-width:32px; min-height:32px; padding:0; border:0; background:transparent; color:var(--ink); cursor:pointer; border-radius:8px; }

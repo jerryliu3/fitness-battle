@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   const { data: crew, error: crewError } = await db
     .from("crews")
     .select("id, name, sport, format, target_sessions, journey_km, invite_code")
-    .eq("invite_code", normalized)
+    .ilike("invite_code", normalized)
     .maybeSingle();
   if (crewError) {
     return NextResponse.json({ error: "preview_unavailable" }, { status: 500 });

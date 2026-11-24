@@ -2,7 +2,7 @@ import { pageCarouselStyles } from "../ui/carousel-styles";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Pressable, ScrollView, View } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { crewMemberRelayColor, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
+import { CREW_INVITE_WEEKLY_PLACEHOLDER, crewMemberRelayColor, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { FocusButton, useFocusStyles } from "../ui/focus";
 import { AppText } from "../ui/section";
@@ -17,8 +17,15 @@ import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
 import { mobileEnv } from "../lib/env";
 
-type Props = CrewOverviewInput & { crewId: string; crewName: string; onSelectMember: (id: string) => void; onViewMembers: () => void; hiddenIds: readonly string[] };
-export function CrewOverview({ crewId, crewName, onSelectMember, onViewMembers, hiddenIds, ...input }: Props) {
+type Props = CrewOverviewInput & {
+  crewId: string;
+  crewName: string;
+  onSelectMember: (id: string) => void;
+  onViewMembers: () => void;
+  hiddenIds: readonly string[];
+  invitePreview?: boolean;
+};
+export function CrewOverview({ crewId, crewName, onSelectMember, onViewMembers, hiddenIds, invitePreview = false, ...input }: Props) {
   const c = useThemeColors();
   const f = useFocusStyles();
   const reduced = useReducedMotion();
@@ -78,6 +85,14 @@ export function CrewOverview({ crewId, crewName, onSelectMember, onViewMembers, 
   const selectFrame = (value: number) => { if (!events.length) return; setPlaying(false); setFrame(Math.max(0, Math.min(1, value))); };
   const scrubTrack = (locationX: number) => selectFrame(locationX / Math.max(1, trackWidth));
   return <><View style={{ gap: 28 }}>
+  {invitePreview ? (
+    <View style={[f.card, { gap: 8, paddingVertical: 16, paddingHorizontal: 18 }]}>
+      <AppText role="label">Weekly field</AppText>
+      <AppText role="body" secondary>
+        {CREW_INVITE_WEEKLY_PLACEHOLDER}
+      </AppText>
+    </View>
+  ) : (
     <View style={[f.card, { backgroundColor: c.actionSoft, borderColor: c.tennis, gap: 12, overflow: "hidden", padding: 20 }]}>
       {contract ? <>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
@@ -123,6 +138,7 @@ export function CrewOverview({ crewId, crewName, onSelectMember, onViewMembers, 
         {passport.error && !passport.data ? <FocusButton secondary label="Refresh" onPress={() => void passport.reload()} /> : <FocusButton label="Set weekly contract" disabled={!passport.available || !passport.data} onPress={contractUi.openEditor} />}
       </>}
     </View>
+  )}
     <View style={{ gap: 12 }} onLayout={e => setLineupWidth(e.nativeEvent.layout.width)}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <AppText role="heading" accessibilityRole="header">Crew mates</AppText>

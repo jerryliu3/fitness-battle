@@ -36,10 +36,10 @@
 }
 
 .crew-invite-hero {
-  border-radius: 24px;
-  padding: 24px 20px;
-  background: color-mix(in srgb, var(--action-primary) 32%, var(--card));
-  border: 1px solid color-mix(in srgb, var(--action-primary) 50%, var(--line));
+  border-radius: 20px;
+  padding: 18px 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
   display: grid;
   gap: 8px;
   overflow: hidden;
