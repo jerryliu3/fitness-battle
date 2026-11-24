@@ -10,7 +10,7 @@ import {
   CREW_INVITE_PREVIEW_FOOTNOTE,
   type CrewInvitePreviewPayload,
 } from "@fitness-battle/shared";
-import { RankAvatar } from "../ui/rank-symbol";
+import { UserAvatar } from "../ui/user-avatar";
 import { AppText } from "../ui/section";
 import { FocusButton, useFocusStyles } from "../ui/focus";
 import { CrewOverview } from "./crew-overview";
@@ -53,7 +53,7 @@ export function CrewInvitePreview({
         </AppText>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           {roster.map((member) => (
-            <RankAvatar key={member.user_id} src={member.avatar_url} name={member.display_name} size={40} />
+            <UserAvatar key={member.user_id} src={member.avatar_url} name={member.display_name} size={40} />
           ))}
           {extraCount > 0 ? (
             <AppText role="caption" secondary>
