@@ -28,19 +28,11 @@ import {
   crewTargetSpec,
   crewInviteHttpsUrl,
   PUBLIC_SHARE_ORIGIN,
-  crewInvitePreviewErrorMessage,
-  type CrewInvitePreviewPayload,
 } from "@fitness-battle/shared";
-import { CrewInvitePreview } from "./crew-invite-preview";
+import { CrewInviteLanding } from "./crew-invite-landing";
+import { useCrewInviteFlow } from "./use-crew-invite-flow";
 import { GuestEntrySheet } from "./guest-entry-sheet";
-import {
-  clearPendingCrewInvite,
-  readPendingCrewAccept,
-  readPendingCrewInvite,
-  stashPendingCrewAccept,
-  stashPendingCrewInvite,
-  useGuestEntryPrompt,
-} from "../lib/guest-entry";
+import { useGuestEntryPrompt } from "../lib/guest-entry";
 import { Chip, ChipRow } from "../ui/chip";
 import { NumberStepper } from "../ui/number-stepper";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -156,12 +148,33 @@ const f=useFocusStyles();
   const [editTarget, setEditTarget] = useState<number>(40);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [inviteCode, setInviteCode] = useState("");
-  const [invitePreview, setInvitePreview] = useState<CrewInvitePreviewPayload | null>(null);
-  const [invitePreviewLoading, setInvitePreviewLoading] = useState(false);
-  const [invitePreviewError, setInvitePreviewError] = useState<string | null>(null);
-  const [inviteJoinBusy, setInviteJoinBusy] = useState(false);
   const [guestAuthOpen, setGuestAuthOpen] = useState(false);
+  const inviteFlow = useCrewInviteFlow({
+    inviteParam: params.invite,
+    userId: user?.id,
+    router,
+    joinCrew: async (code) => {
+      setNote("");
+      try {
+        await write("/join", { code });
+        await api.reload();
+        return true;
+      } catch (error) {
+        setNote(crewError(error));
+        return false;
+      }
+    },
+    onGuestAccept: () => setGuestAuthOpen(true),
+  });
+  const {
+    inviteCode,
+    invitePreview,
+    invitePreviewLoading,
+    invitePreviewError,
+    inviteJoinBusy,
+    clearInviteFlow,
+    acceptInvite,
+  } = inviteFlow;
   const guestNext = inviteCode ? `/field?invite=${encodeURIComponent(inviteCode)}` : "/field";
   const guest = useGuestEntryPrompt(user?.id, { enabled: !inviteCode, nextPath: guestNext });
   const flight = useRef(false);
@@ -175,112 +188,6 @@ const f=useFocusStyles();
     setName("");
     setCode("");
   }, [user?.id]);
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const raw = params.invite;
-      const fromParams = (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? "";
-      const fromStash = (await readPendingCrewInvite()) ?? "";
-      const merged = (fromParams || fromStash).toUpperCase();
-      if (cancelled) return;
-      if (!merged) {
-        setInviteCode("");
-        setInvitePreview(null);
-        setInvitePreviewError(null);
-        return;
-      }
-      await stashPendingCrewInvite(merged);
-      setInviteCode(merged);
-      if (fromParams) router.setParams({ invite: undefined });
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [params.invite, router]);
-
-  useEffect(() => {
-    if (!inviteCode) return;
-    let cancelled = false;
-    setInvitePreviewLoading(true);
-    setInvitePreviewError(null);
-    void fetch(`${mobileEnv.apiUrl}/api/crews/invite-preview?code=${encodeURIComponent(inviteCode)}`)
-      .then(async (response) => {
-        if (!response.ok) {
-          const body = await response.json().catch(() => null);
-          throw new Error(crewInvitePreviewErrorMessage(body?.error));
-        }
-        return response.json() as Promise<CrewInvitePreviewPayload>;
-      })
-      .then((payload) => {
-        if (!cancelled) setInvitePreview(payload);
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          setInvitePreview(null);
-          setInvitePreviewError(
-            error instanceof Error ? error.message : crewInvitePreviewErrorMessage(),
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setInvitePreviewLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [inviteCode]);
-
-  async function clearInviteFlow() {
-    await clearPendingCrewInvite();
-    await stashPendingCrewAccept(false);
-    setInviteCode("");
-    setInvitePreview(null);
-    setInvitePreviewError(null);
-    setInviteJoinBusy(false);
-  }
-
-  async function acceptInvite() {
-    if (!inviteCode) return;
-    if (!user) {
-      await stashPendingCrewAccept(true);
-      setGuestAuthOpen(true);
-      return;
-    }
-    setInviteJoinBusy(true);
-    setNote("");
-    try {
-      await write("/join", { code: inviteCode });
-      await clearInviteFlow();
-      await api.reload();
-    } catch (error) {
-      setNote(crewError(error));
-    } finally {
-      setInviteJoinBusy(false);
-    }
-  }
-
-  useEffect(() => {
-    if (!user || !inviteCode) return;
-    let cancelled = false;
-    void (async () => {
-      const pending = await readPendingCrewAccept();
-      if (!pending || cancelled) return;
-      await stashPendingCrewAccept(false);
-      setInviteJoinBusy(true);
-      try {
-        await write("/join", { code: inviteCode });
-        await clearInviteFlow();
-        await api.reload();
-      } catch (error) {
-        setNote(crewError(error));
-      } finally {
-        setInviteJoinBusy(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id, inviteCode]);
   useFocusEffect(
     useCallback(() => {
       void api.reload();
@@ -394,18 +301,33 @@ const f=useFocusStyles();
     `${formatDistanceM(meters, state?.units)} ${distanceUnitLabel(state?.units)}`;
   const memberTotal = (id: string) =>
     crewMemberWeekValue(entries, id, sessionsMetric);
-  function open(next: typeof panel) {
-    if (next === "members") { router.push({ pathname: "/crew-members", params: { crewId: crew.id } }); return; }
-    setNote("");
-    setName("");
-    setCode("");
-    if (next === "manage") {
-      const isSessions = crew.format === "personal_target" || crew.sport === "strength";
-      setEditSport((SPORTS.some((s) => s.id === crew.sport) ? crew.sport : "running") as SportId);
-      setEditFormat(isSessions ? "personal_target" : "cooperative");
-      setEditTarget(isSessions ? crew.target_sessions : crew.journey_km);
+  function requireCrewAccount(action: () => void) {
+    if (user) {
+      action();
+      return;
     }
-    setPanel(next);
+    setGuestAuthOpen(true);
+  }
+
+  function open(next: typeof panel) {
+    if (next === "members") {
+      requireCrewAccount(() => {
+        router.push({ pathname: "/crew-members", params: { crewId: crew.id } });
+      });
+      return;
+    }
+    requireCrewAccount(() => {
+      setNote("");
+      setName("");
+      setCode("");
+      if (next === "manage") {
+        const isSessions = crew.format === "personal_target" || crew.sport === "strength";
+        setEditSport((SPORTS.some((s) => s.id === crew.sport) ? crew.sport : "running") as SportId);
+        setEditFormat(isSessions ? "personal_target" : "cooperative");
+        setEditTarget(isSessions ? crew.target_sessions : crew.journey_km);
+      }
+      setPanel(next);
+    });
   }
   async function write(path: string, body: object, method?: string) {
     if (flight.current) return;
@@ -580,33 +502,20 @@ const f=useFocusStyles();
   if (membersOnly) return <>{membersView}{memberSheet}</>;
   return (
     <>
-      {inviteCode ? (
-        <>
-          {invitePreviewLoading ? (
-            <AppText role="body" secondary>
-              Loading your invitation…
-            </AppText>
-          ) : null}
-          {invitePreviewError ? (
-            <View style={f.section}>
-              <AppText role="heading">Invitation unavailable</AppText>
-              <AppText role="body" secondary>
-                {invitePreviewError}
-              </AppText>
-              <FocusButton label="Dismiss" secondary onPress={() => void clearInviteFlow()} />
-            </View>
-          ) : null}
-          {invitePreview ? (
-            <CrewInvitePreview
-              preview={invitePreview}
-              busy={inviteJoinBusy}
-              error={note || null}
-              onAccept={() => void acceptInvite()}
-              onDecline={() => void clearInviteFlow()}
-            />
-          ) : null}
-        </>
-      ) : null}
+      <CrewInviteLanding
+        inviteCode={inviteCode}
+        loading={invitePreviewLoading}
+        loadError={invitePreviewError}
+        preview={invitePreview}
+        joinBusy={inviteJoinBusy}
+        joinError={inviteCode && note ? note : null}
+        onAccept={() => {
+          setNote("");
+          void acceptInvite();
+        }}
+        onDecline={clearInviteFlow}
+        onDismissError={clearInviteFlow}
+      />
       {api.error ? (
         <FocusButton
           label="Refresh crews"
@@ -625,12 +534,7 @@ const f=useFocusStyles();
             Private crews share a week of effort, member standings and
             an optional shared field.
           </AppText>
-          <FocusButton
-            label={user ? "Create or join a crew" : "View account"}
-            onPress={() =>
-              user ? open("add") : router.navigate("/athlete")
-            }
-          />
+          <FocusButton label="Create or join a crew" onPress={() => open("add")} />
           {!user ? (
             <AppText role="caption" secondary >
               Sign in to create or join a private crew.
@@ -665,7 +569,7 @@ const f=useFocusStyles();
         onDismiss={() => {
           if (!createAfterSwitch.current) return;
           createAfterSwitch.current = false;
-          open("add");
+          requireCrewAccount(() => open("add"));
         }}
         menuLayout={switcherMenu.menuLayout}
         accessibilityLabel="Close crew menu"
