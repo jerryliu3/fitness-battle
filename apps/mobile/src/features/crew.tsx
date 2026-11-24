@@ -28,7 +28,18 @@ import {
   crewTargetSpec,
   crewInviteHttpsUrl,
   PUBLIC_SHARE_ORIGIN,
+  type CrewInvitePreviewPayload,
 } from "@fitness-battle/shared";
+import { CrewInvitePreview } from "./crew-invite-preview";
+import { GuestEntrySheet } from "./guest-entry-sheet";
+import {
+  clearPendingCrewInvite,
+  readPendingCrewAccept,
+  readPendingCrewInvite,
+  stashPendingCrewAccept,
+  stashPendingCrewInvite,
+  useGuestEntryPrompt,
+} from "../lib/guest-entry";
 import { Chip, ChipRow } from "../ui/chip";
 import { NumberStepper } from "../ui/number-stepper";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -144,6 +155,14 @@ const f=useFocusStyles();
   const [editTarget, setEditTarget] = useState<number>(40);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+  const [invitePreview, setInvitePreview] = useState<CrewInvitePreviewPayload | null>(null);
+  const [invitePreviewLoading, setInvitePreviewLoading] = useState(false);
+  const [invitePreviewError, setInvitePreviewError] = useState<string | null>(null);
+  const [inviteJoinBusy, setInviteJoinBusy] = useState(false);
+  const [guestAuthOpen, setGuestAuthOpen] = useState(false);
+  const guestNext = inviteCode ? `/field?invite=${encodeURIComponent(inviteCode)}` : "/field";
+  const guest = useGuestEntryPrompt(user?.id, { enabled: !inviteCode, nextPath: guestNext });
   const flight = useRef(false);
   const owner = useRef(user?.id);
   owner.current = user?.id;
@@ -156,14 +175,113 @@ const f=useFocusStyles();
     setCode("");
   }, [user?.id]);
   useEffect(() => {
-    const raw = params.invite;
-    const invite = (Array.isArray(raw) ? raw[0] : raw)?.trim();
-    if (!invite || !api.live) return;
+    let cancelled = false;
+    void (async () => {
+      const raw = params.invite;
+      const fromParams = (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? "";
+      const fromStash = (await readPendingCrewInvite()) ?? "";
+      const merged = (fromParams || fromStash).toUpperCase();
+      if (cancelled) return;
+      if (!merged) {
+        setInviteCode("");
+        setInvitePreview(null);
+        setInvitePreviewError(null);
+        return;
+      }
+      await stashPendingCrewInvite(merged);
+      setInviteCode(merged);
+      if (fromParams) router.setParams({ invite: undefined });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [params.invite, router]);
+
+  useEffect(() => {
+    if (!inviteCode) return;
+    let cancelled = false;
+    setInvitePreviewLoading(true);
+    setInvitePreviewError(null);
+    void fetch(`${mobileEnv.apiUrl}/api/crews/invite-preview?code=${encodeURIComponent(inviteCode)}`)
+      .then(async (response) => {
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          throw new Error(
+            body?.error === "invite_not_found"
+              ? "We couldn't find a crew with that invite code."
+              : "Could not load this invitation.",
+          );
+        }
+        return response.json() as Promise<CrewInvitePreviewPayload>;
+      })
+      .then((payload) => {
+        if (!cancelled) setInvitePreview(payload);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setInvitePreview(null);
+          setInvitePreviewError(error instanceof Error ? error.message : "Could not load this invitation.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setInvitePreviewLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [inviteCode]);
+
+  async function clearInviteFlow() {
+    await clearPendingCrewInvite();
+    await stashPendingCrewAccept(false);
+    setInviteCode("");
+    setInvitePreview(null);
+    setInvitePreviewError(null);
+    setInviteJoinBusy(false);
+  }
+
+  async function acceptInvite() {
+    if (!inviteCode) return;
+    if (!user) {
+      await stashPendingCrewAccept(true);
+      setGuestAuthOpen(true);
+      return;
+    }
+    setInviteJoinBusy(true);
     setNote("");
-    setCode(invite.toUpperCase());
-    setPanel("add");
-    router.setParams({ invite: undefined });
-  }, [params.invite, api.live, router]);
+    try {
+      await write("/join", { code: inviteCode });
+      await clearInviteFlow();
+      await api.reload();
+    } catch (error) {
+      setNote(crewError(error));
+    } finally {
+      setInviteJoinBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!user || !inviteCode) return;
+    let cancelled = false;
+    void (async () => {
+      const pending = await readPendingCrewAccept();
+      if (!pending || cancelled) return;
+      await stashPendingCrewAccept(false);
+      setInviteJoinBusy(true);
+      try {
+        await write("/join", { code: inviteCode });
+        await clearInviteFlow();
+        await api.reload();
+      } catch (error) {
+        setNote(crewError(error));
+      } finally {
+        setInviteJoinBusy(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, inviteCode]);
   useFocusEffect(
     useCallback(() => {
       void api.reload();
@@ -463,6 +581,33 @@ const f=useFocusStyles();
   if (membersOnly) return <>{membersView}{memberSheet}</>;
   return (
     <>
+      {inviteCode ? (
+        <>
+          {invitePreviewLoading ? (
+            <AppText role="body" secondary>
+              Loading your invitation…
+            </AppText>
+          ) : null}
+          {invitePreviewError ? (
+            <View style={f.section}>
+              <AppText role="heading">Invitation unavailable</AppText>
+              <AppText role="body" secondary>
+                {invitePreviewError}
+              </AppText>
+              <FocusButton label="Dismiss" secondary onPress={() => void clearInviteFlow()} />
+            </View>
+          ) : null}
+          {invitePreview ? (
+            <CrewInvitePreview
+              preview={invitePreview}
+              busy={inviteJoinBusy}
+              error={note || null}
+              onAccept={() => void acceptInvite()}
+              onDecline={() => void clearInviteFlow()}
+            />
+          ) : null}
+        </>
+      ) : null}
       {api.error ? (
         <FocusButton
           label="Refresh crews"
@@ -470,7 +615,8 @@ const f=useFocusStyles();
           onPress={() => void api.reload()}
         />
       ) : null}
-      {solo ? (
+      {!inviteCode ? (
+        solo ? (
         <SectionStack divided={false}>
         <ImageBackground source={alpineTrail} style={{height:200,justifyContent:"flex-end",padding:22,borderRadius:20,overflow:"hidden",backgroundColor:c.fieldDeep}}><View style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3670"}]}/><AppText accessibilityRole="header" role="display" style={{ color: c.textOnFeature }}>Stronger together.</AppText><AppText role="body" secondary style={{ color: c.textOnFeature }}>A place for every pace.</AppText></ImageBackground>
         <View style={f.section}>
@@ -493,7 +639,7 @@ const f=useFocusStyles();
           ) : null}
         </View>
         </SectionStack>
-      ) : (
+        ) : (
         <SectionStack divided={false}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 4 }}>
               <View ref={switcherMenu.anchorRef} collapsable={false} style={{ flex: 1, minWidth: 0 }}>
@@ -509,7 +655,8 @@ const f=useFocusStyles();
           </View>
           <CrewOverview crewId={crew.id} crewName={crew.name} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} displayTimeZone={state ? accountTimeZone(state) : undefined} hiddenIds={hiddenIds} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => open("members")} />
         </SectionStack>
-      )}
+        )
+      ) : null}
       <AnchoredMenu
         open={switcherMenu.open}
         onClose={() => {
@@ -555,7 +702,7 @@ const f=useFocusStyles();
           {formatNoticeUnits(n.body, state?.units)}
         </AppText>
       ))}
-      {!user ? (
+      {!user && !inviteCode ? (
         <>
           <View style={f.section}>
             <Text style={f.kicker}>What crews unlock</Text>
@@ -796,6 +943,19 @@ const f=useFocusStyles();
           </AppText>
         ) : null}
       </FocusSheet>
+      <GuestEntrySheet
+        open={guest.open || guestAuthOpen}
+        reason={
+          inviteCode
+            ? `Join this crew with invite code ${inviteCode}.`
+            : "Sign in to create or join a private crew."
+        }
+        nextPath={guestNext}
+        onClose={() => {
+          guest.dismiss();
+          setGuestAuthOpen(false);
+        }}
+      />
     </>
   );
 }

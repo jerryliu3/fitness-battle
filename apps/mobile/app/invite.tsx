@@ -9,5 +9,5 @@ export default function CrewInvite() {
 
   if (pending || required) return null;
   if (!invite) return <Redirect href="/field" />;
-  return <Redirect href={{ pathname: user ? "/field" : "/welcome", params: { invite } }} />;
+  return <Redirect href={{ pathname: "/field", params: { invite } }} />;
 }

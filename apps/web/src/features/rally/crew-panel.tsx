@@ -32,7 +32,9 @@ import {
   crewMemberWeekValue,
   crewLineup,
   crewTargetSpec,
+  type CrewInvitePreviewPayload,
 } from "@fitness-battle/shared";
+import { CrewInvitePreview } from "./crew-invite-preview";
 import { NumberStepper } from "@/ui/number-stepper";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -41,7 +43,9 @@ import { GuestEntrySheet } from "@/components/guest-entry-sheet";
 import { OpenInAppBanner } from "@/components/open-in-app-banner";
 import {
   clearPendingCrewInvite,
+  readPendingCrewAccept,
   readPendingCrewInvite,
+  stashPendingCrewAccept,
   stashPendingCrewInvite,
   useGuestEntryPrompt,
 } from "@/lib/guest-entry";
@@ -121,8 +125,14 @@ export function CrewPanel() {
   const inviteParam = searchParams.get("invite")?.trim() ?? "";
   const fieldDestination = inviteParam ? crewInviteWebDestination(inviteParam) : "/app/field";
   const guestNextPath = fieldDestination;
+  const [inviteCode, setInviteCode] = useState("");
+  const [invitePreview, setInvitePreview] = useState<CrewInvitePreviewPayload | null>(null);
+  const [invitePreviewLoading, setInvitePreviewLoading] = useState(false);
+  const [invitePreviewError, setInvitePreviewError] = useState<string | null>(null);
+  const [inviteJoinBusy, setInviteJoinBusy] = useState(false);
+  const [pendingAutoJoin, setPendingAutoJoin] = useState(() => readPendingCrewAccept());
   const guest = useGuestEntryPrompt({
-    enabled: true,
+    enabled: !inviteCode,
     nextPath: guestNextPath,
     reason: inviteParam
       ? `Use invite code ${inviteParam.toUpperCase()} after you sign in to join this crew.`
@@ -168,29 +178,94 @@ export function CrewPanel() {
   }, [user?.id, offlineMode]);
 
   useEffect(() => {
-    const invite = searchParams.get("invite")?.trim();
-  if (invite) stashPendingCrewInvite(invite);
-    if (!invite || offlineMode) return;
-    setCode(invite.toUpperCase());
-    if (user) {
-      setPanel("add");
+    const fromUrl = searchParams.get("invite")?.trim() ?? "";
+    const fromStash = readPendingCrewInvite() ?? "";
+    const merged = (fromUrl || fromStash).toUpperCase();
+    if (!merged) {
+      setInviteCode("");
+      setInvitePreview(null);
+      setInvitePreviewError(null);
+      return;
+    }
+    stashPendingCrewInvite(merged);
+    setInviteCode(merged);
+    if (fromUrl) {
       const next = new URLSearchParams(searchParams.toString());
       next.delete("invite");
       const qs = next.toString();
-      const cleaned = qs ? `${path}?${qs}` : path;
-      router.replace(cleaned, { scroll: false });
-      clearPendingCrewInvite();
+      router.replace(qs ? `${path}?${qs}` : path, { scroll: false });
     }
-  }, [searchParams, user, offlineMode, router, path]);
+  }, [searchParams, router, path]);
 
   useEffect(() => {
-    if (!user || offlineMode) return;
-    const pending = readPendingCrewInvite();
-    if (!pending) return;
-    setCode(pending);
-    setPanel("add");
+    if (!inviteCode || offlineMode) return;
+    let cancelled = false;
+    setInvitePreviewLoading(true);
+    setInvitePreviewError(null);
+    void fetch(`/api/crews/invite-preview?code=${encodeURIComponent(inviteCode)}`)
+      .then(async (response) => {
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          throw new Error(
+            body?.error === "invite_not_found"
+              ? "We couldn't find a crew with that invite code."
+              : "Could not load this invitation.",
+          );
+        }
+        return response.json() as Promise<CrewInvitePreviewPayload>;
+      })
+      .then((payload) => {
+        if (!cancelled) setInvitePreview(payload);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setInvitePreview(null);
+          setInvitePreviewError(error instanceof Error ? error.message : "Could not load this invitation.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setInvitePreviewLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [inviteCode, offlineMode]);
+
+  function clearInviteFlow() {
     clearPendingCrewInvite();
-  }, [user?.id, offlineMode]);
+    stashPendingCrewAccept(false);
+    setPendingAutoJoin(false);
+    setInviteCode("");
+    setInvitePreview(null);
+    setInvitePreviewError(null);
+    setInviteJoinBusy(false);
+  }
+
+  async function acceptInvite() {
+    if (!inviteCode) return;
+    if (!user) {
+      stashPendingCrewAccept(true);
+      setPendingAutoJoin(true);
+      setGuestAuthOpen(true);
+      return;
+    }
+    setInviteJoinBusy(true);
+    setNote("");
+    const ok = await write("/join", { code: inviteCode });
+    setInviteJoinBusy(false);
+    if (ok) clearInviteFlow();
+  }
+
+  useEffect(() => {
+    if (!user || offlineMode || !pendingAutoJoin || !inviteCode) return;
+    stashPendingCrewAccept(false);
+    setPendingAutoJoin(false);
+    setInviteJoinBusy(true);
+    void write("/join", { code: inviteCode }).then((ok) => {
+      setInviteJoinBusy(false);
+      if (ok) clearInviteFlow();
+    });
+  }, [user?.id, offlineMode, pendingAutoJoin, inviteCode]);
 
   async function write(path: string, body: object, method = "POST"): Promise<boolean> {
     setBusy(true);
@@ -392,7 +467,38 @@ export function CrewPanel() {
         </section>
       )}
 
-      {(!user || offlineMode || data) && (
+      {inviteCode ? (
+        <>
+          {invitePreviewLoading ? (
+            <AppParagraph typographyRole="body" className="fb-copy">
+              Loading your invitation…
+            </AppParagraph>
+          ) : null}
+          {invitePreviewError ? (
+            <section className="focus-card">
+              <AppHeading level={2} role="heading">
+                Invitation unavailable
+              </AppHeading>
+              <AppParagraph typographyRole="body" className="fb-copy" style={{ marginBottom: 16 }}>
+                {invitePreviewError}
+              </AppParagraph>
+              <button type="button" className="fb-btn-line" onClick={clearInviteFlow}>
+                Dismiss
+              </button>
+            </section>
+          ) : null}
+          {invitePreview ? (
+            <CrewInvitePreview
+              preview={invitePreview}
+              busy={inviteJoinBusy}
+              error={isCrewErrorNote(note) ? note : null}
+              onAccept={() => void acceptInvite()}
+              onDecline={clearInviteFlow}
+            />
+          ) : null}
+        </>
+      ) : null}
+      {(!user || offlineMode || data) && !inviteCode && (
         <>
           <header className="crew-header">
             <div className="crew-header-main">
@@ -409,7 +515,7 @@ export function CrewPanel() {
               setPanel("manage");
             })}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.settings} /></svg></button></div>
           </header>
-          {!isSolo ? <CrewOverview crewId={crew.id} crewName={crew.name} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} displayTimeZone={state ? accountTimeZone(state) : undefined} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => setPanel("members")} /> : user ? <section className="focus-card"><AppHeading level={2} role="display">Make room for your people.</AppHeading><button type="button" className="fb-btn" onClick={() => setPanel("add")}>Create or join a crew</button></section> : null}
+          {!isSolo ? <CrewOverview crewId={crew.id} crewName={crew.name} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} displayTimeZone={state ? accountTimeZone(state) : undefined} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => requireCrewAccount(() => setPanel("members"))} /> : user ? <section className="focus-card"><AppHeading level={2} role="display">Make room for your people.</AppHeading><button type="button" className="fb-btn" onClick={() => requireCrewAccount(() => setPanel("add"))}>Create or join a crew</button></section> : null}
         </>
       )}
       {!panel && note && (
@@ -425,7 +531,7 @@ export function CrewPanel() {
           {formatNoticeUnits(n.body, state?.units)}
         </AppParagraph>
       ))}
-      {!user && (
+      {!user && !inviteCode && (
         <div className="focus-crew-preview" style={{ marginBottom: 28 }}>
           <section className="focus-card">
             <AppParagraph typographyRole="label" className="fb-kicker">What crews unlock</AppParagraph>
@@ -596,7 +702,7 @@ export function CrewPanel() {
               </AppParagraph>
               <button
                 className="fb-btn"
-                onClick={() => setPanel("add")}
+                onClick={() => requireCrewAccount(() => setPanel("add"))}
               >
                 Create crew ＋
               </button>
@@ -641,7 +747,7 @@ export function CrewPanel() {
             </AppParagraph>
             <button
               className="fb-btn"
-              onClick={() => setPanel("add")}
+              onClick={() => requireCrewAccount(() => setPanel("add"))}
             >
               Create shared crew ＋
             </button>

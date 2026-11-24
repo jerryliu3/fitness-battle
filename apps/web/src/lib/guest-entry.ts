@@ -4,6 +4,26 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 
 export const PENDING_CREW_INVITE_KEY = "fb:pending-crew-invite:v1";
+export const PENDING_CREW_ACCEPT_KEY = "fb:pending-crew-accept:v1";
+
+export function readPendingCrewAccept(): boolean {
+  if (typeof sessionStorage === "undefined") return false;
+  try {
+    return sessionStorage.getItem(PENDING_CREW_ACCEPT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function stashPendingCrewAccept(pending: boolean) {
+  if (typeof sessionStorage === "undefined") return;
+  try {
+    if (pending) sessionStorage.setItem(PENDING_CREW_ACCEPT_KEY, "1");
+    else sessionStorage.removeItem(PENDING_CREW_ACCEPT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 const DISMISS_PREFIX = "fb:guest-entry-dismiss:v1:";
 
 function dismissKey(path: string) {

@@ -14,6 +14,7 @@ export * from "./phone-views";
 export * from "./shell";
 export * from "./product-routes";
 export * from "./share-links";
+export * from "./crew-invite-preview";
 export * from "./types";
 
 export * from "./layout-concepts";

@@ -1,0 +1,46 @@
+.crew-invite-preview {
+  display: grid;
+  gap: 16px;
+}
+
+.crew-invite-bar {
+  position: sticky;
+  top: max(8px, env(safe-area-inset-top));
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  box-shadow: 0 10px 32px #142b3b16;
+  backdrop-filter: blur(10px);
+}
+
+.crew-invite-bar-kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.crew-invite-bar-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.crew-invite-bar-actions .fb-btn,
+.crew-invite-bar-actions .fb-btn-line {
+  min-height: 40px;
+  padding-inline: 14px;
+}
+
+.crew-invite-member-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}

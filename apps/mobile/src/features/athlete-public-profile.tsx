@@ -21,6 +21,9 @@ import { AchievementMeter } from "./achievement-meter";
 import { useAchievementTileStyle } from "./achievements-catalog";
 import { AwardShelf } from "../ui/award-shelf";
 import { useAuth } from "../lib/auth";
+import { GuestEntrySheet } from "./guest-entry-sheet";
+import { useGuestEntryPrompt } from "../lib/guest-entry";
+import { publicAthleteNativePath } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { requestApi } from "../lib/api";
 import { supabase } from "../lib/supabase";
@@ -65,6 +68,10 @@ export function AthletePublicProfileScreen() {
 
   const athleteId = typeof params.id === "string" ? params.id : "";
   const isSelf = Boolean(user?.id && athleteId && user.id === athleteId);
+  const guest = useGuestEntryPrompt(user?.id, {
+    enabled: !isSelf && Boolean(athleteId),
+    nextPath: publicAthleteNativePath(athleteId),
+  });
   const [loading, setLoading] = useState(!isSelf);
   const [error, setError] = useState<string | null>(null);
   const [remote, setRemote] = useState<PublicProfilePayload | null>(null);
@@ -281,6 +288,12 @@ export function AthletePublicProfileScreen() {
           ) : null}
         </SectionStack>
       </ScrollView>
+      <GuestEntrySheet
+        open={guest.open}
+        reason="Sign in to follow athletes and join them on the field."
+        nextPath={publicAthleteNativePath(athleteId)}
+        onClose={guest.dismiss}
+      />
     </SafeAreaView>
   );
 }

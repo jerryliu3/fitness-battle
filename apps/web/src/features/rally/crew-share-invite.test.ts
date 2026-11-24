@@ -12,5 +12,6 @@ describe("crew invites", () => {
     expect(source).toMatch(/next\.delete\("invite"\)/);
     expect(source).toMatch(/Copy invite link/);
     expect(source).toMatch(/crewInviteHttpsUrl/);
+    expect(source).toMatch(/CrewInvitePreview/);
   });
 });
