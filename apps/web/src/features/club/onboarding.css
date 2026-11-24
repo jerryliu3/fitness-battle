@@ -1,38 +1,315 @@
-.onboarding { position: relative; width: 100%; max-width: 520px; margin: 0 auto; padding: 20px 0 32px; scroll-margin-top: 24px; }
-.onboarding-progress { display: flex; gap: 5px; }
-.onboarding-progress span { flex: 1; height: 3px; border-radius: 8px; background: var(--line); }
-.onboarding-progress [data-complete="true"] { background: var(--action-primary); }
-.onboarding-sports { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.onboarding-sport { min-height: 142px; border: 1px solid var(--line); border-radius: 20px; background: var(--card); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font: inherit; cursor: pointer; }
-.onboarding-sport[aria-pressed="true"] { border: 2px solid var(--ink); background: var(--action-soft); }
-.onboarding-sport-emoji { display: inline-block; font: var(--type-display); line-height: var(--type-display-leading); transform: scale(3.6); }
-.onboarding-sport-emoji[data-mirror="true"] { transform: scale(3.6) scaleX(-1); }
-.onboarding-weekly-volume { display: flex; align-items: center; gap: 12px; }
-.onboarding-weekly-volume-label { flex: 1; margin: 0; font: var(--type-caption); }
-.onboarding-weekly-volume-input { width: 80px; }
-.onboarding-actions { display: flex; gap: 12px; align-items: center; }
-.onboarding-actions > .fb-btn { flex: 1; }
-.onboarding-actions:empty { display: none; }
-.onboarding-score { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.onboarding-score strong { font: var(--type-display); }
+/* Web onboarding chrome (apps/web only). Mobile native mirrors layout in apps/mobile/app/welcome.tsx. */
+
+.onboarding {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 0 0 32px;
+  scroll-margin-top: 24px;
+}
+
+.onboarding-progress {
+  display: flex;
+  gap: 5px;
+}
+
+.onboarding-progress span {
+  flex: 1;
+  height: 3px;
+  border-radius: 8px;
+  background: var(--line, var(--app-border-subtle));
+}
+
+.onboarding-progress [data-complete="true"] {
+  background: var(--action-primary, var(--app-action-primary));
+}
+
+.onboarding-sports {
+  /* Matches packages/shared ONBOARDING_SPORT_EMOJI_SCALE. */
+  --onboarding-sport-emoji-scale: 2.331;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.onboarding-sport {
+  position: relative;
+  min-height: 182px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  background: var(--card, var(--app-surface-card));
+  color: var(--ink, var(--app-text-primary));
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  text-align: center;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink, var(--app-text-primary)) 10%, transparent);
+}
+
+.onboarding-sport[aria-pressed="true"] {
+  border-color: var(--ink, var(--app-text-primary));
+  box-shadow: none;
+}
+
+.onboarding-sport:focus-visible {
+  outline: 2px solid var(--app-focus-ring);
+  outline-offset: 2px;
+}
+
+.onboarding-sport-emoji {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  display: block;
+  font: var(--type-display);
+  line-height: 1;
+  transform: translate(-50%, -50%) scale(var(--onboarding-sport-emoji-scale));
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.onboarding-sport-emoji[data-mirror="true"] {
+  transform: translate(-50%, -50%) scale(var(--onboarding-sport-emoji-scale)) scaleX(-1);
+}
+
+.onboarding-sport-label,
+.onboarding-sport > strong {
+  position: absolute;
+  inset: auto 0 12px;
+  z-index: 1;
+  margin: 0;
+  padding: 0 12px;
+  font: var(--type-label);
+  text-align: center;
+}
+
+.onboarding-weekly-volume {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.onboarding-weekly-volume-label {
+  flex: 1 1 180px;
+  margin: 0;
+  font: var(--type-caption);
+}
+
+.onboarding-weekly-volume-input {
+  width: 80px;
+}
+
+.onboarding-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.onboarding-actions > .fb-btn {
+  flex: 1;
+}
+
+.onboarding-actions:empty {
+  display: none;
+}
+
+.onboarding-score {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.onboarding-score strong {
+  font: var(--type-display);
+}
 
 /* Interactive feature discovery, with no account or health data access. */
-.onboarding-feature-tabs { display: flex; border: 1px solid var(--line); border-radius: 999px; background: var(--soft); padding: 4px; gap: 2px; }
-.onboarding-feature-tabs button { flex: 1; min-width: 0; min-height: 44px; padding: 8px 5px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: var(--type-label); cursor: pointer; }
-.onboarding-feature-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
+.onboarding-features {
+  width: 100%;
+  min-width: 0;
+}
 
-.onboarding-account { display: grid; gap: 18px; }
+.onboarding-feature-tabs {
+  display: flex;
+  border: 1px solid var(--line, var(--app-border-subtle));
+  border-radius: 999px;
+  background: var(--soft, var(--app-soft));
+  padding: 4px;
+  gap: 2px;
+}
 
-.onboarding-heading { display:flex; align-items:center; gap:16px; }
-.onboarding-heading > h1 { flex:1; min-width:0; }
-.onboarding-heading[data-compact="true"] > h1 { font-size:var(--type-heading-size); line-height:var(--type-heading-leading); font-weight:var(--type-heading-weight); }
-.onboarding-persistent-card { position:absolute; top:0; left:0; width:320px; height:430px; z-index:30; }
-.onboarding-card-slot-small { width:116px; height:156px; flex:0 0 116px; margin-left:auto; }
-.onboarding-card-slot-large, .onboarding-card-slot-save { width:280px; height:380px; align-self:center; }
-.onboarding-photo { position:relative; cursor:pointer; text-align:center; }
-.onboarding-photo input { position:absolute; inset:0; opacity:0; width:100%; cursor:pointer; }
+.onboarding-feature-tabs button {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 5px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink, var(--app-text-primary));
+  font: var(--type-label);
+  cursor: pointer;
+}
 
-.onboarding-photo-row { display:flex; align-items:center; gap:16px; }
-.onboarding-photo-row > .onboarding-photo { flex:1; background:var(--card); color:var(--ink); border:1px solid var(--line); }
-.onboarding-remove-photo { border:0; background:transparent; color:var(--ink); font:inherit; cursor:pointer; min-height:44px; padding:0; }
-.onboarding-photo:focus-within { outline:2px solid var(--app-focus-ring); outline-offset:3px; }
+.onboarding-feature-tabs button[aria-pressed="true"] {
+  background: var(--ink, var(--app-text-primary));
+  color: var(--card, var(--app-surface-card));
+}
+
+.onboarding-feature-tabs button:focus-visible {
+  outline: 2px solid var(--app-focus-ring);
+  outline-offset: 1px;
+}
+
+.onboarding-units {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.onboarding-units-toggle {
+  position: relative;
+  display: flex;
+  width: min(210px, 100%);
+  padding: 4px;
+  border-radius: 24px;
+  background: var(--soft, var(--app-soft));
+  border: 1px solid var(--line, var(--app-border-subtle));
+}
+
+.onboarding-units-thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 20px;
+  background: var(--ink, var(--app-text-primary));
+}
+
+.onboarding-profile-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .onboarding-profile-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.onboarding-account {
+  display: grid;
+  gap: 18px;
+}
+
+.onboarding-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.onboarding-heading > h1 {
+  flex: 1;
+  min-width: 0;
+}
+
+.onboarding-heading[data-compact="true"] > h1 {
+  font-size: var(--type-heading-size);
+  line-height: var(--type-heading-leading);
+  font-weight: var(--type-heading-weight);
+}
+
+.onboarding-persistent-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 320px;
+  height: 430px;
+  z-index: 30;
+  pointer-events: none;
+  max-width: calc(100% - 8px);
+}
+
+.onboarding-card-slot-small {
+  width: 116px;
+  height: 156px;
+  flex: 0 0 116px;
+  margin-left: auto;
+}
+
+.onboarding-card-slot-large,
+.onboarding-card-slot-save {
+  width: min(280px, 100%);
+  height: 380px;
+  align-self: center;
+}
+
+.onboarding-photo {
+  position: relative;
+  cursor: pointer;
+  text-align: center;
+}
+
+.onboarding-photo input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  cursor: pointer;
+}
+
+.onboarding-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.onboarding-photo-row > .onboarding-photo {
+  flex: 1 1 200px;
+  background: var(--card, var(--app-surface-card));
+  color: var(--ink, var(--app-text-primary));
+  border: 1px solid var(--line, var(--app-border-subtle));
+}
+
+.onboarding-remove-photo {
+  border: 0;
+  background: transparent;
+  color: var(--ink, var(--app-text-primary));
+  font: inherit;
+  cursor: pointer;
+  min-height: 44px;
+  padding: 0;
+}
+
+.onboarding-photo:focus-within {
+  outline: 2px solid var(--app-focus-ring);
+  outline-offset: 3px;
+}
+
+.onboarding .fb-btn-ghost {
+  text-align: center;
+  justify-self: center;
+}
+
+@media (max-width: 380px) {
+  .onboarding-sports {
+    gap: 10px;
+  }
+
+  .onboarding-sport {
+    min-height: 168px;
+  }
+
+  .onboarding-card-slot-large,
+  .onboarding-card-slot-save {
+    height: min(380px, calc(100vw - 64px) * (380 / 280));
+  }
+}
