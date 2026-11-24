@@ -49,7 +49,10 @@ export function useCrewInviteFlow({
         return;
       }
       await stashPendingCrewInvite(merged);
-      setInviteCode(merged);
+      setInviteCode((prev) => {
+        if (prev && prev !== merged) void stashPendingCrewAccept(false);
+        return merged;
+      });
       if (fromParams) router.setParams({ invite: undefined });
     })();
     return () => {

@@ -14,12 +14,8 @@ export function InviteClient({ code }: { code: string }) {
 
   useEffect(() => {
     if (loading) return;
-    if (user) {
-      router.replace(destination);
-      return;
-    }
     router.replace(destination);
-  }, [destination, loading, router, user]);
+  }, [destination, loading, router]);
 
   return <OpenInAppBanner nativePath={nativePath} label="Open invite" />;
 }

@@ -44,7 +44,10 @@ export function useCrewInviteFlow({
       return;
     }
     stashPendingCrewInvite(merged);
-    setInviteCode(merged);
+    setInviteCode((prev) => {
+      if (prev && prev !== merged) stashPendingCrewAccept(false);
+      return merged;
+    });
     if (fromUrl) {
       const next = new URLSearchParams(searchParams.toString());
       next.delete("invite");

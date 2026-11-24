@@ -1,13 +1,23 @@
 import { Redirect, useLocalSearchParams } from "expo-router";
-import { useAuth } from "../src/lib/auth";
+import { useEffect } from "react";
+import { stashPendingCrewInvite } from "../src/lib/guest-entry";
 import { useOnboardingRequired } from "../src/lib/onboarding-navigation";
 
 export default function CrewInvite() {
-  const { invite } = useLocalSearchParams<{ invite?: string }>();
-  const { user } = useAuth();
+  const { invite } = useLocalSearchParams<{ invite?: string | string[] }>();
+  const code = (Array.isArray(invite) ? invite[0] : invite)?.trim().toUpperCase() ?? "";
   const { pending, required } = useOnboardingRequired();
 
-  if (pending || required) return null;
-  if (!invite) return <Redirect href="/field" />;
-  return <Redirect href={{ pathname: "/field", params: { invite } }} />;
+  useEffect(() => {
+    if (code) void stashPendingCrewInvite(code);
+  }, [code]);
+
+  if (!code) return <Redirect href="/field" />;
+  if (pending) return null;
+
+  if (required) {
+    return <Redirect href={{ pathname: "/welcome", params: { invite: code } }} />;
+  }
+
+  return <Redirect href={{ pathname: "/field", params: { invite: code } }} />;
 }
