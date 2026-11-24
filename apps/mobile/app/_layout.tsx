@@ -29,13 +29,15 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Platform, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
-// Registers the foreground notification handler.
+// Registers the foreground notification handler and background health sync task.
 import "../src/lib/expo-push-register";
+import { registerBackgroundHealthSync } from "../src/lib/background-health-sync";
 import { AthleteBlocksProvider, useAthleteBlocks } from "../src/lib/athlete-blocks";
 import { AuthProvider, useAuth } from "../src/lib/auth";
 import {
   CompeteProvider,
   useCompeteFieldRefresh,
+  useCompeteStore,
 } from "../src/lib/compete-store";
 import { shellTabFromPath } from "@fitness-battle/shared";
 
@@ -61,6 +63,16 @@ const SHELL_COLORS=useThemeColors();
 function LiveFieldRefresh() {
   const tab = shellTabFromPath(usePathname());
   useCompeteFieldRefresh(tab?.id === "today" || tab?.id === "arena" || tab?.id === "field");
+  return null;
+}
+
+function BackgroundHealthSync() {
+  const { user, offlineMode } = useAuth();
+  const { state } = useCompeteStore();
+  useEffect(() => {
+    if (!user || offlineMode || !state?.onboardingCompleted) return;
+    void registerBackgroundHealthSync();
+  }, [user?.id, offlineMode, state?.onboardingCompleted]);
   return null;
 }
 
@@ -195,6 +207,7 @@ const SHELL_COLORS=useThemeColors();
                         <NotificationNavigation />
                         <BlockPrivacyGate>
                           <LiveFieldRefresh />
+                          <BackgroundHealthSync />
                           <NavigationWarmup />
                           <OnboardingNavigation />
                           <StatusBar style={mode === "dark" ? "light" : "dark"} />
