@@ -521,7 +521,7 @@ const f=useFocusStyles();
                   onPress={() => setLeadersCollapsed(true)}
                   style={{ width: 28, height: 28, alignItems: "center", justifyContent: "center" }}
                 >
-                  <Text style={{ ...textStyle("label"), color: hud.ink, fontSize: 18, lineHeight: 20 }}>×</Text>
+                  <AppText role="caption" style={{ color: hud.ink }}>×</AppText>
                 </Pressable>
               </View>
               {coursePositionLeaders(ranked).map((peer, idx) => {

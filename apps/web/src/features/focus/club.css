@@ -1772,14 +1772,17 @@
   color: var(--map-hud-muted, rgba(255, 255, 255, 0.6));
 }
 .focus-broadcast-tower-dismiss {
+  display: grid;
+  place-items: center;
   width: 28px;
   height: 28px;
   border: 0;
   border-radius: 999px;
   background: transparent;
   color: var(--map-hud-ink, var(--app-white));
+  letter-spacing: normal;
+  text-transform: none;
   font: var(--type-label);
-  line-height: 1;
   cursor: pointer;
 }
 .focus-broadcast-tower-row {
