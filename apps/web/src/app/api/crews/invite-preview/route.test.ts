@@ -34,13 +34,21 @@ describe("crew invite preview", () => {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockResolvedValue({
-        data: [{ user_id: "u1", display_name: "Alex", profiles: { avatar_url: null } }],
+        data: [{ user_id: "u1", display_name: "Alex" }],
+        error: null,
+      }),
+    };
+    const profilesQuery = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({
+        data: [{ id: "u1", avatar_url: null }],
         error: null,
       }),
     };
     stubs.from
       .mockImplementationOnce(() => crewQuery)
-      .mockImplementationOnce(() => memberQuery);
+      .mockImplementationOnce(() => memberQuery)
+      .mockImplementationOnce(() => profilesQuery);
     stubs.db.mockReturnValue({ from: stubs.from });
   });
 
