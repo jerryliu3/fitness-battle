@@ -16,7 +16,7 @@ describe("crew invite preview", () => {
     vi.clearAllMocks();
     const crewQuery = {
       select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
+      ilike: vi.fn().mockReturnThis(),
       maybeSingle: vi.fn().mockResolvedValue({
         data: {
           id: "crew-1",

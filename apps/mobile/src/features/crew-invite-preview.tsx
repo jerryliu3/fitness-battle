@@ -12,21 +12,17 @@ import {
 } from "@fitness-battle/shared";
 import { UserAvatar } from "../ui/user-avatar";
 import { AppText } from "../ui/section";
-import { FocusButton, useFocusStyles } from "../ui/focus";
+import { useFocusStyles } from "../ui/focus";
 import { CrewOverview } from "./crew-overview";
 
 export function CrewInvitePreview({
   preview,
-  busy,
   error,
-  onAccept,
-  onDecline,
+  topInset = 0,
 }: {
   preview: CrewInvitePreviewPayload;
-  busy?: boolean;
   error?: string | null;
-  onAccept: () => void;
-  onDecline: () => void;
+  topInset?: number;
 }) {
   const f = useFocusStyles();
   const targetLabel = crewInviteTargetLabel(preview);
@@ -34,26 +30,18 @@ export function CrewInvitePreview({
   const extraCount = crewInviteExtraRosterCount(preview);
 
   return (
-    <View style={f.section}>
-      <View style={[f.card, f.row, { paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16 }]}>
-        <AppText role="label">Invitation</AppText>
-        <View style={{ flexDirection: "row", gap: 8, flexShrink: 0 }}>
-          <FocusButton label="Decline" secondary onPress={onDecline} disabled={busy} />
-          <FocusButton label={busy ? "Joining…" : "Accept"} onPress={onAccept} disabled={busy} />
-        </View>
-      </View>
-
-      <View style={[f.card, { gap: 10 }]}>
+    <View style={[f.section, { paddingTop: topInset }]}>
+      <View style={[f.card, { gap: 8, paddingVertical: 16, paddingHorizontal: 16 }]}>
         <AppText role="caption" secondary>
           {crewInviteSportName(String(preview.sport))} crew
         </AppText>
-        <AppText role="display">{preview.name}</AppText>
+        <AppText role="heading">{preview.name}</AppText>
         <AppText role="body" secondary>
           {crewInviteMemberCountLabel(preview.member_count)} · Weekly {targetLabel}
         </AppText>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
           {roster.map((member) => (
-            <UserAvatar key={member.user_id} src={member.avatar_url} name={member.display_name} size={40} />
+            <UserAvatar key={member.user_id} src={member.avatar_url} name={member.display_name} size={36} />
           ))}
           {extraCount > 0 ? (
             <AppText role="caption" secondary>
@@ -81,6 +69,7 @@ export function CrewInvitePreview({
         now={new Date().toISOString()}
         displayTimeZone={APP_TIMEZONE}
         hiddenIds={[]}
+        invitePreview
         onSelectMember={() => {}}
         onViewMembers={() => {}}
       />

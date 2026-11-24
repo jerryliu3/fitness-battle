@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
-import { APP_ICON_PATHS, crewMemberRelayColor, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
+import { APP_ICON_PATHS, CREW_INVITE_WEEKLY_PLACEHOLDER, crewMemberRelayColor, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
 import { AppHeading, AppParagraph, AppText } from "@/ui/section";
 import { UserAvatar } from "@/ui/user-avatar";
 import { CrewRelay } from "./crew-relay";
@@ -11,8 +11,14 @@ import { CrewDerbyCard } from "./crew-derby";
 import "./crew-overview.css";
 import { useAuth } from "@/components/auth-context";
 
-type Props = CrewOverviewInput & { crewId: string; crewName: string; onSelectMember: (id: string) => void; onViewMembers: () => void };
-export function CrewOverview({ crewId, crewName, onSelectMember, onViewMembers, ...input }: Props) {
+type Props = CrewOverviewInput & {
+  crewId: string;
+  crewName: string;
+  onSelectMember: (id: string) => void;
+  onViewMembers: () => void;
+  invitePreview?: boolean;
+};
+export function CrewOverview({ crewId, crewName, onSelectMember, onViewMembers, invitePreview = false, ...input }: Props) {
   const { user, offlineMode } = useAuth();
   const [replayEntries, setReplayEntries] = useState<CrewOverviewInput["entries"]>();
   const [replayError, setReplayError] = useState("");
@@ -63,8 +69,18 @@ export function CrewOverview({ crewId, crewName, onSelectMember, onViewMembers, 
     return () => cancelAnimationFrame(animation);
   }, [playing, reduced, events.length]);
   return <><div className="crew-overview">
-    <section className="crew-week-hero" aria-label="Shared weekly progress">
-      {contract ? <>
+    <section
+      className={invitePreview ? "crew-week-placeholder" : "crew-week-hero"}
+      aria-label={invitePreview ? "Weekly field preview" : "Shared weekly progress"}
+    >
+      {invitePreview ? (
+        <>
+          <AppText role="label">Weekly field</AppText>
+          <AppParagraph typographyRole="body" className="fb-copy">
+            {CREW_INVITE_WEEKLY_PLACEHOLDER}
+          </AppParagraph>
+        </>
+      ) : contract ? <>
         <div className="crew-week-hero-head">
           <div className="crew-week-hero-title">
             <AppText role="label">Weekly contract</AppText>

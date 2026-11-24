@@ -72,6 +72,9 @@ export function crewInviteOverviewMembers(preview: CrewInvitePreviewPayload): Cr
 export const CREW_INVITE_PREVIEW_FOOTNOTE =
   "This is a preview. Accept to join and see live weekly progress with your crew.";
 
+export const CREW_INVITE_WEEKLY_PLACEHOLDER =
+  "Shared weekly progress and replay unlock after you join this crew.";
+
 export function crewInvitePreviewErrorMessage(code?: string): string {
   return code === "invite_not_found"
     ? "We couldn't find a crew with that invite code."
