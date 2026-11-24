@@ -1,14 +1,18 @@
 import { View } from "react-native";
-import { useThemeColors } from "../theme";
 import {
   APP_TIMEZONE,
+  crewInviteExtraRosterCount,
+  crewInviteMemberCountLabel,
+  crewInviteOverviewMembers,
+  crewInviteRosterPreview,
   crewInviteSportName,
-  formatCrewTargetLabel,
+  crewInviteTargetLabel,
+  CREW_INVITE_PREVIEW_FOOTNOTE,
   type CrewInvitePreviewPayload,
 } from "@fitness-battle/shared";
 import { RankAvatar } from "../ui/rank-symbol";
 import { AppText } from "../ui/section";
-import { FocusButton } from "../ui/focus";
+import { FocusButton, useFocusStyles } from "../ui/focus";
 import { CrewOverview } from "./crew-overview";
 
 export function CrewInvitePreview({
@@ -24,48 +28,41 @@ export function CrewInvitePreview({
   onAccept: () => void;
   onDecline: () => void;
 }) {
-  const colors = useThemeColors();
-  const sessionsMetric = preview.format === "personal_target" || preview.sport === "strength";
-  const targetLabel = sessionsMetric
-    ? formatCrewTargetLabel(preview.target_sessions, "sessions")
-    : formatCrewTargetLabel(preview.journey_km, "km");
+  const f = useFocusStyles();
+  const targetLabel = crewInviteTargetLabel(preview);
+  const roster = crewInviteRosterPreview(preview);
+  const extraCount = crewInviteExtraRosterCount(preview);
 
   return (
-    <View style={{ gap: 16 }}>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 10,
-          padding: 12,
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: colors.line,
-        }}
-      >
+    <View style={f.section}>
+      <View style={[f.card, f.row, { paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16 }]}>
         <AppText role="label">Invitation</AppText>
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <View style={{ flexDirection: "row", gap: 8, flexShrink: 0 }}>
           <FocusButton label="Decline" secondary onPress={onDecline} disabled={busy} />
           <FocusButton label={busy ? "Joining…" : "Accept"} onPress={onAccept} disabled={busy} />
         </View>
       </View>
 
-      <View style={{ gap: 8 }}>
+      <View style={[f.card, { gap: 10 }]}>
         <AppText role="caption" secondary>
           {crewInviteSportName(String(preview.sport))} crew
         </AppText>
         <AppText role="display">{preview.name}</AppText>
         <AppText role="body" secondary>
-          {preview.member_count} {preview.member_count === 1 ? "member" : "members"} · Weekly {targetLabel}
+          {crewInviteMemberCountLabel(preview.member_count)} · Weekly {targetLabel}
         </AppText>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {preview.members.slice(0, 8).map((member) => (
+          {roster.map((member) => (
             <RankAvatar key={member.user_id} src={member.avatar_url} name={member.display_name} size={40} />
           ))}
+          {extraCount > 0 ? (
+            <AppText role="caption" secondary>
+              +{extraCount} more
+            </AppText>
+          ) : null}
         </View>
         <AppText role="caption" secondary>
-          Accept to join and see live weekly progress with this crew.
+          {CREW_INVITE_PREVIEW_FOOTNOTE}
         </AppText>
       </View>
 
@@ -78,12 +75,7 @@ export function CrewInvitePreview({
         format={preview.format}
         targetSessions={preview.target_sessions}
         targetDistanceM={preview.journey_km * 1000}
-        members={preview.members.map((member) => ({
-          user_id: member.user_id,
-          display_name: member.display_name,
-          avatar_url: member.avatar_url,
-          rest_week: null,
-        }))}
+        members={crewInviteOverviewMembers(preview)}
         entries={[]}
         units="us"
         now={new Date().toISOString()}

@@ -37,10 +37,36 @@
   padding-inline: 14px;
 }
 
+.crew-invite-hero {
+  border-radius: 24px;
+  padding: 24px 20px;
+  background: color-mix(in srgb, var(--action-primary) 32%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--action-primary) 50%, var(--line));
+  display: grid;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.crew-invite-hero-name {
+  margin: 0;
+}
+
+.crew-invite-hero-meta {
+  margin: 0;
+}
+
+.crew-invite-hero-footnote {
+  margin: 4px 0 0;
+}
+
 .crew-invite-member-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-top: 14px;
+  margin-top: 6px;
+}
+
+.crew-invite-error {
+  margin-bottom: 16px;
 }

@@ -32,23 +32,15 @@ import {
   crewMemberWeekValue,
   crewLineup,
   crewTargetSpec,
-  type CrewInvitePreviewPayload,
 } from "@fitness-battle/shared";
-import { CrewInvitePreview } from "./crew-invite-preview";
+import { CrewInviteLanding } from "./crew-invite-landing";
+import { useCrewInviteFlow } from "./use-crew-invite-flow";
 import { NumberStepper } from "@/ui/number-stepper";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { buildLoginHref, buildSignupHref } from "@/lib/auth/login-redirect";
 import { GuestEntrySheet } from "@/components/guest-entry-sheet";
 import { OpenInAppBanner } from "@/components/open-in-app-banner";
-import {
-  clearPendingCrewInvite,
-  readPendingCrewAccept,
-  readPendingCrewInvite,
-  stashPendingCrewAccept,
-  stashPendingCrewInvite,
-  useGuestEntryPrompt,
-} from "@/lib/guest-entry";
+import { useGuestEntryPrompt } from "@/lib/guest-entry";
 interface Crew {
   id: string;
   name: string;
@@ -119,18 +111,25 @@ function isCrewErrorNote(note: string): boolean {
 export function CrewPanel() {
   const { user, offlineMode } = useAuth();
   const { state, dispatch } = useCompete();
-  const router = useRouter();
-  const path = usePathname();
-  const searchParams = useSearchParams();
-  const inviteParam = searchParams.get("invite")?.trim() ?? "";
+  const [guestAuthOpen, setGuestAuthOpen] = useState(false);
+  const inviteFlow = useCrewInviteFlow({
+    offlineMode,
+    userId: user?.id,
+    joinCrew: async (code) => write("/join", { code }),
+    onGuestAccept: () => setGuestAuthOpen(true),
+  });
+  const {
+    inviteParam,
+    inviteCode,
+    invitePreview,
+    invitePreviewLoading,
+    invitePreviewError,
+    inviteJoinBusy,
+    clearInviteFlow,
+    acceptInvite,
+  } = inviteFlow;
   const fieldDestination = inviteParam ? crewInviteWebDestination(inviteParam) : "/app/field";
   const guestNextPath = fieldDestination;
-  const [inviteCode, setInviteCode] = useState("");
-  const [invitePreview, setInvitePreview] = useState<CrewInvitePreviewPayload | null>(null);
-  const [invitePreviewLoading, setInvitePreviewLoading] = useState(false);
-  const [invitePreviewError, setInvitePreviewError] = useState<string | null>(null);
-  const [inviteJoinBusy, setInviteJoinBusy] = useState(false);
-  const [pendingAutoJoin, setPendingAutoJoin] = useState(() => readPendingCrewAccept());
   const guest = useGuestEntryPrompt({
     enabled: !inviteCode,
     nextPath: guestNextPath,
@@ -138,7 +137,6 @@ export function CrewPanel() {
       ? `Use invite code ${inviteParam.toUpperCase()} after you sign in to join this crew.`
       : "Sign in to create or join a private crew.",
   });
-  const [guestAuthOpen, setGuestAuthOpen] = useState(false);
   const [data, setData] = useState<CrewData | null>(null);
   const [selected, setSelected] = useState("");
   const [panel, setPanel] = useState<
@@ -176,96 +174,6 @@ export function CrewPanel() {
     if (user && !offlineMode) void reload();
     else setData(null);
   }, [user?.id, offlineMode]);
-
-  useEffect(() => {
-    const fromUrl = searchParams.get("invite")?.trim() ?? "";
-    const fromStash = readPendingCrewInvite() ?? "";
-    const merged = (fromUrl || fromStash).toUpperCase();
-    if (!merged) {
-      setInviteCode("");
-      setInvitePreview(null);
-      setInvitePreviewError(null);
-      return;
-    }
-    stashPendingCrewInvite(merged);
-    setInviteCode(merged);
-    if (fromUrl) {
-      const next = new URLSearchParams(searchParams.toString());
-      next.delete("invite");
-      const qs = next.toString();
-      router.replace(qs ? `${path}?${qs}` : path, { scroll: false });
-    }
-  }, [searchParams, router, path]);
-
-  useEffect(() => {
-    if (!inviteCode || offlineMode) return;
-    let cancelled = false;
-    setInvitePreviewLoading(true);
-    setInvitePreviewError(null);
-    void fetch(`/api/crews/invite-preview?code=${encodeURIComponent(inviteCode)}`)
-      .then(async (response) => {
-        if (!response.ok) {
-          const body = await response.json().catch(() => null);
-          throw new Error(
-            body?.error === "invite_not_found"
-              ? "We couldn't find a crew with that invite code."
-              : "Could not load this invitation.",
-          );
-        }
-        return response.json() as Promise<CrewInvitePreviewPayload>;
-      })
-      .then((payload) => {
-        if (!cancelled) setInvitePreview(payload);
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          setInvitePreview(null);
-          setInvitePreviewError(error instanceof Error ? error.message : "Could not load this invitation.");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setInvitePreviewLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [inviteCode, offlineMode]);
-
-  function clearInviteFlow() {
-    clearPendingCrewInvite();
-    stashPendingCrewAccept(false);
-    setPendingAutoJoin(false);
-    setInviteCode("");
-    setInvitePreview(null);
-    setInvitePreviewError(null);
-    setInviteJoinBusy(false);
-  }
-
-  async function acceptInvite() {
-    if (!inviteCode) return;
-    if (!user) {
-      stashPendingCrewAccept(true);
-      setPendingAutoJoin(true);
-      setGuestAuthOpen(true);
-      return;
-    }
-    setInviteJoinBusy(true);
-    setNote("");
-    const ok = await write("/join", { code: inviteCode });
-    setInviteJoinBusy(false);
-    if (ok) clearInviteFlow();
-  }
-
-  useEffect(() => {
-    if (!user || offlineMode || !pendingAutoJoin || !inviteCode) return;
-    stashPendingCrewAccept(false);
-    setPendingAutoJoin(false);
-    setInviteJoinBusy(true);
-    void write("/join", { code: inviteCode }).then((ok) => {
-      setInviteJoinBusy(false);
-      if (ok) clearInviteFlow();
-    });
-  }, [user?.id, offlineMode, pendingAutoJoin, inviteCode]);
 
   async function write(path: string, body: object, method = "POST"): Promise<boolean> {
     setBusy(true);
@@ -467,37 +375,20 @@ export function CrewPanel() {
         </section>
       )}
 
-      {inviteCode ? (
-        <>
-          {invitePreviewLoading ? (
-            <AppParagraph typographyRole="body" className="fb-copy">
-              Loading your invitation…
-            </AppParagraph>
-          ) : null}
-          {invitePreviewError ? (
-            <section className="focus-card">
-              <AppHeading level={2} role="heading">
-                Invitation unavailable
-              </AppHeading>
-              <AppParagraph typographyRole="body" className="fb-copy" style={{ marginBottom: 16 }}>
-                {invitePreviewError}
-              </AppParagraph>
-              <button type="button" className="fb-btn-line" onClick={clearInviteFlow}>
-                Dismiss
-              </button>
-            </section>
-          ) : null}
-          {invitePreview ? (
-            <CrewInvitePreview
-              preview={invitePreview}
-              busy={inviteJoinBusy}
-              error={isCrewErrorNote(note) ? note : null}
-              onAccept={() => void acceptInvite()}
-              onDecline={clearInviteFlow}
-            />
-          ) : null}
-        </>
-      ) : null}
+      <CrewInviteLanding
+        inviteCode={inviteCode}
+        loading={invitePreviewLoading}
+        loadError={invitePreviewError}
+        preview={invitePreview}
+        joinBusy={inviteJoinBusy}
+        joinError={isCrewErrorNote(note) ? note : null}
+        onAccept={() => {
+          setNote("");
+          void acceptInvite();
+        }}
+        onDecline={clearInviteFlow}
+        onDismissError={clearInviteFlow}
+      />
       {(!user || offlineMode || data) && !inviteCode && (
         <>
           <header className="crew-header">

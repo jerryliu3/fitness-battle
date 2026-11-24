@@ -28,6 +28,7 @@ import {
   crewTargetSpec,
   crewInviteHttpsUrl,
   PUBLIC_SHARE_ORIGIN,
+  crewInvitePreviewErrorMessage,
   type CrewInvitePreviewPayload,
 } from "@fitness-battle/shared";
 import { CrewInvitePreview } from "./crew-invite-preview";
@@ -206,11 +207,7 @@ const f=useFocusStyles();
       .then(async (response) => {
         if (!response.ok) {
           const body = await response.json().catch(() => null);
-          throw new Error(
-            body?.error === "invite_not_found"
-              ? "We couldn't find a crew with that invite code."
-              : "Could not load this invitation.",
-          );
+          throw new Error(crewInvitePreviewErrorMessage(body?.error));
         }
         return response.json() as Promise<CrewInvitePreviewPayload>;
       })
@@ -220,7 +217,9 @@ const f=useFocusStyles();
       .catch((error) => {
         if (!cancelled) {
           setInvitePreview(null);
-          setInvitePreviewError(error instanceof Error ? error.message : "Could not load this invitation.");
+          setInvitePreviewError(
+            error instanceof Error ? error.message : crewInvitePreviewErrorMessage(),
+          );
         }
       })
       .finally(() => {

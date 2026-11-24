@@ -4,10 +4,14 @@ import { UserAvatar } from "@/ui/user-avatar";
 import { AppHeading, AppParagraph, AppText } from "@/ui/section";
 import {
   APP_TIMEZONE,
+  crewInviteExtraRosterCount,
+  crewInviteMemberCountLabel,
+  crewInviteOverviewMembers,
+  crewInviteRosterPreview,
   crewInviteSportName,
-  formatCrewTargetLabel,
+  crewInviteTargetLabel,
+  CREW_INVITE_PREVIEW_FOOTNOTE,
   type CrewInvitePreviewPayload,
-  type SportId,
 } from "@fitness-battle/shared";
 import { CrewOverview } from "./crew-overview";
 import "./crew-invite-preview.css";
@@ -28,11 +32,9 @@ export function CrewInvitePreview({
   onDecline,
 }: CrewInvitePreviewProps) {
   const now = new Date().toISOString();
-  const sport = preview.sport as SportId;
-  const sessionsMetric = preview.format === "personal_target" || preview.sport === "strength";
-  const targetLabel = sessionsMetric
-    ? formatCrewTargetLabel(preview.target_sessions, "sessions")
-    : formatCrewTargetLabel(preview.journey_km, "km");
+  const targetLabel = crewInviteTargetLabel(preview);
+  const roster = crewInviteRosterPreview(preview);
+  const extraCount = crewInviteExtraRosterCount(preview);
 
   return (
     <div className="crew-invite-preview">
@@ -50,18 +52,18 @@ export function CrewInvitePreview({
         </div>
       </div>
 
-      <section className="focus-card" style={{ marginBottom: 16 }}>
+      <section className="crew-invite-hero">
         <AppParagraph typographyRole="label" className="fb-kicker">
           {crewInviteSportName(String(preview.sport))} crew
         </AppParagraph>
-        <AppHeading level={1} role="display">
+        <AppHeading level={1} role="display" className="crew-invite-hero-name">
           {preview.name}
         </AppHeading>
-        <AppParagraph typographyRole="body" className="fb-copy" style={{ marginTop: 8 }}>
-          {preview.member_count} {preview.member_count === 1 ? "member" : "members"} · Weekly {targetLabel}
+        <AppParagraph typographyRole="body" className="fb-copy crew-invite-hero-meta">
+          {crewInviteMemberCountLabel(preview.member_count)} · Weekly {targetLabel}
         </AppParagraph>
         <div className="crew-invite-member-row">
-          {preview.members.slice(0, 8).map((member) => (
+          {roster.map((member) => (
             <UserAvatar
               key={member.user_id}
               src={member.avatar_url}
@@ -69,14 +71,14 @@ export function CrewInvitePreview({
               size={40}
             />
           ))}
-          {preview.member_count > 8 ? (
+          {extraCount > 0 ? (
             <AppText role="caption" secondary>
-              +{preview.member_count - 8} more
+              +{extraCount} more
             </AppText>
           ) : null}
         </div>
-        <AppParagraph typographyRole="caption" className="fb-note" style={{ marginTop: 12 }}>
-          This is a preview. Accept to join and see live weekly progress with your crew.
+        <AppParagraph typographyRole="caption" className="fb-note crew-invite-hero-footnote">
+          {CREW_INVITE_PREVIEW_FOOTNOTE}
         </AppParagraph>
       </section>
 
@@ -93,12 +95,7 @@ export function CrewInvitePreview({
         format={preview.format}
         targetSessions={preview.target_sessions}
         targetDistanceM={preview.journey_km * 1000}
-        members={preview.members.map((member) => ({
-          user_id: member.user_id,
-          display_name: member.display_name,
-          avatar_url: member.avatar_url,
-          rest_week: null,
-        }))}
+        members={crewInviteOverviewMembers(preview)}
         entries={[]}
         units="us"
         now={now}
