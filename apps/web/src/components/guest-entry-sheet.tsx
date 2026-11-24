@@ -1,8 +1,9 @@
 "use client";
 
 import { buildLoginHref, buildSignupHref } from "@/lib/auth/login-redirect";
+import { GUEST_ENTRY_COPY } from "@fitness-battle/shared";
 import Link from "next/link";
-import { AppParagraph, SectionHeader } from "@/ui/section";
+import { AppParagraph } from "@/ui/section";
 import { Sheet } from "@/ui/sheet";
 
 interface GuestEntrySheetProps {
@@ -17,12 +18,11 @@ export function GuestEntrySheet({ open, reason, nextPath, onClose }: GuestEntryS
   return (
     <Sheet
       open={open}
-      title="Join in"
-      body="Create an account to compete and keep your progress."
+      title={GUEST_ENTRY_COPY.sheetTitle}
+      body={GUEST_ENTRY_COPY.sheetBody}
       onClose={onClose}
       preventAutoFocus
     >
-      <SectionHeader title="Sign in to continue" />
       <AppParagraph typographyRole="body" className="fb-copy" style={{ marginBottom: 16 }}>
         {reason}
       </AppParagraph>
@@ -32,18 +32,18 @@ export function GuestEntrySheet({ open, reason, nextPath, onClose }: GuestEntryS
           className="fb-btn"
           style={{ flex: 1, textAlign: "center" }}
         >
-          Create account
+          {GUEST_ENTRY_COPY.createAccount}
         </Link>
         <Link
           href={buildLoginHref(nextPath)}
           className="fb-btn-line"
           style={{ flex: 1, textAlign: "center" }}
         >
-          Sign in
+          {GUEST_ENTRY_COPY.signIn}
         </Link>
       </div>
       <button type="button" className="fb-btn-ghost" onClick={onClose} style={{ width: "100%" }}>
-        Keep browsing
+        {GUEST_ENTRY_COPY.keepBrowsing}
       </button>
     </Sheet>
   );

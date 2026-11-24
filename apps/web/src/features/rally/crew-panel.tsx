@@ -32,19 +32,16 @@ import {
   crewMemberWeekValue,
   crewLineup,
   crewTargetSpec,
+  humanizeCrewApiError,
 } from "@fitness-battle/shared";
+import { CrewInviteLanding } from "./crew-invite-landing";
+import { useCrewInviteFlow } from "./use-crew-invite-flow";
 import { NumberStepper } from "@/ui/number-stepper";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { buildLoginHref, buildSignupHref } from "@/lib/auth/login-redirect";
 import { GuestEntrySheet } from "@/components/guest-entry-sheet";
 import { OpenInAppBanner } from "@/components/open-in-app-banner";
-import {
-  clearPendingCrewInvite,
-  readPendingCrewInvite,
-  stashPendingCrewInvite,
-  useGuestEntryPrompt,
-} from "@/lib/guest-entry";
+import { useGuestEntryPrompt } from "@/lib/guest-entry";
 interface Crew {
   id: string;
   name: string;
@@ -85,22 +82,6 @@ interface CrewData {
   seasonWeeks?: Record<string, number>;
 }
 
-function humanCrewError(code?: string): string {
-  if (!code) return "Could not reach your crew.";
-  const raw = code.toLowerCase();
-  if (raw.includes("invite_not_found"))
-    return "We couldn't find a crew with that invite code.";
-  if (raw.includes("already_a_member"))
-    return "You are already a member of this crew.";
-  if (raw.includes("not_a_member"))
-    return "You are not a member of this crew.";
-  if (raw.includes("crew_not_found")) return "We couldn't find that crew.";
-  if (raw.includes("name_required")) return "Please enter a crew name.";
-  if (raw.includes("authentication_required"))
-    return "Sign in to manage crews.";
-  return code;
-}
-
 function isCrewErrorNote(note: string): boolean {
   return (
     note.startsWith("Please ") ||
@@ -115,20 +96,29 @@ function isCrewErrorNote(note: string): boolean {
 export function CrewPanel() {
   const { user, offlineMode } = useAuth();
   const { state, dispatch } = useCompete();
-  const router = useRouter();
-  const path = usePathname();
-  const searchParams = useSearchParams();
-  const inviteParam = searchParams.get("invite")?.trim() ?? "";
+  const [guestAuthOpen, setGuestAuthOpen] = useState(false);
+  const inviteFlow = useCrewInviteFlow({
+    offlineMode,
+    userId: user?.id,
+    joinCrew: async (code) => write("/join", { code }),
+    onGuestAccept: () => setGuestAuthOpen(true),
+  });
+  const {
+    inviteParam,
+    inviteCode,
+    invitePreview,
+    invitePreviewLoading,
+    invitePreviewError,
+    inviteJoinBusy,
+    clearInviteFlow,
+    acceptInvite,
+  } = inviteFlow;
   const fieldDestination = inviteParam ? crewInviteWebDestination(inviteParam) : "/app/field";
   const guestNextPath = fieldDestination;
   const guest = useGuestEntryPrompt({
-    enabled: true,
+    enabled: !inviteCode,
     nextPath: guestNextPath,
-    reason: inviteParam
-      ? `Use invite code ${inviteParam.toUpperCase()} after you sign in to join this crew.`
-      : "Sign in to create or join a private crew.",
   });
-  const [guestAuthOpen, setGuestAuthOpen] = useState(false);
   const [data, setData] = useState<CrewData | null>(null);
   const [selected, setSelected] = useState("");
   const [panel, setPanel] = useState<
@@ -165,31 +155,6 @@ export function CrewPanel() {
   useEffect(() => {
     if (user && !offlineMode) void reload();
     else setData(null);
-  }, [user?.id, offlineMode]);
-
-  useEffect(() => {
-    const invite = searchParams.get("invite")?.trim();
-  if (invite) stashPendingCrewInvite(invite);
-    if (!invite || offlineMode) return;
-    setCode(invite.toUpperCase());
-    if (user) {
-      setPanel("add");
-      const next = new URLSearchParams(searchParams.toString());
-      next.delete("invite");
-      const qs = next.toString();
-      const cleaned = qs ? `${path}?${qs}` : path;
-      router.replace(cleaned, { scroll: false });
-      clearPendingCrewInvite();
-    }
-  }, [searchParams, user, offlineMode, router, path]);
-
-  useEffect(() => {
-    if (!user || offlineMode) return;
-    const pending = readPendingCrewInvite();
-    if (!pending) return;
-    setCode(pending);
-    setPanel("add");
-    clearPendingCrewInvite();
   }, [user?.id, offlineMode]);
 
   async function write(path: string, body: object, method = "POST"): Promise<boolean> {
@@ -232,7 +197,7 @@ export function CrewPanel() {
       });
       const result = await res.json();
       if (!res.ok || result.persisted === false)
-        throw Error(humanCrewError(result.error));
+        throw Error(humanizeCrewApiError(result.error ?? "Could not reach your crew."));
       await reload();
       if (path !== "/rest") setPanel(null);
       setName("");
@@ -392,7 +357,21 @@ export function CrewPanel() {
         </section>
       )}
 
-      {(!user || offlineMode || data) && (
+      <CrewInviteLanding
+        inviteCode={inviteCode}
+        loading={invitePreviewLoading}
+        loadError={invitePreviewError}
+        preview={invitePreview}
+        joinBusy={inviteJoinBusy}
+        joinError={isCrewErrorNote(note) ? note : null}
+        onAccept={() => {
+          setNote("");
+          void acceptInvite();
+        }}
+        onDecline={clearInviteFlow}
+        onDismissError={clearInviteFlow}
+      />
+      {(!user || offlineMode || data) && !inviteCode && (
         <>
           <header className="crew-header">
             <div className="crew-header-main">
@@ -409,7 +388,7 @@ export function CrewPanel() {
               setPanel("manage");
             })}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.settings} /></svg></button></div>
           </header>
-          {!isSolo ? <CrewOverview crewId={crew.id} crewName={crew.name} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} displayTimeZone={state ? accountTimeZone(state) : undefined} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => setPanel("members")} /> : user ? <section className="focus-card"><AppHeading level={2} role="display">Make room for your people.</AppHeading><button type="button" className="fb-btn" onClick={() => setPanel("add")}>Create or join a crew</button></section> : null}
+          {!isSolo ? <CrewOverview crewId={crew.id} crewName={crew.name} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} displayTimeZone={state ? accountTimeZone(state) : undefined} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => requireCrewAccount(() => setPanel("members"))} /> : user ? <section className="focus-card"><AppHeading level={2} role="display">Make room for your people.</AppHeading><button type="button" className="fb-btn" onClick={() => requireCrewAccount(() => setPanel("add"))}>Create or join a crew</button></section> : null}
         </>
       )}
       {!panel && note && (
@@ -425,7 +404,7 @@ export function CrewPanel() {
           {formatNoticeUnits(n.body, state?.units)}
         </AppParagraph>
       ))}
-      {!user && (
+      {!user && !inviteCode && (
         <div className="focus-crew-preview" style={{ marginBottom: 28 }}>
           <section className="focus-card">
             <AppParagraph typographyRole="label" className="fb-kicker">What crews unlock</AppParagraph>
@@ -596,7 +575,7 @@ export function CrewPanel() {
               </AppParagraph>
               <button
                 className="fb-btn"
-                onClick={() => setPanel("add")}
+                onClick={() => requireCrewAccount(() => setPanel("add"))}
               >
                 Create crew ＋
               </button>
@@ -641,7 +620,7 @@ export function CrewPanel() {
             </AppParagraph>
             <button
               className="fb-btn"
-              onClick={() => setPanel("add")}
+              onClick={() => requireCrewAccount(() => setPanel("add"))}
             >
               Create shared crew ＋
             </button>

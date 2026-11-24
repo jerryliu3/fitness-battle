@@ -28,7 +28,12 @@ import {
   crewTargetSpec,
   crewInviteHttpsUrl,
   PUBLIC_SHARE_ORIGIN,
+  humanizeCrewApiError,
 } from "@fitness-battle/shared";
+import { CrewInviteLanding } from "./crew-invite-landing";
+import { useCrewInviteFlow } from "./use-crew-invite-flow";
+import { GuestEntrySheet } from "./guest-entry-sheet";
+import { useGuestEntryPrompt } from "../lib/guest-entry";
 import { Chip, ChipRow } from "../ui/chip";
 import { NumberStepper } from "../ui/number-stepper";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -99,15 +104,8 @@ export function useCrewApi() {
 }
 
 function crewError(error: unknown): string {
-  const raw =
-    error instanceof Error ? error.message : "Could not reach your crew.";
-  if (raw.includes("invite_not_found"))
-    return "We couldn't find a crew with that invite code.";
-  if (raw.includes("already_a_member"))
-    return "You are already a member of this crew.";
-  if (raw.includes("not_a_member"))
-    return "You are no longer a member of this crew. Refresh your crews.";
-  return raw;
+  const raw = error instanceof Error ? error.message : "Could not reach your crew.";
+  return humanizeCrewApiError(raw);
 }
 function inviteLink(code: string): string {
   return crewInviteHttpsUrl(PUBLIC_SHARE_ORIGIN, code);
@@ -144,6 +142,35 @@ const f=useFocusStyles();
   const [editTarget, setEditTarget] = useState<number>(40);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [guestAuthOpen, setGuestAuthOpen] = useState(false);
+  const inviteFlow = useCrewInviteFlow({
+    inviteParam: params.invite,
+    userId: user?.id,
+    router,
+    joinCrew: async (code) => {
+      setNote("");
+      try {
+        await write("/join", { code });
+        await api.reload();
+        return true;
+      } catch (error) {
+        setNote(crewError(error));
+        return false;
+      }
+    },
+    onGuestAccept: () => setGuestAuthOpen(true),
+  });
+  const {
+    inviteCode,
+    invitePreview,
+    invitePreviewLoading,
+    invitePreviewError,
+    inviteJoinBusy,
+    clearInviteFlow,
+    acceptInvite,
+  } = inviteFlow;
+  const guestNext = inviteCode ? `/field?invite=${encodeURIComponent(inviteCode)}` : "/field";
+  const guest = useGuestEntryPrompt(user?.id, { enabled: !inviteCode, nextPath: guestNext });
   const flight = useRef(false);
   const owner = useRef(user?.id);
   owner.current = user?.id;
@@ -155,15 +182,6 @@ const f=useFocusStyles();
     setName("");
     setCode("");
   }, [user?.id]);
-  useEffect(() => {
-    const raw = params.invite;
-    const invite = (Array.isArray(raw) ? raw[0] : raw)?.trim();
-    if (!invite || !api.live) return;
-    setNote("");
-    setCode(invite.toUpperCase());
-    setPanel("add");
-    router.setParams({ invite: undefined });
-  }, [params.invite, api.live, router]);
   useFocusEffect(
     useCallback(() => {
       void api.reload();
@@ -277,18 +295,33 @@ const f=useFocusStyles();
     `${formatDistanceM(meters, state?.units)} ${distanceUnitLabel(state?.units)}`;
   const memberTotal = (id: string) =>
     crewMemberWeekValue(entries, id, sessionsMetric);
-  function open(next: typeof panel) {
-    if (next === "members") { router.push({ pathname: "/crew-members", params: { crewId: crew.id } }); return; }
-    setNote("");
-    setName("");
-    setCode("");
-    if (next === "manage") {
-      const isSessions = crew.format === "personal_target" || crew.sport === "strength";
-      setEditSport((SPORTS.some((s) => s.id === crew.sport) ? crew.sport : "running") as SportId);
-      setEditFormat(isSessions ? "personal_target" : "cooperative");
-      setEditTarget(isSessions ? crew.target_sessions : crew.journey_km);
+  function requireCrewAccount(action: () => void) {
+    if (user) {
+      action();
+      return;
     }
-    setPanel(next);
+    setGuestAuthOpen(true);
+  }
+
+  function open(next: typeof panel) {
+    if (next === "members") {
+      requireCrewAccount(() => {
+        router.push({ pathname: "/crew-members", params: { crewId: crew.id } });
+      });
+      return;
+    }
+    requireCrewAccount(() => {
+      setNote("");
+      setName("");
+      setCode("");
+      if (next === "manage") {
+        const isSessions = crew.format === "personal_target" || crew.sport === "strength";
+        setEditSport((SPORTS.some((s) => s.id === crew.sport) ? crew.sport : "running") as SportId);
+        setEditFormat(isSessions ? "personal_target" : "cooperative");
+        setEditTarget(isSessions ? crew.target_sessions : crew.journey_km);
+      }
+      setPanel(next);
+    });
   }
   async function write(path: string, body: object, method?: string) {
     if (flight.current) return;
@@ -463,6 +496,20 @@ const f=useFocusStyles();
   if (membersOnly) return <>{membersView}{memberSheet}</>;
   return (
     <>
+      <CrewInviteLanding
+        inviteCode={inviteCode}
+        loading={invitePreviewLoading}
+        loadError={invitePreviewError}
+        preview={invitePreview}
+        joinBusy={inviteJoinBusy}
+        joinError={inviteCode && note ? note : null}
+        onAccept={() => {
+          setNote("");
+          void acceptInvite();
+        }}
+        onDecline={clearInviteFlow}
+        onDismissError={clearInviteFlow}
+      />
       {api.error ? (
         <FocusButton
           label="Refresh crews"
@@ -470,7 +517,8 @@ const f=useFocusStyles();
           onPress={() => void api.reload()}
         />
       ) : null}
-      {solo ? (
+      {!inviteCode ? (
+        solo ? (
         <SectionStack divided={false}>
         <ImageBackground source={alpineTrail} style={{height:200,justifyContent:"flex-end",padding:22,borderRadius:20,overflow:"hidden",backgroundColor:c.fieldDeep}}><View style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3670"}]}/><AppText accessibilityRole="header" role="display" style={{ color: c.textOnFeature }}>Stronger together.</AppText><AppText role="body" secondary style={{ color: c.textOnFeature }}>A place for every pace.</AppText></ImageBackground>
         <View style={f.section}>
@@ -480,12 +528,7 @@ const f=useFocusStyles();
             Private crews share a week of effort, member standings and
             an optional shared field.
           </AppText>
-          <FocusButton
-            label={user ? "Create or join a crew" : "View account"}
-            onPress={() =>
-              user ? open("add") : router.navigate("/athlete")
-            }
-          />
+          <FocusButton label="Create or join a crew" onPress={() => open("add")} />
           {!user ? (
             <AppText role="caption" secondary >
               Sign in to create or join a private crew.
@@ -493,7 +536,7 @@ const f=useFocusStyles();
           ) : null}
         </View>
         </SectionStack>
-      ) : (
+        ) : (
         <SectionStack divided={false}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 4 }}>
               <View ref={switcherMenu.anchorRef} collapsable={false} style={{ flex: 1, minWidth: 0 }}>
@@ -509,7 +552,8 @@ const f=useFocusStyles();
           </View>
           <CrewOverview crewId={crew.id} crewName={crew.name} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} displayTimeZone={state ? accountTimeZone(state) : undefined} hiddenIds={hiddenIds} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => open("members")} />
         </SectionStack>
-      )}
+        )
+      ) : null}
       <AnchoredMenu
         open={switcherMenu.open}
         onClose={() => {
@@ -519,7 +563,7 @@ const f=useFocusStyles();
         onDismiss={() => {
           if (!createAfterSwitch.current) return;
           createAfterSwitch.current = false;
-          open("add");
+          requireCrewAccount(() => open("add"));
         }}
         menuLayout={switcherMenu.menuLayout}
         accessibilityLabel="Close crew menu"
@@ -555,7 +599,7 @@ const f=useFocusStyles();
           {formatNoticeUnits(n.body, state?.units)}
         </AppText>
       ))}
-      {!user ? (
+      {!user && !inviteCode ? (
         <>
           <View style={f.section}>
             <Text style={f.kicker}>What crews unlock</Text>
@@ -796,6 +840,19 @@ const f=useFocusStyles();
           </AppText>
         ) : null}
       </FocusSheet>
+      <GuestEntrySheet
+        open={guest.open || guestAuthOpen}
+        reason={
+          inviteCode
+            ? `Join this crew with invite code ${inviteCode}.`
+            : "Sign in to create or join a private crew."
+        }
+        nextPath={guestNext}
+        onClose={() => {
+          guest.dismiss();
+          setGuestAuthOpen(false);
+        }}
+      />
     </>
   );
 }
