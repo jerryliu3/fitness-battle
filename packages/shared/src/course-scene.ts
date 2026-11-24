@@ -1,6 +1,6 @@
 import { raceCourseRacerPosition, raceCourseTrail, raceEffortMetres, type RaceCourse } from "./race-course";
 import { ordinalPlace, type ArenaSceneLane } from "./arena-view";
-import { getAppColors } from "./appearance";
+import { MEDAL_GOLD, getAppColors } from "./appearance";
 import type { LngLat } from "./routeGeoUtils";
 
 export const RACE_LANE_SPACING_METRES = .42;
@@ -31,8 +31,8 @@ export function coursePreviewLanes(lanes: readonly ArenaSceneLane[], unit: strin
   });
 }
 
-/** First place is gold; every other athlete uses the comparison color. */
-const leaderColor = (leader: boolean) => { const colors = getAppColors(); return leader ? colors.actionPrimary : colors.chartComparison; };
+/** First place is brand gold in every appearance mode; peers use the comparison color. */
+const leaderColor = (leader: boolean) => (leader ? MEDAL_GOLD.srgb : getAppColors().chartComparison);
 
 function courseOverviewCoordinates(
   course: RaceCourse,

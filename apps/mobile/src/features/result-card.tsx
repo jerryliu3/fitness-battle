@@ -22,7 +22,7 @@ import {
 export { formatPeriodDateRange };
 
 export function podiumMedalColor(c: AppColors, place: number): string | null {
-  return place === 1 ? c.podiumGold : place === 2 ? c.podiumSilver : place === 3 ? c.podiumBronze : null;
+  return place === 1 ? c.podiumGold : place === 2 ? c.podiumSilver : place === 3 ? c.podiumGold : null;
 }
 
 export function eloDeltaPalette(c: AppColors, frozen: boolean, delta: number) {
@@ -193,7 +193,7 @@ export function ResultCard({
             [
               { step: 2, label: "2nd", height: 42, color: c.podiumSilver },
               { step: 1, label: "1st", height: 56, color: c.podiumGold },
-              { step: 3, label: "3rd", height: 34, color: c.podiumBronze },
+              { step: 3, label: "3rd", height: 34, color: c.podiumGold },
             ] as const
           ).map((podium) => {
             const athletes = podiumAthletes.filter((a) => a.place === podium.step);

@@ -103,6 +103,11 @@ export function isGeographicArenaUnit(unit: string): boolean {
   return unit === "km" || unit === "mi";
 }
 
+/** Units that can drive the weekly geographic Mapbox course (including step-based walking). */
+export function isGeographicCourseMapUnit(unit: string): boolean {
+  return isGeographicArenaUnit(unit) || unit === "steps";
+}
+
 /** Legacy persisted baselines may still read `pts`; treat like hours lanes. */
 export function isHoursLikeArenaUnit(unit: string): boolean {
   return unit === "hrs" || unit === "pts";

@@ -13,6 +13,7 @@ import {
   formatArenaValue,
   formatArenaVolume,
   isGeographicArenaUnit,
+  isGeographicCourseMapUnit,
 } from "./compete-field-view";
 import type { CheckpointSeries } from "./compete/track";
 
@@ -57,6 +58,8 @@ describe("competeFieldView", () => {
   it("exposes arena unit helpers for lane zoom and formatting", () => {
     expect(isGeographicArenaUnit("km")).toBe(true);
     expect(isGeographicArenaUnit("hrs")).toBe(false);
+    expect(isGeographicCourseMapUnit("steps")).toBe(true);
+    expect(isGeographicCourseMapUnit("hrs")).toBe(false);
     expect(fieldZoomLimits("steps")).toEqual({ min: 500, max: 40_000 });
     expect(arenaValueDecimals("steps")).toBe(0);
     expect(arenaValueDecimals("hrs")).toBe(1);

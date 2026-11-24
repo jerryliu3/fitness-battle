@@ -288,5 +288,5 @@ it("keeps tied and nearly tied distances proportional and assigns podium colors 
   expect(standingsBar(.5,1,3).percent).toBe(standingsBar(.5,1,2).percent);
   expect(standingsBar(.501,1,2).percent - standingsBar(.5,1,3).percent).toBeCloseTo(.1);
   expect(standingsBar(0,0,1).percent).toBe(0);
-  expect([1,2,3,4,8].map(place=>standingsBar(.5,1,place).color)).toEqual(["#dfad3c","#9fa5af","#b87945","#637482","#637482"]);
+  expect([1,2,3,4,8].map(place=>standingsBar(.5,1,place).color)).toEqual(["#FFB800","#9fa5af","#FFB800","#637482","#637482"]);
 });

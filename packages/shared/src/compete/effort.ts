@@ -62,8 +62,8 @@ export const WORKOUT_SIZE_LABELS: Record<WorkoutSizeTier, string> = {
 
 /** Progress from bronze and silver to Medal Gold for the highest effort tier. */
 export const WORKOUT_SIZE_BAR_COLOR_ROLES = [
-  "podiumBronze",
-  "podiumBronze",
+  "actionPrimary",
+  "actionPrimary",
   "podiumSilver",
   "podiumSilver",
   "actionPrimary",

@@ -147,6 +147,18 @@ export interface CourseCameraDriver {
   trace?(poseAt: (fraction: number, elapsedMs?: number) => CourseCameraPose, duration: number): void;
   fit?(bounds: { ne: LngLat; sw: LngLat }, duration: number): void;
 }
+
+/** Ease route progress: accelerate, cruise, then decelerate. */
+export function courseTravelFraction(linear: number): number {
+  const t = Math.max(0, Math.min(1, linear));
+  if (t <= 0.14) return (t / 0.14) ** 2 * 0.16;
+  if (t >= 0.86) {
+    const u = (1 - t) / 0.14;
+    return 1 - u * u * 0.16;
+  }
+  return 0.16 + ((t - 0.14) / 0.72) * 0.68;
+}
+
 /** One owner for both platforms. Native engines own every frame between camera commands. */
 export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = false, initialDimension: CourseDimension = "3d") {
   let lastCourse: RaceCourse | null = null, lastMetres = 0, lastLateral = 0;
@@ -158,6 +170,26 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
     const metres = distance(from.center, pose.center, { units: "meters" });
     driver.stop();
     driver.move(pose, reducedMotion ? 0 : automatic ? 500 : Math.min(1800, 400 + 180 * Math.log2(1 + metres / 30)));
+  };
+  const traceRoute = (course: RaceCourse, from: number, to: number, fromLateral: number, toLateral: number, current: CourseCameraPose) => {
+    if (reducedMotion || !driver.trace || Math.abs(to - from) <= .1) return false;
+    const duration = Math.min(4000, 800 + 350 * Math.log2(1 + Math.abs(to - from) / 100));
+    let smoothedHeading = current.bearing, previousElapsed = 0;
+    driver.stop();
+    driver.trace((fraction, elapsedMs = fraction * duration) => {
+      const progress = fraction >= 1 ? to : from + (to - from) * courseTravelFraction(fraction);
+      const lateral = fraction >= 1 ? toLateral : fromLateral + (toLateral - fromLateral) * courseTravelFraction(fraction);
+      lastCourse = course; lastMetres = progress; lastLateral = lateral;
+      const at = raceCourseRacerPosition(course, progress, lateral);
+      const desiredHeading = courseForwardHeading(course, progress);
+      const dt = Math.max(0, Math.min(64, elapsedMs - previousElapsed));
+      previousElapsed = elapsedMs;
+      const delta = shortestAngleDiff(smoothedHeading, desiredHeading);
+      const adjustment = delta * (1 - Math.exp(-dt / 220));
+      smoothedHeading += Math.max(-dt * .18, Math.min(dt * .18, adjustment));
+      return { ...current, center: at.coordinate, pitch: dimension === "3d" ? 60 : 0, bearing: dimension === "3d" ? smoothedHeading : 0 };
+    }, duration);
+    return true;
   };
   return {
     anchor(course: RaceCourse, metres: number, lateralMetres = 0) { lastCourse = course; lastMetres = metres; lastLateral = lateralMetres; },
@@ -171,29 +203,22 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
       const current = driver.read();
       const heading = courseForwardHeading(course, metres);
       const target = { ...current, center: raceCourseRacerPosition(course, metres, lateralMetres).coordinate, pitch: dimension === "3d" ? 60 : 0, bearing: dimension === "3d" ? heading : 0 };
-      if (!reducedMotion && driver.trace && lastCourse === course && Math.abs(metres - lastMetres) > .1) {
-        const from = lastMetres, fromLateral = lastLateral;
-        const duration = Math.min(4000, 800 + 350 * Math.log2(1 + Math.abs(metres - from) / 100));
-        let smoothedHeading = current.bearing, previousElapsed = 0;
-        driver.stop();
-        driver.trace((fraction, elapsedMs = fraction * duration) => {
-          const progress = fraction >= 1 ? metres : from + (metres - from) * fraction;
-          const lateral = fraction >= 1 ? lateralMetres : fromLateral + (lateralMetres - fromLateral) * fraction;
-          lastCourse = course; lastMetres = progress; lastLateral = lateral;
-          const at = raceCourseRacerPosition(course, progress, lateral);
-          // Moving backward changes position only; the lens still faces race-forward.
-          const desiredHeading = courseForwardHeading(course, progress);
-          const dt = Math.max(0, Math.min(64, elapsedMs - previousElapsed));
-          previousElapsed = elapsedMs;
-          const delta = shortestAngleDiff(smoothedHeading, desiredHeading);
-          const adjustment = delta * (1 - Math.exp(-dt / 220));
-          smoothedHeading += Math.max(-dt * .18, Math.min(dt * .18, adjustment));
-          return { ...current, center: at.coordinate, pitch: dimension === "3d" ? 60 : 0, bearing: dimension === "3d" ? smoothedHeading : 0 };
-        }, duration);
-      } else {
-        lastCourse = course; lastMetres = metres; lastLateral = lateralMetres;
-        move(target, automatic);
-      }
+      if (lastCourse === course && traceRoute(course, lastMetres, metres, lastLateral, lateralMetres, current)) return;
+      lastCourse = course; lastMetres = metres; lastLateral = lateralMetres;
+      move(target, automatic);
+    },
+    /** Follow-mode navigation along the course polyline (standings, scrubber, rail). */
+    travelAlong(course: RaceCourse, metres: number, lateralMetres = 0) {
+      following = true;
+      const current = driver.read();
+      const from = lastCourse === course ? lastMetres : metres;
+      const fromLateral = lastCourse === course ? lastLateral : lateralMetres;
+      lastCourse = course;
+      if (traceRoute(course, from, metres, fromLateral, lateralMetres, current)) return;
+      const heading = courseForwardHeading(course, metres);
+      lastCourse = course; lastMetres = metres; lastLateral = lateralMetres;
+      driver.stop();
+      driver.move({ ...current, center: raceCourseRacerPosition(course, metres, lateralMetres).coordinate, pitch: dimension === "3d" ? 60 : 0, bearing: dimension === "3d" ? heading : 0 }, reducedMotion ? 0 : 0);
     },
     seek(course: RaceCourse, metres: number) {
       following = false;
