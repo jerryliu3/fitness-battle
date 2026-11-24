@@ -617,6 +617,7 @@ const f=useFocusStyles();
             {focusedLane && !backgroundMode ? (
               <SlidingFieldPanel
                 label="athlete panel"
+                collapseGrip
                 collapsed={spotlightCollapsed}
                 onToggle={() => setSpotlightCollapsed(value => !value)}
                 overlaysHidden={overlaysHidden}

@@ -234,7 +234,7 @@ it("frames both racers during slow motion and pulses only visible passed athlete
   await act(async () => renderer.update(createElement(CourseMap, {...props,replay:{...props.replay,focus:0,passEffects:[]}})));
   const before = calls.setCamera.mock.lastCall![0].zoomLevel;
   advance();
-  expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBeGreaterThan(before - .2);
+  expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBeLessThanOrEqual(before);
   advance(100);
   expect(calls.setCamera.mock.lastCall![0].zoomLevel).toBeCloseTo(17, 1);
   vi.restoreAllMocks();

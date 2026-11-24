@@ -47,8 +47,8 @@ it("shares fullscreen, athlete panels, selection and timeline with 4D", async ()
   await act(async () => button("Collapse athlete panel").props.onClick());
   await act(async () => overview().props.onNavigate(.5));
   expect(map().props.distanceTarget.value).toBe(.5);
-  await act(async () => button("Collapse live intervals").props.onClick());
-  expect(button("Expand live intervals").props["aria-expanded"]).toBe(false);
+  await act(async () => button("Collapse live standings").props.onClick());
+  expect(button("Expand live standings").props["aria-expanded"]).toBe(false);
   await act(async () => map().props.onSelect("peer"));
   expect(map().props.selectedId).toBe("peer");
   expect(map().props.distanceTarget).toBeNull();
@@ -61,7 +61,7 @@ it("shares fullscreen, athlete panels, selection and timeline with 4D", async ()
   expect(overview().props.positionOnly).toBe(true);
   expect(map().props.course).toBe(course);
   expect(map().props.selectedId).toBe("peer");
-  expect(button("Expand live intervals")).toBeDefined();
+  expect(button("Expand live standings")).toBeDefined();
   await act(async () => overview().props.onNavigate(7));
   await act(async () => renderer.update(createElement(FieldStage, {
     model: { ...model, periodStart: model.periodEnd, periodEnd: "2026-11-09T05:00:00Z" },

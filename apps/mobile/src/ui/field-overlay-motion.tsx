@@ -32,11 +32,13 @@ export function FieldOverlayGroup({ hidden, ...props }: GProps & { hidden: boole
   return <AnimatedGroup {...props} opacity={opacity} />;
 }
 
-export function SlidingFieldPanel({ label, collapsed, onToggle, collapsible = true, overlaysHidden, style, surfaceStyle, onHeightChange, children }: {
+export function SlidingFieldPanel({ label, collapsed, onToggle, collapsible = true, collapseGrip = false, overlaysHidden, style, surfaceStyle, onHeightChange, children }: {
   label: string;
   collapsed: boolean;
   onToggle: () => void;
   collapsible?: boolean;
+  /** Show a collapse grip while expanded (for panels whose onToggle fully toggles). */
+  collapseGrip?: boolean;
   overlaysHidden: boolean;
   style: ViewStyle;
   surfaceStyle: ViewStyle;
@@ -83,7 +85,21 @@ export function SlidingFieldPanel({ label, collapsed, onToggle, collapsible = tr
           </View>
         </Pressable>
       ) : null}
-      <View pointerEvents={panelCollapsed ? "none" : "auto"} accessibilityElementsHidden={panelCollapsed} importantForAccessibility={panelCollapsed ? "no-hide-descendants" : "auto"} style={[surfaceStyle, collapsible && collapsed ? { marginRight: 44 } : null]}>{children}</View>
+      {collapsible && collapseGrip && !collapsed ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Collapse ${label}`}
+          accessibilityState={{ expanded: true }}
+          onPress={() => { void playCue("selection"); onToggle(); }}
+          style={{ position: "absolute", right: 0, top: "50%", marginTop: -32, width: 44, height: 64, justifyContent: "center", zIndex: 1 }}
+        >
+          <View pointerEvents="none" style={{ width: 18, height: 52, borderTopRightRadius: 10, borderBottomRightRadius: 10, backgroundColor: "rgba(20,20,19,.78)", ...hud.chrome, alignItems: "center", justifyContent: "center" }}>
+            <MapHudBackdrop radius={10} />
+            <View style={{ width: 3, height: 22, borderRadius: 2, backgroundColor: hud.light ? hud.muted : "rgba(255,255,255,.7)" }} />
+          </View>
+        </Pressable>
+      ) : null}
+      <View pointerEvents={panelCollapsed ? "none" : "auto"} accessibilityElementsHidden={panelCollapsed} importantForAccessibility={panelCollapsed ? "no-hide-descendants" : "auto"} style={[surfaceStyle, collapsible && collapsed ? { marginRight: 44 } : collapseGrip && !collapsed ? { marginRight: 44 } : null]}>{children}</View>
     </FieldOverlayView>
   );
 }
