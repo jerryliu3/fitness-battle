@@ -202,7 +202,10 @@ function ResultsView({ state, result, replay, hiddenIds, reduced, debug }: {
   state: CompeteState; result: PeriodResult; replay: CompetitionReplay | null; hiddenIds: readonly string[]; reduced: boolean; debug: boolean;
 }) {
   const highlights = useMemo(() => weekRecapHighlights(replay, state, result, hiddenIds), [replay, state, result, hiddenIds]);
-  const onPodium = result.placement != null && result.placement <= 3;
+  const onPodium = useMemo(
+    () => weekRecapPodium(replay, state, result, hiddenIds).some((slot) => slot.entry?.you),
+    [replay, state, result, hiddenIds],
+  );
   return (
     <View style={s.resultsWrap}>
       <PodiumHero replay={replay} state={state} result={result} hiddenIds={hiddenIds} reduced={reduced} />
