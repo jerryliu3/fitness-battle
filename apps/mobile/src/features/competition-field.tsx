@@ -40,7 +40,6 @@ import {
   normalizeCompeteFieldView,
   arenaValueDecimals,
   formatArenaVolume,
-  ordinalPlace,
   shellTabFromPath,
   weeklyBoard,
   type CompeteArenaEvent,
@@ -53,7 +52,7 @@ import {
 } from "@fitness-battle/shared";
 import { usePathname } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AppState, Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { AppState, Modal, Pressable, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "../ui/icon-button";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
@@ -179,7 +178,6 @@ const f=useFocusStyles();
   const [courseFlat, setCourseFlat] = useState(false);
   const [expanded, setExpanded] = useState(persistent);
   const [leadersHeight, setLeadersHeight] = useState(0);
-  const [spotlightCollapsed, setSpotlightCollapsed] = useState(false);
   const [leadersCollapsed, setLeadersCollapsed] = useState(false);
   const [overlaysHidden, setOverlaysHidden] = useState(false);
   const hold = useRef<ReturnType<typeof createFieldOverlayHold> | null>(null);
@@ -349,12 +347,6 @@ const f=useFocusStyles();
     ranked.find((lane) => !hiddenIds.includes(lane.id) && lane.id === (selectedId ?? me?.id)) ??
     me ??
     ranked[0];
-  const focusedRank = focusedLane ? place(focusedLane.values[2]) : 1;
-
-  const focusedDeltaToYou = focusedLane ? focusedLane.values[2] - total : 0;
-  const focusedDeltaToLeader =
-    focusedLane && leader ? focusedLane.values[2] - leader.values[2] : 0;
-
   const fieldContent = (
     <View
       onTouchStart={event => {
@@ -392,7 +384,7 @@ const f=useFocusStyles();
       ) : null}
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <View pointerEvents={expanded ? "auto" : "none"} style={{ flex: 1 }}>
-          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following && !chaseReplay} onFollowChange={setFollowing} mapFollowing={following} followAthleteName={focusedLane?.name ?? me?.name ?? "your athlete"} onFollowChipPress={expanded && !queued ? () => { if (following) setFollowing(false); else { setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } } : undefined} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={expanded ? (selectedId ?? "") : ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={chaseReplay ? undefined : courseTarget} replay={chaseReplay} onReplay={timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onMapChromeChange={onOptionsChange ? handleMapChromeChange : undefined} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
+          <GeographicCourse presentationActive={isFocused} cardSessionKey={expanded} initialFlat={courseFlat} onFlatChange={setCourseFlat} followAthlete={following && !chaseReplay} onFollowChange={setFollowing} mapFollowing={following} followAthleteName={focusedLane?.name ?? me?.name ?? "your athlete"} onFollowChipPress={expanded && !queued ? () => { if (following) setFollowing(false); else { setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } } : undefined} hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={expanded ? (selectedId ?? "") : ""} focusRequest={expanded ? focusRequest : 0} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={chaseReplay ? undefined : courseTarget} replay={chaseReplay} onReplay={timeline.toggle} onChoose2D={backgroundMode ? () => chooseView("2d") : undefined} onMapChromeChange={onOptionsChange ? handleMapChromeChange : undefined} optionsTop={expanded && !queued ? Math.max(insets.top, 0) + 6 : null} controlsBottom={expanded ? safeBottom + 136 + (backgroundMode ? 0 : 128) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
           <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, ...hud.chrome }}><MapHudBackdrop radius={999} /><Text style={{ ...textStyle("caption"), color: hud.ink }}>Tap to open full screen</Text></View>
@@ -618,151 +610,6 @@ const f=useFocusStyles();
             </SlidingFieldPanel>
 
             {backgroundMode && <FieldOverlayView hidden={overlaysHidden || !leadersHeight} style={{ position: "absolute", left: 12, top: Math.max(insets.top, 0) + 62 + leadersHeight + 12 }}><CoursePositionRail markers={fieldLanes.filter(lane => !hiddenIds.includes(lane.id))} height={Math.max(44, Math.min(140, dimensions.height * .58 - Math.max(insets.top, 0) - 62 - leadersHeight - 68))} value={sceneDimension === "4d" ? courseTarget?.value ?? focusedLane?.values[2] ?? total : view.center} maximum={Math.max(0, ...fieldLanes.map(lane => lane.value))} unit={arena.unit} onChange={value => { if (courseReplay) return; if (sceneDimension === "4d") setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 })); else panTo(value); }} /></FieldOverlayView>}
-            {/* Broadcast HUD: Bottom Focused Athlete Spotlight + Player Chips */}
-            {focusedLane && !backgroundMode ? (
-              <SlidingFieldPanel
-                label="athlete panel"
-                collapseGrip
-                collapsed={spotlightCollapsed}
-                onToggle={() => setSpotlightCollapsed(value => !value)}
-                overlaysHidden={overlaysHidden}
-                style={{
-                  position: "absolute",
-                  left: 12,
-                  right: 12,
-                  bottom: safeBottom + 136,
-                }}
-                surfaceStyle={{
-                  backgroundColor: "rgba(20, 20, 19, 0.86)",
-                  borderRadius: 20,
-                  paddingVertical: 10,
-                  paddingHorizontal: 12,
-                  borderWidth: 1,
-                  borderColor: "rgba(255, 255, 255, 0.16)",
-                  ...hud.chrome,
-                  gap: 8,
-                }}
-              >
-                <MapHudBackdrop radius={20} />
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 10,
-                  }}
-                >
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <Text
-                      style={{
-                        ...textStyle("caption"),
-                        color: focusedRank === 1 ? hud.accent : (hud.light ? hud.muted : "rgba(255,255,255,0.65)"),
-                      }}
-                    >
-                      {ordinalPlace(focusedRank).toUpperCase()} PLACE
-                    </Text>
-                    <Text
-                      numberOfLines={1}
-                      style={{ ...textStyle("label"), color: hud.ink }}
-                    >
-                      {focusedLane.name}
-                    </Text>
-                  </View>
-                  <View style={{ alignItems: "flex-end", gap: 2 }}>
-                    <Text style={{ ...textStyle("heading"), color: hud.accent }}>
-                      {focusedLane.values[2].toFixed(volumeDecimals)} {arena.unit}
-                    </Text>
-                    <Text
-                      style={{
-                        ...textStyle("caption"),
-                        color: (hud.light ? hud.muted : "rgba(255,255,255,0.72)"),
-                      }}
-                    >
-                      {focusedLane.you
-                        ? focusedRank === 1
-                          ? "Leading the field"
-                          : `${Math.abs(focusedDeltaToLeader).toFixed(volumeDecimals)} ${arena.unit} to 1st`
-                        : `${focusedDeltaToYou > 0 ? "+" : ""}${focusedDeltaToYou.toFixed(volumeDecimals)} ${arena.unit} vs you`}
-                    </Text>
-                  </View>
-                </View>
-
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ gap: 6, paddingTop: 2 }}
-                >
-                  {ranked.filter(peer => !hiddenIds.includes(peer.id)).map((peer) => {
-                    const activeChip = focusedLane.id === peer.id;
-                    return (
-                      <Pressable
-                        key={peer.id}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Focus ${peer.name}, place ${place(peer.values[2])}`}
-                        onPress={() => {
-                          selectAthlete(peer.id);
-                        }}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 6,
-                          paddingHorizontal: 10,
-                          paddingVertical: 6,
-                          borderRadius: 999,
-                          backgroundColor: activeChip
-                            ? c.tennis
-                            : hud.light
-                              ? c.soft
-                              : "rgba(255, 255, 255, 0.1)",
-                          borderWidth: 1,
-                          borderColor: activeChip
-                            ? c.tennis
-                            : place(peer.values[2]) === 1
-                              ? (hud.light ? c.tennis : "rgba(200, 245, 59, 0.45)")
-                              : (hud.light ? "rgba(20, 43, 59, 0.14)" : "rgba(255, 255, 255, 0.14)"),
-                        }}
-                      >
-                        <Text
-                          style={{
-                            ...textStyle("caption"),
-                            color: activeChip
-                              ? c.textOnAction
-                              : place(peer.values[2]) === 1
-                                ? hud.accent
-                                : (hud.light ? hud.muted : "rgba(255,255,255,0.7)"),
-                          }}
-                        >
-                          #{place(peer.values[2])}
-                        </Text>
-                        <Text
-                          numberOfLines={1}
-                          style={{
-                            ...textStyle("caption"),
-                            color: activeChip ? c.textOnAction : hud.ink,
-                          }}
-                        >
-                          {peer.name.split(" ")[0]}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-
-                <View style={{ borderRadius: 12, overflow: "hidden", marginTop: 4 }}>
-                  <FieldOverview
-                    hiddenIds={hiddenIds}
-                    lanes={fieldLanes}
-                    view={sceneDimension === "4d" ? { ...view, center: courseTarget?.value ?? focusedLane?.values[2] ?? total } : view}
-                    unit={arena.unit}
-                    positionOnly={sceneDimension === "4d"}
-                    onNavigate={value => {
-                      if (sceneDimension === "4d") setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }));
-                      else panTo(value);
-                    }}
-                  />
-                </View>
-              </SlidingFieldPanel>
-            ) : null}
           </> : null}
           {!backgroundMode && !queued && <FieldOverlayView hidden={overlaysHidden} style={{ position: "absolute", left: 12, right: 12, bottom: safeBottom + 8 }}><FieldTimeline timeline={timeline} floating /></FieldOverlayView>}
           <AthleteProfileSheet athlete={profileAthlete} onClose={() => setProfileAthlete(null)} />
