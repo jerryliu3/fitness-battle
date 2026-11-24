@@ -85,7 +85,7 @@ export async function loadCrewInvitePreview(
   const base = endpoint.replace(/\/$/, "");
   const response = await fetch(`${base}?code=${encodeURIComponent(code)}`);
   if (!response.ok) {
-    const body = await response.json().catch(() => null);
+    const body = (await response.json().catch(() => null)) as { error?: string } | null;
     throw new Error(crewInvitePreviewErrorMessage(body?.error));
   }
   return response.json() as Promise<CrewInvitePreviewPayload>;
