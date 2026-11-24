@@ -470,6 +470,7 @@ export function ReplayPlayer({
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(64);
   const [wall, setWall] = useState(false);
+  const [includeWheelchair, setIncludeWheelchair] = useState(false);
   const [reduced, setReduced] = useState(false);
   const [mapError, setMapError] = useState("");
   const [mapAttempt, setMapAttempt] = useState(0);
@@ -539,16 +540,16 @@ export function ReplayPlayer({
     });
   }
 
-  const scopeKey = useMemo(
-    () =>
-      new URLSearchParams({
-        edition: String(editionId),
-        distance: distanceSlug,
-        sex: category,
-        clock,
-      }).toString(),
-    [editionId, distanceSlug, category, clock],
-  );
+  const scopeKey = useMemo(() => {
+    const params = new URLSearchParams({
+      edition: String(editionId),
+      distance: distanceSlug,
+      sex: category,
+      clock,
+    });
+    if (includeWheelchair) params.set("wheelchair", "1");
+    return params.toString();
+  }, [editionId, distanceSlug, category, clock, includeWheelchair]);
 
   useEffect(() => {
     if (active && map.current) {
@@ -1181,6 +1182,22 @@ export function ReplayPlayer({
             setCategory(nextSex);
             setPage(0);
           }}
+          extraRow2={
+            isRunningSport ? (
+              <label className="ovt-filter-chip subtle" style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={includeWheelchair}
+                  aria-label="Include wheelchair division"
+                  onChange={() => {
+                    setIncludeWheelchair(v => !v);
+                    setPage(0);
+                  }}
+                />
+                Include wheelchair
+              </label>
+            ) : undefined
+          }
         />
       </div>
 

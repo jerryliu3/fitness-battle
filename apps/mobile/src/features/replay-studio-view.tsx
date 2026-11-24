@@ -469,6 +469,7 @@ export function ReplayStudioView({
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(64);
   const [wall, setWall] = useState(false);
+  const [includeWheelchair, setIncludeWheelchair] = useState(false);
   const [mapExpanded, setMapExpanded] = useState(false);
   const [seekWidth, setSeekWidth] = useState(200);
   const [expandedRunnerId, setExpandedRunnerId] = useState<number | null>(null);
@@ -499,7 +500,7 @@ export function ReplayStudioView({
   // Fetch & precompile replay field with shared cache
   useEffect(() => {
     if (!isRunningSport) return;
-    const cacheKey = replayScopeCacheKey(editionId, distanceSlug, category, ids);
+    const cacheKey = replayScopeCacheKey(editionId, distanceSlug, category, ids, includeWheelchair);
     const cached = getCachedReplayField(cacheKey);
     if (cached && validateReplayCourse(cached.data.course, storedDistance)) {
       setData(cached.data);
@@ -528,6 +529,7 @@ export function ReplayStudioView({
       distanceSlug,
       sex: category,
       ids,
+      includeWheelchair,
       signal: controller.signal,
       onProgress: setProgress,
     })
@@ -550,7 +552,7 @@ export function ReplayStudioView({
       });
 
     return () => controller.abort();
-  }, [isRunningSport, editionId, distanceSlug, category, ids, attempt, storedDistance]);
+  }, [isRunningSport, editionId, distanceSlug, category, ids, includeWheelchair, attempt, storedDistance]);
 
   useEffect(() => {
     if (!runners.length) {
@@ -1184,6 +1186,25 @@ export function ReplayStudioView({
             setPage(0);
           }}
         />
+        {isRunningSport ? (
+          <View style={{ marginTop: 10, flexDirection: "row", alignItems: "center" }}>
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityLabel="Include wheelchair division"
+              accessibilityState={{ checked: includeWheelchair }}
+              onPress={() => {
+                setIncludeWheelchair(v => !v);
+                setPage(0);
+              }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              <View style={[s.checkbox, includeWheelchair && s.checkboxChecked]}>
+                {includeWheelchair ? <AppText role="nav" style={{ color: "#ffffff" }}>✓</AppText> : null}
+              </View>
+              <AppText role="caption" secondary>Include wheelchair</AppText>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
 
       {!isRunningSport ? (

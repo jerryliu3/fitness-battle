@@ -1,7 +1,7 @@
 -- Isolated rankings database only. Invoke with ON_ERROR_STOP. Always rolls back.
 begin;
 do $$
-declare src bigint; evt bigint; ed bigint; rec bigint; perf bigint; cps bigint; wrong_cps bigint; revision timestamptz; payload jsonb;
+declare src bigint; evt bigint; ed bigint; rec bigint; wc_rec bigint; perf bigint; wc_perf bigint; cps bigint; wrong_cps bigint; revision timestamptz; payload jsonb;
 begin
   insert into public.sources(slug,name,attribution,reuse_notes,display_allowed,audited_at)
   values('replay_contract_test','Splits','Test','Test',true,now()) returning id into src;
@@ -23,6 +23,18 @@ begin
     or (payload->'splits'->>'finishMs')::integer is distinct from 3000000 then raise exception 'Split report lost observations'; end if;
   insert into public.rankings_replay_courses(event_edition_id,distance_slug,points,source_url,attribution,review_notes,reviewed_at,display_allowed)
   values(ed,'10k','[[0,0,0],[0.05,0,5000],[0.1,0,10000]]','https://example.test/course','Course','Reviewed alignment',now(),true);
+  insert into public.source_records(source_id,event_edition_id,normalized_name,category_key)
+  values(src,ed,'wheelchair runner','10k:unknown') returning id into wc_rec;
+  insert into public.performances(source_record_id,event_edition_id,athlete_name,sex,distance_slug,chip_time_ms,rank_time_ms,rank_clock,finish_status,competition_class)
+  values(wc_rec,ed,'Wheelchair Runner','unknown','10k',1800000,1800000,'chip','finished','wheelchair') returning id into wc_perf;
+  payload:=public.rankings_replay_page(ed,'10k','unknown','chip',null,0);
+  if (payload->>'totalAvailable')::integer is distinct from 1 or jsonb_array_length(payload->'runners') is distinct from 1 then raise exception 'Wheelchair leaked into default replay page'; end if;
+  payload:=public.rankings_replay_compact_page(ed,'10k','unknown','chip',null,0,5000);
+  if (payload->>'totalAvailable')::integer is distinct from 1 or jsonb_array_length(payload->'runners') is distinct from 1 then raise exception 'Wheelchair leaked into default compact replay page'; end if;
+  payload:=public.rankings_replay_compact_page(ed,'10k','unknown','chip',null,0,5000,true);
+  if (payload->>'totalAvailable')::integer is distinct from 2 or jsonb_array_length(payload->'runners') is distinct from 2 then raise exception 'Wheelchair opt-in failed on compact replay page'; end if;
+  payload:=public.rankings_replay_page(ed,'10k','unknown','chip',null,0,true);
+  if (payload->>'totalAvailable')::integer is distinct from 2 or jsonb_array_length(payload->'runners') is distinct from 2 then raise exception 'Wheelchair opt-in failed on replay page'; end if;
   payload:=public.rankings_replay_page(ed,'10k','unknown','chip',array[perf],0);
   if (payload->>'totalAvailable')::integer is distinct from 1 or jsonb_array_length(payload->'runners') is distinct from 1
     or payload->'course'->'points' is null or payload->'next' is distinct from 'null'::jsonb then raise exception 'Replay scope failed'; end if;
