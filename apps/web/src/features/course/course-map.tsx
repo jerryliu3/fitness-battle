@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseReplayPose, courseTravelFraction, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { CourseCallout } from "./course-callout";
 import { addMapboxAttribution, mapboxAttributionOptions } from "@/components/maps/mapbox-attribution";
 import { useAppearanceMode } from "@/theme/appearance-provider";
@@ -46,7 +46,7 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     let sized = container.current.clientHeight > 0;
     let routeFrame = 0;
     let initialized = false;
-    const buildCamera = () => { camera.current = createCourseCamera({ read, trace: (poseAt, duration) => { const start = performance.now(); const tick = () => { const elapsed = performance.now() - start, fraction = Math.min(1, elapsed / duration), next = poseAt(fraction * fraction * (3 - 2 * fraction), elapsed); instance.jumpTo({ center: next.center, zoom: next.zoom, pitch: next.pitch, bearing: next.bearing }); if (elapsed < duration + 1200) routeFrame = requestAnimationFrame(tick); else routeFrame = 0; }; routeFrame = requestAnimationFrame(tick); }, fit: (bounds, duration) => { instance.fitBounds([bounds.sw, bounds.ne], { padding: 48, pitch: 0, bearing: 0, maxZoom: 20, duration }); }, stop: userGesture => { if (routeFrame) cancelAnimationFrame(routeFrame); routeFrame = 0; if (!userGesture) instance.stop(); }, move: (pose, duration) => instance.easeTo({ center: pose.center, zoom: pose.zoom, pitch: pose.pitch, bearing: pose.bearing, duration: initialized ? duration : 0 }) }, reduced.current, initialFlat ? "2d" : "3d"); };
+    const buildCamera = () => { camera.current = createCourseCamera({ read, trace: (poseAt, duration) => { const start = performance.now(); const tick = () => { const elapsed = performance.now() - start, linear = Math.min(1, elapsed / duration), next = poseAt(courseTravelFraction(linear), elapsed); instance.jumpTo({ center: next.center, zoom: next.zoom, pitch: next.pitch, bearing: next.bearing }); if (elapsed < duration + 1200) routeFrame = requestAnimationFrame(tick); else routeFrame = 0; }; routeFrame = requestAnimationFrame(tick); }, fit: (bounds, duration) => { instance.fitBounds([bounds.sw, bounds.ne], { padding: 48, pitch: 0, bearing: 0, maxZoom: 20, duration }); }, stop: userGesture => { if (routeFrame) cancelAnimationFrame(routeFrame); routeFrame = 0; if (!userGesture) instance.stop(); }, move: (pose, duration) => instance.easeTo({ center: pose.center, zoom: pose.zoom, pitch: pose.pitch, bearing: pose.bearing, duration: initialized ? duration : 0 }) }, reduced.current, initialFlat ? "2d" : "3d"); };
     buildCamera();
     const preferenceChanged = () => { reduced.current = preference.matches; camera.current?.setReducedMotion(reduced.current); };
     preference.addEventListener("change", preferenceChanged);
@@ -58,7 +58,7 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
       const s = latest.current.scene;
       instance.addSource("completed", { type: "geojson", data: s.trails });
       instance.addSource("athletes", { type: "geojson", data: s.markers });
-      instance.addLayer({ id: "completed-line", type: "line", source: "completed", slot: "middle", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "priority"] }, paint: { "line-color": ["get", "color"], "line-width": sharedLane ? RACE_OVERLAY_WIDTH_PIXELS : RACE_SEPARATE_WIDTH_PIXELS } });
+      instance.addLayer({ id: "completed-line", type: "line", source: "completed", slot: "middle", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "priority"] }, paint: { "line-color": ["get", "color"], "line-emissive-strength": 1, "line-width": sharedLane ? RACE_OVERLAY_WIDTH_PIXELS : RACE_SEPARATE_WIDTH_PIXELS } });
       instance.addLayer({ id: "athlete-dots", type: "circle", source: "athletes", slot: "top", filter: ["!=", ["get", "mystery"], true], layout: { "circle-sort-key": ["case", ["get", "selected"], 2, ["get", "you"], 1, 0], visibility: sharedLane ? "none" : "visible" }, paint: { "circle-radius": ["case", ["get", "selected"], RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS], "circle-color": ["get", "color"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
       instance.on("click", "athlete-dots", event => { const id = event.features?.[0]?.properties?.id; if (typeof id === "string") latest.current.onSelect(id); });
       setReady(true); setError("");
@@ -113,9 +113,13 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
     if (!ready || !distanceTarget) return;
     const metres = raceEffortMetres(clampedTarget ?? 0, unit);
     if (metres === null) return;
-    camera.current?.seek(course, metres);
-    setFollowing(false);
-  }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request, clampedTarget]);
+    if (followAthlete && (camera.current?.following ?? following)) {
+      camera.current?.travelAlong(course, metres, scene.selected?.lateralMetres ?? 0);
+    } else {
+      camera.current?.seek(course, metres);
+      setFollowing(false);
+    }
+  }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request, clampedTarget, followAthlete, following, scene.selected?.lateralMetres]);
   const control = (label: string, action: () => void) => <button type="button" className="fb-btn-line" style={{ whiteSpace: "nowrap", minHeight: 38 }} onClick={() => { action(); const next = camera.current?.following ?? false; setFollowing(next); onFollowChange?.(next); }}>{label}</button>;
   return <div className="geographic-map" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", position: "relative", "--map-controls-bottom": `${controlsBottom}px` } as React.CSSProperties}>
     <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 0, position: "relative", overflow: "hidden" }} />

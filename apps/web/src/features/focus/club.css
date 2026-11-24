@@ -1751,7 +1751,7 @@
   z-index: 80;
   display: grid;
   gap: 4px;
-  width: 186px;
+  width: 248px;
   padding: 9px 10px;
   border-radius: 14px;
   background: var(--map-hud-fill, rgba(20, 20, 19, 0.76));
@@ -1759,11 +1759,31 @@
   backdrop-filter: var(--map-hud-blur, blur(12px));
   pointer-events: auto;
 }
+.focus-broadcast-tower-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
 .focus-broadcast-tower-kicker {
   letter-spacing: normal;
   text-transform: none;
   font: var(--type-label);
   color: var(--map-hud-muted, rgba(255, 255, 255, 0.6));
+}
+.focus-broadcast-tower-dismiss {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--map-hud-ink, var(--app-white));
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
+  cursor: pointer;
 }
 .focus-broadcast-tower-row {
   display: flex;
@@ -1802,6 +1822,7 @@
 }
 .focus-broadcast-tower-name {
   flex: 1;
+  min-width: 5.5rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

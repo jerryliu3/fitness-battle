@@ -4,7 +4,7 @@ import { useThemeColors } from "../theme";
 import type { FieldMapChromeSlot } from "@fitness-battle/shared";
 import { Component, type ReactNode } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
-import { type CourseReplayFrame, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane } from "@fitness-battle/shared";
+import { isGeographicCourseMapUnit, type CourseReplayFrame, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { AppText, textStyle } from "../ui/section";
 
@@ -34,7 +34,7 @@ const c=useThemeColors();
   useBootLoading(nativeCourseMapAvailable && !onSnapshot && Boolean(mobileEnv.mapboxAccessToken) && !settled && !error);
   const prepared = () => { setSettled(true); onReady?.(); };
 
-  if (unit !== "mi" && unit !== "km") return null;
+  if (!isGeographicCourseMapUnit(unit)) return null;
   return <View style={{ flex: 1, minHeight: 0 }}>
     {!mobileEnv.mapboxAccessToken ? (
       <View style={{ flex: 1, minHeight: 0, justifyContent: "center", alignItems: "center", padding: 24 }}>

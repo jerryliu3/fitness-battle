@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { courseReplayPose, createRaceCourse, raceCoursePosition, raceCourseTrail, raceEffortMetres, createCourseCamera, type CourseCameraPose } from "./race-course";
+import { courseReplayPose, courseTravelFraction, createRaceCourse, raceCoursePosition, raceCourseTrail, raceEffortMetres, createCourseCamera, type CourseCameraPose } from "./race-course";
 const course = createRaceCourse("City", [[0, 0], [.001, 0], [.001, .002]]);
 describe("race courses", () => {
   it("indexes distance, removes duplicates and preserves distance units", () => {
@@ -122,6 +122,22 @@ it("traces curved course distance forward, backward, and from an interrupted jou
   expect(pose.center).toEqual(raceCoursePosition(course, 100).coordinate);
   expect(camera.courseMetres).toBe(100);
   expect(pose.zoom).toBe(16);
+});
+
+it("eases route progress with a faster middle segment", () => {
+  expect(courseTravelFraction(0)).toBe(0);
+  expect(courseTravelFraction(1)).toBe(1);
+  expect(courseTravelFraction(0.5)).toBeGreaterThan(0.4);
+});
+
+it("travelAlong keeps following and traces the route", () => {
+  const trace = vi.fn();
+  const camera = createCourseCamera({ read: () => ({ center: [0, 0], zoom: 16, pitch: 60, bearing: 0 }), move() {}, stop() {}, trace });
+  camera.focus(course, 50);
+  trace.mockClear();
+  camera.travelAlong(course, 300);
+  expect(trace).toHaveBeenCalledOnce();
+  expect(camera.following).toBe(true);
 });
 
 it("skips route animation with reduced motion", () => {

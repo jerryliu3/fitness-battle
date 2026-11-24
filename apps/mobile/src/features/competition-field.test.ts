@@ -93,7 +93,7 @@ it("cancels a pending hold for small drags and app backgrounding", async () => {
   expect(field().props.overlaysHidden).toBe(false);
 });
 it("collapses the athlete spotlight panel and isolates timeline touches from scene holds", async () => {
-  expect(button("Collapse live standings")).toBeUndefined();
+  expect(button("Collapse live standings")).toBeDefined();
   expect(button("Collapse athlete panel").props.accessibilityState.expanded).toBe(true);
   await act(async () => button("Collapse athlete panel").props.onPress());
   expect(button("Expand athlete panel").props.accessibilityState.expanded).toBe(false);
@@ -125,7 +125,7 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and time
   await act(async () => map().props.onSelect(map().props.lanes.find((lane: { you?: boolean }) => lane.you).id));
   expect(map().props.distanceTarget).toBeNull();
   expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(1);
-  expect(button("Collapse live standings")).toBeUndefined();
+  expect(button("Collapse live standings")).toBeDefined();
   await act(async () => button("Collapse athlete panel").props.onPress());
   expect(button("Expand athlete panel")).toBeDefined();
   expect(overview()).toBeDefined();

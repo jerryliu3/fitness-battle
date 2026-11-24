@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useBootLoading } from "@/shell/boot-readiness";
 
 import dynamic from "next/dynamic";
-import { type CourseReplayFrame, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane } from "@fitness-battle/shared";
+import { isGeographicCourseMapUnit, type CourseReplayFrame, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane } from "@fitness-battle/shared";
 import { webEnv } from "@/lib/env";
 
 const CourseMap = dynamic(() => import("./course-map"), { ssr: false, loading: () => <p className="fb-copy">Loading map…</p> });
@@ -29,7 +29,7 @@ export function GeographicCourse({ cardSessionKey, initialFlat, onFlatChange, on
   }, [attempt, error]);
   const prepared = () => { if (preparation.current.expired || preparation.current.attempt !== attempt) return; setSettled(true); onReady?.(); };
 
-  if (unit !== "mi" && unit !== "km") return null;
+  if (!isGeographicCourseMapUnit(unit)) return null;
   if (expired && !settled) return <div role="status">The field could not finish loading. <button type="button" onClick={() => { preparation.current = { expired: false, attempt: attempt + 1 }; setExpired(false); setAttempt(value => value + 1); onRetry?.(); }}>Retry field</button></div>;
   return <div className="geographic-field-scene" style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, position: "relative" }}>
     {!webEnv.mapboxAccessToken ? <p className="fb-copy">Mapbox access is not configured.</p> : !course ?

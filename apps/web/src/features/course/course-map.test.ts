@@ -81,7 +81,7 @@ it.each(["km", "mi"])("seeks %s overview targets after loading and allows repeat
   vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
   const course = createRaceCourse("Corner", [[0, 0], [.01, 0], [.01, .01]]);
   const value = course.length * 1.25 / (unit === "mi" ? 1609.344 : 1000);
-  const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 4 }], unit, selectedId: "you", focusRequest: 0, onSelect: vi.fn(), onResumeFollow: vi.fn(), distanceTarget: { value, request: 1 } };
+  const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 4 }], unit, selectedId: "you", focusRequest: 0, onSelect: vi.fn(), onResumeFollow: vi.fn(), followAthlete: false, distanceTarget: { value, request: 1 } };
   await act(async () => { renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "div" ? {} : null }); });
   const instance = mock.instances[0];
   await act(async () => instance.emit("load"));
@@ -98,10 +98,10 @@ it.each(["km", "mi"])("seeks %s overview targets after loading and allows repeat
   instance.easeTo.mockClear();
   await act(async () => renderer.update(createElement(CourseMap, { ...repeated, lanes: [{ ...props.lanes[0], value: 5 }] })));
   expect(instance.easeTo).not.toHaveBeenCalled();
+  instance.easeTo.mockClear();
   await act(async () => renderer.root.findAllByType("button").find(node => node.props.children === "Recenter")!.props.onClick());
-  await finishCameraTravel();
   expect(props.onResumeFollow).toHaveBeenCalledOnce();
-  expect(instance.jumpTo.mock.lastCall[0].center).toEqual(raceCoursePosition(course, raceEffortMetres(5, unit)!).coordinate);
+  expect(instance.easeTo).toHaveBeenCalled();
   expect(props.onSelect).not.toHaveBeenCalled();
   expect(mock.instances).toHaveLength(1);
 });

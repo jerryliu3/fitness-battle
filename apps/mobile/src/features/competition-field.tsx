@@ -179,6 +179,7 @@ const f=useFocusStyles();
   const [expanded, setExpanded] = useState(persistent);
   const [leadersHeight, setLeadersHeight] = useState(0);
   const [spotlightCollapsed, setSpotlightCollapsed] = useState(false);
+  const [leadersCollapsed, setLeadersCollapsed] = useState(false);
   const [overlaysHidden, setOverlaysHidden] = useState(false);
   const hold = useRef<ReturnType<typeof createFieldOverlayHold> | null>(null);
   if (!hold.current) hold.current = createFieldOverlayHold(setOverlaysHidden);
@@ -485,16 +486,16 @@ const f=useFocusStyles();
             {/* Broadcast HUD: Left Current Positions Tower */}
             <SlidingFieldPanel
               label="live standings"
-              collapsible={false}
+              collapsible
               onHeightChange={setLeadersHeight}
-              collapsed={false}
-              onToggle={() => {}}
+              collapsed={leadersCollapsed}
+              onToggle={() => setLeadersCollapsed(value => !value)}
               overlaysHidden={overlaysHidden}
               style={{
                 position: "absolute",
                 top: Math.max(insets.top, 0) + 62,
                 left: 12,
-                maxWidth: 274, // 230 px panel plus the 44 px grip target.
+                maxWidth: 318,
               }}
               surfaceStyle={{
                 backgroundColor: "rgba(20, 20, 19, 0.72)",
@@ -505,12 +506,24 @@ const f=useFocusStyles();
                 borderColor: "rgba(255, 255, 255, 0.14)",
                 ...hud.chrome,
                 gap: 5,
+                minWidth: 236,
               }}
             >
               <MapHudBackdrop radius={14} />
-              <Text style={{ ...textStyle("label"), color: (hud.light ? hud.muted : "rgba(255,255,255,0.65)") }}>
-                Live standings
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <Text style={{ ...textStyle("label"), color: (hud.light ? hud.muted : "rgba(255,255,255,0.65)") }}>
+                  Live standings
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Collapse live standings"
+                  hitSlop={8}
+                  onPress={() => setLeadersCollapsed(true)}
+                  style={{ width: 28, height: 28, alignItems: "center", justifyContent: "center" }}
+                >
+                  <AppText role="caption" style={{ color: hud.ink }}>×</AppText>
+                </Pressable>
+              </View>
               {coursePositionLeaders(ranked).map((peer, idx) => {
                 if (hiddenIds.includes(peer.id)) return <View key={peer.id} style={{ height: 24 }} />;
                 const delta = peer.values[2] - leaderValue;
@@ -555,6 +568,7 @@ const f=useFocusStyles();
                         ...textStyle("caption"),
                         color: leads ? hud.accent : hud.ink,
                         flex: 1,
+                        minWidth: 72,
                       }}
                     >
                       {peer.name.split(" ")[0]}

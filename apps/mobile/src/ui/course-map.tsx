@@ -9,7 +9,7 @@ import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import Mapbox, { MapView, Camera, StyleImport, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
-import { courseReplayPose, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceCourseRacerPosition, raceCourseStartCoordinate, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseReplayPose, courseTravelFraction, type CourseReplayFrame, courseAthleteDetail, courseAthleteSubdetail, createCourseCamera, raceCourseRacerPosition, raceCourseStartCoordinate, raceEffortMetres, raceCourseScene, courseInitialZoom, RACE_OVERLAY_WIDTH_PIXELS, RACE_SEPARATE_WIDTH_PIXELS, RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { CourseOptions } from "./course-options";
 import { FieldFollowChip } from "./field-follow-chip";
@@ -151,7 +151,7 @@ const { colors: appearanceColors, mode } = useAppTheme();
     follow(next) { ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: 300, animationMode: "easeTo" }); },
     trace(poseAt, duration) {
       const start = Date.now();
-      const tick = () => { const elapsed = Date.now() - start; const fraction = Math.min(1, elapsed / duration); const next = poseAt(fraction * fraction * (3 - 2 * fraction), elapsed); pose.current = next; ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: 0 }); if (elapsed < duration + 1200) routeFrame.current = requestAnimationFrame(tick); else routeFrame.current = 0; };
+      const tick = () => { const elapsed = Date.now() - start; const linear = Math.min(1, elapsed / duration); const next = poseAt(courseTravelFraction(linear), elapsed); pose.current = next; ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: 0 }); if (elapsed < duration + 1200) routeFrame.current = requestAnimationFrame(tick); else routeFrame.current = 0; };
       routeFrame.current = requestAnimationFrame(tick);
     },
     fit(bounds, duration) { ref.current?.setCamera({ bounds: { ...bounds, paddingTop: 48, paddingBottom: 48, paddingLeft: 48, paddingRight: 48 }, pitch: 0, heading: 0, animationDuration: duration, animationMode: "easeTo" }); },
@@ -222,8 +222,9 @@ const { colors: appearanceColors, mode } = useAppTheme();
     if (!active || !ready || !distanceTarget) return;
     const metres = raceEffortMetres(clampedTarget ?? 0, unit);
     if (metres === null) return;
-    controller.seek(course, metres);
-  }, [active, ready, course, unit, distanceTarget?.value, distanceTarget?.request, clampedTarget, controller]);
+    if (followAthlete && controller.following) controller.travelAlong(course, metres, selectedOffset);
+    else controller.seek(course, metres);
+  }, [active, ready, course, unit, distanceTarget?.value, distanceTarget?.request, clampedTarget, controller, followAthlete, selectedOffset]);
   const optionsHandlers = useRef({ onReplay, onChoose2D, toggleDimension: () => {}, toggleSpacing: () => {}, overview: () => {} });
   optionsHandlers.current = { onReplay, onChoose2D,
     toggleDimension: () => { overviewHold.current = false; controller.dimension(flat ? "3d" : "2d", !(followAthlete && controller.following && scene.selected)); setFlat(!flat); onFlatChange?.(!flat); if (followAthlete && controller.following) focus(); },
@@ -309,7 +310,7 @@ const { colors: appearanceColors, mode } = useAppTheme();
           onFollowChange?.(false);
         }
       }} />
-      <ShapeSource id="completed" shape={visibleTrails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineSortKey: ["get", "priority"], lineWidth: sharedLane ? RACE_OVERLAY_WIDTH_PIXELS : RACE_SEPARATE_WIDTH_PIXELS, lineCap: "round", lineJoin: "round" }} /></ShapeSource>
+      <ShapeSource id="completed" shape={visibleTrails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineEmissiveStrength: 1, lineSortKey: ["get", "priority"], lineWidth: sharedLane ? RACE_OVERLAY_WIDTH_PIXELS : RACE_SEPARATE_WIDTH_PIXELS, lineCap: "round", lineJoin: "round" }} /></ShapeSource>
       {!sharedLane && !queuedStart ? <ShapeSource id="athletes" shape={visibleMarkers} onPress={event => { const id = event.features[0]?.properties?.id; if (typeof id === "string") onSelect(id); }}>
         <CircleLayer id="athlete-dots" slot="top" style={{ circleSortKey: ["case", ["get", "selected"], 2, ["get", "you"], 1, 0], circleRadius: ["case", ["get", "selected"], RACE_SELECTED_RADIUS_PIXELS, RACE_ATHLETE_RADIUS_PIXELS], circleColor: ["get", "color"], circleStrokeColor: "#ffffff", circleStrokeWidth: 1 }} />
       </ShapeSource> : null}

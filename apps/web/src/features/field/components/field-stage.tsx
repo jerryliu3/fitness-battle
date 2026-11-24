@@ -409,7 +409,10 @@ export function FieldStage({
       <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Live standings">
         <button type="button" className="focus-panel-toggle" aria-label={intervalsCollapsed ? "Expand live intervals" : "Collapse live intervals"} aria-expanded={!intervalsCollapsed} onClick={() => setIntervalsCollapsed(value => !value)}><span className="focus-panel-grip" aria-hidden="true" /></button>
         <div className="focus-panel-content" inert={intervalsCollapsed} aria-hidden={intervalsCollapsed}>
-          <span className="focus-broadcast-tower-kicker">Live standings</span>
+          <div className="focus-broadcast-tower-head">
+            <span className="focus-broadcast-tower-kicker">Live standings</span>
+            <button type="button" className="focus-broadcast-tower-dismiss" aria-label="Collapse live standings" onClick={() => setIntervalsCollapsed(true)}>×</button>
+          </div>
           {coursePositionLeaders(ranked).map((peer) => {
             const delta = peer.value - leaderValue;
             const isSelected = tappedId === peer.id;

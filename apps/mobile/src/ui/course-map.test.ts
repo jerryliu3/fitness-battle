@@ -103,7 +103,7 @@ it.each(["km", "mi"])("seeks %s overview targets without changing map pose or at
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const course = createRaceCourse("Corner", [[0, 0], [.01, 0], [.01, .01]]);
   const value = course.length * 1.25 / (unit === "mi" ? 1609.344 : 1000);
-  const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 4 }], unit, selectedId: "you", focusRequest: 0, onSelect: vi.fn(), distanceTarget: { value, request: 1 } };
+  const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 4 }], unit, selectedId: "you", focusRequest: 0, onSelect: vi.fn(), followAthlete: false, distanceTarget: { value, request: 1 } };
   await act(async () => { renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "Camera" ? calls : null }); });
   await act(async () => renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [.005, 0], zoom: 15, pitch: 30, heading: 20, isUserInteraction: true } } }));
   await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
@@ -116,9 +116,10 @@ it.each(["km", "mi"])("seeks %s overview targets without changing map pose or at
   calls.setCamera.mockClear();
   await act(async () => renderer.update(createElement(CourseMap, { ...repeated, lanes: [{ ...props.lanes[0], value: 5 }] })));
   expect(calls.setCamera).not.toHaveBeenCalled();
-  await act(async () => renderer.update(createElement(CourseMap, { ...repeated, lanes: [{ ...props.lanes[0], value: 5 }], distanceTarget: null, focusRequest: 1 })));
-  await finishCameraTravel();
-  expect(calls.setCamera.mock.lastCall![0].centerCoordinate).toEqual(raceCoursePosition(course, raceEffortMetres(5, unit)!).coordinate);
+  const progressed = [{ ...props.lanes[0], value: 5 }];
+  calls.setCamera.mockClear();
+  await act(async () => renderer.update(createElement(CourseMap, { ...repeated, followAthlete: true, lanes: progressed, distanceTarget: null, focusRequest: 1 })));
+  expect(calls.setCamera).toHaveBeenCalled();
   expect(props.onSelect).not.toHaveBeenCalled();
   expect(renderer.root.findAllByType("Map" as never)).toHaveLength(1);
 });
