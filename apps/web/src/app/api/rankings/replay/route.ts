@@ -10,8 +10,8 @@ export async function GET(request:Request) {
   try {
     const sex=params.get("sex")==="all" ? "all" : query.sex;
     const data=compact
-      ? await loadReplayCompactPage(query.editionId,distance.stored,sex,clock,ids,after)
-      : await loadReplayPage(query.editionId,distance.stored,sex,clock,ids,after);
+      ? await loadReplayCompactPage(query.editionId,distance.stored,sex,clock,ids,after,query.includeWheelchair)
+      : await loadReplayPage(query.editionId,distance.stored,sex,clock,ids,after,query.includeWheelchair);
     return NextResponse.json(data ?? {error:"Reviewed course and timing profiles unavailable"},{status:data ? 200 : 404,headers:{"Cache-Control":"public, max-age=300, stale-while-revalidate=600"}});
   }
   catch {return NextResponse.json({error:"Replay unavailable"},{status:503});}

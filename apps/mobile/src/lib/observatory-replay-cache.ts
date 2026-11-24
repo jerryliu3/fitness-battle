@@ -73,14 +73,21 @@ export function loadCoursePreviewsCached(): Promise<Record<string, [number, numb
   return coursePreviewsInFlight;
 }
 
-export function replayScopeCacheKey(editionId: number, distanceSlug: string, sex: string, ids?: string | null): string {
-  const scopeKey = new URLSearchParams({
+export function replayScopeCacheKey(
+  editionId: number,
+  distanceSlug: string,
+  sex: string,
+  ids?: string | null,
+  includeWheelchair = false,
+): string {
+  const params = new URLSearchParams({
     edition: String(editionId),
     distance: distanceSlug,
     sex,
     clock: "chip",
-  }).toString();
-  return `${scopeKey}|${ids ?? ""}`;
+  });
+  if (includeWheelchair) params.set("wheelchair", "1");
+  return `${params.toString()}|${ids ?? ""}`;
 }
 
 export function loadAndCompileReplayField({
@@ -88,6 +95,7 @@ export function loadAndCompileReplayField({
   distanceSlug,
   sex,
   ids = null,
+  includeWheelchair = false,
   signal,
   onProgress,
 }: {
@@ -95,10 +103,11 @@ export function loadAndCompileReplayField({
   distanceSlug: string;
   sex: string;
   ids?: string | null;
+  includeWheelchair?: boolean;
   signal?: AbortSignal;
   onProgress?: (count: number) => void;
 }): Promise<CachedReplayField> {
-  const key = replayScopeCacheKey(editionId, distanceSlug, sex, ids);
+  const key = replayScopeCacheKey(editionId, distanceSlug, sex, ids, includeWheelchair);
   const cached = replayFieldCache.get(key);
   if (cached) return Promise.resolve(cached);
 
@@ -112,6 +121,7 @@ export function loadAndCompileReplayField({
     sex,
     clock: "chip",
   });
+  if (includeWheelchair) scopeParams.set("wheelchair", "1");
 
   const promise = loadReplayField(
     async after => {

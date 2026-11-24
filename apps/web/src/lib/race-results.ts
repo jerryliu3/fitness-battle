@@ -214,22 +214,32 @@ export async function loadReplayPage(
   clock: string,
   ids: number[] | null,
   after: number,
+  includeWheelchair = false,
 ): Promise<import("@fitness-battle/shared").ReplayPage | null> {
-  const key = JSON.stringify({ edition, distance, sex, clock, ids, after });
+  const key = JSON.stringify({ edition, distance, sex, clock, ids, after, includeWheelchair });
   const now = Date.now();
   const cached = replayCache.get(key);
   if (cached && cached.expiresAt > now) return cached.data;
 
   const client = createRankingsClient();
   if (!client) throw new Error("Rankings unavailable");
-  const { data, error } = await client.rpc("rankings_replay_page", {
+  const baseParams = {
     p_edition_id: edition,
     p_distance: distance,
     p_sex: sex,
     p_clock: clock,
     p_ids: ids,
     p_after: after,
-  });
+    p_include_wheelchair: includeWheelchair,
+  };
+  let { data, error } = await client.rpc("rankings_replay_page", baseParams);
+  if (
+    error
+    && (error.code === "PGRST202" || /p_include_wheelchair|schema cache/i.test(error.message))
+  ) {
+    const { p_include_wheelchair: _wc, ...legacyParams } = baseParams;
+    ({ data, error } = await client.rpc("rankings_replay_page", legacyParams));
+  }
   if (error) throw new Error("Replay unavailable");
   if (replayCache.size > 100) {
     const firstKey = replayCache.keys().next().value;
@@ -246,8 +256,9 @@ export async function loadReplayCompactPage(
   clock: string,
   ids: number[] | null,
   after: number,
+  includeWheelchair = false,
 ): Promise<ReplayCompactPage | null> {
-  const key = JSON.stringify({ edition, distance, sex, clock, ids, after });
+  const key = JSON.stringify({ edition, distance, sex, clock, ids, after, includeWheelchair });
   const now = Date.now();
   const cached = replayCompactCache.get(key);
   if (cached && cached.expiresAt > now) return cached.data;
@@ -261,7 +272,7 @@ export async function loadReplayCompactPage(
 
       let result: ReplayCompactPage | null = null;
       if (!compactRpcUnavailable) {
-        const { data, error } = await client.rpc("rankings_replay_compact_page", {
+        const baseParams = {
           p_edition_id: edition,
           p_distance: distance,
           p_sex: sex,
@@ -269,7 +280,16 @@ export async function loadReplayCompactPage(
           p_ids: ids,
           p_after: after,
           p_limit: 5000,
-        });
+          p_include_wheelchair: includeWheelchair,
+        };
+        let { data, error } = await client.rpc("rankings_replay_compact_page", baseParams);
+        if (
+          error
+          && (error.code === "PGRST202" || /p_include_wheelchair|schema cache/i.test(error.message))
+        ) {
+          const { p_include_wheelchair: _wc, ...legacyParams } = baseParams;
+          ({ data, error } = await client.rpc("rankings_replay_compact_page", legacyParams));
+        }
         if (error && (error.code === "PGRST202" || /rankings_replay_compact_page|schema cache/i.test(error.message))) {
           compactRpcUnavailable = true;
         } else if (error) {
@@ -281,14 +301,14 @@ export async function loadReplayCompactPage(
 
       if (compactRpcUnavailable) {
         const clockTyped = clock === "gun" ? "gun" : "chip";
-        const first = await loadReplayPage(edition, distance, sex, clock, ids, after);
+        const first = await loadReplayPage(edition, distance, sex, clock, ids, after, includeWheelchair);
         if (!first) {
           result = null;
         } else {
           const combined = compactReplayPage(first, clockTyped);
           let cursor = first.next;
           for (let batch = 1; batch < 5 && cursor !== null; batch++) {
-            const nextPage = await loadReplayPage(edition, distance, sex, clock, ids, cursor);
+            const nextPage = await loadReplayPage(edition, distance, sex, clock, ids, cursor, includeWheelchair);
             if (!nextPage) break;
             const compacted = compactReplayPage(nextPage, clockTyped);
             combined.runners.push(...compacted.runners);

@@ -92,6 +92,36 @@ export function replayFrameInterval(fieldSize: number) {
   return fieldSize <= 32 ? 1000 / 30 : fieldSize <= 250 ? 50 : fieldSize <= 1000 ? 100 : 200;
 }
 
+const REPLAY_ROAD_HALF_WIDTH_M = 5.5;
+const REPLAY_LANE_SPREAD_M = 4.5;
+const REPLAY_WEAVE_AMP_M = 1.4;
+const EARTH_CIRCUMFERENCE_M = 40_075_016.686;
+
+function hash32(seed: number): number {
+  let x = seed | 0;
+  x = Math.imul(x ^ (x >>> 16), 0x85ebca6b);
+  x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35);
+  return (x ^ (x >>> 16)) >>> 0;
+}
+
+function runnerLateralParams(runnerId: number): [number, number, number] {
+  const u1 = hash32(runnerId ^ 0x9e3779b9) / 4294967296;
+  const u2 = hash32(runnerId ^ 0x7f4a7c15) / 4294967296;
+  const u3 = hash32(runnerId ^ 0x517cc1b7) / 4294967296;
+  const u4 = hash32(runnerId ^ 0x2c1b3c6d) / 4294967296;
+  const baseM = (u1 + u2 - 1) * REPLAY_LANE_SPREAD_M;
+  const freq = (2 * Math.PI) / (180 + u3 * 160);
+  const phase = u4 * 2 * Math.PI;
+  return [baseM, freq, phase];
+}
+
+/** Deterministic lateral road offset (metres) with gentle slow weaving across the road width. */
+export function replayLateralOffsetM(runnerId: number, distanceM: number): number {
+  const [baseM, freq, phase] = runnerLateralParams(runnerId);
+  const raw = baseM + REPLAY_WEAVE_AMP_M * Math.sin(distanceM * freq + phase);
+  return Math.max(-REPLAY_ROAD_HALF_WIDTH_M, Math.min(REPLAY_ROAD_HALF_WIDTH_M, raw));
+}
+
 export function replayFeatures(
   course: ReplayCourse,
   runners: CompiledReplayRunner[],
@@ -103,13 +133,16 @@ export function replayFeatures(
   for (const runner of runners) {
     const metres = replayDistance(runner, time - (origin !== null && Number.isFinite(runner.startMs) ? runner.startMs - origin : 0));
     if (metres !== null) {
+      const lateralM = replayLateralOffsetM(runner.id, metres);
       features.push({
         type: "Feature",
         id: runner.id,
         properties: { id: runner.id, distanceM: metres },
         geometry: {
           type: "Point",
-          coordinates: courseIndex ? replayCoordinateAt(courseIndex, metres) : replayCoordinate(course, metres),
+          coordinates: courseIndex
+            ? replayCoordinateAt(courseIndex, metres, lateralM)
+            : replayCoordinate(course, metres),
         },
       });
     }
@@ -152,9 +185,13 @@ export type ReplayCourseIndex = {
   lat: Float64Array;
   dx: Float32Array;
   dy: Float32Array;
+  nx: Float32Array;
+  ny: Float32Array;
+  nLng: Float64Array;
+  nLat: Float64Array;
 };
 
-/** Pre-bake course polyline into a uniform-distance LUT for O(1) coordinate & relative-Mercator lookup. */
+/** Pre-bake course polyline into a uniform-distance LUT for O(1) coordinate, road-normal & relative-Mercator lookup. */
 export function buildReplayCourseIndex(course: ReplayCourse, buckets = 4096): ReplayCourseIndex {
   const pts = course.points;
   const totalMeters = pts[pts.length - 1][2];
@@ -197,10 +234,42 @@ export function buildReplayCourseIndex(course: ReplayCourse, buckets = 4096): Re
     dy[i] = my - originMy;
   }
 
-  return { totalMeters, buckets: count, stepMeters, invStep, originMx, originMy, lng, lat, dx, dy };
+  // Pre-bake smoothed perpendicular road normals scaled to units-per-meter.
+  const nx = new Float32Array(count + 1);
+  const ny = new Float32Array(count + 1);
+  const nLng = new Float64Array(count + 1);
+  const nLat = new Float64Array(count + 1);
+  const halfWin = Math.max(1, Math.round(15 / Math.max(1, stepMeters)));
+  let prevUx = 0;
+  let prevUy = 1;
+  for (let i = 0; i <= count; i++) {
+    const i0 = Math.max(0, i - halfWin);
+    const i1 = Math.min(count, i + halfWin);
+    const tx = dx[i1] - dx[i0];
+    const ty = dy[i1] - dy[i0];
+    const len = Math.hypot(tx, ty);
+    let ux = prevUx;
+    let uy = prevUy;
+    if (len > 1e-12) {
+      ux = -ty / len;
+      uy = tx / len;
+      prevUx = ux;
+      prevUy = uy;
+    }
+    const cosLat = Math.max(0.05, Math.cos((lat[i] * Math.PI) / 180));
+    const mercPerM = 1 / (EARTH_CIRCUMFERENCE_M * cosLat);
+    const mxPerM = ux * mercPerM;
+    const myPerM = uy * mercPerM;
+    nx[i] = mxPerM;
+    ny[i] = myPerM;
+    nLng[i] = 360 * mxPerM;
+    nLat[i] = -360 * cosLat * myPerM;
+  }
+
+  return { totalMeters, buckets: count, stepMeters, invStep, originMx, originMy, lng, lat, dx, dy, nx, ny, nLng, nLat };
 }
 
-export function replayCoordinateAt(index: ReplayCourseIndex, metres: number): [number, number] {
+export function replayCoordinateAt(index: ReplayCourseIndex, metres: number, lateralM = 0): [number, number] {
   const clamped = Math.max(0, Math.min(metres, index.totalMeters));
   const f = clamped * index.invStep;
   const i = Math.min(index.buckets - 1, f | 0);
@@ -208,18 +277,27 @@ export function replayCoordinateAt(index: ReplayCourseIndex, metres: number): [n
   let delta = index.lng[i + 1] - index.lng[i];
   if (delta > 180) delta -= 360;
   else if (delta < -180) delta += 360;
-  return [((index.lng[i] + frac * delta + 540) % 360) - 180, index.lat[i] + frac * (index.lat[i + 1] - index.lat[i])];
+  let lon = index.lng[i] + frac * delta;
+  let latitude = index.lat[i] + frac * (index.lat[i + 1] - index.lat[i]);
+  if (lateralM !== 0) {
+    lon += lateralM * (index.nLng[i] + frac * (index.nLng[i + 1] - index.nLng[i]));
+    latitude += lateralM * (index.nLat[i] + frac * (index.nLat[i + 1] - index.nLat[i]));
+  }
+  return [((lon + 540) % 360) - 180, Math.max(-85, Math.min(85, latitude))];
 }
 
-export function replayMercatorOffsetAt(index: ReplayCourseIndex, metres: number): [number, number] {
+export function replayMercatorOffsetAt(index: ReplayCourseIndex, metres: number, lateralM = 0): [number, number] {
   const clamped = Math.max(0, Math.min(metres, index.totalMeters));
   const f = clamped * index.invStep;
   const i = Math.min(index.buckets - 1, f | 0);
   const frac = f - i;
-  return [
-    index.dx[i] + frac * (index.dx[i + 1] - index.dx[i]),
-    index.dy[i] + frac * (index.dy[i + 1] - index.dy[i]),
-  ];
+  let x = index.dx[i] + frac * (index.dx[i + 1] - index.dx[i]);
+  let y = index.dy[i] + frac * (index.dy[i + 1] - index.dy[i]);
+  if (lateralM !== 0) {
+    x += lateralM * (index.nx[i] + frac * (index.nx[i + 1] - index.nx[i]));
+    y += lateralM * (index.ny[i] + frac * (index.ny[i + 1] - index.ny[i]));
+  }
+  return [x, y];
 }
 
 export type CompiledReplayField = {
@@ -227,6 +305,9 @@ export type CompiledReplayField = {
   ids: Int32Array;
   finishMs: Uint32Array;
   startOffsetMs: Float32Array;
+  laneBaseM: Float32Array;
+  weaveFreq: Float32Array;
+  weavePhase: Float32Array;
   cpOffsets: Uint32Array;
   cpDistM: Float32Array;
   cpElapsedMs: Uint32Array;
@@ -251,6 +332,9 @@ export function buildCompiledReplayField(runners: CompiledReplayRunner[], wall: 
   const ids = new Int32Array(count);
   const finishMs = new Uint32Array(count);
   const startOffsetMs = new Float32Array(count);
+  const laneBaseM = new Float32Array(count);
+  const weaveFreq = new Float32Array(count);
+  const weavePhase = new Float32Array(count);
   const cpOffsets = new Uint32Array(count + 1);
   const cursors = new Uint32Array(count);
   const names: string[] = new Array(count);
@@ -278,6 +362,10 @@ export function buildCompiledReplayField(runners: CompiledReplayRunner[], wall: 
     ids[i] = r.id;
     finishMs[i] = r.splits.finishMs;
     startOffsetMs[i] = timeline.origin !== null && Number.isFinite(r.startMs) ? r.startMs - timeline.origin : 0;
+    const [baseM, freq, phase] = runnerLateralParams(r.id);
+    laneBaseM[i] = baseM;
+    weaveFreq[i] = freq;
+    weavePhase[i] = phase;
     names[i] = r.name;
     namesLower[i] = r.name.toLowerCase();
     bibs[i] = r.bib ?? null;
@@ -304,6 +392,9 @@ export function buildCompiledReplayField(runners: CompiledReplayRunner[], wall: 
     ids,
     finishMs,
     startOffsetMs,
+    laneBaseM,
+    weaveFreq,
+    weavePhase,
     cpOffsets,
     cpDistM,
     cpElapsedMs,
@@ -396,8 +487,8 @@ export function fillMercatorPositions(
   outXY: Float32Array,
   outIndices?: Int32Array,
 ): number {
-  const { count } = field;
-  const { totalMeters, buckets, invStep, dx, dy } = courseIndex;
+  const { count, laneBaseM, weaveFreq, weavePhase } = field;
+  const { totalMeters, buckets, invStep, dx, dy, nx, ny } = courseIndex;
   const maxBucket = buckets - 1;
   let written = 0;
   for (let i = 0; i < count; i++) {
@@ -407,9 +498,16 @@ export function fillMercatorPositions(
     const f = clamped * invStep;
     const b = f >= maxBucket ? maxBucket : (f | 0);
     const frac = f - b;
+    const rawLane = laneBaseM[i] + REPLAY_WEAVE_AMP_M * Math.sin(clamped * weaveFreq[i] + weavePhase[i]);
+    const laneM =
+      rawLane > REPLAY_ROAD_HALF_WIDTH_M
+        ? REPLAY_ROAD_HALF_WIDTH_M
+        : rawLane < -REPLAY_ROAD_HALF_WIDTH_M
+          ? -REPLAY_ROAD_HALF_WIDTH_M
+          : rawLane;
     const off = written << 1;
-    outXY[off] = dx[b] + frac * (dx[b + 1] - dx[b]);
-    outXY[off + 1] = dy[b] + frac * (dy[b + 1] - dy[b]);
+    outXY[off] = dx[b] + frac * (dx[b + 1] - dx[b]) + laneM * (nx[b] + frac * (nx[b + 1] - nx[b]));
+    outXY[off + 1] = dy[b] + frac * (dy[b + 1] - dy[b]) + laneM * (ny[b] + frac * (ny[b + 1] - ny[b]));
     if (outIndices) outIndices[written] = i;
     written++;
   }
@@ -632,8 +730,8 @@ export function pickNearestRunnerId(
   let bestDistSq = threshold * threshold;
   let bestId: number | null = null;
 
-  const { count, ids } = field;
-  const { totalMeters, buckets, invStep, dx, dy } = courseIndex;
+  const { count, ids, laneBaseM, weaveFreq, weavePhase } = field;
+  const { totalMeters, buckets, invStep, dx, dy, nx, ny } = courseIndex;
   const maxBucket = buckets - 1;
 
   for (let i = 0; i < count; i++) {
@@ -643,8 +741,15 @@ export function pickNearestRunnerId(
     const f = clamped * invStep;
     const b = f >= maxBucket ? maxBucket : (f | 0);
     const frac = f - b;
-    const px = dx[b] + frac * (dx[b + 1] - dx[b]) - clickDx;
-    const py = dy[b] + frac * (dy[b + 1] - dy[b]) - clickDy;
+    const rawLane = laneBaseM[i] + REPLAY_WEAVE_AMP_M * Math.sin(clamped * weaveFreq[i] + weavePhase[i]);
+    const laneM =
+      rawLane > REPLAY_ROAD_HALF_WIDTH_M
+        ? REPLAY_ROAD_HALF_WIDTH_M
+        : rawLane < -REPLAY_ROAD_HALF_WIDTH_M
+          ? -REPLAY_ROAD_HALF_WIDTH_M
+          : rawLane;
+    const px = dx[b] + frac * (dx[b + 1] - dx[b]) + laneM * (nx[b] + frac * (nx[b + 1] - nx[b])) - clickDx;
+    const py = dy[b] + frac * (dy[b + 1] - dy[b]) + laneM * (ny[b] + frac * (ny[b + 1] - ny[b])) - clickDy;
     const dSq = px * px + py * py;
     if (dSq <= bestDistSq) {
       bestDistSq = dSq;

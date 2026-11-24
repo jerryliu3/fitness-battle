@@ -34,6 +34,7 @@ import { useAuth } from "@/components/auth-context";
 import { addMapboxAttribution, mapboxAttributionOptions } from "@/components/maps/mapbox-attribution";
 import { useRaceFavorites } from "../favorites";
 import { coursePreviewsMemoryCache, formatEditionDisplay, RaceRouteArt } from "../race-explorer";
+import { RequestRaceCta } from "../request-race-cta";
 import { computeSplitMetrics, SportFilterBar, SPORTS, type SportId } from "../sport-filter-bar";
 import { FieldWebGLLayer } from "./field-webgl-layer";
 
@@ -470,6 +471,7 @@ export function ReplayPlayer({
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(64);
   const [wall, setWall] = useState(false);
+  const [includeWheelchair, setIncludeWheelchair] = useState(false);
   const [reduced, setReduced] = useState(false);
   const [mapError, setMapError] = useState("");
   const [mapAttempt, setMapAttempt] = useState(0);
@@ -539,16 +541,16 @@ export function ReplayPlayer({
     });
   }
 
-  const scopeKey = useMemo(
-    () =>
-      new URLSearchParams({
-        edition: String(editionId),
-        distance: distanceSlug,
-        sex: category,
-        clock,
-      }).toString(),
-    [editionId, distanceSlug, category, clock],
-  );
+  const scopeKey = useMemo(() => {
+    const params = new URLSearchParams({
+      edition: String(editionId),
+      distance: distanceSlug,
+      sex: category,
+      clock,
+    });
+    if (includeWheelchair) params.set("wheelchair", "1");
+    return params.toString();
+  }, [editionId, distanceSlug, category, clock, includeWheelchair]);
 
   useEffect(() => {
     if (active && map.current) {
@@ -1181,6 +1183,22 @@ export function ReplayPlayer({
             setCategory(nextSex);
             setPage(0);
           }}
+          extraRow2={
+            isRunningSport ? (
+              <label className="ovt-filter-chip subtle" style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={includeWheelchair}
+                  aria-label="Include wheelchair division"
+                  onChange={() => {
+                    setIncludeWheelchair(v => !v);
+                    setPage(0);
+                  }}
+                />
+                Include wheelchair
+              </label>
+            ) : undefined
+          }
         />
       </div>
 
@@ -1193,7 +1211,10 @@ export function ReplayPlayer({
         <>
           <section className="ovt-replay-races" aria-label="Choose a race edition to replay">
             <div className="ovt-mini-title">
-              <AppHeading level={2} role="heading">Choose a race</AppHeading>
+              <div className="ovt-mini-title-lead">
+                <AppHeading level={2} role="heading">Choose a race</AppHeading>
+                <RequestRaceCta surface="replay" />
+              </div>
               <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                 <label className="ovt-inline-check">
                   <input

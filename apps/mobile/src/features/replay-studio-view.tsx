@@ -41,6 +41,7 @@ import { MapHudBackdrop, useMapHud } from "../ui/map-hud";
 import { RaceRouteArtNative, SplitSparklineNative } from "../ui/observatory-race-card";
 import { ObservatorySportBar } from "../ui/observatory-sport-bar";
 import { ReplayMap } from "../ui/race-replay-map";
+import { RequestRaceCta } from "../ui/request-race-cta";
 import { SearchField } from "../ui/search-field";
 import { AppText, chartTextProps, textStyle } from "../ui/section";
 import { useReducedMotion } from "../ui/use-reduced-motion";
@@ -469,6 +470,7 @@ export function ReplayStudioView({
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(64);
   const [wall, setWall] = useState(false);
+  const [includeWheelchair, setIncludeWheelchair] = useState(false);
   const [mapExpanded, setMapExpanded] = useState(false);
   const [seekWidth, setSeekWidth] = useState(200);
   const [expandedRunnerId, setExpandedRunnerId] = useState<number | null>(null);
@@ -499,7 +501,7 @@ export function ReplayStudioView({
   // Fetch & precompile replay field with shared cache
   useEffect(() => {
     if (!isRunningSport) return;
-    const cacheKey = replayScopeCacheKey(editionId, distanceSlug, category, ids);
+    const cacheKey = replayScopeCacheKey(editionId, distanceSlug, category, ids, includeWheelchair);
     const cached = getCachedReplayField(cacheKey);
     if (cached && validateReplayCourse(cached.data.course, storedDistance)) {
       setData(cached.data);
@@ -528,6 +530,7 @@ export function ReplayStudioView({
       distanceSlug,
       sex: category,
       ids,
+      includeWheelchair,
       signal: controller.signal,
       onProgress: setProgress,
     })
@@ -550,7 +553,7 @@ export function ReplayStudioView({
       });
 
     return () => controller.abort();
-  }, [isRunningSport, editionId, distanceSlug, category, ids, attempt, storedDistance]);
+  }, [isRunningSport, editionId, distanceSlug, category, ids, includeWheelchair, attempt, storedDistance]);
 
   useEffect(() => {
     if (!runners.length) {
@@ -1184,6 +1187,25 @@ export function ReplayStudioView({
             setPage(0);
           }}
         />
+        {isRunningSport ? (
+          <View style={{ marginTop: 10, flexDirection: "row", alignItems: "center" }}>
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityLabel="Include wheelchair division"
+              accessibilityState={{ checked: includeWheelchair }}
+              onPress={() => {
+                setIncludeWheelchair(v => !v);
+                setPage(0);
+              }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              <View style={[s.checkbox, includeWheelchair && s.checkboxChecked]}>
+                {includeWheelchair ? <AppText role="nav" style={{ color: "#ffffff" }}>✓</AppText> : null}
+              </View>
+              <AppText role="caption" secondary>Include wheelchair</AppText>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
 
       {!isRunningSport ? (
@@ -1197,8 +1219,14 @@ export function ReplayStudioView({
         <>
           {/* Choose a Race Carousel with GPS Course Outlines + Hide Ineligible Toggle */}
           <View style={{ gap: 10 }}>
-            <View style={s.sectionHead}>
-              <AppText role="heading">Choose a race</AppText>
+            <View style={[s.sectionHead, { flexWrap: "wrap", rowGap: 8 }]}>
+              <View style={{ gap: 2 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <AppText role="heading">Choose a race</AppText>
+                  <RequestRaceCta surface="replay" />
+                </View>
+                <AppText role="caption" secondary>Don&apos;t see your race?</AppText>
+              </View>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                 <Pressable
                   accessibilityRole="checkbox"

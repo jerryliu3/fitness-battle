@@ -8,6 +8,8 @@ export type CatalogEvent = {
   externalEventId: string;
   editionYear: number;
   startsOn: string;
+  /** IANA timezone for local race-day wall-clock timestamps (e.g. `America/Chicago`). */
+  timeZone?: string;
   distance: RoadDistance;
   /** Public results list. Null when we looked and the page did not publish a list. */
   listUrl: string | null;
@@ -52,6 +54,7 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     externalEventId: "R",
     editionYear: 2025,
     startsOn: "2025-04-21",
+    timeZone: "America/New_York",
     distance: "marathon",
     listUrl: "https://results.baa.org/2025/",
     mikaEvent: "R",
@@ -75,6 +78,7 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     externalEventId: "MAS",
     editionYear: 2025,
     startsOn: "2025-04-27",
+    timeZone: "Europe/London",
     distance: "marathon",
     listUrl: "https://results.tcslondonmarathon.com/2025/",
     mikaEvent: "MAS",
@@ -98,6 +102,7 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     externalEventId: "BML_HCH3C0OH2F2",
     editionYear: 2025,
     startsOn: "2025-09-21",
+    timeZone: "Europe/Berlin",
     distance: "marathon",
     listUrl: "https://berlin.r.mikatiming.com/2025/",
     mikaEvent: "BML_HCH3C0OH2F2",
@@ -121,6 +126,7 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     externalEventId: "MAR_9TGG96381A5",
     editionYear: 2025,
     startsOn: "2025-10-12",
+    timeZone: "America/Chicago",
     distance: "marathon",
     listUrl: "https://chicago-history.r.mikatiming.com/2025/",
     mikaEvent: "MAR_9TGG96381A5",
@@ -144,6 +150,7 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     externalEventId: "5K_HCH3C0OH2EF",
     editionYear: 2025,
     startsOn: "2025-09-21",
+    timeZone: "Europe/Berlin",
     distance: "5k",
     listUrl: "https://berlin.r.mikatiming.com/2025/",
     mikaEvent: "5K_HCH3C0OH2EF",
@@ -167,6 +174,7 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     externalEventId: "R",
     editionYear: 2026,
     startsOn: "2026-04-20",
+    timeZone: "America/New_York",
     distance: "marathon",
     listUrl: "https://results.baa.org/2026/",
     mikaEvent: "R",
@@ -190,6 +198,7 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     externalEventId: "MAS",
     editionYear: 2026,
     startsOn: "2026-04-26",
+    timeZone: "Europe/London",
     distance: "marathon",
     listUrl: "https://results.tcslondonmarathon.com/2026/",
     mikaEvent: "MAS",
@@ -214,6 +223,7 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     externalEventId: "BML_HCH3C0OH2F2",
     editionYear: 2026,
     startsOn: "2026-09-27",
+    timeZone: "Europe/Berlin",
     distance: "marathon",
     listUrl: "https://berlin.r.mikatiming.com/2026/",
     mikaEvent: "BML_HCH3C0OH2F2",
@@ -238,6 +248,7 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     externalEventId: "MAR_9TGG96381A5",
     editionYear: 2026,
     startsOn: "2026-10-11",
+    timeZone: "America/Chicago",
     distance: "marathon",
     listUrl: "https://chicago-history.r.mikatiming.com/2026/",
     mikaEvent: "MAR_9TGG96381A5",
@@ -262,6 +273,7 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     externalEventId: "banffhalf-2026-half",
     editionYear: 2026,
     startsOn: "2026-06-20",
+    timeZone: "America/Edmonton",
     distance: "half_marathon",
     listUrl: "https://www.racedaytiming.ca/en/races/2026/banffhalf/event/Half",
     mikaEvent: null,
@@ -287,6 +299,7 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     externalEventId: "91608-242840",
     editionYear: 2026,
     startsOn: "2026-07-26",
+    timeZone: "America/Los_Angeles",
     distance: "marathon",
     listUrl: "https://live.chronotrack.com/event/91608/results",
     mikaEvent: null,

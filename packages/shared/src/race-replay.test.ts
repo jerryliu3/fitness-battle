@@ -14,6 +14,7 @@ import {
   replayCourseBearing,
   replayDistance,
   replayFeatures,
+  replayLateralOffsetM,
   replayMercatorOffsetAt,
   replayTelemetry,
   replayTimeline,
@@ -266,9 +267,51 @@ describe("edition course replay",()=>{
     evaluateFieldDistances(field, 600000, dist);
     const written = fillMercatorPositions(idx, field, dist, outXY, outIdx);
     expect(written).toBe(2); // r1 and r2 active; rGap is in missing-split gap at 600s
-    const [ox, oy] = replayMercatorOffsetAt(idx, dist[0]);
-    expect(outXY[0]).toBeCloseTo(ox, 6);
-    expect(outXY[1]).toBeCloseTo(oy, 6);
+    const [ox, oy] = replayMercatorOffsetAt(idx, dist[0], replayLateralOffsetM(r1.id, dist[0]));
+    expect(outXY[0]).toBeCloseTo(ox, 7);
+    expect(outXY[1]).toBeCloseTo(oy, 7);
+  });
+
+  it("spreads runners deterministically across road width with slow weaving across WebGL, GeoJSON, and picking", () => {
+    const idx = buildReplayCourseIndex(course, 4096);
+    const samePace = Array.from({ length: 40 }, (_, k) =>
+      compileReplayRunner({ ...runner, id: 1000 + k }, "5k")!,
+    );
+    const field = buildCompiledReplayField(samePace, false);
+    const dist = new Float32Array(field.count);
+    evaluateFieldDistances(field, 600000, dist); // all at 2000m along eastbound equator course
+
+    const outXY = new Float32Array(field.count * 2);
+    expect(fillMercatorPositions(idx, field, dist, outXY)).toBe(40);
+    const features = replayFeatures(course, samePace, 600000, null, idx);
+    expect(features.features).toHaveLength(40);
+
+    const offsets = samePace.map(r => replayLateralOffsetM(r.id, 2000));
+    expect(Math.min(...offsets)).toBeGreaterThanOrEqual(-5.5);
+    expect(Math.max(...offsets)).toBeLessThanOrEqual(5.5);
+    expect(new Set(offsets.map(v => v.toFixed(3))).size).toBeGreaterThan(25);
+
+    // Eastbound course -> perpendicular lateral spread shifts latitude (y), not longitude (x)
+    const [baseLng, baseLat] = replayCoordinateAt(idx, 2000);
+    const [fLng, fLat] = features.features[0].geometry.coordinates;
+    expect(fLng).toBeCloseTo(baseLng, 7);
+    expect(Math.abs(fLat - baseLat)).toBeGreaterThan(1e-6);
+    expect(Math.abs(fLat - baseLat)).toBeLessThan(6e-5); // <= ~6m in degrees
+
+    // WebGL Mercator offset and GeoJSON feature coordinate match for the same runner
+    const [mX, mY] = replayMercatorOffsetAt(idx, 2000, offsets[0]);
+    expect(outXY[0]).toBeCloseTo(mX, 7);
+    expect(outXY[1]).toBeCloseTo(mY, 7);
+
+    // Slow weaving changes lateral position smoothly over distance
+    const weaveSamples = [0, 50, 100, 150, 200].map(d => replayLateralOffsetM(1000, d));
+    expect(new Set(weaveSamples.map(v => v.toFixed(4))).size).toBeGreaterThan(1);
+    for (let i = 1; i < weaveSamples.length; i++) {
+      expect(Math.abs(weaveSamples[i] - weaveSamples[i - 1])).toBeLessThan(2.8);
+    }
+
+    // Picking at runner 0's offset coordinate finds a runner right at that point
+    expect(pickNearestRunnerId(idx, field, dist, fLng, fLat, 16, 8)).not.toBeNull();
   });
 
   it("selects top leaderboard slices accurately for large fields without full sort", () => {

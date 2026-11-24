@@ -34,6 +34,7 @@ import {
 } from "../ui/observatory-chart";
 import { RaceRouteArtNative, SplitSparklineNative } from "../ui/observatory-race-card";
 import { ObservatorySportBar } from "../ui/observatory-sport-bar";
+import { RequestRaceCta } from "../ui/request-race-cta";
 import { SearchField } from "../ui/search-field";
 import { AppText, textStyle } from "../ui/section";
 
@@ -591,8 +592,14 @@ export function ObservatoryTab({
       {/* Race Editions Horizontal Carousel */}
       {isRunningSport && coverage ? (
         <View style={{ gap: 10 }}>
-          <View style={s.sectionHead}>
-            <AppText role="heading">Race editions</AppText>
+          <View style={[s.sectionHead, { flexWrap: "wrap", rowGap: 8 }]}>
+            <View style={{ gap: 2 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <AppText role="heading">Race editions</AppText>
+                <RequestRaceCta surface="observatory" />
+              </View>
+              <AppText role="caption" secondary>Don&apos;t see your race?</AppText>
+            </View>
             <Pressable
               onPress={() => {
                 setModalSearch("");
