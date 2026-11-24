@@ -7,6 +7,7 @@ import { useAppearance } from "@/theme/appearance-provider";
 import {
   APP_ICON_PATHS,
   competeChartPreview,
+  competeTimeSeriesPathColor,
   buildCompeteTimeSeriesModel,
   buildSleepTimeSeriesModel,
   clamp,
@@ -266,9 +267,7 @@ export function CompeteTimeSeriesChart({
     setScrubFraction(null);
   };
 
-  const placeColor = (place: number) => (place === 1 ? c.tennis : c.secondary);
   const selectedLeads = model.selectedAthlete.placeAtCursor === 1;
-  const unselectedAthletes = model.athletes.filter((a) => !a.selected);
 
   if (compact) {
     const preview = competeChartPreview(model);
@@ -278,7 +277,7 @@ export function CompeteTimeSeriesChart({
       {preview.yTicks.map(tick => <g key={tick.y}><line x1={preview.left} x2={preview.right} y1={tick.y} y2={tick.y} stroke={c.line} /><text style={typographyStyle("caption")} x={preview.left - 8} y={tick.y + 4} textAnchor="end" fill={c.muted}>{tick.label}</text></g>)}
       {preview.xTicks.map((tick, i) => <text style={typographyStyle("caption")} key={tick.label} x={tick.x} y={282} textAnchor={i ? "end" : "start"} fill={c.muted}>{tick.label}</text>)}
       {preview.athletes.map(athlete => <g key={athlete.id}>
-        <polyline points={athlete.points} fill="none" stroke={placeColor(athlete.placeAtCursor)} strokeWidth={athlete.selected ? 4 : 2} opacity={athlete.selected ? 1 : .65} />
+        <polyline points={athlete.points} fill="none" stroke={competeTimeSeriesPathColor(athlete.placeAtCursor)} strokeWidth={athlete.selected ? 4 : 2} opacity={athlete.selected ? 1 : .9} />
         <g transform={`translate(${athlete.x} ${athlete.y})`}>
           <AthleteNode
             lane={athlete}
@@ -550,8 +549,20 @@ export function CompeteTimeSeriesChart({
             />
           )}
 
-          {/* Unselected background competitor traces + circular profile nodes */}
-          {unselectedAthletes.map((athlete) => (
+          {model.athletes.map((athlete) => (
+            <polyline
+              key={`path-${athlete.id}`}
+              points={athlete.polyline}
+              fill="none"
+              stroke={competeTimeSeriesPathColor(athlete.placeAtCursor)}
+              strokeWidth={athlete.selected ? 3 : 2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={athlete.selected ? 1 : 0.92}
+            />
+          ))}
+
+          {model.athletes.filter((athlete) => !athlete.selected).map((athlete) => (
             <g
               key={athlete.id}
               style={{ cursor: "pointer" }}
@@ -559,43 +570,21 @@ export function CompeteTimeSeriesChart({
                 event.stopPropagation();
                 handleSelectAthlete(athlete.id);
               }}
+              transform={`translate(${athlete.cursorX} ${athlete.cursorY})`}
             >
-              <polyline
-                points={athlete.polyline}
-                fill="none"
-                stroke={placeColor(athlete.placeAtCursor)}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity={0.6}
+              <AthleteNode
+                lane={athlete}
+                x={0}
+                y={0}
+                detail=""
+                prefix={`ts-peer-${athlete.id}`}
+                expanded={false}
+                selected={false}
+                gold={athlete.placeAtCursor === 1}
+                nodeRadius={22}
               />
-              <g transform={`translate(${athlete.cursorX} ${athlete.cursorY})`}>
-                <AthleteNode
-                  lane={athlete}
-                  x={0}
-                  y={0}
-                  detail=""
-                  prefix={`ts-peer-${athlete.id}`}
-                  expanded={false}
-                  selected={false}
-                  gold={athlete.placeAtCursor === 1}
-                  nodeRadius={22}
-                />
-              </g>
             </g>
           ))}
-
-          {/* Single Selected Athlete foreground trace */}
-          <g key={`selected-${model.selectedAthlete.id}`}>
-            <polyline
-              points={model.selectedAthlete.polyline}
-              fill="none"
-              stroke={placeColor(model.selectedAthlete.placeAtCursor)}
-              strokeWidth={3}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </g>
 
           {/* Overtake Crossover Nodes (drawn ONLY for the selected athlete) */}
           {model.overtakes.map((node) => (

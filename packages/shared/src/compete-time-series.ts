@@ -19,6 +19,13 @@ import { APP_TIMEZONE, accountTimeZone, endOfZonedDay, formatAppDateTime, shiftA
 import { competeChartUnit, competeVolumeFromTotals } from "./compete-field-view";
 import { walkingStepsInPeriod } from "./compete/journal";
 import { competePeriodWindow } from "./phone-views";
+import { MEDAL_GOLD } from "./appearance";
+
+export const COMPETE_TIMELINE_SILVER = "#d0d8e0";
+
+export function competeTimeSeriesPathColor(place: number): string {
+  return place === 1 ? MEDAL_GOLD.srgb : COMPETE_TIMELINE_SILVER;
+}
 
 export type FieldViewDimension = "2d" | "3d" | "4d" | "graph";
 export type CompeteTimeSeriesView = "trajectory" | "event";
@@ -421,9 +428,12 @@ export function evaluateCompeteTimeSeriesModel(
       const valueAtCursor = valuesAtCursor[idx]!;
       const placeAtCursor = competitionPlace(valuesAtCursor, valueAtCursor);
       const clipped = clipVerticesToCursor(a.vertices, cursorFraction);
-      const polyline = clipped
-        .map((v) => `${xForT(v.t).toFixed(1)},${yForValue(v.value).toFixed(1)}`)
-        .join(" ");
+      const pointPairs = clipped.map((v) => `${xForT(v.t).toFixed(1)},${yForValue(v.value).toFixed(1)}`);
+      const polyline = pointPairs.length >= 2
+        ? pointPairs.join(" ")
+        : pointPairs.length === 1
+          ? `${xForT(0).toFixed(1)},${yForValue(0).toFixed(1)} ${pointPairs[0]}`
+          : `${xForT(0).toFixed(1)},${yForValue(0).toFixed(1)} ${xForT(cursorFraction).toFixed(1)},${yForValue(valueAtCursor).toFixed(1)}`;
       return {
         id: a.id,
         name: a.name,
@@ -760,7 +770,14 @@ function buildCompetitorVertices(
   const spanMs = Math.max(1, endMs - startMs);
   const synthetic = findSynthetic(sport, athleteId);
 
-  if (!synthetic) return [{ t: nowFraction, value: liveValue }];
+  if (!synthetic) {
+    return nowFraction > 0
+      ? [
+          { t: 0, value: 0 },
+          { t: nowFraction, value: liveValue },
+        ]
+      : [{ t: 0, value: 0 }];
+  }
   const rawPoints: CompeteTimeSeriesVertex[] = [{ t: 0, value: 0 }];
   let cursor = new Date(startMs);
   while (cursor.getTime() < clampedNowMs) {
