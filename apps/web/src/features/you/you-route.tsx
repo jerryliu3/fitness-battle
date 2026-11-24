@@ -27,6 +27,7 @@ import { buildSplitBoard } from "@/features/split/model";
 import { APP_ICON_PATHS, SETTINGS_ICON_PATHS, activityFromSample, INTEGRATION_ICONS, awardCards, BACKFILL_DAYS, competeNow, competitionTrack, evidenceLabel, primaryFreezePeriodStart, PROVIDERS, RANK_BANDS, sleepRenewal, type ActivitySample, type ProviderId, type ReadinessMark, type ReadinessSample } from "@fitness-battle/shared";
 import { RankSymbol } from "@/ui/rank-symbol";
 import { AuthPrompt } from "@/components/auth-gate";
+import { AthletePublicView } from "./athlete-public-view";
 import { Sheet } from "@/ui/sheet";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -939,10 +940,21 @@ export function ProgressPage() {
   );
 }
 
+function AthleteRoute() {
+  const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const viewedId = searchParams.get("id")?.trim() ?? "";
+  const self = Boolean(user?.id && viewedId && user.id === viewedId);
+  if (viewedId && (!user?.id || !self)) {
+    return <AthletePublicView athleteId={viewedId} />;
+  }
+  return <YouContent surface="athlete" />;
+}
+
 export function AthletePage() {
   return (
     <Suspense fallback={<AppParagraph typographyRole="body" className="fb-copy">Loading…</AppParagraph>}>
-      <YouContent surface="athlete" />
+      <AthleteRoute />
     </Suspense>
   );
 }

@@ -26,6 +26,8 @@ import {
   crewMemberWeekValue,
   crewLineup,
   crewTargetSpec,
+  crewInviteHttpsUrl,
+  PUBLIC_SHARE_ORIGIN,
 } from "@fitness-battle/shared";
 import { Chip, ChipRow } from "../ui/chip";
 import { NumberStepper } from "../ui/number-stepper";
@@ -108,8 +110,7 @@ function crewError(error: unknown): string {
   return raw;
 }
 function inviteLink(code: string): string {
-  const base = "https://overtaek.xyz";
-  return `${base}/invite?invite=${encodeURIComponent(code)}`;
+  return crewInviteHttpsUrl(PUBLIC_SHARE_ORIGIN, code);
 }
 
 export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: boolean; crewId?: string } = {}) {

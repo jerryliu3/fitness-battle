@@ -11,10 +11,40 @@ import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { CrewOverview } from "./crew-overview";
 import { Sheet } from "@/ui/sheet";
-import { SPORTS, rankSymbolForScore, APP_ICON_PATHS, competitionTrack, APP_TIMEZONE, accountTimeZone, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, crewLineup, crewTargetSpec } from "@fitness-battle/shared";
+import {
+  SPORTS,
+  rankSymbolForScore,
+  APP_ICON_PATHS,
+  competitionTrack,
+  APP_TIMEZONE,
+  accountTimeZone,
+  competeNow,
+  weeklyPeriodBounds,
+  dayKey,
+  crewInviteHttpsUrl,
+  crewInviteNativePath,
+  crewInviteWebDestination,
+  type SportId,
+  countsOnTrack,
+  distanceUnitLabel,
+  formatDistanceM,
+  formatNoticeUnits,
+  crewMemberWeekValue,
+  crewLineup,
+  crewTargetSpec,
+} from "@fitness-battle/shared";
 import { NumberStepper } from "@/ui/number-stepper";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { buildLoginHref, buildSignupHref } from "@/lib/auth/login-redirect";
+import { GuestEntrySheet } from "@/components/guest-entry-sheet";
+import { OpenInAppBanner } from "@/components/open-in-app-banner";
+import {
+  clearPendingCrewInvite,
+  readPendingCrewInvite,
+  stashPendingCrewInvite,
+  useGuestEntryPrompt,
+} from "@/lib/guest-entry";
 interface Crew {
   id: string;
   name: string;
@@ -86,7 +116,19 @@ export function CrewPanel() {
   const { user, offlineMode } = useAuth();
   const { state, dispatch } = useCompete();
   const router = useRouter();
+  const path = usePathname();
   const searchParams = useSearchParams();
+  const inviteParam = searchParams.get("invite")?.trim() ?? "";
+  const fieldDestination = inviteParam ? crewInviteWebDestination(inviteParam) : "/app/field";
+  const guestNextPath = fieldDestination;
+  const guest = useGuestEntryPrompt({
+    enabled: true,
+    nextPath: guestNextPath,
+    reason: inviteParam
+      ? `Use invite code ${inviteParam.toUpperCase()} after you sign in to join this crew.`
+      : "Sign in to create or join a private crew.",
+  });
+  const [guestAuthOpen, setGuestAuthOpen] = useState(false);
   const [data, setData] = useState<CrewData | null>(null);
   const [selected, setSelected] = useState("");
   const [panel, setPanel] = useState<
@@ -127,14 +169,28 @@ export function CrewPanel() {
 
   useEffect(() => {
     const invite = searchParams.get("invite")?.trim();
-    if (!invite || !user || offlineMode) return;
+  if (invite) stashPendingCrewInvite(invite);
+    if (!invite || offlineMode) return;
     setCode(invite.toUpperCase());
+    if (user) {
+      setPanel("add");
+      const next = new URLSearchParams(searchParams.toString());
+      next.delete("invite");
+      const qs = next.toString();
+      const cleaned = qs ? `${path}?${qs}` : path;
+      router.replace(cleaned, { scroll: false });
+      clearPendingCrewInvite();
+    }
+  }, [searchParams, user, offlineMode, router, path]);
+
+  useEffect(() => {
+    if (!user || offlineMode) return;
+    const pending = readPendingCrewInvite();
+    if (!pending) return;
+    setCode(pending);
     setPanel("add");
-    const next = new URLSearchParams(searchParams.toString());
-    next.delete("invite");
-    const qs = next.toString();
-    router.replace(qs ? `/field?${qs}` : "/field", { scroll: false });
-  }, [searchParams, user, offlineMode, router]);
+    clearPendingCrewInvite();
+  }, [user?.id, offlineMode]);
 
   async function write(path: string, body: object, method = "POST"): Promise<boolean> {
     setBusy(true);
@@ -311,8 +367,22 @@ export function CrewPanel() {
   const previousDistanceM = data?.previousProgressAvailable?.[crew.id]
     ? (data.previousProgress??[]).filter(row=>row.crew_id===crew.id && members.some(m=>m.user_id===row.user_id)).reduce((sum,row)=>sum+Number(row.distance_m),0)
     : null;
+  const shareOrigin =
+    typeof window !== "undefined" ? window.location.origin : "https://overtaek.xyz";
+
+  function requireCrewAccount(action: () => void) {
+    if (user) {
+      action();
+      return;
+    }
+    setGuestAuthOpen(true);
+  }
+
   return (
     <>
+      {inviteParam ? (
+        <OpenInAppBanner nativePath={crewInviteNativePath(inviteParam)} label="Open invite" />
+      ) : null}
       {user && !offlineMode && !data && (
         <section className="focus-card">
           <AppParagraph typographyRole="body" className="fb-copy">{note || "Loading your circle…"}</AppParagraph>
@@ -327,17 +397,17 @@ export function CrewPanel() {
           <header className="crew-header">
             <div className="crew-header-main">
               <AppHeading level={1} role="heading" className="crew-header-name"><select aria-label="Switch crew" value={crew.id} onChange={e => {
-                if (e.target.value === "new") setPanel("add");
+                if (e.target.value === "new") requireCrewAccount(() => setPanel("add"));
                 else setSelected(e.target.value);
               }}>{crews.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}<option value="new">New crew +</option></select><svg aria-hidden="true" className="crew-header-chevron" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.chevron} /></svg></AppHeading>
             </div>
-            <div className="crew-header-actions"><button type="button" className="crew-invite" onClick={() => setPanel(isSolo ? "add" : "invite")}>Invite</button><button type="button" aria-label="Crew settings" onClick={() => {
+            <div className="crew-header-actions"><button type="button" className="crew-invite" onClick={() => requireCrewAccount(() => setPanel(isSolo ? "add" : "invite"))}>Invite</button><button type="button" aria-label="Crew settings" onClick={() => requireCrewAccount(() => {
               const isSessions = crew.format === "personal_target" || crew.sport === "strength";
               setEditSport((SPORTS.some((s) => s.id === crew.sport) ? crew.sport : "running") as SportId);
               setEditFormat(isSessions ? "personal_target" : "cooperative");
               setEditTarget(isSessions ? crew.target_sessions : crew.journey_km);
               setPanel("manage");
-            }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.settings} /></svg></button></div>
+            })}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.settings} /></svg></button></div>
           </header>
           {!isSolo ? <CrewOverview crewId={crew.id} crewName={crew.name} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} displayTimeZone={state ? accountTimeZone(state) : undefined} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => setPanel("members")} /> : user ? <section className="focus-card"><AppHeading level={2} role="display">Make room for your people.</AppHeading><button type="button" className="fb-btn" onClick={() => setPanel("add")}>Create or join a crew</button></section> : null}
         </>
@@ -383,14 +453,14 @@ export function CrewPanel() {
             <div className="fb-row" style={{ width: "100%", gap: 10 }}>
               <Link
                 className="fb-btn"
-                href="/signup?next=/field"
+                href={buildSignupHref(guestNextPath)}
                 style={{ flex: 1, textAlign: "center" }}
               >
                 Create account
               </Link>
               <Link
                 className="fb-btn-line"
-                href="/login?next=/field"
+                href={buildLoginHref(guestNextPath)}
                 style={{ flex: 1, textAlign: "center" }}
               >
                 Sign in
@@ -438,14 +508,14 @@ export function CrewPanel() {
             <div className="fb-row" style={{ width: "100%", gap: 10 }}>
               <Link
                 className="fb-btn"
-                href="/signup?next=/field"
+                href={buildSignupHref(guestNextPath)}
                 style={{ flex: 1, textAlign: "center" }}
               >
                 Create account
               </Link>
               <Link
                 className="fb-btn-line"
-                href="/login?next=/field"
+                href={buildLoginHref(guestNextPath)}
                 style={{ flex: 1, textAlign: "center" }}
               >
                 Sign in
@@ -538,7 +608,7 @@ export function CrewPanel() {
                 Invite link
                 <input
                   readOnly
-                  value={`${typeof window !== "undefined" ? window.location.origin : ""}/field?invite=${encodeURIComponent(crew?.invite_code ?? "")}`}
+                  value={crewInviteHttpsUrl(shareOrigin, crew?.invite_code ?? "")}
                 />
               </label>
               <label className="fb-field">
@@ -548,7 +618,7 @@ export function CrewPanel() {
               <button
                 className="fb-btn"
                 onClick={() => {
-                  const link = `${window.location.origin}/field?invite=${encodeURIComponent(crew?.invite_code ?? "")}`;
+                  const link = crewInviteHttpsUrl(shareOrigin, crew?.invite_code ?? "");
                   void navigator.clipboard
                     .writeText(link)
                     .then(
@@ -777,6 +847,19 @@ export function CrewPanel() {
           </div>
         </Sheet>
       )}
+      <GuestEntrySheet
+        open={guest.open || guestAuthOpen}
+        reason={
+          inviteParam
+            ? `Join this crew with invite code ${inviteParam.toUpperCase()}.`
+            : "Sign in to create or join a private crew."
+        }
+        nextPath={guestNextPath}
+        onClose={() => {
+          guest.dismiss();
+          setGuestAuthOpen(false);
+        }}
+      />
     </>
   );
 }

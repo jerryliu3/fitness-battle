@@ -25,6 +25,7 @@ import {
   RANK_BANDS,
   type ProviderId,
   webProductPath,
+  publicAthleteHttpsUrl,
 } from "@fitness-battle/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native/button";
@@ -736,10 +737,9 @@ const styles=useThemedStyles(stylesThemes);
   const awards = awardCards(state);
   const topRecords = records.slice(0, 3);
   const profileShareUrl = useMemo(() => {
+    if (!user?.id) return "";
     const origin = publicProfileOrigin(mobileEnv.apiUrl);
-    const path = webProductPath("/athlete");
-    const query = user?.id ? `?id=${encodeURIComponent(user.id)}` : "";
-    return `${origin}${path}${query}`;
+    return publicAthleteHttpsUrl(origin, user.id);
   }, [user?.id]);
 
   const copyProfileShareUrl = () => {
@@ -1049,4 +1049,19 @@ const stylesThemes = createThemedStyles(themeColors=>{const SHELL_COLORS=themeCo
 
 
 export function TrackerConnections({ preview = false }: { preview?: boolean }) { return <AthleteContent inlineConnections trackerPreview={preview} />; }
-export default function AthleteScreen() { return <AthleteContent/>; }
+export default function AthleteScreen() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { user } = useAuth();
+  const router = useRouter();
+  const viewed = typeof id === "string" ? id.trim() : "";
+  useEffect(() => {
+    if (!viewed) return;
+    if (user?.id === viewed) {
+      router.replace("/athlete");
+      return;
+    }
+    router.replace({ pathname: "/athlete-profile", params: { id: viewed } });
+  }, [viewed, user?.id, router]);
+  if (viewed && user?.id !== viewed) return null;
+  return <AthleteContent />;
+}

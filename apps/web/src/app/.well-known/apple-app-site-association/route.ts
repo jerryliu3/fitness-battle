@@ -6,7 +6,18 @@ export function GET() {
 
   return Response.json({
     applinks: {
-      details: [{ appIDs: [appId], components: [{ "/": "/invite" }] }],
+      details: [
+        {
+          appIDs: [appId],
+          components: [
+            { "/": "/invite", "?": { invite: "?*" } },
+            { "/": "/field", "?": { invite: "?*" } },
+            { "/": "/athlete", "?": { id: "?*" } },
+            { "/": "/app/field", "?": { invite: "?*" } },
+            { "/": "/app/athlete", "?": { id: "?*" } },
+          ],
+        },
+      ],
     },
   });
 }

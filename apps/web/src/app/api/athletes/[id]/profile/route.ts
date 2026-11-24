@@ -22,35 +22,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const viewerId = await resolveRequestUserId(request);
-  if (!viewerId) {
-    return NextResponse.json({ error: "authentication_required" }, { status: 401 });
-  }
   const targetId = (await params).id;
   if (!UUID.test(targetId)) {
     return NextResponse.json({ error: "invalid_athlete" }, { status: 400 });
   }
-  if (targetId === viewerId) {
+  if (viewerId && targetId === viewerId) {
     return NextResponse.json({ error: "use_own_athlete_page" }, { status: 400 });
-  }
-
-  const client = await createRequestClient(request);
-  const { data: block } = await client
-    .from("athlete_blocks")
-    .select("blocked_id")
-    .eq("blocker_id", viewerId)
-    .eq("blocked_id", targetId)
-    .maybeSingle();
-  if (block) {
-    return NextResponse.json({ error: "athlete_unavailable" }, { status: 404 });
-  }
-
-  const { data: profile } = await client
-    .from("profiles")
-    .select("created_at")
-    .eq("id", targetId)
-    .maybeSingle();
-  if (!profile) {
-    return NextResponse.json({ error: "athlete_unavailable" }, { status: 404 });
   }
 
   let db;
@@ -58,6 +35,28 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     db = competitionAuthorityDatabase();
   } catch {
     return NextResponse.json({ error: "profile_unavailable" }, { status: 503 });
+  }
+
+  if (viewerId) {
+    const client = await createRequestClient(request);
+    const { data: block } = await client
+      .from("athlete_blocks")
+      .select("blocked_id")
+      .eq("blocker_id", viewerId)
+      .eq("blocked_id", targetId)
+      .maybeSingle();
+    if (block) {
+      return NextResponse.json({ error: "athlete_unavailable" }, { status: 404 });
+    }
+  }
+
+  const { data: profile } = await db
+    .from("profiles")
+    .select("created_at")
+    .eq("id", targetId)
+    .maybeSingle();
+  if (!profile) {
+    return NextResponse.json({ error: "athlete_unavailable" }, { status: 404 });
   }
 
   let loaded;
@@ -111,6 +110,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       proudMoments,
       memberSince,
     },
-    { headers: { "Cache-Control": "private, no-store" } },
+    {
+      headers: {
+        "Cache-Control": viewerId ? "private, no-store" : "public, max-age=60, stale-while-revalidate=120",
+      },
+    },
   );
 }
