@@ -24,6 +24,7 @@ import {
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { useRaceFavorites } from "./favorites";
+import { RequestRaceCta } from "./request-race-cta";
 import { computeSplitMetrics, SportFilterBar, SPORTS, type SportId } from "./sport-filter-bar";
 
 type Query = ReturnType<typeof raceQuery>;
@@ -1404,7 +1405,10 @@ export function RaceExplorer({
       )}
 
       <div className="ovt-mini-title">
-        <AppHeading level={2} role="heading">Race editions</AppHeading>
+        <div className="ovt-mini-title-lead">
+          <AppHeading level={2} role="heading">Race editions</AppHeading>
+          <RequestRaceCta surface="observatory" />
+        </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {edition && (
             <Link href={`/pace/history?edition=${edition}&distance=${distance}&sex=${sex}`} className="ovt-btn quiet">

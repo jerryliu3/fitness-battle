@@ -41,6 +41,7 @@ import { MapHudBackdrop, useMapHud } from "../ui/map-hud";
 import { RaceRouteArtNative, SplitSparklineNative } from "../ui/observatory-race-card";
 import { ObservatorySportBar } from "../ui/observatory-sport-bar";
 import { ReplayMap } from "../ui/race-replay-map";
+import { RequestRaceCta } from "../ui/request-race-cta";
 import { SearchField } from "../ui/search-field";
 import { AppText, chartTextProps, textStyle } from "../ui/section";
 import { useReducedMotion } from "../ui/use-reduced-motion";
@@ -1218,8 +1219,14 @@ export function ReplayStudioView({
         <>
           {/* Choose a Race Carousel with GPS Course Outlines + Hide Ineligible Toggle */}
           <View style={{ gap: 10 }}>
-            <View style={s.sectionHead}>
-              <AppText role="heading">Choose a race</AppText>
+            <View style={[s.sectionHead, { flexWrap: "wrap", rowGap: 8 }]}>
+              <View style={{ gap: 2 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <AppText role="heading">Choose a race</AppText>
+                  <RequestRaceCta surface="replay" />
+                </View>
+                <AppText role="caption" secondary>Don&apos;t see your race?</AppText>
+              </View>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                 <Pressable
                   accessibilityRole="checkbox"

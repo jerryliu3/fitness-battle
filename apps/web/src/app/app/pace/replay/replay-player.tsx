@@ -34,6 +34,7 @@ import { useAuth } from "@/components/auth-context";
 import { addMapboxAttribution, mapboxAttributionOptions } from "@/components/maps/mapbox-attribution";
 import { useRaceFavorites } from "../favorites";
 import { coursePreviewsMemoryCache, formatEditionDisplay, RaceRouteArt } from "../race-explorer";
+import { RequestRaceCta } from "../request-race-cta";
 import { computeSplitMetrics, SportFilterBar, SPORTS, type SportId } from "../sport-filter-bar";
 import { FieldWebGLLayer } from "./field-webgl-layer";
 
@@ -1210,7 +1211,10 @@ export function ReplayPlayer({
         <>
           <section className="ovt-replay-races" aria-label="Choose a race edition to replay">
             <div className="ovt-mini-title">
-              <AppHeading level={2} role="heading">Choose a race</AppHeading>
+              <div className="ovt-mini-title-lead">
+                <AppHeading level={2} role="heading">Choose a race</AppHeading>
+                <RequestRaceCta surface="replay" />
+              </div>
               <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                 <label className="ovt-inline-check">
                   <input
