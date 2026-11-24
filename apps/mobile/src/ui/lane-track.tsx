@@ -304,6 +304,7 @@ const c=useThemeColors();
               );
               const isSelected = selectedId === l.id;
               const isExpanded = replayFocusIds?.includes(l.id) ?? expandedId === l.id;
+              const youVal = overtakeFrame?.youValue ?? me?.values[index] ?? 0;
               const laneScene = (peer: ArenaLane, peerValue: number): ArenaSceneLane => ({
                 id: peer.id,
                 name: peer.name,

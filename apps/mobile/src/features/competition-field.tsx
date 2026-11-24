@@ -247,13 +247,14 @@ const f=useFocusStyles();
     })),
   }, [liveArena, timeline.frame, metricFrame]);
   const arena = useMemo(() => {
-    if (!arenaBase || !timeline.index || !state) return arenaBase;
+    const replayIndex = timeline.index;
+    if (!arenaBase || !replayIndex || !state) return arenaBase;
     const cursor = timeline.frame?.position ?? timeline.count;
     return {
       ...arenaBase,
       lanes: arenaBase.lanes.map((lane) => {
         const touch = athleteLatestReplayContribution(
-          timeline.index,
+          replayIndex,
           lane.id,
           cursor,
           state.units,
