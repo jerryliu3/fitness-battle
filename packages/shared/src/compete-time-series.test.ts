@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   competeChartPreview,
+  competeTimeSeriesPathColor,
+  COMPETE_TIMELINE_SILVER,
   buildCompetitionMomentTimeSeriesModel,
   buildCompeteTimeSeriesModel,
   buildSleepTimeSeriesModel,
   interpolateTimeSeriesAt,
 } from "./compete-time-series";
+import { MEDAL_GOLD } from "./appearance";
 import { demoSleepNight, freshState, reduceCompete } from "./compete";
 
 describe("compete-time-series", () => {
@@ -176,6 +179,11 @@ describe("compete-time-series", () => {
   });
 });
 
+it("colors timeline paths gold for first place and bright silver elsewhere", () => {
+  expect(competeTimeSeriesPathColor(1)).toBe(MEDAL_GOLD.srgb);
+  expect(competeTimeSeriesPathColor(2)).toBe(COMPETE_TIMELINE_SILVER);
+});
+
 it("fits every preview marker inside the axes and honors fullscreen plot height", () => {
   const now = new Date("2026-10-22T18:00:00Z");
   const model = buildCompeteTimeSeriesModel(freshState(now), "strength", "open", now, { height: 460 });
@@ -202,7 +210,12 @@ it("does not invent historical rival totals or places from a current-only roster
   expect(model.historyAvailable).toBe(false);
   expect(model.isScrubbing).toBe(false);
   expect(model.cursorFraction).toBe(model.nowFraction);
-  expect(model.athletes.find(a => a.id === "real-rival")?.vertices).toEqual([{ t: model.nowFraction, value: 1 }]);
+  const rival = model.athletes.find(a => a.id === "real-rival")!;
+  expect(rival.vertices).toEqual([
+    { t: 0, value: 0 },
+    { t: model.nowFraction, value: 1 },
+  ]);
+  expect(rival.polyline.split(" ").length).toBeGreaterThanOrEqual(2);
   expect(model.overtakes).toEqual([]);
   const filtered = buildCompeteTimeSeriesModel(state, "strength", "open", now, { hiddenIds: ["real-rival"], scrubFraction: .1 });
   expect(filtered.athletes.some(athlete => athlete.id === "real-rival")).toBe(false);
