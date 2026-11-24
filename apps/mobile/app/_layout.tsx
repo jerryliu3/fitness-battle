@@ -85,12 +85,13 @@ function pathFromNotificationResponse(
   const data = response.notification.request.content.data as {
     path?: unknown;
   };
-  return typeof data.path === "string" && data.path.startsWith("/")
-    ? data.path
-    : null;
+  if (typeof data.path !== "string" || !data.path.startsWith("/")) return null;
+  const [pathname] = data.path.split("#");
+  return pathname || null;
 }
 
 function NotificationNavigation() {
+  const { refresh } = useCompeteStore();
   useEffect(() => {
     // Browser study previews do not have a native notification response API.
     if (Platform.OS === "web") return;
@@ -100,17 +101,21 @@ function NotificationNavigation() {
       const path = pathFromNotificationResponse(response);
       if (path) router.push(path as "/settings");
     });
-    const sub = Notifications.addNotificationResponseReceivedListener(
+    const responseSub = Notifications.addNotificationResponseReceivedListener(
       (response) => {
         const path = pathFromNotificationResponse(response);
         if (path) router.push(path as "/settings");
       },
     );
+    const receivedSub = Notifications.addNotificationReceivedListener(() => {
+      void refresh();
+    });
     return () => {
       alive = false;
-      sub.remove();
+      responseSub.remove();
+      receivedSub.remove();
     };
-  }, []);
+  }, [refresh]);
   return null;
 }
 
