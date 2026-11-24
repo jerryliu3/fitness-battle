@@ -262,7 +262,7 @@ const f=useFocusStyles();
           value: l.values[2],
           you: l.you,
           ghost: false,
-          lastUpdated: l.lastUpdated,
+          lastUpdated: "lastUpdated" in l ? l.lastUpdated : undefined,
         })),
     [arena?.lanes],
   );
