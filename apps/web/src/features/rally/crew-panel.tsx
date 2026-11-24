@@ -32,6 +32,7 @@ import {
   crewMemberWeekValue,
   crewLineup,
   crewTargetSpec,
+  humanizeCrewApiError,
 } from "@fitness-battle/shared";
 import { CrewInviteLanding } from "./crew-invite-landing";
 import { useCrewInviteFlow } from "./use-crew-invite-flow";
@@ -81,22 +82,6 @@ interface CrewData {
   seasonWeeks?: Record<string, number>;
 }
 
-function humanCrewError(code?: string): string {
-  if (!code) return "Could not reach your crew.";
-  const raw = code.toLowerCase();
-  if (raw.includes("invite_not_found"))
-    return "We couldn't find a crew with that invite code.";
-  if (raw.includes("already_a_member"))
-    return "You are already a member of this crew.";
-  if (raw.includes("not_a_member"))
-    return "You are not a member of this crew.";
-  if (raw.includes("crew_not_found")) return "We couldn't find that crew.";
-  if (raw.includes("name_required")) return "Please enter a crew name.";
-  if (raw.includes("authentication_required"))
-    return "Sign in to manage crews.";
-  return code;
-}
-
 function isCrewErrorNote(note: string): boolean {
   return (
     note.startsWith("Please ") ||
@@ -133,9 +118,6 @@ export function CrewPanel() {
   const guest = useGuestEntryPrompt({
     enabled: !inviteCode,
     nextPath: guestNextPath,
-    reason: inviteParam
-      ? `Use invite code ${inviteParam.toUpperCase()} after you sign in to join this crew.`
-      : "Sign in to create or join a private crew.",
   });
   const [data, setData] = useState<CrewData | null>(null);
   const [selected, setSelected] = useState("");
@@ -215,7 +197,7 @@ export function CrewPanel() {
       });
       const result = await res.json();
       if (!res.ok || result.persisted === false)
-        throw Error(humanCrewError(result.error));
+        throw Error(humanizeCrewApiError(result.error ?? "Could not reach your crew."));
       await reload();
       if (path !== "/rest") setPanel(null);
       setName("");

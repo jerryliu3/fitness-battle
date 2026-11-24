@@ -1,9 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { GUEST_ENTRY_STORAGE } from "@fitness-battle/shared";
 import { useCallback, useEffect, useState } from "react";
 
-const PENDING_CREW_INVITE_KEY = "fb:pending-crew-invite:v1";
-const PENDING_CREW_ACCEPT_KEY = "fb:pending-crew-accept:v1";
-const DISMISS_PREFIX = "fb:guest-entry-dismiss:v1:";
+const PENDING_CREW_INVITE_KEY = GUEST_ENTRY_STORAGE.pendingInvite;
+const PENDING_CREW_ACCEPT_KEY = GUEST_ENTRY_STORAGE.pendingAccept;
+const DISMISS_PREFIX = GUEST_ENTRY_STORAGE.dismissPrefix;
 
 export async function readPendingCrewInvite(): Promise<string | null> {
   try {

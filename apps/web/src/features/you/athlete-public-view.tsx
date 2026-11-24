@@ -39,7 +39,6 @@ export function AthletePublicView({ athleteId }: { athleteId: string }) {
   const guest = useGuestEntryPrompt({
     enabled: true,
     nextPath: publicAthleteWebDestination(athleteId),
-    reason: "Create an account to follow athletes and compete on the same field.",
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

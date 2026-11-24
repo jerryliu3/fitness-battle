@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  crewInvitePreviewErrorMessage,
-  type CrewInvitePreviewPayload,
-} from "@fitness-battle/shared";
+import { loadCrewInvitePreview, type CrewInvitePreviewPayload } from "@fitness-battle/shared";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -35,7 +32,6 @@ export function useCrewInviteFlow({
   const [invitePreviewLoading, setInvitePreviewLoading] = useState(false);
   const [invitePreviewError, setInvitePreviewError] = useState<string | null>(null);
   const [inviteJoinBusy, setInviteJoinBusy] = useState(false);
-  const [pendingAutoJoin, setPendingAutoJoin] = useState(() => readPendingCrewAccept());
 
   useEffect(() => {
     const fromUrl = searchParams.get("invite")?.trim() ?? "";
@@ -62,21 +58,14 @@ export function useCrewInviteFlow({
     let cancelled = false;
     setInvitePreviewLoading(true);
     setInvitePreviewError(null);
-    void fetch(`/api/crews/invite-preview?code=${encodeURIComponent(inviteCode)}`)
-      .then(async (response) => {
-        if (!response.ok) {
-          const body = await response.json().catch(() => null);
-          throw new Error(crewInvitePreviewErrorMessage(body?.error));
-        }
-        return response.json() as Promise<CrewInvitePreviewPayload>;
-      })
+    void loadCrewInvitePreview("/api/crews/invite-preview", inviteCode)
       .then((payload) => {
         if (!cancelled) setInvitePreview(payload);
       })
       .catch((error) => {
         if (!cancelled) {
           setInvitePreview(null);
-          setInvitePreviewError(error instanceof Error ? error.message : crewInvitePreviewErrorMessage());
+          setInvitePreviewError(error instanceof Error ? error.message : "Could not load this invitation.");
         }
       })
       .finally(() => {
@@ -90,7 +79,6 @@ export function useCrewInviteFlow({
   const clearInviteFlow = useCallback(() => {
     clearPendingCrewInvite();
     stashPendingCrewAccept(false);
-    setPendingAutoJoin(false);
     setInviteCode("");
     setInvitePreview(null);
     setInvitePreviewError(null);
@@ -101,7 +89,6 @@ export function useCrewInviteFlow({
     if (!inviteCode) return;
     if (!userId) {
       stashPendingCrewAccept(true);
-      setPendingAutoJoin(true);
       onGuestAccept();
       return;
     }
@@ -112,15 +99,14 @@ export function useCrewInviteFlow({
   }, [inviteCode, userId, joinCrew, onGuestAccept, clearInviteFlow]);
 
   useEffect(() => {
-    if (!userId || offlineMode || !pendingAutoJoin || !inviteCode) return;
+    if (!userId || offlineMode || !inviteCode || !readPendingCrewAccept()) return;
     stashPendingCrewAccept(false);
-    setPendingAutoJoin(false);
     setInviteJoinBusy(true);
     void joinCrew(inviteCode).then((ok) => {
       setInviteJoinBusy(false);
       if (ok) clearInviteFlow();
     });
-  }, [userId, offlineMode, pendingAutoJoin, inviteCode, joinCrew, clearInviteFlow]);
+  }, [userId, offlineMode, inviteCode, joinCrew, clearInviteFlow]);
 
   return {
     inviteParam,

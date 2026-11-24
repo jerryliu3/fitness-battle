@@ -28,6 +28,7 @@ import {
   crewTargetSpec,
   crewInviteHttpsUrl,
   PUBLIC_SHARE_ORIGIN,
+  humanizeCrewApiError,
 } from "@fitness-battle/shared";
 import { CrewInviteLanding } from "./crew-invite-landing";
 import { useCrewInviteFlow } from "./use-crew-invite-flow";
@@ -103,15 +104,8 @@ export function useCrewApi() {
 }
 
 function crewError(error: unknown): string {
-  const raw =
-    error instanceof Error ? error.message : "Could not reach your crew.";
-  if (raw.includes("invite_not_found"))
-    return "We couldn't find a crew with that invite code.";
-  if (raw.includes("already_a_member"))
-    return "You are already a member of this crew.";
-  if (raw.includes("not_a_member"))
-    return "You are no longer a member of this crew. Refresh your crews.";
-  return raw;
+  const raw = error instanceof Error ? error.message : "Could not reach your crew.";
+  return humanizeCrewApiError(raw);
 }
 function inviteLink(code: string): string {
   return crewInviteHttpsUrl(PUBLIC_SHARE_ORIGIN, code);

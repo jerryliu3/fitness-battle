@@ -3,6 +3,7 @@ import {
   crewInviteMemberCountLabel,
   crewInviteOverviewMembers,
   crewInvitePreviewErrorMessage,
+  humanizeCrewApiError,
   crewInviteRosterPreview,
   crewInviteTargetLabel,
   CREW_INVITE_ROSTER_PREVIEW_LIMIT,
@@ -65,5 +66,11 @@ describe("crewInviteOverviewMembers", () => {
 describe("crewInvitePreviewErrorMessage", () => {
   it("maps invite_not_found", () => {
     expect(crewInvitePreviewErrorMessage("invite_not_found")).toMatch(/couldn't find/i);
+  });
+});
+
+describe("humanizeCrewApiError", () => {
+  it("maps join error tokens", () => {
+    expect(humanizeCrewApiError("already_a_member")).toMatch(/already a member/i);
   });
 });

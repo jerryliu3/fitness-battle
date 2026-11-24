@@ -77,3 +77,28 @@ export function crewInvitePreviewErrorMessage(code?: string): string {
     ? "We couldn't find a crew with that invite code."
     : "Could not load this invitation.";
 }
+
+export async function loadCrewInvitePreview(
+  endpoint: string,
+  code: string,
+): Promise<CrewInvitePreviewPayload> {
+  const base = endpoint.replace(/\/$/, "");
+  const response = await fetch(`${base}?code=${encodeURIComponent(code)}`);
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(crewInvitePreviewErrorMessage(body?.error));
+  }
+  return response.json() as Promise<CrewInvitePreviewPayload>;
+}
+
+/** Map crew API / join error tokens to product copy. */
+export function humanizeCrewApiError(raw: string): string {
+  const lower = raw.toLowerCase();
+  if (lower.includes("invite_not_found")) return crewInvitePreviewErrorMessage("invite_not_found");
+  if (lower.includes("already_a_member")) return "You are already a member of this crew.";
+  if (lower.includes("not_a_member")) return "You are not a member of this crew.";
+  if (lower.includes("crew_not_found")) return "We couldn't find that crew.";
+  if (lower.includes("name_required")) return "Please enter a crew name.";
+  if (lower.includes("authentication_required")) return "Sign in to manage crews.";
+  return raw;
+}

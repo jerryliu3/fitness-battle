@@ -1,10 +1,11 @@
 "use client";
 
+import { GUEST_ENTRY_STORAGE } from "@fitness-battle/shared";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 
-export const PENDING_CREW_INVITE_KEY = "fb:pending-crew-invite:v1";
-export const PENDING_CREW_ACCEPT_KEY = "fb:pending-crew-accept:v1";
+export const PENDING_CREW_INVITE_KEY = GUEST_ENTRY_STORAGE.pendingInvite;
+export const PENDING_CREW_ACCEPT_KEY = GUEST_ENTRY_STORAGE.pendingAccept;
 
 export function readPendingCrewAccept(): boolean {
   if (typeof sessionStorage === "undefined") return false;
@@ -24,10 +25,9 @@ export function stashPendingCrewAccept(pending: boolean) {
     /* ignore */
   }
 }
-const DISMISS_PREFIX = "fb:guest-entry-dismiss:v1:";
 
 function dismissKey(path: string) {
-  return `${DISMISS_PREFIX}${path}`;
+  return `${GUEST_ENTRY_STORAGE.dismissPrefix}${path}`;
 }
 
 export function readPendingCrewInvite(): string | null {
@@ -78,11 +78,7 @@ export function isMobileWebClient() {
 }
 
 /** Invasive guest CTA shown once per destination until dismissed or the user signs in. */
-export function useGuestEntryPrompt(options: {
-  enabled?: boolean;
-  nextPath: string;
-  reason: string;
-}) {
+export function useGuestEntryPrompt(options: { enabled?: boolean; nextPath: string }) {
   const { user, loading } = useAuth();
   const { enabled = true, nextPath } = options;
   const [dismissed, setDismissed] = useState(() => isDismissed(nextPath));

@@ -1,4 +1,4 @@
-import { crewInvitePreviewErrorMessage, type CrewInvitePreviewPayload } from "@fitness-battle/shared";
+import { loadCrewInvitePreview, type CrewInvitePreviewPayload } from "@fitness-battle/shared";
 import { useCallback, useEffect, useState } from "react";
 import {
   clearPendingCrewInvite,
@@ -62,23 +62,15 @@ export function useCrewInviteFlow({
     let cancelled = false;
     setInvitePreviewLoading(true);
     setInvitePreviewError(null);
-    void fetch(`${mobileEnv.apiUrl}/api/crews/invite-preview?code=${encodeURIComponent(inviteCode)}`)
-      .then(async (response) => {
-        if (!response.ok) {
-          const body = await response.json().catch(() => null);
-          throw new Error(crewInvitePreviewErrorMessage(body?.error));
-        }
-        return response.json() as Promise<CrewInvitePreviewPayload>;
-      })
+    const endpoint = `${mobileEnv.apiUrl}/api/crews/invite-preview`;
+    void loadCrewInvitePreview(endpoint, inviteCode)
       .then((payload) => {
         if (!cancelled) setInvitePreview(payload);
       })
       .catch((error) => {
         if (!cancelled) {
           setInvitePreview(null);
-          setInvitePreviewError(
-            error instanceof Error ? error.message : crewInvitePreviewErrorMessage(),
-          );
+          setInvitePreviewError(error instanceof Error ? error.message : "Could not load this invitation.");
         }
       })
       .finally(() => {
@@ -90,14 +82,12 @@ export function useCrewInviteFlow({
   }, [inviteCode]);
 
   const clearInviteFlow = useCallback(() => {
-    void (async () => {
-      await clearPendingCrewInvite();
-      await stashPendingCrewAccept(false);
-      setInviteCode("");
-      setInvitePreview(null);
-      setInvitePreviewError(null);
-      setInviteJoinBusy(false);
-    })();
+    void clearPendingCrewInvite();
+    void stashPendingCrewAccept(false);
+    setInviteCode("");
+    setInvitePreview(null);
+    setInvitePreviewError(null);
+    setInviteJoinBusy(false);
   }, []);
 
   const acceptInvite = useCallback(async () => {
@@ -117,8 +107,7 @@ export function useCrewInviteFlow({
     if (!userId || !inviteCode) return;
     let cancelled = false;
     void (async () => {
-      const pending = await readPendingCrewAccept();
-      if (!pending || cancelled) return;
+      if (!(await readPendingCrewAccept()) || cancelled) return;
       await stashPendingCrewAccept(false);
       setInviteJoinBusy(true);
       const ok = await joinCrew(inviteCode);
