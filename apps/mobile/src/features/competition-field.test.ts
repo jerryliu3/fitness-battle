@@ -92,11 +92,8 @@ it("cancels a pending hold for small drags and app backgrounding", async () => {
   await act(async () => mocks.appState?.("inactive"));
   expect(field().props.overlaysHidden).toBe(false);
 });
-it("collapses the athlete spotlight panel and isolates timeline touches from scene holds", async () => {
+it("isolates timeline touches from scene holds", async () => {
   expect(button("Collapse live standings")).toBeDefined();
-  expect(button("Collapse athlete panel").props.accessibilityState.expanded).toBe(true);
-  await act(async () => button("Collapse athlete panel").props.onPress());
-  expect(button("Expand athlete panel").props.accessibilityState.expanded).toBe(false);
   expect(button("Zoom in")).toBeUndefined();
   const replay = renderer.root.findAllByType("View" as never).find(node => node.props.onTouchStart && !node.props.onTouchEnd)!;
   const stopPropagation = vi.fn();
@@ -114,28 +111,17 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and time
   const course = DEMO_RACE_COURSE;
   expect(map().props.course).toBe(course);
   expect(map().props.onCourseChange).toBeUndefined();
-  const overview = () => renderer.root.findByType("FieldOverview" as never);
-  expect(overview().props.positionOnly).toBe(true);
   const selected = map().props.selectedId;
-  await act(async () => overview().props.onNavigate(.75));
-  expect(map().props.distanceTarget).toMatchObject({ value: .75, request: 1 });
-  expect(overview().props.view.center).toBe(.75);
-  expect(map().props.selectedId).toBe(selected);
   expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(0);
   await act(async () => map().props.onSelect(map().props.lanes.find((lane: { you?: boolean }) => lane.you).id));
   expect(map().props.distanceTarget).toBeNull();
   expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(1);
   expect(button("Collapse live standings")).toBeDefined();
-  await act(async () => button("Collapse athlete panel").props.onPress());
-  expect(button("Expand athlete panel")).toBeDefined();
-  expect(overview()).toBeDefined();
-  await act(async () => overview().props.onNavigate(.5));
   const peer = map().props.lanes.find((lane: { you: boolean }) => !lane.you);
   if (peer) {
     await act(async () => map().props.onSelect(peer.id));
     expect(map().props.selectedId).toBe(peer.id);
     expect(map().props.distanceTarget).toBeNull();
-    expect(overview().props.view.center).toBe(peer.value);
   }
   expect(mocks.fly).not.toHaveBeenCalled();
   expect(renderer.root.findAllByProps({ accessibilityLabel: "Competition timeline" }).length).toBeGreaterThan(0);
@@ -143,28 +129,19 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and time
   expect(map().props.overlaysHidden).toBe(true);
   await act(async () => scene().props.onTouchEnd());
   await switchTo("2D");
-  expect(renderer.root.findAllByType("FieldOverview" as never)).toHaveLength(1);
   expect(renderer.root.findAllByType("GeographicCourse" as never)).toHaveLength(0);
+  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
   await switchTo("4D");
-  expect(overview().props.positionOnly).toBe(true);
   expect(map().props.course).toBe(course);
-  expect(button("Expand athlete panel")).toBeDefined();
 });
 
-it("keeps a navigable overview inside the athlete panel across collapse and expansion", async () => {
+it("keeps the inline race overview in 2D below the lanes", async () => {
+  const close = renderer.root.findAllByType("IconButton" as never).find(node => node.props.label === "Close full screen field")!;
+  await act(async () => close.props.onPress());
   const overview = () => renderer.root.findByType("FieldOverview" as never);
   expect(overview()).toBeDefined();
   await act(async () => overview().props.onNavigate(5));
   expect(field().props.view.center).toBe(5);
-  await act(async () => button("Collapse athlete panel").props.onPress());
-  expect(overview()).toBeDefined();
-  const switcher = renderer.root.findAllByType("FieldViewSwitcher" as never)[0];
-  await act(async () => switcher.props.onChange("2d"));
-  expect(overview()).toBeDefined();
-  await act(async () => overview().props.onNavigate(3));
-  expect(field().props.view.center).toBe(3);
-  await act(async () => button("Expand athlete panel").props.onPress());
-  expect(overview()).toBeDefined();
 });
 it("focuses an athlete from current leaders without opening their profile", async () => {
   const entry = renderer.root.findAllByType("Pressable" as never).find(node => String(node.props.accessibilityLabel).startsWith("Focus "))!;
@@ -191,11 +168,6 @@ it("expands the whole 3D preview and only exposes course options in full screen"
   expect(button("Open 3D course in full screen")).toBeUndefined();
 });
 
-
-it("omits Elo from the fullscreen athlete spotlight", () => {
-  const labels = renderer.root.findAllByType("Text" as never).map(node => JSON.stringify(node.props.children));
-  expect(labels.some(label => /ELO/i.test(label))).toBe(false);
-});
 
 it("retains the fullscreen scene across tab blur and exits without collapsing it", async () => {
   await act(async () => renderer.unmount());
