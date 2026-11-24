@@ -137,12 +137,21 @@ it.each(["km", "mi"])("includes reachable preview rivals using competition dista
   expect(coursePreviewLanes(lanes, "pts")).toEqual([]);
 });
 
-it("labels peer gaps against you and appends activity recency when known", () => {
+it("labels last counted activity with volume and recency", () => {
   const lanes = [
     { id: "you", name: "You", initials: "Y", you: true, value: 3.2 },
-    { id: "peer", name: "Peer", initials: "P", value: 4.5, lastUpdated: "2026-10-18T11:00:00Z" },
+    {
+      id: "peer",
+      name: "Peer",
+      initials: "P",
+      value: 4.5,
+      lastUpdated: "2026-10-18T11:00:00Z",
+      lastActivityVolume: 2.1,
+    },
   ];
-  expect(courseAthleteSubdetail(lanes, lanes[1]!, "km", new Date("2026-10-18T12:00:00Z"))).toBe("+1.3 km vs you · 1 hour ago");
+  expect(courseAthleteSubdetail(lanes, lanes[1]!, "km", new Date("2026-10-18T12:00:00Z"))).toBe(
+    "Last: 2.1 km • 1 hour ago",
+  );
 });
 
 it("keeps you in a center start position regardless of ID sorting or selected rival", () => {

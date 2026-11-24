@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  nextCompetitionReplaySpeed, competitionReplayFrame, competitionReplayDateForState, indexCompetitionReplay, localCompetitionReplay,
+  COMPETITION_REPLAY_SPEEDS,
+  competitionReplayFrame, competitionReplayDateForState, indexCompetitionReplay, localCompetitionReplay,
   competitionReplayTimeMs, competitionReplayCursorFromTimeMs, REPLAY_MINUTES_PER_REAL_SECOND_1X,
   type CompeteState, type CompetitionReplay, type CompetitionReplaySelection,
 } from "@fitness-battle/shared";
@@ -90,7 +91,8 @@ export function useFieldTimeline(state: CompeteState | undefined, selection: Com
   return {
     frame, index,
     cursor: bounded, count, playing, seek, live, toggle, error, speed,
-    changeSpeed: () => setSpeed(nextCompetitionReplaySpeed),
+    speeds: COMPETITION_REPLAY_SPEEDS,
+    setSpeed: (value: number) => setSpeed(value),
     ready: Boolean(index) && !error, retry: () => setAttempt(value => value + 1),
     latestLabel: index && state ? competitionReplayDateForState(state, index, count, true) : "",
     label: index && state ? competitionReplayDateForState(state, index, bounded, position === null) : "Loading timeline…",

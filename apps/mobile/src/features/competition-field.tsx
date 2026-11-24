@@ -33,6 +33,7 @@ import {
   buildCompeteTimeSeriesModel,
   fieldDefaultSpan,
   competitionCourseReplayFrame,
+  athleteLatestReplayContribution,
   buildArenaModel,
   initialsFromName,
   isGeographicCompete,
@@ -237,11 +238,27 @@ const f=useFocusStyles();
     }),
   } : !timeline.frame || !liveArena ? liveArena : {
     ...liveArena,
-    lanes: timeline.frame.rows.map(row => ({
-      ...row, initials: initialsFromName(row.name), ghost: false, mystery: false,
-      values: [row.value, row.value, row.value] as [number, number, number],
-    })),
-  }, [liveArena, timeline.frame, metricFrame]);
+    lanes: timeline.frame.rows.map(row => {
+      const touch =
+        timeline.index && state
+          ? athleteLatestReplayContribution(
+              timeline.index,
+              row.id,
+              timeline.frame!.position,
+              state.units,
+            )
+          : undefined;
+      return {
+        ...row,
+        initials: initialsFromName(row.name),
+        ghost: false,
+        mystery: false,
+        values: [row.value, row.value, row.value] as [number, number, number],
+        lastUpdated: touch?.at,
+        lastActivityVolume: touch?.volume,
+      };
+    }),
+  }, [liveArena, timeline.frame, timeline.index, metricFrame, state?.units]);
   useEffect(() => { if (externalAthleteFocus && !hiddenIds.includes(externalAthleteFocus.id)) { setSelectedId(externalAthleteFocus.id); const lane = arena?.lanes.find(item => item.id === externalAthleteFocus.id); if (lane) setCenter(lane.values[2]); setCourseTarget(null); setFollowing(true); setFocusRequest(value => value + 1); } }, [externalAthleteFocus, hiddenIds]);
   const defaultSpan = fieldDefaultSpan(arena?.unit ?? "km");
   const viewSpan = span ?? defaultSpan;
@@ -253,18 +270,31 @@ const f=useFocusStyles();
     () =>
       (arena?.lanes ?? [])
         .filter((l) => !l.ghost)
-        .map((l) => ({
-          id: l.id,
-          name: l.name,
-          avatarUrl: l.avatarUrl,
-          initials: l.mystery ? "?" : initialsFromName(l.name),
-          mystery: l.mystery,
-          value: l.values[2],
-          you: l.you,
-          ghost: false,
-          lastUpdated: "lastUpdated" in l ? l.lastUpdated : undefined,
-        })),
-    [arena?.lanes],
+        .map((l) => {
+          const replayTouch =
+            timeline.index && timeline.frame && state
+              ? athleteLatestReplayContribution(
+                  timeline.index,
+                  l.id,
+                  timeline.frame.position,
+                  state.units,
+                )
+              : undefined;
+          return {
+            id: l.id,
+            name: l.name,
+            avatarUrl: l.avatarUrl,
+            initials: l.mystery ? "?" : initialsFromName(l.name),
+            mystery: l.mystery,
+            value: l.values[2],
+            you: l.you,
+            ghost: false,
+            lastUpdated: replayTouch?.at ?? ("lastUpdated" in l ? l.lastUpdated : undefined),
+            lastActivityVolume:
+              replayTouch?.volume ?? ("lastActivityVolume" in l ? l.lastActivityVolume : undefined),
+          };
+        }),
+    [arena?.lanes, timeline.index, timeline.frame, state?.units],
   );
 
   const courseReplay = useMemo(() => {

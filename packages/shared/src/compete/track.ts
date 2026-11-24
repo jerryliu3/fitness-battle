@@ -1,4 +1,5 @@
 import type { DailyHealthSample } from "../fitness/types";
+import { competeVolumeFromTotals } from "../compete-field-view";
 import { APP_TIMEZONE, endOfZonedDay, shiftAppDay } from "../period";
 import { periodEffort } from "./effort";
 import { athleteWeekEffort, type FieldAthlete } from "./field";
@@ -8,6 +9,7 @@ import {
   sportById,
   unitInterval,
   type Activity,
+  type CompeteState,
   type ScoreTrack,
   type SportId,
 } from "./sports";
@@ -170,6 +172,25 @@ export function syntheticCheckpoints(
     labels: checkpointLabels([early, mid, live]),
     liveAt: live,
   };
+}
+
+/** Peer totals are synthetic; attribute the live checkpoint delta as recent activity. */
+export function syntheticLatestActivity(
+  series: CheckpointSeries,
+  sport: SportId,
+  units: CompeteState["units"],
+): { at: string; volume: number } | undefined {
+  const volume = competeVolumeFromTotals(
+    sport,
+    {
+      effort: series.effort[2]! - series.effort[1]!,
+      distanceM: series.distanceM[2]! - series.distanceM[1]!,
+      movingSec: series.movingSec[2]! - series.movingSec[1]!,
+    },
+    units,
+  );
+  if (volume <= 0) return undefined;
+  return { at: series.liveAt.toISOString(), volume };
 }
 
 /**

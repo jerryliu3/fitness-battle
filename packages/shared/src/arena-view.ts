@@ -15,6 +15,7 @@ export interface ArenaSceneLane {
   you?: boolean;
   ghost?: boolean;
   lastUpdated?: string;
+  lastActivityVolume?: number;
 }
 export function ordinalPlace(place: number): string {
   const lastTwo=place%100;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatActivityAge, formatActivityRecency, latestCountedActivityAt } from "./activity-age";
+import { formatActivityAge, formatActivityRecency, isActivityLive, latestCountedActivityAt } from "./activity-age";
 import { getDemoCompeteState } from "./compete-demo-seed";
 describe("activity update labels", () => {
   it("never fabricates recent activity for unknown rivals", () => {
@@ -17,6 +17,12 @@ describe("activity update labels", () => {
         new Date("2026-10-18T12:00:00Z"),
       ),
     ).toBe("30 mins ago");
+    expect(
+      isActivityLive("2026-10-18T11:30:00Z", new Date("2026-10-18T12:00:00Z")),
+    ).toBe(true);
+    expect(
+      isActivityLive("2026-10-18T10:00:00Z", new Date("2026-10-18T12:00:00Z")),
+    ).toBe(false);
   });
   it("uses only real counted timestamps inside the selected event period", () => {
     const state = getDemoCompeteState("alice")!;
