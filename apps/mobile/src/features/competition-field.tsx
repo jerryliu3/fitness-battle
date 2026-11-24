@@ -66,6 +66,7 @@ import { FieldOverview, useFieldAppearance } from "../ui/field-course";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 
 const rememberedFieldViews = new Map<string, FieldViewDimension>();
+const LIVE_STANDINGS_PANEL_WIDTH = 156;
 export function forgetFieldViews() { rememberedFieldViews.clear(); }
 
 export function CompetitionField({
@@ -519,7 +520,7 @@ const f=useFocusStyles();
                 position: "absolute",
                 top: Math.max(insets.top, 0) + 62,
                 left: 12,
-                width: 156,
+                width: LIVE_STANDINGS_PANEL_WIDTH,
                 alignSelf: "flex-start",
               }}
               surfaceStyle={{
@@ -531,7 +532,7 @@ const f=useFocusStyles();
                 borderColor: "rgba(255, 255, 255, 0.14)",
                 ...hud.chrome,
                 gap: 5,
-                width: 156,
+                width: LIVE_STANDINGS_PANEL_WIDTH,
               }}
             >
               <MapHudBackdrop radius={14} />

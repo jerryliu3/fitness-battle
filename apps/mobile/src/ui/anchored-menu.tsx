@@ -68,6 +68,25 @@ export function useAnchoredMenu(options?: {
   return { open, close, toggle, anchorRef, menuLayout };
 }
 
+function GlassMenuSurface() {
+  const hud = useMapHud();
+  return (
+    <>
+      <MapHudBackdrop radius={16} />
+      <View
+        pointerEvents="none"
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            borderRadius: 16,
+            backgroundColor: hud.light ? hud.surface?.backgroundColor : "rgba(20, 20, 19, 0.86)",
+          },
+        ]}
+      />
+    </>
+  );
+}
+
 export function AnchoredMenu({
   open,
   onClose,
@@ -89,8 +108,7 @@ export function AnchoredMenu({
   dimBackdrop?: boolean;
   children?: ReactNode;
 }) {
-const s=useThemedStyles(sThemes);
-  const hud = useMapHud();
+  const s = useThemedStyles(sThemes);
   const wasOpen = useRef(open);
   useEffect(() => {
     const closing = wasOpen.current && !open;
@@ -121,7 +139,6 @@ const s=useThemedStyles(sThemes);
       <View
         style={[
           variant === "glass" ? s.dropdownGlass : s.dropdown,
-          hud.chrome,
           menuLayout
             ? {
                 position: "absolute",
@@ -133,21 +150,7 @@ const s=useThemedStyles(sThemes);
           style,
         ]}
       >
-        {variant === "glass" ? (
-          <>
-            <MapHudBackdrop radius={16} />
-            <View
-              pointerEvents="none"
-              style={[
-                StyleSheet.absoluteFill,
-                {
-                  borderRadius: 16,
-                  backgroundColor: hud.light ? hud.surface?.backgroundColor : "rgba(20, 20, 19, 0.86)",
-                },
-              ]}
-            />
-          </>
-        ) : null}
+        {variant === "glass" ? <GlassMenuSurface /> : null}
         {children}
       </View>
     </Modal>

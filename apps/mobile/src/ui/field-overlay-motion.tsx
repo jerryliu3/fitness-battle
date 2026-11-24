@@ -32,6 +32,24 @@ export function FieldOverlayGroup({ hidden, ...props }: GProps & { hidden: boole
   return <AnimatedGroup {...props} opacity={opacity} />;
 }
 
+function PanelSideGrip({ label, expanded, onPress }: { label: string; expanded: boolean; onPress: () => void }) {
+  const hud = useMapHud();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={expanded ? `Collapse ${label}` : `Expand ${label}`}
+      accessibilityState={{ expanded }}
+      onPress={() => { void playCue("selection"); onPress(); }}
+      style={{ position: "absolute", right: 0, top: "50%", marginTop: -32, width: 44, height: 64, justifyContent: "center", zIndex: 1 }}
+    >
+      <View pointerEvents="none" style={{ width: 18, height: 52, borderTopRightRadius: 10, borderBottomRightRadius: 10, backgroundColor: "rgba(20,20,19,.78)", ...hud.chrome, alignItems: "center", justifyContent: "center" }}>
+        <MapHudBackdrop radius={10} />
+        <View style={{ width: 3, height: 22, borderRadius: 2, backgroundColor: hud.light ? hud.muted : "rgba(255,255,255,.7)" }} />
+      </View>
+    </Pressable>
+  );
+}
+
 export function SlidingFieldPanel({ label, collapsed, onToggle, collapsible = true, collapseGrip = false, overlaysHidden, style, surfaceStyle, onHeightChange, children }: {
   label: string;
   collapsed: boolean;
@@ -45,12 +63,13 @@ export function SlidingFieldPanel({ label, collapsed, onToggle, collapsible = tr
   onHeightChange?: (height: number) => void;
   children: ReactNode;
 }) {
-  const hud = useMapHud();
   const reduced = useReducedMotion();
   const [width, setWidth] = useState(0);
   const progress = useRef(new Animated.Value(collapsed ? 1 : 0)).current;
   const inset = typeof style.left === "number" ? style.left : 0;
   const translateX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, 44 - width - inset] });
+  const panelCollapsed = collapsible && collapsed;
+  const reserveGrip = collapsible && (panelCollapsed || collapseGrip);
   useEffect(() => {
     if (!collapsible) return;
     const animation = Animated.timing(progress, {
@@ -62,54 +81,33 @@ export function SlidingFieldPanel({ label, collapsed, onToggle, collapsible = tr
     animation.start();
     return () => animation.stop();
   }, [collapsed, collapsible, reduced, progress]);
-  const panelHidden = overlaysHidden;
-  const panelCollapsed = collapsible && collapsed;
+  useEffect(() => {
+    if (panelCollapsed) onHeightChange?.(0);
+  }, [panelCollapsed, onHeightChange]);
   return (
     <FieldOverlayView
-      hidden={panelHidden}
+      hidden={overlaysHidden}
       pointerEvents="box-none"
       onLayout={event => {
         setWidth(event.nativeEvent.layout.width);
-        onHeightChange?.(panelCollapsed ? 0 : event.nativeEvent.layout.height);
+        if (!panelCollapsed) onHeightChange?.(event.nativeEvent.layout.height);
       }}
       style={[style, collapsible ? { transform: [{ translateX }], overflow: "hidden" as const } : null]}
     >
-      {collapsible && collapsed ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Expand ${label}`}
-          accessibilityState={{ expanded: false }}
-          onPress={() => { void playCue("selection"); onToggle(); }}
-          style={{ position: "absolute", right: 0, top: "50%", marginTop: -32, width: 44, height: 64, justifyContent: "center", zIndex: 1 }}
-        >
-          <View pointerEvents="none" style={{ width: 18, height: 52, borderTopRightRadius: 10, borderBottomRightRadius: 10, backgroundColor: "rgba(20,20,19,.78)", ...hud.chrome, alignItems: "center", justifyContent: "center" }}>
-            <MapHudBackdrop radius={10} />
-            <View style={{ width: 3, height: 22, borderRadius: 2, backgroundColor: hud.light ? hud.muted : "rgba(255,255,255,.7)" }} />
-          </View>
-        </Pressable>
-      ) : null}
-      {collapsible && collapseGrip && !collapsed ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Collapse ${label}`}
-          accessibilityState={{ expanded: true }}
-          onPress={() => { void playCue("selection"); onToggle(); }}
-          style={{ position: "absolute", right: 0, top: "50%", marginTop: -32, width: 44, height: 64, justifyContent: "center", zIndex: 1 }}
-        >
-          <View pointerEvents="none" style={{ width: 18, height: 52, borderTopRightRadius: 10, borderBottomRightRadius: 10, backgroundColor: "rgba(20,20,19,.78)", ...hud.chrome, alignItems: "center", justifyContent: "center" }}>
-            <MapHudBackdrop radius={10} />
-            <View style={{ width: 3, height: 22, borderRadius: 2, backgroundColor: hud.light ? hud.muted : "rgba(255,255,255,.7)" }} />
-          </View>
-        </Pressable>
-      ) : null}
-      {!panelCollapsed ? (
-        <View
-          pointerEvents="auto"
-          style={[surfaceStyle, collapseGrip ? { marginRight: 44 } : collapsible && collapsed ? { marginRight: 44 } : null]}
-        >
-          {children}
-        </View>
-      ) : null}
+      {collapsible && panelCollapsed ? <PanelSideGrip label={label} expanded={false} onPress={onToggle} /> : null}
+      {collapsible && collapseGrip && !panelCollapsed ? <PanelSideGrip label={label} expanded={true} onPress={onToggle} /> : null}
+      <View
+        pointerEvents={panelCollapsed ? "none" : "auto"}
+        accessibilityElementsHidden={panelCollapsed}
+        importantForAccessibility={panelCollapsed ? "no-hide-descendants" : "auto"}
+        style={[
+          surfaceStyle,
+          reserveGrip && !panelCollapsed ? { marginRight: 44 } : null,
+          panelCollapsed ? { opacity: 0, height: 0, overflow: "hidden" as const, paddingVertical: 0, paddingHorizontal: 0, borderWidth: 0 } : null,
+        ]}
+      >
+        {children}
+      </View>
     </FieldOverlayView>
   );
 }
