@@ -43,6 +43,7 @@ vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
 vi.mock("../ui/mascot/animated-ember", () => ({ AnimatedEmber: "Mascot" }));
 vi.mock("../ui/standard-line-chart", () => ({ StandardLineChart: "Chart" }));
 vi.mock("../ui/user-avatar", () => ({ UserAvatar: "UserAvatar" }));
+vi.mock("./notification-opt-in", () => ({ NotificationOptInStrip: "NotificationOptInStrip" }));
 vi.mock("../lib/haptics", () => ({ playPattern: mock.earned, playCue: mock.cue }));
 vi.mock("./athlete-preferences", () => ({ AthletePreferencesFields: "AthletePreferencesFields" }));
 vi.mock("./competition-replay", () => ({ CompetitionReplayButton: "Replay" }));

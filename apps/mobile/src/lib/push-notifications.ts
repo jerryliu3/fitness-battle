@@ -1,18 +1,23 @@
 import {
+  NOTIFICATION_OPT_IN_STORAGE_KEY,
   NOTIFICATION_STORAGE_KEY,
   mergeNotificationPreferences,
   normalizeNotificationPreferences,
   parseNotificationPreferences,
+  parseNotificationPromptState,
   prepareNotificationDelivery,
+  recordNotificationMaybeLater,
   registerPushDevice,
   registerStubPush,
   serializeNotificationPreferences,
+  serializeNotificationPromptState,
   setCategoryEnabled,
   unregisterPush,
   type NotificationCategoryId,
   type NotificationDeliveryPayload,
   type NotificationPlatform,
   type NotificationPreferences,
+  type NotificationPromptState,
 } from "@fitness-battle/shared";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
@@ -139,8 +144,25 @@ export type EnablePushResult = {
   detail?: string;
 };
 
+export async function loadNotificationPromptState(): Promise<NotificationPromptState> {
+  const raw = await AsyncStorage.getItem(NOTIFICATION_OPT_IN_STORAGE_KEY);
+  return parseNotificationPromptState(raw);
+}
+
+export async function dismissNotificationOptIn(
+  now: Date = new Date(),
+): Promise<NotificationPromptState> {
+  const next = recordNotificationMaybeLater(now);
+  await AsyncStorage.setItem(
+    NOTIFICATION_OPT_IN_STORAGE_KEY,
+    serializeNotificationPromptState(next),
+  );
+  return next;
+}
+
 export async function enableNativePush(
   identity?: SyncIdentity | null,
+  category?: NotificationCategoryId,
 ): Promise<EnablePushResult> {
   return enqueueWrite(async () => {
     const platform = detectionPlatform();
@@ -176,6 +198,10 @@ export async function enableNativePush(
       }
       next = registerStubPush(prefs, platform, new Date(), "stub");
       detail = expo.message;
+    }
+
+    if (category) {
+      next = setCategoryEnabled(next, category, true);
     }
 
     const saved = await saveNotificationPreferences(next);

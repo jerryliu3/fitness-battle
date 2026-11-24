@@ -21,6 +21,7 @@ import { UserAvatar } from "../ui/user-avatar";
 import { playCue, playPattern } from "../lib/haptics";
 import { AthletePreferencesFields } from "./athlete-preferences";
 import { CompetitionReplayButton } from "./competition-replay";
+import { NotificationOptInStrip } from "./notification-opt-in";
 import { ResultCard } from "./result-card";
 import { WeeklySocialActions } from "./weekly-social";
 import { WeekRecapBackground } from "./week-recap-background";
@@ -55,10 +56,11 @@ const PODIUM_STEP = {
   },
 } as const;
 
-export function WeekRecap({ state, results, nonRaceWeek, social, dispatch, onClose, loadReplay, hiddenIds = [] }: {
+export function WeekRecap({ state, results, nonRaceWeek, social, debug = false, dispatch, onClose, loadReplay, hiddenIds = [] }: {
   state: CompeteState; results: PeriodResult[];
   nonRaceWeek?: { sport: SportId; periodStart: string; periodEnd: string } | null;
   social: boolean;
+  debug?: boolean;
   dispatch?: (action: Action) => void;
   onClose: () => void;
   loadReplay?: (result: PeriodResult) => Promise<CompetitionReplay | null>; hiddenIds?: readonly string[];
@@ -139,7 +141,7 @@ export function WeekRecap({ state, results, nonRaceWeek, social, dispatch, onClo
                 </View>
               ) : page.kind === "results" ? (
                 <ResultsView state={state} result={page.result} replay={replays[page.result.id] ?? null} hiddenIds={hiddenIds} reduced={reduced} />
-              ) : <Training state={state} target={{ sport: page.sport, periodStart: page.periodStart, periodEnd: page.periodEnd, result: page.result }} reduced={reduced} />}
+              ) : <Training state={state} target={{ sport: page.sport, periodStart: page.periodStart, periodEnd: page.periodEnd, result: page.result }} reduced={reduced} debug={debug} />}
             </WeekRecapFit>
 
             <View style={s.footer}>
@@ -303,7 +305,7 @@ function PodiumHero({ replay, state, result, hiddenIds, reduced }: {
   );
 }
 
-function Training({ state, target, reduced }: { state: CompeteState; target: WeekRecapTarget; reduced: boolean }) {
+function Training({ state, target, reduced, debug }: { state: CompeteState; target: WeekRecapTarget; reduced: boolean; debug: boolean }) {
   const series = weekRecapTraining(state, target);
   const { stats, nextRound } = weekRecapBreakdown(state, target);
   const hr = weekRecapHeartRateRanges(state, target);
@@ -413,6 +415,9 @@ function Training({ state, target, reduced }: { state: CompeteState; target: Wee
           </View>
         </View>
         <AppText role="row" style={s.light}>{nextRound.detail}</AppText>
+        {nextRound.active && (
+          <NotificationOptInStrip surface="week_recap" variant="recap" compact debug={debug} />
+        )}
       </View>
     </View>
   );

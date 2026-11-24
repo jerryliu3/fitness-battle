@@ -9,11 +9,12 @@ import { RaceUpdates } from "./race-updates";
 import { StandingsList } from "./standings-list";
 import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
 import { CompeteSheet } from "../ui/compete-sheet";
+import { useCompetitionSheetHeight } from "../ui/competition-sheet-height";
 import { IconButton } from "../ui/icon-button";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { CompeteTimeSeriesChart } from "../ui/compete-time-series-chart";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   DEMO_RACE_COURSE,
@@ -41,6 +42,7 @@ import { AppText, textStyle } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 import { FocusButton, useFocusStyles } from "../ui/focus";
 import { playCue, playPattern } from "../lib/haptics";
+import { NotificationOptInStrip } from "./notification-opt-in";
 
 const ignore = () => {};
 
@@ -162,6 +164,25 @@ export function CompetitionMoment({
     }
   };
   const ended = progress >= 1;
+  const { minimum: sheetMinimum } = useCompetitionSheetHeight();
+  const optInFade = useRef(new Animated.Value(reduced ? 1 : 0)).current;
+  useEffect(() => {
+    if (!ended) {
+      optInFade.setValue(0);
+      return;
+    }
+    if (reduced) {
+      optInFade.setValue(1);
+      return;
+    }
+    const anim = Animated.timing(optInFade, {
+      toValue: 1,
+      duration: 240,
+      useNativeDriver: true,
+    });
+    anim.start();
+    return () => anim.stop();
+  }, [ended, reduced, optInFade]);
   const playbackIcon = ended ? "replay" : playing ? "pause" : "play";
   const playbackLabel = ended ? "Replay" : playing ? "Pause replay" : "Play replay";
   const togglePlayback = () => {
@@ -347,12 +368,33 @@ export function CompetitionMoment({
           </View>
         </View>
       ) : (
-        <CompeteSheet
-          active
-          expandRequest={0}
-          defaultIndex={0}
-          overview={actionRow}
-        >
+        <>
+          {!practice && ended && (
+            <Animated.View
+              pointerEvents="box-none"
+              style={{
+                position: "absolute",
+                left: 16,
+                right: 16,
+                bottom: (sheetMinimum || insets.bottom + 120) + 12,
+                zIndex: 25,
+                opacity: optInFade,
+              }}
+            >
+              <NotificationOptInStrip
+                surface="competition_moment"
+                hasOvertake={moment.plan.hasOvertake}
+                variant="floating"
+                debug={debug}
+              />
+            </Animated.View>
+          )}
+          <CompeteSheet
+            active
+            expandRequest={0}
+            defaultIndex={0}
+            overview={actionRow}
+          >
           <CompetitionPanel
             active
             standings={
@@ -380,6 +422,7 @@ export function CompetitionMoment({
             }
           />
         </CompeteSheet>
+        </>
       )}
       {!embedded && (
         <AthleteProfileSheet athlete={profileAthlete} onClose={() => setProfileAthlete(null)} />
