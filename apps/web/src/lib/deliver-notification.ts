@@ -77,6 +77,31 @@ export async function deliverNotificationToUser(
   const tokens = liveTokens(remote.devices, prefs);
 
   if (tokens.length > 0) {
+    if (options?.requireLive) {
+      const fiveMinAgo = new Date(Date.now() - 5 * 60_000).toISOString();
+      const { data: recent } = await supabase
+        .from("notification_outbox")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("category", payload.category)
+        .eq("title", payload.title)
+        .eq("body", payload.body)
+        .in("status", ["sent", "queued"])
+        .gte("created_at", fiveMinAgo)
+        .limit(1)
+        .maybeSingle();
+      if (recent?.id) {
+        return {
+          ok: true,
+          mode: "expo",
+          payload,
+          deviceCount: 0,
+          outboxId: String(recent.id),
+          persisted: true,
+          message: "deduplicated",
+        };
+      }
+    }
     const send = await sendExpoPush(tokens, payload);
     const status =
       send.okCount > 0 && send.errorCount === 0
