@@ -519,7 +519,7 @@ const f=useFocusStyles();
                 position: "absolute",
                 top: Math.max(insets.top, 0) + 62,
                 left: 12,
-                maxWidth: 318,
+                width: 156,
                 alignSelf: "flex-start",
               }}
               surfaceStyle={{
@@ -531,7 +531,7 @@ const f=useFocusStyles();
                 borderColor: "rgba(255, 255, 255, 0.14)",
                 ...hud.chrome,
                 gap: 5,
-                alignSelf: "flex-start",
+                width: 156,
               }}
             >
               <MapHudBackdrop radius={14} />
@@ -583,6 +583,7 @@ const f=useFocusStyles();
                         overflow: "hidden",
                         backgroundColor: hud.light && leads ? c.tennis : undefined,
                         color: leads ? hud.accent : (hud.light ? hud.muted : "rgba(255,255,255,0.7)"),
+                        fontVariant: ["tabular-nums"],
                       }}
                     >
                       {place(peer.values[2])}
@@ -592,7 +593,8 @@ const f=useFocusStyles();
                       style={{
                         ...textStyle("caption"),
                         color: leads ? hud.accent : hud.ink,
-                        flexShrink: 1,
+                        flex: 1,
+                        minWidth: 0,
                       }}
                     >
                       {peer.name.split(" ")[0]}
@@ -600,8 +602,10 @@ const f=useFocusStyles();
                     <Text
                       style={{
                         ...textStyle("caption"),
+                        width: 52,
+                        textAlign: "right",
                         color: leads ? hud.accent : (hud.light ? hud.muted : "rgba(255,255,255,0.8)"),
-                        flexShrink: 0,
+                        fontVariant: ["tabular-nums"],
                       }}
                     >
                       {leads ? "Leader" : `${delta.toFixed(1)}`}

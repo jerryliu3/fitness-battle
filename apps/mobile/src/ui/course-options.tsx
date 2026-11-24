@@ -19,6 +19,8 @@ export function LayersMenu({
   buttonBorderColor,
   iconColor,
   icon = "layers",
+  menuVariant,
+  menuDimBackdrop,
   children,
 }: {
   label: string;
@@ -29,9 +31,13 @@ export function LayersMenu({
   buttonBorderColor?: string;
   iconColor?: string;
   icon?: AppIconName;
+  menuVariant?: "card" | "glass";
+  menuDimBackdrop?: boolean;
   children: (ctx: { close: () => void; runAfterDismiss: (action: () => void) => void }) => ReactNode;
 }) {
   const hud = useMapHud();
+  const resolvedVariant = menuVariant ?? (buttonBackgroundColor === undefined ? "glass" : "card");
+  const resolvedDimBackdrop = menuDimBackdrop ?? resolvedVariant === "card";
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({ minWidth, estimatedHeight });
   const pendingAction = useRef<(() => void) | null>(null);
   const finishPendingAction = () => {
@@ -74,6 +80,8 @@ export function LayersMenu({
         style={{ width: menuLayout?.width ?? minWidth }}
         menuLayout={menuLayout}
         accessibilityLabel={closeLabel}
+        variant={resolvedVariant}
+        dimBackdrop={resolvedDimBackdrop}
       >
         {children({ close, runAfterDismiss })}
       </AnchoredMenu>

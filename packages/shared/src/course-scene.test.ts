@@ -150,7 +150,7 @@ it("labels last counted activity with volume and recency", () => {
     },
   ];
   expect(courseAthleteSubdetail(lanes, lanes[1]!, "km", new Date("2026-10-18T12:00:00Z"))).toBe(
-    "Last: 2.1 km • 1 hour ago",
+    "+2.1 km • 1h ago",
   );
 });
 

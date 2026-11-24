@@ -62,14 +62,17 @@ export function SlidingFieldPanel({ label, collapsed, onToggle, collapsible = tr
     animation.start();
     return () => animation.stop();
   }, [collapsed, collapsible, reduced, progress]);
-  const panelHidden = overlaysHidden || (collapsible && collapsed && width === 0);
+  const panelHidden = overlaysHidden;
   const panelCollapsed = collapsible && collapsed;
   return (
     <FieldOverlayView
       hidden={panelHidden}
       pointerEvents="box-none"
-      onLayout={event => { setWidth(event.nativeEvent.layout.width); onHeightChange?.(event.nativeEvent.layout.height); }}
-      style={[style, collapsible ? { transform: [{ translateX }] } : null]}
+      onLayout={event => {
+        setWidth(event.nativeEvent.layout.width);
+        onHeightChange?.(panelCollapsed ? 0 : event.nativeEvent.layout.height);
+      }}
+      style={[style, collapsible ? { transform: [{ translateX }], overflow: "hidden" as const } : null]}
     >
       {collapsible && collapsed ? (
         <Pressable
@@ -99,7 +102,14 @@ export function SlidingFieldPanel({ label, collapsed, onToggle, collapsible = tr
           </View>
         </Pressable>
       ) : null}
-      <View pointerEvents={panelCollapsed ? "none" : "auto"} accessibilityElementsHidden={panelCollapsed} importantForAccessibility={panelCollapsed ? "no-hide-descendants" : "auto"} style={[surfaceStyle, collapsible && collapsed ? { marginRight: 44 } : collapseGrip && !collapsed ? { marginRight: 44 } : null]}>{children}</View>
+      {!panelCollapsed ? (
+        <View
+          pointerEvents="auto"
+          style={[surfaceStyle, collapseGrip ? { marginRight: 44 } : collapsible && collapsed ? { marginRight: 44 } : null]}
+        >
+          {children}
+        </View>
+      ) : null}
     </FieldOverlayView>
   );
 }

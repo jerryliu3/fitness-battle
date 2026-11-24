@@ -22,6 +22,7 @@ export function ReplaySpeedControl({
   const menu = useAnchoredMenu({
     minWidth: 112,
     estimatedHeight: COMPETITION_REPLAY_SPEEDS.length * 46 + 12,
+    placement: "above",
   });
   const label = `${speed}×`;
   return (
@@ -52,6 +53,8 @@ export function ReplaySpeedControl({
         onClose={menu.close}
         menuLayout={menu.menuLayout}
         accessibilityLabel="Close speed options"
+        variant="glass"
+        dimBackdrop={false}
         style={{ width: menu.menuLayout?.width ?? 112 }}
       >
         {COMPETITION_REPLAY_SPEEDS.map((option) => (

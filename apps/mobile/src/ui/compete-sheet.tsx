@@ -26,6 +26,8 @@ export function CompeteSheet({ children, expandRequest, active, overview, scroll
   const stops = [minimum, middle, maximum];
   const bodyHeight = Math.max(120, maximum - headingHeight - 44);
   const scrollPaddingBottom = safeBottom + 48;
+  const viewportHeight = (snapIndex: number) =>
+    Math.max(80, stops[snapIndex] - headingHeight - 44);
   const [index, setIndex] = useState(0);
   const indexRef = useRef(0);
   const offset = useRef(new Animated.Value(maximum - stops[0])).current;
@@ -66,6 +68,6 @@ export function CompeteSheet({ children, expandRequest, active, overview, scroll
 
     {(!hasDock || index !== 0) && <View {...pan.panHandlers} accessible accessibilityRole="adjustable" accessibilityLabel="Competition sheet height" accessibilityValue={{ text: ["Minimized", "Partially expanded", "Fully expanded"][index] }} accessibilityActions={[{ name: "increment", label: "Expand" }, { name: "decrement", label: "Minimize" }]} onAccessibilityAction={event => snap(Math.max(0, Math.min(2, index + (event.nativeEvent.actionName === "increment" ? 1 : -1))))} style={{ height: 44, alignItems: "center", justifyContent: "center" }}><View style={{ width: 40, height: 4, borderRadius: 4, backgroundColor: c.muted }} /></View>}
     {overview && <View {...overviewPan.panHandlers} onLayout={event => setControlsHeight(Math.ceil(event.nativeEvent.layout.height))} style={{ paddingHorizontal: 16, paddingBottom: 8 }}>{overview}</View>}
-    <ScrollView removeClippedSubviews={false} style={{ height: bodyHeight, overflow: flipping ? "visible" : "hidden", zIndex: flipping ? 1 : 0 }} nestedScrollEnabled scrollEnabled={scrollable && !flipping} contentContainerStyle={{ padding: 20, paddingTop: 4, paddingBottom: scrollPaddingBottom, minHeight: bodyHeight }}><FlipLayer.Provider value={setFlipping}>{children}</FlipLayer.Provider></ScrollView>
+    <ScrollView removeClippedSubviews={false} style={{ height: viewportHeight(index), overflow: flipping ? "visible" : "hidden", zIndex: flipping ? 1 : 0 }} nestedScrollEnabled scrollEnabled={scrollable && !flipping && index > 0} contentContainerStyle={{ padding: 20, paddingTop: 4, paddingBottom: scrollPaddingBottom, minHeight: bodyHeight }}><FlipLayer.Provider value={setFlipping}>{children}</FlipLayer.Provider></ScrollView>
   </Animated.View>;
 }
