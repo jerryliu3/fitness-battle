@@ -51,6 +51,7 @@ export function useSyncReviewGate(
     blocked.current = false;
     setReceipt(null);
     if (!value || value.receipt.account !== current.current.account) return;
+    if (selected && selected.length === 0) return;
     value.beforeApply?.();
     const actions = selected ? selectedSyncActions(value.actions, selected) : value.actions;
     const before = current.current.state;

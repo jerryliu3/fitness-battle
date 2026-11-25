@@ -12,7 +12,7 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
   onComplete: (selected?: readonly string[], quiet?: boolean) => unknown; onAcknowledge?: () => void;
 }) {
   const title = receipt ? (receipt.confirmBeforeSave ? "Review activities" : "Sync completed") : moment?.plan.hasOvertake ? "Your overtakes" : moment && moment.plan.youAfter > moment.plan.youBefore ? "Your progress" : "Your field changed";
-  return <Sheet open hideTitle={Boolean(receipt)} title={title} body="" fullScreen minimal={!receipt} scrollResetKey={receipt ? "review" : moment?.id} onClose={() => { if (receipt) onComplete(undefined, true); }}>
+  return <Sheet open hideTitle={Boolean(receipt)} title={title} body="" fullScreen minimal={!receipt} scrollResetKey={receipt ? "review" : moment?.id} onClose={() => { if (receipt && (typeof window === "undefined" || window.confirm("Closing will cancel this sync and nothing will be saved.\n\nTo hide an activity instead, deselect it and swipe to save."))) onComplete([], true); }}>
     {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete}/> : moment ? <Moment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : null}
   </Sheet>;
 }
