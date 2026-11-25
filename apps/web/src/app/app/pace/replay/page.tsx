@@ -13,13 +13,12 @@ export default async function ReplayPage({ searchParams }: { searchParams: Promi
   }
   const query = raceQuery(params);
   const clock = ["chip", "gun"].includes(params.get("clock") ?? "") ? (params.get("clock") as string) : "chip";
-  let coverage = null;
-  try {
-    coverage = await loadRaceCoverage();
-  } catch {
-    coverage = null;
-  }
-  const coursePreviews = coverage ? await loadReplayCoursePreviews(coverage).catch(() => ({})) : {};
+  const [inventory, previews] = await Promise.allSettled([
+    loadRaceCoverage(),
+    loadReplayCoursePreviews(),
+  ]);
+  const coverage = inventory.status === "fulfilled" ? inventory.value : null;
+  const coursePreviews = previews.status === "fulfilled" ? previews.value : {};
 
   const allGroups = coverage ? raceEventGroups(coverage, "all") : [];
   const requestedDistance = RACE_DISTANCES.find(d => d.slug === params.get("distance"));

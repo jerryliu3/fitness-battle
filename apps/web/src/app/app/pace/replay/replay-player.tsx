@@ -33,7 +33,7 @@ import { webEnv } from "@/lib/env";
 import { useAuth } from "@/components/auth-context";
 import { addMapboxAttribution, mapboxAttributionOptions } from "@/components/maps/mapbox-attribution";
 import { useRaceFavorites } from "../favorites";
-import { coursePreviewsMemoryCache, formatEditionDisplay, RaceRouteArt } from "../race-explorer";
+import { coursePreviewsMemoryCache, coverageMemoryCache, formatEditionDisplay, RaceRouteArt } from "../race-explorer";
 import { RequestRaceCta } from "../request-race-cta";
 import { computeSplitMetrics, SportFilterBar, SPORTS, type SportId } from "../sport-filter-bar";
 import { FieldWebGLLayer } from "./field-webgl-layer";
@@ -404,13 +404,22 @@ export function ReplayPlayer({
   const { user } = useAuth();
   const saved = useRaceFavorites();
 
-  const [coverage, setCoverage] = useState<RaceCoverage[] | null>(initialCoverage);
+  const [coverage, setCoverage] = useState<RaceCoverage[] | null>(() => {
+    if (initialCoverage) {
+      coverageMemoryCache.data = initialCoverage;
+      return initialCoverage;
+    }
+    return coverageMemoryCache.data;
+  });
   useEffect(() => {
     if (coverage !== null) return;
     fetch("/api/rankings/coverage")
       .then(r => (r.ok ? r.json() : null))
       .then((c: RaceCoverage[] | null) => {
-        if (Array.isArray(c)) setCoverage(c);
+        if (Array.isArray(c)) {
+          coverageMemoryCache.data = c;
+          setCoverage(c);
+        }
       })
       .catch(() => {});
   }, [coverage]);
@@ -599,6 +608,11 @@ export function ReplayPlayer({
       },
       () => controller.signal.aborted,
       setProgress,
+      partial => {
+        if (!controller.signal.aborted && validateReplayCourse(partial.course, storedDistance)) {
+          setData(partial);
+        }
+      },
     )
       .then(value => {
         if (!controller.signal.aborted) {
@@ -630,8 +644,9 @@ export function ReplayPlayer({
   );
   const hasCheckpointSplits = useMemo(() => runners.some(r => r.points.length > 2), [runners]);
 
-  // Preserve valid selections on field change, never auto-select default athletes
+  // Preserve valid selections on field change once streaming completes, never auto-select default athletes
   useEffect(() => {
+    if (busy) return;
     if (!runners.length) {
       setPinnedIds([]);
       setCameraTargetId(null);
@@ -644,7 +659,7 @@ export function ReplayPlayer({
     setCameraTargetId(prev => (prev !== null && idSet.has(prev) ? prev : null));
     setDuelPrimaryId(prev => (prev !== null && idSet.has(prev) ? prev : null));
     setPeerId(prev => (prev !== null && idSet.has(prev) ? prev : null));
-  }, [runners]);
+  }, [runners, busy]);
 
   const savedInFieldIds = useMemo(() => {
     const idSet = new Set(runners.map(r => r.id));
@@ -680,7 +695,8 @@ export function ReplayPlayer({
     });
   }
 
-  const courseIndex = useMemo(() => (data ? buildReplayCourseIndex(data.course) : null), [data]);
+  const course = data?.course ?? null;
+  const courseIndex = useMemo(() => (course ? buildReplayCourseIndex(course) : null), [course]);
   const field = useMemo(() => buildCompiledReplayField(runners, wall), [runners, wall]);
   const timeline = useMemo(
     () => ({ wallAvailable: field.wallAvailable, origin: field.wallOrigin, duration: field.duration }),
@@ -860,7 +876,7 @@ export function ReplayPlayer({
   }, [playing, reduced, speed, data, courseIndex, field, runners, timeline.duration, timeline.origin, ready, cameraMode, cameraTargetId, replayMode]);
 
   useEffect(() => {
-    if (!data || !container.current || !webEnv.mapboxAccessToken) return;
+    if (!course || !container.current || !webEnv.mapboxAccessToken) return;
     setReady(false);
     setMapError("");
     let instance: mapboxgl.Map;
@@ -870,7 +886,7 @@ export function ReplayPlayer({
         accessToken: webEnv.mapboxAccessToken,
         style: "mapbox://styles/mapbox/standard",
         projection: "mercator",
-        center: data.course.points[0].slice(0, 2) as [number, number],
+        center: course.points[0].slice(0, 2) as [number, number],
         zoom: 11.5,
         ...mapboxAttributionOptions,
         logoPosition: "bottom-left",
@@ -901,7 +917,7 @@ export function ReplayPlayer({
       } catch {
         // Older Mapbox style payloads may omit optional Standard config properties.
       }
-      const coords = data.course.points.map(p => p.slice(0, 2) as [number, number]);
+      const coords = course.points.map(p => p.slice(0, 2) as [number, number]);
       instance.addSource("course", {
         type: "geojson",
         data: {
@@ -956,7 +972,7 @@ export function ReplayPlayer({
       });
       applyRunnerLayerPaint(instance, pinnedIds, cameraTargetId, replayMode === "duel" ? (peerId ?? -1) : -1);
       const bounds = new mapboxgl.LngLatBounds();
-      for (const point of data.course.points) bounds.extend([point[0], point[1]]);
+      for (const point of course.points) bounds.extend([point[0], point[1]]);
       instance.fitBounds(bounds, { padding: 56, duration: 0 });
       setReady(true);
     });
@@ -999,7 +1015,7 @@ export function ReplayPlayer({
       instance.remove();
       map.current = null;
     };
-  }, [data, mapAttempt]);
+  }, [course, mapAttempt]);
 
   useEffect(() => {
     if (ready && !playing) {

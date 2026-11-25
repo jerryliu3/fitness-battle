@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState, type ReactNode } from "react";
@@ -7,7 +8,11 @@ import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { AppHeading } from "@/ui/section";
 import { useRaceFavorites } from "./favorites";
-import { ReplayPlayer } from "./replay/replay-player";
+
+const ReplayPlayer = dynamic(
+  () => import("./replay/replay-player").then(m => m.ReplayPlayer),
+  { ssr: false },
+);
 
 type ActiveTab = "observatory" | "replay";
 

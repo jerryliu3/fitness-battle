@@ -11,10 +11,14 @@ export async function GET(request: Request) {
   if (query.dateError) return NextResponse.json({error:query.dateError},{status:400});
   const rawPageSize = Number(params.get("pageSize"));
   const pageSize = Number.isInteger(rawPageSize) && rawPageSize >= 1 && rawPageSize <= 50 ? rawPageSize : 50;
+  const cacheHeaders = {
+    "Cache-Control": "public, max-age=120, s-maxage=300, stale-while-revalidate=3600",
+    "CDN-Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600",
+  };
   try {
     if (pageSize === 50) {
       const data = await loadRaceResults(distance.stored, query);
-      return NextResponse.json(data, { headers: { "Cache-Control": "public, max-age=120, stale-while-revalidate=300" } });
+      return NextResponse.json(data, { headers: cacheHeaders });
     }
     const startOffset = (query.page - 1) * pageSize;
     const endOffset = startOffset + pageSize;
@@ -29,7 +33,7 @@ export async function GET(request: Request) {
     const localStart = startOffset - (firstDbPage - 1) * 50;
     return NextResponse.json(
       { ...first, rows: combined.slice(localStart, localStart + pageSize), page: query.page, pageSize },
-      { headers: { "Cache-Control": "public, max-age=120, stale-while-revalidate=300" } },
+      { headers: cacheHeaders },
     );
   } catch {
     return NextResponse.json({ error: "Race results are unavailable. Please try again." }, { status: 503 });

@@ -1,7 +1,7 @@
 import { bearing } from "@turf/turf";
 import { analyzeRaceSplits, RACE_METERS, type RaceTimingSplits } from "./race-splits";
 export type ReplayCourse={points:[number,number,number][];sourceUrl:string;attribution:string};
-export type ReplayRunner={id:number;name:string;bib?:string|null;startAt:string|null;splits:RaceTimingSplits};
+export type ReplayRunner={id:number;name:string;bib?:string|null;startAt:string|null;startMs?:number;splits:RaceTimingSplits};
 export type ReplayPage={version:string;course:ReplayCourse|null;totalAvailable:number;runners:ReplayRunner[];next:number|null};
 export type ReplayData={version:string;course:ReplayCourse;totalAvailable:number;runners:ReplayRunner[]};
 export function validateReplayCourse(course:ReplayCourse,distance:string) {
@@ -39,15 +39,83 @@ function flatTimingSplits(splits: RaceTimingSplits, distance: string): RaceTimin
   };
 }
 
+function compileReplayPointsFast(splits: RaceTimingSplits, total: number): { distanceM: number; elapsedMs: number; ordinal: number }[] | null {
+  const finishMs = splits.finishMs;
+  if (!Number.isSafeInteger(finishMs) || finishMs <= 0 || (splits.clock !== "chip" && splits.clock !== "gun")) return null;
+  const cps = splits.checkpoints;
+  const len = cps.length;
+  if (len > 100) return null;
+  // Fast path: flat pace (single checkpoint at finish or empty checkpoints)
+  if (len === 0 || (len === 1 && cps[0].distanceM === total && (cps[0].elapsedMs === finishMs || cps[0].elapsedMs === null))) {
+    return [
+      { distanceM: 0, elapsedMs: 0, ordinal: -1 },
+      { distanceM: total, elapsedMs: finishMs, ordinal: 0 },
+    ];
+  }
+  const points: { distanceM: number; elapsedMs: number; ordinal: number }[] = [
+    { distanceM: 0, elapsedMs: 0, ordinal: -1 },
+  ];
+  let prevDist = 0;
+  let prevTime = 0;
+  let hasFinish = false;
+  for (let i = 0; i < len; i++) {
+    const cp = cps[i];
+    const d = cp.distanceM;
+    if (!Number.isFinite(d) || d <= prevDist || d > total) return null;
+    prevDist = d;
+    const t = cp.elapsedMs;
+    if (d === total) {
+      if (t !== null && t !== undefined && t !== finishMs) return null;
+      if (finishMs <= prevTime) return null;
+      hasFinish = true;
+      points.push({ distanceM: total, elapsedMs: finishMs, ordinal: i });
+      continue;
+    }
+    if (t === null || t === undefined) continue;
+    if (!Number.isSafeInteger(t) || t <= prevTime || t >= finishMs) return null;
+    prevTime = t;
+    points.push({ distanceM: d, elapsedMs: t, ordinal: i });
+  }
+  if (!hasFinish) {
+    if (finishMs <= prevTime) return null;
+    points.push({ distanceM: total, elapsedMs: finishMs, ordinal: len });
+  }
+  return points;
+}
+
 /** Recorded mats when present; otherwise constant pace along the reviewed course polyline. */
 export function compileReplayRunner(runner: ReplayRunner, distance: string) {
+  const total = RACE_METERS[distance];
+  const startMs =
+    runner.splits.clock === "chip"
+      ? typeof runner.startMs === "number" && Number.isFinite(runner.startMs)
+        ? runner.startMs
+        : runner.startAt
+          ? Date.parse(runner.startAt)
+          : NaN
+      : NaN;
+  if (total) {
+    const fastPoints = compileReplayPointsFast(runner.splits, total);
+    if (fastPoints) {
+      return { ...runner, startMs, points: fastPoints };
+    }
+  }
   let analysis = analyzeRaceSplits(runner.splits, distance);
   if (analysis.status !== "ready") {
     const flat = flatTimingSplits(runner.splits, distance);
     if (flat) analysis = analyzeRaceSplits(flat, distance);
   }
   if (analysis.status !== "ready") return null;
-  return {...runner,startMs:runner.splits.clock==="chip" && runner.startAt ? Date.parse(runner.startAt) : NaN,points:[{distanceM:0,elapsedMs:0,ordinal:-1},...analysis.rows.flatMap((row,ordinal)=>row.elapsedMs===null ? [] : [{distanceM:row.distanceM,elapsedMs:row.elapsedMs,ordinal}])]};
+  return {
+    ...runner,
+    startMs,
+    points: [
+      { distanceM: 0, elapsedMs: 0, ordinal: -1 },
+      ...analysis.rows.flatMap((row, ordinal) =>
+        row.elapsedMs === null ? [] : [{ distanceM: row.distanceM, elapsedMs: row.elapsedMs, ordinal }],
+      ),
+    ],
+  };
 }
 export type CompiledReplayRunner=NonNullable<ReturnType<typeof compileReplayRunner>>;
 function replaySegment(points: CompiledReplayRunner["points"], time: number) {
@@ -618,14 +686,14 @@ export function selectFieldRankSlice(
   return { total: count, indices };
 }
 
-/** Compact wire tuple: [id, name, bib, startEpochMs, finishMs, distancesM, elapsedMs] */
+/** Compact wire tuple: [id, name, bib, startEpochMs, finishMs, distancesM | checkpointSetId | null, elapsedMs] */
 export type ReplayCompactTuple = [
   number,
   string,
   string | null,
   number | null,
   number,
-  number[],
+  number[] | string | null,
   (number | null)[],
 ];
 
@@ -634,6 +702,7 @@ export type ReplayCompactPage = {
   clock: "chip" | "gun";
   course: ReplayCourse | null;
   totalAvailable: number | null;
+  checkpointSets?: Record<string, number[]> | null;
   runners: ReplayCompactTuple[];
   next: number | null;
 };
@@ -645,7 +714,12 @@ export function compactReplayPage(page: ReplayPage, clock: "chip" | "gun" = "chi
     course: page.course,
     totalAvailable: page.totalAvailable,
     runners: page.runners.map(r => {
-      const startMs = r.startAt ? Date.parse(r.startAt) : NaN;
+      const startMs =
+        typeof r.startMs === "number" && Number.isFinite(r.startMs)
+          ? r.startMs
+          : r.startAt
+            ? Date.parse(r.startAt)
+            : NaN;
       return [
         r.id,
         r.name,
@@ -660,17 +734,35 @@ export function compactReplayPage(page: ReplayPage, clock: "chip" | "gun" = "chi
   };
 }
 
-export function expandCompactRunner(tuple: ReplayCompactTuple, clock: "chip" | "gun", sourceUrl: string): ReplayRunner {
-  const [id, name, bib, startMs, finishMs, dists, times] = tuple;
+export function expandCompactRunner(
+  tuple: ReplayCompactTuple,
+  clock: "chip" | "gun",
+  sourceUrl: string,
+  checkpointSets?: Record<string, number[]> | null,
+  courseTotalM?: number,
+): ReplayRunner {
+  const [id, name, bib, startMs, finishMs, rawDists, times] = tuple;
+  let dists: number[];
+  if (Array.isArray(rawDists)) {
+    dists = rawDists;
+  } else if (typeof rawDists === "string" && checkpointSets?.[rawDists]) {
+    dists = checkpointSets[rawDists];
+  } else if (courseTotalM && courseTotalM > 0) {
+    dists = [courseTotalM];
+  } else {
+    dists = [];
+  }
   const checkpoints: { distanceM: number; elapsedMs: number | null }[] = new Array(dists.length);
   for (let i = 0; i < dists.length; i++) {
     checkpoints[i] = { distanceM: dists[i], elapsedMs: times[i] ?? null };
   }
+  const validStart = startMs !== null && Number.isFinite(startMs);
   return {
     id,
     name,
     bib,
-    startAt: startMs !== null && Number.isFinite(startMs) ? new Date(startMs).toISOString() : null,
+    startAt: null,
+    startMs: validStart ? startMs : undefined,
     splits: { clock, finishMs, sourceUrl, checkpoints },
   };
 }
@@ -679,9 +771,11 @@ export async function loadReplayCompactField(
   fetchPage: (after: number) => Promise<ReplayCompactPage>,
   cancelled: () => boolean,
   onProgress: (count: number) => void,
+  onPage?: (partial: ReplayData) => void,
 ): Promise<ReplayData> {
   let after = 0;
   let course: ReplayCourse | null = null;
+  let courseTotalM = 0;
   let version = "";
   let totalAvailable = 0;
   const runners: ReplayRunner[] = [];
@@ -692,19 +786,24 @@ export async function loadReplayCompactField(
     if (!course) {
       if (!page.course) throw new Error("Course unavailable");
       course = page.course;
+      courseTotalM = course.points[course.points.length - 1]?.[2] ?? 0;
       version = page.version;
       totalAvailable = page.totalAvailable ?? page.runners.length;
     } else if (page.version !== version) {
       throw new Error("Course changed; reload replay");
     }
     const sourceUrl = course.sourceUrl;
+    const cpSets = page.checkpointSets ?? null;
     for (let i = 0; i < page.runners.length; i++) {
       const t = page.runners[i];
       const prevId = i > 0 ? page.runners[i - 1][0] : after;
       if (t[0] <= prevId) throw new Error("Invalid replay page");
-      runners.push(expandCompactRunner(t, page.clock, sourceUrl));
+      runners.push(expandCompactRunner(t, page.clock, sourceUrl, cpSets, courseTotalM));
     }
     onProgress(runners.length);
+    if (onPage && page.next !== null) {
+      onPage({ course, version, totalAvailable, runners: runners.slice() });
+    }
     if (page.next === null) return { course, version, totalAvailable, runners };
     const lastId = page.runners.at(-1)?.[0];
     if (page.next <= after || page.next !== lastId) throw new Error("Invalid replay cursor");

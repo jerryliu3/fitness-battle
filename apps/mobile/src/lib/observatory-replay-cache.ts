@@ -1,11 +1,11 @@
 import {
   RACE_DISTANCES,
   compileReplayRunner,
-  loadReplayField,
+  loadReplayCompactField,
   type CompiledReplayRunner,
   type RaceCoverage,
+  type ReplayCompactPage,
   type ReplayData,
-  type ReplayPage,
 } from "@fitness-battle/shared";
 import { mobileEnv } from "./env";
 
@@ -123,10 +123,11 @@ export function loadAndCompileReplayField({
   });
   if (includeWheelchair) scopeParams.set("wheelchair", "1");
 
-  const promise = loadReplayField(
+  const promise = loadReplayCompactField(
     async after => {
       const params = new URLSearchParams(scopeParams);
       params.set("after", String(after));
+      params.set("format", "compact");
       if (ids !== null && ids.trim() !== "") params.set("ids", ids);
       const res = await fetch(`${mobileEnv.apiUrl}/api/rankings/replay?${params}`, { signal });
       if (!res.ok) {
@@ -136,7 +137,7 @@ export function loadAndCompileReplayField({
             : "Replay could not load.",
         );
       }
-      return (await res.json()) as ReplayPage;
+      return (await res.json()) as ReplayCompactPage;
     },
     () => Boolean(signal?.aborted),
     onProgress ?? (() => {}),

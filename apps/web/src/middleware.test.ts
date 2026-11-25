@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { middleware } from "./middleware";
+import { updateSession } from "@/lib/supabase/middleware";
 import { DEMO_USER_COOKIE, serializeDemoUserCookie } from "./lib/auth/design-access";
 
 vi.mock("@/lib/supabase/middleware", () => ({
@@ -52,6 +53,22 @@ describe("middleware", () => {
       const res = await middleware(req);
       expect(res.status).toBe(307);
       expect(new URL(res.headers.get("location")!).pathname).toBe("/app/arena");
+    });
+
+    it("bypasses auth session refresh for public read-only rankings APIs", async () => {
+      for (const path of [
+        "/api/rankings?distance=marathon",
+        "/api/rankings/coverage",
+        "/api/rankings/courses",
+        "/api/rankings/replay?edition=18&distance=marathon",
+      ]) {
+        const res = await middleware(new NextRequest(`https://overtaek.xyz${path}`));
+        expect(res.status).toBe(200);
+      }
+      expect(updateSession).not.toHaveBeenCalled();
+
+      await middleware(new NextRequest("https://overtaek.xyz/api/rankings/saved"));
+      expect(updateSession).toHaveBeenCalledTimes(1);
     });
   });
 

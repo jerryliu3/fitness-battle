@@ -44,6 +44,8 @@ begin
   update public.performances set start_at = '2094-05-01T13:10:00Z'::timestamptz where id = perf;
   payload:=public.rankings_replay_compact_page(ed,'10k','unknown','chip',array[perf],0,5000);
   if (payload->'runners'->0->>3)::bigint is distinct from (extract(epoch from '2094-05-01T13:10:00Z'::timestamptz) * 1000)::bigint then raise exception 'Compact replay did not return performance start_at'; end if;
+  payload:=public.rankings_replay_compact_page(ed,'10k','unknown','chip',array[perf],0,5000,false,true);
+  if payload->'checkpointSets'->(cps::text) is null or (payload->'runners'->0->>5) is distinct from cps::text then raise exception 'Compact replay v2 checkpointSets deduplication failed'; end if;
   payload:=public.rankings_replay_page(ed,'10k','unknown','chip',null,perf);
   if jsonb_array_length(payload->'runners') is distinct from 0 or payload->'course' is distinct from 'null'::jsonb then raise exception 'Replay cursor failed'; end if;
   payload:=public.rankings_replay_page(ed,'10k','female','chip',null,0);

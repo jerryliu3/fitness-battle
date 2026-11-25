@@ -20,6 +20,7 @@ import {
   replayTimeline,
   selectFieldRankSlice,
   validateReplayCourse,
+  type ReplayCompactPage,
   type ReplayCourse,
   type ReplayPage,
   type ReplayRunner,
@@ -371,7 +372,7 @@ describe("edition course replay",()=>{
     const compact1 = compactReplayPage(legacyPage1);
     const compact2 = compactReplayPage(legacyPage2);
     const loaded = await loadReplayCompactField(
-      async after => (after === 0 ? compact1 : compact2),
+      async (after): Promise<ReplayCompactPage> => (after === 0 ? compact1 : compact2),
       () => false,
       () => {},
     );
@@ -389,5 +390,77 @@ describe("edition course replay",()=>{
     expect(pickNearestRunnerId(idx, field, dist, 0.0241, 0, 12, 16)).toBe(2);
     expect(pickNearestRunnerId(idx, field, dist, 0.0199, 0, 12, 16)).toBe(1);
     expect(pickNearestRunnerId(idx, field, dist, 1.5, 1.5, 12, 16)).toBeNull();
+  });
+
+  it("expands deduplicated compact v2 checkpointSets, flat-pace null shorthand, and streams partial pages", async () => {
+    const startEpoch = Date.parse("2026-11-01T14:10:00.000Z");
+    const partials: number[] = [];
+    const loaded = await loadReplayCompactField(
+      async (after): Promise<ReplayCompactPage> =>
+        after === 0
+          ? {
+              version: "v2",
+              clock: "chip",
+              course,
+              totalAvailable: 2,
+              checkpointSets: { "7": [2000, 4000, 5000] },
+              runners: [[10, "Split Runner", "10", startEpoch, 1500000, "7", [600000, 1200000, 1500000]]],
+              next: 10,
+            }
+          : {
+              version: "v2",
+              clock: "chip",
+              course: null,
+              totalAvailable: null,
+              checkpointSets: {},
+              runners: [[20, "Flat Runner", "20", startEpoch + 60000, 1800000, null, [1800000]]],
+              next: null,
+            },
+      () => false,
+      () => {},
+      partial => partials.push(partial.runners.length),
+    );
+    expect(partials).toEqual([1]);
+    expect(loaded.runners).toHaveLength(2);
+    const c1 = compileReplayRunner(loaded.runners[0], "5k")!;
+    const c2 = compileReplayRunner(loaded.runners[1], "5k")!;
+    expect(c1.startMs).toBe(startEpoch);
+    expect(c2.startMs).toBe(startEpoch + 60000);
+    expect(replayDistance(c1, 600000)).toBe(2000);
+    expect(replayDistance(c2, 900000)).toBe(2500);
+    const tl = replayTimeline([c1, c2], true);
+    expect(tl.wallAvailable).toBe(true);
+    expect(tl.origin).toBe(startEpoch);
+
+    // Finish checkpoint with null mat elapsedMs still retains finishMs observation
+    const nullFinishMat = compileReplayRunner(
+      {
+        ...runner,
+        id: 30,
+        splits: {
+          ...runner.splits,
+          checkpoints: [
+            { distanceM: 2000, elapsedMs: 600000 },
+            { distanceM: 5000, elapsedMs: null },
+          ],
+        },
+      },
+      "5k",
+    )!;
+    expect(replayDistance(nullFinishMat, 1500000)).toBe(5000);
+
+    // Intermediate checkpoint >= finishMs is rejected (matches analyzeRaceSplits)
+    const badIntermediate = compileReplayRunner(
+      {
+        ...runner,
+        id: 31,
+        splits: {
+          ...runner.splits,
+          checkpoints: [{ distanceM: 2000, elapsedMs: 1500000 }],
+        },
+      },
+      "5k",
+    );
+    expect(badIntermediate).toBeNull();
   });
 });

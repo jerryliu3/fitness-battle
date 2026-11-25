@@ -52,10 +52,12 @@ async function emitAndMaybeApply(filename, sqlText) {
     console.log("Dry run complete. Re-run with --apply (and RANKINGS_DATABASE_URL / RANKINGS_DB_PASSWORD) to apply.");
     return;
   }
-  const { loadRankingsRepoEnv, psqlFile, requireDatabaseUrl } = await import("./psql-util.mjs");
+  const { loadRankingsRepoEnv, psqlFile, psqlQuery, requireDatabaseUrl } = await import("./psql-util.mjs");
   loadRankingsRepoEnv();
-  await psqlFile(requireDatabaseUrl(), sqlPath);
-  console.log("Applied start-time backfill SQL.");
+  const dbUrl = requireDatabaseUrl();
+  await psqlFile(dbUrl, sqlPath);
+  psqlQuery(dbUrl, "select private.refresh_rankings_time_counts();");
+  console.log("Applied start-time backfill SQL and refreshed rankings caches.");
 }
 
 if (mode === "gun-offset") {
