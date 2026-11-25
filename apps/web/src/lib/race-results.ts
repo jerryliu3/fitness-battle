@@ -239,16 +239,24 @@ export async function loadReplayCompactPage(
           p_clock: clock,
           p_ids: ids,
           p_after: after,
-          p_limit: 5000,
+          p_limit: 15000,
           p_include_wheelchair: includeWheelchair,
+          p_dedupe_checkpoints: true,
         };
         let { data, error } = await client.rpc("rankings_replay_compact_page", baseParams);
         if (
           error
+          && (error.code === "PGRST202" || /p_dedupe_checkpoints|schema cache/i.test(error.message))
+        ) {
+          const { p_dedupe_checkpoints: _dc, ...v1Params } = baseParams;
+          ({ data, error } = await client.rpc("rankings_replay_compact_page", { ...v1Params, p_limit: 10000 }));
+        }
+        if (
+          error
           && (error.code === "PGRST202" || /p_include_wheelchair|schema cache/i.test(error.message))
         ) {
-          const { p_include_wheelchair: _wc, ...legacyParams } = baseParams;
-          ({ data, error } = await client.rpc("rankings_replay_compact_page", legacyParams));
+          const { p_dedupe_checkpoints: _dc, p_include_wheelchair: _wc, ...legacyParams } = baseParams;
+          ({ data, error } = await client.rpc("rankings_replay_compact_page", { ...legacyParams, p_limit: 5000 }));
         }
         if (error && (error.code === "PGRST202" || /rankings_replay_compact_page|schema cache/i.test(error.message))) {
           compactRpcUnavailable = true;
