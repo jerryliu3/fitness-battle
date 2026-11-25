@@ -39,7 +39,24 @@ const s=useThemedStyles(sThemes);
         rows.map((row, index) => (
           <Pressable key={`${row.userId}:${row.id}`} accessibilityRole="button"
           onPressIn={() => row.ownActivity && prefetchActivityReplay(row.ownActivity, accessToken)}
-          onPress={() => row.ownActivity ? onOpen(row.ownActivity) : setSelected({ account: user?.id, id: row.id })}
+          onPress={() => {
+            if (row.ownActivity) {
+              onOpen(row.ownActivity);
+              return;
+            }
+            const peerActivity: Activity = {
+              id: row.id,
+              sport: row.sport,
+              startedAt: row.startedAt,
+              distanceM: row.distanceM,
+              movingSec: row.movingSec,
+              avgHr: null,
+              source: "strava",
+              verified: true,
+              provenance: "recorded",
+            };
+            onOpen(peerActivity);
+          }}
           style={[f.row, s.row, index < rows.length - 1 && s.rowDivider]}>
           <ActivityLeadingGraphic
             activity={row.ownActivity ?? row}
