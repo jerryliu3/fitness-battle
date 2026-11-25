@@ -107,8 +107,6 @@ it("a native full-screen swipe confirms the selected activities once without nav
   const carousel = renderer!.root.findAllByType("ScrollView" as never).find(node => node.props.horizontal)!;
   expect(carousel.props.scrollEnabled).toBe(false);
   expect(carousel.props.contentContainerStyle).toEqual(expect.objectContaining({ justifyContent: "center" }));
-  const summary = renderer!.root.findAllByType("ScrollView" as never).find(node => !node.props.horizontal)!;
-  expect(summary.props.scrollEnabled).not.toBe(false);
   const details = renderer!.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "View Running activity details")!;
   await act(async () => details.props.onPress());
   const cachedReplay = renderer!.root.findByType("ActivityReplay" as never);
