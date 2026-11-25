@@ -50,8 +50,8 @@ const s=useThemedStyles(sThemes);
               startedAt: row.startedAt,
               distanceM: row.distanceM,
               movingSec: row.movingSec,
-              avgHr: row.avgHr ?? null,
-              source: row.source ?? "strava",
+              avgHr: null,
+              source: "strava",
               verified: true,
               provenance: "recorded",
             };
