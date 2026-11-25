@@ -52,7 +52,7 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
   const [confirmBlock, setConfirmBlock] = useState(false);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [openOwnPage, setOpenOwnPage] = useState(false);
-  const [openFullPage, setOpenFullPage] = useState(false);
+  const [pendingFullProfile, setPendingFullProfile] = useState<Record<string, string> | null>(null);
   const [reporting, setReporting] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -168,9 +168,9 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
           router.navigate("/athlete");
           return;
         }
-        if (openFullPage && fullProfileParams) {
-          setOpenFullPage(false);
-          router.push({ pathname: "/athlete-profile", params: fullProfileParams });
+        if (pendingFullProfile) {
+          setPendingFullProfile(null);
+          router.push({ pathname: "/athlete-profile", params: pendingFullProfile });
         }
       }}
     >
