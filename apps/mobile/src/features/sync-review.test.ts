@@ -251,8 +251,8 @@ it("supports Select all and Deselect all, and omits the saved safely message", a
   await act(async () => close.props.onPress());
   const { Alert } = await import("react-native");
   expect(Alert.alert).toHaveBeenCalledTimes(1);
-  const buttons = (Alert.alert as ReturnType<typeof vi.fn>).mock.calls[0][2] as Array<{ onPress?: () => void }>;
-  await act(async () => buttons[1].onPress?.());
+  const alertButtons = (Alert.alert as ReturnType<typeof vi.fn>).mock.calls[0][2] as Array<{ onPress?: () => void }>;
+  await act(async () => alertButtons[1].onPress?.());
   expect(done).toHaveBeenCalledWith([], true);
 
   await act(async () => renderer!.unmount());
