@@ -185,8 +185,10 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
                     label="View full profile"
                     secondary
                     onPress={() => {
-                      setOpenFullPage(true);
                       onClose();
+                      if (fullProfileParams) {
+                        router.push({ pathname: "/athlete-profile", params: fullProfileParams });
+                      }
                     }}
                   />
                 </View>
