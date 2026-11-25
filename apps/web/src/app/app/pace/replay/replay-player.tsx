@@ -33,7 +33,7 @@ import { webEnv } from "@/lib/env";
 import { useAuth } from "@/components/auth-context";
 import { addMapboxAttribution, mapboxAttributionOptions } from "@/components/maps/mapbox-attribution";
 import { useRaceFavorites } from "../favorites";
-import { coursePreviewsMemoryCache, formatEditionDisplay, RaceRouteArt } from "../race-explorer";
+import { coursePreviewsMemoryCache, coverageMemoryCache, formatEditionDisplay, RaceRouteArt } from "../race-explorer";
 import { RequestRaceCta } from "../request-race-cta";
 import { computeSplitMetrics, SportFilterBar, SPORTS, type SportId } from "../sport-filter-bar";
 import { FieldWebGLLayer } from "./field-webgl-layer";
@@ -404,13 +404,22 @@ export function ReplayPlayer({
   const { user } = useAuth();
   const saved = useRaceFavorites();
 
-  const [coverage, setCoverage] = useState<RaceCoverage[] | null>(initialCoverage);
+  const [coverage, setCoverage] = useState<RaceCoverage[] | null>(() => {
+    if (initialCoverage) {
+      coverageMemoryCache.data = initialCoverage;
+      return initialCoverage;
+    }
+    return coverageMemoryCache.data;
+  });
   useEffect(() => {
     if (coverage !== null) return;
     fetch("/api/rankings/coverage")
       .then(r => (r.ok ? r.json() : null))
       .then((c: RaceCoverage[] | null) => {
-        if (Array.isArray(c)) setCoverage(c);
+        if (Array.isArray(c)) {
+          coverageMemoryCache.data = c;
+          setCoverage(c);
+        }
       })
       .catch(() => {});
   }, [coverage]);

@@ -150,6 +150,7 @@ export const SplitSparkline = memo(function SplitSparkline({ splits, distanceSlu
 });
 
 export const coursePreviewsMemoryCache: { data: Record<string, [number, number][]> | null } = { data: null };
+export const coverageMemoryCache: { data: RaceCoverage[] | null } = { data: null };
 
 export const RaceRouteArt = memo(function RaceRouteArt({
   eventName,
@@ -243,6 +244,7 @@ export function RaceExplorer({
   const saved = useRaceFavorites();
 
   const [coursePreviews] = useState<Record<string, [number, number][]>>(() => {
+    if (coverage) coverageMemoryCache.data = coverage;
     if (initialCoursePreviews) {
       coursePreviewsMemoryCache.data = initialCoursePreviews;
       return initialCoursePreviews;

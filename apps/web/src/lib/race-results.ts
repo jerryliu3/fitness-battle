@@ -1,10 +1,23 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { compactReplayPage, raceDateBounds } from "@fitness-battle/shared";
 import type { RaceCoverage, RaceResultsPage, ReplayCompactPage, raceQuery } from "@fitness-battle/shared";
 import { createRankingsClient } from "./rankings";
 
 const RESULTS_TTL_MS = 30 * 60 * 1000;
 const COVERAGE_TTL_MS = 30 * 60 * 1000;
+const NEXT_DATA_REVALIDATE_S = 300;
+
+async function withNextCache<T>(key: string[], revalidate: number, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await unstable_cache(fn, key, { revalidate })();
+  } catch (err) {
+    if (err instanceof Error && /incrementalCache|staticGenerationAsyncStorage/i.test(err.message)) {
+      return fn();
+    }
+    throw err;
+  }
+}
 
 const resultsCache = new Map<string, { expiresAt: number; data: RaceResultsPage }>();
 const resultsInFlight = new Map<string, Promise<RaceResultsPage>>();
@@ -52,28 +65,34 @@ export async function loadRaceResults(distance: string, query: ReturnType<typeof
 
   const task = (async () => {
     try {
-      let { data, error } = await client.rpc("rankings_page_scoped", {
-        ...baseParams,
-        p_percentile: percentile,
-      });
-      if (
-        error
-        && query.includeWheelchair
-        && (error.code === "PGRST202" || /p_include_wheelchair|schema cache/i.test(error.message))
-      ) {
-        const { p_include_wheelchair: _wc, ...legacyParams } = baseParams;
-        ({ data, error } = await client.rpc("rankings_page_scoped", {
-          ...legacyParams,
+      const fetchFromDb = async (): Promise<RaceResultsPage> => {
+        let { data, error } = await client.rpc("rankings_page_scoped", {
+          ...baseParams,
           p_percentile: percentile,
-        }));
-      }
-      // Fallback for Rankings DBs that have not yet applied 20261110060000_pace_percentiles.sql
-      if (error && percentile === "all" && (error.code === "PGRST202" || /p_percentile|schema cache/i.test(error.message))) {
-        const { p_include_wheelchair: _wc, ...legacyParams } = baseParams;
-        ({ data, error } = await client.rpc("rankings_page_scoped", legacyParams));
-      }
-      if (error || !data) throw new Error("Rankings unavailable");
-      const page = data as RaceResultsPage;
+        });
+        if (
+          error
+          && query.includeWheelchair
+          && (error.code === "PGRST202" || /p_include_wheelchair|schema cache/i.test(error.message))
+        ) {
+          const { p_include_wheelchair: _wc, ...legacyParams } = baseParams;
+          ({ data, error } = await client.rpc("rankings_page_scoped", {
+            ...legacyParams,
+            p_percentile: percentile,
+          }));
+        }
+        // Fallback for Rankings DBs that have not yet applied 20261110060000_pace_percentiles.sql
+        if (error && percentile === "all" && (error.code === "PGRST202" || /p_percentile|schema cache/i.test(error.message))) {
+          const { p_include_wheelchair: _wc, ...legacyParams } = baseParams;
+          ({ data, error } = await client.rpc("rankings_page_scoped", legacyParams));
+        }
+        if (error || !data) throw new Error("Rankings unavailable");
+        return data as RaceResultsPage;
+      };
+
+      const page = !query.query
+        ? await withNextCache(["rankings-results", cacheKey], NEXT_DATA_REVALIDATE_S, fetchFromDb)
+        : await fetchFromDb();
       if (resultsCache.size > 400) {
         const firstKey = resultsCache.keys().next().value;
         if (firstKey) resultsCache.delete(firstKey);
@@ -138,9 +157,11 @@ export async function loadRaceCoverage(): Promise<import("@fitness-battle/shared
 
   coverageInFlight = (async () => {
     try {
-      const { data, error } = await client.rpc("rankings_coverage");
-      if (error || !Array.isArray(data)) throw new Error("Coverage unavailable");
-      const typed = data as RaceCoverage[];
+      const typed = await withNextCache(["rankings-coverage"], NEXT_DATA_REVALIDATE_S, async () => {
+        const { data, error } = await client.rpc("rankings_coverage");
+        if (error || !Array.isArray(data)) throw new Error("Coverage unavailable");
+        return data as RaceCoverage[];
+      });
       coverageCache = { expiresAt: Date.now() + COVERAGE_TTL_MS, data: typed };
       return typed;
     } finally {
@@ -324,19 +345,27 @@ export async function loadReplayCoursePreviews(coverage?: RaceCoverage[] | null)
     try {
       const client = createRankingsClient();
       if (client && !previewsRpcUnavailable) {
-        const { data, error } = await client.rpc("rankings_replay_course_previews");
-        if (!error && Array.isArray(data)) {
-          const previews: Record<string, [number, number][]> = {};
-          for (const row of data as Array<{ edition_id: number; distance_slug: string; points?: [number, number, number][] }>) {
-            if (Array.isArray(row.points) && row.points.length >= 2) {
-              previews[`${row.edition_id}:${row.distance_slug}`] = simplifyCourseOutline(row.points);
+        try {
+          const previews = await withNextCache(["rankings-course-previews"], NEXT_DATA_REVALIDATE_S, async () => {
+            const { data, error } = await client.rpc("rankings_replay_course_previews");
+            if (error || !Array.isArray(data)) {
+              if (error && (error.code === "PGRST202" || /rankings_replay_course_previews|schema cache/i.test(error.message))) {
+                previewsRpcUnavailable = true;
+              }
+              throw new Error("Course previews RPC unavailable");
             }
-          }
+            const out: Record<string, [number, number][]> = {};
+            for (const row of data as Array<{ edition_id: number; distance_slug: string; points?: [number, number, number][] }>) {
+              if (Array.isArray(row.points) && row.points.length >= 2) {
+                out[`${row.edition_id}:${row.distance_slug}`] = simplifyCourseOutline(row.points);
+              }
+            }
+            return out;
+          });
           coursePreviewsCache = { expiresAt: Date.now() + COVERAGE_TTL_MS, data: previews };
           return previews;
-        }
-        if (error && (error.code === "PGRST202" || /rankings_replay_course_previews|schema cache/i.test(error.message))) {
-          previewsRpcUnavailable = true;
+        } catch {
+          // Fall back to per-edition preview loading
         }
       }
 
