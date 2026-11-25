@@ -23,44 +23,6 @@ let coursePreviewsInFlight: Promise<Record<string, [number, number][]>> | null =
 
 let coverageCache: { expiresAt: number; data: RaceCoverage[] } | null = null;
 let coverageInFlight: Promise<RaceCoverage[]> | null = null;
-let backgroundWarmStarted = false;
-
-function warmCommonRankingsScopes(_coverage: RaceCoverage[]) {
-  if (backgroundWarmStarted) return;
-  backgroundWarmStarted = true;
-
-  const queue: Array<{ distance: string; sex: string; editionId: number | null }> = [
-    { distance: "marathon", sex: "all", editionId: null },
-    { distance: "10k", sex: "all", editionId: null },
-    { distance: "half_marathon", sex: "all", editionId: null },
-    { distance: "5k", sex: "all", editionId: null },
-  ];
-
-  setTimeout(() => {
-    void (async () => {
-      for (const item of queue) {
-        try {
-          await loadRaceResults(item.distance, {
-            sex: item.sex as ReturnType<typeof raceQuery>["sex"],
-            year: null,
-            editionId: item.editionId,
-            editionError: null,
-            timeframe: "all",
-            from: "",
-            through: "",
-            dateError: null,
-            percentile: "all",
-            query: "",
-            page: 1,
-            includeWheelchair: false,
-          });
-        } catch {
-          // Ignore background warm-up errors
-        }
-      }
-    })();
-  }, 2500);
-}
 
 export async function loadRaceResults(distance: string, query: ReturnType<typeof raceQuery>): Promise<RaceResultsPage> {
   const client = createRankingsClient();
@@ -167,7 +129,6 @@ export async function loadSavedRaceResults(ids: number[]): Promise<import("@fitn
 export async function loadRaceCoverage(): Promise<import("@fitness-battle/shared").RaceCoverage[]> {
   const now = Date.now();
   if (coverageCache && coverageCache.expiresAt > now) {
-    warmCommonRankingsScopes(coverageCache.data);
     return coverageCache.data;
   }
   if (coverageInFlight) return coverageInFlight;
@@ -181,7 +142,6 @@ export async function loadRaceCoverage(): Promise<import("@fitness-battle/shared
       if (error || !Array.isArray(data)) throw new Error("Coverage unavailable");
       const typed = data as RaceCoverage[];
       coverageCache = { expiresAt: Date.now() + COVERAGE_TTL_MS, data: typed };
-      warmCommonRankingsScopes(typed);
       return typed;
     } finally {
       coverageInFlight = null;

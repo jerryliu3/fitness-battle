@@ -12,7 +12,10 @@ export async function GET(request:Request) {
     const data=compact
       ? await loadReplayCompactPage(query.editionId,distance.stored,sex,clock,ids,after,query.includeWheelchair)
       : await loadReplayPage(query.editionId,distance.stored,sex,clock,ids,after,query.includeWheelchair);
-    return NextResponse.json(data ?? {error:"Reviewed course and timing profiles unavailable"},{status:data ? 200 : 404,headers:{"Cache-Control":"public, max-age=300, stale-while-revalidate=600"}});
+    return NextResponse.json(data ?? {error:"Reviewed course and timing profiles unavailable"},{status:data ? 200 : 404,headers:{
+      "Cache-Control":"public, max-age=300, s-maxage=600, stale-while-revalidate=3600",
+      "CDN-Cache-Control":"public, s-maxage=600, stale-while-revalidate=86400",
+    }});
   }
   catch {return NextResponse.json({error:"Replay unavailable"},{status:503});}
 }

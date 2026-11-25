@@ -8,7 +8,7 @@ export async function updateSessionAndGetUser(request: NextRequest): Promise<{
   user: User | null;
 }> {
   const { supabaseUrl, supabaseAnonKey, configured } = getSupabaseConfig();
-  if (!configured) {
+  if (!configured || !request.cookies.getAll().some((cookie) => cookie.name.startsWith("sb-"))) {
     return { response: NextResponse.next({ request }), user: null };
   }
 

@@ -89,9 +89,20 @@ function redirectToDenied(request: NextRequest, sessionResponse: NextResponse, r
   return redirectResponse;
 }
 
+function isPublicRankingsReadApi(pathname: string, method: string): boolean {
+  if (method !== "GET" && method !== "HEAD") return false;
+  if (pathname === "/api/rankings") return true;
+  if (!pathname.startsWith("/api/rankings/")) return false;
+  return !pathname.startsWith("/api/rankings/saved") && !pathname.startsWith("/api/rankings/race-requests");
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (pathname === "/.well-known/apple-app-site-association" || pathname === "/.well-known/assetlinks.json") {
+  if (
+    pathname === "/.well-known/apple-app-site-association" ||
+    pathname === "/.well-known/assetlinks.json" ||
+    isPublicRankingsReadApi(pathname, request.method)
+  ) {
     return NextResponse.next();
   }
 
