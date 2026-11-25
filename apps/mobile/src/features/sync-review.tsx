@@ -4,6 +4,7 @@ import { textStyle } from "../ui/section";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Easing,
   LayoutAnimation,
@@ -29,12 +30,25 @@ import { ScreenFade } from "../ui/screen-fade";
 import { CompetitionMoment } from "./competition-moment";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 
+function confirmCancelSync(onCancel: () => void) {
+  Alert.alert(
+    "Cancel sync?",
+    "Closing will cancel this sync and nothing will be saved. To hide an activity instead, deselect it and swipe to save.",
+    [
+      { text: "Keep reviewing", style: "cancel", isPreferred: true },
+      { text: "Cancel sync", style: "destructive", onPress: onCancel },
+    ],
+  );
+}
+
 export function SyncReview({ receipt, state, moment, debug = false, remaining = 0, onComplete, onAcknowledge = () => {} }: {
   receipt: SyncReviewReceipt | null; state: CompeteState; debug?: boolean; moment?: Moment | null; remaining?: number;
   onComplete: (selected?: readonly string[], quiet?: boolean) => unknown; onAcknowledge?: () => void;
 }) {
   const reduced = useReducedMotion();
-  const close = () => { if (receipt) onComplete(undefined, true); };
+  const close = () => {
+    if (receipt) confirmCancelSync(() => onComplete([], true));
+  };
   return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "fade"} onRequestClose={close}>
     <SafeAreaProvider><ScreenFade identity={receipt ? `receipt:${receipt.account}:${receipt.day}` : `moment:${moment?.id}`}>{!receipt && moment ? <CompetitionMoment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete}/> : null}</ScreenFade></SafeAreaProvider>
   </Modal>;
@@ -62,8 +76,8 @@ const c=useThemeColors();
   const energySpace = (bodyHeight ?? estimatedBodyHeight) - (reviewHeight ?? estimatedReviewHeight) - 48;
   const sideMetricWidth = Math.ceil(76 * textScale);
   const sideCoreWidth = windowDimensions.width - insets.left - insets.right - 32 - 16 - sideMetricWidth * 2;
-  const sideTotals = energySpace < preferredCoreSize + summaryHeight && sideCoreWidth >= 132;
-  const coreSize = Math.max(132, Math.floor(Math.min(
+  const sideTotals = energySpace < preferredCoreSize + summaryHeight + 16 && sideCoreWidth >= 112;
+  const coreSize = Math.max(88, Math.floor(Math.min(
     preferredCoreSize,
     sideTotals ? Math.min(energySpace, sideCoreWidth) : energySpace - summaryHeight,
   )));
@@ -117,7 +131,9 @@ const c=useThemeColors();
       onComplete(ids);
     }, SYNC_REVIEW_SAVE_DELAY_MS);
   };
-  const closeReview = () => { if (!saving) onComplete(undefined, true); };
+  const closeReview = () => {
+    if (!saving) confirmCancelSync(() => onComplete([], true));
+  };
   const selectCard = (idx: number) => {
     if (idx === activeIndex) return;
     if (Platform.OS !== "web" && typeof LayoutAnimation?.configureNext === "function" && !reduced) {
@@ -147,11 +163,9 @@ const c=useThemeColors();
     .filter((item): item is SyncReviewReceipt["activities"][number] => Boolean(item));
   return <View style={{ flex: 1, backgroundColor: c.paper }}>
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper, zIndex: 1 }} edges={["top", "bottom", "left", "right"]}>
-    <ScrollView
-      style={{ flex: 1 }}
-      bounces={false}
+    <View
+      style={{ flex: 1, padding: 16 }}
       onLayout={event => setBodyHeight(event.nativeEvent.layout.height)}
-      contentContainerStyle={{ flexGrow: 1, padding: 16 }}
     >
     <View onLayout={event => setReviewHeight(event.nativeEvent.layout.height)} style={{ gap: 12 }}>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
@@ -327,10 +341,10 @@ const c=useThemeColors();
       />
     </View>
     </View>
-    <View style={{ flexGrow: 1, justifyContent: "center", alignItems: "center", width: "100%", paddingTop: 16 }}>
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", width: "100%", paddingTop: 12 }}>
       <SyncEnergyCore activities={selected} history={[...state.activities.filter(a => !excluded.includes(a.id)), ...selected]} benchmarkSeconds={benchmarkSeconds} units={state.units} draining={saving} size={coreSize} sideTotals={sideTotals} active={!detail}/>
     </View>
-    </ScrollView>
+    </View>
     <View style={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 }}>
       <View onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ height: footerHeight, borderRadius: 36, backgroundColor: c.surfaceInverse, justifyContent: "center", position: "relative", overflow: "hidden" }}>
         <View pointerEvents="none" style={{ position: "absolute", left: progress * width, right: 0, top: 0, bottom: 0, overflow: "hidden", justifyContent: "center" }}>

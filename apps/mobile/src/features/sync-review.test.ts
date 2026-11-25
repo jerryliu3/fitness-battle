@@ -18,6 +18,7 @@ vi.mock("../ui/focus", () => ((()=>{const mock={
 };return {...mock,useFocusStyles:()=>("f" in mock ? mock.f : {})};})()));
 vi.mock("react-native", () => ({useColorScheme: () => "light",
   AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
+  Alert: { alert: vi.fn() },
   Modal: "Modal",
   View: "View",
   ScrollView: "ScrollView",
@@ -84,8 +85,7 @@ it("a native full-screen swipe confirms the selected activities once without nav
     );
   });
   const energy = () => renderer!.root.findByType("SyncEnergyCore" as never).props;
-  const viewport = renderer!.root.findAllByType("ScrollView" as never).find(node => !node.props.horizontal)!;
-  const review = viewport.findAllByType("View" as never).find(node => node.props.onLayout)!;
+  const [viewport, review] = renderer!.root.findAllByType("View" as never).filter(node => node.props.onLayout);
   const layout = (height: number) => ({ nativeEvent: { layout: { height } } });
   await act(async () => {
     viewport.props.onLayout(layout(720));
@@ -107,8 +107,6 @@ it("a native full-screen swipe confirms the selected activities once without nav
   const carousel = renderer!.root.findAllByType("ScrollView" as never).find(node => node.props.horizontal)!;
   expect(carousel.props.scrollEnabled).toBe(false);
   expect(carousel.props.contentContainerStyle).toEqual(expect.objectContaining({ justifyContent: "center" }));
-  const summary = renderer!.root.findAllByType("ScrollView" as never).find(node => !node.props.horizontal)!;
-  expect(summary.props.scrollEnabled).not.toBe(false);
   const details = renderer!.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "View Running activity details")!;
   await act(async () => details.props.onPress());
   const cachedReplay = renderer!.root.findByType("ActivityReplay" as never);
@@ -249,7 +247,11 @@ it("supports Select all and Deselect all, and omits the saved safely message", a
   const close = renderer!.root.findByType("MaterialClose" as never);
   expect(close.props.label).toBe("Dismiss review");
   await act(async () => close.props.onPress());
-  expect(done).toHaveBeenCalledWith(undefined, true);
+  const { Alert } = await import("react-native");
+  expect(Alert.alert).toHaveBeenCalledTimes(1);
+  const alertButtons = (Alert.alert as ReturnType<typeof vi.fn>).mock.calls[0][2] as Array<{ onPress?: () => void }>;
+  await act(async () => alertButtons[1].onPress?.());
+  expect(done).toHaveBeenCalledWith([], true);
 
   await act(async () => renderer!.unmount());
 });
