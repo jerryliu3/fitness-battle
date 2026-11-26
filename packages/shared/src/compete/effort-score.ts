@@ -53,10 +53,11 @@ export function trainingVolumeForXp(sport: Sport, xp: number): number {
 /** Persistence is per user + sport. State is not a second user-facing score. */
 export interface EffortState {
   scoringVersion: string;
+  starterProgress?: number;
   baselineWeeklyVolume: number | null;
-  /** Highest actual settled EWMA baseline (NOT self-reported declaration). */
+  /** Highest observed settled EWMA baseline. */
   peakObservedBaselineWeeklyVolume: number;
-  /** 0-7; declaration seeds one sample. */
+  /** Number of observed weekly samples, capped at seven. */
   calibrationSamples: number;
   /** Accumulated accepted training / reference weekly volume. */
   cumulativeNormalizedVolume: number;
@@ -79,6 +80,7 @@ export interface WeeklyInput {
   /** Actual Monday start in America/New_York, ISO date. No skipped weeks. */
   weekId: string;
   eligibleTrainingXp: number;
+  starterCredit?: { ordinaryWeeks: number; boostedWeeks: number };
   competition?: CompetitionInput | null;
   placementReward?: number;
 }
@@ -137,20 +139,24 @@ export function createEmptyEffortState(): EffortState {
   };
 }
 
-/** A declaration is one provisional observation, capped at Master entry volume. */
-export function createDeclaredEffortState(sport: Sport, declaredWeeklyVolume: number): EffortState {
-  nonnegative(declaredWeeklyVolume, 'declaredWeeklyVolume');
-  const baselineWeeklyVolume = Math.min(declaredWeeklyVolume, SPORT_CONFIG[sport].anchors[6]);
-  const s = { ...createEmptyEffortState(), baselineWeeklyVolume, calibrationSamples: 1 };
-  // Do not treat self-reported volume as a verified personal best.
-  return { ...s, officialRankIndex: getScoreBreakdown(sport, s).scoreBasedRankIndex };
+export const EFFORT_STARTER_WEEKS = 16;
+export const EFFORT_BOOST_DAYS = 30;
+
+export function effortBoostMultiplier(coveredHistoryDays: number): number {
+  return 1 + 2 * Math.max(0, Math.min(90, coveredHistoryDays)) / 90;
+}
+
+/** Omitted on legacy states so established scores retain their original curve. */
+export function createStarterEffortState(): EffortState {
+  return { ...createEmptyEffortState(), starterProgress: 0 };
 }
 
 export function getScoreBreakdown(sport: Sport, state: EffortState): ScoreBreakdown {
   const position = state.baselineWeeklyVolume === null ? 0 : trainingPosition(sport, state.baselineWeeklyVolume);
   const historyPoints = historicalBonusPoints(state.cumulativeNormalizedVolume);
   const competitionPoints = state.competitionOffsetPoints;
-  const trainingPoints = POINTS_PER_RANK * position;
+  const trainingPoints = POINTS_PER_RANK * position *
+    (state.starterProgress === undefined ? 1 : state.starterProgress / EFFORT_STARTER_WEEKS);
   const displayedScore = Math.round(Math.max(0, trainingPoints + historyPoints + competitionPoints));
   const scoreBasedRankIndex = Math.min(8, Math.floor(displayedScore / POINTS_PER_RANK));
   return {
@@ -207,6 +213,19 @@ function mondayUtcMs(weekId: string): number {
   return ms;
 }
 
+function applyStarterCredit(
+  sport: Sport,
+  prior: EffortState,
+  candidate: EffortState,
+  credit: WeeklyInput['starterCredit'],
+): void {
+  if (prior.starterProgress === undefined || !credit) return;
+  candidate.starterProgress = Math.min(EFFORT_STARTER_WEEKS, prior.starterProgress + credit.ordinaryWeeks);
+  if (getScoreBreakdown(sport, candidate).trainingPoints > getScoreBreakdown(sport, prior).trainingPoints) {
+    candidate.starterProgress = Math.min(EFFORT_STARTER_WEEKS, candidate.starterProgress + credit.boostedWeeks);
+  }
+}
+
 /**
  * Settle exactly one complete Monday-Monday week. Any absent activity = zero.
  * Call once per week per sport within an atomic server transaction.
@@ -236,6 +255,7 @@ export function settleEffortWeek(sport: Sport, prior: EffortState, input: Weekly
     competitionOffsetPoints,
     lastSettledWeekId: input.weekId,
   };
+  applyStarterCredit(sport, prior, baseState, input.starterCredit);
   const targetRank = getScoreBreakdown(sport, baseState).scoreBasedRankIndex;
   let officialRankIndex = prior.officialRankIndex;
   let consecutiveBelowRankWeeks = 0;
@@ -303,6 +323,8 @@ export interface LiveEffortInput {
   now: Date;
   trainingXpBeforeToday: number;
   trainingXpToday: number;
+  morningCredit?: WeeklyInput["starterCredit"];
+  activityCredit?: WeeklyInput["starterCredit"];
 }
 
 export function calculateLiveEffortScore(sport: Sport, frozen: EffortState, input: LiveEffortInput) {
@@ -312,15 +334,19 @@ export function calculateLiveEffortScore(sport: Sport, frozen: EffortState, inpu
   if (!Number.isFinite(now.getTime())) throw new Error('invalid_live_time');
   const k = (getZonedWeekday(now) + 6) % 7;
   const forecast = frozen.baselineWeeklyVolume ?? 0;
-  const preview = (volume: number, observed: number) => getScoreBreakdown(sport, {
-    ...frozen,
-    baselineWeeklyVolume: updateEffortBaseline(sport, frozen, volume),
-    cumulativeNormalizedVolume: frozen.cumulativeNormalizedVolume + observed / SPORT_CONFIG[sport].referenceVolume,
-  }).displayedScore;
+  const preview = (volume: number, observed: number, credit: WeeklyInput["starterCredit"]) => {
+    const candidate = {
+      ...frozen,
+      baselineWeeklyVolume: updateEffortBaseline(sport, frozen, volume),
+      cumulativeNormalizedVolume: frozen.cumulativeNormalizedVolume + observed / SPORT_CONFIG[sport].referenceVolume,
+    };
+    applyStarterCredit(sport, frozen, candidate, credit);
+    return getScoreBreakdown(sport, candidate).displayedScore;
+  };
   const morningProjectedVolume = a + (7 - k) / 7 * forecast;
   const activityProjectedVolume = a + d + (6 - k) / 7 * forecast;
-  const morningScore = preview(morningProjectedVolume, a);
-  const activityScore = preview(activityProjectedVolume, a + d);
+  const morningScore = preview(morningProjectedVolume, a, input.morningCredit);
+  const activityScore = preview(activityProjectedVolume, a + d, input.activityCredit);
   const liveScore = Math.max(morningScore, activityScore);
   return {
     settledScore: getScoreBreakdown(sport, frozen).displayedScore,

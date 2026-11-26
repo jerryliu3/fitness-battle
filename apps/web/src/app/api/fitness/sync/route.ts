@@ -129,7 +129,8 @@ export async function PATCH(request: Request) {
     if (activities.length !== selected.size) {
       return NextResponse.json({ error: "invalid_history_selection" }, { status: 400 });
     }
-    if (await persistSyncedActivities(userId, activities, "recorded", body.historyLease)) {
+    const boost = await persistSyncedActivities(userId, activities, "recorded", body.historyLease);
+    if (boost) {
       // The workout transaction already succeeded. Auxiliary metrics use the
       // same idempotent stores as ordinary sync.
       await Promise.allSettled([
@@ -137,7 +138,7 @@ export async function PATCH(request: Request) {
         persistReadiness(userId, samples.readiness ?? []),
         ...(samples.sleepNights ?? []).map(night => persistSleepNight(userId, night)),
       ]);
-      return NextResponse.json({ persisted: true });
+      return NextResponse.json({ persisted: true, boost });
     }
     return NextResponse.json({ error: "history_review_expired", message: "This review has expired. Start the history import again." }, { status: 409 });
   } catch {

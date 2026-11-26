@@ -20,6 +20,7 @@ vi.mock("../ui/country-picker", () => ({ CountryPicker: "Country" }));
 vi.mock("../ui/timezone-picker", () => ({ TimezonePicker: "Timezone" }));
 vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton", FocusSegments: "FocusSegments", useFocusStyles: () => ({}) }));
 vi.mock("../../app/athlete", () => ({ TrackerConnections: "TrackerConnections" }));
+vi.mock("./fitness-history-import", () => ({ HistoryImportPreview: "HistoryImportPreview" }));
 vi.mock("./event-registration", () => ({ EventRegistration: "EventRegistration" }));
 vi.mock("../ui/onboarding-canvas", () => ({ OnboardingCanvas: ({ children }: { children: unknown }) => children }));
 import Onboarding from "../../app/onboarding";
@@ -48,13 +49,12 @@ it.each([false, true])("collects details first, registers one sport, shows a cla
   await act(async () => r.root.findByType("EventRegistration" as never).props.onBack());
   expect(r.root.findByType("TrackerConnections" as never).props.preview).toBe(preview);
   await next(r);
-  await act(async () => r.root.findByType("TextInput" as never).props.onChangeText("7"));
+  expect(r.root.findAllByType("TextInput" as never)).toHaveLength(0);
   const ticket = r.root.findByType("EventRegistration" as never);
   expect(ticket.props).toMatchObject({ event: "running", registered: true, ticketOnly: true });
   expect(mock.dispatch.mock.calls.some(([action]) => action.type === "complete-onboarding")).toBe(false);
   await act(async () => ticket.props.onView());
   if (!preview) {
-    expect(mock.dispatch).toHaveBeenCalledWith({ type: "declare-effort", sport: "running", declaredWeeklyVolume: 11265.408 });
     expect(mock.dispatch.mock.calls.filter(([action]) => action.type === "opt-in")).toHaveLength(1);
   }
   if (preview) { expect(mock.dispatch).not.toHaveBeenCalled(); expect(mock.save).not.toHaveBeenCalled(); }
@@ -86,10 +86,10 @@ it("registers immediately when restoring the final step", async () => {
   let r!: ReactTestRenderer;
   await act(async () => { r = create(createElement(Onboarding)); });
   expect(r.root.findByType("EventRegistration" as never).props.registered).toBe(true);
-  expect(r.root.findByType("TextInput" as never).props.accessibilityLabel).toBe("Typical weekly running");
+  expect(r.root.findAllByType("TextInput" as never)).toHaveLength(0);
   await act(async () => r.unmount());
 });
-it("omits the weekly-volume field and declaration when synced training exists", async () => {
+it("ignores the weekly volume in an old onboarding draft", async () => {
   state.activities.push({ id: "workout", sport: "running", startedAt: "2026-11-16T12:00:00Z", distanceM: 5000, movingSec: 1800, avgHr: null, verified: true, source: "apple_health" });
   mock.values.set("onboarding-draft:v7:a", JSON.stringify({ weeklyVolume: { running: "7" } }));
   let r!: ReactTestRenderer;

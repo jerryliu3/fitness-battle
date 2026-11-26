@@ -16,7 +16,6 @@ export const PHASE_A_COMPETE_INTENT_TYPES = [
   "set-units",
   "set-timezone",
   "complete-onboarding",
-  "declare-effort",
   "opt-in",
   "opt-out",
   "schedule-leave",
@@ -146,9 +145,6 @@ export function normalizeCompeteIntent(
       if (!tz || !isValidIanaTimeZone(tz)) throw new Error("invalid_intent");
       return { ...base, timezone: tz };
     }
-    case "declare-effort":
-      if(!raw.sport||!SPORT_IDS.includes(raw.sport)||typeof raw.declaredWeeklyVolume!=="number"||!Number.isFinite(raw.declaredWeeklyVolume)||raw.declaredWeeklyVolume<0)throw new Error("invalid_intent");
-      return {...base,sport:raw.sport,declaredWeeklyVolume:raw.declaredWeeklyVolume};
     case "complete-onboarding":
       return base;
     case "set-primary":

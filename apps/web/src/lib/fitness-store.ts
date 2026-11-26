@@ -1,3 +1,4 @@
+import type { HistoryEffortAward } from "@fitness-battle/shared";
 import { activityFromSample, mergeActivities, normalizeRouteReplay } from "@fitness-battle/shared";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type {
@@ -225,12 +226,18 @@ async function recomputeMemberships(
 }
 
 /** Write synced samples and refresh battle scores. Returns false when skipped. */
+export function persistSyncedActivities(
+  userId: string, activities: ActivitySample[], provenance?: "recorded" | "imported",
+): Promise<boolean>;
+export function persistSyncedActivities(
+  userId: string, activities: ActivitySample[], provenance: "recorded" | "imported", historyReviewLease: string,
+): Promise<false | HistoryEffortAward>;
 export async function persistSyncedActivities(
   userId: string,
   activities: ActivitySample[],
   provenance: "recorded" | "imported" = "recorded",
   historyReviewLease?: string,
-): Promise<boolean> {
+): Promise<boolean | HistoryEffortAward> {
   const db = serviceDb();
   if (!db || !isUuid(userId) || activities.length === 0) return false;
 
@@ -312,12 +319,12 @@ export async function persistSyncedActivities(
   if (rows.length === 0) return false;
 
   if (historyReviewLease) {
-    const { data, error } = await db.rpc("confirm_fitness_history_review", {
+    const { data, error } = await db.rpc("confirm_fitness_history_with_boost", {
       p_user: userId, p_lease: historyReviewLease, p_rows: rows,
     });
     if (error) throw new Error(error.message);
     if (data) await recomputeMemberships(db, userId).catch(console.error);
-    return data === true;
+    return data ?? false;
   }
 
   const { error } = await db.from("activities").upsert(rows, {

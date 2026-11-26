@@ -2,14 +2,14 @@ import { TextField } from "../src/ui/text-field";
 import { OnboardingProgress } from "../src/ui/onboarding-progress";
 import { useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Modal, TextInput, View } from "react-native";
+import { Modal, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import {
-  ONBOARDING_SETUP_TITLES as titles, detectDeviceTimeZone, guestIntroForAccount, SPORTS, hasOnboardingTrainingHistory,
+  ONBOARDING_SETUP_TITLES as titles, detectDeviceTimeZone, guestIntroForAccount, SPORTS,
   type ProfileGender, type SportId, type UnitSystem,
-  onboardingWeeklyVolumeInput, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, onboardingWeeklyVolumeUnit, type OnboardingWeeklyVolumes,
 } from "@fitness-battle/shared";
+import { HistoryImportPreview } from "../src/features/fitness-history-import";
 import { TrackerConnections } from "./athlete";
 import { GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft } from "../src/lib/guest-intro";
 import { TimezonePicker } from "../src/ui/timezone-picker";
@@ -30,7 +30,7 @@ import { useCompeteStore } from "../src/lib/compete-store";
 export default function Onboarding() {
   const f = useFocusStyles();
   const reduced = useReducedMotion();
-  const { state, canWrite, dispatch, loadStatus } = useCompeteStore();
+  const { state, canWrite, dispatch } = useCompeteStore();
   const { user, offlineMode } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ preview?: string; sport?: string; invite?: string }>();
@@ -48,7 +48,6 @@ export default function Onboarding() {
   const [gender, setGender] = useState<ProfileGender | "">("");
   const [countryCode, setCountryCode] = useState("");
   const [sport, setSport] = useState<SportId>("running");
-  const [weeklyVolume, setWeeklyVolume] = useState<OnboardingWeeklyVolumes>({});
   const [units, setUnits] = useState<UnitSystem>("us");
   const [timezone, setTimezone] = useState(() => detectDeviceTimeZone());
   const [guestImported, setGuestImported] = useState(false);
@@ -80,7 +79,6 @@ export default function Onboarding() {
       setCountryCode(typeof saved?.countryCode === "string" ? saved.countryCode : imported ? imported.countryCode : state?.countryCode ?? "");
       setUnits(saved?.units === "us" || saved?.units === "metric" ? saved.units : state?.units ?? "us");
       setSport(initialSport);
-      setWeeklyVolume(parseOnboardingWeeklyVolumes(saved?.weeklyVolume));
       setTimezone(typeof saved?.timezone === "string" ? saved.timezone : detectDeviceTimeZone());
       setGuestImported(useGuest);
       setLoadedKey(key);
@@ -97,8 +95,8 @@ export default function Onboarding() {
 
   useEffect(() => {
     if (!ready || loadedKey !== key || preview) return;
-    void AsyncStorage.setItem(key, JSON.stringify({ step, name, city, gender, countryCode, units, timezone, weeklyVolume })).catch(() => {});
-  }, [ready, loadedKey, preview, key, step, name, city, gender, countryCode, units, timezone, weeklyVolume]);
+    void AsyncStorage.setItem(key, JSON.stringify({ step, name, city, gender, countryCode, units, timezone })).catch(() => {});
+  }, [ready, loadedKey, preview, key, step, name, city, gender, countryCode, units, timezone]);
 
   useEffect(() => {
     if (step !== 2 || registered || !state || !ready || loadedKey !== key || (!preview && (!user || !canWrite))) return;
@@ -119,10 +117,6 @@ export default function Onboarding() {
   const completionRoute = invite ? { pathname: "/field" as const, params: { invite } } : "/today";
   if (!preview && state?.onboardingCompleted) return <Redirect href={completionRoute} />;
   if (!state || !ready) return <AppText>Loading setup…</AppText>;
-  const sportName = SPORTS.find(item => item.id === sport)!.name;
-  const accountReady = loadStatus !== "loading";
-  const hasHistory = hasOnboardingTrainingHistory(state, sport);
-  const needsVolume = accountReady && !hasHistory;
   function advance() { setStep(Math.min(2, step + 1)); }
   function back() { setRegistered(false); setStep(Math.max(0, step - 1)); }
 
@@ -144,8 +138,6 @@ export default function Onboarding() {
       return;
     } finally { setSaving(false); }
     if (owner.current !== user.id) return;
-    const declaredWeeklyVolume = onboardingDeclaredVolume(sport, weeklyVolume[sport] ?? "0", units);
-    if (!hasHistory && declaredWeeklyVolume !== undefined) dispatch({ type: "declare-effort", sport, declaredWeeklyVolume });
     dispatch({ type: "complete-onboarding" });
     void AsyncStorage.removeItem(key).catch(() => {});
     if (guestImported) void AsyncStorage.multiRemove([GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY]).catch(() => {});
@@ -176,15 +168,10 @@ export default function Onboarding() {
           {step === 1 && <>
             <AppText secondary>Sync your tracker to bring up to 90 days of workouts. You can also connect later.</AppText>
             <TrackerConnections preview={preview} />
+            {preview && __DEV__ && <HistoryImportPreview />}
           </>}
           {step === 2 && <>
             <AppText secondary>Your chosen event registers for the next wave. You can register for more events in the app.</AppText>
-            {needsVolume && <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <AppText role="caption" style={{ flex: 1 }}>Typical weekly {sport === "strength" ? "training" : sport === "walking" ? "steps" : "distance"} ({onboardingWeeklyVolumeUnit(sport, units)}) · {sportName}</AppText>
-              <TextInput style={[f.input, { width: 80, textAlign: "center" }]} keyboardType="decimal-pad" accessibilityLabel={`Typical weekly ${sport}`}
-                value={weeklyVolume[sport] ?? "0"}
-                onChangeText={value => setWeeklyVolume(current => ({ ...current, [sport]: onboardingWeeklyVolumeInput(value) }))} />
-            </View>}
             <EventRegistration state={state} event={sport} registered={registered} ticketOnly busy={saving || (!preview && !canWrite)} error={saveError ?? undefined} onBack={back} onClaim={finish} onView={finish} />
           </>}
           {step < 2 && <View style={{ flexDirection: "row", gap: 12 }}>

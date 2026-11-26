@@ -1,6 +1,6 @@
 import { VITALS_LAB_METRICS, type VitalsLabMetricDisplay } from "./vitals-lab-body";
 import { crewWeekRelay, type CrewWeekRelayInput } from "./compete/crew-relay";
-import { SPORTS, SPORT_IDS, type CompeteState, type SportId, type UnitSystem } from "./compete/sports";
+import { SPORTS, SPORT_IDS, type SportId } from "./compete/sports";
 import { athleteCardModelForPeer, type AthleteCardModel } from "./athlete-card";
 import { athleteLocationLine } from "./countries";
 
@@ -66,32 +66,6 @@ export function parseGuestIntroDraft(raw: string | null): GuestIntroDraft | null
 
 export function guestIntroForAccount(draft: GuestIntroDraft | null, pendingEmail: string | null, email?: string | null) {
   return draft && email && pendingEmail?.trim().toLowerCase() === email.trim().toLowerCase() ? draft : null;
-}
-
-export type OnboardingWeeklyVolumes = Partial<Record<SportId, string>>;
-
-export function parseOnboardingWeeklyVolumes(value: unknown): OnboardingWeeklyVolumes {
-  if (!value || typeof value !== "object") return {};
-  const saved = value as Record<string, unknown>;
-  return Object.fromEntries(SPORT_IDS.flatMap(sport => typeof saved[sport] === "string" ? [[sport, onboardingWeeklyVolumeInput(saved[sport])]] : []));
-}
-
-export function onboardingWeeklyVolumeUnit(sport: SportId, units: UnitSystem) {
-  return sport === "walking" ? "steps" : sport === "strength" ? "minutes" : units === "metric" ? "km" : "miles";
-}
-
-/** Keep onboarding volume entry within the supported input range. */
-export function onboardingWeeklyVolumeInput(value: string): string {
-  if (!/^\d*\.?\d*$/.test(value)) return "0";
-  return Number(value) > 1000 ? "1000" : value;
-}
-
-/** Convert optional declarations to the scorer's metres, seconds or steps. */
-export function onboardingDeclaredVolume(sport: SportId, value: string | undefined, units: UnitSystem): number | undefined {
-  if (!value?.trim()) return undefined;
-  const amount = Number(value);
-  if (!Number.isFinite(amount) || amount < 0) return undefined;
-  return Math.min(1000, amount) * (sport === "running" || sport === "cycling" ? (units === "metric" ? 1000 : 1609.344) : sport === "strength" ? 60 : 1);
 }
 
 export function hasCompletedOnboardingIntro(draft: GuestIntroDraft | null, pendingEmail: string | null, email?: string | null) {
@@ -181,9 +155,4 @@ export function onboardingCrewGoal(draft: GuestIntroDraft, progress: number) {
   const format = (value: number) => (value / (sport === "walking" ? 1 : sport === "strength" ? 3600 : 1000)).toLocaleString("en-US", { maximumFractionDigits: sport === "walking" ? 0 : 1 });
   const unit = sport === "walking" ? "steps" : sport === "strength" ? "hrs" : "km";
   return `Weekly goal: ${format(relay.model.total)}/${format(relay.target ?? 0)} ${unit}`;
-}
-
-/** A connection alone is not evidence that any workouts were imported. */
-export function hasOnboardingTrainingHistory(state: Pick<CompeteState, "activities">, sport: SportId) {
-  return state.activities.some(activity => activity.sport === sport && activity.source !== "manual" && activity.source !== "history" && activity.provenance !== "demo" && activity.provenance !== "manual" && (activity.disposition ?? "counted") === "counted" && !activity.journalOnly);
 }

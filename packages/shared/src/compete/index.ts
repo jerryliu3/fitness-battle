@@ -316,11 +316,11 @@ export {
   type DebugEventResult,
 } from "./debug-events";
 
-export { calculateLiveEffortScore, settleEffortWeek, updateEffortBaseline, trainingPosition, historicalBonusPoints, placementRewardPoints, createEmptyEffortState, createDeclaredEffortState, createImportedEffortState, getScoreBreakdown, SPORT_CONFIG as EFFORT_SPORT_CONFIG, SCORING_VERSION as EFFORT_SCORING_VERSION, type EffortState, type LiveEffortInput } from './effort-score';
+export { calculateLiveEffortScore, settleEffortWeek, updateEffortBaseline, trainingPosition, historicalBonusPoints, placementRewardPoints, createEmptyEffortState, createImportedEffortState, getScoreBreakdown, SPORT_CONFIG as EFFORT_SPORT_CONFIG, SCORING_VERSION as EFFORT_SCORING_VERSION, type EffortState, type LiveEffortInput } from './effort-score';
 export { liveEffortFromActivities } from './effort-volume';
 
-export { initializeEffortAccounts, settleAccountEffort, readAccountEffort, type EffortAccounts } from './effort-account';
-export { replayEffortHistory } from './effort-account';
+export { initializeEffortAccounts, historyEffortCredit, type HistoryEffortAward, startAccountEffort, settleAccountEffort, readAccountEffort, type EffortAccounts } from './effort-account';
+export { replayEffortHistory, resetAccountEffort } from './effort-account';
 
 export { activityBaseTrainingXp, activityTrainingXp, eligibleTrainingXp, trainingXpInPeriod, formatTrainingXp } from './training-xp';
 export { TRAINING_XP_PER_REFERENCE_WEEK, trainingXpForVolume, trainingVolumeForXp } from './effort-score';

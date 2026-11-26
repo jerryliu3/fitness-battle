@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { activityFromSample, competeNow, dayKey, type SyncReviewReceipt, type ActivitySample, type FitnessHistoryStatus, type FitnessHistoryTicket, type ProviderId } from "@fitness-battle/shared";
+import { activeMultiplier, activityFromSample, historyEffortCredit, type HistoryEffortAward, competeNow, dayKey, type SyncReviewReceipt, type ActivitySample, type FitnessHistoryStatus, type FitnessHistoryTicket, type ProviderId } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { Sheet } from "@/ui/sheet";
@@ -20,6 +20,51 @@ async function historyRequest<T>(path: string, options?: RequestInit): Promise<T
 
 type HistoryImportProps = { offer: ProviderId | null; onDismiss: () => void; showSettings?: boolean };
 
+type ImportConfirmation = { pending: true } | { pending: false; boost?: HistoryEffortAward };
+
+function HistoryImportResult({ confirmation, onContinue }: {
+  confirmation: ImportConfirmation;
+  onContinue: () => void;
+}) {
+  const boost = confirmation.pending ? null : activeMultiplier(confirmation.boost, new Date());
+  const headStart = !confirmation.pending && confirmation.boost ? historyEffortCredit(confirmation.boost) : 0;
+  const credit = headStart.toLocaleString("en-US");
+  const title = confirmation.pending ? "Calibrating your Effort Boost…" : boost ? "You earned an Effort Boost" : "History imported";
+  const body = confirmation.pending ? "Saving your selected workouts." : boost
+    ? `Your training history earned you a 30-day head start across all sports.${headStart > 0 ? ` Your history supports ${credit} starting Effort in your primary sport.` : ""} Eligible training advances your Effort progression faster.`
+    : "Your selected workouts are ready to view.";
+  return <Sheet open fullScreen title={title} body={body} onClose={onContinue}>
+    <div className="history-import-reveal">
+      {boost && <strong className="history-import-reveal-value">{boost.label}</strong>}
+      {!confirmation.pending && <button type="button" className="fb-btn" onClick={onContinue}>Continue</button>}
+    </div>
+  </Sheet>;
+}
+
+export function HistoryImportPreview() {
+  const [confirmation, setConfirmation] = useState<ImportConfirmation | null>(null);
+  useEffect(() => {
+    if (!confirmation?.pending) return;
+    const timer = setTimeout(() => {
+      const now = Date.now();
+      setConfirmation({ pending: false, boost: {
+        multiplier: 3,
+        coveredHistoryDays: 90,
+        primarySport: "running",
+        weeklyVolumes: { running: 35 * 1609.344 },
+        startsAt: new Date(now).toISOString(),
+        boostEndsAt: new Date(now + 30 * 86_400_000).toISOString(),
+      } });
+    }, 650);
+    return () => clearTimeout(timer);
+  }, [confirmation]);
+  return confirmation
+    ? <HistoryImportResult confirmation={confirmation} onContinue={() => {
+        if (!confirmation.pending) setConfirmation(null);
+      }} />
+    : <button type="button" className="fb-btn-line" onClick={() => setConfirmation({ pending: true })}>Preview history import</button>;
+}
+
 export function FitnessHistoryImport(props: HistoryImportProps) {
   const { user } = useAuth();
   return <AccountHistoryImport key={user?.id ?? "guest"} {...props} />;
@@ -32,6 +77,7 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
   const [provider, setProvider] = useState<ProviderId | null>(null);
   const [days, setDays] = useState(90);
   const [busy, setBusy] = useState(false);
+  const [confirmation, setConfirmation] = useState<ImportConfirmation | null>(null);
   const [error, setError] = useState("");
   const [review, setReview] = useState<{ lease: string; provider: ProviderId; receipt: SyncReviewReceipt } | null>(null);
   const flight = useRef(false);
@@ -72,16 +118,20 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
     const confirmed = !quiet && Boolean(selected?.length);
     try {
       if (confirmed) {
-        await historyRequest("/api/fitness/sync", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ historyLease: review.lease, selected }) });
+        setConfirmation({ pending: true });
+        const result = await historyRequest<{ boost?: HistoryEffortAward }>("/api/fitness/sync", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ historyLease: review.lease, selected }) });
         if (!mounted.current) return;
         setStatus({ completed: true, provider: review.provider, days: Number(days) });
         void refresh({ skipSyncReview: true });
+        setConfirmation({ pending: false, boost: result.boost });
+        return;
       } else {
         await historyRequest("/api/fitness/history", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lease: review.lease }) });
       }
       if (mounted.current) dismiss.current();
     } catch (error) {
       if (mounted.current) {
+        setConfirmation(null);
         setError(error instanceof Error ? error.message : "Could not finish the history import.");
         setProvider(review.provider);
         await historyRequest("/api/fitness/history", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lease: review.lease }) }).catch(() => {});
@@ -124,6 +174,11 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
     }
   }
 
+  if (confirmation) return <HistoryImportResult confirmation={confirmation} onContinue={() => {
+    if (confirmation.pending) return;
+    setConfirmation(null);
+    dismiss.current();
+  }} />;
   if (review && state) return <SyncReview receipt={review.receipt} state={state} onComplete={finishReview} />;
 
   return <>

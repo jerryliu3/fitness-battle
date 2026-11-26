@@ -20,7 +20,7 @@ vi.mock("./sync-review", () => ({ SyncReview: "SyncReview" }));
 import { SyncReview } from "./sync-review";
 import { FocusButton, FocusSheet } from "../ui/focus";
 import { NumberPicker } from "../ui/form-picker";
-import { FitnessHistoryImport } from "./fitness-history-import";
+import { FitnessHistoryImport, HistoryImportPreview } from "./fitness-history-import";
 
 let renderer: ReactTestRenderer;
 const button = (label: string) => renderer.root.findAllByType(FocusButton).find(b => b.props.label === label)!;
@@ -106,6 +106,11 @@ it("ignores an old import even after switching away and back to the same account
 it.each([false, true])("commits Strava history only on swipe (confirmed: %s)", async (confirmed) => {
   mock.request.mockImplementation(async (_url, _token, _path, options) => {
     if (options?.body?.days) return { lease: "ticket" };
+    if (options?.method === "PATCH") return { persisted: true, boost: {
+      multiplier: 3,
+      startsAt: new Date(Date.now() - 1000).toISOString(),
+      boostEndsAt: new Date(Date.now() + 86_400_000).toISOString(),
+    } };
     if (options?.body?.reviewHistory) {
       return { activities: [
         { id: "strava-a", provider: "strava", categorySlug: "running", startedAt: "2026-11-17T18:00:00Z", metricValue: 5000 },
@@ -126,10 +131,32 @@ it.each([false, true])("commits Strava history only on swipe (confirmed: %s)", a
   if (confirmed) {
     expect(mock.request).toHaveBeenCalledWith("https://example.test", "alice-token", "/api/fitness/sync", { method: "PATCH", body: { historyLease: "ticket", selected: ["strava-b"] } });
     expect(mock.refresh).toHaveBeenCalledWith({ skipSyncReview: true });
+    expect(renderer.root.findByType(FocusSheet).props.title).toBe("You earned an Effort Boost");
+    expect(mock.dismiss).not.toHaveBeenCalled();
+    await act(async () => button("Continue").props.onPress());
+    expect(mock.dismiss).toHaveBeenCalled();
   } else {
     expect(mock.request).toHaveBeenCalledWith("https://example.test", "alice-token", "/api/fitness/history", { method: "DELETE", body: { lease: "ticket" } });
     expect(mock.request.mock.calls.some(c => c[3]?.method === "PATCH")).toBe(false);
     expect(button("Import fitness history").props.disabled).toBe(false);
   }
   expect(mock.dispatch).not.toHaveBeenCalled();
+});
+
+it("previews calibration and the reward without importing or saving workouts", async () => {
+  vi.useFakeTimers();
+  try {
+    await act(async () => { renderer = create(createElement(HistoryImportPreview)); });
+    await act(async () => button("Preview history import").props.onPress());
+    expect(renderer.root.findByType(FocusSheet).props.title).toBe("Calibrating your Effort Boost…");
+    await act(async () => { await vi.advanceTimersByTimeAsync(650); });
+    expect(renderer.root.findByType(FocusSheet).props.title).toBe("You earned an Effort Boost");
+    expect(JSON.stringify(renderer.toJSON())).toContain("3×");
+    await act(async () => button("Continue").props.onPress());
+    expect(button("Preview history import")).toBeDefined();
+    expect(mock.request).not.toHaveBeenCalled();
+    expect(mock.dispatch).not.toHaveBeenCalled();
+  } finally {
+    vi.useRealTimers();
+  }
 });

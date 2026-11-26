@@ -85,23 +85,6 @@
   text-align: center;
 }
 
-.onboarding-weekly-volume {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.onboarding-weekly-volume-label {
-  flex: 1 1 180px;
-  margin: 0;
-  font: var(--type-caption);
-}
-
-.onboarding-weekly-volume-input {
-  width: 80px;
-}
-
 .onboarding-actions {
   display: flex;
   gap: 12px;

@@ -1,6 +1,6 @@
 import { competeVolumeFromTotals } from "../compete-field-view";
-import { initializeEffortAccounts, settleAccountEffort } from './effort-account';
-import { createDeclaredEffortState, getScoreBreakdown, placementRewardPoints } from './effort-score';
+import { initializeEffortAccounts, settleAccountEffort, startAccountEffort } from './effort-account';
+import { placementRewardPoints } from './effort-score';
 import { competitionPlace } from "../competition-place";
 import {
   APP_TIMEZONE,
@@ -109,7 +109,6 @@ export interface Action {
   | "apply-sync"
   | "import-history"
     | "complete-lesson"
-    | "declare-effort"
     | "complete-onboarding"
     | "freeze"
     | "unfreeze"
@@ -123,7 +122,6 @@ export interface Action {
     | "clear-crew-board"
     /** Demo/dev: settle the open week as if Monday already arrived. */
     | "debug-close-week";
-  declaredWeeklyVolume?: number;
   distanceM?: number;
   movingSec?: number;
   name?: string;
@@ -1290,17 +1288,13 @@ function reduceCompeteAction(
         ),
       };
     }
-    case "declare-effort": {
-      if(rolled.onboardingCompleted||!action.sport||typeof action.declaredWeeklyVolume!=="number"||!Number.isFinite(action.declaredWeeklyVolume)||action.declaredWeeklyVolume<0)return rolled;
-      const initialized=initializeEffortAccounts(rolled,now);
-      const account=initialized.effortAccounts![action.sport]!;
-      if(account.state.calibrationSamples>1||account.state.cumulativeNormalizedVolume>0)return initialized;
-      const declared=createDeclaredEffortState(action.sport,action.declaredWeeklyVolume!);
-      const score=getScoreBreakdown(action.sport,declared).displayedScore;
-      return {...initialized,effortAccounts:{...initialized.effortAccounts,[action.sport]:{...account,state:declared}},ratings:initialized.ratings.map(r=>r.sport===action.sport?{...r,openElo:score,verifiedElo:score,lockOpen:score,lockVerified:score}:r)};
+    case "complete-onboarding": {
+      if (rolled.onboardingCompleted) return rolled;
+      const started = rolled.effortAccounts?.[rolled.primary]?.starter ? rolled : startAccountEffort(rolled, {
+        multiplier: 1, startsAt: now.toISOString(), boostEndsAt: now.toISOString(),
+      });
+      return { ...started, onboardingCompleted: true };
     }
-    case "complete-onboarding":
-      return { ...rolled, onboardingCompleted: true };
     case "sync": {
       if (!action.provider || !action.allowSample) return rolled;
       const link = rolled.links.find((item) => item.provider === action.provider);

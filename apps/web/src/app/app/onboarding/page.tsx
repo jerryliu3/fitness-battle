@@ -3,9 +3,9 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ONBOARDING_SETUP_TITLES as titles, detectDeviceTimeZone, guestIntroForAccount, GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY,
-  SPORTS, hasOnboardingTrainingHistory, type ProfileGender, type SportId, type UnitSystem,
-  onboardingWeeklyVolumeInput, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, onboardingWeeklyVolumeUnit, type OnboardingWeeklyVolumes,
+  SPORTS, type ProfileGender, type SportId, type UnitSystem,
 } from "@fitness-battle/shared";
+import { HistoryImportPreview } from "@/features/you/fitness-history-import";
 import { TrackerConnections } from "@/features/you/you-route";
 import { CountryCombobox } from "@/ui/country-combobox";
 import { TimezoneCombobox } from "@/ui/timezone-combobox";
@@ -41,7 +41,6 @@ function Setup({ preview }: { preview: boolean }) {
   const [gender, setGender] = useState<ProfileGender | "">("");
   const [countryCode, setCountryCode] = useState("");
   const [sport, setSport] = useState<SportId>("running");
-  const [weeklyVolume, setWeeklyVolume] = useState<OnboardingWeeklyVolumes>({});
   const [units, setUnits] = useState<UnitSystem>("us");
   const [timezone, setTimezone] = useState(() => detectDeviceTimeZone());
   const [guestImported, setGuestImported] = useState(false);
@@ -67,15 +66,14 @@ function Setup({ preview }: { preview: boolean }) {
     setCountryCode(typeof saved?.countryCode === "string" ? saved.countryCode : guest?.countryCode ?? state.countryCode ?? "");
     setUnits(saved?.units === "us" || saved?.units === "metric" ? saved.units : state.units);
     setSport(initialSport);
-    setWeeklyVolume(parseOnboardingWeeklyVolumes(saved?.weeklyVolume));
     setTimezone(typeof saved?.timezone === "string" ? saved.timezone : detectDeviceTimeZone());
     setGuestImported(Boolean(guest));
     setLoadedKey(key);
   }, [key, preview, previewSport, user?.email, Boolean(state)]);
   useEffect(() => {
     if (loadedKey !== key || preview) return;
-    try { sessionStorage.setItem(key, JSON.stringify({ step, name, city, gender, countryCode, units, timezone, weeklyVolume })); } catch {}
-  }, [loadedKey, key, preview, step, name, city, gender, countryCode, units, timezone, weeklyVolume]);
+    try { sessionStorage.setItem(key, JSON.stringify({ step, name, city, gender, countryCode, units, timezone })); } catch {}
+  }, [loadedKey, key, preview, step, name, city, gender, countryCode, units, timezone]);
   useEffect(() => {
     if (!preview && state?.onboardingCompleted) router.replace(resolvePostOnboardingPath(params.get("next")));
   }, [preview, state?.onboardingCompleted, params, router]);
@@ -96,10 +94,6 @@ function Setup({ preview }: { preview: boolean }) {
   }, [step, registered, state, loadedKey, key, preview, user, canWrite, sport, name, city, gender, countryCode, units, timezone, dispatch]);
 
   if (!state || loadedKey !== key) return <AppParagraph>Loading setup…</AppParagraph>;
-  const sportName = SPORTS.find(item => item.id === sport)!.name;
-  const accountReady = loadStatus === "ready" || loadStatus === "local";
-  const hasHistory = hasOnboardingTrainingHistory(state, sport);
-  const needsVolume = accountReady && !hasHistory;
   function advance() { setStep(Math.min(2, step + 1)); }
   async function finish() {
     if (preview) { router.replace("/app/arena"); return; }
@@ -120,8 +114,6 @@ function Setup({ preview }: { preview: boolean }) {
       return;
     } finally { setSaving(false); }
     if (owner.current !== user.id) return;
-    const declaredWeeklyVolume = onboardingDeclaredVolume(sport, weeklyVolume[sport] ?? "0", units);
-    if (!hasHistory && declaredWeeklyVolume !== undefined) dispatch({ type: "declare-effort", sport, declaredWeeklyVolume });
     dispatch({ type: "complete-onboarding" });
     try {
       sessionStorage.removeItem(key);
@@ -148,15 +140,10 @@ function Setup({ preview }: { preview: boolean }) {
     {step === 1 && <>
       <AppParagraph>Sync your tracker to bring up to 90 days of workouts. You can also connect later.</AppParagraph>
       {!preview && <TrackerConnections />}
+      {preview && process.env.NODE_ENV === "development" && <HistoryImportPreview />}
     </>}
     {step === 2 && <>
       <AppParagraph>Your chosen event registers for the next wave. You can register for more events in the app.</AppParagraph>
-      {needsVolume && <label className="fb-field onboarding-weekly-volume">
-        <AppParagraph typographyRole="caption" className="onboarding-weekly-volume-label">Typical weekly {sport === "strength" ? "training" : sport === "walking" ? "steps" : "distance"} ({onboardingWeeklyVolumeUnit(sport, units)}) · {sportName}</AppParagraph>
-        <input className="onboarding-weekly-volume-input" type="number" inputMode="decimal" min="0" max={1000} step="any" aria-label={`Typical weekly ${sport}`}
-          value={weeklyVolume[sport] ?? "0"}
-          onChange={e => setWeeklyVolume(current => ({ ...current, [sport]: onboardingWeeklyVolumeInput(e.target.value) }))} />
-      </label>}
       <EventRegistration state={state} event={sport} registered={registered} ticketOnly busy={saving || (!preview && !canWrite)} error={saveError ?? ""} onBack={() => { setRegistered(false); setStep(1); }} onClaim={finish} onView={finish} />
     </>}
     {step < 2 && <div className="onboarding-actions">
