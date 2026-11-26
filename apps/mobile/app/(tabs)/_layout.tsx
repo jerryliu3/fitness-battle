@@ -1,5 +1,6 @@
 import { useReducedMotion } from "../../src/ui/use-reduced-motion";
 import { CompeteExperienceProvider } from "../../src/features/compete-experience";
+import { CoursePreviewPrefetch } from "../../src/features/event-home";
 import type { CompeteEvent } from "@fitness-battle/shared";
 import { ArenaScreen } from "./arena";
 import { useEffect, useRef, useState } from "react";
@@ -35,7 +36,7 @@ export default function TabLayout() {
   const { pending, required } = useOnboardingRequired();
   if (pending) return <View style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }} />;
   if (required) return <Redirect href="/onboarding" />;
-  if (Platform.OS === "ios") return <CompeteExperienceProvider value={experience}><View style={{ flex: 1 }}><View style={{ flex: 1 }} accessibilityElementsHidden={experience.immersive} importantForAccessibility={experience.immersive ? "no-hide-descendants" : "auto"}>
+  if (Platform.OS === "ios") return <CompeteExperienceProvider value={experience}><View style={{ flex: 1 }}><CoursePreviewPrefetch /><View style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }} accessibilityElementsHidden={experience.immersive} importantForAccessibility={experience.immersive ? "no-hide-descendants" : "auto"}>
     <NativeTabs tintColor={SHELL_COLORS.ink} blurEffect={mode === "dark" ? "systemUltraThinMaterialDark" : "systemUltraThinMaterialLight"} backgroundColor={SHELL_COLORS.surfaceNavigation} disableTransparentOnScrollEdge>
       <NativeTabs.Trigger name="today" accessibilityLabel="Home"><NativeTabs.Trigger.Icon sf={{ default: "house", selected: "house.fill" }} /><NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="arena" accessibilityLabel="Compete"><NativeTabs.Trigger.Icon sf={{ default: "flag", selected: "flag.fill" }} /><NativeTabs.Trigger.Label>Compete</NativeTabs.Trigger.Label></NativeTabs.Trigger>
@@ -44,7 +45,7 @@ export default function TabLayout() {
     </NativeTabs></View>{host}
   </View></CompeteExperienceProvider>;
   return (
-    <CompeteExperienceProvider value={experience}><View style={{ flex: 1 }}><View style={{ flex: 1 }} accessibilityElementsHidden={experience.immersive} importantForAccessibility={experience.immersive ? "no-hide-descendants" : "auto"}><Tabs
+    <CompeteExperienceProvider value={experience}><View style={{ flex: 1 }}><CoursePreviewPrefetch /><View style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }} accessibilityElementsHidden={experience.immersive} importantForAccessibility={experience.immersive ? "no-hide-descendants" : "auto"}><Tabs
       tabBar={(props) => <PhoneTabBar {...props} />}
       screenOptions={{
         headerShown: false,

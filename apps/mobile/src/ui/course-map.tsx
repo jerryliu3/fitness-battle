@@ -350,7 +350,7 @@ const { colors: appearanceColors, mode } = useAppTheme();
             </View>
           </MarkerView>;
         }
-        const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
+        const rank = lane.rank ?? (1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length);
         const now = new Date();
         const subdetail = courseAthleteSubdetail(lanes, lane, unit, now);
         const subdetailLive = courseAthleteSubdetailLive(lane, now);

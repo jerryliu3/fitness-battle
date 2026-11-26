@@ -132,7 +132,11 @@ it.each(["km", "mi"])("includes reachable preview rivals using competition dista
     { id: "far", metres: 5900 },
     { id: "past", ghost: true, metres: 5000 },
   ].map(lane => ({ ...lane, name: lane.id, initials: "", value: lane.metres / metresPerUnit }));
-  expect(coursePreviewLanes(lanes, unit).map(lane => lane.id)).toEqual(["you", "ahead", "behind"]);
+  const preview = coursePreviewLanes(lanes, unit);
+  expect(preview.map(lane => lane.id)).toEqual(["you", "ahead", "behind"]);
+  expect(preview.find(lane => lane.id === "you")?.rank).toBe(3);
+  expect(preview.find(lane => lane.id === "you")?.leader).toBe(false);
+  expect(courseAthleteDetail(preview, preview.find(lane => lane.id === "you")!, unit)).toContain("3rd ·");
   expect(coursePreviewLanes(lanes.filter(lane => !lane.you), unit)).toEqual([]);
   expect(coursePreviewLanes(lanes, "pts")).toEqual([]);
 });

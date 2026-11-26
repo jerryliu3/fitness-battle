@@ -1,12 +1,17 @@
 import { WaveCountdown } from "../ui/wave-countdown";
 import { pageCarouselStyles } from "../ui/carousel-styles";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
+import { useAuth } from "../lib/auth";
+import { mobileEnv } from "../lib/env";
+import { useBootLoading } from "../ui/boot-readiness";
+import { nativeCourseMapAvailable } from "./deferred-course-map";
+import { useCoursePreviewReady } from "./course-preview-ready";
 import { useCompetitionCourse } from "./use-competition-course";
 import { GeographicCourse } from "./geographic-course";
 import { useCompeteStore } from "../lib/compete-store";
 import { type GestureResponderEvent, Image, Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
-import { competeEventCarouselPageIndex, formatActivityAge, competitionCourseWindow, coursePreviewLanes, initialsFromName, type ArenaSceneLane, buildArenaModel, competitionQueue, competitionTrack, competeNow, isMetricCompete, ordinalPlace, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
+import { competeEventCarouselPageIndex, formatActivityAge, competitionCourseWindow, coursePreviewLanes, initialsFromName, type ArenaSceneLane, buildArenaModel, competitionQueue, competitionTrack, competeNow, isGeographicCompete, isMetricCompete, ordinalPlace, SPORTS, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { AppText, textStyle } from "../ui/section";
 import { useThemeColors } from "../theme";
 import { AppIcon } from "../ui/app-icon";
@@ -15,6 +20,7 @@ import { CompeteIcon, CompeteSportBadge, EventArt } from "./compete-home-section
 import { CompeteTimeSeriesChart } from "../ui/compete-time-series-chart";
 
 const TAP_SLOP = 10;
+const PREVIEW_SETTLE_TIMEOUT_MS = 6000;
 const snapshotCache = new Map<string, string>();
 
 /** Read-only event previews; entering is an explicit presentation action. */
@@ -107,14 +113,53 @@ function RegisteredEventCard({ state, sport, active, cardWidth, onEnter }: { sta
   </View>;
 }
 
+function coursePreviewParams(
+  state: CompeteState,
+  sport: SportId,
+  queued: boolean,
+  blockedIds: readonly string[],
+  accountKey: string,
+  course: ReturnType<typeof useCompetitionCourse>["course"],
+) {
+  const model = buildArenaModel(state, undefined, competitionTrack(sport), sport);
+  const me = model?.lanes.find(lane => lane.you);
+  const previewLanes: ArenaSceneLane[] = queued
+    ? [
+        { id: me?.id ?? "you", name: me?.name ?? state.name, initials: "", you: true, value: 0 },
+        ...Array.from({ length: model?.lanes.filter(l => l.mystery).length ?? 0 }, (_, i) => ({
+          id: `mystery-${i}`,
+          name: `Athlete #${i + 1}`,
+          initials: "?",
+          mystery: true,
+          value: 0,
+        })),
+      ]
+    : coursePreviewLanes(
+        (model?.lanes ?? [])
+          .filter(lane => !blockedIds.includes(lane.id))
+          .map(lane => ({
+            id: lane.id,
+            name: lane.name,
+            initials: lane.mystery ? "?" : initialsFromName(lane.name),
+            avatarUrl: lane.avatarUrl,
+            you: lane.you,
+            ghost: lane.ghost,
+            mystery: lane.mystery,
+            value: lane.values[2],
+          })),
+        model?.unit ?? "",
+      );
+  const unit = model?.unit ?? "";
+  const cacheKey = `race-card-local-v10:${JSON.stringify(previewLanes)}:${queued}:${accountKey}:${sport}:${course?.name}:${course?.length}:${me?.values[2]}:${state.units}`;
+  return { previewLanes, unit, cacheKey };
+}
+
 export function CoursePreview({ state, sport, queued }: { state: CompeteState; sport: SportId; queued: boolean }) {
   const { blocks } = useAthleteBlocks();
   const c = useThemeColors();
   const period = competitionCourseWindow(state, competeNow(state), sport);
   const { debugActive, accountKey } = useCompeteStore();
-  const { course } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, true);
-  const model = buildArenaModel(state, undefined, competitionTrack(sport), sport);
-  const me = model?.lanes.find(lane => lane.you);
+  const { course, error: courseError } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, true);
 
   if (!queued && isMetricCompete(sport)) {
     return (
@@ -135,21 +180,45 @@ export function CoursePreview({ state, sport, queued }: { state: CompeteState; s
     );
   }
 
-  const previewLanes = queued ? [{ id: me?.id ?? "you", name: me?.name ?? state.name, initials: "", you: true, value: 0 }, ...Array.from({ length: model?.lanes.filter(l => l.mystery).length ?? 0 }, (_, i) => ({ id: `mystery-${i}`, name: `Athlete #${i + 1}`, initials: "?", mystery: true, value: 0 }))] : coursePreviewLanes((model?.lanes ?? []).filter(lane => !blocks.some(block => block.id === lane.id)).map(lane => ({ id: lane.id, name: lane.name, initials: lane.mystery ? "?" : initialsFromName(lane.name), avatarUrl: lane.avatarUrl, you: lane.you, ghost: lane.ghost, mystery: lane.mystery, value: lane.values[2] })), model?.unit ?? "");
-  const key = `race-card-local-v9:${JSON.stringify(previewLanes)}:${queued}:${accountKey}:${sport}:${course?.name}:${course?.length}:${me?.values[2]}:${state.units}`;
-  return <View style={{ position: "relative", borderRadius: 12, overflow: "hidden" }}><SnapshotPreview key={`${accountKey}:${sport}:${state.units}`} cacheKey={key} course={course} lanes={previewLanes} unit={model?.unit ?? ""} />
+  const blockedIds = blocks.map(block => block.id);
+  const { previewLanes, unit, cacheKey } = coursePreviewParams(state, sport, queued, blockedIds, accountKey, course);
+  return <View style={{ position: "relative", borderRadius: 12, overflow: "hidden" }}><SnapshotPreview key={`${accountKey}:${sport}:${state.units}`} cacheKey={cacheKey} course={course} courseError={courseError} lanes={previewLanes} unit={unit} />
     {course ? <View style={{ position: "absolute", top: 4, right: 6, maxWidth: "95%", flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 6, backgroundColor: c.card, borderRadius: 4, paddingHorizontal: 4 }}>
       {[{ label: "© Mapbox", url: "https://www.mapbox.com/about/maps" }, { label: "© OpenStreetMap", url: "https://www.openstreetmap.org/copyright" }, { label: "ⓘ", url: "https://apps.mapbox.com/feedback/" }].map(link => <Pressable key={link.label} accessibilityRole="link" accessibilityLabel={link.label === "ⓘ" ? "Improve this map" : link.label} hitSlop={8} onPress={event => { event.stopPropagation(); void Linking.openURL(link.url); }}><Text style={{ ...textStyle("nav"), color: c.muted }}>{link.label}</Text></Pressable>)}
     </View> : null}
   </View>;
 }
-function SnapshotPreview({ cacheKey, course, lanes, unit }: { cacheKey: string; course: ReturnType<typeof useCompetitionCourse>["course"]; lanes: ArenaSceneLane[]; unit: string }) {
+function SnapshotPreview({ cacheKey, course, courseError = "", lanes, unit, onSettled }: { cacheKey: string; course: ReturnType<typeof useCompetitionCourse>["course"]; courseError?: string; lanes: ArenaSceneLane[]; unit: string; onSettled?: (ready: boolean) => void }) {
   const c = useThemeColors();
-  const [shown, setShown] = useState(() => snapshotCache.get(cacheKey) ?? "");
+  const { offlineMode } = useAuth();
+  const [shown, setShown] = useState<{ key: string; uri: string } | null>(() => {
+    const initial = snapshotCache.get(cacheKey);
+    return initial ? { key: cacheKey, uri: initial } : null;
+  });
+  const [timedOut, setTimedOut] = useState(false);
   const cached = snapshotCache.get(cacheKey);
-  const uri = cached ?? shown;
-  const capturing = !cached && Boolean(course) && lanes.length > 0 && (unit === "mi" || unit === "km");
-  const capture = (value: string) => { if (snapshotCache.size >= 32) snapshotCache.delete(snapshotCache.keys().next().value!); snapshotCache.set(cacheKey, value); setShown(value); };
+  const uri = cached ?? (shown?.key === cacheKey ? shown.uri : "");
+  const canMapCapture = nativeCourseMapAvailable && Boolean(mobileEnv.mapboxAccessToken) && !offlineMode && !courseError && lanes.length > 0 && (unit === "mi" || unit === "km");
+  const capturing = !uri && canMapCapture && Boolean(course);
+  const ready = Boolean(uri) || !canMapCapture || timedOut;
+  useCoursePreviewReady(ready);
+  useEffect(() => {
+    onSettled?.(ready);
+  }, [onSettled, ready]);
+  useEffect(() => {
+    if (uri || !canMapCapture) {
+      setTimedOut(false);
+      return;
+    }
+    setTimedOut(false);
+    const timer = setTimeout(() => setTimedOut(true), PREVIEW_SETTLE_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [cacheKey, uri, canMapCapture]);
+  const capture = (value: string) => {
+    if (snapshotCache.size >= 32) snapshotCache.delete(snapshotCache.keys().next().value!);
+    snapshotCache.set(cacheKey, value);
+    setShown({ key: cacheKey, uri: value });
+  };
   // The live map only renders hidden beneath the frozen image while a new snapshot is captured.
   return <View pointerEvents="none" style={{ width: "100%", aspectRatio: 1, borderRadius: 12, overflow: "hidden", backgroundColor: c.paper }}>
     {capturing && course ? <GeographicCourse key={cacheKey} course={course} lanes={lanes} unit={unit} selectedId={lanes.find(lane => lane.you)?.id ?? ""} focusRequest={0} onSelect={() => {}} onSnapshot={capture} optionsTop={0} /> : null}
@@ -157,6 +226,94 @@ function SnapshotPreview({ cacheKey, course, lanes, unit }: { cacheKey: string; 
       {uri ? <Image source={{ uri }} resizeMode="cover" accessibilityLabel="3D snapshot of your current race position" style={{ width: "100%", height: "100%" }} /> : capturing ? null : <AppText role="caption" secondary>{unit === "hrs" || unit === "steps" ? "Chart preview" : "Preview unavailable"}</AppText>}
     </View>
   </View>;
+}
+
+function CoursePreviewWarmup({ state, sport, accountKey, debugActive, blockedIds, onStatus }: {
+  state: CompeteState;
+  sport: SportId;
+  accountKey: string;
+  debugActive: boolean;
+  blockedIds: readonly string[];
+  onStatus: (sport: SportId, ready: boolean) => void;
+}) {
+  const now = competeNow(state);
+  const queue = competitionQueue(state, sport, now);
+  const queued = Boolean(queue?.queued || queue?.awaitingField);
+  const period = competitionCourseWindow(state, now, sport);
+  const { course, error } = useCompetitionCourse(sport, period.startsAt.toISOString(), period.endsAt.toISOString(), debugActive, true);
+  const { previewLanes, unit, cacheKey } = coursePreviewParams(state, sport, queued, blockedIds, accountKey, course);
+  const instanceId = useId();
+  const alreadyCached = Boolean(snapshotCache.get(cacheKey));
+  const handleSettled = (ready: boolean) => onStatus(sport, ready);
+  useEffect(() => {
+    if (alreadyCached) onStatus(sport, true);
+  }, [alreadyCached, onStatus, sport]);
+  useEffect(() => () => onStatus(sport, true), [onStatus, sport, instanceId]);
+  if (alreadyCached) {
+    return null;
+  }
+  return (
+    <SnapshotPreview
+      key={`${accountKey}:${sport}:${state.units}`}
+      cacheKey={cacheKey}
+      course={course}
+      courseError={error}
+      lanes={previewLanes}
+      unit={unit}
+      onSettled={handleSettled}
+    />
+  );
+}
+
+/** Offscreen warmup so Compete Mapbox previews are pre-fetched before entering the tab. */
+export function CoursePreviewPrefetch() {
+  const { state, accountKey, debugActive } = useCompeteStore();
+  const { blocks } = useAthleteBlocks();
+  const { offlineMode } = useAuth();
+  const { width } = useWindowDimensions();
+  const [pending, setPending] = useState<Record<string, boolean>>({});
+  const blockedIds = blocks.map(block => block.id);
+  const sports = (state?.ratings ?? [])
+    .filter(r => r.optedIn && isGeographicCompete(r.sport))
+    .map(r => r.sport);
+
+  const onStatus = useRef((sport: SportId, ready: boolean) => {
+    setPending(prev => (Boolean(prev[sport]) === !ready ? prev : { ...prev, [sport]: !ready }));
+  }).current;
+
+  const waiting = Boolean(
+    state &&
+      nativeCourseMapAvailable &&
+      mobileEnv.mapboxAccessToken &&
+      !offlineMode &&
+      sports.some(sport => pending[sport]),
+  );
+  useBootLoading(waiting);
+
+  if (!state || !nativeCourseMapAvailable || !mobileEnv.mapboxAccessToken || offlineMode || !sports.length) return null;
+  const previewSize = Math.max(240, Math.min(360, width - 40));
+
+  return (
+    <View
+      pointerEvents="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={{ position: "absolute", top: 0, left: 0, width: previewSize, height: previewSize, zIndex: -1 }}
+    >
+      {sports.map(sport => (
+        <View key={`${accountKey}:${sport}`} style={{ position: "absolute", top: 0, left: 0, width: previewSize, height: previewSize }}>
+          <CoursePreviewWarmup
+            state={state}
+            sport={sport}
+            accountKey={accountKey}
+            debugActive={Boolean(debugActive)}
+            blockedIds={blockedIds}
+            onStatus={onStatus}
+          />
+        </View>
+      ))}
+    </View>
+  );
 }
 
 function LiveIndicator() {
