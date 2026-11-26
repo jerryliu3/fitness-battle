@@ -25,6 +25,7 @@ export {
   UNRESOLVED_MAJOR_EVENTS,
   type CatalogEvent,
 } from "./ingest/catalog";
+export { replayTimeZoneForEdition } from "./ingest/replay-time-zone";
 export {
   CHECKPOINT_PROFILES,
   MARATHON_BOSTON,

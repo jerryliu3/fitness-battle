@@ -6,6 +6,7 @@ import {
   compileReplayRunner,
   evaluateFieldDistances,
   fillMercatorPositions,
+  formatRaceReplayWallClock,
   loadReplayCompactField,
   loadReplayField,
   pickNearestRunnerId,
@@ -462,5 +463,14 @@ describe("edition course replay",()=>{
       "5k",
     );
     expect(badIntermediate).toBeNull();
+  });
+
+  it("formats replay wall clock in the race IANA zone, not the viewer locale", () => {
+    const tokyoStartMs = Date.parse("2026-03-01T00:10:01.000Z");
+    const label = formatRaceReplayWallClock(tokyoStartMs, "Asia/Tokyo");
+    expect(label).toMatch(/9:10:01/);
+    const eastern = formatRaceReplayWallClock(tokyoStartMs, "America/New_York");
+    expect(eastern).toMatch(/7:10:01/);
+    expect(label).not.toBe(eastern);
   });
 });

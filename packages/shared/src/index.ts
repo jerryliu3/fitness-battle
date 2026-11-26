@@ -101,6 +101,7 @@ export * from "./race-favorites";
 export * from "./race-splits";
 export * from "./race-history";
 export * from "./race-replay";
+export * from "./race-replay-time-zone";
 export * from "./rank-symbols";
 export * from "./compete-time-series";
 export * from "./compete-field-view";

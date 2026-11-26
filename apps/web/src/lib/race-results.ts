@@ -2,6 +2,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { compactReplayPage, raceDateBounds } from "@fitness-battle/shared";
 import type { RaceCoverage, RaceResultsPage, ReplayCompactPage, raceQuery } from "@fitness-battle/shared";
+import { replayTimeZoneForEdition } from "@fitness-battle/rankings";
 import { createRankingsClient } from "./rankings";
 
 const RESULTS_TTL_MS = 30 * 60 * 1000;
@@ -36,6 +37,15 @@ let coursePreviewsInFlight: Promise<Record<string, [number, number][]>> | null =
 
 let coverageCache: { expiresAt: number; data: RaceCoverage[] } | null = null;
 let coverageInFlight: Promise<RaceCoverage[]> | null = null;
+
+async function replayEditionTimeZone(editionId: number, distanceSlug: string): Promise<string | null> {
+  const list = await loadRaceCoverage();
+  const row =
+    list.find(c => c.edition_id === editionId && c.distance_slug === distanceSlug) ??
+    list.find(c => c.edition_id === editionId);
+  if (!row) return null;
+  return replayTimeZoneForEdition(row.event_name, row.edition_year);
+}
 
 export async function loadRaceResults(distance: string, query: ReturnType<typeof raceQuery>): Promise<RaceResultsPage> {
   const client = createRankingsClient();
@@ -311,6 +321,10 @@ export async function loadReplayCompactPage(
       if (replayCompactCache.size > 100) {
         const firstKey = replayCompactCache.keys().next().value;
         if (firstKey) replayCompactCache.delete(firstKey);
+      }
+      if (result && result.timeZone == null) {
+        const timeZone = await replayEditionTimeZone(edition, distance);
+        result = { ...result, timeZone };
       }
       replayCompactCache.set(key, { expiresAt: Date.now() + RESULTS_TTL_MS, data: result });
       return result;

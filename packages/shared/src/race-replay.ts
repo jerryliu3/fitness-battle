@@ -1,9 +1,23 @@
 import { bearing } from "@turf/turf";
 import { analyzeRaceSplits, RACE_METERS, type RaceTimingSplits } from "./race-splits";
+import { isValidIanaTimeZone } from "./timezone";
+
 export type ReplayCourse={points:[number,number,number][];sourceUrl:string;attribution:string};
 export type ReplayRunner={id:number;name:string;bib?:string|null;startAt:string|null;startMs?:number;splits:RaceTimingSplits};
-export type ReplayPage={version:string;course:ReplayCourse|null;totalAvailable:number;runners:ReplayRunner[];next:number|null};
-export type ReplayData={version:string;course:ReplayCourse;totalAvailable:number;runners:ReplayRunner[]};
+export type ReplayPage={version:string;course:ReplayCourse|null;totalAvailable:number;runners:ReplayRunner[];next:number|null;timeZone?:string|null};
+export type ReplayData={version:string;course:ReplayCourse;totalAvailable:number;runners:ReplayRunner[];timeZone?:string|null};
+
+/** Wall-clock label for replay scrubber: race-local IANA zone, not the viewer's device zone. */
+export function formatRaceReplayWallClock(epochMs: number, timeZone: string | null | undefined): string {
+  if (!Number.isFinite(epochMs)) return "—";
+  const zone = timeZone && isValidIanaTimeZone(timeZone) ? timeZone : "UTC";
+  return new Date(epochMs).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    timeZone: zone,
+  });
+}
 export function validateReplayCourse(course:ReplayCourse,distance:string) {
   let previous=-1;
   return course.points.length>=2 && course.points.length<=20000 && course.points.every((point,index)=>{
@@ -705,6 +719,7 @@ export type ReplayCompactPage = {
   checkpointSets?: Record<string, number[]> | null;
   runners: ReplayCompactTuple[];
   next: number | null;
+  timeZone?: string | null;
 };
 
 export function compactReplayPage(page: ReplayPage, clock: "chip" | "gun" = "chip"): ReplayCompactPage {
@@ -778,6 +793,7 @@ export async function loadReplayCompactField(
   let courseTotalM = 0;
   let version = "";
   let totalAvailable = 0;
+  let timeZone: string | null | undefined;
   const runners: ReplayRunner[] = [];
   while (true) {
     if (cancelled()) throw new Error("Cancelled");
@@ -789,6 +805,7 @@ export async function loadReplayCompactField(
       courseTotalM = course.points[course.points.length - 1]?.[2] ?? 0;
       version = page.version;
       totalAvailable = page.totalAvailable ?? page.runners.length;
+      timeZone = page.timeZone ?? null;
     } else if (page.version !== version) {
       throw new Error("Course changed; reload replay");
     }
@@ -802,9 +819,9 @@ export async function loadReplayCompactField(
     }
     onProgress(runners.length);
     if (onPage && page.next !== null) {
-      onPage({ course, version, totalAvailable, runners: runners.slice() });
+      onPage({ course, version, totalAvailable, runners: runners.slice(), timeZone });
     }
-    if (page.next === null) return { course, version, totalAvailable, runners };
+    if (page.next === null) return { course, version, totalAvailable, runners, timeZone };
     const lastId = page.runners.at(-1)?.[0];
     if (page.next <= after || page.next !== lastId) throw new Error("Invalid replay cursor");
     after = page.next;
