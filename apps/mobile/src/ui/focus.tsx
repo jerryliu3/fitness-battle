@@ -146,11 +146,11 @@ const f=useThemedStyles(fThemes);
         <AnimatedSafeAreaView
           onLayout={event => { sheetHeight.current = event.nativeEvent.layout.height; }}
           onAccessibilityEscape={onClose}
-          edges={fullScreen ? ["top", "bottom"] : ["bottom"]}
+          edges={[]}
           style={[
             f.sheet,
-            { maxHeight: maxSheetHeight },
-            fullScreen && { flex: 1, maxHeight: "100%", borderTopLeftRadius: 0, borderTopRightRadius: 0, paddingTop: 0 },
+            { maxHeight: maxSheetHeight, paddingBottom: insets.bottom },
+            fullScreen && { flex: 1, maxHeight: "100%", borderTopLeftRadius: 0, borderTopRightRadius: 0, paddingTop: insets.top },
             {
               transform: [
                 {

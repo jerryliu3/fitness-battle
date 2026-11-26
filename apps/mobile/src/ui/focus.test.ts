@@ -177,6 +177,14 @@ it("keeps full-screen map drags inside the map and permits header dismissal", as
   await act(async () => { renderer = create(createElement(FocusSheet, { open: true, title: "Your route", onClose: vi.fn(), fullScreen: true })); });
   const surface = renderer.root.findByProps({ accessibilityLabel: "Dismiss full screen" });
   const gesture = { dx: 0, dy: 120, numberActiveTouches: 1, y0: 400 };
-  expect(renderer.root.findByType("SafeAreaView" as never).props.onMoveShouldSetPanResponderCapture).toBeUndefined();
+  const safeSheet = renderer.root.findByType("SafeAreaView" as never);
+  expect(safeSheet.props.onMoveShouldSetPanResponderCapture).toBeUndefined();
+  expect(safeSheet.props.edges).toEqual([]);
+  expect(safeSheet.props.style).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ paddingBottom: 34 }),
+      expect.objectContaining({ paddingTop: 44, maxHeight: "100%" }),
+    ]),
+  );
   expect(surface.props.onMoveShouldSetPanResponderCapture({}, { ...gesture, y0: 60 })).toBe(true);
 });
