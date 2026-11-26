@@ -11,6 +11,8 @@ import {
   compileReplayRunner,
   evaluateFieldDistances,
   fillMercatorPositions,
+  formatRaceReplayWallClock,
+  inferRaceReplayTimeZone,
   loadReplayCompactField,
   pickNearestRunnerId,
   RACE_DISTANCES,
@@ -524,6 +526,12 @@ export function ReplayPlayer({
     [allRaceEditions, editionId, storedDistance],
   );
 
+  const replayWallTimeZone = useMemo(() => {
+    if (data?.timeZone) return data.timeZone;
+    if (activeRaceMeta) return inferRaceReplayTimeZone(activeRaceMeta.event_name);
+    return null;
+  }, [data?.timeZone, activeRaceMeta]);
+
   function selectRaceEdition(nextEditionId: number, nextDistanceStored?: string) {
     const distObj = nextDistanceStored
       ? (RACE_DISTANCES.find(d => d.stored === nextDistanceStored) ?? distanceObj)
@@ -819,7 +827,9 @@ export function ReplayPlayer({
       }
       if (hudClockRef.current) {
         hudClockRef.current.textContent =
-          timeline.origin !== null ? new Date(timeline.origin + nextTime).toLocaleTimeString() : raceClock(nextTime);
+          timeline.origin !== null
+            ? formatRaceReplayWallClock(timeline.origin + nextTime, replayWallTimeZone)
+            : raceClock(nextTime);
       }
 
       if (ready && map.current) {
@@ -1389,7 +1399,9 @@ export function ReplayPlayer({
               <div className="ovt-map-head">
                 <span>{timeline.origin !== null ? "Time of day" : "Chip time"}</span>
                 <strong ref={hudClockRef}>
-                  {timeline.origin !== null ? new Date(timeline.origin + time).toLocaleTimeString() : raceClock(time)}
+                  {timeline.origin !== null
+                    ? formatRaceReplayWallClock(timeline.origin + time, replayWallTimeZone)
+                    : raceClock(time)}
                 </strong>
                 <span>
                   {cameraTargetEntry
@@ -1553,7 +1565,9 @@ export function ReplayPlayer({
                 if (scrubberClockRef.current) scrubberClockRef.current.textContent = raceClock(nextTime);
                 if (hudClockRef.current) {
                   hudClockRef.current.textContent =
-                    timeline.origin !== null ? new Date(timeline.origin + nextTime).toLocaleTimeString() : raceClock(nextTime);
+                    timeline.origin !== null
+            ? formatRaceReplayWallClock(timeline.origin + nextTime, replayWallTimeZone)
+            : raceClock(nextTime);
                 }
                 if (ready && map.current && data) {
                   pushMapFrameRef.current(nextTime);

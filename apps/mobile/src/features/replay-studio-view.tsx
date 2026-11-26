@@ -11,6 +11,8 @@ import {
   buildReplayCourseIndex,
   evaluateFieldDistances,
   formatEditionDisplay,
+  formatRaceReplayWallClock,
+  inferRaceReplayTimeZone,
   raceClock,
   raceEventGroups,
   replayDistance,
@@ -251,6 +253,7 @@ function FullScreenReplayStage({
   cameraTargetEntry,
   cameraMode,
   timelineOrigin,
+  replayWallTimeZone,
   time,
   runnersCount,
   wall,
@@ -272,6 +275,7 @@ function FullScreenReplayStage({
   cameraTargetEntry: RunnerWithDistance | null;
   cameraMode: "field" | "follow" | "chase3d";
   timelineOrigin: number | null;
+  replayWallTimeZone: string | null;
   time: number;
   runnersCount: number;
   wall: boolean;
@@ -321,7 +325,9 @@ function FullScreenReplayStage({
               {timelineOrigin !== null ? "TIME OF DAY" : "CHIP TIME"}
             </AppText>
             <AppText role="heading" style={{ color: hud.ink, fontVariant: ["tabular-nums"] }}>
-              {timelineOrigin !== null ? new Date(timelineOrigin + time).toLocaleTimeString() : raceClock(time)}
+              {timelineOrigin !== null
+                ? formatRaceReplayWallClock(timelineOrigin + time, replayWallTimeZone)
+                : raceClock(time)}
             </AppText>
             <AppText role="nav" style={{ color: hud.muted }} numberOfLines={1}>
               {cameraTargetEntry
@@ -457,6 +463,11 @@ export function ReplayStudioView({
   );
 
   const [data, setData] = useState<ReplayData | null>(null);
+  const replayWallTimeZone = useMemo(() => {
+    if (data?.timeZone) return data.timeZone;
+    if (activeRaceMeta) return inferRaceReplayTimeZone(activeRaceMeta.event_name);
+    return null;
+  }, [data?.timeZone, activeRaceMeta]);
   const [runners, setRunners] = useState<CompiledReplayRunner[]>([]);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -1375,7 +1386,9 @@ export function ReplayStudioView({
                     {timeline.origin !== null ? "TIME OF DAY" : "CHIP TIME"}
                   </AppText>
                   <AppText role="heading" style={{ color: hud.ink, fontVariant: ["tabular-nums"] }}>
-                    {timeline.origin !== null ? new Date(timeline.origin + time).toLocaleTimeString() : raceClock(time)}
+                    {timeline.origin !== null
+                      ? formatRaceReplayWallClock(timeline.origin + time, replayWallTimeZone)
+                      : raceClock(time)}
                   </AppText>
                   <AppText role="nav" style={{ color: hud.muted }} numberOfLines={1}>
                     {cameraTargetEntry
@@ -1443,6 +1456,7 @@ export function ReplayStudioView({
                     cameraTargetEntry={cameraTargetEntry}
                     cameraMode={cameraMode}
                     timelineOrigin={timeline.origin}
+                    replayWallTimeZone={replayWallTimeZone}
                     time={time}
                     runnersCount={runners.length}
                     wall={wall}
