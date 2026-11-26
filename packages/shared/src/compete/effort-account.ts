@@ -37,6 +37,7 @@ export interface SportEffortAccount {
   nextWeek: string;
   starter?: TimedMultiplier;
   trainingStartsAt?: string;
+  historyAnchor?: { occurredAt: string; score: number };
 }
 export type EffortAccounts = Partial<Record<SportId, SportEffortAccount>>;
 const dateFor = (day:string)=>new Date(`${day}T12:00:00Z`);
@@ -67,7 +68,10 @@ export function startAccountEffort(state: CompeteState, award: HistoryEffortAwar
       getScoreBreakdown(sport, existing.state).displayedScore >= getScoreBreakdown(sport, seeded).displayedScore;
     effortAccounts[sport] = keep
       ? { ...existing, starter }
-      : { state: seeded, nextWeek: dayKey(week), starter, trainingStartsAt: award.startsAt };
+      : {
+        state: seeded, nextWeek: dayKey(week), starter, trainingStartsAt: award.startsAt,
+        historyAnchor: { occurredAt: award.startsAt, score: getScoreBreakdown(sport, seeded).displayedScore },
+      };
   }
   return {
     ...state,
