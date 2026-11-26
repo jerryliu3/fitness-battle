@@ -24,7 +24,7 @@ export function ActivityLeadingGraphic({
   size = 44,
 }: {
   activity: ActivityGraphicSubject;
-  routeActivity?: Activity | null;
+  routeActivity?: Pick<Activity, "summaryPolyline" | "detailedPolyline"> | null;
   history: readonly Activity[];
   size?: number;
 }) {
