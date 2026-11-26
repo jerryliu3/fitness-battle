@@ -15,10 +15,10 @@ import {
   competitionTrack,
   competeNow,
   countsOnTrack,
-  distanceUnitLabel,
-  formatDistanceM,
+  formatCrewRelayVolume,
   formatNoticeUnits,
   rankSymbolForScore,
+  resolveCrewWeekMetric,
   weeklyPeriodBounds,
   dayKey,
   APP_TIMEZONE,
@@ -31,13 +31,14 @@ import {
   humanizeCrewApiError,
 } from "@fitness-battle/shared";
 import { CrewInviteLanding } from "./crew-invite-landing";
+import { useCrewPassport } from "./use-crew-passport";
 import { useCrewInviteFlow } from "./use-crew-invite-flow";
 import { GuestEntrySheet } from "./guest-entry-sheet";
 import { useGuestEntryPrompt } from "../lib/guest-entry";
 import { Chip, ChipRow } from "../ui/chip";
 import { NumberStepper } from "../ui/number-stepper";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ImageBackground, Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
@@ -290,11 +291,51 @@ const f=useFocusStyles();
   const previousDistanceM = api.data?.previousProgressAvailable?.[crew.id]
     ? (api.data.previousProgress??[]).filter(row=>row.crew_id===crew.id && members.some(m=>m.user_id===row.user_id)).reduce((sum,row)=>sum+Number(row.distance_m),0)
     : null;
-  const sessionsMetric = crew.format === "personal_target" || crew.sport === "strength";
-  const distance = (meters: number) =>
-    `${formatDistanceM(meters, state?.units)} ${distanceUnitLabel(state?.units)}`;
-  const memberTotal = (id: string) =>
-    crewMemberWeekValue(entries, id, sessionsMetric);
+  const passportInput = useMemo(
+    () => ({
+      members: members.map((m) => ({
+        user_id: m.user_id,
+        display_name: m.display_name,
+        avatar_url: m.avatar_url,
+      })),
+      entries,
+      sport: crew.sport,
+      format: crew.format,
+      targetSessions: crew.target_sessions,
+      targetDistanceM: crew.journey_km * 1000,
+      previousDistanceM,
+      now: (state ? competeNow(state) : new Date()).toISOString(),
+      units: state?.units,
+    }),
+    [
+      members,
+      entries,
+      crew.sport,
+      crew.format,
+      crew.target_sessions,
+      crew.journey_km,
+      previousDistanceM,
+      state,
+    ],
+  );
+  const { data: crewPassport } = useCrewPassport(crew.id, passportInput);
+  const weekContract = crewPassport?.contract
+    ? { metric: crewPassport.contract.metric, target: crewPassport.contract.target }
+    : null;
+  const weekMetric = resolveCrewWeekMetric({
+    format: crew.format,
+    sport: crew.sport,
+    contract: weekContract,
+  });
+  const memberTotal = (id: string) => crewMemberWeekValue(entries, id, weekMetric);
+  const memberContribution = (id: string) =>
+    formatCrewRelayVolume(
+      weekMetric === "sessions",
+      crew.sport as SportId,
+      memberTotal(id),
+      state?.units,
+      weekMetric,
+    );
   function requireCrewAccount(action: () => void) {
     if (user) {
       action();
@@ -455,7 +496,7 @@ const f=useFocusStyles();
       setBusy(false);
     }
   }
-  const lineup = crewLineup(members, entries, crew.sport);
+  const lineup = crewLineup(members, entries, crew.sport, weekMetric);
   const membersView = (
 <View style={{ gap: 16 }}>
             <AppText role="body" secondary >{crew.name}</AppText>
@@ -466,7 +507,7 @@ const f=useFocusStyles();
             }}>
               <RankAvatar rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} size={64} />
               <View style={f.grow}><AppText role="row">{m.display_name}</AppText><AppText role="support" secondary >Active</AppText>
-                <AppText role="support" secondary >{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))} this week</AppText>
+                <AppText role="support" secondary >{memberContribution(m.user_id)} this week</AppText>
               </View>
             </Pressable>)}
             </SectionStack>
@@ -488,7 +529,7 @@ const f=useFocusStyles();
       id: viewingMember.user_id, name: viewingMember.display_name, avatarUrl: viewingMember.avatar_url,
       you: viewingMember.user_id === user?.id, score: viewingMember.effort_score,
       contextLabel: "This week's crew contribution",
-      contextValue: viewingMember.status === "former" ? undefined : sessionsMetric ? `${memberTotal(viewingMember.user_id)} sessions` : distance(memberTotal(viewingMember.user_id)),
+      contextValue: viewingMember.status === "former" ? undefined : memberContribution(viewingMember.user_id),
       contextDetail: `${crew.name} · ${Math.round(memberTotal(viewingMember.user_id) / Math.max(1, members.reduce((sum, m) => sum + memberTotal(m.user_id), 0)) * 100)}% of crew total`,
     } : null}
     onClose={() => setViewingMember(null)}
