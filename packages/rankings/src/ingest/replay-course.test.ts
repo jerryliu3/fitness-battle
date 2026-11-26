@@ -38,7 +38,7 @@ describe("replay course", () => {
   });
 
   it("scales committed Tokyo marathon GPX to 42.195 km", () => {
-    const gpx = readFileSync(join(fixtureDir, "courses/tokyo-marathon-2025.gpx"), "utf8");
+    const gpx = readFileSync(join(fixtureDir, "courses/tokyo-marathon-2026.gpx"), "utf8");
     const trkpts = parseGpxTrkpts(gpx);
     expect(trkpts.length).toBeGreaterThan(500);
     const points = replayCourseFromGpx(gpx, "marathon");

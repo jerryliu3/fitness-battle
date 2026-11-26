@@ -42,11 +42,6 @@ export {
 } from "./ingest/chronotrack";
 export { chronotrackSplitsForProfile } from "./ingest/chronotrack-splits";
 export { parseResultsCsv } from "./ingest/csv";
-export {
-  marathonGuideFinishersApiUrl,
-  parseMarathonGuideFinishersPage,
-  parseMarathonGuideResultsUrl,
-} from "./ingest/marathonguide";
 export { mikaListUrl, parseMikaTimingList } from "./ingest/mikatiming";
 export { parseRaceDayTimingList, racedayTimingListUrl } from "./ingest/racedaytiming";
 export {

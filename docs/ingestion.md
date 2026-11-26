@@ -94,12 +94,10 @@ Replay course tracks for the observatory/replay renderer live in `public.ranking
 ```sh
 pnpm rankings:course -- --slug banff-half-2026 --display-allowed
 pnpm rankings:course -- --slug sf-marathon-2026 --display-allowed
-pnpm rankings:course -- --slug tokyo-marathon-2025 --display-allowed
+pnpm rankings:course -- --slug tokyo-marathon-2026 --display-allowed
 ```
 
-Tokyo uses the committed `fixtures/courses/tokyo-marathon-2025.gpx` trace (official course map), scaled to `42.195 km`. Finishers (chip times only, no splits) use MarathonGuide's JSON API via `pnpm rankings:ingest-marathonguide -- --slug tokyo-marathon-2025` after source review; Cloudflare may block unattended cloud fetches.
-
-Banff uses the organizer-linked MapMyRun route (`5544185092`). SF uses the committed `fixtures/courses/sf-marathon-2026-full.gpx` trace aligned to the published 2026 course map, scaled to exactly `42.195 km` / `21.0975 km` so `private.valid_replay_course` passes.
+Banff uses the organizer-linked MapMyRun route (`5544185092`). SF uses the committed `fixtures/courses/sf-marathon-2026-full.gpx` trace aligned to the published 2026 course map, scaled to exactly `42.195 km` / `21.0975 km` so `private.valid_replay_course` passes. Tokyo 2026 uses `fixtures/courses/tokyo-marathon-2026.gpx`, scaled to `42.195 km`.
 
 Readable public lists, copied in the latest run: Boston Marathon 2025 (28,404), London Marathon 2025 mass (55,226), Berlin Marathon 2025 runners (48,345), Chicago Marathon 2025 (54,109), Generali Berlin 5K 2025 (9,168), plus the OpenTrack 10 km fixture (44). Chicago's public page listed 54,315. The extra sex filter repeated people already stored, so that pass stopped.
 
