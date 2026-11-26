@@ -101,6 +101,7 @@ export async function middleware(request: NextRequest) {
   if (
     pathname === "/.well-known/apple-app-site-association" ||
     pathname === "/.well-known/assetlinks.json" ||
+    pathname === "/api/app-version" ||
     isPublicRankingsReadApi(pathname, request.method)
   ) {
     return NextResponse.next();

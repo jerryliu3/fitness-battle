@@ -45,7 +45,7 @@ import { BootGate } from "../src/ui/boot-gate";
 import { LaunchGate } from "../src/ui/launch-gate";
 import { useReducedMotion } from "../src/ui/use-reduced-motion";
 import { NavigationWarmup } from "../src/lib/navigation-warmup";
-import { applyExpoUpdateOnLaunch } from "../src/lib/expo-ota";
+import { applyExpoUpdateOnLaunch, checkStoreVersionOnLaunch } from "../src/lib/expo-ota";
 import { OfflineNotice } from "../src/ui/offline-notice";
 
 function BlockPrivacyGate({ children }: { children: ReactNode }) {
@@ -143,6 +143,7 @@ const SHELL_COLORS=useThemeColors();
 
   useEffect(() => {
     void applyExpoUpdateOnLaunch();
+    void checkStoreVersionOnLaunch();
   }, []);
 
   useEffect(() => {
