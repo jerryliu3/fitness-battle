@@ -4,7 +4,7 @@ import { nextDailyWaveWindowAt, weekEndAfter, weeklyWaveWindowAt } from "../matc
 import { DEFAULT_GROUP_CAPACITY } from "../matching/types";
 
 /** How often an open Compete field asks the server for shared scores. */
-export const FIELD_REFRESH_MS = 60_000;
+export const FIELD_REFRESH_MS = 5 * 60_000;
 
 /** Wave times in a specific zone (default Eastern for registration stamp math). */
 export function waveTimeLabel(

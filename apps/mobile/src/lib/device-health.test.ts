@@ -315,3 +315,12 @@ it("registers a first connection without querying a zero-length workout range", 
   expect(deps.nativeModule?.getAnchoredWorkouts).not.toHaveBeenCalled();
   expect(deps.fetchFn).toHaveBeenCalledWith("https://example.test/api/fitness/ingest", expect.objectContaining({ body: expect.stringContaining('"activities":[]') }));
 });
+
+it("skips POST /api/fitness/ingest when skipIfEmpty is enabled and nothing new was found", async () => {
+  const at = "2026-11-17T18:00:00.000Z";
+  const deps = testDeps({ syncRange: { since: at, until: at }, skipIfEmpty: true });
+  const result = await syncAppleHealth(deps);
+  expect(result.ok).toBe(true);
+  expect(result.count).toBe(0);
+  expect(deps.fetchFn).not.toHaveBeenCalled();
+});

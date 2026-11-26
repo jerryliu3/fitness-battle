@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { clearApiReads } from "./api-read-cache";
 import { apiReadScope, cachedApiRead } from "./api-read-cache";
 import { requestApi } from "./api";
-import { useCachedApi } from "./use-cached-api";
+import { TAB_READ_TTL, useCachedApi } from "./use-cached-api";
 
 const mock = vi.hoisted(() => ({ id: "alice", token: "alice", resume: null as null | ((state: string) => void) }));
 vi.mock("./auth", () => ({ useAuth: () => ({ user: { id: mock.id }, accessToken: mock.token, offlineMode: false }) }));
@@ -94,7 +94,7 @@ it("reloads silently on background return without setting busy when cached", asy
   expect(fetcher).toHaveBeenCalledTimes(1);
 
   // Advance time past TAB_READ_TTL so cache is stale
-  vi.advanceTimersByTime(65_000);
+  vi.advanceTimersByTime(TAB_READ_TTL + 5_000);
 
   // Background return reloads silently
   fetcher.mockImplementationOnce(async () => Response.json({ value: "fresh" }));
