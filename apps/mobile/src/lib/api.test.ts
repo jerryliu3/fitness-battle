@@ -1,4 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: () => ({ remove() {} }) } }));
+vi.mock("./env", () => ({ mobileEnv: { apiUrl: "https://test.com" } }));
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: { getItem: vi.fn(async () => null), setItem: vi.fn(async () => {}), removeItem: vi.fn(async () => {}) },
+}));
 import { requestApi } from "./api";
 afterEach(() => vi.unstubAllGlobals());
 describe("mobile API transport", () => {

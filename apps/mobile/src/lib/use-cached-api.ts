@@ -3,8 +3,15 @@ import { useFocusEffect } from "expo-router";
 import { AppState } from "react-native";
 import { useAuth } from "./auth";
 import { requestApi } from "./api";
-import { apiReadScope, peekApiRead, subscribeApiReads } from "./api-read-cache";
+import {
+  apiReadScope,
+  hydratePersistedApiRead,
+  peekApiRead,
+  subscribeApiReads,
+  writePersistedApiRead,
+} from "./api-read-cache";
 import { mobileEnv } from "./env";
+import { isTransportError, subscribeNetworkReconnect } from "./network";
 
 export const TAB_READ_TTL = 60_000;
 
@@ -12,6 +19,7 @@ export const TAB_READ_TTL = 60_000;
 export function useCachedApi<T>(path: string | null) {
   const { user, accessToken, offlineMode } = useAuth();
   const token = user && !offlineMode ? accessToken : null;
+  const userId = user && !offlineMode ? user.id : null;
   const scope = token ? apiReadScope(mobileEnv.apiUrl, token) : "";
   const key = JSON.stringify([scope, path]);
   const currentKey = useRef(key);
@@ -28,23 +36,45 @@ export function useCachedApi<T>(path: string | null) {
     try {
       const data = await requestApi<T>(mobileEnv.apiUrl, token, path, { cacheMs: TAB_READ_TTL });
       if (currentKey.current !== key || attempt !== sequence.current) return false;
+      if (userId) writePersistedApiRead(mobileEnv.apiUrl, userId, path, data);
       setResult({ key, data, error: "", busy: false });
       return true;
     } catch (error) {
-      if (currentKey.current === key && attempt === sequence.current)
-        setResult(previous => ({ ...previous, key, error: error instanceof Error ? error.message : "Could not load data.", busy: false }));
+      if (currentKey.current === key && attempt === sequence.current) {
+        const fallback = peekApiRead<T>(scope, path);
+        setResult(previous => {
+          const existing = (previous.key === key ? previous.data : undefined) ?? fallback;
+          const suppressError = existing !== undefined && isTransportError(error);
+          return {
+            key,
+            data: existing,
+            error: suppressError ? "" : error instanceof Error ? error.message : "Could not load data.",
+            busy: false,
+          };
+        });
+      }
       return false;
     }
-  }, [key, scope, token, path]);
+  }, [key, scope, token, userId, path]);
   useEffect(() => {
-    void reload();
+    let alive = true;
+    if (userId && scope && path && peekApiRead<T>(scope, path) === undefined) {
+      void hydratePersistedApiRead<T>(mobileEnv.apiUrl, userId, scope, path).then(persisted => {
+        if (!alive || persisted === undefined || currentKey.current !== key) return;
+        setResult(previous => (previous.key === key && previous.data !== undefined ? previous : { key, data: persisted, error: "", busy: previous.busy }));
+      });
+    }
+    void reload({ silent: Boolean(scope && path && peekApiRead<T>(scope, path) !== undefined) });
     const unsubscribe = scope ? subscribeApiReads(scope, changedPath => {
       if (!changedPath) void reload();
       else if (changedPath === path && currentKey.current === key)
         setResult({ key, data: peekApiRead<T>(scope, changedPath), error: "", busy: false });
     }) : () => {};
-    return () => { sequence.current++; unsubscribe(); };
-  }, [reload, scope, path, key]);
+    const unsubNetwork = token && path ? subscribeNetworkReconnect(() => {
+      void reload({ silent: true });
+    }) : () => {};
+    return () => { alive = false; sequence.current++; unsubscribe(); unsubNetwork(); };
+  }, [reload, scope, userId, token, path, key]);
   useFocusEffect(useCallback(() => {
     const hasCached = scope && path ? peekApiRead<T>(scope, path) !== undefined : false;
     void reload({ silent: hasCached });

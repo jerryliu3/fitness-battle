@@ -6,7 +6,7 @@ const mock = vi.hoisted(() => ({ state: null as CompeteState | null, dispatch: v
 vi.mock("react-native", () => ({ Platform: { OS: "ios" }, StyleSheet: { create: (s: unknown) => s }, View: "View", Text: "Text", Pressable: "Pressable", ScrollView: "ScrollView", BackHandler: { addEventListener: () => ({ remove() {} }) }, AppState: { currentState: "active", addEventListener: () => ({ remove() {} }) } }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "https://test.local" } }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView", useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }));
-vi.mock("expo-router", () => ({ useGlobalSearchParams: () => ({}), usePathname: () => "/arena", useRouter: () => ({ navigate: vi.fn(), push: vi.fn() }) }));
+vi.mock("expo-router", () => ({ useFocusEffect: () => {}, useGlobalSearchParams: () => ({}), usePathname: () => "/arena", useRouter: () => ({ navigate: vi.fn(), push: vi.fn() }) }));
 vi.mock("../theme", () => ({ useThemeColors: () => ({}) }));
 vi.mock("../ui/focus", () => ({ useFocusStyles: () => ({}), FocusSheet: "FocusSheet", FocusButton: "FocusButton" }));
 vi.mock("../ui/section", () => ({ SectionStack: "SectionStack", AppText: "AppText" }));

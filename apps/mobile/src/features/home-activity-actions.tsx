@@ -40,10 +40,11 @@ export function HomeActivityActions({
 }: {
   compact?: boolean;
 }) {
-  const { state, canWrite, dispatch, refresh,
+  const { state, canWrite, canWriteLocal, dispatch, refresh,
     beginSyncReviewBatch,
     endSyncReviewBatch,
   } = useCompeteStore();
+  const canLogLocal = canWriteLocal ?? canWrite;
   const { user, accessToken, offlineMode } = useAuth();
   const owner = useRef(user?.id);
   owner.current = user?.id;
@@ -179,7 +180,7 @@ export function HomeActivityActions({
     <View style={{ flexDirection: "row", gap: 8 }}>
       <IconButton primary icon="sync" label={busy ? "Syncing activities" : "Sync activities"} disabled={!user || !canWrite || busy} onPress={() => void sync()} />
       <View ref={sportMenu.anchorRef} collapsable={false}>
-        <IconButton icon="plus" label="Add activity" disabled={!user || !canWrite || busy} onPress={sportMenu.toggle} />
+        <IconButton icon="plus" label="Add activity" disabled={!user || !canLogLocal || busy} onPress={sportMenu.toggle} />
       </View>
     </View>
   ) : (
@@ -192,7 +193,7 @@ export function HomeActivityActions({
       <View ref={sportMenu.anchorRef} collapsable={false} style={{ flex: 1 }}><FocusButton
         secondary
         label="Add activity"
-        disabled={!user || !canWrite || busy}
+        disabled={!user || !canLogLocal || busy}
         onPress={sportMenu.toggle}
       /></View>
     </View>
@@ -259,10 +260,10 @@ export function HomeActivityActions({
           </AppText>
         ) : null}
         <FocusButton
-          disabled={!user || !canWrite || !sport}
+          disabled={!user || !canLogLocal || !sport}
           label="Save activity"
           onPress={() => {
-            if (!user || !canWrite || !sport) return;
+            if (!user || !canLogLocal || !sport) return;
             const parsed = parseManualActivity(sport, miles, minutes, state.units);
             if (parsed.error !== null) {
               void playCue("error");

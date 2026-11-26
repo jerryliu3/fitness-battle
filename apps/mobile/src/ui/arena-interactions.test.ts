@@ -59,6 +59,7 @@ vi.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 47, bottom: 34, left: 0, right: 0 }),
 }));
 vi.mock("expo-router", () => ({
+  useFocusEffect: () => {},
   usePathname: () => "/arena",
   useGlobalSearchParams:()=>({}),
   useRouter: () => ({ navigate: vi.fn() }),

@@ -1,9 +1,49 @@
-// Memory only. Credentials separate sessions; bounded storage also limits replay payloads.
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// Memory cache + optional durable AsyncStorage persistence keyed by userId (never by JWT).
 const MAX_ENTRIES = 40;
+const PERSIST_PREFIX = "fb-api-cache-v1";
 type Entry = { scope: string; value?: unknown; storedAt: number; flight?: Promise<unknown> };
 const entries = new Map<string, Entry>();
 const listeners = new Map<string, Set<(path?: string) => void>>();
 const readKey = (scope: string, path: string) => JSON.stringify([scope, path]);
+
+function persistKey(apiUrl: string, userId: string, path: string) {
+  return `${PERSIST_PREFIX}:${apiUrl.replace(/\/$/, "")}:${userId}:${path}`;
+}
+
+export async function hydratePersistedApiRead<T>(
+  apiUrl: string,
+  userId: string,
+  scope: string,
+  path: string,
+): Promise<T | undefined> {
+  const existing = peekApiRead<T>(scope, path);
+  if (existing !== undefined) return existing;
+  try {
+    const raw = await AsyncStorage.getItem(persistKey(apiUrl, userId, path));
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as { value?: T };
+    if (parsed?.value === undefined) return undefined;
+    const key = readKey(scope, path);
+    const current = entries.get(key);
+    if (current?.value !== undefined) return current.value as T;
+    // Seed with storedAt: 0 so cached data renders immediately while background revalidation runs.
+    entries.set(key, { scope, value: parsed.value, storedAt: 0, flight: current?.flight });
+    if (entries.size > MAX_ENTRIES) entries.delete(entries.keys().next().value!);
+    listeners.get(scope)?.forEach(listener => listener(path));
+    return parsed.value;
+  } catch {
+    return undefined;
+  }
+}
+
+export function writePersistedApiRead(apiUrl: string, userId: string, path: string, value: unknown) {
+  void AsyncStorage.setItem(
+    persistKey(apiUrl, userId, path),
+    JSON.stringify({ value, storedAt: Date.now() }),
+  ).catch(() => {});
+}
 
 export function apiReadScope(apiUrl: string, token: string) {
   return JSON.stringify([apiUrl.replace(/\/$/, ""), token]);
